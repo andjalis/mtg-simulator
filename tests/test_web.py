@@ -53,7 +53,7 @@ class WebSimTests(unittest.TestCase):
 
     def test_grades_reuse_the_grandmaster_games(self):
         run = sim.make_run("burn", BURN, ["grandmaster"], ladder=False, games=2, seed=4)
-        run.goldfish_games, run.samples = 5, 300
+        run.goldfish_games, run.samples, run.record_history = 5, 300, False
         with ThreadPoolExecutor(2) as pool:
             run.execute(pool)
         snap = run.snapshot()

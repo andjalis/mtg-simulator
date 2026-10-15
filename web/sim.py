@@ -12,6 +12,7 @@ import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field
 
+from mtgsim import history
 from mtgsim.carddb import CardDB
 from mtgsim.decklist import load_deck, parse_decklist
 from mtgsim.runner import build_deck, run_match, wilson
@@ -147,6 +148,7 @@ class Run:
     samples: int = 20000
     assessment: dict | None = None
     grade_error: str = ""
+    record_history: bool = True
     lock: threading.Lock = field(default_factory=threading.Lock)
 
     def opponents(self, tier) -> list[Opponent]:
@@ -213,6 +215,10 @@ class Run:
         if self.tracker:
             with self.lock:
                 self.tracker.finish(self.verdict)
+            if self.record_history:
+                history.try_record(history.record_ladder, self.tracker.to_dict(), self.counts, source="web")
+        if self.record_history and self.assessment:
+            history.try_record(history.record_assessment, self.assessment, self.counts, source="web")
 
     def _grade(self, pool, rng, chunks) -> None:
         """Grade the deck. The meta criterion reuses the games against the Grandmaster pool and
@@ -251,7 +257,8 @@ class Run:
             if self.assessment:
                 grades = {"html": render_grades(self.assessment), "data": self.assessment,
                           "caveat": meta_caveat(self.assessment)}
-        return {"rank": rank, "assessment": grades, "grade_error": self.grade_error, "deck": self.deck_name, "ladder": self.ladder, "pass_rate": self.pass_rate,
+        return {"rank": rank, "assessment": grades, "grade_error": self.grade_error,
+                "deck": self.deck_name, "ladder": self.ladder, "pass_rate": self.pass_rate,
                 "games_per_opponent": self.games, "done": self.done, "total": self.total,
                 "current": self.current, "tiers": self.rows, "verdict": self.verdict}
 

@@ -8,26 +8,38 @@ GET  /api/tiers        tiers and their decks
 POST /api/check        {"deck": text}                       -> card counts, unknown and partial cards
 POST /api/run          {"deck", "name", "ladder", "tiers", "games", "full", "seed", "grade"} -> {"id"}
 GET  /api/runs/<id>    progress and results so far
+GET  /leaderboard      every tested deck ranked by MMR (JSON at /api/leaderboard)
+GET  /leaderboard/{history,ladder,assess,run}/<name>   one deck's latest results
 """
 from __future__ import annotations
 
 import argparse
 import json
+import re
 import threading
+import time
 import traceback
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from . import sim
+from . import leaderboard, sim
+
+try:
+    from mtgsim.ladder_report import render_page as ladder_page
+except ImportError:
+    ladder_page = None
 
 STATIC = Path(__file__).parent / "static"
 MAX_BODY = 1 << 20
 
 
 class App:
-    def __init__(self, jobs: int | None = None, offline: bool = False):
+    def __init__(self, jobs: int | None = None, offline: bool = False, results: Path = leaderboard.RESULTS,
+                 history_path=None):
         self.offline = offline
+        self.results = Path(results)
+        self.history_path = history_path  # None: mtgsim.history's default store
         self.pool = sim.make_pool(jobs)
         self.runs: dict[str, dict] = {}
         self.lock = threading.Lock()  # one run at a time; they share the pool anyway
@@ -53,6 +65,7 @@ class App:
             try:
                 entry["run"].execute(self.pool)
                 entry["status"] = "done"
+                entry["finished"] = time.time()
             except Exception as e:  # report to the page rather than dying silently
                 traceback.print_exc()
                 entry["status"], entry["error"] = "error", f"{type(e).__name__}: {e}"
@@ -63,6 +76,23 @@ class App:
             return None
         return {"status": entry["status"], "error": entry["error"], "partial": entry["check"]["partial"],
                 **entry["run"].snapshot()}
+
+
+    def ladder_data(self, rid: str) -> dict | None:
+        entry = self.runs.get(rid)
+        tracker = entry and entry["status"] == "done" and entry["run"].tracker
+        return tracker.to_dict() if tracker else None
+
+    def leaderboard(self) -> list[dict]:
+        web_runs = []
+        for rid, entry in list(self.runs.items()):
+            d = self.ladder_data(rid)
+            if d:
+                web_runs.append(leaderboard.ladder_entry(d, entry["finished"], f"/leaderboard/run/{rid}", "web"))
+        return leaderboard.collect(self.results, web_runs, self.history_path)
+
+
+NAME = re.compile(r"^[\w.-]+$")
 
 
 def make_handler(app: App):
@@ -90,11 +120,40 @@ def make_handler(app: App):
                 self._send(200, (STATIC / "index.html").read_bytes(), "text/html; charset=utf-8")
             elif self.path == "/api/tiers":
                 self._send(200, {"tiers": sim.tier_info(), "pass_rate": sim.PASS_RATE, "max_games": sim.MAX_GAMES})
+            elif self.path == "/api/leaderboard":
+                self._send(200, {"decks": app.leaderboard()})
+            elif self.path in ("/leaderboard", "/leaderboard/"):
+                self._send(200, leaderboard.render_page(app.leaderboard()).encode(), "text/html; charset=utf-8")
+            elif self.path.startswith("/leaderboard/"):
+                self._deck_page(*(self.path.split("/", 3)[2:] + [""])[:2])
             elif self.path.startswith("/api/runs/"):
                 st = app.status(self.path.rsplit("/", 1)[1])
                 self._send(200, st) if st else self._send(404, {"error": "no such run"})
             else:
                 self._send(404, {"error": "not found"})
+
+        def _deck_page(self, kind: str, name: str):
+            data = None
+            if NAME.match(name) and not name.startswith("."):
+                if kind == "run":
+                    data = app.ladder_data(name)
+                elif kind == "history" and name.isdigit():
+                    run = leaderboard.history_run(int(name), app.history_path)
+                    if run:
+                        kind = "assess" if run["kind"] == "assess" else "ladder"
+                        data = run["result"]
+                elif kind in ("ladder", "assess"):
+                    data = leaderboard._read(app.results / kind / f"{name}.json")
+            if not data:
+                return self._send(404, {"error": "no such results"})
+            if kind == "assess":
+                page = leaderboard.render_assessment(data)
+            elif ladder_page:
+                page = ladder_page(data).replace("<body>", "<body><nav style='font:14px system-ui;padding:12px 16px'>"
+                                                 "<a href='/leaderboard'>← Leaderboard</a></nav>", 1)
+            else:
+                return self._send(200, data)
+            self._send(200, page.encode(), "text/html; charset=utf-8")
 
         def do_POST(self):
             try:
