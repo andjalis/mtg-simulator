@@ -68,10 +68,12 @@ tr.opp td:first-child { padding-left: 22px; }
 .scroll { overflow-x: auto; }
 #rank { margin: -16px -16px 16px; border-bottom: 1px solid var(--line); }
 #rank .mmr { border-radius: 10px 10px 0 0; }
+#grades { margin: 0 0 16px; }
 </style>
 </head>
 <body>
 <main>
+  <nav style="float:right;font-size:14px;margin-top:8px"><a href="/leaderboard">Leaderboard</a></nav>
   <h1>MTG ranked ladder</h1>
   <p class="sub">Paste a decklist, choose ranks, and see how it fares against the test decks in the built-in engine. Ranks/MMR are internal pool scores, not Arena equivalents. Main-deck only; no sideboarding.</p>
   <div class="grid">
@@ -94,6 +96,7 @@ tr.opp td:first-child { padding-left: 22px; }
 
       <label class="h" for="games">Games per opponent</label>
       <input id="games" type="number" min="2" step="2" value="100">
+      <label class="opt"><input type="checkbox" id="grade" checked> Grade the deck: meta, mana, speed, consistency</label>
       <button class="go" id="go" disabled>Run</button>
     </section>
 
@@ -166,7 +169,7 @@ if ($("#deck").value.trim()) scheduleCheck();
 
 $("#go").onclick = async () => {
   const body = {deck: $("#deck").value, name: $("#name").value, games: +$("#games").value,
-                ladder: mode === "ladder", full: $("#full").checked};
+                ladder: mode === "ladder", full: $("#full").checked, grade: $("#grade").checked};
   if (mode === "tiers") {
     body.tiers = [...document.querySelectorAll("#tierList input:checked")].map(i => i.value);
     if (!body.tiers.length) { $("#out").innerHTML = `<p class="no">Pick at least one rank.</p>`; return; }
@@ -226,6 +229,8 @@ function render(s) {
           <div class="progress"><div style="width:${(100 * frac).toFixed(1)}%"></div></div>`;
   }
   if (s.status === "error") h += `<p class="no">The run failed: ${esc(s.error)}</p>`;
+  if (s.assessment) h += `<div id="grades">${s.assessment.html}</div>`;  // grade cards, with the meta caveat
+  else if (s.grade_error) h += `<p class="note">The deck could not be graded: ${esc(s.grade_error)}</p>`;
   if (s.verdict && !s.rank) h += `<div class="verdict">${esc(s.verdict)}</div>`;  // the rank view shows it already
   else if (s.status === "done") h += `<div class="verdict">${esc(s.deck)} by rank</div>`;
   if (s.tiers.length) {

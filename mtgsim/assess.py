@@ -36,7 +36,7 @@ from pathlib import Path
 from .ai import HeuristicAI
 from .carddb import CardDB
 from .cards import COLORS, CardDef
-from .decklist import load_deck
+from .decklist import load_deck, load_deck_full
 from .engine import Game, Player
 from .rating import RANKS, next_rank, performance_rating, rank_for
 from .runner import build_deck, run_match, wilson
@@ -160,6 +160,46 @@ def assess_meta(name: str, archetypes: list[Archetype], results: dict[str, tuple
     }
     # 1000 MMR (bottom of Silver) scores 0, 2200 (mid Grandmaster) scores 100
     return rating, _criterion("Meta", (mmr - 1000) / 12, summary, details)
+
+
+# ------------------------------------------------------------------ sideboard / best of three
+def assess_bo3(name: str, counts: dict[str, int], sideboard: dict[str, int], bring_in: dict[str, str],
+               archetypes: list[Archetype], db: CardDB, matches: int, seed=None, say=lambda _: None) -> dict:
+    """Bo3 matches with sideboarding against the meta field, weighted by meta share. The score is
+    the weighted gain of post-board games over game 1."""
+    from .sideboard import run_bo3, sideboard_score
+
+    rows, no_sb = [], []
+    for a in archetypes:
+        say(f"bo3: {name} vs {a.name}")
+        opp = load_deck_full(a.path)[1]
+        if not opp.sideboard:
+            no_sb.append(a.name)
+        r = run_bo3(name, counts, sideboard, a.name, opp.main, opp.sideboard, db, matches, seed=seed,
+                    bring_in_a=bring_in, bring_in_b=opp.bring_in)
+        rows.append((a, r))
+    w_total = sum(a.weight for a, _ in rows) or 1.0
+    wavg = lambda f: sum(a.weight / w_total * f(r) for a, r in rows)
+    gain = wavg(lambda r: r.sideboard_gain_a)
+    match_rate = wavg(lambda r: r.match_win_rate_a)
+    bo1_rate = wavg(lambda r: r.bo1_match_rate_a)
+    summary = (f"{match_rate:.0%} meta-weighted Bo3 match win rate; sideboarding moves post-board games "
+               f"{gain:+.0%} against game 1" + ("" if sideboard else " (no sideboard: opponents still board)"))
+    details = {
+        "match_win_rate": round(match_rate, 4),
+        "match_win_rate_without_sideboarding": round(bo1_rate, 4),
+        "sideboard_gain": round(gain, 4),
+        "matches_per_deck": matches,
+        "has_sideboard": bool(sideboard),
+        "opponents_without_sideboard": no_sb,
+        "engine": "python",
+        "matchups": [{"name": a.name, "key": a.key, "weight": round(a.weight, 4), "matches": r.matches,
+                      "match_win_rate": round(r.match_win_rate_a, 4), "game1_win_rate": round(r.g1_win_rate_a, 4),
+                      "postboard_win_rate": round(r.post_win_rate_a, 4), "sideboard_gain": round(r.sideboard_gain_a, 4),
+                      "opponent_archetype": r.plan_a.opponent_archetype, "ins": r.plan_a.ins, "outs": r.plan_a.outs}
+                     for a, r in rows],
+    }
+    return _criterion("Sideboard", sideboard_score(gain), summary, details)
 
 
 # ------------------------------------------------------------------ mana base (Karsten)
@@ -388,17 +428,20 @@ def assess(name: str, counts: dict[str, int], db: CardDB | None = None, games: i
            goldfish_games: int = 200, samples: int = 20000, key_cards: list[str] | None = None,
            seed: int | None = None, metagame: Path = METAGAME, decks_dir: Path = DECKS_DIR,
            meta_results: dict[str, tuple[float, int]] | None = None, skip_meta: bool = False,
-           play=None, progress=None) -> dict:
+           play=None, progress=None, bo3: int = 0, sideboard: dict[str, int] | None = None,
+           bring_in: dict[str, str] | None = None) -> dict:
     """Rate a deck. Returns plain JSON:
 
         {"deck", "assessed" (ISO date), "format",
          "rating": {"mmr", "rank", "rank_color", "next_rank", "to_next", "basis"} or None if skip_meta,
-         "criteria": {"meta" | "mana" | "speed" | "consistency":
+         "criteria": {"meta" | "sideboard" (only with bo3) | "mana" | "speed" | "consistency":
                       {"label", "score" 0-100, "grade" S/A/B/C/D/F, "summary" (one sentence), "details"}}}
 
     meta_results (archetype key -> (points, games)) reuses games already played, e.g. on the
     ladder; otherwise every archetype is played with play(name, deck, opp_name, opp_counts) ->
     (points, games), which defaults to the built-in engine. progress(text) is told what's running.
+    bo3 > 0 also plays that many best-of-three matches with sideboards against each meta deck
+    (built-in engine) and adds the "sideboard" criterion; see mtgsim.sideboard.
     """
     db = db or CardDB()
     say = progress or (lambda _: None)
@@ -424,6 +467,9 @@ def assess(name: str, counts: dict[str, int], db: CardDB | None = None, games: i
         criteria["meta"]["details"]["engine"] = "given" if meta_results and not partial else (
             "forge" if play else "python")
         criteria["meta"]["details"]["partial_opponent_cards"] = len(partial)
+    if bo3 and not skip_meta:
+        criteria["sideboard"] = assess_bo3(name, counts, sideboard or {}, bring_in or {}, archetypes, db,
+                                           bo3, seed=seed, say=say)
     say("mana base")
     criteria["mana"] = assess_mana(counts, db)
     say("goldfish")
@@ -454,6 +500,12 @@ def text_report(a: dict) -> str:
                        "of the meta decks' cards; Forge offers broader coverage but also needs rules and pilot review")
         md = meta["details"]["metagame"]
         out.append(f"  Metagame of {md['date']} ({md['window']}): " + ", ".join(s["name"] for s in md["sources"]))
+    sb = a["criteria"].get("sideboard")
+    if sb:
+        out.append("  Best of three (match win rate, game 1 -> post-board):")
+        for m in sb["details"]["matchups"]:
+            out.append(f"    {m['name']:<26} {m['match_win_rate']:4.0%}  {m['game1_win_rate']:.0%} -> "
+                       f"{m['postboard_win_rate']:.0%}")
     return "\n".join(out)
 
 
@@ -466,10 +518,14 @@ def main(argv=None):
     ap.add_argument("--samples", type=int, default=20000, help="sampled hands for consistency (default 20000)")
     ap.add_argument("--key", action="append", metavar="CARD",
                     help="a key card to track by turn N (repeatable; default: the deck's most-played spells)")
+    ap.add_argument("--bo3", type=int, default=0, metavar="N",
+                    help="also play N best-of-three matches with sideboards against each meta deck")
     ap.add_argument("--skip-meta", action="store_true", help="skip the meta games (no MMR or rank)")
     ap.add_argument("--metagame", default=str(METAGAME), help="metagame JSON (default mtgsim/data/metagame.json)")
     ap.add_argument("--json", metavar="PATH", help="also write the assessment as JSON")
     ap.add_argument("--seed", type=int, default=None)
+    ap.add_argument("--no-history", action="store_true",
+                    help="don't save the assessment to the deck's history (python3 -m mtgsim.history)")
     ap.add_argument("--offline", action="store_true", help="don't fetch unknown cards from Scryfall")
     ap.add_argument("--engine", choices=["python", "forge"], default="python",
                     help="engine for the meta games; goldfishing always uses the built-in engine")
@@ -479,7 +535,8 @@ def main(argv=None):
     ap.add_argument("--clock", type=int, default=120)
     args = ap.parse_args(argv)
 
-    name, counts = load_deck(args.deck)
+    name, full = load_deck_full(args.deck)
+    counts = full.main
     play = None
     if args.engine == "forge":
         from .forge import ForgeError, run_forge_match
@@ -494,11 +551,15 @@ def main(argv=None):
     try:
         result = assess(name, counts, CardDB(offline=args.offline), games=args.games, goldfish_games=args.goldfish,
                         samples=args.samples, key_cards=args.key, seed=args.seed, metagame=Path(args.metagame),
-                        skip_meta=args.skip_meta, play=play,
+                        skip_meta=args.skip_meta, play=play, bo3=args.bo3, sideboard=full.sideboard,
+                        bring_in=full.bring_in,
                         progress=lambda s: print(f"  {s}...", file=sys.stderr, flush=True))
     except KeyError as e:
         sys.exit(f"{name}: {e}")
     print(text_report(result))
+    if not args.no_history:
+        from . import history
+        history.try_record(history.record_assessment, result, counts, engine=args.engine, source="cli")
     if args.json:
         Path(args.json).parent.mkdir(parents=True, exist_ok=True)
         Path(args.json).write_text(json.dumps(result, indent=2), encoding="utf-8")
