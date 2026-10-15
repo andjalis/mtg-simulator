@@ -112,6 +112,7 @@ class CardDef:
     chapters: list = field(default_factory=list)        # saga chapters: one effect list each
     back: "CardDef | None" = None                       # transformed face
     adventure: "CardDef | None" = None
+    land_face: "CardDef | None" = None                  # a modal double-faced card's land back face
     alt_costs: list = field(default_factory=list)
     activated: list = field(default_factory=list)
     anthem: tuple = ()                                  # (power, toughness) for creatures you control
@@ -470,7 +471,7 @@ def card_from_scryfall(data: dict) -> CardDef:
             if "Adventure" in back_types:
                 card.adventure = _parse_face(back)
             elif "Land" in back_types and not card.is_land:
-                card.unsupported.append(f"back face {back['name']} (a land) is never played")
+                card.land_face = _parse_face(back)   # modal double-faced: may be played as this land
             elif re.search(r"Daybound|Nightbound", card.oracle):
                 pass  # day/night isn't tracked; the day side stays
             else:

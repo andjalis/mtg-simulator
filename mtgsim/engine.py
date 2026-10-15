@@ -764,12 +764,15 @@ class Game:
         return True
 
     # -------------------------------------------------------------- actions
-    def play_land(self, p: Player, card: CardDef):
-        assert card.is_land and not p.land_played
+    def play_land(self, p: Player, card: CardDef, back: bool = False):
+        """Play a land from hand; with back=True, a modal double-faced card's land face."""
+        face = card.land_face if back else card
+        assert face is not None and face.is_land and not p.land_played
         p.hand.remove(card)
         p.land_played = True
-        self.log(f"plays {card.name}", p)
-        self.enter_battlefield(p, card)
+        self.log(f"plays {face.name}", p)
+        perm = self.enter_battlefield(p, face)
+        perm.front = card    # the whole card goes to the graveyard
         self.settle()
 
     def cast(self, p: Player, card: CardDef, targets: list | None = None) -> bool:

@@ -43,8 +43,6 @@ class CoverageReportTests(unittest.TestCase):
             paths += [Path(p) for p in glob.glob(str(ROOT / "decks" / "tiers" / tier / "*.txt"))]
         for path in paths:
             for row in deck_coverage(DB, load_deck(path)[1]):
-                if path.stem == "ub_snow_control" and row.name == "Jwari Disruption":
-                    continue  # its land back face is never played
                 self.assertIn(row.status, (FULL, SIMPLIFIED), f"{path.stem}: {row.name} {row.ignored}")
 
     def test_every_parsed_effect_is_resolved(self):
@@ -157,6 +155,18 @@ class NewCardTests(unittest.TestCase):
         self.lands(self.a, "Mountain", 1)
         self.cast(self.a, "Shock", [maw])
         self.assertEqual((maw.damage, maw.counters.get("-1/-1"), maw.power), (0, 2, 4))
+
+    def test_modal_double_faced_land(self):
+        jwari = DB.get("Jwari Disruption")
+        self.assertEqual((jwari.land_face.name, jwari.land_face.produces), ("Jwari Ruins", {"U"}))
+        self.assertTrue(DB.get("Jwari Disruption").fully_supported)
+        self.a.hand = [jwari]
+        self.game.play_land(self.a, jwari, back=True)
+        ruins = self.a.battlefield[0]
+        self.assertTrue(ruins.tapped)
+        self.assertEqual(self.a.hand, [])
+        self.game.leave_battlefield(ruins, "graveyard")
+        self.assertEqual(self.a.graveyard, [jwari])
 
     def test_mossborn_hydra_counters(self):
         self.lands(self.a, "Forest", 3)
