@@ -1,0 +1,14 @@
+# Gold: mana elves and efficient green and white creatures with a little pump
+9 Forest
+8 Plains
+4 Overgrown Farmland
+4 Llanowar Elves
+4 Savannah Lions
+4 Elite Vanguard
+4 Kalonian Tusker
+4 Garruk's Companion
+4 Centaur Courser
+4 Serra Angel
+4 Rumbling Baloth
+3 Giant Growth
+4 Steel Leaf Champion
