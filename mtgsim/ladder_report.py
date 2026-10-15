@@ -71,6 +71,7 @@ def sparkline(history, width=40) -> str:
 def text_summary(d: dict) -> str:
     """The rank ladder as text: every rank band, the pools in it and where the deck landed."""
     lines = [f"Rank: {d['deck']} is {d['rank']} at {d['mmr']} MMR (peak {d['peak']}, {d['games']} games)"]
+    lines.append("  Internal pool ranks/MMR, not Arena equivalents. Ladder games are main-deck only (no sideboarding). AI pilot and rules limitations apply.")
     pools_by_rank = {}
     for p in d["pools"]:
         if p["rank"]:
@@ -343,6 +344,7 @@ def render_fragment(d: dict, assessment: dict | None = None) -> str:
             f'<div class="prog"><i style="width:{pct:.0f}%;background:{d["rank_color"]}"></i></div>'
             f'<p class="sub">{progress_text} · peak {d["peak"]} · {d["games"]} games</p></div></div>'
             + (f'<p>{_e(d["verdict"])}</p>' if d["verdict"] else "")
+            + '<p>Internal pool ranks/MMR, not Arena equivalents. Ladder games are main-deck only (no sideboarding). AI pilot and rules limitations apply.</p>'
             + (f'<div style="margin-top:20px">{render_grades(assessment)}</div>' if assessment else "")
             + f'<h2>MMR over the run</h2><div style="position:relative">{mmr_chart(d)}</div>'
             f'<h2>Results by opponent</h2>{opponent_table(d)}'

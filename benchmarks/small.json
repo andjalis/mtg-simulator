@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "name": "Small archetype diagnostic",
+  "scope": "Repository fixtures, main-deck games only. Mixed card pools; no claim of format legality, tournament provenance or current metagame representativeness.",
+  "decks": [
+    {
+      "id": "aggro",
+      "archetype": "aggro",
+      "path": "../decks/ranks/4-platinum/mono_red_aggro.txt",
+      "reason": "Pressure, burn, prowess and adventure decisions."
+    },
+    {
+      "id": "midrange",
+      "archetype": "midrange",
+      "path": "../decks/ranks/4-platinum/rakdos_midrange.txt",
+      "reason": "Discard, removal, threats and graveyard/transform decisions."
+    },
+    {
+      "id": "control",
+      "archetype": "control",
+      "path": "../decks/ranks/4-platinum/azorius_control.txt",
+      "reason": "Counters, sweepers, planeswalkers and delayed win conditions."
+    },
+    {
+      "id": "combo",
+      "archetype": "combo",
+      "path": "../decks/combo/kiln_fiend_strobe.txt",
+      "reason": "Compact curated Kiln Fiend + double-strike fixture: cast triggers, keyword grants, pump and burn sequencing."
+    }
+  ],
+  "matchups": [
+    [
+      "aggro",
+      "midrange"
+    ],
+    [
+      "aggro",
+      "control"
+    ],
+    [
+      "midrange",
+      "control"
+    ],
+    [
+      "combo",
+      "midrange"
+    ]
+  ],
+  "missing_coverage": [
+    "combo: one compact curated fixture only (Kiln Fiend); no copy-effect combos (Reflection of Kiki-Jiki copying is unsupported) and no tournament-sourced combo list"
+  ],
+  "human_evidence": [],
+  "missing_evidence": "No verified human main-deck game dataset applicable to these exact lists and conditions. No human matchup expectations are asserted. Tournament BO3 match rates and archetype popularity are not main-deck game evidence."
+}

@@ -33,7 +33,7 @@ class CoverageReportTests(unittest.TestCase):
         self.assertEqual([r.status for r in rows], [UNKNOWN, PARTIAL, SIMPLIFIED, FULL])
         self.assertEqual(summary(rows), {FULL: 4, SIMPLIFIED: 3, PARTIAL: 2, UNKNOWN: 1, "total": 10})
         text = format_coverage("test", rows)
-        self.assertIn("test: 70% playable as written", text)
+        self.assertIn("test: 70% matched by templates (including simplifications)", text)
         self.assertIn("Old-Growth Troll [partial]", text)
         self.assertNotIn("Lightning Bolt", text)
 

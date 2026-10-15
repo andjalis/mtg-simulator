@@ -58,7 +58,7 @@ def main(argv=None):
     ap.add_argument("--offline", action="store_true", help="don't fetch unknown cards from Scryfall")
     ap.add_argument("--log", action="store_true", help="print the play-by-play of the first game")
     ap.add_argument("--engine", choices=["python", "forge"], default="python",
-                    help="python: built-in simplified engine (fast); forge: Forge's full rules engine")
+                    help="python: built-in simplified engine (fast); forge: Forge rules and AI (independent comparator)")
     ap.add_argument("--forge-dir", help="Forge install folder (or set FORGE_HOME)")
     ap.add_argument("--java", default="java", help="java executable for --engine forge")
     ap.add_argument("--jobs", type=int, default=1, help="Forge: run games in this many Java processes at once")
@@ -129,7 +129,7 @@ def main(argv=None):
             part = sum(1 for c in distinct.values() if c.unsupported)
             if part:
                 print(f"  {n}: {part} of {len(distinct)}")
-        print("  Results for decks with many partial cards say little; --engine forge plays every card,")
+        print("  Results depend on rules coverage and AI pilots; Forge offers broader coverage,")
         print("  and --coverage shows what each card is missing.")
         print()
 

@@ -37,7 +37,33 @@ class MatchResult:
     wins_a_on_play: int = 0
     games_a_on_play: int = 0
     turns: list = field(default_factory=list)
-    play_draw_known: bool = True   # Forge doesn't report who went first or game length
+    play_draw_known: bool = True   # True only when every game's first player is known
+    games_a_on_draw: int = 0
+    wins_a_on_draw: int = 0
+    draws_a_on_play: int = 0
+    draws_a_on_draw: int = 0
+    game_metadata: list = field(default_factory=list)
+
+    def add_game(self, winner, first_player, player_turns, **metadata):
+        """Seats: 0=A, 1=B, None=unknown (or draw for winner)."""
+        self.games += 1
+        self.wins_a += winner == 0
+        self.wins_b += winner == 1
+        self.draws += winner is None
+        if first_player == 0:
+            self.games_a_on_play += 1
+            self.wins_a_on_play += winner == 0
+            self.draws_a_on_play += winner is None
+        elif first_player == 1:
+            self.games_a_on_draw += 1
+            self.wins_a_on_draw += winner == 0
+            self.draws_a_on_draw += winner is None
+        else:
+            self.play_draw_known = False
+        if player_turns is not None:
+            self.turns.append(player_turns)
+        self.game_metadata.append(dict(winner=winner, first_player=first_player,
+                                       player_turns=player_turns, **metadata))
 
     @property
     def win_rate_a(self) -> float:
@@ -46,25 +72,27 @@ class MatchResult:
 
     def summary(self) -> str:
         lo, hi = wilson(self.wins_a + 0.5 * self.draws, self.games)
-        on_draw = self.games - self.games_a_on_play
-        wins_on_draw = self.wins_a - self.wins_a_on_play
         avg_turns = sum(self.turns) / len(self.turns) if self.turns else 0
         lines = [
             f"{self.deck_a} vs {self.deck_b}: {self.games} games",
             f"  {self.deck_a} wins {self.wins_a}, {self.deck_b} wins {self.wins_b}, draws {self.draws}",
-            f"  {self.deck_a} win rate {self.win_rate_a:.1%} (95% CI {lo:.1%} to {hi:.1%})",
+            f"  {self.deck_a} score {self.win_rate_a:.1%} (draws count half; approximate 95% interval {lo:.1%} to {hi:.1%})",
         ]
-        if self.play_draw_known:
+        if self.games_a_on_play + self.games_a_on_draw:
             lines += [
                 f"  {self.deck_a} on the play {self.wins_a_on_play}/{self.games_a_on_play}, "
-                f"on the draw {wins_on_draw}/{on_draw}",
-                f"  average game length {avg_turns:.1f} turns ({avg_turns / 2:.1f} per player)",
+                f"on the draw {self.wins_a_on_draw}/{self.games_a_on_draw} wins; "
+                f"draws {self.draws_a_on_play}/{self.draws_a_on_draw}, "
+                f"unknown first player {self.games - self.games_a_on_play - self.games_a_on_draw}",
             ]
+        if self.turns:
+            lines.append(f"  average game length {avg_turns:.1f} player-turns "
+                         f"({len(self.turns)}/{self.games} games known)")
         return "\n".join(lines)
 
 
 def run_match(name_a, deck_a, name_b, deck_b, games=1000, seed=None, ai_a=None, ai_b=None,
-              log_first=False, on_game=None) -> tuple[MatchResult, list[str]]:
+              log_first=False, on_game=None, log_game=None) -> tuple[MatchResult, list[str]]:
     """on_game(res), if given, is called with the running MatchResult after every game."""
     rng = random.Random(seed)
     res = MatchResult(name_a, name_b)
@@ -73,20 +101,15 @@ def run_match(name_a, deck_a, name_b, deck_b, games=1000, seed=None, ai_a=None, 
         a = Player(name_a, deck_a, ai_a or HeuristicAI())
         b = Player(name_b, deck_b, ai_b or HeuristicAI())
         a_on_play = i % 2 == 0
-        game = Game(*((a, b) if a_on_play else (b, a)), rng=rng, log=log_first and i == 0)
+        game = Game(*((a, b) if a_on_play else (b, a)), rng=rng,
+                    log=log_game is not None or (log_first and i == 0))
         winner = game.play()
         if i == 0:
             first_log = game.events
-        res.games += 1
-        res.turns.append(game.turn)
-        res.games_a_on_play += a_on_play
-        if winner is a:
-            res.wins_a += 1
-            res.wins_a_on_play += a_on_play
-        elif winner is b:
-            res.wins_b += 1
-        else:
-            res.draws += 1
+        res.add_game(0 if winner is a else 1 if winner is b else None,
+                     0 if a_on_play else 1, game.turn, game_number=i + 1)
+        if log_game is not None:
+            log_game(i + 1, game.events)
         if on_game:
             on_game(res)
     return res, first_log

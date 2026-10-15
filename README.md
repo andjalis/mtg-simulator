@@ -1,9 +1,11 @@
 # MTG Simulator
 
-A Magic: The Gathering game simulator. `mtgsim` simulates Magic games to measure deck strength.
+A Magic: The Gathering game simulator. `mtgsim` measures AI-vs-AI outcomes under each simulator's rules and pilot policies.
 
 Plays thousands of AI-vs-AI games between decklists and reports win rates with
-95% confidence intervals, split by play/draw.
+sampling uncertainty, split by play/draw when available. Matchups, the ladder and the benchmark
+play main-deck games; `mtgsim.sideboard` and `assess --bo3` play best-of-three matches with
+sideboarding. Results do not establish human matchup strength.
 
 ```
 python3 -m mtgsim.build_carddb                  # once after cloning: builds the card database
@@ -27,13 +29,12 @@ Plain text as exported by Arena, MTGO or Moxfield: `4 Lightning Bolt`,
 `4x Lightning Bolt`, `4 Lightning Bolt (M10) 146`. Pasted tables with section
 headings and tab-separated columns also work, and double-faced cards are read
 by their front face. A `Sideboard` header (or a
-blank line after 60+ cards) ends the main deck; the sideboard is ignored.
+blank line after 60+ cards) ends the main deck; only best-of-three runs use the sideboard.
 
 ## Ranks and the ladder
 
 Opponents are grouped into seven ranks under `decks/ranks/`, from Bronze (badly built piles) through
-Silver, Gold, Platinum, Diamond and Master to Grandmaster (the most-played, best-performing current
-Standard tournament decks). `--ladder` plays a deck against each rank's pool from the bottom up and
+Silver, Gold, Platinum, Diamond and Master to Grandmaster (a dated, curated opponent pool). `--ladder` plays a deck against each rank's pool from the bottom up and
 stops at the first rank it fails; a rank is cleared with a win rate of at least 50% against all its
 decks together (`--pass-rate` changes that, `--full-ladder` keeps going). `--rank master diamond`
 plays chosen ranks, and `--list-ranks` shows every deck. Use `--engine forge` from Diamond up: the
@@ -42,7 +43,9 @@ from and how the ranks were checked.
 
 ## Ranks and MMR
 
-A ladder or tier run also rates the deck like a ranked queue: Bronze, Silver, Gold, Platinum,
+Ranks and MMR are internal scores against these fixed pools, not Arena ranks/MMR,
+player skill ratings or calibrated tournament predictions. Pool anchors are assigned,
+not inferred from human results. A ladder or tier run uses these labels: Bronze, Silver, Gold, Platinum,
 Diamond, Master and Grandmaster, each a 200-point MMR band (Silver starts at 1000, Grandmaster at
 2000). Each rank's opponent pool is anchored at the middle of that rank's band (a custom pool not named
 after a rank is spread over the bands in order), and the deck's MMR is its
@@ -82,10 +85,10 @@ python3 -m mtgsim.assess MY_DECK.txt --skip-meta --key "Sheoldred, the Apocalyps
 python3 -m mtgsim.assess MY_DECK.txt --bo3 20             # adds the Sideboard criterion
 ```
 
-Rates a deck on the criteria competitive players use, each scored 0 to 100 with a grade (S, A, B,
+Provides heuristic diagnostics, each scored 0 to 100 with an internal grade (S, A, B,
 C, D, F):
 
-- **Meta**: win rate against the top Standard decks, each weighted by its tournament meta share
+- **Meta**: simulated score against a dated Standard opponent snapshot, weighted by its recorded meta share
   (`mtgsim/data/metagame.json`, with sources and the date it was read). This sets the MMR and rank:
   the meta field is the Grandmaster pool, reweighted by share before the Elo performance rating.
 - **Mana**: Frank Karsten's method. For each coloured spell, the chance of having enough sources of
@@ -158,16 +161,14 @@ card scripts, because Scryfall and MTGJSON are blocked where it was built.
 Forge's data has no sets or format legality.
 
 Each card's rules text is matched against templates the engine understands.
-Text that doesn't match is ignored, and the run prints exactly which cards are
-only partially simulated, so you know how far to trust a result.
+Text that does not match is ignored and reported. Template coverage helps identify gaps;
+it cannot prove correct rules execution or quantify how trustworthy a win rate is.
 
-`--coverage` reports this per deck without playing: each card is fully
-supported, simplified (played in a looser way, such as a fetch land cracked as
+`--coverage` reports this per deck without playing: each card is template-matched, simplified (played in a looser way, such as a fetch land cracked as
 soon as it enters or an optional extra cost never paid), partly supported (the
 ignored text is listed) or unknown. It works on decklists and on whole tiers
-(`--coverage --tier all`). The trash, beginner and advanced tiers and the
-semi-pro mono red and Azorius lists are fully playable; the pro tier is about
-30 to 65% playable, so use `--engine forge` there.
+(`--coverage --tier all`). These labels describe template recognition, not verified rules correctness. Use
+`--engine forge` for a broader implementation and review both engines' logs.
 
 ## What the engine covers
 
@@ -211,7 +212,14 @@ Not yet: auras and equipment, X spells, copy effects (Reflection of
 Kiki-Jiki), casualty (never paid), day/night, Old-Growth Troll's return, Map
 tokens, spree, warp. Modal double-faced cards keep their land face in
 `CardDef.land_face`, played with `Game.play_land(p, card, back=True)`.
-Every run lists the text it ignores.
+Builtin runs report known coverage gaps; this is not an exhaustive rules audit.
+
+Logged games (`--log`, or `run_match(log_game=...)`) also carry machine-readable
+`AUDIT {json}` lines: `start` (players in play order, starting life, `turn_unit`
+`player-turn`), `mulligan` and `keep` with the hand, every life change with
+`before`/`delta`/`after` and its cause, `loss` with its cause, and `result` with the
+winner, final life and player-turns. `seat` is the index in play order (0 went first).
+`tests/test_audit.py` rebuilds each life total from these lines and checks the result.
 
 ### How AIs plug in
 
@@ -278,12 +286,12 @@ threats, burn and card draw at their end step, pump spells to save a creature
 or win a block) and keeps counter mana up. `AI_RESULTS.md` has before/after
 numbers against `BaselineAI`.
 
-## Forge mode: full card coverage
+## Forge mode: broader rules coverage
 
 `--engine forge` plays the games in [Forge](https://github.com/Card-Forge/forge),
-an open-source (GPL-3) Java rules engine that implements nearly every card and
-has its own AI. Use it for real decks; use the built-in engine for fast
-what-if runs on simple cards.
+an open-source (GPL-3) Java rules engine with broader card support and its own AI.
+Forge is an independent comparison tool, not a ground-truth oracle: card scripts, rules
+and pilot decisions can be wrong. Agreement between engines does not validate human win rates.
 
 Setup (needs git, Java 17+ and Maven; a few minutes, about 1.5 GB):
 
@@ -304,13 +312,82 @@ with the built-in engine.
 
 - Every card name is checked against Forge's card list first, so typos fail
   loudly instead of Forge quietly playing a short deck.
-- Forge doesn't report who played first or game length, so those lines are
-  left out of the summary.
+- Forge's quiet mode doesn't report who played first or game length, so plain
+  `--engine forge` runs leave those lines out. The benchmark runs Forge without `-q`
+  and reads each game's `Turn: Turn N (Ai(k)-deck)` lines: turn 1 gives the first
+  player, an unbroken 1..N sequence that matches `Game Outcome: Turn` gives N
+  player-turns. Missing, partial or unrecognised lines stay unknown.
+- Forge picks the starting player itself. In 35 worker logs checked (October 2026) the
+  first game's starter varied (deck A 15 times, deck B 20) and the loser of each game
+  started the next one (107 of 107 cases). A deck that loses most games is therefore
+  mostly on the play. Play/draw is not balanced and reversing seats would not balance it;
+  results are split by the observed starting player instead.
 - About 3 to 4 seconds per game on a 4-core machine. `--jobs` runs several
   Java processes, which helps most on machines with more cores.
-- `--clock` (default 120 s) calls a stuck game a draw.
+- `--clock` (default 120 s) calls a stuck game a draw. Forge can also emit draws
+  after internal errors; inspect raw logs before interpreting them. The wrapper rejects
+  unknown winners, duplicate/malformed results, nonzero exits and incomplete counts.
 - Win rates reflect Forge's AI piloting both decks. It plays control and
   combo decks less well than a strong human.
 
 `decks/forge/` has three opponents that use real, modern cards
 (mono-red aggro, mono-green stompy, Rakdos midrange).
+
+
+## Trust-validation benchmark
+
+```
+python3 -m mtgsim.benchmark --engine builtin -n 20 --out results/benchmark-builtin
+python3 -m mtgsim.benchmark --engine forge --forge-dir ~/forge -n 20 --out results/benchmark-forge
+python3 -m mtgsim.benchmark --engine both --forge-dir ~/forge -n 2 --clock 10 --worker-timeout 90 --out results/benchmark-smoke
+```
+
+The curated [manifest](benchmarks/small.json) references three existing aggro, midrange
+and control fixtures and runs their three pairings. These are mixed-pool diagnostic lists;
+comments in the original deck files do not certify format legality or tournament provenance.
+Combo coverage is one compact curated fixture, `decks/combo/kiln_fiend_strobe.txt`
+(Kiln Fiend plus double-strike spells; not a tournament list); copy-effect combos are
+not covered. **No applicable human matchup rates are supplied.** Popularity and
+BO3 tournament match rates cannot substitute for main-deck game outcomes.
+
+`report.md` reports W/L/D, A's actual win probability with a 95% Wilson interval (draws are
+non-wins), and score with half-credit for draws separately. Intervals capture sampling
+uncertainty assuming independent games, not rules or pilot bias. The report gives coverage
+details, missing evidence, descriptive engine gaps and a manual log-review procedure.
+A few games only check the workflow; they cannot validate matchup accuracy. Builtin alternates
+play/draw, with A starting first; Forge play/draw is observed per game (see Forge mode) and
+reported as W–L–D on the play and on the draw, with unknowns counted separately. Turn units are
+player-turns for both engines. Seeds are engine-specific, not paired games.
+Both pilots can struggle with control and combo. Forge draws can include timeouts or errors.
+
+`results.json` checkpoints each completed pairing/engine and records the manifest, deck bytes
+and parsed main decks, all Python engine/module code, effective local card database/cache,
+Python/platform, seed and run settings. Forge identity also includes jar bytes, all resource
+names/contents (including symlink targets), Java executable/version/flags, jobs and clock.
+Benchmark and crosscheck Forge workers use **fresh default preferences and isolated homes**;
+installed/user preferences and inherited Java option variables are deliberately excluded.
+`--worker-timeout` bounds each benchmark Java process including startup; by default the wrapper
+allows 60 seconds startup plus `(clock + 5) * worker_games` seconds.
+
+Builtin game logs (`--builtin-logs first`, the default, or `all`, written one game at a time)
+and full Forge raw worker logs are kept in unique attempt directories,
+including failed attempts. Checkpoints are atomic and an exclusive `.run.lock` prevents concurrent
+writers; after a hard kill, remove that lock only after checking that its process has stopped.
+Repeat the identical command to resume. Completed results are reused only when the complete
+identity and result/log hashes match; changed inputs/settings require a **new `--out` directory**.
+The final check rejects inputs changed during the run. Keep inputs immutable during experiments.
+Changing `-n` starts a new experiment; it does not append games to the old sample.
+
+`python3 -m mtgsim.crosscheck` retains the larger diagnostic suite, now with content-based
+resume checks too. It refuses legacy caches without provenance or changed inputs; choose a new
+`--out`, or explicitly use `--rerun` to replace the checkpoint. Its fractional-draw z statistics
+are approximate review prompts, not evidence that a difference is beyond chance. Use the small
+benchmark for clearer uncertainty and evidence reporting.
+
+A custom manifest may add human evidence only after source review: each entry must identify
+`matchup`, `unit: "main_deck_game"`, exact ordered `deck_sha256`, `source_url`, `event`, `format`,
+`date`, `applicability`, `reviewed_by`, and integer `wins_a`, `wins_b`, `draws`. Describe why the
+format, lists, first-player distribution and game conditions apply. The loader checks structure
+and exact deck hashes; it cannot verify a source's truth or a curator's applicability judgment.
+Never enter inferred BO3-to-game conversions or invented rates. Leave `human_evidence` empty
+and explain the missing data when applicable sources are unavailable.
