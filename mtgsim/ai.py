@@ -17,7 +17,7 @@ from . import engine
 from .engine import Game, Permanent, Player, can_block, find_payment
 
 LETHAL = 1000.0
-LIFE_SCALE = 8.0        # value of life = LIFE_SCALE * sqrt(life)
+LIFE_SCALE = 5.0        # value of life = LIFE_SCALE * sqrt(life)
 HOLD_BURN = 2.5         # value of keeping an any-target burn spell for a creature later
 CRACK_WEIGHT = 0.5      # weight on (non-lethal) damage we expect to take back next turn
 MAX_ENUMERATE = 6       # try every attack set up to this many ready creatures
