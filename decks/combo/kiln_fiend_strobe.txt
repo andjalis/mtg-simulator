@@ -1,0 +1,16 @@
+// Curated compact combo fixture, not a tournament list. Key line: Kiln Fiend (+3/+0 per
+// instant or sorcery) plus a double-strike spell (Assault Strobe, Temur Battle Rage) and
+// cheap pump/burn. Two spells on a Fiend with Brute Force are 20 damage: (1+3+3+3) x 2.
+// Card text: Scryfall/Forge oracle text in mtgsim/data/cards.sqlite3. No format legality or
+// tournament provenance is claimed.
+4 Kiln Fiend
+4 Monastery Swiftspear
+4 Assault Strobe
+4 Temur Battle Rage
+4 Brute Force
+4 Lightning Bolt
+4 Gut Shot
+4 Lava Dart
+4 Expedite
+4 Shock
+20 Mountain

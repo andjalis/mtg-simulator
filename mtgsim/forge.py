@@ -11,6 +11,8 @@ Forge install folder, and turns its "Game Result" lines into a MatchResult.
 from __future__ import annotations
 
 import os
+from collections import deque
+from contextlib import nullcontext
 import re
 import shutil
 import subprocess
@@ -34,6 +36,8 @@ JAVA_ARGS = [
     ) for x in ("--add-opens", f"{mod}=ALL-UNNAMED")],
 ]
 RESULT = re.compile(r"Game Result: Game (\d+) ended in (?:a Draw|\d+ ms\. (.+) has won)")
+TURN = re.compile(r"^Turn: Turn (\d+) \(Ai\(([12])\)-.*\)\s*$")
+OUTCOME_TURN = re.compile(r"^Game Outcome: Turn (\d+)\s*$")
 
 
 class ForgeError(RuntimeError):
@@ -81,30 +85,60 @@ def to_dck(name: str, counts: dict[str, int]) -> str:
 
 def parse_results(lines, name_a: str, name_b: str) -> MatchResult:
     """Read Forge sim output. Forge names players Ai(1)-<deck> and Ai(2)-<deck>."""
-    res = MatchResult(name_a, name_b, play_draw_known=False)
+    res = MatchResult(name_a, name_b)
+    seen = set()
+    turns, malformed, outcome_turn = [], False, None
     for line in lines:
+        turn = TURN.match(line)
+        if turn:
+            turns.append((int(turn[1]), int(turn[2]) - 1))
+        elif line.startswith("Turn:"):
+            malformed = True
+        outcome = OUTCOME_TURN.match(line)
+        if outcome:
+            outcome_turn = int(outcome[1])
         m = RESULT.search(line)
         if not m:
             if "Could not load deck" in line:
                 raise ForgeError(line.strip())
+            if "Game Result:" in line:
+                raise ForgeError(f"Malformed Forge result: {line.strip()}")
             continue
-        res.games += 1
+        if int(m[1]) in seen:
+            raise ForgeError(f"Duplicate Forge game number: {m[1]}")
+        seen.add(int(m[1]))
         winner = m[2]
         if winner is None:
-            res.draws += 1
-        elif winner.startswith("Ai(1)"):
-            res.wins_a += 1
-        elif winner.startswith("Ai(2)"):
-            res.wins_b += 1
+            seat = None
+        elif winner.startswith("Ai(1)-"):
+            seat = 0
+        elif winner.startswith("Ai(2)-"):
+            seat = 1
         else:
-            res.draws += 1
+            raise ForgeError(f"Unrecognised Forge winner: {winner}")
+        # Turn numbers are player-turns, whereas Game Outcome: Turn is a round
+        # counter. Never double the latter to manufacture a game length.
+        first = (turns[0][1] if turns and turns[0][0] == 1 and
+                 sum(n == 1 for n, _ in turns) == 1 and not malformed else None)
+        complete = (first is not None and [n for n, _ in turns] == list(range(1, len(turns) + 1))
+                    and outcome_turn == (len(turns) + 1) // 2)
+        res.add_game(seat, first, len(turns) if complete else None, game_number=int(m[1]))
+        turns, malformed, outcome_turn = [], False, None
+    if not res.games:
+        res.play_draw_known = False
     return res
 
 
 def run_forge_match(name_a, counts_a, name_b, counts_b, games=100, seed=None, forge_dir=None,
-                    java="java", clock=120, check_cards=True, progress=None, jobs=1) -> MatchResult:
+                    java="java", clock=120, check_cards=True, progress=None, jobs=1,
+                    log_dir=None, isolated=False, worker_timeout=None) -> MatchResult:
     """Play games in Forge. jobs > 1 splits them across that many Java processes."""
+    if games < 1 or jobs < 1 or clock < 1 or (worker_timeout is not None and worker_timeout < 1):
+        raise ForgeError("games, jobs and clock must be positive")
     folder, jar = find_forge(forge_dir)
+    if log_dir is not None:
+        log_dir = Path(log_dir)
+        log_dir.mkdir(parents=True, exist_ok=True)
     if check_cards:
         known = forge_card_names(folder)
         if known is not None:
@@ -127,30 +161,70 @@ def run_forge_match(name_a, counts_a, name_b, counts_b, games=100, seed=None, fo
         (tmp / "b.dck").write_text(to_dck(name_b, counts_b), encoding="utf-8")
 
         def run_share(i):
-            cmd = [shutil.which(java) or java, *JAVA_ARGS, "-jar", str(jar), "sim",
-                   "-d", "a.dck", "b.dck", "-D", str(tmp), "-n", str(shares[i]), "-c", str(clock), "-q"]
+            cwd = folder
+            extra, env = [], None
+            if isolated:
+                # Keep preferences and generated files out of the installed Forge/user profile.
+                cwd = tmp / f"worker-{i}"
+                cwd.mkdir()
+                (cwd / "res").symlink_to(folder / "res", target_is_directory=True)
+                (cwd / "forge.profile.properties").write_text(
+                    "userDir=user\ncacheDir=cache\n", encoding="utf-8")
+                extra = [f"-Duser.home={cwd}"]
+                env = os.environ.copy()
+                for key in ("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS"):
+                    env.pop(key, None)
+            cmd = [shutil.which(java) or java, *JAVA_ARGS, *extra, "-jar", str(jar), "sim",
+                   "-d", "a.dck", "b.dck", "-D", str(tmp), "-n", str(shares[i]), "-c", str(clock)]
+            if log_dir is None:
+                cmd.append("-q")
             if seed is not None:
                 cmd += ["-s", str(seed + i)]
             lines = []
-            with subprocess.Popen(cmd, cwd=folder, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                  text=True, encoding="utf-8", errors="replace") as proc:
-                for line in proc.stdout:
-                    lines.append(line)
-                    if RESULT.search(line):
-                        on_game()
-            return lines, proc.returncode
+            tail = deque(maxlen=20)
+            expired = threading.Event()
+            with (log_dir / f"worker-{i}.log").open("w", encoding="utf-8") if log_dir else nullcontext() as raw:
+                with subprocess.Popen(cmd, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                      text=True, encoding="utf-8", errors="replace") as proc:
+                    def stop():
+                        expired.set()
+                        proc.kill()
+
+                    timer = threading.Timer(worker_timeout or (60 + shares[i] * (clock + 5)), stop)
+                    timer.start()
+                    try:
+                        for line in proc.stdout:
+                            tail.append(line)
+                            if raw:
+                                raw.write(line)
+                                raw.flush()
+                            # Retain compact per-game metadata as well as results.
+                            if (RESULT.search(line) or "Game Result:" in line or "Could not load deck" in line
+                                    or line.startswith(("Turn:", "Game Outcome: Turn"))):
+                                lines.append(line)
+                            if RESULT.search(line):
+                                on_game()
+                        proc.wait()
+                    finally:
+                        timer.cancel()
+                        if proc.poll() is None:
+                            proc.kill()
+                        proc.stdout.close()
+            if expired.is_set():
+                raise ForgeError(f"Forge worker {i} exceeded wall timeout; raw log retained")
+            return lines, proc.returncode, "".join(tail)
 
         with ThreadPoolExecutor(jobs) as pool:
             outputs = list(pool.map(run_share, range(jobs)))
 
-    res = MatchResult(name_a, name_b, play_draw_known=False)
-    for lines, code in outputs:
+    res = MatchResult(name_a, name_b)
+    for i, (lines, code, tail) in enumerate(outputs):
         part = parse_results(lines, name_a, name_b)
         if part.games == 0:
-            tail = "".join(lines[-20:])
             raise ForgeError(f"Forge finished without reporting any games (exit code {code}):\n{tail}")
-        res.games += part.games
-        res.wins_a += part.wins_a
-        res.wins_b += part.wins_b
-        res.draws += part.draws
+        if code != 0 or part.games != shares[i]:
+            raise ForgeError(f"Forge worker {i} reported {part.games}/{shares[i]} games "
+                             f"(exit code {code}); incomplete results rejected")
+        for metadata in part.game_metadata:
+            res.add_game(**metadata, worker=i)
     return res
