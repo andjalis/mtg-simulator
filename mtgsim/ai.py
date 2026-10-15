@@ -22,6 +22,7 @@ HOLD_BURN = 2.5         # value of keeping an any-target burn spell for a creatu
 CRACK_WEIGHT = 0.5      # weight on (non-lethal) damage we expect to take back next turn
 MAX_ENUMERATE = 6       # try every attack set up to this many ready creatures
 REMOVAL_BAR = 4.5       # least a creature must be worth to spend instant removal on it
+SWEEP_BAR = 6.0         # least net value for a sweeper when we are not under pressure
 
 
 def card_value(card: CardDef) -> float:
@@ -312,7 +313,7 @@ class HeuristicAI:
     def keep_hand(self, hand: list[CardDef], mulligans: int) -> bool:
         if mulligans >= 2:
             return True
-        lands = sum(c.is_land for c in hand)
+        lands = sum(c.is_land or c.land_face is not None for c in hand)
         cheap = sum(not c.is_land and c.cmc <= 3 for c in hand)
         if lands < 2 or lands > 5:
             return False
@@ -406,7 +407,12 @@ class HeuristicAI:
 
     def play_land(self, game: Game, me: Player):
         lands = [c for c in me.hand if c.is_land]
-        if not lands or me.land_played:
+        if me.land_played:
+            return
+        if not lands:
+            card = HeuristicAI.mdfc_land(self, game, me)
+            if card is not None:
+                game.play_land(me, card, back=True)
             return
 
         def castable_with(card):
@@ -427,6 +433,16 @@ class HeuristicAI:
             return (gain, new_colors, tapped_bonus, -len(card.produces))
 
         game.play_land(me, max(lands, key=score))
+
+    def mdfc_land(self, game: Game, me: Player):
+        """A modal double-faced card to play as its land side (Kazandu Mammoth, Jwari Disruption)
+        when we have no other land: early on, or when its spell side is out of reach anyway."""
+        mdfcs = [c for c in me.hand if c.land_face is not None]
+        if not mdfcs:
+            return None
+        lands_out = sum(p.card.is_land for p in me.battlefield)
+        card = min(mdfcs, key=lambda c: (card_value(c), c.cmc))
+        return card if lands_out < 4 or card.cmc > lands_out + 1 else None
 
     def face_value(self, game: Game, me: Player, amount: int, extra_reach=0) -> float:
         opp = game.opponent(me)
@@ -474,15 +490,18 @@ class HeuristicAI:
                 value += perm_value(tgt) + 1 if eff.kind != "bounce" else 0.5 * tgt.card.cmc + 1
             elif eff.kind in ("wrath", "debuff") or (eff.kind == "damage" and eff.target == "each_creature"):
                 v = self.sweep_value(game, me, eff)
-                if v <= 2:
+                # Under pressure any good sweep will do; otherwise wait until it takes out several cards.
+                pressure = 2 * sum(combat_power(c) for c in opp.creatures) >= me.life
+                if v <= (2.0 if pressure else SWEEP_BAR):
                     return None
                 targets.append(None)
                 value += v
-            elif eff.kind in ("draw", "dig", "scry"):
+            elif eff.kind in ("draw", "dig", "scry", "surveil"):
                 if instant:
                     return None  # card draw at the opponent's end step
                 targets.append(None)
-                value += 1.5 * (eff.amount2 if eff.kind == "dig" else eff.amount) * (0.3 if eff.kind == "scry" else 1)
+                value += 1.5 * (eff.amount2 if eff.kind == "dig" else eff.amount) * \
+                    (0.3 if eff.kind in ("scry", "surveil") else 1)
             elif eff.kind == "discard":
                 targets.append(None)
                 value -= 0.8 * eff.amount
@@ -796,7 +815,7 @@ class HeuristicAI:
                 value, targets = card_value(card), None
             elif _is_trick(card) or any(e.target == "spell" for e in card.spell_effects):
                 continue
-            elif all(e.kind in ("draw", "dig", "scry", "discard", "gain_life") for e in card.spell_effects):
+            elif all(e.kind in ("draw", "dig", "scry", "surveil", "discard", "gain_life") for e in card.spell_effects):
                 plan = self.plan_spell(game, me, CardDef(card.name, card.mana_cost, card.cmc,
                                                          card.types - {"Instant"} | {"Sorcery"},
                                                          spell_effects=card.spell_effects), False)

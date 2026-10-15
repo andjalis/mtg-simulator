@@ -85,6 +85,21 @@ A look-ahead attacker that plays each candidate attack out to the end of the
 game was also tried. It won 53% (±5) of a red mirror against the current AI but
 ran about 50 times slower, so it was not added.
 
+## Round 2: control and land drops
+
+Each change was measured against the previous AI on every pairing of the old
+trash to semi-pro decks, both seats, with only the new AI using the change:
+
+| Change | Deck it affects | Win rate vs previous AI |
+| --- | --- | --- |
+| Sweepers wait until they take out several cards (unless the AI is under pressure) | Azorius control | 40% → 45% (±2) |
+| Modal double-faced cards are played as lands when no other land is in hand | Mono-green stompy (Kazandu Mammoth) | 84.3% → 85.1% (±1) |
+| Cantrips that surveil (Consider) are cast at the opponent's end step | Control decks | too small to measure |
+
+Tried and dropped: holding flash permanents such as The Wandering Emperor for
+the opponent's turn (Azorius 44% → 41%), and stricter two-land keeps (no
+change, and worse when two two-drops were required).
+
 ## Tie-break among already-lethal attacks (October 2026)
 
 Lethal and burn-reach attack scores saturate, so the old attacker picked the
@@ -125,6 +140,11 @@ but 24 more seeds (12,000 games per arm, aggro new or old vs control old) gave
 72.1% old and 72.3% new, standard error 0.4 points: the first gap was noise.
 In 400 aggro-vs-control games the two pilots chose differently 119 times,
 117 of them by adding attackers to an already lethal attack on an empty board.
+
+These runs used the AI before the Round 2 changes above were merged. Rerun on the
+merged AI (tie-break on vs off, otherwise identical): mirrors 49.5, 48.2, 49.1,
+51.0 and 48.0% for aggro, midrange, control, stompy and combo (1,200 games each,
+±2.8), and aggro vs control 68.5 → 69.4% (2,400 games per arm, ±1.9).
 
 Result: the change fixes the fixture positions and has no detectable effect on
 win rates at these sample sizes. It costs about 1.5% more CPU time per game

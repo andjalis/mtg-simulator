@@ -17,3 +17,6 @@ results/ladder/
 
 # Local benchmark evidence and raw worker logs
 results/benchmark*/
+
+# Deck run history (python3 -m mtgsim.history)
+results/history.sqlite3

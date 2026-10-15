@@ -15,6 +15,7 @@ import argparse
 import itertools
 import sys
 
+from . import history
 from .carddb import CardDB
 from .coverage import deck_coverage, format_coverage
 from .decklist import load_deck
@@ -48,6 +49,10 @@ def main(argv=None):
                     help="with --ladder/--rank: where to write the live ranked-ladder report "
                          "(default results/ladder/DECK.html)")
     ap.add_argument("--no-report", action="store_true", help="with --ladder/--rank: don't write the HTML report")
+    ap.add_argument("--no-grades", action="store_true",
+                    help="with --ladder/--rank: skip the deck grades (meta, mana, speed, consistency) at the end")
+    ap.add_argument("--no-history", action="store_true",
+                    help="with --ladder/--rank: don't save the run to the deck's history (python3 -m mtgsim.history)")
     ap.add_argument("--show-ignored", action="store_true",
                     help="list every card's ignored rules text, even when there is a lot of it")
     ap.add_argument("--offline", action="store_true", help="don't fetch unknown cards from Scryfall")
@@ -128,7 +133,7 @@ def main(argv=None):
         print("  and --coverage shows what each card is missing.")
         print()
 
-    tracker = view = None
+    tracker = view = report = None
     if tiers:
         tracker = LadderTracker(names[0], [(t.key, t.label, tier_opps[t.key]) for t in tiers],
                                 pass_rate=args.pass_rate, ladder=args.ladder)
@@ -136,8 +141,9 @@ def main(argv=None):
         tracker.listeners.append(view)
         if not args.no_report:
             report = args.report or f"results/ladder/{names[0]}.html"
-            tracker.listeners.append(HtmlReport(report))
-            print(f"Live ranked-ladder report: {report}\n")
+            report = HtmlReport(report)
+            tracker.listeners.append(report)
+            print(f"Live ranked-ladder report: {report.path}\n")
 
     def play(a, b):
         if tracker:
@@ -173,6 +179,13 @@ def main(argv=None):
     if tiers:
         run_tiers(names[0], tiers, tier_opps, play, ladder=args.ladder, full=args.full_ladder,
                   pass_rate=args.pass_rate, tracker=tracker)
+        grades = None if args.no_grades else grade_deck(names[0], counts[names[0]], tracker, report, args)
+        if not args.no_history and history.try_record(history.record_ladder, tracker.to_dict(), counts[names[0]],
+                                                      engine=args.engine, source="cli"):
+            if grades:
+                history.try_record(history.record_assessment, grades, counts[names[0]], engine=args.engine,
+                                   source="cli")
+            print(f"Saved to run history: python3 -m mtgsim.history show {names[0]}")
         return
 
     totals = {n: [0.0, 0] for n in names}
@@ -231,6 +244,38 @@ def run_tiers(me, tiers, tier_opps, play, ladder=False, full=False, pass_rate=PA
         tracker.finish(verdict)
         print()
         print(text_summary(tracker.to_dict()))
+
+
+def grade_deck(me, my_counts, tracker, report, args):
+    """Grade the deck after a ladder run (see mtgsim.assess), reusing its games against the
+    Grandmaster pool for the meta criterion, then add the grades to the HTML report."""
+    from .assess import assess, text_report
+
+    given = {o.name.rsplit("/", 1)[-1]: (o.points, o.games)
+             for o in tracker.opponents.values() if o.pool == "grandmaster" and o.games}
+    play = None
+    if args.engine == "forge":
+        def play(a, a_counts, b, b_counts):
+            try:
+                res = run_forge_match(a, a_counts, b, b_counts, games=args.games, seed=args.seed,
+                                      forge_dir=args.forge_dir, java=args.java, clock=args.clock, jobs=args.jobs)
+            except ForgeError as e:
+                sys.exit(f"Forge: {e}")
+            return res.wins_a + 0.5 * res.draws, res.games
+    print("\nGrading the deck (meta, mana, speed, consistency)...", file=sys.stderr)
+    try:
+        a = assess(me, my_counts, CardDB(offline=args.offline), games=args.games, seed=args.seed,
+                   meta_results=given, play=play,
+                   progress=lambda s: print(f"  {s}...", file=sys.stderr, flush=True))
+    except KeyError as e:
+        sys.exit(f"{me}: {e}")
+    a["criteria"]["meta"]["details"]["engine"] = args.engine
+    print()
+    print(text_report(a))
+    if report:
+        report.assessment = a
+        report(tracker)
+    return a
 
 
 if __name__ == "__main__":

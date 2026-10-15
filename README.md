@@ -3,8 +3,9 @@
 A Magic: The Gathering game simulator. `mtgsim` measures AI-vs-AI outcomes under each simulator's rules and pilot policies.
 
 Plays thousands of AI-vs-AI games between decklists and reports win rates with
-sampling uncertainty, split by play/draw when available. All games use main decks only;
-there is no sideboarding or BO3 match simulation. Results do not establish human matchup strength.
+sampling uncertainty, split by play/draw when available. Matchups, the ladder and the benchmark
+play main-deck games; `mtgsim.sideboard` and `assess --bo3` play best-of-three matches with
+sideboarding. Results do not establish human matchup strength.
 
 ```
 python3 -m mtgsim.build_carddb                  # once after cloning: builds the card database
@@ -28,7 +29,7 @@ Plain text as exported by Arena, MTGO or Moxfield: `4 Lightning Bolt`,
 `4x Lightning Bolt`, `4 Lightning Bolt (M10) 146`. Pasted tables with section
 headings and tab-separated columns also work, and double-faced cards are read
 by their front face. A `Sideboard` header (or a
-blank line after 60+ cards) ends the main deck; the sideboard is ignored.
+blank line after 60+ cards) ends the main deck; only best-of-three runs use the sideboard.
 
 ## Ranks and the ladder
 
@@ -69,12 +70,19 @@ as you type and flags unknown cards and cards the engine only partly simulates. 
 the built-in engine on every CPU core (`--jobs N` to limit, `--port`, `--host`, `--offline`).
 Standard library only, like the rest of the simulator.
 
+The Leaderboard page (`/leaderboard`, JSON at `/api/leaderboard`) ranks every tested deck by MMR:
+its rank badge, MMR, the S-F grades from its latest assessment, when it was tested and a link to
+its latest results. It reads the run history (see `mtgsim.history`), showing each deck's latest
+version (marked v2, v3 ... once a list has changed) and its latest rated run; decks tested before
+the history existed still show from `results/ladder/*.json` and `results/assess/*.json`.
+
 ## Deck assessment
 
 ```
 python3 -m mtgsim.assess MY_DECK.txt                     # rank plus four graded criteria
 python3 -m mtgsim.assess MY_DECK.txt -n 50 --engine forge --forge-dir ~/forge --json out.json
 python3 -m mtgsim.assess MY_DECK.txt --skip-meta --key "Sheoldred, the Apocalypse"
+python3 -m mtgsim.assess MY_DECK.txt --bo3 20             # adds the Sideboard criterion
 ```
 
 Provides heuristic diagnostics, each scored 0 to 100 with an internal grade (S, A, B,
@@ -88,9 +96,45 @@ C, D, F):
 - **Speed**: the average turn the deck kills a goldfish (an opponent who only plays lands).
 - **Consistency**: sampled hands with the AI's mulligan rule: mulligans, screw, flood, castable
   plays on turns 1 to 4 and key cards by turn N.
+- **Sideboard** (with `--bo3 N`): N best-of-three matches against each meta deck with both sides
+  sideboarding after game 1. Reports the meta-weighted match win rate and how much post-board games
+  move against game 1 (play and draw compared separately); no change scores 50.
+
+### Best of three and sideboarding
+
+```
+python3 -m mtgsim.sideboard MY_DECK.txt OPPONENT.txt -n 50     # Bo3 matches
+python3 -m mtgsim.sideboard MY_DECK.txt OPPONENT.txt --plan    # show both sideboard plans
+```
+
+Decklists can carry a sideboard (an Arena `Sideboard` heading, an MTGO blank line, `SB:` lines, or a
+pasted table with a fourth "Bring in vs." column). Before game 2 each side labels the opponent
+aggro, midrange or control and swaps up to six spells with a rule-based plan read from the cards'
+rules text: sweepers and cheap removal against aggro, discard and narrow counters against control.
+A "Bring in vs." note adds weight. Lands are never swapped and the loser of a game is on the play
+next. Decks without a sideboard (all of Bronze to Gold and some Platinum decks) play their main deck
+every game.
 
 `mtgsim.assess.assess()` returns the same thing as plain JSON for the web page and reports.
+The web page and the `--ladder`/`--rank` HTML report show these grades as cards under the rank
+(the report's JSON gains an `assessment` key); they reuse the games already played against the
+Grandmaster pool and play the rest of the meta field. Turn them off with `--no-grades` or the
+page's "Grade the deck" box. In the built-in engine the meta grade is a rough guide, and the page
+says so; `--engine forge` gives a trustworthy one.
 Refresh `metagame.json` when the metagame moves.
+
+## Run history: compare versions of a deck
+
+Every ladder, rank and assessment run is saved when it finishes, from the command line and the
+web page, in `results/history.sqlite3` (set `MTGSIM_HISTORY` for another file, `--no-history` to
+skip). A deck's versions are told apart by a fingerprint of its exact main deck, so editing the
+list and re-testing it adds version 2, 3 and so on.
+
+    python3 -m mtgsim.history                            # every deck: current and best rank/MMR
+    python3 -m mtgsim.history show my_deck               # its versions and every run
+    python3 -m mtgsim.history compare my_deck [1 2]      # cards added/removed, MMR, rank and grade changes
+
+Add `--json` for machine-readable output; `mtgsim/history.py` documents the Python API.
 
 ## Card data
 
