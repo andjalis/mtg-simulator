@@ -113,6 +113,11 @@ next. Decks without a sideboard (all of Bronze to Gold and some Platinum decks) 
 every game.
 
 `mtgsim.assess.assess()` returns the same thing as plain JSON for the web page and reports.
+The web page and the `--ladder`/`--rank` HTML report show these grades as cards under the rank
+(the report's JSON gains an `assessment` key); they reuse the games already played against the
+Grandmaster pool and play the rest of the meta field. Turn them off with `--no-grades` or the
+page's "Grade the deck" box. In the built-in engine the meta grade is a rough guide, and the page
+says so; `--engine forge` gives a trustworthy one.
 Refresh `metagame.json` when the metagame moves.
 
 ## Run history: compare versions of a deck
