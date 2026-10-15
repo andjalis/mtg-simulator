@@ -16,6 +16,12 @@ from mtgsim.decklist import load_deck, parse_decklist
 from mtgsim.runner import build_deck, run_match, wilson
 from mtgsim.tiers import PASS_RATE, TIERS, resolve_tiers
 
+try:  # rank badge and MMR chart, from the ranked-ladder visuals (mtgsim/rating.py)
+    from mtgsim.ladder_report import render_fragment
+    from mtgsim.rating import LadderTracker
+except ImportError:
+    LadderTracker = render_fragment = None
+
 CHUNK = 20  # games per task; even, so play and draw stay balanced
 MAX_GAMES = 2000
 
@@ -128,6 +134,8 @@ class Run:
     current: str = ""
     rows: list = field(default_factory=list)
     verdict: str = ""
+    tracker: object = None
+    lock: threading.Lock = field(default_factory=threading.Lock)
 
     def opponents(self, tier) -> list[Opponent]:
         return [Opponent(tier.key, p.stem, load_deck(p)[1]) for p in tier.decks()]
@@ -136,21 +144,34 @@ class Run:
         rng = random.Random(self.seed)
         chunks = [CHUNK] * (self.games // CHUNK) + ([self.games % CHUNK] if self.games % CHUNK else [])
         self.total = sum(len(t.decks()) for t in self.tiers) * self.games
+        if LadderTracker:
+            self.tracker = LadderTracker(self.deck_name, [(t.key, t.label, [f"{t.key}/{p.stem}" for p in t.decks()])
+                                                          for t in self.tiers], self.pass_rate, self.ladder)
         reached = failed = None
         for t in self.tiers:
             self.current = t.label
             opps = self.opponents(t)
+            if self.tracker:
+                with self.lock:
+                    for o in opps:
+                        self.tracker.start_match(f"{t.key}/{o.name}", self.games)
             futures = {pool.submit(_play_chunk, self.counts, o.counts, n, rng.randrange(2**32)): (o, n)
                        for o in opps for n in chunks}
             for f in as_completed(futures):
                 o, n = futures[f]
-                o.add(f.result())
-                self.done += n
+                with self.lock:
+                    o.add(f.result())
+                    self.done += n
+                    if self.tracker:
+                        self.tracker.update_match(f"{t.key}/{o.name}", o.wins, o.draws, o.games)
             games = sum(o.games for o in opps)
             points = sum(o.wins + 0.5 * o.draws for o in opps)
             rate = points / games if games else 0.0
             lo, hi = wilson(points, games)
             cleared = rate >= self.pass_rate
+            if self.tracker:
+                with self.lock:
+                    self.tracker.end_pool(t.key, cleared if self.ladder else None)
             self.rows.append({"key": t.key, "label": t.label, "rate": rate, "lo": lo, "hi": hi, "games": games,
                               "cleared": cleared if self.ladder else None,
                               "opponents": [o.as_dict() for o in opps]})
@@ -171,9 +192,17 @@ class Run:
                 self.verdict = f"{me} did not clear the first rank ({failed.label})."
             else:
                 self.verdict = f"{me} reached {reached.label} and stopped at {failed.label}."
+        if self.tracker:
+            with self.lock:
+                self.tracker.finish(self.verdict)
 
     def snapshot(self) -> dict:
-        return {"deck": self.deck_name, "ladder": self.ladder, "pass_rate": self.pass_rate,
+        with self.lock:
+            rank = None
+            if self.tracker:
+                d = self.tracker.to_dict()
+                rank = {"html": render_fragment(d), "data": d}
+        return {"rank": rank, "deck": self.deck_name, "ladder": self.ladder, "pass_rate": self.pass_rate,
                 "games_per_opponent": self.games, "done": self.done, "total": self.total,
                 "current": self.current, "tiers": self.rows, "verdict": self.verdict}
 

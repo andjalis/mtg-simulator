@@ -66,6 +66,8 @@ tr.opp td:first-child { padding-left: 22px; }
 .ok { color: var(--good); } .no { color: var(--bad); }
 .note { color: var(--muted); font-size: 13px; margin-top: 12px; }
 .scroll { overflow-x: auto; }
+#rank { margin: -16px -16px 16px; border-bottom: 1px solid var(--line); }
+#rank .mmr { border-radius: 10px 10px 0 0; }
 </style>
 </head>
 <body>
@@ -207,7 +209,12 @@ function renderRank(s) {
   const el = $("#rank");
   if (!el || !s.rank) return;
   el.hidden = false;
-  el.innerHTML = s.rank.html || `<div class="verdict">${esc(s.rank.label || "")}</div>`;
+  el.innerHTML = s.rank.html;
+  el.querySelectorAll("script").forEach(old => {  // innerHTML doesn't run scripts (the chart's tooltips)
+    const js = document.createElement("script");
+    js.textContent = old.textContent;
+    old.replaceWith(js);
+  });
 }
 
 function render(s) {
@@ -219,7 +226,7 @@ function render(s) {
           <div class="progress"><div style="width:${(100 * frac).toFixed(1)}%"></div></div>`;
   }
   if (s.status === "error") h += `<p class="no">The run failed: ${esc(s.error)}</p>`;
-  if (s.verdict) h += `<div class="verdict">${esc(s.verdict)}</div>`;
+  if (s.verdict && !s.rank) h += `<div class="verdict">${esc(s.verdict)}</div>`;  // the rank view shows it already
   else if (s.status === "done") h += `<div class="verdict">${esc(s.deck)} by rank</div>`;
   if (s.tiers.length) {
     h += `<div class="scroll"><table><thead><tr><th>Rank / opponent</th><th class="num">Win rate</th><th>95% CI (line = ${pct(s.pass_rate).replace(".0%", "%")} to clear)</th>
