@@ -68,4 +68,32 @@ plays them yet.
 
 ## Checking the order
 
-Results of the check that each rank beats the ones below it are added here when the runs finish.
+Every deck in a rank played every deck in each rank below it, same AI on both sides. The number is
+the higher rank's win rate against the lower one, over all its decks.
+
+Built-in engine, 100 games per pairing (2026-10-15):
+
+| | vs Bronze | vs Silver | vs Gold |
+| --- | --- | --- | --- |
+| Silver | 81% | | |
+| Gold | 87% | 67% | |
+| Platinum | 84% | 65% | 58% |
+
+Forge, each deck against every deck in the rank directly below, 4 games per pairing (120 to 144
+games per row, so about ±8 points):
+
+| | Win rate | Games |
+| --- | --- | --- |
+| Diamond vs Platinum | 65% | 140 |
+| Master vs Diamond | 22% | 120 |
+| Grandmaster vs Master | 50% | 144 |
+
+Bronze to Diamond climb as intended. Above Diamond the order follows tournament results, not how
+well the AI pilots the decks: Forge's AI plays fast aggro decks well and control, combo and
+reanimator decks badly, so Diamond's aggro decks beat most of Master, and Grandmaster's control
+decks (Azorius Control, Izzet Spellementals) lose to Master. Per deck, Boros Dwarves, Rakdos Aggro
+and Boros Dragons did best and Azorius Control, Dimir Control and Izzet Spellementals worst. Treat
+a deck's Master or Grandmaster result as "how it does against the real top decks as the AI plays
+them", not as a strict ladder step.
+
+The Gold deck Mono-Blue Tempo was dropped before this run for winning only 26% against Silver.
