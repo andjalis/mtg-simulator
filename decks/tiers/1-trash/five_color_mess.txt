@@ -1,0 +1,18 @@
+# Trash: one of everything in five colours on basic lands only, so it rarely casts its spells
+5 Plains
+5 Island
+5 Swamp
+5 Mountain
+4 Forest
+3 Serra Angel
+3 Air Elemental
+3 Gray Merchant of Asphodel
+3 Hill Giant
+3 Rumbling Baloth
+3 Divination
+3 Shock
+3 Giant Growth
+3 Doom Blade
+3 Storm Crow
+3 Gray Ogre
+3 Bog Imp

@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Card database: 27 MB, rebuilt with `python3 -m mtgsim.build_carddb`
+mtgsim/data/cards.sqlite3
+
+# Forge checkout and build output (scripts/install_forge.sh, --forge-dir)
+forge/
+*.jar
+*.dck

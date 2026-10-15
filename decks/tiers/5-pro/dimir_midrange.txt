@@ -1,0 +1,39 @@
+# Dimir Midrange (AetherHub: Dimir Aggro)
+# Pro: top Standard tournament deck, metagame of 2026-10-15
+# Archetype share (last 30 days): #3, 11.0% AetherHub / 9.6% MTGGoldfish
+# List: Ale_Mtg, MTGO Standard Challenge 32, top 8, 2026-10-12
+# Source: https://aetherhub.com/Metagame/Traditional-Standard/Deck/dimir-aggro-1433385 (fetched 2026-10-15)
+4 Dream Beavers
+4 Floodpits Drowner
+3 Spyglass Siren
+2 The Wondrous Wasp
+2 Tishana's Tidebinder
+1 Wan Shi Tong, Librarian
+1 Yuriko, Hope from the Shadows
+4 Enduring Curiosity
+4 Kaito, Bane of Nightmares
+3 Requiting Hex
+2 Bitter Triumph
+2 Shoot the Sheriff
+2 We Say Thee Nay!
+1 Spell Snare
+1 Strategic Betrayal
+1 Theorix Charm
+4 Watery Grave
+4 Gloomlake Verge
+2 Hidden Lair
+2 Soulstone Sanctuary
+2 Shipwreck Marsh
+2 Restless Reef
+4 Island
+3 Swamp
+
+Sideboard
+4 Duress
+3 Strategic Betrayal
+2 Day of Black Sun
+2 Flashfreeze
+1 Negate
+1 Wan Shi Tong, Librarian
+1 Tishana's Tidebinder
+1 Vren, the Relentless
