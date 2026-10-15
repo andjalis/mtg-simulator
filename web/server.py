@@ -9,7 +9,7 @@ POST /api/check        {"deck": text}                       -> card counts, unkn
 POST /api/run          {"deck", "name", "ladder", "tiers", "games", "full", "seed"} -> {"id"}
 GET  /api/runs/<id>    progress and results so far
 GET  /leaderboard      every tested deck ranked by MMR (JSON at /api/leaderboard)
-GET  /leaderboard/{ladder,assess,run}/<name>   one deck's latest results
+GET  /leaderboard/{history,ladder,assess,run}/<name>   one deck's latest results
 """
 from __future__ import annotations
 
@@ -35,9 +35,11 @@ MAX_BODY = 1 << 20
 
 
 class App:
-    def __init__(self, jobs: int | None = None, offline: bool = False, results: Path = leaderboard.RESULTS):
+    def __init__(self, jobs: int | None = None, offline: bool = False, results: Path = leaderboard.RESULTS,
+                 history_path=None):
         self.offline = offline
         self.results = Path(results)
+        self.history_path = history_path  # None: mtgsim.history's default store
         self.pool = sim.make_pool(jobs)
         self.runs: dict[str, dict] = {}
         self.lock = threading.Lock()  # one run at a time; they share the pool anyway
@@ -86,7 +88,7 @@ class App:
             d = self.ladder_data(rid)
             if d:
                 web_runs.append(leaderboard.ladder_entry(d, entry["finished"], f"/leaderboard/run/{rid}", "web"))
-        return leaderboard.collect(self.results, web_runs)
+        return leaderboard.collect(self.results, web_runs, self.history_path)
 
 
 NAME = re.compile(r"^[\w.-]+$")
@@ -134,6 +136,11 @@ def make_handler(app: App):
             if NAME.match(name) and not name.startswith("."):
                 if kind == "run":
                     data = app.ladder_data(name)
+                elif kind == "history" and name.isdigit():
+                    run = leaderboard.history_run(int(name), app.history_path)
+                    if run:
+                        kind = "assess" if run["kind"] == "assess" else "ladder"
+                        data = run["result"]
                 elif kind in ("ladder", "assess"):
                     data = leaderboard._read(app.results / kind / f"{name}.json")
             if not data:
