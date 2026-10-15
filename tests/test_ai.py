@@ -105,6 +105,32 @@ class AITests(unittest.TestCase):
         self.assertIn(troll, self.b.battlefield)
         self.assertEqual(self.b.hand, [])
 
+    def test_plays_mdfc_land_side_when_out_of_lands(self):
+        perm("Forest", self.a)
+        self.a.hand = [DB.get("Kazandu Mammoth")]
+        self.game.step = "main1"
+        self.a.ai.play_land(self.game, self.a)
+        self.assertEqual(self.a.hand, [])
+        self.assertIn("Kazandu Valley", [p.card.name for p in self.a.battlefield])
+
+    def test_cantrip_at_end_step(self):
+        perm("Island", self.b)
+        self.b.hand = [DB.get("Consider")]
+        self.game.active_idx = 0
+        self.game.step = "end_step"
+        choice = self.b.ai.respond(self.game, self.b)
+        self.assertEqual(choice[0].name, "Consider")
+
+    def test_sweeper_waits_for_more_than_one_creature(self):
+        perm("Grizzly Bears", self.a)
+        for _ in range(4):
+            perm("Plains", self.b)
+        sweep = DB.get("Depopulate")
+        self.assertIsNone(self.b.ai.plan_spell(self.game, self.b, sweep))
+        perm("Kalonian Tusker", self.a)
+        perm("Centaur Courser", self.a)
+        self.assertIsNotNone(self.b.ai.plan_spell(self.game, self.b, sweep))
+
 
 if __name__ == "__main__":
     unittest.main()
