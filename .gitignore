@@ -11,3 +11,6 @@ mtgsim/data/cards.sqlite3
 forge/
 *.jar
 *.dck
+
+# Live ranked-ladder reports written by --ladder / --tier
+results/ladder/

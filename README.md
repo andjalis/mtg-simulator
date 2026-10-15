@@ -35,6 +35,19 @@ going). `--tier pro semipro` plays chosen tiers, and `--list-tiers` shows every 
 `--engine forge` for the pro tier: the built-in engine ignores much of those cards' text.
 `decks/tiers/README.md` says where each list came from.
 
+## Ranks and MMR
+
+A ladder or tier run also rates the deck like a ranked queue: Bronze, Silver, Gold, Platinum,
+Diamond, Master and Grandmaster, each a 200-point MMR band (Silver starts at 1000, Grandmaster at
+2000). Each opponent pool is anchored at an MMR (a pool named after a rank sits in the middle of
+that rank's band; the five tiers are spread from Bronze to Grandmaster), and the deck's MMR is its
+Elo performance rating against everything it has played, so it moves after every game. While the
+run goes, the terminal shows the current rank and match progress on one live line, each match ends
+with the MMR change, and the run ends with the rank ladder as text. `results/ladder/DECK.html` is
+rewritten as the run goes (it reloads itself in a browser until the run finishes) with a rank
+badge, the MMR climb over the rank bands and win rates by opponent; `DECK.json` beside it holds
+the same data. `--report PATH` writes it elsewhere and `--no-report` skips it.
+
 ## Card data
 
 Every Magic card (about 34,000) is in `mtgsim/data/cards.sqlite3`, an offline
@@ -139,6 +152,8 @@ adventures, flashback, foretold cards, blitz, channel; cast them with
 | `mtgsim/ai.py` | `HeuristicAI` (default) and `BaselineAI` (the first, simpler player, kept for comparison) |
 | `mtgsim/runner.py` | Match loop, statistics |
 | `mtgsim/tiers.py` | Test tiers and the ladder (`decks/tiers/`) |
+| `mtgsim/rating.py` | MMR, ranks and `LadderTracker` (live state of a ladder run, as JSON) |
+| `mtgsim/ladder_report.py` | Live terminal line, text summary and HTML report of a ladder run |
 | `mtgsim/forge.py` | Forge mode: .dck export, running Forge's `sim`, parsing results |
 | `decks/` | Sample decklists and the test tiers |
 | `results/` | Saved test runs, such as `results/ub_snow_control/` |
