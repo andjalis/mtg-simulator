@@ -11,6 +11,7 @@ import threading
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field
 
+from mtgsim import history
 from mtgsim.carddb import CardDB
 from mtgsim.decklist import load_deck, parse_decklist
 from mtgsim.runner import build_deck, run_match, wilson
@@ -135,6 +136,7 @@ class Run:
     rows: list = field(default_factory=list)
     verdict: str = ""
     tracker: object = None
+    record_history: bool = True
     lock: threading.Lock = field(default_factory=threading.Lock)
 
     def opponents(self, tier) -> list[Opponent]:
@@ -195,6 +197,8 @@ class Run:
         if self.tracker:
             with self.lock:
                 self.tracker.finish(self.verdict)
+            if self.record_history:
+                history.try_record(history.record_ladder, self.tracker.to_dict(), self.counts, source="web")
 
     def snapshot(self) -> dict:
         with self.lock:

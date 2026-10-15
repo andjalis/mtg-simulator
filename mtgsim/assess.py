@@ -469,6 +469,8 @@ def main(argv=None):
     ap.add_argument("--metagame", default=str(METAGAME), help="metagame JSON (default mtgsim/data/metagame.json)")
     ap.add_argument("--json", metavar="PATH", help="also write the assessment as JSON")
     ap.add_argument("--seed", type=int, default=None)
+    ap.add_argument("--no-history", action="store_true",
+                    help="don't save the assessment to the deck's history (python3 -m mtgsim.history)")
     ap.add_argument("--offline", action="store_true", help="don't fetch unknown cards from Scryfall")
     ap.add_argument("--engine", choices=["python", "forge"], default="python",
                     help="engine for the meta games; goldfishing always uses the built-in engine")
@@ -498,6 +500,9 @@ def main(argv=None):
     except KeyError as e:
         sys.exit(f"{name}: {e}")
     print(text_report(result))
+    if not args.no_history:
+        from . import history
+        history.try_record(history.record_assessment, result, counts, engine=args.engine, source="cli")
     if args.json:
         Path(args.json).parent.mkdir(parents=True, exist_ok=True)
         Path(args.json).write_text(json.dumps(result, indent=2), encoding="utf-8")
