@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MTG Ladder</title>
+<title>MTG Ranked Ladder</title>
 <style>
 :root {
   --bg: #f6f5f2; --panel: #ffffff; --text: #1d1d1f; --muted: #6b6b70; --line: #e2e0da;
@@ -70,8 +70,8 @@ tr.opp td:first-child { padding-left: 22px; }
 </head>
 <body>
 <main>
-  <h1>MTG ladder</h1>
-  <p class="sub">Paste a decklist, choose tiers, and see how it fares against the test decks in the built-in engine.</p>
+  <h1>MTG ranked ladder</h1>
+  <p class="sub">Paste a decklist, choose ranks, and see how it fares against the test decks in the built-in engine.</p>
   <div class="grid">
     <section class="panel">
       <label class="h" for="name">Deck name</label>
@@ -82,11 +82,11 @@ tr.opp td:first-child { padding-left: 22px; }
 
       <label class="h">Mode</label>
       <div class="seg" id="mode">
-        <button data-mode="ladder" class="on">Ladder</button>
-        <button data-mode="tiers">Chosen tiers</button>
+        <button data-mode="ladder" class="on">Full climb</button>
+        <button data-mode="tiers">Chosen ranks</button>
       </div>
       <div id="ladderOpts">
-        <label class="opt"><input type="checkbox" id="full"> Keep going after a failed tier</label>
+        <label class="opt"><input type="checkbox" id="full"> Keep going after a failed rank</label>
       </div>
       <div class="tiers" id="tierList" hidden></div>
 
@@ -96,7 +96,7 @@ tr.opp td:first-child { padding-left: 22px; }
     </section>
 
     <section class="panel" id="out">
-      <p class="empty">Results appear here. The ladder plays each tier from Trash up and stops at the first tier
+      <p class="empty">Results appear here. The full climb plays each rank from the lowest up and stops at the first rank
         where the deck wins less than <span id="passRate">50%</span> of its games.</p>
     </section>
   </div>
@@ -121,7 +121,7 @@ api("/api/tiers").then(d => {
   $("#passRate").textContent = pct(passRate).replace(".0%", "%");
   $("#games").max = d.max_games;
   $("#tierList").innerHTML = d.tiers.map((t, i) =>
-    `<label title="${esc(t.decks.join(", "))}"><input type="checkbox" value="${t.key}"${t.key === "pro" ? "" : " checked"}>
+    `<label title="${esc(t.decks.join(", "))}"><input type="checkbox" value="${t.key}"${i === d.tiers.length - 1 ? "" : " checked"}>
      <span>${i + 1}. ${esc(t.label)} <small>${t.decks.length} decks · ${esc(t.about)}</small></span></label>`).join("");
 });
 
@@ -167,7 +167,7 @@ $("#go").onclick = async () => {
                 ladder: mode === "ladder", full: $("#full").checked};
   if (mode === "tiers") {
     body.tiers = [...document.querySelectorAll("#tierList input:checked")].map(i => i.value);
-    if (!body.tiers.length) { $("#out").innerHTML = `<p class="no">Pick at least one tier.</p>`; return; }
+    if (!body.tiers.length) { $("#out").innerHTML = `<p class="no">Pick at least one rank.</p>`; return; }
   }
   $("#go").disabled = true;
   try {
@@ -202,7 +202,7 @@ function meter(r) {
 }
 
 // Slot for the ranked-ladder view (Bronze to Grandmaster). When the run snapshot carries a
-// `rank` object, this fills #rank above the tier table; until then it stays hidden.
+// `rank` object, this fills #rank above the rank table; until then it stays hidden.
 function renderRank(s) {
   const el = $("#rank");
   if (!el || !s.rank) return;
@@ -220,9 +220,9 @@ function render(s) {
   }
   if (s.status === "error") h += `<p class="no">The run failed: ${esc(s.error)}</p>`;
   if (s.verdict) h += `<div class="verdict">${esc(s.verdict)}</div>`;
-  else if (s.status === "done") h += `<div class="verdict">${esc(s.deck)} by tier</div>`;
+  else if (s.status === "done") h += `<div class="verdict">${esc(s.deck)} by rank</div>`;
   if (s.tiers.length) {
-    h += `<div class="scroll"><table><thead><tr><th>Tier / opponent</th><th class="num">Win rate</th><th>95% CI (line = ${pct(s.pass_rate).replace(".0%", "%")} to clear)</th>
+    h += `<div class="scroll"><table><thead><tr><th>Rank / opponent</th><th class="num">Win rate</th><th>95% CI (line = ${pct(s.pass_rate).replace(".0%", "%")} to clear)</th>
           <th class="num">W–L–D</th><th class="num">Play / draw</th><th class="num">Turns</th>${s.ladder ? "<th></th>" : ""}</tr></thead><tbody>`;
     for (const t of s.tiers) {
       const isOpen = open.has(t.key);
@@ -236,12 +236,12 @@ function render(s) {
               <td class="num">${o.avg_turns == null ? "–" : o.avg_turns.toFixed(1)}</td>${s.ladder ? "<td></td>" : ""}</tr>`;
       }
     }
-    h += `</tbody></table></div><p class="note">Click a tier to see each opponent. Draws count as half a win.
+    h += `</tbody></table></div><p class="note">Click a rank to see each opponent. Draws count as half a win.
           ${s.games_per_opponent} games per opponent; play / draw shows wins on the play · on the draw.</p>`;
   }
   if (s.partial && s.partial.length)
     h += `<p class="note">${s.partial.length === 1 ? "One of your cards is" : s.partial.length + " of your cards are"} only partly simulated, so treat these numbers with care.
-          The Pro tier in particular uses cards the built-in engine handles only in part.</p>`;
+          The top rank in particular uses cards the built-in engine handles only in part.</p>`;
   $("#out").innerHTML = `<div id="rank" hidden></div>` + (h || `<p class="empty">Starting…</p>`);
   renderRank(s);
   $("#out").querySelectorAll("tr.tier").forEach(tr => tr.onclick = () => {

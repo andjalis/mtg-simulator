@@ -166,9 +166,9 @@ class Run:
         if self.ladder:
             me = self.deck_name
             if failed is None:
-                self.verdict = f"{me} cleared every tier, up to and including {reached.label}."
+                self.verdict = f"{me} cleared every rank, up to and including {reached.label}."
             elif reached is None:
-                self.verdict = f"{me} did not clear the first tier ({failed.label})."
+                self.verdict = f"{me} did not clear the first rank ({failed.label})."
             else:
                 self.verdict = f"{me} reached {reached.label} and stopped at {failed.label}."
 

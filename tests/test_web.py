@@ -33,7 +33,7 @@ class WebSimTests(unittest.TestCase):
         self.assertEqual([t["key"] for t in snap["tiers"]], ["trash"])
         self.assertEqual(snap["done"], snap["total"])
         self.assertEqual(snap["tiers"][0]["games"], 4 * len(TIERS[0].decks()))
-        self.assertIn("did not clear the first tier", snap["verdict"])
+        self.assertIn("did not clear the first rank", snap["verdict"])
 
     def test_chosen_tiers_play_every_opponent(self):
         run = sim.make_run("burn", BURN, ["beginner", "1"], ladder=False, games=6, seed=2)
