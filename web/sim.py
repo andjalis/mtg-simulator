@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 import random
 import threading
+import traceback
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field
 
@@ -22,6 +23,12 @@ try:  # rank badge and MMR chart, from the ranked-ladder visuals (mtgsim/rating.
     from mtgsim.rating import LadderTracker
 except ImportError:
     LadderTracker = render_fragment = None
+
+try:  # deck grades: meta, mana, speed, consistency (mtgsim/assess.py)
+    from mtgsim.assess import assess, load_metagame
+    from mtgsim.ladder_report import meta_caveat, render_grades
+except ImportError:
+    assess = None
 
 CHUNK = 20  # games per task; even, so play and draw stay balanced
 MAX_GAMES = 2000
@@ -136,6 +143,11 @@ class Run:
     rows: list = field(default_factory=list)
     verdict: str = ""
     tracker: object = None
+    grade: bool = True            # grade the deck after the ladder (see mtgsim.assess)
+    goldfish_games: int = 200
+    samples: int = 20000
+    assessment: dict | None = None
+    grade_error: str = ""
     record_history: bool = True
     lock: threading.Lock = field(default_factory=threading.Lock)
 
@@ -185,6 +197,12 @@ class Run:
                     if not self.full:
                         self.total = self.done
                         break
+        if self.grade and assess:
+            try:
+                self._grade(pool, rng, chunks)
+            except Exception as e:  # keep the ladder results; say why the grades are missing
+                traceback.print_exc()
+                self.grade_error = f"{type(e).__name__}: {e}"
         self.current = ""
         if self.ladder:
             me = self.deck_name
@@ -199,6 +217,35 @@ class Run:
                 self.tracker.finish(self.verdict)
             if self.record_history:
                 history.try_record(history.record_ladder, self.tracker.to_dict(), self.counts, source="web")
+        if self.record_history and self.assessment:
+            history.try_record(history.record_assessment, self.assessment, self.counts, source="web")
+
+    def _grade(self, pool, rng, chunks) -> None:
+        """Grade the deck. The meta criterion reuses the games against the Grandmaster pool and
+        plays whichever meta decks the ladder didn't reach; the other criteria are quick."""
+        self.current = "the meta field"
+        results = {o["name"]: (o["wins"] + 0.5 * o["draws"], o["games"])
+                   for t in self.rows if t["key"] == "grandmaster" for o in t["opponents"] if o["games"]}
+        _, archetypes = load_metagame()
+        todo = [a for a in archetypes if a.key not in results]
+        with self.lock:
+            self.total += len(todo) * self.games
+        futures = {pool.submit(_play_chunk, self.counts, load_deck(a.path)[1], n, rng.randrange(2**32)): (a, n)
+                   for a in todo for n in chunks}
+        for f in as_completed(futures):
+            a, n = futures[f]
+            r = f.result()
+            pts, games = results.get(a.key, (0.0, 0))
+            results[a.key] = (pts + r["wins"] + 0.5 * r["draws"], games + r["games"])
+            with self.lock:
+                self.done += n
+        self.current = "goldfish games and sample hands"
+        with _db_lock:
+            a = assess(self.deck_name, self.counts, _card_db(True), goldfish_games=self.goldfish_games,
+                       samples=self.samples, seed=rng.randrange(2**32), meta_results=results)
+        a["criteria"]["meta"]["details"]["engine"] = "python"
+        with self.lock:
+            self.assessment = a
 
     def snapshot(self) -> dict:
         with self.lock:
@@ -206,19 +253,24 @@ class Run:
             if self.tracker:
                 d = self.tracker.to_dict()
                 rank = {"html": render_fragment(d), "data": d}
-        return {"rank": rank, "deck": self.deck_name, "ladder": self.ladder, "pass_rate": self.pass_rate,
+            grades = None
+            if self.assessment:
+                grades = {"html": render_grades(self.assessment), "data": self.assessment,
+                          "caveat": meta_caveat(self.assessment)}
+        return {"rank": rank, "assessment": grades, "grade_error": self.grade_error,
+                "deck": self.deck_name, "ladder": self.ladder, "pass_rate": self.pass_rate,
                 "games_per_opponent": self.games, "done": self.done, "total": self.total,
                 "current": self.current, "tiers": self.rows, "verdict": self.verdict}
 
 
 def make_run(deck_name: str, text: str, tiers: list[str] | None, ladder: bool, games: int,
-             full: bool = False, seed: int | None = None) -> Run:
+             full: bool = False, seed: int | None = None, grade: bool = True) -> Run:
     if not 2 <= games <= MAX_GAMES:
         raise ValueError(f"games per opponent must be between 2 and {MAX_GAMES}")
     chosen = TIERS if ladder and not tiers else resolve_tiers(tiers or [])
     if not chosen:
         raise ValueError("pick at least one tier")
-    return Run(deck_name or "my deck", parse_decklist(text), chosen, ladder, games, full, seed)
+    return Run(deck_name or "my deck", parse_decklist(text), chosen, ladder, games, full, seed, grade=grade)
 
 
 def make_pool(jobs: int | None = None) -> ProcessPoolExecutor:
