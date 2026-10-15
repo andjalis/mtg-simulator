@@ -3,8 +3,8 @@
     python -m mtgsim DECK_A DECK_B [-n GAMES] [--seed S]      head-to-head
     python -m mtgsim DECK --gauntlet OPP1 OPP2 ... [-n GAMES]  one deck vs a field
     python -m mtgsim --round-robin DECK1 DECK2 DECK3 ...        everyone vs everyone
-    python -m mtgsim DECK --ladder                             climb the test tiers, trash to pro
-    python -m mtgsim DECK --tier pro [semipro ... | all]       one deck vs whole tiers (--list-tiers)
+    python -m mtgsim DECK --ladder                             climb the ranks, Bronze to Grandmaster
+    python -m mtgsim DECK --rank master [diamond ... | all]    one deck vs whole rank pools (--list-ranks)
     python -m mtgsim DECK ... --coverage                       which cards the built-in engine can't fully play
 
 Add --engine forge --forge-dir PATH to play the games in Forge instead.
@@ -22,7 +22,7 @@ from .forge import ForgeError, run_forge_match
 from .ladder_report import HtmlReport, TerminalView, text_summary
 from .rating import LadderTracker
 from .runner import build_deck, run_match, unsupported_report, wilson
-from .tiers import PASS_RATE, TIERS, list_tiers, resolve_tiers
+from .ranks import PASS_RATE, RANKS, list_ranks, resolve_ranks
 
 
 def main(argv=None):
@@ -33,19 +33,21 @@ def main(argv=None):
     ap.add_argument("--gauntlet", nargs="+", metavar="OPP", help="play the first deck against each of these")
     ap.add_argument("--round-robin", action="store_true", help="play every deck against every other deck")
     ap.add_argument("--ladder", action="store_true",
-                    help="climb the test tiers (trash, beginner, advanced, semi-pro, pro) until a tier is failed")
-    ap.add_argument("--full-ladder", action="store_true", help="with --ladder: keep playing after a failed tier")
+                    help="climb the ranks (Bronze, Silver, Gold, Platinum, Diamond, Master, Grandmaster) "
+                         "until a rank is failed")
+    ap.add_argument("--full-ladder", action="store_true", help="with --ladder: keep playing after a failed rank")
     ap.add_argument("--pass-rate", type=float, default=PASS_RATE,
-                    help=f"with --ladder: win rate needed to clear a tier (default {PASS_RATE})")
-    ap.add_argument("--tier", nargs="+", metavar="T",
-                    help="play the deck against every deck in these tiers (names, numbers 1-5, or all)")
-    ap.add_argument("--list-tiers", action="store_true", help="show the test tiers and their decks")
+                    help=f"with --ladder: win rate needed to clear a rank (default {PASS_RATE})")
+    ap.add_argument("--rank", "--tier", dest="rank", nargs="+", metavar="R",
+                    help="play the deck against every deck in these ranks (names, numbers 1-7, or all)")
+    ap.add_argument("--list-ranks", "--list-tiers", dest="list_ranks", action="store_true",
+                    help="show the ranks and their decks")
     ap.add_argument("--coverage", action="store_true",
                     help="report which cards the built-in engine plays fully, simplified or partly, then exit")
     ap.add_argument("--report", metavar="HTML",
-                    help="with --ladder/--tier: where to write the live ranked-ladder report "
+                    help="with --ladder/--rank: where to write the live ranked-ladder report "
                          "(default results/ladder/DECK.html)")
-    ap.add_argument("--no-report", action="store_true", help="with --ladder/--tier: don't write the HTML report")
+    ap.add_argument("--no-report", action="store_true", help="with --ladder/--rank: don't write the HTML report")
     ap.add_argument("--show-ignored", action="store_true",
                     help="list every card's ignored rules text, even when there is a lot of it")
     ap.add_argument("--offline", action="store_true", help="don't fetch unknown cards from Scryfall")
@@ -57,17 +59,17 @@ def main(argv=None):
     ap.add_argument("--jobs", type=int, default=1, help="Forge: run games in this many Java processes at once")
     ap.add_argument("--clock", type=int, default=120, help="Forge: seconds before a game is called a draw")
     args = ap.parse_args(argv)
-    if args.list_tiers:
-        print(list_tiers())
+    if args.list_ranks:
+        print(list_ranks())
         return
-    if not args.decks and not (args.coverage and args.tier):
+    if not args.decks and not (args.coverage and args.rank):
         ap.error("give at least one decklist")
     if args.coverage:
         db = CardDB(offline=args.offline)
         paths = list(args.decks) + (args.gauntlet or [])
         reports = [load_deck(p) for p in paths]
         try:
-            reports += [(f"{t.key}/{p.stem}", load_deck(p)[1]) for t in resolve_tiers(args.tier or []) for p in t.decks()]
+            reports += [(f"{t.key}/{p.stem}", load_deck(p)[1]) for t in resolve_ranks(args.rank or []) for p in t.decks()]
         except ValueError as e:
             ap.error(str(e))
         print("\n\n".join(format_coverage(name, deck_coverage(db, counts)) for name, counts in reports))
@@ -75,17 +77,17 @@ def main(argv=None):
 
     paths = list(args.decks) + (args.gauntlet or [])
     tiers = []
-    if args.ladder or args.tier:
+    if args.ladder or args.rank:
         if len(args.decks) != 1 or args.gauntlet or args.round_robin:
-            ap.error("--ladder and --tier play one deck against the tiers; give exactly one deck")
+            ap.error("--ladder and --rank play one deck against the ranks; give exactly one deck")
         try:
-            tiers = TIERS if args.ladder and not args.tier else resolve_tiers(args.tier)
+            tiers = RANKS if args.ladder and not args.rank else resolve_ranks(args.rank)
         except ValueError as e:
             ap.error(str(e))
     counts, decks = {}, {}
     for path in paths:
         name, counts[name] = load_deck(path)
-    tier_opps = {}  # tier key -> opponent names; tiers can share deck names, so names carry the tier
+    tier_opps = {}  # rank key -> opponent names; ranks can share deck names, so names carry the rank
     for t in tiers:
         tier_opps[t.key] = []
         for p in t.decks():
@@ -108,7 +110,7 @@ def main(argv=None):
     elif len(names) == 2:
         pairings = [(names[0], names[1])]
     else:
-        ap.error("give two decks, or use --gauntlet / --round-robin / --tier / --ladder")
+        ap.error("give two decks, or use --gauntlet / --round-robin / --rank / --ladder")
 
     warnings = [line for n in decks for line in unsupported_report(n, decks[n])]
     if warnings and (len(warnings) <= 25 or args.show_ignored):
@@ -190,9 +192,9 @@ def main(argv=None):
 
 
 def run_tiers(me, tiers, tier_opps, play, ladder=False, full=False, pass_rate=PASS_RATE, tracker=None):
-    """Play `me` against each tier in order. On the ladder, stop at the first tier it fails
-    (win rate below pass_rate against the tier as a whole) unless full is set.
-    A rating.LadderTracker, if given, is told when each tier ends and gets the verdict."""
+    """Play `me` against each rank's pool in order. On the ladder, stop at the first rank it fails
+    (win rate below pass_rate against the pool as a whole) unless full is set.
+    A rating.LadderTracker, if given, is told when each rank's pool ends and gets the verdict."""
     rows, reached, failed = [], None, None
     for t in tiers:
         points = games = 0.0
@@ -203,7 +205,7 @@ def run_tiers(me, tiers, tier_opps, play, ladder=False, full=False, pass_rate=PA
         rate = points / games if games else 0.0
         cleared = rate >= pass_rate
         lo, hi = wilson(points, int(games))
-        rows.append(f"  {t.label:<9} {rate:6.1%}  (95% CI {lo:.1%} to {hi:.1%}, {int(games)} games)"
+        rows.append(f"  {t.label:<11} {rate:6.1%}  (95% CI {lo:.1%} to {hi:.1%}, {int(games)} games)"
                     + (("  cleared" if cleared else "  failed") if ladder else ""))
         if tracker:
             tracker.end_pool(t.key, cleared if ladder else None)
@@ -214,14 +216,14 @@ def run_tiers(me, tiers, tier_opps, play, ladder=False, full=False, pass_rate=PA
                 failed = t
                 if not full:
                     break
-    print(f"{me} by tier" + (f" (clearing a tier needs {pass_rate:.0%})" if ladder else ""))
+    print(f"{me} by rank" + (f" (clearing a rank needs {pass_rate:.0%})" if ladder else ""))
     print("\n".join(rows))
     verdict = ""
     if ladder:
         if failed is None:
-            verdict = f"Ladder: {me} cleared every tier, up to and including {reached.label}."
+            verdict = f"Ladder: {me} cleared every rank, up to and including {reached.label}."
         elif reached is None:
-            verdict = f"Ladder: {me} did not clear the first tier ({failed.label})."
+            verdict = f"Ladder: {me} did not clear the first rank ({failed.label})."
         else:
             verdict = f"Ladder: {me} reached {reached.label} and stopped at {failed.label}."
         print(verdict)

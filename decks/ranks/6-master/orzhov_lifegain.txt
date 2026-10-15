@@ -1,0 +1,38 @@
+# Orzhov Lifegain
+# Master: a strong current Standard deck outside the top six archetypes
+# Archetype share: 3.9% of 1,147 MTGO Challenge decks, 17 top-8s (2026-09-10 to 2026-10-11)
+# List: CardGameAddict, MTGO Standard Challenge 32 Special, 1st Place, 2026-10-09
+# Source: https://www.mtgo.com/decklist/standard-challenge-32-special-2026-10-0912856158#deck_CardGameAddict
+4 Amalia Benavides Aguirre
+4 Case of the Uneaten Feast
+4 Godless Shrine
+4 Hinterland Sanctifier
+4 Shattered Sanctum
+4 Starting Town
+3 Ajani Resolute
+3 Concealed Courtyard
+3 Enlightened Confidant
+3 Haliya, Guided by Light
+3 Liliana the Faultless
+3 Lunar Convocation
+3 Moseo, Vein's New Dean
+2 Deep-Cavern Bat
+2 Erode
+2 Starscape Cleric
+1 Bleachbone Verge
+1 Dalkovan Encampment
+1 Emptiness
+1 Zoraline, Cosmos Caller
+3 Plains
+2 Swamp
+
+Sideboard
+3 Duress
+3 Strategic Betrayal
+2 Curious Farm Animals
+2 Shoot the Sheriff
+1 Decorum Dissertation
+1 Lunar Convocation
+1 Requisition Raid
+1 Seam Rip
+1 Starscape Cleric

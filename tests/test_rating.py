@@ -33,7 +33,8 @@ class RatingTests(unittest.TestCase):
     def test_pool_anchors(self):
         self.assertEqual(pool_anchors(["bronze", "Gold", "grandmaster"]),
                          {"bronze": 900, "Gold": 1300, "grandmaster": 2100})
-        spread = pool_anchors([t.key for t in TIERS])
+        self.assertEqual(pool_anchors([t.key for t in TIERS]), {r.key: r.anchor for r in RANKS})  # pools are ranks
+        spread = pool_anchors(["trash", "beginner", "advanced", "semipro", "pro"])
         self.assertEqual(spread["trash"], RANKS[0].anchor)
         self.assertEqual(spread["pro"], RANKS[-1].anchor)
         self.assertEqual(list(spread.values()), sorted(spread.values()))
@@ -63,7 +64,8 @@ class RatingTests(unittest.TestCase):
         self.assertEqual(len(sparkline([(i, i) for i in range(100)], width=10)), 10)
 
     def test_run_tiers_feeds_tracker(self):
-        rates = {"trash": 0.9, "beginner": 0.6, "advanced": 0.4, "semipro": 0.8, "pro": 0.1}
+        rates = {"bronze": 0.9, "silver": 0.6, "gold": 0.4, "platinum": 0.8, "diamond": 0.8, "master": 0.8,
+                 "grandmaster": 0.1}
         tracker = LadderTracker("me", [(t.key, t.label, [t.key]) for t in TIERS], ladder=True)
 
         def play(me, opp):
@@ -77,8 +79,8 @@ class RatingTests(unittest.TestCase):
             run_tiers("me", TIERS, {t.key: [t.key] for t in TIERS}, play, ladder=True, tracker=tracker)
         d = tracker.to_dict()
         self.assertEqual(d["status"], "done")
-        self.assertIn("stopped at Advanced", d["verdict"])
-        self.assertEqual([p["cleared"] for p in d["pools"]], [True, True, False, None, None])
+        self.assertIn("stopped at Gold", d["verdict"])
+        self.assertEqual([p["cleared"] for p in d["pools"]], [True, True, False, None, None, None, None])
         self.assertIn("Rank: me is", out.getvalue())
 
 
