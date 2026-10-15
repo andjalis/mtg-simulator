@@ -141,19 +141,57 @@ def _e(s) -> str:
     return html.escape(str(s))
 
 
+def _shade(color: str, f: float) -> str:
+    """Mix a hex colour toward white (f > 0) or black (f < 0)."""
+    c = color.lstrip("#")
+    if len(c) == 3:
+        c = "".join(ch * 2 for ch in c)
+    try:
+        rgb = [int(c[i:i + 2], 16) for i in (0, 2, 4)]
+    except ValueError:
+        rgb = [136, 136, 136]
+    rgb = [v + (255 - v) * f if f >= 0 else v * (1 + f) for v in rgb]
+    return "#" + "".join(f"{round(v):02x}" for v in rgb)
+
+
 def emblem(rank: str, color: str) -> str:
-    """A shield badge; higher ranks get more pips."""
+    """A gilt shield set with a cut gem in the rank's colour; higher ranks add pips, then laurels,
+    and Grandmaster a crown."""
     names = [r.name for r in RANKS]
     level = names.index(rank) if rank in names else 0
-    pips = "".join(f'<circle cx="{36 - (level - 1) * 4 + i * 8}" cy="14" r="2.6" fill="#fff" opacity=".9"/>'
-                   for i in range(level))
-    crown = ('<path d="M22 6 L28 14 L36 4 L44 14 L50 6 L48 18 L24 18 Z" fill="#ffd54a" stroke="#0003"/>'
+    gid = "em-" + "".join(ch for ch in rank.lower() if ch.isalnum())
+    light, dark, deep = _shade(color, .45), _shade(color, -.35), _shade(color, -.7)
+    xs = [36 - (level - 1) * 4.5 + i * 9 for i in range(level if rank != "Grandmaster" else 0)]
+    pips = "".join(f'<path d="M{x:g} {6.2 + abs(x - 36) * 9 / 28:.1f} l2.4 2.8 -2.4 2.8 -2.4 -2.8z" fill="#fff4d6" '
+                   f'stroke="#3b2a10" stroke-width=".7"/>' for x in xs)
+    laurels = ""
+    if "Master" in names and level >= names.index("Master"):
+        leaf = '<ellipse cx="0" cy="0" rx="2.4" ry="5.2" fill="#e2c47e" stroke="#0005" stroke-width=".6"/>'
+        for side in (1, -1):
+            for i, (lx, ly, rot) in enumerate(((7, 56, -40), (4.5, 46, -20), (3.5, 35, -5), (4.5, 24, 12))):
+                x = lx if side == 1 else 72 - lx
+                laurels += f'<g transform="translate({x} {ly}) rotate({rot * side})">{leaf}</g>'
+    crown = ('<path d="M23 9 L28 1.5 L32 7 L36 0 L40 7 L44 1.5 L49 9 L47 14 L25 14 Z" fill="url(#em-gilt)" '
+             'stroke="#3b2a10" stroke-width="1"/><circle cx="36" cy="9" r="1.8" fill="#e2553b"/>'
              if rank == "Grandmaster" else "")
+    shield = "M36 5 L64 14 L61 48 Q57 64 36 75 Q15 64 11 48 L8 14 Z"
+    inner = "M36 12 L57 19 L54.5 47 Q51 59 36 67 Q21 59 17.5 47 L15 19 Z"
     return (f'<svg class="emblem" viewBox="0 0 72 80" role="img" aria-label="{_e(rank)} rank">'
-            f'<path d="M36 4 L66 14 L62 50 Q58 66 36 76 Q14 66 10 50 L6 14 Z" fill="{color}" stroke="#0003" stroke-width="2"/>'
-            f'<path d="M36 12 L58 19 L55 48 Q52 60 36 68 Q20 60 17 48 L14 19 Z" fill="#fff" opacity=".18"/>'
-            f'{crown}{pips}<text x="36" y="50" text-anchor="middle" style="fill:#fff;font-size:22px;font-weight:700">'
-            f'{_e(rank[0])}</text></svg>')
+            f'<defs><linearGradient id="em-gilt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f3dc9f"/>'
+            f'<stop offset=".45" stop-color="#a47d3a"/><stop offset=".7" stop-color="#e2c47e"/>'
+            f'<stop offset="1" stop-color="#6d5126"/></linearGradient>'
+            f'<radialGradient id="{gid}" cx=".35" cy=".25" r=".9"><stop offset="0" stop-color="{light}"/>'
+            f'<stop offset=".55" stop-color="{color}"/><stop offset="1" stop-color="{dark}"/></radialGradient></defs>'
+            f'{laurels}<path d="{shield}" fill="url(#em-gilt)" stroke="#2a1d0b" stroke-width="1.5"/>'
+            f'<path d="{inner}" fill="{deep}" stroke="#0008" stroke-width="1"/>'
+            f'<path d="{inner}" fill="url(#{gid})" opacity=".35"/>'
+            f'<path d="M36 22 L52 40 L36 61 L20 40 Z" fill="url(#{gid})" stroke="{_shade(color, .6)}" stroke-width=".8"/>'
+            f'<path d="M36 22 L36 40 L20 40 Z" fill="#fff" opacity=".38"/>'
+            f'<path d="M36 22 L52 40 L36 40 Z" fill="#fff" opacity=".12"/>'
+            f'<path d="M20 40 L36 61 L36 40 Z" fill="#000" opacity=".12"/>'
+            f'<path d="M52 40 L36 61 L36 40 Z" fill="#000" opacity=".32"/>'
+            f'<path d="M29 30 L33 27" stroke="#fff" stroke-width="1.4" stroke-linecap="round" opacity=".8"/>'
+            f'{pips}{crown}</svg>')
 
 
 def mmr_chart(d: dict, w=900, h=300) -> str:
