@@ -870,16 +870,36 @@ class HeuristicAI:
                 cache[key] = self.score_attack(game, me, opp, list(attack), my_reach, fights)
             return cache[key]
 
+        def preference(attack):
+            value = score(attack)
+            if value < LETHAL * 0.9:
+                return value, 0, 0, -len(attack)
+            # Lethal/reach scores saturate. Among tied plans, first preserve
+            # material and blockers in case interaction stops the kill, then
+            # prefer more damage (redundancy against removal or failed reach).
+            # No hidden-hand inspection and no incentive to sacrifice blockers
+            # merely to increase overkill.
+            blocks = search_blocks(attack, [c for c in opp.creatures if not c.tapped],
+                                   me, opp, 0, 0, fights) if attack else {}
+            dead, damage, gain, _ = simulate_combat(attack, blocks, fights)
+            untapped = [c for c in me.creatures if c not in dead and not c.tapped
+                        and (c not in attack or c.has("vigilance"))]
+            exposure = sum(perm_value(c) for c in dead if c.controller is me)
+            exposure += self.crack_back(game, me, opp, untapped,
+                                        [c for c in opp.creatures if c not in dead], me.life + gain)
+            return value, -exposure, damage, -len(attack)
+
         if len(ready) <= MAX_ENUMERATE:
             subsets = [[c for i, c in enumerate(ready) if mask >> i & 1] for mask in range(1 << len(ready))]
-            return max(subsets, key=lambda s: (score(s), -len(s)))
-        current = max([[], list(ready)], key=score)
+            best = max(score(s) for s in subsets)
+            return max((s for s in subsets if score(s) == best), key=preference)
+        current = max([[], list(ready)], key=preference)
         improved = True
         while improved:
             improved = False
             for c in ready:
                 trial = [x for x in current if x is not c] if c in current else current + [c]
-                if score(trial) > score(current) + 1e-9:
+                if preference(trial) > preference(current):
                     current, improved = trial, True
         return current
 

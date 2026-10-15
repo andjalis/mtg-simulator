@@ -69,3 +69,8 @@ plays them yet.
 ## Checking the order
 
 Results of the check that each rank beats the ones below it are added here when the runs finish.
+
+Ranks and MMR are internal pool labels and assigned anchors, not Arena equivalents or
+validated human strength predictions. Pool descriptions and source dates are snapshots,
+not claims about today's metagame. Main-deck only: no sideboarding or BO3 match prediction.
+Forge and builtin outcomes both depend on rules implementations and AI pilot limitations.

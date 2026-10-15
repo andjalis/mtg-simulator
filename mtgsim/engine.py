@@ -20,6 +20,7 @@ an AI can override each one by defining the hook of the same name (see README).
 from __future__ import annotations
 
 import dataclasses
+import json
 import random
 
 from .cards import BASIC_MANA, COLORS, AltCost, CardDef, Effect, make_token
@@ -256,6 +257,19 @@ class Game:
         if self.log_enabled:
             self.events.append(f"T{self.turn} {(who or self.players[self.active_idx]).name}: {msg}")
 
+    def audit(self, event, **fields):
+        """Machine-readable records alongside prose; seats are indices in players."""
+        if self.log_enabled:
+            self.events.append("AUDIT " + json.dumps(
+                {"event": event, "player_turn": self.turn, **fields}, ensure_ascii=False))
+
+    def change_life(self, player, delta, cause):
+        before = player.life
+        player.life += delta
+        if delta and self.log_enabled:
+            self.audit("life", seat=self.players.index(player), before=before,
+                       delta=delta, after=player.life, cause=cause)
+
     def opponent(self, p: Player) -> Player:
         return self.players[1] if p is self.players[0] else self.players[0]
 
@@ -476,6 +490,8 @@ class Game:
     def draw(self, p: Player, n: int = 1):
         for _ in range(n):
             if not p.library:
+                if not p.lost:
+                    self.audit("loss", seat=self.players.index(p), cause="drew from empty library")
                 p.lost = True
                 self.log("loses by drawing from an empty library", p)
                 return
@@ -485,6 +501,8 @@ class Game:
             self.fire(opp, "opp_draw", context=p)
 
     def setup(self):
+        self.audit("start", players=[p.name for p in self.players], first_player=0,
+                   life=[p.life for p in self.players], turn_unit="player-turn")
         for p in self.players:
             while True:
                 p.library = list(p.deck)
@@ -493,10 +511,14 @@ class Game:
                 self.draw(p, 7)
                 if p.mulligans >= 2 or p.ai.keep_hand(p.hand, p.mulligans):
                     break
+                self.audit("mulligan", seat=self.players.index(p),
+                           hand=[c.name for c in p.hand], mulligans=p.mulligans + 1)
                 p.mulligans += 1
             for card in p.ai.cards_to_bottom(p.hand, p.mulligans):
                 p.hand.remove(card)
                 p.library.insert(0, card)
+            self.audit("keep", seat=self.players.index(p), mulligans=p.mulligans,
+                       hand=[c.name for c in p.hand])
         self.pending = []   # opening hands don't trigger "whenever you draw"
 
     # ----------------------------------------------------------- game loop
@@ -510,6 +532,9 @@ class Game:
         if len(losers) == 1:
             self.winner = self.opponent(losers[0])
         self.log(f"game over, winner: {self.winner}")
+        self.audit("result", winner=self.players.index(self.winner) if self.winner else None,
+                   life=[p.life for p in self.players], lost=[p.lost for p in self.players],
+                   reason="loss" if losers else "player-turn cap", player_turns=self.turn)
         return self.winner
 
     def main_phase(self, p: Player):
@@ -788,9 +813,9 @@ class Game:
         if payment is None:
             return False
         if alt is not None and alt.life:
-            p.life -= alt.life
+            self.change_life(p, -alt.life, f"{card.name}: alternative cost")
         if card.extra_life_cost:
-            p.life -= card.extra_life_cost
+            self.change_life(p, -card.extra_life_cost, f"{card.name}: additional cost")
         zone = {"from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard}.get(kind, p.hand)
         zone.remove(base)
@@ -821,7 +846,9 @@ class Game:
         if not card.is_ability:
             for perm in list(p.battlefield):
                 for trig in perm.triggers:
-                    if trig.event == "cast_spell" or (trig.event == "cast_noncreature" and not card.is_creature):
+                    if (trig.event == "cast_spell" or
+                            (trig.event == "cast_noncreature" and not card.is_creature) or
+                            (trig.event == "cast_instant_sorcery" and (card.is_instant or card.is_sorcery))):
                         self.queue_trigger(p, trig.effects, perm, perm.card.name, modes=trig.modes)
             for pl in self.players:
                 self.fire(pl, "any_cast", context=p, subject=card)
@@ -929,7 +956,7 @@ class Game:
             perm.tapped = p is not self.active
         elif cond == "shock":
             if self.hook(p, "pay_shock")(self, p, card):
-                p.life -= 2
+                self.change_life(p, -2, f"{card.name}: shock land cost")
             else:
                 perm.tapped = True
         if card.loyalty:
@@ -998,16 +1025,19 @@ class Game:
         if eff.target == "that_controller":
             target = prev.controller if isinstance(prev, Permanent) else prev
         k = eff.kind
+        source = (item.card.name if item and item.card else
+                  item.source.card.name if item and isinstance(item.source, Permanent) else "effect")
+        cause = f"{source}: {k}"
         if k == "damage":
             if eff.target == "each_creature":
                 for perm in p.creatures + opp.creatures:
-                    self.deal_damage(perm, eff.amount, by=p)
+                    self.deal_damage(perm, eff.amount, by=p, cause=cause)
             elif eff.target == "each_opp_and_pw":
-                opp.life -= eff.amount
+                self.change_life(opp, -eff.amount, cause)
                 for pw in opp.planeswalkers:
                     pw.counters["loyalty"] = pw.loyalty - eff.amount
             else:
-                self.deal_damage(target, eff.amount, by=p)
+                self.deal_damage(target, eff.amount, by=p, cause=cause)
         elif k == "destroy":
             if isinstance(target, Permanent) and target in target.controller.battlefield:
                 self.destroy(target)
@@ -1018,9 +1048,9 @@ class Game:
             self.draw(p, max(0, eff.amount - len(p.hand)))
         elif k == "gain_life":
             who = target if eff.target == "that_controller" and isinstance(target, Player) else p
-            who.life += eff.amount
+            self.change_life(who, eff.amount, cause)
         elif k == "drain":
-            opp.life -= eff.amount
+            self.change_life(opp, -eff.amount, cause)
         elif k == "pump":
             if isinstance(target, Permanent) and target in target.controller.battlefield:
                 target.pump_p += eff.amount
@@ -1029,7 +1059,7 @@ class Game:
             self.counter(p, eff, target)
         elif k == "lose_life":
             who = target if eff.target == "that_player" and target is not None else p
-            who.life -= eff.amount
+            self.change_life(who, -eff.amount, cause)
         elif k == "debuff":
             victims = opp.creatures if eff.target == "opp_creatures" else p.creatures + opp.creatures
             for perm in victims:
@@ -1060,7 +1090,15 @@ class Game:
             self.dig_put(p, eff.amount, eff.amount2)
         elif k == "discard":
             who = target if isinstance(target, Player) else p
-            for _ in range(min(eff.amount, len(who.hand))):
+            basics = [c for c in who.hand if is_basic_land(c)] if eff.data.get("unless") == "basic_land" else []
+            if basics:
+                # One basic land instead of the larger discard (Thirst for Discovery); for an
+                # AI that is nearly always the cheaper option.
+                card = max(basics, key=lambda c: sum(c.name == x.name for x in who.hand))
+                who.hand.remove(card)
+                who.graveyard.append(card)
+                self.log(f"discards {card.name}", who)
+            for _ in range(0 if basics else min(eff.amount, len(who.hand))):
                 card = who.ai.choose_discard(self, who)
                 who.hand.remove(card)
                 who.graveyard.append(card)
@@ -1127,8 +1165,8 @@ class Game:
                 card = max(creatures, key=lambda c: c.cmc)
                 opp.graveyard.remove(card)
                 opp.exile.append(card)
-                opp.life -= eff.amount
-                p.life += eff.amount
+                self.change_life(opp, -eff.amount, cause)
+                self.change_life(p, eff.amount, cause)
             elif opp.graveyard:
                 card = max(opp.graveyard, key=lambda c: c.is_instant or c.is_sorcery)
                 opp.graveyard.remove(card)
@@ -1136,8 +1174,8 @@ class Game:
         elif k == "drain_devotion":
             color = eff.data["color"]
             n = sum(x.card.mana_cost.get(color, 0) for x in p.battlefield)
-            opp.life -= n
-            p.life += n
+            self.change_life(opp, -n, cause)
+            self.change_life(p, n, cause)
             self.log(f"drains {n} (devotion)", p)
         elif k == "mill":
             who = target if isinstance(target, Player) else p
@@ -1182,10 +1220,10 @@ class Game:
             self.adversary(p, item, eff)
         self.state_based_actions()
 
-    def deal_damage(self, target, amount: int, by: Player | None = None):
+    def deal_damage(self, target, amount: int, by: Player | None = None, cause="noncombat damage"):
         """Noncombat damage; ``by`` is the controller of the source."""
         if isinstance(target, Player):
-            target.life -= amount
+            self.change_life(target, -amount, cause)
         elif isinstance(target, Permanent) and target in target.controller.battlefield:
             if target.is_planeswalker and not target.is_creature:
                 target.counters["loyalty"] = target.loyalty - amount
@@ -1342,6 +1380,8 @@ class Game:
                         changed = True
         for p in self.players:
             if p.life <= 0:
+                if not p.lost:
+                    self.audit("loss", seat=self.players.index(p), cause="life total 0 or less")
                 p.lost = True
 
     # --------------------------------------------------------------- combat
@@ -1436,7 +1476,7 @@ class Game:
                 hits.append((a, target, a.power))
         for src, tgt, amt in hits:
             if isinstance(tgt, Player):
-                tgt.life -= amt
+                self.change_life(tgt, -amt, f"{src.card.name}: combat damage")
                 self.fire(src.controller, "combat_damage_player", src)
             elif tgt.is_planeswalker and not tgt.is_creature:
                 tgt.counters["loyalty"] = tgt.loyalty - amt
@@ -1445,7 +1485,7 @@ class Game:
                 if src.has("deathtouch"):
                     tgt.deathtouched = True
             if src.has("lifelink"):
-                src.controller.life += amt
+                self.change_life(src.controller, amt, f"{src.card.name}: lifelink")
         self.state_based_actions()
         self.settle()
 
@@ -1506,7 +1546,7 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
             theirs = [x for x in theirs if x.toughness <= eff.amount2]
         theirs = [x for x in theirs if not (k == "destroy" and x.has("indestructible"))]
         return max(theirs, key=perm_value, default=None)
-    if k in ("pump", "p1_counters", "double_power"):
+    if k in ("pump", "p1_counters", "double_power", "grant"):
         return max(mine, key=perm_value, default=None)
     if k in ("counter", "bounce_spell"):
         return next((i for i in reversed(game.stack) if i in legal), None)
@@ -1515,10 +1555,13 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     return None
 
 
+def is_basic_land(c) -> bool:
+    return c.is_land and (c.name in BASIC_MANA or c.name.startswith("Snow-Covered ") or c.name == "Wastes")
+
+
 def choose_basic(game: Game, me: Player):
     """The basic land to fetch: one making the colour the hand needs most and the battlefield has least."""
-    basics = [c for c in me.library if c.is_land and (c.name in BASIC_MANA or c.name.startswith("Snow-Covered ")
-                                                      or c.name == "Wastes")]
+    basics = [c for c in me.library if is_basic_land(c)]
     if not basics:
         return None
     have = {col: sum(col in x.card.produces for x in me.battlefield if x.card.is_land) for col in COLORS}

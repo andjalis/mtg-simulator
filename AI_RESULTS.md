@@ -85,6 +85,52 @@ A look-ahead attacker that plays each candidate attack out to the end of the
 game was also tried. It won 53% (±5) of a red mirror against the current AI but
 ran about 50 times slower, so it was not added.
 
+## Tie-break among already-lethal attacks (October 2026)
+
+Lethal and burn-reach attack scores saturate, so the old attacker picked the
+fewest attackers among tied plans. The current one breaks those ties by least
+exposure (attackers that die in combat plus crack-back if the kill fails), then
+more damage, then fewer attackers. It never looks at the opponent's hand.
+
+Fixed positions (tests in `tests/test_ai.py`), old → new choice:
+
+| Position | Old | New |
+| --- | --- | --- |
+| 3 bears, any 2 lethal, opponent has open mana | 2 attack | 3 attack |
+| Same, but a failed kill leaves us dead to crack-back | 2 | 2 |
+| Bolt in hand is lethal, 1 bear, no blockers | 0 | 1 |
+| Bolt in hand is lethal, bear would meet a bigger blocker | 0 | 0 |
+
+Games (platinum ranked lists plus the combo fixture; script and raw rows in
+`results/pilot-tiebreak/`). Draws count half. Each seed restarts one RNG
+stream for 400 games, but the streams desync after the first different
+decision, so seeds are not paired games.
+
+| New pilot vs old pilot, same deck | Seeds 11–13 | Pooled (1,200 games, 95% CI) |
+| --- | --- | --- |
+| Mono-red aggro | 50.0, 49.0, 49.5% | 49.5% (46.7–52.3) |
+| Rakdos midrange | 45.5, 48.7, 50.5% | 48.2% (45.4–51.1) |
+| Azorius control | 49.2, 48.2, 50.5% | 49.3% (46.5–52.2) |
+| Mono-green stompy | 51.2, 49.2, 51.0% | 50.5% (47.7–53.3) |
+| Kiln Fiend combo fixture | 50.7, 47.7, 45.5% | 48.0% (45.2–50.8) |
+
+Cross matchups, both sides old vs both sides new, 1,200 games each: aggro vs
+midrange 45.1 → 45.2%, midrange vs control 74.3 → 76.0%, stompy vs aggro
+75.1 → 74.8%, stompy vs midrange 61.8 → 61.9%, combo vs midrange 11.8 →
+12.0%, combo vs aggro 14.7 → 14.7%.
+
+Aggro vs control first showed 74.2 → 70.6%. Splitting the sides showed the
+aggro pilot was the one that changed (control's change made no difference),
+but 24 more seeds (12,000 games per arm, aggro new or old vs control old) gave
+72.1% old and 72.3% new, standard error 0.4 points: the first gap was noise.
+In 400 aggro-vs-control games the two pilots chose differently 119 times,
+117 of them by adding attackers to an already lethal attack on an empty board.
+
+Result: the change fixes the fixture positions and has no detectable effect on
+win rates at these sample sizes. It costs about 1.5% more CPU time per game
+(240 s → 244 s for the cross-matchup runs). The suspected Tenacious Underdog
+misplay from the review log was not reproduced: that log had no life totals.
+
 ## What changed and why
 
 - **Control was the deck the old AI couldn't play.** It cast counters and

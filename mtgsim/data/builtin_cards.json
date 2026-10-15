@@ -419,7 +419,7 @@
   "mana_cost": "{2}{U}",
   "cmc": 3,
   "type_line": "Instant",
-  "oracle_text": "Draw three cards. Then discard two cards unless you discard a basic snow land card."
+  "oracle_text": "Draw three cards. Then discard two cards unless you discard a basic land card."
  },
  {
   "name": "Opt",
