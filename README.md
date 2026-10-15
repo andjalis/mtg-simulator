@@ -90,6 +90,19 @@ C, D, F):
 `mtgsim.assess.assess()` returns the same thing as plain JSON for the web page and reports.
 Refresh `metagame.json` when the metagame moves.
 
+## Run history: compare versions of a deck
+
+Every ladder, rank and assessment run is saved when it finishes, from the command line and the
+web page, in `results/history.sqlite3` (set `MTGSIM_HISTORY` for another file, `--no-history` to
+skip). A deck's versions are told apart by a fingerprint of its exact main deck, so editing the
+list and re-testing it adds version 2, 3 and so on.
+
+    python3 -m mtgsim.history                            # every deck: current and best rank/MMR
+    python3 -m mtgsim.history show my_deck               # its versions and every run
+    python3 -m mtgsim.history compare my_deck [1 2]      # cards added/removed, MMR, rank and grade changes
+
+Add `--json` for machine-readable output; `mtgsim/history.py` documents the Python API.
+
 ## Card data
 
 Every Magic card (about 34,000) is in `mtgsim/data/cards.sqlite3`, an offline
