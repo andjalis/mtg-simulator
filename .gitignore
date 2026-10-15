@@ -14,3 +14,6 @@ forge/
 
 # Live ranked-ladder reports written by --ladder / --tier
 results/ladder/
+
+# Local benchmark evidence and raw worker logs
+results/benchmark*/

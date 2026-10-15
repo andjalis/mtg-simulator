@@ -137,13 +137,13 @@ def assess_meta(name: str, archetypes: list[Archetype], results: dict[str, tuple
     rank, nxt = rank_for(mmr), next_rank(mmr)
     rating = {"mmr": round(mmr), "rank": rank.name, "rank_color": rank.color,
               "next_rank": nxt.name if nxt else None, "to_next": round(nxt.floor - mmr) if nxt else None,
-              "basis": "meta-weighted win rate against the Grandmaster field"}
+              "basis": "simulated meta-weighted score against the internal Grandmaster pool"}
     matchups = [{"name": a.name, "key": a.key, "share": a.share, "weight": round(a.weight, 4),
                  "games": results.get(a.key, (0, 0))[1], "points": results.get(a.key, (0, 0))[0],
                  "win_rate": (results[a.key][0] / results[a.key][1]) if a in played else None}
                 for a in archetypes]
     worst = min(played, key=lambda a: results[a.key][0] / results[a.key][1], default=None)
-    summary = (f"{weighted:.0%} meta-weighted win rate against the top {len(played)} Standard decks"
+    summary = (f"{weighted:.0%} simulated meta-weighted score against {len(played)} snapshot opponents"
                + (f"; weakest against {worst.name}" if worst else ""))
     details = {
         "weighted_win_rate": round(weighted, 4),
@@ -436,6 +436,7 @@ def assess(name: str, counts: dict[str, int], db: CardDB | None = None, games: i
 
 def text_report(a: dict) -> str:
     out = [f"{a['deck']}: deck assessment ({a['assessed']})"]
+    out.append("Internal heuristic scores and pool ranks/MMR, not Arena equivalents. Main-deck only; no sideboarding. AI pilot and rules limitations apply.")
     r = a["rating"]
     if r:
         nxt = f", {r['to_next']} MMR to {r['next_rank']}" if r["next_rank"] else ""
@@ -444,13 +445,13 @@ def text_report(a: dict) -> str:
         out.append(f"  {c['label']:<12} {c['score']:>3}  {c['grade']}  {c['summary']}")
     meta = a["criteria"].get("meta")
     if meta:
-        out.append("  Matchups (meta weight, win rate):")
+        out.append("  Matchups (meta weight, simulated score; draws count half):")
         for m in meta["details"]["matchups"]:
             wr = f"{m['win_rate']:.0%} of {m['games']}" if m["win_rate"] is not None else "not played"
             out.append(f"    {m['name']:<26} {m['weight']:5.1%}  {wr}")
         if meta["details"].get("partial_opponent_cards"):
             out.append(f"  Note: the built-in engine ignores some text on {meta['details']['partial_opponent_cards']} "
-                       "of the meta decks' cards; --engine forge plays them fully")
+                       "of the meta decks' cards; Forge offers broader coverage but also needs rules and pilot review")
         md = meta["details"]["metagame"]
         out.append(f"  Metagame of {md['date']} ({md['window']}): " + ", ".join(s["name"] for s in md["sources"]))
     return "\n".join(out)

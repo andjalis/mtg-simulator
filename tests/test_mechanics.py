@@ -97,6 +97,24 @@ class MechanicsTests(unittest.TestCase):
     def lands(self, p, name, n):
         return [perm(name, p) for _ in range(n)]
 
+    def test_thirst_for_discovery_discards_one_basic_land_instead_of_two(self):
+        thirst = card_from_scryfall({"name": "Thirst for Discovery", "mana_cost": "{2}{U}", "cmc": 3,
+                                     "type_line": "Instant", "oracle_text": "Draw three cards. Then discard two "
+                                     "cards unless you discard a basic land card."})
+        self.assertEqual(thirst.unsupported, [])
+        for hand, discarded in (([DB.get("Island"), DB.get("Lightning Bolt")], 1),
+                                ([DB.get("Lightning Bolt"), DB.get("Counterspell")], 2)):
+            with self.subTest(hand=hand):
+                self.a.hand, self.a.graveyard = list(hand), []
+                self.a.library = [DB.get("Lightning Bolt")] * 20
+                self.lands(self.a, "Island", 3)
+                self.a.hand.append(thirst)
+                self.game.cast(self.a, thirst)
+                self.game.settle()
+                self.assertEqual(len(self.a.graveyard) - 1, discarded)   # minus Thirst itself
+                if discarded == 1:
+                    self.assertIn(DB.get("Island"), self.a.graveyard)
+
     def test_saga_chapters_and_transform(self):
         self.lands(self.a, "Mountain", 3)
         fable = CARDS["Fable of the Mirror-Breaker"]

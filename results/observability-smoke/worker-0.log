@@ -1,0 +1,718 @@
+Error handling registered!
+23:51:53 [INFO ] GuiBase: ##########################################
+23:51:53 [INFO ] GuiBase: APP: Forge v.2.0.16-SNAPSHOT-10.15
+23:51:53 [INFO ] GuiBase: Java: 17.0.20.1 (Arch Linux)
+23:51:53 [INFO ] GuiBase: OS: Linux 7.2.5-3-omarchy amd64
+23:51:53 [INFO ] GuiBase: RAM: 4096 MB max, 12 CPUs
+23:51:53 [INFO ] GuiBase: ##########################################
+Language 'en-US' loaded successfully.
+(ThreadUtil first call): Running with priority 5
+Read cards: 34086 files in 0 ms (25 parts) using thread pool
+Upcoming set Marvel: Darkhold Destiny (MDD) dated in the future. All `upcoming` cards will be added to this set with unknown rarity.
+The card A-Alrund's Epiphany was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Baba Lysaga, Night Witch was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Divide by Zero was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Esika's Chariot was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Faceless Haven was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Fires of Invention was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Goldspan Dragon was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Hullbreaker Horror was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Kumano Faces Kakkazan was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Luminarch Aspirant was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Monster Manual was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Omnath, Locus of Creation was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-The Meathook Massacre was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card A-Unholy Heat was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Blinding Radiance was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Goblin Bruiser was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Ogre Painbringer was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Titanic Pelagosaur was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+The card Treetop Recluse was not assigned to any set. Adding it to UNKNOWN set... to fix see res/editions/ folder. 
+Upcoming set Marvel: Darkhold Destiny (MDD) dated in the future. All `upcoming` cards will be added to this set with unknown rarity.
+Read cards: 857 files in 0 ms (8 parts) using thread pool
+Simulation mode
+Ai(1)-aggro vs Ai(2)-midrange - two games of Constructed seed 17
+Lightning Strike Did not have activator set in SpellAbilityRestriction.canPlay()
+Eidolon of the Great Revel Did not have activator set in SpellAbilityRestriction.canPlay()
+Mulligan: Ai(2)-midrange has mulliganed down to 6 cards.
+Mulligan: Ai(1)-aggro has kept a hand of 7 cards
+Mulligan: Ai(2)-midrange has kept a hand of 6 cards
+Turn: Turn 1 (Ai(1)-aggro)
+Phase: Ai(1)-aggro's Untap step
+Phase: Ai(1)-aggro's Upkeep step
+Phase: Ai(1)-aggro's Draw step
+Phase: Ai(1)-aggro's Main phase, precombat
+Land: Ai(1)-aggro played Mountain (36)
+Mana: Mountain (36) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Monastery Swiftspear
+Resolve Stack: Monastery Swiftspear - Creature 1 / 2
+Phase: Ai(1)-aggro's Beginning of Combat Step
+Phase: Ai(1)-aggro's Declare Attackers Step
+Combat: Ai(1)-aggro assigned Monastery Swiftspear (3) to attack Ai(2)-midrange.
+Phase: Ai(1)-aggro's Declare Blockers Step
+Combat: Ai(2)-midrange didn't block Monastery Swiftspear (3).
+Phase: Ai(1)-aggro's First Strike Damage Step
+Phase: Ai(1)-aggro's Combat Damage Step
+Damage: Monastery Swiftspear (3) deals 1 combat damage to Ai(2)-midrange.
+Life: Life: Ai(2)-midrange 20 > 19
+Phase: Ai(1)-aggro's End of Combat Step
+Phase: Ai(1)-aggro's Main phase, postcombat
+Phase: Ai(1)-aggro's End step
+Phase: Ai(1)-aggro's Cleanup step
+Turn: Turn 2 (Ai(2)-midrange)
+Phase: Ai(2)-midrange's Untap step
+Phase: Ai(2)-midrange's Upkeep step
+Phase: Ai(2)-midrange's Draw step
+Phase: Ai(2)-midrange's Main phase, precombat
+Land: Ai(2)-midrange played Swamp (87)
+Phase: Ai(2)-midrange's Beginning of Combat Step
+Phase: Ai(2)-midrange's Declare Attackers Step
+Phase: Ai(2)-midrange's Declare Blockers Step
+Phase: Ai(2)-midrange's First Strike Damage Step
+Phase: Ai(2)-midrange's Combat Damage Step
+Phase: Ai(2)-midrange's End of Combat Step
+Phase: Ai(2)-midrange's Main phase, postcombat
+Mana: Swamp (87) - {T}: Add {B}.
+Add To Stack: Ai(2)-midrange cast Thoughtseize targeting [Ai(1)-aggro]
+Discard: Ai(1)-aggro discards Lightning Strike (8).
+Life: Life: Ai(2)-midrange 19 > 17
+Resolve Stack: Thoughtseize (99) - Ai(1)-aggro reveals their hand. Ai(2)-midrange chooses a nonland card from it. Ai(1)-aggro discards that card. Ai(2)-midrange loses 2 life.
+Phase: Ai(2)-midrange's End step
+Phase: Ai(2)-midrange's Cleanup step
+Turn: Turn 3 (Ai(1)-aggro)
+Phase: Ai(1)-aggro's Untap step
+Phase: Ai(1)-aggro's Upkeep step
+Phase: Ai(1)-aggro's Draw step
+Phase: Ai(1)-aggro's Main phase, precombat
+Land: Ai(1)-aggro played Mountain (33)
+Mana: Mountain (36) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Kumano Faces Kakkazan
+Add To Stack: Ai(1)-aggro triggered Monastery Swiftspear
+Resolve Stack: Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.) [Card: Kumano Faces Kakkazan (57), Activator: Ai(1)-aggro, SpellAbility: Kumano Faces Kakkazan]
+Replacement Effect: Kumano Faces Kakkazan enters with a lore counter on it.
+Resolve Stack: Kumano Faces Kakkazan
+Add To Stack: Ai(1)-aggro triggered Kumano Faces Kakkazan
+Damage: Kumano Faces Kakkazan (57) deals 1 non-combat damage to Ai(2)-midrange.
+Life: Life: Ai(2)-midrange 17 > 16
+Resolve Stack: I — Kumano Faces Kakkazan deals 1 damage to each opponent and 1 damage to each planeswalker they control. [Added once: Kumano Faces Kakkazan (57)]
+Phase: Ai(1)-aggro's Beginning of Combat Step
+Phase: Ai(1)-aggro's Declare Attackers Step
+Combat: Ai(1)-aggro assigned Monastery Swiftspear (3) to attack Ai(2)-midrange.
+Phase: Ai(1)-aggro's Declare Blockers Step
+Combat: Ai(2)-midrange didn't block Monastery Swiftspear (3).
+Phase: Ai(1)-aggro's First Strike Damage Step
+Phase: Ai(1)-aggro's Combat Damage Step
+Damage: Monastery Swiftspear (3) deals 2 combat damage to Ai(2)-midrange.
+Life: Life: Ai(2)-midrange 16 > 14
+Phase: Ai(1)-aggro's End of Combat Step
+Phase: Ai(1)-aggro's Main phase, postcombat
+Phase: Ai(1)-aggro's End step
+Phase: Ai(1)-aggro's Cleanup step
+Turn: Turn 4 (Ai(2)-midrange)
+Phase: Ai(2)-midrange's Untap step
+Phase: Ai(2)-midrange's Upkeep step
+Phase: Ai(2)-midrange's Draw step
+Phase: Ai(2)-midrange's Main phase, precombat
+Replacement Effect: As Blood Crypt enters, you may pay 2 life. If you don't, it enters tapped.
+Land: Ai(2)-midrange played Blood Crypt (105)
+Phase: Ai(2)-midrange's Beginning of Combat Step
+Phase: Ai(2)-midrange's Declare Attackers Step
+Phase: Ai(2)-midrange's Declare Blockers Step
+Phase: Ai(2)-midrange's First Strike Damage Step
+Phase: Ai(2)-midrange's Combat Damage Step
+Phase: Ai(2)-midrange's End of Combat Step
+Phase: Ai(2)-midrange's Main phase, postcombat
+Phase: Ai(2)-midrange's End step
+Phase: Ai(2)-midrange's Cleanup step
+Turn: Turn 5 (Ai(1)-aggro)
+Phase: Ai(1)-aggro's Untap step
+Phase: Ai(1)-aggro's Upkeep step
+Phase: Ai(1)-aggro's Draw step
+Phase: Ai(1)-aggro's Main phase, precombat
+Add To Stack: Ai(1)-aggro triggered Kumano Faces Kakkazan
+Resolve Stack: II — When you cast your next creature spell this turn, that creature enters with an additional +1/+1 counter on it. [Added once: Kumano Faces Kakkazan (57)]
+Land: Ai(1)-aggro played Mountain (47)
+Phase: Ai(1)-aggro's Beginning of Combat Step
+Phase: Ai(1)-aggro's Declare Attackers Step
+Combat: Ai(1)-aggro assigned Monastery Swiftspear (3) to attack Ai(2)-midrange.
+Phase: Ai(1)-aggro's Declare Blockers Step
+Combat: Ai(2)-midrange didn't block Monastery Swiftspear (3).
+Phase: Ai(1)-aggro's First Strike Damage Step
+Phase: Ai(1)-aggro's Combat Damage Step
+Damage: Monastery Swiftspear (3) deals 1 combat damage to Ai(2)-midrange.
+Life: Life: Ai(2)-midrange 14 > 13
+Phase: Ai(1)-aggro's End of Combat Step
+Phase: Ai(1)-aggro's Main phase, postcombat
+Mana: Mountain (36) - {T}: Add {R}.
+Mana: Mountain (33) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Eidolon of the Great Revel
+Resolve Stack: Eidolon of the Great Revel - Creature 2 / 2
+Phase: Ai(1)-aggro's End step
+Phase: Ai(1)-aggro's Cleanup step
+Turn: Turn 6 (Ai(2)-midrange)
+Phase: Ai(2)-midrange's Untap step
+Phase: Ai(2)-midrange's Upkeep step
+Mana: Blood Crypt (105) - {T}: Add {R}.
+Mana: Swamp (87) - {T}: Add {B}.
+Add To Stack: Ai(2)-midrange cast Stomp
+Add To Stack: Ai(1)-aggro triggered Eidolon of the Great Revel
+Damage: Eidolon of the Great Revel (51) deals 2 non-combat damage to Ai(2)-midrange.
+Life: Life: Ai(2)-midrange 13 > 11
+Resolve Stack: Whenever a player casts a spell with mana value 3 or less, Eidolon of the Great Revel deals 2 damage to that player. [Card: Stomp (117), Activator: Ai(2)-midrange, SpellAbility: Damage can't be prevented this turn. Stomp deals 2 damage to any target. ]
+Damage: Stomp (117) deals 2 damage to Monastery Swiftspear (3).
+Resolve Stack: Stomp (117) - Damage can't be prevented this turn. Stomp deals 2 damage to any target. Stomp (117) deals 2 damage to Monastery Swiftspear (3).
+Replacement Effect: Adventure
+Zone Change: Monastery Swiftspear (3) was put into Graveyard from Battlefield.
+Phase: Ai(2)-midrange's Draw step
+Phase: Ai(2)-midrange's Main phase, precombat
+Replacement Effect: Haunted Ridge enters tapped unless you control two or more other lands.
+Land: Ai(2)-midrange played Haunted Ridge (101)
+Phase: Ai(2)-midrange's Beginning of Combat Step
+Phase: Ai(2)-midrange's Declare Attackers Step
+Phase: Ai(2)-midrange's Declare Blockers Step
+Phase: Ai(2)-midrange's First Strike Damage Step
+Phase: Ai(2)-midrange's Combat Damage Step
+Phase: Ai(2)-midrange's End of Combat Step
+Phase: Ai(2)-midrange's Main phase, postcombat
+Phase: Ai(2)-midrange's End step
+Phase: Ai(2)-midrange's Cleanup step
+Turn: Turn 7 (Ai(1)-aggro)
+Phase: Ai(1)-aggro's Untap step
+Phase: Ai(1)-aggro's Upkeep step
+Phase: Ai(1)-aggro's Draw step
+Phase: Ai(1)-aggro's Main phase, precombat
+Add To Stack: Ai(1)-aggro triggered Kumano Faces Kakkazan
+Zone Change: Kumano Faces Kakkazan (57) was put into Exile from Battlefield.
+Resolve Stack: III — Exile this Saga, then return it to the battlefield transformed under your control. [Added once: Kumano Faces Kakkazan (57)]
+Phase: Ai(1)-aggro's Beginning of Combat Step
+Phase: Ai(1)-aggro's Declare Attackers Step
+Combat: Ai(1)-aggro assigned Eidolon of the Great Revel (51) and Etching of Kumano (57) to attack Ai(2)-midrange.
+Phase: Ai(1)-aggro's Declare Blockers Step
+Combat: Ai(2)-midrange didn't block Eidolon of the Great Revel (51).
+Ai(2)-midrange didn't block Etching of Kumano (57).
+Phase: Ai(1)-aggro's First Strike Damage Step
+Phase: Ai(1)-aggro's Combat Damage Step
+Damage: Eidolon of the Great Revel (51) deals 3 combat damage to Ai(2)-midrange.
+Damage: Etching of Kumano (57) deals 2 combat damage to Ai(2)-midrange.
+Life: Life: Ai(2)-midrange 11 > 6
+Mana: Mountain (36) - {T}: Add {R}.
+Mana: Mountain (33) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Lightning Strike targeting [Ai(2)-midrange]
+Add To Stack: Ai(1)-aggro triggered Eidolon of the Great Revel
+Damage: Eidolon of the Great Revel (51) deals 2 non-combat damage to Ai(1)-aggro.
+Life: Life: Ai(1)-aggro 20 > 18
+Resolve Stack: Whenever a player casts a spell with mana value 3 or less, Eidolon of the Great Revel deals 2 damage to that player. [Card: Lightning Strike (6), Activator: Ai(1)-aggro, SpellAbility: Lightning Strike deals 3 damage to any target.]
+Damage: Lightning Strike (6) deals 3 non-combat damage to Ai(2)-midrange.
+Life: Life: Ai(2)-midrange 6 > 3
+Resolve Stack: Lightning Strike (6) - Lightning Strike (6) deals 3 damage to Ai(2)-midrange.
+Phase: Ai(1)-aggro's End of Combat Step
+Phase: Ai(1)-aggro's Main phase, postcombat
+Phase: Ai(1)-aggro's End step
+Phase: Ai(1)-aggro's Cleanup step
+Turn: Turn 8 (Ai(2)-midrange)
+Phase: Ai(2)-midrange's Untap step
+Phase: Ai(2)-midrange's Upkeep step
+Mana: Swamp (87) - {T}: Add {B}.
+Mana: Haunted Ridge (101) - {T}: Add {B} or {R}.
+Add To Stack: Ai(2)-midrange cast Go for the Throat targeting [Eidolon of the Great Revel (51)]
+Add To Stack: Ai(1)-aggro triggered Eidolon of the Great Revel
+Damage: Eidolon of the Great Revel (51) deals 2 non-combat damage to Ai(2)-midrange.
+Life: Life: Ai(2)-midrange 3 > 1
+Resolve Stack: Whenever a player casts a spell with mana value 3 or less, Eidolon of the Great Revel deals 2 damage to that player. [Card: Go for the Throat (63), Activator: Ai(2)-midrange, SpellAbility: Destroy target nonartifact creature.]
+Zone Change: Eidolon of the Great Revel (51) was put into Graveyard from Battlefield.
+Resolve Stack: Go for the Throat (63) - Destroy Eidolon of the Great Revel (51).
+Phase: Ai(2)-midrange's Draw step
+Phase: Ai(2)-midrange's Main phase, precombat
+Land: Ai(2)-midrange played Mountain (72)
+Phase: Ai(2)-midrange's Beginning of Combat Step
+Phase: Ai(2)-midrange's Declare Attackers Step
+Phase: Ai(2)-midrange's Declare Blockers Step
+Phase: Ai(2)-midrange's First Strike Damage Step
+Phase: Ai(2)-midrange's Combat Damage Step
+Phase: Ai(2)-midrange's End of Combat Step
+Phase: Ai(2)-midrange's Main phase, postcombat
+Mana: Blood Crypt (105) - {T}: Add {B}.
+Mana: Mountain (72) - {T}: Add {R}.
+Add To Stack: Ai(2)-midrange cast Bloodtithe Harvester
+Resolve Stack: Bloodtithe Harvester - Creature 3 / 2
+Add To Stack: Ai(2)-midrange triggered Bloodtithe Harvester
+Resolve Stack: When Bloodtithe Harvester enters, create a Blood token. (It's an artifact with "{1}, {T}, Discard a card, Sacrifice this token: Draw a card.") [Zone Changer: Bloodtithe Harvester (95)]
+Phase: Ai(2)-midrange's End step
+Phase: Ai(2)-midrange's Cleanup step
+Turn: Turn 9 (Ai(1)-aggro)
+Phase: Ai(1)-aggro's Untap step
+Phase: Ai(1)-aggro's Upkeep step
+Phase: Ai(1)-aggro's Draw step
+Phase: Ai(1)-aggro's Main phase, precombat
+Mana: Mountain (36) - {T}: Add {R}.
+Mana: Mountain (33) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Kami's Flare targeting [Bloodtithe Harvester (95)]
+Damage: Kami's Flare (56) deals 3 damage to Bloodtithe Harvester (95).
+Resolve Stack: Kami's Flare (56) - Kami's Flare (56) deals 3 damage to Bloodtithe Harvester (95). Deals 2 damage to Ai(2)-midrange if Ai(1)-aggro controls a modified creature.
+Zone Change: Bloodtithe Harvester (95) was put into Exile from Battlefield.
+Replacement Effect: If a creature dealt damage this turn by a source you controlled would die, exile it instead.
+Phase: Ai(1)-aggro's Beginning of Combat Step
+Phase: Ai(1)-aggro's Declare Attackers Step
+Combat: Ai(1)-aggro assigned Etching of Kumano (57) to attack Ai(2)-midrange.
+Phase: Ai(1)-aggro's Declare Blockers Step
+Combat: Ai(2)-midrange didn't block Etching of Kumano (57).
+Phase: Ai(1)-aggro's First Strike Damage Step
+Phase: Ai(1)-aggro's Combat Damage Step
+Damage: Etching of Kumano (57) deals 2 combat damage to Ai(2)-midrange.
+Life: Life: Ai(2)-midrange 1 > -1
+Player Control: Ai(1)-aggro has restored control over themself
+Player Control: Ai(2)-midrange has restored control over themself
+Game Outcome: Match Duration 0m : 01s
+Game Outcome: Turn 5
+Game Outcome: Ai(1)-aggro has won because all opponents have lost
+Game Outcome: Ai(2)-midrange has lost because life total reached 0
+Match Result: Ai(1)-aggro: 1 Ai(2)-midrange: 0 
+
+Game Result: Game 1 ended in 2471 ms. Ai(1)-aggro has won!
+
+Mulligan: Ai(2)-midrange has mulliganed down to 6 cards.
+Mulligan: Ai(2)-midrange has mulliganed down to 5 cards.
+Mulligan: Ai(2)-midrange has kept a hand of 5 cards
+Mulligan: Ai(1)-aggro has kept a hand of 7 cards
+Turn: Turn 1 (Ai(2)-midrange)
+Phase: Ai(2)-midrange's Untap step
+Phase: Ai(2)-midrange's Upkeep step
+Phase: Ai(2)-midrange's Draw step
+Phase: Ai(2)-midrange's Main phase, precombat
+Replacement Effect: As Blood Crypt enters, you may pay 2 life. If you don't, it enters tapped.
+Land: Ai(2)-midrange played Blood Crypt (104)
+Phase: Ai(2)-midrange's Beginning of Combat Step
+Phase: Ai(2)-midrange's Declare Attackers Step
+Phase: Ai(2)-midrange's Declare Blockers Step
+Phase: Ai(2)-midrange's First Strike Damage Step
+Phase: Ai(2)-midrange's Combat Damage Step
+Phase: Ai(2)-midrange's End of Combat Step
+Phase: Ai(2)-midrange's Main phase, postcombat
+Phase: Ai(2)-midrange's End step
+Phase: Ai(2)-midrange's Cleanup step
+Turn: Turn 2 (Ai(1)-aggro)
+Phase: Ai(1)-aggro's Untap step
+Phase: Ai(1)-aggro's Upkeep step
+Phase: Ai(1)-aggro's Draw step
+Phase: Ai(1)-aggro's Main phase, precombat
+Land: Ai(1)-aggro played Mountain (41)
+Mana: Mountain (41) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Monastery Swiftspear
+Resolve Stack: Monastery Swiftspear - Creature 1 / 2
+Phase: Ai(1)-aggro's Beginning of Combat Step
+Phase: Ai(1)-aggro's Declare Attackers Step
+Combat: Ai(1)-aggro assigned Monastery Swiftspear (1) to attack Ai(2)-midrange.
+Phase: Ai(1)-aggro's Declare Blockers Step
+Combat: Ai(2)-midrange didn't block Monastery Swiftspear (1).
+Phase: Ai(1)-aggro's First Strike Damage Step
+Phase: Ai(1)-aggro's Combat Damage Step
+Damage: Monastery Swiftspear (1) deals 1 combat damage to Ai(2)-midrange.
+Life: Life: Ai(2)-midrange 20 > 19
+Phase: Ai(1)-aggro's End of Combat Step
+Phase: Ai(1)-aggro's Main phase, postcombat
+Phase: Ai(1)-aggro's End step
+Phase: Ai(1)-aggro's Cleanup step
+Turn: Turn 3 (Ai(2)-midrange)
+Phase: Ai(2)-midrange's Untap step
+Phase: Ai(2)-midrange's Upkeep step
+Phase: Ai(2)-midrange's Draw step
+Phase: Ai(2)-midrange's Main phase, precombat
+Land: Ai(2)-midrange played Mountain (68)
+Mana: Mountain (68) - {T}: Add {R}.
+Mana: Blood Crypt (104) - {T}: Add {R}.
+Add To Stack: Ai(2)-midrange cast Stomp
+Damage: Stomp (115) deals 2 damage to Monastery Swiftspear (1).
+Resolve Stack: Stomp (115) - Damage can't be prevented this turn. Stomp deals 2 damage to any target. Stomp (115) deals 2 damage to Monastery Swiftspear (1).
+Replacement Effect: Adventure
+Zone Change: Monastery Swiftspear (1) was put into Graveyard from Battlefield.
+Phase: Ai(2)-midrange's Beginning of Combat Step
+Phase: Ai(2)-midrange's Declare Attackers Step
+Phase: Ai(2)-midrange's Declare Blockers Step
+Phase: Ai(2)-midrange's First Strike Damage Step
+Phase: Ai(2)-midrange's Combat Damage Step
+Phase: Ai(2)-midrange's End of Combat Step
+Phase: Ai(2)-midrange's Main phase, postcombat
+Phase: Ai(2)-midrange's End step
+Phase: Ai(2)-midrange's Cleanup step
+Turn: Turn 4 (Ai(1)-aggro)
+Phase: Ai(1)-aggro's Untap step
+Phase: Ai(1)-aggro's Upkeep step
+Phase: Ai(1)-aggro's Draw step
+Phase: Ai(1)-aggro's Main phase, precombat
+Land: Ai(1)-aggro played Mountain (29)
+Mana: Mountain (41) - {T}: Add {R}.
+Mana: Mountain (29) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Stomp
+Damage: Stomp (17) deals 2 non-combat damage to Ai(2)-midrange.
+Life: Life: Ai(2)-midrange 19 > 17
+Resolve Stack: Stomp (17) - Damage can't be prevented this turn. Stomp deals 2 damage to any target. Stomp (17) deals 2 damage to Ai(2)-midrange.
+Replacement Effect: Adventure
+Phase: Ai(1)-aggro's Beginning of Combat Step
+Phase: Ai(1)-aggro's Declare Attackers Step
+Phase: Ai(1)-aggro's Declare Blockers Step
+Phase: Ai(1)-aggro's First Strike Damage Step
+Phase: Ai(1)-aggro's Combat Damage Step
+Phase: Ai(1)-aggro's End of Combat Step
+Phase: Ai(1)-aggro's Main phase, postcombat
+Phase: Ai(1)-aggro's End step
+Phase: Ai(1)-aggro's Cleanup step
+Turn: Turn 5 (Ai(2)-midrange)
+Phase: Ai(2)-midrange's Untap step
+Phase: Ai(2)-midrange's Upkeep step
+Phase: Ai(2)-midrange's Draw step
+Phase: Ai(2)-midrange's Main phase, precombat
+Land: Ai(2)-midrange played Swamp (86)
+Phase: Ai(2)-midrange's Beginning of Combat Step
+Phase: Ai(2)-midrange's Declare Attackers Step
+Phase: Ai(2)-midrange's Declare Blockers Step
+Phase: Ai(2)-midrange's First Strike Damage Step
+Phase: Ai(2)-midrange's Combat Damage Step
+Phase: Ai(2)-midrange's End of Combat Step
+Phase: Ai(2)-midrange's Main phase, postcombat
+Mana: Mountain (68) - {T}: Add {R}.
+Mana: Swamp (86) - {T}: Add {B}.
+Mana: Blood Crypt (104) - {T}: Add {R}.
+Add To Stack: Ai(2)-midrange cast Bonecrusher Giant
+Resolve Stack: Bonecrusher Giant - Creature 4 / 3
+Phase: Ai(2)-midrange's End step
+Phase: Ai(2)-midrange's Cleanup step
+Turn: Turn 6 (Ai(1)-aggro)
+Phase: Ai(1)-aggro's Untap step
+Phase: Ai(1)-aggro's Upkeep step
+Mana: Mountain (41) - {T}: Add {R}.
+Mana: Mountain (29) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Kami's Flare targeting [Bonecrusher Giant (115)]
+Add To Stack: Ai(2)-midrange triggered Bonecrusher Giant
+Damage: Bonecrusher Giant (115) deals 2 non-combat damage to Ai(1)-aggro.
+Life: Life: Ai(1)-aggro 20 > 18
+Resolve Stack: When Bonecrusher Giant becomes the target of a spell, Bonecrusher Giant deals 2 damage to that spell's controller. [Source: Kami's Flare (54), Target: Bonecrusher Giant (115)]
+Damage: Kami's Flare (54) deals 3 damage to Bonecrusher Giant (115).
+Resolve Stack: Kami's Flare (54) - Kami's Flare (54) deals 3 damage to Bonecrusher Giant (115). Deals 2 damage to Ai(2)-midrange if Ai(1)-aggro controls a modified creature.
+Zone Change: Bonecrusher Giant (115) was put into Graveyard from Battlefield.
+Phase: Ai(1)-aggro's Draw step
+Phase: Ai(1)-aggro's Main phase, precombat
+Land: Ai(1)-aggro played Mountain (39)
+Phase: Ai(1)-aggro's Beginning of Combat Step
+Phase: Ai(1)-aggro's Declare Attackers Step
+Phase: Ai(1)-aggro's Declare Blockers Step
+Phase: Ai(1)-aggro's First Strike Damage Step
+Phase: Ai(1)-aggro's Combat Damage Step
+Phase: Ai(1)-aggro's End of Combat Step
+Phase: Ai(1)-aggro's Main phase, postcombat
+Mana: Mountain (39) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Soul-Scar Mage
+Resolve Stack: Soul-Scar Mage - Creature 1 / 2
+Phase: Ai(1)-aggro's End step
+Phase: Ai(1)-aggro's Cleanup step
+Turn: Turn 7 (Ai(2)-midrange)
+Phase: Ai(2)-midrange's Untap step
+Phase: Ai(2)-midrange's Upkeep step
+Phase: Ai(2)-midrange's Draw step
+Phase: Ai(2)-midrange's Main phase, precombat
+Land: Ai(2)-midrange played Swamp (91)
+Phase: Ai(2)-midrange's Beginning of Combat Step
+Phase: Ai(2)-midrange's Declare Attackers Step
+Phase: Ai(2)-midrange's Declare Blockers Step
+Phase: Ai(2)-midrange's First Strike Damage Step
+Phase: Ai(2)-midrange's Combat Damage Step
+Phase: Ai(2)-midrange's End of Combat Step
+Phase: Ai(2)-midrange's Main phase, postcombat
+Mana: Mountain (68) - {T}: Add {R}.
+Mana: Swamp (86) - {T}: Add {B}.
+Add To Stack: Ai(2)-midrange cast Bloodtithe Harvester
+Resolve Stack: Bloodtithe Harvester - Creature 3 / 2
+Add To Stack: Ai(2)-midrange triggered Bloodtithe Harvester
+Resolve Stack: When Bloodtithe Harvester enters, create a Blood token. (It's an artifact with "{1}, {T}, Discard a card, Sacrifice this token: Draw a card.") [Zone Changer: Bloodtithe Harvester (94)]
+Mana: Blood Crypt (104) - {T}: Add {R}.
+Mana: Swamp (91) - {T}: Add {B}.
+Add To Stack: Ai(2)-midrange cast Bloodtithe Harvester
+Resolve Stack: Bloodtithe Harvester - Creature 3 / 2
+Add To Stack: Ai(2)-midrange triggered Bloodtithe Harvester
+Resolve Stack: When Bloodtithe Harvester enters, create a Blood token. (It's an artifact with "{1}, {T}, Discard a card, Sacrifice this token: Draw a card.") [Zone Changer: Bloodtithe Harvester (93)]
+Phase: Ai(2)-midrange's End step
+Phase: Ai(2)-midrange's Cleanup step
+Turn: Turn 8 (Ai(1)-aggro)
+Phase: Ai(1)-aggro's Untap step
+Phase: Ai(1)-aggro's Upkeep step
+Mana: Mountain (41) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Play with Fire targeting [Bloodtithe Harvester (94)]
+Add To Stack: Ai(1)-aggro triggered Soul-Scar Mage
+Resolve Stack: Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.) [Card: Play with Fire (24), Activator: Ai(1)-aggro, SpellAbility: Play with Fire deals 2 damage to any target. If a player is dealt damage this way, scry 1.  ]
+Replacement Effect: If a source you control would deal noncombat damage to a creature an opponent controls, put that many -1/-1 counters on that creature instead.
+Resolve Stack: Play with Fire (24) - Play with Fire deals 2 damage to any target. If a player is dealt damage this way, scry 1. (Targeting: Bloodtithe Harvester (94))  
+Zone Change: Bloodtithe Harvester (94) was put into Graveyard from Battlefield.
+Phase: Ai(1)-aggro's Draw step
+Phase: Ai(1)-aggro's Main phase, precombat
+Land: Ai(1)-aggro played Mountain (45)
+Phase: Ai(1)-aggro's Beginning of Combat Step
+Phase: Ai(1)-aggro's Declare Attackers Step
+Phase: Ai(1)-aggro's Declare Blockers Step
+Phase: Ai(1)-aggro's First Strike Damage Step
+Phase: Ai(1)-aggro's Combat Damage Step
+Phase: Ai(1)-aggro's End of Combat Step
+Phase: Ai(1)-aggro's Main phase, postcombat
+Mana: Mountain (29) - {T}: Add {R}.
+Mana: Mountain (39) - {T}: Add {R}.
+Mana: Mountain (45) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Bonecrusher Giant
+Resolve Stack: Bonecrusher Giant - Creature 4 / 3
+Phase: Ai(1)-aggro's End step
+Phase: Ai(1)-aggro's Cleanup step
+Turn: Turn 9 (Ai(2)-midrange)
+Phase: Ai(2)-midrange's Untap step
+Phase: Ai(2)-midrange's Upkeep step
+Phase: Ai(2)-midrange's Draw step
+Mana: Mountain (68) - {T}: Add {R}.
+Mana: Swamp (86) - {T}: Add {B}.
+Add To Stack: Ai(2)-midrange cast Stomp
+Damage: Stomp (116) deals 2 damage to Soul-Scar Mage (13).
+Resolve Stack: Stomp (116) - Damage can't be prevented this turn. Stomp deals 2 damage to any target. Stomp (116) deals 2 damage to Soul-Scar Mage (13).
+Replacement Effect: Adventure
+Zone Change: Soul-Scar Mage (13) was put into Graveyard from Battlefield.
+Phase: Ai(2)-midrange's Main phase, precombat
+Phase: Ai(2)-midrange's Beginning of Combat Step
+Phase: Ai(2)-midrange's Declare Attackers Step
+Phase: Ai(2)-midrange's Declare Blockers Step
+Phase: Ai(2)-midrange's First Strike Damage Step
+Phase: Ai(2)-midrange's Combat Damage Step
+Phase: Ai(2)-midrange's End of Combat Step
+Phase: Ai(2)-midrange's Main phase, postcombat
+Mana: Swamp (91) - {T}: Add {B}.
+Mana: Blood Crypt (104) - {T}: Add {R}.
+Add To Stack: Ai(2)-midrange cast Tenacious Underdog
+Resolve Stack: Tenacious Underdog - Creature 3 / 2
+Phase: Ai(2)-midrange's End step
+Phase: Ai(2)-midrange's Cleanup step
+Turn: Turn 10 (Ai(1)-aggro)
+Phase: Ai(1)-aggro's Untap step
+Phase: Ai(1)-aggro's Upkeep step
+Phase: Ai(1)-aggro's Draw step
+Phase: Ai(1)-aggro's Main phase, precombat
+Phase: Ai(1)-aggro's Beginning of Combat Step
+Phase: Ai(1)-aggro's Declare Attackers Step
+Phase: Ai(1)-aggro's Declare Blockers Step
+Phase: Ai(1)-aggro's First Strike Damage Step
+Phase: Ai(1)-aggro's Combat Damage Step
+Phase: Ai(1)-aggro's End of Combat Step
+Phase: Ai(1)-aggro's Main phase, postcombat
+Land: Ai(1)-aggro played Mountain (35)
+Mana: Mountain (41) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Soul-Scar Mage
+Resolve Stack: Soul-Scar Mage - Creature 1 / 2
+Phase: Ai(1)-aggro's End step
+Phase: Ai(1)-aggro's Cleanup step
+Turn: Turn 11 (Ai(2)-midrange)
+Phase: Ai(2)-midrange's Untap step
+Phase: Ai(2)-midrange's Upkeep step
+Phase: Ai(2)-midrange's Draw step
+Phase: Ai(2)-midrange's Main phase, precombat
+Phase: Ai(2)-midrange's Beginning of Combat Step
+Phase: Ai(2)-midrange's Declare Attackers Step
+Combat: Ai(2)-midrange assigned Bloodtithe Harvester (93) and Tenacious Underdog (74) to attack Ai(1)-aggro.
+Phase: Ai(2)-midrange's Declare Blockers Step
+Combat: Ai(1)-aggro didn't block Bloodtithe Harvester (93).
+Ai(1)-aggro didn't block Tenacious Underdog (74).
+Phase: Ai(2)-midrange's First Strike Damage Step
+Phase: Ai(2)-midrange's Combat Damage Step
+Damage: Bloodtithe Harvester (93) deals 3 combat damage to Ai(1)-aggro.
+Damage: Tenacious Underdog (74) deals 3 combat damage to Ai(1)-aggro.
+Life: Life: Ai(1)-aggro 18 > 12
+Phase: Ai(2)-midrange's End of Combat Step
+Phase: Ai(2)-midrange's Main phase, postcombat
+Mana: Swamp (86) - {T}: Add {B}.
+Mana: Swamp (91) - {T}: Add {B}.
+Mana: Mountain (68) - {T}: Add {R}.
+Mana: Blood Crypt (104) - {T}: Add {R}.
+Add To Stack: Ai(2)-midrange cast Sheoldred, the Apocalypse
+Resolve Stack: Sheoldred, the Apocalypse - Creature 4 / 5
+Phase: Ai(2)-midrange's End step
+Phase: Ai(2)-midrange's Cleanup step
+Turn: Turn 12 (Ai(1)-aggro)
+Phase: Ai(1)-aggro's Untap step
+Phase: Ai(1)-aggro's Upkeep step
+Phase: Ai(1)-aggro's Draw step
+Add To Stack: Ai(2)-midrange triggered Sheoldred, the Apocalypse
+Mana: Mountain (41) - {T}: Add {R}.
+Mana: Mountain (29) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Stomp
+Add To Stack: Ai(1)-aggro triggered Soul-Scar Mage
+Resolve Stack: Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.) [Card: Stomp (18), Activator: Ai(1)-aggro, SpellAbility: Damage can't be prevented this turn. Stomp deals 2 damage to any target. ]
+Replacement Effect: If a source you control would deal noncombat damage to a creature an opponent controls, put that many -1/-1 counters on that creature instead.
+Resolve Stack: Stomp (18) - Damage can't be prevented this turn. Stomp deals 2 damage to any target. Stomp (18) deals 2 damage to Bloodtithe Harvester (93).
+Replacement Effect: Adventure
+Zone Change: Bloodtithe Harvester (93) was put into Graveyard from Battlefield.
+Life: Life: Ai(1)-aggro 12 > 10
+Resolve Stack: Whenever an opponent draws a card, they lose 2 life. [Player: Ai(1)-aggro]
+Phase: Ai(1)-aggro's Main phase, precombat
+Phase: Ai(1)-aggro's Beginning of Combat Step
+Phase: Ai(1)-aggro's Declare Attackers Step
+Phase: Ai(1)-aggro's Declare Blockers Step
+Phase: Ai(1)-aggro's First Strike Damage Step
+Phase: Ai(1)-aggro's Combat Damage Step
+Phase: Ai(1)-aggro's End of Combat Step
+Phase: Ai(1)-aggro's Main phase, postcombat
+Mana: Mountain (39) - {T}: Add {R}.
+Mana: Mountain (45) - {T}: Add {R}.
+Mana: Mountain (35) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Bonecrusher Giant
+Resolve Stack: Bonecrusher Giant - Creature 4 / 3
+Phase: Ai(1)-aggro's End step
+Phase: Ai(1)-aggro's Cleanup step
+Turn: Turn 13 (Ai(2)-midrange)
+Phase: Ai(2)-midrange's Untap step
+Phase: Ai(2)-midrange's Upkeep step
+Phase: Ai(2)-midrange's Draw step
+Add To Stack: Ai(2)-midrange triggered Sheoldred, the Apocalypse
+Life: Life: Ai(2)-midrange 17 > 19
+Resolve Stack: Whenever you draw a card, you gain 2 life. [Player: Ai(2)-midrange]
+Phase: Ai(2)-midrange's Main phase, precombat
+Replacement Effect: Haunted Ridge enters tapped unless you control two or more other lands.
+Land: Ai(2)-midrange played Haunted Ridge (100)
+Phase: Ai(2)-midrange's Beginning of Combat Step
+Phase: Ai(2)-midrange's Declare Attackers Step
+Combat: Ai(2)-midrange assigned Sheoldred, the Apocalypse (119) and Tenacious Underdog (74) to attack Ai(1)-aggro.
+Phase: Ai(2)-midrange's Declare Blockers Step
+Combat: Ai(1)-aggro didn't block Sheoldred, the Apocalypse (119).
+Ai(1)-aggro assigned Bonecrusher Giant (17) to block Tenacious Underdog (74).
+Phase: Ai(2)-midrange's First Strike Damage Step
+Phase: Ai(2)-midrange's Combat Damage Step
+Damage: Sheoldred, the Apocalypse (119) deals 4 combat damage to Ai(1)-aggro.
+Damage: Tenacious Underdog (74) deals 3 damage to Bonecrusher Giant (17).
+Damage: Bonecrusher Giant (17) deals 4 damage to Tenacious Underdog (74).
+Life: Life: Ai(1)-aggro 10 > 6
+Zone Change: Tenacious Underdog (74) was put into Graveyard from Battlefield.
+Zone Change: Bonecrusher Giant (17) was put into Graveyard from Battlefield.
+Phase: Ai(2)-midrange's End of Combat Step
+Phase: Ai(2)-midrange's Main phase, postcombat
+Mana: Mountain (68) - {T}: Add {R}.
+Mana: Swamp (86) - {T}: Add {B}.
+Mana: Swamp (91) - {T}: Add {B}.
+Add To Stack: Ai(2)-midrange cast Bonecrusher Giant
+Resolve Stack: Bonecrusher Giant - Creature 4 / 3
+Phase: Ai(2)-midrange's End step
+Phase: Ai(2)-midrange's Cleanup step
+Turn: Turn 14 (Ai(1)-aggro)
+Phase: Ai(1)-aggro's Untap step
+Phase: Ai(1)-aggro's Upkeep step
+Phase: Ai(1)-aggro's Draw step
+Add To Stack: Ai(2)-midrange triggered Sheoldred, the Apocalypse
+Life: Life: Ai(1)-aggro 6 > 4
+Resolve Stack: Whenever an opponent draws a card, they lose 2 life. [Player: Ai(1)-aggro]
+Phase: Ai(1)-aggro's Main phase, precombat
+Mana: Mountain (41) - {T}: Add {R}.
+Mana: Mountain (29) - {T}: Add {R}.
+Mana: Mountain (39) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Light Up the Stage
+Add To Stack: Ai(1)-aggro triggered Soul-Scar Mage
+Resolve Stack: Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.) [Card: Light Up the Stage (27), Activator: Ai(1)-aggro, SpellAbility: Exile the top two cards of your library. Until the end of your next turn, you may play those cards.  ]
+Resolve Stack: Light Up the Stage (27) - Ai(1)-aggro exiles the top two cards of their library.  
+Land: Ai(1)-aggro played Mountain (32)
+Phase: Ai(1)-aggro's Beginning of Combat Step
+Phase: Ai(1)-aggro's Declare Attackers Step
+Phase: Ai(1)-aggro's Declare Blockers Step
+Phase: Ai(1)-aggro's First Strike Damage Step
+Phase: Ai(1)-aggro's Combat Damage Step
+Phase: Ai(1)-aggro's End of Combat Step
+Phase: Ai(1)-aggro's Main phase, postcombat
+Mana: Mountain (45) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Play with Fire targeting [Ai(2)-midrange]
+Add To Stack: Ai(1)-aggro triggered Soul-Scar Mage
+Resolve Stack: Prowess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.) [Card: Play with Fire (21), Activator: Ai(1)-aggro, SpellAbility: Play with Fire deals 2 damage to any target. If a player is dealt damage this way, scry 1. by Light Up the Stage (27)  ]
+Damage: Play with Fire (21) deals 2 non-combat damage to Ai(2)-midrange.
+Life: Life: Ai(2)-midrange 19 > 17
+Resolve Stack: Ai(1)-aggro scried 1 card(s) to the bottom of the library
+Resolve Stack: Play with Fire (21) - Play with Fire deals 2 damage to any target. If a player is dealt damage this way, scry 1. (Targeting: Ai(2)-midrange)  
+Phase: Ai(1)-aggro's End step
+Phase: Ai(1)-aggro's Cleanup step
+Turn: Turn 15 (Ai(2)-midrange)
+Phase: Ai(2)-midrange's Untap step
+Phase: Ai(2)-midrange's Upkeep step
+Phase: Ai(2)-midrange's Draw step
+Add To Stack: Ai(2)-midrange triggered Sheoldred, the Apocalypse
+Life: Life: Ai(2)-midrange 17 > 19
+Resolve Stack: Whenever you draw a card, you gain 2 life. [Player: Ai(2)-midrange]
+Phase: Ai(2)-midrange's Main phase, precombat
+Phase: Ai(2)-midrange's Beginning of Combat Step
+Phase: Ai(2)-midrange's Declare Attackers Step
+Combat: Ai(2)-midrange assigned Sheoldred, the Apocalypse (119) and Bonecrusher Giant (116) to attack Ai(1)-aggro.
+Phase: Ai(2)-midrange's Declare Blockers Step
+Combat: Ai(1)-aggro assigned Soul-Scar Mage (14) to block Sheoldred, the Apocalypse (119).
+Ai(1)-aggro assigned Bonecrusher Giant (18) to block Bonecrusher Giant (116).
+Phase: Ai(2)-midrange's First Strike Damage Step
+Phase: Ai(2)-midrange's Combat Damage Step
+Damage: Sheoldred, the Apocalypse (119) deals 4 damage (Deathtouch) to Soul-Scar Mage (14).
+Damage: Bonecrusher Giant (116) deals 4 damage to Bonecrusher Giant (18).
+Damage: Bonecrusher Giant (18) deals 4 damage to Bonecrusher Giant (116).
+Damage: Soul-Scar Mage (14) deals 1 damage to Sheoldred, the Apocalypse (119).
+Zone Change: Bonecrusher Giant (116) was put into Graveyard from Battlefield.
+Zone Change: Soul-Scar Mage (14) was put into Graveyard from Battlefield.
+Zone Change: Bonecrusher Giant (18) was put into Graveyard from Battlefield.
+Phase: Ai(2)-midrange's End of Combat Step
+Phase: Ai(2)-midrange's Main phase, postcombat
+Mana: Swamp (86) - {T}: Add {B}.
+Mana: Swamp (91) - {T}: Add {B}.
+Mana: Mountain (68) - {T}: Add {R}.
+Add To Stack: Ai(2)-midrange cast Graveyard Trespasser
+Resolve Stack: Graveyard Trespasser - Creature 3 / 3
+Add To Stack: Ai(2)-midrange triggered Graveyard Trespasser targeting [Bonecrusher Giant (18)]
+Life: Life: Ai(1)-aggro 4 > 3
+Life: Life: Ai(2)-midrange 19 > 20
+Resolve Stack: Whenever Graveyard Trespasser enters or attacks, exile up to one target card from a graveyard. If a creature card was exiled this way, each opponent loses 1 life and you gain 1 life. (Targeting: [[Bonecrusher Giant (18)]]) [Zone Changer: Graveyard Trespasser (65)]
+Phase: Ai(2)-midrange's End step
+Phase: Ai(2)-midrange's Cleanup step
+Turn: Turn 16 (Ai(1)-aggro)
+Phase: Ai(1)-aggro's Untap step
+Phase: Ai(1)-aggro's Upkeep step
+Phase: Ai(1)-aggro's Draw step
+Add To Stack: Ai(2)-midrange triggered Sheoldred, the Apocalypse
+Life: Life: Ai(1)-aggro 3 > 1
+Resolve Stack: Whenever an opponent draws a card, they lose 2 life. [Player: Ai(1)-aggro]
+Phase: Ai(1)-aggro's Main phase, precombat
+Phase: Ai(1)-aggro's Beginning of Combat Step
+Phase: Ai(1)-aggro's Declare Attackers Step
+Phase: Ai(1)-aggro's Declare Blockers Step
+Phase: Ai(1)-aggro's First Strike Damage Step
+Phase: Ai(1)-aggro's Combat Damage Step
+Phase: Ai(1)-aggro's End of Combat Step
+Phase: Ai(1)-aggro's Main phase, postcombat
+Mana: Mountain (41) - {T}: Add {R}.
+Add To Stack: Ai(1)-aggro cast Kumano Faces Kakkazan
+Replacement Effect: Kumano Faces Kakkazan enters with a lore counter on it.
+Resolve Stack: Kumano Faces Kakkazan
+Add To Stack: Ai(1)-aggro triggered Kumano Faces Kakkazan
+Damage: Kumano Faces Kakkazan (60) deals 1 non-combat damage to Ai(2)-midrange.
+Life: Life: Ai(2)-midrange 20 > 19
+Resolve Stack: I — Kumano Faces Kakkazan deals 1 damage to each opponent and 1 damage to each planeswalker they control. [Added once: Kumano Faces Kakkazan (60)]
+Phase: Ai(1)-aggro's End step
+Phase: Ai(1)-aggro's Cleanup step
+Turn: Turn 17 (Ai(2)-midrange)
+Phase: Ai(2)-midrange's Untap step
+Phase: Ai(2)-midrange's Upkeep step
+Phase: Ai(2)-midrange's Draw step
+Add To Stack: Ai(2)-midrange triggered Sheoldred, the Apocalypse
+Life: Life: Ai(2)-midrange 19 > 21
+Resolve Stack: Whenever you draw a card, you gain 2 life. [Player: Ai(2)-midrange]
+Phase: Ai(2)-midrange's Main phase, precombat
+Phase: Ai(2)-midrange's Beginning of Combat Step
+Phase: Ai(2)-midrange's Declare Attackers Step
+Combat: Ai(2)-midrange assigned Sheoldred, the Apocalypse (119) and Graveyard Trespasser (65) to attack Ai(1)-aggro.
+Add To Stack: Ai(2)-midrange triggered Graveyard Trespasser targeting [Light Up the Stage (27)]
+Resolve Stack: Whenever Graveyard Trespasser enters or attacks, exile up to one target card from a graveyard. If a creature card was exiled this way, each opponent loses 1 life and you gain 1 life. (Targeting: [[Light Up the Stage (27)]]) [Attacker: Graveyard Trespasser (65)]
+Phase: Ai(2)-midrange's Declare Blockers Step
+Combat: Ai(1)-aggro didn't block Sheoldred, the Apocalypse (119).
+Ai(1)-aggro didn't block Graveyard Trespasser (65).
+Phase: Ai(2)-midrange's First Strike Damage Step
+Phase: Ai(2)-midrange's Combat Damage Step
+Damage: Sheoldred, the Apocalypse (119) deals 4 combat damage to Ai(1)-aggro.
+Damage: Graveyard Trespasser (65) deals 3 combat damage to Ai(1)-aggro.
+Life: Life: Ai(1)-aggro 1 > -6
+Player Control: Ai(1)-aggro has restored control over themself
+Player Control: Ai(2)-midrange has restored control over themself
+Game Outcome: Match Duration 0m : 02s
+Game Outcome: Turn 9
+Game Outcome: Ai(1)-aggro has lost because life total reached 0
+Game Outcome: Ai(2)-midrange has won because all opponents have lost
+Match Result: Ai(1)-aggro: 1 Ai(2)-midrange: 1 
+
+Game Result: Game 2 ended in 2667 ms. Ai(2)-midrange has won!
+
