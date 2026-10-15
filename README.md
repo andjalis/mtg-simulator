@@ -44,8 +44,8 @@ from and how the ranks were checked.
 
 A ladder or tier run also rates the deck like a ranked queue: Bronze, Silver, Gold, Platinum,
 Diamond, Master and Grandmaster, each a 200-point MMR band (Silver starts at 1000, Grandmaster at
-2000). Each opponent pool is anchored at an MMR (a pool named after a rank sits in the middle of
-that rank's band; the five tiers are spread from Bronze to Grandmaster), and the deck's MMR is its
+2000). Each rank's opponent pool is anchored at the middle of that rank's band (a custom pool not named
+after a rank is spread over the bands in order), and the deck's MMR is its
 Elo performance rating against everything it has played, so it moves after every game. While the
 run goes, the terminal shows the current rank and match progress on one live line, each match ends
 with the MMR change, and the run ends with the rank ladder as text. `results/ladder/DECK.html` is
