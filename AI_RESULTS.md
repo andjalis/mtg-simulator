@@ -85,6 +85,21 @@ A look-ahead attacker that plays each candidate attack out to the end of the
 game was also tried. It won 53% (±5) of a red mirror against the current AI but
 ran about 50 times slower, so it was not added.
 
+## Round 2: control and land drops
+
+Each change was measured against the previous AI on every pairing of the old
+trash to semi-pro decks, both seats, with only the new AI using the change:
+
+| Change | Deck it affects | Win rate vs previous AI |
+| --- | --- | --- |
+| Sweepers wait until they take out several cards (unless the AI is under pressure) | Azorius control | 40% → 45% (±2) |
+| Modal double-faced cards are played as lands when no other land is in hand | Mono-green stompy (Kazandu Mammoth) | 84.3% → 85.1% (±1) |
+| Cantrips that surveil (Consider) are cast at the opponent's end step | Control decks | too small to measure |
+
+Tried and dropped: holding flash permanents such as The Wandering Emperor for
+the opponent's turn (Azorius 44% → 41%), and stricter two-land keeps (no
+change, and worse when two two-drops were required).
+
 ## What changed and why
 
 - **Control was the deck the old AI couldn't play.** It cast counters and
