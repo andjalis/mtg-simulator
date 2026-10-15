@@ -3,8 +3,9 @@ the ones where the win rates disagree by more than chance explains.
 
     python3 -m mtgsim.crosscheck --forge-dir ~/forge [--forge-games 40] [--python-games 500] [--jobs 4]
 
-By default the matchups are UB Snow Control against every tier deck, plus a round robin
-inside each tier. Results are saved to results/cross_check/results.json as they finish,
+By default the matchups are UB Snow Control against every deck in the rank pools
+(decks/ranks/, or the older decks/tiers/ when the ranks aren't there), plus a round robin
+inside each rank. Results are saved to results/cross_check/results.json as they finish,
 so an interrupted run picks up where it stopped; report.md is rewritten from that file.
 
 A big disagreement points at something wrong in one engine: a card the built-in engine
@@ -24,7 +25,10 @@ from .carddb import CardDB
 from .decklist import load_deck
 from .forge import ForgeError, run_forge_match
 from .runner import build_deck, run_match, wilson
-from .tiers import TIERS
+try:  # the seven ranks (Bronze to Grandmaster) replace the five tiers
+    from .ranks import RANKS as POOLS
+except ImportError:
+    from .tiers import TIERS as POOLS
 
 ROOT = Path(__file__).resolve().parent.parent
 UB_SNOW = ROOT / "results" / "ub_snow_control" / "decks" / "ub_snow_control.txt"
@@ -32,12 +36,12 @@ OUT = ROOT / "results" / "cross_check"
 
 
 def default_matchups() -> list[tuple[str, Path, str, Path]]:
-    """UB Snow vs every tier deck, then every pair inside each tier."""
+    """UB Snow vs every rank deck, then every pair inside each rank."""
     pairs = []
-    for t in TIERS:
+    for t in POOLS:
         for p in t.decks():
             pairs.append(("ub_snow_control", UB_SNOW, f"{t.key}/{p.stem}", p))
-    for t in TIERS:
+    for t in POOLS:
         for a, b in itertools.combinations(t.decks(), 2):
             pairs.append((f"{t.key}/{a.stem}", a, f"{t.key}/{b.stem}", b))
     return pairs
