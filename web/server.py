@@ -6,7 +6,7 @@
 GET  /                 the page
 GET  /api/tiers        tiers and their decks
 POST /api/check        {"deck": text}                       -> card counts, unknown and partial cards
-POST /api/run          {"deck", "name", "ladder", "tiers", "games", "full", "seed"} -> {"id"}
+POST /api/run          {"deck", "name", "ladder", "tiers", "games", "full", "seed", "grade"} -> {"id"}
 GET  /api/runs/<id>    progress and results so far
 """
 from __future__ import annotations
@@ -39,7 +39,8 @@ class App:
             raise ValueError(check["error"])
         run = sim.make_run(body.get("name", "").strip(), text, body.get("tiers"), bool(body.get("ladder")),
                            int(body.get("games", 100)), bool(body.get("full")),
-                           None if body.get("seed") in (None, "") else int(body["seed"]))
+                           None if body.get("seed") in (None, "") else int(body["seed"]),
+                           bool(body.get("grade", True)))
         rid = uuid.uuid4().hex[:12]
         entry = {"run": run, "status": "queued", "error": None, "check": check}
         self.runs[rid] = entry

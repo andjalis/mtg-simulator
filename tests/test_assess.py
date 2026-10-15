@@ -117,5 +117,43 @@ class MetaTests(unittest.TestCase):
         self.assertEqual(out["criteria"]["meta"]["details"]["engine"], "given")
 
 
+class GradesReportTests(unittest.TestCase):
+    def test_grades_in_html_report(self):
+        from mtgsim.ladder_report import HtmlReport, meta_caveat, render_grades
+        from mtgsim.rating import LadderTracker
+        a = {"deck": "red", "rating": {"mmr": 1450, "rank": "Platinum"},
+             "criteria": {"meta": {"label": "Meta", "score": 37, "grade": "D", "summary": "40% <meta>",
+                                   "details": {"engine": "python"}},
+                          "mana": {"label": "Mana", "score": 91, "grade": "S", "summary": "fine", "details": {}}}}
+        html = render_grades(a)
+        self.assertIn("1450 MMR (Platinum)", html)
+        self.assertIn("&lt;meta&gt;", html)
+        self.assertIn("built-in engine", html)
+        a["criteria"]["meta"]["details"]["engine"] = "forge"
+        self.assertEqual(meta_caveat(a), "")
+        tracker = LadderTracker("red", [("gold", "Gold", ["gold/x"])])
+        tracker.update_match("gold/x", 3, 0, 4)
+        with tempfile.TemporaryDirectory() as tmp:
+            report = HtmlReport(Path(tmp) / "red.html")
+            report.assessment = a
+            tracker.finish()
+            report(tracker)
+            self.assertIn("Deck grades", (Path(tmp) / "red.html").read_text())
+            self.assertEqual(json.loads((Path(tmp) / "red.json").read_text())["assessment"]["deck"], "red")
+
+    def test_cli_grades_after_rank_run(self):
+        import contextlib
+        import io
+        from mtgsim.__main__ import main
+        deck = Path(__file__).resolve().parent.parent / "decks" / "ranks" / "3-gold" / "boros_burn.txt"
+        with tempfile.TemporaryDirectory() as tmp:
+            out = io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+                main([str(deck), "--rank", "bronze", "-n", "2", "--seed", "1", "--offline",
+                      "--report", str(Path(tmp) / "r.html")])
+            self.assertIn("Consistency", out.getvalue())
+            self.assertIn("Deck grades", (Path(tmp) / "r.html").read_text())
+
+
 if __name__ == "__main__":
     unittest.main()
