@@ -1,0 +1,40 @@
+Partially simulated cards (their extra text is ignored):
+  ub_snow_control: Jwari Disruption — ignored text: back face Jwari Ruins (a land) is never played
+  mono_red_aggro: Soul-Scar Mage — ignored text: If a source you control would deal noncombat damage to a creature an opponent controls, put that many -1/-1 counters on that creature instead.
+  mono_green_stompy: Old-Growth Troll — ignored text: return it to the battlefield. | It's an Aura enchantment with enchant Forest you control and "Enchanted Forest has '{T}: Add {G}{G}' and '{1}, {T}, Sacrifice ~: Create a tapped 4/4 green Troll Warrior creature token with trample.'"
+  mono_green_stompy: Kazandu Mammoth — ignored text: back face Kazandu Valley (a land) is never played
+  rakdos_midrange: Graveyard Trespasser — ignored text: Daybound
+  azorius_control: The Wandering Emperor — ignored text: +1: Put a +1/+1 counter on up to one target creature. It gains first strike until end of turn. | −1: Create a 2/2 white Samurai creature token with vigilance. | −2:Exile target tapped creature. You gain 2 life.
+  azorius_control: Elspeth Resplendent — ignored text: +1: Choose up to one target creature. Put a +1/+1 counter and a counter from among flying, first strike, lifelink, or vigilance on it. | −3: Look at the top seven cards of your library. You may put a permanent card with mana value 3 or less from among them onto the battlefield with a shield counter on it. Put the rest on the bottom of your library in a random order. | −7: Create five 3/3 white Angel creature tokens with flying.
+  azorius_control: Make Disappear — ignored text: Casualty 1
+
+ub_snow_control vs mono_red_aggro: 500 games
+  ub_snow_control wins 114, mono_red_aggro wins 386, draws 0
+  ub_snow_control win rate 22.8% (95% CI 19.3% to 26.7%)
+  ub_snow_control on the play 79/250, on the draw 35/250
+  average game length 13.9 turns (7.0 per player) 
+
+ub_snow_control vs mono_green_stompy: 500 games
+  ub_snow_control wins 167, mono_green_stompy wins 333, draws 0
+  ub_snow_control win rate 33.4% (95% CI 29.4% to 37.6%)
+  ub_snow_control on the play 84/250, on the draw 83/250
+  average game length 16.2 turns (8.1 per player) 
+
+ub_snow_control vs rakdos_midrange: 500 games
+  ub_snow_control wins 145, rakdos_midrange wins 355, draws 0
+  ub_snow_control win rate 29.0% (95% CI 25.2% to 33.1%)
+  ub_snow_control on the play 74/250, on the draw 71/250
+  average game length 17.9 turns (9.0 per player) 
+
+ub_snow_control vs azorius_control: 500 games
+  ub_snow_control wins 267, azorius_control wins 221, draws 12
+  ub_snow_control win rate 54.6% (95% CI 50.2% to 58.9%)
+  ub_snow_control on the play 134/250, on the draw 133/250
+  average game length 33.7 turns (16.8 per player) 
+
+Overall win rate
+  mono_red_aggro            77.2%  (95% CI 73.3% to 80.7%, 500 games)
+  rakdos_midrange           71.0%  (95% CI 66.9% to 74.8%, 500 games)
+  mono_green_stompy         66.6%  (95% CI 62.4% to 70.6%, 500 games)
+  azorius_control           45.4%  (95% CI 41.1% to 49.8%, 500 games)
+  ub_snow_control           34.9%  (95% CI 32.9% to 37.1%, 2000 games)

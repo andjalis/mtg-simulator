@@ -1,0 +1,30 @@
+ub_snow_control vs mono_red_aggro: 500 games
+  ub_snow_control wins 190, mono_red_aggro wins 310, draws 0
+  ub_snow_control win rate 38.0% (95% CI 33.9% to 42.3%)
+  ub_snow_control on the play 95/250, on the draw 95/250
+  average game length 17.5 turns (8.8 per player) 
+
+ub_snow_control vs mono_green_stompy: 500 games
+  ub_snow_control wins 194, mono_green_stompy wins 306, draws 0
+  ub_snow_control win rate 38.8% (95% CI 34.6% to 43.1%)
+  ub_snow_control on the play 108/250, on the draw 86/250
+  average game length 18.4 turns (9.2 per player) 
+
+ub_snow_control vs rakdos_midrange: 500 games
+  ub_snow_control wins 156, rakdos_midrange wins 340, draws 4
+  ub_snow_control win rate 31.6% (95% CI 27.7% to 35.8%)
+  ub_snow_control on the play 78/250, on the draw 78/250
+  average game length 21.3 turns (10.6 per player) 
+
+ub_snow_control vs azorius_control: 500 games
+  ub_snow_control wins 331, azorius_control wins 0, draws 169
+  ub_snow_control win rate 83.1% (95% CI 79.6% to 86.1%)
+  ub_snow_control on the play 159/250, on the draw 172/250
+  average game length 41.3 turns (20.7 per player) 
+
+Overall win rate
+  rakdos_midrange           68.4%  (95% CI 64.2% to 72.3%, 500 games)
+  mono_red_aggro            62.0%  (95% CI 57.7% to 66.1%, 500 games)
+  mono_green_stompy         61.2%  (95% CI 56.9% to 65.4%, 500 games)
+  ub_snow_control           47.9%  (95% CI 45.7% to 50.1%, 2000 games)
+  azorius_control           16.9%  (95% CI 13.9% to 20.4%, 500 games)

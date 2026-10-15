@@ -1,0 +1,57 @@
+1. UB Snow Control (1v1), 60 cards
+Creatures (6)
+
+Qty	Card Name	Color
+2	Iymrith, Desert Doom	Blue
+1	Hullbreaker Horror	Blue
+1	Sphinx of the Final Word	Blue
+1	Massacre Wurm	Black
+1	Tolarian Terror (new)	Blue
+Counterspells (6)
+
+Qty	Card Name	Color
+4	Saw It Coming	Blue
+2	Jwari Disruption // Jwari Ruins	Blue (back side is a Blue land)
+Spot removal (10)
+
+Qty	Card Name	Color
+4	Hero's Downfall	Black
+3	Power Word Kill	Black
+2	Baleful Mastery	Black
+1	Infernal Grasp	Black
+Sweepers (5)
+
+Qty	Card Name	Color
+3	Blood on the Snow	Black
+2	Crippling Fear	Black
+Card draw (8)
+
+Qty	Card Name	Color
+4	Memory Deluge	Blue
+2	Thirst for Discovery	Blue
+2	Opt	Blue
+Artifact (1)
+
+Qty	Card Name	Color
+1	Sol Ring	Colorless
+Lands (24)
+
+Qty	Card Name	Color / Mana
+7	Snow-Covered Swamp	Black
+5	Snow-Covered Island	Blue
+4	Ice Tunnel	Blue / Black
+4	Shipwreck Marsh	Blue / Black
+2	Hall of Storm Giants	Blue
+1	Temple of Deceit	Blue / Black
+1	Crawling Barrens	Colorless
+Sideboard (15)
+
+Qty	Card Name	Color	Bring in vs.
+3	Duress	Black	Control
+3	Negate	Blue	Control
+1	Arcanis the Omnipotent	Blue	Grindy decks
+2	Siphon Insight	Blue / Black	Grindy decks
+2	Graveyard Trespasser	Black	Aggro
+1	Exsanguinate	Black	Aggro
+2	Bloodchief's Thirst	Black	Aggro
+1	Vampire Nighthawk	Black	Aggro
