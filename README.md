@@ -73,6 +73,7 @@ Standard library only, like the rest of the simulator.
 python3 -m mtgsim.assess MY_DECK.txt                     # rank plus four graded criteria
 python3 -m mtgsim.assess MY_DECK.txt -n 50 --engine forge --forge-dir ~/forge --json out.json
 python3 -m mtgsim.assess MY_DECK.txt --skip-meta --key "Sheoldred, the Apocalypse"
+python3 -m mtgsim.assess MY_DECK.txt --bo3 20             # adds the Sideboard criterion
 ```
 
 Rates a deck on the criteria competitive players use, each scored 0 to 100 with a grade (S, A, B,
@@ -86,6 +87,24 @@ C, D, F):
 - **Speed**: the average turn the deck kills a goldfish (an opponent who only plays lands).
 - **Consistency**: sampled hands with the AI's mulligan rule: mulligans, screw, flood, castable
   plays on turns 1 to 4 and key cards by turn N.
+- **Sideboard** (with `--bo3 N`): N best-of-three matches against each meta deck with both sides
+  sideboarding after game 1. Reports the meta-weighted match win rate and how much post-board games
+  move against game 1 (play and draw compared separately); no change scores 50.
+
+### Best of three and sideboarding
+
+```
+python3 -m mtgsim.sideboard MY_DECK.txt OPPONENT.txt -n 50     # Bo3 matches
+python3 -m mtgsim.sideboard MY_DECK.txt OPPONENT.txt --plan    # show both sideboard plans
+```
+
+Decklists can carry a sideboard (an Arena `Sideboard` heading, an MTGO blank line, `SB:` lines, or a
+pasted table with a fourth "Bring in vs." column). Before game 2 each side labels the opponent
+aggro, midrange or control and swaps up to six spells with a rule-based plan read from the cards'
+rules text: sweepers and cheap removal against aggro, discard and narrow counters against control.
+A "Bring in vs." note adds weight. Lands are never swapped and the loser of a game is on the play
+next. Decks without a sideboard (all of Bronze to Gold and some Platinum decks) play their main deck
+every game.
 
 `mtgsim.assess.assess()` returns the same thing as plain JSON for the web page and reports.
 Refresh `metagame.json` when the metagame moves.
