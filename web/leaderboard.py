@@ -1,7 +1,8 @@
 """Leaderboard: every tested deck, ranked by MMR.
 
-Entries come from three places, through one thin adapter (collect) so a run-history store can
-replace the file scan later without touching the page:
+Entries come from the run history (mtgsim.history: every ladder, rank and assessment run, from the
+CLI and the web page), with each deck's latest version's latest rated run. Decks tested before the
+history existed still show from the files they left, through the same adapter (collect):
 
     results/ladder/*.json   ranked-ladder runs from the command line (LadderTracker.to_dict())
     results/assess/*.json   deck assessments (mtgsim.assess): MMR from the meta field, plus S-F grades
@@ -16,6 +17,11 @@ import json
 import time
 from datetime import datetime
 from pathlib import Path
+
+try:
+    from mtgsim import history
+except ImportError:  # pragma: no cover
+    history = None
 
 try:
     from mtgsim.ladder_report import emblem
@@ -70,11 +76,51 @@ def from_files(results: Path = RESULTS) -> list[dict]:
     return out
 
 
-def collect(results: Path = RESULTS, web_runs: list[dict] = ()) -> list[dict]:
-    """One row per deck (latest rated run wins), best MMR first; unrated decks go last."""
+def from_history(path=None) -> list[dict]:
+    """One entry per deck: the latest rated run of its latest version (else its latest run),
+    with the grades of that version's latest graded run."""
+    by_deck: dict[str, list[dict]] = {}
+    for r in history.runs(path=path):  # newest first
+        by_deck.setdefault(r["deck"], []).append(r)
+    out = []
+    for deck, rs in by_deck.items():
+        latest_v = max(r["version"] for r in rs)
+        mine = [r for r in rs if r["version"] == latest_v]
+        run = next((r for r in mine if r["mmr"] is not None), mine[0])
+        graded = next((r for r in mine if r["grades"]), None)
+        tested = datetime.fromisoformat(run["created"].replace("Z", "+00:00")).timestamp()
+        out.append({"deck": deck, "mmr": None if run["mmr"] is None else round(run["mmr"]), "rank": run["rank"],
+                    "rank_color": _color(run["rank"]), "games": run["games"], "tested": tested,
+                    "link": f"/leaderboard/history/{run['id']}", "source": "history", "version": latest_v,
+                    "grades": graded["grades"] if graded else None})
+    return out
+
+
+def history_run(run_id: int, path=None) -> dict | None:
+    """The saved result of one history run: {"kind", "result"}, or None."""
+    if history is None:
+        return None
+    try:
+        r = next((r for r in history.runs(path=path) if r["id"] == run_id), None)
+    except Exception:
+        return None
+    return r and {"kind": r["kind"], "result": r["result"]}
+
+
+def collect(results: Path = RESULTS, web_runs: list[dict] = (), history_path=None) -> list[dict]:
+    """One row per deck (latest rated run wins), best MMR first; unrated decks go last.
+    A deck in the run history is shown from it; files and web runs only fill in decks it lacks."""
     by_deck: dict[str, dict] = {}
     grades: dict[str, tuple[float, dict]] = {}
-    for e in [*from_files(results), *web_runs]:
+    known = []
+    if history is not None:
+        try:
+            known = from_history(history_path)
+        except Exception:  # an unreadable store must not take the page down
+            known = []
+    in_history = {e["deck"].strip().lower() for e in known}
+    rest = [e for e in [*from_files(results), *web_runs] if e["deck"].strip().lower() not in in_history]
+    for e in [*known, *rest]:
         key = e["deck"].strip().lower()
         if e.get("grades") and (key not in grades or e["tested"] > grades[key][0]):
             grades[key] = (e["tested"], e["grades"])
@@ -102,6 +148,11 @@ def _ago(ts: float, now: float) -> str:
     return "just now"
 
 
+def _v(r: dict) -> str:
+    v = r.get("version")
+    return f" <span class=ver title='version {v} of this list'>v{v}</span>" if v and v > 1 else ""
+
+
 CSS = """
 :root{--bg:#f6f7f9;--panel:#fff;--text:#1d2129;--muted:#5f6b7a;--line:#e3e6eb;--link:#2c64c8}
 @media (prefers-color-scheme:dark){:root{--bg:#121418;--panel:#1b1e24;--text:#e7eaee;--muted:#9aa5b1;--line:#2c313a;--link:#7aa7ff}}
@@ -115,7 +166,7 @@ tr:last-child td{border-bottom:0}td.n{text-align:right;font-variant-numeric:tabu
 .rk{display:flex;align-items:center;gap:8px}.rk .emblem{width:28px;height:31px}
 .deck{font-weight:600}.g{display:inline-block;min-width:22px;text-align:center;font-weight:700;border-radius:4px;padding:0 4px}
 .gS,.gA{color:#1f8a4c}.gB{color:#4a8a1f}.gC{color:#a07a00}.gD,.gF{color:#c0392b}
-.empty{padding:28px;text-align:center;color:var(--muted)}
+.ver{color:var(--muted);font-weight:400;font-size:13px}.empty{padding:28px;text-align:center;color:var(--muted)}
 """
 
 
@@ -131,7 +182,7 @@ def render_page(rows: list[dict], now: float | None = None) -> str:
         rank = r["rank"] or "Unrated"
         badge = emblem(rank, r["rank_color"]) if emblem and r["rank"] else ""
         cells = (f"<td class=n>{r['place']}</td><td><div class=rk>{badge}<span>{e(rank)}</span></div></td>"
-                 f"<td class=deck>{e(r['deck'])}</td><td class=n>{'' if r['mmr'] is None else r['mmr']}</td>")
+                 f"<td class=deck>{e(r['deck'])}{_v(r)}</td><td class=n>{'' if r['mmr'] is None else r['mmr']}</td>")
         if show_grades:
             g = r["grades"] or {}
             cells += "".join(f"<td><span class='g g{e(g.get(k) or '')}'>{e(g.get(k) or '–')}</span></td>"

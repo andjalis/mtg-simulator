@@ -69,9 +69,9 @@ Standard library only, like the rest of the simulator.
 
 The Leaderboard page (`/leaderboard`, JSON at `/api/leaderboard`) ranks every tested deck by MMR:
 its rank badge, MMR, the S-F grades from its latest assessment, when it was tested and a link to
-its latest results. It reads ranked-ladder runs in `results/ladder/*.json`, assessments in
-`results/assess/*.json` and runs finished on the page since the server started; each deck appears
-once, with its latest run.
+its latest results. It reads the run history (see `mtgsim.history`), showing each deck's latest
+version (marked v2, v3 ... once a list has changed) and its latest rated run; decks tested before
+the history existed still show from `results/ladder/*.json` and `results/assess/*.json`.
 
 ## Deck assessment
 
