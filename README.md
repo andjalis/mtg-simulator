@@ -67,6 +67,12 @@ as you type and flags unknown cards and cards the engine only partly simulates. 
 the built-in engine on every CPU core (`--jobs N` to limit, `--port`, `--host`, `--offline`).
 Standard library only, like the rest of the simulator.
 
+The Leaderboard page (`/leaderboard`, JSON at `/api/leaderboard`) ranks every tested deck by MMR:
+its rank badge, MMR, the S-F grades from its latest assessment, when it was tested and a link to
+its latest results. It reads ranked-ladder runs in `results/ladder/*.json`, assessments in
+`results/assess/*.json` and runs finished on the page since the server started; each deck appears
+once, with its latest run.
+
 ## Deck assessment
 
 ```
