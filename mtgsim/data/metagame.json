@@ -1,0 +1,23 @@
+{
+  "format": "Standard",
+  "date": "2026-10-15",
+  "window": "last 30 days",
+  "about": "Meta share of the top Standard archetypes in tournaments. A deck's meta-weighted win rate weights its win rate against each archetype by that archetype's share. Shares from both sources are averaged; where only one source lists an archetype, its share is used alone. Weights are normalised over the archetypes listed here.",
+  "sources": [
+    {"name": "AetherHub tournament metagame", "url": "https://aetherhub.com/Metagame/Standard-Events/", "read": "2026-10-15"},
+    {"name": "MTGGoldfish Standard metagame", "url": "https://www.mtggoldfish.com/metagame/standard", "read": "2026-10-15"}
+  ],
+  "not_covered": [
+    {"name": "Azorius Control (counterspells)", "share": {"MTGGoldfish": 6.0}, "why": "exact list not readable"},
+    {"name": "4c Control", "share": {"MTGGoldfish": 5.0}, "why": "exact list not readable"}
+  ],
+  "archetypes": [
+    {"name": "Izzet Spellementals", "file": "izzet_spellementals.txt", "share": {"AetherHub": 14.1, "MTGGoldfish": 12.3}},
+    {"name": "Jund Sacrifice", "file": "jund_sacrifice.txt", "share": {"AetherHub": 11.5, "MTGGoldfish": 6.3}},
+    {"name": "Dimir Midrange", "file": "dimir_midrange.txt", "share": {"AetherHub": 11.0, "MTGGoldfish": 9.6}},
+    {"name": "Azorius Artifact Control", "file": "azorius_artifact_control.txt", "share": {"AetherHub": 10.3}},
+    {"name": "Mono-Green Landfall", "file": "mono_green_landfall.txt", "share": {"AetherHub": 9.4, "MTGGoldfish": 8.6}},
+    {"name": "Boros Dragons", "file": "boros_dragons.txt", "share": {"AetherHub": 8.2, "MTGGoldfish": 8.4}},
+    {"name": "Dimir Control", "file": "dimir_control.txt", "share": {"AetherHub": 4.5}}
+  ]
+}

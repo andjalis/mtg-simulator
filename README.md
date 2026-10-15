@@ -66,6 +66,29 @@ as you type and flags unknown cards and cards the engine only partly simulates. 
 the built-in engine on every CPU core (`--jobs N` to limit, `--port`, `--host`, `--offline`).
 Standard library only, like the rest of the simulator.
 
+## Deck assessment
+
+```
+python3 -m mtgsim.assess MY_DECK.txt                     # rank plus four graded criteria
+python3 -m mtgsim.assess MY_DECK.txt -n 50 --engine forge --forge-dir ~/forge --json out.json
+python3 -m mtgsim.assess MY_DECK.txt --skip-meta --key "Sheoldred, the Apocalypse"
+```
+
+Rates a deck on the criteria competitive players use, each scored 0 to 100 with a grade (S, A, B,
+C, D, F):
+
+- **Meta**: win rate against the top Standard decks, each weighted by its tournament meta share
+  (`mtgsim/data/metagame.json`, with sources and the date it was read). This sets the MMR and rank:
+  the meta field is the Grandmaster pool, reweighted by share before the Elo performance rating.
+- **Mana**: Frank Karsten's method. For each coloured spell, the chance of having enough sources of
+  its colours to cast it on curve, against his 90% target.
+- **Speed**: the average turn the deck kills a goldfish (an opponent who only plays lands).
+- **Consistency**: sampled hands with the AI's mulligan rule: mulligans, screw, flood, castable
+  plays on turns 1 to 4 and key cards by turn N.
+
+`mtgsim.assess.assess()` returns the same thing as plain JSON for the web page and reports.
+Refresh `metagame.json` when the metagame moves.
+
 ## Card data
 
 Every Magic card (about 34,000) is in `mtgsim/data/cards.sqlite3`, an offline
