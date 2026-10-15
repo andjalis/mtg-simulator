@@ -1,5 +1,5 @@
 """Cross-check the built-in engine against Forge: play the same matchups in both and flag
-the ones where the win rates disagree by more than chance explains.
+large differences for manual rules and pilot review.
 
     python3 -m mtgsim.crosscheck --forge-dir ~/forge [--forge-games 40] [--python-games 500] [--jobs 4]
 
@@ -8,7 +8,7 @@ By default the matchups are UB Snow Control against every deck in the rank pools
 inside each rank. Results are saved to results/cross_check/results.json as they finish,
 so an interrupted run picks up where it stopped; report.md is rewritten from that file.
 
-A big disagreement points at something wrong in one engine: a card the built-in engine
+A big disagreement may reflect sampling noise, configuration, or differences in engines/pilots: a card the built-in engine
 only partly simulates, a rules bug, or a misplay by one of the AIs. The "partial cards"
 columns say how many distinct cards in each deck have rules text the built-in engine ignores.
 """
@@ -19,12 +19,15 @@ import itertools
 import json
 import math
 import sys
+import subprocess
+import uuid
 from pathlib import Path
 
 from .carddb import CardDB
 from .decklist import load_deck
 from .forge import ForgeError, run_forge_match
 from .runner import build_deck, run_match, wilson
+from .provenance import atomic_json, deck_identity, output_lock, runtime_identity
 try:  # the seven ranks (Bronze to Grandmaster) replace the five tiers
     from .ranks import RANKS as POOLS
 except ImportError:
@@ -69,8 +72,18 @@ def load_results(path: Path) -> dict:
 
 
 def save_results(path: Path, data: dict):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, indent=1, sort_keys=True) + "\n")
+    atomic_json(path, data)
+
+
+def checked_results(path: Path, provenance: dict, rerun=False) -> dict:
+    """Never reuse legacy, incomplete or differently configured experiments."""
+    data = load_results(path)
+    if rerun or not data:
+        return {"_provenance": provenance}
+    if data.get("_provenance") != provenance or data.get("_invalid"):
+        raise ValueError("Unsafe crosscheck resume refused: legacy cache or changed decks/code/data/"
+                         "Forge/settings. Use a new --out directory or --rerun to replace all cached results.")
+    return data
 
 
 def record(res) -> dict:
@@ -111,8 +124,13 @@ def write_report(rows, partial, path: Path, min_gap: float, min_z: float, settin
         "# Built-in engine vs Forge",
         "",
         f"{len(rows)} matchups played in both engines ({settings}). Win rates are for the first deck,",
-        "draws counted as half a win. A matchup is flagged when the engines differ by at least "
-        f"{min_gap:.0%} and the difference is beyond chance (|z| ≥ {min_z}).",
+        "draws counted as half a win (these are score rates). A matchup is flagged when the engines differ by at least "
+        f"{min_gap:.0%} and the approximate diagnostic |z| ≥ {min_z}.",
+        "The fractional-draw z statistic and intervals are heuristics, especially with small samples or many draws; "
+        "multiple comparisons are not corrected. Flags are review prompts, not significance or accuracy verdicts. "
+        "Forge is not ground truth. Both engines have rules and pilot limitations. "
+        "Main-deck only, no sideboarding; no human matchup evidence is supplied. "
+        "Ranks/MMR are internal pool scores, not Arena equivalents. For win-probability intervals and coverage gaps, use mtgsim.benchmark.",
         "",
         f"- Flagged: **{len(flagged)}** of {len(rows)}",
         f"- Median gap {sorted(gaps)[len(gaps) // 2]:.0%}, mean gap {sum(gaps) / max(len(gaps), 1):.0%}"
@@ -130,9 +148,9 @@ def write_report(rows, partial, path: Path, min_gap: float, min_z: float, settin
                    f"({r['forge_ci'][0]:.0%}–{r['forge_ci'][1]:.0%}) | {r['gap']:+.0%} | {r['z']:+.1f} "
                    f"| {r['partial_a'][0]}/{r['partial_a'][1]} / {r['partial_b'][0]}/{r['partial_b'][1]} |")
     out += ["", "## All matchups", "",
-            "| Matchup | Built-in | Forge | Gap | z | Flag |", "|---|---|---|---|---|---|"]
+            "| Matchup | Built-in | Forge | Forge draws | Gap | z | Flag |", "|---|---|---|---|---|---|---|"]
     for r in rows:
-        out.append(f"| {r['a']} vs {r['b']} | {r['python']:.0%} | {r['forge']:.0%} | {r['gap']:+.0%} "
+        out.append(f"| {r['a']} vs {r['b']} | {r['python']:.0%} | {r['forge']:.0%} | {r['forge_draws']} | {r['gap']:+.0%} "
                    f"| {r['z']:+.1f} | {r['flag']} |")
     out += ["", "## Partly simulated cards per deck (built-in engine)", ""]
     for name, (n, total, names) in sorted(partial.items()):
@@ -155,17 +173,34 @@ def main(argv=None):
     ap.add_argument("--rerun", action="store_true", help="replay matchups that already have results")
     ap.add_argument("--only", nargs="+", metavar="TEXT", help="only matchups whose names contain all of these")
     args = ap.parse_args(argv)
+    if min(args.forge_games, args.python_games, args.jobs, args.clock) < 1:
+        ap.error("game counts, jobs and clock must be positive")
+    try:
+        with output_lock(args.out):
+            execute(args)
+    except (ValueError, OSError, ForgeError, subprocess.SubprocessError) as exc:
+        ap.error(str(exc))
+
+
+def execute(args):
 
     pairs = default_matchups()
     if args.only:
         pairs = [p for p in pairs if all(t in f"{p[0]} vs {p[2]}" for t in args.only)]
     results_path = args.out / "results.json"
-    data = load_results(results_path)
+    runtime = runtime_identity(not args.skip_forge, args.forge_dir)
     db = CardDB(offline=True)
     counts = {}
     for a, pa, b, pb in pairs:
         counts.setdefault(a, load_deck(pa)[1])
         counts.setdefault(b, load_deck(pb)[1])
+    provenance = {"schema": 1, "runtime": runtime,
+                  "decks": {n: deck_identity(p, counts[n]) for a, pa, b, pb in pairs for n, p in ((a, pa), (b, pb))},
+                  "pairs": [[a, b] for a, _, b, _ in pairs],
+                  "settings": {k: getattr(args, k) for k in
+                               ("python_games", "forge_games", "seed", "jobs", "clock", "skip_forge")}}
+    data = checked_results(results_path, provenance, args.rerun)
+    save_results(results_path, data)
     partial = {n: partial_cards(db, c) for n, c in counts.items()}
     decks = {n: build_deck(db, c) for n, c in counts.items()}
 
@@ -173,7 +208,10 @@ def main(argv=None):
         key = f"{a} vs {b}"
         entry = data.setdefault(key, {})
         if args.rerun or "python" not in entry or entry["python"]["games"] != args.python_games:
-            res, _ = run_match(a, decks[a], b, decks[b], games=args.python_games, seed=args.seed)
+            res, log = run_match(a, decks[a], b, decks[b], games=args.python_games, seed=args.seed, log_first=True)
+            log_path = args.out / "logs" / f"builtin-{i}-{uuid.uuid4().hex[:12]}.log"
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            log_path.write_text("\n".join(log) + "\n", encoding="utf-8")
             entry["python"] = record(res)
             save_results(results_path, data)
         if not args.skip_forge and (args.rerun or "forge" not in entry
@@ -181,7 +219,8 @@ def main(argv=None):
             print(f"[{i}/{len(pairs)}] Forge {key}", file=sys.stderr, flush=True)
             try:
                 res = run_forge_match(a, counts[a], b, counts[b], games=args.forge_games, seed=args.seed,
-                                      forge_dir=args.forge_dir, clock=args.clock, jobs=args.jobs)
+                                      forge_dir=args.forge_dir, clock=args.clock, jobs=args.jobs, isolated=True,
+                                      log_dir=args.out / "logs" / f"forge-{i}-{uuid.uuid4().hex[:12]}")
             except ForgeError as e:
                 print(f"  skipped: {e}", file=sys.stderr)
                 continue
@@ -190,6 +229,12 @@ def main(argv=None):
             print(f"  built-in {entry['python']['win_rate_a']:.0%}, Forge {res.win_rate_a:.0%}",
                   file=sys.stderr, flush=True)
 
+    if (runtime_identity(not args.skip_forge, args.forge_dir) != runtime or
+            any(deck_identity(Path(d["path"]), load_deck(d["path"])[1]) != d
+                for d in provenance["decks"].values())):
+        data["_invalid"] = True
+        save_results(results_path, data)
+        raise ValueError("Inputs changed during crosscheck; results invalidated")
     rows = build_rows(pairs, data, partial, args.min_gap, args.min_z)
     settings = (f"built-in engine {args.python_games} games, Forge {args.forge_games} games per matchup, "
                 f"seed {args.seed}")

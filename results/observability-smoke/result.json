@@ -1,0 +1,35 @@
+{
+  "deck_a": "aggro",
+  "deck_b": "midrange",
+  "games": 2,
+  "wins_a": 1,
+  "wins_b": 1,
+  "draws": 0,
+  "wins_a_on_play": 1,
+  "games_a_on_play": 1,
+  "turns": [
+    9,
+    17
+  ],
+  "play_draw_known": true,
+  "games_a_on_draw": 1,
+  "wins_a_on_draw": 0,
+  "draws_a_on_play": 0,
+  "draws_a_on_draw": 0,
+  "game_metadata": [
+    {
+      "winner": 0,
+      "first_player": 0,
+      "player_turns": 9,
+      "game_number": 1,
+      "worker": 0
+    },
+    {
+      "winner": 1,
+      "first_player": 1,
+      "player_turns": 17,
+      "game_number": 2,
+      "worker": 0
+    }
+  ]
+}
