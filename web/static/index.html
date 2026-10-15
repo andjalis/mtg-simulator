@@ -201,6 +201,15 @@ function meter(r) {
     <div class="pt" style="left:calc(${pos(r.rate)} - 1px)"></div></div>`;
 }
 
+// Slot for the ranked-ladder view (Bronze to Grandmaster). When the run snapshot carries a
+// `rank` object, this fills #rank above the tier table; until then it stays hidden.
+function renderRank(s) {
+  const el = $("#rank");
+  if (!el || !s.rank) return;
+  el.hidden = false;
+  el.innerHTML = s.rank.html || `<div class="verdict">${esc(s.rank.label || "")}</div>`;
+}
+
 function render(s) {
   let h = "";
   if (s.status === "queued") h += `<p class="empty">Waiting for the previous run to finish…</p>`;
@@ -233,7 +242,8 @@ function render(s) {
   if (s.partial && s.partial.length)
     h += `<p class="note">${s.partial.length === 1 ? "One of your cards is" : s.partial.length + " of your cards are"} only partly simulated, so treat these numbers with care.
           The Pro tier in particular uses cards the built-in engine handles only in part.</p>`;
-  $("#out").innerHTML = h || `<p class="empty">Starting…</p>`;
+  $("#out").innerHTML = `<div id="rank" hidden></div>` + (h || `<p class="empty">Starting…</p>`);
+  renderRank(s);
   $("#out").querySelectorAll("tr.tier").forEach(tr => tr.onclick = () => {
     open.has(tr.dataset.key) ? open.delete(tr.dataset.key) : open.add(tr.dataset.key);
     render(s);
