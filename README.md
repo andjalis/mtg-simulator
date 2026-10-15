@@ -17,6 +17,9 @@ python3 -m unittest discover -s tests -t .       # tests
 
 Needs only Python 3.10+, no packages.
 
+GitHub Actions runs the tests on Python 3.10 and 3.13 for every push and pull request
+(`.github/workflows/tests.yml`); the card database is rebuilt there once a week and cached.
+
 ## Decklists
 
 Plain text as exported by Arena, MTGO or Moxfield: `4 Lightning Bolt`,
