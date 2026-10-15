@@ -45,6 +45,28 @@ class AITests(unittest.TestCase):
         self.b.battlefield[0].tapped = True   # the bear could attack past one, but not leave us dead
         self.assertEqual(self.a.ai.choose_attackers(self.game, self.a, self.b), [])
 
+    def test_lethal_tie_adds_redundancy_against_open_mana(self):
+        # Any two bears are lethal; the third costs nothing and survives one removal spell.
+        self.b.life = 4
+        bears = [perm("Grizzly Bears", self.a) for _ in range(3)]
+        perm("Mountain", self.b)
+        self.assertEqual(set(self.a.ai.choose_attackers(self.game, self.a, self.b)), set(bears))
+
+    def test_lethal_tie_keeps_blocker_when_failed_kill_means_crack_back(self):
+        self.b.life, self.a.life = 4, 3
+        [perm("Grizzly Bears", self.a) for _ in range(3)]
+        perm("Kalonian Tusker", self.b).tapped = True
+        self.assertEqual(len(self.a.ai.choose_attackers(self.game, self.a, self.b)), 2)
+
+    def test_reach_lethal_adds_costless_attack_but_not_into_blocker(self):
+        self.b.life = 3
+        perm("Mountain", self.a)
+        self.a.hand = [DB.get("Lightning Bolt")]
+        bear = perm("Grizzly Bears", self.a)
+        self.assertEqual(self.a.ai.choose_attackers(self.game, self.a, self.b), [bear])
+        perm("Kalonian Tusker", self.b)
+        self.assertEqual(self.a.ai.choose_attackers(self.game, self.a, self.b), [])
+
     def test_blocks_trade_and_chumps_only_when_needed(self):
         tusker = perm("Kalonian Tusker", self.a)
         bears = perm("Grizzly Bears", self.b)

@@ -97,3 +97,8 @@ a deck's Master or Grandmaster result as "how it does against the real top decks
 them", not as a strict ladder step.
 
 The Gold deck Mono-Blue Tempo was dropped before this run for winning only 26% against Silver.
+
+Ranks and MMR are internal pool labels and assigned anchors, not Arena equivalents or
+validated human strength predictions. Pool descriptions and source dates are snapshots,
+not claims about today's metagame. Ladder games are main-deck only (no sideboarding or Bo3).
+Forge and builtin outcomes both depend on rules implementations and AI pilot limitations.

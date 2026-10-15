@@ -61,10 +61,10 @@ def summary(rows: list[CardCoverage]) -> dict[str, int]:
 def format_coverage(deck: str, rows: list[CardCoverage]) -> str:
     s = summary(rows)
     pct = 100 * (s[FULL] + s[SIMPLIFIED]) / s["total"] if s["total"] else 100
-    parts = [f"{s[FULL]} fully supported"] + [f"{s[k]} {label}" for k, label in
+    parts = [f"{s[FULL]} fully template-matched"] + [f"{s[k]} {label}" for k, label in
                                               ((SIMPLIFIED, "simplified"), (PARTIAL, "partly supported"),
                                                (UNKNOWN, "unknown")) if s[k]]
-    lines = [f"{deck}: {pct:.0f}% playable as written ({', '.join(parts)}; {s['total']} cards)"]
+    lines = [f"{deck}: {pct:.0f}% matched by templates (including simplifications) ({', '.join(parts)}; {s['total']} cards)"]
     labels = {UNKNOWN: "unknown", PARTIAL: "partial", SIMPLIFIED: "simplified"}
     for r in rows:
         if r.status == FULL:
