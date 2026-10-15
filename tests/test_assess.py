@@ -147,12 +147,18 @@ class GradesReportTests(unittest.TestCase):
         from mtgsim.__main__ import main
         deck = Path(__file__).resolve().parent.parent / "decks" / "ranks" / "3-gold" / "boros_burn.txt"
         with tempfile.TemporaryDirectory() as tmp:
+            from unittest import mock
+            from mtgsim import history
             out = io.StringIO()
-            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            db = str(Path(tmp) / "history.sqlite3")
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()), \
+                    mock.patch.dict("os.environ", {"MTGSIM_HISTORY": db}):
                 main([str(deck), "--rank", "bronze", "-n", "2", "--seed", "1", "--offline",
                       "--report", str(Path(tmp) / "r.html")])
+                kinds = sorted(r["kind"] for r in history.runs())
             self.assertIn("Consistency", out.getvalue())
             self.assertIn("Deck grades", (Path(tmp) / "r.html").read_text())
+            self.assertEqual(kinds, ["assess", "rank"])
 
 
 if __name__ == "__main__":
