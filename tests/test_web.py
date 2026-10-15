@@ -99,6 +99,13 @@ class WebServerTests(unittest.TestCase):
         self.assertIn(b"<title>", page)
         code, tiers = self.call("/api/tiers")
         self.assertEqual([t["key"] for t in json.loads(tiers)["tiers"]], [t.key for t in TIERS])
+        self.assertEqual(json.loads(tiers)["ranks"][-1]["name"], "Grandmaster")
+        self.assertIn(b"/static/theme.css", page)
+        code, css = self.call("/static/theme.css")
+        self.assertEqual(code, 200)
+        self.assertIn(b".frame", css)
+        for bad in ("/static/nope.css", "/static/index.html", "/static/..%2Fserver.py"):
+            self.assertEqual(self.call(bad)[0], 404, bad)
 
     def test_run_round_trip(self):
         code, body = self.call("/api/run", {"deck": BURN, "name": "burn", "tiers": ["bronze"], "games": 4, "seed": 3,

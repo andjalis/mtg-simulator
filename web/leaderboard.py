@@ -18,6 +18,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+from . import theme
+
 try:
     from mtgsim import history
 except ImportError:  # pragma: no cover
@@ -153,21 +155,20 @@ def _v(r: dict) -> str:
     return f" <span class=ver title='version {v} of this list'>v{v}</span>" if v and v > 1 else ""
 
 
-CSS = """
-:root{--bg:#f6f7f9;--panel:#fff;--text:#1d2129;--muted:#5f6b7a;--line:#e3e6eb;--link:#2c64c8}
-@media (prefers-color-scheme:dark){:root{--bg:#121418;--panel:#1b1e24;--text:#e7eaee;--muted:#9aa5b1;--line:#2c313a;--link:#7aa7ff}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,sans-serif}
-main{max-width:980px;margin:0 auto;padding:24px 16px}h1{margin:0 0 4px;font-size:26px}
-.sub{color:var(--muted);margin:0 0 18px}a{color:var(--link)}nav{margin-bottom:12px;font-size:14px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow-x:auto}
-table{border-collapse:collapse;width:100%}th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
-th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}
-tr:last-child td{border-bottom:0}td.n{text-align:right;font-variant-numeric:tabular-nums}
-.rk{display:flex;align-items:center;gap:8px}.rk .emblem{width:28px;height:31px}
-.deck{font-weight:600}.g{display:inline-block;min-width:22px;text-align:center;font-weight:700;border-radius:4px;padding:0 4px}
-.gS,.gA{color:#1f8a4c}.gB{color:#4a8a1f}.gC{color:#a07a00}.gD,.gF{color:#c0392b}
-.ver{color:var(--muted);font-weight:400;font-size:13px}.empty{padding:28px;text-align:center;color:var(--muted)}
-"""
+def _badge(r: dict) -> str:
+    return emblem(r["rank"], r["rank_color"]) if emblem and r["rank"] else '<i class="gem"></i>'
+
+
+def _podium(rows: list[dict]) -> str:
+    e = html.escape
+    top = [r for r in rows if r["mmr"] is not None][:3]
+    if len(top) < 3:
+        return ""
+    cells = "".join(
+        f'<section class="frame"><div class="face"><span class="pl">{("FIRST", "SECOND", "THIRD")[i]}</span>'
+        f'{_badge(r)}<a class="nm" href="{e(r["link"])}">{e(r["deck"])}</a>'
+        f'<span class="mm">{e(r["rank"])} · {r["mmr"]} MMR</span></div></section>' for i, r in enumerate(top))
+    return f'<div class="podium">{cells}</div>'
 
 
 def render_page(rows: list[dict], now: float | None = None) -> str:
@@ -180,40 +181,39 @@ def render_page(rows: list[dict], now: float | None = None) -> str:
     body = []
     for r in rows:
         rank = r["rank"] or "Unrated"
-        badge = emblem(rank, r["rank_color"]) if emblem and r["rank"] else ""
-        cells = (f"<td class=n>{r['place']}</td><td><div class=rk>{badge}<span>{e(rank)}</span></div></td>"
-                 f"<td class=deck>{e(r['deck'])}{_v(r)}</td><td class=n>{'' if r['mmr'] is None else r['mmr']}</td>")
+        cells = (f"<td class=place>{r['place']}</td><td><div class=rk>{_badge(r)}<span>{e(rank)}</span></div></td>"
+                 f"<td class=deck>{e(r['deck'])}{_v(r)}</td>"
+                 f"<td class='n mmrv'>{'' if r['mmr'] is None else r['mmr']}</td>")
         if show_grades:
             g = r["grades"] or {}
-            cells += "".join(f"<td><span class='g g{e(g.get(k) or '')}'>{e(g.get(k) or '–')}</span></td>"
-                             for k, _ in CRITERIA)
+            cells += "".join(f"<td><span class='g g{e(g.get(k) or '')}' title='{label}'>{e(g.get(k) or '–')}</span></td>"
+                             for k, label in CRITERIA)
         when = datetime.fromtimestamp(r["tested"]).strftime("%Y-%m-%d %H:%M")
-        cells += (f"<td title='{when}'>{_ago(r['tested'], now)}</td>"
-                  f"<td><a href='{e(r['link'])}'>Results</a></td>")
-        body.append(f"<tr>{cells}</tr>")
-    table = (f"<table><thead>{head}</thead><tbody>{''.join(body)}</tbody></table>" if rows else
-             "<div class=empty>No decks tested yet. Run one from the <a href='/'>ladder page</a>.</div>")
-    return ("<!doctype html><html><head><meta charset=utf-8>"
-            "<meta name=viewport content='width=device-width,initial-scale=1'>"
-            f"<title>Deck leaderboard</title><style>{CSS}</style></head><body><main>"
-            "<nav><a href='/'>← Test a deck</a></nav><h1>Leaderboard</h1>"
-            "<p class=sub>Every tested deck, ranked by MMR from its latest run.</p>"
-            f"<div class=panel>{table}</div></main></body></html>")
+        cells += (f"<td class=note title='{when}'>{_ago(r['tested'], now)}</td>"
+                  f"<td class=n><a href='{e(r['link'])}'>Results ›</a></td>")
+        body.append(f"<tr class=p{r['place']}>{cells}</tr>")
+    table = (f"<div class=scroll><table class=lb><thead>{head}</thead><tbody>{''.join(body)}</tbody></table></div>"
+             if rows else "<p class=empty>No decks tested yet. Run one from the <a href='/'>deck page</a>.</p>")
+    hero = ("<div class=hero><h1>Leaderboard</h1><p>Every tested deck, ranked by MMR from its latest run.</p>"
+            "<p class=flavor>Seven ranks stand between a fresh list and the Grandmaster pool.</p></div>")
+    return theme.page("Deck leaderboard", hero + _podium(rows) + theme.frame("Standings", table), "leaderboard")
 
 
 def render_assessment(d: dict) -> str:
-    """A plain page for one saved assessment: its rating and the four graded criteria."""
+    """A page for one saved assessment: its rating and the graded criteria."""
     e = html.escape
     r = d.get("rating") or {}
-    rows = "".join(f"<tr><td>{e(c.get('label', k))}</td><td><span class='g g{e(c.get('grade', ''))}'>"
+    rows = "".join(f"<tr><td class=deck>{e(c.get('label', k))}</td><td><span class='g g{e(c.get('grade', ''))}'>"
                    f"{e(c.get('grade', ''))}</span></td><td class=n>{c.get('score', '')}</td>"
-                   f"<td style='white-space:normal'>{e(c.get('summary', ''))}</td></tr>"
+                   f"<td class=note style='font-size:14px'>{e(c.get('summary', ''))}</td></tr>"
                    for k, c in d.get("criteria", {}).items())
     rating = f"{e(r['rank'])} · {r['mmr']} MMR" if r.get("rank") else "Unrated"
-    return ("<!doctype html><html><head><meta charset=utf-8>"
-            "<meta name=viewport content='width=device-width,initial-scale=1'>"
-            f"<title>{e(d.get('deck', 'Deck'))} assessment</title><style>{CSS}</style></head><body><main>"
-            f"<nav><a href='/leaderboard'>← Leaderboard</a></nav><h1>{e(d.get('deck', ''))}</h1>"
-            f"<p class=sub>{rating} · assessed {e(d.get('assessed', ''))}</p><div class=panel><table>"
-            f"<thead><tr><th>Criterion</th><th>Grade</th><th class=n>Score</th><th>Summary</th></tr></thead>"
-            f"<tbody>{rows}</tbody></table></div></main></body></html>")
+    badge = emblem(r["rank"], r.get("rank_color") or _color(r["rank"])) if emblem and r.get("rank") else ""
+    badge = badge.replace('class="emblem"', 'class="emblem" width="72" height="80"')
+    hero = (f"<a class=back href='/leaderboard'>‹ Leaderboard</a><div class=hero style='display:flex;gap:18px;"
+            f"align-items:center'>{badge}"
+            f"<div><h1>{e(d.get('deck', ''))}</h1><p>{rating} · assessed {e(d.get('assessed', ''))}</p></div></div>")
+    table = ("<div class=scroll><table><thead><tr><th>Criterion</th><th>Grade</th><th class=n>Score</th><th>Summary</th>"
+             f"</tr></thead><tbody>{rows}</tbody></table></div>")
+    return theme.page(f"{d.get('deck', 'Deck')} assessment",
+                      f"<div class=report>{hero}{theme.frame('Deck grades', table)}</div>", "leaderboard")

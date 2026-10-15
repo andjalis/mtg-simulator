@@ -4,80 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MTG Ranked Ladder</title>
-<style>
-:root {
-  --bg: #f6f5f2; --panel: #ffffff; --text: #1d1d1f; --muted: #6b6b70; --line: #e2e0da;
-  --accent: #3b5bdb; --accent-text: #ffffff; --good: #2b8a3e; --bad: #c92a2a; --warn: #b26a00;
-  --track: #ecebe6; --bar: #3b5bdb; --ci: rgba(59, 91, 219, .25);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #141416; --panel: #1d1d20; --text: #ececee; --muted: #9a9aa2; --line: #2e2e33;
-    --accent: #7b93ff; --accent-text: #0e0e10; --good: #69db7c; --bad: #ff8787; --warn: #ffc078;
-    --track: #2a2a2f; --bar: #7b93ff; --ci: rgba(123, 147, 255, .3);
-  }
-}
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--text);
-  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
-main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
-h1 { font-size: 22px; margin: 0 0 4px; }
-.sub { color: var(--muted); margin: 0 0 20px; }
-.grid { display: grid; grid-template-columns: minmax(0, 380px) minmax(0, 1fr); gap: 20px; align-items: start; }
-@media (max-width: 820px) { .grid { grid-template-columns: minmax(0, 1fr); } }
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
-label.h { display: block; font-weight: 600; margin: 14px 0 6px; }
-label.h:first-child { margin-top: 0; }
-textarea, input[type=text], input[type=number] { width: 100%; background: var(--bg); color: var(--text);
-  border: 1px solid var(--line); border-radius: 6px; padding: 8px; font: inherit; }
-textarea { height: 260px; font: 13px/1.4 ui-monospace, Menlo, Consolas, monospace; resize: vertical; }
-.row { display: flex; gap: 8px; flex-wrap: wrap; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-.seg button { border: 0; background: transparent; color: var(--text); padding: 6px 12px; font: inherit; cursor: pointer; }
-.seg button.on { background: var(--accent); color: var(--accent-text); }
-.tiers label { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; cursor: pointer; }
-.tiers small { color: var(--muted); }
-.check { margin-top: 8px; font-size: 13px; color: var(--muted); }
-.check .err { color: var(--bad); }
-.check .warn { color: var(--warn); }
-.check details { margin-top: 4px; }
-.check li { margin: 2px 0; }
-button.go { margin-top: 16px; width: 100%; padding: 10px; border: 0; border-radius: 6px; font: inherit;
-  font-weight: 600; background: var(--accent); color: var(--accent-text); cursor: pointer; }
-button.go:disabled { opacity: .5; cursor: default; }
-.opt { display: flex; gap: 8px; align-items: center; margin-top: 8px; font-size: 14px; }
-.empty { color: var(--muted); }
-.progress { height: 8px; background: var(--track); border-radius: 4px; overflow: hidden; margin: 8px 0 4px; }
-.progress div { height: 100%; background: var(--bar); width: 0; transition: width .3s; }
-.verdict { font-size: 18px; font-weight: 600; margin: 4px 0 12px; }
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: middle; }
-th { color: var(--muted); font-weight: 500; font-size: 12px; }
-td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-tr.tier { cursor: pointer; font-weight: 600; }
-tr.tier td:first-child::before { content: "▸ "; color: var(--muted); }
-tr.tier.open td:first-child::before { content: "▾ "; }
-tr.opp td { font-weight: 400; color: var(--text); }
-tr.opp td:first-child { padding-left: 22px; }
-.meter { position: relative; height: 10px; background: var(--track); border-radius: 5px; min-width: 90px; }
-.meter .ci { position: absolute; top: 0; bottom: 0; background: var(--ci); border-radius: 5px; }
-.meter .pt { position: absolute; top: -2px; width: 3px; height: 14px; background: var(--bar); border-radius: 1px; }
-.meter .pass { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--muted); }
-.ok { color: var(--good); } .no { color: var(--bad); }
-.note { color: var(--muted); font-size: 13px; margin-top: 12px; }
-.scroll { overflow-x: auto; }
-#rank { margin: -16px -16px 16px; border-bottom: 1px solid var(--line); }
-#rank .mmr { border-radius: 10px 10px 0 0; }
-#grades { margin: 0 0 16px; }
-</style>
 </head>
 <body>
-<main>
-  <nav style="float:right;font-size:14px;margin-top:8px"><a href="/leaderboard">Leaderboard</a></nav>
-  <h1>MTG ranked ladder</h1>
-  <p class="sub">Paste a decklist, choose ranks, and see how it fares against the test decks in the built-in engine. Ranks/MMR are internal pool scores, not Arena equivalents. Main-deck only; no sideboarding.</p>
+<main class="page">
+  <div class="hero">
+    <h1>Test your deck</h1>
+    <p>Paste a decklist, choose ranks, and see how it fares against the test decks in the built-in engine. Ranks/MMR are internal pool scores, not Arena equivalents. Main-deck only; no sideboarding.</p>
+    <p class="flavor">Every list starts at Silver. Only the strongest climb to face the Grandmaster pool.</p>
+  </div>
   <div class="grid">
-    <section class="panel">
+    <section class="frame"><div class="face">
+      <div class="titlebar"><h2>Your deck</h2><span class="pips" aria-hidden="true"><i class="pip w"></i><i class="pip u"></i><i class="pip b"></i><i class="pip r"></i><i class="pip g"></i></span></div>
       <label class="h" for="name">Deck name</label>
       <input id="name" type="text" placeholder="my deck">
       <label class="h" for="deck">Decklist</label>
@@ -97,13 +34,17 @@ tr.opp td:first-child { padding-left: 22px; }
       <label class="h" for="games">Games per opponent</label>
       <input id="games" type="number" min="2" step="2" value="100">
       <label class="opt"><input type="checkbox" id="grade" checked> Grade the deck: meta, mana, speed, consistency</label>
-      <button class="go" id="go" disabled>Run</button>
-    </section>
+      <button class="go" id="go" disabled>Begin the trial</button>
+    </div></section>
 
-    <section class="panel" id="out">
-      <p class="empty">Results appear here. The full climb plays each rank from the lowest up and stops at the first rank
-        where the deck wins less than <span id="passRate">50%</span> of its games.</p>
-    </section>
+    <section class="frame"><div class="face">
+      <div class="titlebar"><h2>Results</h2><span class="pips" aria-hidden="true"><i class="pip w"></i><i class="pip u"></i><i class="pip b"></i><i class="pip r"></i><i class="pip g"></i></span></div>
+      <div id="out">
+        <p class="empty">Results appear here. The full climb plays each rank from the lowest up and stops at the first rank
+          where the deck wins less than <span id="passRate">50%</span> of its games.</p>
+        <div class="ladder" id="ladder"></div>
+      </div>
+    </div></section>
   </div>
 </main>
 <script>
@@ -127,7 +68,10 @@ api("/api/tiers").then(d => {
   $("#games").max = d.max_games;
   $("#tierList").innerHTML = d.tiers.map((t, i) =>
     `<label title="${esc(t.decks.join(", "))}"><input type="checkbox" value="${t.key}"${i === d.tiers.length - 1 ? "" : " checked"}>
-     <span>${i + 1}. ${esc(t.label)} <small>${t.decks.length} decks · ${esc(t.about)}</small></span></label>`).join("");
+     <i class="gem rk-${esc(t.key)}"></i><span><b>${esc(t.label)}</b><small>${t.decks.length} decks · ${esc(t.about)}</small></span></label>`).join("");
+  const ranks = d.ranks || [];
+  if ($("#ladder")) $("#ladder").innerHTML = ranks.slice().reverse().map(r =>
+    `<div class="step">${r.emblem}<b>${esc(r.name)}</b><span>${r.floor ? r.floor + "+ MMR" : "below " + ranks[1].floor + " MMR"}</span></div>`).join("");
 });
 
 document.querySelectorAll("#mode button").forEach(b => b.onclick = () => {
@@ -239,9 +183,9 @@ function render(s) {
     for (const t of s.tiers) {
       const isOpen = open.has(t.key);
       const w = t.opponents.reduce((a, o) => [a[0] + o.wins, a[1] + o.losses, a[2] + o.draws], [0, 0, 0]);
-      h += `<tr class="tier${isOpen ? " open" : ""}" data-key="${t.key}"><td>${esc(t.label)}</td><td class="num">${pct(t.rate)}</td>
+      h += `<tr class="tier${isOpen ? " open" : ""}" data-key="${t.key}"><td><span class="lbl"><i class="gem rk-${esc(t.key)}"></i>${esc(t.label)}</span></td><td class="num">${pct(t.rate)}</td>
             <td>${meter(t)}</td><td class="num">${w.join("–")}</td><td></td><td></td>
-            ${s.ladder ? `<td class="${t.cleared ? "ok" : "no"}">${t.cleared ? "cleared" : "failed"}</td>` : ""}</tr>`;
+            ${s.ladder ? `<td><span class="chip ${t.cleared ? "ok" : "no"}">${t.cleared ? "cleared" : "failed"}</span></td>` : ""}</tr>`;
       if (isOpen) for (const o of t.opponents) {
         h += `<tr class="opp"><td>${esc(o.name)}</td><td class="num">${pct(o.rate)}</td><td>${meter(o)}</td>
               <td class="num">${o.wins}–${o.losses}–${o.draws}</td><td class="num">${o.on_play} · ${o.on_draw}</td>
