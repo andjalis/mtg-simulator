@@ -6,6 +6,7 @@ say which cards are only partially simulated.
 """
 from __future__ import annotations
 
+import dataclasses
 import re
 from dataclasses import dataclass, field
 
@@ -58,10 +59,10 @@ class Trigger:
 @dataclass
 class AltCost:
     """Another way to cast a card: flashback, foretell, spectacle, blitz, channel, Baleful Mastery."""
-    kind: str                        # flashback, foretell, spectacle, blitz, channel, alt
+    kind: str                        # flashback, foretell, spectacle, blitz, channel, alt, kicker
     cost: dict
     zone: str = "hand"               # hand, graveyard, foretold
-    effects: list | None = None      # channel: the ability's effects instead of the card's
+    effects: list | None = None      # channel / kicker: these effects instead of the card's
     extra: list = field(default_factory=list)    # extra effects (Baleful: an opponent draws)
     life: int = 0
 
@@ -91,6 +92,7 @@ class CardDef:
     spell_effects: list = field(default_factory=list)
     etb_effects: list = field(default_factory=list)
     unsupported: list = field(default_factory=list)
+    approximations: list = field(default_factory=list)  # text the engine plays in a simplified way
     oracle: str = ""
     triggers: list = field(default_factory=list)       # Trigger, including the ETB one
     mana_amount: int = 1                                # Sol Ring makes 2
@@ -119,6 +121,10 @@ class CardDef:
     token_kind: str = ""                                # treasure, clue, blood
     is_token: bool = False
     is_ability: bool = False                            # a channel ability cast like a spell
+    etb_counters: int = 0                               # "enters with N +1/+1 counters on it"
+    extra_life_cost: int = 0                            # "As an additional cost to cast ~, pay N life"
+    wither_noncombat: bool = False                      # Soul-Scar Mage: noncombat damage becomes -1/-1 counters
+    exile_damaged: bool = False                         # Etching of Kumano: damaged creatures are exiled instead
 
     @property
     def is_land(self): return "Land" in self.types
@@ -174,6 +180,14 @@ def parse_mana_cost(cost: str) -> dict:
     return out
 
 
+def add_mana(*costs) -> dict:
+    out: dict = {}
+    for c in costs:
+        for k, v in c.items():
+            out[k] = out.get(k, 0) + v
+    return out
+
+
 def _parse_mana_ability(rest: str) -> tuple[set, int]:
     """Colours a {T} ability can make, and how much mana it makes ({C}{C} is 2)."""
     if "any color" in rest:
@@ -196,22 +210,31 @@ def _token(m_count, power, toughness, desc, with_kw="", attacking=False, ability
                                                 "attacking": attacking, "triggers": triggers})
 
 
+_SRC = r"(?:~|it|he|she)"
 _EFFECT_PATTERNS = [
-    (r"~ deals (\d+) damage to any target", lambda m: Effect("damage", int(m[1]), target="any")),
-    (r"(?:~|it) deals (\d+) damage to target attacking or blocking creature",
+    (_SRC + r" deals (\d+) damage to any target", lambda m: Effect("damage", int(m[1]), target="any")),
+    (_SRC + r" deals (\d+) damage to target attacking or blocking creature",
      lambda m: Effect("damage", int(m[1]), target="creature", filter="attacking_blocking")),
-    (r"~ deals (\d+) damage to target (?:creature or planeswalker|creature)",
+    (_SRC + r" deals (\d+) damage to target tapped creature(?: an opponent controls)?",
+     lambda m: Effect("damage", int(m[1]), target="creature", filter="tapped")),
+    (_SRC + r" deals (\d+) damage to target creature without flying",
+     lambda m: Effect("damage", int(m[1]), target="creature", filter="nonflying")),
+    (_SRC + r" deals (\d+) damage to (?:up to one )?target (?:creature or planeswalker|creature)"
+     r"(?: an opponent controls| you don't control)?",
      lambda m: Effect("damage", int(m[1]), target="creature")),
-    (r"~ deals (\d+) damage to (?:target player or planeswalker|target player|target opponent"
+    (_SRC + r" deals (\d+) damage to (?:target player or planeswalker|target player|target opponent"
      r"(?: or planeswalker)?|each opponent)",
      lambda m: Effect("damage", int(m[1]), target="player")),
-    (r"~ deals (\d+) damage to each opponent and each planeswalker they control",
+    (_SRC + r" deals (\d+) damage to each opponent and each planeswalker they control",
      lambda m: Effect("damage", int(m[1]), target="each_opp_and_pw")),
-    (r"~ deals (\d+) damage to (?:that player|that spell's controller)",
+    (_SRC + r" deals (\d+) damage to (?:that player|that spell's controller)",
      lambda m: Effect("damage", int(m[1]), target="that_player")),
+    (_SRC + r" deals (\d+) damage to you", lambda m: Effect("lose_life", int(m[1]))),
     (r"~ also deals (\d+) damage to that permanent's controller if you control a modified creature",
      lambda m: Effect("damage", int(m[1]), target="that_controller", cond="modified")),
     (r"~ deals (\d+) damage to each creature", lambda m: Effect("damage", int(m[1]), target="each_creature")),
+    (r"destroy target creature with mana value (\d+) or less",
+     lambda m: Effect("destroy", target="creature", filter=f"max_cmc:{m[1]}")),
     (r"destroy target creature if it has mana value (\d+) or less",
      lambda m: Effect("destroy", target="creature", filter=f"max_cmc:{m[1]}")),
     (r"revolt — destroy that creature if it has mana value (\d+) or less instead if a permanent you "
@@ -222,7 +245,7 @@ _EFFECT_PATTERNS = [
     (r"exile target tapped creature", lambda m: Effect("destroy", target="creature", filter="tapped")),
     (r"destroy target nonartifact creature", lambda m: Effect("destroy", target="creature", filter="nonartifact")),
     # "non-Angel, non-Demon, non-Dragon" style restrictions are parsed but not enforced.
-    (r"(?:destroy|exile) target (?:[\w-]+,? )*?creature or planeswalker",
+    (r"(?:destroy|exile) target (?:[\w-]+,? )*?creature(?:, enchantment,)? or planeswalker",
      lambda m: Effect("destroy", target="creature_pw")),
     (r"(?:destroy|exile) target (?:[\w-]+,? )*?creature(?: an opponent controls| you don't control)?",
      lambda m: Effect("destroy", target="creature")),
@@ -233,9 +256,14 @@ _EFFECT_PATTERNS = [
     (r"you gain (\d+) life", lambda m: Effect("gain_life", int(m[1]))),
     (r"its controller gains (\d+) life", lambda m: Effect("gain_life", int(m[1]), target="that_controller")),
     (r"each opponent loses (\d+) life", lambda m: Effect("drain", int(m[1]), target="each_opponent")),
+    (r"each opponent loses (\d+) life and you gain (\d+) life",
+     lambda m: [Effect("drain", int(m[1]), target="each_opponent"), Effect("gain_life", int(m[2]))]),
+    (r"DEVOTIONDRAIN ([WUBRG])", lambda m: Effect("drain_devotion", data={"color": m[1]})),
     (r"target creature(?: you control)? gets \+(\d+)/\+(\d+) until end of turn",
      lambda m: Effect("pump", int(m[1]), int(m[2]), target="creature")),
     (r"~ gets \+(\d+)/\+(\d+) until end of turn", lambda m: Effect("pump", int(m[1]), int(m[2]), target="self")),
+    (r"counter target spell with mana value (\d+)",
+     lambda m: Effect("counter", target="spell", filter=f"cmc:{m[1]}")),
     (r"counter target (noncreature |creature |instant or sorcery )?spell"
      r"(?: unless its controller pays \{(\d+)\})?",
      lambda m: Effect("counter", int(m[2] or 0), target="spell",
@@ -248,6 +276,8 @@ _EFFECT_PATTERNS = [
     # Crippling Fear: approximated as "your creatures share the chosen type".
     (r"creatures that aren't of the chosen type get -(\d+)/-(\d+) until end of turn",
      lambda m: Effect("debuff", int(m[1]), int(m[2]), target="opp_creatures")),
+    (r"target creature(?: an opponent controls| you don't control)? gets -(\d+)/-(\d+) until end of turn",
+     lambda m: Effect("debuff_one", int(m[1]), int(m[2]), target="creature")),
     (r"(?:all creatures|each creature) gets? -(\d+)/-(\d+) until end of turn",
      lambda m: Effect("debuff", int(m[1]), int(m[2]), target="each_creature")),
     (r"choose a creature type", lambda m: None),
@@ -264,6 +294,23 @@ _EFFECT_PATTERNS = [
     (r"DIGPUT (\d+) (\d+)", lambda m: Effect("dig_put", int(m[1]), int(m[2]))),
     (r"IMPULSE (\d+)", lambda m: Effect("draw", int(m[1]))),   # "exile the top N, you may play them"
     (r"TARGETDISCARD", lambda m: Effect("discard_choice", 1, target="player")),
+    (r"TARGETDISCARDNONCREATURE", lambda m: Effect("discard_choice", 1, target="player", filter="noncreature")),
+    (r"(?:target player|each opponent) mills (a|one|two|three|four|five|\d+) cards?",
+     lambda m: Effect("mill", _num(m[1]), target="player")),
+    (r"mill (a|one|two|three|four|five|\d+) cards?", lambda m: Effect("mill", _num(m[1]))),
+    (r"tap (?:up to one )?target (?:creature|nonland permanent)(?: an opponent controls| you don't control)?",
+     lambda m: Effect("tap", 1, target="creature")),
+    (r"tap up to (two|three) target creatures", lambda m: Effect("tap", _num(m[1]), target="creature")),
+    (r"tap target creature(?: an opponent controls)? and put (a|two|three) stun counters? on it",
+     lambda m: [Effect("tap", 1, target="creature"), Effect("stun", _num(m[1]), target="prev")]),
+    (r"put (a|two|three) stun counters? on it", lambda m: Effect("stun", _num(m[1]), target="prev")),
+    (r"GOBLINGUIDE", lambda m: Effect("reveal_land", target="each_opponent")),
+    (r"FETCHBASIC( UNTAP4)?", lambda m: Effect("fetch_basic", data={"untap4": bool(m[1])})),
+    (r"double the number of \+1/\+1 counters on ~", lambda m: Effect("double_counters", target="self")),
+    (r"double the power of target creature you control until end of turn",
+     lambda m: Effect("double_power", target="creature_mine")),
+    (r"(?:then )?draw a card for each opponent who lost life this turn",
+     lambda m: Effect("draw", 1, cond="opp_lost_life")),
     (r"target player discards a card", lambda m: Effect("discard", 1, target="player")),
     (r"(?:then )?discard (a|one|two|three) cards?(?: unless .*)?", lambda m: Effect("discard", _num(m[1]))),
     (r"RUMMAGE (\d+)", lambda m: Effect("rummage", int(m[1]))),
@@ -301,6 +348,20 @@ _EFFECT_PATTERNS = [
 ]
 
 _SUBS = [
+    (re.compile(r"you may discard a card\. if you do, draw a card\.", re.I), lambda m: "RUMMAGE 1."),
+    (re.compile(r"each opponent loses X life, where X is your devotion to (white|blue|black|red|green)\. you gain "
+                r"life equal to the life lost this way\.", re.I),
+     lambda m: f"DEVOTIONDRAIN {dict(white='W', blue='U', black='B', red='R', green='G')[m[1].lower()]}."),
+    (re.compile(r"defending player reveals the top card of their library\. if it's a land card, that player puts "
+                r"it into their hand\.", re.I), lambda m: "GOBLINGUIDE."),
+    (re.compile(r"target (?:player|opponent) reveals their hand\. you choose a noncreature, nonland card from it\. "
+                r"that player discards that card\.", re.I), lambda m: "TARGETDISCARDNONCREATURE."),
+    (re.compile(r"look at the top (\w+) cards of your library\. put (one) of them into your hand and the (?:other|rest) "
+                r"on the bottom of your library(?: in any order)?\.", re.I),
+     lambda m: f"DIG {_num(m[1])} {_num(m[2])}."),
+    (re.compile(r"search your library for a basic land card, put it onto the battlefield tapped, then shuffle\."
+                r"( then if you control four or more lands, untap that land\.)?", re.I),
+     lambda m: "FETCHBASIC UNTAP4." if m[1] else "FETCHBASIC."),
     (re.compile(r"you may discard up(?: to)? (\w+) cards\. if you do, draw that many cards\.", re.I),
      lambda m: f"RUMMAGE {_num(m[1])}."),
     (re.compile(r"choose up to one target creature\. put a \+1/\+1 counter and a counter from among flying, first "
@@ -327,6 +388,7 @@ _SUBS = [
 
 _TRIGGERS = [
     (r"When(?:ever)? ~ enters or attacks, (.+)", ("etb", "attacks")),
+    (r"When ~ enters and at the beginning of your upkeep, (.+)", ("etb", "upkeep")),
     (r"When(?:ever)? ~ enters(?: the battlefield)?, (.+)", ("etb",)),
     (r"Whenever ~ attacks, (.+)", ("attacks",)),
     (r"When(?:ever)? ~ dies, (?:if it was a creature, )?(.+)", ("dies",)),
@@ -361,12 +423,35 @@ def _parse_effects(text: str):
                 m = re.fullmatch(pat, s[5:], flags=re.IGNORECASE)
             if m:
                 eff = build(m)
-                if eff is not None:
+                if isinstance(eff, list):
+                    effects += eff
+                elif eff is not None:
                     effects.append(eff)
                 break
         else:
-            unmatched.append(sentence.strip())
+            parts = _split_compound(s)
+            if parts:
+                effects += parts
+            else:
+                unmatched.append(sentence.strip())
     return effects, unmatched
+
+
+def _split_compound(s: str):
+    """Effects for "A, then B" / "A and B" when every part matches a template, else None."""
+    for sep in (r",? then ", r" and "):
+        pieces = re.split(sep, s, maxsplit=1, flags=re.I)
+        if len(pieces) != 2:
+            continue
+        out = []
+        for piece in pieces:
+            effs, bad = _parse_effects(piece[0].upper() + piece[1:] + ".")
+            if bad or not effs:
+                break
+            out += effs
+        else:
+            return out
+    return None
 
 
 def _face_types(type_line: str) -> frozenset:
@@ -420,7 +505,7 @@ def _parse_face(data: dict) -> CardDef:
     text = re.sub(r", where X is the amount of mana spent to cast ~\.", ".", text).replace(
         "the top X cards", f"the top {int(data.get('cmc', 0) or 0)} cards")
 
-    keywords, produces, etb, spell, unsupported = set(), set(), [], [], []
+    keywords, produces, etb, spell, unsupported, approximations = set(), set(), [], [], [], []
     triggers: list[Trigger] = []
     extra: dict = {"snow": "Snow" in type_line}
     modes: list = []
@@ -438,9 +523,16 @@ def _parse_face(data: dict) -> CardDef:
     if data.get("loyalty"):
         extra["loyalty"] = stat(data["loyalty"]) or 0
 
+    kicked: list = []
     for line in (l.strip() for l in text.split("\n")):
         if not line:
             continue
+        if any(a.startswith("never paid: As an additional cost") for a in approximations):
+            line = re.sub(r"\s*If ~'s additional cost was paid, [^.]+\.", "", line).strip()
+            if not line:
+                continue
+        kicked += re.findall(r"If ~ was kicked, (.+?\.)", line)
+        line = re.sub(r"\s*If ~ was kicked, .+?\.", "", line).strip()
         line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid) — (?=When|At|If)", "", line)
         parts = [p.strip().lower() for p in line.split(",")]
         if all(p in KEYWORDS or re.fullmatch(r"ward \{\d+\}", p) for p in parts):
@@ -465,7 +557,27 @@ def _parse_face(data: dict) -> CardDef:
         if m:
             extra.update(ward=int(m[1]), ward_untapped_only=True)
             continue
-        m = re.fullmatch(r"\{T\}: Add (.+?)\.(?: ~ deals 1 damage to you\.)?", line)
+        m = re.fullmatch(r"\{T\}: Add one mana of any color\. (Spend this mana only .+)", line)
+        if m:
+            produces |= set(COLORS)
+            unsupported.append(f"mana restriction ignored: {m[1]}")
+            continue
+        m = re.fullmatch(r"\{T\}: Add (\{[WUBRG]\}(?: or \{[WUBRG]\})?)\. (Activate only if [^.]+\.)", line)
+        if m:
+            produces |= set(re.findall(r"[WUBRG]", m[1]))
+            approximations.append(f"condition ignored: {m[2]}")
+            continue
+        if re.fullmatch(r"\{T\}, Pay 1 life: Add one mana of any color\.", line):
+            produces |= set(COLORS)
+            approximations.append("the 1 life for coloured mana isn't paid")
+            continue
+        if re.fullmatch(r"~ enters tapped unless it's your first, second, or third turn of the game\.", line):
+            extra["tapped_condition"] = "after_turn3"
+            continue
+        if re.fullmatch(r"~ enters tapped if it's not your turn\.", line):
+            extra["tapped_condition"] = "not_your_turn"
+            continue
+        m = re.fullmatch(r"\{T\}: Add ([^.]+)\.(?: ~ deals 1 damage to you\.)?", line)
         if m:
             cols, amount = _parse_mana_ability(m[1])
             produces |= cols
@@ -476,6 +588,50 @@ def _parse_face(data: dict) -> CardDef:
             continue
         if re.fullmatch(r"~ enters(?: the battlefield)? tapped unless you control two or more other lands\.", line):
             extra["tapped_condition"] = "unless_2_lands"
+            continue
+        if re.fullmatch(r"~ enters(?: the battlefield)? tapped unless you control two or fewer other lands\.", line):
+            extra["tapped_condition"] = "unless_le_2_lands"
+            continue
+        m = re.fullmatch(r"~ enters(?: the battlefield)? with (a|one|two|three|four|five) \+1/\+1 counters? on it\.",
+                         line)
+        if m:
+            extra["etb_counters"] = _num(m[1])
+            continue
+        m = re.fullmatch(r"\{T\}, Sacrifice ~: (Search your library for a basic land card, put it onto the battlefield "
+                         r"tapped, then shuffle\.(?: Then if you control four or more lands, untap that land\.)?)", line)
+        if m and "Land" in types:
+            effs, _ = _parse_effects(m[1])
+            approximations.append("cracked as soon as it enters")
+            effs[0].data["sacrifice"] = True
+            triggers.append(Trigger("etb", effs))
+            etb += effs
+            continue
+        if re.fullmatch(r"If a source you control would deal noncombat damage to a creature an opponent controls, put "
+                        r"that many -1/-1 counters on that creature instead\.", line):
+            extra["wither_noncombat"] = True
+            continue
+        if re.fullmatch(r"If a creature dealt damage this turn by a source you controlled would die, exile it "
+                        r"instead\.", line):
+            extra["exile_damaged"] = True
+            continue
+        if line in ("Daybound", "Nightbound"):
+            approximations.append("day/night isn't tracked: it stays on its front face")
+            continue
+        if re.fullmatch(r"Casualty \d+", line):
+            approximations.append(f"never paid: {line}")
+            continue
+        m = re.fullmatch(r"Kicker (\{[^ ]+\})", line)
+        if m:
+            extra["kicker"] = parse_mana_cost(m[1])
+            continue
+        if re.fullmatch(r"As an additional cost to cast ~, you may [^.]+\.", line):
+            approximations.append(f"never paid: {line}")
+            continue
+        if re.fullmatch(r"If ~'s additional cost was paid, [^.]+\.", line) and approximations:
+            continue
+        m = re.fullmatch(r"As an additional cost to cast ~, (?:discard a card or )?pay (\d+) life\.", line)
+        if m:
+            extra["extra_life_cost"] = int(m[1])
             continue
         if re.fullmatch(r"If you control two or more other lands, ~ enters(?: the battlefield)? tapped\.", line):
             extra["tapped_condition"] = "if_2_lands"
@@ -546,7 +702,8 @@ def _parse_face(data: dict) -> CardDef:
                         r"time you could cast an instant\.", line):
             extra["pw_instant_on_entry"] = True
             continue
-        m = re.fullmatch(r"\[([+−-]?\d+)\]: ?(.+)", line)
+        m = re.fullmatch(r"\[([+−-]?\d+)\]: ?(.+)", line) or \
+            ("Planeswalker" in types and re.fullmatch(r"([+−-]?\d+): ?(.+)", line))
         if m:
             effs, bad = _parse_effects(m[2])
             if effs:
@@ -578,6 +735,12 @@ def _parse_face(data: dict) -> CardDef:
             elif ability:
                 act.keywords = frozenset(k.strip().lower() for k in ability.split(",") if k.strip().lower() in KEYWORDS)
             activated.append(act)
+            continue
+        m = re.fullmatch(r"(\{[^:]+\}): ~ becomes an? (\d+)/(\d+) [\w ]*? creature(?: with ([\w ,]+))? until end of "
+                         r"turn\. It's still a land\.", line)
+        if m:
+            kws = frozenset(k.strip().lower() for k in re.split(r",| and ", m[4] or "") if k.strip().lower() in KEYWORDS)
+            activated.append(Activated("animate", parse_mana_cost(m[1]), int(m[2]), int(m[3]), keywords=kws))
             continue
         m = re.fullmatch(r"(\{[^:]+\}): Put two \+1/\+1 counters on ~\. Then you may have it become a 0/0 \w+ "
                          r"creature until end of turn\. It's still a land\.", line)
@@ -614,6 +777,20 @@ def _parse_face(data: dict) -> CardDef:
         for e in spell:
             if e.kind == "dig":
                 e.data["x_mana"] = True
+    if "kicker" in extra:
+        kicked_effects = [dataclasses.replace(e) for e in spell]
+        for k in kicked:
+            m = re.fullmatch(r"it deals (\d+) damage instead\.", k)
+            dmg = [e for e in kicked_effects if e.kind == "damage"]
+            if m and dmg:
+                dmg[0].amount = int(m[1])
+                continue
+            effs, bad = _parse_effects(k)
+            kicked_effects += effs
+            unsupported += [f"if kicked: {b}" for b in bad]
+        alt_costs.append(AltCost("kicker", add_mana(cost, extra.pop("kicker")), effects=kicked_effects))
+    elif kicked:
+        unsupported += [f"if kicked: {k}" for k in kicked]
     if "prowess" in keywords:
         triggers.append(Trigger("cast_noncreature", [Effect("pump", 1, 1, target="self")]))
     # Triggers with "choose up to one" get their bullet modes; drop ones that ended up empty.
@@ -623,7 +800,7 @@ def _parse_face(data: dict) -> CardDef:
         name=name, mana_cost=cost, cmc=int(data.get("cmc", 0) or 0), types=types,
         power=stat(data.get("power")), toughness=stat(data.get("toughness")),
         keywords=frozenset(keywords), produces=frozenset(produces), enters_tapped=enters_tapped,
-        spell_effects=spell, etb_effects=etb, unsupported=unsupported, oracle=oracle,
+        spell_effects=spell, etb_effects=etb, unsupported=unsupported, approximations=approximations, oracle=oracle,
         triggers=triggers, modes=modes, chapters=chapters, loyalty_abilities=loyalty_abilities,
         alt_costs=alt_costs, activated=activated, **extra,
     )
