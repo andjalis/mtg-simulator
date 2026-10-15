@@ -17,6 +17,8 @@ import sys
 from .carddb import CardDB
 from .decklist import load_deck
 from .forge import ForgeError, run_forge_match
+from .ladder_report import HtmlReport, TerminalView, text_summary
+from .rating import LadderTracker
 from .runner import build_deck, run_match, unsupported_report, wilson
 from .tiers import PASS_RATE, TIERS, list_tiers, resolve_tiers
 
@@ -36,6 +38,10 @@ def main(argv=None):
     ap.add_argument("--tier", nargs="+", metavar="T",
                     help="play the deck against every deck in these tiers (names, numbers 1-5, or all)")
     ap.add_argument("--list-tiers", action="store_true", help="show the test tiers and their decks")
+    ap.add_argument("--report", metavar="HTML",
+                    help="with --ladder/--tier: where to write the live ranked-ladder report "
+                         "(default results/ladder/DECK.html)")
+    ap.add_argument("--no-report", action="store_true", help="with --ladder/--tier: don't write the HTML report")
     ap.add_argument("--show-ignored", action="store_true",
                     help="list every card's ignored rules text, even when there is a lot of it")
     ap.add_argument("--offline", action="store_true", help="don't fetch unknown cards from Scryfall")
@@ -105,9 +111,26 @@ def main(argv=None):
         print("  Results for decks with many partial cards say little; --engine forge plays every card.")
         print()
 
+    tracker = view = None
+    if tiers:
+        tracker = LadderTracker(names[0], [(t.key, t.label, tier_opps[t.key]) for t in tiers],
+                                pass_rate=args.pass_rate, ladder=args.ladder)
+        view = TerminalView()
+        tracker.listeners.append(view)
+        if not args.no_report:
+            report = args.report or f"results/ladder/{names[0]}.html"
+            tracker.listeners.append(HtmlReport(report))
+            print(f"Live ranked-ladder report: {report}\n")
+
     def play(a, b):
+        if tracker:
+            before = tracker.mmr
+            tracker.start_match(b, args.games)
+        on_game = (lambda r: tracker.update_match(b, r.wins_a, r.draws, r.games)) if tracker else None
         if args.engine == "forge":
             def progress(done, total):
+                if view and view.live:
+                    return  # the live rank line already shows progress
                 print(f"\r  {a} vs {b}: {done}/{total} games", end="", file=sys.stderr, flush=True)
             try:
                 res = run_forge_match(a, counts[a], b, counts[b], games=args.games, seed=args.seed,
@@ -118,15 +141,21 @@ def main(argv=None):
             print(file=sys.stderr)
         else:
             res, log = run_match(a, decks[a], b, decks[b], games=args.games, seed=args.seed,
-                                 log_first=args.log)
+                                 log_first=args.log, on_game=on_game)
             if args.log:
                 print("\n".join(log), "\n")
-        print(res.summary(), "\n")
+        if tracker:
+            tracker.update_match(b, res.wins_a, res.draws, res.games)
+            view.clear()
+            print(res.summary())
+            print(f"  MMR {tracker.mmr:.0f} ({tracker.rank.name}, {tracker.mmr - before:+.0f})\n")
+        else:
+            print(res.summary(), "\n")
         return res
 
     if tiers:
         run_tiers(names[0], tiers, tier_opps, play, ladder=args.ladder, full=args.full_ladder,
-                  pass_rate=args.pass_rate)
+                  pass_rate=args.pass_rate, tracker=tracker)
         return
 
     totals = {n: [0.0, 0] for n in names}
@@ -145,9 +174,10 @@ def main(argv=None):
                 print(f"  {n:<24} {w / g:6.1%}  (95% CI {lo:.1%} to {hi:.1%}, {g} games)")
 
 
-def run_tiers(me, tiers, tier_opps, play, ladder=False, full=False, pass_rate=PASS_RATE):
+def run_tiers(me, tiers, tier_opps, play, ladder=False, full=False, pass_rate=PASS_RATE, tracker=None):
     """Play `me` against each tier in order. On the ladder, stop at the first tier it fails
-    (win rate below pass_rate against the tier as a whole) unless full is set."""
+    (win rate below pass_rate against the tier as a whole) unless full is set.
+    A rating.LadderTracker, if given, is told when each tier ends and gets the verdict."""
     rows, reached, failed = [], None, None
     for t in tiers:
         points = games = 0.0
@@ -160,6 +190,8 @@ def run_tiers(me, tiers, tier_opps, play, ladder=False, full=False, pass_rate=PA
         lo, hi = wilson(points, int(games))
         rows.append(f"  {t.label:<9} {rate:6.1%}  (95% CI {lo:.1%} to {hi:.1%}, {int(games)} games)"
                     + (("  cleared" if cleared else "  failed") if ladder else ""))
+        if tracker:
+            tracker.end_pool(t.key, cleared if ladder else None)
         if ladder:
             if cleared and failed is None:
                 reached = t
@@ -169,13 +201,19 @@ def run_tiers(me, tiers, tier_opps, play, ladder=False, full=False, pass_rate=PA
                     break
     print(f"{me} by tier" + (f" (clearing a tier needs {pass_rate:.0%})" if ladder else ""))
     print("\n".join(rows))
+    verdict = ""
     if ladder:
         if failed is None:
-            print(f"Ladder: {me} cleared every tier, up to and including {reached.label}.")
+            verdict = f"Ladder: {me} cleared every tier, up to and including {reached.label}."
         elif reached is None:
-            print(f"Ladder: {me} did not clear the first tier ({failed.label}).")
+            verdict = f"Ladder: {me} did not clear the first tier ({failed.label})."
         else:
-            print(f"Ladder: {me} reached {reached.label} and stopped at {failed.label}.")
+            verdict = f"Ladder: {me} reached {reached.label} and stopped at {failed.label}."
+        print(verdict)
+    if tracker:
+        tracker.finish(verdict)
+        print()
+        print(text_summary(tracker.to_dict()))
 
 
 if __name__ == "__main__":
