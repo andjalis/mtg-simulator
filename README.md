@@ -17,6 +17,9 @@ python3 -m unittest discover -s tests -t .       # tests
 
 Needs only Python 3.10+, no packages.
 
+GitHub Actions runs the tests on Python 3.10 and 3.13 for every push and pull request
+(`.github/workflows/tests.yml`); the card database is rebuilt there once a week and cached.
+
 ## Decklists
 
 Plain text as exported by Arena, MTGO or Moxfield: `4 Lightning Bolt`,
@@ -35,6 +38,19 @@ going). `--tier pro semipro` plays chosen tiers, and `--list-tiers` shows every 
 `--engine forge` for the pro tier: the built-in engine ignores much of those cards' text.
 `decks/tiers/README.md` says where each list came from.
 
+## Ranks and MMR
+
+A ladder or tier run also rates the deck like a ranked queue: Bronze, Silver, Gold, Platinum,
+Diamond, Master and Grandmaster, each a 200-point MMR band (Silver starts at 1000, Grandmaster at
+2000). Each opponent pool is anchored at an MMR (a pool named after a rank sits in the middle of
+that rank's band; the five tiers are spread from Bronze to Grandmaster), and the deck's MMR is its
+Elo performance rating against everything it has played, so it moves after every game. While the
+run goes, the terminal shows the current rank and match progress on one live line, each match ends
+with the MMR change, and the run ends with the rank ladder as text. `results/ladder/DECK.html` is
+rewritten as the run goes (it reloads itself in a browser until the run finishes) with a rank
+badge, the MMR climb over the rank bands and win rates by opponent; `DECK.json` beside it holds
+the same data. `--report PATH` writes it elsewhere and `--no-report` skips it.
+
 ## Web page
 
 ```
@@ -44,7 +60,8 @@ python3 -m web            # then open http://127.0.0.1:8000
 Paste a decklist, pick the full climb or chosen ranks and the number of games per opponent,
 and the page shows how far the deck climbs and each rank's win rate with its 95% confidence
 interval; click a rank for every opponent's record, play/draw split and game length. It checks the list
-as you type and flags unknown cards and cards the engine only partly simulates. Games run in
+as you type and flags unknown cards and cards the engine only partly simulates. Above the results it shows the deck's rank, MMR and MMR chart
+(see Ranks and MMR) as games finish. Games run in
 the built-in engine on every CPU core (`--jobs N` to limit, `--port`, `--host`, `--offline`).
 Standard library only, like the rest of the simulator.
 
@@ -152,6 +169,8 @@ adventures, flashback, foretold cards, blitz, channel; cast them with
 | `mtgsim/ai.py` | `HeuristicAI` (default) and `BaselineAI` (the first, simpler player, kept for comparison) |
 | `mtgsim/runner.py` | Match loop, statistics |
 | `mtgsim/tiers.py` | Test tiers and the ladder (`decks/tiers/`) |
+| `mtgsim/rating.py` | MMR, ranks and `LadderTracker` (live state of a ladder run, as JSON) |
+| `mtgsim/ladder_report.py` | Live terminal line, text summary and HTML report of a ladder run |
 | `mtgsim/forge.py` | Forge mode: .dck export, running Forge's `sim`, parsing results |
 | `web/` | The web page: `server.py` (HTTP API), `sim.py` (runs tiers in a process pool), `static/index.html` |
 | `decks/` | Sample decklists and the test tiers |
