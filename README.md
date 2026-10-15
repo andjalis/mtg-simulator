@@ -35,6 +35,19 @@ going). `--tier pro semipro` plays chosen tiers, and `--list-tiers` shows every 
 `--engine forge` for the pro tier: the built-in engine ignores much of those cards' text.
 `decks/tiers/README.md` says where each list came from.
 
+## Web page
+
+```
+python3 -m web            # then open http://127.0.0.1:8000
+```
+
+Paste a decklist, pick the ladder or chosen tiers and the number of games per opponent, and
+the page shows the ladder result and each tier's win rate with its 95% confidence interval;
+click a tier for every opponent's record, play/draw split and game length. It checks the list
+as you type and flags unknown cards and cards the engine only partly simulates. Games run in
+the built-in engine on every CPU core (`--jobs N` to limit, `--port`, `--host`, `--offline`).
+Standard library only, like the rest of the simulator.
+
 ## Card data
 
 Every Magic card (about 34,000) is in `mtgsim/data/cards.sqlite3`, an offline
@@ -140,6 +153,7 @@ adventures, flashback, foretold cards, blitz, channel; cast them with
 | `mtgsim/runner.py` | Match loop, statistics |
 | `mtgsim/tiers.py` | Test tiers and the ladder (`decks/tiers/`) |
 | `mtgsim/forge.py` | Forge mode: .dck export, running Forge's `sim`, parsing results |
+| `web/` | The web page: `server.py` (HTTP API), `sim.py` (runs tiers in a process pool), `static/index.html` |
 | `decks/` | Sample decklists and the test tiers |
 | `results/` | Saved test runs, such as `results/ub_snow_control/` |
 | `AI_RESULTS.md` | Measurements of the AI against the baseline player |
