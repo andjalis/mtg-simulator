@@ -15,6 +15,7 @@ import argparse
 import itertools
 import sys
 
+from . import history
 from .carddb import CardDB
 from .coverage import deck_coverage, format_coverage
 from .decklist import load_deck
@@ -48,6 +49,8 @@ def main(argv=None):
                     help="with --ladder/--rank: where to write the live ranked-ladder report "
                          "(default results/ladder/DECK.html)")
     ap.add_argument("--no-report", action="store_true", help="with --ladder/--rank: don't write the HTML report")
+    ap.add_argument("--no-history", action="store_true",
+                    help="with --ladder/--rank: don't save the run to the deck's history (python3 -m mtgsim.history)")
     ap.add_argument("--show-ignored", action="store_true",
                     help="list every card's ignored rules text, even when there is a lot of it")
     ap.add_argument("--offline", action="store_true", help="don't fetch unknown cards from Scryfall")
@@ -173,6 +176,9 @@ def main(argv=None):
     if tiers:
         run_tiers(names[0], tiers, tier_opps, play, ladder=args.ladder, full=args.full_ladder,
                   pass_rate=args.pass_rate, tracker=tracker)
+        if not args.no_history and history.try_record(history.record_ladder, tracker.to_dict(), counts[names[0]],
+                                                      engine=args.engine, source="cli"):
+            print(f"Saved to run history: python3 -m mtgsim.history show {names[0]}")
         return
 
     totals = {n: [0.0, 0] for n in names}
