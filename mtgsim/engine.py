@@ -22,7 +22,7 @@ from __future__ import annotations
 import dataclasses
 import random
 
-from .cards import COLORS, AltCost, CardDef, Effect, make_token
+from .cards import BASIC_MANA, COLORS, AltCost, CardDef, Effect, make_token
 
 TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "artifact", "player", "spell")
 
@@ -57,12 +57,15 @@ class Permanent:
     @property
     def power(self):
         base = self.animated.power if self.animated and self.animated.kind == "animate" else (self.card.power or 0)
-        return base + self.pump_p + self.p1 + (self.anthem[0] if self.is_creature else 0)
+        return base + self.pump_p + self.p1 - self.m1 + (self.anthem[0] if self.is_creature else 0)
 
     @property
     def toughness(self):
         base = self.animated.toughness if self.animated and self.animated.kind == "animate" else (self.card.toughness or 0)
-        return base + self.pump_t + self.p1 + (self.anthem[1] if self.is_creature else 0)
+        return base + self.pump_t + self.p1 - self.m1 + (self.anthem[1] if self.is_creature else 0)
+
+    @property
+    def m1(self): return self.counters.get("-1/-1", 0)
 
     @property
     def loyalty(self): return self.counters.get("loyalty", 0)
@@ -308,7 +311,8 @@ class Game:
                 v = dataclasses.replace(card, name=f"{card.name} ({kind})")
                 if alt is not None:
                     v.mana_cost = alt.cost
-                    v.spell_effects = list(card.spell_effects) + list(alt.extra)
+                    v.spell_effects = list(alt.effects if alt.effects is not None else card.spell_effects) + \
+                        list(alt.extra)
                     v.cost_reduction = ""
             v.origin = (card, kind, alt)
             self._variants[key] = v
@@ -329,7 +333,7 @@ class Game:
             if c.adventure:
                 out.append(self._variant(c, "adventure"))
             for a in c.alt_costs:
-                if a.kind == "alt" or (a.kind == "spectacle" and opp.lost_life_turn) or \
+                if a.kind in ("alt", "kicker") or (a.kind == "spectacle" and opp.lost_life_turn) or \
                         (a.kind == "blitz" and "hand" in a.zone):
                     out.append(self._variant(c, a.kind, a))
         out += [self._variant(c, "from_adventure") for c in p.on_adventure]
@@ -347,7 +351,7 @@ class Game:
 
     def _available(self, p: Player, card: CardDef) -> bool:
         base, kind, _ = self._origin(card)
-        zone = {"": p.hand, "adventure": p.hand, "alt": p.hand, "spectacle": p.hand, "blitz": p.hand,
+        zone = {"": p.hand, "adventure": p.hand, "alt": p.hand, "kicker": p.hand, "spectacle": p.hand, "blitz": p.hand,
                 "channel": p.hand, "from_adventure": p.on_adventure, "foretold": p.foretold,
                 "flashback": p.graveyard, "blitz_gy": p.graveyard}[kind]
         return base in zone
@@ -360,6 +364,8 @@ class Game:
         if kind == "spectacle" and not self.opponent(p).lost_life_turn:
             return False
         if alt is not None and alt.life and p.life <= alt.life:
+            return False
+        if card.extra_life_cost and p.life <= card.extra_life_cost:
             return False
         if not card.instant_speed and not (p is self.active and self.step in ("main1", "main2")
                                            and not self.stack):
@@ -394,6 +400,10 @@ class Game:
             return perm in self.attackers or any(perm in bl for bl in self.blocks.values())
         if f == "nonartifact":
             return not perm.card.is_artifact
+        if f == "nonflying":
+            return not perm.has("flying")
+        if f == "untapped":
+            return not perm.tapped
         return True
 
     def legal_targets(self, p: Player, eff: Effect) -> list:
@@ -436,6 +446,8 @@ class Game:
         if eff.filter == "noncreature" and card.is_creature:
             return False
         if eff.filter == "instant_sorcery" and not (card.is_instant or card.is_sorcery):
+            return False
+        if eff.filter.startswith("cmc:") and card.cmc != int(eff.filter[4:]):
             return False
         return True
 
@@ -512,7 +524,10 @@ class Game:
             pl.attacked_with = 0
         self.step = "untap"
         for perm in p.battlefield:
-            perm.tapped = False
+            if perm.tapped and perm.counters.get("stun"):
+                perm.counters["stun"] -= 1   # a stun counter is removed instead of untapping
+            else:
+                perm.tapped = False
             perm.sick = False
             perm.loyalty_used = False
         p.land_played = False
@@ -744,6 +759,8 @@ class Game:
             return isinstance(prev, Player)
         if c == "modified":
             return any(x.counters.get("+1/+1") for x in p.creatures)
+        if c == "opp_lost_life":
+            return self.opponent(p).lost_life_turn
         return True
 
     # -------------------------------------------------------------- actions
@@ -769,6 +786,8 @@ class Game:
             return False
         if alt is not None and alt.life:
             p.life -= alt.life
+        if card.extra_life_cost:
+            p.life -= card.extra_life_cost
         zone = {"from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard}.get(kind, p.hand)
         zone.remove(base)
@@ -899,6 +918,12 @@ class Game:
             perm.tapped = others < 2
         elif cond == "if_2_lands":
             perm.tapped = others >= 2
+        elif cond == "unless_le_2_lands":
+            perm.tapped = others > 2
+        elif cond == "after_turn3":
+            perm.tapped = self.turn > 6    # each player's first three turns are game turns 1-6
+        elif cond == "not_your_turn":
+            perm.tapped = p is not self.active
         elif cond == "shock":
             if self.hook(p, "pay_shock")(self, p, card):
                 p.life -= 2
@@ -906,6 +931,8 @@ class Game:
                 perm.tapped = True
         if card.loyalty:
             perm.counters["loyalty"] = card.loyalty
+        if card.etb_counters:
+            perm.counters["+1/+1"] = card.etb_counters
         p.battlefield.append(perm)
         if tapped_attacking:
             perm.tapped = True
@@ -971,13 +998,13 @@ class Game:
         if k == "damage":
             if eff.target == "each_creature":
                 for perm in p.creatures + opp.creatures:
-                    perm.damage += eff.amount
+                    self.deal_damage(perm, eff.amount, by=p)
             elif eff.target == "each_opp_and_pw":
                 opp.life -= eff.amount
                 for pw in opp.planeswalkers:
                     pw.counters["loyalty"] = pw.loyalty - eff.amount
             else:
-                self.deal_damage(target, eff.amount)
+                self.deal_damage(target, eff.amount, by=p)
         elif k == "destroy":
             if isinstance(target, Permanent) and target in target.controller.battlefield:
                 self.destroy(target)
@@ -1038,6 +1065,10 @@ class Game:
         elif k == "discard_choice":
             if isinstance(target, Player):
                 card = self.hook(p, "choose_discard_from")(self, p, target)
+                if eff.filter == "noncreature":    # Duress: a noncreature, nonland card
+                    legal = [c for c in target.hand if not c.is_land and not c.is_creature]
+                    if card not in legal:
+                        card = max(legal, key=lambda c: c.cmc, default=None)
                 if card is not None:
                     target.hand.remove(card)
                     target.graveyard.append(card)
@@ -1099,18 +1130,65 @@ class Game:
                 card = max(opp.graveyard, key=lambda c: c.is_instant or c.is_sorcery)
                 opp.graveyard.remove(card)
                 opp.exile.append(card)
+        elif k == "drain_devotion":
+            color = eff.data["color"]
+            n = sum(x.card.mana_cost.get(color, 0) for x in p.battlefield)
+            opp.life -= n
+            p.life += n
+            self.log(f"drains {n} (devotion)", p)
+        elif k == "mill":
+            who = target if isinstance(target, Player) else p
+            for _ in range(min(eff.amount, len(who.library))):
+                who.graveyard.append(who.library.pop())
+        elif k == "tap":
+            if isinstance(target, Permanent):
+                target.tapped = True
+            for _ in range(eff.amount - 1):   # "tap up to two target creatures": the next best ones
+                extra = default_choose_target(self, p, eff)
+                if extra is not None:
+                    extra.tapped = True
+        elif k == "stun":
+            if isinstance(target, Permanent) and target in target.controller.battlefield:
+                target.counters["stun"] = target.counters.get("stun", 0) + eff.amount
+        elif k == "reveal_land":
+            if opp.library and opp.library[-1].is_land:
+                opp.hand.append(opp.library.pop())
+                self.log(f"{opp} puts a revealed land into their hand", p)
+        elif k == "fetch_basic":
+            if eff.data.get("sacrifice"):
+                if item is None or item.source not in p.battlefield:
+                    return
+                self.leave_battlefield(item.source, "graveyard")
+            land = choose_basic(self, p)
+            if land is not None:
+                p.library.remove(land)
+                self.log(f"fetches {land.name}", p)
+                perm = self.enter_battlefield(p, land)
+                lands = sum(x.card.is_land for x in p.battlefield)
+                perm.tapped = not (eff.data.get("untap4") and lands >= 4)
+            self.rng.shuffle(p.library)
+        elif k == "double_power":
+            if isinstance(target, Permanent) and target.power > 0:
+                target.pump_p += target.power
+        elif k == "double_counters":
+            if isinstance(target, Permanent) and target.p1:
+                target.counters["+1/+1"] = target.p1 * 2
         elif k == "next_creature_counter":
             p.next_creature_counters += 1
         elif k == "adversary":
             self.adversary(p, item, eff)
         self.state_based_actions()
 
-    def deal_damage(self, target, amount: int):
+    def deal_damage(self, target, amount: int, by: Player | None = None):
+        """Noncombat damage; ``by`` is the controller of the source."""
         if isinstance(target, Player):
             target.life -= amount
         elif isinstance(target, Permanent) and target in target.controller.battlefield:
             if target.is_planeswalker and not target.is_creature:
                 target.counters["loyalty"] = target.loyalty - amount
+            elif by is not None and target.controller is not by and \
+                    any(x.card.wither_noncombat for x in by.battlefield):
+                target.counters["-1/-1"] = target.m1 + amount   # Soul-Scar Mage
             else:
                 target.damage += amount
 
@@ -1226,6 +1304,11 @@ class Game:
 
     def dies(self, perm: Permanent):
         was_creature = perm.is_creature
+        if was_creature and (perm.damage or perm.deathtouched) and \
+                any(x.card.exile_damaged for x in self.opponent(perm.controller).battlefield):
+            if self.leave_battlefield(perm, "exile"):   # Etching of Kumano
+                self.log(f"{perm.card.name} is exiled instead of dying", perm.controller)
+            return
         if not self.leave_battlefield(perm, "graveyard"):
             return
         self.log(f"{perm.card.name} dies", perm.controller)
@@ -1410,18 +1493,34 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         if killable:
             return max(killable, key=perm_value)
         return opp if eff.target == "any" else None
+    if k == "mill":
+        return opp
+    if k == "tap":
+        theirs = [x for x in theirs if not x.tapped]
+        return max(theirs, key=perm_value, default=None)
     if k in ("destroy", "debuff_one", "bounce"):
         if k == "debuff_one":
             theirs = [x for x in theirs if x.toughness <= eff.amount2]
         theirs = [x for x in theirs if not (k == "destroy" and x.has("indestructible"))]
         return max(theirs, key=perm_value, default=None)
-    if k in ("pump", "p1_counters"):
+    if k in ("pump", "p1_counters", "double_power"):
         return max(mine, key=perm_value, default=None)
     if k in ("counter", "bounce_spell"):
         return next((i for i in reversed(game.stack) if i in legal), None)
     if k in ("discard", "discard_choice"):
         return opp if opp.hand else None
     return None
+
+
+def choose_basic(game: Game, me: Player):
+    """The basic land to fetch: one making the colour the hand needs most and the battlefield has least."""
+    basics = [c for c in me.library if c.is_land and (c.name in BASIC_MANA or c.name.startswith("Snow-Covered ")
+                                                      or c.name == "Wastes")]
+    if not basics:
+        return None
+    have = {col: sum(col in x.card.produces for x in me.battlefield if x.card.is_land) for col in COLORS}
+    need = {col: sum(c.mana_cost.get(col, 0) for c in me.hand + me.library) for col in COLORS}
+    return max(basics, key=lambda c: max((need[col] / (1 + have[col]) for col in c.produces), default=0))
 
 
 def choose_target(game: Game, me: Player, eff: Effect):
