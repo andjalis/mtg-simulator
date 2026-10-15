@@ -64,7 +64,8 @@ class MatchResult:
 
 
 def run_match(name_a, deck_a, name_b, deck_b, games=1000, seed=None, ai_a=None, ai_b=None,
-              log_first=False) -> tuple[MatchResult, list[str]]:
+              log_first=False, on_game=None) -> tuple[MatchResult, list[str]]:
+    """on_game(res), if given, is called with the running MatchResult after every game."""
     rng = random.Random(seed)
     res = MatchResult(name_a, name_b)
     first_log: list[str] = []
@@ -86,6 +87,8 @@ def run_match(name_a, deck_a, name_b, deck_b, games=1000, seed=None, ai_a=None, 
             res.wins_b += 1
         else:
             res.draws += 1
+        if on_game:
+            on_game(res)
     return res, first_log
 
 
