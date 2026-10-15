@@ -1,0 +1,11 @@
+# Silver: mono-green creatures and pump spells, some of them overcosted
+24 Forest
+4 Llanowar Elves
+4 Elvish Visionary
+4 Grizzly Bears
+4 Ironroot Treefolk
+4 Garruk's Companion
+4 Centaur Courser
+4 Giant Growth
+4 Colossal Dreadmaw
+4 Rumbling Baloth

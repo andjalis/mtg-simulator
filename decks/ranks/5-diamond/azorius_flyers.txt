@@ -1,0 +1,35 @@
+# Azorius Flyers
+# Diamond: a current Standard tournament deck from the edge of the metagame
+# Archetype share: 1.7% of 1,147 MTGO Challenge decks, 6 top-8s (2026-09-10 to 2026-10-11)
+# List: JonDaBill, MTGO Standard Challenge 16 Special, 3rd Place, 2026-10-07
+# Source: https://www.mtgo.com/decklist/standard-challenge-16-special-2026-10-0712855544#deck_JonDaBill
+4 Daydream
+4 Floodfarm Verge
+4 Gleaming Bastion
+4 Hallowed Fountain
+4 Momo, Friendly Flier
+4 Practiced Offense
+4 Quantum Riddler
+4 Sage of the Skies
+4 Starfield Shepherd
+4 Steamcore Scholar
+3 Clarion Conqueror
+3 Springleaf Drum
+2 Abandoned Air Temple
+2 Seam Rip
+1 Erode
+1 Guiding Hydra
+1 Nurturing Pixie
+7 Plains
+
+Sideboard
+3 Rest in Peace
+2 Dawn's Truce
+2 Seam Rip
+2 Spider-Sense
+1 Avatar's Wrath
+1 Disdainful Stroke
+1 Emeritus of Ideation
+1 Get Lost
+1 The Theorist, Jace Beleren
+1 Wan Shi Tong, Librarian

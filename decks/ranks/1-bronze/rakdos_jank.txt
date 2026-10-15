@@ -1,0 +1,12 @@
+# Bronze: two colours of overcosted creatures and discard that does nothing on the board
+12 Swamp
+12 Mountain
+4 Raging Goblin
+4 Bog Imp
+4 Typhoid Rats
+4 Goblin Piker
+4 Gray Ogre
+4 Hill Giant
+4 Highland Giant
+4 Mind Rot
+4 Shock

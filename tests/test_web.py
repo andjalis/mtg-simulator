@@ -12,7 +12,7 @@ from mtgsim.tiers import TIERS
 from web import sim
 from web.server import App, make_handler
 
-BURN = (Path(__file__).resolve().parent.parent / "decks" / "tiers" / "3-advanced" / "boros_burn.txt").read_text()
+BURN = (Path(__file__).resolve().parent.parent / "decks" / "ranks" / "3-gold" / "boros_burn.txt").read_text()
 
 
 class WebSimTests(unittest.TestCase):
@@ -30,17 +30,17 @@ class WebSimTests(unittest.TestCase):
         with ThreadPoolExecutor(2) as pool:
             run.execute(pool)
         snap = run.snapshot()
-        self.assertEqual([t["key"] for t in snap["tiers"]], ["trash"])
+        self.assertEqual([t["key"] for t in snap["tiers"]], ["bronze"])
         self.assertEqual(snap["done"], snap["total"])
         self.assertEqual(snap["tiers"][0]["games"], 4 * len(TIERS[0].decks()))
         self.assertIn("did not clear the first rank", snap["verdict"])
 
     def test_chosen_tiers_play_every_opponent(self):
-        run = sim.make_run("burn", BURN, ["beginner", "1"], ladder=False, games=6, seed=2)
+        run = sim.make_run("burn", BURN, ["silver", "1"], ladder=False, games=6, seed=2)
         with ThreadPoolExecutor(2) as pool:
             run.execute(pool)
         rows = run.snapshot()["tiers"]
-        self.assertEqual([t["key"] for t in rows], ["trash", "beginner"])
+        self.assertEqual([t["key"] for t in rows], ["bronze", "silver"])
         for t in rows:
             for o in t["opponents"]:
                 self.assertEqual(o["games"], 6)
@@ -83,7 +83,7 @@ class WebServerTests(unittest.TestCase):
         self.assertEqual([t["key"] for t in json.loads(tiers)["tiers"]], [t.key for t in TIERS])
 
     def test_run_round_trip(self):
-        code, body = self.call("/api/run", {"deck": BURN, "name": "burn", "tiers": ["trash"], "games": 4, "seed": 3})
+        code, body = self.call("/api/run", {"deck": BURN, "name": "burn", "tiers": ["bronze"], "games": 4, "seed": 3})
         self.assertEqual(code, 200)
         rid = json.loads(body)["id"]
         for _ in range(300):
@@ -92,7 +92,7 @@ class WebServerTests(unittest.TestCase):
                 break
             time.sleep(0.1)
         self.assertEqual(st["status"], "done", st.get("error"))
-        self.assertEqual(st["tiers"][0]["key"], "trash")
+        self.assertEqual(st["tiers"][0]["key"], "bronze")
 
     def test_bad_requests(self):
         self.assertEqual(self.call("/api/run", {"deck": "4 Not A Real Card Xyz", "games": 4})[0], 400)

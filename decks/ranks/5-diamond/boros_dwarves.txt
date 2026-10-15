@@ -1,0 +1,35 @@
+# Boros Dwarves
+# Diamond: a current Standard tournament deck from the edge of the metagame
+# Archetype share: 2.6% of 1,147 MTGO Challenge decks, 4 top-8s (2026-09-10 to 2026-10-11)
+# List: Kritik, MTGO Standard Challenge 32, 3rd Place, 2026-09-19
+# Source: https://www.mtgo.com/decklist/standard-challenge-32-2026-09-1912854503#deck_Kritik
+4 Cavern of Souls
+4 Dragonfire Blade
+4 Dwarven Mauler
+4 Dáin's Company
+4 Inspiring Vantage
+4 Kíli the Resourceful
+4 Lavaspur Boots
+4 Leyline Axe
+4 Sacred Foundry
+4 Sunbillow Verge
+4 The Lonely Mountain
+4 Thorin, Mountain-king
+3 Dwalin, Weaponmaster
+2 Giott, King of the Dwarves
+1 Basilisk Collar
+1 Doc Ock's Tentacles
+1 Dáin Ironfoot
+1 Mabel, Heir to Cragflame
+2 Plains
+1 Mountain
+
+Sideboard
+3 Chainsaw
+3 Erode
+3 Rest in Peace
+2 Anzrag's Rampage
+1 Bofur, Reliable Guardian
+1 Dawn's Truce
+1 Shattered Acolyte
+1 The Queen of Dale

@@ -1,0 +1,14 @@
+# Gold: mana elves, efficient creatures and six removal spells, with Chupacabra for value
+10 Forest
+9 Swamp
+4 Jungle Hollow
+4 Llanowar Elves
+4 Vampire Nighthawk
+4 Kalonian Tusker
+4 Centaur Courser
+4 Ravenous Chupacabra
+4 Rumbling Baloth
+3 Colossal Dreadmaw
+4 Doom Blade
+2 Murder
+4 Giant Growth

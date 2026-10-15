@@ -1,0 +1,11 @@
+# Silver: mono-black creatures with some removal and a Gray Merchant finish
+24 Swamp
+4 Typhoid Rats
+4 Bog Imp
+4 Walking Corpse
+4 Gravedigger
+4 Sengir Vampire
+4 Gray Merchant of Asphodel
+4 Doom Blade
+4 Mind Rot
+4 Vampire Interloper

@@ -1,0 +1,33 @@
+# Grixis Midrange
+# Platinum: a top Standard deck of late 2022 (older card pool, real tournament list)
+# Archetype share in late-2022 MTGO Standard Challenges: 22.5% of 1,480 decks, 54 top-8s (2022-10 to 2022-12)
+# List: Mah_Quintanilha, MTGO Standard Challenge, 1st Place, 2022-12-25
+# Source: https://www.mtgo.com/decklist/standard-challenge-2022-12-2512504241#deck_Mah_Quintanilha
+4 Bloodtithe Harvester
+4 Corpse Appraiser
+4 Fable of the Mirror-Breaker
+4 Haunted Ridge
+4 Reckoner Bankbuster
+4 Shipwreck Marsh
+4 Sulfurous Springs
+4 Xander's Lounge
+3 Abrade
+3 Go for the Throat
+3 Invoke Despair
+3 Make Disappear
+3 Sheoldred, the Apocalypse
+3 Shivan Reef
+2 Wandering Mind
+1 Otawara, Soaring City
+1 Sorin the Mirthless
+1 Stormcarved Coast
+1 Takenuma, Abandoned Mire
+4 Swamp
+
+Sideboard
+3 Brotherhood's End
+3 Cut Down
+3 Disdainful Stroke
+3 Duress
+2 Negate
+1 Bladecoil Serpent

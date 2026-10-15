@@ -1,0 +1,25 @@
+# Mono-Black Aggro
+# Diamond: a current Standard tournament deck from the edge of the metagame
+# Archetype share: 1.0% of 1,147 MTGO Challenge decks, 3 top-8s (2026-09-10 to 2026-10-11)
+# List: Bertram, MTGO Standard Challenge 32, 3rd Place, 2026-09-15
+# Source: https://www.mtgo.com/decklist/standard-challenge-32-2026-09-1512854114#deck_Bertram
+4 Corpses of the Lost
+4 Desolation Prowler
+4 Forsaken Miner
+4 Iridescent Vinelasher
+4 Nighthowl Pursuer
+4 Requiting Hex
+4 Sunset Saboteur
+3 Dissection Practice
+3 Gollum, Riddle Master
+3 Shoot the Sheriff
+3 Soulstone Sanctuary
+2 Realm of Koh
+18 Swamp
+
+Sideboard
+4 Duress
+4 Strategic Betrayal
+3 Day of Black Sun
+2 Elegy Acolyte
+2 Ral Zarek, Guest Lecturer
