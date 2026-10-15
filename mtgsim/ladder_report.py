@@ -4,6 +4,7 @@ Every view renders the plain dict from LadderTracker.to_dict(), so a web page ca
     render_fragment(data)  -> an HTML <section> with its own scoped <style> (no scripts needed;
                               one small optional script adds chart tooltips)
     render_page(data)      -> a whole HTML page; while data["status"] == "running" it reloads itself
+    render_grades(a)       -> the deck assessment (mtgsim.assess.assess()) as graded criteria cards
     HtmlReport(path)       -> a tracker listener that rewrites the page as the run goes
 """
 from __future__ import annotations
@@ -230,7 +231,62 @@ def opponent_table(d: dict) -> str:
             f'<tbody>{"".join(rows)}</tbody></table>')
 
 
-def render_fragment(d: dict) -> str:
+GRADE_COLORS = {"S": "#8a4fd1", "A": "#2b8a3e", "B": "#1f8a8a", "C": "#c08a00", "D": "#d9670b", "F": "#c92a2a"}
+GRADES_CSS = """
+.grades{--g-ink:#1d2129;--g-ink2:#545b66;--g-line:#e3e6ea;--g-panel:#f6f7f9;--g-warn:#8a5a00;
+  font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--g-ink)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .grades{--g-ink:#e8eaed;--g-ink2:#b3b9c2;
+  --g-line:#30353d;--g-panel:#1b1e23;--g-warn:#ffc078}}
+:root[data-theme="dark"] .grades{--g-ink:#e8eaed;--g-ink2:#b3b9c2;--g-line:#30353d;--g-panel:#1b1e23;--g-warn:#ffc078}
+.grades h2{font-size:15px;margin:0 0 8px}
+.grades .cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media (max-width:900px){.grades .cards{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:420px){.grades .cards{grid-template-columns:minmax(0,1fr)}}
+.grades .card{background:var(--g-panel);border:1px solid var(--g-line);border-radius:8px;padding:10px 12px;min-width:0}
+.grades .top{display:flex;align-items:center;gap:10px}
+.grades .letter{flex:none;width:38px;height:38px;border-radius:8px;color:#fff;font-size:22px;font-weight:700;
+  display:flex;align-items:center;justify-content:center}
+.grades .name{font-weight:600}
+.grades .score{color:var(--g-ink2);font-variant-numeric:tabular-nums;font-size:13px}
+.grades .bar{height:6px;background:var(--g-line);border-radius:3px;overflow:hidden;margin:8px 0 6px}
+.grades .bar>i{display:block;height:100%;border-radius:3px}
+.grades .sum{margin:0;color:var(--g-ink2);font-size:13px;overflow-wrap:break-word}
+.grades .warn{color:var(--g-warn);font-size:13px;margin:8px 0 0}
+"""
+
+
+def meta_caveat(a: dict) -> str:
+    """Why the meta grade may be off, or "" when it was played in Forge (or not played at all)."""
+    meta = a.get("criteria", {}).get("meta")
+    if not meta or meta["details"].get("engine") == "forge":
+        return ""
+    return ("The meta grade was played in the built-in engine, which simplifies some cards in the top decks, "
+            "so treat it as a rough guide. On the command line, --engine forge plays every card fully and gives a "
+            "trustworthy meta score.")
+
+
+def render_grades(a: dict) -> str:
+    """The deck assessment as one card per criterion: grade, score out of 100 and a one-line summary."""
+    cards = []
+    for key, c in a["criteria"].items():
+        colour = GRADE_COLORS.get(c["grade"], "#888")
+        extra = ""
+        if key == "meta" and a.get("rating"):
+            r = a["rating"]
+            extra = f' · {r["mmr"]} MMR ({_e(r["rank"])})'
+        cards.append(f'<div class="card"><div class="top"><span class="letter" style="background:{colour}" '
+                     f'aria-label="grade {_e(c["grade"])}">{_e(c["grade"])}</span><div>'
+                     f'<div class="name">{_e(c["label"])}</div>'
+                     f'<div class="score">{c["score"]} / 100{extra}</div></div></div>'
+                     f'<div class="bar"><i style="width:{c["score"]}%;background:{colour}"></i></div>'
+                     f'<p class="sum">{_e(c["summary"])}</p></div>')
+    caveat = meta_caveat(a)
+    return (f'<section class="grades"><style>{GRADES_CSS}</style><h2>Deck grades</h2>'
+            f'<div class="cards">{"".join(cards)}</div>'
+            + (f'<p class="warn">{_e(caveat)}</p>' if caveat else "") + '</section>')
+
+
+def render_fragment(d: dict, assessment: dict | None = None) -> str:
     nxt = d["next_rank"]
     floor = next(r["floor"] for r in d["ranks"] if r["name"] == d["rank"])
     top = next((r["floor"] for r in d["ranks"] if r["name"] == nxt), None)
@@ -249,18 +305,19 @@ def render_fragment(d: dict) -> str:
             f'<div class="prog"><i style="width:{pct:.0f}%;background:{d["rank_color"]}"></i></div>'
             f'<p class="sub">{progress_text} · peak {d["peak"]} · {d["games"]} games</p></div></div>'
             + (f'<p>{_e(d["verdict"])}</p>' if d["verdict"] else "")
+            + (f'<div style="margin-top:20px">{render_grades(assessment)}</div>' if assessment else "")
             + f'<h2>MMR over the run</h2><div style="position:relative">{mmr_chart(d)}</div>'
             f'<h2>Results by opponent</h2>{opponent_table(d)}'
             f'<script>{TIP_JS}</script></section>')
 
 
-def render_page(d: dict, refresh: int = 2) -> str:
+def render_page(d: dict, refresh: int = 2, assessment: dict | None = None) -> str:
     meta = f'<meta http-equiv="refresh" content="{refresh}">' if d["status"] == "running" else ""
     return (f'<!doctype html><html><head><meta charset="utf-8">'
             f'<meta name="viewport" content="width=device-width,initial-scale=1">{meta}'
             f'<title>{_e(d["deck"])} ranked ladder</title>'
             f'<style>body{{margin:0;background:#fff}}@media (prefers-color-scheme:dark){{body{{background:#121418}}}}'
-            f'</style></head><body>{render_fragment(d)}</body></html>')
+            f'</style></head><body>{render_fragment(d, assessment)}</body></html>')
 
 
 class HtmlReport:
@@ -270,6 +327,7 @@ class HtmlReport:
         self.path = Path(path)
         self.json_path = self.path.with_suffix(".json")
         self.min_interval, self.last = min_interval, 0.0
+        self.assessment = None   # set to mtgsim.assess.assess() output to show the grades, then call again
 
     def __call__(self, tracker):
         now = time.time()
@@ -277,8 +335,11 @@ class HtmlReport:
             return
         self.last = now
         d = tracker.to_dict()
+        page = render_page(d, assessment=self.assessment)
+        if self.assessment:
+            d = {**d, "assessment": self.assessment}
         self.path.parent.mkdir(parents=True, exist_ok=True)
-        for path, text in ((self.path, render_page(d)), (self.json_path, json.dumps(d, indent=1))):
+        for path, text in ((self.path, page), (self.json_path, json.dumps(d, indent=1))):
             tmp = path.with_suffix(path.suffix + ".tmp")
             tmp.write_text(text, encoding="utf-8")
             os.replace(tmp, path)
