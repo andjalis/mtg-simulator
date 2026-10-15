@@ -11,6 +11,7 @@ python3 -m mtgsim decks/mono_red_aggro.txt decks/green_stompy.txt -n 1000
 python3 -m mtgsim decks/orzhov_midrange.txt --gauntlet decks/mono_red_aggro.txt decks/green_stompy.txt
 python3 -m mtgsim --round-robin decks/*.txt -n 1000 --seed 7
 python3 -m mtgsim A.txt B.txt -n 1 --log        # watch one game play out
+python3 -m mtgsim decks/ub_snow_control.txt --coverage   # which cards the engine can't fully play
 python3 -m mtgsim decks/ub_snow_control.txt --ladder --engine forge --forge-dir ~/forge   # climb the tiers
 python3 -m unittest discover -s tests -t .       # tests
 ```
@@ -93,10 +94,19 @@ Each card's rules text is matched against templates the engine understands.
 Text that doesn't match is ignored, and the run prints exactly which cards are
 only partially simulated, so you know how far to trust a result.
 
+`--coverage` reports this per deck without playing: each card is fully
+supported, simplified (played in a looser way, such as a fetch land cracked as
+soon as it enters or an optional extra cost never paid), partly supported (the
+ignored text is listed) or unknown. It works on decklists and on whole tiers
+(`--coverage --tier all`). The trash, beginner and advanced tiers and the
+semi-pro mono red and Azorius lists are fully playable; the pro tier is about
+30 to 65% playable, so use `--engine forge` there.
+
 ## What the engine covers
 
 - Lands and mana: dual, tapped and conditionally tapped lands, shock lands
-  (pay 2 life or enter tapped), mana creatures, Sol Ring, Treasure
+  (pay 2 life or enter tapped), fast lands, fetch lands and basic-land
+  search, mana creatures, Sol Ring, Treasure
 - The stack with priority passing: both players can respond to every spell and
   trigger, and get priority with an empty stack in the declare attackers,
   declare blockers and end steps. Counterspells (including "unless its
@@ -117,6 +127,10 @@ only partially simulated, so you know how far to trust a result.
   Blood on the Snow's return
 - Manlands (Hall of Storm Giants, Den of the Bugbear, Crawling Barrens) and
   vehicles with crew
+- Kicker (Burst Lightning), additional life costs (Bitter Triumph), devotion
+  drain (Gray Merchant), stun counters and tapping, mill, -1/-1 counters
+  (Soul-Scar Mage), "enters with +1/+1 counters" and doubling them,
+  Duress, Spell Snare, Goblin Guide's drawback
 - Burn, removal with restrictions (mana value, tapped, attacking, nonartifact;
   creature-type restrictions like "non-Dragon" are ignored), bounce, discard
   (Thoughtseize), card draw, scry, surveil, "look at the top N", rummaging,
@@ -127,8 +141,9 @@ only partially simulated, so you know how far to trust a result.
 - London mulligan, drawing from an empty library, hand size, 60-turn cap
 
 Not yet: auras and equipment, X spells, copy effects (Reflection of
-Kiki-Jiki), replacement effects (Soul-Scar Mage), casualty, day/night,
-modal double-faced lands (their land side), Old-Growth Troll's return.
+Kiki-Jiki), casualty (never paid), day/night, Old-Growth Troll's return, Map
+tokens, spree, warp. Modal double-faced cards keep their land face in
+`CardDef.land_face`, played with `Game.play_land(p, card, back=True)`.
 Every run lists the text it ignores.
 
 ### How AIs plug in

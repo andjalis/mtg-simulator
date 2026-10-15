@@ -5,6 +5,7 @@
     python -m mtgsim --round-robin DECK1 DECK2 DECK3 ...        everyone vs everyone
     python -m mtgsim DECK --ladder                             climb the test tiers, trash to pro
     python -m mtgsim DECK --tier pro [semipro ... | all]       one deck vs whole tiers (--list-tiers)
+    python -m mtgsim DECK ... --coverage                       which cards the built-in engine can't fully play
 
 Add --engine forge --forge-dir PATH to play the games in Forge instead.
 """
@@ -15,6 +16,7 @@ import itertools
 import sys
 
 from .carddb import CardDB
+from .coverage import deck_coverage, format_coverage
 from .decklist import load_deck
 from .forge import ForgeError, run_forge_match
 from .ladder_report import HtmlReport, TerminalView, text_summary
@@ -38,6 +40,8 @@ def main(argv=None):
     ap.add_argument("--tier", nargs="+", metavar="T",
                     help="play the deck against every deck in these tiers (names, numbers 1-5, or all)")
     ap.add_argument("--list-tiers", action="store_true", help="show the test tiers and their decks")
+    ap.add_argument("--coverage", action="store_true",
+                    help="report which cards the built-in engine plays fully, simplified or partly, then exit")
     ap.add_argument("--report", metavar="HTML",
                     help="with --ladder/--tier: where to write the live ranked-ladder report "
                          "(default results/ladder/DECK.html)")
@@ -56,8 +60,18 @@ def main(argv=None):
     if args.list_tiers:
         print(list_tiers())
         return
-    if not args.decks:
+    if not args.decks and not (args.coverage and args.tier):
         ap.error("give at least one decklist")
+    if args.coverage:
+        db = CardDB(offline=args.offline)
+        paths = list(args.decks) + (args.gauntlet or [])
+        reports = [load_deck(p) for p in paths]
+        try:
+            reports += [(f"{t.key}/{p.stem}", load_deck(p)[1]) for t in resolve_tiers(args.tier or []) for p in t.decks()]
+        except ValueError as e:
+            ap.error(str(e))
+        print("\n\n".join(format_coverage(name, deck_coverage(db, counts)) for name, counts in reports))
+        return
 
     paths = list(args.decks) + (args.gauntlet or [])
     tiers = []
@@ -108,7 +122,8 @@ def main(argv=None):
             part = sum(1 for c in distinct.values() if c.unsupported)
             if part:
                 print(f"  {n}: {part} of {len(distinct)}")
-        print("  Results for decks with many partial cards say little; --engine forge plays every card.")
+        print("  Results for decks with many partial cards say little; --engine forge plays every card,")
+        print("  and --coverage shows what each card is missing.")
         print()
 
     tracker = view = None

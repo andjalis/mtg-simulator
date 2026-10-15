@@ -37,7 +37,8 @@ class CardParsingTests(unittest.TestCase):
         highlands = DB.get("Rugged Highlands")
         self.assertTrue(highlands.enters_tapped)
         self.assertEqual(highlands.produces, {"R", "G"})
-        self.assertFalse(DB.get("Goblin Guide").fully_supported)
+        self.assertTrue(DB.get("Goblin Guide").fully_supported)
+        self.assertFalse(DB.get("Old-Growth Troll").fully_supported)
 
 
 class ManaTests(unittest.TestCase):
