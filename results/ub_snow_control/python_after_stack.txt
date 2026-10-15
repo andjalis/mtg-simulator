@@ -1,0 +1,80 @@
+Partially simulated cards (their extra text is ignored):
+  ub_snow_control: Iymrith, Desert Doom — ignored text: Then if you have fewer than three cards in hand, draw cards equal to the difference.
+  ub_snow_control: Hullbreaker Horror — ignored text: choose up to one — | • Return target spell you don't control to its owner's hand. | • Return target nonland permanent to its owner's hand.
+  ub_snow_control: Saw It Coming — ignored text: Foretell {1}{U}
+  ub_snow_control: Baleful Mastery — ignored text: You may pay {1}{B} rather than pay ~'s mana cost. | If the {1}{B} cost was paid, an opponent draws a card.
+  ub_snow_control: Blood on the Snow — ignored text: other mode: Destroy all planeswalkers. | Then return a creature or planeswalker card with mana value X or less from your graveyard to the battlefield, where X is the amount of {S} spent to cast ~.
+  ub_snow_control: Memory Deluge — ignored text: Flashback {5}{U}{U}
+  ub_snow_control: Hall of Storm Giants — ignored text: {5}{U}: Until end of turn, ~ becomes a 7/7 blue Giant creature with ward {3}. It's still a land.
+  ub_snow_control: Crawling Barrens — ignored text: {4}: Put two +1/+1 counters on ~. Then you may have it become a 0/0 Elemental creature until end of turn. It's still a land.
+  mono_red_aggro: Soul-Scar Mage — ignored text: If a source you control would deal noncombat damage to a creature an opponent controls, put that many -1/-1 counters on that creature instead.
+  mono_red_aggro: Kumano Faces Kakkazan — ignored text: I — ~ deals 1 damage to each opponent and each planeswalker they control. | II — When you cast your next creature spell this turn, that creature enters with an additional +1/+1 counter on it. | III — Exile this Saga, then return it to the battlefield transformed under your control.
+  mono_red_aggro: Bonecrusher Giant — ignored text: Whenever ~ becomes the target of a spell, ~ deals 2 damage to that spell's controller.
+  mono_red_aggro: Bloodthirsty Adversary — ignored text: you may pay {2}{R} any number of times. | When you pay this cost one or more times, put that many +1/+1 counters on ~, then exile up to that many target instant and/or sorcery cards with mana value 3 or less from your graveyard and copy them. | You may cast any number of the copies without paying their mana costs.
+  mono_red_aggro: Eidolon of the Great Revel — ignored text: Whenever a player casts a spell with mana value 3 or less, ~ deals 2 damage to that player.
+  mono_red_aggro: Play with Fire — ignored text: If a player is dealt damage this way, scry 1.
+  mono_red_aggro: Kami's Flare — ignored text: ~ also deals 2 damage to that permanent's controller if you control a modified creature.
+  mono_red_aggro: Light Up the Stage — ignored text: Spectacle {R} | Exile the top two cards of your library. | Until the end of your next turn, you may play those cards.
+  mono_green_stompy: Pelt Collector — ignored text: Whenever another creature you control enters or dies, if that creature's power is greater than ~'s, put a +1/+1 counter on ~. | As long as ~ has three or more +1/+1 counters on it, it has trample.
+  mono_green_stompy: Steel Leaf Champion — ignored text: ~ can't be blocked by creatures with power 2 or less.
+  mono_green_stompy: Old-Growth Troll — ignored text: if it was a creature, return it to the battlefield. | It's an Aura enchantment with enchant Forest you control and "Enchanted Forest has '{T}: Add {G}{G}' and '{1}, {T}, Sacrifice ~: Create a tapped 4/4 green Troll Warrior creature token with trample.'"
+  mono_green_stompy: Kazandu Mammoth — ignored text: Landfall — Whenever a land you control enters, ~ gets +2/+2 until end of turn.
+  mono_green_stompy: Esika's Chariot — ignored text: create two 2/2 green Cat creature tokens. | create a token that's a copy of target token you control. | Crew 4
+  mono_green_stompy: Ghalta, Primal Hunger — ignored text: ~ costs {X} less to cast, where X is the total power of creatures you control.
+  mono_green_stompy: Snakeskin Veil — ignored text: Put a +1/+1 counter on target creature you control. | It gains hexproof until end of turn.
+  rakdos_midrange: Blood Crypt — ignored text: As ~ enters, you may pay 2 life. If you don't, it enters tapped.
+  rakdos_midrange: Den of the Bugbear — ignored text: {3}{R}: Until end of turn, ~ becomes a 3/2 red Goblin creature with "Whenever ~ attacks, create a 1/1 red Goblin creature token that's tapped and attacking." It's still a land.
+  rakdos_midrange: Fable of the Mirror-Breaker — ignored text: I — Create a 2/2 red Goblin Shaman creature token with "Whenever this token attacks, create a Treasure token." | II — You may discard up two cards. If you do, draw that many cards. | III — Exile this Saga, then return it to the battlefield transformed under your control.
+  rakdos_midrange: Bloodtithe Harvester — ignored text: create a Blood token. | {T}, Sacrifice ~: Target creature gets -X/-X until end of turn, where X is twice the number of Blood tokens you control. Activate only as a sorcery.
+  rakdos_midrange: Thoughtseize — ignored text: Target player reveals their hand. | You choose a nonland card from it. | That player discards that card.
+  rakdos_midrange: Fatal Push — ignored text: Destroy target creature if it has mana value 2 or less. | Revolt — Destroy that creature if it has mana value 4 or less instead if a permanent you controlled left the battlefield this turn.
+  rakdos_midrange: Sheoldred, the Apocalypse — ignored text: Whenever you draw a card, you gain 2 life. | Whenever an opponent draws a card, they lose 2 life.
+  rakdos_midrange: Graveyard Trespasser — ignored text: Ward—Discard a card. | Whenever ~ enters or attacks, exile up to one target card from a graveyard. If a creature card was exiled this way, each opponent loses 1 life and you gain 1 life. | Daybound
+  rakdos_midrange: Bonecrusher Giant — ignored text: Whenever ~ becomes the target of a spell, ~ deals 2 damage to that spell's controller.
+  rakdos_midrange: Kolaghan's Command — ignored text: Choose two — | • Return target creature card from your graveyard to your hand. | • Target player discards a card. | • Destroy target artifact. | • ~ deals 2 damage to any target.
+  rakdos_midrange: Tenacious Underdog — ignored text: Blitz—{2}{B}{B}, Pay 2 life. | You may cast ~ from your graveyard using its blitz ability.
+  azorius_control: The Wandering Emperor — ignored text: As long as ~ entered this turn, you may activate her loyalty abilities any time you could cast an instant. | [+1]: Put a +1/+1 counter on up to one target creature. It gains first strike until end of turn. | [-1]: Create a 2/2 white Samurai creature token with vigilance. | [-2]:Exile target tapped creature. You gain 2 life.
+  azorius_control: Wedding Announcement — ignored text: put an invitation counter on ~. | If you attacked with two or more creatures this turn, draw a card. | Otherwise, create a 1/1 white Human creature token. | Then if ~ has three or more invitation counters on it, transform it.
+  azorius_control: Elspeth Resplendent — ignored text: [+1]: Choose up to one target creature. Put a +1/+1 counter and a counter from among flying, first strike, lifelink, or vigilance on it. | [-3]: Look at the top seven cards of your library. You may put a permanent card with mana value 3 or less from among them onto the battlefield with a shield counter on it. Put the rest on the bottom of your library in a random order. | [-7]: Create five 3/3 white Angel creature tokens with flying.
+  azorius_control: Memory Deluge — ignored text: Flashback {5}{U}{U}
+  azorius_control: Make Disappear — ignored text: Casualty 1
+  azorius_control: Saw It Coming — ignored text: Foretell {1}{U}
+  azorius_control: Fateful Absence — ignored text: Its controller investigates.
+  azorius_control: Depopulate — ignored text: Each player who controls a multicolored creature draws a card. | Then destroy all creatures.
+  azorius_control: Doomskar — ignored text: Foretell {1}{W}{W}
+  azorius_control: Lay Down Arms — ignored text: Exile target creature with mana value less than or equal to the number of Plains you control. | Its controller gains 3 life.
+  azorius_control: Consider — ignored text: Surveil 1.
+  azorius_control: Hall of Storm Giants — ignored text: {5}{U}: Until end of turn, ~ becomes a 7/7 blue Giant creature with ward {3}. It's still a land.
+  azorius_control: Otawara, Soaring City — ignored text: Channel — {3}{U}, Discard ~: Return target artifact, creature, enchantment, or planeswalker to its owner's hand. This ability costs {1} less to activate for each legendary creature you control.
+  azorius_control: Eiganjo, Seat of the Empire — ignored text: Channel — {2}{W}, Discard ~: It deals 4 damage to target attacking or blocking creature. This ability costs {1} less to activate for each legendary creature you control.
+
+ub_snow_control vs mono_red_aggro: 500 games
+  ub_snow_control wins 292, mono_red_aggro wins 205, draws 3
+  ub_snow_control win rate 58.7% (95% CI 54.3% to 62.9%)
+  ub_snow_control on the play 157/250, on the draw 135/250
+  average game length 22.4 turns (11.2 per player) 
+
+ub_snow_control vs mono_green_stompy: 500 games
+  ub_snow_control wins 343, mono_green_stompy wins 154, draws 3
+  ub_snow_control win rate 68.9% (95% CI 64.7% to 72.8%)
+  ub_snow_control on the play 179/250, on the draw 164/250
+  average game length 24.3 turns (12.2 per player) 
+
+ub_snow_control vs rakdos_midrange: 500 games
+  ub_snow_control wins 365, rakdos_midrange wins 118, draws 17
+  ub_snow_control win rate 74.7% (95% CI 70.7% to 78.3%)
+  ub_snow_control on the play 189/250, on the draw 176/250
+  average game length 27.4 turns (13.7 per player) 
+
+ub_snow_control vs azorius_control: 500 games
+  ub_snow_control wins 336, azorius_control wins 0, draws 164
+  ub_snow_control win rate 83.6% (95% CI 80.1% to 86.6%)
+  ub_snow_control on the play 179/250, on the draw 157/250
+  average game length 42.3 turns (21.1 per player) 
+
+Overall win rate
+  ub_snow_control           71.5%  (95% CI 69.5% to 73.4%, 2000 games)
+  mono_red_aggro            41.3%  (95% CI 37.1% to 45.7%, 500 games)
+  mono_green_stompy         31.1%  (95% CI 27.2% to 35.3%, 500 games)
+  rakdos_midrange           25.3%  (95% CI 21.7% to 29.3%, 500 games)
+  azorius_control           16.4%  (95% CI 13.4% to 19.9%, 500 games)

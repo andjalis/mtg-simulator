@@ -1,0 +1,16 @@
+# Advanced: budget counter-and-removal control that wins with big flyers and Gray Merchant
+8 Island
+8 Swamp
+4 Temple of Deceit
+4 Shipwreck Marsh
+4 Opt
+4 Counterspell
+4 Essence Scatter
+2 Negate
+4 Doom Blade
+4 Murder
+4 Divination
+4 Tolarian Terror
+2 Ravenous Chupacabra
+2 Gray Merchant of Asphodel
+2 Air Elemental
