@@ -1,0 +1,12 @@
+# Bronze: overcosted vanilla creatures in two colours, no removal, no card advantage
+12 Forest
+12 Plains
+4 Sanctuary Cat
+4 Pearled Unicorn
+4 Pillarfield Ox
+4 Ironroot Treefolk
+4 Siege Mastodon
+4 Spined Wurm
+4 Craw Wurm
+4 Ancient Brontodon
+4 Grizzly Bears

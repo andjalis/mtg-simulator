@@ -12,7 +12,7 @@ python3 -m mtgsim decks/orzhov_midrange.txt --gauntlet decks/mono_red_aggro.txt 
 python3 -m mtgsim --round-robin decks/*.txt -n 1000 --seed 7
 python3 -m mtgsim A.txt B.txt -n 1 --log        # watch one game play out
 python3 -m mtgsim decks/ub_snow_control.txt --coverage   # which cards the engine can't fully play
-python3 -m mtgsim decks/ub_snow_control.txt --ladder --engine forge --forge-dir ~/forge   # climb the tiers
+python3 -m mtgsim decks/ub_snow_control.txt --ladder --engine forge --forge-dir ~/forge   # climb the ranks
 python3 -m unittest discover -s tests -t .       # tests
 ```
 
@@ -29,22 +29,23 @@ headings and tab-separated columns also work, and double-faced cards are read
 by their front face. A `Sideboard` header (or a
 blank line after 60+ cards) ends the main deck; the sideboard is ignored.
 
-## Test tiers and the ladder
+## Ranks and the ladder
 
-Opponents are grouped into five tiers under `decks/tiers/`: trash, beginner, advanced, semi-pro
-and pro (the best current Standard tournament decks). `--ladder` plays a deck against each tier
-from the bottom up and stops at the first tier it fails; a tier is cleared with a win rate of at
-least 50% against all its decks together (`--pass-rate` changes that, `--full-ladder` keeps
-going). `--tier pro semipro` plays chosen tiers, and `--list-tiers` shows every deck. Use
-`--engine forge` for the pro tier: the built-in engine ignores much of those cards' text.
-`decks/tiers/README.md` says where each list came from.
+Opponents are grouped into seven ranks under `decks/ranks/`, from Bronze (badly built piles) through
+Silver, Gold, Platinum, Diamond and Master to Grandmaster (the most-played, best-performing current
+Standard tournament decks). `--ladder` plays a deck against each rank's pool from the bottom up and
+stops at the first rank it fails; a rank is cleared with a win rate of at least 50% against all its
+decks together (`--pass-rate` changes that, `--full-ladder` keeps going). `--rank master diamond`
+plays chosen ranks, and `--list-ranks` shows every deck. Use `--engine forge` from Diamond up: the
+built-in engine ignores much of those cards' text. `decks/ranks/README.md` says where each list came
+from and how the ranks were checked.
 
 ## Ranks and MMR
 
 A ladder or tier run also rates the deck like a ranked queue: Bronze, Silver, Gold, Platinum,
 Diamond, Master and Grandmaster, each a 200-point MMR band (Silver starts at 1000, Grandmaster at
-2000). Each opponent pool is anchored at an MMR (a pool named after a rank sits in the middle of
-that rank's band; the five tiers are spread from Bronze to Grandmaster), and the deck's MMR is its
+2000). Each rank's opponent pool is anchored at the middle of that rank's band (a custom pool not named
+after a rank is spread over the bands in order), and the deck's MMR is its
 Elo performance rating against everything it has played, so it moves after every game. While the
 run goes, the terminal shows the current rank and match progress on one live line, each match ends
 with the MMR change, and the run ends with the rank ladder as text. `results/ladder/DECK.html` is
@@ -206,12 +207,12 @@ adventures, flashback, foretold cards, blitz, channel; cast them with
 | `mtgsim/engine.py` | Game state, turns, the stack and priority, triggers, combat, default response policy |
 | `mtgsim/ai.py` | `HeuristicAI` (default) and `BaselineAI` (the first, simpler player, kept for comparison) |
 | `mtgsim/runner.py` | Match loop, statistics |
-| `mtgsim/tiers.py` | Test tiers and the ladder (`decks/tiers/`) |
+| `mtgsim/ranks.py` | Ranks and the ladder (`decks/ranks/`); `tiers.py` is its old name |
 | `mtgsim/rating.py` | MMR, ranks and `LadderTracker` (live state of a ladder run, as JSON) |
 | `mtgsim/ladder_report.py` | Live terminal line, text summary and HTML report of a ladder run |
 | `mtgsim/forge.py` | Forge mode: .dck export, running Forge's `sim`, parsing results |
-| `web/` | The web page: `server.py` (HTTP API), `sim.py` (runs tiers in a process pool), `static/index.html` |
-| `decks/` | Sample decklists and the test tiers |
+| `web/` | The web page: `server.py` (HTTP API), `sim.py` (runs ranks in a process pool), `static/index.html` |
+| `decks/` | Sample decklists and the rank pools |
 | `results/` | Saved test runs, such as `results/ub_snow_control/` |
 | `AI_RESULTS.md` | Measurements of the AI against the baseline player |
 

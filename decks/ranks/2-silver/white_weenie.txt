@@ -1,0 +1,11 @@
+# Silver: a starter-style white creature deck with a few good cards among the filler
+24 Plains
+4 Siege Mastodon
+4 Elite Vanguard
+4 Suntail Hawk
+4 Glory Seeker
+4 Pillarfield Ox
+4 Benalish Marshal
+4 Serra Angel
+4 Sanctuary Cat
+4 Pearled Unicorn

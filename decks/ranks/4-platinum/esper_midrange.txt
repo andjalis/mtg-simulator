@@ -1,0 +1,45 @@
+# Esper Midrange
+# Platinum: a top Standard deck of late 2022 (older card pool, real tournament list)
+# Archetype share in late-2022 MTGO Standard Challenges: 9.6% of 1,480 decks, 29 top-8s (2022-10 to 2022-12)
+# List: Mogged, MTGO Standard Challenge, 1st Place, 2022-12-31
+# Source: https://www.mtgo.com/decklist/standard-challenge-2022-12-3112504288#deck_Mogged
+4 Caves of Koilos
+4 Dennick, Pious Apprentice
+4 Raffine's Tower
+4 Raffine, Scheming Seer
+4 Wedding Announcement
+3 Obscura Interceptor
+3 Shattered Sanctum
+3 Underground River
+2 Adarkar Wastes
+2 Cut Down
+2 Deserted Beach
+2 Destroy Evil
+2 Eiganjo, Seat of the Empire
+2 Ertai Resurrected
+2 Scatter Ray
+2 Shipwreck Marsh
+2 Spell Pierce
+2 Tenacious Underdog
+2 The Wandering Emperor
+1 Go for the Throat
+1 Infernal Grasp
+1 Kaito Shizuki
+1 Make Disappear
+1 Otawara, Soaring City
+1 Takenuma, Abandoned Mire
+1 Island
+1 Plains
+1 Swamp
+
+Sideboard
+2 Cut Down
+2 Defabricate
+2 Disdainful Stroke
+2 Knockout Blow
+2 Path of Peril
+1 Destroy Evil
+1 Duress
+1 Go for the Throat
+1 Liliana of the Veil
+1 Negate

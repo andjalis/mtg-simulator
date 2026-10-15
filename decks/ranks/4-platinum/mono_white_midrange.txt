@@ -1,0 +1,32 @@
+# Mono-White Midrange
+# Platinum: a top Standard deck of late 2022 (older card pool, real tournament list)
+# Archetype share in late-2022 MTGO Standard Challenges: 6.6% of 1,480 decks, 15 top-8s (2022-10 to 2022-12)
+# List: Koala40, MTGO Standard Challenge, 2nd Place, 2022-12-17
+# Source: https://www.mtgo.com/decklist/standard-challenge-2022-12-1712502870#deck_Koala40
+4 Lay Down Arms
+4 Reckoner Bankbuster
+4 Roadside Reliquary
+4 The Wandering Emperor
+4 Wedding Announcement
+3 Ambitious Farmhand
+3 Loran of the Third Path
+3 Spirited Companion
+2 Destroy Evil
+2 Sanctuary Warden
+2 Serra Paragon
+2 Steel Seraph
+2 The Restoration of Eiganjo
+1 Eiganjo, Seat of the Empire
+1 Farewell
+19 Plains
+
+Sideboard
+2 Depopulate
+2 Elspeth Resplendent
+2 Fateful Absence
+2 Temporary Lockdown
+2 Unlicensed Hearse
+2 Urza's Sylex
+1 Farewell
+1 Sanctuary Warden
+1 Serra Paragon

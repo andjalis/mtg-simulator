@@ -1,0 +1,11 @@
+# Bronze: mostly card draw and counters with a handful of tiny creatures, so it rarely wins
+24 Island
+4 Opt
+4 Divination
+4 Think Twice
+4 Negate
+4 Essence Scatter
+4 Unsummon
+4 Storm Crow
+4 Coral Merfolk
+4 Horned Turtle

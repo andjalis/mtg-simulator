@@ -1,0 +1,36 @@
+# Mardu Aggro
+# Diamond: a current Standard tournament deck from the edge of the metagame
+# Archetype share: 0.9% of 1,147 MTGO Challenge decks, 4 top-8s (2026-09-10 to 2026-10-11)
+# List: Bugsy69, MTGO Standard Challenge 32, 1st Place, 2026-09-14
+# Source: https://www.mtgo.com/decklist/standard-challenge-32-2026-09-1412854105#deck_Bugsy69
+4 Blood Crypt
+4 Bloodghast
+4 Cool but Rude
+4 Hardened Academic
+4 Iron-Shield Elf
+4 Marauding Mako
+4 Moonshadow
+4 Practiced Offense
+4 Sacred Foundry
+3 Concealed Courtyard
+3 Godless Shrine
+3 Starting Town
+2 Cecil, Dark Knight
+2 Erode
+2 Inspiring Vantage
+2 Requiting Hex
+2 Tersa Lightshatter
+1 Casey Jones, Vigilante
+1 Inti, Seneschal of the Sun
+1 Multiversal Passage
+1 Mountain
+1 Swamp
+
+Sideboard
+3 Monument to Endurance
+3 Sheltered by Ghosts
+3 Strategic Betrayal
+2 Day of Judgment
+2 Shoot the Sheriff
+1 Case of the Crimson Pulse
+1 Requisition Raid
