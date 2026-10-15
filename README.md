@@ -41,9 +41,9 @@ going). `--tier pro semipro` plays chosen tiers, and `--list-tiers` shows every 
 python3 -m web            # then open http://127.0.0.1:8000
 ```
 
-Paste a decklist, pick the ladder or chosen tiers and the number of games per opponent, and
-the page shows the ladder result and each tier's win rate with its 95% confidence interval;
-click a tier for every opponent's record, play/draw split and game length. It checks the list
+Paste a decklist, pick the full climb or chosen ranks and the number of games per opponent,
+and the page shows how far the deck climbs and each rank's win rate with its 95% confidence
+interval; click a rank for every opponent's record, play/draw split and game length. It checks the list
 as you type and flags unknown cards and cards the engine only partly simulates. Games run in
 the built-in engine on every CPU core (`--jobs N` to limit, `--port`, `--host`, `--offline`).
 Standard library only, like the rest of the simulator.
