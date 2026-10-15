@@ -4,6 +4,7 @@
 - Gauntlet (2022-era Standard, matching the deck's card pool): `mono_red_aggro`, `mono_green_stompy`,
   `rakdos_midrange` (copied from `decks/forge`) and `azorius_control` (built here as the control stand-in).
 - `python_current.txt`: latest Python-engine results; `forge_results.txt`: Forge results.
+- `forge_ladder.txt`: the deck climbing the test tiers (`--ladder`) in Forge, 50 games per opponent.
 
 Rerun from the repository root:
 

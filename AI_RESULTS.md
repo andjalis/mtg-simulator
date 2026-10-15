@@ -59,6 +59,32 @@ Head to head (row deck's win rate, old → new):
 | Gauntlet mono-red | 28% → 25% | 40% → 41% |
 | Gauntlet mono-green | | 69% → 61% |
 
+## Test tiers: does the better deck win more?
+
+The ladder only works if a stronger deck beats a weaker one, so this is the
+main check of the AI. Every deck in tiers 1 to 4 (trash to semi-pro) played
+every deck in the other tiers, 400 games per pairing, same AI on both sides.
+The pro tier is left out because the built-in engine ignores much of its text.
+
+| Higher tier's win rate | Old AI | New AI | New AI, tuned (current) |
+| --- | --- | --- | --- |
+| Beginner vs trash | 76% | 75% | 75% |
+| Advanced vs beginner | 60% | 62% | 63% |
+| Semi-pro vs advanced | 61% | 66% | 65% |
+| Semi-pro vs beginner | 65% | 70% | 71% |
+| All tier pairs | 68.9% | 71.8% | 72.2% |
+
+The new AI widens the gaps between the better tiers, mostly because it plays
+the semi-pro control and midrange decks properly: Azorius control goes from 33%
+to 44% overall, Rakdos midrange from 77% to 82%. "Tuned" is the latest change,
+which values life less steeply (`LIFE_SCALE` 8 → 5), so the AI races and trades
+a little more readily. Against the previous version, settings of 4.5 and 6 won 51.2–51.3% of games on
+average across 7 mirrors and 4 cross matchups.
+
+A look-ahead attacker that plays each candidate attack out to the end of the
+game was also tried. It won 53% (±5) of a red mirror against the current AI but
+ran about 50 times slower, so it was not added.
+
 ## What changed and why
 
 - **Control was the deck the old AI couldn't play.** It cast counters and
