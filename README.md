@@ -127,8 +127,9 @@ semi-pro mono red and Azorius lists are fully playable; the pro tier is about
 - London mulligan, drawing from an empty library, hand size, 60-turn cap
 
 Not yet: auras and equipment, X spells, copy effects (Reflection of
-Kiki-Jiki), casualty (never paid), day/night, modal double-faced lands (their
-land side), Old-Growth Troll's return, Map tokens, spree, warp.
+Kiki-Jiki), casualty (never paid), day/night, Old-Growth Troll's return, Map
+tokens, spree, warp. Modal double-faced cards keep their land face in
+`CardDef.land_face`, played with `Game.play_land(p, card, back=True)`.
 Every run lists the text it ignores.
 
 ### How AIs plug in
