@@ -1,0 +1,91 @@
+ub_snow_control vs trash/five_color_mess: 50 games
+  ub_snow_control wins 44, trash/five_color_mess wins 6, draws 0
+  ub_snow_control win rate 88.0% (95% CI 76.2% to 94.4%) 
+
+ub_snow_control vs trash/land_glut: 50 games
+  ub_snow_control wins 27, trash/land_glut wins 23, draws 0
+  ub_snow_control win rate 54.0% (95% CI 40.4% to 67.0%) 
+
+ub_snow_control vs trash/vanilla_pile: 50 games
+  ub_snow_control wins 39, trash/vanilla_pile wins 11, draws 0
+  ub_snow_control win rate 78.0% (95% CI 64.8% to 87.2%) 
+
+ub_snow_control vs beginner/green_stompy: 50 games
+  ub_snow_control wins 26, beginner/green_stompy wins 24, draws 0
+  ub_snow_control win rate 52.0% (95% CI 38.5% to 65.2%) 
+
+ub_snow_control vs beginner/red_goblins: 50 games
+  ub_snow_control wins 19, beginner/red_goblins wins 31, draws 0
+  ub_snow_control win rate 38.0% (95% CI 25.9% to 51.8%) 
+
+ub_snow_control vs beginner/uw_flyers: 50 games
+  ub_snow_control wins 32, beginner/uw_flyers wins 18, draws 0
+  ub_snow_control win rate 64.0% (95% CI 50.1% to 75.9%) 
+
+ub_snow_control vs advanced/boros_burn: 50 games
+  ub_snow_control wins 18, advanced/boros_burn wins 32, draws 0
+  ub_snow_control win rate 36.0% (95% CI 24.1% to 49.9%) 
+
+ub_snow_control vs advanced/dimir_control: 50 games
+  ub_snow_control wins 42, advanced/dimir_control wins 8, draws 0
+  ub_snow_control win rate 84.0% (95% CI 71.5% to 91.7%) 
+
+ub_snow_control vs advanced/gruul_midrange: 50 games
+  ub_snow_control wins 38, advanced/gruul_midrange wins 12, draws 0
+  ub_snow_control win rate 76.0% (95% CI 62.6% to 85.7%) 
+
+ub_snow_control vs advanced/orzhov_midrange: 50 games
+  ub_snow_control wins 27, advanced/orzhov_midrange wins 23, draws 0
+  ub_snow_control win rate 54.0% (95% CI 40.4% to 67.0%) 
+
+ub_snow_control vs semipro/azorius_control: 50 games
+  ub_snow_control wins 15, semipro/azorius_control wins 35, draws 0
+  ub_snow_control win rate 30.0% (95% CI 19.1% to 43.8%) 
+
+ub_snow_control vs semipro/mono_green_stompy: 50 games
+  ub_snow_control wins 20, semipro/mono_green_stompy wins 30, draws 0
+  ub_snow_control win rate 40.0% (95% CI 27.6% to 53.8%) 
+
+ub_snow_control vs semipro/mono_red_aggro: 50 games
+  ub_snow_control wins 14, semipro/mono_red_aggro wins 36, draws 0
+  ub_snow_control win rate 28.0% (95% CI 17.5% to 41.7%) 
+
+ub_snow_control vs semipro/rakdos_midrange: 50 games
+  ub_snow_control wins 17, semipro/rakdos_midrange wins 33, draws 0
+  ub_snow_control win rate 34.0% (95% CI 22.4% to 47.8%) 
+
+ub_snow_control vs pro/azorius_artifact_control: 50 games
+  ub_snow_control wins 20, pro/azorius_artifact_control wins 30, draws 0
+  ub_snow_control win rate 40.0% (95% CI 27.6% to 53.8%) 
+
+ub_snow_control vs pro/boros_dragons: 50 games
+  ub_snow_control wins 16, pro/boros_dragons wins 34, draws 0
+  ub_snow_control win rate 32.0% (95% CI 20.8% to 45.8%) 
+
+ub_snow_control vs pro/dimir_control: 50 games
+  ub_snow_control wins 39, pro/dimir_control wins 11, draws 0
+  ub_snow_control win rate 78.0% (95% CI 64.8% to 87.2%) 
+
+ub_snow_control vs pro/dimir_midrange: 50 games
+  ub_snow_control wins 19, pro/dimir_midrange wins 31, draws 0
+  ub_snow_control win rate 38.0% (95% CI 25.9% to 51.8%) 
+
+ub_snow_control vs pro/izzet_spellementals: 50 games
+  ub_snow_control wins 41, pro/izzet_spellementals wins 9, draws 0
+  ub_snow_control win rate 82.0% (95% CI 69.2% to 90.2%) 
+
+ub_snow_control vs pro/jund_sacrifice: 50 games
+  ub_snow_control wins 20, pro/jund_sacrifice wins 30, draws 0
+  ub_snow_control win rate 40.0% (95% CI 27.6% to 53.8%) 
+
+ub_snow_control vs pro/mono_green_landfall: 50 games
+  ub_snow_control wins 15, pro/mono_green_landfall wins 35, draws 0
+  ub_snow_control win rate 30.0% (95% CI 19.1% to 43.8%) 
+
+ub_snow_control by tier (clearing a tier needs 50%)
+  Trash      73.3%  (95% CI 65.7% to 79.8%, 150 games)  cleared
+  Beginner   51.3%  (95% CI 43.4% to 59.2%, 150 games)  cleared
+  Advanced   62.5%  (95% CI 55.6% to 68.9%, 200 games)  cleared
+  Semi-pro   33.0%  (95% CI 26.9% to 39.8%, 200 games)  failed
+  Pro        48.6%  (95% CI 43.4% to 53.8%, 350 games)  failed
+Ladder: ub_snow_control reached Advanced and stopped at Semi-pro.

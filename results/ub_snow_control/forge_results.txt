@@ -1,0 +1,22 @@
+ub_snow_control vs mono_red_aggro: 100 games
+  ub_snow_control wins 31, mono_red_aggro wins 69, draws 0
+  ub_snow_control win rate 31.0% (95% CI 22.8% to 40.6%) 
+
+ub_snow_control vs mono_green_stompy: 100 games
+  ub_snow_control wins 38, mono_green_stompy wins 62, draws 0
+  ub_snow_control win rate 38.0% (95% CI 29.1% to 47.8%) 
+
+ub_snow_control vs rakdos_midrange: 100 games
+  ub_snow_control wins 26, rakdos_midrange wins 74, draws 0
+  ub_snow_control win rate 26.0% (95% CI 18.4% to 35.4%) 
+
+ub_snow_control vs azorius_control: 100 games
+  ub_snow_control wins 31, azorius_control wins 69, draws 0
+  ub_snow_control win rate 31.0% (95% CI 22.8% to 40.6%) 
+
+Overall win rate
+  rakdos_midrange           74.0%  (95% CI 64.6% to 81.6%, 100 games)
+  mono_red_aggro            69.0%  (95% CI 59.4% to 77.2%, 100 games)
+  azorius_control           69.0%  (95% CI 59.4% to 77.2%, 100 games)
+  mono_green_stompy         62.0%  (95% CI 52.2% to 70.9%, 100 games)
+  ub_snow_control           31.5%  (95% CI 27.1% to 36.2%, 400 games)

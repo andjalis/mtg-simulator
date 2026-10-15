@@ -1,0 +1,9 @@
+# Trash: 32 lands and weak creatures, so it floods out
+32 Mountain
+4 Raging Goblin
+4 Goblin Piker
+4 Gray Ogre
+4 Highland Giant
+4 Hill Giant
+4 Charging Monstrosaur
+4 Shock

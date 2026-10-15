@@ -1,0 +1,508 @@
+[
+ {
+  "name": "Plains",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Basic Land \u2014 Plains",
+  "oracle_text": "({T}: Add {W}.)"
+ },
+ {
+  "name": "Island",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Basic Land \u2014 Island",
+  "oracle_text": "({T}: Add {U}.)"
+ },
+ {
+  "name": "Swamp",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Basic Land \u2014 Swamp",
+  "oracle_text": "({T}: Add {B}.)"
+ },
+ {
+  "name": "Mountain",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Basic Land \u2014 Mountain",
+  "oracle_text": "({T}: Add {R}.)"
+ },
+ {
+  "name": "Forest",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Basic Land \u2014 Forest",
+  "oracle_text": "({T}: Add {G}.)"
+ },
+ {
+  "name": "Rugged Highlands",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {R} or {G}."
+ },
+ {
+  "name": "Scoured Barrens",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "This land enters tapped.\nWhen this land enters, you gain 1 life.\n{T}: Add {W} or {B}."
+ },
+ {
+  "name": "Lightning Bolt",
+  "mana_cost": "{R}",
+  "cmc": 1,
+  "type_line": "Instant",
+  "oracle_text": "Lightning Bolt deals 3 damage to any target."
+ },
+ {
+  "name": "Shock",
+  "mana_cost": "{R}",
+  "cmc": 1,
+  "type_line": "Instant",
+  "oracle_text": "Shock deals 2 damage to any target."
+ },
+ {
+  "name": "Lava Spike",
+  "mana_cost": "{R}",
+  "cmc": 1,
+  "type_line": "Sorcery \u2014 Arcane",
+  "oracle_text": "Lava Spike deals 3 damage to target player or planeswalker."
+ },
+ {
+  "name": "Searing Spear",
+  "mana_cost": "{1}{R}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Searing Spear deals 3 damage to any target."
+ },
+ {
+  "name": "Monastery Swiftspear",
+  "mana_cost": "{R}",
+  "cmc": 1,
+  "type_line": "Creature \u2014 Human Monk",
+  "oracle_text": "Haste\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)",
+  "power": "1",
+  "toughness": "2"
+ },
+ {
+  "name": "Goblin Guide",
+  "mana_cost": "{R}",
+  "cmc": 1,
+  "type_line": "Creature \u2014 Goblin Scout",
+  "oracle_text": "Haste\nWhenever this creature attacks, defending player reveals the top card of their library. If it's a land card, that player puts it into their hand.",
+  "power": "2",
+  "toughness": "2"
+ },
+ {
+  "name": "Raging Goblin",
+  "mana_cost": "{R}",
+  "cmc": 1,
+  "type_line": "Creature \u2014 Goblin Berserker",
+  "oracle_text": "Haste",
+  "power": "1",
+  "toughness": "1"
+ },
+ {
+  "name": "Keldon Raider",
+  "mana_cost": "{2}{R}{R}",
+  "cmc": 4,
+  "type_line": "Creature \u2014 Human Warrior",
+  "oracle_text": "When this creature enters, you may discard a card. If you do, draw a card.",
+  "power": "4",
+  "toughness": "3"
+ },
+ {
+  "name": "Hill Giant",
+  "mana_cost": "{3}{R}",
+  "cmc": 4,
+  "type_line": "Creature \u2014 Giant",
+  "oracle_text": "",
+  "power": "3",
+  "toughness": "3"
+ },
+ {
+  "name": "Llanowar Elves",
+  "mana_cost": "{G}",
+  "cmc": 1,
+  "type_line": "Creature \u2014 Elf Druid",
+  "oracle_text": "{T}: Add {G}.",
+  "power": "1",
+  "toughness": "1"
+ },
+ {
+  "name": "Grizzly Bears",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Creature \u2014 Bear",
+  "oracle_text": "",
+  "power": "2",
+  "toughness": "2"
+ },
+ {
+  "name": "Elvish Visionary",
+  "mana_cost": "{1}{G}",
+  "cmc": 2,
+  "type_line": "Creature \u2014 Elf Shaman",
+  "oracle_text": "When this creature enters, draw a card.",
+  "power": "1",
+  "toughness": "1"
+ },
+ {
+  "name": "Kalonian Tusker",
+  "mana_cost": "{G}{G}",
+  "cmc": 2,
+  "type_line": "Creature \u2014 Beast",
+  "oracle_text": "",
+  "power": "3",
+  "toughness": "3"
+ },
+ {
+  "name": "Garruk's Companion",
+  "mana_cost": "{G}{G}",
+  "cmc": 2,
+  "type_line": "Creature \u2014 Beast",
+  "oracle_text": "Trample",
+  "power": "3",
+  "toughness": "2"
+ },
+ {
+  "name": "Centaur Courser",
+  "mana_cost": "{2}{G}",
+  "cmc": 3,
+  "type_line": "Creature \u2014 Centaur Warrior",
+  "oracle_text": "",
+  "power": "3",
+  "toughness": "3"
+ },
+ {
+  "name": "Giant Growth",
+  "mana_cost": "{G}",
+  "cmc": 1,
+  "type_line": "Instant",
+  "oracle_text": "Target creature gets +3/+3 until end of turn."
+ },
+ {
+  "name": "Colossal Dreadmaw",
+  "mana_cost": "{4}{G}{G}",
+  "cmc": 6,
+  "type_line": "Creature \u2014 Dinosaur",
+  "oracle_text": "Trample",
+  "power": "6",
+  "toughness": "6"
+ },
+ {
+  "name": "Savannah Lions",
+  "mana_cost": "{W}",
+  "cmc": 1,
+  "type_line": "Creature \u2014 Cat",
+  "oracle_text": "",
+  "power": "2",
+  "toughness": "1"
+ },
+ {
+  "name": "Elite Vanguard",
+  "mana_cost": "{W}",
+  "cmc": 1,
+  "type_line": "Creature \u2014 Human Soldier",
+  "oracle_text": "",
+  "power": "2",
+  "toughness": "1"
+ },
+ {
+  "name": "Serra Angel",
+  "mana_cost": "{3}{W}{W}",
+  "cmc": 5,
+  "type_line": "Creature \u2014 Angel",
+  "oracle_text": "Flying, vigilance",
+  "power": "4",
+  "toughness": "4"
+ },
+ {
+  "name": "Vampire Nighthawk",
+  "mana_cost": "{1}{B}{B}",
+  "cmc": 3,
+  "type_line": "Creature \u2014 Vampire Shaman",
+  "oracle_text": "Flying\nDeathtouch\nLifelink",
+  "power": "2",
+  "toughness": "3"
+ },
+ {
+  "name": "Murder",
+  "mana_cost": "{1}{B}{B}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Destroy target creature."
+ },
+ {
+  "name": "Gray Merchant of Asphodel",
+  "mana_cost": "{3}{B}{B}",
+  "cmc": 5,
+  "type_line": "Creature \u2014 Zombie",
+  "oracle_text": "When this creature enters, each opponent loses X life, where X is your devotion to black. You gain life equal to the life lost this way.",
+  "power": "2",
+  "toughness": "4"
+ },
+ {
+  "name": "Ravenous Chupacabra",
+  "mana_cost": "{2}{B}{B}",
+  "cmc": 4,
+  "type_line": "Creature \u2014 Horror",
+  "oracle_text": "When this creature enters, destroy target creature an opponent controls.",
+  "power": "2",
+  "toughness": "2"
+ },
+ {
+  "name": "Divination",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Sorcery",
+  "oracle_text": "Draw two cards."
+ },
+ {
+  "name": "Air Elemental",
+  "mana_cost": "{3}{U}{U}",
+  "cmc": 5,
+  "type_line": "Creature \u2014 Elemental",
+  "oracle_text": "Flying",
+  "power": "4",
+  "toughness": "4"
+ },
+ {
+  "name": "Doom Blade",
+  "mana_cost": "{1}{B}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Destroy target nonblack creature."
+ },
+ {
+  "name": "Suntail Hawk",
+  "mana_cost": "{W}",
+  "cmc": 1,
+  "type_line": "Creature \u2014 Bird",
+  "oracle_text": "Flying",
+  "power": "1",
+  "toughness": "1"
+ },
+ {
+  "name": "Rumbling Baloth",
+  "mana_cost": "{2}{G}{G}",
+  "cmc": 4,
+  "type_line": "Creature \u2014 Beast",
+  "oracle_text": "",
+  "power": "4",
+  "toughness": "4"
+ },
+ {
+  "name": "Iymrith, Desert Doom",
+  "mana_cost": "{3}{U}{U}",
+  "cmc": 5,
+  "type_line": "Legendary Creature \u2014 Dragon",
+  "power": "5",
+  "toughness": "5",
+  "oracle_text": "Flying\nIymrith, Desert Doom has ward {4} as long as it's untapped.\nWhenever Iymrith deals combat damage to a player, draw a card. Then if you have fewer than three cards in hand, draw cards equal to the difference."
+ },
+ {
+  "name": "Hullbreaker Horror",
+  "mana_cost": "{5}{U}{U}",
+  "cmc": 7,
+  "type_line": "Creature \u2014 Kraken Horror",
+  "power": "7",
+  "toughness": "8",
+  "oracle_text": "Flash\nThis spell can't be countered.\nWhenever you cast a spell, choose up to one \u2014\n\u2022 Return target spell you don't control to its owner's hand.\n\u2022 Return target nonland permanent to its owner's hand."
+ },
+ {
+  "name": "Sphinx of the Final Word",
+  "mana_cost": "{5}{U}{U}",
+  "cmc": 7,
+  "type_line": "Creature \u2014 Sphinx",
+  "power": "5",
+  "toughness": "5",
+  "oracle_text": "This spell can't be countered.\nFlying, hexproof\nInstant and sorcery spells you control can't be countered."
+ },
+ {
+  "name": "Massacre Wurm",
+  "mana_cost": "{3}{B}{B}{B}",
+  "cmc": 6,
+  "type_line": "Creature \u2014 Phyrexian Wurm",
+  "power": "6",
+  "toughness": "5",
+  "oracle_text": "When Massacre Wurm enters, creatures your opponents control get -2/-2 until end of turn.\nWhenever a creature an opponent controls dies, that player loses 2 life."
+ },
+ {
+  "name": "Tolarian Terror",
+  "mana_cost": "{6}{U}",
+  "cmc": 7,
+  "type_line": "Creature \u2014 Serpent",
+  "power": "5",
+  "toughness": "5",
+  "oracle_text": "This spell costs {1} less to cast for each instant and sorcery card in your graveyard.\nWard {2}"
+ },
+ {
+  "name": "Saw It Coming",
+  "mana_cost": "{1}{U}{U}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Counter target spell.\nForetell {1}{U} (During your turn, you may pay {2} and exile this card from your hand face down. Cast it on a later turn for its foretell cost.)"
+ },
+ {
+  "name": "Jwari Disruption // Jwari Ruins",
+  "mana_cost": "{1}{U} // ",
+  "cmc": 2,
+  "type_line": "Instant // Land",
+  "card_faces": [
+   {
+    "name": "Jwari Disruption",
+    "mana_cost": "{1}{U}",
+    "type_line": "Instant",
+    "oracle_text": "Counter target spell unless its controller pays {1}."
+   },
+   {
+    "name": "Jwari Ruins",
+    "mana_cost": "",
+    "type_line": "Land",
+    "oracle_text": "Jwari Ruins enters the battlefield tapped.\n{T}: Add {U}."
+   }
+  ]
+ },
+ {
+  "name": "Hero's Downfall",
+  "mana_cost": "{1}{B}{B}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Destroy target creature or planeswalker."
+ },
+ {
+  "name": "Power Word Kill",
+  "mana_cost": "{1}{B}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Destroy target non-Angel, non-Demon, non-Dragon creature."
+ },
+ {
+  "name": "Baleful Mastery",
+  "mana_cost": "{3}{B}",
+  "cmc": 4,
+  "type_line": "Instant",
+  "oracle_text": "You may pay {1}{B} rather than pay this spell's mana cost.\nIf the {1}{B} cost was paid, an opponent draws a card.\nExile target creature or planeswalker."
+ },
+ {
+  "name": "Infernal Grasp",
+  "mana_cost": "{1}{B}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Destroy target creature. You lose 2 life."
+ },
+ {
+  "name": "Blood on the Snow",
+  "mana_cost": "{4}{B}{B}",
+  "cmc": 6,
+  "type_line": "Snow Sorcery",
+  "oracle_text": "Choose one \u2014\n\u2022 Destroy all creatures.\n\u2022 Destroy all planeswalkers.\nThen return a creature or planeswalker card with mana value X or less from your graveyard to the battlefield, where X is the amount of {S} spent to cast this spell."
+ },
+ {
+  "name": "Crippling Fear",
+  "mana_cost": "{2}{B}{B}",
+  "cmc": 4,
+  "type_line": "Sorcery",
+  "oracle_text": "Choose a creature type. Creatures that aren't of the chosen type get -3/-3 until end of turn."
+ },
+ {
+  "name": "Memory Deluge",
+  "mana_cost": "{2}{U}{U}",
+  "cmc": 4,
+  "type_line": "Instant",
+  "oracle_text": "Look at the top X cards of your library, where X is the amount of mana spent to cast this spell. Put two of them into your hand and the rest on the bottom of your library in a random order.\nFlashback {5}{U}{U}"
+ },
+ {
+  "name": "Thirst for Discovery",
+  "mana_cost": "{2}{U}",
+  "cmc": 3,
+  "type_line": "Instant",
+  "oracle_text": "Draw three cards. Then discard two cards unless you discard a basic snow land card."
+ },
+ {
+  "name": "Opt",
+  "mana_cost": "{U}",
+  "cmc": 1,
+  "type_line": "Instant",
+  "oracle_text": "Scry 1.\nDraw a card."
+ },
+ {
+  "name": "Sol Ring",
+  "mana_cost": "{1}",
+  "cmc": 1,
+  "type_line": "Artifact",
+  "oracle_text": "{T}: Add {C}{C}."
+ },
+ {
+  "name": "Snow-Covered Swamp",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Basic Snow Land \u2014 Swamp",
+  "oracle_text": "({T}: Add {B}.)"
+ },
+ {
+  "name": "Snow-Covered Island",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Basic Snow Land \u2014 Island",
+  "oracle_text": "({T}: Add {U}.)"
+ },
+ {
+  "name": "Ice Tunnel",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Snow Land \u2014 Island Swamp",
+  "oracle_text": "({T}: Add {U} or {B}.)\nIce Tunnel enters tapped."
+ },
+ {
+  "name": "Shipwreck Marsh",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "This land enters tapped unless you control two or more other lands.\n{T}: Add {U} or {B}."
+ },
+ {
+  "name": "Hall of Storm Giants",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "If you control two or more other lands, this land enters tapped.\n{T}: Add {U}.\n{5}{U}: Until end of turn, this land becomes a 7/7 blue Giant creature with ward {3}. It's still a land."
+ },
+ {
+  "name": "Temple of Deceit",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "This land enters tapped.\nWhen this land enters, scry 1.\n{T}: Add {U} or {B}."
+ },
+ {
+  "name": "Crawling Barrens",
+  "mana_cost": "",
+  "cmc": 0,
+  "type_line": "Land",
+  "oracle_text": "{T}: Add {C}.\n{4}: Put two +1/+1 counters on this land. Then you may have it become a 0/0 Elemental creature until end of turn. It's still a land."
+ },
+ {
+  "name": "Counterspell",
+  "mana_cost": "{U}{U}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Counter target spell."
+ },
+ {
+  "name": "Essence Scatter",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Counter target creature spell."
+ },
+ {
+  "name": "Negate",
+  "mana_cost": "{1}{U}",
+  "cmc": 2,
+  "type_line": "Instant",
+  "oracle_text": "Counter target noncreature spell."
+ }
+]
