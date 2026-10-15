@@ -23,15 +23,18 @@ import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-from . import leaderboard, sim
+from . import leaderboard, sim, theme
 
 try:
-    from mtgsim.ladder_report import render_page as ladder_page
+    from mtgsim.ladder_report import emblem, render_page as ladder_page
+    from mtgsim.rating import RANKS
 except ImportError:
-    ladder_page = None
+    ladder_page = emblem = None
+    RANKS = []
 
 STATIC = Path(__file__).parent / "static"
 MAX_BODY = 1 << 20
+STATIC_TYPES = {".css": "text/css; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".svg": "image/svg+xml"}
 
 
 class App:
@@ -95,6 +98,12 @@ class App:
 NAME = re.compile(r"^[\w.-]+$")
 
 
+def rank_info() -> list[dict]:
+    """The ranks, low to high, with their badges for the page."""
+    return [{"name": r.name, "key": r.key, "floor": r.floor, "color": r.color,
+             "emblem": emblem(r.name, r.color) if emblem else ""} for r in RANKS]
+
+
 def make_handler(app: App):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, fmt, *args):
@@ -117,9 +126,18 @@ def make_handler(app: App):
 
         def do_GET(self):
             if self.path in ("/", "/index.html"):
-                self._send(200, (STATIC / "index.html").read_bytes(), "text/html; charset=utf-8")
+                page = theme.dress((STATIC / "index.html").read_text(encoding="utf-8"), "test")
+                self._send(200, page.encode(), "text/html; charset=utf-8")
+            elif self.path.startswith("/static/"):
+                name = self.path[len("/static/"):]
+                path = STATIC / name
+                if NAME.match(name) and not name.startswith(".") and path.suffix in STATIC_TYPES and path.is_file():
+                    self._send(200, path.read_bytes(), STATIC_TYPES[path.suffix])
+                else:
+                    self._send(404, {"error": "not found"})
             elif self.path == "/api/tiers":
-                self._send(200, {"tiers": sim.tier_info(), "pass_rate": sim.PASS_RATE, "max_games": sim.MAX_GAMES})
+                self._send(200, {"tiers": sim.tier_info(), "ranks": rank_info(), "pass_rate": sim.PASS_RATE,
+                                 "max_games": sim.MAX_GAMES})
             elif self.path == "/api/leaderboard":
                 self._send(200, {"decks": app.leaderboard()})
             elif self.path in ("/leaderboard", "/leaderboard/"):
@@ -149,8 +167,10 @@ def make_handler(app: App):
             if kind == "assess":
                 page = leaderboard.render_assessment(data)
             elif ladder_page:
-                page = ladder_page(data).replace("<body>", "<body><nav style='font:14px system-ui;padding:12px 16px'>"
-                                                 "<a href='/leaderboard'>← Leaderboard</a></nav>", 1)
+                page = theme.dress(ladder_page(data), "leaderboard",
+                                   "<main class='page report'><a class=back href='/leaderboard'>‹ Leaderboard</a>"
+                                   f"<section class=frame><div class=face>{theme.titlebar('Ranked ladder')}",
+                                   "</div></section></main>")
             else:
                 return self._send(200, data)
             self._send(200, page.encode(), "text/html; charset=utf-8")
