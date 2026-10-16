@@ -177,6 +177,8 @@ class CardDef:
     lands_from_gy: bool = False                         # "You may play lands from your graveyard."
     etb_counters_if: tuple = ()                         # ("opp_lost_life", n): "enters with a +1/+1 counter if ..."
     team_keywords: frozenset = frozenset()              # "Creatures you control have haste."
+    token_ability_discount: int = 0                     # "Activated abilities of artifact tokens you control cost {1} less"
+    grant_mana: tuple = ()                              # ((scope, colours), ...): 'Creatures you control have "{T}: Add ..."'
     cost_discount: tuple = ()                           # ((filter, n), ...): "Red spells you cast cost {1} less"
     opp_no_cast: bool = False                           # "Your opponents can't cast spells during your turn."
     pt_if: tuple = ()                                   # ((condition, power, toughness), ...) conditional pump
@@ -430,6 +432,9 @@ _EFFECT_PATTERNS = [
     (r"target player discards a card", lambda m: Effect("discard", 1, target="player")),
     (r"each opponent discards a card", lambda m: Effect("discard", 1, target="player")),
     (r"empower jace (\d+)", lambda m: Effect("empower", int(m[1]))),
+    (r"empower jace x, where x is the number of (creatures|islands) you control",
+     lambda m: Effect("empower", 0, data={"count": m[1].lower()})),
+    (r"create x (mutagen) tokens", lambda m: Effect("token", 0, data={"kind": "mutagen", "x": True})),
     (r"discover (\d+)", lambda m: Effect("discover", int(m[1]))),
     (r"(?:~|it|he|she) connives", lambda m: Effect("connive", target="prev")),
     (r"(?:up to one )?target creature you control connives", lambda m: Effect("connive", target="creature_mine")),
@@ -1128,6 +1133,18 @@ def _parse_face(data: dict) -> CardDef:
                          r"\{(\d+)\} less to cast\.", line)
         if m:
             extra["cost_discount"] = extra.get("cost_discount", ()) + ((m[1].lower(), int(m[2])),)
+            continue
+        m = re.fullmatch(r"(Creatures|Lands|Creature tokens|Foods|Other permanents|Each land and Ally) you control "
+                         r"(?:have|has) \"\{T\}: Add (one mana of any color|\{[WUBRGC]\})\.\"", line)
+        if m:
+            scope = {"creatures": "creature", "lands": "land", "creature tokens": "creature_token", "foods": "food",
+                     "other permanents": "other", "each land and ally": "land_or_ally"}[m[1].lower()]
+            cols = frozenset(COLORS) if "any color" in m[2] else frozenset(re.findall(r"[WUBRGC]", m[2]))
+            extra["grant_mana"] = extra.get("grant_mana", ()) + ((scope, cols),)
+            continue
+        m = re.fullmatch(r"Activated abilities of artifact tokens you control cost \{(\d+)\} less to activate\.", line)
+        if m:
+            extra["token_ability_discount"] = int(m[1])
             continue
         if line == "Your opponents can't cast spells during your turn.":
             extra["opp_no_cast"] = True
