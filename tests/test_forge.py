@@ -6,24 +6,36 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from mtgsim.forge import ForgeError, parse_results, run_forge_match, to_dck
+from mtgsim.forge import ForgeError, parse_results, play_quotas, run_forge_match, to_dck
 
+# Like Forge: the first game's starter is fixed here (a coin flip in Forge) and the loser of each game
+# starts the next. PATTERN gives each game's result in turn: a or b wins, d is a draw.
 FAKE_JAVA = textwrap.dedent("""\
     #!/usr/bin/env python3
     import sys
+    PATTERN = "aabd"
+    TURN_LINES = True
     args = sys.argv[1:]
     d = args.index("-d")
     deck_dir = args[args.index("-D") + 1]
     names = [open(f"{deck_dir}/{f}").read().split("Name=")[1].split()[0] for f in args[d + 1:d + 3]]
     n = int(args[args.index("-n") + 1])
     print("Simulation mode")
+    starter = 0
     for i in range(1, n + 1):
-        if i % 4 == 0:
+        result = PATTERN[(i - 1) % len(PATTERN)]
+        if TURN_LINES:
+            for t in range(1, 6):
+                seat = (starter + t - 1) % 2
+                print(f"Turn: Turn {t} (Ai({seat + 1})-{names[seat]})")
+            print("Game Outcome: Turn 3")
+        if result == "d":
             print(f"\\nGame Result: Game {i} ended in a Draw! Took 10 ms.")
         else:
-            winner = names[0] if i % 4 != 3 else names[1]
-            idx = 1 if winner == names[0] else 2
-            print(f"\\nGame Result: Game {i} ended in 1234 ms. Ai({idx})-{winner} has won!\\n")
+            idx = 1 if result == "a" else 2
+            print(f"\\nGame Result: Game {i} ended in 1234 ms. Ai({idx})-{names[idx - 1]} has won!\\n")
+            starter = 1 if result == "a" else 0
+        sys.stdout.flush()
     """)
 
 
@@ -50,13 +62,54 @@ class ForgeWrapperTests(unittest.TestCase):
         deck = {"Lightning Bolt": 4, "Mountain": 20}
         res = run_forge_match("burn", deck, "other", deck, games=8, forge_dir=str(self.forge), java=str(self.java))
         self.assertEqual((res.games, res.wins_a, res.wins_b, res.draws), (8, 4, 2, 2))
-        self.assertNotIn("on the play", res.summary())
+        self.assertEqual((res.games_a_on_play, res.games_a_on_draw), (4, 4))
+        self.assertIn("on the play", res.summary())
 
     def test_parallel_jobs_add_up(self):
         deck = {"Lightning Bolt": 4, "Mountain": 20}
         res = run_forge_match("burn", deck, "other", deck, games=8, forge_dir=str(self.forge),
                               java=str(self.java), jobs=3)
-        self.assertEqual((res.games, res.wins_a, res.wins_b, res.draws), (8, 6, 2, 0))
+        # Workers keep (2 play, 1 draw), (1, 2) and (1, 1) games; see play_quotas.
+        self.assertEqual((res.games, res.wins_a, res.wins_b, res.draws), (8, 6, 1, 1))
+        self.assertEqual((res.games_a_on_play, res.games_a_on_draw), (4, 4))
+        self.assertEqual(play_quotas([3, 3, 2]), [2, 1, 1])
+        self.assertEqual(play_quotas([5]), [3])
+
+    def set_fake(self, pattern=None, turn_lines=True):
+        script = FAKE_JAVA
+        if pattern:
+            script = script.replace('PATTERN = "aabd"', f'PATTERN = "{pattern}"')
+        if not turn_lines:
+            script = script.replace("TURN_LINES = True", "TURN_LINES = False")
+        self.java.write_text(script)
+
+    def test_even_play_draw_split_when_one_deck_wins_most(self):
+        # A wins 3 of 4, so left to Forge's loser-starts rule A is on the play in only 1 game of 4.
+        self.set_fake("aaab")
+        deck = {"Mountain": 60}
+        for games, jobs in ((8, 1), (12, 2), (7, 3)):
+            with self.subTest(games=games, jobs=jobs):
+                res = run_forge_match("a", deck, "b", deck, games=games, forge_dir=str(self.forge),
+                                      java=str(self.java), jobs=jobs)
+                self.assertEqual(res.games, games)
+                self.assertTrue(res.play_draw_known)
+                self.assertLessEqual(abs(res.games_a_on_play - res.games_a_on_draw), 1)
+                self.assertEqual(res.games_a_on_play + res.games_a_on_draw, games)
+        # The same holds when B wins most games.
+        self.set_fake("bbba")
+        res = run_forge_match("a", deck, "b", deck, games=10, forge_dir=str(self.forge), java=str(self.java))
+        self.assertEqual((res.games_a_on_play, res.games_a_on_draw, res.wins_b), (5, 5, 9))
+
+    def test_cap_keeps_remaining_games_whatever_their_starter(self):
+        self.set_fake("aaab")
+        deck = {"Mountain": 60}
+        res = run_forge_match("a", deck, "b", deck, games=8, forge_dir=str(self.forge), java=str(self.java),
+                              max_factor=1)
+        self.assertEqual((res.games, res.games_a_on_play, res.games_a_on_draw), (8, 2, 6))
+        self.set_fake(turn_lines=False)
+        res = run_forge_match("a", deck, "b", deck, games=4, forge_dir=str(self.forge), java=str(self.java))
+        self.assertEqual(res.games, 4)
+        self.assertFalse(res.play_draw_known)
 
     def test_unknown_card(self):
         with self.assertRaises(ForgeError) as e:
@@ -120,8 +173,8 @@ class ForgeWrapperTests(unittest.TestCase):
                 parse_results(lines, "a", "b")
 
     def test_reject_nonzero_or_incomplete_even_with_results_and_preserve_raw_logs(self):
-        for script, games in ((FAKE_JAVA + "sys.exit(2)\n", 2),
-                              (FAKE_JAVA.replace('range(1, n + 1)', 'range(1, n)'), 2)):
+        for script, games in ((FAKE_JAVA.replace('range(1, n + 1)', 'range(1, 2)') + "sys.exit(2)\n", 2),
+                              (FAKE_JAVA.replace('range(1, n + 1)', 'range(1, 2)'), 2)):
             self.java.write_text(script)
             logs = Path(self.tmp.name) / "logs"
             with self.assertRaisesRegex(ForgeError, "incomplete results rejected"):
@@ -130,7 +183,8 @@ class ForgeWrapperTests(unittest.TestCase):
             self.assertIn("Simulation mode", (logs / "worker-0.log").read_text())
 
     def test_raw_log_includes_review_detail_and_isolated_settings(self):
-        self.java.write_text(FAKE_JAVA + textwrap.dedent('''
+        # Checked before the games: the wrapper stops Forge once it has the games it needs.
+        self.java.write_text(FAKE_JAVA.replace('print("Simulation mode")\n', textwrap.dedent('''
             import os
             from pathlib import Path
             assert "-q" not in args
@@ -139,7 +193,7 @@ class ForgeWrapperTests(unittest.TestCase):
             assert Path("res").is_dir()
             assert "JAVA_TOOL_OPTIONS" not in os.environ
             print("reviewable action")
-        '''))
+        '''), 1))
         logs = Path(self.tmp.name) / "logs"
         from unittest.mock import patch
         with patch.dict(os.environ, {"JAVA_TOOL_OPTIONS": "invalid inherited setting"}):

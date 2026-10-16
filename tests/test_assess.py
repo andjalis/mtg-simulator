@@ -3,8 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from mtgsim.assess import (assess, assess_consistency, assess_mana, color_pips, grade, load_metagame,
-                           meta_weighted_rows, p_on_curve, sources_needed, text_report)
+from mtgsim.assess import (assess, assess_consistency, assess_mana, color_pips, coverage_share, grade,
+                           load_metagame, meta_weighted_rows, p_on_curve, sources_needed, text_report)
 from mtgsim.carddb import CardDB
 from mtgsim.rating import RANKS, performance_rating
 from mtgsim.runner import build_deck
@@ -115,6 +115,97 @@ class MetaTests(unittest.TestCase):
                          decks_dir=Path(tmp) / "decks", meta_results={"green": (50.0, 100)})
         self.assertAlmostEqual(out["criteria"]["meta"]["details"]["weighted_win_rate"], 0.5)
         self.assertEqual(out["criteria"]["meta"]["details"]["engine"], "given")
+
+
+# 24 Swamps play fully; the 36 spells each ignore some text, so the built-in engine covers 40%
+LOW = {"Swamp": 24, "Deep-Cavern Bat": 12, "Preacher of the Schism": 12, "Fable of the Mirror-Breaker": 12}
+
+
+def meta_dir(tmp, decks):
+    """A metagame file and Grandmaster pool with these decks, equal shares."""
+    pool = Path(tmp) / "decks" / "ranks" / "7-grandmaster"
+    pool.mkdir(parents=True)
+    for key, counts in decks.items():
+        (pool / f"{key}.txt").write_text(as_text(counts))
+    meta_file = Path(tmp) / "meta.json"
+    meta_file.write_text(json.dumps({"archetypes": [{"name": k.title(), "file": f"{k}.txt", "share": {"A": 10.0}}
+                                                    for k in decks]}))
+    return dict(metagame=meta_file, decks_dir=Path(tmp) / "decks")
+
+
+class ReliabilityTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.db = CardDB(offline=True)
+
+    def run_assess(self, decks, results, **kw):
+        with tempfile.TemporaryDirectory() as tmp:
+            return assess("red", RED, self.db, goldfish_games=2, samples=50, meta_results=results,
+                          **meta_dir(tmp, decks), **kw)
+
+    def test_coverage_share(self):
+        self.assertEqual(coverage_share(self.db, RED), 1.0)
+        self.assertAlmostEqual(coverage_share(self.db, LOW), 0.4)
+
+    def test_full_coverage_is_high_with_an_mmr_interval(self):
+        out = self.run_assess({"green": GREEN}, {"green": (12.0, 20)})
+        rel = out["reliability"]
+        self.assertEqual(rel["level"], "high")
+        self.assertEqual((rel["field_coverage"], rel["deck_coverage"]), (1.0, 1.0))
+        lo, hi = out["rating"]["mmr_interval"]
+        self.assertLess(lo, out["rating"]["mmr"])
+        self.assertGreater(hi, out["rating"]["mmr"])
+        more = self.run_assess({"green": GREEN}, {"green": (120.0, 200)})["rating"]["mmr_interval"]
+        self.assertLess(more[1] - more[0], hi - lo)  # more games, narrower range
+        self.assertIn("Reliability high", text_report(out))
+
+    def test_low_coverage_field_is_low(self):
+        out = self.run_assess({"low": LOW}, {"low": (10.0, 20)})
+        self.assertEqual(out["reliability"]["level"], "low")
+        self.assertAlmostEqual(out["reliability"]["field_coverage"], 0.4)
+        self.assertEqual(out["criteria"]["meta"]["details"]["matchups"][0]["coverage"], 0.4)
+        self.assertIn("Low", out["reliability"]["reason"])
+        mixed = self.run_assess({"low": LOW, "green": GREEN}, {"low": (10.0, 20), "green": (10.0, 20)})
+        self.assertEqual(mixed["reliability"]["level"], "medium")  # 70% of the field covered
+
+    def test_auto_sends_low_coverage_matchups_to_forge(self):
+        calls = []
+
+        def fake_forge(a, a_counts, b, b_counts):
+            calls.append(b)
+            return 3.0, 4
+
+        out = self.run_assess({"low": LOW, "green": GREEN}, {"low": (10.0, 20), "green": (10.0, 20)},
+                              forge_play=fake_forge, result_engines={"low": "python", "green": "python"})
+        self.assertEqual(calls, ["Low"])  # replayed in Forge even though a built-in result was given
+        m = {x["key"]: x for x in out["criteria"]["meta"]["details"]["matchups"]}
+        self.assertEqual((m["low"]["engine"], m["low"]["games"]), ("forge", 4))
+        self.assertEqual((m["green"]["engine"], m["green"]["games"]), ("python", 20))
+        self.assertEqual(out["criteria"]["meta"]["details"]["engine"], "mixed")
+        self.assertEqual(out["reliability"]["level"], "high")
+        self.assertAlmostEqual(out["reliability"]["forge_share"], 0.5)
+
+    def test_web_run_plays_the_meta_field_in_forge(self):
+        from unittest import mock
+        from web import sim
+        run = sim.make_run("burn", as_text(RED), ["bronze"], ladder=False, games=2, seed=1)
+        run.forge_dir, run.goldfish_games, run.samples, run.record_history = "/fake/forge", 2, 50, False
+        played = []
+
+        def fake_forge(me, opp, games, seed, folder):
+            played.append(folder)
+            return 1.0, games
+
+        with mock.patch.object(sim, "_forge_match", fake_forge), sim.make_pool(1) as pool:
+            run.execute(pool)
+        self.assertEqual(run.grade_error, "")
+        snap = run.snapshot()
+        _, archetypes = load_metagame()
+        self.assertEqual(played, ["/fake/forge"] * len(archetypes))
+        self.assertEqual(snap["meta_engine"], "forge")
+        self.assertEqual(snap["reliability"]["level"], "high")
+        self.assertEqual(snap["reliability"]["forge_share"], 1.0)
+        self.assertEqual(snap["assessment"]["data"]["criteria"]["meta"]["details"]["engine"], "forge")
 
 
 class GradesReportTests(unittest.TestCase):

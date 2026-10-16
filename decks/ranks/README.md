@@ -98,7 +98,47 @@ them", not as a strict ladder step.
 
 The Gold deck Mono-Blue Tempo was dropped before this run for winning only 26% against Silver.
 
-Ranks and MMR are internal pool labels and assigned anchors, not Arena equivalents or
+## Fitted ratings
+
+Every pool deck has its own rating in `ratings.json`, fitted from simulated results by
+`python3 -m mtgsim.calibrate` (Bradley-Terry on the Elo scale, Bronze's mean anchored at 900, the
+centre of its band). The ladder rates each opponent at its fitted rating when it computes a deck's
+MMR, and uses the band centre for any deck the file doesn't list. The rule for clearing a rank (50%
+against its pool) is unchanged. `python3 -m mtgsim --list-ranks` shows the ratings.
+
+The current fit (2026-10-16) uses the rank-order numbers above, plus 20 built-in games for every
+Silver-Bronze, Gold-Silver and Platinum-Gold deck pairing (`--play 20`, 1,940 games), which give
+Bronze to Platinum decks their own ratings. Diamond, Master and Grandmaster have only the Forge
+rank-against-rank numbers, so every deck in those ranks shares its rank's rating until per-deck Forge
+results are added. The scale mixes engines: Diamond is placed against Platinum with Forge games,
+Platinum against the lower ranks with built-in games.
+
+| Rank | Mean fitted rating | Band |
+| --- | --- | --- |
+| Bronze | 900 | below 1000 |
+| Silver | 1140 | 1000-1199 |
+| Gold | 1251 | 1200-1399 |
+| Platinum | 1278 | 1400-1599 |
+| Diamond | 1412 | 1600-1799 |
+| Master | 1192 | 1800-1999 |
+| Grandmaster | 1192 | 2000 and up |
+
+Fitted against observed, rank against rank: Silver vs Bronze 78% (81% observed), Gold vs Silver
+65% (67%), Platinum vs Gold 53% (57%), every other row within a point. The built-in rows are not
+fully transitive (Platinum beats Bronze less often than Gold does), so no single rating per deck
+matches all of them; the gaps are about two standard errors.
+
+Decks whose fitted rating falls outside their rank's band are listed under `out_of_band` in
+`ratings.json` and printed by the calibrate command. In this fit: Land Glut (Bronze, rates as
+Silver); Boros Burn and Gruul Midrange (Gold, rate as Silver); Esper, Grixis and Mono-White Midrange
+(Platinum, rate as Silver) and Mono-Red Aggro (Platinum, rates as Gold); every Diamond deck (rates as
+Platinum); and every Master and Grandmaster deck (rate as Silver, because Forge's AI pilots them
+worse than Diamond's aggro decks). The deck files have not been moved.
+
+To refit: `python3 -m mtgsim.calibrate` refits from the results stored in `ratings.json`;
+`--play N` replays the built-in adjacent-rank pairings first.
+
+Ranks and MMR are internal pool labels and fitted pool ratings, not Arena equivalents or
 validated human strength predictions. Pool descriptions and source dates are snapshots,
 not claims about today's metagame. Ladder games are main-deck only (no sideboarding or Bo3).
 Forge and builtin outcomes both depend on rules implementations and AI pilot limitations.
