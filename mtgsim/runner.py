@@ -27,6 +27,30 @@ def wilson(wins: float, n: int, z: float = 1.96) -> tuple[float, float]:
     return (c - r) / d, (c + r) / d
 
 
+# Early stopping: a matchup whose result is already clear stops before its full game count.
+EARLY_MIN = 20   # fewest games before a matchup may stop
+EARLY_STEP = 10  # games between checks; even, so play and draw stay balanced
+EARLY_Z = 3.0    # stricter than the 95% interval, because the result is checked again and again
+
+
+def clear_result(points: float, games: int, line: float = 0.5, z: float = EARLY_Z,
+                 min_games: int = EARLY_MIN) -> bool:
+    """Whether a matchup is clearly won or lost: after at least min_games, its interval at z
+    lies wholly above or below line. 17 of the first 20, or 3 of them, is clear."""
+    if games < min_games:
+        return False
+    lo, hi = wilson(points, games, z)
+    return lo > line or hi < line
+
+
+def pool_rate(results) -> float:
+    """A pool's win rate from (points, games) per opponent: the mean of the matchups' rates, so a
+    matchup stopped early counts as much as one played in full. With the same games against
+    every opponent it equals total points / total games."""
+    rates = [p / g for p, g in results if g]
+    return sum(rates) / len(rates) if rates else 0.0
+
+
 @dataclass
 class MatchResult:
     deck_a: str
@@ -104,8 +128,10 @@ def fresh_ai(ai):
 
 
 def run_match(name_a, deck_a, name_b, deck_b, games=1000, seed=None, ai_a=None, ai_b=None,
-              log_first=False, on_game=None, log_game=None) -> tuple[MatchResult, list[str]]:
-    """on_game(res), if given, is called with the running MatchResult after every game."""
+              log_first=False, on_game=None, log_game=None, stop_early=False) -> tuple[MatchResult, list[str]]:
+    """on_game(res), if given, is called with the running MatchResult after every game. With
+    stop_early the match ends once its result is clear (see clear_result); the games it does play
+    are the same as the first games of a full run with this seed."""
     rng = random.Random(seed)
     res = MatchResult(name_a, name_b)
     first_log: list[str] = []
@@ -124,6 +150,8 @@ def run_match(name_a, deck_a, name_b, deck_b, games=1000, seed=None, ai_a=None, 
             log_game(i + 1, game.events)
         if on_game:
             on_game(res)
+        if stop_early and res.games % EARLY_STEP == 0 and clear_result(res.wins_a + 0.5 * res.draws, res.games):
+            break
     return res, first_log
 
 

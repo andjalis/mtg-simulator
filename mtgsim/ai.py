@@ -14,7 +14,7 @@ from itertools import combinations
 
 from .cards import CardDef, Effect
 from . import engine
-from .engine import Game, Permanent, Player, can_block, find_payment
+from .engine import Game, Permanent, Player, can_block, payable
 
 LETHAL = 1000.0
 LIFE_SCALE = 5.0        # value of life = LIFE_SCALE * sqrt(life)
@@ -67,7 +67,7 @@ def _ward_payable(game: Game, by: Player, perm, card: CardDef | None = None) -> 
                     else (card.mana_cost if card is not None else {}))
         cost.pop("X", None)
         cost["generic"] = cost.get("generic", 0) + ward
-        return find_payment(game.mana_sources(by), cost) is not None
+        return payable(game.mana_sources(by), cost)
     life = getattr(perm.card, "ward_life", 0)
     if life:
         return by.life > life + 3
@@ -448,7 +448,7 @@ class HeuristicAI:
                 for c in combo:
                     for k, v in self._cost(game, me, c).items():
                         cost[k] = cost.get(k, 0) + v
-                if find_payment(sources, cost) is None:
+                if not payable(sources, cost):
                     continue
                 plan = self._setup_plan(game, me, opp, combo)
                 if plan is not None:
@@ -594,7 +594,7 @@ class HeuristicAI:
                     cost["generic"] = cost.get("generic", 0) + sum(
                         getattr(t, "ward", 0) for t in plans[c][1] or ()
                         if isinstance(t, Permanent) and t.controller is not me)
-                if find_payment(sources, cost) is None:
+                if not payable(sources, cost):
                     continue
                 key = (sum(plans[c][0] for c in combo), sum(c.cmc for c in combo))
                 if best_key is None or key > best_key:
@@ -1018,7 +1018,7 @@ class HeuristicAI:
             if not effs or not all(game.can_counter(e, item, me) for e in effs):
                 continue
             tax = max(e.amount for e in effs)
-            if tax and find_payment(game.mana_sources(opp), {"generic": tax}) is not None:
+            if tax and payable(game.mana_sources(opp), {"generic": tax}):
                 continue   # they would just pay
             counters.append(card)
         if not counters:

@@ -36,7 +36,9 @@ blank line after 60+ cards) ends the main deck; only best-of-three runs use the 
 Opponents are grouped into seven ranks under `decks/ranks/`, from Bronze (badly built piles) through
 Silver, Gold, Platinum, Diamond and Master to Grandmaster (a dated, curated opponent pool). `--ladder` plays a deck against each rank's pool from the bottom up and
 stops at the first rank it fails; a rank is cleared with a win rate of at least 50% against all its
-decks together (`--pass-rate` changes that, `--full-ladder` keeps going). `--rank master diamond`
+decks together (`--pass-rate` changes that, `--full-ladder` keeps going). On the built-in engine a matchup ends early once
+its result is clear (at least 20 games, then a 99.7% interval wholly above or below 50%), which cuts lopsided
+pools to a fraction of the games; `--no-early-stop` plays every game. `--rank master diamond`
 plays chosen ranks, and `--list-ranks` shows every deck. Use `--engine forge` from Diamond up: the
 built-in engine ignores much of those cards' text. `decks/ranks/README.md` says where each list came
 from and how the ranks were checked.
