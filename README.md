@@ -227,11 +227,16 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   offspring, plot, spree, harmonize (as flashback), X costs (X is all the spare
   mana) for X damage and "enters with X +1/+1 counters". Warp and evoke are only
   offered when the full cost can't be paid.
+- Map (explore), Lander and Food tokens, "its controller creates Map tokens /
+  may search for a basic land" (Get Lost, Erode), exile until this leaves the
+  battlefield (Seam Rip, Pinnacle Starcage), graveyard triggers that return the
+  card (Bloodghast) and "exile this card from your graveyard" abilities, damage
+  equal to the number of Treasures/artifacts/creatures/lands you control
 - London mulligan, drawing from an empty library, hand size, 60-turn cap
 
 Not yet: auras, equipment tokens and attaching equipment by effects (Thorin), X in
 anything but damage and +1/+1 counters, copy effects (Reflection of Kiki-Jiki),
-casualty (never paid), day/night, Old-Growth Troll's return, Map tokens. Modal double-faced cards keep their land face in
+casualty (never paid), day/night, Old-Growth Troll's return. Modal double-faced cards keep their land face in
 `CardDef.land_face`, played with `Game.play_land(p, card, back=True)`.
 Builtin runs report known coverage gaps; this is not an exhaustive rules audit.
 

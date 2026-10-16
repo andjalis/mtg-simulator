@@ -155,6 +155,7 @@ class CardDef:
     hybrid: tuple = ()                                  # hybrid pips of the mana cost: ("UB", "UB")
     spent_colors: frozenset = frozenset()               # colours in "if {U}{U} was spent to cast it" triggers
     spree: list = field(default_factory=list)           # spree modes: (extra cost, effects)
+    gy_triggers: list = field(default_factory=list)     # triggers that work from the graveyard (Bloodghast)
 
     @property
     def is_land(self): return "Land" in self.types
@@ -360,8 +361,26 @@ _EFFECT_PATTERNS = [
      lambda m: _token(m[1], m[2], m[3], m[4], m[6], bool(m[5]))),
     (r'create (a) (\d+)/(\d+) ((?:\w+ )+?)creature token with "(.+)"',
      lambda m: _token(m[1], m[2], m[3], m[4], "", False, m[5])),
-    (r"create (a|one|two) (treasure|clue|blood) tokens?", lambda m: Effect("token", _num(m[1]),
-                                                                          data={"kind": m[2].lower()})),
+    (r"create (a|one|two|three) (treasure|clue|blood|map|lander|food) tokens?",
+     lambda m: Effect("token", _num(m[1]), data={"kind": m[2].lower()})),
+    (r"its controller creates (a|one|two|three) (treasure|clue|blood|map|lander|food) tokens?",
+     lambda m: Effect("token", _num(m[1]), target="that_controller", data={"kind": m[2].lower()})),
+    (r"target creature you control explores", lambda m: Effect("explore", target="creature_mine")),
+    (r"(?:you may )?return ~ from your graveyard to the battlefield", lambda m: Effect("return_self_gy")),
+    (r"~ explores", lambda m: Effect("explore", target="self")),
+    (r"its controller (?:may search their library|searches their library) for a basic land card, puts? it onto the "
+     r"battlefield tapped, then shuffles?", lambda m: Effect("fetch_basic", target="that_controller")),
+    (r"exile target nonland permanent(?: an opponent controls| you don't control)?(?: with mana value (\d+) or "
+     r"less)? until ~ leaves the battlefield",
+     lambda m: Effect("oring", target="nonland_perm", filter=f"max_cmc:{m[1]}" if m[1] else "opp")),
+    (r"exile all artifacts and creatures with mana value (\d+) or less until ~ leaves the battlefield",
+     lambda m: Effect("oring_all", int(m[1]))),
+    (r"(?:destroy|exile) target nonland permanent(?: an opponent controls| you don't control)?",
+     lambda m: Effect("destroy", target="nonland_perm")),
+    (r"its controller loses (\d+) life and you gain (\d+) life",
+     lambda m: [Effect("lose_life", int(m[1]), target="that_controller"), Effect("gain_life", int(m[2]))]),
+    (_SRC + r" deals damage equal to the number of (treasures|artifacts|creatures|lands) you control to any target",
+     lambda m: Effect("damage", 0, target="any", data={"count": m[1].lower()})),
     (r"its controller investigates", lambda m: Effect("token", 1, target="that_controller", data={"kind": "clue"})),
     (r"create a token that's a copy of target token you control", lambda m: Effect("copy_token")),
     (r"put (a|one|two|three) \+1/\+1 counters? on (?:up to one )?target creature(?: you control)?",
@@ -568,6 +587,8 @@ def _parse_face(data: dict) -> CardDef:
     text = text.replace(name, "~")
     if "," in name and "Legendary" in type_line:
         text = re.sub(rf"\b{re.escape(name.split(',')[0])}\b", "~", text)  # "Iymrith" for "Iymrith, Desert Doom"
+    elif " the " in name and "Legendary" in type_line:
+        text = re.sub(rf"\b{re.escape(name.split(' the ')[0])}\b", "~", text)  # "Smaug the Magnificent"
     text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga)\b", "~",
                   text, flags=re.I)
     text = re.sub(r", where X is the amount of mana spent to cast ~\.", ".", text).replace(
@@ -769,6 +790,12 @@ def _parse_face(data: dict) -> CardDef:
             alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2]), hybrid=tuple(
                 a + b for a, b in re.findall(r"\{([WUBRG])/([WUBRG])\}", m[2]))))
             continue
+        m = re.fullmatch(r"(\{[^:]+\}), Exile (?:~|this card) from your graveyard: (.+)", line)
+        if m:
+            effs, bad = _parse_effects(m[2])
+            if effs and not bad:
+                alt_costs.append(AltCost("gy_ability", parse_mana_cost(m[1]), zone="graveyard", effects=effs))
+                continue
         m = re.fullmatch(r"Harmonize (\{[^ ]+\})", line)
         if m:
             alt_costs.append(AltCost("flashback", parse_mana_cost(m[1]), zone="graveyard"))
@@ -970,6 +997,8 @@ def _parse_face(data: dict) -> CardDef:
     elif kicked:
         unsupported += [f"if kicked: {k}" for k in kicked]
     extra.pop("is_spree", None)
+    extra["gy_triggers"] = [t for t in triggers if any(e.kind == "return_self_gy" for e in t.effects)]
+    triggers = [t for t in triggers if t not in extra["gy_triggers"]]
     extra["spent_colors"] = frozenset(t.effects[0].cond[6:] for t in triggers
                                       if t.effects and t.effects[0].cond.startswith("spent:"))
     if "prowess" in keywords:
@@ -1104,12 +1133,23 @@ def _parse_trigger_line(line: str):
     return None
 
 
+# Artifact tokens with an activated ability, as general abilities (see _parse_ability).
+TOKEN_ABILITIES = {
+    "map": "{1}, {T}, Sacrifice ~: Target creature you control explores. Activate only as a sorcery.",
+    "lander": "{2}, {T}, Sacrifice ~: Search your library for a basic land card, put it onto the battlefield "
+              "tapped, then shuffle.",
+    "food": "{2}, {T}, Sacrifice ~: You gain 3 life.",
+}
+
+
 def make_token(name: str, power: int, toughness: int, keywords=frozenset(), triggers=None, kind: str = "") -> CardDef:
     """A token's CardDef. kind is treasure/clue/blood for artifact tokens."""
     if kind:
         produces = frozenset(COLORS) if kind == "treasure" else frozenset()
+        activated = [_parse_ability(TOKEN_ABILITIES[kind], [])] if kind in TOKEN_ABILITIES else []
         return CardDef(name=kind.capitalize(), mana_cost={"generic": 0}, cmc=0, types=frozenset({"Artifact"}),
-                       produces=produces, token_kind=kind, is_token=True)
+                       subtypes=frozenset({kind.capitalize()}), produces=produces, token_kind=kind, is_token=True,
+                       activated=activated)
     return CardDef(name=f"{name} token", mana_cost={"generic": 0}, cmc=0, types=frozenset({"Creature"}),
                    power=power, toughness=toughness, keywords=frozenset(keywords), triggers=list(triggers or []),
                    is_token=True)
