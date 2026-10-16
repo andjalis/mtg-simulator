@@ -1,0 +1,198 @@
+[metadata]
+Code=SPM
+Name=Marvel's Spider-Man
+
+[cards]
+1 Anti-Venom, Horrifying Healer
+2 Arachne, Psionic Weaver
+3 Aunt May
+4 City Pigeon
+5 Costume Closet
+6 Daily Bugle Reporters
+7 Flash Thompson, Spider-Fan
+8 Friendly Neighborhood
+9 Origin of Spider-Man
+10 Peter Parker
+11 Rent Is Due
+12 Selfless Police Captain
+13 Silver Sable, Mercenary Leader
+14 Spectacular Spider-Man
+15 Spectacular Tactics
+16 Spider-Man, Web-Slinger
+17 Spider-UK
+18 Starling, Aerial Ally
+19 Sudden Strike
+20 Thwip!
+21 Web Up
+22 Web-Shooters
+23 Wild Pack Squad
+24 With Great Power . . .
+25 Amazing Acrobatics
+26 Beetle, Legacy Criminal
+27 Chameleon, Master of Disguise
+28 The Clone Saga
+29 Doc Ock, Sinister Scientist
+30 Doc Ock's Henchmen
+31 Flying Octobot
+32 Hide on the Ceiling
+33 Hydro-Man, Fluid Felon
+34 Impostor Syndrome
+35 Lady Octopus, Inspired Inventor
+36 Madame Web, Clairvoyant
+37 Mysterio, Master of Illusion
+38 Mysterio's Phantasm
+39 Norman Osborn
+40 Oscorp Research Team
+41 Robotics Mastery
+42 School Daze
+43 Secret Identity
+44 Spider-Byte, Web Warden
+45 Spider-Man No More
+46 Spider-Sense
+47 Unstable Experiment
+48 Whoosh!
+49 Agent Venom
+50 Alien Symbiosis
+51 Behold the Sinister Six!
+52 Black Cat, Cunning Thief
+53 Common Crook
+54 The Death of Gwen Stacy
+55 Eddie Brock
+56 Gwenom, Remorseless
+57 Inner Demons Gangsters
+58 Merciless Enforcers
+59 Morlun, Devourer of Spiders
+60 Parker Luck
+61 Prison Break
+62 Risky Research
+63 Sandman's Quicksand
+64 Scorpion, Seething Striker
+65 Scorpion's Sting
+66 The Soul Stone
+67 Spider-Man Noir
+68 The Spot's Portal
+69 Swarm, Being of Bees
+70 Tombstone, Career Criminal
+71 Venom, Evil Unleashed
+72 Venomized Cat
+73 Venom's Hunger
+74 Villainous Wrath
+75 Angry Rabble
+76 Electro, Assaulting Battery
+77 Electro's Bolt
+78 Gwen Stacy
+79 Heroes' Hangout
+80 Hobgoblin, Mantled Marauder
+81 J. Jonah Jameson
+82 Masked Meower
+83 Maximum Carnage
+84 Molten Man, Inferno Incarnate
+85 Raging Goblinoids
+86 Romantic Rendezvous
+87 Shadow of the Goblin
+88 Shock
+89 Shocker, Unshakable
+90 Spider-Gwen, Free Spirit
+91 Spider-Islanders
+92 Spider-Punk
+93 Spider-Verse
+94 Spinneret and Spiderling
+95 Stegron the Dinosaur Man
+96 Superior Foes of Spider-Man
+97 Taxi Driver
+98 Wisecrack
+99 Damage Control Crew
+100 Ezekiel Sims, Spider-Totem
+101 Grow Extra Arms
+102 Guy in the Chair
+103 Kapow!
+104 Kraven's Cats
+105 Kraven's Last Hunt
+106 Lizard, Connors's Curse
+107 Lurking Lizards
+108 Miles Morales
+109 Pictures of Spider-Man
+110 Professional Wrestler
+111 Radioactive Spider
+112 Sandman, Shifting Scoundrel
+113 Scout the City
+114 Spider-Ham, Peter Porker
+115 Spider-Man, Brooklyn Visionary
+116 Spider-Rex, Daring Dino
+117 Spiders-Man, Heroic Horde
+118 Strength of Will
+119 Supportive Parents
+120 Terrific Team-Up
+121 Wall Crawl
+122 Web of Life and Destiny
+123 Araña, Heart of the Spider
+124 Biorganic Carapace
+125 Carnage, Crimson Chaos
+126 Cheering Crowd
+127 Cosmic Spider-Man
+128 Doctor Octopus, Master Planner
+129 Gallant Citizen
+130 Green Goblin, Revenant
+131 Jackal, Genius Geneticist
+132 Kraven, Proud Predator
+133 Kraven the Hunter
+134 Mary Jane Watson
+135 Mister Negative
+136 Mob Lookout
+137 Morbius the Living Vampire
+138 Prowler, Clawed Thief
+139 Pumpkin Bombardment
+140 Rhino, Barreling Brute
+141 Rhino's Rampage
+142 Scarlet Spider, Ben Reilly
+143 Scarlet Spider, Kaine
+144 Shriek, Treblemaker
+145 Silk, Web Weaver
+146 Skyward Spider
+147 SP//dr, Piloted by Peni
+148 Spider Manifestation
+149 Spider-Girl, Legacy Hero
+150 Spider-Man 2099
+151 Spider-Man India
+152 Spider-Woman, Stunning Savior
+153 The Spot, Living Portal
+154 Sun-Spider, Nimble Webber
+155 Superior Spider-Man
+156 Symbiote Spider-Man
+157 Ultimate Green Goblin
+158 Vulture, Scheming Scavenger
+159 Web-Warriors
+160 Wraith, Vicious Vigilante
+161 Bagel and Schmear
+162 Doc Ock's Tentacles
+163 Eerie Gravestone
+164 Hot Dog Cart
+165 Interdimensional Web Watch
+166 Iron Spider, Stark Upgrade
+167 Living Brain, Mechanical Marvel
+168 Mechanical Mobster
+169 News Helicopter
+170 Passenger Ferry
+171 Peter Parker's Camera
+172 Rocket-Powered Goblin Glider
+173 Spider-Bot
+174 Spider-Mobile
+175 Spider-Slayer, Hatred Honed
+176 Spider-Suit
+177 Steel Wrecking Ball
+178 Subway Train
+179 Daily Bugle Building
+180 Multiversal Passage
+181 Ominous Asylum
+182 Oscorp Industries
+183 Savage Mansion
+184 Sinister Hideout
+185 Suburban Sanctuary
+186 University Campus
+187 Urban Retreat
+188 Vibrant Cityscape
+189 Plains
+190 Island
+191 Swamp
+192 Mountain
+193 Forest

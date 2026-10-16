@@ -1,0 +1,296 @@
+[metadata]
+Code=LCI
+Name=The Lost Caverns of Ixalan
+
+[cards]
+1 Abuelo's Awakening
+2 Acrobatic Leap
+3 Adaptive Gemguard
+4 Attentive Sunscribe
+5 Bat Colony
+6 Clay-Fired Bricks
+7 Cosmium Blast
+8 Dauntless Dismantler
+9 Deconstruction Hammer
+10 Dusk Rose Reliquary
+11 Envoy of Okinec Ahau
+12 Fabrication Foundry
+13 Family Reunion
+14 Get Lost
+15 Glorifier of Suffering
+16 Guardian of the Great Door
+17 Helping Hand
+18 Ironpaw Aspirant
+19 Kinjalli's Dawnrunner
+20 Kutzil's Flanker
+21 Malamet War Scribe
+22 Market Gnome
+23 Might of the Ancestors
+24 Miner's Guidewing
+25 Mischievous Pup
+26 Ojer Taq, Deepest Foundation
+27 Oltec Archaeologists
+28 Oltec Cloud Guard
+29 Oteclan Landmark
+30 Petrify
+31 Quicksand Whirlpool
+32 Resplendent Angel
+33 Ruin-Lurker Bat
+34 Sanguine Evangelist
+35 Soaring Sandwing
+36 Spring-Loaded Sawblades
+37 Thousand Moons Crackshot
+38 Thousand Moons Infantry
+39 Thousand Moons Smithy
+40 Tinker's Tote
+41 Unstable Glyphbridge
+42 Vanguard of the Rose
+43 Warden of the Inner Sky
+44 Akal Pakal, First Among Equals
+45 Ancestral Reminiscence
+46 Brackish Blunder
+47 Braided Net
+48 Chart a Course
+49 Cogwork Wrestler
+50 Confounding Riddle
+51 Council of Echoes
+52 Deeproot Pilgrimage
+53 Didact Echo
+54 Eaten by Piranhas
+55 The Enigma Jewel
+56 The Everflowing Well
+57 Frilled Cave-Wurm
+58 Hermitic Nautilus
+59 Hurl into History
+60 Inverted Iceberg
+61 Kitesail Larcenist
+62 Lodestone Needle
+63 Malcolm, Alluring Scoundrel
+64 Marauding Brinefang
+65 Merfolk Cave-Diver
+66 Oaken Siren
+67 Ojer Pakpatiq, Deepest Epoch
+68 Orazca Puzzle-Door
+69 Out of Air
+70 Pirate Hat
+71 Relic's Roar
+72 River Herald Scout
+73 Sage of Days
+74 Self-Reflection
+75 Shipwreck Sentry
+76 Sinuous Benthisaur
+77 Song of Stupefaction
+78 Spyglass Siren
+79 Staunch Crewmate
+80 Subterranean Schooner
+81 Tishana's Tidebinder
+82 Unlucky Drop
+83 Waterlogged Hulk
+84 Waterwind Scout
+85 Waylaying Pirates
+86 Zoetic Glyph
+87 Abyssal Gorestalker
+88 Aclazotz, Deepest Betrayal
+89 Acolyte of Aclazotz
+90 Another Chance
+91 Bitter Triumph
+92 Bloodletter of Aclazotz
+93 Bloodthorn Flail
+94 Bringer of the Last Gift
+95 Broodrage Mycoid
+96 Canonized in Blood
+97 Chupacabra Echo
+98 Corpses of the Lost
+99 Dead Weight
+100 Deathcap Marionette
+101 Deep Goblin Skulltaker
+102 Deep-Cavern Bat
+103 Defossilize
+104 Echo of Dusk
+105 Fanatical Offering
+106 Fungal Fortitude
+107 Gargantuan Leech
+108 Grasping Shadows
+109 Greedy Freebooter
+110 Join the Dead
+111 Malicious Eclipse
+112 Mephitic Draught
+113 Preacher of the Schism
+114 Primordial Gnawer
+115 Queen's Bay Paladin
+116 Rampaging Spiketail
+117 Ray of Ruin
+118 Screaming Phantom
+119 Skullcap Snail
+120 Soulcoil Viper
+121 Souls of the Lost
+122 Stalactite Stalker
+123 Starving Revenant
+124 Stinging Cave Crawler
+125 Synapse Necromage
+126 Tarrian's Journal
+127 Terror Tide
+128 Tithing Blade
+129 Visage of Dread
+130 Vito's Inquisitor
+131 Abrade
+132 Ancestors' Aid
+133 Belligerent Yearling
+134 Bonehoard Dracosaur
+135 Brass's Tunnel-Grinder
+136 Brazen Blademaster
+137 Breeches, Eager Pillager
+138 Burning Sun Cavalry
+139 Calamitous Cave-In
+140 Child of the Volcano
+141 Curator of Sun's Creation
+142 Daring Discovery
+143 Diamond Pick-Axe
+144 Dinotomaton
+145 Dire Flail
+146 Dowsing Device
+147 Dreadmaw's Ire
+148 Enterprising Scallywag
+149 Etali's Favor
+150 Geological Appraiser
+151 Goblin Tomb Raider
+152 Goldfury Strider
+153 Hit the Mother Lode
+154 Hotfoot Gnome
+155 Idol of the Deep King
+156 Inti, Seneschal of the Sun
+157 Magmatic Galleon
+158 Ojer Axonil, Deepest Might
+159 Panicked Altisaur
+160 Plundering Pirate
+161 Poetic Ingenuity
+162 Rampaging Ceratops
+163 Rumbling Rockslide
+164 Saheeli's Lattice
+165 Scytheclaw Raptor
+166 Seismic Monstrosaur
+167 Sunfire Torch
+168 Sunshot Militia
+169 Tectonic Hazard
+170 Triumphant Chomp
+171 Trumpeting Carnosaur
+172 Volatile Wanderglyph
+173 Zoyowa's Justice
+174 Armored Kincaller
+175 Basking Capybara
+176 Bedrock Tortoise
+177 Cavern Stomper
+178 Cenote Scout
+179 Coati Scavenger
+180 Colossadactyl
+181 Cosmium Confluence
+182 Disturbed Slumber
+183 Earthshaker Dreadmaw
+184 Explorer's Cache
+185 Ghalta, Stampede Tyrant
+186 Glimpse the Core
+187 Glowcap Lantern
+188 Growing Rites of Itlimoc
+189 Huatli, Poet of Unity
+190 Huatli's Final Strike
+191 Hulking Raptor
+192 In the Presence of Ages
+193 Intrepid Paleontologist
+194 Ixalli's Lorekeeper
+195 Jade Seedstones
+196 Jadelight Spelunker
+197 Kaslem's Stonetree
+198 Malamet Battle Glyph
+199 Malamet Brawler
+200 Malamet Scythe
+201 Malamet Veteran
+202 Mineshaft Spider
+203 Nurturing Bristleback
+204 Ojer Kaslem, Deepest Growth
+205 Over the Edge
+206 Pathfinding Axejaw
+207 Poison Dart Frog
+208 Pugnacious Hammerskull
+209 River Herald Guide
+210 Seeker of Sunlight
+211 Sentinel of the Nameless City
+212 The Skullspore Nexus
+213 Spelunking
+214 Staggering Size
+215 Tendril of the Mycotyrant
+216 Thrashing Brontodon
+217 Twists and Turns
+218 Walk with the Ancestors
+219 Abuelo, Ancestral Echo
+220 Akawalli, the Seething Tower
+221 Amalia Benavides Aguirre
+222 The Ancient One
+223 Anim Pakal, Thousandth Moon
+224 Bartolomé del Presidio
+225 The Belligerent
+226 Caparocti Sunborn
+227 Captain Storm, Cosmium Raider
+228 Deepfathom Echo
+229 Gishath, Sun's Avatar
+230 Itzquinth, Firstborn of Gishath
+231 Kellan, Daring Traveler
+232 Kutzil, Malamet Exemplar
+233 Master's Guide-Mural
+234 Molten Collapse
+235 The Mycotyrant
+236 Nicanzil, Current Conductor
+237 Palani's Hatcher
+238 Quintorius Kand
+239 Saheeli, the Sun's Brilliance
+240 Sovereign Okinec Ahau
+241 Squirming Emergence
+242 Uchbenbak, the Great Mistake
+243 Vito, Fanatic of Aclazotz
+244 Wail of the Forgotten
+245 Zoyowa Lava-Tongue
+246 Buried Treasure
+247 Careening Mine Cart
+248 Cartographer's Companion
+249 Chimil, the Inner Sun
+250 Compass Gnome
+251 Contested Game Ball
+252 Digsite Conservator
+253 Disruptor Wanderglyph
+254 Hoverstone Pilgrim
+255 Hunter's Blowgun
+256 Matzalantli, the Great Door
+257 The Millennium Calendar
+258 Roaming Throne
+259 Runaway Boulder
+260 Scampering Surveyor
+261 Sorcerous Spyglass
+262 Sunbird Standard
+263 Swashbuckler's Whip
+264 Tarrian's Soulcleaver
+265 Threefold Thunderhulk
+266 Throne of the Grim Captain
+267 Treasure Map
+268 Captivating Cave
+269 Cavern of Souls
+270 Cavernous Maw
+271 Echoing Deeps
+272 Forgotten Monument
+273 Hidden Cataract
+274 Hidden Courtyard
+275 Hidden Necropolis
+276 Hidden Nursery
+277 Hidden Volcano
+278 Pit of Offerings
+279 Promising Vein
+280 Restless Anchorage
+281 Restless Prairie
+282 Restless Reef
+283 Restless Ridgeline
+284 Restless Vents
+285 Sunken Citadel
+286 Volatile Fault
+287 Plains
+288 Island
+289 Swamp
+290 Mountain
+291 Forest

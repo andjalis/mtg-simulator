@@ -1,0 +1,281 @@
+[metadata]
+Code=WOE
+Name=Wilds of Eldraine
+
+[cards]
+1 Archon of the Wild Rose
+2 Archon's Glory
+3 Armory Mice
+4 Besotted Knight
+5 Break the Spell
+6 Charmed Clothier
+7 Cheeky House-Mouse
+8 Cooped Up
+9 Cursed Courtier
+10 Discerning Financier
+11 Dutiful Griffin
+12 Eerie Interference
+13 Expel the Interlopers
+14 Frostbridge Guard
+15 Gallant Pie-Wielder
+16 Glass Casket
+17 Hopeful Vigil
+18 Kellan's Lightblades
+19 Knight of Doves
+20 Moment of Valor
+21 Moonshaker Cavalry
+22 Plunge into Winter
+23 The Princess Takes Flight
+24 Protective Parents
+25 Regal Bunnicorn
+26 Return Triumphant
+27 Rimefur Reindeer
+28 Savior of the Sleeping
+29 Slumbering Keepguard
+30 Solitary Sanctuary
+31 Spellbook Vendor
+32 Stockpiling Celebrant
+33 Stroke of Midnight
+34 A Tale for the Ages
+35 Three Blind Mice
+36 Tuinvale Guide
+37 Unassuming Sage
+38 Virtue of Loyalty
+39 Werefox Bodyguard
+40 Aquatic Alchemist
+41 Archive Dragon
+42 Asinine Antics
+43 Beluna's Gatekeeper
+44 Bitter Chill
+45 Chancellor of Tales
+46 Diminisher Witch
+47 Disdainful Stroke
+48 Extraordinary Journey
+49 Farsight Ritual
+50 Freeze in Place
+51 Gadwick's First Duel
+52 Galvanic Giant
+53 Horned Loch-Whale
+54 Ice Out
+55 Icewrought Sentry
+56 Ingenious Prodigy
+57 Into the Fae Court
+58 Johann's Stopgap
+59 Living Lectern
+60 Merfolk Coralsmith
+61 Misleading Motes
+62 Mocking Sprite
+63 Obyra's Attendants
+64 Picklock Prankster
+65 Quick Study
+66 Sleep-Cursed Faerie
+67 Sleight of Hand
+68 Snaremaster Sprite
+69 Spell Stutter
+70 Splashy Spellcaster
+71 Stormkeld Prowler
+72 Succumb to the Cold
+73 Talion's Messenger
+74 Tenacious Tomeseeker
+75 Vantress Transmuter
+76 Virtue of Knowledge
+77 Water Wings
+78 Ashiok, Wicked Manipulator
+79 Ashiok's Reaper
+80 Back for Seconds
+81 Barrow Naughty
+82 Beseech the Mirror
+83 Candy Grapple
+84 Conceited Witch
+85 Dream Spoilers
+86 Ego Drain
+87 The End
+88 Eriette's Whisper
+89 Faerie Dreamthief
+90 Faerie Fencing
+91 Feed the Cauldron
+92 Fell Horseman
+93 Gumdrop Poisoner
+94 High Fae Negotiator
+95 Hopeless Nightmare
+96 Lich-Knights' Conquest
+97 Lord Skitter, Sewer King
+98 Lord Skitter's Blessing
+99 Lord Skitter's Butcher
+100 Mintstrosity
+101 Not Dead After All
+102 Rankle's Prank
+103 Rat Out
+104 Rowan's Grim Search
+105 Scream Puff
+106 Shatter the Oath
+107 Specter of Mortality
+108 Spiteful Hexmage
+109 Stingblade Assassin
+110 Sugar Rush
+111 Sweettooth Witch
+112 Taken by Nightmares
+113 Tangled Colony
+114 Twisted Sewer-Witch
+115 Virtue of Persistence
+116 Voracious Vermin
+117 Warehouse Tabby
+118 Wicked Visitor
+119 The Witch's Vanity
+120 Belligerent of the Ball
+121 Bellowing Bruiser
+122 Bespoke Battlegarb
+123 Boundary Lands Ranger
+124 Charming Scoundrel
+125 Cut In
+126 Edgewall Pack
+127 Embereth Veteran
+128 Flick a Coin
+129 Food Fight
+130 Frantic Firebolt
+131 Gnawing Crescendo
+132 Goddric, Cloaked Reveler
+133 Grabby Giant
+134 Grand Ball Guest
+135 Harried Spearguard
+136 Hearth Elemental
+137 Imodane, the Pyrohammer
+138 Kindled Heroism
+139 Korvold and the Noble Thief
+140 Merry Bards
+141 Minecart Daredevil
+142 Monstrous Rage
+143 Raging Battle Mouse
+144 Ratcatcher Trainee
+145 Realm-Scorcher Hellkite
+146 Redcap Gutter-Dweller
+147 Redcap Thief
+148 Rotisserie Elemental
+149 Skewer Slinger
+150 Song of Totentanz
+151 Stonesplitter Bolt
+152 Tattered Ratter
+153 Torch the Tower
+154 Twisted Fealty
+155 Two-Headed Hunter
+156 Unruly Catapult
+157 Virtue of Courage
+158 Witch's Mark
+159 Witchstalker Frenzy
+160 Agatha's Champion
+161 Beanstalk Wurm
+162 Bestial Bloodline
+163 Blossoming Tortoise
+164 Bramble Familiar
+165 Brave the Wilds
+166 Commune with Nature
+167 Curse of the Werefox
+168 Elvish Archivist
+169 Feral Encounter
+170 Ferocious Werefox
+171 Graceful Takedown
+172 Gruff Triplets
+173 Hamlet Glutton
+174 Hollow Scavenger
+175 Howling Galefang
+176 The Huntsman's Redemption
+177 Leaping Ambush
+178 Night of the Sweets' Revenge
+179 Redtooth Genealogist
+180 Redtooth Vanguard
+181 Return from the Wilds
+182 Rootrider Faun
+183 Royal Treatment
+184 Sentinel of Lost Lore
+185 Skybeast Tracker
+186 Spider Food
+187 Stormkeld Vanguard
+188 Tanglespan Lookout
+189 Territorial Witchstalker
+190 Thunderous Debut
+191 Titanic Growth
+192 Toadstool Admirer
+193 Tough Cookie
+194 Troublemaker Ouphe
+195 Up the Beanstalk
+196 Verdant Outrider
+197 Virtue of Strength
+198 Welcome to Sweettooth
+199 Agatha of the Vile Cauldron
+200 The Apprentice's Folly
+201 Ash, Party Crasher
+202 Eriette of the Charmed Apple
+203 Faunsbane Troll
+204 The Goose Mother
+205 Greta, Sweettooth Scourge
+206 Hylda of the Icy Crown
+207 Johann, Apprentice Sorcerer
+208 Likeness Looter
+209 Neva, Stalked by Nightmares
+210 Obyra, Dreaming Duelist
+211 Rowan, Scion of War
+212 Ruby, Daring Tracker
+213 Sharae of Numbing Depths
+214 Syr Armont, the Redeemer
+215 Talion, the Kindly Lord
+216 Totentanz, Swarm Piper
+217 Troyan, Gutsy Explorer
+218 Will, Scion of Peace
+219 Yenna, Redtooth Regent
+220 Beluna Grandsquall
+221 Callous Sell-Sword
+222 Cruel Somnophage
+223 Decadent Dragon
+224 Devouring Sugarmaw
+225 Elusive Otter
+226 Frolicking Familiar
+227 Gingerbread Hunter
+228 Heartflame Duelist
+229 Imodane's Recruiter
+230 Kellan, the Fae-Blooded
+231 Mosswood Dreadknight
+232 Picnic Ruiner
+233 Pollen-Shield Hare
+234 Questing Druid
+235 Scalding Viper
+236 Shrouded Shepherd
+237 Spellscorn Coven
+238 Tempest Hart
+239 Threadbind Clique
+240 Twining Twins
+241 Woodland Acolyte
+242 Agatha's Soul Cauldron
+243 Candy Trail
+244 Collector's Vault
+245 Eriette's Tempting Apple
+246 Gingerbrute
+247 Hylda's Crown of Winter
+248 The Irencrag
+249 Prophetic Prism
+250 Scarecrow Guide
+251 Soul-Guide Lantern
+252 Syr Ginger, the Meal Ender
+253 Three Bowls of Porridge
+254 Crystal Grotto
+255 Edgewall Inn
+256 Evolving Wilds
+257 Restless Bivouac
+258 Restless Cottage
+259 Restless Fortress
+260 Restless Spire
+261 Restless Vinestalk
+262 Plains
+263 Island
+264 Swamp
+265 Mountain
+266 Forest
+267 Plains
+268 Plains
+269 Island
+270 Island
+271 Swamp
+272 Swamp
+273 Mountain
+274 Mountain
+275 Forest
+276 Forest

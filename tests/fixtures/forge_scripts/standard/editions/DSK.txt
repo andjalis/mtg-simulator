@@ -1,0 +1,291 @@
+[metadata]
+Code=DSK
+Name=Duskmourn: House of Horror
+
+[cards]
+1 Acrobatic Cheerleader
+2 Cult Healer
+3 Dazzling Theater // Prop Room
+4 Dollmaker's Shop // Porcelain Gallery
+5 Emerge from the Cocoon
+6 Enduring Innocence
+7 Ethereal Armor
+8 Exorcise
+9 Fear of Abduction
+10 Fear of Immobility
+11 Fear of Surveillance
+12 Friendly Ghost
+13 Ghostly Dancers
+14 Glimmer Seeker
+15 Grand Entryway // Elegant Rotunda
+16 Hardened Escort
+17 Jump Scare
+18 Leyline of Hope
+19 Lionheart Glimmer
+20 Living Phone
+21 Optimistic Scavenger
+22 Orphans of the Wheat
+23 Overlord of the Mistmoors
+24 Patched Plaything
+25 Possessed Goat
+26 Reluctant Role Model
+27 Savior of the Small
+28 Seized from Slumber
+29 Shardmage's Rescue
+30 Sheltered by Ghosts
+31 Shepherding Spirits
+32 Split Up
+33 Splitskin Doll
+34 Surgical Suite // Hospital Room
+35 Toby, Beastie Befriender
+36 Trapped in the Screen
+37 Unidentified Hovership
+38 Unsettling Twins
+39 Unwanted Remake
+40 Veteran Survivor
+41 The Wandering Rescuer
+42 Abhorrent Oculus
+43 Bottomless Pool // Locker Room
+44 Central Elevator // Promising Stairs
+45 Clammy Prowler
+46 Creeping Peeper
+47 Cursed Windbreaker
+48 Daggermaw Megalodon
+49 Don't Make a Sound
+50 Duskmourn's Domination
+51 Enduring Curiosity
+52 Enter the Enigma
+53 Entity Tracker
+54 Erratic Apparition
+55 Fear of Failed Tests
+56 Fear of Falling
+57 Fear of Impostors
+58 Fear of Isolation
+59 Floodpits Drowner
+60 Get Out
+61 Ghostly Keybearer
+62 Glimmerburst
+63 Leyline of Transformation
+64 Marina Vendrell's Grimoire
+65 Meat Locker // Drowned Diner
+66 The Mindskinner
+67 Mirror Room // Fractured Realm
+68 Overlord of the Floodpits
+69 Paranormal Analyst
+70 Piranha Fly
+71 Scrabbling Skullcrab
+72 Silent Hallcreeper
+73 Stalked Researcher
+74 Stay Hidden, Stay Silent
+75 The Tale of Tamiyo
+76 Tunnel Surveyor
+77 Twist Reality
+78 Unable to Scream
+79 Underwater Tunnel // Slimy Aquarium
+80 Unnerving Grasp
+81 Unwilling Vessel
+82 Vanish from Sight
+83 Appendage Amalgam
+84 Balemurk Leech
+85 Cackling Slasher
+86 Come Back Wrong
+87 Commune with Evil
+88 Cracked Skull
+89 Cynical Loner
+90 Dashing Bloodsucker
+91 Defiled Crypt // Cadaver Lab
+92 Demonic Counsel
+93 Derelict Attic // Widow's Walk
+94 Doomsday Excruciator
+95 Enduring Tenacity
+96 Fanatic of the Harrowing
+97 Fear of Lost Teeth
+98 Fear of the Dark
+99 Final Vengeance
+100 Funeral Room // Awakening Hall
+101 Give In to Violence
+102 Grievous Wound
+103 Innocuous Rat
+104 Killer's Mask
+105 Let's Play a Game
+106 Leyline of the Void
+107 Live or Die
+108 Meathook Massacre II
+109 Miasma Demon
+110 Murder
+111 Nowhere to Run
+112 Osseous Sticktwister
+113 Overlord of the Balemurk
+114 Popular Egotist
+115 Resurrected Cultist
+116 Spectral Snatcher
+117 Sporogenic Infection
+118 Unholy Annex // Ritual Chamber
+119 Unstoppable Slasher
+120 Valgavoth, Terror Eater
+121 Valgavoth's Faithful
+122 Vile Mutilator
+123 Winter's Intervention
+124 Withering Torment
+125 Bedhead Beastie
+126 Betrayer's Bargain
+127 Boilerbilges Ripper
+128 Chainsaw
+129 Charred Foyer // Warped Space
+130 Clockwork Percussionist
+131 Cursed Recording
+132 Diversion Specialist
+133 Enduring Courage
+134 Fear of Being Hunted
+135 Fear of Burning Alive
+136 Fear of Missing Out
+137 Glassworks // Shattered Yard
+138 Grab the Prize
+139 Hand That Feeds
+140 Impossible Inferno
+141 Infernal Phantom
+142 Irreverent Gremlin
+143 Leyline of Resonance
+144 Most Valuable Slayer
+145 Norin, Swift Survivalist
+146 Overlord of the Boilerbilges
+147 Painter's Studio // Defaced Gallery
+148 Piggy Bank
+149 Pyroclasm
+150 Ragged Playmate
+151 Rampaging Soulrager
+152 Razorkin Hordecaller
+153 Razorkin Needlehead
+154 Ripchain Razorkin
+155 The Rollercrusher Ride
+156 Scorching Dragonfire
+157 Screaming Nemesis
+158 Ticket Booth // Tunnel of Hate
+159 Trial of Agony
+160 Turn Inside Out
+161 Untimely Malfunction
+162 Vengeful Possession
+163 Vicious Clown
+164 Violent Urge
+165 Waltz of Rage
+166 Altanak, the Thrice-Called
+167 Anthropede
+168 Balustrade Wurm
+169 Bashful Beastie
+170 Break Down the Door
+171 Cathartic Parting
+172 Cautious Survivor
+173 Coordinated Clobbering
+174 Cryptid Inspector
+175 Defiant Survivor
+176 Enduring Vitality
+177 Fear of Exposure
+178 Flesh Burrower
+179 Frantic Strength
+180 Grasping Longneck
+181 Greenhouse // Rickety Gazebo
+182 Hauntwoods Shrieker
+183 Hedge Shredder
+184 Horrid Vigor
+185 House Cartographer
+186 Insidious Fungus
+187 Kona, Rescue Beastie
+188 Leyline of Mutation
+189 Manifest Dread
+190 Moldering Gym // Weight Room
+191 Monstrous Emergence
+192 Omnivorous Flytrap
+193 Overgrown Zealot
+194 Overlord of the Hauntwoods
+195 Patchwork Beastie
+196 Rootwise Survivor
+197 Say Its Name
+198 Slavering Branchsnapper
+199 Spineseeker Centipede
+200 Threats Around Every Corner
+201 Twitching Doll
+202 Tyvar, the Pummeler
+203 Under the Skin
+204 Valgavoth's Onslaught
+205 Walk-In Closet // Forgotten Cellar
+206 Wary Watchdog
+207 Wickerfolk Thresher
+208 Arabella, Abandoned Doll
+209 Baseball Bat
+210 Beastie Beatdown
+211 Broodspinner
+212 Disturbing Mirth
+213 Drag to the Roots
+214 Fear of Infinity
+215 Gremlin Tamer
+216 Growing Dread
+217 Inquisitive Glimmer
+218 Intruding Soulrager
+219 The Jolly Balloon Man
+220 Kaito, Bane of Nightmares
+221 Marina Vendrell
+222 Midnight Mayhem
+223 Nashi, Searcher in the Dark
+224 Niko, Light of Hope
+225 Oblivious Bookworm
+226 Peer Past the Veil
+227 Restricted Office // Lecture Hall
+228 Rip, Spawn Hunter
+229 Rite of the Moth
+230 Roaring Furnace // Steaming Sauna
+231 Sawblade Skinripper
+232 Shrewd Storyteller
+233 Shroudstomper
+234 Skullsnap Nuisance
+235 Smoky Lounge // Misty Salon
+236 The Swarmweaver
+237 Undead Sprinter
+238 Victor, Valgavoth's Seneschal
+239 Wildfire Wickerfolk
+240 Winter, Misanthropic Guide
+241 Zimone, All-Questioning
+242 Attack-in-the-Box
+243 Bear Trap
+244 Conductive Machete
+245 Dissection Tools
+246 Found Footage
+247 Friendly Teddy
+248 Ghost Vacuum
+249 Glimmerlight
+250 Haunted Screen
+251 Keys to the House
+252 Malevolent Chandelier
+253 Marvin, Murderous Mimic
+254 Saw
+255 Abandoned Campground
+256 Blazemire Verge
+257 Bleeding Woods
+258 Etched Cornfield
+259 Floodfarm Verge
+260 Gloomlake Verge
+261 Hushwood Verge
+262 Lakeside Shack
+263 Murky Sewer
+264 Neglected Manor
+265 Peculiar Lighthouse
+266 Raucous Carnival
+267 Razortrap Gorge
+268 Strangled Cemetery
+269 Terramorphic Expanse
+270 Thornspire Verge
+271 Valgavoth's Lair
+272 Plains
+273 Island
+274 Swamp
+275 Mountain
+276 Forest
+277 Plains
+278 Plains
+279 Island
+280 Island
+281 Swamp
+282 Swamp
+283 Mountain
+284 Mountain
+285 Forest
+286 Forest

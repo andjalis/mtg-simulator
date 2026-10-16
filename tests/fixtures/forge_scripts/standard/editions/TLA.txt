@@ -1,0 +1,291 @@
+[metadata]
+Code=TLA
+Name=Avatar: The Last Airbender
+
+[cards]
+1 Aang's Journey
+2 Energybending
+3 Zuko's Exile
+4 Aang, the Last Airbender
+5 Aang's Iceberg
+6 Airbender Ascension
+7 Airbender's Reversal
+8 Airbending Lesson
+9 Appa, Loyal Sky Bison
+10 Appa, Steadfast Guardian
+11 Avatar Enthusiasts
+12 Avatar's Wrath
+13 Compassionate Healer
+14 Curious Farm Animals
+15 Destined Confrontation
+16 Earth Kingdom Jailer
+17 Earth Kingdom Protectors
+18 Enter the Avatar State
+19 Fancy Footwork
+20 Gather the White Lotus
+21 Glider Kids
+22 Glider Staff
+23 Hakoda, Selfless Commander
+24 Invasion Reinforcements
+25 Jeong Jeong's Deserters
+26 Kyoshi Warriors
+27 The Legend of Yangchen
+28 Master Piandao
+29 Momo, Friendly Flier
+30 Momo, Playful Pet
+31 Path to Redemption
+32 Rabaroo Troop
+33 Razor Rings
+34 Sandbenders' Storm
+35 South Pole Voyager
+36 Southern Air Temple
+37 Suki, Courageous Rescuer
+38 Team Avatar
+39 United Front
+40 Vengeful Villagers
+41 Water Tribe Captain
+42 Water Tribe Rallier
+43 Yip Yip!
+44 Accumulate Wisdom
+45 Benevolent River Spirit
+46 Boomerang Basics
+47 Crashing Wave
+48 Ember Island Production
+49 First-Time Flyer
+50 Flexible Waterbender
+51 Forecasting Fortune Teller
+52 Geyser Leaper
+53 Giant Koi
+54 Gran-Gran
+55 Honest Work
+56 Iguana Parrot
+57 Invasion Submersible
+58 It'll Quench Ya!
+59 Katara, Bending Prodigy
+60 Knowledge Seeker
+61 The Legend of Kuruk
+62 Lost Days
+63 Master Pakku
+64 The Mechanist, Aerial Artisan
+65 North Pole Patrol
+66 Octopus Form
+67 Otter-Penguin
+68 Rowdy Snowballers
+69 Secret of Bloodbending
+70 Serpent of the Pass
+71 Sokka's Haiku
+72 The Spirit Oasis
+73 Spirit Water Revival
+74 Teo, Spirited Glider
+75 Tiger-Seal
+76 Ty Lee, Chi Blocker
+77 The Unagi of Kyoshi Island
+78 Wan Shi Tong, Librarian
+79 Waterbender Ascension
+80 Waterbending Lesson
+81 Waterbending Scroll
+82 Watery Grasp
+83 Yue, the Moon Spirit
+84 Azula Always Lies
+85 Azula, On the Hunt
+86 Beetle-Headed Merchants
+87 Boiling Rock Rioter
+88 Buzzard-Wasp Colony
+89 Callous Inspector
+90 Canyon Crawler
+91 Cat-Gator
+92 Corrupt Court Official
+93 Dai Li Indoctrination
+94 Day of Black Sun
+95 Deadly Precision
+96 Epic Downfall
+97 Fatal Fissure
+98 The Fire Nation Drill
+99 Fire Nation Engineer
+100 Fire Navy Trebuchet
+101 Foggy Swamp Hunters
+102 Foggy Swamp Visions
+103 Heartless Act
+104 Hog-Monkey
+105 Joo Dee, One of Many
+106 June, Bounty Hunter
+107 Koh, the Face Stealer
+108 Lo and Li, Twin Tutors
+109 Mai, Scornful Striker
+110 Merchant of Many Hats
+111 Northern Air Temple
+112 Obsessive Pursuit
+113 Ozai's Cruelty
+114 Phoenix Fleet Airship
+115 Pirate Peddlers
+116 Raven Eagle
+117 The Rise of Sozin
+118 Ruinous Waterbending
+119 Sold Out
+120 Swampsnare Trap
+121 Tundra Tank
+122 Wolfbat
+123 Zuko's Conviction
+124 Boar-q-pine
+125 Bumi Bash
+126 The Cave of Two Lovers
+127 Combustion Man
+128 Combustion Technique
+129 Crescent Island Temple
+130 Cunning Maneuver
+131 Deserter's Disciple
+132 Fated Firepower
+133 Fire Nation Attacks
+134 Fire Nation Cadets
+135 Fire Nation Raider
+136 Fire Sages
+137 Firebender Ascension
+138 Firebending Lesson
+139 Firebending Student
+140 How to Start a Riot
+141 Iroh's Demonstration
+142 Jeong Jeong, the Deserter
+143 Jet's Brainwashing
+144 The Last Agni Kai
+145 The Legend of Roku
+146 Lightning Strike
+147 Mai, Jaded Edge
+148 Mongoose Lizard
+149 Price of Freedom
+150 Ran and Shaw
+151 Redirect Lightning
+152 Rough Rhino Cavalry
+153 Solstice Revelations
+154 Sozin's Comet
+155 Tiger-Dillo
+156 Treetop Freedom Fighters
+157 Twin Blades
+158 Ty Lee, Artful Acrobat
+159 War Balloon
+160 Wartime Protestors
+161 Yuyan Archers
+162 Zhao, the Moon Slayer
+163 Zuko, Exiled Prince
+164 Allies at Last
+165 Avatar Destiny
+166 Badgermole
+167 Badgermole Cub
+168 The Boulder, Ready to Rumble
+169 Bumi, King of Three Trials
+170 Cycle of Renewal
+171 Diligent Zookeeper
+172 The Earth King
+173 Earth Kingdom General
+174 Earth Rumble
+175 Earthbender Ascension
+176 Earthbending Lesson
+177 Earthen Ally
+178 Elemental Teachings
+179 Flopsie, Bumi's Buddy
+180 Foggy Swamp Vinebender
+181 Great Divide Guide
+182 Haru, Hidden Talent
+183 Invasion Tactics
+184 Kyoshi Island Plaza
+185 Leaves from the Vine
+186 The Legend of Kyoshi
+187 Origin of Metalbending
+188 Ostrich-Horse
+189 Pillar Launch
+190 Raucous Audience
+191 Rebellious Captives
+192 Rockalanche
+193 Rocky Rebuke
+194 Saber-Tooth Moose-Lion
+195 Seismic Sense
+196 Shared Roots
+197 Sparring Dummy
+198 Toph, the Blind Bandit
+199 True Ancestry
+200 Turtle-Duck
+201 Unlucky Cabbage Merchant
+202 Walltop Sentries
+203 Aang, at the Crossroads
+204 Aang, Swift Savior
+205 Abandon Attachments
+206 Air Nomad Legacy
+207 Avatar Aang
+208 Azula, Cunning Usurper
+209 Beifong's Bounty Hunters
+210 Bitter Work
+211 Bumi, Unleashed
+212 Cat-Owl
+213 Cruel Administrator
+214 Dai Li Agents
+215 Dragonfly Swarm
+216 Earth Kingdom Soldier
+217 Earth King's Lieutenant
+218 Earth Rumble Wrestlers
+219 Earth Village Ruffians
+220 Fire Lord Azula
+221 Fire Lord Zuko
+222 Foggy Swamp Spirit Keeper
+223 Guru Pathik
+224 Hama, the Bloodbender
+225 Hei Bai, Spirit of Balance
+226 Hermitic Herbalist
+227 Iroh, Grand Lotus
+228 Iroh, Tea Master
+229 Jet, Freedom Fighter
+230 Katara, the Fearless
+231 Katara, Water Tribe's Hope
+232 The Lion-Turtle
+233 Long Feng, Grand Secretariat
+234 Messenger Hawk
+235 Ozai, the Phoenix King
+236 Platypus-Bear
+237 Pretending Poxbearers
+238 Professor Zei, Anthropologist
+239 Sandbender Scavengers
+240 Sokka, Bold Boomeranger
+241 Sokka, Lateral Strategist
+242 Sokka, Tenacious Tactician
+243 Suki, Kyoshi Warrior
+244 Sun Warriors
+245 Tolls of War
+246 Toph, Hardheaded Teacher
+247 Toph, the First Metalbender
+248 Uncle Iroh
+249 Vindictive Warden
+250 Wandering Musicians
+251 White Lotus Reinforcements
+252 Zhao, Ruthless Admiral
+253 Zuko, Conflicted
+254 Barrels of Blasting Jelly
+255 Bender's Waterskin
+256 Fire Nation Warship
+257 Kyoshi Battle Fan
+258 Meteor Sword
+259 Planetarium of Wan Shi Tong
+260 Trusty Boomerang
+261 The Walls of Ba Sing Se
+262 White Lotus Tile
+263 Abandoned Air Temple
+264 Agna Qel'a
+265 Airship Engine Room
+266 Ba Sing Se
+267 Boiling Rock Prison
+268 Fire Nation Palace
+269 Foggy Bottom Swamp
+270 Jasmine Dragon Tea Shop
+271 Kyoshi Village
+272 Meditation Pools
+273 Misty Palms Oasis
+274 North Pole Gates
+275 Omashu City
+276 Realm of Koh
+277 Rumble Arena
+278 Secret Tunnel
+279 Serpent's Pass
+280 Sun-Blessed Peak
+281 White Lotus Hideout
+282 Plains
+283 Island
+284 Swamp
+285 Mountain
+286 Forest

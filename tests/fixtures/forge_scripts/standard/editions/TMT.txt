@@ -1,0 +1,195 @@
+[metadata]
+Code=TMT
+Name=Teenage Mutant Ninja Turtles
+
+[cards]
+1 Action News Crew
+2 Agent Bishop, Man in Black
+3 April O'Neil, Kunoichi Trainee
+4 Dimensional Exile
+5 East Wind Avatar
+6 Featherbrained Filcher
+7 Grounded for Life
+8 Hamato Guardian Stance
+9 High-Flying Ace
+10 Jennika, Bad Apple Big Sister
+11 Koya, Death from Above
+12 The Last Ronin's Technique
+13 Leader's Talent
+14 Leonardo, Big Brother
+15 Leonardo, Cutting Edge
+16 Leonardo, Leader in Blue
+17 Leonardo, Sewer Samurai
+18 Leonardo's Technique
+19 Lita, Little Orphan Amphibian
+20 Make Your Move
+21 Mighty Mutanimals
+22 Prehistoric Pet
+23 Quintessential Katana
+24 Sally Pride, Lioness Leader
+25 Triceraton Commander
+26 Turncoat Kunoichi
+27 Turtles Forever
+28 Uneasy Alliance
+29 April O'Neil, Hacktivist
+30 April, Reporter of the Weird
+31 Bespoke Bō
+32 Buzz Bots
+33 Crustacean Commando
+34 Does Machines
+35 Donatello, Gadget Master
+36 Donatello, Mutant Mechanic
+37 Donatello, Turtle Techie
+38 Donatello, Way with Machines
+39 Donatello's Technique
+40 Fugitive Droid
+41 Kitsune, Dragon's Daughter
+42 Kitsune's Technique
+43 Krang, Master Mind
+44 Metalhead
+45 Mind Transfer Protocol
+46 Mondo Gecko
+47 Negate
+48 Ooze Spill
+49 Ray Fillet, Man Ray
+50 Renet, Temporal Apprentice
+51 Retro-Mutation
+52 Return to the Sewers
+53 Sewer-veillance Cam
+54 Stockman, Mad Fly-entist
+55 Turtles in Time
+56 Utrom Scientists
+57 Anchovy & Banana Pizza
+58 Armaggon, Future Shark
+59 Bebop, Warthog Warrior
+60 The Cloning of Shredder
+61 Death in the Family
+62 Dream Beavers
+63 Foot Mystic
+64 Insectoid Exterminator
+65 Lord Dregg, Insect Invader
+66 Madame Null, Power Broker
+67 Ninja Teen
+68 Oroku Saki, Shredder Rising
+69 Pain 101
+70 Paramecia Coloniex
+71 Rat King, Verminister
+72 Savanti Romero, Time's Exile
+73 Shark Shredder, Killer Clone
+74 Shredder, Unrelenting
+75 Shredder's Armor
+76 Shredder's Revenge
+77 Shredder's Technique
+78 South Wind Avatar
+79 Splinter, Hamato Yoshi
+80 Splinter's Technique
+81 Squirrelanoids
+82 Stomped by the Foot
+83 Super Shredder
+84 Tunnel Rats
+85 Bot Bashing Time
+86 Broadcast Takeover
+87 Casey Jones, Jury-Rig Justiciar
+88 Casey Jones, Vigilante
+89 Cool but Rude
+90 General Traag, Heart of Stone
+91 Hard-Won Jitte
+92 Improvised Arsenal
+93 Jennika's Technique
+94 Manhole Missile
+95 Mouser Attack!
+96 Mouser Foundry
+97 Mutant Town Musicians
+98 Null Group Biological Assets
+99 Old Hob, Alleycat Blues
+100 Purple Dragon Punks
+101 Raphael, Most Attitude
+102 Raphael, Ninja Destroyer
+103 Raphael, the Nightwatcher
+104 Raphael, Tough Turtle
+105 Raphael's Technique
+106 Ravenous Robots
+107 Rock Soldiers
+108 Slash, Reptile Rampager
+109 Spicy Oatmeal Pizza
+110 Wingnut, Bat on the Belfry
+111 Zog, Triceraton Castaway
+112 Courier of Comestibles
+113 Cowabunga!
+114 Frog Butler
+115 Groundchuck & Dirtbag
+116 Guac & Marshmallow Pizza
+117 Leatherhead, Swamp Stalker
+118 Michelangelo, Game Master
+119 Michelangelo, Improviser
+120 Michelangelo, Mutant BFF
+121 Michelangelo, Weirdness to 11
+122 Michelangelo's Technique
+123 Mona Lisa, Science Geek
+124 Mutagen Man, Living Ooze
+125 Mutant Chain Reaction
+126 New Generation's Technique
+127 Novel Nunchaku
+128 Party Dude
+129 Primordial Pachyderm
+130 Ragamuffin Raptor
+131 Rocksteady, Crash Courser
+132 Saved by the Shell
+133 Tenderize
+134 Transdimensional Bovine
+135 Turtle Power!
+136 Venus, Torn Between Worlds
+137 West Wind Avatar
+138 Zoo Escapees
+139 Baxter Stockman
+140 Bebop & Rocksteady
+141 Brilliance Unleashed
+142 Dark Leo & Shredder
+143 Don & Leo, Problem Solvers
+144 Don & Raph, Hard Science
+145 EPF Point Squad
+146 Foot Elite
+147 Foot Ninjas
+148 Genghis Frog
+149 Go Ninja Go
+150 Ice Cream Kitty
+151 Karai, Future of the Foot
+152 Karai's Technique
+153 Krang & Shredder
+154 The Last Ronin
+155 Lessons from Life
+156 Mechanized Ninja Cavalry
+157 Mikey & Don, Party Planners
+158 Mikey & Leo, Chaos & Order
+159 Mouser Mark III
+160 The Neutrinos
+161 Nobody
+162 North Wind Avatar
+163 Pizza Face, Gastromancer
+164 Punk Frogs
+165 Putrid Pals
+166 Raph & Leo, Sibling Rivals
+167 Raph & Mikey, Troublemakers
+168 Slithering Cryptid
+169 Splinter, Radical Rat
+170 Tainted Treats
+171 Tokka & Rahzar, Terrible Twos
+172 Chrome Dome
+173 Everything Pizza
+174 Henchbots
+175 Krang, Utrom Warlord
+176 Omni-Cheese Pizza
+177 The Ooze
+178 Skateboard
+179 Technodrome
+180 Turtle Blimp
+181 Turtle Van
+182 Weather Maker
+183 Dimension X
+184 Escape Tunnel
+185 Foot Headquarters
+186 Illegitimate Business
+187 Mutant Town
+188 Northampton Farm
+189 TCRI Building
+190 Turtle Lair

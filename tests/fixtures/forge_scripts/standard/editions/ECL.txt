@@ -1,0 +1,278 @@
+[metadata]
+Code=ECL
+Name=Lorwyn Eclipsed
+
+[cards]
+1 Changeling Wayfinder
+2 Rooftop Percher
+3 Adept Watershaper
+4 Ajani, Outland Chaperone
+5 Appeal to Eirdu
+6 Bark of Doran
+7 Brigid, Clachan's Heart
+8 Burdened Stoneback
+9 Champion of the Clachan
+10 Clachan Festival
+11 Crib Swap
+12 Curious Colossus
+13 Eirdu, Carrier of Dawn
+14 Encumbered Reejerey
+15 Evershrike's Gift
+16 Flock Impostor
+17 Gallant Fowlknight
+18 Goldmeadow Nomad
+19 Keep Out
+20 Kinbinding
+21 Kinsbaile Aspirant
+22 Kinscaer Sentry
+23 Kithkeeper
+24 Liminal Hold
+25 Meanders Guide
+26 Moonlit Lamenter
+27 Morningtide's Light
+28 Personify
+29 Protective Response
+30 Pyrrhic Strike
+31 Reluctant Dounguard
+32 Rhys, the Evermore
+33 Riverguard's Reflexes
+34 Shore Lurker
+35 Slumbering Walker
+36 Spiral into Solitude
+37 Sun-Dappled Celebrant
+38 Thoughtweft Imbuer
+39 Timid Shieldbearer
+40 Tributary Vaulter
+41 Wanderbrine Preacher
+42 Wanderbrine Trapper
+43 Winnowing
+44 Aquitect's Defenses
+45 Blossombind
+46 Champions of the Shoal
+47 Disruptor of Currents
+48 Flitterwing Nuisance
+49 Glamer Gifter
+50 Glamermite
+51 Glen Elendra Guardian
+52 Glen Elendra's Answer
+53 Gravelgill Scoundrel
+54 Harmonized Crescendo
+55 Illusion Spinners
+56 Kulrath Mystic
+57 Loch Mare
+58 Lofty Dreams
+59 Mirrorform
+60 Noggle the Mind
+61 Oko, Lorwyn Liege
+62 Omni-Changeling
+63 Pestered Wellguard
+64 Rime Chill
+65 Rimefire Torque
+66 Rimekin Recluse
+67 Run Away Together
+68 Shinestriker
+69 Silvergill Mentor
+70 Silvergill Peddler
+71 Spell Snare
+72 Stratosoarer
+73 Summit Sentinel
+74 Sunderflock
+75 Swat Away
+76 Sygg, Wanderwine Wisdom
+77 Tanufel Rimespeaker
+78 Temporal Cleansing
+79 Thirst for Identity
+80 Unexpected Assistance
+81 Unwelcome Sprite
+82 Wanderwine Distracter
+83 Wanderwine Farewell
+84 Wild Unraveling
+85 Auntie's Sentence
+86 Barbed Bloodletter
+87 Bile-Vial Boggart
+88 Bitterbloom Bearer
+89 Blight Rot
+90 Blighted Blackthorn
+91 Bloodline Bidding
+92 Boggart Mischief
+93 Boggart Prankster
+94 Bogslither's Embrace
+95 Champion of the Weird
+96 Creakwood Safewright
+97 Darkness Descends
+98 Dawnhand Dissident
+99 Dawnhand Eulogist
+100 Dose of Dawnglow
+101 Dream Seizer
+102 Gloom Ripper
+103 Gnarlbark Elm
+104 Graveshifter
+105 Grub, Storied Matriarch
+106 Gutsplitter Gang
+107 Heirloom Auntie
+108 Iron-Shield Elf
+109 Moonglove Extractor
+110 Moonshadow
+111 Mornsong Aria
+112 Mudbutton Cursetosser
+113 Nameless Inversion
+114 Nightmare Sower
+115 Perfect Intimidation
+116 Requiting Hex
+117 Retched Wretch
+118 Scarblade Scout
+119 Scarblade's Malice
+120 Shimmercreep
+121 Taster of Wares
+122 Twilight Diviner
+123 Unbury
+124 Ashling, Rekindled
+125 Boldwyr Aggressor
+126 Boneclub Berserker
+127 Boulder Dash
+128 Brambleback Brute
+129 Burning Curiosity
+130 Champion of the Path
+131 Cinder Strike
+132 Collective Inferno
+133 Elder Auntie
+134 End-Blaze Epiphany
+135 Enraged Flamecaster
+136 Explosive Prodigy
+137 Feed the Flames
+138 Flame-Chain Mauler
+139 Flamebraider
+140 Flamekin Gildweaver
+141 Giantfall
+142 Goatnap
+143 Goliath Daydreamer
+144 Gristle Glutton
+145 Hexing Squelcher
+146 Impolite Entrance
+147 Kindle the Inner Flame
+148 Kulrath Zealot
+149 Lasting Tarfire
+150 Lavaleaper
+151 Meek Attack
+152 Reckless Ransacking
+153 Scuzzback Scrounger
+154 Sear
+155 Sizzling Changeling
+156 Soul Immolation
+157 Soulbright Seeker
+158 Sourbread Auntie
+159 Spinerock Tyrant
+160 Squawkroaster
+161 Sting-Slinger
+162 Tweeze
+163 Warren Torchmaster
+164 Assert Perfection
+165 Aurora Awakener
+166 Bloom Tender
+167 Blossoming Defense
+168 Bristlebane Battler
+169 Bristlebane Outrider
+170 Celestial Reunion
+171 Champions of the Perfect
+172 Chomping Changeling
+173 Crossroads Watcher
+174 Dawn's Light Archer
+175 Dundoolin Weaver
+176 Formidable Speaker
+177 Gilt-Leaf's Embrace
+178 Great Forest Druid
+179 Luminollusk
+180 Lys Alana Dignitary
+181 Lys Alana Informant
+182 Midnight Tilling
+183 Mistmeadow Council
+184 Moon-Vigil Adherents
+185 Morcant's Eyes
+186 Mutable Explorer
+187 Pitiless Fists
+188 Prismabasher
+189 Prismatic Undercurrents
+190 Pummeler for Hire
+191 Safewright Cavalry
+192 Sapling Nursery
+193 Selfless Safewright
+194 Shimmerwilds Growth
+195 Spry and Mighty
+196 Surly Farrier
+197 Tend the Sprigs
+198 Thoughtweft Charge
+199 Trystan, Callous Cultivator
+200 Unforgiving Aim
+201 Vinebred Brawler
+202 Virulent Emissary
+203 Wildvine Pummeler
+204 Abigale, Eloquent First-Year
+205 Ashling's Command
+206 Boggart Cursecrafter
+207 Bre of Clan Stoutarm
+208 Brigid's Command
+209 Catharsis
+210 Chaos Spewer
+211 Chitinous Graspling
+212 Deceit
+213 Deepchannel Duelist
+214 Deepway Navigator
+215 Doran, Besieged by Time
+216 Dream Harvest
+217 Eclipsed Boggart
+218 Eclipsed Elf
+219 Eclipsed Flamekin
+220 Eclipsed Kithkin
+221 Eclipsed Merrow
+222 Emptiness
+223 Feisty Spikeling
+224 Figure of Fable
+225 Flaring Cinder
+226 Gangly Stompling
+227 Glister Bairn
+228 Grub's Command
+229 High Perfect Morcant
+230 Hovel Hurler
+231 Kirol, Attentive First-Year
+232 Lluwen, Imperfect Naturalist
+233 Maralen, Fae Ascendant
+234 Merrow Skyswimmer
+235 Mischievous Sneakling
+236 Morcant's Loyalist
+237 Noggle Robber
+238 Prideful Feastling
+239 Raiding Schemes
+240 Reaping Willow
+241 Sanar, Innovative First-Year
+242 Shadow Urchin
+243 Stoic Grove-Guide
+244 Sygg's Command
+245 Tam, Mindful First-Year
+246 Thoughtweft Lieutenant
+247 Trystan's Command
+248 Twinflame Travelers
+249 Vibrance
+250 Voracious Tome-Skimmer
+251 Wary Farmer
+252 Wistfulness
+253 Chronicle of Victory
+254 Dawn-Blessed Pennant
+255 Firdoch Core
+256 Foraging Wickermaw
+257 Gathering Stone
+258 Mirrormind Crown
+259 Puca's Eye
+260 Springleaf Drum
+261 Stalactite Dagger
+262 Blood Crypt
+263 Eclipsed Realms
+264 Evolving Wilds
+265 Hallowed Fountain
+266 Overgrown Tomb
+267 Steam Vents
+268 Temple Garden
+269 Plains
+270 Island
+271 Swamp
+272 Mountain
+273 Forest

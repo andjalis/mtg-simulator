@@ -1,0 +1,35 @@
+[metadata]
+Code=BIG
+Name=The Big Score
+
+[cards]
+1 Collector's Cage
+2 Grand Abolisher
+3 Oltec Matterweaver
+4 Rest in Peace
+5 Esoteric Duplicator
+6 Simulacrum Synthesizer
+7 Worldwalker Helm
+8 Greed's Gambit
+9 Harvester of Misery
+10 Hostile Investigator
+11 Generous Plunderer
+12 Legion Extruder
+13 Memory Vessel
+14 Molten Duplication
+15 Territory Forge
+16 Ancient Cornucopia
+17 Bristlebud Farmer
+18 Omenpath Journey
+19 Sandstorm Salvager
+20 Vaultborn Tyrant
+21 Loot, the Key to Everything
+22 Pest Control
+23 Lost Jitte
+24 Lotus Ring
+25 Nexus of Becoming
+26 Sword of Wealth and Power
+27 Torpor Orb
+28 Transmutation Font
+29 Fomori Vault
+30 Tarnation Vista

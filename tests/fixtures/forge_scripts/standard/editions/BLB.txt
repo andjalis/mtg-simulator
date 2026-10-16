@@ -1,0 +1,286 @@
+[metadata]
+Code=BLB
+Name=Bloomburrow
+
+[cards]
+1 Banishing Light
+2 Beza, the Bounding Spring
+3 Brave-Kin Duo
+4 Brightblade Stoat
+5 Builder's Talent
+6 Caretaker's Talent
+7 Carrot Cake
+8 Crumb and Get It
+9 Dawn's Truce
+10 Dewdrop Cure
+11 Driftgloom Coyote
+12 Essence Channeler
+13 Feather of Flight
+14 Flowerfoot Swordmaster
+15 Harvestrite Host
+16 Hop to It
+17 Intrepid Rabbit
+18 Jackdaw Savior
+19 Jolly Gerbils
+20 Lifecreed Duo
+21 Mabel's Mettle
+22 Mouse Trapper
+23 Nettle Guard
+24 Parting Gust
+25 Pileated Provisioner
+26 Rabbit Response
+27 Repel Calamity
+28 Salvation Swan
+29 Season of the Burrow
+30 Seasoned Warrenguard
+31 Shrike Force
+32 Sonar Strike
+33 Star Charter
+34 Starfall Invocation
+35 Thistledown Players
+36 Valley Questcaller
+37 Warren Elder
+38 Warren Warleader
+39 Wax-Wane Witness
+40 Whiskervale Forerunner
+41 Azure Beastbinder
+42 Bellowing Crier
+43 Calamitous Tide
+44 Daring Waverider
+45 Dazzling Denial
+46 Dire Downdraft
+47 Dour Port-Mage
+48 Eddymurk Crab
+49 Eluge, the Shoreless Sea
+50 Finch Formation
+51 Gossip's Talent
+52 Into the Flood Maw
+53 Kitnap
+54 Kitsa, Otterball Elite
+55 Knightfisher
+56 Lightshell Duo
+57 Long River Lurker
+58 Long River's Pull
+59 Mind Spiral
+60 Mindwhisker
+61 Mockingbird
+62 Nightwhorl Hermit
+63 Otterball Antics
+64 Pearl of Wisdom
+65 Plumecreed Escort
+66 Portent of Calamity
+67 Run Away Together
+68 Season of Weaving
+69 Shore Up
+70 Shoreline Looter
+71 Skyskipper Duo
+72 Spellgyre
+73 Splash Lasher
+74 Splash Portal
+75 Stormchaser's Talent
+76 Sugar Coat
+77 Thought Shucker
+78 Thundertrap Trainer
+79 Valley Floodcaller
+80 Waterspout Warden
+81 Wishing Well
+82 Agate-Blade Assassin
+83 Bandit's Talent
+84 Bonebind Orator
+85 Bonecache Overseer
+86 Coiling Rebirth
+87 Consumed by Greed
+88 Cruelclaw's Heist
+89 Daggerfang Duo
+90 Darkstar Augur
+91 Diresight
+92 Downwind Ambusher
+93 Early Winter
+94 Feed the Cycle
+95 Fell
+96 Glidedive Duo
+97 Hazel's Nocturne
+98 Huskburster Swarm
+99 Iridescent Vinelasher
+100 Maha, Its Feathers Night
+101 Moonstone Harbinger
+102 Nocturnal Hunger
+103 Osteomancer Adept
+104 Persistent Marshstalker
+105 Psychic Whorl
+106 Ravine Raider
+107 Rottenmouth Viper
+108 Ruthless Negotiation
+109 Savor
+110 Scales of Shale
+111 Scavenger's Talent
+112 Season of Loss
+113 Sinister Monolith
+114 Stargaze
+115 Starlit Soothsayer
+116 Starscape Cleric
+117 Thornplate Intimidator
+118 Thought-Stalker Warlock
+119 Valley Rotcaller
+120 Wick, the Whorled Mind
+121 Wick's Patrol
+122 Agate Assault
+123 Alania's Pathmaker
+124 Artist's Talent
+125 Blacksmith's Talent
+126 Blooming Blast
+127 Brambleguard Captain
+128 Brazen Collector
+129 Byway Barterer
+130 Conduct Electricity
+131 Coruscation Mage
+132 Dragonhawk, Fate's Tempest
+133 Emberheart Challenger
+134 Festival of Embers
+135 Flamecache Gecko
+136 Frilled Sparkshooter
+137 Harnesser of Storms
+138 Heartfire Hero
+139 Hearthborn Battler
+140 Hired Claw
+141 Hoarder's Overflow
+142 Kindlespark Duo
+143 Manifold Mouse
+144 Might of the Meek
+145 Playful Shove
+146 Quaketusk Boar
+147 Rabid Gnaw
+148 Raccoon Rallier
+149 Reptilian Recruiter
+150 Roughshod Duo
+151 Sazacap's Brew
+152 Season of the Bold
+153 Steampath Charger
+154 Stormsplitter
+155 Sunspine Lynx
+156 Take Out the Trash
+157 Teapot Slinger
+158 Valley Flamecaller
+159 Valley Rally
+160 War Squeak
+161 Whiskerquill Scribe
+162 Wildfire Howl
+163 Bakersbane Duo
+164 Bark-Knuckle Boxer
+165 Brambleguard Veteran
+166 Bushy Bodyguard
+167 Cache Grab
+168 Clifftop Lookout
+169 Curious Forager
+170 Druid of the Spade
+171 Fecund Greenshell
+172 For the Common Good
+173 Galewind Moose
+174 Hazardroot Herbalist
+175 Heaped Harvest
+176 High Stride
+177 Hivespine Wolverine
+178 Honored Dreyleader
+179 Hunter's Talent
+180 Innkeeper's Talent
+181 Keen-Eyed Curator
+182 Longstalk Brawl
+183 Lumra, Bellow of the Woods
+184 Mistbreath Elder
+185 Overprotect
+186 Pawpatch Formation
+187 Pawpatch Recruit
+188 Peerless Recycling
+189 Polliwallop
+190 Rust-Shield Rampager
+191 Scrapshooter
+192 Season of Gathering
+193 Stickytongue Sentinel
+194 Stocking the Pantry
+195 Sunshower Druid
+196 Tender Wildguide
+197 Thornvault Forager
+198 Three Tree Rootweaver
+199 Three Tree Scribe
+200 Treeguard Duo
+201 Treetop Sentries
+202 Valley Mightcaller
+203 Wear Down
+204 Alania, Divergent Storm
+205 Baylen, the Haymaker
+206 Burrowguard Mentor
+207 Camellia, the Seedmiser
+208 Cindering Cutthroat
+209 Clement, the Worrywort
+210 Corpseberry Cultivator
+211 Dreamdew Entrancer
+212 Finneas, Ace Archer
+213 Fireglass Mentor
+214 Gev, Scaled Scorch
+215 Glarb, Calamity's Augur
+216 Head of the Homestead
+217 Helga, Skittish Seer
+218 Hugs, Grisly Guardian
+219 The Infamous Cruelclaw
+220 Junkblade Bruiser
+221 Kastral, the Windcrested
+222 Lilysplash Mentor
+223 Lunar Convocation
+224 Mabel, Heir to Cragflame
+225 Mind Drill Assailant
+226 Moonrise Cleric
+227 Muerra, Trash Tactician
+228 Plumecreed Mentor
+229 Pond Prophet
+230 Ral, Crackling Wit
+231 Seedglaive Mentor
+232 Seedpod Squire
+233 Starseer Mentor
+234 Stormcatch Mentor
+235 Tempest Angler
+236 Tidecaller Mentor
+237 Veteran Guardmouse
+238 Vinereap Mentor
+239 Vren, the Relentless
+240 Wandertale Mentor
+241 Ygra, Eater of All
+242 Zoraline, Cosmos Caller
+243 Barkform Harvester
+244 Bumbleflower's Sharepot
+245 Fountainport Bell
+246 Heirloom Epic
+247 Patchwork Banner
+248 Short Bow
+249 Starforged Sword
+250 Tangle Tumbler
+251 Three Tree Mascot
+252 Fabled Passage
+253 Fountainport
+254 Hidden Grotto
+255 Lilypad Village
+256 Lupinflower Village
+257 Mudflat Village
+258 Oakhollow Village
+259 Rockface Village
+260 Three Tree City
+261 Uncharted Haven
+262 Plains
+263 Plains
+264 Plains
+265 Plains
+266 Island
+267 Island
+268 Island
+269 Island
+270 Swamp
+271 Swamp
+272 Swamp
+273 Swamp
+274 Mountain
+275 Mountain
+276 Mountain
+277 Mountain
+278 Forest
+279 Forest
+280 Forest
+281 Forest
