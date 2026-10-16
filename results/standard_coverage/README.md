@@ -233,3 +233,9 @@ is full), Changeling (counts as every creature type), "Investigate", "untap ~", 
 end of turn" and "each opponent discards a card". Fully supported cards 911 → 1,020 (20.8% of 4,902).
 Next cheapest: Convoke (8), "enters prepared" (17, a new mechanic), Mobilize, Disguise, manifest dread, endure,
 "exile up to N target cards from a graveyard".
+
+## Convoke and enters prepared (mtgsim/engine.py)
+
+Convoke taps summoning-sick creatures (or any untapped creature once combat is over) to pay generic mana.
+"Enters prepared": the creature may cast a copy of its spell face once (`Permanent.prepared`, cast as a `prepared`
+spell variant that goes nowhere afterwards). Fully supported cards 1,020 → 1,047.
