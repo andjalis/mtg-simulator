@@ -20,6 +20,11 @@ MOUNT = card("Test Mount", "{2}{R}", "Creature — Mount", (
     "Whenever ~ attacks while saddled, put a +1/+1 counter on it.\nSaddle 1"), 2, 2)
 TAPPER = card("Tap Gainer", "{1}{W}", "Creature — Human", "Whenever ~ becomes tapped, you gain 1 life.", 1, 1)
 SPENDER = card("Big Spender Two", "{1}{G}", "Creature — Elf", "Whenever you expend 4, ~ gets +1/+1 until end of turn.", 1, 1)
+MOURNER = card("Grim Mourner", "{1}{B}", "Creature — Vampire", (
+    "Whenever a creature you control dies, put a +1/+1 counter on ~."), 1, 1)
+WATCHER = card("Ench Watcher", "{1}{W}", "Creature — Spirit", (
+    "Whenever an enchantment you control is put into a graveyard from the battlefield, put a +1/+1 counter on ~."), 1, 1)
+RUNE = card("Test Rune", "{1}{W}", "Enchantment", "You gain 1 life.")
 BOTH = card("Twice Blessed", "{2}{W}", "Creature — Angel", "When ~ enters or dies, you gain 2 life.", 2, 2)
 
 
@@ -39,7 +44,7 @@ class TriggerTests(unittest.TestCase):
         return p
 
     def test_templates_match(self):
-        for c in (DRILL, SECOND, CASTER, BIGCAST, BOTH, MOUNT, TAPPER, SPENDER):
+        for c in (DRILL, SECOND, CASTER, BIGCAST, BOTH, MOUNT, TAPPER, SPENDER, MOURNER, WATCHER):
             with self.subTest(card=c.name):
                 self.assertEqual(c.unsupported, [])
 
@@ -112,6 +117,26 @@ class TriggerTests(unittest.TestCase):
         self.assertIsNotNone(self.game.pay(self.a, {"generic": 1}))
         self.game.settle()
         self.assertEqual(s.pump_p, 1)
+
+    def test_ally_dies(self):
+        m = self.perm(MOURNER)
+        bear = self.perm(BEAR)
+        self.game.destroy(bear)
+        self.game.settle()
+        self.assertEqual(m.counters.get("+1/+1"), 1)
+        self.game.destroy(m)                           # its own death is not a trigger for itself here
+        self.game.settle()
+
+    def test_permanent_to_graveyard(self):
+        w = self.perm(WATCHER)
+        rune = self.perm(RUNE)
+        self.game.leave_battlefield(rune, "graveyard")
+        self.game.settle()
+        self.assertEqual(w.counters.get("+1/+1"), 1)
+        bear = self.perm(BEAR)
+        self.game.destroy(bear)                          # not an enchantment
+        self.game.settle()
+        self.assertEqual(w.counters.get("+1/+1"), 1)
 
 
 if __name__ == "__main__":

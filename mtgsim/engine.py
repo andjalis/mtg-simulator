@@ -966,6 +966,11 @@ class Game:
                         continue
                 if event == "expend" and trig.filter != str(subject):
                     continue
+                if event in ("ally_dies", "perm_to_gy"):
+                    scope, ctr, desc = trig.filter.split("|", 2)
+                    if (subject is perm and scope == "other") or (ctr and not subject.counters) or \
+                            not copies.fits(subject.card, desc, subject):
+                        continue
                 if trig.filter == "saddled" and not perm.saddled:
                     continue
                 if trig.filter.startswith("with:") and \
@@ -2152,6 +2157,9 @@ class Game:
             self.attackers.remove(perm)
         if not perm.front.is_token:
             {"graveyard": owner.graveyard, "hand": owner.hand, "exile": owner.exile}[to].append(perm.front)
+        if to == "graveyard":
+            self.fire(owner, "perm_to_gy", subject=perm)
+            self.fire(owner, "perm_to_gy", perm, subject=perm)
         return True
 
     def extra_sac_candidates(self, p: Player, card: CardDef) -> list:
@@ -2182,6 +2190,8 @@ class Game:
         self.log(f"{perm.card.name} dies", perm.controller)
         if was_creature:
             self.fire(perm.controller, "dies", perm)
+            self.fire(perm.controller, "ally_dies", subject=perm)
+            self.fire(perm.controller, "ally_dies", perm, subject=perm)
             if perm.blitz:
                 self.queue_trigger(perm.controller, [Effect("draw", 1)], perm, f"{perm.card.name} blitz")
             self.fire(perm.controller, "other_creature_dies", subject=perm)
