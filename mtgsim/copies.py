@@ -440,7 +440,8 @@ def on_cast(game, p, item):
 
 def wants_spell(effects) -> bool:
     """Whether a cast trigger's effects copy "that spell" (so the trigger needs the spell as context)."""
-    return any((e.kind == "copy_spell" and e.data.get("of") == "that") or e.cond.startswith("mana") for e in effects)
+    return any((e.kind == "copy_spell" and e.data.get("of") == "that") or e.cond.startswith("mana") or e.kind == "increment"
+               for e in effects)
 
 
 def clone_on_enter(game, p, card):

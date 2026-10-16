@@ -39,5 +39,26 @@ class XTokens(Base):
         self.assertEqual(jace.loyalty, 2)
 
 
+SHOCK = card("Test Scorch", "{1}{R}", "Sorcery",
+             "~ deals 3 damage to target creature. If that creature would die this turn, exile it instead.")
+
+
+class ExileInstead(Base):
+    def test_template(self):
+        self.assertEqual(SHOCK.unsupported, [])
+
+    def test_damaged_creature_is_exiled(self):
+        from tests.test_templates import MOUNTAIN
+        for _ in range(2):
+            self.perm(MOUNTAIN)
+        bear = self.perm(BEAR, self.b)
+        self.a.hand.append(SHOCK)
+        self.assertTrue(self.game.cast(self.a, SHOCK, [bear, bear]))
+        self.game.settle()
+        self.assertNotIn(bear, self.b.battlefield)
+        self.assertEqual(self.b.graveyard, [])
+        self.assertIn(BEAR, self.b.exile)
+
+
 if __name__ == "__main__":
     unittest.main()

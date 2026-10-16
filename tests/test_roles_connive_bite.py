@@ -10,6 +10,7 @@ from tests.test_templates import BEAR, ISLAND, MOUNTAIN, card
 ROYAL = card("Test Royal", "{1}{W}", "Sorcery", "Create a Royal Role token attached to target creature you control.")
 CURSE = card("Test Curse", "{1}{B}", "Sorcery", "Create a Cursed Role token attached to target creature an opponent controls.")
 HERO = card("Test Hero Role", "{W}", "Sorcery", "Create a Young Hero Role token attached to target creature you control.")
+VIRTUOUS = card("Test Virtuous", "{W}", "Sorcery", "Create a Virtuous Role token attached to target creature you control.")
 WICKED = card("Test Wicked", "{B}", "Sorcery", "Create a Wicked Role token attached to target creature you control.")
 CONNIVER = card("Test Conniver", "{1}{U}", "Creature — Rogue", "When ~ enters, it connives.", 2, 2)
 GNAW = card("Test Gnaw", "{1}{G}", "Instant", "Target creature you control gets +1/+0 until end of turn. Then it deals damage "
@@ -54,6 +55,12 @@ class RolesConniveBite(unittest.TestCase):
         self.cast(WICKED, [SWAMP], [bear])                       # a new Role replaces the old one
         self.assertEqual(len(bear.auras), 1)
         self.assertEqual((bear.power, bear.ward), (3, 0))
+
+    def test_virtuous_role_counts_enchantments(self):
+        bear = self.perm(BEAR)
+        self.perm(card("Ench", "{1}", "Enchantment", ""))
+        self.cast(VIRTUOUS, [PLAINS], [bear])
+        self.assertEqual(bear.power, 2 + 2)                      # the Role and the other enchantment
 
     def test_cursed_role_sets_base_1_1(self):
         big = self.perm(card("Ogre", "{3}", "Creature — Ogre", "", 5, 5), self.b)
