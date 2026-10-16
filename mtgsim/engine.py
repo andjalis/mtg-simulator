@@ -747,6 +747,10 @@ class Game:
                 return
             p.hand.append(p.library.pop())
             self.fire(p, "you_draw")
+            drawn = getattr(p, "drawn_turn", (0, 0))
+            p.drawn_turn = (self.turn, drawn[1] + 1 if drawn[0] == self.turn else 1)
+            if p.drawn_turn[1] == 2:
+                self.fire(p, "draw_second")
             opp = self.opponent(p)
             self.fire(opp, "opp_draw", context=p)
 
@@ -1221,12 +1225,16 @@ class Game:
                     if flt.startswith("spell:") and not (flt[6:] in card.subtypes or
                                                          flt[6:].capitalize() in card.types):
                         continue
-                    if (trig.event == "cast_spell" or
+                    if trig.event == "cast_cmc" and card.cmc < int(trig.filter[5:]):
+                        continue
+                    if (trig.event in ("cast_spell", "cast_cmc") or
                             (trig.event == "cast_noncreature" and not card.is_creature) or
                             (trig.event == "cast_instant_sorcery" and (card.is_instant or card.is_sorcery))):
                         self.queue_trigger(p, trig.effects, perm, perm.card.name, modes=trig.modes,
                                            context=item if copies.wants_spell(trig.effects) else None)
             copies.on_cast(self, p, item)
+            if self.spells_cast.get(p.name) == 2:
+                self.fire(p, "cast_second")
             for pl in self.players:
                 self.fire(pl, "any_cast", context=p, subject=card)
         self.check_ward(item)
@@ -2187,6 +2195,10 @@ class Game:
     def combat(self, p: Player, opp: Player):
         self.step = "declare_attackers"
         self.attackers, self.blocks, self.attack_targets = [], {}, {}
+        self.fire(p, "begin_combat")
+        self.settle()
+        if self.over:
+            return
         self.hook(p, "before_attacks")(self, p)
         if self.over:
             return
