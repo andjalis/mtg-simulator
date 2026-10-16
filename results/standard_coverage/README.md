@@ -50,6 +50,23 @@ rough split whose method isn't recorded; counting by lines or characters gives 2
 and the family counts use this tool's own regexes (`FAMILIES` in `standard_coverage.py`), so they
 are close to but not the plan's. Every template PR can now quote the before/after of this report.
 
+## Re-measure after PRs 32 to 37 (2026-10-16)
+
+Same command on `main` at `6cabebf`, card database rebuilt from Forge `21f55608`:
+
+| | Before (`272decd`) | Now (`6cabebf`) |
+| --- | --- | --- |
+| Fully supported | 381 (7.8%) | 726 (14.8%) |
+| Simplified | 23 (0.5%) | 38 (0.8%) |
+| Partly supported | 4,498 (91.8%) | 4,138 (84.4%) |
+| Partly supported, missing only one line | 1,962 | 2,135 |
+| Rules sentences handled (rough) | 27% (3,483) | 38% (4,908) |
+
+Fully supported cards nearly doubled. Biggest family drops (cards with an ignored line):
+triggered 1,031 → 816, sacrifice 473 → 358, activated abilities 564 → 400, tokens 634 → 536,
+X costs 304 → 233, anthems 95 → 49, food 60 → 29. Copy effects (144) and modal spells (114) did not
+move and are now the largest families with no progress.
+
 ## Can Forge's card scripts be translated into engine effects?
 
 ```
