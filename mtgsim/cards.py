@@ -67,6 +67,7 @@ class AltCost:
     extra: list = field(default_factory=list)    # extra effects (Baleful: an opponent draws)
     life: int = 0
     hybrid: tuple = ()               # hybrid pips in cost, e.g. ("UB", "UB") for {U/B}{U/B}
+    counters: int = 0                # impending: time counters it enters with
 
 
 @dataclass
@@ -298,6 +299,26 @@ _EFFECT_PATTERNS = [
     (r"(?:destroy|exile) target (?:[\w-]+,? )*?creature(?: an opponent controls| you don't control)?",
      lambda m: Effect("destroy", target="creature")),
     (r"destroy target artifact", lambda m: Effect("destroy", target="artifact")),
+    (r"(?:destroy|exile) target artifact or enchantment(?: an opponent controls)?",
+     lambda m: Effect("destroy", target="artifact_enchantment", filter="opp")),
+    (r"you may put a permanent card from among the (?:cards milled this way|milled cards) into your hand",
+     lambda m: Effect("mill_pick")),
+    (r"if you control a Squirrel or returned a Squirrel card to your hand this way, create a food token",
+     lambda m: Effect("token", 1, data={"kind": "food"}, cond="squirrel")),
+    (r"(?:you may )?return (?:a|up to one) (?:non-\w+ )?creature card(?: or a planeswalker card)? from your "
+     r"graveyard to your hand", lambda m: Effect("regrow")),
+    (r"DISCARDTUTOR", lambda m: Effect("discard_tutor", data={"desc": "a creature card"})),
+    (r"when you discard one or more nonland cards this way, tap up to that many target creatures and put a stun "
+     r"counter on each of them", lambda m: Effect("stun_discarded")),
+    (_SRC + r" deals damage equal to that creature's power to any target",
+     lambda m: Effect("damage", 0, target="any", data={"subject_power": True})),
+    (r"shuffle ~ and target creature with a stun counter on it into their owners' libraries",
+     lambda m: Effect("shuffle_away", target="creature", filter="stunned")),
+    (r"RETURNENCHANT", lambda m: Effect("return_as_enchantment")),
+    (r"LASTGIFT", lambda m: Effect("last_gift")),
+    (r"target opponent exiles a creature they control and their graveyard",
+     lambda m: [Effect("edict", 1, data={"exile": True}), Effect("exile_gy")]),
+    (r"untap another target permanent", lambda m: Effect("untap_other")),
     (r"(?:you )?draw (a|one|two|three|four|\d+) cards?", lambda m: Effect("draw", _num(m[1]))),
     (r"(?:then )?if you have fewer than (three) cards in hand, draw cards equal to the difference",
      lambda m: Effect("draw_up_to", _num(m[1]))),
@@ -503,6 +524,17 @@ _SUBS = [
     (re.compile(r"then return a creature or planeswalker card with mana value X or less from your graveyard to "
                 r"the battlefield, where X is the amount of \{S\} spent to cast ~\.", re.I),
      lambda m: "REANIMATESNOW."),
+    (re.compile(r"each player sacrifices all other creatures they control\. then each player returns all creature "
+                r"cards from their graveyard that weren't put there this way to the battlefield\.", re.I),
+     lambda m: "LASTGIFT."),
+    (re.compile(r"you may discard a card\. if you do, search your library for a creature card, reveal it, put it "
+                r"into your hand, then shuffle\.", re.I), lambda m: "DISCARDTUTOR."),
+    # Face-down permanents aren't modelled, so the "unless" clause never applies.
+    (re.compile(r"you may draw a card\. if you do, discard a card unless a permanent entered the battlefield face "
+                r"down under your control this turn or you turned a permanent face up this turn\.", re.I),
+     lambda m: "Draw a card. Then discard a card."),
+    (re.compile(r"return it to the battlefield under its owner's control\. it's an enchantment\.(?: \(It's not a "
+                r"creature\.\))?", re.I), lambda m: "RETURNENCHANT."),
     (re.compile(r"you may pay \{2\}\{R\} any number of times\. when you pay this cost one or more times, .*",
                 re.I | re.S), lambda m: "ADVERSARY."),
 ]
@@ -514,6 +546,7 @@ _TRIGGERS = [
     (r"Whenever ~ attacks, (.+)", ("attacks",)),
     (r"When(?:ever)? ~ dies, (?:if it was a creature, )?(.+)", ("dies",)),
     (r"Whenever ~ deals combat damage to a player, (.+)", ("combat_damage_player",)),
+    (r"Whenever a creature you control deals combat damage to a player, (.+)", ("ally_combat_damage",)),
     (r"Whenever you cast a noncreature spell, (.+)", ("cast_noncreature",)),
     (r"Whenever you cast an instant or sorcery spell, (.+)", ("cast_instant_sorcery",)),
     (r"Whenever you cast a spell, (.+)", ("cast_spell",)),
@@ -840,6 +873,15 @@ def _parse_face(data: dict) -> CardDef:
         if re.fullmatch(r"Casualty \d+", line):
             approximations.append(f"never paid: {line}")
             continue
+        m = re.fullmatch(r"Impending (\d+)—(\{[^ ]+\})", line)
+        if m:
+            alt_costs.append(AltCost("impending", parse_mana_cost(m[2]), counters=int(m[1])))
+            continue
+        m = re.fullmatch(r"Spells your opponents cast that target ~ cost an additional (\d+) life to cast\.", line)
+        if m:
+            approximations.append(f"as ward (pay {m[1]} life): {line}")
+            extra["ward_life"] = int(m[1])
+            continue
         m = re.fullmatch(r"(Warp|Evoke|Offspring|Plot) (\{[^ ]+\})", line)
         if m:
             alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2]), hybrid=tuple(
@@ -1006,6 +1048,12 @@ def _parse_face(data: dict) -> CardDef:
             elif ability:
                 act.keywords = frozenset(k.strip().lower() for k in ability.split(",") if k.strip().lower() in KEYWORDS)
             activated.append(act)
+            continue
+        m = re.fullmatch(r"(\{[^:]+\}): ~ becomes an? (\d+)/(\d+) creature with (\w+) and all creature types\. "
+                         r"It's still a land\.", line)
+        if m:   # permanently (Soulstone Sanctuary)
+            activated.append(Activated("animate", parse_mana_cost(m[1]), int(m[2]), int(m[3]),
+                                       keywords=frozenset({m[4].lower()}) & KEYWORDS, text="permanent"))
             continue
         m = re.fullmatch(r"(\{[^:]+\}): ~ becomes an? (\d+)/(\d+) [\w ]*? creature(?: with ([\w ,]+))? until end of "
                          r"turn\. It's still a land\.", line)
@@ -1206,6 +1254,8 @@ def _parse_trigger_line(line: str):
         cond = f"spent:{spent[1]}" if spent else ""
         if spent:
             rest = spent[2]
+        if rest.startswith("if you cast it, "):
+            cond, rest = "cast", rest[16:]
         c = re.fullmatch(r"if (you gained life|you gained and lost life|you've gained (\d+) or more life|an opponent "
                          r"lost life) this turn, (.+)", rest, flags=re.S) or \
             re.fullmatch(r"(.+?) if (you gained life|you've gained (\d+) or more life) this turn\.", rest, flags=re.S)

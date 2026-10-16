@@ -672,3 +672,119 @@ class Round2Tests(Base):
         self.assertNotIn(rock, self.a.battlefield)
         self.assertEqual(self.b.life, 18)
         self.assertFalse(self.game.can_cast_now(self.a, PRECISION))   # no sacrifice, {4} too much
+
+
+CACHE_GRAB = card("Cache Grab", "{1}{G}", "Instant", (
+    "Mill four cards. You may put a permanent card from among the cards milled this way into your hand. If you "
+    "control a Squirrel or returned a Squirrel card to your hand this way, create a Food token."))
+SPEAKER = card("Formidable Speaker", "{2}{G}", "Creature — Elf Druid", (
+    "When this creature enters, you may discard a card. If you do, search your library for a creature card, reveal "
+    "it, put it into your hand, then shuffle.\n{1}, {T}: Untap another target permanent."), 2, 4)
+BOOKWORM = card("Oblivious Bookworm", "{G}{U}", "Creature — Human Wizard", (
+    "At the beginning of your end step, you may draw a card. If you do, discard a card unless a permanent entered "
+    "the battlefield face down under your control this turn or you turned a permanent face up this turn."), 2, 3)
+CRYOMANCER = card("Seasoned Cryomancer", "{1}{U}{U}", "Creature — Human Wizard", (
+    "When this creature enters, draw two cards, then discard two cards. When you discard one or more nonland "
+    "cards this way, tap up to that many target creatures and put a stun counter on each of them."), 2, 2)
+OVERLORD = card("Overlord of the Balemurk", "{3}{B}{B}", "Enchantment Creature — Avatar Horror", (
+    "Impending 5—{1}{B}\nWhenever this creature enters or attacks, mill four cards, then you may return a "
+    "non-Avatar creature card or a planeswalker card from your graveyard to your hand."), 5, 5)
+TERROR = card("Terror of the Peaks", "{3}{R}{R}", "Creature — Dragon", (
+    "Flying\nSpells your opponents cast that target this creature cost an additional 3 life to cast.\nWhenever "
+    "another creature you control enters, this creature deals damage equal to that creature's power to any "
+    "target."), 5, 4)
+DROWNER = card("Floodpits Drowner", "{1}{U}", "Creature — Merfolk", (
+    "Flash\nVigilance\nWhen this creature enters, tap target creature an opponent controls and put a stun counter "
+    "on it.\n{1}{U}, {T}: Shuffle this creature and target creature with a stun counter on it into their owners' "
+    "libraries."), 2, 1)
+CURIOSITY = card("Enduring Curiosity", "{2}{U}{U}", "Enchantment Creature — Cat Glimmer", (
+    "Flash\nWhenever a creature you control deals combat damage to a player, draw a card.\nWhen this creature "
+    "dies, if it was a creature, return it to the battlefield under its owner's control. It's an enchantment. "
+    "(It's not a creature.)"), 4, 3)
+SANCTUARY = card("Soulstone Sanctuary", types="Land", text=(
+    "{T}: Add {C}.\n{4}: This land becomes a 3/3 creature with vigilance and all creature types. It's still a "
+    "land."))
+BETRAYAL = card("Strategic Betrayal", "{1}{B}", "Sorcery", (
+    "Target opponent exiles a creature they control and their graveyard."))
+BRINGER = card("Bringer of the Last Gift", "{6}{B}{B}", "Creature — Vampire Demon", (
+    "Flying\nWhen this creature enters, if you cast it, each player sacrifices all other creatures they control. "
+    "Then each player returns all creature cards from their graveyard that weren't put there this way to the "
+    "battlefield."), 6, 6)
+
+
+class Round3Tests(Base):
+    def test_parsing(self):
+        for c in (CACHE_GRAB, SPEAKER, BOOKWORM, CRYOMANCER, OVERLORD, TERROR, DROWNER, CURIOSITY, SANCTUARY,
+                  BETRAYAL, BRINGER):
+            with self.subTest(card=c.name):
+                self.assertEqual(c.unsupported, [])
+
+    def test_mill_and_pick_a_permanent(self):
+        self.a.library = [ISLAND, SHOCK, BEAR, SHOCK, ISLAND]
+        for e in CACHE_GRAB.spell_effects:
+            if self.game.check_cond(self.a, e, None, None):
+                self.game.resolve(self.a, e, None)
+        self.assertEqual(len(self.a.hand), 1)
+        self.assertTrue(self.a.hand[0].is_permanent)
+        self.assertEqual(len(self.a.graveyard), 3)
+        self.assertFalse(any(x.card.token_kind == "food" for x in self.a.battlefield))
+
+    def test_discard_to_tutor_and_cryomancer_stuns(self):
+        self.a.hand = [ISLAND]
+        self.a.library = [ISLAND, BEAR, ISLAND]
+        self.game.resolve(self.a, SPEAKER.triggers[0].effects[0], None)
+        self.assertEqual(self.a.hand, [BEAR])
+        foe = self.perm(DRAGON3, self.b)
+        self.a.hand, self.a.library = [], [SHOCK, SHOCK]
+        for e in CRYOMANCER.triggers[0].effects:
+            self.game.resolve(self.a, e, None)
+        self.assertEqual((foe.tapped, foe.counters.get("stun")), (True, 1))
+
+    def test_impending_is_not_a_creature(self):
+        for _ in range(2):
+            self.perm(SWAMP, self.a)
+        self.a.hand = [OVERLORD]
+        variant = next(v for v in self.game.spell_options(self.a) if v.name.endswith("(impending)"))
+        self.game.cast(self.a, variant)
+        self.game.settle()
+        lord = next(x for x in self.a.battlefield if x.card.name == "Overlord of the Balemurk")
+        self.assertFalse(lord.is_creature)
+        lord.counters["time"] = 0
+        self.assertTrue(lord.is_creature)
+
+    def test_terror_and_drowner(self):
+        self.perm(TERROR, self.a)
+        self.game.enter_battlefield(self.a, DRAGON3)
+        self.game.settle()
+        self.assertEqual(self.b.life, 17)
+        foe = self.perm(DRAGON3, self.b)
+        foe.counters["stun"] = 1
+        self.perm(DROWNER, self.a)
+        eff = DROWNER.activated[0].effects[0]
+        self.assertEqual(self.game.legal_targets(self.a, eff), [foe])
+
+    def test_enduring_returns_as_enchantment(self):
+        cat = self.perm(CURIOSITY, self.a)
+        self.game.destroy(cat)
+        self.game.settle()
+        back = next(x for x in self.a.battlefield if x.card.name == "Enduring Curiosity")
+        self.assertFalse(back.is_creature)
+
+    def test_strategic_betrayal(self):
+        self.perm(BEAR, self.b)
+        self.b.graveyard = [BEAR, SHOCK]
+        for e in BETRAYAL.spell_effects:
+            self.game.resolve(self.a, e, None)
+        self.assertEqual((self.b.creatures, self.b.graveyard, len(self.b.exile)), ([], [], 3))
+
+    def test_last_gift(self):
+        mine = self.perm(BEAR, self.a)
+        self.a.graveyard = [DRAGON3]
+        self.b.graveyard = [DRAGON]
+        bringer = self.perm(BRINGER, self.a)
+        bringer.was_cast = True
+        self.game.queue_trigger(self.a, BRINGER.triggers[0].effects, bringer, "Bringer")
+        self.game.settle()
+        self.assertNotIn(mine, self.a.battlefield)
+        self.assertEqual(sorted(x.card.name for x in self.a.creatures), ["Big Dragon", "Bringer of the Last Gift"])
+        self.assertEqual([x.card.name for x in self.b.creatures], ["Test Dragon"])
