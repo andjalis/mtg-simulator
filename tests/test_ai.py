@@ -191,6 +191,34 @@ class AITests(unittest.TestCase):
             land.tapped = True
         self.assertEqual(self.a.ai._reserve(self.game, self.a), {})
 
+    def test_removal_skips_ward_it_cannot_pay(self):
+        terror = perm("Tolarian Terror", self.b)     # ward {2}
+        swamps = [perm("Swamp", self.a) for _ in range(5)]
+        murder = DB.get("Murder")
+        self.a.hand = [murder]
+        for s in swamps[3:]:
+            s.tapped = True
+        eff = murder.spell_effects[0]
+        self.assertIsNone(self.a.ai.choose_target(self.game, self.a, eff, murder))
+        for s in swamps[3:]:
+            s.tapped = False
+        self.assertIs(self.a.ai.choose_target(self.game, self.a, eff, murder), terror)
+
+    def test_new_effects_have_value(self):
+        from mtgsim.cards import card_from_scryfall
+        rally = card_from_scryfall({"name": "Rally Test", "mana_cost": "{1}{W}", "cmc": 2, "type_line": "Sorcery",
+                                    "oracle_text": "Creatures you control get +2/+1 until end of turn."})
+        tutor = card_from_scryfall({"name": "Tutor Test", "mana_cost": "{1}{G}", "cmc": 2, "type_line": "Sorcery",
+                                    "oracle_text": "Search your library for a creature card, reveal it, put it "
+                                                   "into your hand, then shuffle."})
+        self.assertEqual([e.kind for e in rally.spell_effects], ["pump_all"])
+        self.assertEqual([e.kind for e in tutor.spell_effects], ["tutor"])
+        for _ in range(2):
+            perm("Grizzly Bears", self.a)
+        self.assertGreater(self.a.ai.plan_spell(self.game, self.a, rally, precombat=True)[0], 2)
+        self.assertIsNone(self.a.ai.plan_spell(self.game, self.a, rally, precombat=False))
+        self.assertGreater(self.a.ai.plan_spell(self.game, self.a, tutor)[0], 0)
+
 
 if __name__ == "__main__":
     unittest.main()
