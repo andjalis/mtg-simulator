@@ -39,6 +39,9 @@ EFFECT_PATTERNS = [
     (r"(destroy|exile) (?:up to one )?target ((?:artifact|enchantment|creature|planeswalker|nonland permanent)"
      r"(?:(?:,| or|, or) (?:artifact|enchantment|creature|planeswalker))*)(?: (an opponent controls|you don't control))?"
      r"(?: with (mana value|power|toughness) (\d+) or (less|greater))?", lambda m: _removal_pattern(m)),
+    (r"(?:for each opponent, )?exile (?:up to one )?(?:other )?target (?:non-(\w+) )?((?:artifact|enchantment|creature|planeswalker|nonland permanent)"
+     r"(?:(?:,| or|, or) (?:artifact|enchantment|creature|planeswalker))*)(?: other than enchanted creature)?(?: (an opponent controls|you control))?"
+     r"(?: with (mana value) (\d+) or (less|greater))? until ~ leaves the battlefield", lambda m: _oring(m)),
     (r"target creature you control fights target creature " + _THEIRS, lambda m: _pair("fight")),
     (r"target creature you control deals damage equal to its power to target creature " + _THEIRS,
      lambda m: _pair("bite")),
@@ -95,9 +98,25 @@ def _removal_pattern(m):
     return Effect("destroy", target=kind, filter=flt)
 
 
+def _oring(m):
+    from .cards import Effect
+    types = [t for t in re.split(r",? or |, ", m[2]) if t]
+    cond = f"cmc{'<=' if m[6] == 'less' else '>='}{m[5]}" if m[4] else ""
+    who = "mine" if m[3] == "you control" else "opp" if m[3] else ""
+    flt = f"x:{','.join(types)}|{cond}|{who}|{m[1] or ''}"
+    return Effect("oring", target="nonland_perm", filter=flt)
+
+
 def x_passes(flt: str, perm, by) -> bool:
-    types, cond, opp = flt[2:].split("|")
-    if opp and perm.controller is by:
+    parts = flt[2:].split("|")
+    types, cond, opp = parts[:3]
+    nonsub = parts[3] if len(parts) > 3 else ""
+    if nonsub and nonsub.capitalize() in perm.card.subtypes:
+        return False
+    if opp == "mine":
+        if perm.controller is not by:
+            return False
+    elif opp and perm.controller is by:
         return False
     ok = False
     for t in types.split(","):
