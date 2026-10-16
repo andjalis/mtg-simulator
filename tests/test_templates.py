@@ -476,5 +476,83 @@ class ZoneTests(Base):
         self.assertEqual(self.b.life, 18)
 
 
+
+CLERIC = card("Starscape Cleric", "{1}{B}", "Creature — Human Cleric", "This creature can't block.\nWhenever you "
+              "gain life, each opponent loses 1 life.", 2, 2)
+CONVOCATION = card("Lunar Convocation", "{W}{B}", "Enchantment", "At the beginning of your end step, if you gained "
+                   "life this turn, each opponent loses 1 life.")
+HALIYA = card("Haliya", "{2}{W}", "Legendary Creature — Human", "At the beginning of your end step, draw a card if "
+              "you've gained 3 or more life this turn.", 3, 3)
+AMALIA = card("Amalia Benavides Aguirre", "{W}{B}", "Legendary Creature — Vampire", "Ward—Pay 3 life.", 2, 2)
+GEV = card("Gev, Scaled Scorch", "{B}{R}", "Legendary Creature — Lizard", "Whenever you cast a Lizard spell, Gev "
+           "deals 1 damage to target opponent.", 3, 2)
+LIZARD = card("Small Lizard", "{R}", "Creature — Lizard", "", 1, 1)
+CLAW = card("Hired Claw", "{R}", "Creature — Lizard Mercenary", "Whenever you attack with one or more Lizards, this "
+            "creature deals 1 damage to target opponent.", 1, 2)
+INGRIS = card("Ingris", "{1}{R}", "Creature — Wizard", "Whenever a creature you control attacks, that creature deals 1 "
+              "damage to each opponent.", 2, 2)
+RELIC = card("Cryogen Relic", "{1}{U}", "Artifact", "When this artifact enters or leaves the battlefield, draw a card.")
+CHARM = card("Stingerquill Charm", "{1}{R}", "Instant", "Choose one —\n• Target creature gains first strike and "
+             "deathtouch until end of turn.\n• Create a 2/2 colorless Wizard Soldier creature token named Cadet. It "
+             "gains haste until end of turn.")
+FRONT = card("United Battlefront", "{3}{W}", "Sorcery", "Look at the top seven cards of your library. Put up to two "
+             "noncreature, nonland permanent cards with mana value 3 or less from among them onto the battlefield. "
+             "Put the rest on the bottom of your library in a random order.")
+
+
+class TriggerTests(Base):
+    def test_parsing(self):
+        for c in (CLERIC, CONVOCATION, HALIYA, AMALIA, GEV, CLAW, INGRIS, RELIC, CHARM, FRONT):
+            with self.subTest(card=c.name):
+                self.assertEqual(c.unsupported, [])
+
+    def test_lifegain_triggers_and_conditions(self):
+        self.perm(CLERIC, self.a)
+        self.perm(CONVOCATION, self.a)
+        self.perm(HALIYA, self.a)
+        self.game.change_life(self.a, 2, "test")
+        self.game.settle()
+        self.assertEqual(self.b.life, 19)
+        self.game.fire(self.a, "end_step")
+        self.game.settle()
+        self.assertEqual((self.b.life, len(self.a.hand)), (18, 0))     # gained 2, not 3
+        self.game.change_life(self.a, 1, "test")
+        self.game.fire(self.a, "end_step")
+        self.game.settle()
+        self.assertEqual(len(self.a.hand), 1)
+
+    def test_ward_pay_life(self):
+        amalia = self.perm(AMALIA, self.b)
+        for _ in range(1):
+            self.perm(MOUNTAIN, self.a)
+        self.a.hand = [SHOCK]
+        self.game.cast(self.a, SHOCK, [amalia])
+        self.assertEqual((self.a.life, amalia in self.b.battlefield), (17, False))
+
+    def test_cast_and_attack_triggers(self):
+        self.perm(GEV, self.a)
+        self.perm(MOUNTAIN, self.a)
+        self.a.hand = [LIZARD]
+        self.game.cast(self.a, LIZARD)
+        self.assertEqual(self.b.life, 19)
+        claw = self.perm(CLAW, self.a)
+        self.perm(INGRIS, self.a)
+        self.a.ai.choose_attackers = lambda g, me, opp: [claw]
+        self.b.ai.choose_blocks = lambda g, me, opp, attackers: {}
+        self.game.combat(self.a, self.b)
+        self.assertEqual(self.b.life, 19 - 1 - 1 - 1)                  # Claw trigger, Ingris, combat
+
+    def test_leaves_trigger_charm_token_and_battlefront(self):
+        relic = self.perm(RELIC, self.a)
+        self.game.leave_battlefield(relic, "graveyard")
+        self.game.settle()
+        self.assertEqual(len(self.a.hand), 1)
+        token = CHARM.modes[1][0]
+        self.assertIn("haste", token.data["keywords"])
+        self.a.library = [ISLAND, RELIC, BEAR, CANDY, ISLAND, ISLAND, ISLAND]
+        self.game.resolve(self.a, FRONT.spell_effects[0], None)
+        self.assertEqual(sorted(x.card.name for x in self.a.battlefield), ["Candy Trail", "Cryogen Relic"])
+
+
 if __name__ == "__main__":
     unittest.main()

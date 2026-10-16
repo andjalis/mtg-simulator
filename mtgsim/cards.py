@@ -156,6 +156,7 @@ class CardDef:
     spent_colors: frozenset = frozenset()               # colours in "if {U}{U} was spent to cast it" triggers
     spree: list = field(default_factory=list)           # spree modes: (extra cost, effects)
     gy_triggers: list = field(default_factory=list)     # triggers that work from the graveyard (Bloodghast)
+    ward_life: int = 0                                  # "Ward—Pay N life."
 
     @property
     def is_land(self): return "Land" in self.types
@@ -330,6 +331,8 @@ _EFFECT_PATTERNS = [
     (r"surveil (\d+)", lambda m: Effect("surveil", int(m[1]))),
     (r"DIG (\d+) (\d+)", lambda m: Effect("dig", int(m[1]), int(m[2]))),
     (r"DIGPUT (\d+) (\d+)", lambda m: Effect("dig_put", int(m[1]), int(m[2]))),
+    (r"DIGPUTNONCREATURE (\d+) (\d+) (\d+)",
+     lambda m: Effect("dig_put", int(m[1]), int(m[2]), data={"count": int(m[3]), "noncreature": True})),
     (r"DIGFILTER (\d+) (.+)", lambda m: Effect("dig", int(m[1]), 1, data={"filter": m[2]})),
     (r"DIGLANDS (\d+)", lambda m: Effect("dig", 0, int(m[1]), data={"x_lands": True})),
     (r"IMPULSE (\d+)", lambda m: Effect("draw", int(m[1]))),   # "exile the top N, you may play them"
@@ -356,8 +359,8 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("discard", _num(m[1]), data={"unless": "basic_land"})),
     (r"(?:then )?discard (a|one|two|three) cards?(?: unless .*)?", lambda m: Effect("discard", _num(m[1]))),
     (r"RUMMAGE (\d+)", lambda m: Effect("rummage", int(m[1]))),
-    (r"create (a|one|two|three|four|five) (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: that's (tapped and "
-     r"attacking))?(?: with ([\w ,]+))?",
+    (r"create (a|one|two|three|four|five) (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: named [\w' ,-]+?)?(?: that's "
+     r"(tapped and attacking))?(?: with ([\w ,]+))?",
      lambda m: _token(m[1], m[2], m[3], m[4], m[6], bool(m[5]))),
     (r'create (a) (\d+)/(\d+) ((?:\w+ )+?)creature token with "(.+)"',
      lambda m: _token(m[1], m[2], m[3], m[4], "", False, m[5])),
@@ -389,6 +392,14 @@ _EFFECT_PATTERNS = [
     (r"ELSPETHPLUS", lambda m: Effect("p1_counters", 1, target="creature_mine", data={"keyword": "flying"})),
     (r"it gains (hexproof|first strike|haste|indestructible) until end of turn",
      lambda m: Effect("grant", target="prev", data={"keyword": m[1].lower()})),
+    (r"target creature gains ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) and ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) until end of turn",
+     lambda m: [Effect("grant", target="creature", data={"keyword": m[1].lower()}),
+                Effect("grant", target="prev", data={"keyword": m[2].lower()})]),
+    (r"target creature gains your choice of ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) or (?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach) until end of turn",
+     lambda m: Effect("grant", target="creature", data={"keyword": m[1].lower()})),
+    (r"put (a|one|two) \+1/\+1 counters? on each creature target player controls",
+     lambda m: Effect("p1_counters", _num(m[1]), target="my_creatures")),
+    (r"that creature deals (\d+) damage to each opponent", lambda m: Effect("damage", int(m[1]), target="player")),
     (r"target creature gains (double strike|first strike|trample|haste|hexproof|indestructible) until end of turn",
      lambda m: Effect("grant", target="creature", data={"keyword": m[1].lower()})),
     (r"put an? (\w+) counter on ~", lambda m: Effect("add_counter", 1, target="self", data={"counter": m[1].lower()})),
@@ -424,6 +435,8 @@ _EFFECT_PATTERNS = [
 ]
 
 _SUBS = [
+    (re.compile(r"(create a \d+/\d+ (?:\w+ )+?creature token) named [\w' ,-]+?\. it gains haste until end of turn\.",
+                re.I), lambda m: f"{m[1]} with haste."),
     (re.compile(r"you may discard a card\. if you do, draw a card\.", re.I), lambda m: "RUMMAGE 1."),
     (re.compile(r"each opponent loses X life, where X is your devotion to (white|blue|black|red|green)\. you gain "
                 r"life equal to the life lost this way\.", re.I),
@@ -453,6 +466,10 @@ _SUBS = [
     (re.compile(r"look at the top \w+ cards of your library, where X is the number of lands you control\. put "
                 r"(\w+) of those cards into your hand\. put the rest on the bottom of your library in (?:a random|"
                 r"any) order\.", re.I), lambda m: f"DIGLANDS {_num(m[1])}."),
+    (re.compile(r"look at the top (\w+) cards of your library\. put up to (two) noncreature, nonland permanent "
+                r"cards with mana value (\d+) or less from among them onto the battlefield\. put the rest on the "
+                r"bottom of your library in a random order\.", re.I),
+     lambda m: f"DIGPUTNONCREATURE {_num(m[1])} {m[3]} {_num(m[2])}."),
     (re.compile(r"look at the top (\w+) cards of your library\. you may put a permanent card with mana value "
                 r"(\d+) or less from among them onto the battlefield(?: with a shield counter on it)?\. put the rest "
                 r"on the bottom of your library in a random order\.", re.I),
@@ -479,6 +496,13 @@ _TRIGGERS = [
     (r"Whenever you cast a noncreature spell, (.+)", ("cast_noncreature",)),
     (r"Whenever you cast an instant or sorcery spell, (.+)", ("cast_instant_sorcery",)),
     (r"Whenever you cast a spell, (.+)", ("cast_spell",)),
+    (r"Whenever you cast an? ([A-Z]\w+|creature|artifact|enchantment) spell, (.+)", ("cast_spell",)),
+    (r"Whenever you gain life, (.+)", ("gain_life",)),
+    (r"Whenever you attack, (.+)", ("you_attack",)),
+    (r"Whenever you attack with one or more ([A-Z]\w+), (.+)", ("you_attack",)),
+    (r"Whenever a creature you control attacks, (.+)", ("creature_attacks",)),
+    (r"When(?:ever)? ~ enters or leaves the battlefield, (.+)", ("etb", "leaves")),
+    (r"When(?:ever)? ~ leaves the battlefield, (.+)", ("leaves",)),
     (r"Whenever a player casts a spell with mana value (\d+) or less, (.+)", ("any_cast",)),
     (r"At the beginning of your upkeep, (.+)", ("upkeep",)),
     (r"At the beginning of your end step, (.+)", ("end_step",)),
@@ -587,6 +611,10 @@ def _parse_face(data: dict) -> CardDef:
     text = text.replace(name, "~")
     if "," in name and "Legendary" in type_line:
         text = re.sub(rf"\b{re.escape(name.split(',')[0])}\b", "~", text)  # "Iymrith" for "Iymrith, Desert Doom"
+    elif "Legendary" in type_line and " " in name and " the " not in name and len(name.split()[0]) >= 4 and \
+            name.split()[0] not in ("The", "Lord", "Lady", "King", "Queen", "Sir") and \
+            re.search(rf"\b{re.escape(name.split()[0])}\b", text):
+        text = re.sub(rf"\b{re.escape(name.split()[0])}\b", "~", text)  # "Ajani" for "Ajani Resolute"
     elif " the " in name and "Legendary" in type_line:
         text = re.sub(rf"\b{re.escape(name.split(' the ')[0])}\b", "~", text)  # "Smaug the Magnificent"
     text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga)\b", "~",
@@ -639,6 +667,10 @@ def _parse_face(data: dict) -> CardDef:
                 mode_sink.append(effs)
             continue
         mode_sink = None
+        m = re.fullmatch(r"Ward—Pay (\d+) life\.", line)
+        if m:
+            extra["ward_life"] = int(m[1])
+            continue
         if re.fullmatch(r"Ward—Discard a card\.", line):
             extra["ward_discard"] = True
             continue
@@ -1113,6 +1145,10 @@ def _parse_trigger_line(line: str):
         rest = m[m.lastindex]
         if events == ("any_cast",):
             flt = f"cmc<={m[1]}"
+        if events == ("cast_spell",) and m.lastindex == 2:
+            flt = f"spell:{m[1]}"
+        if events == ("you_attack",) and m.lastindex == 2:
+            flt = f"with:{m[1].rstrip('s')}"
         if events[0] == "other_creature_enters":
             flt = "greater_power"
         if events == ("permanent_enters",):
@@ -1122,11 +1158,22 @@ def _parse_trigger_line(line: str):
             modes: list = []
             return [Trigger(e, [], flt, modes) for e in events], [], modes
         spent = re.fullmatch(r"if \{([WUBRG])\}\{\1\} was spent to cast it, (.+)", rest, flags=re.S)
+        cond = f"spent:{spent[1]}" if spent else ""
         if spent:
-            rest = spent[2][0].upper() + spent[2][1:]
+            rest = spent[2]
+        c = re.fullmatch(r"if (you gained life|you gained and lost life|you've gained (\d+) or more life|an opponent "
+                         r"lost life) this turn, (.+)", rest, flags=re.S) or \
+            re.fullmatch(r"(.+?) if (you gained life|you've gained (\d+) or more life) this turn\.", rest, flags=re.S)
+        if c:
+            phrase, n, rest = (c[1], c[2], c[3]) if not c[1][0].isupper() and c.re.pattern.startswith("if") \
+                else (c[2], c[3], c[1] + ".")
+            cond = {"you gained life": "gained_life", "you gained and lost life": "gained_and_lost",
+                    "an opponent lost life": "opp_lost_life"}.get(phrase, f"gained_life>={n}")
+        if cond:
+            rest = rest[0].upper() + rest[1:]
         effs, bad = _parse_effects(rest)
-        if spent:
-            effs = [dataclasses.replace(e, cond=f"spent:{spent[1]}") for e in effs]
+        if cond:
+            effs = [dataclasses.replace(e, cond=cond) for e in effs]
         if not effs:
             return [], bad or [line], None
         return [Trigger(e, effs, flt) for e in events], bad, None
