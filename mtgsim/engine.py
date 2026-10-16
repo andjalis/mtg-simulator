@@ -126,9 +126,20 @@ class Permanent:
         for cond, pp, tt in self.card.pt_if:
             gy = self.controller.graveyard
             n = sum(c.is_permanent for c in gy) if cond.startswith("gy_perm") else len(gy)
+            if cond.startswith("lands"):
+                n = sum(x.card.is_land for x in self.controller.battlefield)
             if n >= int(cond.split(">=")[1]):
                 bp += pp
                 bt += tt
+        for x in self.controller.battlefield:
+            for kw, pp, tt in x.card.anthem_kw:
+                if creature and self.has(kw):
+                    bp += pp
+                    bt += tt
+            for sub, pp, tt, other in x.card.anthem_sub:
+                if creature and sub in self.card.subtypes and not (other and x is self):
+                    bp += pp
+                    bt += tt
         if what:
             per = counting.count(None, self.controller, {"what": what, "zone": "battlefield"}, self)
             bp += per * sp
@@ -185,6 +196,12 @@ class Permanent:
         for k, cond in self.card.cond_keywords:
             if k == kw and self.condition(cond):
                 return True
+        if any(sub in self.card.subtypes and k == kw and not (other and x is self)
+               for x in self.controller.battlefield for sub, k, other in x.card.keyword_sub):
+            return True
+        if self.is_creature and self.p1 > 0 and any(kw in x.card.counter_team_keywords
+                                                    for x in self.controller.battlefield):
+            return True
         if kw in TEAM_KEYWORDS and self.is_creature:
             for x in self.controller.battlefield:
                 if kw in x.card.team_keywords:
@@ -351,7 +368,7 @@ class StackItem:
 def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if not blocker.is_creature or blocker.tapped:
         return False
-    if blocker.card.cant_block or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
+    if blocker.card.cant_block or blocker.has("cant_block_now") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
         return False
     if attacker.has("flying") and not (blocker.has("flying") or blocker.has("reach")):
         return False
@@ -652,6 +669,12 @@ class Game:
                         (flt in COLOR_WORDS and cost.get(COLOR_WORDS[flt], 0)) or \
                         (flt in ("creature", "artifact") and flt.capitalize() in card.types):
                     n += k
+        counts = getattr(self, "spells_cast", {})
+        if counts.get("turn") == self.turn and counts.get(p.name, 0) == 1:
+            n += sum(x.card.second_spell_discount for x in p.battlefield)
+        for sub, k in card.discount_if:
+            if any(sub in x.card.subtypes for x in p.battlefield):
+                n += k
         if card.tapped_discount and self.tapped_targets(p, card):
             n += card.tapped_discount
         cost["generic"] = max(0, cost.get("generic", 0) - n)
@@ -840,6 +863,12 @@ class Game:
             return perm.controller is not by
         if f == "mine":
             return perm.controller is by
+        if f == "opp_damaged":
+            return perm.controller is not by and perm.damage > 0
+        if f == "opp_artifact_creature":
+            return perm.controller is not by and (perm.is_creature or perm.card.is_artifact)
+        if f == "opp_tapped_creature":
+            return perm.controller is not by and perm.is_creature and perm.tapped
         if f == "stunned":
             return bool(perm.counters.get("stun"))
         if f.startswith("max_power:"):
@@ -887,6 +916,8 @@ class Game:
         if eff.filter == "creature" and not card.is_creature:
             return False
         if eff.filter == "noncreature" and card.is_creature:
+            return False
+        if eff.filter == "artifact_ench" and not (card.is_artifact or "Enchantment" in card.types):
             return False
         if eff.filter == "creature_ench" and not (card.is_creature or "Enchantment" in card.types):
             return False
@@ -2125,6 +2156,8 @@ class Game:
                 if eff.data.get("keyword"):
                     target.perm_kw.add(eff.data["keyword"])
         elif k == "grant":
+            if eff.data.get("host") and item is not None and isinstance(item.source, Permanent):
+                target = item.source.attached_to
             if isinstance(target, Permanent):
                 target.temp_kw.add(eff.data["keyword"])
         elif k == "add_counter":
@@ -2381,13 +2414,64 @@ class Game:
                                                subtypes=frozenset({"Equipment"}), equip_cost={"generic": 3},
                                                equip_bonus=(3, 3), triggers=[], activated=[])
                 self.log("The Irencrag becomes Everflame", p)
+        elif k == "draw_each":
+            for pl in self.players:
+                self.draw(pl, eff.amount)
+        elif k == "cant_block_turn":
+            if isinstance(target, Permanent):
+                target.temp_kw.add("cant_block_now")
+        elif k == "opp_exile_hand":
+            if opp.hand:
+                card = opp.ai.choose_discard(self, opp)
+                opp.hand.remove(card)
+                opp.exile.append(card)
+                self.log(f"{opp} exiles {card.name} from hand", p)
+        elif k == "reanimate_one":
+            cands = [c for c in p.graveyard if c.is_creature]
+            if cands:
+                card = max(cands, key=lambda c: c.cmc)
+                p.graveyard.remove(card)
+                self.enter_battlefield(p, card)
+                self.log(f"reanimates {card.name}", p)
+        elif k == "regrow_perm":
+            cands = [c for c in p.graveyard if c.is_permanent]
+            if cands:
+                card = max(cands, key=lambda c: c.cmc)
+                p.graveyard.remove(card)
+                p.hand.append(card)
+                self.log(f"returns {card.name} to hand", p)
+        elif k == "regrow_any":
+            if p.graveyard:
+                card = max(p.graveyard, key=lambda c: c.cmc)
+                p.graveyard.remove(card)
+                p.hand.append(card)
+        elif k == "exile_gy":
+            if eff.amount:
+                if opp.graveyard:
+                    card = max(opp.graveyard, key=lambda c: c.cmc)
+                    opp.graveyard.remove(card)
+                    opp.exile.append(card)
+            else:
+                opp.exile.extend(opp.graveyard)
+                del opp.graveyard[:]
+        elif k == "damage_each_player":
+            for pl in self.players:
+                self.change_life(pl, -eff.amount, cause)
+        elif k == "shrink":
+            if isinstance(target, Permanent) and target in target.controller.battlefield:
+                target.counters["-1/-1"] = target.m1 + eff.amount
+        elif k == "shrink_all":
+            for v in p.creatures + opp.creatures:
+                v.counters["-1/-1"] = v.m1 + eff.amount
         elif k == "wheel_self":
             for c in list(p.hand):
                 self.discard_card(p, c)
             self.draw(p, 2)
         elif k == "mass_bounce":
             keep = eff.data.get("except", "")
-            for v in [x for pl in self.players for x in pl.creatures if keep not in x.card.subtypes]:
+            only = eff.data.get("only")
+            for v in [x for pl in self.players for x in pl.creatures if keep not in x.card.subtypes
+                      and (only != "attacking" or x in self.attackers)]:
                 self.log(f"{v.card.name} returns to hand", p)
                 self.leave_battlefield(v, "hand")
         elif k == "exile_all_creatures":
@@ -3026,6 +3110,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return opp
     if k == "tap":
         theirs = [x for x in theirs if not x.tapped]
+        return max(theirs, key=perm_value, default=None)
+    if k == "shrink":
         return max(theirs, key=perm_value, default=None)
     if k in ("destroy", "debuff_one", "bounce"):
         if k == "debuff_one":
