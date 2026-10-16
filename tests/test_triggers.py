@@ -25,6 +25,8 @@ MOURNER = card("Grim Mourner", "{1}{B}", "Creature — Vampire", (
 WATCHER = card("Ench Watcher", "{1}{W}", "Creature — Spirit", (
     "Whenever an enchantment you control is put into a graveyard from the battlefield, put a +1/+1 counter on ~."), 1, 1)
 RUNE = card("Test Rune", "{1}{W}", "Enchantment", "You gain 1 life.")
+DESCENDER = card("Cave Delver", "{1}{B}", "Creature — Human", (
+    "At the beginning of your end step, if you descended this turn, put a +1/+1 counter on ~."), 1, 1)
 BOTH = card("Twice Blessed", "{2}{W}", "Creature — Angel", "When ~ enters or dies, you gain 2 life.", 2, 2)
 
 
@@ -44,7 +46,7 @@ class TriggerTests(unittest.TestCase):
         return p
 
     def test_templates_match(self):
-        for c in (DRILL, SECOND, CASTER, BIGCAST, BOTH, MOUNT, TAPPER, SPENDER, MOURNER, WATCHER):
+        for c in (DRILL, SECOND, CASTER, BIGCAST, BOTH, MOUNT, TAPPER, SPENDER, MOURNER, WATCHER, DESCENDER):
             with self.subTest(card=c.name):
                 self.assertEqual(c.unsupported, [])
 
@@ -137,6 +139,18 @@ class TriggerTests(unittest.TestCase):
         self.game.destroy(bear)                          # not an enchantment
         self.game.settle()
         self.assertEqual(w.counters.get("+1/+1"), 1)
+
+    def test_descended(self):
+        d = self.perm(DESCENDER)
+        self.game.fire(self.a, "end_step")
+        self.game.settle()
+        self.assertFalse(d.counters)                       # nothing went to the graveyard yet
+        self.a.graveyard.append(BEAR)
+        self.a.graveyard.append(SHOCK)                     # an instant doesn't count
+        self.assertEqual(self.a.graveyard.descents, 1)
+        self.game.fire(self.a, "end_step")
+        self.game.settle()
+        self.assertEqual(d.counters.get("+1/+1"), 1)
 
 
 if __name__ == "__main__":

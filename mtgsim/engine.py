@@ -32,6 +32,16 @@ TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "
             "player", "spell")
 
 
+class Graveyard(list):
+    """A graveyard that counts the permanent cards put into it this turn ("if you descended this turn")."""
+    descents = 0
+
+    def append(self, card):
+        if card.is_permanent and not card.is_token:
+            self.descents += 1
+        super().append(card)
+
+
 class Permanent:
     def __init__(self, card: CardDef, controller: "Player"):
         self.card = card
@@ -211,7 +221,7 @@ class Player:
         self.library: list[CardDef] = []
         self.hand: list[CardDef] = []
         self.battlefield: list[Permanent] = []
-        self.graveyard: list[CardDef] = []
+        self.graveyard: list[CardDef] = Graveyard()
         self.exile: list[CardDef] = []
         self.on_adventure: list[CardDef] = []
         self.foretold: list[CardDef] = []
@@ -813,6 +823,8 @@ class Game:
             pl.lost_life_turn = pl.perm_left_turn = False
             pl.life_gained_turn = 0
             pl.attacked_with = 0
+            if isinstance(pl.graveyard, Graveyard):
+                pl.graveyard.descents = 0
         self.step = "untap"
         for perm in p.battlefield:
             if perm.tapped and perm.counters.get("stun"):
@@ -1128,6 +1140,8 @@ class Game:
             return p.life_gained_turn > 0
         if c.startswith("gained_life>="):
             return p.life_gained_turn >= int(c[13:])
+        if c == "descended":
+            return getattr(p.graveyard, "descents", 0) > 0
         if c == "gained_and_lost":
             return p.life_gained_turn > 0 and p.lost_life_turn
         if c == "cast":
