@@ -25,6 +25,7 @@ import random
 import re
 
 from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, add_mana, make_token
+from . import modal
 
 TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "artifact", "artifact_enchantment",
             "player", "spell")
@@ -963,10 +964,9 @@ class Game:
         pending.sort(key=lambda t: order.index(t[0]))
         for controller, effects, source, name, context, targets, kind, modes in pending:
             if modes:
-                chosen = self.hook(controller, "choose_modes")(self, controller, modes, 1, True)
-                if not chosen:
+                effects = list(effects) + modal.pick(self, controller, modes, source, least=0)
+                if not effects:
                     continue
-                effects = [e for i in chosen for e in modes[i]]
             if targets is None:
                 targets = self.auto_targets(controller, effects, source)
             item = StackItem(controller, effects, targets, source=source, name=name, context=context, kind=kind)
@@ -1148,8 +1148,7 @@ class Game:
             for i, t in zip(missing, filled):
                 targets[i] = t
         if card.modes:
-            chosen = self.hook(p, "choose_modes")(self, p, card.modes, card.modes_choose, False)
-            mode_effects = [e for i in chosen for e in card.modes[i]]
+            mode_effects = modal.pick(self, p, card.modes, n=card.modes_choose)
             effects = mode_effects + effects
             targets = self.auto_targets(p, mode_effects) + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")
@@ -1376,9 +1375,14 @@ class Game:
             self.sacrifice(perm)
         elif c.get("exile_self"):
             self.leave_battlefield(perm, "exile")
+        effects = list(act.effects)
         if targets is None:
             targets = self.auto_targets(p, act.effects, perm)
-        item = StackItem(p, list(act.effects), list(targets), source=perm, name=f"{perm.card.name} ability",
+        if act.modes:
+            mode_effects = modal.pick(self, p, act.modes, perm)
+            effects += mode_effects
+            targets = list(targets) + self.auto_targets(p, mode_effects, perm)
+        item = StackItem(p, effects, list(targets), source=perm, name=f"{perm.card.name} ability",
                          kind="ability")
         self.stack.append(item)
         self.log(f"activates {item}" + (f" -> {targets}" if any(targets) else ""), p)
@@ -2497,9 +2501,8 @@ def respond(game: Game, me: Player):
 def _option_value(game: Game, me: Player, c: CardDef) -> float:
     if c.is_permanent:
         return 1
-    best_modes = sorted((_mode_value(game, me, m) for m in c.modes), reverse=True)[:c.modes_choose]
     rest = _mode_value(game, me, c.spell_effects) if c.spell_effects else 0
-    return sum(best_modes) + max(rest, 0) if c.modes else rest
+    return modal.value(game, me, c.modes, n=c.modes_choose) + max(rest, 0) if c.modes else rest
 
 
 def respond_extras(game: Game, me: Player):
@@ -2539,7 +2542,8 @@ def respond_extras(game: Game, me: Player):
 
 
 def _self_pump(act) -> bool:
-    return all(e.target == "self" and e.kind in ("pump", "grant", "p1_counters") for e in act.effects)
+    return bool(act.effects) and all(e.target == "self" and e.kind in ("pump", "grant", "p1_counters")
+                                     for e in act.effects)
 
 
 def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: int = 0) -> bool:
@@ -2554,6 +2558,8 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
     if not payable(game.mana_sources(me, perm if c.get("tap") else None, "ability"), need):
         return False
     value = _mode_value(game, me, act.effects)
+    if act.modes:
+        value += modal.value(game, me, act.modes, perm)
     if value <= 0:
         return False
     if c.get("sac_self") or c.get("exile_self"):
