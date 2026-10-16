@@ -206,6 +206,16 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
 - Creatures with flying, reach, haste, vigilance, defender, menace, trample,
   first strike, double strike, deathtouch, lifelink, hexproof, indestructible,
   "can't be blocked by power 2 or less"
+- Activated abilities in general ("{2}, {T}, Sacrifice this: ..."): mana, tap,
+  sacrifice, discard, life and counter costs, "only as a sorcery", "only once
+  each turn"; the default policy uses them with spare mana, and self-pumps on
+  unblocked attackers
+- Mana that can only be spent on some spells (Cavern of Souls, which also makes
+  its creature uncounterable; creature-, artifact-, instant/sorcery- and
+  Dragon-only mana), "choose a basic land type" lands, lands that enter tapped
+  unless you control a basic land / an Equipment / a Plains or an Island, or
+  behold a Jace, Clarion Conqueror, "can't block", library searches to hand,
+  team pumps and counters on each creature you control
 - London mulligan, drawing from an empty library, hand size, 60-turn cap
 
 Not yet: auras and equipment, X spells, copy effects (Reflection of
