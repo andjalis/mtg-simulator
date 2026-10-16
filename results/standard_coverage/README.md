@@ -144,3 +144,12 @@ spells ("when you next cast an instant or sorcery spell this turn, copy that spe
 copy it") now have templates. Fully supported cards 726 → 745 (14.8% → 15.2%); the copy-effects family
 144 → 100 cards. Not modelled: becoming a copy until end of turn, copying abilities, "may cast the copy",
 the legend rule. Targets for copies are chosen when the effect resolves.
+
+## Restricted removal and fights (mtgsim/removal.py)
+
+Destroy/exile with a restriction (enchantment, noncreature artifact, Vehicle, power 4 or greater, flying/reach),
+"fights", "deals damage equal to its power", "untap target creature" and "target creature you control gains
+KEYWORD". Many of these were the lines that kept modal spells partly supported. Fully supported cards
+754 → 779 (15.4% → 15.9%) on top of copy effects (726 → 754 together with modal spells). Not done: the
+"choose both instead" upgrades (teamwork, 5 cards; descend, delirium and the 8-permanent graveyard check, 3 cards)
+are still played without the upgrade and reported as simplified.
