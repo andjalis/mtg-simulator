@@ -24,6 +24,7 @@ import json
 import random
 import re
 
+from . import copies
 from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, add_mana, make_token
 
 TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "artifact", "artifact_enchantment",
@@ -1117,7 +1118,9 @@ class Game:
                     if (trig.event == "cast_spell" or
                             (trig.event == "cast_noncreature" and not card.is_creature) or
                             (trig.event == "cast_instant_sorcery" and (card.is_instant or card.is_sorcery))):
-                        self.queue_trigger(p, trig.effects, perm, perm.card.name, modes=trig.modes)
+                        self.queue_trigger(p, trig.effects, perm, perm.card.name, modes=trig.modes,
+                                           context=item if copies.wants_spell(trig.effects) else None)
+            copies.on_cast(self, p, item)
             for pl in self.players:
                 self.fire(pl, "any_cast", context=p, subject=card)
         self.check_ward(item)
@@ -1372,7 +1375,9 @@ class Game:
         return True
 
     def enter_battlefield(self, p: Player, card: CardDef, tapped_attacking: bool = False, x: int = 0) -> Permanent:
+        card, front = copies.clone_on_enter(self, p, card)
         perm = Permanent(card, p)
+        perm.front = front
         perm.entered_turn = self.turn
         perm.spent_color = getattr(self, "_spent", "")
         others = sum(x.card.is_land for x in p.battlefield)
@@ -1845,6 +1850,8 @@ class Game:
         elif k == "token_copy":
             self.enter_battlefield(p, eff.data["card"])
             self.log(f"creates {eff.data['card'].name}", p)
+        elif k in copies.KINDS:
+            copies.resolve(self, p, eff, target, item)
         self.state_based_actions()
 
     def deal_damage(self, target, amount: int, by: Player | None = None, cause="noncombat damage"):
@@ -2335,6 +2342,11 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
             total += perm_value(tgt)
         elif k in ("bounce_spell", "counter"):
             total += tgt.card.cmc if isinstance(tgt, StackItem) and tgt.card else 1
+        elif k in copies.KINDS:
+            v = copies.value(game, me, e)
+            if v < 0:
+                return -1
+            total += v
         elif k == "unblockable":
             # Only worth it before combat, when the opponent has a blocker.
             if game.step != "main1" or not any(not c.tapped for c in opp.creatures):
