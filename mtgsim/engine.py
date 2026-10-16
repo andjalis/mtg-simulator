@@ -26,7 +26,7 @@ import random
 import re
 
 from . import auras, copies, counting, removal, search, xspells
-from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, add_mana, jace_token, make_token
+from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, add_mana, jace_token, make_token, role_token
 from . import modal
 
 TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
@@ -136,6 +136,8 @@ class Permanent:
 
     def _base(self, power: bool):
         an = self.animated
+        if self.auras and any("base_1_1" in a.card.aura_flags for a in self.auras):
+            return 1                                    # Cursed Role
         if an and an.kind == "animate":
             return an.power if power else an.toughness
         return (self.card.power if power else self.card.toughness) or 0
@@ -211,7 +213,8 @@ class Permanent:
             return self.animated.ward
         if self.card.ward_untapped_only and self.tapped:
             return 0
-        return max([self.card.ward] + [e.card.equip_ward for e in self.equipment])
+        return max([self.card.ward] + [e.card.equip_ward for e in self.equipment] +
+                   [a.card.equip_ward for a in self.auras])
 
     def can_attack(self):
         return (self.is_creature and not self.tapped and not self.has("defender")
@@ -1131,6 +1134,11 @@ class Game:
                     effects = [dataclasses.replace(e, amount=max(0, subject.power)) if e.data.get("subject_power")
                                else e for e in effects]
                 self.queue_trigger(perm.controller, effects, perm, perm.card.name, context, modes=trig.modes)
+        if source is not None:      # Role tokens give the enchanted creature triggers
+            for aura in list(source.auras):
+                for trig in aura.card.host_triggers:
+                    if trig.event == event:
+                        self.queue_trigger(aura.controller, trig.effects, source, aura.card.name, context)
         if source is None:      # abilities that trigger from the graveyard (Bloodghast)
             for card in list(p.graveyard):
                 for trig in card.gy_triggers:
@@ -1259,6 +1267,8 @@ class Game:
         c = eff.cond
         if not c:
             return True
+        if c == "host_toughness<=3":
+            return item.source is not None and item.source.toughness <= 3
         if c in ("mana>=5", "mana<5"):
             spell = item.context
             big = isinstance(spell, StackItem) and spell.mana_spent >= 5
@@ -2064,6 +2074,25 @@ class Game:
                 perm = self.enter_battlefield(p, ench)
                 perm.front = card
                 self.log(f"returns {card.name} as an enchantment", p)
+        elif k == "role":
+            host = target if isinstance(target, Permanent) else (item.source if item is not None else None)
+            if isinstance(host, Permanent) and host in host.controller.battlefield and host.is_creature:
+                for old in [a for a in host.auras if "Role" in a.card.subtypes and a.controller is p]:
+                    self.leave_battlefield(old, "graveyard")
+                self._aura_host = host
+                self.enter_battlefield(p, role_token(eff.data["role"]))
+                self._aura_host = None
+        elif k == "connive":
+            who = target if isinstance(target, Permanent) else (item.source if item is not None else None)
+            if isinstance(who, Permanent) and who in who.controller.battlefield:
+                ctl = who.controller
+                self.draw(ctl)
+                if ctl.hand:
+                    card = ctl.ai.choose_discard(self, ctl)
+                    self.discard_card(ctl, card)
+                    self.log(f"{who.card.name} connives, discarding {card.name}", ctl)
+                    if not card.is_land:
+                        who.counters["+1/+1"] = who.p1 + 1
         elif k == "empower":
             jace = next((x for x in p.battlefield if x.is_planeswalker and x.card.is_token and "Jace" in x.card.subtypes),
                         None)
