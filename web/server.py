@@ -226,10 +226,11 @@ def make_handler(app: App):
             if kind == "assess":
                 page = leaderboard.render_assessment(data)
             elif ladder_page:
+                panel, scripts = leaderboard.replay_panel(data)
                 page = theme.dress(ladder_page(data), "leaderboard",
-                                   "<main class='page report'><a class=back href='/leaderboard'>‹ Leaderboard</a>"
+                                   f"<main class='page report'><a class=back href='/leaderboard'>‹ Leaderboard</a>{panel}"
                                    f"<section class=frame><div class=face>{theme.titlebar('Ranked ladder')}",
-                                   "</div></section></main>")
+                                   f"</div></section></main>{scripts}")
             else:
                 return self._send(200, data)
             self._send(200, page.encode(), "text/html; charset=utf-8")

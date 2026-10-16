@@ -407,3 +407,12 @@ textarea.locked { animation: deckLock 1.6s ease-out; }
 .track .node.final .nm { color: var(--gold); }
 .track .node.beat .emblem { filter: grayscale(.5) brightness(.8) drop-shadow(0 0 4px var(--gold-2)); }
 .track .node.beat .st { color: var(--ink-2); }
+
+/* -- replay of a saved run ------------------------------------------------------------- */
+.replaybar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin: 0 0 14px; }
+.replaybar button { margin: 0; width: auto; padding: 10px 20px; font-size: 13px; }
+.replaybar button.ghost { border: 1px solid var(--line-2); background: transparent; color: var(--ink-2); border-radius: 12px; cursor: pointer;
+  font: 600 13px var(--body); padding: 10px 16px; }
+.replaybar button.ghost:hover { color: var(--ink); border-color: var(--gold-2); }
+.replaybar .opt { margin: 0 0 0 auto; }
+.lb a.play { margin-right: 10px; white-space: nowrap; }

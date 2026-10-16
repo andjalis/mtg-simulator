@@ -25,6 +25,21 @@ def ladder_json(deck, mmr, rank):
             "pools": [], "opponents": [], "history": [[0, 1000], [40, mmr]]}
 
 
+def playable(deck, mmr, rank):
+    """A ladder result with two pools of one opponent each, enough to replay."""
+    d = ladder_json(deck, mmr, rank)
+    d["pools"] = [{"key": "bronze", "label": "Bronze", "rating": 900, "rank": "Bronze", "games": 10, "rate": .8,
+                   "cleared": True, "done": True},
+                  {"key": "silver", "label": "Silver", "rating": 1100, "rank": "Silver", "games": 10, "rate": .3,
+                   "cleared": False, "done": True}]
+    d["opponents"] = [{"name": "bronze/land_glut", "pool": "bronze", "rating": 900, "games": 10, "wins": 8, "draws": 0,
+                       "win_rate": .8},
+                      {"name": "silver/</script>", "pool": "silver", "rating": 1100, "games": 10, "wins": 3, "draws": 0,
+                       "win_rate": .3}]
+    d["history"] = [[0, 1000], [10, 1100], [20, mmr]]
+    return d
+
+
 def write(path: Path, data: dict, mtime: float):
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data))
@@ -84,12 +99,31 @@ class LeaderboardTests(unittest.TestCase):
         self.assertEqual(leaderboard.history_run(rid, self.store)["result"]["mmr"], 1650)
 
 
+class ReplayTests(unittest.TestCase):
+    def test_only_complete_runs_can_be_replayed(self):
+        self.assertFalse(leaderboard.can_replay(ladder_json("Burn", 1300, "Gold")))  # no pools or opponents
+        self.assertTrue(leaderboard.can_replay(playable("Burn", 1300, "Gold")))
+        self.assertEqual(leaderboard.replay_panel(ladder_json("Burn", 1300, "Gold")), ("", ""))
+
+    def test_replay_link_and_panel(self):
+        row = leaderboard.ladder_entry(playable("Burn", 1300, "Gold"), time.time(), "/leaderboard/run/x", "web")
+        plain = leaderboard.ladder_entry(ladder_json("Elves", 1100, "Silver"), time.time(), "/leaderboard/run/y", "web")
+        page = leaderboard.render_page(leaderboard.collect(Path("/nonexistent"), [row, plain], history_path=Path("/nonexistent/h")))
+        self.assertIn("/leaderboard/run/x?replay=1", page)
+        self.assertNotIn("/leaderboard/run/y?replay=1", page)
+        panel, scripts = leaderboard.replay_panel(playable("Burn", 1300, "Gold"))
+        self.assertIn("rp-play", panel)
+        self.assertIn("/static/arena.js", scripts)
+        self.assertEqual(scripts.count("</script>"), 3)  # an opponent name can't close the data block early
+
+
 class LeaderboardServerTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tmp = tempfile.TemporaryDirectory()
         root = Path(cls.tmp.name)
         write(root / "ladder" / "burn.json", ladder_json("Burn", 1300, "Gold"), time.time())
+        write(root / "ladder" / "replayed.json", playable("Replayed", 1250, "Gold"), time.time())
         write(root / "assess" / "burn.json", {"deck": "Burn", "assessed": "2026-10-01", "rating": None,
                                               "criteria": {"speed": {"label": "Speed", "grade": "B",
                                                                      "score": 70, "summary": "fast"}}}, time.time())
@@ -121,6 +155,16 @@ class LeaderboardServerTests(unittest.TestCase):
                 return r.status, r.read()
         except urllib.error.HTTPError as e:
             return e.code, e.read()
+
+    def test_replay_page_and_script(self):
+        code, page = self.call("/leaderboard/ladder/replayed?replay=1")
+        self.assertEqual(code, 200)
+        self.assertIn(b'id="run-data"', page)
+        self.assertIn(b"Replay the climb", page)
+        self.assertNotIn(b"Replay the climb", self.call("/leaderboard/ladder/burn")[1])  # nothing to replay
+        code, js = self.call("/static/arena.js")
+        self.assertEqual(code, 200)
+        self.assertIn(b"function replaySteps", js)
 
     def test_pages(self):
         code, page = self.call("/leaderboard")
