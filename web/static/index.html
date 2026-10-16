@@ -9,7 +9,7 @@
 <main class="page trial-page" data-screen="loadout">
   <header class="game-chrome">
     <div class="game-brand"><span class="game-mark" aria-hidden="true">✦</span><b>MTG <span>DECK TRIALS</span></b></div>
-    <div class="screen-route" aria-label="Trial stages"><span id="loadoutStep" aria-current="step">01 <b>Loadout</b></span><i aria-hidden="true">/</i><span id="arenaStep">02 <b>Arena</b></span></div>
+    <div class="screen-route" aria-label="Trial stages"><span id="loadoutStep" aria-current="step">01 <b>Loadout</b></span><i aria-hidden="true">/</i><span id="arenaStep">02 <b>Arena</b></span><i aria-hidden="true">/</i><span id="resultsStep">03 <b>Results</b></span></div>
     <span id="activeDeck" hidden></span>
     <div class="game-controls"><a class="leaderboard-link" href="/leaderboard">Leaderboard</a><button id="fullscreen" class="chrome-button" aria-pressed="false">⛶ Fullscreen</button></div>
   </header>
@@ -46,7 +46,14 @@
   </section>
   <section id="arenaScreen" class="trial-screen" aria-label="Trial arena" hidden>
     <div class="frame arena-panel"><div class="face"><div id="out"></div></div></div>
-    <div class="arena-actions"><p id="arenaActionHint">Your trial is running. Your loadout will be available when it finishes.</p><button id="configure" class="secondary-action" disabled>Trial in progress…</button></div>
+    <div class="arena-actions"><p id="arenaActionHint">Your trial is running. Your loadout will be available when it finishes.</p><div><button id="viewResults" class="secondary-action" hidden>View results →</button><button id="configure" class="secondary-action" disabled>Trial in progress…</button></div></div>
+  </section>
+  <section id="resultsScreen" class="trial-screen" aria-labelledby="resultTitle" hidden>
+    <div class="run-highlight frame"><div class="face" id="runHighlight"></div></div>
+    <div id="grades"></div>
+    <section class="frame results-intelligence" id="more"><div class="face"><div class="titlebar"><h2>Match intelligence</h2><span class="panel-tag">FULL BREAKDOWN</span></div><div id="rest"></div></div></section>
+    <div class="results-actions"><button id="reviewArena" class="secondary-action">← Review arena</button><button id="nextTrial" class="secondary-action">Configure next trial →</button></div>
+    <p class="note simulation-note results-note">Internal simulator ratings · AI vs. AI · Main-deck games only. Intervals measure sampling uncertainty, not rules or pilot bias.</p>
   </section>
 </main>
 <script src="/static/arena.js"></script>
@@ -200,23 +207,26 @@ if ($("#deck").value.trim()) scheduleCheck();
 Fx.bind($("#fx"));
 
 function showScreen(screen) {
-  const arena = screen === "arena";
-  if (!arena && polling) return;
+  if (polling && screen !== "arena") return;
+  const titles = {loadout: "#loadoutTitle", arena: "#arenaTitle", results: "#resultTitle"};
+  if (!titles[screen] || !$(titles[screen])) return;
   $(".trial-page").dataset.screen = screen;
-  $("#loadoutScreen").hidden = arena;
-  $("#arenaScreen").hidden = !arena;
-  $("#activeDeck").hidden = !arena;
-  $("#loadoutStep").toggleAttribute("aria-current", !arena);
-  $("#arenaStep").toggleAttribute("aria-current", arena);
-  $(arena ? "#arenaStep" : "#loadoutStep").setAttribute("aria-current", "step");
-  const target = $(arena ? "#arenaScreen" : "#loadoutScreen");
-  replay(target, "screen-enter");
-  $(arena ? "#arenaTitle" : "#loadoutTitle").focus({preventScroll: true});
+  for (const key of Object.keys(titles)) {
+    $("#" + key + "Screen").hidden = key !== screen;
+    const step = $("#" + key + "Step");
+    if (key === screen) step.setAttribute("aria-current", "step");
+    else step.removeAttribute("aria-current");
+  }
+  $("#activeDeck").hidden = screen === "loadout";
+  replay($("#" + screen + "Screen"), "screen-enter");
+  $(titles[screen]).focus({preventScroll: true});
   window.scrollTo({top: 0, behavior: "instant"});
-  document.title = arena ? "Arena · MTG Simulator" : "Loadout · MTG Simulator";
+  document.title = screen.charAt(0).toUpperCase() + screen.slice(1) + " · MTG Simulator";
 }
-$("#configure").onclick = () => showScreen("loadout");
-$("#viewTrial").onclick = () => showScreen("arena");
+$("#configure").onclick = $("#nextTrial").onclick = () => showScreen("loadout");
+$("#reviewArena").onclick = () => showScreen("arena");
+$("#viewResults").onclick = () => showScreen("results");
+$("#viewTrial").onclick = () => showScreen(A.snapshot?.status === "done" ? "results" : "arena");
 $("#fullscreen").disabled = !document.fullscreenEnabled;
 $("#fullscreen").onclick = async () => {
   try {
@@ -265,7 +275,7 @@ function showTrialError(message) {
   $("#runError").textContent = message;
   $("#runError").hidden = false;
 }
-function finishTrial() {
+function finishTrial(snapshot) {
   polling = false;
   $("#loadout").disabled = false;
   $("#go").disabled = !checkOk;
@@ -274,7 +284,11 @@ function finishTrial() {
   $("#viewTrial").hidden = !hasTrial;
   $("#configure").disabled = false;
   $("#configure").textContent = "Configure next trial →";
-  $("#arenaActionHint").textContent = "Return to your loadout to adjust the deck or start another trial.";
+  $("#arenaActionHint").textContent = "Review the completed arena or open the full results.";
+  const complete = snapshot?.status === "done";
+  $("#viewResults").hidden = !complete;
+  $("#viewTrial").textContent = complete ? "View last results" : "View last trial";
+  if (complete) { renderHighlight(snapshot); showScreen("results"); }
 }
 const open = new Set();
 function poll(id) {
@@ -284,7 +298,7 @@ function poll(id) {
     try { s = await api("/api/runs/" + id); } catch (e) { showTrialError(`Connection interrupted. Your trial may still be running: ${e.message}`); $("#prog")?.classList.remove("running"); finishTrial(); return; }
     render(s);
     if (s.status === "queued" || s.status === "running") setTimeout(tick, 700);
-    else { finishTrial(); }
+    else { finishTrial(s); }
   };
   tick();
 }
@@ -317,6 +331,12 @@ function renderRank(s) {
 // rank changes reveal the badge, and grades arrive once when the assessment finishes.
 function startArena() {
   resetArena();
+  $("#grades").innerHTML = "";
+  $("#grades").classList.remove("reveal");
+  $("#rest").innerHTML = "";
+  $("#runHighlight").innerHTML = "";
+  $("#viewResults").hidden = true;
+  $("#viewTrial").hidden = true;
   open.clear();
   $("#go span").textContent = "Trial in progress";
   $("#out").innerHTML = `<div class="trial-hud" id="prog">
@@ -325,10 +345,27 @@ function startArena() {
       <div class="progress" role="progressbar" aria-label="Scheduled games completed" aria-valuemin="0" aria-valuemax="100"><div></div></div>
       <div class="trial-steps"><span class="active">01 · Deck locked</span><span>02 · League battles</span><span>03 · Deck reveal</span></div>
       <div class="verdict" hidden></div>
-    </div>${arenaHTML()}<div id="grades"></div>
-    <details class="more" id="more"><summary>Match intelligence <small>win rates, MMR chart, every opponent</small></summary><div id="rest"></div></details>
+    </div>${arenaHTML()}
     <p class="note simulation-note">Internal simulator ratings · AI vs. AI · Main-deck games only. A league clear and an MMR rank measure different things. Draws earn half a point.</p>`;
 }
+function renderHighlight(s) {
+  const d = s.rank?.data;
+  const opponents = d?.opponents || s.tiers.flatMap(t => t.opponents.map(o => ({...o, games: o.wins + o.losses + o.draws, win_rate: o.rate})));
+  const totals = opponents.reduce((a, o) => ({wins: a.wins + o.wins, draws: a.draws + o.draws, games: a.games + o.games}), {wins: 0, draws: 0, games: 0});
+  const losses = totals.games - totals.wins - totals.draws;
+  const best = opponents.filter(o => o.games > 0 && o.win_rate != null).sort((a, b) => b.win_rate - a.win_rate || b.games - a.games)[0];
+  const rank = rankList.find(r => r.name === d?.rank);
+  const metric = (label, value) => `<div><span>${label}</span><b>${esc(value)}</b></div>`;
+  const pools = d?.pools || [];
+  const cleared = pools.filter(p => p.cleared === true).length;
+  $("#runHighlight").innerHTML = `<div class="result-emblem" aria-hidden="true">${rank?.emblem || "✦"}</div>
+    <div class="result-heading"><div class="overline">TRIAL COMPLETE · ${esc(s.deck)}</div><h2 id="resultTitle" tabindex="-1">${d ? `${esc(d.rank)} <span>· ${d.mmr} MMR</span>` : "Your run, revealed"}</h2>
+    <p>${esc(s.verdict || "Selected league battles complete.")}</p>
+    <div class="run-metrics">${metric("GAMES PLAYED", totals.games.toLocaleString())}${metric("WINS / LOSSES / DRAWS", `${totals.wins} / ${losses} / ${totals.draws}`)}${metric("OVERALL SCORE", totals.games ? pct((totals.wins + .5 * totals.draws) / totals.games) : "—")}${metric("PEAK MMR", d?.peak ?? "—")}${metric(s.ladder ? "LEAGUES CLEARED" : "LEAGUES PLAYED", s.ladder ? cleared : pools.filter(p => p.done).length)}</div>
+    ${best ? `<div class="match-highlight"><span>HIGHEST-SCORING MATCHUP</span><b>${esc(oppName(best.name))}</b><span>${pct(best.win_rate)} score · ${best.games} games</span><small>Descriptive result from this run; sample sizes and uncertainty matter.</small></div>` : ""}</div>`;
+  $("#runHighlight").style.setProperty("--rc", d?.rank_color || "var(--gold)");
+}
+
 function updateHUD(s) {
   const active = s.status === "running", queued = s.status === "queued";
   const grading = /goldfish|sample hands|meta field/.test(s.current || "");
@@ -338,7 +375,7 @@ function updateHUD(s) {
   el.classList.toggle("finished", s.status === "done");
   el.querySelector(".phase").textContent = queued ? "IN QUEUE" : s.status === "done" ? "TRIAL COMPLETE" : s.status === "error" ? "TRIAL INTERRUPTED" : grading ? "DECK ANALYSIS" : "LIVE TRIAL";
   el.querySelector(".hud-title").textContent = queued ? "Your arena is being prepared" : s.status === "done" ? `${s.deck} · trial complete` : s.status === "error" ? "The trial could not finish" : grading ? "Discovering your deck’s strengths" : `Challenging ${s.current || "the leagues"}`;
-  el.querySelector(".hud-detail").textContent = queued ? "Another trial is finishing. Yours will begin automatically." : s.status === "done" ? (s.assessment ? "Your rating is locked. Explore your grades and match intelligence below." : "Your rating is locked. Open match intelligence to explore the results.") : s.status === "error" ? s.error : grading ? "Playing the meta field, testing speed and sampling hands for your grades." : `Games run ${playedWhere(s)}. Results arrive as batches finish.`;
+  el.querySelector(".hud-detail").textContent = queued ? "Another trial is finishing. Yours will begin automatically." : s.status === "done" ? (s.assessment ? "Your rating is locked. Deck grades and match intelligence are on the results screen." : "Your rating is locked. Open the results screen for match intelligence.") : s.status === "error" ? s.error : grading ? "Playing the meta field, testing speed and sampling hands for your grades." : `Games run ${playedWhere(s)}. Results arrive as batches finish.`;
   el.querySelector(".hud-count").textContent = s.total ? `${s.done.toLocaleString()} / ${s.total.toLocaleString()} games` : "";
   const progress = el.querySelector(".progress");
   progress.hidden = queued || s.status === "error";
@@ -361,7 +398,8 @@ function playedWhere(s) {
 }
 
 function render(s) {
-  if (!$("#rest")) startArena();
+  if (!$("#prog")) startArena();
+  A.snapshot = s;
   let h = "";
   if (s.grade_error && !s.assessment) h += `<p class="note">The deck could not be graded: ${esc(s.grade_error)}</p>`;
   if (s.tiers.length) {
