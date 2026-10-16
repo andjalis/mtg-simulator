@@ -71,6 +71,7 @@ class Permanent:
         self.exiled_cards: list = []       # (card, owner) exiled until this leaves the battlefield
         self.warped = False
         self.was_cast = False              # "if you cast it"
+        self.prepared = False              # a prepared creature may cast a copy of its spell
         self.saddled = False               # a Mount saddled this turn
         self.copy_revert = None            # the card this permanent is while it is a copy until end of turn
         self.impending = False             # cast for its impending cost: not a creature while it has time counters
@@ -512,6 +513,9 @@ class Game:
         elif card.cost_reduction.startswith("affinity:"):
             n = sum(card_matches(x.card, "a " + card.cost_reduction[9:]) for x in p.battlefield)
         cost["generic"] = max(0, cost.get("generic", 0) - n)
+        if card.convoke:
+            self._convoke_k = min(len(self.convoke_pool(p)), cost.get("generic", 0))
+            cost["generic"] -= self._convoke_k
         if card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
             cost["generic"] += card.extra_sac_or_pay
         return cost
@@ -522,6 +526,8 @@ class Game:
         if key not in self._variants:
             if kind == "adventure":
                 v = dataclasses.replace(card.adventure)
+            elif kind == "prepared":
+                v = dataclasses.replace(card.back, name=f"{card.name} (prepared)")
             elif kind in ("channel", "gy_ability"):
                 v = CardDef(name=f"{card.name} ({kind})", mana_cost=alt.cost, cmc=card.cmc,
                             types=frozenset({"Instant"}), spell_effects=list(alt.effects), is_ability=True)
@@ -595,6 +601,7 @@ class Game:
                 if a.kind in ("alt", "kicker") or (a.kind == "spectacle" and opp.lost_life_turn) or \
                         (a.kind == "blitz" and "hand" in a.zone):
                     out.append(self._variant(c, a.kind, a))
+        out += [self._variant(x.card, "prepared") for x in p.battlefield if x.prepared and x.card.back is not None]
         out += [self._variant(c, "from_adventure") for c in p.on_adventure]
         out += [self._variant(c, "plotted", AltCost("plotted", {"generic": 0})) for c in p.plotted
                 if p.exiled_turn.get(c.name, 0) < self.turn]
@@ -618,6 +625,8 @@ class Game:
 
     def _available(self, p: Player, card: CardDef) -> bool:
         base, kind, _ = self._origin(card)
+        if kind == "prepared":
+            return any(x.card is base and x.prepared for x in p.battlefield)
         return base in self._zone(p, kind)
 
     def can_cast_now(self, p: Player, card: CardDef) -> bool:
@@ -1150,7 +1159,7 @@ class Game:
             owner.on_adventure.append(base)
         elif kind == "flashback":
             owner.exile.append(base)
-        elif kind != "channel":
+        elif kind not in ("channel", "prepared"):
             owner.graveyard.append(base)
 
     def check_cond(self, p: Player, eff: Effect, item: StackItem, prev) -> bool:
@@ -1205,6 +1214,12 @@ class Game:
         perm.front = card    # the whole card goes to the graveyard
         self.settle()
 
+    def convoke_pool(self, p: Player) -> list:
+        """Creatures that can be tapped to convoke without costing us an attack or block: summoning-sick ones,
+        or any untapped creature once combat is over."""
+        late = self.step in ("main2", "end_step")
+        return [c for c in p.creatures if not c.tapped and (c.sick or late)]
+
     def pay_teamwork(self, p: Player, card: CardDef) -> bool:
         """Tap creatures with total power of card.teamwork or more (smallest first; summoning-sick ones are free
         to tap). Only done when the creatures can't usefully attack: they are sick, or it's after combat."""
@@ -1232,9 +1247,12 @@ class Game:
         if not self._available(p, card):
             return False
         cost = self.cost_of(p, card)
+        convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
         payment = self.pay(p, cost, spell=card)
         if payment is None:
             return False
+        for c in convoked:
+            c.tapped = True
         x = 0
         if "X" in card.mana_cost:     # X: as much as the remaining mana allows
             while x < 20 and payable(self.mana_sources(p, spell=card), {"generic": x + 1}):
@@ -1249,7 +1267,10 @@ class Game:
             victim = self.extra_sac_candidates(p, card)[0]
             self.log(f"sacrifices {victim.card.name} for {card.name}", p)
             self.sacrifice(victim)
-        self._zone(p, kind).remove(base)
+        if kind == "prepared":
+            next(x for x in p.battlefield if x.card is base and x.prepared).prepared = False
+        else:
+            self._zone(p, kind).remove(base)
         if kind == "channel":
             p.graveyard.append(base)
         elif kind == "gy_ability":
@@ -1570,6 +1591,7 @@ class Game:
         perm = Permanent(card, p)
         perm.front = front
         perm.entered_turn = self.turn
+        perm.prepared = bool(card.prepared and card.back is not None)
         perm.spent_color = getattr(self, "_spent", "")
         others = sum(x.card.is_land for x in p.battlefield)
         cond = card.tapped_condition
