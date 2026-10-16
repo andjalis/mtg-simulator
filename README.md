@@ -238,6 +238,12 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   attacks", "whenever you cast a Lizard spell", "enters or leaves the
   battlefield" triggers; named tokens; "put up to two noncreature permanents
   from the top seven onto the battlefield"
+- Sacrifice: "whenever you sacrifice an artifact / a token" triggers and "as an
+  additional cost, (pay {4} or) sacrifice an artifact or creature"; stun counters
+  on a tapped creature; "can't be blocked this turn"; earthbend (the land stays a
+  creature, but does not return when it dies); extra land drops and lands from
+  the graveyard; affinity; quest counters with "when you do, if it has four or
+  more"; tokens that get +1/+1 for each artifact you control
 - London mulligan, drawing from an empty library, hand size, 60-turn cap
 
 Not yet: auras, equipment tokens and attaching equipment by effects (Thorin), X in
