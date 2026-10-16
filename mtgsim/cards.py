@@ -602,6 +602,10 @@ _TRIGGERS = [
     (r"Whenever ~ becomes tapped, (.+)", ("becomes_tapped",)),
     (r"Whenever ~ enters or becomes tapped, (.+)", ("etb", "becomes_tapped")),
     (r"Whenever you expend (\d+), (.+)", ("expend",)),
+    (r"Whenever (a|another) ([\w, -]+?) you control( with (?:a|an|one or more) (?:\+1/\+1 )?counters? on it)? dies, "
+     r"(.+)", ("ally_dies",)),
+    (r"Whenever (a|an|another) ([\w, -]+?) you control is put into a graveyard from the battlefield, (.+)",
+     ("perm_to_gy",)),
 ]
 
 
@@ -1316,6 +1320,10 @@ def _parse_trigger_line(line: str):
             rest = re.sub(r"^it (gets|gains|deals)\b", r"~ \1", re.sub(r"\b(on|untap|to) it\b", r"\1 ~", rest))
         if events == ("expend",):
             flt = m[1]
+        if events == ("ally_dies",):
+            flt = f"{'other' if m[1] == 'another' else 'any'}|{'counter' if m[3] else ''}|{m[2]}"
+        if events == ("perm_to_gy",):
+            flt = f"{'other' if m[1] == 'another' else 'any'}||{m[2]}"
         if events == ("attacks",) and "while saddled" in pat:
             flt = "saddled"
         if events == ("cast_cmc",):
