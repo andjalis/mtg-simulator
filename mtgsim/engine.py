@@ -51,6 +51,11 @@ class Permanent:
         self.chosen_type = ""              # Cavern of Souls
         self.produces_now = None           # set by Game.mana_sources: the colours usable right now
         self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
+        self.attached_to: "Permanent | None" = None    # Equipment: the creature it is attached to
+
+    @property
+    def equipment(self):
+        return [x for x in self.controller.battlefield if x.attached_to is self] if self.is_creature else []
 
     @property
     def p1(self): return self.counters.get("+1/+1", 0)
@@ -62,12 +67,14 @@ class Permanent:
     @property
     def power(self):
         base = self.animated.power if self.animated and self.animated.kind == "animate" else (self.card.power or 0)
-        return base + self.pump_p + self.p1 - self.m1 + (self.anthem[0] if self.is_creature else 0)
+        return base + self.pump_p + self.p1 - self.m1 + (self.anthem[0] if self.is_creature else 0) + \
+            sum(e.card.equip_bonus[0] for e in self.equipment)
 
     @property
     def toughness(self):
         base = self.animated.toughness if self.animated and self.animated.kind == "animate" else (self.card.toughness or 0)
-        return base + self.pump_t + self.p1 - self.m1 + (self.anthem[1] if self.is_creature else 0)
+        return base + self.pump_t + self.p1 - self.m1 + (self.anthem[1] if self.is_creature else 0) + \
+            sum(e.card.equip_bonus[1] for e in self.equipment)
 
     @property
     def m1(self): return self.counters.get("-1/-1", 0)
@@ -80,9 +87,23 @@ class Permanent:
             return True
         if self.animated and kw in self.animated.keywords:
             return True
+        if any(kw in e.card.equip_keywords for e in self.equipment):
+            return True
+        for k, cond in self.card.cond_keywords:
+            if k == kw and self.condition(cond):
+                return True
         if self.card.keyword_at_counters and self.p1 >= self.card.keyword_at_counters[0]:
             return kw == self.card.keyword_at_counters[1]
         return kw == "haste" and self.blitz
+
+    def condition(self, cond: str) -> bool:
+        if cond.startswith("another:"):
+            kind = cond[8:]
+            return any(kind in x.card.subtypes for x in self.controller.battlefield if x is not self)
+        if cond.startswith("opp_life<="):
+            opp = getattr(self.controller, "opponent", None)
+            return opp is not None and opp.life <= int(cond[10:])
+        return False
 
     @property
     def is_creature(self): return self.card.is_creature or self.animated is not None or self.crewed
@@ -100,7 +121,7 @@ class Permanent:
             return self.animated.ward
         if self.card.ward_untapped_only and self.tapped:
             return 0
-        return self.card.ward
+        return max([self.card.ward] + [e.card.equip_ward for e in self.equipment])
 
     def can_attack(self):
         return (self.is_creature and not self.tapped and not self.has("defender")
@@ -249,6 +270,7 @@ def add_costs(*costs) -> dict:
 class Game:
     def __init__(self, p1: Player, p2: Player, rng: random.Random, max_turns: int = 60, log: bool = False):
         self.players = [p1, p2]       # p1 is on the play
+        p1.opponent, p2.opponent = p2, p1
         self.rng = rng
         self.max_turns = max_turns
         self.turn = 0
@@ -571,6 +593,11 @@ class Game:
                 p.library.insert(0, card)
             self.audit("keep", seat=self.players.index(p), mulligans=p.mulligans,
                        hand=[c.name for c in p.hand])
+        for p in self.players:
+            for card in [c for c in p.hand if c.leyline]:
+                p.hand.remove(card)
+                self.log(f"begins the game with {card.name} on the battlefield", p)
+                self.enter_battlefield(p, card)
         self.pending = []   # opening hands don't trigger "whenever you draw"
 
     # ----------------------------------------------------------- game loop
@@ -711,7 +738,7 @@ class Game:
         if action[0] == "loyalty":
             return self.activate_loyalty(p, action[1], action[2], action[3] if len(action) > 3 else None)
         if action[0] == "activate":
-            return self.activate(p, action[1], action[2])
+            return self.activate(p, action[1], action[2], *action[3:])
         card, targets = action
         if not self.can_cast_now(p, card):
             return False
@@ -726,9 +753,21 @@ class Game:
         """Queue the triggers for event: of ``source`` if given, else of p's permanents."""
         perms = [source] if source is not None else list(p.battlefield)
         for perm in perms:
-            for trig in perm.triggers:
+            for i, trig in enumerate(perm.triggers):
                 if trig.event != event:
                     continue
+                if event == "permanent_enters":
+                    me_ok, other, desc = trig.filter.split("|", 2)
+                    if subject is perm and me_ok == "self":
+                        pass
+                    elif subject is perm and other == "other":
+                        continue
+                    elif not card_matches(subject.card, "a " + re.sub(r",? or |, ", " or a ", desc)):
+                        continue
+                if trig.once:
+                    if perm.ability_turns.get(("trigger", i)) == self.turn:
+                        continue
+                    perm.ability_turns[("trigger", i)] = self.turn
                 if trig.filter.startswith("cmc<=") and subject is not None and \
                         subject.cmc > int(trig.filter[5:]):
                     continue
@@ -934,13 +973,15 @@ class Game:
         self.settle()
         return True
 
-    def activate(self, p: Player, perm: Permanent, what: str) -> bool:
+    def activate(self, p: Player, perm: Permanent, what: str, target=None) -> bool:
         """Non-loyalty activated abilities: Clue, Blood, Bloodtithe Harvester, manlands, crew, and
         "ability:N" for the card's Nth activated ability (see activate_ability)."""
         if perm not in p.battlefield:
             return False
         if what.startswith("ability:"):
             return self.activate_ability(p, perm, int(what[8:]))
+        if what.startswith("equip"):
+            return self.equip(p, perm, target)
         if self.activations_stopped() and (perm.card.is_artifact or perm.is_creature):
             return False
         if what == "clue":
@@ -988,6 +1029,30 @@ class Game:
         else:
             return False
         self.settle()
+        return True
+
+    def equip_cost(self, equipment: Permanent, creature: Permanent) -> dict:
+        cost = dict(equipment.card.equip_cost or {})
+        cost["generic"] = max(0, cost.get("generic", 0) - creature.card.equip_discount)
+        return cost
+
+    def equip(self, p: Player, equipment: Permanent, creature: Permanent | None = None) -> bool:
+        """Equip {N}: attach equipment to a creature p controls, at sorcery speed."""
+        if equipment not in p.battlefield or equipment.card.equip_cost is None:
+            return False
+        if not (p is self.active and self.step in ("main1", "main2") and not self.stack):
+            return False
+        if self.activations_stopped():
+            return False
+        if creature is None:
+            creature = self.hook(p, "choose_equip_target")(self, p, equipment)
+        if creature is None or creature not in p.battlefield or not creature.is_creature or \
+                creature is equipment.attached_to:
+            return False
+        if self.pay(p, self.equip_cost(equipment, creature)) is None:
+            return False
+        equipment.attached_to = creature
+        self.log(f"equips {equipment.card.name} to {creature.card.name}", p)
         return True
 
     def sacrifice_candidates(self, p: Player, perm: Permanent, what: str) -> list:
@@ -1129,6 +1194,7 @@ class Game:
             self.add_lore(perm)
         if perm.is_creature:
             self.fire(p, "other_creature_enters", subject=perm)
+        self.fire(p, "permanent_enters", subject=perm)
         if card.is_land:
             self.fire(p, "land_enters")
         self.state_based_actions()
@@ -1238,7 +1304,9 @@ class Game:
             self.scry(p, eff.amount, to_graveyard=True)
         elif k == "dig":
             n = item.mana_spent if eff.data.get("x_mana") and item is not None and item.mana_spent else eff.amount
-            self.dig(p, n, eff.amount2)
+            if eff.data.get("x_lands"):
+                n = sum(x.card.is_land for x in p.battlefield)
+            self.dig(p, n, eff.amount2, eff.data.get("filter"))
         elif k == "dig_put":
             self.dig_put(p, eff.amount, eff.amount2)
         elif k == "discard":
@@ -1478,9 +1546,10 @@ class Game:
             else:
                 p.library.insert(0, c)
 
-    def dig(self, p: Player, n: int, keep: int):
+    def dig(self, p: Player, n: int, keep: int, desc: str | None = None):
         cards = [p.library.pop() for _ in range(min(n, len(p.library)))]
-        chosen = list(self.hook(p, "choose_dig")(self, p, list(cards), keep))[:keep]
+        allowed = [c for c in cards if card_matches(c, desc.replace(" or ", " or a "))] if desc else cards
+        chosen = list(self.hook(p, "choose_dig")(self, p, list(allowed), keep))[:keep] if allowed else []
         rest = list(cards)
         for c in chosen:
             rest.remove(c)
@@ -1515,6 +1584,10 @@ class Game:
         owner = perm.controller
         owner.battlefield.remove(perm)
         owner.perm_left_turn = True
+        perm.attached_to = None
+        for x in owner.battlefield:
+            if x.attached_to is perm:
+                x.attached_to = None
         if perm in self.attackers:
             self.attackers.remove(perm)
         if not perm.front.is_token:
@@ -1996,6 +2069,27 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
     return True
 
 
+def choose_equip_target(game: Game, me: Player, equipment: Permanent):
+    """The creature to equip: the best one that can attack this turn, else the best one."""
+    cands = [c for c in me.creatures if not c.card.is_token or c.power > 0]
+    if not cands:
+        return None
+    ready = [c for c in cands if not c.sick or c.has("haste") or "haste" in equipment.card.equip_keywords]
+    pool = ready if ready and game.step == "main1" else cands
+    return max(pool, key=lambda c: (c.card.equip_discount, perm_value(c) - len(c.equipment)))
+
+
+def equip_all(game: Game, me: Player):
+    """Attach unattached Equipment with spare mana (main phase 1, so it helps this combat)."""
+    for eq in [x for x in me.battlefield if x.card.equip_cost is not None and x.attached_to is None]:
+        tgt = game.hook(me, "choose_equip_target")(game, me, eq)
+        if tgt is None:
+            continue
+        need = add_costs(game.equip_cost(eq, tgt), {"generic": _reserve(game, me)})
+        if find_payment(game.mana_sources(me, spell="ability"), need) is not None:
+            game.equip(me, eq, tgt)
+
+
 def choose_ability(game: Game, me: Player, instant: bool):
     """An ("activate", permanent, "ability:N") action worth taking now, or None. With instant=True
     only abilities without "Activate only as a sorcery"."""
@@ -2154,6 +2248,7 @@ def use_abilities(game: Game, me: Player):
                  and perm_value(c) > perm_value(h)]
         if blood and kills and not h.sick and not h.tapped:
             game.activate(me, h, "sac_debuff")
+    equip_all(game, me)
     # Spells from other zones or with alternative costs the AI may not look at.
     for c in game.spell_options(me):
         if (c in me.hand and not c.modes) or c.instant_speed or not game.can_cast_now(me, c):
@@ -2181,7 +2276,7 @@ DEFAULTS = {
     "scry": scry, "choose_dig": choose_dig, "pay_unless": pay_unless, "pay_optional": pay_optional,
     "pay_shock": pay_shock, "choose_discard_from": choose_discard_from, "choose_rummage": choose_rummage,
     "choose_crew": choose_crew, "before_attacks": before_attacks, "choose_attack_targets": choose_attack_targets,
-    "use_abilities": use_abilities, "respond_extras": respond_extras,
+    "use_abilities": use_abilities, "respond_extras": respond_extras, "choose_equip_target": choose_equip_target,
 }
 # Older names, kept for compatibility.
 default_respond = respond
