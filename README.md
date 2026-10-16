@@ -326,6 +326,10 @@ with the built-in engine.
   plays at most 4 times its share; past that it keeps the remaining games whatever their
   starter, and the on-the-play/on-the-draw line in the output shows the skew. Games whose
   starter can't be read are discarded the same way.
+  Close matchups, where play/draw matters most, always get an exact split. In a 12-game check
+  (October 2026) of a Diamond deck against a Bronze one, which won 11 of 12, the cap was reached
+  and the split was 2 on the play and 10 on the draw; Forge's own order put the winner on the
+  play in 2 of 48 games.
 - `sim` mode can play a best-of-three (`-m 3`), but it never turns on AI sideboarding, so all
   three games use the main deck, and one process plays only one match. Sideboarded best-of-three
   is not available through Forge's `sim`.
