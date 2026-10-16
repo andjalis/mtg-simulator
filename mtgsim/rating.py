@@ -1,10 +1,11 @@
 """MMR and ranks for a deck tested against pools of opponent decks.
 
 Ranks run Bronze to Grandmaster, each a band of MMR (an Elo-scale rating: 400 points
-apart means the stronger deck is expected to win about 91% of games). Every opponent
-pool is anchored at an MMR: a pool keyed by a rank name ("gold") sits at the centre of
-that rank's band, other pools are spread evenly over the bands in the order given. A
-tested deck's MMR is its performance rating: the rating at which its expected score
+apart means the stronger deck is expected to win about 91% of games). Each opponent is
+rated at its fitted rating from decks/ranks/ratings.json (written by mtgsim.calibrate
+from simulated results) when that file lists it. Otherwise its pool's anchor is used: a
+pool keyed by a rank name ("gold") sits at the centre of that rank's band, other pools
+are spread evenly over the bands in the order given. A tested deck's MMR is its performance rating: the rating at which its expected score
 against the opponents it has played equals the score it actually got.
 
     tracker = LadderTracker("my_deck", [("gold", "Gold", ["gold/a", "gold/b"]), ...])
@@ -16,9 +17,11 @@ The tracker calls each function in tracker.listeners after every change, so a li
 """
 from __future__ import annotations
 
+import json
 import math
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 
 
 @dataclass(frozen=True)
@@ -50,6 +53,16 @@ RANKS = [
 START_MMR = 1000       # an unplayed deck sits at the bottom of Silver
 PRIOR_GAMES = 2        # virtual draws at START_MMR, so the first few games don't swing to the extremes
 MMR_MIN, MMR_MAX = 0, 3000
+RATINGS_FILE = Path(__file__).resolve().parent.parent / "decks" / "ranks" / "ratings.json"
+
+
+def load_ratings(path: Path | str | None = None) -> dict[str, int]:
+    """Fitted opponent ratings by deck name ("gold/boros_burn"); empty if the file is missing or unreadable."""
+    try:
+        doc = json.loads(Path(path or RATINGS_FILE).read_text(encoding="utf-8"))
+        return {name: int(d["rating"]) for name, d in doc.get("decks", {}).items()}
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return {}
 
 
 def rank_for(mmr: float) -> Rank:
@@ -85,8 +98,19 @@ def performance_rating(results: list[tuple[float, float, float]], prior=(START_M
     return (lo + hi) / 2
 
 
-def pool_anchors(keys: list[str]) -> dict[str, int]:
-    """MMR for each pool: its rank's band centre if the key names a rank, else spread evenly."""
+def pool_anchors(keys: list[str], ratings: dict[str, int] | None = None) -> dict[str, int]:
+    """MMR for each pool: the mean fitted rating of its decks when `ratings` (from load_ratings)
+    has any deck named "<key>/...", else its rank's band centre if the key names a rank, else
+    spread evenly."""
+    base = _band_anchors(keys)
+    for k in keys:
+        mine = [v for n, v in (ratings or {}).items() if n.split("/", 1)[0] == k]
+        if mine:
+            base[k] = round(sum(mine) / len(mine))
+    return base
+
+
+def _band_anchors(keys: list[str]) -> dict[str, int]:
     by_name = {r.key: r for r in RANKS}
     if all(k.lower() in by_name for k in keys):
         return {k: by_name[k.lower()].anchor for k in keys}
@@ -119,10 +143,14 @@ class LadderTracker:
     pass_rate: float = 0.5
     ladder: bool = False
     listeners: list = field(default_factory=list)
+    ratings: dict | None = None   # deck name -> fitted rating; None reads decks/ranks/ratings.json
 
     def __post_init__(self):
+        if self.ratings is None:
+            self.ratings = load_ratings()
         anchors = pool_anchors([k for k, _, _ in self.pools])
-        self.opponents = {n: Opponent(n, k, anchors[k]) for k, _, names in self.pools for n in names}
+        self.opponents = {n: Opponent(n, k, self.ratings.get(n, anchors[k]))
+                          for k, _, names in self.pools for n in names}
         self.pool_results: dict[str, dict] = {}
         self.current: str | None = None
         self.mmr = float(START_MMR)
@@ -184,9 +212,10 @@ class LadderTracker:
         pools = []
         for key, label, names in self.pools:
             res = self.pool_results.get(key, {})
-            anchor = self.opponents[names[0]].rating if names else None
+            anchor = round(sum(self.opponents[n].rating for n in names) / len(names)) if names else None
+            named = next((r for r in RANKS if r.key == key.lower()), None)
             pools.append({"key": key, "label": label, "rating": anchor,
-                          "rank": rank_for(anchor).name if anchor is not None else None,
+                          "rank": named.name if named else rank_for(anchor).name if anchor is not None else None,
                           "games": res.get("games", 0), "rate": res.get("rate"),
                           "cleared": res.get("cleared"), "done": key in self.pool_results})
         return {

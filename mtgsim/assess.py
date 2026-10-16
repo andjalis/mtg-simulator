@@ -17,6 +17,12 @@ The criteria:
 * Consistency: sampled opening hands and draws, with the AI's own mulligan rule: mulligans, mana
   screw and flood, castable plays on turns 1 to 4, and key cards by turn N.
 
+Every assessment also says how far to trust its rating: "reliability" is high, medium or low from
+how much of each matchup the built-in engine can actually play (card coverage, mtgsim.coverage),
+weighted by meta share. Matchups Forge played count as fully covered. With --engine auto,
+matchups where either deck is below the coverage threshold go to Forge and the rest stay in the
+built-in engine.
+
 Each criterion has a 0-100 score and a grade (S, A, B, C, D, F). assess() returns plain JSON;
 see its docstring for the shape.
 """
@@ -36,6 +42,7 @@ from pathlib import Path
 from .ai import HeuristicAI
 from .carddb import CardDB
 from .cards import COLORS, CardDef
+from .coverage import FULL, SIMPLIFIED, deck_coverage, summary as coverage_summary
 from .decklist import load_deck, load_deck_full
 from .engine import Game, Player
 from .rating import RANKS, next_rank, performance_rating, rank_for
@@ -46,6 +53,9 @@ METAGAME = Path(__file__).parent / "data" / "metagame.json"
 META_RATING = RANKS[-1].anchor   # the meta field is the Grandmaster pool
 CAST_TARGET = 0.90               # Karsten: cast the spell on curve at least 90% of the time
 GRADES = [(90, "S"), (75, "A"), (60, "B"), (45, "C"), (30, "D"), (0, "F")]
+HIGH_COVERAGE = 0.85             # reliability "high" from here (or when Forge played the matchup)
+MEDIUM_COVERAGE = 0.65           # "medium" from here, "low" below
+AUTO_THRESHOLD = HIGH_COVERAGE   # --engine auto: matchups with either deck below this go to Forge
 
 
 def grade(score: float) -> str:
@@ -160,6 +170,54 @@ def assess_meta(name: str, archetypes: list[Archetype], results: dict[str, tuple
     }
     # 1000 MMR (bottom of Silver) scores 0, 2200 (mid Grandmaster) scores 100
     return rating, _criterion("Meta", (mmr - 1000) / 12, summary, details)
+
+
+# ------------------------------------------------------------------ reliability
+def coverage_share(db: CardDB, counts: dict[str, int]) -> float:
+    """Share of a deck's copies whose rules text the built-in engine matches fully or simply."""
+    s = coverage_summary(deck_coverage(db, counts))
+    return (s[FULL] + s[SIMPLIFIED]) / s["total"] if s["total"] else 1.0
+
+
+def reliability_level(coverage: float) -> str:
+    return "high" if coverage >= HIGH_COVERAGE else "medium" if coverage >= MEDIUM_COVERAGE else "low"
+
+
+def assess_reliability(matchups: list[dict], deck_coverage: float) -> dict:
+    """How far to trust the meta rating. Each matchup counts as covered as the less covered of
+    the two decks when the built-in engine played it, and fully covered when Forge did; the
+    field's coverage is those numbers weighted by meta share."""
+    played = [m for m in matchups if m["games"]] or matchups
+    w_total = sum(m["weight"] for m in played) or 1.0
+    wavg = lambda f: sum(m["weight"] / w_total * f(m) for m in played)
+    field = wavg(lambda m: m["coverage"])
+    effective = wavg(lambda m: 1.0 if m["engine"] == "forge" else min(m["coverage"], deck_coverage))
+    forge_share = wavg(lambda m: m["engine"] == "forge")
+    level = reliability_level(effective)
+    low = sorted((m for m in played if m["engine"] != "forge" and m["coverage"] < HIGH_COVERAGE),
+                 key=lambda m: m["coverage"])
+    if forge_share >= 1:
+        reason = "Forge played every meta matchup"
+    else:
+        reason = (f"the built-in engine plays {effective:.0%} of the meta field's cards"
+                  + (f" ({forge_share:.0%} of the field played in Forge)" if forge_share else "")
+                  + (f"; least covered: {', '.join(m['name'] for m in low[:3])}" if low else ""))
+    return {"level": level, "effective_coverage": round(effective, 4), "field_coverage": round(field, 4),
+            "deck_coverage": round(deck_coverage, 4), "forge_share": round(forge_share, 4), "reason": reason,
+            "thresholds": {"high": HIGH_COVERAGE, "medium": MEDIUM_COVERAGE}}
+
+
+def mmr_interval(archetypes: list[Archetype], results: dict[str, tuple[float, int]]) -> list[int]:
+    """95% range of the meta-weighted MMR: every matchup at the low (then high) end of its own
+    Wilson interval, so thinly sampled matchups widen it most."""
+    played = [a for a in archetypes if results.get(a.key, (0, 0))[1] > 0]
+    weights = {a.key: a.weight for a in played}
+    out = []
+    for end in (0, 1):
+        rows = [(a.key, META_RATING, wilson(*results[a.key])[end] * results[a.key][1], results[a.key][1])
+                for a in played]
+        out.append(round(performance_rating(meta_weighted_rows(rows, weights))))
+    return out
 
 
 # ------------------------------------------------------------------ sideboard / best of three
@@ -429,11 +487,15 @@ def assess(name: str, counts: dict[str, int], db: CardDB | None = None, games: i
            seed: int | None = None, metagame: Path = METAGAME, decks_dir: Path = DECKS_DIR,
            meta_results: dict[str, tuple[float, int]] | None = None, skip_meta: bool = False,
            play=None, progress=None, bo3: int = 0, sideboard: dict[str, int] | None = None,
-           bring_in: dict[str, str] | None = None) -> dict:
+           bring_in: dict[str, str] | None = None, forge_play=None, auto_threshold: float = AUTO_THRESHOLD,
+           result_engines: dict[str, str] | None = None) -> dict:
     """Rate a deck. Returns plain JSON:
 
         {"deck", "assessed" (ISO date), "format",
-         "rating": {"mmr", "rank", "rank_color", "next_rank", "to_next", "basis"} or None if skip_meta,
+         "rating": {"mmr", "mmr_interval" [lo, hi], "rank", "rank_color", "next_rank", "to_next", "basis"}
+                   or None if skip_meta,
+         "reliability": {"level" high/medium/low, "effective_coverage", "field_coverage", "deck_coverage",
+                         "forge_share", "reason", "thresholds"} or None if skip_meta,
          "criteria": {"meta" | "sideboard" (only with bo3) | "mana" | "speed" | "consistency":
                       {"label", "score" 0-100, "grade" S/A/B/C/D/F, "summary" (one sentence), "details"}}}
 
@@ -442,31 +504,51 @@ def assess(name: str, counts: dict[str, int], db: CardDB | None = None, games: i
     (points, games), which defaults to the built-in engine. progress(text) is told what's running.
     bo3 > 0 also plays that many best-of-three matches with sideboards against each meta deck
     (built-in engine) and adds the "sideboard" criterion; see mtgsim.sideboard.
+
+    forge_play (same signature as play) turns on the "auto" engine: matchups where either deck's
+    coverage is below auto_threshold are played with it, even when meta_results has them, and the
+    rest as above. Each matchup records its opponent's "coverage" and the "engine" that played it
+    ("python", "forge", or for reused meta_results the label in result_engines, default "given").
     """
     db = db or CardDB()
     say = progress or (lambda _: None)
     deck = build_deck(db, counts)
-    criteria, rating, meta = {}, None, {}
+    criteria, rating, meta, reliability = {}, None, {}, None
     if not skip_meta:
         meta, archetypes = load_metagame(metagame, decks_dir)
         results = dict(meta_results or {})
         partial = set()
+        mine = coverage_share(db, counts)
+        cover, engines = {}, {}
         for a in archetypes:
-            if a.key in results:
-                continue
-            say(f"meta: {name} vs {a.name} ({a.weight:.0%} of the field)")
             opp_counts = load_deck(a.path)[1]
-            if play:
-                results[a.key] = play(name, counts, a.name, opp_counts)
+            cover[a.key] = coverage_share(db, opp_counts)
+            routed = forge_play is not None and min(mine, cover[a.key]) < auto_threshold
+            if a.key in results and not routed:
+                engines[a.key] = (result_engines or {}).get(a.key, "given")
+                continue
+            say(f"meta: {name} vs {a.name} ({a.weight:.0%} of the field)" + (" in Forge" if routed else ""))
+            if routed or play:
+                results[a.key] = (forge_play if routed else play)(name, counts, a.name, opp_counts)
+                engines[a.key] = "forge"
             else:
                 opp = build_deck(db, opp_counts)
                 partial |= {c.name for c in opp if c.unsupported}
                 res, _ = run_match(name, deck, a.name, opp, games=games, seed=seed)
                 results[a.key] = (res.wins_a + 0.5 * res.draws, res.games)
+                engines[a.key] = "python"
         rating, criteria["meta"] = assess_meta(name, archetypes, results, meta)
-        criteria["meta"]["details"]["engine"] = "given" if meta_results and not partial else (
-            "forge" if play else "python")
-        criteria["meta"]["details"]["partial_opponent_cards"] = len(partial)
+        rating["mmr_interval"] = mmr_interval(archetypes, results)
+        details = criteria["meta"]["details"]
+        for m in details["matchups"]:
+            m["coverage"] = round(cover[m["key"]], 4)
+            m["engine"] = engines.get(m["key"])
+        used = {engines[a.key] for a in archetypes if results.get(a.key, (0, 0))[1] > 0}
+        details["engine"] = used.pop() if len(used) == 1 else "mixed" if used else "given"
+        details["partial_opponent_cards"] = len(partial)
+        details["deck_coverage"] = round(mine, 4)
+        reliability = assess_reliability(details["matchups"], mine)
+        details["field_coverage"] = reliability["field_coverage"]
     if bo3 and not skip_meta:
         criteria["sideboard"] = assess_bo3(name, counts, sideboard or {}, bring_in or {}, archetypes, db,
                                            bo3, seed=seed, say=say)
@@ -477,7 +559,7 @@ def assess(name: str, counts: dict[str, int], db: CardDB | None = None, games: i
     say("consistency")
     criteria["consistency"] = assess_consistency(deck, samples, key_cards, seed=seed)
     return {"deck": name, "assessed": date.today().isoformat(), "format": meta.get("format", "Standard"),
-            "rating": rating, "criteria": criteria}
+            "rating": rating, "reliability": reliability, "criteria": criteria}
 
 
 def text_report(a: dict) -> str:
@@ -487,6 +569,11 @@ def text_report(a: dict) -> str:
     if r:
         nxt = f", {r['to_next']} MMR to {r['next_rank']}" if r["next_rank"] else ""
         out.append(f"  Rank {r['rank']}, MMR {r['mmr']}{nxt} ({r['basis']})")
+        if r.get("mmr_interval"):
+            out.append(f"  MMR range {r['mmr_interval'][0]} to {r['mmr_interval'][1]} (95%, by matchup sample size)")
+    rel = a.get("reliability")
+    if rel:
+        out.append(f"  Reliability {rel['level']}: {rel['reason']}")
     for c in a["criteria"].values():
         out.append(f"  {c['label']:<12} {c['score']:>3}  {c['grade']}  {c['summary']}")
     meta = a["criteria"].get("meta")
@@ -494,7 +581,8 @@ def text_report(a: dict) -> str:
         out.append("  Matchups (meta weight, simulated score; draws count half):")
         for m in meta["details"]["matchups"]:
             wr = f"{m['win_rate']:.0%} of {m['games']}" if m["win_rate"] is not None else "not played"
-            out.append(f"    {m['name']:<26} {m['weight']:5.1%}  {wr}")
+            cov = f"  coverage {m['coverage']:.0%}, {m['engine']}" if m.get("engine") else ""
+            out.append(f"    {m['name']:<26} {m['weight']:5.1%}  {wr}{cov}")
         if meta["details"].get("partial_opponent_cards"):
             out.append(f"  Note: the built-in engine ignores some text on {meta['details']['partial_opponent_cards']} "
                        "of the meta decks' cards; Forge offers broader coverage but also needs rules and pilot review")
@@ -527,8 +615,9 @@ def main(argv=None):
     ap.add_argument("--no-history", action="store_true",
                     help="don't save the assessment to the deck's history (python3 -m mtgsim.history)")
     ap.add_argument("--offline", action="store_true", help="don't fetch unknown cards from Scryfall")
-    ap.add_argument("--engine", choices=["python", "forge"], default="python",
-                    help="engine for the meta games; goldfishing always uses the built-in engine")
+    ap.add_argument("--engine", choices=["python", "forge", "auto"], default="python",
+                    help="engine for the meta games (auto: Forge for matchups below the coverage threshold, "
+                         "when Forge is installed); goldfishing always uses the built-in engine")
     ap.add_argument("--forge-dir", help="Forge install folder (or set FORGE_HOME)")
     ap.add_argument("--java", default="java")
     ap.add_argument("--jobs", type=int, default=1)
@@ -537,22 +626,31 @@ def main(argv=None):
 
     name, full = load_deck_full(args.deck)
     counts = full.main
-    play = None
-    if args.engine == "forge":
-        from .forge import ForgeError, run_forge_match
+    play = forge_play = None
+    if args.engine in ("forge", "auto"):
+        from .forge import ForgeError, find_forge, run_forge_match
 
-        def play(a, a_counts, b, b_counts):
+        def forge(a, a_counts, b, b_counts):
             try:
                 res = run_forge_match(a, a_counts, b, b_counts, games=args.games, seed=args.seed,
                                       forge_dir=args.forge_dir, java=args.java, clock=args.clock, jobs=args.jobs)
             except ForgeError as e:
                 sys.exit(f"Forge: {e}")
             return res.wins_a + 0.5 * res.draws, res.games
+
+        if args.engine == "forge":
+            play = forge
+        else:
+            try:
+                find_forge(args.forge_dir)
+                forge_play = forge
+            except ForgeError as e:
+                print(f"  no Forge install ({e}); every matchup uses the built-in engine", file=sys.stderr)
     try:
         result = assess(name, counts, CardDB(offline=args.offline), games=args.games, goldfish_games=args.goldfish,
                         samples=args.samples, key_cards=args.key, seed=args.seed, metagame=Path(args.metagame),
                         skip_meta=args.skip_meta, play=play, bo3=args.bo3, sideboard=full.sideboard,
-                        bring_in=full.bring_in,
+                        bring_in=full.bring_in, forge_play=forge_play,
                         progress=lambda s: print(f"  {s}...", file=sys.stderr, flush=True))
     except KeyError as e:
         sys.exit(f"{name}: {e}")
