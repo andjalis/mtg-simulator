@@ -26,6 +26,14 @@ COLOR_WORDS = r"(?:white|blue|black|red|green|colorless)"
 NO_MATCH = object()      # returned by a template builder: "not this template after all"
 
 
+def _distinct_bounce():
+    return Effect("bounce", target="nonland_perm", filter="opp", data={"distinct": True})
+
+
+def _distinct_pump(m):
+    return Effect("pump", int(m[1]), int(m[2]), target="creature_mine", data={"distinct": True})
+
+
 def _num(word: str) -> int:
     return NUMBERS.get(word.lower()) or int(word)
 
@@ -179,6 +187,12 @@ class CardDef:
     team_keywords: frozenset = frozenset()              # "Creatures you control have haste."
     collect_evidence: int = 0                           # "you may collect evidence N" (exile graveyard cards worth N mana value)
     chosen_land_lock: bool = False                      # Petrified Hamlet: choose a land name, stifle it and make it tap for {C}
+    anthem_kw: tuple = ()                               # (("flying", 1, 1), ...): "Creatures you control with flying get +1/+1"
+    keyword_sub: tuple = ()                             # (("Rhino", "menace", other), ...): "Rhinos you control have menace"
+    discount_if: tuple = ()                             # (("Wizard", 1), ...): "~ costs {1} less to cast if you control a Wizard"
+    anthem_sub: tuple = ()                              # (("Elf", 1, 1, other), ...): "Other Elf creatures you control get +1/+1"
+    counter_team_keywords: frozenset = frozenset()      # "Creatures you control with +1/+1 counters on them have trample"
+    second_spell_discount: int = 0                      # "The second spell you cast each turn costs {1} less"
     tapped_discount: int = 0                            # "~ costs {3} less to cast if it targets a tapped creature"
     extra_discard: int = 0                              # "As an additional cost to cast ~, discard a card" (1 = or pay {2}: see discard_or_pay)
     discard_or_pay: int = 0                             # "... discard a card or pay {2}"
@@ -373,7 +387,43 @@ _EFFECT_PATTERNS = [
     (r"DEVOTIONDRAIN ([WUBRG])", lambda m: Effect("drain_devotion", data={"color": m[1]})),
     (r"target creature(?: you control)? gets \+(\d+)/\+(\d+) until end of turn",
      lambda m: Effect("pump", int(m[1]), int(m[2]), target="creature")),
-    (r"~ gets \+(\d+)/\+(\d+) until end of turn", lambda m: Effect("pump", int(m[1]), int(m[2]), target="self")),
+    (r"~ gets ([+-]\d+)/([+-]\d+) until end of turn",
+     lambda m: Effect("pump", int(m[1]), int(m[2]), target="self")),
+    (r"~ gets \+(\d+)/\+(\d+) and gains (flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach) until end of turn",
+     lambda m: Effect("pump", int(m[1]), int(m[2]), target="self", data={"keyword": m[3].lower()})),
+    (r"enchanted creature gains (flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach) until end of turn",
+     lambda m: Effect("grant", target="none", data={"keyword": m[1].lower(), "host": True})),
+    (r"destroy target creature or enchantment", lambda m: Effect("destroy", target="nonland_perm", filter="creature_or_ench")),
+    (r"destroy target creature an opponent controls that was dealt damage this turn",
+     lambda m: Effect("destroy", target="creature", filter="opp_damaged")),
+    (r"exile target (artifact or creature|tapped creature) an opponent controls until ~ leaves the battlefield",
+     lambda m: Effect("oring", target="nonland_perm", filter="opp_tapped_creature" if m[1].startswith("tapped")
+                      else "opp_artifact_creature")),
+    (r"counter target artifact or enchantment spell", lambda m: Effect("counter", target="spell", filter="artifact_ench")),
+    (r"destroy target noncreature, nonland permanent", lambda m: Effect("destroy", target="nonland_perm", filter="noncreature")),
+    (r"return target card from your graveyard to your hand", lambda m: Effect("regrow_any")),
+    (r"return up to two target creatures to their owners' hands",
+     lambda m: [_distinct_bounce(), _distinct_bounce()]),
+    (r"one or two target creatures each get \+(\d+)/\+(\d+) until end of turn",
+     lambda m: [_distinct_pump(m), _distinct_pump(m)]),
+    (r"untap target artifact or creature", lambda m: Effect("untap_target", target="creature_mine")),
+    (r"exile (?:each opponent's|target player's) graveyard", lambda m: Effect("exile_gy")),
+    (r"exile target card from an opponent's graveyard", lambda m: Effect("exile_gy", 1)),
+    (r"target player draws (a|two|three) cards?", lambda m: Effect("draw", _num(m[1]))),
+    (r"target player draws (a|two|three) cards? and loses (\d+) life",
+     lambda m: [Effect("draw", _num(m[1])), Effect("lose_life", int(m[2]))]),
+    (r"~ deals (\d+) damage to each player", lambda m: Effect("damage_each_player", int(m[1]))),
+    (r"put (a|one|two|three|four|five|six) \+1/\+1 counters? on it", lambda m: Effect("p1_counters", _num(m[1]), target="prev")),
+    (r"put (a|one|two|three|four) -1/-1 counters? on (?:up to one )?target creature",
+     lambda m: Effect("shrink", _num(m[1]), target="creature", filter="opp")),
+    (r"put (a|one|two) -1/-1 counters? on each creature", lambda m: Effect("shrink_all", _num(m[1]))),
+    (r"return all attacking creatures to their owner's hand", lambda m: Effect("mass_bounce", data={"only": "attacking"})),
+    (r"tap target permanent", lambda m: Effect("tap", 1, target="nonland_perm")),
+    (r"each player draws a card", lambda m: Effect("draw_each", 1)),
+    (r"target creature can't block this turn", lambda m: Effect("cant_block_turn", target="creature")),
+    (r"target opponent exiles a card from their hand", lambda m: Effect("opp_exile_hand")),
+    (r"return target creature card from your graveyard to the battlefield", lambda m: Effect("reanimate_one")),
+    (r"return up to one target permanent card from your graveyard to your hand", lambda m: Effect("regrow_perm")),
     (r"counter target spell with mana value (\d+)",
      lambda m: Effect("counter", target="spell", filter=f"cmc:{m[1]}")),
     (r"counter target artifact or creature spell",
@@ -1230,6 +1280,41 @@ def _parse_face(data: dict) -> CardDef:
         if line == "∞ — At the beginning of your end step, exile up to one other target nonland permanent you control, "\
                    "then return that card to the battlefield under its owner's control.":
             triggers.append(Trigger("end_step", [Effect("blink_own", cond="harnessed")]))
+            continue
+        m = re.fullmatch(r"Creatures you control with (flying|trample|menace|first strike|lifelink|deathtouch) get "
+                         r"\+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["anthem_kw"] = extra.get("anthem_kw", ()) + ((m[1], int(m[2]), int(m[3])),)
+            continue
+        m = re.fullmatch(r"(Other )?([A-Z][a-z]+?)s you control get \+(\d+)/\+(\d+)\.", line)
+        if m and m[2] != "Creature":
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
+            continue
+        m = re.fullmatch(r"(Other )?([A-Z][a-z]+?)s you control have (menace|trample|flying|vigilance|haste|lifelink|"
+                         r"first strike|double strike|deathtouch|reach|indestructible)\.", line)
+        if m and m[2] != "Creature":
+            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((m[2], m[3], bool(m[1])),)
+            continue
+        m = re.fullmatch(r"~ costs \{(\d+)\} less to cast if you control an? ([A-Z]\w+)\.", line)
+        if m:
+            extra["discount_if"] = extra.get("discount_if", ()) + ((m[2], int(m[1])),)
+            continue
+        m = re.fullmatch(r"(Other )?(?!Enchanted)([A-Z][\w-]+) creatures you control get \+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
+            continue
+        m = re.fullmatch(r"Creatures you control with \+1/\+1 counters on them have (trample|flying|vigilance|haste|lifelink|"
+                         r"first strike|deathtouch|menace|reach|indestructible)\.", line)
+        if m:
+            extra["counter_team_keywords"] = extra.get("counter_team_keywords", frozenset()) | {m[1]}
+            continue
+        m = re.fullmatch(r"The second spell you cast each turn costs \{(\d+)\} less to cast\.", line)
+        if m:
+            extra["second_spell_discount"] = int(m[1])
+            continue
+        m = re.fullmatch(r"As long as you control seven or more lands, ~ gets \+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["pt_if"] = extra.get("pt_if", ()) + (("lands>=7", int(m[1]), int(m[2])),)
             continue
         m = re.fullmatch(r"~ costs \{(\d+)\} less to cast if it targets a tapped creature\.", line)
         if m:
