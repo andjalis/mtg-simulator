@@ -654,6 +654,12 @@ _EFFECT_PATTERNS = [
     (r"that creature deals (\d+) damage to each opponent", lambda m: Effect("damage", int(m[1]), target="player")),
     (r"target creature gains (double strike|first strike|trample|haste|hexproof|indestructible) until end of turn",
      lambda m: Effect("grant", target="creature", data={"keyword": m[1].lower()})),
+    (r"return (all |(?:up to )?(?:one|two|three|four|five|six|x) (?:other )?target |(?:up to one )?target |an? )?"
+     r"([\w ,/'-]+?) cards?(?: each)?(?: with mana value (\d+|x) or (less|greater))? from (your|a|an opponent's) "
+     r"graveyard (to your hand|(?:onto|to) the battlefield)( tapped)?(?: under your control)?",
+     lambda m: _gy_move(m)),
+    (r"target instant or sorcery card in your graveyard gains flashback until end of turn",
+     lambda m: Effect("grant_flashback")),
     (r"put (?:a|an) ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) counter on (target creature|~|it)",
      lambda m: Effect("grant", target=_kw_target(m[2]), data={"keyword": m[1].lower(), "perm": True})),
     (r"put (a|two) \+1/\+1 counters? and (?:a|an) ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) counter on (target creature|~|it)",
@@ -850,6 +856,8 @@ _TRIGGERS = [
     (r"Whenever a creature you control attacks alone, (.+)", ("attacks_alone",)),
     (r"Whenever you commit a crime, (.+)", ("crime",)),
     (r"Whenever you scry or surveil, (.+)", ("scry_surveil",)),
+    (r"Whenever (?:one or more|an?) (?:(.+?) )?cards? (?:leaves?|leave) your graveyard( during your turn)?, (.+)",
+     ("gy_leave",)),
     (r"Whenever you discard (?:a card|one or more cards), (.+)", ("you_discard",)),
     (r"Whenever you cast a spell with mana value (\d+) or greater, (.+)", ("cast_cmc",)),
     (r"Whenever ~ attacks while saddled, (.+)", ("attacks",)),
@@ -888,6 +896,22 @@ def _opt_rider(s: str, effects: list):
     for e in new:
         e.cond = e.cond or cond
     return new
+
+
+_N_WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "x": 0}
+
+
+def _gy_move(m):
+    head = (m[1] or "").lower()
+    what = m[2]
+    if re.search(r"\b(this|named|that)\b", what) or what.lower().startswith("up to"):
+        return NO_MATCH
+    w = re.search(r"(one|two|three|four|five|six|x)", head)
+    n = 99 if head.startswith("all") else (_N_WORDS[w[1]] if w else 1)
+    return Effect("gy_move", n, data={"what": what, "dest": "hand" if m[6].endswith("hand") else "bf",
+                                      "tapped": bool(m[7]), "zone": {"your": "mine", "a": "any"}.get(m[5], "opp"),
+                                      "x_n": bool(w and w[1] == "x"),
+                                      "cmc": ((m[3].lower() if m[3].lower() == "x" else int(m[3])), m[4]) if m[3] else None})
 
 
 def _kw_target(what: str) -> str:
@@ -1479,6 +1503,10 @@ def _parse_face(data: dict) -> CardDef:
         if re.fullmatch(r"Instant and sorcery spells you control can't be countered\.", line):
             extra["protects_spells"] = True
             continue
+        m = re.fullmatch(r"~ costs \{1\} less to cast for each ([\w, /-]+?) cards? in your graveyard\.", line)
+        if m and m[1] != "instant and sorcery":
+            extra["cost_reduction"] = "gy:" + m[1].replace("and/or", "or")
+            continue
         if re.fullmatch(r"~ costs \{1\} less to cast for each instant and sorcery card in your graveyard\.", line):
             extra["cost_reduction"] = "instant_sorcery_gy"
             continue
@@ -1613,6 +1641,17 @@ def _parse_face(data: dict) -> CardDef:
         if m and m[1].lower() in KEYWORDS:
             extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((m[1].lower(), "your_turn"),)
             continue
+        m = re.fullmatch(r"(?:Descend \d+ — |Threshold — )?~ (?:gets \+(\d+)/\+(\d+) and has ([a-z ]+?)|has ([a-z ]+?)|"
+                         r"(can't be blocked)) as long as there are (\w+) or more (permanent )?cards in your graveyard\.",
+                         line)
+        if m and m[6].lower() in NUMBERS:
+            kw = "unblockable" if m[5] else (m[3] or m[4])
+            if kw in KEYWORDS or kw == "unblockable":
+                cond = ("gy_perm>=" if m[7] else "gy>=") + str(_num(m[6]))
+                if m[1]:
+                    extra["pt_if"] = extra.get("pt_if", ()) + ((cond, int(m[1]), int(m[2])),)
+                extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((kw, cond),)
+                continue
         m = re.fullmatch(r"(?:Descend \d+ — |Threshold — )?~ gets \+(\d+)/\+(\d+) as long as there are (four|seven) or more (permanent )?cards in your "
                          r"graveyard\.", line)
         if m:
@@ -1978,6 +2017,8 @@ def _parse_trigger_line(line: str):
             rest = re.sub(r"^it (gets|gains|deals)\b", r"~ \1", re.sub(r"\b(on|untap|to) it\b", r"\1 ~", rest))
         if events == ("expend",):
             flt = m[1]
+        if events == ("gy_leave",):
+            flt = f"{m[1] or ''}|{'turn' if m[2] else ''}"
         if events == ("ally_dies",):
             flt = f"{'other' if m[1] == 'another' else 'any'}|{'counter' if m[3] else ''}|{m[2]}"
         if events == ("perm_to_gy",):

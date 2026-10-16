@@ -36,6 +36,9 @@ EFFECT_PATTERNS = [
     (r"(?:destroy|exile) target creature with power (\d+) or greater",
      _destroy("creature", lambda m: f"min_power:{m[1]}")),
     (r"(?:destroy|exile) target creature with (flying|reach)", _destroy("creature", lambda m: f"kw:{m[1].lower()}")),
+    (r"(destroy|exile) (?:up to one )?target ((?:artifact|enchantment|creature|planeswalker|nonland permanent)"
+     r"(?:(?:,| or|, or) (?:artifact|enchantment|creature|planeswalker))*)(?: (an opponent controls|you don't control))?"
+     r"(?: with (mana value|power|toughness) (\d+) or (less|greater))?", lambda m: _removal_pattern(m)),
     (r"target creature you control fights target creature " + _THEIRS, lambda m: _pair("fight")),
     (r"target creature you control deals damage equal to its power to target creature " + _THEIRS,
      lambda m: _pair("bite")),
@@ -74,6 +77,38 @@ def _pair(kind, target="creature", flt="opp"):
 def _effect_bounce_own():
     from .cards import Effect
     return Effect("bounce_own", target="nonland_perm", filter="mine")
+
+
+_ORD = ("artifact", "enchantment", "creature", "planeswalker")
+
+
+def _removal_pattern(m):
+    """destroy/exile target <types> [an opponent controls] [with mana value / power / toughness N or less / greater]."""
+    from .cards import Effect, NO_MATCH
+    types = [t for t in re.split(r",? or |, ", m[2]) if t]
+    if not (m[3] or m[4]) and len(types) == 1 and types[0] in ("creature", "artifact", "enchantment"):
+        return NO_MATCH            # the plain templates in cards.py handle these
+    kind = types[0] if len(types) == 1 and types[0] in ("creature", "artifact") else "nonland_perm"
+    stat = {"mana value": "cmc", "power": "power", "toughness": "toughness"}.get(m[4], "")
+    cond = f"{stat}{'<=' if m[6] == 'less' else '>='}{m[5]}" if stat else ""
+    flt = f"x:{','.join(types)}|{cond}|{'opp' if m[3] else ''}"
+    return Effect("destroy", target=kind, filter=flt)
+
+
+def x_passes(flt: str, perm, by) -> bool:
+    types, cond, opp = flt[2:].split("|")
+    if opp and perm.controller is by:
+        return False
+    ok = False
+    for t in types.split(","):
+        ok |= (perm.is_creature if t == "creature" else perm.card.is_artifact if t == "artifact" else
+               "Enchantment" in perm.card.types if t == "enchantment" else perm.is_planeswalker if t == "planeswalker"
+               else not perm.card.is_land)
+    if cond:
+        stat, op, n = re.fullmatch(r"(cmc|power|toughness)(<=|>=)(\d+)", cond).groups()
+        val = {"cmc": perm.card.cmc, "power": perm.power, "toughness": perm.toughness}[stat]
+        ok &= val <= int(n) if op == "<=" else val >= int(n)
+    return ok
 
 
 def passes(flt: str, perm):

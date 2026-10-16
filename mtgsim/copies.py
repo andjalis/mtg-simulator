@@ -225,6 +225,10 @@ def fits(card, what: str, perm=None) -> bool:
                 ok &= not card.is_token
             elif lw == "nonland":
                 ok &= not card.is_land
+            elif lw == "noncreature":
+                ok &= not is_creature
+            elif lw == "nonartifact":
+                ok &= not card.is_artifact
             elif lw.startswith("non-"):
                 ok &= w[4:] not in card.subtypes
             elif lw == "creature":
