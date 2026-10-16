@@ -27,6 +27,16 @@ WATCHER = card("Ench Watcher", "{1}{W}", "Creature — Spirit", (
 RUNE = card("Test Rune", "{1}{W}", "Enchantment", "You gain 1 life.")
 DESCENDER = card("Cave Delver", "{1}{B}", "Creature — Human", (
     "At the beginning of your end step, if you descended this turn, put a +1/+1 counter on ~."), 1, 1)
+CYCLER = card("Dusk Cycler", "{5}{B}{B}", "Creature — Horror", "Cycling {1}", 6, 6)
+LANDCYCLER = card("Trail Guide", "{3}{G}", "Creature — Elf", "Forestcycling {1}", 3, 3)
+CAMPGROUND = card("Test Campground", "", "Land", "Test Campground enters tapped unless a player has 13 or less life.\n{T}: Add {W}.")
+PWLAND = card("Test Commons", "", "Land", "This land enters tapped unless you control a planeswalker.\n{T}: Add {R}.")
+CHANGER = card("Test Changeling", "{1}{G}", "Creature — Shapeshifter", "Changeling", 2, 2)
+FORESTISH = card("Forest", "", "Basic Land — Forest", "{T}: Add {G}.")
+SNEAKY = card("Quick Study Two", "{1}{W}", "Instant", (
+    "Target creature gets +2/+0 and gains first strike until end of turn. Investigate."))
+KITE = card("Kindle Duo", "{1}{R}", "Creature — Elemental", (
+    "{T}: ~ deals 1 damage to target opponent.\nWhenever you cast a noncreature spell, untap ~."), 1, 1)
 BOTH = card("Twice Blessed", "{2}{W}", "Creature — Angel", "When ~ enters or dies, you gain 2 life.", 2, 2)
 
 
@@ -46,7 +56,7 @@ class TriggerTests(unittest.TestCase):
         return p
 
     def test_templates_match(self):
-        for c in (DRILL, SECOND, CASTER, BIGCAST, BOTH, MOUNT, TAPPER, SPENDER, MOURNER, WATCHER, DESCENDER):
+        for c in (DRILL, SECOND, CASTER, BIGCAST, BOTH, MOUNT, TAPPER, SPENDER, MOURNER, WATCHER, DESCENDER, CYCLER, LANDCYCLER, CAMPGROUND, PWLAND, CHANGER, SNEAKY, KITE):
             with self.subTest(card=c.name):
                 self.assertEqual(c.unsupported, [])
 
@@ -151,6 +161,58 @@ class TriggerTests(unittest.TestCase):
         self.game.fire(self.a, "end_step")
         self.game.settle()
         self.assertEqual(d.counters.get("+1/+1"), 1)
+
+    def test_cycling(self):
+        self.assertEqual(CYCLER.cycling["land"], "")
+        self.assertEqual(LANDCYCLER.cycling["land"], "Forest")
+        self.perm(ISLAND)
+        self.a.hand = [CYCLER]
+        self.a.library = [BEAR, ISLAND]
+        self.game.cycle_spare(self.a)
+        self.assertEqual([c.name for c in self.a.graveyard], ["Dusk Cycler"])
+        self.assertEqual(len(self.a.hand), 1)
+
+    def test_landcycling_fetches_a_forest(self):
+        self.perm(ISLAND)
+        self.a.hand = [LANDCYCLER]
+        self.a.library = [BEAR, FORESTISH, ISLAND]
+        self.game.cycle_spare(self.a)
+        self.assertEqual([c.name for c in self.a.hand], ["Forest"])
+
+    def test_enters_tapped_conditions(self):
+        self.assertEqual(CAMPGROUND.tapped_condition, "unless_player_life<=13")
+        healthy = self.game.enter_battlefield(self.a, CAMPGROUND)
+        self.assertTrue(healthy.tapped)               # both players are at 20
+        self.b.life = 13
+        hurt = self.game.enter_battlefield(self.a, CAMPGROUND)
+        self.assertFalse(hurt.tapped)
+        self.assertTrue(self.game.enter_battlefield(self.a, PWLAND).tapped)
+
+    def test_changeling_is_every_type(self):
+        from mtgsim import copies
+        self.assertTrue(copies.fits(CHANGER, "Elf"))
+        self.assertFalse(copies.fits(BEAR, "Elf"))
+
+    def test_pump_with_keyword_and_investigate(self):
+        bear = self.perm(BEAR)
+        for _ in range(2):
+            self.perm(card("Plains", "", "Basic Land — Plains", "{T}: Add {W}."))
+        self.a.hand = [SNEAKY]
+        self.game.cast(self.a, SNEAKY, [bear])
+        self.assertEqual((bear.pump_p, "first strike" in bear.temp_kw), (2, True))
+        self.assertTrue(any(x.card.token_kind == "clue" for x in self.a.battlefield))
+
+    def test_untap_self(self):
+        duo = self.perm(KITE)
+        duo.tapped = True
+        for _ in range(2):
+            self.perm(ISLAND)
+        self.a.hand = [SHOCK]
+        for _ in range(2):
+            self.perm(card("Mountain", "", "Basic Land — Mountain", "{T}: Add {R}."))
+        self.game.cast(self.a, SHOCK, [self.b])
+        self.game.settle()
+        self.assertFalse(duo.tapped)
 
 
 if __name__ == "__main__":
