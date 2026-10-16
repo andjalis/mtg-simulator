@@ -61,6 +61,7 @@ class Permanent:
         self.exiled_cards: list = []       # (card, owner) exiled until this leaves the battlefield
         self.warped = False
         self.was_cast = False              # "if you cast it"
+        self.saddled = False               # a Mount saddled this turn
         self.copy_revert = None            # the card this permanent is while it is a copy until end of turn
         self.impending = False             # cast for its impending cost: not a creature while it has time counters
 
@@ -483,6 +484,11 @@ class Game:
             s.tapped = True
             if s.card.token_kind == "treasure":
                 self.sacrifice(s)
+        spent = getattr(p, "expend", (0, 0))
+        old = spent[1] if spent[0] == self.turn else 0
+        p.expend = (self.turn, old + len(payment))
+        for n in range(old + 1, old + len(payment) + 1):
+            self.fire(p, "expend", subject=n)
         return payment
 
     def cost_of(self, p: Player, card: CardDef) -> dict:
@@ -877,6 +883,7 @@ class Game:
             if not (perm.animated and perm.animated.text in ("earthbend", "permanent")):
                 perm.animated = None
             perm.crewed = False
+            perm.saddled = False
         p.next_creature_counters = 0
         self.state_based_actions()
 
@@ -957,6 +964,10 @@ class Game:
                         continue
                     elif not card_matches(subject.card, "a " + re.sub(r",? or (?!greater)|, ", " or a ", desc)):
                         continue
+                if event == "expend" and trig.filter != str(subject):
+                    continue
+                if trig.filter == "saddled" and not perm.saddled:
+                    continue
                 if trig.filter.startswith("with:") and \
                         not any(trig.filter[5:] in a.card.subtypes for a in self.attackers):
                     continue
@@ -1310,6 +1321,15 @@ class Game:
                 perm.counters["+1/+1"] = perm.p1 + 2
             perm.animated = act
             self.log(f"animates {perm}", p)
+        elif what == "saddle":
+            crew = saddle_creatures(self, p, perm)
+            if not crew:
+                return False
+            for c in crew:
+                c.tapped = True
+                self.fire(p, "becomes_tapped", c)
+            perm.saddled = True
+            self.log(f"saddles {perm.card.name} with {crew}", p)
         elif what == "crew":
             crew = self.hook(p, "choose_crew")(self, p, perm)
             if not crew:
@@ -2213,6 +2233,7 @@ class Game:
                                                          and t in opp.battlefield)) else opp
             if not a.has("vigilance"):
                 a.tapped = True
+                self.fire(p, "becomes_tapped", a)
         p.attacked_with = len(attackers)
         self.log(f"attacks with {attackers}" + (
             f" ({ {a: t for a, t in self.attack_targets.items() if t is not opp} })"
@@ -2766,6 +2787,21 @@ def choose_rummage(game: Game, me: Player, n: int) -> list[CardDef]:
     return out[:n]
 
 
+def saddle_creatures(game: Game, me: Player, mount: Permanent):
+    """Creatures to tap to saddle mount (total power at least its saddle number): summoning-sick ones first,
+    then the smallest. Not worth it when a creature as strong as the Mount would be tapped."""
+    cands = sorted((c for c in me.creatures if c is not mount and not c.tapped), key=lambda c: (not c.sick, c.power))
+    crew, total = [], 0
+    for c in cands:
+        if total >= mount.card.saddle:
+            break
+        if not c.sick and c.power >= mount.power:
+            break
+        crew.append(c)
+        total += c.power
+    return crew if total >= mount.card.saddle else None
+
+
 def choose_crew(game: Game, me: Player, vehicle: Permanent):
     """Creatures to tap to crew vehicle: summoning-sick ones first, then the smallest."""
     if vehicle.sick or vehicle.tapped:
@@ -2792,6 +2828,8 @@ def before_attacks(game: Game, me: Player):
     """Crew vehicles and animate manlands with spare mana before attackers are chosen."""
     for v in [x for x in me.battlefield if x.card.crew and not x.is_creature]:
         game.activate(me, v, "crew")
+    for m in [x for x in me.battlefield if x.card.saddle and not x.saddled and not x.sick and not x.tapped]:
+        game.activate(me, m, "saddle")
     for land in [x for x in me.battlefield if x.card.activated and not x.sick and not x.tapped]:
         for act in land.card.activated:
             if act.kind not in ("animate", "barrens"):

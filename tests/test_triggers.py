@@ -16,6 +16,10 @@ CASTER = card("Spell Student", "{1}{R}", "Creature — Wizard", (
     "Whenever you cast your second spell each turn, put a +1/+1 counter on ~."), 1, 1)
 BIGCAST = card("Big Spender", "{2}{R}", "Creature — Wizard", (
     "Whenever you cast a spell with mana value 3 or greater, put a +1/+1 counter on ~."), 1, 1)
+MOUNT = card("Test Mount", "{2}{R}", "Creature — Mount", (
+    "Whenever ~ attacks while saddled, put a +1/+1 counter on it.\nSaddle 1"), 2, 2)
+TAPPER = card("Tap Gainer", "{1}{W}", "Creature — Human", "Whenever ~ becomes tapped, you gain 1 life.", 1, 1)
+SPENDER = card("Big Spender Two", "{1}{G}", "Creature — Elf", "Whenever you expend 4, ~ gets +1/+1 until end of turn.", 1, 1)
 BOTH = card("Twice Blessed", "{2}{W}", "Creature — Angel", "When ~ enters or dies, you gain 2 life.", 2, 2)
 
 
@@ -35,7 +39,7 @@ class TriggerTests(unittest.TestCase):
         return p
 
     def test_templates_match(self):
-        for c in (DRILL, SECOND, CASTER, BIGCAST, BOTH):
+        for c in (DRILL, SECOND, CASTER, BIGCAST, BOTH, MOUNT, TAPPER, SPENDER):
             with self.subTest(card=c.name):
                 self.assertEqual(c.unsupported, [])
 
@@ -76,6 +80,38 @@ class TriggerTests(unittest.TestCase):
         self.game.destroy(perm)
         self.game.settle()
         self.assertEqual(self.a.life, 24)
+
+    def test_saddle_and_attack_trigger(self):
+        self.assertEqual(MOUNT.saddle, 1)
+        mount = self.perm(MOUNT)
+        helper = self.perm(BEAR)
+        helper.sick = True
+        from mtgsim.engine import before_attacks
+        self.game.fire(self.a, "attacks", mount)        # not saddled: no trigger
+        self.game.settle()
+        self.assertFalse(mount.counters)
+        before_attacks(self.game, self.a)
+        self.assertTrue(mount.saddled)
+        self.assertTrue(helper.tapped)
+        self.game.fire(self.a, "attacks", mount)
+        self.game.settle()
+        self.assertEqual(mount.counters.get("+1/+1"), 1)
+
+    def test_becomes_tapped_when_attacking(self):
+        self.perm(TAPPER)
+        self.game.combat(self.a, self.b)
+        self.assertEqual(self.a.life, 21)
+
+    def test_expend_four(self):
+        s = self.perm(SPENDER)
+        for _ in range(4):
+            self.perm(ISLAND)
+        self.assertIsNotNone(self.game.pay(self.a, {"generic": 3}))
+        self.game.settle()
+        self.assertEqual(s.pump_p, 0)
+        self.assertIsNotNone(self.game.pay(self.a, {"generic": 1}))
+        self.game.settle()
+        self.assertEqual(s.pump_p, 1)
 
 
 if __name__ == "__main__":
