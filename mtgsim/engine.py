@@ -65,6 +65,7 @@ class Permanent:
         self.loyalty_used = False
         self.entered_turn = 0
         self.entered_x = 0
+        self.exile_turn = -1
         self.chosen_type = ""              # Cavern of Souls
         self.produces_now = None           # set by Game.mana_sources: the colours usable right now
         self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
@@ -114,6 +115,9 @@ class Permanent:
                 if a:
                     bp += a[0]
                     bt += a[1]
+                if c.anthem_enchanted and self.auras:
+                    bp += c.anthem_enchanted[0]
+                    bt += c.anthem_enchanted[1]
                 if x.attached_to is self:
                     e = c.equip_bonus
                     bp += e[0]
@@ -133,6 +137,10 @@ class Permanent:
                 e = a.card.equip_bonus
                 bp += e[0]
                 bt += e[1]
+                if "per_enchantment" in a.card.aura_flags:     # Virtuous Role
+                    n = sum("Enchantment" in y.card.types for y in self.controller.battlefield)
+                    bp += n
+                    bt += n
         return bp, bt
 
     def _base(self, power: bool):
@@ -582,6 +590,18 @@ class Game:
             self.fire(p, "expend", subject=n)
         return payment
 
+    def spare_cards(self, p: Player, card: CardDef) -> int:
+        """Cards in hand that could be discarded to cast card (not card itself)."""
+        return len(p.hand) - (1 if self._zone(p, self._origin(card)[1]) is p.hand else 0)
+
+    def tapped_targets(self, p: Player, card: CardDef) -> list:
+        """Tapped opposing creatures a "costs less if it targets a tapped creature" spell could aim at."""
+        eff = next((e for e in card.spell_effects if e.target in TARGETED), None)
+        if eff is None:
+            return []
+        return [t for t in self.legal_targets(p, eff)
+                if isinstance(t, Permanent) and t.is_creature and t.tapped and t.controller is not p]
+
     def cost_of(self, p: Player, card: CardDef) -> dict:
         """The mana cost after cost reductions (Tolarian Terror, Ghalta)."""
         cost = dict(card.mana_cost)
@@ -598,7 +618,11 @@ class Game:
                         (flt in COLOR_WORDS and cost.get(COLOR_WORDS[flt], 0)) or \
                         (flt in ("creature", "artifact") and flt.capitalize() in card.types):
                     n += k
+        if card.tapped_discount and self.tapped_targets(p, card):
+            n += card.tapped_discount
         cost["generic"] = max(0, cost.get("generic", 0) - n)
+        if card.extra_discard and card.discard_or_pay and self.spare_cards(p, card) < 1:
+            cost["generic"] += card.discard_or_pay
         if card.convoke:
             self._convoke_k = min(len(self.convoke_pool(p)), cost.get("generic", 0))
             cost["generic"] -= self._convoke_k
@@ -730,6 +754,8 @@ class Game:
             return False
         if card.extra_life_cost and p.life <= card.extra_life_cost:
             return False
+        if card.extra_discard and not card.discard_or_pay and self.spare_cards(p, card) < 1:
+            return False
         if self.active is not p and any(x.card.opp_no_cast for x in self.opponent(p).battlefield):
             return False
         if card.extra_sacrifice and not card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
@@ -778,6 +804,8 @@ class Game:
             return not perm.tapped
         if f == "opp":
             return perm.controller is not by
+        if f == "mine":
+            return perm.controller is by
         if f == "stunned":
             return bool(perm.counters.get("stun"))
         if f.startswith("max_power:"):
@@ -973,6 +1001,9 @@ class Game:
                 pl.graveyard.descents = 0
         self.creature_died_turn = False
         self.step = "untap"
+        for perm in self.opponent(p).battlefield:
+            if perm.card.untap_each_untap:
+                perm.tapped = False
         for perm in p.battlefield:
             if perm.tapped and perm.counters.get("stun"):
                 perm.counters["stun"] -= 1   # a stun counter is removed instead of untapping
@@ -1247,6 +1278,9 @@ class Game:
         else:
             self.log(f"{item} resolves", p)
             prev = None
+            for i, (eff, tgt) in enumerate(zip(item.effects, item.targets)):   # "would die this turn" must precede the damage
+                if eff.kind == "exile_instead" and i and isinstance(item.targets[i - 1], Permanent):
+                    item.targets[i - 1].exile_turn = self.turn
             for eff, tgt in zip(item.effects, item.targets):
                 if eff.target in TARGETED:
                     if not self.legal_target(p, eff, tgt):
@@ -1393,6 +1427,10 @@ class Game:
             next(x for x in p.battlefield if x.card is base and x.prepared).prepared = False
         else:
             self._zone(p, kind).remove(base)
+        if card.extra_discard and p.hand:
+            pitched = p.ai.choose_discard(self, p)
+            self.discard_card(p, pitched)
+            self.log(f"discards {pitched.name} for {card.name}", p)
         if kind == "channel":
             p.graveyard.append(base)
         elif kind == "gy_ability":
@@ -1400,6 +1438,11 @@ class Game:
         effects = [] if card.is_permanent else list(card.spell_effects)
         targets = list(targets or [])
         targets += [None] * (len(effects) - len(targets))
+        if card.tapped_discount and not card.is_permanent:
+            tapped = self.tapped_targets(p, card)
+            idx = next((i for i, e in enumerate(effects) if e.target in TARGETED), None)
+            if tapped and idx is not None and targets[idx] not in tapped:
+                targets[idx] = max(tapped, key=perm_value)
         missing = [i for i, e in enumerate(effects) if e.target in TARGETED and targets[i] is None]
         if missing:   # targets the AI didn't pick (effects it doesn't know about)
             filled = self.auto_targets(p, [effects[i] for i in missing])
@@ -2017,12 +2060,33 @@ class Game:
             if isinstance(target, Permanent):
                 self.transform(target)
         elif k == "regrow":
-            cands = [c for c in p.graveyard if c.is_creature]
-            if cands:
+            for _ in range(max(1, eff.amount)):
+                cands = [c for c in p.graveyard if c.is_creature]
+                if not cands:
+                    break
                 card = max(cands, key=lambda c: c.cmc)
                 p.graveyard.remove(card)
                 p.hand.append(card)
                 self.log(f"returns {card.name} to hand", p)
+        elif k == "recruit":
+            self.draw(p)
+            if p.hand:
+                card = p.ai.choose_discard(self, p)
+                self.discard_card(p, card)
+                self.log(f"recruits, discarding {card.name}", p)
+                if not card.is_land:
+                    self.create_token(p, Effect("token", 1, data={"name": "Human Soldier", "power": 1,
+                                                                  "toughness": 1, "keywords": frozenset()}))
+        elif k == "bounce_self":
+            src = item.source if item is not None else None
+            if src is not None and src in src.controller.battlefield:
+                self.log(f"{src.card.name} returns to hand", p)
+                self.leave_battlefield(src, "hand")
+        elif k == "increment":
+            src = item.source if item is not None else None
+            if isinstance(src, Permanent) and src in src.controller.battlefield and isinstance(item.context, StackItem):
+                if item.context.mana_spent + item.context.x > min(src.power, src.toughness):
+                    src.counters["+1/+1"] = src.p1 + 1
         elif k == "reanimate_snow":
             x = item.snow_spent if item else 0
             cands = [c for c in p.graveyard if (c.is_creature or c.is_planeswalker) and c.cmc <= x]
@@ -2120,6 +2184,9 @@ class Game:
                     self.log(f"{who.card.name} connives, discarding {card.name}", ctl)
                     if not card.is_land:
                         who.counters["+1/+1"] = who.p1 + 1
+        elif k == "exile_instead":
+            if isinstance(target, Permanent):
+                target.exile_turn = self.turn
         elif k == "empower":
             amount = eff.amount
             cnt = eff.data.get("count")
@@ -2545,6 +2612,10 @@ class Game:
         if was_creature and (perm.damage or perm.deathtouched) and \
                 any(x.card.exile_damaged for x in self.opponent(perm.controller).battlefield):
             if self.leave_battlefield(perm, "exile"):   # Etching of Kumano
+                self.log(f"{perm.card.name} is exiled instead of dying", perm.controller)
+            return
+        if perm.exile_turn == self.turn:
+            if self.leave_battlefield(perm, "exile"):
                 self.log(f"{perm.card.name} is exiled instead of dying", perm.controller)
             return
         if not self.leave_battlefield(perm, "graveyard"):

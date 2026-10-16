@@ -306,3 +306,14 @@ less" applies to ability costs. "Empower Jace X, where X is the number of creatu
 on resolution. Static lines that give other permanents a mana ability (creatures, lands, creature tokens, Foods, other
 permanents, lands and Allies) make those permanents tap for the granted colours; summoning-sick creatures still
 cannot. Restricted-mana grants (Clement, Mm'menon) are not done. Fully supported cards 1,281 → 1,286.
+
+## Exile-instead, Virtuous Role and the cheapest single-line misses
+
+"If that creature would die this turn, exile it instead" marks the target before the damage so the state-based
+death exiles it. Virtuous Role gives +1/+1 per enchantment you control. New templates: Recruit, Increment (compares
+the mana spent on the spell with power and toughness), "discard a card" additional costs (with the "or pay {2}"
+form), "costs {N} less if it targets a tapped creature" (the spell is aimed at a tapped opposing creature),
+destroy artifact/enchantment/flying creature, return up to two creature cards from the graveyard, return another
+permanent you control (only chosen to replay an enters ability), Dragonstorm "return ~ when a Dragon enters", lands
+that choose a color, "untap during each other player's untap step" and "enchanted creatures you control get +N/+N".
+Not yet: Firebending (needs a combat mana pool), bites at two targets. Fully supported cards 1,286 → 1,339.

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 
-KINDS = {"fight_mark", "fight", "bite", "untap_target"}
+KINDS = {"fight_mark", "fight", "bite", "untap_target", "bounce_own"}
 _KW = "flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach"
 _THEIRS = r"(?:an opponent controls|you don't control)"
 
@@ -20,6 +20,10 @@ def _destroy(target, flt):
 
 
 EFFECT_PATTERNS = [
+    (r"destroy (?:up to one )?target artifact, enchantment, or creature with flying",
+     _destroy("nonland_perm", "art_ench_fly")),
+    (r"return up to one other target permanent you control to its owner's hand",
+     lambda m: _effect_bounce_own()),
     (r"(?:destroy|exile) target enchantment(?: an opponent controls| you don't control)?",
      _destroy("artifact_enchantment", "enchantment")),
     (r"(?:destroy|exile) target noncreature artifact", _destroy("artifact_enchantment", "noncreature_artifact")),
@@ -53,8 +57,15 @@ def _pair(kind, target="creature", flt="opp"):
     return [Effect("fight_mark", target="creature_mine"), Effect(kind, target=target, filter=flt)]
 
 
+def _effect_bounce_own():
+    from .cards import Effect
+    return Effect("bounce_own", target="nonland_perm", filter="mine")
+
+
 def passes(flt: str, perm):
     """True/False for the restrictions defined here, None for any other filter."""
+    if flt == "art_ench_fly":
+        return perm.card.is_artifact or "Enchantment" in perm.card.types or (perm.is_creature and perm.has("flying"))
     if flt == "enchantment":
         return "Enchantment" in perm.card.types
     if flt == "noncreature_artifact":
@@ -73,6 +84,8 @@ def choose(game, me, eff):
     mine = [x for x in game.legal_targets(me, eff) if x.controller is me]
     theirs = [x for x in game.legal_targets(me, eff) if x.controller is not me]
     from .engine import perm_value
+    if eff.kind == "bounce_own":     # only worth it to replay a "when enters" ability
+        return max((x for x in mine if (x.card.etb_effects or any(t.event == "etb" for t in x.card.triggers)) and x.card.cmc <= 3), key=perm_value, default=None)
     if eff.kind in ("fight_mark", "untap_target"):
         if eff.kind == "untap_target":
             mine = [x for x in mine if x.tapped]
@@ -93,6 +106,12 @@ def resolve(game, p, eff, target, item):
             game.log(f"untaps {target.card.name}", p)
         return
     if k == "fight_mark":
+        return
+    if k == "bounce_own":
+        src = item.source if item is not None else None
+        if target is not None and target is not src and target in target.controller.battlefield:
+            game.log(f"{target.card.name} returns to hand", p)
+            game.leave_battlefield(target, "hand")
         return
     mine = item.targets[0] if item is not None and item.targets else None
     if mine is None and item is not None:
