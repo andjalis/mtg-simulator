@@ -118,6 +118,31 @@ class PreparedAndConvoke(unittest.TestCase):
         self.game.turn_face_up(self.a)
         self.assertEqual((face_down.card.name, face_down.power), ("Disguised Phantom", 3))
 
+    def test_graveyard_lines(self):
+        spells = [
+            card("Hunter", "{2}", "Creature — Wolf", "When this creature enters, exile up to one target card from a "
+                 "graveyard.", 2, 2),
+            card("Gaunt", "{2}", "Creature — Rat", "When this creature enters, you may mill two cards.", 1, 1),
+            card("Trick", "{G}", "Instant", "Target creature gets +1/+1 until end of turn. Untap it."),
+        ]
+        for c in spells:
+            self.assertEqual(c.unsupported, [], c.name)
+        self.b.graveyard.append(BEAR)
+        self.game.enter_battlefield(self.a, spells[0])
+        self.game.settle()
+        self.assertEqual(self.b.graveyard, [])
+        self.assertEqual([c.name for c in self.b.exile], [BEAR.name])
+        n = len(self.a.library)
+        self.game.enter_battlefield(self.a, spells[1])
+        self.game.settle()
+        self.assertEqual(len(self.a.library), n - 2)
+        bear = self.perm(BEAR)
+        bear.tapped = True
+        self.perm(card("Forest", "", "Basic Land — Forest", "{T}: Add {G}."))
+        self.a.hand = [spells[2]]
+        self.game.cast(self.a, spells[2], [bear])
+        self.assertFalse(bear.tapped)
+
 
 if __name__ == "__main__":
     unittest.main()
