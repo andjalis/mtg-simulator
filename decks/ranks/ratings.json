@@ -1,0 +1,1222 @@
+{
+ "about": "Fitted opponent ratings (Elo scale), written by python3 -m mtgsim.calibrate. Bronze's mean is anchored at the centre of its band.",
+ "date": "2026-10-16",
+ "anchor": {
+  "pool": "bronze",
+  "rating": 900
+ },
+ "decks": {
+  "bronze/five_color_mess": {
+   "rating": 830,
+   "games": 1400,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "bronze/land_glut": {
+   "rating": 1030,
+   "games": 1400,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "bronze/mono_blue_durdle": {
+   "rating": 744,
+   "games": 1400,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "bronze/rakdos_jank": {
+   "rating": 981,
+   "games": 1400,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "bronze/vanilla_pile": {
+   "rating": 915,
+   "games": 1400,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "silver/green_stompy": {
+   "rating": 1179,
+   "games": 920,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "silver/mono_black_starter": {
+   "rating": 1179,
+   "games": 920,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "silver/red_goblins": {
+   "rating": 1095,
+   "games": 920,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "silver/uw_flyers": {
+   "rating": 1059,
+   "games": 920,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "silver/white_weenie": {
+   "rating": 1187,
+   "games": 920,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "gold/boros_burn": {
+   "rating": 1175,
+   "games": 740,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "gold/dimir_control": {
+   "rating": 1210,
+   "games": 740,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "gold/golgari_midrange": {
+   "rating": 1290,
+   "games": 740,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "gold/gruul_midrange": {
+   "rating": 1188,
+   "games": 740,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "gold/orzhov_midrange": {
+   "rating": 1354,
+   "games": 740,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "gold/selesnya_aggro": {
+   "rating": 1290,
+   "games": 740,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "platinum/azorius_control": {
+   "rating": 1442,
+   "games": 1140,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "platinum/esper_midrange": {
+   "rating": 1047,
+   "games": 1140,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "platinum/grixis_midrange": {
+   "rating": 1097,
+   "games": 1140,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "platinum/mono_green_stompy": {
+   "rating": 1534,
+   "games": 1140,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "platinum/mono_red_aggro": {
+   "rating": 1236,
+   "games": 1140,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "platinum/mono_white_midrange": {
+   "rating": 1149,
+   "games": 1140,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "platinum/rakdos_midrange": {
+   "rating": 1442,
+   "games": 1140,
+   "engine": "python",
+   "date": "2026-10-16"
+  },
+  "diamond/azorius_flyers": {
+   "rating": 1412,
+   "games": 52,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "diamond/boros_dwarves": {
+   "rating": 1412,
+   "games": 52,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "diamond/mardu_aggro": {
+   "rating": 1412,
+   "games": 52,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "diamond/mono_black_aggro": {
+   "rating": 1412,
+   "games": 52,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "diamond/rakdos_aggro": {
+   "rating": 1412,
+   "games": 52,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "master/azorius_artifact_control": {
+   "rating": 1192,
+   "games": 44,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "master/dimir_control": {
+   "rating": 1192,
+   "games": 44,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "master/izzet_prowess": {
+   "rating": 1192,
+   "games": 44,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "master/jeskai_control": {
+   "rating": 1192,
+   "games": 44,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "master/orzhov_lifegain": {
+   "rating": 1192,
+   "games": 44,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "master/sultai_reanimator": {
+   "rating": 1192,
+   "games": 44,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "grandmaster/azorius_control": {
+   "rating": 1192,
+   "games": 24,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "grandmaster/boros_dragons": {
+   "rating": 1192,
+   "games": 24,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "grandmaster/dimir_midrange": {
+   "rating": 1192,
+   "games": 24,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "grandmaster/izzet_spellementals": {
+   "rating": 1192,
+   "games": 24,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "grandmaster/jund_sacrifice": {
+   "rating": 1192,
+   "games": 24,
+   "engine": "forge",
+   "date": "2026-10-16"
+  },
+  "grandmaster/mono_green_landfall": {
+   "rating": 1192,
+   "games": 24,
+   "engine": "forge",
+   "date": "2026-10-16"
+  }
+ },
+ "out_of_band": [
+  {
+   "deck": "bronze/land_glut",
+   "rank": "Bronze",
+   "rating": 1030,
+   "fits": "Silver"
+  },
+  {
+   "deck": "gold/boros_burn",
+   "rank": "Gold",
+   "rating": 1175,
+   "fits": "Silver"
+  },
+  {
+   "deck": "gold/gruul_midrange",
+   "rank": "Gold",
+   "rating": 1188,
+   "fits": "Silver"
+  },
+  {
+   "deck": "platinum/esper_midrange",
+   "rank": "Platinum",
+   "rating": 1047,
+   "fits": "Silver"
+  },
+  {
+   "deck": "platinum/grixis_midrange",
+   "rank": "Platinum",
+   "rating": 1097,
+   "fits": "Silver"
+  },
+  {
+   "deck": "platinum/mono_red_aggro",
+   "rank": "Platinum",
+   "rating": 1236,
+   "fits": "Gold"
+  },
+  {
+   "deck": "platinum/mono_white_midrange",
+   "rank": "Platinum",
+   "rating": 1149,
+   "fits": "Silver"
+  },
+  {
+   "deck": "diamond/azorius_flyers",
+   "rank": "Diamond",
+   "rating": 1412,
+   "fits": "Platinum"
+  },
+  {
+   "deck": "diamond/boros_dwarves",
+   "rank": "Diamond",
+   "rating": 1412,
+   "fits": "Platinum"
+  },
+  {
+   "deck": "diamond/mardu_aggro",
+   "rank": "Diamond",
+   "rating": 1412,
+   "fits": "Platinum"
+  },
+  {
+   "deck": "diamond/mono_black_aggro",
+   "rank": "Diamond",
+   "rating": 1412,
+   "fits": "Platinum"
+  },
+  {
+   "deck": "diamond/rakdos_aggro",
+   "rank": "Diamond",
+   "rating": 1412,
+   "fits": "Platinum"
+  },
+  {
+   "deck": "master/azorius_artifact_control",
+   "rank": "Master",
+   "rating": 1192,
+   "fits": "Silver"
+  },
+  {
+   "deck": "master/dimir_control",
+   "rank": "Master",
+   "rating": 1192,
+   "fits": "Silver"
+  },
+  {
+   "deck": "master/izzet_prowess",
+   "rank": "Master",
+   "rating": 1192,
+   "fits": "Silver"
+  },
+  {
+   "deck": "master/jeskai_control",
+   "rank": "Master",
+   "rating": 1192,
+   "fits": "Silver"
+  },
+  {
+   "deck": "master/orzhov_lifegain",
+   "rank": "Master",
+   "rating": 1192,
+   "fits": "Silver"
+  },
+  {
+   "deck": "master/sultai_reanimator",
+   "rank": "Master",
+   "rating": 1192,
+   "fits": "Silver"
+  },
+  {
+   "deck": "grandmaster/azorius_control",
+   "rank": "Grandmaster",
+   "rating": 1192,
+   "fits": "Silver"
+  },
+  {
+   "deck": "grandmaster/boros_dragons",
+   "rank": "Grandmaster",
+   "rating": 1192,
+   "fits": "Silver"
+  },
+  {
+   "deck": "grandmaster/dimir_midrange",
+   "rank": "Grandmaster",
+   "rating": 1192,
+   "fits": "Silver"
+  },
+  {
+   "deck": "grandmaster/izzet_spellementals",
+   "rank": "Grandmaster",
+   "rating": 1192,
+   "fits": "Silver"
+  },
+  {
+   "deck": "grandmaster/jund_sacrifice",
+   "rank": "Grandmaster",
+   "rating": 1192,
+   "fits": "Silver"
+  },
+  {
+   "deck": "grandmaster/mono_green_landfall",
+   "rank": "Grandmaster",
+   "rating": 1192,
+   "fits": "Silver"
+  }
+ ],
+ "observations": [
+  {
+   "a": "gold",
+   "b": "bronze",
+   "points": 2610.0,
+   "games": 3000,
+   "engine": "python",
+   "source": "decks/ranks/README.md rank order, 2026-10-15"
+  },
+  {
+   "a": "platinum",
+   "b": "bronze",
+   "points": 2940.0,
+   "games": 3500,
+   "engine": "python",
+   "source": "decks/ranks/README.md rank order, 2026-10-15"
+  },
+  {
+   "a": "platinum",
+   "b": "silver",
+   "points": 2275.0,
+   "games": 3500,
+   "engine": "python",
+   "source": "decks/ranks/README.md rank order, 2026-10-15"
+  },
+  {
+   "a": "diamond",
+   "b": "platinum",
+   "points": 91.0,
+   "games": 140,
+   "engine": "forge",
+   "source": "decks/ranks/README.md rank order, 2026-10-15"
+  },
+  {
+   "a": "master",
+   "b": "diamond",
+   "points": 26.4,
+   "games": 120,
+   "engine": "forge",
+   "source": "decks/ranks/README.md rank order, 2026-10-15"
+  },
+  {
+   "a": "grandmaster",
+   "b": "master",
+   "points": 72.0,
+   "games": 144,
+   "engine": "forge",
+   "source": "decks/ranks/README.md rank order, 2026-10-15"
+  },
+  {
+   "a": "silver/green_stompy",
+   "b": "bronze/five_color_mess",
+   "points": 18.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/green_stompy",
+   "b": "bronze/land_glut",
+   "points": 14.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/green_stompy",
+   "b": "bronze/mono_blue_durdle",
+   "points": 19.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/green_stompy",
+   "b": "bronze/rakdos_jank",
+   "points": 15.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/green_stompy",
+   "b": "bronze/vanilla_pile",
+   "points": 18.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/mono_black_starter",
+   "b": "bronze/five_color_mess",
+   "points": 20.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/mono_black_starter",
+   "b": "bronze/land_glut",
+   "points": 15.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/mono_black_starter",
+   "b": "bronze/mono_blue_durdle",
+   "points": 19.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/mono_black_starter",
+   "b": "bronze/rakdos_jank",
+   "points": 20.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/mono_black_starter",
+   "b": "bronze/vanilla_pile",
+   "points": 18.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/red_goblins",
+   "b": "bronze/five_color_mess",
+   "points": 17.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/red_goblins",
+   "b": "bronze/land_glut",
+   "points": 13.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/red_goblins",
+   "b": "bronze/mono_blue_durdle",
+   "points": 15.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/red_goblins",
+   "b": "bronze/rakdos_jank",
+   "points": 12.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/red_goblins",
+   "b": "bronze/vanilla_pile",
+   "points": 12.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/uw_flyers",
+   "b": "bronze/five_color_mess",
+   "points": 17.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/uw_flyers",
+   "b": "bronze/land_glut",
+   "points": 8.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/uw_flyers",
+   "b": "bronze/mono_blue_durdle",
+   "points": 20.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/uw_flyers",
+   "b": "bronze/rakdos_jank",
+   "points": 12.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/uw_flyers",
+   "b": "bronze/vanilla_pile",
+   "points": 14.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/white_weenie",
+   "b": "bronze/five_color_mess",
+   "points": 16.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/white_weenie",
+   "b": "bronze/land_glut",
+   "points": 18.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/white_weenie",
+   "b": "bronze/mono_blue_durdle",
+   "points": 20.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/white_weenie",
+   "b": "bronze/rakdos_jank",
+   "points": 15.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "silver/white_weenie",
+   "b": "bronze/vanilla_pile",
+   "points": 19.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/boros_burn",
+   "b": "silver/green_stompy",
+   "points": 7.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/boros_burn",
+   "b": "silver/mono_black_starter",
+   "points": 13.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/boros_burn",
+   "b": "silver/red_goblins",
+   "points": 8.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/boros_burn",
+   "b": "silver/uw_flyers",
+   "points": 10.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/boros_burn",
+   "b": "silver/white_weenie",
+   "points": 8.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/dimir_control",
+   "b": "silver/green_stompy",
+   "points": 12.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/dimir_control",
+   "b": "silver/mono_black_starter",
+   "points": 11.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/dimir_control",
+   "b": "silver/red_goblins",
+   "points": 10.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/dimir_control",
+   "b": "silver/uw_flyers",
+   "points": 18.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/dimir_control",
+   "b": "silver/white_weenie",
+   "points": 13.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/golgari_midrange",
+   "b": "silver/green_stompy",
+   "points": 12.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/golgari_midrange",
+   "b": "silver/mono_black_starter",
+   "points": 14.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/golgari_midrange",
+   "b": "silver/red_goblins",
+   "points": 15.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/golgari_midrange",
+   "b": "silver/uw_flyers",
+   "points": 18.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/golgari_midrange",
+   "b": "silver/white_weenie",
+   "points": 17.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/gruul_midrange",
+   "b": "silver/green_stompy",
+   "points": 9.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/gruul_midrange",
+   "b": "silver/mono_black_starter",
+   "points": 9.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/gruul_midrange",
+   "b": "silver/red_goblins",
+   "points": 15.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/gruul_midrange",
+   "b": "silver/uw_flyers",
+   "points": 11.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/gruul_midrange",
+   "b": "silver/white_weenie",
+   "points": 8.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/orzhov_midrange",
+   "b": "silver/green_stompy",
+   "points": 19.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/orzhov_midrange",
+   "b": "silver/mono_black_starter",
+   "points": 18.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/orzhov_midrange",
+   "b": "silver/red_goblins",
+   "points": 15.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/orzhov_midrange",
+   "b": "silver/uw_flyers",
+   "points": 18.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/orzhov_midrange",
+   "b": "silver/white_weenie",
+   "points": 18.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/selesnya_aggro",
+   "b": "silver/green_stompy",
+   "points": 15.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/selesnya_aggro",
+   "b": "silver/mono_black_starter",
+   "points": 17.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/selesnya_aggro",
+   "b": "silver/red_goblins",
+   "points": 17.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/selesnya_aggro",
+   "b": "silver/uw_flyers",
+   "points": 16.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "gold/selesnya_aggro",
+   "b": "silver/white_weenie",
+   "points": 12.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/azorius_control",
+   "b": "gold/boros_burn",
+   "points": 10.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/azorius_control",
+   "b": "gold/dimir_control",
+   "points": 20.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/azorius_control",
+   "b": "gold/golgari_midrange",
+   "points": 17.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/azorius_control",
+   "b": "gold/gruul_midrange",
+   "points": 14.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/azorius_control",
+   "b": "gold/orzhov_midrange",
+   "points": 17.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/azorius_control",
+   "b": "gold/selesnya_aggro",
+   "points": 14.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/esper_midrange",
+   "b": "gold/boros_burn",
+   "points": 8.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/esper_midrange",
+   "b": "gold/dimir_control",
+   "points": 8.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/esper_midrange",
+   "b": "gold/golgari_midrange",
+   "points": 4.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/esper_midrange",
+   "b": "gold/gruul_midrange",
+   "points": 7.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/esper_midrange",
+   "b": "gold/orzhov_midrange",
+   "points": 2.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/esper_midrange",
+   "b": "gold/selesnya_aggro",
+   "points": 7.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/grixis_midrange",
+   "b": "gold/boros_burn",
+   "points": 7.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/grixis_midrange",
+   "b": "gold/dimir_control",
+   "points": 4.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/grixis_midrange",
+   "b": "gold/golgari_midrange",
+   "points": 7.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/grixis_midrange",
+   "b": "gold/gruul_midrange",
+   "points": 9.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/grixis_midrange",
+   "b": "gold/orzhov_midrange",
+   "points": 6.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/grixis_midrange",
+   "b": "gold/selesnya_aggro",
+   "points": 9.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_green_stompy",
+   "b": "gold/boros_burn",
+   "points": 19.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_green_stompy",
+   "b": "gold/dimir_control",
+   "points": 20.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_green_stompy",
+   "b": "gold/golgari_midrange",
+   "points": 14.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_green_stompy",
+   "b": "gold/gruul_midrange",
+   "points": 16.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_green_stompy",
+   "b": "gold/orzhov_midrange",
+   "points": 14.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_green_stompy",
+   "b": "gold/selesnya_aggro",
+   "points": 19.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_red_aggro",
+   "b": "gold/boros_burn",
+   "points": 13.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_red_aggro",
+   "b": "gold/dimir_control",
+   "points": 13.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_red_aggro",
+   "b": "gold/golgari_midrange",
+   "points": 10.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_red_aggro",
+   "b": "gold/gruul_midrange",
+   "points": 9.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_red_aggro",
+   "b": "gold/orzhov_midrange",
+   "points": 10.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_red_aggro",
+   "b": "gold/selesnya_aggro",
+   "points": 7.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_white_midrange",
+   "b": "gold/boros_burn",
+   "points": 9.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_white_midrange",
+   "b": "gold/dimir_control",
+   "points": 10.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_white_midrange",
+   "b": "gold/golgari_midrange",
+   "points": 7.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_white_midrange",
+   "b": "gold/gruul_midrange",
+   "points": 10.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_white_midrange",
+   "b": "gold/orzhov_midrange",
+   "points": 7.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/mono_white_midrange",
+   "b": "gold/selesnya_aggro",
+   "points": 6.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/rakdos_midrange",
+   "b": "gold/boros_burn",
+   "points": 15.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/rakdos_midrange",
+   "b": "gold/dimir_control",
+   "points": 13.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/rakdos_midrange",
+   "b": "gold/golgari_midrange",
+   "points": 17.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/rakdos_midrange",
+   "b": "gold/gruul_midrange",
+   "points": 18.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/rakdos_midrange",
+   "b": "gold/orzhov_midrange",
+   "points": 14.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  },
+  {
+   "a": "platinum/rakdos_midrange",
+   "b": "gold/selesnya_aggro",
+   "points": 15.0,
+   "games": 20,
+   "engine": "python",
+   "source": "mtgsim.calibrate --play 20, 2026-10-16"
+  }
+ ]
+}

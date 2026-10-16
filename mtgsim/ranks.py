@@ -62,8 +62,14 @@ def resolve_ranks(values: list[str]) -> list[Rank]:
 
 
 def list_ranks() -> str:
+    from .rating import load_ratings
+    ratings = load_ratings()
     out = [f"Ladder: a deck clears a rank with a win rate of at least {PASS_RATE:.0%} against its pool."]
+    if ratings:
+        out.append("Numbers are each deck's fitted rating (decks/ranks/ratings.json, python3 -m mtgsim.calibrate).")
     for i, r in enumerate(RANKS, 1):
         out.append(f"{i}. {r.label} ({r.key}): {r.about}")
-        out += [f"     {p.stem}" for p in r.decks()]
+        for p in r.decks():
+            fitted = ratings.get(f"{r.key}/{p.stem}")
+            out.append(f"     {p.stem}" + (f"  {fitted}" if fitted is not None else ""))
     return "\n".join(out)
