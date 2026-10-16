@@ -312,16 +312,27 @@ with the built-in engine.
 
 - Every card name is checked against Forge's card list first, so typos fail
   loudly instead of Forge quietly playing a short deck.
-- Forge's quiet mode doesn't report who played first or game length, so plain
-  `--engine forge` runs leave those lines out. The benchmark runs Forge without `-q`
-  and reads each game's `Turn: Turn N (Ai(k)-deck)` lines: turn 1 gives the first
-  player, an unbroken 1..N sequence that matches `Game Outcome: Turn` gives N
-  player-turns. Missing, partial or unrecognised lines stay unknown.
-- Forge picks the starting player itself. In 35 worker logs checked (October 2026) the
-  first game's starter varied (deck A 15 times, deck B 20) and the loser of each game
-  started the next one (107 of 107 cases). A deck that loses most games is therefore
-  mostly on the play. Play/draw is not balanced and reversing seats would not balance it;
-  results are split by the observed starting player instead.
+- Forge has no option to choose who starts: the first game of a run is a coin flip and the
+  loser of each game starts the next (107 of 107 cases in worker logs checked in October 2026).
+  Left alone, a deck that loses most games would mostly be on the play, pulling every win rate
+  toward 50%. The wrapper therefore runs Forge with its full game log, reads each game's
+  starter from turn 1 of its `Turn: Turn N (Ai(k)-deck)` lines, and keeps only as many games
+  of each starter as an even split needs, discarding the rest and stopping Forge once both
+  halves are full. Which games are kept depends only on who started them, never on their own
+  result. An unbroken 1..N turn sequence that matches `Game Outcome: Turn` also gives each
+  game's length in player-turns.
+- Discarded games cost time: when one deck wins a share p of games, about `n/2 / (1 - p)`
+  games are played to fill its on-the-play half (twice as many as asked at 75%). Each worker
+  plays at most 4 times its share; past that it keeps the remaining games whatever their
+  starter, and the on-the-play/on-the-draw line in the output shows the skew. Games whose
+  starter can't be read are discarded the same way.
+  Close matchups, where play/draw matters most, always get an exact split. In a 12-game check
+  (October 2026) of a Diamond deck against a Bronze one, which won 11 of 12, the cap was reached
+  and the split was 2 on the play and 10 on the draw; Forge's own order put the winner on the
+  play in 2 of 48 games.
+- `sim` mode can play a best-of-three (`-m 3`), but it never turns on AI sideboarding, so all
+  three games use the main deck, and one process plays only one match. Sideboarded best-of-three
+  is not available through Forge's `sim`.
 - About 3 to 4 seconds per game on a 4-core machine. `--jobs` runs several
   Java processes, which helps most on machines with more cores.
 - `--clock` (default 120 s) calls a stuck game a draw. Forge can also emit draws

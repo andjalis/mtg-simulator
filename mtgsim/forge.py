@@ -7,6 +7,12 @@ its own AI. Its desktop build has a `sim` mode:
 
 This module writes our decklists as .dck files, runs that command from the
 Forge install folder, and turns its "Game Result" lines into a MatchResult.
+
+Forge has no option to choose the starting player: the first game of a run is
+a coin flip and the loser of each game starts the next. Left alone, a deck that
+loses most games is mostly on the play. So the wrapper reads each game's starter
+from the game log and keeps only as many games of each starter as an even
+play/draw split needs, discarding the rest (see run_forge_match).
 """
 from __future__ import annotations
 
@@ -129,12 +135,30 @@ def parse_results(lines, name_a: str, name_b: str) -> MatchResult:
     return res
 
 
+def play_quotas(shares: list[int]) -> list[int]:
+    """Games each worker keeps with deck A on the play: half its share, odd halves alternating."""
+    quotas, extra = [], 0
+    for share in shares:
+        quotas.append(share // 2 + (share % 2 and extra % 2 == 0))
+        extra += share % 2
+    return quotas
+
+
 def run_forge_match(name_a, counts_a, name_b, counts_b, games=100, seed=None, forge_dir=None,
                     java="java", clock=120, check_cards=True, progress=None, jobs=1,
-                    log_dir=None, isolated=False, worker_timeout=None) -> MatchResult:
-    """Play games in Forge. jobs > 1 splits them across that many Java processes."""
-    if games < 1 or jobs < 1 or clock < 1 or (worker_timeout is not None and worker_timeout < 1):
-        raise ForgeError("games, jobs and clock must be positive")
+                    log_dir=None, isolated=False, worker_timeout=None, max_factor=4) -> MatchResult:
+    """Play games in Forge, half with deck A on the play and half on the draw.
+
+    jobs > 1 splits them across that many Java processes. Each worker asks Forge
+    for up to max_factor times its share and keeps a game only while its
+    starter's quota is open, so which games are kept depends on who started them,
+    never on their own result. Games whose starter can't be read are discarded.
+    If the cap is reached first (a very lopsided matchup), the worker keeps the
+    next games whatever their starter; the play/draw counts then show the skew.
+    """
+    if (games < 1 or jobs < 1 or clock < 1 or max_factor < 1
+            or (worker_timeout is not None and worker_timeout < 1)):
+        raise ForgeError("games, jobs, clock and max_factor must be positive")
     folder, jar = find_forge(forge_dir)
     if log_dir is not None:
         log_dir = Path(log_dir)
@@ -147,6 +171,7 @@ def run_forge_match(name_a, counts_a, name_b, counts_b, games=100, seed=None, fo
                 raise ForgeError(f"Forge doesn't know these cards (check spelling): {', '.join(missing)}")
     jobs = max(1, min(jobs, games))
     shares = [games // jobs + (i < games % jobs) for i in range(jobs)]
+    quotas = play_quotas(shares)
     done, lock = [0], threading.Lock()
 
     def on_game():
@@ -174,15 +199,33 @@ def run_forge_match(name_a, counts_a, name_b, counts_b, games=100, seed=None, fo
                 env = os.environ.copy()
                 for key in ("JAVA_TOOL_OPTIONS", "JDK_JAVA_OPTIONS", "_JAVA_OPTIONS"):
                     env.pop(key, None)
+            cap = shares[i] * max_factor
+            # No -q: the full game log carries the Turn lines that name each game's starter.
             cmd = [shutil.which(java) or java, *JAVA_ARGS, *extra, "-jar", str(jar), "sim",
-                   "-d", "a.dck", "b.dck", "-D", str(tmp), "-n", str(shares[i]), "-c", str(clock)]
-            if log_dir is None:
-                cmd.append("-q")
+                   "-d", "a.dck", "b.dck", "-D", str(tmp), "-n", str(cap), "-c", str(clock)]
             if seed is not None:
                 cmd += ["-s", str(seed + i)]
-            lines = []
+            kept, pending, numbers = MatchResult(name_a, name_b), [], set()
+            want = {0: quotas[i], 1: shares[i] - quotas[i]}
+            seen = [0]
             tail = deque(maxlen=20)
-            expired = threading.Event()
+            expired, finished = threading.Event(), threading.Event()
+
+            def take(lines):
+                part = parse_results(lines, name_a, name_b)
+                for meta in part.game_metadata:
+                    if meta["game_number"] in numbers:
+                        raise ForgeError(f"Duplicate Forge game number: {meta['game_number']}")
+                    numbers.add(meta["game_number"])
+                    seen[0] += 1
+                    first = meta["first_player"]
+                    if seen[0] > cap - (shares[i] - kept.games) or want.get(first, 0) > 0:
+                        # Past this point every remaining game is needed to reach the share.
+                        if first in want and want[first] > 0:
+                            want[first] -= 1
+                        kept.add_game(**meta)
+                        on_game()
+
             with (log_dir / f"worker-{i}.log").open("w", encoding="utf-8") if log_dir else nullcontext() as raw:
                 with subprocess.Popen(cmd, cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                       text=True, encoding="utf-8", errors="replace") as proc:
@@ -190,7 +233,7 @@ def run_forge_match(name_a, counts_a, name_b, counts_b, games=100, seed=None, fo
                         expired.set()
                         proc.kill()
 
-                    timer = threading.Timer(worker_timeout or (60 + shares[i] * (clock + 5)), stop)
+                    timer = threading.Timer(worker_timeout or (60 + cap * (clock + 5)), stop)
                     timer.start()
                     try:
                         for line in proc.stdout:
@@ -201,9 +244,14 @@ def run_forge_match(name_a, counts_a, name_b, counts_b, games=100, seed=None, fo
                             # Retain compact per-game metadata as well as results.
                             if (RESULT.search(line) or "Game Result:" in line or "Could not load deck" in line
                                     or line.startswith(("Turn:", "Game Outcome: Turn"))):
-                                lines.append(line)
-                            if RESULT.search(line):
-                                on_game()
+                                pending.append(line)
+                            if "Game Result:" in line:
+                                take(pending)
+                                pending = []
+                                if kept.games == shares[i]:
+                                    finished.set()
+                                    proc.kill()
+                                    break
                         proc.wait()
                     finally:
                         timer.cancel()
@@ -212,15 +260,15 @@ def run_forge_match(name_a, counts_a, name_b, counts_b, games=100, seed=None, fo
                         proc.stdout.close()
             if expired.is_set():
                 raise ForgeError(f"Forge worker {i} exceeded wall timeout; raw log retained")
-            return lines, proc.returncode, "".join(tail)
+            take(pending)   # surfaces "Could not load deck" and other trailing errors
+            return kept, seen[0], 0 if finished.is_set() else proc.returncode, "".join(tail)
 
         with ThreadPoolExecutor(jobs) as pool:
             outputs = list(pool.map(run_share, range(jobs)))
 
     res = MatchResult(name_a, name_b)
-    for i, (lines, code, tail) in enumerate(outputs):
-        part = parse_results(lines, name_a, name_b)
-        if part.games == 0:
+    for i, (part, seen, code, tail) in enumerate(outputs):
+        if seen == 0:
             raise ForgeError(f"Forge finished without reporting any games (exit code {code}):\n{tail}")
         if code != 0 or part.games != shares[i]:
             raise ForgeError(f"Forge worker {i} reported {part.games}/{shares[i]} games "
