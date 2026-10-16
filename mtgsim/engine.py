@@ -26,7 +26,8 @@ import re
 
 from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, add_mana, make_token
 
-TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "artifact", "player", "spell")
+TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "artifact", "artifact_enchantment",
+            "player", "spell")
 
 
 class Permanent:
@@ -55,6 +56,8 @@ class Permanent:
         self.spent_color = ""              # "if {U}{U} was spent to cast it"
         self.exiled_cards: list = []       # (card, owner) exiled until this leaves the battlefield
         self.warped = False
+        self.was_cast = False              # "if you cast it"
+        self.impending = False             # cast for its impending cost: not a creature while it has time counters
 
     @property
     def equipment(self):
@@ -118,7 +121,10 @@ class Permanent:
         return False
 
     @property
-    def is_creature(self): return self.card.is_creature or self.animated is not None or self.crewed
+    def is_creature(self):
+        if self.impending and self.counters.get("time"):
+            return False
+        return self.card.is_creature or self.animated is not None or self.crewed
 
     @property
     def is_planeswalker(self): return self.card.is_planeswalker
@@ -170,6 +176,9 @@ class Player:
         self.lost = False
         self.lands_played = 0
         self.sacrificed_turn = 0
+        self.milled_last: list[CardDef] = []     # the cards the last mill put into the graveyard
+        self.picked_last: CardDef | None = None   # the card mill_pick returned to hand
+        self.discarded_last: list[CardDef] = []
         self.mulligans = 0
         self.lost_life_turn = False
         self.perm_left_turn = False
@@ -463,6 +472,8 @@ class Game:
         for a in c.alt_costs:
             if a.kind == "offspring":
                 out.append(self._variant(c, "offspring", AltCost("offspring", add_mana(c.mana_cost, a.cost))))
+            elif a.kind == "impending" and not full:
+                out.append(self._variant(c, "impending", AltCost("impending", a.cost, counters=a.counters)))
             elif a.kind in ("warp", "evoke") and not full:
                 acols = sorted({x for pair in a.hybrid for x in pair}) if a.hybrid and c.spent_colors else []
                 for col in acols or [""]:
@@ -573,6 +584,8 @@ class Game:
             return not perm.tapped
         if f == "opp":
             return perm.controller is not by
+        if f == "stunned":
+            return bool(perm.counters.get("stun"))
         if f.startswith("max_power:"):
             return perm.power <= int(f[10:])
         return True
@@ -591,6 +604,9 @@ class Game:
             return [x for x in everything if (not x.card.is_land or x.is_creature) and self.passes_filter(eff, x, p)]
         if t == "artifact":
             return [x for x in everything if x.card.is_artifact]
+        if t == "artifact_enchantment":
+            return [x for x in everything if (x.card.is_artifact or "Enchantment" in x.card.types)
+                    and self.passes_filter(eff, x, p)]
         if t == "any":
             return creatures + [x for x in everything if x.is_planeswalker] + list(self.players)
         if t == "player":
@@ -751,6 +767,8 @@ class Game:
         self.step = "end_step"
         self.fire(p, "end_step")
         for perm in list(p.battlefield):
+            if perm.impending and perm.counters.get("time"):
+                perm.counters["time"] -= 1
             if perm.blitz:
                 self.log(f"sacrifices blitzed {perm.card.name}", p)
                 self.sacrifice(perm)
@@ -772,7 +790,7 @@ class Game:
             perm.deathtouched = False
             perm.pump_p = perm.pump_t = 0
             perm.temp_kw.clear()
-            if not (perm.animated and perm.animated.text == "earthbend"):
+            if not (perm.animated and perm.animated.text in ("earthbend", "permanent")):
                 perm.animated = None
             perm.crewed = False
         p.next_creature_counters = 0
@@ -868,8 +886,11 @@ class Game:
                 if trig.filter == "greater_power" and (subject is None or subject is perm
                                                        or subject.power <= perm.power):
                     continue
-                self.queue_trigger(perm.controller, trig.effects, perm, perm.card.name, context,
-                                   modes=trig.modes)
+                effects = trig.effects
+                if subject is not None and any(e.data.get("subject_power") for e in effects):
+                    effects = [dataclasses.replace(e, amount=max(0, subject.power)) if e.data.get("subject_power")
+                               else e for e in effects]
+                self.queue_trigger(perm.controller, effects, perm, perm.card.name, context, modes=trig.modes)
         if source is None:      # abilities that trigger from the graveyard (Bloodghast)
             for card in list(p.graveyard):
                 for trig in card.gy_triggers:
@@ -928,6 +949,10 @@ class Game:
                 perm.blitz = True
             if kind == "warp":
                 perm.warped = True
+            perm.was_cast = True
+            if kind == "impending":
+                perm.impending = True
+                perm.counters["time"] = next(a.counters for a in base.alt_costs if a.kind == "impending")
             if kind == "offspring":
                 token = dataclasses.replace(base, name=f"{base.name} token", power=1, toughness=1, is_token=True,
                                             alt_costs=[])
@@ -998,6 +1023,11 @@ class Game:
             return p.life_gained_turn >= int(c[13:])
         if c == "gained_and_lost":
             return p.life_gained_turn > 0 and p.lost_life_turn
+        if c == "cast":
+            return item.source is not None and item.source.was_cast
+        if c == "squirrel":
+            return any("Squirrel" in x.card.subtypes for x in p.battlefield) or \
+                (p.picked_last is not None and "Squirrel" in p.picked_last.subtypes)
         if c.startswith("counters:"):
             name, n = c[9:].split(">=")
             return item.source is not None and item.source.counters.get(name, 0) >= int(n)
@@ -1500,10 +1530,12 @@ class Game:
                 who.hand.remove(card)
                 who.graveyard.append(card)
                 self.log(f"discards {card.name}", who)
+            who.discarded_last = []
             for _ in range(0 if basics else min(eff.amount, len(who.hand))):
                 card = who.ai.choose_discard(self, who)
                 who.hand.remove(card)
                 who.graveyard.append(card)
+                who.discarded_last.append(card)
                 self.log(f"discards {card.name}", who)
         elif k == "discard_choice":
             if isinstance(target, Player):
@@ -1603,8 +1635,87 @@ class Game:
             self.log(f"drains {n} (devotion)", p)
         elif k == "mill":
             who = target if isinstance(target, Player) else p
+            who.milled_last = []
             for _ in range(min(eff.amount, len(who.library))):
-                who.graveyard.append(who.library.pop())
+                who.milled_last.append(who.library.pop())
+                who.graveyard.append(who.milled_last[-1])
+        elif k == "mill_pick":
+            cands = [c for c in p.milled_last if c.is_permanent and c in p.graveyard]
+            p.picked_last = None
+            if cands:
+                card = choose_tutor(self, p, cands)
+                p.graveyard.remove(card)
+                p.hand.append(card)
+                p.picked_last = card
+                self.log(f"puts milled {card.name} into hand", p)
+        elif k == "discard_tutor":
+            cands = [c for c in p.library if card_matches(c, eff.data["desc"])]
+            if p.hand and cands:
+                card = p.ai.choose_discard(self, p)
+                p.hand.remove(card)
+                p.graveyard.append(card)
+                found = choose_tutor(self, p, cands)
+                p.library.remove(found)
+                p.hand.append(found)
+                self.rng.shuffle(p.library)
+                self.log(f"discards {card.name} and searches for {found.name}", p)
+        elif k == "stun_discarded":
+            n = sum(not c.is_land for c in p.discarded_last)
+            for _ in range(n):
+                tgt = max((c for c in opp.creatures if not c.counters.get("stun") and self.targetable(c, p)),
+                          key=perm_value, default=None)
+                if tgt is None:
+                    break
+                tgt.tapped = True
+                tgt.counters["stun"] = 1
+                self.log(f"taps and stuns {tgt.card.name}", p)
+        elif k == "shuffle_away":
+            for perm in (target, item.source if item else None):
+                if isinstance(perm, Permanent) and perm in perm.controller.battlefield:
+                    owner = perm.controller
+                    if self.leave_battlefield(perm, "graveyard") and not perm.front.is_token:
+                        owner.graveyard.remove(perm.front)
+                        owner.library.append(perm.front)
+                        self.rng.shuffle(owner.library)
+                    self.log(f"shuffles {perm.card.name} into its owner's library", p)
+        elif k == "return_as_enchantment":
+            card = item.source.front if item and item.source else None
+            if card is not None and card in p.graveyard:
+                p.graveyard.remove(card)
+                ench = dataclasses.replace(card, types=card.types - {"Creature"}, power=None, toughness=None)
+                perm = self.enter_battlefield(p, ench)
+                perm.front = card
+                self.log(f"returns {card.name} as an enchantment", p)
+        elif k == "edict":
+            victims = sorted(opp.creatures, key=perm_value)[:eff.amount]
+            for v in victims:
+                if eff.data.get("exile"):
+                    self.leave_battlefield(v, "exile")
+                    self.log(f"{opp} exiles {v.card.name}", p)
+                else:
+                    self.sacrifice(v)
+        elif k == "last_gift":
+            src = item.source if item else None
+            before = {pl.name: [c for c in pl.graveyard if c.is_creature] for pl in self.players}
+            for pl in self.players:
+                for c in [x for x in pl.creatures if x is not src]:
+                    self.sacrifice(c)
+            for pl in self.players:
+                for card in before[pl.name]:
+                    if card in pl.graveyard:
+                        pl.graveyard.remove(card)
+                        self.enter_battlefield(pl, card)
+                self.log(f"{pl} returns {len(before[pl.name])} creatures", p)
+        elif k == "exile_gy":
+            opp.exile += opp.graveyard
+            opp.graveyard.clear()
+            self.log(f"{opp} exiles their graveyard", p)
+        elif k == "untap_other":
+            tapped = [x for x in p.battlefield if x.tapped and x is not (item.source if item else None)]
+            best = max(tapped, key=lambda x: (x.card.is_land or bool(x.card.produces), perm_value(x) if x.is_creature
+                                             else x.card.cmc), default=None)
+            if best is not None:
+                best.tapped = False
         elif k == "tap":
             if isinstance(target, Permanent):
                 target.tapped = True
@@ -1979,6 +2090,7 @@ class Game:
             if isinstance(tgt, Player):
                 self.change_life(tgt, -amt, f"{src.card.name}: combat damage")
                 self.fire(src.controller, "combat_damage_player", src)
+                self.fire(src.controller, "ally_combat_damage")
             elif tgt.is_planeswalker and not tgt.is_creature:
                 tgt.counters["loyalty"] = tgt.loyalty - amt
             else:
@@ -2051,7 +2163,7 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return max(mine, key=perm_value, default=None)
     if k == "oring":
         return max(theirs, key=perm_value, default=None)
-    if k == "stun":
+    if k in ("stun", "shuffle_away"):
         return max(theirs, key=perm_value, default=None)
     if k == "unblockable":
         ready = [x for x in mine if x.can_attack() and x.power > 0]
@@ -2169,7 +2281,7 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
             total += 2 if opp.hand else 0
         elif k == "regrow":
             total += max((c.cmc for c in me.graveyard if c.is_creature), default=-1)
-        elif k in ("destroy", "bounce"):
+        elif k in ("destroy", "bounce", "shuffle_away"):
             total += perm_value(tgt)
         elif k in ("bounce_spell", "counter"):
             total += tgt.card.cmc if isinstance(tgt, StackItem) and tgt.card else 1

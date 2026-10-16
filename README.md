@@ -244,6 +244,14 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   creature, but does not return when it dies); extra land drops and lands from
   the graveyard; affinity; quest counters with "when you do, if it has four or
   more"; tokens that get +1/+1 for each artifact you control
+- Reanimator and Dimir staples: "mill N, you may put a permanent card from among
+  them into your hand", "discard a card, if you do search for a creature",
+  impending, "return a creature card from your graveyard to your hand", stun
+  counters per discarded nonland card, "deals damage equal to that creature's
+  power", shuffling a stunned creature away, Enduring creatures returning as
+  enchantments, edicts that exile, Bringer of the Last Gift's mass swap, lands
+  that become creatures for good. Terror of the Peaks' life tax is played as
+  ward (pay 3 life); face-down permanents aren't modelled.
 - London mulligan, drawing from an empty library, hand size, 60-turn cap
 
 Not yet: auras, equipment tokens and attaching equipment by effects (Thorin), X in
