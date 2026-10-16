@@ -68,6 +68,7 @@ class Permanent:
         self.exile_turn = -1
         self.chosen_land = ""
         self.chosen_type = ""              # Cavern of Souls
+        self.bargained = self.gifted = False   # cast with Bargain / the gift promised
         self.produces_now = None           # set by Game.mana_sources: the colours usable right now
         self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
         self.auras: list["Permanent"] = []   # Auras on this permanent (they sit on their caster's battlefield)
@@ -637,6 +638,54 @@ class Game:
         for n in range(old + 1, old + len(payment) + 1):
             self.fire(p, "expend", subject=n)
         return payment
+
+    def x_quantity(self, p: Player, spec: tuple, item, prev) -> int:
+        """The value of X in ", where X is ..." (see cards._xq)."""
+        kind = spec[0]
+        src = item.source if item is not None and isinstance(item.source, Permanent) else None
+        if kind == "life":
+            return max(0, p.life)
+        if kind == "speed":
+            return p.speed
+        if kind == "gained":
+            return p.life_gained_turn
+        if kind == "hand":
+            return len(p.hand)
+        if kind == "stat":
+            who = prev if spec[1] == "prev" else src
+            if spec[2] == "mana value":
+                return item.card.cmc if spec[1] == "self" and item is not None and item.card else 0
+            return max(0, getattr(who, spec[2], 0)) if isinstance(who, Permanent) else 0
+        if kind == "greatest":
+            return max((getattr(x, spec[1]) for x in p.creatures), default=0)
+        if kind == "counters":
+            return src.counters.get(spec[1], 0) if src is not None else 0
+        if kind == "gy":
+            return counting.count(self, p, {"what": spec[1], "zone": "graveyard"}, src)
+        return counting.count(self, p, {"what": spec[1], "zone": "battlefield"}, src)
+
+    def pay_bargain(self, p: Player, card: CardDef) -> bool:
+        """Sacrifice a spare artifact, enchantment or token (the cheapest) for Bargain; False if there is none worth it."""
+        spare = [x for x in p.battlefield if (x.card.is_token or x.card.is_artifact or "Enchantment" in x.card.types)
+                 and perm_value(x) <= 3]
+        if not spare:
+            return False
+        self.sacrifice(min(spare, key=perm_value))
+        self.log(f"bargains {card.name}", p)
+        return True
+
+    def give_gift(self, p: Player, kind: str):
+        """The opponent receives the gift promised with a Gift spell."""
+        opp = self.opponent(p)
+        self.log(f"promises a gift ({kind})", p)
+        if kind == "card":
+            self.draw(opp, 1)
+        elif kind in ("food", "treasure"):
+            self.enter_battlefield(opp, make_token("", 0, 0, (), None, kind, True))
+        elif kind == "tapped fish":
+            self.enter_battlefield(opp, make_token("Fish", 1, 1)).tapped = True
+        elif kind == "octopus":
+            self.enter_battlefield(opp, make_token("Octopus", 8, 8))
 
     def collect_evidence(self, p: Player, card: CardDef) -> bool:
         """Exile graveyard cards worth card.collect_evidence mana value, if p can; False otherwise."""
@@ -1369,6 +1418,10 @@ class Game:
             if kind == "warp":
                 perm.warped = True
             perm.was_cast = True
+            perm.bargained = getattr(item, "bargained", False)
+            perm.gifted = getattr(item, "gifted", False)
+            if perm.gifted:
+                self.give_gift(p, base.gift)
             if kind == "impending":
                 perm.impending = True
                 perm.counters["time"] = next(a.counters for a in base.alt_costs if a.kind == "impending")
@@ -1388,6 +1441,8 @@ class Game:
             self.log(f"{item} fizzles (no legal target)", p)
         else:
             self.log(f"{item} resolves", p)
+            if getattr(item, "gifted", False) and item.card is not None:
+                self.give_gift(p, item.card.gift)
             prev = None
             done: list = []
             for i, (eff, tgt) in enumerate(zip(item.effects, item.targets)):   # "would die this turn" must precede the damage
@@ -1433,6 +1488,12 @@ class Game:
         c = eff.cond
         if not c:
             return True
+        if c[0] == "!":
+            sub = Effect(eff.kind, cond=c[1:])
+            return not self.check_cond(p, sub, item, prev)
+        if c in ("bargained", "gifted"):
+            src = item.source if getattr(item, "kind", "") != "spell" else None
+            return bool(getattr(item, c, False) or (src is not None and getattr(src, c, False)))
         if c == "host_toughness<=3":
             return item.source is not None and item.source.toughness <= 3
         if c == "max_speed":
@@ -1584,6 +1645,8 @@ class Game:
         item.snow_spent = sum(1 for s in payment if s.card.snow)
         item.x = x
         item.evidence = self.collect_evidence(p, card)
+        item.bargained = bool(card.bargain) and self.pay_bargain(p, card)
+        item.gifted = bool(card.gift)
         item.uncounterable = any(s.card.mana_restriction == "chosen_type" and self.mana_allowed(s, card)
                                  for s in payment)
         item.mana_spent = sum(v for k, v in cost.items() if k != "X")
@@ -2035,6 +2098,13 @@ class Game:
         if eff.data.get("per"):    # "for each X you control"
             src = item.source if item is not None else None
             eff = dataclasses.replace(eff, amount=eff.amount * counting.count(self, p, eff.data["per"], src))
+        if eff.data.get("xq"):     # ", where X is the number of ..."
+            n = self.x_quantity(p, eff.data["xq"], item, prev)
+            if eff.data.get("xq_size"):
+                eff = dataclasses.replace(eff, data=dict(eff.data, power=n, toughness=n))
+            else:
+                eff = dataclasses.replace(eff, amount=eff.amount * n,
+                                          amount2=eff.amount2 * n if k in ("pump", "debuff", "debuff_one", "pump_all") else eff.amount2)
         if eff.data.get("x"):      # X is the X paid for the spell
             n = getattr(item, "x", 0)
             eff = dataclasses.replace(eff, amount=n, amount2=n if eff.data.get("x2") else eff.amount2)
