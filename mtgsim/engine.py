@@ -165,6 +165,7 @@ class Player:
         self.perm_left_turn = False
         self.attacked_with = 0
         self.next_creature_counters = 0
+        self.life_gained_turn = 0
 
     @property
     def life(self): return self._life
@@ -307,6 +308,9 @@ class Game:
     def change_life(self, player, delta, cause):
         before = player.life
         player.life += delta
+        if delta > 0:
+            player.life_gained_turn += delta
+            self.fire(player, "gain_life")
         if delta and self.log_enabled:
             self.audit("life", seat=self.players.index(player), before=before,
                        delta=delta, after=player.life, cause=cause)
@@ -677,6 +681,7 @@ class Game:
         opp = self.opponent(p)
         for pl in self.players:
             pl.lost_life_turn = pl.perm_left_turn = False
+            pl.life_gained_turn = 0
             pl.attacked_with = 0
         self.step = "untap"
         for perm in p.battlefield:
@@ -821,6 +826,9 @@ class Game:
                         continue
                     elif not card_matches(subject.card, "a " + re.sub(r",? or |, ", " or a ", desc)):
                         continue
+                if trig.filter.startswith("with:") and \
+                        not any(trig.filter[5:] in a.card.subtypes for a in self.attackers):
+                    continue
                 if trig.once:
                     if perm.ability_turns.get(("trigger", i)) == self.turn:
                         continue
@@ -865,6 +873,10 @@ class Game:
             if isinstance(tgt, Permanent) and tgt.controller is not item.controller:
                 if tgt.ward:
                     self.queue_trigger(tgt.controller, [Effect("counter", tgt.ward, target="spell")], tgt,
+                                       f"{tgt.card.name} ward", targets=[item])
+                elif tgt.card.ward_life:
+                    self.queue_trigger(tgt.controller, [Effect("counter", 1, target="spell",
+                                                               data={"life": tgt.card.ward_life})], tgt,
                                        f"{tgt.card.name} ward", targets=[item])
                 elif tgt.card.ward_discard:
                     self.queue_trigger(tgt.controller, [Effect("counter", 1, target="spell",
@@ -951,6 +963,12 @@ class Game:
             return any(x.counters.get("+1/+1") for x in p.creatures)
         if c == "opp_lost_life":
             return self.opponent(p).lost_life_turn
+        if c == "gained_life":
+            return p.life_gained_turn > 0
+        if c.startswith("gained_life>="):
+            return p.life_gained_turn >= int(c[13:])
+        if c == "gained_and_lost":
+            return p.life_gained_turn > 0 and p.lost_life_turn
         if c.startswith("spent:"):
             return item.source is not None and getattr(item.source, "spent_color", "") == c[6:]
         return True
@@ -1022,6 +1040,10 @@ class Game:
         if not card.is_ability:
             for perm in list(p.battlefield):
                 for trig in perm.triggers:
+                    flt = trig.filter
+                    if flt.startswith("spell:") and not (flt[6:] in card.subtypes or
+                                                         flt[6:].capitalize() in card.types):
+                        continue
                     if (trig.event == "cast_spell" or
                             (trig.event == "cast_noncreature" and not card.is_creature) or
                             (trig.event == "cast_instant_sorcery" and (card.is_instant or card.is_sorcery))):
@@ -1425,7 +1447,7 @@ class Game:
                 n = sum(x.card.is_land for x in p.battlefield)
             self.dig(p, n, eff.amount2, eff.data.get("filter"))
         elif k == "dig_put":
-            self.dig_put(p, eff.amount, eff.amount2)
+            self.dig_put(p, eff.amount, eff.amount2, eff.data.get("count", 1), eff.data.get("noncreature", False))
         elif k == "discard":
             who = target if isinstance(target, Player) else p
             basics = [c for c in who.hand if is_basic_land(c)] if eff.data.get("unless") == "basic_land" else []
@@ -1661,7 +1683,12 @@ class Game:
             return
         if eff.amount:
             payer = target.controller
-            if eff.data.get("discard"):
+            if eff.data.get("life"):
+                n = eff.data["life"]
+                if payer.life > n + 2 and self.hook(payer, "pay_unless")(self, payer, 0, target):
+                    self.change_life(payer, -n, f"ward: pay {n} life")
+                    return
+            elif eff.data.get("discard"):
                 if payer.hand and self.hook(payer, "pay_unless")(self, payer, 0, target):
                     card = payer.ai.choose_discard(self, payer)
                     payer.hand.remove(card)
@@ -1705,12 +1732,12 @@ class Game:
             p.library.insert(0, c)
         self.log(f"digs {n}, keeps {chosen}", p)
 
-    def dig_put(self, p: Player, n: int, max_cmc: int):
+    def dig_put(self, p: Player, n: int, max_cmc: int, count: int = 1, noncreature: bool = False):
         cards = [p.library.pop() for _ in range(min(n, len(p.library)))]
-        cands = [c for c in cards if c.is_permanent and not c.is_land and c.cmc <= max_cmc]
+        cands = [c for c in cards if c.is_permanent and not c.is_land and c.cmc <= max_cmc
+                 and not (noncreature and c.is_creature)]
         rest = list(cards)
-        if cands:
-            card = max(cands, key=lambda c: c.cmc)
+        for card in sorted(cands, key=lambda c: -c.cmc)[:count]:
             rest.remove(card)
             self.log(f"puts {card.name} onto the battlefield", p)
             self.enter_battlefield(p, card)
@@ -1734,6 +1761,7 @@ class Game:
         for x in owner.battlefield:
             if x.attached_to is perm:
                 x.attached_to = None
+        self.fire(owner, "leaves", perm)
         returning, perm.exiled_cards = perm.exiled_cards, []
         for card, card_owner in returning:
             if card in card_owner.exile:
@@ -1811,6 +1839,8 @@ class Game:
             if any(t is not opp for t in self.attack_targets.values()) else ""), p)
         for a in attackers:
             self.fire(p, "attacks", a)
+            self.fire(p, "creature_attacks")
+        self.fire(p, "you_attack")
         self.run_priority(until_empty_stack=False)
         attackers = [a for a in self.attackers if a in p.battlefield]
         self.attackers = attackers

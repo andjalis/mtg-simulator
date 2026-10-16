@@ -232,6 +232,12 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   battlefield (Seam Rip, Pinnacle Starcage), graveyard triggers that return the
   card (Bloodghast) and "exile this card from your graveyard" abilities, damage
   equal to the number of Treasures/artifacts/creatures/lands you control
+- Lifegain: "whenever you gain life" triggers and "if you gained life / gained
+  3 or more life / gained and lost life this turn" conditions; "Ward—Pay N
+  life"; "whenever you attack (with Lizards)", "whenever a creature you control
+  attacks", "whenever you cast a Lizard spell", "enters or leaves the
+  battlefield" triggers; named tokens; "put up to two noncreature permanents
+  from the top seven onto the battlefield"
 - London mulligan, drawing from an empty library, hand size, 60-turn cap
 
 Not yet: auras, equipment tokens and attaching equipment by effects (Thorin), X in
