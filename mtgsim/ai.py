@@ -20,8 +20,10 @@ LETHAL = 1000.0
 LIFE_SCALE = 5.0        # value of life = LIFE_SCALE * sqrt(life)
 HOLD_BURN = 2.5         # value of keeping an any-target burn spell for a creature later
 CRACK_WEIGHT = 0.5      # weight on (non-lethal) damage we expect to take back next turn
+MAX_SETUP_SPELLS = 6    # spells considered when looking for a precombat kill (pump, burn, keywords)
 MAX_ENUMERATE = 6       # try every attack set up to this many ready creatures
 REMOVAL_BAR = 4.5       # least a creature must be worth to spend instant removal on it
+PW_KEEP = 2.0           # value of a planeswalker still being on the battlefield next turn
 SWEEP_BAR = 6.0         # least net value for a sweeper when we are not under pressure
 
 
@@ -91,6 +93,38 @@ def _is_trick(card: CardDef) -> bool:
 
 def _aim(card: CardDef, eff, target) -> list:
     return [target if e is eff else None for e in card.spell_effects]
+
+
+# Effects lethal_setup knows how to add up before combat, and the keywords it models.
+SETUP_KINDS = {"pump", "grant", "p1_counters", "damage", "draw", "scry", "surveil"}
+SETUP_KEYWORDS = {"double strike", "first strike", "haste", "trample", "flying", "menace"}
+CAST_EVENTS = {"cast_instant_sorcery": lambda c: c.is_instant or c.is_sorcery,
+               "cast_noncreature": lambda c: not c.is_creature,
+               "cast_spell": lambda c: True, "any_cast": lambda c: True}
+
+
+def _setup_spell(card: CardDef) -> bool:
+    """A noncreature spell whose every effect lethal_setup can model."""
+    if card.is_permanent or getattr(card, "modes", None) or not card.spell_effects:
+        return False
+    for e in card.spell_effects:
+        if e.kind not in SETUP_KINDS:
+            return False
+        if e.kind == "grant" and (e.data or {}).get("keyword") not in SETUP_KEYWORDS:
+            return False
+        if e.kind in ("pump", "grant", "p1_counters") and e.target not in ("creature", "creature_mine"):
+            return False
+        if e.kind == "damage" and e.target not in ("any", "player", "creature", "creature_pw"):
+            return False
+    return True
+
+
+def _product(choices):
+    """Every way to pick one item from each list in choices."""
+    out = [[]]
+    for opts in choices:
+        out = [o + [x] for o in out for x in opts]
+    return out
 
 
 def _is_counter(card: CardDef) -> bool:
@@ -307,6 +341,10 @@ class HeuristicAI:
     """Evaluation-driven player: simulates combat, holds instants for the opponent's turn."""
 
     def __init__(self):
+        self.reset()
+
+    def reset(self):
+        """Clear per-game state (run_match calls this on a fresh copy for every game)."""
         self._idle_turns = 0       # own turns in a row we kept mana up for a counter and cast nothing
 
     # -------------------------------------------------------------- mulligan
@@ -347,7 +385,7 @@ class HeuristicAI:
     def main_phase(self, game: Game, me: Player):
         precombat = getattr(game, "step", "main1") != "main2"
         self.play_land(game, me)
-        cast_any = False
+        cast_any = precombat and self.lethal_setup(game, me)
         while not game.over:
             choice = self.choose_spell(game, me, precombat, reserve=self._reserve(game, me))
             if choice is None:
@@ -358,6 +396,134 @@ class HeuristicAI:
         if not precombat:
             held = bool(self._reserve(game, me))
             self._idle_turns = self._idle_turns + 1 if held and not cast_any else 0
+
+    # ------------------------------------------------------- precombat kill
+    def _best_attack_score(self, game: Game, me: Player, opp: Player) -> float:
+        attack = self.choose_attackers(game, me, opp)
+        return self.score_attack(game, me, opp, attack, 0, {}) if attack else 0.0
+
+    def lethal_setup(self, game: Game, me: Player) -> bool:
+        """Before combat, cast the fewest spells (pump, double strike, haste, burn to the face or
+        at a blocker, plus the prowess-style cast triggers they set off) that make an attack
+        lethal through the opponent's best blocks. Returns True if it cast anything."""
+        opp = game.opponent(me)
+        if not me.creatures or not opp.life > 0:
+            return False
+        spells = [c for c in _spell_options(game, me) if _setup_spell(c) and self._can_cast(game, me, c)
+                  and "X" not in c.mana_cost]
+        if not spells:
+            return False
+        spells = sorted(spells, key=lambda c: c.cmc)[:MAX_SETUP_SPELLS]
+        if self._best_attack_score(game, me, opp) >= LETHAL:
+            return False   # already lethal: keep the spells
+        sources = game.mana_sources(me)
+        best = None
+        for r in range(1, min(len(spells), 4) + 1):
+            for combo in combinations(spells, r):
+                cost = {}
+                for c in combo:
+                    for k, v in self._cost(game, me, c).items():
+                        cost[k] = cost.get(k, 0) + v
+                if find_payment(sources, cost) is None:
+                    continue
+                plan = self._setup_plan(game, me, opp, combo)
+                if plan is not None:
+                    key = (r, sum(c.cmc for c in combo))
+                    if best is None or key < best[0]:
+                        best = (key, plan)
+            if best is not None:
+                break   # fewest spells first
+        if best is None:
+            return False
+        cast = False
+        for card, targets in best[1]:
+            live = [t for t in targets if isinstance(t, Permanent)]
+            if any(t not in t.controller.battlefield for t in live) or card not in _spell_options(game, me):
+                break   # they answered a piece of the plan; fall back to the normal main phase
+            if not game.cast(me, card, targets):
+                break
+            cast = True
+            if game.over:
+                break
+        return cast
+
+    def _setup_plan(self, game: Game, me: Player, opp: Player, combo):
+        """[(card, targets)] if casting combo now makes some attack lethal, else None."""
+        carriers = [c for c in me.creatures if not c.tapped and not c.has("defender")]
+        needs_carrier = any(e.kind in ("pump", "grant", "p1_counters") for c in combo for e in c.spell_effects)
+        burn = [c for c in combo if any(e.kind == "damage" for e in c.spell_effects)]
+        blockers = [b for b in opp.creatures if not b.tapped]
+        for carrier in (carriers if needs_carrier else [None]):
+            # Burn goes face, or at one blocker it kills (each burn spell picks independently).
+            choices = []
+            for card in burn:
+                eff = next(e for e in card.spell_effects if e.kind == "damage")
+                opts = [opp] if eff.target in ("any", "player") else []
+                if eff.target in CREATURE_TARGETS:
+                    opts += [b for b in blockers if b.toughness - b.damage <= eff.amount
+                             and not b.has("indestructible") and _legal(game, me, eff, b)][:3]
+                if not opts:
+                    break
+                choices.append(opts)
+            else:
+                for aims in _product(choices):
+                    burn_aim = dict(zip(burn, aims))
+                    if self._lethal_after(game, me, opp, combo, carrier, burn_aim):
+                        out = []
+                        for card in combo:
+                            out.append((card, [burn_aim.get(card) if e.kind == "damage" else
+                                               carrier if e.kind in ("pump", "grant", "p1_counters") else None
+                                               for e in card.spell_effects]))
+                        # Keyword grants and pumps first, then burn (it may clear a blocker).
+                        out.sort(key=lambda x: any(e.kind == "damage" for e in x[0].spell_effects))
+                        return out
+        return None
+
+    def _lethal_after(self, game: Game, me: Player, opp: Player, combo, carrier, burn_aim) -> bool:
+        """Apply combo's effects on scratch state, test for a lethal attack, then undo them."""
+        undo_pump, undo_kw, removed, life = [], [], [], opp._life
+        try:
+            for card in combo:
+                for c in me.creatures:
+                    for t in c.triggers:
+                        test = CAST_EVENTS.get(t.event)
+                        if test is None or not test(card) or t.filter:
+                            continue
+                        for e in t.effects:
+                            if e.kind == "pump" and e.target == "self":
+                                c.pump_p += e.amount
+                                c.pump_t += e.amount2
+                                undo_pump.append((c, e.amount, e.amount2))
+                for e in card.spell_effects:
+                    if e.kind in ("pump", "p1_counters"):
+                        dt = e.amount2 if e.kind == "pump" else e.amount
+                        carrier.pump_p += e.amount
+                        carrier.pump_t += dt
+                        undo_pump.append((carrier, e.amount, dt))
+                    elif e.kind == "grant":
+                        kw = e.data["keyword"]
+                        if kw not in carrier.temp_kw:
+                            carrier.temp_kw.add(kw)
+                            undo_kw.append((carrier, kw))
+                    elif e.kind == "damage":
+                        tgt = burn_aim.get(card)
+                        if tgt is opp:
+                            opp._life -= e.amount
+                        elif isinstance(tgt, Permanent) and tgt in opp.battlefield:
+                            removed.append((opp.battlefield.index(tgt), tgt))
+                            opp.battlefield.remove(tgt)
+            if opp._life <= 0:
+                return True
+            return self._best_attack_score(game, me, opp) >= LETHAL
+        finally:
+            opp._life = life
+            for c, dp, dt in undo_pump:
+                c.pump_p -= dp
+                c.pump_t -= dt
+            for c, kw in undo_kw:
+                c.temp_kw.discard(kw)
+            for i, perm in reversed(removed):
+                opp.battlefield.insert(i, perm)
 
     def _can_cast(self, game: Game, me: Player, card: CardDef) -> bool:
         if hasattr(game, "can_cast_now"):
@@ -374,6 +540,9 @@ class HeuristicAI:
         counters = [c for c in me.hand if _is_counter(c)]
         if not counters or not opp.hand or self._idle_turns >= 1:
             return {}
+        if len(game.mana_sources(opp)) < 2 and any(
+                (c.is_creature or c.is_planeswalker) and self._can_cast(game, me, c) for c in me.hand):
+            return {}   # they are tapped out: the window to resolve a threat past their counters
         return self._cost(game, me, min(counters, key=lambda c: c.cmc))
 
     def choose_spell(self, game: Game, me: Player, precombat: bool, reserve=None):
@@ -836,6 +1005,68 @@ class HeuristicAI:
             if value > 0 and (best is None or value > best[0]):
                 best = (value, card, targets)
         return (best[1], best[2]) if best else None
+
+    # -------------------------------------------------------- planeswalkers
+    def use_abilities(self, game: Game, me: Player):
+        """Loyalty abilities by our own policy, then the engine's defaults for everything else."""
+        skipped = []
+        for pw in list(me.planeswalkers):
+            if pw.loyalty_used or game.over or pw not in me.battlefield:
+                continue
+            idx = self.choose_loyalty(game, me, pw)
+            if idx is None or not game.activate_loyalty(me, pw, idx):
+                pw.loyalty_used = True    # so the engine default doesn't pick one for it
+                skipped.append(pw)
+        try:
+            if not game.over:
+                engine.use_abilities(game, me)
+        finally:
+            for pw in skipped:
+                pw.loyalty_used = False
+
+    def choose_loyalty(self, game: Game, me: Player, pw: Permanent):
+        """Index of the loyalty ability to use, or None. Each ability is worth its effect plus
+        keeping the planeswalker: a + ability that leaves it out of reach of the opponent's
+        attackers beats a - ability that gets it killed, and a walker that dies anyway uses its
+        best effect while it can."""
+        opp = game.opponent(me)
+        best, best_score = None, -1e9
+        for i, (cost, effects) in enumerate(pw.card.loyalty_abilities):
+            after = pw.loyalty + cost
+            if after < 0:
+                continue
+            value = engine._mode_value(game, me, effects)
+            if value < 0:
+                continue
+            score = value
+            if after > 0 and after > self._pw_danger(game, me, opp, effects):
+                score += PW_KEEP + 0.5 * after
+            if cost <= -7:
+                score += 20   # an ultimate usually wins the game
+            if score > best_score:
+                best, best_score = i, score
+        return best
+
+    def _pw_danger(self, game: Game, me: Player, opp: Player, effects) -> int:
+        """Damage the opponent's creatures could put on our planeswalker next turn, after effects."""
+        gone, tokens = set(), []
+        for e in effects:
+            if e.kind in ("destroy", "bounce", "damage", "debuff_one") and e.target in engine.TARGETED:
+                tgt = engine.default_choose_target(game, me, e)
+                if isinstance(tgt, Permanent) and (e.kind != "damage" or tgt.toughness - tgt.damage <= e.amount):
+                    gone.add(tgt)
+            elif e.kind == "wrath":
+                gone |= set(opp.creatures)
+            elif e.kind == "token" and "power" in (e.data or {}):
+                d = e.data
+                fly = "flying" in d.get("keywords", ())
+                tokens += [(d["power"], fly, "reach" in d.get("keywords", ()), None)] * max(1, e.amount)
+        theirs = [(combat_power(c), c.has("flying"), c.has("menace"), c) for c in opp.creatures
+                  if c not in gone and not c.has("defender") and c.power > 0]
+        if not theirs:
+            return 0
+        mine = [(c.power, c.has("flying"), c.has("reach"), c) for c in me.creatures if c not in gone]
+        return unblocked_damage(theirs, mine + tokens, chump=True)
 
     # ---------------------------------------------------------------- combat
     def _pending_blockers(self, game: Game, me: Player):

@@ -1,6 +1,7 @@
 """Run many AI-vs-AI games between decks and summarise the results."""
 from __future__ import annotations
 
+import copy
 import math
 import random
 from dataclasses import dataclass, field
@@ -91,6 +92,17 @@ class MatchResult:
         return "\n".join(lines)
 
 
+def fresh_ai(ai):
+    """A per-game copy of ai with its per-game state cleared (a new HeuristicAI if ai is None).
+    Passing one AI instance for many games, or for both seats, must not carry state over."""
+    if ai is None:
+        return HeuristicAI()
+    ai = copy.copy(ai)
+    if hasattr(ai, "reset"):
+        ai.reset()
+    return ai
+
+
 def run_match(name_a, deck_a, name_b, deck_b, games=1000, seed=None, ai_a=None, ai_b=None,
               log_first=False, on_game=None, log_game=None) -> tuple[MatchResult, list[str]]:
     """on_game(res), if given, is called with the running MatchResult after every game."""
@@ -98,8 +110,8 @@ def run_match(name_a, deck_a, name_b, deck_b, games=1000, seed=None, ai_a=None, 
     res = MatchResult(name_a, name_b)
     first_log: list[str] = []
     for i in range(games):
-        a = Player(name_a, deck_a, ai_a or HeuristicAI())
-        b = Player(name_b, deck_b, ai_b or HeuristicAI())
+        a = Player(name_a, deck_a, fresh_ai(ai_a))
+        b = Player(name_b, deck_b, fresh_ai(ai_b))
         a_on_play = i % 2 == 0
         game = Game(*((a, b) if a_on_play else (b, a)), rng=rng,
                     log=log_game is not None or (log_first and i == 0))
