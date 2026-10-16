@@ -377,3 +377,15 @@ graveyard cards). New trigger events: first and second main phase (with Survival
 triggers only once"), a creature attacking alone, committing a crime (targeting an opponent, their permanent or
 their graveyard), scrying or surveilling, discarding. "Add {R}{R}" effects. Fully supported cards 1,565 → 1,669.
 Not done: Level up and Class levels, "When you do" reflexive triggers with their own targets, cards leaving the graveyard.
+
+## Round 12: graveyard returns, granted flashback, graveyard statics, restricted removal
+
+One general template for "Return [up to N] target <description> card(s) [with mana value N or less] from your / a
+graveyard to your hand / the battlefield [tapped]" (descriptions like "noncreature, nonland permanent", "creature or
+Vehicle", subtypes, "all land cards"). "Target instant or sorcery card in your graveyard gains flashback until end of
+turn". Threshold / Descend statics that grant keywords or "can't be blocked", "~ costs {1} less for each <description>
+card in your graveyard", and "whenever one or more <description> cards leave your graveyard" triggers (once per batch).
+Restricted removal: "destroy / exile [up to one] target <artifact, enchantment, creature ...> [an opponent controls]
+[with mana value / power / toughness N or less / greater]". Fully supported cards 1,669 → 1,755.
+Not done: counter riders on returned cards ("with a finality counter", "with X additional +1/+1 counters"),
+"cast from your graveyard" permissions, embalm / eternalize grants.
