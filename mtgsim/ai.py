@@ -51,11 +51,29 @@ def _targetable(game: Game, perm: Permanent, by: Player) -> bool:
     return game.targetable(perm, by) if hasattr(game, "targetable") else True
 
 
-def _legal(game: Game, by: Player, eff: Effect, perm: Permanent) -> bool:
-    """Targetable and passing the effect's restrictions ("nonblack", "mana value 2 or less")."""
-    if hasattr(game, "legal_target"):
-        return game.legal_target(by, eff, perm)
-    return _targetable(game, perm, by)
+def _legal(game: Game, by: Player, eff: Effect, perm: Permanent, card: CardDef | None = None) -> bool:
+    """Targetable, passing the effect's restrictions ("nonblack", "mana value 2 or less"), and
+    with any ward on it payable on top of card's cost (without card: from the mana left now)."""
+    ok = game.legal_target(by, eff, perm) if hasattr(game, "legal_target") else _targetable(game, perm, by)
+    return ok and _ward_payable(game, by, perm, card)
+
+
+def _ward_payable(game: Game, by: Player, perm, card: CardDef | None = None) -> bool:
+    if not isinstance(perm, Permanent) or perm.controller is by:
+        return True
+    ward = getattr(perm, "ward", 0)
+    if ward:
+        cost = dict(game.cost_of(by, card) if card is not None and card.name and hasattr(game, "cost_of")
+                    else (card.mana_cost if card is not None else {}))
+        cost.pop("X", None)
+        cost["generic"] = cost.get("generic", 0) + ward
+        return find_payment(game.mana_sources(by), cost) is not None
+    life = getattr(perm.card, "ward_life", 0)
+    if life:
+        return by.life > life + 3
+    if getattr(perm.card, "ward_discard", False):
+        return len(by.hand) > (1 if card is not None and card in by.hand else 0)
+    return True
 
 
 CREATURE_TARGETS = ("creature", "creature_pw", "any")
@@ -94,6 +112,10 @@ def _is_trick(card: CardDef) -> bool:
 def _aim(card: CardDef, eff, target) -> list:
     return [target if e is eff else None for e in card.spell_effects]
 
+
+# Effects plan_spell values through _extra_value.
+EXTRA_KINDS = {"tutor", "explore", "oring_all", "pump_all", "double_counters",
+               "tap", "stun", "mill"}
 
 # Effects lethal_setup knows how to add up before combat, and the keywords it models.
 SETUP_KINDS = {"pump", "grant", "p1_counters", "damage", "draw", "scry", "surveil"}
@@ -461,7 +483,7 @@ class HeuristicAI:
                 opts = [opp] if eff.target in ("any", "player") else []
                 if eff.target in CREATURE_TARGETS:
                     opts += [b for b in blockers if b.toughness - b.damage <= eff.amount
-                             and not b.has("indestructible") and _legal(game, me, eff, b)][:3]
+                             and not b.has("indestructible") and _legal(game, me, eff, b, card)][:3]
                 if not opts:
                     break
                 choices.append(opts)
@@ -564,6 +586,9 @@ class HeuristicAI:
                     for k, v in self._cost(game, me, c).items():
                         if k != "X":
                             cost[k] = cost.get(k, 0) + v
+                    cost["generic"] = cost.get("generic", 0) + sum(
+                        getattr(t, "ward", 0) for t in plans[c][1] or ()
+                        if isinstance(t, Permanent) and t.controller is not me)
                 if find_payment(sources, cost) is None:
                     continue
                 key = (sum(plans[c][0] for c in combo), sum(c.cmc for c in combo))
@@ -627,7 +652,7 @@ class HeuristicAI:
             if card.is_creature and precombat and "haste" not in card.keywords and not card.produces \
                     and any(_is_trick(c) for c in me.hand):
                 return None  # keep mana open for the trick; cast it after combat
-            return (card_value(card) + 0.5 * card.cmc, None)
+            return (card_value(card) + 0.5 * card.cmc + self._etb_value(game, me, card, precombat), None)
         instant = card.instant_speed
         if getattr(card, "modes", None):
             # The engine picks modes and targets (choose_modes); value it the same way.
@@ -649,14 +674,20 @@ class HeuristicAI:
                     return None  # removal waits for their attack or end step
                 targets.append(tgt)
                 value += v
-            elif eff.kind in ("destroy", "bounce", "debuff_one"):
-                tgt = self.choose_target(game, me, eff)
+            elif eff.kind in ("destroy", "bounce", "debuff_one", "oring"):
+                tgt = self.choose_target(game, me, eff, card)
                 if tgt is None:
                     return None
                 if instant and not self._clears_blocker(game, me, tgt, precombat):
                     return None
                 targets.append(tgt)
                 value += perm_value(tgt) + 1 if eff.kind != "bounce" else 0.5 * tgt.card.cmc + 1
+            elif eff.kind in EXTRA_KINDS or (eff.kind == "p1_counters" and eff.target == "my_creatures"):
+                got = self._extra_value(game, me, eff, card, precombat)
+                if got is None:
+                    return None
+                targets.append(got[0])
+                value += got[1]
             elif eff.kind in ("wrath", "debuff") or (eff.kind == "damage" and eff.target == "each_creature"):
                 v = self.sweep_value(game, me, eff)
                 # Under pressure any good sweep will do; otherwise wait until it takes out several cards.
@@ -705,7 +736,7 @@ class HeuristicAI:
                 value += sum(perm_value(x) for x in getattr(opp, "planeswalkers", [])) - \
                     sum(perm_value(x) for x in getattr(me, "planeswalkers", []))
             elif eff.target in getattr(engine, "TARGETED", ()):
-                tgt = self.choose_target(game, me, eff)
+                tgt = self.choose_target(game, me, eff, card)
                 if tgt is None:
                     return None
                 targets.append(tgt)
@@ -714,6 +745,57 @@ class HeuristicAI:
                 targets.append(None)
                 value += MINOR_EFFECTS.get(eff.kind, 0.0) * max(1, eff.amount)
         return (value, targets)
+
+    def _extra_value(self, game: Game, me: Player, eff: Effect, card: CardDef, precombat: bool):
+        """(target, value) for effects the main switch above has no case for, or None to hold."""
+        opp = game.opponent(me)
+        k = eff.kind
+        ready = [c for c in me.creatures if c.can_attack() and c.power > 0]
+        if k == "tutor":
+            return None, 2.0      # the best card of a kind, from the library
+        if k == "explore":
+            tgt = self.choose_target(game, me, eff, card) if eff.target == "creature_mine" else None
+            if eff.target == "creature_mine" and tgt is None:
+                return None
+            return tgt, 1.2       # a land to hand, or a +1/+1 counter and a look at the top card
+        if k == "oring_all":
+            hit = lambda x: (x.is_creature or x.card.is_artifact) and x.card.cmc <= eff.amount
+            v = sum(perm_value(x) for x in opp.battlefield if hit(x)) - \
+                sum(perm_value(x) for x in me.battlefield if hit(x))
+            return (None, v) if v > 0 else None
+        if k == "pump_all":
+            # A team pump matters for this turn's attack: before combat, with attackers ready.
+            if not precombat or not ready:
+                return None
+            kw = 0.5 if (eff.data or {}).get("keyword") else 0.0
+            return None, len(ready) * (0.5 * (eff.amount + eff.amount2) + kw)
+        if k in ("p1_counters", "double_counters") and eff.target == "my_creatures":
+            if not me.creatures:
+                return None
+            each = eff.amount if k == "p1_counters" else 0.5
+            return None, len(me.creatures) * each
+        if k in ("tap", "stun"):
+            tgt = self.choose_target(game, me, eff, card)
+            if tgt is None and eff.target in engine.TARGETED:
+                return None
+            return tgt, 0.5 * eff.amount if k == "stun" else 0.5
+        if k == "mill":
+            return None, 0.1 * eff.amount
+        return None, 0.0
+
+    def _etb_value(self, game: Game, me: Player, card: CardDef, precombat: bool) -> float:
+        """Extra value of a permanent's enters-the-battlefield removal, tutor or explore."""
+        # Mirrors Game.enter_battlefield: etb_effects only fire on a card without an etb trigger.
+        effects = [e for t in card.triggers if t.event == "etb" for e in t.effects] or list(card.etb_effects)
+        value = 0.0
+        for eff in effects:
+            if eff.kind == "oring":
+                tgt = self.choose_target(game, me, eff, card)
+                value += perm_value(tgt) if tgt is not None else 0.0
+            elif eff.kind in EXTRA_KINDS and eff.target in ("none", "self", "my_creatures"):
+                got = self._extra_value(game, me, eff, card, precombat)
+                value += got[1] if got is not None else 0.0
+        return value
 
     def _clears_blocker(self, game: Game, me: Player, tgt, precombat: bool) -> bool:
         """Is it worth using instant removal on tgt in our own main phase (to attack past it)?"""
@@ -745,14 +827,14 @@ class HeuristicAI:
         best_kill, kill_val = None, 0.0
         if eff.target in CREATURE_TARGETS:
             for c in opp.creatures:
-                if c.toughness - c.damage <= eff.amount and _legal(game, me, eff, c) \
+                if c.toughness - c.damage <= eff.amount and _legal(game, me, eff, c, card) \
                         and not c.has("indestructible"):
                     v = perm_value(c) + 0.5
                     if v > kill_val:
                         best_kill, kill_val = c, v
         if eff.target in ("any", "creature_pw"):
             for pw in getattr(opp, "planeswalkers", []):
-                if not pw.is_creature and pw.loyalty <= eff.amount and _legal(game, me, eff, pw):
+                if not pw.is_creature and pw.loyalty <= eff.amount and _legal(game, me, eff, pw, card):
                     v = perm_value(pw) + 0.5
                     if v > kill_val:
                         best_kill, kill_val = pw, v
@@ -767,26 +849,28 @@ class HeuristicAI:
             return None, 0.0
         return opp, face
 
-    def choose_target(self, game: Game, me: Player, eff: Effect):
+    def choose_target(self, game: Game, me: Player, eff: Effect, card: CardDef | None = None):
         opp = game.opponent(me)
         if eff.kind == "damage":
             if eff.target in ("any", "player", "creature", "creature_pw"):
-                tgt, _ = self.best_damage_target(game, me, eff, CardDef("", {}, 0, frozenset()), False)
+                tgt, _ = self.best_damage_target(game, me, eff, card or CardDef("", {}, 0, frozenset()), False)
                 if tgt is not None or eff.target in ("creature", "creature_pw"):
                     return tgt
                 return opp
             return None
-        if eff.kind in ("destroy", "bounce", "debuff_one"):
+        if eff.kind in ("destroy", "bounce", "debuff_one", "oring", "tap", "stun"):
             pool = opp.creatures + [x for x in getattr(opp, "planeswalkers", []) if not x.is_creature]
             if eff.target == "nonland_perm":
                 pool = [x for x in opp.battlefield if not x.card.is_land or x.is_creature]
             elif eff.target == "artifact":
                 pool = [x for x in opp.battlefield if getattr(x.card, "is_artifact", False)]
-            legal = [c for c in pool if _legal(game, me, eff, c)
+            if eff.kind in ("tap", "stun"):
+                pool = [c for c in opp.creatures if not c.tapped or eff.kind == "stun"]
+            legal = [c for c in pool if _legal(game, me, eff, c, card)
                      and not (eff.kind == "destroy" and c.has("indestructible"))
                      and not (eff.kind == "debuff_one" and c.toughness - c.damage > eff.amount2)]
             return max(legal, key=perm_value, default=None)
-        if eff.kind in ("pump", "p1_counters"):
+        if eff.kind in ("pump", "p1_counters", "explore"):
             mine = [c for c in me.creatures if _legal(game, me, eff, c)]
             return max(mine, key=perm_value, default=None)
         if hasattr(engine, "default_choose_target"):
@@ -908,7 +992,7 @@ class HeuristicAI:
         targets, value = [], 0.0
         for eff in card.spell_effects:
             if eff.kind in ("destroy", "bounce") or (eff.kind == "damage" and eff.target in CREATURE_TARGETS):
-                legal = [c for c in pool if _legal(game, me, eff, c)
+                legal = [c for c in pool if _legal(game, me, eff, c, card)
                          and not (eff.kind != "bounce" and c.has("indestructible"))
                          and (eff.kind != "damage" or c.toughness - c.damage <= eff.amount)]
                 tgt = max(legal, key=perm_value, default=None)
