@@ -10,6 +10,8 @@ import dataclasses
 import re
 from dataclasses import dataclass, field
 
+from . import modal
+
 COLORS = ("W", "U", "B", "R", "G")
 KEYWORDS = {
     "flying", "reach", "haste", "trample", "first strike", "double strike",
@@ -88,6 +90,7 @@ class Activated:
     once: bool = False               # "Activate only once each turn."
     min_charge: int = 0              # under "STATION N+": needs N charge counters
     text: str = ""
+    modes: list = field(default_factory=list)    # "COST: Choose one —": a modal.Modes
 
 
 @dataclass
@@ -722,12 +725,13 @@ def _parse_face(data: dict) -> CardDef:
                 else:
                     keywords.add(p)
             continue
-        if line.startswith("•") and mode_sink is not None:
-            effs, bad = _parse_effects(line[1:].strip())
+        bullet = modal.parse_bullet(line) if mode_sink is not None else None
+        if bullet is not None:
+            effs, bad = _parse_effects(bullet[1])
             if bad or not effs:
                 unsupported.append(line)
             else:
-                mode_sink.append(effs)
+                modal.add_mode(mode_sink, effs, bullet[0])
             continue
         mode_sink = None
         m = re.fullmatch(r"Ward—Pay (\d+) life\.", line)
@@ -1098,6 +1102,8 @@ def _parse_face(data: dict) -> CardDef:
         if act is not None:
             act.min_charge = station_min
             activated.append(act)
+            if isinstance(act.modes, modal.Modes):
+                mode_sink = act.modes
             continue
         trig = _parse_trigger(line)
         if trig is not None:
@@ -1111,9 +1117,11 @@ def _parse_face(data: dict) -> CardDef:
             unsupported += bad
             continue
         if not types.isdisjoint({"Instant", "Sorcery"}):
-            m = re.fullmatch(r"Choose (one|two) —", line)
-            if m:
-                extra["modes_choose"] = _num(m[1])
+            head = modal.parse_header(line)
+            if head is not None and not modes:
+                modes = modal.Modes(spec=head[0])
+                extra["modes_choose"] = min(head[0].most, 9)
+                approximations += head[1]
                 mode_sink = modes
                 continue
             effs, bad = _parse_effects(line)
@@ -1233,6 +1241,11 @@ def _parse_ability(line: str, approximations: list):
         once |= r[2] == "Activate only once each turn"
         if r[2].startswith("This ability costs"):
             approx.append(f"cost reduction ignored: {r[2]}.")
+    head = modal.parse_header(body)
+    if head is not None and not head[1]:
+        approximations += approx
+        return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=line,
+                         modes=modal.Modes(spec=head[0]))
     effects, bad = _parse_effects(body)
     if bad or not effects:
         return None
@@ -1272,8 +1285,9 @@ def _parse_trigger_line(line: str):
         if events == ("permanent_enters",):
             desc = m[3] + (f" or {m[5]}" if m[5] else "") + (m[4] or "")
             flt = f"{'self' if m[1] else 'noself'}|{'other' if m[2] == 'another' else 'any'}|{desc}"
-        if re.fullmatch(r"choose up to one —", rest, flags=re.I):
-            modes: list = []
+        head = modal.parse_header(rest)
+        if head is not None and not head[1]:
+            modes = modal.Modes(spec=head[0])
             return [Trigger(e, [], flt, modes) for e in events], [], modes
         spent = re.fullmatch(r"if \{([WUBRG])\}\{\1\} was spent to cast it, (.+)", rest, flags=re.S)
         cond = f"spent:{spent[1]}" if spent else ""
