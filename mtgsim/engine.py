@@ -1159,6 +1159,9 @@ class Game:
 
     def check_ward(self, item: StackItem):
         for tgt in item.targets:
+            if isinstance(tgt, Permanent) and tgt.controller is item.controller and tgt in tgt.controller.battlefield:
+                self.fire(tgt.controller, "targeted_mine", source=tgt)      # Valiant
+        for tgt in item.targets:
             if isinstance(tgt, Permanent) and tgt.controller is not item.controller:
                 if tgt.ward:
                     self.queue_trigger(tgt.controller, [Effect("counter", tgt.ward, target="spell")], tgt,
@@ -1256,6 +1259,10 @@ class Game:
         c = eff.cond
         if not c:
             return True
+        if c in ("mana>=5", "mana<5"):
+            spell = item.context
+            big = isinstance(spell, StackItem) and spell.mana_spent >= 5
+            return big if c == "mana>=5" else not big
         if c == "attacked2":
             return p.attacked_with >= 2
         if c == "not_attacked2":
@@ -1400,6 +1407,9 @@ class Game:
                                                          flt[6:].capitalize() in card.types):
                         continue
                     if trig.event == "cast_cmc" and card.cmc < int(trig.filter[5:]):
+                        continue
+                    if flt == "targets_creature" and not any(isinstance(t, Permanent) and t.is_creature
+                                                            for t in targets):
                         continue
                     if (trig.event in ("cast_spell", "cast_cmc") or
                             (trig.event == "cast_noncreature" and not card.is_creature) or
