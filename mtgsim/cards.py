@@ -177,6 +177,11 @@ class CardDef:
     lands_from_gy: bool = False                         # "You may play lands from your graveyard."
     etb_counters_if: tuple = ()                         # ("opp_lost_life", n): "enters with a +1/+1 counter if ..."
     team_keywords: frozenset = frozenset()              # "Creatures you control have haste."
+    tapped_discount: int = 0                            # "~ costs {3} less to cast if it targets a tapped creature"
+    extra_discard: int = 0                              # "As an additional cost to cast ~, discard a card" (1 = or pay {2}: see discard_or_pay)
+    discard_or_pay: int = 0                             # "... discard a card or pay {2}"
+    untap_each_untap: bool = False                      # "Untap ~ during each other player's untap step"
+    anthem_enchanted: tuple = ()                        # "Enchanted creatures you control get +N/+N"
     token_ability_discount: int = 0                     # "Activated abilities of artifact tokens you control cost {1} less"
     grant_mana: tuple = ()                              # ((scope, colours), ...): 'Creatures you control have "{T}: Add ..."'
     cost_discount: tuple = ()                           # ((filter, n), ...): "Red spells you cast cost {1} less"
@@ -431,6 +436,12 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("draw", 1, cond="opp_lost_life")),
     (r"target player discards a card", lambda m: Effect("discard", 1, target="player")),
     (r"each opponent discards a card", lambda m: Effect("discard", 1, target="player")),
+    (r"if (?:that|the) (?:creature|permanent|creature or planeswalker) would die this turn, exile it instead",
+     lambda m: Effect("exile_instead", target="prev")),
+    (r"(?:you )?recruit", lambda m: Effect("recruit")),
+    (r"return up to (one|two) target creature cards? from your graveyard to your hand",
+     lambda m: Effect("regrow", _num(m[1]))),
+    (r"return ~ to its owner's hand", lambda m: Effect("bounce_self")),
     (r"empower jace (\d+)", lambda m: Effect("empower", int(m[1]))),
     (r"empower jace x, where x is the number of (creatures|islands) you control",
      lambda m: Effect("empower", 0, data={"count": m[1].lower()})),
@@ -649,7 +660,7 @@ _TRIGGERS = [
     (r"Whenever another creature you control enters or dies, if that creature's power is greater than ~'s, (.+)",
      ("other_creature_enters", "other_creature_dies")),
     (r"Whenever a land you control enters, (.+)", ("land_enters",)),
-    (r"Whenever (~ or )?(another|an?) ((?:[\w-]+(?:,? or |, | ))*?(?:creature|artifact|enchantment|planeswalker|"
+    (r"When(?:ever)? (~ or )?(another|an?) ((?:[\w-]+(?:,? or |, | ))*?(?:creature|artifact|enchantment|planeswalker|"
      r"[A-Z]\w+)s?) you control( with mana value \d+ or greater)? enters(?: and whenever an? ([A-Z]\w+) you control "
      r"enters| and whenever you fully unlock a Room)?, (.+)",
      ("permanent_enters",)),
@@ -1142,6 +1153,28 @@ def _parse_face(data: dict) -> CardDef:
             cols = frozenset(COLORS) if "any color" in m[2] else frozenset(re.findall(r"[WUBRGC]", m[2]))
             extra["grant_mana"] = extra.get("grant_mana", ()) + ((scope, cols),)
             continue
+        m = re.fullmatch(r"~ costs \{(\d+)\} less to cast if it targets a tapped creature\.", line)
+        if m:
+            extra["tapped_discount"] = int(m[1])
+            continue
+        m = re.fullmatch(r"As an additional cost to cast ~, discard a card(?: or pay \{(\d+)\})?\.", line)
+        if m:
+            extra["extra_discard"] = 1
+            extra["discard_or_pay"] = int(m[1] or 0)
+            continue
+        if line == "Untap ~ during each other player's untap step.":
+            extra["untap_each_untap"] = True
+            continue
+        m = re.fullmatch(r"Enchanted creatures you control get \+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["anthem_enchanted"] = (int(m[1]), int(m[2]))
+            continue
+        if line in ("~ enters tapped. As it enters, choose a color.", "As ~ enters, choose a color."):
+            extra["choose_type"] = "basic_land"
+            produces |= set(COLORS)
+            if line.startswith("~ enters"):
+                enters_tapped = True
+            continue
         m = re.fullmatch(r"Activated abilities of artifact tokens you control cost \{(\d+)\} less to activate\.", line)
         if m:
             extra["token_ability_discount"] = int(m[1])
@@ -1168,6 +1201,9 @@ def _parse_face(data: dict) -> CardDef:
         m = re.fullmatch(r"Creatures you control get \+(\d+)/\+(\d+)\.", line)
         if m:
             extra["anthem"] = (int(m[1]), int(m[2]))
+            continue
+        if line == "Increment":
+            triggers.append(Trigger("cast_spell", [Effect("increment")]))
             continue
         m = re.fullmatch(r"Mobilize (\d+|X)(?:, where X is the number of creature cards in your graveyard)?", line)
         if m:
@@ -1621,7 +1657,7 @@ _ROLES = {
     "sorcerer": dict(host_triggers=[Trigger("attacks", [Effect("scry", 1)])]),
     "young hero": dict(host_triggers=[Trigger("attacks", [Effect("add_counter", 1, target="self", cond="host_toughness<=3",
                                                                     data={"counter": "+1/+1"})])]),
-    "virtuous": dict(),
+    "virtuous": dict(aura_flags=frozenset({"per_enchantment"})),
 }
 
 
