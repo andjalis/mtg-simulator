@@ -223,3 +223,13 @@ thresholds (plan counters). Fully supported cards 894 → 905.
 Graveyards count the permanent cards put into them this turn, so "if you descended this turn, ..." works as a trigger
 condition and as a "choose both instead" upgrade. Kicker and additional-cost upgrades (two cards) are still unmodelled.
 Fully supported cards 905 → 911.
+
+## Cheapest single-line misses
+
+Taken from the cards missing exactly one line, most common first: "enters tapped unless you control a planeswalker /
+unless a player has 13 or less life" (20 cards), Cycling and the landcycling family (about 30; the AI cycles with
+spare mana after its main phase: a landcycler while land drops are short, a card it can't reach soon, or when the hand
+is full), Changeling (counts as every creature type), "Investigate", "untap ~", "gets +X/+Y and gains KEYWORD until
+end of turn" and "each opponent discards a card". Fully supported cards 911 → 1,020 (20.8% of 4,902).
+Next cheapest: Convoke (8), "enters prepared" (17, a new mechanic), Mobilize, Disguise, manifest dread, endure,
+"exile up to N target cards from a graveyard".
