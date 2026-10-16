@@ -153,6 +153,44 @@ class AITests(unittest.TestCase):
         perm("Centaur Courser", self.a)
         self.assertIsNotNone(self.b.ai.plan_spell(self.game, self.b, sweep))
 
+    def test_run_match_gives_each_game_fresh_ai_state(self):
+        from mtgsim.runner import fresh_ai
+        shared = HeuristicAI()
+        shared._idle_turns = 3
+        copy = fresh_ai(shared)
+        self.assertIsNot(copy, shared)
+        self.assertEqual(copy._idle_turns, 0)
+        self.assertEqual(shared._idle_turns, 3)
+
+    def test_planeswalker_makes_blocker_instead_of_plus_that_gets_it_killed(self):
+        emperor = perm("The Wandering Emperor", self.a)
+        emperor.counters["loyalty"] = 2
+        perm("Grizzly Bears", self.a)
+        perm("Kalonian Tusker", self.b)
+        perm("Kalonian Tusker", self.b)
+        # +1 leaves 3 loyalty against two 3/3s and one blocker; -1 makes a second blocker.
+        cost = emperor.card.loyalty_abilities[self.a.ai.choose_loyalty(self.game, self.a, emperor)][0]
+        self.assertEqual(cost, -1)
+
+    def test_planeswalker_plus_when_it_keeps_the_walker_safe(self):
+        emperor = perm("The Wandering Emperor", self.a)
+        emperor.counters["loyalty"] = 3
+        perm("Grizzly Bears", self.a)
+        perm("Grizzly Bears", self.b)
+        cost = emperor.card.loyalty_abilities[self.a.ai.choose_loyalty(self.game, self.a, emperor)][0]
+        self.assertEqual(cost, 1)
+
+    def test_taps_counter_mana_for_a_threat_while_they_are_tapped_out(self):
+        for _ in range(5):
+            perm("Island", self.a)
+        lands = [perm("Island", self.b) for _ in range(3)]
+        self.a.hand = [DB.get("Counterspell"), DB.get("Air Elemental")]
+        self.b.hand = [DB.get("Grizzly Bears")]
+        self.assertTrue(self.a.ai._reserve(self.game, self.a))
+        for land in lands:
+            land.tapped = True
+        self.assertEqual(self.a.ai._reserve(self.game, self.a), {})
+
 
 if __name__ == "__main__":
     unittest.main()

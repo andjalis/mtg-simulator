@@ -19,6 +19,14 @@ CARDS = {c["name"]: card_from_scryfall(c) for c in [
      "oracle_text": "Target creature gets +3/+3 until end of turn."},
     {"name": "Expedite", "mana_cost": "{R}", "cmc": 1, "type_line": "Instant",
      "oracle_text": "Target creature gains haste until end of turn.\nDraw a card."},
+    {"name": "Temur Battle Rage", "mana_cost": "{1}{R}", "cmc": 2, "type_line": "Instant",
+     "oracle_text": "Target creature gains double strike until end of turn."},
+    {"name": "Lightning Bolt", "mana_cost": "{R}", "cmc": 1, "type_line": "Instant",
+     "oracle_text": "Lightning Bolt deals 3 damage to any target."},
+    {"name": "Shock", "mana_cost": "{R}", "cmc": 1, "type_line": "Instant",
+     "oracle_text": "Shock deals 2 damage to any target."},
+    {"name": "Grizzly Bears", "mana_cost": "{1}{G}", "cmc": 2, "type_line": "Creature — Bear",
+     "power": "2", "toughness": "2", "oracle_text": ""},
     {"name": "Mountain", "mana_cost": "", "cmc": 0, "type_line": "Basic Land — Mountain", "oracle_text": "({T}: Add {R}.)"},
 ]}
 
@@ -84,6 +92,34 @@ class KilnFiendComboTests(unittest.TestCase):
         self.a.hand = [CARDS["Assault Strobe"], CARDS["Brute Force"]]
         self.game.take_turn(self.a)
         self.assertTrue(self.b.lost)
+
+    def test_pilot_casts_burn_precombat_for_the_extra_trigger(self):
+        # Battle Rage alone: (1+3) x 2 = 8. Bolt first adds a trigger: (1+3+3) x 2 = 14.
+        perm("Kiln Fiend", self.a)
+        for _ in range(3):
+            perm("Mountain", self.a)
+        self.b.life = 14
+        self.a.hand = [CARDS["Temur Battle Rage"], CARDS["Lightning Bolt"]]
+        self.game.take_turn(self.a)
+        self.assertTrue(self.b.lost)
+
+    def test_pilot_burns_the_blocker_to_get_through(self):
+        perm("Kiln Fiend", self.a)
+        for _ in range(2):
+            perm("Mountain", self.a)
+        perm("Grizzly Bears", self.b)
+        self.b.life = 12
+        self.a.hand = [CARDS["Assault Strobe"], CARDS["Shock"]]
+        self.game.take_turn(self.a)
+        self.assertTrue(self.b.lost)
+
+    def test_pilot_keeps_spells_when_no_kill_is_on(self):
+        perm("Kiln Fiend", self.a)
+        perm("Mountain", self.a)
+        self.a.hand = [CARDS["Lightning Bolt"]]
+        self.game.step = "main1"
+        self.assertFalse(self.a.ai.lethal_setup(self.game, self.a))
+        self.assertEqual(self.a.hand, [CARDS["Lightning Bolt"]])
 
     def test_fixture_deck_is_sixty_cards(self):
         from mtgsim.decklist import load_deck
