@@ -263,3 +263,12 @@ in your graveyard" (descend, threshold), "~ enters with a +1/+1 counter if a cre
 you attacked this turn", plus small effect lines (drain with "defending player", "draw a card and lose N life",
 opponent discards, opponent sacrifices a creature, another target creature gains a keyword or a counter, "1 damage
 to each of one or two targets" read as one target). Fully supported cards 1,110 → 1,162.
+
+## Flagged-deck cards and mana abilities with costs
+
+Magmatic Hellkite (destroys the opponent's best nonbasic land, which fetches a tapped basic with a stun counter; the land
+is chosen, not targeted), Sapling Nursery ("Treefolk and Forests you control gain indestructible"). Mana abilities:
+filter lands and Prophetic Prism ("{1}, {T}: Add one mana of any color" adds no mana of its own, it recolours one other
+source and taps), once-per-turn converters ("{1}: Add {W}, {B}, or {G}", no tap needed), "{T}, Tap an untapped creature
+you control: Add one mana of any color", "{T}, Sacrifice ~: Add ...", and "Activate only if you control a Dragon".
+Fully supported cards 1,162 → 1,184.
