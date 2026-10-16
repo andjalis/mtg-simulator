@@ -232,7 +232,7 @@ def fits(card, what: str, perm=None) -> bool:
             elif lw in _TYPES:
                 ok &= _TYPES[lw] in card.types
             elif w[0].isupper():
-                ok &= w in card.subtypes
+                ok &= w in card.subtypes or card.changeling
             else:
                 ok = False
         if ok:

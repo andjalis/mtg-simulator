@@ -136,6 +136,8 @@ class CardDef:
     activated: list = field(default_factory=list)
     anthem: tuple = ()                                  # (power, toughness) for creatures you control
     crew: int = 0
+    changeling: bool = False                            # is every creature type
+    cycling: dict | None = None                         # {"cost": mana, "land": "" | basic | any | Plains...}
     saddle: int = 0                                     # Mounts: tap creatures with total power N or more to saddle
     min_blocker_power: int = 0
     keyword_at_counters: tuple = ()                     # (n, keyword): Pelt Collector
@@ -414,6 +416,12 @@ _EFFECT_PATTERNS = [
     (r"(?:then )?draw a card for each opponent who lost life this turn",
      lambda m: Effect("draw", 1, cond="opp_lost_life")),
     (r"target player discards a card", lambda m: Effect("discard", 1, target="player")),
+    (r"each opponent discards a card", lambda m: Effect("discard", 1, target="player")),
+    (r"investigate", lambda m: Effect("token", 1, data={"kind": "clue"})),
+    (r"untap ~", lambda m: Effect("untap_self")),
+    (r"target creature(?: you control)? gets \+(\d+)/\+(\d+) and gains (flying|first strike|double strike|deathtouch|"
+     r"lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach) until end of turn",
+     lambda m: Effect("pump", int(m[1]), int(m[2]), target="creature", data={"keyword": m[3].lower()})),
     (r"(?:then )?discard (a|one|two|three) cards? unless you discard an? basic land card",
      lambda m: Effect("discard", _num(m[1]), data={"unless": "basic_land"})),
     (r"(?:then )?discard (a|one|two|three) cards?(?: unless .*)?", lambda m: Effect("discard", _num(m[1]))),
@@ -802,6 +810,12 @@ def _parse_face(data: dict) -> CardDef:
             kinds = [re.fullmatch(r"an? (basic land|[A-Z]\w+)", part)[1] for part in m[1].split(" or ")]
             extra["tapped_condition"] = "unless_control:" + "|".join("basic" if k == "basic land" else k for k in kinds)
             continue
+        if re.fullmatch(r"~ enters(?: the battlefield)? tapped unless you control a planeswalker\.", line):
+            extra["tapped_condition"] = "unless_pw"
+            continue
+        if re.fullmatch(r"~ enters(?: the battlefield)? tapped unless a player has (\d+) or less life\.", line):
+            extra["tapped_condition"] = "unless_player_life<=" + re.search(r"(\d+)", line)[1]
+            continue
         m = re.fullmatch(r"As ~ enters(?: the battlefield)?, you may behold an? ([A-Z]\w+)\. If you don't, ~ enters "
                          r"(?:the battlefield )?tapped\.", line)
         if m:
@@ -1033,6 +1047,17 @@ def _parse_face(data: dict) -> CardDef:
         m = re.fullmatch(r"Creatures you control get \+(\d+)/\+(\d+)\.", line)
         if m:
             extra["anthem"] = (int(m[1]), int(m[2]))
+            continue
+        if line == "Changeling":
+            extra["changeling"] = True
+            continue
+        m = re.fullmatch(r"(Cycling|Basic landcycling|Landcycling|(?:Plains|Island|Swamp|Mountain|Forest)cycling) "
+                         r"(\{[^ ]+\})", line)
+        if m:
+            kind = m[1].lower()
+            extra["cycling"] = {"cost": parse_mana_cost(m[2]), "land": "" if kind == "cycling" else
+                                "basic" if kind == "basic landcycling" else "any" if kind == "landcycling" else
+                                m[1][:-7]}
             continue
         m = re.fullmatch(r"Saddle (\d+)", line)
         if m:

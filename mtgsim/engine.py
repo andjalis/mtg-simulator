@@ -816,6 +816,39 @@ class Game:
         p.ai.main_phase(self, p)
         if not self.over:
             self.hook(p, "use_abilities")(self, p)
+            self.cycle_spare(p)
+
+    def cycle_spare(self, p: Player):
+        """Cycle (and landcycle) cards that aren't going to be cast, with the mana left after the main phase:
+        a card with a landcycling cost while the land drops are short, a cycling card that costs more than we
+        can reach soon, or any cycling card when the hand is full."""
+        for card in list(p.hand):
+            spec = card.cycling
+            if not spec or card not in p.hand or self.over:
+                continue
+            lands = sum(x.card.is_land for x in p.battlefield)
+            if spec["land"]:
+                if lands + sum(c.is_land for c in p.hand) >= 5:
+                    continue
+            elif not (card.cmc > lands + 2 or len(p.hand) > 7):
+                continue
+            if self.pay(p, spec["cost"]) is None:
+                continue
+            p.hand.remove(card)
+            p.graveyard.append(card)
+            self.log(f"cycles {card.name}", p)
+            if spec["land"]:
+                want = spec["land"]
+                found = next((c for c in p.library if c.is_land and (
+                    want == "any" or (want == "basic" and is_basic_land(c)) or want in c.subtypes)), None)
+                if found is not None:
+                    p.library.remove(found)
+                    p.hand.append(found)
+                    self.log(f"fetches {found.name}", p)
+                self.rng.shuffle(p.library)
+            else:
+                self.draw(p)
+            self.settle()
 
     def take_turn(self, p: Player):
         opp = self.opponent(p)
@@ -1557,6 +1590,10 @@ class Game:
         elif cond.startswith("behold:"):
             kind = cond.split(":", 1)[1]
             perm.tapped = not any(kind in c.subtypes for c in [x.card for x in p.battlefield] + p.hand)
+        elif cond == "unless_pw":
+            perm.tapped = not p.planeswalkers
+        elif cond.startswith("unless_player_life<="):
+            perm.tapped = not any(pl.life <= int(cond[20:]) for pl in self.players)
         elif cond == "shock":
             if self.hook(p, "pay_shock")(self, p, card):
                 self.change_life(p, -2, f"{card.name}: shock land cost")
@@ -1704,6 +1741,8 @@ class Game:
             if isinstance(target, Permanent) and target in target.controller.battlefield:
                 target.pump_p += eff.amount
                 target.pump_t += eff.amount2
+                if eff.data.get("keyword"):
+                    target.temp_kw.add(eff.data["keyword"])
         elif k in ("counter", "bounce_spell"):
             self.counter(p, eff, target)
         elif k == "lose_life":
@@ -1931,6 +1970,10 @@ class Game:
             opp.exile += opp.graveyard
             opp.graveyard.clear()
             self.log(f"{opp} exiles their graveyard", p)
+        elif k == "untap_self":
+            src = item.source if item is not None else None
+            if src is not None and src in src.controller.battlefield:
+                src.tapped = False
         elif k == "untap_other":
             tapped = [x for x in p.battlefield if x.tapped and x is not (item.source if item else None)]
             best = max(tapped, key=lambda x: (x.card.is_land or bool(x.card.produces), perm_value(x) if x.is_creature
@@ -2461,7 +2504,8 @@ def card_matches(card: CardDef, desc: str) -> bool:
         if "basic" in words and not is_basic_land(card):
             ok = False
         for w in words:
-            if w[0].isupper() and w not in card.subtypes and w != card.name:
+            if w[0].isupper() and w not in card.subtypes and w != card.name and not \
+                    (card.changeling and card.is_creature):
                 ok = False
         if ok:
             return True
