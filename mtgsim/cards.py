@@ -591,6 +591,12 @@ _TRIGGERS = [
     (r"Whenever you sacrifice (an? [\w ]+?), (.+)", ("sacrifice",)),
     (r"Whenever an opponent draws a card, (.+)", ("opp_draw",)),
     (r"Whenever ~ becomes the target of a spell, (.+)", ("targeted_by_spell",)),
+    (r"When(?:ever)? ~ enters or dies, (.+)", ("etb", "dies")),
+    (r"When ~ is put into a graveyard from the battlefield, (.+)", ("dies",)),
+    (r"At the beginning of combat on your turn, (.+)", ("begin_combat",)),
+    (r"Whenever you draw your second card each turn, (.+)", ("draw_second",)),
+    (r"Whenever you cast your second spell each turn, (.+)", ("cast_second",)),
+    (r"Whenever you cast a spell with mana value (\d+) or greater, (.+)", ("cast_cmc",)),
 ]
 
 
@@ -1297,6 +1303,8 @@ def _parse_trigger_line(line: str):
         rest = m[m.lastindex]
         if events == ("any_cast",):
             flt = f"cmc<={m[1]}"
+        if events == ("cast_cmc",):
+            flt = f"cmc>={m[1]}"
         if events == ("cast_spell",) and m.lastindex == 2:
             flt = f"spell:{m[1]}"
         if events == ("sacrifice",):
