@@ -398,5 +398,83 @@ class CostTests(Base):
         self.assertEqual(self.a.creatures[0].power, 3)
 
 
+
+GET_LOST = card("Get Lost", "{1}{W}", "Instant", "Destroy target creature, enchantment, or planeswalker. Its "
+                "controller creates two Map tokens.")
+ERODE = card("Erode", "{W}", "Instant", "Destroy target creature or planeswalker. Its controller may search their "
+             "library for a basic land card, put it onto the battlefield tapped, then shuffle.")
+SEAM_RIP = card("Seam Rip", "{W}", "Enchantment", "When this enchantment enters, exile target nonland permanent an "
+                "opponent controls with mana value 2 or less until this enchantment leaves the battlefield.")
+DEFEAT = card("Inevitable Defeat", "{1}{B}{B}{R}", "Instant", "This spell can't be countered.\nExile target nonland "
+              "permanent. Its controller loses 3 life and you gain 3 life.")
+GHAST2 = card("Bloodghast", "{B}{B}", "Creature — Vampire Spirit", "Bloodghast can't block.\nLandfall — Whenever "
+              "a land you control enters, you may return Bloodghast from your graveyard to the battlefield.", 2, 1)
+CRYO = card("Seasoned Cryomancer", "{2}{U}", "Creature — Human Wizard", "{3}{U}{U}, Exile this card from your "
+            "graveyard: Draw two cards.", 2, 2)
+SMAUG = card("Smaug the Magnificent", "{3}{R}{R}", "Legendary Creature — Dragon", "Flying, haste\nWhenever Smaug "
+             "attacks, he deals damage equal to the number of Treasures you control to any target.", 4, 4)
+
+
+class ZoneTests(Base):
+    def test_parsing(self):
+        for c in (GET_LOST, ERODE, SEAM_RIP, DEFEAT, GHAST2, CRYO, SMAUG):
+            with self.subTest(card=c.name):
+                self.assertEqual(c.unsupported, [])
+        self.assertEqual(len(GHAST2.gy_triggers), 1)
+
+    def test_map_tokens_explore(self):
+        bear = self.perm(BEAR, self.b)
+        self.game.resolve(self.a, GET_LOST.spell_effects[0], bear)
+        self.game.resolve(self.a, GET_LOST.spell_effects[1], None, prev=bear)
+        maps = [x for x in self.b.battlefield if x.card.token_kind == "map"]
+        self.assertEqual(len(maps), 2)
+        mine = self.perm(BEAR, self.b)
+        self.perm(ISLAND, self.b)
+        self.game.active_idx = 1
+        self.b.library = [BEAR]
+        self.assertTrue(self.game.activate(self.b, maps[0], "ability:0"))
+        self.assertEqual(mine.p1, 1)
+
+    def test_erode_gives_the_controller_a_land(self):
+        bear = self.perm(BEAR, self.b)
+        self.b.library = [ISLAND, BEAR]
+        for e in ERODE.spell_effects:
+            self.game.resolve(self.a, e, bear if e.kind == "destroy" else None, prev=bear)
+        self.assertEqual([x.card.name for x in self.b.battlefield], ["Island"])
+
+    def test_exile_until_leaves_and_exile_drain(self):
+        bear = self.perm(BEAR, self.b)
+        self.game.enter_battlefield(self.a, SEAM_RIP)
+        self.game.settle()
+        self.assertNotIn(bear, self.b.battlefield)
+        rip = next(x for x in self.a.battlefield if x.card.name == "Seam Rip")
+        self.game.destroy(rip)
+        self.assertEqual([x.card.name for x in self.b.battlefield], ["Grizzly Bears"])
+        target = self.b.battlefield[0]
+        self.game.resolve(self.a, DEFEAT.spell_effects[0], target)
+        self.game.resolve(self.a, DEFEAT.spell_effects[1], None, prev=target)
+        self.game.resolve(self.a, DEFEAT.spell_effects[2], None, prev=target)
+        self.assertEqual((self.b.life, self.a.life, self.b.battlefield), (17, 23, []))
+
+    def test_graveyard_trigger_and_ability(self):
+        self.a.graveyard = [GHAST2, CRYO]
+        self.game.enter_battlefield(self.a, SWAMP)
+        self.game.settle()
+        self.assertIn("Bloodghast", [c.card.name for c in self.a.creatures])
+        for _ in range(5):
+            self.perm(ISLAND, self.a)
+        ability = next(c for c in self.game.spell_options(self.a) if c.name.endswith("(gy_ability)"))
+        self.game.cast(self.a, ability)
+        self.assertEqual((len(self.a.hand), self.a.exile), (2, [CRYO]))
+
+    def test_damage_equal_to_treasures(self):
+        smaug = self.perm(SMAUG, self.a)
+        self.game.resolve(self.a, card("Twin Hoard", "{R}", "Instant", "Create two Treasure tokens.").spell_effects[0], None)
+        from mtgsim.engine import StackItem
+        item = StackItem(self.a, SMAUG.triggers[0].effects, [self.b], source=smaug)
+        self.game.resolve(self.a, SMAUG.triggers[0].effects[0], self.b, item)
+        self.assertEqual(self.b.life, 18)
+
+
 if __name__ == "__main__":
     unittest.main()
