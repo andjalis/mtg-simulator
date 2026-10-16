@@ -177,6 +177,8 @@ class CardDef:
     lands_from_gy: bool = False                         # "You may play lands from your graveyard."
     etb_counters_if: tuple = ()                         # ("opp_lost_life", n): "enters with a +1/+1 counter if ..."
     team_keywords: frozenset = frozenset()              # "Creatures you control have haste."
+    collect_evidence: int = 0                           # "you may collect evidence N" (exile graveyard cards worth N mana value)
+    chosen_land_lock: bool = False                      # Petrified Hamlet: choose a land name, stifle it and make it tap for {C}
     tapped_discount: int = 0                            # "~ costs {3} less to cast if it targets a tapped creature"
     extra_discard: int = 0                              # "As an additional cost to cast ~, discard a card" (1 = or pay {2}: see discard_or_pay)
     discard_or_pay: int = 0                             # "... discard a card or pay {2}"
@@ -383,6 +385,8 @@ _EFFECT_PATTERNS = [
     (r"exile all creatures", lambda m: Effect("exile_all_creatures")),
     (r"empower jace x, where x is the number of creatures exiled this way",
      lambda m: Effect("empower", 0, data={"count": "exiled"})),
+    (r"counter target creature or enchantment spell",
+     lambda m: Effect("counter", target="spell", filter="creature_ench")),
     (r"counter target (noncreature |creature |instant or sorcery )?spell"
      r"(?: unless its controller pays \{(\d+)\})?",
      lambda m: Effect("counter", int(m[2] or 0), target="spell",
@@ -410,6 +414,23 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("bounce", target="nonland_perm")),
     (r"scry (\d+)", lambda m: Effect("scry", int(m[1]))),
     (r"surveil (\d+)", lambda m: Effect("surveil", int(m[1]))),
+    (r"put x \+1/\+1 counters on each creature you control, where x is the number of cards in your hand",
+     lambda m: Effect("p1_counters", 0, target="my_creatures", data={"x": "hand"})),
+    (r"for each opponent, return up to one target artifact or creature that player controls to its owner's hand",
+     lambda m: Effect("bounce", target="nonland_perm", filter="opp")),
+    (r"IRENCRAG", lambda m: Effect("irencrag")),
+    (r"harness ~", lambda m: Effect("harness")),
+    (r"search your library for a card, put it into your graveyard, then shuffle", lambda m: Effect("tutor_gy")),
+    (r"return up to two creature cards with total mana value 4 or less from your graveyard to the battlefield",
+     lambda m: Effect("reanimate_total", 4)),
+    (r"search your library for an artifact card with mana value equal to 1 plus the sacrificed artifact's mana value, "
+     r"put that card onto the battlefield, then shuffle", lambda m: Effect("bay_search")),
+    (r"STARCAGE", lambda m: Effect("starcage")),
+    (r"COVERUP", lambda m: Effect("cover_up", cond="evidence")),
+    (r"OBSESS", lambda m: Effect("add_counter", 0, target="creature_mine", data={"counter": "+1/+1", "x": "sacrificed"})),
+    (r"SACDRAWTREASURE", lambda m: Effect("sac_draw_treasure")),
+    (r"AZOG (\w+?)s?", lambda m: Effect("destroy", target="creature", data={"azog": m[1].capitalize()})),
+    (r"DIGFLOW (\d+)", lambda m: Effect("dig", int(m[1]), 1, data={"instead_two": "instant+sorcery"})),
     (r"DIG (\d+) (\d+)", lambda m: Effect("dig", int(m[1]), int(m[2]))),
     (r"DIGPUT (\d+) (\d+)", lambda m: Effect("dig_put", int(m[1]), int(m[2]))),
     (r"DIGPUTNONCREATURE (\d+) (\d+) (\d+)",
@@ -447,6 +468,10 @@ _EFFECT_PATTERNS = [
     (r"each opponent discards a card", lambda m: Effect("discard", 1, target="player")),
     (r"if (?:that|the) (?:creature|permanent|creature or planeswalker) would die this turn, exile it instead",
      lambda m: Effect("exile_instead", target="prev")),
+    (r"discard your hand, then draw two cards", lambda m: Effect("wheel_self")),
+    (r"return all non-(\w+) creatures to their owners' hands", lambda m: Effect("mass_bounce", data={"except": m[1]})),
+    (r"return one or two target creatures and/or enchantments you own to your hand",
+     lambda m: Effect("bounce_own", target="nonland_perm", filter="mine")),
     (r"(?:you )?recruit", lambda m: Effect("recruit")),
     (r"return up to (one|two) target creature cards? from your graveyard to your hand",
      lambda m: Effect("regrow", _num(m[1]))),
@@ -573,6 +598,28 @@ _EFFECT_PATTERNS = [
 ]
 
 _SUBS = [
+    (re.compile(r"put each card exiled with ~ into its owner's graveyard, then create a 2/2 colorless robot artifact "
+                r"creature token for each card put into a graveyard this way\. sacrifice ~\.", re.I),
+     lambda m: "STARCAGE."),
+    (re.compile(r"you may have ~ become a legendary equipment artifact named everflame, heroes' legacy\. if you do, "
+                r"it gains equip \{3\} and \"equipped creature gets \+3/\+3\" and loses all other abilities\.", re.I),
+     lambda m: "IRENCRAG."),
+    (re.compile(r"if evidence was collected, exile a card from an opponent's graveyard\. then search its owner's "
+                r"graveyard, hand, and library for any number of cards with that name and exile them\. that player "
+                r"shuffles, then draws a card for each card exiled from their hand this way\.", re.I),
+     lambda m: "COVERUP."),
+    (re.compile(r"put x \+1/\+1 counters on target attacking creature, where x is the number of permanents you've "
+                r"sacrificed this turn\. if x is three or greater, that creature gains lifelink until end of turn\.",
+                re.I), lambda m: "OBSESS."),
+    (re.compile(r"you may sacrifice another creature or artifact\. if you do, draw a card and create a treasure token\.",
+                re.I), lambda m: "SACDRAWTREASURE."),
+    (re.compile(r"destroy up to one other target creature\. its controller amasses (\w+) x, where x is that creature's "
+                r"power\. if you controlled that creature, draw a card\.", re.I), lambda m: f"AZOG {m[1]}."),
+    (re.compile(r"look at the top (\w+) cards of your library\. put (\w+) of them into your hand and the "
+                r"rest on the bottom of your library(?: in (?:a random|any|any random) order)?\. if there is an "
+                r"instant card and a sorcery card in your graveyard, instead put two of them into your hand and the "
+                r"rest on the bottom of your library in any order\.", re.I),
+     lambda m: f"DIGFLOW {_num(m[1])}."),
     (re.compile(r"(create a \d+/\d+ (?:\w+ )+?creature token) named [\w' ,-]+?\. it gains haste until end of turn\.",
                 re.I), lambda m: f"{m[1]} with haste."),
     (re.compile(r"you may discard a card\. if you do, draw a card\.", re.I), lambda m: "RUMMAGE 1."),
@@ -644,7 +691,7 @@ _SUBS = [
 _TRIGGERS = [
     (r"When(?:ever)? ~ enters or attacks, (.+)", ("etb", "attacks")),
     (r"When ~ enters and at the beginning of your upkeep, (.+)", ("etb", "upkeep")),
-    (r"When(?:ever)? ~ enters(?: the battlefield)?, (.+)", ("etb",)),
+    (r"When(?:ever)? ~ enters?(?: the battlefield)?, (.+)", ("etb",)),
     (r"Whenever ~ attacks, (.+)", ("attacks",)),
     (r"When(?:ever)? ~ dies, (?:if it was a creature, )?(.+)", ("dies",)),
     (r"Whenever ~ deals combat damage to a player, (.+)", ("combat_damage_player",)),
@@ -664,6 +711,7 @@ _TRIGGERS = [
     (r"When(?:ever)? ~ leaves the battlefield, (.+)", ("leaves",)),
     (r"Whenever a player casts a spell with mana value (\d+) or less, (.+)", ("any_cast",)),
     (r"At the beginning of your upkeep, (.+)", ("upkeep",)),
+    (r"At the beginning of each opponent's draw step, (.+)", ("opp_draw_step",)),
     (r"At the beginning of your end step, (.+)", ("end_step",)),
     (r"Whenever a creature an opponent controls dies, (.+)", ("opp_creature_dies",)),
     (r"Whenever another creature you control enters or dies, if that creature's power is greater than ~'s, (.+)",
@@ -1091,6 +1139,10 @@ def _parse_face(data: dict) -> CardDef:
         if m:
             extra["teamwork"] = int(m[1])
             continue
+        m = re.fullmatch(r"As an additional cost to cast ~, you may collect evidence (\d+)\.", line)
+        if m:
+            extra["collect_evidence"] = int(m[1])
+            continue
         if re.fullmatch(r"As an additional cost to cast ~, you may [^.]+\.", line):
             approximations.append(f"never paid: {line}")
             continue
@@ -1115,6 +1167,14 @@ def _parse_face(data: dict) -> CardDef:
             continue
         if re.fullmatch(r"~ costs \{1\} less to cast for each instant and sorcery card in your graveyard\.", line):
             extra["cost_reduction"] = "instant_sorcery_gy"
+            continue
+        if re.fullmatch(r"~ costs \{X\} less to cast, where X is the number of cards in your graveyard that are instant "
+                        r"cards, sorcery cards, and/or have an Adventure\.", line):
+            extra["cost_reduction"] = "instant_sorcery_adventure_gy"
+            continue
+        if re.fullmatch(r"~ costs \{X\} less to cast, where X is the greatest mana value among Elementals you control\.",
+                        line):
+            extra["cost_reduction"] = "greatest_elemental"
             continue
         if re.fullmatch(r"~ costs \{X\} less to cast, where X is the total power of creatures you control\.", line):
             extra["cost_reduction"] = "power"
@@ -1161,6 +1221,15 @@ def _parse_face(data: dict) -> CardDef:
                      "other permanents": "other", "each land and ally": "land_or_ally"}[m[1].lower()]
             cols = frozenset(COLORS) if "any color" in m[2] else frozenset(re.findall(r"[WUBRGC]", m[2]))
             extra["grant_mana"] = extra.get("grant_mana", ()) + ((scope, cols),)
+            continue
+        if line in ("When this land enters, choose a land card name.", "When ~ enters, choose a land card name.") or \
+                line.startswith("Activated abilities of sources with the chosen name can't be activated") or \
+                line == 'Lands with the chosen name have "{T}: Add {C}."':
+            extra["chosen_land_lock"] = True
+            continue
+        if line == "∞ — At the beginning of your end step, exile up to one other target nonland permanent you control, "\
+                   "then return that card to the battlefield under its owner's control.":
+            triggers.append(Trigger("end_step", [Effect("blink_own", cond="harnessed")]))
             continue
         m = re.fullmatch(r"~ costs \{(\d+)\} less to cast if it targets a tapped creature\.", line)
         if m:
