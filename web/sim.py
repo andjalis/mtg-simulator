@@ -20,7 +20,7 @@ from dataclasses import dataclass, field
 from mtgsim import history
 from mtgsim.carddb import CardDB
 from mtgsim.decklist import load_deck, parse_decklist
-from mtgsim.runner import build_deck, run_match, wilson
+from mtgsim.runner import build_deck, clear_result, pool_rate, run_match, wilson
 from mtgsim.tiers import PASS_RATE, TIERS, resolve_tiers
 
 try:  # rank badge and MMR chart, from the ranked-ladder visuals (mtgsim/rating.py)
@@ -182,6 +182,7 @@ class Run:
     record_history: bool = True
     meta_engine: str = "forge"    # with a Forge install: forge (whole meta field), auto (low coverage only), python
     forge_dir: str | None = None  # None: the meta field stays in the built-in engine
+    early_stop: bool = True       # stop a matchup once it is clearly won or lost (runner.clear_result)
     where: str = "server"         # where the games were asked to run: "device" or "server"
     chunk: int = 0                # games per task; 0 means CHUNK
     lock: threading.Lock = field(default_factory=threading.Lock)
@@ -212,19 +213,39 @@ class Run:
                 with self.lock:
                     for o in opps:
                         self.tracker.start_match(f"{t.key}/{o.name}", self.games)
-            futures = {pool.submit(_play_chunk, self.counts, o.counts, n, rng.randrange(2**32)): (o, n)
-                       for o in opps for n in chunks}
+            futures = {pool.submit(_play_chunk, self.counts, o.counts, n, rng.randrange(2**32)): (o, i)
+                       for o in opps for i, n in enumerate(chunks)}
+            # Chunks count in order, so an early stop depends only on the seed, not on which
+            # worker finished first; a stopped opponent's later chunks are cancelled or dropped.
+            ready = {o.name: {} for o in opps}
+            applied = dict.fromkeys(ready, 0)
+            stopped = set()
             for f in as_completed(futures):
-                o, n = futures[f]
-                with self.lock:
-                    o.add(f.result())
-                    self.done += n
-                    if self.tracker:
-                        self.tracker.update_match(f"{t.key}/{o.name}", o.wins, o.draws, o.games)
+                o, i = futures[f]
+                if o.name in stopped or f.cancelled():
+                    continue
+                ready[o.name][i] = f.result()
+                while applied[o.name] in ready[o.name] and o.name not in stopped:
+                    k = applied[o.name]
+                    applied[o.name] += 1
+                    with self.lock:
+                        o.add(ready[o.name].pop(k))
+                        self.done += chunks[k]
+                        if self.tracker:
+                            self.tracker.update_match(f"{t.key}/{o.name}", o.wins, o.draws, o.games)
+                    if (self.early_stop and applied[o.name] < len(chunks)
+                            and clear_result(o.wins + 0.5 * o.draws, o.games)):
+                        stopped.add(o.name)
+                        for g, (o2, _) in futures.items():
+                            if o2 is o:
+                                g.cancel()
+                        with self.lock:
+                            self.total -= sum(chunks[applied[o.name]:])
+                            if self.tracker:
+                                self.tracker.opponents[f"{t.key}/{o.name}"].total = o.games
             games = sum(o.games for o in opps)
-            points = sum(o.wins + 0.5 * o.draws for o in opps)
-            rate = points / games if games else 0.0
-            lo, hi = wilson(points, games)
+            rate = pool_rate([(o.wins + 0.5 * o.draws, o.games) for o in opps])
+            lo, hi = wilson(rate * games, games)
             cleared = rate >= self.pass_rate
             if self.tracker:
                 with self.lock:
@@ -399,6 +420,9 @@ class DevicePool:
             out = []
             while self.queue and len(out) < n and not self.on_server:
                 tid = self.queue.popleft()
+                if self.tasks[tid][0].cancelled():   # the matchup stopped early (Run.execute)
+                    del self.tasks[tid]
+                    continue
                 me, opp, games, seed = self.tasks[tid][1]
                 out.append({"id": tid, "me": me, "opp": opp, "games": games, "seed": seed})
             return out
