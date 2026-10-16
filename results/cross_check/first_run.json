@@ -1,0 +1,2465 @@
+{
+ "bronze/five_color_mess vs bronze/land_glut": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.275,
+   "wins_a": 11,
+   "wins_b": 29
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.1833,
+   "wins_a": 55,
+   "wins_b": 245
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.174,
+   "wins_a": 87,
+   "wins_b": 413
+  }
+ },
+ "bronze/five_color_mess vs bronze/vanilla_pile": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.35,
+   "wins_a": 14,
+   "wins_b": 26
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.36,
+   "wins_a": 108,
+   "wins_b": 192
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.316,
+   "wins_a": 158,
+   "wins_b": 342
+  }
+ },
+ "bronze/land_glut vs bronze/vanilla_pile": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.4,
+   "wins_a": 16,
+   "wins_b": 24
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.6167,
+   "wins_a": 185,
+   "wins_b": 115
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.612,
+   "wins_a": 306,
+   "wins_b": 194
+  }
+ },
+ "gold/boros_burn vs gold/dimir_control": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.55,
+   "wins_a": 22,
+   "wins_b": 18
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.6633,
+   "wins_a": 199,
+   "wins_b": 101
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.71,
+   "wins_a": 355,
+   "wins_b": 145
+  }
+ },
+ "gold/boros_burn vs gold/gruul_midrange": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.45,
+   "wins_a": 18,
+   "wins_b": 22
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.3767,
+   "wins_a": 113,
+   "wins_b": 187
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.432,
+   "wins_a": 216,
+   "wins_b": 284
+  }
+ },
+ "gold/boros_burn vs gold/orzhov_midrange": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.25,
+   "wins_a": 10,
+   "wins_b": 30
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.2333,
+   "wins_a": 70,
+   "wins_b": 230
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.356,
+   "wins_a": 178,
+   "wins_b": 322
+  }
+ },
+ "gold/dimir_control vs gold/gruul_midrange": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.825,
+   "wins_a": 33,
+   "wins_b": 7
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.82,
+   "wins_a": 246,
+   "wins_b": 54
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.788,
+   "wins_a": 394,
+   "wins_b": 106
+  }
+ },
+ "gold/dimir_control vs gold/orzhov_midrange": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.45,
+   "wins_a": 18,
+   "wins_b": 22
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.3533,
+   "wins_a": 106,
+   "wins_b": 194
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.392,
+   "wins_a": 196,
+   "wins_b": 304
+  }
+ },
+ "gold/gruul_midrange vs gold/orzhov_midrange": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.175,
+   "wins_a": 7,
+   "wins_b": 33
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 1,
+   "games": 300,
+   "win_rate_a": 0.265,
+   "wins_a": 79,
+   "wins_b": 220
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.286,
+   "wins_a": 143,
+   "wins_b": 357
+  }
+ },
+ "grandmaster/boros_dragons vs grandmaster/dimir_midrange": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.75,
+   "wins_a": 30,
+   "wins_b": 10
+  },
+  "partial_a": [
+   11,
+   [
+    "Cavern of Souls",
+    "Clarion Conqueror",
+    "Get Lost",
+    "Maelstrom of the Spirit Dragon",
+    "Magda, the Hoardmaster",
+    "Magmatic Hellkite",
+    "Momo, Friendly Flier",
+    "Nova Hellkite",
+    "Sarkhan, Dragon Ascendant",
+    "Smaug the Magnificent",
+    "Voice of Victory"
+   ]
+  ],
+  "partial_b": [
+   11,
+   [
+    "Enduring Curiosity",
+    "Floodpits Drowner",
+    "Kaito, Bane of Nightmares",
+    "Soulstone Sanctuary",
+    "Spyglass Siren",
+    "Strategic Betrayal",
+    "The Wondrous Wasp",
+    "Tishana's Tidebinder",
+    "Wan Shi Tong, Librarian",
+    "We Say Thee Nay!",
+    "Yuriko, Hope from the Shadows"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.8267,
+   "wins_a": 248,
+   "wins_b": 52
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.912,
+   "wins_a": 456,
+   "wins_b": 44
+  }
+ },
+ "grandmaster/boros_dragons vs grandmaster/izzet_spellementals": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.575,
+   "wins_a": 23,
+   "wins_b": 17
+  },
+  "partial_a": [
+   11,
+   [
+    "Cavern of Souls",
+    "Clarion Conqueror",
+    "Get Lost",
+    "Maelstrom of the Spirit Dragon",
+    "Magda, the Hoardmaster",
+    "Magmatic Hellkite",
+    "Momo, Friendly Flier",
+    "Nova Hellkite",
+    "Sarkhan, Dragon Ascendant",
+    "Smaug the Magnificent",
+    "Voice of Victory"
+   ]
+  ],
+  "partial_b": [
+   7,
+   [
+    "Cori Mountain Monastery",
+    "Flow State",
+    "Get Out",
+    "Hearth Elemental",
+    "Prismari Charm",
+    "Sunderflock",
+    "Traumatic Critique"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.94,
+   "wins_a": 282,
+   "wins_b": 18
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.982,
+   "wins_a": 491,
+   "wins_b": 9
+  }
+ },
+ "grandmaster/boros_dragons vs grandmaster/jund_sacrifice": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.875,
+   "wins_a": 35,
+   "wins_b": 5
+  },
+  "partial_a": [
+   11,
+   [
+    "Cavern of Souls",
+    "Clarion Conqueror",
+    "Get Lost",
+    "Maelstrom of the Spirit Dragon",
+    "Magda, the Hoardmaster",
+    "Magmatic Hellkite",
+    "Momo, Friendly Flier",
+    "Nova Hellkite",
+    "Sarkhan, Dragon Ascendant",
+    "Smaug the Magnificent",
+    "Voice of Victory"
+   ]
+  ],
+  "partial_b": [
+   11,
+   [
+    "Azog, Moria's Ruin",
+    "Biotech Specialist",
+    "Deadly Precision",
+    "Fanatical Offering",
+    "Gene Pollinator",
+    "Lively Dirge",
+    "Mutagen Man, Living Ooze",
+    "Obsessive Pursuit",
+    "Smaug the Magnificent",
+    "The Sackville-Bagginses",
+    "Umbral Collar Zealot"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.96,
+   "wins_a": 288,
+   "wins_b": 12
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.96,
+   "wins_a": 480,
+   "wins_b": 20
+  }
+ },
+ "grandmaster/boros_dragons vs grandmaster/mono_green_landfall": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.65,
+   "wins_a": 26,
+   "wins_b": 14
+  },
+  "partial_a": [
+   11,
+   [
+    "Cavern of Souls",
+    "Clarion Conqueror",
+    "Get Lost",
+    "Maelstrom of the Spirit Dragon",
+    "Magda, the Hoardmaster",
+    "Magmatic Hellkite",
+    "Momo, Friendly Flier",
+    "Nova Hellkite",
+    "Sarkhan, Dragon Ascendant",
+    "Smaug the Magnificent",
+    "Voice of Victory"
+   ]
+  ],
+  "partial_b": [
+   9,
+   [
+    "Ba Sing Se",
+    "Bristly Bill, Spine Sower",
+    "Demolition Field",
+    "Earthbender Ascension",
+    "Escape Tunnel",
+    "Esper Origins",
+    "Icetill Explorer",
+    "Mightform Harmonizer",
+    "Sapling Nursery"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.76,
+   "wins_a": 228,
+   "wins_b": 72
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.782,
+   "wins_a": 391,
+   "wins_b": 109
+  }
+ },
+ "grandmaster/boros_dragons vs master/dimir_control": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.925,
+   "wins_a": 37,
+   "wins_b": 3
+  },
+  "partial_a": [
+   11,
+   [
+    "Cavern of Souls",
+    "Clarion Conqueror",
+    "Get Lost",
+    "Maelstrom of the Spirit Dragon",
+    "Magda, the Hoardmaster",
+    "Magmatic Hellkite",
+    "Momo, Friendly Flier",
+    "Nova Hellkite",
+    "Sarkhan, Dragon Ascendant",
+    "Smaug the Magnificent",
+    "Voice of Victory"
+   ]
+  ],
+  "partial_b": [
+   11,
+   [
+    "Cavern of Souls",
+    "Deadly Cover-Up",
+    "Deceit",
+    "Multiversal Passage",
+    "Overlord of the Balemurk",
+    "Seasoned Cryomancer",
+    "Strategic Betrayal",
+    "Superior Spider-Man",
+    "The Theorist, Jace Beleren",
+    "Uldaros Theorix",
+    "Winternight Stories"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.96,
+   "wins_a": 288,
+   "wins_b": 12
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.954,
+   "wins_a": 477,
+   "wins_b": 23
+  }
+ },
+ "grandmaster/dimir_midrange vs grandmaster/izzet_spellementals": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.575,
+   "wins_a": 23,
+   "wins_b": 17
+  },
+  "partial_a": [
+   11,
+   [
+    "Enduring Curiosity",
+    "Floodpits Drowner",
+    "Kaito, Bane of Nightmares",
+    "Soulstone Sanctuary",
+    "Spyglass Siren",
+    "Strategic Betrayal",
+    "The Wondrous Wasp",
+    "Tishana's Tidebinder",
+    "Wan Shi Tong, Librarian",
+    "We Say Thee Nay!",
+    "Yuriko, Hope from the Shadows"
+   ]
+  ],
+  "partial_b": [
+   7,
+   [
+    "Cori Mountain Monastery",
+    "Flow State",
+    "Get Out",
+    "Hearth Elemental",
+    "Prismari Charm",
+    "Sunderflock",
+    "Traumatic Critique"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.77,
+   "wins_a": 231,
+   "wins_b": 69
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.766,
+   "wins_a": 383,
+   "wins_b": 117
+  }
+ },
+ "grandmaster/dimir_midrange vs grandmaster/jund_sacrifice": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.675,
+   "wins_a": 27,
+   "wins_b": 13
+  },
+  "partial_a": [
+   11,
+   [
+    "Enduring Curiosity",
+    "Floodpits Drowner",
+    "Kaito, Bane of Nightmares",
+    "Soulstone Sanctuary",
+    "Spyglass Siren",
+    "Strategic Betrayal",
+    "The Wondrous Wasp",
+    "Tishana's Tidebinder",
+    "Wan Shi Tong, Librarian",
+    "We Say Thee Nay!",
+    "Yuriko, Hope from the Shadows"
+   ]
+  ],
+  "partial_b": [
+   11,
+   [
+    "Azog, Moria's Ruin",
+    "Biotech Specialist",
+    "Deadly Precision",
+    "Fanatical Offering",
+    "Gene Pollinator",
+    "Lively Dirge",
+    "Mutagen Man, Living Ooze",
+    "Obsessive Pursuit",
+    "Smaug the Magnificent",
+    "The Sackville-Bagginses",
+    "Umbral Collar Zealot"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.86,
+   "wins_a": 258,
+   "wins_b": 42
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.872,
+   "wins_a": 436,
+   "wins_b": 64
+  }
+ },
+ "grandmaster/dimir_midrange vs grandmaster/mono_green_landfall": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.575,
+   "wins_a": 23,
+   "wins_b": 17
+  },
+  "partial_a": [
+   11,
+   [
+    "Enduring Curiosity",
+    "Floodpits Drowner",
+    "Kaito, Bane of Nightmares",
+    "Soulstone Sanctuary",
+    "Spyglass Siren",
+    "Strategic Betrayal",
+    "The Wondrous Wasp",
+    "Tishana's Tidebinder",
+    "Wan Shi Tong, Librarian",
+    "We Say Thee Nay!",
+    "Yuriko, Hope from the Shadows"
+   ]
+  ],
+  "partial_b": [
+   9,
+   [
+    "Ba Sing Se",
+    "Bristly Bill, Spine Sower",
+    "Demolition Field",
+    "Earthbender Ascension",
+    "Escape Tunnel",
+    "Esper Origins",
+    "Icetill Explorer",
+    "Mightform Harmonizer",
+    "Sapling Nursery"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.5233,
+   "wins_a": 157,
+   "wins_b": 143
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.536,
+   "wins_a": 268,
+   "wins_b": 232
+  }
+ },
+ "grandmaster/izzet_spellementals vs grandmaster/jund_sacrifice": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.625,
+   "wins_a": 25,
+   "wins_b": 15
+  },
+  "partial_a": [
+   7,
+   [
+    "Cori Mountain Monastery",
+    "Flow State",
+    "Get Out",
+    "Hearth Elemental",
+    "Prismari Charm",
+    "Sunderflock",
+    "Traumatic Critique"
+   ]
+  ],
+  "partial_b": [
+   11,
+   [
+    "Azog, Moria's Ruin",
+    "Biotech Specialist",
+    "Deadly Precision",
+    "Fanatical Offering",
+    "Gene Pollinator",
+    "Lively Dirge",
+    "Mutagen Man, Living Ooze",
+    "Obsessive Pursuit",
+    "Smaug the Magnificent",
+    "The Sackville-Bagginses",
+    "Umbral Collar Zealot"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.4367,
+   "wins_a": 131,
+   "wins_b": 169
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.426,
+   "wins_a": 213,
+   "wins_b": 287
+  }
+ },
+ "grandmaster/izzet_spellementals vs grandmaster/mono_green_landfall": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.725,
+   "wins_a": 29,
+   "wins_b": 11
+  },
+  "partial_a": [
+   7,
+   [
+    "Cori Mountain Monastery",
+    "Flow State",
+    "Get Out",
+    "Hearth Elemental",
+    "Prismari Charm",
+    "Sunderflock",
+    "Traumatic Critique"
+   ]
+  ],
+  "partial_b": [
+   9,
+   [
+    "Ba Sing Se",
+    "Bristly Bill, Spine Sower",
+    "Demolition Field",
+    "Earthbender Ascension",
+    "Escape Tunnel",
+    "Esper Origins",
+    "Icetill Explorer",
+    "Mightform Harmonizer",
+    "Sapling Nursery"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.2167,
+   "wins_a": 65,
+   "wins_b": 235
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.22,
+   "wins_a": 110,
+   "wins_b": 390
+  }
+ },
+ "grandmaster/jund_sacrifice vs grandmaster/mono_green_landfall": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.375,
+   "wins_a": 15,
+   "wins_b": 25
+  },
+  "partial_a": [
+   11,
+   [
+    "Azog, Moria's Ruin",
+    "Biotech Specialist",
+    "Deadly Precision",
+    "Fanatical Offering",
+    "Gene Pollinator",
+    "Lively Dirge",
+    "Mutagen Man, Living Ooze",
+    "Obsessive Pursuit",
+    "Smaug the Magnificent",
+    "The Sackville-Bagginses",
+    "Umbral Collar Zealot"
+   ]
+  ],
+  "partial_b": [
+   9,
+   [
+    "Ba Sing Se",
+    "Bristly Bill, Spine Sower",
+    "Demolition Field",
+    "Earthbender Ascension",
+    "Escape Tunnel",
+    "Esper Origins",
+    "Icetill Explorer",
+    "Mightform Harmonizer",
+    "Sapling Nursery"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.2067,
+   "wins_a": 62,
+   "wins_b": 238
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.2,
+   "wins_a": 100,
+   "wins_b": 400
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/boros_dragons": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.35,
+   "wins_a": 14,
+   "wins_b": 26
+  },
+  "partial_a": [
+   18,
+   [
+    "Adagia, Windswept Bastion",
+    "Braided Net",
+    "Candy Trail",
+    "Castle Doom",
+    "Clay-Fired Bricks",
+    "Cryogen Relic",
+    "Fomori Vault",
+    "Perilous Snare",
+    "Petrified Hamlet",
+    "Pinnacle Starcage",
+    "Repurposing Bay",
+    "Simulacrum Synthesizer",
+    "Spring-Loaded Sawblades",
+    "The Fire Crystal",
+    "The Irencrag",
+    "The Mind Stone",
+    "United Battlefront",
+    "White Auracite"
+   ]
+  ],
+  "partial_b": [
+   11,
+   [
+    "Cavern of Souls",
+    "Clarion Conqueror",
+    "Get Lost",
+    "Maelstrom of the Spirit Dragon",
+    "Magda, the Hoardmaster",
+    "Magmatic Hellkite",
+    "Momo, Friendly Flier",
+    "Nova Hellkite",
+    "Sarkhan, Dragon Ascendant",
+    "Smaug the Magnificent",
+    "Voice of Victory"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.0,
+   "wins_a": 0,
+   "wins_b": 300
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.0,
+   "wins_a": 0,
+   "wins_b": 500
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/dimir_midrange": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.275,
+   "wins_a": 11,
+   "wins_b": 29
+  },
+  "partial_a": [
+   18,
+   [
+    "Adagia, Windswept Bastion",
+    "Braided Net",
+    "Candy Trail",
+    "Castle Doom",
+    "Clay-Fired Bricks",
+    "Cryogen Relic",
+    "Fomori Vault",
+    "Perilous Snare",
+    "Petrified Hamlet",
+    "Pinnacle Starcage",
+    "Repurposing Bay",
+    "Simulacrum Synthesizer",
+    "Spring-Loaded Sawblades",
+    "The Fire Crystal",
+    "The Irencrag",
+    "The Mind Stone",
+    "United Battlefront",
+    "White Auracite"
+   ]
+  ],
+  "partial_b": [
+   11,
+   [
+    "Enduring Curiosity",
+    "Floodpits Drowner",
+    "Kaito, Bane of Nightmares",
+    "Soulstone Sanctuary",
+    "Spyglass Siren",
+    "Strategic Betrayal",
+    "The Wondrous Wasp",
+    "Tishana's Tidebinder",
+    "Wan Shi Tong, Librarian",
+    "We Say Thee Nay!",
+    "Yuriko, Hope from the Shadows"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.0,
+   "wins_a": 0,
+   "wins_b": 300
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.0,
+   "wins_a": 0,
+   "wins_b": 500
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/izzet_spellementals": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.8,
+   "wins_a": 32,
+   "wins_b": 8
+  },
+  "partial_a": [
+   18,
+   [
+    "Adagia, Windswept Bastion",
+    "Braided Net",
+    "Candy Trail",
+    "Castle Doom",
+    "Clay-Fired Bricks",
+    "Cryogen Relic",
+    "Fomori Vault",
+    "Perilous Snare",
+    "Petrified Hamlet",
+    "Pinnacle Starcage",
+    "Repurposing Bay",
+    "Simulacrum Synthesizer",
+    "Spring-Loaded Sawblades",
+    "The Fire Crystal",
+    "The Irencrag",
+    "The Mind Stone",
+    "United Battlefront",
+    "White Auracite"
+   ]
+  ],
+  "partial_b": [
+   7,
+   [
+    "Cori Mountain Monastery",
+    "Flow State",
+    "Get Out",
+    "Hearth Elemental",
+    "Prismari Charm",
+    "Sunderflock",
+    "Traumatic Critique"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.0,
+   "wins_a": 0,
+   "wins_b": 300
+  },
+  "python_tier_era": {
+   "draws": 4,
+   "games": 500,
+   "win_rate_a": 0.004,
+   "wins_a": 0,
+   "wins_b": 496
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/jund_sacrifice": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.5,
+   "wins_a": 20,
+   "wins_b": 20
+  },
+  "partial_a": [
+   18,
+   [
+    "Adagia, Windswept Bastion",
+    "Braided Net",
+    "Candy Trail",
+    "Castle Doom",
+    "Clay-Fired Bricks",
+    "Cryogen Relic",
+    "Fomori Vault",
+    "Perilous Snare",
+    "Petrified Hamlet",
+    "Pinnacle Starcage",
+    "Repurposing Bay",
+    "Simulacrum Synthesizer",
+    "Spring-Loaded Sawblades",
+    "The Fire Crystal",
+    "The Irencrag",
+    "The Mind Stone",
+    "United Battlefront",
+    "White Auracite"
+   ]
+  ],
+  "partial_b": [
+   11,
+   [
+    "Azog, Moria's Ruin",
+    "Biotech Specialist",
+    "Deadly Precision",
+    "Fanatical Offering",
+    "Gene Pollinator",
+    "Lively Dirge",
+    "Mutagen Man, Living Ooze",
+    "Obsessive Pursuit",
+    "Smaug the Magnificent",
+    "The Sackville-Bagginses",
+    "Umbral Collar Zealot"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.0333,
+   "wins_a": 10,
+   "wins_b": 290
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.0,
+   "wins_a": 0,
+   "wins_b": 500
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/mono_green_landfall": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.4,
+   "wins_a": 16,
+   "wins_b": 24
+  },
+  "partial_a": [
+   18,
+   [
+    "Adagia, Windswept Bastion",
+    "Braided Net",
+    "Candy Trail",
+    "Castle Doom",
+    "Clay-Fired Bricks",
+    "Cryogen Relic",
+    "Fomori Vault",
+    "Perilous Snare",
+    "Petrified Hamlet",
+    "Pinnacle Starcage",
+    "Repurposing Bay",
+    "Simulacrum Synthesizer",
+    "Spring-Loaded Sawblades",
+    "The Fire Crystal",
+    "The Irencrag",
+    "The Mind Stone",
+    "United Battlefront",
+    "White Auracite"
+   ]
+  ],
+  "partial_b": [
+   9,
+   [
+    "Ba Sing Se",
+    "Bristly Bill, Spine Sower",
+    "Demolition Field",
+    "Earthbender Ascension",
+    "Escape Tunnel",
+    "Esper Origins",
+    "Icetill Explorer",
+    "Mightform Harmonizer",
+    "Sapling Nursery"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.0,
+   "wins_a": 0,
+   "wins_b": 300
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.0,
+   "wins_a": 0,
+   "wins_b": 500
+  }
+ },
+ "master/azorius_artifact_control vs master/dimir_control": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.725,
+   "wins_a": 29,
+   "wins_b": 11
+  },
+  "partial_a": [
+   18,
+   [
+    "Adagia, Windswept Bastion",
+    "Braided Net",
+    "Candy Trail",
+    "Castle Doom",
+    "Clay-Fired Bricks",
+    "Cryogen Relic",
+    "Fomori Vault",
+    "Perilous Snare",
+    "Petrified Hamlet",
+    "Pinnacle Starcage",
+    "Repurposing Bay",
+    "Simulacrum Synthesizer",
+    "Spring-Loaded Sawblades",
+    "The Fire Crystal",
+    "The Irencrag",
+    "The Mind Stone",
+    "United Battlefront",
+    "White Auracite"
+   ]
+  ],
+  "partial_b": [
+   11,
+   [
+    "Cavern of Souls",
+    "Deadly Cover-Up",
+    "Deceit",
+    "Multiversal Passage",
+    "Overlord of the Balemurk",
+    "Seasoned Cryomancer",
+    "Strategic Betrayal",
+    "Superior Spider-Man",
+    "The Theorist, Jace Beleren",
+    "Uldaros Theorix",
+    "Winternight Stories"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.0,
+   "wins_a": 0,
+   "wins_b": 300
+  },
+  "python_tier_era": {
+   "draws": 1,
+   "games": 500,
+   "win_rate_a": 0.001,
+   "wins_a": 0,
+   "wins_b": 499
+  }
+ },
+ "master/dimir_control vs grandmaster/dimir_midrange": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.125,
+   "wins_a": 5,
+   "wins_b": 35
+  },
+  "partial_a": [
+   11,
+   [
+    "Cavern of Souls",
+    "Deadly Cover-Up",
+    "Deceit",
+    "Multiversal Passage",
+    "Overlord of the Balemurk",
+    "Seasoned Cryomancer",
+    "Strategic Betrayal",
+    "Superior Spider-Man",
+    "The Theorist, Jace Beleren",
+    "Uldaros Theorix",
+    "Winternight Stories"
+   ]
+  ],
+  "partial_b": [
+   11,
+   [
+    "Enduring Curiosity",
+    "Floodpits Drowner",
+    "Kaito, Bane of Nightmares",
+    "Soulstone Sanctuary",
+    "Spyglass Siren",
+    "Strategic Betrayal",
+    "The Wondrous Wasp",
+    "Tishana's Tidebinder",
+    "Wan Shi Tong, Librarian",
+    "We Say Thee Nay!",
+    "Yuriko, Hope from the Shadows"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.2633,
+   "wins_a": 79,
+   "wins_b": 221
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.258,
+   "wins_a": 129,
+   "wins_b": 371
+  }
+ },
+ "master/dimir_control vs grandmaster/izzet_spellementals": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.45,
+   "wins_a": 18,
+   "wins_b": 22
+  },
+  "partial_a": [
+   11,
+   [
+    "Cavern of Souls",
+    "Deadly Cover-Up",
+    "Deceit",
+    "Multiversal Passage",
+    "Overlord of the Balemurk",
+    "Seasoned Cryomancer",
+    "Strategic Betrayal",
+    "Superior Spider-Man",
+    "The Theorist, Jace Beleren",
+    "Uldaros Theorix",
+    "Winternight Stories"
+   ]
+  ],
+  "partial_b": [
+   7,
+   [
+    "Cori Mountain Monastery",
+    "Flow State",
+    "Get Out",
+    "Hearth Elemental",
+    "Prismari Charm",
+    "Sunderflock",
+    "Traumatic Critique"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.61,
+   "wins_a": 183,
+   "wins_b": 117
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.624,
+   "wins_a": 312,
+   "wins_b": 188
+  }
+ },
+ "master/dimir_control vs grandmaster/jund_sacrifice": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.2,
+   "wins_a": 8,
+   "wins_b": 32
+  },
+  "partial_a": [
+   11,
+   [
+    "Cavern of Souls",
+    "Deadly Cover-Up",
+    "Deceit",
+    "Multiversal Passage",
+    "Overlord of the Balemurk",
+    "Seasoned Cryomancer",
+    "Strategic Betrayal",
+    "Superior Spider-Man",
+    "The Theorist, Jace Beleren",
+    "Uldaros Theorix",
+    "Winternight Stories"
+   ]
+  ],
+  "partial_b": [
+   11,
+   [
+    "Azog, Moria's Ruin",
+    "Biotech Specialist",
+    "Deadly Precision",
+    "Fanatical Offering",
+    "Gene Pollinator",
+    "Lively Dirge",
+    "Mutagen Man, Living Ooze",
+    "Obsessive Pursuit",
+    "Smaug the Magnificent",
+    "The Sackville-Bagginses",
+    "Umbral Collar Zealot"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.5933,
+   "wins_a": 178,
+   "wins_b": 122
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.602,
+   "wins_a": 301,
+   "wins_b": 199
+  }
+ },
+ "master/dimir_control vs grandmaster/mono_green_landfall": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.125,
+   "wins_a": 5,
+   "wins_b": 35
+  },
+  "partial_a": [
+   11,
+   [
+    "Cavern of Souls",
+    "Deadly Cover-Up",
+    "Deceit",
+    "Multiversal Passage",
+    "Overlord of the Balemurk",
+    "Seasoned Cryomancer",
+    "Strategic Betrayal",
+    "Superior Spider-Man",
+    "The Theorist, Jace Beleren",
+    "Uldaros Theorix",
+    "Winternight Stories"
+   ]
+  ],
+  "partial_b": [
+   9,
+   [
+    "Ba Sing Se",
+    "Bristly Bill, Spine Sower",
+    "Demolition Field",
+    "Earthbender Ascension",
+    "Escape Tunnel",
+    "Esper Origins",
+    "Icetill Explorer",
+    "Mightform Harmonizer",
+    "Sapling Nursery"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.3567,
+   "wins_a": 107,
+   "wins_b": 193
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.336,
+   "wins_a": 168,
+   "wins_b": 332
+  }
+ },
+ "platinum/azorius_control vs platinum/mono_green_stompy": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.475,
+   "wins_a": 19,
+   "wins_b": 21
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   1,
+   [
+    "Old-Growth Troll"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.48,
+   "wins_a": 144,
+   "wins_b": 156
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.194,
+   "wins_a": 97,
+   "wins_b": 403
+  }
+ },
+ "platinum/azorius_control vs platinum/mono_red_aggro": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.3,
+   "wins_a": 12,
+   "wins_b": 28
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.3,
+   "wins_a": 90,
+   "wins_b": 210
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.118,
+   "wins_a": 59,
+   "wins_b": 441
+  }
+ },
+ "platinum/azorius_control vs platinum/rakdos_midrange": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.325,
+   "wins_a": 13,
+   "wins_b": 27
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.45,
+   "wins_a": 135,
+   "wins_b": 165
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.064,
+   "wins_a": 32,
+   "wins_b": 468
+  }
+ },
+ "platinum/mono_green_stompy vs platinum/mono_red_aggro": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.625,
+   "wins_a": 25,
+   "wins_b": 15
+  },
+  "partial_a": [
+   1,
+   [
+    "Old-Growth Troll"
+   ]
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.79,
+   "wins_a": 237,
+   "wins_b": 63
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.794,
+   "wins_a": 397,
+   "wins_b": 103
+  }
+ },
+ "platinum/mono_green_stompy vs platinum/rakdos_midrange": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.7,
+   "wins_a": 28,
+   "wins_b": 12
+  },
+  "partial_a": [
+   1,
+   [
+    "Old-Growth Troll"
+   ]
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.6267,
+   "wins_a": 188,
+   "wins_b": 112
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.642,
+   "wins_a": 321,
+   "wins_b": 179
+  }
+ },
+ "platinum/mono_red_aggro vs platinum/rakdos_midrange": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.325,
+   "wins_a": 13,
+   "wins_b": 27
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.3967,
+   "wins_a": 119,
+   "wins_b": 181
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.426,
+   "wins_a": 213,
+   "wins_b": 287
+  }
+ },
+ "silver/green_stompy vs silver/red_goblins": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.675,
+   "wins_a": 27,
+   "wins_b": 13
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.7533,
+   "wins_a": 226,
+   "wins_b": 74
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.706,
+   "wins_a": 353,
+   "wins_b": 147
+  }
+ },
+ "silver/green_stompy vs silver/uw_flyers": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.525,
+   "wins_a": 21,
+   "wins_b": 19
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.68,
+   "wins_a": 204,
+   "wins_b": 96
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.68,
+   "wins_a": 340,
+   "wins_b": 160
+  }
+ },
+ "silver/red_goblins vs silver/uw_flyers": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.5,
+   "wins_a": 20,
+   "wins_b": 20
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.61,
+   "wins_a": 183,
+   "wins_b": 117
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.638,
+   "wins_a": 319,
+   "wins_b": 181
+  }
+ },
+ "ub_snow_control vs bronze/five_color_mess": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.925,
+   "wins_a": 37,
+   "wins_b": 3
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.9733,
+   "wins_a": 292,
+   "wins_b": 8
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.972,
+   "wins_a": 486,
+   "wins_b": 14
+  }
+ },
+ "ub_snow_control vs bronze/land_glut": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.55,
+   "wins_a": 22,
+   "wins_b": 18
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.7967,
+   "wins_a": 239,
+   "wins_b": 61
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.798,
+   "wins_a": 399,
+   "wins_b": 101
+  }
+ },
+ "ub_snow_control vs bronze/vanilla_pile": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.775,
+   "wins_a": 31,
+   "wins_b": 9
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.86,
+   "wins_a": 258,
+   "wins_b": 42
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.842,
+   "wins_a": 421,
+   "wins_b": 79
+  }
+ },
+ "ub_snow_control vs gold/boros_burn": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.3,
+   "wins_a": 12,
+   "wins_b": 28
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.33,
+   "wins_a": 99,
+   "wins_b": 201
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.26,
+   "wins_a": 130,
+   "wins_b": 370
+  }
+ },
+ "ub_snow_control vs gold/dimir_control": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.9,
+   "wins_a": 36,
+   "wins_b": 4
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 9,
+   "games": 300,
+   "win_rate_a": 0.7583,
+   "wins_a": 223,
+   "wins_b": 68
+  },
+  "python_tier_era": {
+   "draws": 28,
+   "games": 500,
+   "win_rate_a": 0.764,
+   "wins_a": 368,
+   "wins_b": 104
+  }
+ },
+ "ub_snow_control vs gold/gruul_midrange": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.8,
+   "wins_a": 32,
+   "wins_b": 8
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.7467,
+   "wins_a": 224,
+   "wins_b": 76
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.732,
+   "wins_a": 366,
+   "wins_b": 134
+  }
+ },
+ "ub_snow_control vs gold/orzhov_midrange": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.5,
+   "wins_a": 20,
+   "wins_b": 20
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.6133,
+   "wins_a": 184,
+   "wins_b": 116
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.662,
+   "wins_a": 331,
+   "wins_b": 169
+  }
+ },
+ "ub_snow_control vs grandmaster/boros_dragons": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.35,
+   "wins_a": 14,
+   "wins_b": 26
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   11,
+   [
+    "Cavern of Souls",
+    "Clarion Conqueror",
+    "Get Lost",
+    "Maelstrom of the Spirit Dragon",
+    "Magda, the Hoardmaster",
+    "Magmatic Hellkite",
+    "Momo, Friendly Flier",
+    "Nova Hellkite",
+    "Sarkhan, Dragon Ascendant",
+    "Smaug the Magnificent",
+    "Voice of Victory"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.5533,
+   "wins_a": 166,
+   "wins_b": 134
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.592,
+   "wins_a": 296,
+   "wins_b": 204
+  }
+ },
+ "ub_snow_control vs grandmaster/dimir_midrange": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.4,
+   "wins_a": 16,
+   "wins_b": 24
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   11,
+   [
+    "Enduring Curiosity",
+    "Floodpits Drowner",
+    "Kaito, Bane of Nightmares",
+    "Soulstone Sanctuary",
+    "Spyglass Siren",
+    "Strategic Betrayal",
+    "The Wondrous Wasp",
+    "Tishana's Tidebinder",
+    "Wan Shi Tong, Librarian",
+    "We Say Thee Nay!",
+    "Yuriko, Hope from the Shadows"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.7133,
+   "wins_a": 214,
+   "wins_b": 86
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.898,
+   "wins_a": 449,
+   "wins_b": 51
+  }
+ },
+ "ub_snow_control vs grandmaster/izzet_spellementals": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.825,
+   "wins_a": 33,
+   "wins_b": 7
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   7,
+   [
+    "Cori Mountain Monastery",
+    "Flow State",
+    "Get Out",
+    "Hearth Elemental",
+    "Prismari Charm",
+    "Sunderflock",
+    "Traumatic Critique"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.9633,
+   "wins_a": 289,
+   "wins_b": 11
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 1.0,
+   "wins_a": 500,
+   "wins_b": 0
+  }
+ },
+ "ub_snow_control vs grandmaster/jund_sacrifice": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.45,
+   "wins_a": 18,
+   "wins_b": 22
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   11,
+   [
+    "Azog, Moria's Ruin",
+    "Biotech Specialist",
+    "Deadly Precision",
+    "Fanatical Offering",
+    "Gene Pollinator",
+    "Lively Dirge",
+    "Mutagen Man, Living Ooze",
+    "Obsessive Pursuit",
+    "Smaug the Magnificent",
+    "The Sackville-Bagginses",
+    "Umbral Collar Zealot"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.8167,
+   "wins_a": 245,
+   "wins_b": 55
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.838,
+   "wins_a": 419,
+   "wins_b": 81
+  }
+ },
+ "ub_snow_control vs grandmaster/mono_green_landfall": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.25,
+   "wins_a": 10,
+   "wins_b": 30
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   9,
+   [
+    "Ba Sing Se",
+    "Bristly Bill, Spine Sower",
+    "Demolition Field",
+    "Earthbender Ascension",
+    "Escape Tunnel",
+    "Esper Origins",
+    "Icetill Explorer",
+    "Mightform Harmonizer",
+    "Sapling Nursery"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.7067,
+   "wins_a": 212,
+   "wins_b": 88
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.938,
+   "wins_a": 469,
+   "wins_b": 31
+  }
+ },
+ "ub_snow_control vs master/azorius_artifact_control": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.4,
+   "wins_a": 16,
+   "wins_b": 24
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   18,
+   [
+    "Adagia, Windswept Bastion",
+    "Braided Net",
+    "Candy Trail",
+    "Castle Doom",
+    "Clay-Fired Bricks",
+    "Cryogen Relic",
+    "Fomori Vault",
+    "Perilous Snare",
+    "Petrified Hamlet",
+    "Pinnacle Starcage",
+    "Repurposing Bay",
+    "Simulacrum Synthesizer",
+    "Spring-Loaded Sawblades",
+    "The Fire Crystal",
+    "The Irencrag",
+    "The Mind Stone",
+    "United Battlefront",
+    "White Auracite"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 1.0,
+   "wins_a": 300,
+   "wins_b": 0
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 1.0,
+   "wins_a": 500,
+   "wins_b": 0
+  }
+ },
+ "ub_snow_control vs master/dimir_control": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.75,
+   "wins_a": 30,
+   "wins_b": 10
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   11,
+   [
+    "Cavern of Souls",
+    "Deadly Cover-Up",
+    "Deceit",
+    "Multiversal Passage",
+    "Overlord of the Balemurk",
+    "Seasoned Cryomancer",
+    "Strategic Betrayal",
+    "Superior Spider-Man",
+    "The Theorist, Jace Beleren",
+    "Uldaros Theorix",
+    "Winternight Stories"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.8567,
+   "wins_a": 257,
+   "wins_b": 43
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.986,
+   "wins_a": 493,
+   "wins_b": 7
+  }
+ },
+ "ub_snow_control vs platinum/azorius_control": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.3,
+   "wins_a": 12,
+   "wins_b": 28
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 1,
+   "games": 300,
+   "win_rate_a": 0.1983,
+   "wins_a": 59,
+   "wins_b": 240
+  },
+  "python_tier_era": {
+   "draws": 15,
+   "games": 500,
+   "win_rate_a": 0.613,
+   "wins_a": 299,
+   "wins_b": 186
+  }
+ },
+ "ub_snow_control vs platinum/mono_green_stompy": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.4,
+   "wins_a": 16,
+   "wins_b": 24
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   1,
+   [
+    "Old-Growth Troll"
+   ]
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.2967,
+   "wins_a": 89,
+   "wins_b": 211
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.272,
+   "wins_a": 136,
+   "wins_b": 364
+  }
+ },
+ "ub_snow_control vs platinum/mono_red_aggro": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.25,
+   "wins_a": 10,
+   "wins_b": 30
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.2367,
+   "wins_a": 71,
+   "wins_b": 229
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.25,
+   "wins_a": 125,
+   "wins_b": 375
+  }
+ },
+ "ub_snow_control vs platinum/rakdos_midrange": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.35,
+   "wins_a": 14,
+   "wins_b": 26
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.3467,
+   "wins_a": 104,
+   "wins_b": 196
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.34,
+   "wins_a": 170,
+   "wins_b": 330
+  }
+ },
+ "ub_snow_control vs silver/green_stompy": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.45,
+   "wins_a": 18,
+   "wins_b": 22
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.6933,
+   "wins_a": 208,
+   "wins_b": 92
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.704,
+   "wins_a": 352,
+   "wins_b": 148
+  }
+ },
+ "ub_snow_control vs silver/red_goblins": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.375,
+   "wins_a": 15,
+   "wins_b": 25
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.4533,
+   "wins_a": 136,
+   "wins_b": 164
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.42,
+   "wins_a": 210,
+   "wins_b": 290
+  }
+ },
+ "ub_snow_control vs silver/uw_flyers": {
+  "forge": {
+   "draws": 0,
+   "games": 40,
+   "win_rate_a": 0.6,
+   "wins_a": 24,
+   "wins_b": 16
+  },
+  "partial_a": [
+   0,
+   []
+  ],
+  "partial_b": [
+   0,
+   []
+  ],
+  "python_now": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.8433,
+   "wins_a": 253,
+   "wins_b": 47
+  },
+  "python_tier_era": {
+   "draws": 0,
+   "games": 500,
+   "win_rate_a": 0.892,
+   "wins_a": 446,
+   "wins_b": 54
+  }
+ }
+}
