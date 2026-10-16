@@ -211,3 +211,9 @@ or entering) is each only a handful of cards.
 "Saddle N" (the AI taps creatures with total power N, summoning-sick ones first, before attacks) with
 "Whenever ~ attacks while saddled", and "Whenever you expend N" (counts mana sources tapped this turn).
 Fully supported cards 865 → 894.
+
+## Creature and permanent death triggers (mtgsim/cards.py, engine)
+
+"Whenever a/another creature you control [with a counter on it] dies" and "Whenever an artifact/enchantment/Food you
+control is put into a graveyard from the battlefield". Not modelled: cards leaving a graveyard, "counter is put on ~"
+thresholds (plan counters). Fully supported cards 894 → 905.
