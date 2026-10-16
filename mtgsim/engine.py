@@ -24,7 +24,7 @@ import json
 import random
 import re
 
-from .cards import BASIC_MANA, COLORS, AltCost, CardDef, Effect, make_token
+from .cards import BASIC_MANA, COLORS, AltCost, CardDef, Effect, add_mana, make_token
 
 TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "artifact", "player", "spell")
 
@@ -52,6 +52,8 @@ class Permanent:
         self.produces_now = None           # set by Game.mana_sources: the colours usable right now
         self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
         self.attached_to: "Permanent | None" = None    # Equipment: the creature it is attached to
+        self.spent_color = ""              # "if {U}{U} was spent to cast it"
+        self.warped = False
 
     @property
     def equipment(self):
@@ -151,6 +153,9 @@ class Player:
         self.exile: list[CardDef] = []
         self.on_adventure: list[CardDef] = []
         self.foretold: list[CardDef] = []
+        self.plotted: list[CardDef] = []
+        self.warp_exile: list[CardDef] = []
+        self.exiled_turn: dict = {}        # card name -> turn it was plotted or exiled after warp
         self._life = 20
         self.lost = False
         self.land_played = False
@@ -406,6 +411,45 @@ class Game:
             self._variants[key] = v
         return self._variants[key]
 
+    @staticmethod
+    def _hybrid_cost(cost: dict, hybrid: tuple, col: str) -> dict:
+        """cost (hybrid pips counted as their first colour) with the hybrid pips paid in col where they can be."""
+        out = dict(cost)
+        for pair in hybrid:
+            out[pair[0]] = out.get(pair[0], 0) - 1
+            c = col if col in pair else pair[0]
+            out[c] = out.get(c, 0) + 1
+        return {k: v for k, v in out.items() if v or k == "generic"}
+
+    def _hand_options(self, p: Player, c: CardDef) -> list[CardDef]:
+        """The ways to cast hand card c: itself, or one variant per colour for "if {U}{U} was spent"
+        cards, plus offspring, spree modes, and warp / evoke when the full cost can't be paid."""
+        out = []
+        cols = sorted({x for pair in c.hybrid for x in pair}) if c.spent_colors and c.hybrid else []
+        if cols:
+            out += [self._variant(c, f"spent_{col}", AltCost("spent", self._hybrid_cost(c.mana_cost, c.hybrid, col)))
+                    for col in cols]
+        else:
+            out.append(c)
+        full = any(self.can_pay(p, self.cost_of(p, v), spell=v) for v in out)
+        for a in c.alt_costs:
+            if a.kind == "offspring":
+                out.append(self._variant(c, "offspring", AltCost("offspring", add_mana(c.mana_cost, a.cost))))
+            elif a.kind in ("warp", "evoke") and not full:
+                acols = sorted({x for pair in a.hybrid for x in pair}) if a.hybrid and c.spent_colors else []
+                for col in acols or [""]:
+                    kind = f"{a.kind}_{col}" if col else a.kind
+                    out.append(self._variant(c, kind, AltCost(a.kind, self._hybrid_cost(a.cost, a.hybrid, col)
+                                                              if col else a.cost)))
+        for mask in range(1, 2 ** len(c.spree)):
+            modes = [m for i, m in enumerate(c.spree) if mask >> i & 1]
+            cost = add_mana(c.mana_cost, *(m[0] for m in modes))
+            effects = [e for m in modes for e in m[1]]
+            out.append(self._variant(c, f"spree_{mask}", AltCost("spree", cost, effects=effects)))
+        if c.spree:
+            out.remove(c)     # a spree spell needs at least one mode
+        return out
+
     def spell_options(self, p: Player) -> list[CardDef]:
         """Every nonland spell p could cast from any zone: hand cards plus adventures, cards on an
         adventure, foretold cards, flashback, blitz, spectacle, alternative costs and channel."""
@@ -417,7 +461,7 @@ class Game:
                     if a.kind == "channel":
                         out.append(self._variant(c, "channel", a))
                 continue
-            out.append(c)
+            out += self._hand_options(p, c)
             if c.adventure:
                 out.append(self._variant(c, "adventure"))
             for a in c.alt_costs:
@@ -425,6 +469,9 @@ class Game:
                         (a.kind == "blitz" and "hand" in a.zone):
                     out.append(self._variant(c, a.kind, a))
         out += [self._variant(c, "from_adventure") for c in p.on_adventure]
+        out += [self._variant(c, "plotted", AltCost("plotted", {"generic": 0})) for c in p.plotted
+                if p.exiled_turn.get(c.name, 0) < self.turn]
+        out += [self._variant(c, "from_warp") for c in p.warp_exile if p.exiled_turn.get(c.name, 0) < self.turn]
         for c in p.foretold:
             a = next(a for a in c.alt_costs if a.kind == "foretell")
             out.append(self._variant(c, "foretold", a))
@@ -437,12 +484,14 @@ class Game:
     def _origin(self, card: CardDef):
         return getattr(card, "origin", None) or (card, "", None)
 
+    def _zone(self, p: Player, kind: str) -> list:
+        """The zone a spell_options() variant of this kind is cast from."""
+        return {"from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
+                "blitz_gy": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile}.get(kind, p.hand)
+
     def _available(self, p: Player, card: CardDef) -> bool:
         base, kind, _ = self._origin(card)
-        zone = {"": p.hand, "adventure": p.hand, "alt": p.hand, "kicker": p.hand, "spectacle": p.hand, "blitz": p.hand,
-                "channel": p.hand, "from_adventure": p.on_adventure, "foretold": p.foretold,
-                "flashback": p.graveyard, "blitz_gy": p.graveyard}[kind]
-        return base in zone
+        return base in self._zone(p, kind)
 
     def can_cast_now(self, p: Player, card: CardDef) -> bool:
         """Timing, mana, zone and (for counterspells) a spell to target."""
@@ -669,6 +718,11 @@ class Game:
             if perm.blitz:
                 self.log(f"sacrifices blitzed {perm.card.name}", p)
                 self.dies(perm)
+            if perm.warped and self.leave_battlefield(perm, "exile"):
+                p.exile.remove(perm.front)
+                p.warp_exile.append(perm.front)
+                p.exiled_turn[perm.front.name] = self.turn
+                self.log(f"exiles warped {perm.card.name}", p)
         self.run_priority(until_empty_stack=False)
         if self.over:
             return
@@ -817,9 +871,21 @@ class Game:
         if item.is_spell and item.card.is_permanent:
             self.log(f"{item.card.name} resolves", p)
             base, kind, _ = self._origin(item.card)
-            perm = self.enter_battlefield(p, base)
+            if kind.startswith(("spent_", "evoke_")):
+                self._spent = kind.split("_")[1]
+            perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
+            self._spent = ""
             if kind in ("blitz", "blitz_gy"):
                 perm.blitz = True
+            if kind == "warp":
+                perm.warped = True
+            if kind == "offspring":
+                token = dataclasses.replace(base, name=f"{base.name} token", power=1, toughness=1, is_token=True,
+                                            alt_costs=[])
+                self.queue_trigger(p, [Effect("token_copy", data={"card": token})], perm, f"{base.name} offspring")
+            if kind.startswith("evoke"):
+                self.log(f"sacrifices evoked {base.name}", p)
+                self.dies(perm)
             if perm.is_creature and p.next_creature_counters:
                 perm.counters["+1/+1"] = perm.p1 + p.next_creature_counters
                 p.next_creature_counters = 0
@@ -877,6 +943,8 @@ class Game:
             return any(x.counters.get("+1/+1") for x in p.creatures)
         if c == "opp_lost_life":
             return self.opponent(p).lost_life_turn
+        if c.startswith("spent:"):
+            return item.source is not None and getattr(item.source, "spent_color", "") == c[6:]
         return True
 
     # -------------------------------------------------------------- actions
@@ -903,13 +971,17 @@ class Game:
         payment = self.pay(p, cost, spell=card)
         if payment is None:
             return False
+        x = 0
+        if "X" in card.mana_cost:     # X: as much as the remaining mana allows
+            while x < 20 and find_payment(self.mana_sources(p, spell=card), {"generic": x + 1}) is not None:
+                x += 1
+            if x:
+                payment += self.pay(p, {"generic": x}, spell=card)
         if alt is not None and alt.life:
             self.change_life(p, -alt.life, f"{card.name}: alternative cost")
         if card.extra_life_cost:
             self.change_life(p, -card.extra_life_cost, f"{card.name}: additional cost")
-        zone = {"from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
-                "blitz_gy": p.graveyard}.get(kind, p.hand)
-        zone.remove(base)
+        self._zone(p, kind).remove(base)
         if kind == "channel":
             p.graveyard.append(base)
         effects = [] if card.is_permanent else list(card.spell_effects)
@@ -927,6 +999,7 @@ class Game:
             targets = self.auto_targets(p, mode_effects) + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")
         item.snow_spent = sum(1 for s in payment if s.card.snow)
+        item.x = x
         item.uncounterable = any(s.card.mana_restriction == "chosen_type" and self.mana_allowed(s, card)
                                  for s in payment)
         item.mana_spent = sum(v for k, v in cost.items() if k != "X")
@@ -1131,6 +1204,20 @@ class Game:
         self.settle()
         return True
 
+    def plot(self, p: Player, card: CardDef) -> bool:
+        """Plot: pay the plot cost and exile the card from hand, to cast free on a later turn."""
+        alt = next((a for a in card.alt_costs if a.kind == "plot"), None)
+        if card not in p.hand or alt is None or not (p is self.active and self.step in ("main1", "main2")
+                                                     and not self.stack):
+            return False
+        if self.pay(p, alt.cost) is None:
+            return False
+        p.hand.remove(card)
+        p.plotted.append(card)
+        p.exiled_turn[card.name] = self.turn
+        self.log(f"plots {card.name}", p)
+        return True
+
     def foretell(self, p: Player, card: CardDef) -> bool:
         if card not in p.hand or not any(a.kind == "foretell" for a in card.alt_costs):
             return False
@@ -1141,9 +1228,10 @@ class Game:
         self.log("foretells a card", p)
         return True
 
-    def enter_battlefield(self, p: Player, card: CardDef, tapped_attacking: bool = False) -> Permanent:
+    def enter_battlefield(self, p: Player, card: CardDef, tapped_attacking: bool = False, x: int = 0) -> Permanent:
         perm = Permanent(card, p)
         perm.entered_turn = self.turn
+        perm.spent_color = getattr(self, "_spent", "")
         others = sum(x.card.is_land for x in p.battlefield)
         cond = card.tapped_condition
         if cond == "unless_2_lands":
@@ -1180,7 +1268,9 @@ class Game:
         if card.loyalty:
             perm.counters["loyalty"] = card.loyalty
         if card.etb_counters:
-            perm.counters["+1/+1"] = card.etb_counters
+            n = x if card.etb_counters == -1 else card.etb_counters
+            if n:
+                perm.counters["+1/+1"] = n
         p.battlefield.append(perm)
         if tapped_attacking:
             perm.tapped = True
@@ -1247,6 +1337,8 @@ class Game:
         source = (item.card.name if item and item.card else
                   item.source.card.name if item and isinstance(item.source, Permanent) else "effect")
         cause = f"{source}: {k}"
+        if k == "damage" and eff.data.get("x"):
+            eff = dataclasses.replace(eff, amount=getattr(item, "x", 0))
         if k == "damage":
             if eff.target == "each_creature":
                 for perm in p.creatures + opp.creatures:
@@ -1464,6 +1556,9 @@ class Game:
             p.next_creature_counters += 1
         elif k == "adversary":
             self.adversary(p, item, eff)
+        elif k == "token_copy":
+            self.enter_battlefield(p, eff.data["card"])
+            self.log(f"creates {eff.data['card'].name}", p)
         self.state_based_actions()
 
     def deal_damage(self, target, amount: int, by: Player | None = None, cause="noncombat damage"):
@@ -2266,6 +2361,10 @@ def use_abilities(game: Game, me: Player):
         for b in [x for x in me.battlefield if x.card.token_kind == "blood"]:
             if choose_rummage(game, me, 1) and game.can_pay(me, {"generic": 1 + _reserve(game, me)}):
                 game.activate(me, b, "blood")
+        for card in [c for c in me.hand if any(a.kind == "plot" for a in c.alt_costs)]:
+            alt = next(a for a in card.alt_costs if a.kind == "plot")
+            if game.can_pay(me, add_costs(alt.cost, {"generic": _reserve(game, me)}), spell="ability"):
+                game.plot(me, card)
         for card in [c for c in me.hand if any(a.kind == "foretell" for a in c.alt_costs)]:
             if game.can_pay(me, {"generic": 2 + _reserve(game, me)}):
                 game.foretell(me, card)
