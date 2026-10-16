@@ -420,6 +420,8 @@ _EFFECT_PATTERNS = [
     (r"target player discards a card", lambda m: Effect("discard", 1, target="player")),
     (r"each opponent discards a card", lambda m: Effect("discard", 1, target="player")),
     (r"investigate", lambda m: Effect("token", 1, data={"kind": "clue"})),
+    (r"(?:~|it|this creature) endures (\d+)", lambda m: Effect("endure", int(m[1]))),
+    (r"manifest dread", lambda m: Effect("manifest_dread")),
     (r"untap ~", lambda m: Effect("untap_self")),
     (r"target creature(?: you control)? gets \+(\d+)/\+(\d+) and gains (flying|first strike|double strike|deathtouch|"
      r"lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach) until end of turn",
@@ -1049,6 +1051,20 @@ def _parse_face(data: dict) -> CardDef:
         m = re.fullmatch(r"Creatures you control get \+(\d+)/\+(\d+)\.", line)
         if m:
             extra["anthem"] = (int(m[1]), int(m[2]))
+            continue
+        m = re.fullmatch(r"Mobilize (\d+|X)(?:, where X is the number of creature cards in your graveyard)?", line)
+        if m:
+            sac = Trigger("end_step", [Effect("copy_sac", target="self")])
+            eff = Effect("token", 1 if m[1] == "X" else int(m[1]), data={
+                "name": "Warrior", "power": 1, "toughness": 1, "keywords": frozenset(), "attacking": True,
+                "triggers": [sac], "artifact": False, "pt_per": ""})
+            if m[1] == "X":
+                eff.data["per"] = {"what": "creature", "zone": "graveyard"}
+            triggers.append(Trigger("attacks", [eff]))
+            continue
+        m = re.fullmatch(r"Disguise (\{[^ ]+\})", line)
+        if m:
+            alt_costs.append(AltCost("disguise", parse_mana_cost(m[1])))
             continue
         if line == "Convoke":
             extra["convoke"] = True

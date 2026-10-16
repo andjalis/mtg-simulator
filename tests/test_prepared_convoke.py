@@ -68,6 +68,56 @@ class PreparedAndConvoke(unittest.TestCase):
         self.assertTrue(all(c.tapped for c in self.a.creatures))
         self.assertEqual(len(self.a.hand), 2)
 
+    def test_mobilize_creates_tapped_attacking_warriors_that_are_sacrificed(self):
+        mob = card("Mob Leader", "{2}{R}", "Creature — Goblin", "Mobilize 2", 2, 2)
+        self.assertEqual(mob.unsupported, [])
+        m = self.perm(mob)
+        self.game.step = "declare_attackers"
+        self.game.attackers, self.game.attack_targets = [m], {m: self.b}
+        self.game.fire(self.a, "attacks", m)
+        self.game.settle()
+        warriors = [c for c in self.a.creatures if c.card.is_token]
+        self.assertEqual(len(warriors), 2)
+        self.assertTrue(all(w.tapped and w in self.game.attackers for w in warriors))
+        self.game.fire(self.a, "end_step")
+        self.game.settle()
+        self.assertEqual([c for c in self.a.creatures if c.card.is_token], [])
+
+    def test_endure_puts_counters_on_the_source(self):
+        e = card("Endurer", "{1}{W}", "Creature — Human", "When this creature enters, it endures 2.", 1, 1)
+        self.assertEqual(e.unsupported, [])
+        self.game.enter_battlefield(self.a, e)
+        self.game.settle()
+        self.assertEqual(self.a.battlefield[0].power, 3)
+
+    def test_manifest_dread(self):
+        d = card("Dread Dweller", "{1}{B}", "Creature — Horror", "When this creature enters, manifest dread.", 1, 1)
+        self.assertEqual(d.unsupported, [])
+        self.a.library = [BEAR, ISLAND, ISLAND]
+        self.game.enter_battlefield(self.a, d)
+        self.game.settle()
+        manifests = [c for c in self.a.creatures if c.card.name == "Manifest"]
+        self.assertEqual(len(manifests), 1)
+        self.assertEqual((manifests[0].power, manifests[0].toughness), (2, 2))
+        self.assertEqual(len(self.a.graveyard), 1)
+
+    def test_disguise_cast_face_down_and_turned_up(self):
+        ph = card("Disguised Phantom", "{3}{W}{W}", "Creature — Spirit", "Flying\nDisguise {1}{W}", 3, 3)
+        self.assertEqual(ph.unsupported, [])
+        plains = card("Plains", "", "Basic Land — Plains", "{T}: Add {W}.")
+        for _ in range(3):
+            self.perm(plains)
+        self.a.hand = [ph]
+        opts = [c for c in self.game.spell_options(self.a) if c.name.endswith("(disguise)")]
+        self.assertEqual(len(opts), 1)
+        self.assertTrue(self.game.cast(self.a, opts[0]))
+        face_down = [x for x in self.a.battlefield if x.hidden is not None][0]
+        self.assertEqual((face_down.power, face_down.card.ward), (2, 2))
+        for land in self.a.battlefield:
+            land.tapped = False
+        self.game.turn_face_up(self.a)
+        self.assertEqual((face_down.card.name, face_down.power), ("Disguised Phantom", 3))
+
 
 if __name__ == "__main__":
     unittest.main()
