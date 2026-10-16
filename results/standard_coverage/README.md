@@ -253,3 +253,13 @@ mana after the main phase. Fully supported cards 1,047 → 1,075.
 "Exile up to N target cards from a graveyard" (the opponent's best cards first), "Put target card from a graveyard on
 the bottom of a library", "You may mill N cards", and "Untap it." / "It explores." after a targeted spell effect
 (the previous target). Fully supported cards 1,075 → 1,110.
+
+## Cheap single-line misses (flagged-deck cards first)
+
+Mutagen tokens, "Amass <Type> N" (grows the one Army or makes it), "Creatures you control have haste/trample",
+"Red / Instant and sorcery spells you cast cost {1} less", "Your opponents can't cast spells during your turn",
+"During your turn, ~ has first strike", conditional "~ gets +N/+N as long as there are four permanent / seven cards
+in your graveyard" (descend, threshold), "~ enters with a +1/+1 counter if a creature died / an opponent lost life /
+you attacked this turn", plus small effect lines (drain with "defending player", "draw a card and lose N life",
+opponent discards, opponent sacrifices a creature, another target creature gains a keyword or a counter, "1 damage
+to each of one or two targets" read as one target). Fully supported cards 1,110 → 1,162.
