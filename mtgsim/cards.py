@@ -191,6 +191,8 @@ class CardDef:
     gift: str = ""                                      # "Gift a card/Food/Treasure/tapped Fish": what an opponent gets
     gy_return: dict | None = None                       # "{1}{B}: Return this card from your graveyard to your hand."
     gy_exile_draw: dict | None = None                   # "Max speed — {3}, Exile this card from your graveyard: Draw a card."
+    bargain: bool = False                               # "Bargain": may sacrifice an artifact, enchantment or token as an additional cost
+    gift: str = ""                                      # "Gift a card/Food/Treasure/tapped Fish/Octopus": what an opponent gets if promised
     token_double: bool = False                          # "If one or more tokens would be created ..., twice that many"
     anthem_chosen: tuple = ()                           # "Creatures you control of the chosen type get +1/+1"
     max_blocker_power: int = 0                          # "can't be blocked by creatures with power N or greater"
@@ -619,6 +621,16 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("p1_counters", _num(m[1]), target="creature_mine")),
     (r"put (a|one|two|three) \+1/\+1 counters? on ~", lambda m: Effect("p1_counters", _num(m[1]), target="self")),
     (r"ELSPETHPLUS", lambda m: Effect("p1_counters", 1, target="creature_mine", data={"keyword": "flying"})),
+    (r"(?:it|~) deals (\d+) damage", lambda m: Effect("damage", int(m[1]), target="prev")),
+    (r"that creature gets -(\d+)/-(\d+) until end of turn",
+     lambda m: Effect("debuff_one", int(m[1]), int(m[2]), target="prev")),
+    (r"that creature gets \+(\d+)/\+(\d+) until end of turn",
+     lambda m: Effect("pump", int(m[1]), int(m[2]), target="prev")),
+    (r"destroy that creature", lambda m: Effect("destroy", target="prev")),
+    (r"(?:it|that creature) also gains ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach))(?: and ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)))? until end of turn",
+     lambda m: [Effect("grant", target="prev", data={"keyword": k.lower()}) for k in m.groups() if k]),
+    (r"~ also deals (\d+) damage to that creature's controller",
+     lambda m: Effect("damage", int(m[1]), target="that_controller")),
     (r"it gains (hexproof|first strike|haste|indestructible|trample|lifelink|flying|vigilance|menace) until end of turn",
      lambda m: Effect("grant", target="prev", data={"keyword": m[1].lower()})),
     (r"target creature gains ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) and ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) until end of turn",
@@ -653,6 +665,8 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("p1_counters", _num(m[1]), target="my_creatures", data={"other": bool(m[2])})),
     (r"(other )?creatures you control get \+(\d+)/\+(\d+)(?: and gain ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)))? until end of turn",
      lambda m: Effect("pump_all", int(m[2]), int(m[3]), data={"other": bool(m[1]), "keyword": (m[4] or "").lower()})),
+    (r"(other )?creatures you control gain (KW) and get \+(\d+)/\+(\d+) until end of turn".replace("KW", "(?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)"),
+     lambda m: Effect("pump_all", int(m[3]), int(m[4]), data={"other": bool(m[1]), "keyword": m[2].lower()})),
     (r"(other )?creatures you control gain ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) until end of turn",
      lambda m: Effect("pump_all", 0, 0, data={"other": bool(m[1]), "keyword": m[2].lower()})),
     (r"double the number of \+1/\+1 counters on each creature you control",
@@ -821,7 +835,63 @@ _TRIGGERS = [
 ]
 
 
-def _parse_effects(text: str):
+_OPT_RIDER = re.compile(r"(?:then )?if (?:~|it|the spell) was bargained, (.+)|(?:then )?if the gift (was|wasn't) promised, (.+)",
+                        re.I)
+
+
+def _opt_rider(s: str, effects: list):
+    """"If ~ was bargained / the gift was promised, X [instead]": X's effects carry cond bargained / gifted (or !gifted).
+    With "instead" the earlier effect of the same kind (else every unconditional one) only happens otherwise.
+    Returns the new effects, or None when X doesn't parse."""
+    m = _OPT_RIDER.fullmatch(s)
+    if m is None:
+        return None
+    cond = "bargained" if m[1] else ("gifted" if m[2].lower() == "was" else "!gifted")
+    rest = (m[1] or m[3]).strip()
+    instead = bool(re.search(r"\binstead$", rest, re.I)) or re.match(r"instead,? ", rest, re.I) is not None
+    rest = re.sub(r",? instead$|^instead,? ", "", rest, flags=re.I)
+    new, bad = _parse_effects(rest[0].upper() + rest[1:] + ".")
+    if bad or not new:
+        return None
+    if instead:
+        same = [e for e in effects if not e.cond and e.kind == new[0].kind]
+        for e in same or [e for e in effects if not e.cond]:
+            e.cond = "!" + cond
+    for e in new:
+        e.cond = e.cond or cond
+    return new
+
+
+def _xq(text: str):
+    """The quantity in ", where X is ...": a tuple the engine evaluates, or None when it isn't a known one."""
+    t = text.strip().rstrip(".")
+    tl = t.lower()
+    from .counting import _singular
+    if tl in ("your life total", "your speed", "the amount of life you gained this turn",
+             "the number of cards in your hand"):
+        return ({"your life total": ("life",), "your speed": ("speed",),
+                 "the amount of life you gained this turn": ("gained",),
+                 "the number of cards in your hand": ("hand",)}[tl])
+    m = re.fullmatch(r"(~|its|that creature|that spell)'s? (power|toughness|mana value)", t, re.I) or \
+        re.fullmatch(r"(its) (power|toughness)", t, re.I)
+    if m:
+        return ("stat", "prev" if m[1] == "that creature" else "self", m[2])
+    m = re.fullmatch(r"the greatest (power|toughness) among creatures you control", t, re.I)
+    if m:
+        return ("greatest", m[1])
+    m = re.fullmatch(r"the number of ([\w+/ -]+?) counters on ~", t, re.I)
+    if m:
+        return ("counters", m[1])
+    m = re.fullmatch(r"the number of ([\w -]+?) cards? in your graveyard", t, re.I)
+    if m:
+        return ("gy", _singular(m[1]))
+    m = re.fullmatch(r"the number of ([\w -]+?) you control", t, re.I)
+    if m and " with " not in m[1] and " that " not in m[1]:
+        return ("count", _singular(m[1]))
+    return None
+
+
+def _parse_effects(text: str, opts: bool = False):
     """Parse a run of sentences into effects. Returns (effects, unmatched_sentences)."""
     effects, unmatched = [], []
     for rx, rep in _SUBS:
@@ -836,6 +906,28 @@ def _parse_effects(text: str):
             effects.append(Effect("pay_gate", data={"cost": parse_mana_cost(mp[1])}))
             gated = True
             continue
+        mx = re.fullmatch(r"(.+?),? where X is (.+)", s, re.I)
+        if mx and re.search(r"\bX\b", mx[1]) and _xq(mx[2]):
+            spec = _xq(mx[2])
+            new, bad = [], True
+            for one in ("1", "one", "a"):
+                body = re.sub(r"\bX\b", one, mx[1])
+                if one != "1":
+                    body = re.sub(r"\b(creature |artifact )?tokens\b", r"\1token", body)
+                new, bad = _parse_effects(body + ".")
+                if new and not bad:
+                    break
+            if new and not bad:
+                for e in new:
+                    e.data["xq"] = spec
+                    e.data["xq_size"] = bool(re.search(r"\bX/X\b", mx[1]))
+                effects += new
+                continue
+        if opts:
+            new = _opt_rider(s, effects)
+            if new is not None:
+                effects += new
+                continue
         first = len(effects)
         paid = False
         if gated:
@@ -993,6 +1085,13 @@ def _parse_face(data: dict) -> CardDef:
                     if kw:
                         extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((kw, "max_speed"),)
                 continue
+        if line == "Bargain":
+            extra["bargain"] = True
+            continue
+        m = re.fullmatch(r"Gift (a card|a Food|a Treasure|a tapped Fish|an Octopus)", line)
+        if m:
+            extra["gift"] = m[1].split(" ", 1)[1].lower()
+            continue
         m = re.fullmatch(r"((?:\{[WUBRGC0-9/]+\})+): Return (?:this card|~) from your graveyard to your hand\.", line)
         if m:
             extra["gy_return"] = parse_mana_cost(m[1])
@@ -1632,9 +1731,18 @@ def _parse_face(data: dict) -> CardDef:
             if isinstance(act.modes, modal.Modes):
                 mode_sink = act.modes
             continue
+        opt_cond = ""
+        mo = re.fullmatch(r"(When ~ enters), if (it was bargained|the gift was promised), (.+)", line)
+        if mo and (extra.get("bargain") or extra.get("gift")):
+            line = f"{mo[1]}, {mo[3]}"
+            opt_cond = "bargained" if "bargained" in mo[2] else "gifted"
         trig = _parse_trigger(line)
         if trig is not None:
             new, bad, choose_modes = trig
+            if opt_cond:
+                for t in new:
+                    for e in t.effects:
+                        e.cond = e.cond or opt_cond
             triggers += new
             if choose_modes is not None:
                 mode_sink = choose_modes
@@ -1651,7 +1759,7 @@ def _parse_face(data: dict) -> CardDef:
                 approximations += head[1]
                 mode_sink = modes
                 continue
-            effs, bad = _parse_effects(line)
+            effs, bad = _parse_effects(line, opts=bool(extra.get("bargain") or extra.get("gift")))
             spell += effs
             unsupported += bad
             continue

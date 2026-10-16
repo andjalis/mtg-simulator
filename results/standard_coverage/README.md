@@ -355,3 +355,14 @@ card / sacrifice a permanent. If you do, draw" and the general "you may pay {N}.
 card" (the latter gated on max speed where printed), "twice that many tokens", chosen-type anthems, "can't be blocked by
 creatures with power N or greater", noncreature and subtype cost discounts. Gift riders were left out: they need a
 cast-time promise to the opponent. Fully supported cards 1,509 → 1,519.
+
+## Round 10: Bargain, Gift and ", where X is ..." amounts
+
+Bargain (the AI sacrifices a spare token, artifact or enchantment) and Gift (the opponent gets a card, Food, Treasure,
+tapped Fish or Octopus; the AI always promises it) are decided at cast time. "If ~ was bargained / the gift was
+promised / wasn't promised, ..." riders (with "instead" replacing the matching base effect) work on instants, sorceries
+and on "When ~ enters, if ..." triggers. Any "..., where X is <quantity>" sentence is parsed with X as 1 and scaled at
+resolution by a counted quantity (permanents you control, graveyard cards, a creature's power or toughness, life total,
+speed, life gained this turn, counters on ~, the greatest power or toughness). Pronoun riders ("that creature gets
+-5/-5", "destroy that creature", "it also gains flying and lifelink"). Fully supported cards 1,519 → 1,565.
+Left out: "costs {N} less if bargained" (the cost is needed before the choice).
