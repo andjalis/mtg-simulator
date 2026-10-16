@@ -1,0 +1,431 @@
+{
+ "grandmaster/boros_dragons vs grandmaster/izzet_spellementals": {
+  "ignored_a": [
+   3,
+   18,
+   [
+    "Magda, the Hoardmaster",
+    "Momo, Friendly Flier",
+    "Sarkhan, Dragon Ascendant"
+   ]
+  ],
+  "ignored_b": [
+   4,
+   19,
+   [
+    "Flow State",
+    "Get Out",
+    "Hearth Elemental",
+    "Sunderflock"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.9667,
+   "wins_a": 290,
+   "wins_b": 10
+  }
+ },
+ "grandmaster/izzet_spellementals vs grandmaster/mono_green_landfall": {
+  "ignored_a": [
+   4,
+   19,
+   [
+    "Flow State",
+    "Get Out",
+    "Hearth Elemental",
+    "Sunderflock"
+   ]
+  ],
+  "ignored_b": [
+   2,
+   15,
+   [
+    "Demolition Field",
+    "Esper Origins"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.0767,
+   "wins_a": 23,
+   "wins_b": 277
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/boros_dragons": {
+  "ignored_a": [
+   7,
+   26,
+   [
+    "Braided Net",
+    "Perilous Snare",
+    "Petrified Hamlet",
+    "Pinnacle Starcage",
+    "Repurposing Bay",
+    "The Irencrag",
+    "The Mind Stone"
+   ]
+  ],
+  "ignored_b": [
+   3,
+   18,
+   [
+    "Magda, the Hoardmaster",
+    "Momo, Friendly Flier",
+    "Sarkhan, Dragon Ascendant"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.1633,
+   "wins_a": 49,
+   "wins_b": 251
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/dimir_midrange": {
+  "ignored_a": [
+   7,
+   26,
+   [
+    "Braided Net",
+    "Perilous Snare",
+    "Petrified Hamlet",
+    "Pinnacle Starcage",
+    "Repurposing Bay",
+    "The Irencrag",
+    "The Mind Stone"
+   ]
+  ],
+  "ignored_b": [
+   6,
+   24,
+   [
+    "Kaito, Bane of Nightmares",
+    "The Wondrous Wasp",
+    "Tishana's Tidebinder",
+    "Wan Shi Tong, Librarian",
+    "We Say Thee Nay!",
+    "Yuriko, Hope from the Shadows"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.47,
+   "wins_a": 141,
+   "wins_b": 159
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/izzet_spellementals": {
+  "ignored_a": [
+   7,
+   26,
+   [
+    "Braided Net",
+    "Perilous Snare",
+    "Petrified Hamlet",
+    "Pinnacle Starcage",
+    "Repurposing Bay",
+    "The Irencrag",
+    "The Mind Stone"
+   ]
+  ],
+  "ignored_b": [
+   4,
+   19,
+   [
+    "Flow State",
+    "Get Out",
+    "Hearth Elemental",
+    "Sunderflock"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.7867,
+   "wins_a": 236,
+   "wins_b": 64
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/jund_sacrifice": {
+  "ignored_a": [
+   7,
+   26,
+   [
+    "Braided Net",
+    "Perilous Snare",
+    "Petrified Hamlet",
+    "Pinnacle Starcage",
+    "Repurposing Bay",
+    "The Irencrag",
+    "The Mind Stone"
+   ]
+  ],
+  "ignored_b": [
+   4,
+   23,
+   [
+    "Azog, Moria's Ruin",
+    "Lively Dirge",
+    "Obsessive Pursuit",
+    "The Sackville-Bagginses"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.6767,
+   "wins_a": 203,
+   "wins_b": 97
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/mono_green_landfall": {
+  "ignored_a": [
+   7,
+   26,
+   [
+    "Braided Net",
+    "Perilous Snare",
+    "Petrified Hamlet",
+    "Pinnacle Starcage",
+    "Repurposing Bay",
+    "The Irencrag",
+    "The Mind Stone"
+   ]
+  ],
+  "ignored_b": [
+   2,
+   15,
+   [
+    "Demolition Field",
+    "Esper Origins"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.4433,
+   "wins_a": 133,
+   "wins_b": 167
+  }
+ },
+ "master/azorius_artifact_control vs master/dimir_control": {
+  "ignored_a": [
+   7,
+   26,
+   [
+    "Braided Net",
+    "Perilous Snare",
+    "Petrified Hamlet",
+    "Pinnacle Starcage",
+    "Repurposing Bay",
+    "The Irencrag",
+    "The Mind Stone"
+   ]
+  ],
+  "ignored_b": [
+   3,
+   22,
+   [
+    "Deadly Cover-Up",
+    "The Theorist, Jace Beleren",
+    "Uldaros Theorix"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.3467,
+   "wins_a": 104,
+   "wins_b": 196
+  }
+ },
+ "master/dimir_control vs grandmaster/jund_sacrifice": {
+  "ignored_a": [
+   3,
+   22,
+   [
+    "Deadly Cover-Up",
+    "The Theorist, Jace Beleren",
+    "Uldaros Theorix"
+   ]
+  ],
+  "ignored_b": [
+   4,
+   23,
+   [
+    "Azog, Moria's Ruin",
+    "Lively Dirge",
+    "Obsessive Pursuit",
+    "The Sackville-Bagginses"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.5233,
+   "wins_a": 157,
+   "wins_b": 143
+  }
+ },
+ "ub_snow_control vs bronze/land_glut": {
+  "ignored_a": [
+   0,
+   24,
+   []
+  ],
+  "ignored_b": [
+   0,
+   8,
+   []
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.79,
+   "wins_a": 237,
+   "wins_b": 63
+  }
+ },
+ "ub_snow_control vs grandmaster/dimir_midrange": {
+  "ignored_a": [
+   0,
+   24,
+   []
+  ],
+  "ignored_b": [
+   6,
+   24,
+   [
+    "Kaito, Bane of Nightmares",
+    "The Wondrous Wasp",
+    "Tishana's Tidebinder",
+    "Wan Shi Tong, Librarian",
+    "We Say Thee Nay!",
+    "Yuriko, Hope from the Shadows"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.53,
+   "wins_a": 159,
+   "wins_b": 141
+  }
+ },
+ "ub_snow_control vs grandmaster/jund_sacrifice": {
+  "ignored_a": [
+   0,
+   24,
+   []
+  ],
+  "ignored_b": [
+   4,
+   23,
+   [
+    "Azog, Moria's Ruin",
+    "Lively Dirge",
+    "Obsessive Pursuit",
+    "The Sackville-Bagginses"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.7467,
+   "wins_a": 224,
+   "wins_b": 76
+  }
+ },
+ "ub_snow_control vs grandmaster/mono_green_landfall": {
+  "ignored_a": [
+   0,
+   24,
+   []
+  ],
+  "ignored_b": [
+   2,
+   15,
+   [
+    "Demolition Field",
+    "Esper Origins"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.51,
+   "wins_a": 153,
+   "wins_b": 147
+  }
+ },
+ "ub_snow_control vs master/azorius_artifact_control": {
+  "ignored_a": [
+   0,
+   24,
+   []
+  ],
+  "ignored_b": [
+   7,
+   26,
+   [
+    "Braided Net",
+    "Perilous Snare",
+    "Petrified Hamlet",
+    "Pinnacle Starcage",
+    "Repurposing Bay",
+    "The Irencrag",
+    "The Mind Stone"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.4167,
+   "wins_a": 125,
+   "wins_b": 175
+  }
+ },
+ "ub_snow_control vs silver/green_stompy": {
+  "ignored_a": [
+   0,
+   24,
+   []
+  ],
+  "ignored_b": [
+   0,
+   10,
+   []
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.7233,
+   "wins_a": 217,
+   "wins_b": 83
+  }
+ },
+ "ub_snow_control vs silver/uw_flyers": {
+  "ignored_a": [
+   0,
+   24,
+   []
+  ],
+  "ignored_b": [
+   0,
+   11,
+   []
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.9033,
+   "wins_a": 271,
+   "wins_b": 29
+  }
+ }
+}
