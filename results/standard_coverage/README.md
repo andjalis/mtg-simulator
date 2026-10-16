@@ -389,3 +389,13 @@ Restricted removal: "destroy / exile [up to one] target <artifact, enchantment, 
 [with mana value / power / toughness N or less / greater]". Fully supported cards 1,669 → 1,755.
 Not done: counter riders on returned cards ("with a finality counter", "with X additional +1/+1 counters"),
 "cast from your graveyard" permissions, embalm / eternalize grants.
+
+## Round 13: exile now, play later, "until ~ leaves" removal, behold
+
+"Exile the top N cards of your library" followed by "You may play that card / those cards this turn" or "until the end of
+your next turn": exiled cards go on a per-player playable-exile list with an expiry turn; spells show up in
+`spell_options` (kind `impulse`) and lands are played through `play_land`. One general template for "exile [up to one]
+[other] target [non-Subtype] <types> [an opponent controls] [with mana value N or greater] until ~ leaves the battlefield".
+"As an additional cost to cast ~, behold a <type> or pay {N}" adds the tax unless you control or hold such a card.
+Fully supported cards 1,755 → 1,776. Not done: exiling from an opponent's library, "choose one of them", behold-and-exile
+costs (Champion cycle), "exiled with ~" cards (Suspend-style stores), cast-from-exile mana restrictions.
