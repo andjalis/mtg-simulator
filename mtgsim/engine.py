@@ -24,7 +24,7 @@ import json
 import random
 import re
 
-from .cards import BASIC_MANA, COLORS, AltCost, CardDef, Effect, add_mana, make_token
+from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, add_mana, make_token
 
 TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "artifact", "player", "spell")
 
@@ -68,16 +68,25 @@ class Permanent:
         return [sum(x) for x in zip((0, 0), *(p.card.anthem for p in self.controller.battlefield if p.card.anthem))]
 
     @property
+    def per_bonus(self) -> int:
+        """"~ gets +1/+1 for each artifact you control"."""
+        what = self.card.pt_per
+        if not what:
+            return 0
+        return sum(1 for x in self.controller.battlefield
+                   if (x.is_creature if what == "creature" else what.capitalize() in x.card.types))
+
+    @property
     def power(self):
         base = self.animated.power if self.animated and self.animated.kind == "animate" else (self.card.power or 0)
         return base + self.pump_p + self.p1 - self.m1 + (self.anthem[0] if self.is_creature else 0) + \
-            sum(e.card.equip_bonus[0] for e in self.equipment)
+            sum(e.card.equip_bonus[0] for e in self.equipment) + self.per_bonus
 
     @property
     def toughness(self):
         base = self.animated.toughness if self.animated and self.animated.kind == "animate" else (self.card.toughness or 0)
         return base + self.pump_t + self.p1 - self.m1 + (self.anthem[1] if self.is_creature else 0) + \
-            sum(e.card.equip_bonus[1] for e in self.equipment)
+            sum(e.card.equip_bonus[1] for e in self.equipment) + self.per_bonus
 
     @property
     def m1(self): return self.counters.get("-1/-1", 0)
@@ -159,7 +168,8 @@ class Player:
         self.exiled_turn: dict = {}        # card name -> turn it was plotted or exiled after warp
         self._life = 20
         self.lost = False
-        self.land_played = False
+        self.lands_played = 0
+        self.sacrificed_turn = 0
         self.mulligans = 0
         self.lost_life_turn = False
         self.perm_left_turn = False
@@ -169,6 +179,15 @@ class Player:
 
     @property
     def life(self): return self._life
+
+    @property
+    def land_played(self) -> bool:
+        """Whether this turn's land drops are used up (Icetill Explorer gives another)."""
+        return self.lands_played > sum(x.card.extra_lands for x in self.battlefield)
+
+    @land_played.setter
+    def land_played(self, value):
+        self.lands_played = 99 if value else 0
 
     @life.setter
     def life(self, value):
@@ -211,7 +230,7 @@ class StackItem:
 def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if not blocker.is_creature or blocker.tapped:
         return False
-    if blocker.card.cant_block:
+    if blocker.card.cant_block or attacker.has("unblockable"):
         return False
     if attacker.has("flying") and not (blocker.has("flying") or blocker.has("reach")):
         return False
@@ -382,7 +401,7 @@ class Game:
         for s in payment:
             s.tapped = True
             if s.card.token_kind == "treasure":
-                self.leave_battlefield(s, "graveyard")
+                self.sacrifice(s)
         return payment
 
     def cost_of(self, p: Player, card: CardDef) -> dict:
@@ -393,7 +412,11 @@ class Game:
             n = sum(c.is_instant or c.is_sorcery for c in p.graveyard)
         elif card.cost_reduction == "power":
             n = sum(max(0, c.power) for c in p.creatures)
+        elif card.cost_reduction.startswith("affinity:"):
+            n = sum(card_matches(x.card, "a " + card.cost_reduction[9:]) for x in p.battlefield)
         cost["generic"] = max(0, cost.get("generic", 0) - n)
+        if card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
+            cost["generic"] += card.extra_sac_or_pay
         return cost
 
     # ------------------------------------------------------- casting options
@@ -509,6 +532,8 @@ class Game:
             return False
         if card.extra_life_cost and p.life <= card.extra_life_cost:
             return False
+        if card.extra_sacrifice and not card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
+            return False
         if not card.instant_speed and not (p is self.active and self.step in ("main1", "main2")
                                            and not self.stack):
             return False
@@ -548,6 +573,8 @@ class Game:
             return not perm.tapped
         if f == "opp":
             return perm.controller is not by
+        if f.startswith("max_power:"):
+            return perm.power <= int(f[10:])
         return True
 
     def legal_targets(self, p: Player, eff: Effect) -> list:
@@ -692,6 +719,7 @@ class Game:
             perm.sick = False
             perm.loyalty_used = False
         p.land_played = False
+        p.sacrificed_turn = 0
         self.step = "upkeep"
         self.fire(p, "upkeep")
         self.settle()
@@ -725,7 +753,7 @@ class Game:
         for perm in list(p.battlefield):
             if perm.blitz:
                 self.log(f"sacrifices blitzed {perm.card.name}", p)
-                self.dies(perm)
+                self.sacrifice(perm)
             if perm.warped and self.leave_battlefield(perm, "exile"):
                 p.exile.remove(perm.front)
                 p.warp_exile.append(perm.front)
@@ -744,7 +772,8 @@ class Game:
             perm.deathtouched = False
             perm.pump_p = perm.pump_t = 0
             perm.temp_kw.clear()
-            perm.animated = None
+            if not (perm.animated and perm.animated.text == "earthbend"):
+                perm.animated = None
             perm.crewed = False
         p.next_creature_counters = 0
         self.state_based_actions()
@@ -824,7 +853,7 @@ class Game:
                         pass
                     elif subject is perm and other == "other":
                         continue
-                    elif not card_matches(subject.card, "a " + re.sub(r",? or |, ", " or a ", desc)):
+                    elif not card_matches(subject.card, "a " + re.sub(r",? or (?!greater)|, ", " or a ", desc)):
                         continue
                 if trig.filter.startswith("with:") and \
                         not any(trig.filter[5:] in a.card.subtypes for a in self.attackers):
@@ -905,7 +934,7 @@ class Game:
                 self.queue_trigger(p, [Effect("token_copy", data={"card": token})], perm, f"{base.name} offspring")
             if kind.startswith("evoke"):
                 self.log(f"sacrifices evoked {base.name}", p)
-                self.dies(perm)
+                self.sacrifice(perm)
             if perm.is_creature and p.next_creature_counters:
                 perm.counters["+1/+1"] = perm.p1 + p.next_creature_counters
                 p.next_creature_counters = 0
@@ -969,6 +998,9 @@ class Game:
             return p.life_gained_turn >= int(c[13:])
         if c == "gained_and_lost":
             return p.life_gained_turn > 0 and p.lost_life_turn
+        if c.startswith("counters:"):
+            name, n = c[9:].split(">=")
+            return item.source is not None and item.source.counters.get(name, 0) >= int(n)
         if c.startswith("spent:"):
             return item.source is not None and getattr(item.source, "spent_color", "") == c[6:]
         return True
@@ -978,8 +1010,12 @@ class Game:
         """Play a land from hand; with back=True, a modal double-faced card's land face."""
         face = card.land_face if back else card
         assert face is not None and face.is_land and not p.land_played
-        p.hand.remove(card)
-        p.land_played = True
+        if card in p.hand:
+            p.hand.remove(card)
+        else:   # "You may play lands from your graveyard."
+            assert any(x.card.lands_from_gy for x in p.battlefield)
+            p.graveyard.remove(card)
+        p.lands_played += 1
         self.log(f"plays {face.name}", p)
         perm = self.enter_battlefield(p, face)
         perm.front = card    # the whole card goes to the graveyard
@@ -1007,6 +1043,10 @@ class Game:
             self.change_life(p, -alt.life, f"{card.name}: alternative cost")
         if card.extra_life_cost:
             self.change_life(p, -card.extra_life_cost, f"{card.name}: additional cost")
+        if card.extra_sacrifice and self.extra_sac_candidates(p, card):
+            victim = self.extra_sac_candidates(p, card)[0]
+            self.log(f"sacrifices {victim.card.name} for {card.name}", p)
+            self.sacrifice(victim)
         self._zone(p, kind).remove(base)
         if kind == "channel":
             p.graveyard.append(base)
@@ -1230,9 +1270,9 @@ class Game:
         if c.get("sacrifice"):
             victim = self.sacrifice_candidates(p, perm, c["sacrifice"])[0]
             self.log(f"sacrifices {victim.card.name}", p)
-            self.dies(victim) if victim.is_creature else self.leave_battlefield(victim, "graveyard")
+            self.sacrifice(victim)
         if c.get("sac_self"):
-            self.dies(perm) if perm.is_creature else self.leave_battlefield(perm, "graveyard")
+            self.sacrifice(perm)
         elif c.get("exile_self"):
             self.leave_battlefield(perm, "exile")
         if targets is None:
@@ -1348,7 +1388,7 @@ class Game:
         d = eff.data
         for _ in range(n if n is not None else eff.amount):
             card = make_token(d.get("name", ""), d.get("power", 0), d.get("toughness", 0), d.get("keywords", ()),
-                              d.get("triggers"), d.get("kind", ""))
+                              d.get("triggers"), d.get("kind", ""), d.get("artifact", False), d.get("pt_per", ""))
             self.enter_battlefield(p, card, tapped_attacking=d.get("attacking", False) and self.step in
                                    ("declare_attackers", "declare_blockers"))
         self.log(f"creates {eff.amount} {d.get('kind') or d.get('name')} token(s)", p)
@@ -1445,6 +1485,8 @@ class Game:
             n = item.mana_spent if eff.data.get("x_mana") and item is not None and item.mana_spent else eff.amount
             if eff.data.get("x_lands"):
                 n = sum(x.card.is_land for x in p.battlefield)
+            if eff.data.get("x_count"):
+                n = sum(card_matches(x.card, "a " + eff.data["x_count"]) for x in p.battlefield)
             self.dig(p, n, eff.amount2, eff.data.get("filter"))
         elif k == "dig_put":
             self.dig_put(p, eff.amount, eff.amount2, eff.data.get("count", 1), eff.data.get("noncreature", False))
@@ -1570,6 +1612,16 @@ class Game:
                 extra = default_choose_target(self, p, eff)
                 if extra is not None:
                     extra.tapped = True
+        elif k == "unblockable":
+            if isinstance(target, Permanent):
+                target.temp_kw.add("unblockable")
+        elif k == "earthbend":
+            land = choose_earthbend(self, p)
+            if land is not None:
+                # Target land you control becomes a 0/0 creature with haste that's still a land.
+                land.animated = Activated("animate", {}, 0, 0, frozenset({"haste"}), text="earthbend")
+                land.counters["+1/+1"] = land.p1 + eff.amount
+                self.log(f"earthbends {land.card.name} ({eff.amount})", p)
         elif k == "stun":
             if isinstance(target, Permanent) and target in target.controller.battlefield:
                 target.counters["stun"] = target.counters.get("stun", 0) + eff.amount
@@ -1581,7 +1633,7 @@ class Game:
             if eff.data.get("sacrifice"):
                 if item is None or item.source not in p.battlefield:
                     return
-                self.leave_battlefield(item.source, "graveyard")
+                self.sacrifice(item.source)
             who = target if eff.target == "that_controller" and isinstance(target, Player) else p
             land = choose_basic(self, who)
             if land is not None:
@@ -1773,6 +1825,22 @@ class Game:
         if not perm.front.is_token:
             {"graveyard": owner.graveyard, "hand": owner.hand, "exile": owner.exile}[to].append(perm.front)
         return True
+
+    def extra_sac_candidates(self, p: Player, card: CardDef) -> list:
+        """What p could sacrifice for card's additional cost, least valuable first."""
+        return sorted((x for x in p.battlefield if card_matches(x.card, card.extra_sacrifice.replace(" or ", " or a "))
+                       or (x.is_creature and "creature" in card.extra_sacrifice)),
+                      key=lambda x: (not x.card.is_token, perm_value(x) if x.is_creature else x.card.cmc))
+
+    def sacrifice(self, perm: Permanent):
+        """Sacrifice perm, firing "whenever you sacrifice" triggers."""
+        p = perm.controller
+        p.sacrificed_turn += 1
+        for other in list(p.battlefield):
+            for trig in other.triggers:
+                if trig.event == "sacrifice" and card_matches(perm.card, trig.filter):
+                    self.queue_trigger(p, trig.effects, other, other.card.name)
+        self.dies(perm) if perm.is_creature else self.leave_battlefield(perm, "graveyard")
 
     def dies(self, perm: Permanent):
         was_creature = perm.is_creature
@@ -1983,6 +2051,11 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return max(mine, key=perm_value, default=None)
     if k == "oring":
         return max(theirs, key=perm_value, default=None)
+    if k == "stun":
+        return max(theirs, key=perm_value, default=None)
+    if k == "unblockable":
+        ready = [x for x in mine if x.can_attack() and x.power > 0]
+        return max(ready, key=lambda x: x.power, default=None)
     if k in ("counter", "bounce_spell"):
         return next((i for i in reversed(game.stack) if i in legal), None)
     if k in ("discard", "discard_choice"):
@@ -2012,13 +2085,16 @@ def card_matches(card: CardDef, desc: str) -> bool:
     value 1 or less", "a Dragon card", "an instant or sorcery card" or "a card"."""
     for alt in re.split(r" or (?=an? )", desc.strip()):
         alt = re.sub(r"^an? ", "", alt)
-        m = re.search(r" with mana value (\d+) or less$", alt)
+        m = re.search(r" with mana value (\d+) or (less|greater)$", alt)
         if m:
-            if card.cmc > int(m[1]):
+            if (card.cmc > int(m[1])) if m[2] == "less" else (card.cmc < int(m[1])):
                 continue
             alt = alt[:m.start()]
         words = [w for w in alt.replace(" card", "").split() if w not in ("or", "and/or")]
         ok = True
+        if "token" in words:
+            ok = card.is_token
+            words.remove("token")
         types = [w for w in words if w in _TYPE_WORDS]
         if types and not any(t.capitalize() in card.types for t in types):
             ok = False
@@ -2030,6 +2106,25 @@ def card_matches(card: CardDef, desc: str) -> bool:
         if ok:
             return True
     return False
+
+
+def choose_earthbend(game: Game, me: Player):
+    """The land to earthbend: one already earthbent, else a tapped land, else any land."""
+    lands = [x for x in me.battlefield if x.card.is_land]
+    return max(lands, key=lambda x: (bool(x.animated), x.tapped, not is_basic_land(x.card)), default=None)
+
+
+def play_extra_lands(game: Game, me: Player):
+    """Land drops the AI doesn't make: additional lands (Icetill Explorer) and lands from the graveyard."""
+    for _ in range(3):
+        if me.land_played:
+            return
+        lands = [c for c in me.hand if c.is_land]
+        if any(x.card.lands_from_gy for x in me.battlefield):
+            lands += [c for c in me.graveyard if c.is_land]
+        if not lands:
+            return
+        game.play_land(me, min(lands, key=lambda c: (c.enters_tapped, c in me.hand)))
 
 
 def choose_tutor(game: Game, me: Player, cards: list[CardDef]) -> CardDef:
@@ -2078,6 +2173,11 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
             total += perm_value(tgt)
         elif k in ("bounce_spell", "counter"):
             total += tgt.card.cmc if isinstance(tgt, StackItem) and tgt.card else 1
+        elif k == "unblockable":
+            # Only worth it before combat, when the opponent has a blocker.
+            if game.step != "main1" or not any(not c.tapped for c in opp.creatures):
+                return -1
+            total += tgt.power
         else:
             total += 1
     return total
@@ -2432,7 +2532,14 @@ def use_abilities(game: Game, me: Player):
                  and perm_value(c) > perm_value(h)]
         if blood and kills and not h.sick and not h.tapped:
             game.activate(me, h, "sac_debuff")
+    play_extra_lands(game, me)
     equip_all(game, me)
+    if game.step == "main1":    # "can't be blocked this turn" before combat
+        for perm in list(me.battlefield):
+            for i, act in enumerate(perm.card.activated):
+                if act.kind == "ability" and act.effects and act.effects[0].kind == "unblockable" and \
+                        perm in me.battlefield and ability_worth(game, me, perm, i):
+                    game.activate(me, perm, f"ability:{i}")
     # Spells from other zones or with alternative costs the AI may not look at.
     for c in game.spell_options(me):
         if (c in me.hand and not c.modes) or c.instant_speed or not game.can_cast_now(me, c):

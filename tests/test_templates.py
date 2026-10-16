@@ -556,3 +556,119 @@ class TriggerTests(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+FOREST = card("Forest", types="Basic Land — Forest", text="({T}: Add {G}.)")
+RELIC = card("Cryogen Relic", "{1}{U}", "Artifact", (
+    "When this artifact enters or leaves the battlefield, draw a card.\n{1}{U}, Sacrifice this artifact: Put a stun "
+    "counter on up to one target tapped creature."))
+TUNNEL = card("Escape Tunnel", types="Land", text=(
+    "{T}, Sacrifice Escape Tunnel: Target creature with power 2 or less can't be blocked this turn."))
+EXPLORER = card("Icetill Explorer", "{2}{G}{G}", "Creature — Insect Scout", (
+    "You may play an additional land on each of your turns.\nYou may play lands from your graveyard."), 2, 4)
+NURSERY = card("Sapling Nursery", "{6}{G}{G}", "Enchantment", (
+    "Affinity for Forests\nLandfall — Whenever a land you control enters, create a 3/4 green Treefolk creature "
+    "token with reach."))
+VAULT = card("Fomori Vault", types="Land", text=(
+    "{T}: Add {C}.\n{3}, {T}, Discard a card: Look at the top X cards of your library, where X is the number of "
+    "artifacts you control. Put one of those cards into your hand and the rest on the bottom of your library in a "
+    "random order."))
+ASCENSION = card("Earthbender Ascension", "{2}{G}", "Enchantment", (
+    "When this enchantment enters, earthbend 2.\nLandfall — Whenever a land you control enters, put a quest counter "
+    "on this enchantment. When you do, if it has four or more quest counters on it, put a +1/+1 counter on target "
+    "creature you control. It gains trample until end of turn."))
+SYNTH = card("Simulacrum Synthesizer", "{2}{U}", "Artifact", (
+    "Whenever another artifact you control with mana value 3 or greater enters, create a 0/0 colorless Construct "
+    "artifact creature token with \"This token gets +1/+1 for each artifact you control.\""))
+BIG_ROCK = card("Big Rock", "{3}", "Artifact", "")
+BIOTECH = card("Biotech Specialist", "{R}{G}", "Creature — Insect Scientist", (
+    "Whenever you sacrifice an artifact, this creature deals 2 damage to target opponent."), 1, 3)
+OFFERING = card("Fanatical Offering", "{1}{B}", "Instant", (
+    "As an additional cost to cast this spell, sacrifice an artifact or creature.\nDraw two cards."))
+PRECISION = card("Deadly Precision", "{B}", "Sorcery", (
+    "As an additional cost to cast this spell, pay {4} or sacrifice an artifact or creature.\nDestroy target "
+    "creature."))
+
+
+class Round2Tests(Base):
+    def test_parsing(self):
+        for c in (RELIC, TUNNEL, EXPLORER, NURSERY, VAULT, ASCENSION, SYNTH, BIOTECH, OFFERING, PRECISION):
+            with self.subTest(card=c.name):
+                self.assertEqual(c.unsupported, [])
+        self.assertEqual(NURSERY.cost_reduction, "affinity:Forest")
+        self.assertEqual((PRECISION.extra_sacrifice, PRECISION.extra_sac_or_pay), ("an artifact or creature", 4))
+
+    def test_stun_on_tapped_creature(self):
+        bear = self.perm(BEAR, self.b)
+        relic = self.perm(RELIC, self.a)
+        self.perm(ISLAND, self.a), self.perm(ISLAND, self.a)
+        eff = RELIC.activated[0].effects[0]
+        self.assertEqual(self.game.legal_targets(self.a, eff), [])
+        bear.tapped = True
+        self.assertEqual(self.game.legal_targets(self.a, eff), [bear])
+        self.game.resolve(self.a, eff, bear)
+        self.assertEqual(bear.counters["stun"], 1)
+        self.assertIn(relic, self.a.battlefield)
+
+    def test_cant_be_blocked_this_turn(self):
+        bear = self.perm(BEAR, self.a)
+        blocker = self.perm(BEAR, self.b)
+        self.perm(DRAGON3, self.a)
+        eff = TUNNEL.activated[0].effects[0]
+        self.assertEqual(self.game.legal_targets(self.a, eff), [bear])
+        self.game.resolve(self.a, eff, bear)
+        self.assertFalse(can_block(blocker, bear))
+
+    def test_additional_land_and_lands_from_graveyard(self):
+        self.perm(EXPLORER, self.a)
+        self.a.hand = [ISLAND]
+        self.a.graveyard = [FOREST]
+        self.game.play_land(self.a, ISLAND)
+        self.assertFalse(self.a.land_played)
+        self.game.play_land(self.a, FOREST)
+        self.assertTrue(self.a.land_played)
+        self.assertEqual(self.a.graveyard, [])
+        self.a.land_played = False
+        self.assertFalse(self.a.land_played)
+
+    def test_affinity_and_dig_by_artifact_count(self):
+        for _ in range(3):
+            self.perm(FOREST, self.a)
+        self.assertEqual(self.game.cost_of(self.a, NURSERY)["generic"], 3)
+        self.perm(BIG_ROCK, self.a), self.perm(BIG_ROCK, self.a)
+        self.a.library = [ISLAND] * 5 + [BEAR, DRAGON]
+        dig = VAULT.activated[0].effects[0]
+        self.assertEqual(dig.data, {"x_count": "artifact"})
+        self.game.resolve(self.a, dig, None)
+        self.assertEqual(len(self.a.hand), 1)
+
+    def test_earthbend_and_quest_counters(self):
+        land = self.perm(FOREST, self.a)
+        self.game.enter_battlefield(self.a, ASCENSION)
+        self.game.settle()
+        self.assertTrue(land.is_creature)
+        self.assertEqual((land.power, land.toughness), (2, 2))
+        trig = next(t for t in ASCENSION.triggers if t.event == "land_enters")
+        self.assertEqual(trig.effects[-2].cond, "counters:quest>=4")
+
+    def test_synthesizer_makes_scaling_artifact_tokens(self):
+        self.perm(SYNTH, self.a)
+        self.game.enter_battlefield(self.a, BIG_ROCK)
+        self.game.settle()
+        token = next(x for x in self.a.battlefield if x.card.is_token)
+        self.assertTrue(token.card.is_artifact)
+        self.assertEqual(token.power, 3)     # Synthesizer, Big Rock and the token itself
+
+    def test_sacrifice_trigger_and_additional_cost(self):
+        self.perm(BIOTECH, self.a)
+        rock = self.perm(BIG_ROCK, self.a)
+        self.perm(ISLAND, self.a)
+        self.perm(SWAMP, self.a), self.perm(SWAMP, self.a)
+        self.a.hand = [OFFERING]
+        self.game.active_idx = 0
+        self.assertTrue(self.game.can_cast_now(self.a, OFFERING))
+        self.game.cast(self.a, OFFERING)
+        self.game.settle()
+        self.assertNotIn(rock, self.a.battlefield)
+        self.assertEqual(self.b.life, 18)
+        self.assertFalse(self.game.can_cast_now(self.a, PRECISION))   # no sacrifice, {4} too much

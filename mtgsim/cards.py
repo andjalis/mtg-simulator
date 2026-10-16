@@ -157,6 +157,11 @@ class CardDef:
     spree: list = field(default_factory=list)           # spree modes: (extra cost, effects)
     gy_triggers: list = field(default_factory=list)     # triggers that work from the graveyard (Bloodghast)
     ward_life: int = 0                                  # "Ward—Pay N life."
+    extra_lands: int = 0                                # "You may play an additional land on each of your turns."
+    lands_from_gy: bool = False                         # "You may play lands from your graveyard."
+    pt_per: str = ""                                    # "~ gets +1/+1 for each artifact you control": "artifact"
+    extra_sacrifice: str = ""                           # "As an additional cost to cast ~, sacrifice an artifact or creature"
+    extra_sac_or_pay: int = 0                           # "... pay {4} or sacrifice ...": the generic alternative
 
     @property
     def is_land(self): return "Land" in self.types
@@ -233,13 +238,18 @@ def _token(m_count, power, toughness, desc, with_kw="", attacking=False, ability
     words = desc.split()
     subtypes = [w for w in words if not re.fullmatch(COLOR_WORDS, w, re.I)]
     kws = frozenset(k.strip().lower() for k in re.split(r",| and ", with_kw or "") if k.strip().lower() in KEYWORDS)
-    triggers = []
+    triggers, pt_per = [], ""
     if ability:
-        parsed = _parse_trigger(ability.rstrip("."). replace("this creature", "~") + ".")
+        per = re.fullmatch(r"(?:This (?:token|creature)|~) gets \+1/\+1 for each (\w+?)s? you control\.?", ability)
+        parsed = None if per else _parse_trigger(ability.rstrip("."). replace("this creature", "~") + ".")
         triggers = parsed[0] if parsed else []
+        pt_per = per[1] if per else ""
+    artifact = "artifact" in subtypes
+    subtypes = [w for w in subtypes if w != "artifact"]
     return Effect("token", _num(m_count), data={"name": " ".join(subtypes) or "Token", "power": int(power),
                                                 "toughness": int(toughness), "keywords": kws,
-                                                "attacking": attacking, "triggers": triggers})
+                                                "attacking": attacking, "triggers": triggers,
+                                                "artifact": artifact, "pt_per": pt_per})
 
 
 _SRC = r"(?:~|it|he|she)"
@@ -293,7 +303,7 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("draw_up_to", _num(m[1]))),
     (r"you gain (\d+) life", lambda m: Effect("gain_life", int(m[1]))),
     (r"its controller gains (\d+) life", lambda m: Effect("gain_life", int(m[1]), target="that_controller")),
-    (r"each opponent loses (\d+) life", lambda m: Effect("drain", int(m[1]), target="each_opponent")),
+    (r"(?:each|target) opponent loses (\d+) life", lambda m: Effect("drain", int(m[1]), target="each_opponent")),
     (r"each opponent loses (\d+) life and you gain (\d+) life",
      lambda m: [Effect("drain", int(m[1]), target="each_opponent"), Effect("gain_life", int(m[2]))]),
     (r"DEVOTIONDRAIN ([WUBRG])", lambda m: Effect("drain_devotion", data={"color": m[1]})),
@@ -335,6 +345,7 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("dig_put", int(m[1]), int(m[2]), data={"count": int(m[3]), "noncreature": True})),
     (r"DIGFILTER (\d+) (.+)", lambda m: Effect("dig", int(m[1]), 1, data={"filter": m[2]})),
     (r"DIGLANDS (\d+)", lambda m: Effect("dig", 0, int(m[1]), data={"x_lands": True})),
+    (r"DIGCOUNT (\w+) (\d+)", lambda m: Effect("dig", 0, int(m[2]), data={"x_count": m[1]})),
     (r"IMPULSE (\d+)", lambda m: Effect("draw", int(m[1]))),   # "exile the top N, you may play them"
     (r"TARGETDISCARD", lambda m: Effect("discard_choice", 1, target="player")),
     (r"TARGETDISCARDNONCREATURE", lambda m: Effect("discard_choice", 1, target="player", filter="noncreature")),
@@ -347,6 +358,13 @@ _EFFECT_PATTERNS = [
     (r"tap target creature(?: an opponent controls)? and put (a|two|three) stun counters? on it",
      lambda m: [Effect("tap", 1, target="creature"), Effect("stun", _num(m[1]), target="prev")]),
     (r"put (a|two|three) stun counters? on it", lambda m: Effect("stun", _num(m[1]), target="prev")),
+    (r"put (a|two|three) stun counters? on (?:up to one )?target tapped creature(?: an opponent controls)?",
+     lambda m: Effect("stun", _num(m[1]), target="creature", filter="tapped")),
+    (r"target creature(?: you control)? with power (\d+) or less can't be blocked this turn",
+     lambda m: Effect("unblockable", target="creature_mine", filter=f"max_power:{m[1]}")),
+    (r"target creature you control can't be blocked this turn",
+     lambda m: Effect("unblockable", target="creature_mine")),
+    (r"earthbend (\w+)", lambda m: Effect("earthbend", _num(m[1]))),
     (r"GOBLINGUIDE", lambda m: Effect("reveal_land", target="each_opponent")),
     (r"FETCHBASIC( UNTAP4)?", lambda m: Effect("fetch_basic", data={"untap4": bool(m[1])})),
     (r"double the number of \+1/\+1 counters on ~", lambda m: Effect("double_counters", target="self")),
@@ -390,7 +408,7 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("p1_counters", _num(m[1]), target="creature_mine")),
     (r"put (a|one|two|three) \+1/\+1 counters? on ~", lambda m: Effect("p1_counters", _num(m[1]), target="self")),
     (r"ELSPETHPLUS", lambda m: Effect("p1_counters", 1, target="creature_mine", data={"keyword": "flying"})),
-    (r"it gains (hexproof|first strike|haste|indestructible) until end of turn",
+    (r"it gains (hexproof|first strike|haste|indestructible|trample|lifelink|flying|vigilance|menace) until end of turn",
      lambda m: Effect("grant", target="prev", data={"keyword": m[1].lower()})),
     (r"target creature gains ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) and ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) until end of turn",
      lambda m: [Effect("grant", target="creature", data={"keyword": m[1].lower()}),
@@ -466,6 +484,9 @@ _SUBS = [
     (re.compile(r"look at the top \w+ cards of your library, where X is the number of lands you control\. put "
                 r"(\w+) of those cards into your hand\. put the rest on the bottom of your library in (?:a random|"
                 r"any) order\.", re.I), lambda m: f"DIGLANDS {_num(m[1])}."),
+    (re.compile(r"look at the top \w+ cards of your library, where X is the number of (artifacts|creatures|lands) "
+                r"you control\. put (\w+) of those cards into your hand and the rest on the bottom of your library "
+                r"in (?:a random|any) order\.", re.I), lambda m: f"DIGCOUNT {m[1][:-1]} {_num(m[2])}."),
     (re.compile(r"look at the top (\w+) cards of your library\. put up to (two) noncreature, nonland permanent "
                 r"cards with mana value (\d+) or less from among them onto the battlefield\. put the rest on the "
                 r"bottom of your library in a random order\.", re.I),
@@ -511,9 +532,11 @@ _TRIGGERS = [
      ("other_creature_enters", "other_creature_dies")),
     (r"Whenever a land you control enters, (.+)", ("land_enters",)),
     (r"Whenever (~ or )?(another|an?) ((?:[\w-]+(?:,? or |, | ))*?(?:creature|artifact|enchantment|planeswalker|"
-     r"[A-Z]\w+)s?) you control enters(?: and whenever an? ([A-Z]\w+) you control enters)?, (.+)",
+     r"[A-Z]\w+)s?) you control( with mana value \d+ or greater)? enters(?: and whenever an? ([A-Z]\w+) you control "
+     r"enters)?, (.+)",
      ("permanent_enters",)),
     (r"Whenever you draw a card, (.+)", ("you_draw",)),
+    (r"Whenever you sacrifice (an? [\w ]+?), (.+)", ("sacrifice",)),
     (r"Whenever an opponent draws a card, (.+)", ("opp_draw",)),
     (r"Whenever ~ becomes the target of a spell, (.+)", ("targeted_by_spell",)),
 ]
@@ -880,6 +903,26 @@ def _parse_face(data: dict) -> CardDef:
         if re.fullmatch(r"~ costs \{X\} less to cast, where X is the total power of creatures you control\.", line):
             extra["cost_reduction"] = "power"
             continue
+        m = re.fullmatch(r"Affinity for (\w+?)s", line)
+        if m:
+            extra["cost_reduction"] = "affinity:" + m[1]
+            continue
+        if re.fullmatch(r"You may play an additional land on each of your turns\.", line):
+            extra["extra_lands"] = 1
+            continue
+        if re.fullmatch(r"You may play lands from your graveyard\.", line):
+            extra["lands_from_gy"] = True
+            continue
+        m = re.fullmatch(r"~ gets \+1/\+1 for each (artifact|creature|land) you control\.", line)
+        if m:
+            extra["pt_per"] = m[1]
+            continue
+        m = re.fullmatch(r"As an additional cost to cast ~, (?:pay \{(\d+)\} or )?sacrifice (an? (?:artifact|creature)"
+                         r"(?: or (?:artifact|creature))?)\.", line)
+        if m:
+            extra["extra_sacrifice"] = m[2]
+            extra["extra_sac_or_pay"] = int(m[1] or 0)
+            continue
         m = re.fullmatch(r"~ can't be blocked by creatures with power (\d+) or less\.", line)
         if m:
             extra["min_blocker_power"] = int(m[1]) + 1
@@ -1147,12 +1190,14 @@ def _parse_trigger_line(line: str):
             flt = f"cmc<={m[1]}"
         if events == ("cast_spell",) and m.lastindex == 2:
             flt = f"spell:{m[1]}"
+        if events == ("sacrifice",):
+            flt = m[1]
         if events == ("you_attack",) and m.lastindex == 2:
             flt = f"with:{m[1].rstrip('s')}"
         if events[0] == "other_creature_enters":
             flt = "greater_power"
         if events == ("permanent_enters",):
-            desc = m[3] + (f" or {m[4]}" if m[4] else "")
+            desc = m[3] + (f" or {m[5]}" if m[5] else "") + (m[4] or "")
             flt = f"{'self' if m[1] else 'noself'}|{'other' if m[2] == 'another' else 'any'}|{desc}"
         if re.fullmatch(r"choose up to one —", rest, flags=re.I):
             modes: list = []
@@ -1171,9 +1216,19 @@ def _parse_trigger_line(line: str):
                     "an opponent lost life": "opp_lost_life"}.get(phrase, f"gained_life>={n}")
         if cond:
             rest = rest[0].upper() + rest[1:]
+        # "... When you do, if it has four or more quest counters on it, EFFECTS" (Earthbender Ascension)
+        reflex = re.fullmatch(r"(.+?) When you do, if it has (\w+) or more (\w+) counters on it, (.+)", rest, flags=re.S)
+        later: list = []
+        if reflex:
+            rest = reflex[1]
+            later, bad2 = _parse_effects(reflex[4][0].upper() + reflex[4][1:])
+            if bad2:
+                return [], bad2, None
+            later = [dataclasses.replace(e, cond=f"counters:{reflex[3]}>={_num(reflex[2])}") for e in later]
         effs, bad = _parse_effects(rest)
         if cond:
             effs = [dataclasses.replace(e, cond=cond) for e in effs]
+        effs += later
         if not effs:
             return [], bad or [line], None
         return [Trigger(e, effs, flt) for e in events], bad, None
@@ -1189,7 +1244,8 @@ TOKEN_ABILITIES = {
 }
 
 
-def make_token(name: str, power: int, toughness: int, keywords=frozenset(), triggers=None, kind: str = "") -> CardDef:
+def make_token(name: str, power: int, toughness: int, keywords=frozenset(), triggers=None, kind: str = "",
+               artifact: bool = False, pt_per: str = "") -> CardDef:
     """A token's CardDef. kind is treasure/clue/blood for artifact tokens."""
     if kind:
         produces = frozenset(COLORS) if kind == "treasure" else frozenset()
@@ -1197,6 +1253,7 @@ def make_token(name: str, power: int, toughness: int, keywords=frozenset(), trig
         return CardDef(name=kind.capitalize(), mana_cost={"generic": 0}, cmc=0, types=frozenset({"Artifact"}),
                        subtypes=frozenset({kind.capitalize()}), produces=produces, token_kind=kind, is_token=True,
                        activated=activated)
-    return CardDef(name=f"{name} token", mana_cost={"generic": 0}, cmc=0, types=frozenset({"Creature"}),
-                   power=power, toughness=toughness, keywords=frozenset(keywords), triggers=list(triggers or []),
-                   is_token=True)
+    return CardDef(name=f"{name} token", mana_cost={"generic": 0}, cmc=0,
+                   types=frozenset({"Creature", "Artifact"} if artifact else {"Creature"}),
+                   subtypes=frozenset(name.split()) - {"Token"}, power=power, toughness=toughness,
+                   keywords=frozenset(keywords), triggers=list(triggers or []), is_token=True, pt_per=pt_per)
