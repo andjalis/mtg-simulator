@@ -219,6 +219,35 @@ class AITests(unittest.TestCase):
         self.assertIsNone(self.a.ai.plan_spell(self.game, self.a, rally, precombat=False))
         self.assertGreater(self.a.ai.plan_spell(self.game, self.a, tutor)[0], 0)
 
+    def test_values_for_sacrifice_earthbend_unblockable_and_per_artifact(self):
+        from mtgsim.cards import card_from_scryfall
+        mk = lambda name, cost, cmc, types, text, pt=None: card_from_scryfall(dict(
+            name=name, mana_cost=cost, cmc=cmc, type_line=types, oracle_text=text,
+            **({"power": str(pt[0]), "toughness": str(pt[1])} if pt else {})))
+        ai, g, me = self.a.ai, self.game, self.a
+        precision = mk("Deadly Precision", "{B}", 1, "Sorcery", "As an additional cost to cast this spell, pay {4} "
+                       "or sacrifice an artifact or creature.\nDestroy target creature.")
+        self.assertEqual(ai._sac_cost(g, me, precision), 0)
+        perm("Grizzly Bears", self.a)
+        self.assertGreater(ai._sac_cost(g, me, precision), 2)
+        bend = mk("Bend Test", "{2}{G}", 3, "Sorcery", "Earthbend 3.")
+        self.assertIsNone(ai.plan_spell(g, me, bend))          # no land to animate
+        perm("Forest", self.a)
+        self.assertGreater(ai.plan_spell(g, me, bend)[0], 2)
+        sneak = mk("Sneak Test", "{U}", 1, "Sorcery", "Target creature you control can't be blocked this turn.")
+        self.assertEqual([e.kind for e in sneak.spell_effects], ["unblockable"])
+        self.assertIsNone(ai.plan_spell(g, me, sneak, precombat=True))     # nothing to get past
+        perm("Kalonian Tusker", self.b)
+        self.assertGreater(ai.plan_spell(g, me, sneak, precombat=True)[0], 0)
+        self.assertIsNone(ai.plan_spell(g, me, sneak, precombat=False))
+        construct = mk("Per Test", "{3}", 3, "Artifact Creature — Construct",
+                       "This creature gets +1/+1 for each artifact you control.", (0, 0))
+        self.assertEqual(construct.pt_per, "artifact")
+        rock = mk("Big Rock", "{3}", 3, "Artifact", "")
+        for _ in range(2):
+            self.a.battlefield.append(Permanent(rock, self.a))
+        self.assertEqual(ai._static_value(g, me, construct), 2)
+
 
 if __name__ == "__main__":
     unittest.main()
