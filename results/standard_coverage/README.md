@@ -298,3 +298,11 @@ replaces the old one). Connive draws, discards (the AI's choice) and adds a +1/+
 "It deals damage equal to its power to ..." and "it fights ..." after a first target, and bite spells that can hit a
 planeswalker. Not yet: Virtuous Role, bites at two targets, "if it would die, exile it instead". Fully supported cards
 1,246 → 1,281.
+
+## X Mutagen tokens, Empower X and granted mana abilities
+
+"Create X Mutagen tokens" reads the X the permanent was cast with; "activated abilities of artifact tokens cost {1}
+less" applies to ability costs. "Empower Jace X, where X is the number of creatures/Islands you control" is counted
+on resolution. Static lines that give other permanents a mana ability (creatures, lands, creature tokens, Foods, other
+permanents, lands and Allies) make those permanents tap for the granted colours; summoning-sick creatures still
+cannot. Restricted-mana grants (Clement, Mm'menon) are not done. Fully supported cards 1,281 → 1,286.
