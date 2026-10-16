@@ -60,12 +60,13 @@ class Trigger:
 @dataclass
 class AltCost:
     """Another way to cast a card: flashback, foretell, spectacle, blitz, channel, Baleful Mastery."""
-    kind: str                        # flashback, foretell, spectacle, blitz, channel, alt, kicker
-    cost: dict
+    kind: str                        # flashback, foretell, spectacle, blitz, channel, alt, kicker, warp, evoke,
+    cost: dict                       # offspring (extra cost on top of the mana cost), plot
     zone: str = "hand"               # hand, graveyard, foretold
     effects: list | None = None      # channel / kicker: these effects instead of the card's
     extra: list = field(default_factory=list)    # extra effects (Baleful: an opponent draws)
     life: int = 0
+    hybrid: tuple = ()               # hybrid pips in cost, e.g. ("UB", "UB") for {U/B}{U/B}
 
 
 @dataclass
@@ -151,6 +152,9 @@ class CardDef:
     equip_discount: int = 0                             # Dwarven Mauler: equip abilities targeting it cost less
     leyline: bool = False                               # may begin the game on the battlefield
     cond_keywords: tuple = ()                           # ((keyword, condition), ...): "another:Dwarf", "opp_life<=10"
+    hybrid: tuple = ()                                  # hybrid pips of the mana cost: ("UB", "UB")
+    spent_colors: frozenset = frozenset()               # colours in "if {U}{U} was spent to cast it" triggers
+    spree: list = field(default_factory=list)           # spree modes: (extra cost, effects)
 
     @property
     def is_land(self): return "Land" in self.types
@@ -239,6 +243,7 @@ def _token(m_count, power, toughness, desc, with_kw="", attacking=False, ability
 _SRC = r"(?:~|it|he|she)"
 _EFFECT_PATTERNS = [
     (_SRC + r" deals (\d+) damage to any target", lambda m: Effect("damage", int(m[1]), target="any")),
+    (_SRC + r" deals X damage to any target", lambda m: Effect("damage", 0, target="any", data={"x": True})),
     (_SRC + r" deals (\d+) damage to target attacking or blocking creature",
      lambda m: Effect("damage", int(m[1]), target="creature", filter="attacking_blocking")),
     (_SRC + r" deals (\d+) damage to target tapped creature(?: an opponent controls)?",
@@ -316,7 +321,8 @@ _EFFECT_PATTERNS = [
     (r"damage can't be prevented this turn", lambda m: None),
     (r"destroy all creatures", lambda m: Effect("wrath", target="each_creature")),
     (r"destroy all planeswalkers", lambda m: Effect("wrath_pw")),
-    (r"return target (?:nonland permanent|creature|artifact, creature, enchantment, or planeswalker)"
+    (r"return (?:up to one )?(?:other )?target (?:nonland permanent|creature|artifact, creature, enchantment, or "
+     r"planeswalker)"
      r"(?: an opponent controls| you don't control)? to its owner's hand",
      lambda m: Effect("bounce", target="nonland_perm")),
     (r"scry (\d+)", lambda m: Effect("scry", int(m[1]))),
@@ -435,7 +441,7 @@ _SUBS = [
     (re.compile(r"exile the top (card|\w+ cards) of your library\. until (?:the end of your next turn|end of turn), you "
                 r"may play (?:that card|those cards)(?: this turn)?\.", re.I),
      lambda m: f"IMPULSE {1 if m[1] == 'card' else _num(m[1].split()[0])}."),
-    (re.compile(r"target player reveals their hand\. you choose a nonland card from it\. that player discards "
+    (re.compile(r"target (?:player|opponent) reveals their hand\. you choose a nonland card from it\. that player discards "
                 r"that card\.", re.I), lambda m: "TARGETDISCARD."),
     (re.compile(r"then return a creature or planeswalker card with mana value X or less from your graveyard to "
                 r"the battlefield, where X is the amount of \{S\} spent to cast ~\.", re.I),
@@ -580,8 +586,8 @@ def _parse_face(data: dict) -> CardDef:
     for sub in type_line.split("—")[-1].split():
         if sub in BASIC_MANA and "Land" in types:
             produces.add(BASIC_MANA[sub])
-    if "X" in cost:
-        unsupported.append("X costs are paid as X=0")
+    raw_cost = data.get("mana_cost", "").split(" // ")[0]
+    extra["hybrid"] = tuple(a + b for a, b in re.findall(r"\{([WUBRG])/([WUBRG])\}", raw_cost))
     if data.get("loyalty"):
         extra["loyalty"] = stat(data["loyalty"]) or 0
 
@@ -757,6 +763,31 @@ def _parse_face(data: dict) -> CardDef:
             continue
         if re.fullmatch(r"Casualty \d+", line):
             approximations.append(f"never paid: {line}")
+            continue
+        m = re.fullmatch(r"(Warp|Evoke|Offspring|Plot) (\{[^ ]+\})", line)
+        if m:
+            alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2]), hybrid=tuple(
+                a + b for a, b in re.findall(r"\{([WUBRG])/([WUBRG])\}", m[2]))))
+            continue
+        m = re.fullmatch(r"Harmonize (\{[^ ]+\})", line)
+        if m:
+            alt_costs.append(AltCost("flashback", parse_mana_cost(m[1]), zone="graveyard"))
+            approximations.append("harmonize: tapping a creature to reduce the cost isn't used")
+            continue
+        if line == "Spree":
+            extra["is_spree"] = True
+            continue
+        m = re.fullmatch(r"\+ (\{[^ ]+\}) — (.+)", line)
+        if m and extra.get("is_spree"):
+            effs, bad = _parse_effects(m[2])
+            if effs and not bad:
+                extra.setdefault("spree", []).append((parse_mana_cost(m[1]), effs))
+            else:
+                unsupported.append(line)
+            continue
+        m = re.fullmatch(r"~ enters(?: the battlefield)? with X \+1/\+1 counters on it\.", line)
+        if m:
+            extra["etb_counters"] = -1
             continue
         m = re.fullmatch(r"Kicker (\{[^ ]+\})", line)
         if m:
@@ -938,6 +969,9 @@ def _parse_face(data: dict) -> CardDef:
         alt_costs.append(AltCost("kicker", add_mana(cost, extra.pop("kicker")), effects=kicked_effects))
     elif kicked:
         unsupported += [f"if kicked: {k}" for k in kicked]
+    extra.pop("is_spree", None)
+    extra["spent_colors"] = frozenset(t.effects[0].cond[6:] for t in triggers
+                                      if t.effects and t.effects[0].cond.startswith("spent:"))
     if "prowess" in keywords:
         triggers.append(Trigger("cast_noncreature", [Effect("pump", 1, 1, target="self")]))
     # Triggers with "choose up to one" get their bullet modes; drop ones that ended up empty.
@@ -1058,7 +1092,12 @@ def _parse_trigger_line(line: str):
         if re.fullmatch(r"choose up to one —", rest, flags=re.I):
             modes: list = []
             return [Trigger(e, [], flt, modes) for e in events], [], modes
+        spent = re.fullmatch(r"if \{([WUBRG])\}\{\1\} was spent to cast it, (.+)", rest, flags=re.S)
+        if spent:
+            rest = spent[2][0].upper() + spent[2][1:]
         effs, bad = _parse_effects(rest)
+        if spent:
+            effs = [dataclasses.replace(e, cond=f"spent:{spent[1]}") for e in effs]
         if not effs:
             return [], bad or [line], None
         return [Trigger(e, effs, flt) for e in events], bad, None
