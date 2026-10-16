@@ -252,6 +252,12 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   enchantments, edicts that exile, Bringer of the Last Gift's mass swap, lands
   that become creatures for good. Terror of the Peaks' life tax is played as
   ward (pay 3 life); face-down permanents aren't modelled.
+- Craft with artifact (exiles an artifact card from the graveyard, else an
+  artifact token, else the cheapest other artifact, then returns the card
+  transformed); Station (charge counters from tapping another creature; the
+  default policy only stations when a parsed ability needs the charge);
+  "enters with N net counters"; "draw a card for each artifact you control";
+  "put ~ into its owner's library third from the top"
 - London mulligan, drawing from an empty library, hand size, 60-turn cap
 
 Not yet: auras, equipment tokens and attaching equipment by effects (Thorin), X in
