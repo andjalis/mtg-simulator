@@ -50,7 +50,7 @@ SANCTUM = card("Theorist's Sanctum", types="Land", text=(
     "As this land enters, you may behold a Jace. If you don't, this land enters tapped.\n{T}: Add {U}."))
 
 
-class TemplateTests(unittest.TestCase):
+class Base(unittest.TestCase):
     def setUp(self):
         self.a = Player("a", [DRAGON] * 10 + [BEAR] * 2, HeuristicAI())
         self.b = Player("b", [], HeuristicAI())
@@ -66,6 +66,8 @@ class TemplateTests(unittest.TestCase):
         owner.battlefield.append(p)
         return p
 
+
+class TemplateTests(Base):
     # ------------------------------------------------------- parsing
     def test_templates_match_every_line(self):
         for c in (CAVERN, ROCKFACE, TEMPLE, CANDY, PROWLER, MINER, CONQUEROR, TREASURE_MAKER, MAELSTROM, SANCTUM):
@@ -190,6 +192,102 @@ class TemplateTests(unittest.TestCase):
         self.game.resolve(self.a, anthem.spell_effects[0], None)
         self.assertEqual(bear.power, 4)
         self.assertTrue(bear.has("trample"))
+
+
+
+BOOTS = card("Lavaspur Boots", "{1}", "Artifact — Equipment",
+             "Equipped creature gets +1/+0 and has haste and ward {1}.\nEquip {1}")
+AXE = card("Leyline Axe", "{4}", "Artifact — Equipment", "If this card is in your opening hand, you may begin the "
+           "game with it on the battlefield.\nEquipped creature gets +1/+1 and has double strike and trample.\n"
+           "Equip {3}")
+MAULER = card("Dwarven Mauler", "{3}{R}", "Creature — Dwarf Berserker", "Trample\nEquip abilities you activate "
+              "that target this creature cost {2} less to activate.", 4, 3)
+COMPANY = card("Dain's Company", "{1}{R}", "Creature — Dwarf Warrior", "This creature has lifelink as long as you "
+               "control another Dwarf.", 2, 2)
+GHAST = card("Bloodghast", "{B}{B}", "Creature — Vampire Spirit", "Bloodghast has haste as long as an opponent "
+             "has 10 or less life.", 2, 1)
+KILI = card("Kili", "{1}{R}", "Legendary Creature — Dwarf", "Whenever another Dwarf or Equipment you control "
+            "enters, draw a card. This ability triggers only once each turn.", 2, 2)
+SANCTIFIER = card("Hinterland Sanctifier", "{W}", "Creature — Rabbit Cleric",
+                  "Whenever another creature you control enters, you gain 1 life.", 1, 2)
+
+
+class EquipmentTests(Base):
+    def test_parsing(self):
+        for c in (BOOTS, AXE, MAULER, COMPANY, GHAST, KILI, SANCTIFIER):
+            with self.subTest(card=c.name):
+                self.assertEqual(c.unsupported, [])
+        self.assertEqual((BOOTS.equip_cost, BOOTS.equip_bonus, BOOTS.equip_ward), ({"generic": 1}, (1, 0), 1))
+        self.assertTrue(AXE.leyline)
+
+    def test_equip_gives_stats_and_keywords_and_falls_off(self):
+        for _ in range(4):
+            self.perm(MOUNTAIN, self.a)
+        axe = self.perm(AXE, self.a)
+        mauler = self.perm(MAULER, self.a)
+        self.assertTrue(self.game.equip(self.a, axe, mauler))
+        self.assertEqual(sum(x.tapped for x in self.a.battlefield), 1)     # {3} minus Mauler's {2}
+        self.assertEqual((mauler.power, mauler.toughness), (5, 4))
+        self.assertTrue(mauler.has("double strike"))
+        self.game.destroy(mauler)
+        self.assertIsNone(axe.attached_to)
+        self.assertIn(axe, self.a.battlefield)
+
+    def test_default_policy_equips_before_combat(self):
+        for _ in range(2):
+            self.perm(MOUNTAIN, self.a)
+        boots = self.perm(BOOTS, self.a)
+        bear = self.perm(BEAR, self.a, sick=True)
+        self.game.hook(self.a, "use_abilities")(self.game, self.a)
+        self.assertIs(boots.attached_to, bear)
+        self.assertTrue(bear.can_attack())          # haste from the Boots
+        self.assertEqual(bear.ward, 1)
+
+    def test_leyline_starts_on_battlefield(self):
+        self.a.deck = [AXE] * 30
+        self.b.deck = [ISLAND] * 30
+        self.game.setup()
+        self.assertGreaterEqual(sum(x.card.name == "Leyline Axe" for x in self.a.battlefield), 1)
+
+    def test_conditional_keywords(self):
+        company = self.perm(COMPANY, self.a)
+        self.assertFalse(company.has("lifelink"))
+        self.perm(MAULER, self.a)
+        self.assertTrue(company.has("lifelink"))
+        ghast = self.perm(GHAST, self.a)
+        self.assertFalse(ghast.has("haste"))
+        self.b.life = 10
+        self.assertTrue(ghast.has("haste"))
+
+    def test_enters_triggers_with_type_filter_and_once_per_turn(self):
+        self.perm(KILI, self.a)
+        self.perm(SANCTIFIER, self.a)
+        self.game.enter_battlefield(self.a, MAULER)
+        self.game.enter_battlefield(self.a, BOOTS)
+        self.game.settle()
+        self.assertEqual(len(self.a.hand), 1)           # once each turn
+        self.assertEqual(self.a.life, 21)               # Mauler, not the Boots
+
+    def test_dig_with_filter_and_lands(self):
+        company = card("Dain's Company", "{1}{R}", "Creature — Dwarf", "When this creature enters, look at the top "
+                       "four cards of your library. You may reveal a Dwarf or Equipment card from among them and put "
+                       "it into your hand. Put the rest on the bottom of your library in a random order.", 2, 2)
+        charts = card("Consult the Star Charts", "{1}{U}", "Instant", "Kicker {1}{U}\nLook at the top X cards of "
+                      "your library, where X is the number of lands you control. Put one of those cards into your "
+                      "hand. If this spell was kicked, put two of those cards into your hand instead. Put the rest "
+                      "on the bottom of your library in a random order.")
+        self.assertEqual(company.unsupported, [])
+        self.a.library = [BEAR, BOOTS, ISLAND, ISLAND]
+        self.game.enter_battlefield(self.a, company)
+        self.game.settle()
+        self.assertEqual(self.a.hand, [BOOTS])
+        self.assertEqual(charts.unsupported, [])
+        self.assertEqual([a.effects[0].amount2 for a in charts.alt_costs], [2])
+
+
+    def test_removal_keeps_tapped_restriction(self):
+        lullaby = card("Eriette's Lullaby", "{1}{W}", "Sorcery", "Destroy target tapped creature. You gain 2 life.")
+        self.assertEqual(lullaby.spell_effects[0].filter, "tapped")
 
 
 if __name__ == "__main__":
