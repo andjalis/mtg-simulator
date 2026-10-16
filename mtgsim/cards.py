@@ -180,6 +180,10 @@ class CardDef:
     cost_discount: tuple = ()                           # ((filter, n), ...): "Red spells you cast cost {1} less"
     opp_no_cast: bool = False                           # "Your opponents can't cast spells during your turn."
     pt_if: tuple = ()                                   # ((condition, power, toughness), ...) conditional pump
+    mana_filter: str = ""                               # "tap": {1},{T}: add any colour; "once": {1}: add .... once each turn
+    mana_tap_other: str = ""                            # "creature"/"permanent": also tap an untapped one as a cost
+    mana_sac: bool = False                              # "{T}, Sacrifice ~: Add one mana of any color."
+    mana_cond: str = ""                                 # "Dragon": only while you control one
     pt_scale: tuple = (1, 1)                            # (power, toughness) gained per counted permanent
     pt_per: str = ""                                    # "~ gets +1/+1 for each artifact you control": "artifact"
     extra_sacrifice: str = ""                           # "As an additional cost to cast ~, sacrifice an artifact or creature"
@@ -424,6 +428,10 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("draw", 1, cond="opp_lost_life")),
     (r"target player discards a card", lambda m: Effect("discard", 1, target="player")),
     (r"each opponent discards a card", lambda m: Effect("discard", 1, target="player")),
+    (r"STUNLANDSWAP", lambda m: Effect("land_swap")),
+    (r"(\w+) and (\w+)s you control gain (indestructible|hexproof|vigilance|trample|haste|lifelink|first strike|deathtouch) "
+     r"until end of turn",
+     lambda m: Effect("grant_types", data={"types": (m[1], m[2]), "keyword": m[3].lower()})),
     (r"amass (\w+) (\d+)", lambda m: Effect("amass", int(m[2]), data={"type": m[1].rstrip("s").capitalize()})),
     (r"(?:defending player|target opponent) loses (\d+) life and you gain (\d+) life",
      lambda m: [Effect("drain", int(m[1]), target="each_opponent"), Effect("gain_life", int(m[2]))]),
@@ -548,6 +556,9 @@ _SUBS = [
      lambda m: "FETCHBASIC UNTAP4." if m[1] else "FETCHBASIC."),
     (re.compile(r"you may discard up(?: to)? (\w+) cards\. if you do, draw that many cards\.", re.I),
      lambda m: f"RUMMAGE {_num(m[1])}."),
+    (re.compile(r"destroy target nonbasic land an opponent controls\. its controller searches their library for a basic "
+                r"land card, puts it (?:onto|on) the battlefield tapped with a stun counter on it, then shuffles\.", re.I),
+     lambda m: "STUNLANDSWAP."),
     (re.compile(r"choose up to one target creature\. put a \+1/\+1 counter and a counter from among flying, first "
                 r"strike, lifelink, or vigilance on it\.", re.I), lambda m: "ELSPETHPLUS."),
     (re.compile(r"exile up to one target card from a graveyard\. if a creature card was exiled this way, each "
@@ -894,6 +905,30 @@ def _parse_face(data: dict) -> CardDef:
             continue
         if line == "Activated abilities of artifacts, creatures, and planeswalkers can't be activated.":
             extra["stops_activations"] = True
+            continue
+        if re.fullmatch(r"\{1\}, \{T\}: Add one mana of any color\.", line):
+            produces |= set(COLORS)
+            extra["mana_filter"] = "tap"
+            continue
+        m = re.fullmatch(r"\{1\}: Add (one mana of any color|\{[WUBRG]\}, \{[WUBRG]\}, or \{[WUBRG]\})\. (?:~ becomes that "
+                         r"color until end of turn\. )?Activate only once each turn\.", line)
+        if m:
+            produces |= set(COLORS) if "any color" in m[1] else set(re.findall(r"[WUBRG]", m[1]))
+            extra["mana_filter"] = "once"
+            continue
+        m = re.fullmatch(r"\{T\}, Tap an untapped (creature|permanent) you control: Add one mana of any color\.", line)
+        if m:
+            produces |= set(COLORS)
+            extra["mana_tap_other"] = m[1]
+            continue
+        if line == "{T}, Sacrifice ~: Add one mana of any color.":
+            produces |= set(COLORS)
+            extra["mana_sac"] = True
+            continue
+        m = re.fullmatch(r"\{T\}: Add one mana of any color\. Activate only if you control an? (\w+)\.", line)
+        if m:
+            produces |= set(COLORS)
+            extra["mana_cond"] = m[1]
             continue
         m = re.fullmatch(r"\{T\}: Add (\{[WUBRG]\}(?: or \{[WUBRG]\})?)\. (Activate only if [^.]+\.)", line)
         if m:

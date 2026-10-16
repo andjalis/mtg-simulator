@@ -20,6 +20,7 @@ an AI can override each one by defining the hook of the same name (see README).
 from __future__ import annotations
 
 import dataclasses
+import itertools
 import json
 import random
 import re
@@ -219,7 +220,7 @@ class Permanent:
 
     def can_tap_for_mana(self):
         return bool(self.card.produces or self.card.restricted_produces) and not self.tapped and \
-            not (self.is_creature and self.sick)
+            not (self.is_creature and self.sick and self.card.mana_filter != "once")
 
     def __repr__(self):
         if self.is_creature:
@@ -328,7 +329,31 @@ def _mana_of(s) -> frozenset:
 
 
 def find_payment(sources: list[Permanent], cost: dict):
-    """Pick which mana sources to tap for a cost, or None if it can't be paid."""
+    """Pick which mana sources to tap for a cost, or None if it can't be paid. Filter lands ("{1}, {T}: Add one mana
+    of any color") add no mana of their own: each one that is used recolours one other source's mana."""
+    filt = [s for s in sources if s.card.mana_filter]
+    if not filt:
+        return _find_payment(sources, cost)
+    base = [s for s in sources if not s.card.mana_filter]
+    got = _find_payment(base, cost)
+    if got is not None:
+        return got
+    cands = [s for s in base if getattr(s.card, "mana_amount", 1) == 1]
+    for u in range(1, min(len(filt), len(cands)) + 1):
+        for combo in itertools.combinations(cands, u):
+            saved = [getattr(s, "produces_now", None) for s in combo]
+            for s, f in zip(combo, filt):
+                s.produces_now = f.card.produces
+            got = _find_payment(base, cost)
+            for s, old in zip(combo, saved):
+                s.produces_now = old
+            if got is not None:
+                used = sum(1 for s in got if s in combo)
+                return got + filt[:used]
+    return None
+
+
+def _find_payment(sources: list[Permanent], cost: dict):
     pips = [c for c in COLORS + ("C",) for _ in range(cost.get(c, 0))]
     generic = cost.get("generic", 0)
     # A source that makes several mana (Sol Ring) fills several slots.
@@ -371,6 +396,8 @@ def find_payment(sources: list[Permanent], cost: dict):
 def payable(sources: list[Permanent], cost: dict) -> bool:
     """Whether find_payment(sources, cost) would find a payment, without choosing which sources
     to tap: coloured pips need a matching, and generic mana any slots left over."""
+    if any(s.card.mana_filter for s in sources):
+        return find_payment(sources, cost) is not None
     pips = [c for c in COLORS + ("C",) for _ in range(cost.get(c, 0))]
     generic = cost.get("generic", 0)
     slots = [_mana_of(s) for s in sources for _ in range(max(1, getattr(s.card, "mana_amount", 1)))]
@@ -469,6 +496,14 @@ class Game:
             if stopped and (perm.card.is_artifact or perm.is_creature):
                 continue
             produces = perm.card.produces
+            c = perm.card
+            if c.mana_filter == "once" and perm.ability_turns.get("filter") == self.turn:
+                continue
+            if c.mana_cond and not any(c.mana_cond in x.card.subtypes for x in p.battlefield):
+                continue
+            if c.mana_tap_other and not any(x is not perm and not x.tapped and (x.is_creature or c.mana_tap_other == "permanent")
+                                            for x in p.battlefield):
+                continue
             if perm.card.restricted_produces and self.mana_allowed(perm, spell):
                 produces = produces | perm.card.restricted_produces
             if not produces:
@@ -510,9 +545,17 @@ class Game:
         if payment is None:
             return None
         for s in payment:
-            s.tapped = True
-            if s.card.token_kind == "treasure":
+            if s.card.mana_filter == "once":
+                s.ability_turns["filter"] = self.turn
+            else:
+                s.tapped = True
+            if s.card.token_kind == "treasure" or s.card.mana_sac:
                 self.sacrifice(s)
+            if s.card.mana_tap_other:
+                spare = [x for x in p.battlefield if x is not s and not x.tapped and x not in payment
+                         and (x.is_creature or s.card.mana_tap_other == "permanent")]
+                if spare:
+                    min(spare, key=perm_value).tapped = True
         spent = getattr(p, "expend", (0, 0))
         old = spent[1] if spent[0] == self.turn else 0
         p.expend = (self.turn, old + len(payment))
@@ -2015,6 +2058,23 @@ class Game:
                 perm = self.enter_battlefield(p, ench)
                 perm.front = card
                 self.log(f"returns {card.name} as an enchantment", p)
+        elif k == "land_swap":
+            lands = [x for x in opp.battlefield if x.card.is_land and not is_basic_land(x.card) and self.targetable(x, p)]
+            if lands:
+                victim = max(lands, key=perm_value)
+                self.destroy(victim)
+                land = choose_basic(self, opp)
+                if land is not None:
+                    opp.library.remove(land)
+                    self.log(f"fetches {land.name}", opp)
+                    perm = self.enter_battlefield(opp, land)
+                    perm.tapped = True
+                    perm.counters["stun"] = 1
+                    self.rng.shuffle(opp.library)
+        elif k == "grant_types":
+            for x in p.battlefield:
+                if any(t in x.card.subtypes for t in eff.data["types"]):
+                    x.temp_kw.add(eff.data["keyword"])
         elif k == "amass":
             kind = eff.data["type"]
             army = next((x for x in p.creatures if "Army" in x.card.subtypes), None)
