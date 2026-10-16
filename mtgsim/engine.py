@@ -71,6 +71,7 @@ class Permanent:
         self.exiled_cards: list = []       # (card, owner) exiled until this leaves the battlefield
         self.warped = False
         self.was_cast = False              # "if you cast it"
+        self.hidden = None                 # the real card of a face-down (disguised) creature
         self.prepared = False              # a prepared creature may cast a copy of its spell
         self.saddled = False               # a Mount saddled this turn
         self.copy_revert = None            # the card this permanent is while it is a copy until end of turn
@@ -566,6 +567,8 @@ class Game:
         for a in c.alt_costs:
             if a.kind == "offspring":
                 out.append(self._variant(c, "offspring", AltCost("offspring", add_mana(c.mana_cost, a.cost))))
+            elif a.kind == "disguise" and not full:
+                out.append(self._variant(c, "disguise", AltCost("disguise", {"generic": 3})))
             elif a.kind == "impending" and not full:
                 out.append(self._variant(c, "impending", AltCost("impending", a.cost, counters=a.counters)))
             elif a.kind in ("warp", "evoke") and not full:
@@ -826,6 +829,17 @@ class Game:
         if not self.over:
             self.hook(p, "use_abilities")(self, p)
             self.cycle_spare(p)
+            self.turn_face_up(p)
+
+    def turn_face_up(self, p: Player):
+        """Turn disguised creatures face up when their disguise cost can be paid with the mana that's left."""
+        for perm in list(p.battlefield):
+            if perm.hidden is None:
+                continue
+            alt = next((a for a in perm.hidden.alt_costs if a.kind == "disguise"), None)
+            if alt is not None and self.pay(p, alt.cost) is not None:
+                self.log(f"turns {perm.hidden.name} face up", p)
+                perm.card, perm.hidden = perm.hidden, None
 
     def cycle_spare(self, p: Player):
         """Cycle (and landcycle) cards that aren't going to be cast, with the mana left after the main phase:
@@ -1106,6 +1120,10 @@ class Game:
             perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
             self._aura_host = None
             self._spent = ""
+            if kind == "disguise":
+                perm.hidden = base
+                perm.card = CardDef(name="Face-down creature", mana_cost={"generic": 0}, cmc=0,
+                                    types=frozenset({"Creature"}), power=2, toughness=2, ward=2)
             if kind in ("blitz", "blitz_gy"):
                 perm.blitz = True
             if kind == "warp":
@@ -1992,6 +2010,26 @@ class Game:
             opp.exile += opp.graveyard
             opp.graveyard.clear()
             self.log(f"{opp} exiles their graveyard", p)
+        elif k == "endure":
+            src = target if isinstance(target, Permanent) else (item.source if item is not None else None)
+            if src is not None and src in src.controller.battlefield and src.is_creature:
+                src.counters["+1/+1"] = src.p1 + eff.amount
+                self.log(f"{src.card.name} endures {eff.amount} (counters)", p)
+            else:
+                self.create_token(p, Effect("token", 1, data={"name": "Spirit", "power": eff.amount,
+                                                              "toughness": eff.amount, "keywords": frozenset()}))
+        elif k == "manifest_dread":
+            top = [p.library.pop() for _ in range(min(2, len(p.library)))]
+            if top:
+                top.sort(key=lambda c: copies.score(c))
+                keep, rest = top[0], top[1:]       # manifest the cheaper card, the other goes to the graveyard
+                perm = self.enter_battlefield(p, CardDef(name="Manifest", mana_cost={"generic": 0}, cmc=0,
+                                                         types=frozenset({"Creature"}), power=2, toughness=2,
+                                                         is_token=True))
+                perm.front = keep
+                for c in rest:
+                    p.graveyard.append(c)
+                self.log("manifests dread", p)
         elif k == "untap_self":
             src = item.source if item is not None else None
             if src is not None and src in src.controller.battlefield:
