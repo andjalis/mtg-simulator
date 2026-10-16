@@ -1138,6 +1138,24 @@ class Game:
         perm.front = card    # the whole card goes to the graveyard
         self.settle()
 
+    def pay_teamwork(self, p: Player, card: CardDef) -> bool:
+        """Tap creatures with total power of card.teamwork or more (smallest first; summoning-sick ones are free
+        to tap). Only done when the creatures can't usefully attack: they are sick, or it's after combat."""
+        pool = [c for c in p.creatures if not c.tapped and (c.sick or self.step in ("main2", "end_step"))]
+        pool.sort(key=lambda c: c.power)
+        chosen, total = [], 0
+        for c in pool:
+            if total >= card.teamwork:
+                break
+            chosen.append(c)
+            total += c.power
+        if total < card.teamwork:
+            return False
+        for c in chosen:
+            c.tapped = True
+        self.log(f"taps {[c.card.name for c in chosen]} (teamwork {card.teamwork})", p)
+        return True
+
     def cast(self, p: Player, card: CardDef, targets: list | None = None) -> bool:
         """Pay for card and put it on the stack. ``card`` may be a hand card or one of
         spell_options() (adventure, flashback, ...). Outside a priority loop (an AI's main
@@ -1177,8 +1195,11 @@ class Game:
             filled = self.auto_targets(p, [effects[i] for i in missing])
             for i, t in zip(missing, filled):
                 targets[i] = t
+        flags = set()
+        if card.teamwork and card.modes and self.pay_teamwork(p, card):
+            flags.add("teamwork")
         if card.modes:
-            mode_effects = modal.pick(self, p, card.modes, n=card.modes_choose)
+            mode_effects = modal.pick(self, p, card.modes, n=card.modes_choose, flags=flags)
             effects = mode_effects + effects
             targets = self.auto_targets(p, mode_effects) + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")

@@ -142,6 +142,7 @@ class CardDef:
     is_token: bool = False
     is_ability: bool = False                            # a channel ability cast like a spell
     etb_counters: int = 0                               # "enters with N +1/+1 counters on it"
+    teamwork: int = 0                                   # "Teamwork N": may tap creatures with total power N or more as an additional cost
     extra_life_cost: int = 0                            # "As an additional cost to cast ~, pay N life"
     wither_noncombat: bool = False                      # Soul-Scar Mage: noncombat damage becomes -1/-1 counters
     exile_damaged: bool = False                         # Etching of Kumano: damaged creatures are exiled instead
@@ -955,6 +956,10 @@ def _parse_face(data: dict) -> CardDef:
         m = re.fullmatch(r"Kicker (\{[^ ]+\})", line)
         if m:
             extra["kicker"] = parse_mana_cost(m[1])
+            continue
+        m = re.fullmatch(r"Teamwork (\d+)(?: \(.*\))?", line)
+        if m:
+            extra["teamwork"] = int(m[1])
             continue
         if re.fullmatch(r"As an additional cost to cast ~, you may [^.]+\.", line):
             approximations.append(f"never paid: {line}")

@@ -188,3 +188,12 @@ cleanup step; the legend-rule sentence is ignored on purpose) and "Copy target a
 control [from a creature source] [X times]" (pushes copies of the top matching ability on the stack).
 Fully supported cards 827 → 830. Variants that pick a different target ("it becomes a copy of ... until your next
 turn", copies of cards in graveyards) are still ignored.
+
+## Choose-both upgrades (mtgsim/modal.py)
+
+"If X, choose both / one or more / two instead" is now applied when the spell is cast. Conditions modelled: teamwork
+(new `Teamwork N` line; creatures with total power N are tapped when they are summoning sick or it is after combat),
+no cards in hand, delirium (four card types in the graveyard), eight permanent cards in the graveyard, a creature
+subtype you control, six lands. "You control a commander" can never hold here, so it needs no note. Still unmodelled:
+descend, kicked / additional cost paid, max speed, nonland permanent you don't own.
+Fully supported cards 830 → 832 (the other cards with these lines are held back by other ignored lines).
