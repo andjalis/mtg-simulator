@@ -222,11 +222,16 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   Conditional keywords ("as long as you control another Dwarf", "as long as an
   opponent has 10 or less life"), "whenever another Dwarf or Equipment you
   control enters" triggers (also once each turn), filtered "look at the top N"
+- Warp (exiled at the end step, cast again from exile later), evoke, "if {U}{U}
+  was spent" modes (hybrid costs paid in the colour that turns the mode on),
+  offspring, plot, spree, harmonize (as flashback), X costs (X is all the spare
+  mana) for X damage and "enters with X +1/+1 counters". Warp and evoke are only
+  offered when the full cost can't be paid.
 - London mulligan, drawing from an empty library, hand size, 60-turn cap
 
-Not yet: auras, equipment tokens and attaching equipment by effects (Thorin), X spells, copy effects (Reflection of
-Kiki-Jiki), casualty (never paid), day/night, Old-Growth Troll's return, Map
-tokens, spree, warp. Modal double-faced cards keep their land face in
+Not yet: auras, equipment tokens and attaching equipment by effects (Thorin), X in
+anything but damage and +1/+1 counters, copy effects (Reflection of Kiki-Jiki),
+casualty (never paid), day/night, Old-Growth Troll's return, Map tokens. Modal double-faced cards keep their land face in
 `CardDef.land_face`, played with `Game.play_land(p, card, back=True)`.
 Builtin runs report known coverage gaps; this is not an exhaustive rules audit.
 
