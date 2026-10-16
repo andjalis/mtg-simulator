@@ -172,6 +172,9 @@ class CardDef:
     pt_per: str = ""                                    # "~ gets +1/+1 for each artifact you control": "artifact"
     extra_sacrifice: str = ""                           # "As an additional cost to cast ~, sacrifice an artifact or creature"
     extra_sac_or_pay: int = 0                           # "... pay {4} or sacrifice ...": the generic alternative
+    aura: str = ""                                      # "Enchant creature" (what it enchants; mtgsim.auras)
+    aura_flags: frozenset = frozenset()                 # no_untap, cant_attack_block
+    aura_hostile: bool = False                          # goes on an opponent's permanent
     clone: dict | None = None                           # "You may have ~ enter as a copy of ..." (mtgsim.copies)
     cast_copy: dict | None = None                       # "When you cast ~, copy it." (mtgsim.copies)
 
@@ -689,7 +692,7 @@ def _parse_face(data: dict) -> CardDef:
         text = re.sub(rf"\b{re.escape(name.split()[0])}\b", "~", text)  # "Ajani" for "Ajani Resolute"
     elif " the " in name and "Legendary" in type_line:
         text = re.sub(rf"\b{re.escape(name.split(' the ')[0])}\b", "~", text)  # "Smaug the Magnificent"
-    text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga)\b", "~",
+    text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment)\b", "~",
                   text, flags=re.I)
     text = re.sub(r", where X is the amount of mana spent to cast ~\.", ".", text).replace(
         "the top X cards", f"the top {int(data.get('cmc', 0) or 0)} cards")
@@ -1105,6 +1108,9 @@ def _parse_face(data: dict) -> CardDef:
                         r"number of Blood tokens you control\. Activate only as a sorcery\.", line):
             activated.append(Activated("sac_debuff", {"generic": 0}))
             continue
+        extra["_subtypes"] = type_line
+        if _auras.parse_line(line, extra, types):
+            continue
         clone = _copies.parse_line(line)
         if clone is not None:
             extra.update(clone)
@@ -1164,6 +1170,8 @@ def _parse_face(data: dict) -> CardDef:
     elif kicked:
         unsupported += [f"if kicked: {k}" for k in kicked]
     extra.pop("is_spree", None)
+    extra.pop("_subtypes", None)
+    _auras.finish(extra)
     extra["gy_triggers"] = [t for t in triggers if any(e.kind == "return_self_gy" for e in t.effects)]
     triggers = [t for t in triggers if t not in extra["gy_triggers"]]
     extra["spent_colors"] = frozenset(t.effects[0].cond[6:] for t in triggers
@@ -1360,7 +1368,7 @@ def make_token(name: str, power: int, toughness: int, keywords=frozenset(), trig
 
 
 # Copy effects live in their own module; its templates join the ones above.
-from . import copies as _copies, removal as _removal  # noqa: E402
+from . import auras as _auras, copies as _copies, removal as _removal  # noqa: E402
 
-_EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS
+_EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS
 _SUBS += _copies.SUBS
