@@ -171,3 +171,12 @@ when cast: "deals X damage to target creature", "-X/-X", "you lose X life", "eac
 X)", "draw X cards", "counter unless its controller pays {X}"; the AI plans them with the largest X it can pay.
 Fully supported cards 796 → 813 (16.2% → 16.6%). The rest of the X family is mostly "where X is the number of ..."
 and cost-reduction text, which needs counting templates of its own.
+
+## Counting lines (mtgsim/counting.py)
+
+"~ gets +N/+N for each [other] X you control" (X may be a type or a subtype such as Mountain), "~'s power and
+toughness / power / toughness are equal to the number of X you control", "draw a card for each X you control (or
+card in your graveyard)", "you gain/lose N life for each X", "put a +1/+1 counter on ~ for each X", and "discard up to
+N cards, then draw that many". Effects carry ``data["per"]`` and multiply their amount by the count when they resolve.
+Fully supported cards 813 → 827 (16.6% → 16.9%). The remaining counting lines are one-offs ("greatest power among",
+"number of colors of mana spent", "number of differently named ...").
