@@ -618,6 +618,9 @@ _TRIGGERS = [
     (r"Whenever a creature you control deals combat damage to a player, (.+)", ("ally_combat_damage",)),
     (r"Whenever you cast a noncreature spell, (.+)", ("cast_noncreature",)),
     (r"Whenever you cast an instant or sorcery spell, (.+)", ("cast_instant_sorcery",)),
+    (r"Whenever you cast an instant or sorcery spell that targets a creature, (.+)", ("cast_instant_sorcery",)),
+    (r"Whenever ~ becomes the target of a spell or ability you control for the first time each turn, (.+)",
+     ("targeted_mine",)),
     (r"Whenever you cast a spell, (.+)", ("cast_spell",)),
     (r"Whenever you cast an? ([A-Z]\w+|creature|artifact|enchantment) spell, (.+)", ("cast_spell",)),
     (r"Whenever you gain life, (.+)", ("gain_life",)),
@@ -635,7 +638,7 @@ _TRIGGERS = [
     (r"Whenever a land you control enters, (.+)", ("land_enters",)),
     (r"Whenever (~ or )?(another|an?) ((?:[\w-]+(?:,? or |, | ))*?(?:creature|artifact|enchantment|planeswalker|"
      r"[A-Z]\w+)s?) you control( with mana value \d+ or greater)? enters(?: and whenever an? ([A-Z]\w+) you control "
-     r"enters)?, (.+)",
+     r"enters| and whenever you fully unlock a Room)?, (.+)",
      ("permanent_enters",)),
     (r"Whenever you draw a card, (.+)", ("you_draw",)),
     (r"Whenever you sacrifice (an? [\w ]+?), (.+)", ("sacrifice",)),
@@ -792,7 +795,7 @@ def _parse_face(data: dict) -> CardDef:
                 continue
         kicked += re.findall(r"If ~ was kicked, (.+?\.)", line)
         line = re.sub(r"\s*If ~ was kicked, .+?\.", "", line).strip()
-        line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid) — (?=When|At|If)", "", line)
+        line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant) — (?=When|At|If)", "", line)
         parts = [p.strip().lower() for p in line.split(",")]
         if all(p in KEYWORDS or re.fullmatch(r"ward \{\d+\}", p) for p in parts):
             for p in parts:
@@ -1468,6 +1471,10 @@ def _parse_trigger_line(line: str):
             flt = f"{'other' if m[1] == 'another' else 'any'}||{m[2]}"
         if events == ("attacks",) and "while saddled" in pat:
             flt = "saddled"
+        if events == ("cast_instant_sorcery",) and "that targets a creature" in pat:
+            flt = "targets_creature"
+        if events == ("targeted_mine",):
+            rest = re.sub(r"^it (gets|gains|deals)\b", r"~ \1", re.sub(r"\b(on|untap|to) it\b", r"\1 ~", rest))
         if events == ("cast_cmc",):
             flt = f"cmc>={m[1]}"
         if events == ("cast_spell",) and m.lastindex == 2:
@@ -1510,13 +1517,29 @@ def _parse_trigger_line(line: str):
             if bad2:
                 return [], bad2, None
             later = [dataclasses.replace(e, cond=f"counters:{reflex[3]}>={_num(reflex[2])}") for e in later]
-        effs, bad = _parse_effects(rest)
-        if cond:
-            effs = [dataclasses.replace(e, cond=cond) for e in effs]
+        opus = re.fullmatch(r"(.+?\.) If five or more mana was spent to cast that spell, (.+)", rest, flags=re.S)
+        unless = re.fullmatch(r"(.+?\.) Then (.+?) unless five or more mana was spent to cast that spell\.?", rest, flags=re.S)
+        if opus:
+            instead = opus[2].rstrip(".").endswith(" instead")
+            second = re.sub(r" instead$", "", opus[2].rstrip(".")).replace("~ also ", "~ ")
+            first, bad = _parse_effects(opus[1])
+            more, bad2 = _parse_effects(second[0].upper() + second[1:] + ".")
+            bad += bad2
+            effs = [dataclasses.replace(e, cond="mana<5") for e in first] if instead else first
+            effs += [dataclasses.replace(e, cond="mana>=5") for e in more]
+        elif unless:
+            first, bad = _parse_effects(unless[1])
+            more, bad2 = _parse_effects(unless[2][0].upper() + unless[2][1:] + ".")
+            bad += bad2
+            effs = first + [dataclasses.replace(e, cond="mana<5") for e in more]
+        else:
+            effs, bad = _parse_effects(rest)
+            if cond:
+                effs = [dataclasses.replace(e, cond=cond) for e in effs]
         effs += later
         if not effs:
             return [], bad or [line], None
-        return [Trigger(e, effs, flt) for e in events], bad, None
+        return [Trigger(e, effs, flt, once=events == ("targeted_mine",)) for e in events], bad, None
     return None
 
 
