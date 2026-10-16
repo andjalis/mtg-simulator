@@ -247,3 +247,9 @@ Endure N: counters on the source if it is still on the battlefield, otherwise an
 two cards the cheaper becomes a face-down 2/2 and the other goes to the graveyard; manifests are never turned face up.
 Disguise: cast face down for {3} (2/2 with ward 2) only when the full cost can't be paid, and turned up with leftover
 mana after the main phase. Fully supported cards 1,047 → 1,075.
+
+## Graveyard exile, mill and target pronouns
+
+"Exile up to N target cards from a graveyard" (the opponent's best cards first), "Put target card from a graveyard on
+the bottom of a library", "You may mill N cards", and "Untap it." / "It explores." after a targeted spell effect
+(the previous target). Fully supported cards 1,075 → 1,110.
