@@ -138,6 +138,9 @@ class Permanent:
                 if creature and self.has(kw):
                     bp += pp
                     bt += tt
+            if creature and x.card.anthem_chosen and x.chosen_type and x.chosen_type in self.card.subtypes:
+                bp += x.card.anthem_chosen[0]
+                bt += x.card.anthem_chosen[1]
             for sub, pp, tt, other in x.card.anthem_sub:
                 if creature and sub in self.card.subtypes and not (other and x is self):
                     bp += pp
@@ -379,6 +382,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if attacker.has("flying") and not (blocker.has("flying") or blocker.has("reach")):
         return False
     if attacker.card.min_blocker_power and blocker.power < attacker.card.min_blocker_power:
+        return False
+    if attacker.card.max_blocker_power and blocker.power >= attacker.card.max_blocker_power:
         return False
     return True
 
@@ -678,7 +683,9 @@ class Game:
             for flt, k in x.card.cost_discount:
                 if (flt in ("instant and sorcery",) and (card.is_instant or card.is_sorcery)) or \
                         (flt in COLOR_WORDS and cost.get(COLOR_WORDS[flt], 0)) or \
-                        (flt in ("creature", "artifact") and flt.capitalize() in card.types):
+                        (flt in ("creature", "artifact") and flt.capitalize() in card.types) or \
+                        (flt == "noncreature" and not card.is_creature and not card.is_land) or \
+                        (flt not in COLOR_WORDS and flt.capitalize() in card.subtypes):
                     n += k
         counts = getattr(self, "spells_cast", {})
         if counts.get("turn") == self.turn and counts.get(p.name, 0) == 1:
@@ -1027,6 +1034,22 @@ class Game:
             self.hook(p, "use_abilities")(self, p)
             self.cycle_spare(p)
             self.turn_face_up(p)
+            self.graveyard_abilities(p)
+
+    def graveyard_abilities(self, p: Player):
+        """Return-from-graveyard and exile-to-draw abilities, with the mana left after the main phase."""
+        for card in list(p.graveyard):
+            if self.over or card not in p.graveyard:
+                continue
+            if card.gy_return and len(p.hand) < 7 and self.pay(p, card.gy_return) is not None:
+                p.graveyard.remove(card)
+                p.hand.append(card)
+                self.log(f"returns {card.name} from the graveyard to hand", p)
+            elif card.gy_exile_draw and (not card.gy_needs_speed or p.speed >= 4) and p.library \
+                    and self.pay(p, card.gy_exile_draw) is not None:
+                p.graveyard.remove(card)
+                self.log(f"exiles {card.name} from the graveyard to draw", p)
+                self.draw(p, 1)
 
     def turn_face_up(self, p: Player):
         """Turn disguised creatures face up when their disguise cost can be paid with the mana that's left."""
@@ -1970,7 +1993,10 @@ class Game:
 
     def create_token(self, p: Player, eff: Effect, n: int | None = None):
         d = eff.data
-        for _ in range(n if n is not None else eff.amount):
+        count = n if n is not None else eff.amount
+        if any(x.card.token_double for x in p.battlefield):
+            count *= 2
+        for _ in range(count):
             card = make_token(d.get("name", ""), d.get("power", 0), d.get("toughness", 0), d.get("keywords", ()),
                               d.get("triggers"), d.get("kind", ""), d.get("artifact", False), d.get("pt_per", ""))
             if d.get("mercenary"):

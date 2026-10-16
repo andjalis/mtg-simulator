@@ -348,3 +348,10 @@ their sorcery-speed pump ability and X Mercenary tokens. Job select (Hero token,
 blocked", "no maximum hand size", "attacks each combat if able", "enters with N -1/-1 counters". "You may discard a
 card / sacrifice a permanent. If you do, draw" and the general "you may pay {N}. If you do / When you do, ..." gate
 (the AI pays whenever it can). Fully supported cards 1,455 → 1,509.
+
+## Round 9: graveyard abilities, token doubling, blocker-power evasion
+
+"{cost}: Return this card from your graveyard to your hand" and "{cost}, Exile this card from your graveyard: Draw a
+card" (the latter gated on max speed where printed), "twice that many tokens", chosen-type anthems, "can't be blocked by
+creatures with power N or greater", noncreature and subtype cost discounts. Gift riders were left out: they need a
+cast-time promise to the opponent. Fully supported cards 1,509 → 1,519.
