@@ -162,3 +162,12 @@ enchanted creature", and Equipment that attaches itself when it enters. The host
 (friendly Auras on the caster's best creature, hostile ones on the opponent's best) and an Aura with no legal host
 isn't cast. Fully supported cards 779 → 796 (15.9% → 16.2%). Not done: "you control enchanted creature", "loses all
 abilities", Auras that count things ("for each Forest").
+
+## Library search and X spells (mtgsim/search.py, mtgsim/xspells.py)
+
+`search` covers "search your library for a/up to N <description> cards, [reveal,] put onto the battlefield (tapped) /
+into your hand / on top, then shuffle", including "you may" and "its controller may". X spells take the X paid
+when cast: "deals X damage to target creature", "-X/-X", "you lose X life", "each opponent loses X life (and you gain
+X)", "draw X cards", "counter unless its controller pays {X}"; the AI plans them with the largest X it can pay.
+Fully supported cards 796 → 813 (16.2% → 16.6%). The rest of the X family is mostly "where X is the number of ..."
+and cost-reduction text, which needs counting templates of its own.
