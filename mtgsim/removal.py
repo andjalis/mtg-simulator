@@ -31,20 +31,26 @@ EFFECT_PATTERNS = [
     (r"target creature you control fights target creature " + _THEIRS, lambda m: _pair("fight")),
     (r"target creature you control deals damage equal to its power to target creature " + _THEIRS,
      lambda m: _pair("bite")),
+    (r"(?:it|that creature|he|she) deals damage equal to its power to (?:up to one )?target creature " + _THEIRS,
+     lambda m: _effect("bite", "creature", filter="opp")),
+    (r"(?:it|that creature|he|she) fights (?:up to one )?target creature " + _THEIRS,
+     lambda m: _effect("fight", "creature", filter="opp")),
+    (r"target creature you control deals damage equal to its power to target creature or planeswalker( " + _THEIRS + ")?",
+     lambda m: _pair("bite", "creature_pw", "opp" if m[1] else "")),
     (r"untap target creature", lambda m: _effect("untap_target", "creature")),
     (rf"target creature you control gains ({_KW}) until end of turn",
      lambda m: _effect("grant", "creature_mine", data={"keyword": m[1].lower()})),
 ]
 
 
-def _effect(kind, target, data=None):
+def _effect(kind, target, data=None, filter=""):
     from .cards import Effect
-    return Effect(kind, target=target, data=data or {})
+    return Effect(kind, target=target, data=data or {}, filter=filter)
 
 
-def _pair(kind):
+def _pair(kind, target="creature", flt="opp"):
     from .cards import Effect
-    return [Effect("fight_mark", target="creature_mine"), Effect(kind, target="creature", filter="opp")]
+    return [Effect("fight_mark", target="creature_mine"), Effect(kind, target=target, filter=flt)]
 
 
 def passes(flt: str, perm):
@@ -89,6 +95,8 @@ def resolve(game, p, eff, target, item):
     if k == "fight_mark":
         return
     mine = item.targets[0] if item is not None and item.targets else None
+    if mine is None and item is not None:
+        mine = item.source          # "When ~ enters, it deals damage equal to its power to ..."
     if mine is None or target is None:
         return
     if mine not in mine.controller.battlefield or target not in target.controller.battlefield:
