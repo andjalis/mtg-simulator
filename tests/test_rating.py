@@ -1,12 +1,16 @@
 import io
 import json
+import random
+import tempfile
 import unittest
+from pathlib import Path
 from contextlib import redirect_stdout
 
 from mtgsim.__main__ import run_tiers
 from mtgsim.ladder_report import render_fragment, render_page, sparkline, text_summary
-from mtgsim.rating import (RANKS, LadderTracker, expected, next_rank, performance_rating, pool_anchors,
-                           rank_for)
+from mtgsim.calibrate import fit, predicted, readme_observations, summarize
+from mtgsim.rating import (RANKS, RATINGS_FILE, LadderTracker, expected, load_ratings, next_rank,
+                           performance_rating, pool_anchors, rank_for)
 from mtgsim.runner import MatchResult
 from mtgsim.tiers import TIERS
 
@@ -82,6 +86,72 @@ class RatingTests(unittest.TestCase):
         self.assertIn("stopped at Gold", d["verdict"])
         self.assertEqual([p["cleared"] for p in d["pools"]], [True, True, False, None, None, None, None])
         self.assertIn("Rank: me is", out.getvalue())
+
+
+class CalibrateTests(unittest.TestCase):
+    POOLS = {"bronze": ["bronze/a", "bronze/b"], "silver": ["silver/c", "silver/d"], "gold": ["gold/e"]}
+
+    def test_fit_recovers_ratings(self):
+        rng = random.Random(3)
+        true = {d: 900 + 150 * i + rng.uniform(-60, 60) for i, ds in enumerate(self.POOLS.values()) for d in ds}
+        names = list(true)
+        obs = [{"a": a, "b": b, "points": expected(true[a], true[b]) * 10000, "games": 10000, "engine": "python"}
+               for i, a in enumerate(names) for b in names[i + 1:]]
+        got = fit(obs, self.POOLS, shrink=0)
+        shift = (true["bronze/a"] + true["bronze/b"]) / 2 - RANKS[0].anchor
+        for d in names:
+            self.assertAlmostEqual(got[d], true[d] - shift, delta=1)
+        self.assertAlmostEqual((got["bronze/a"] + got["bronze/b"]) / 2, RANKS[0].anchor, delta=0.01)
+
+    def test_rank_level_observations(self):
+        # a rank-vs-rank result moves every deck of the rank; decks with no games of their own stay together
+        obs = [{"a": "silver", "b": "bronze", "points": 76, "games": 100, "engine": "forge"},
+               {"a": "gold", "b": "silver", "points": 24, "games": 100, "engine": "forge"}]
+        got = fit(obs, self.POOLS)
+        self.assertAlmostEqual(predicted(got, "silver", "bronze", self.POOLS), 0.76, delta=0.005)
+        self.assertAlmostEqual(predicted(got, "gold", "silver", self.POOLS), 0.24, delta=0.005)
+        self.assertAlmostEqual(got["silver/c"], got["silver/d"], delta=0.5)
+        doc = summarize(got, obs, self.POOLS, when="2026-10-15")
+        self.assertEqual(doc["decks"]["gold/e"]["engine"], "forge")
+        self.assertEqual(doc["decks"]["silver/c"]["games"], 100)
+        # gold sits below silver here, so it is out of its band
+        self.assertIn("gold/e", [x["deck"] for x in doc["out_of_band"]])
+
+    def test_readme_rank_order_reproduced(self):
+        """The rank-order numbers in decks/ranks/README.md, fitted at rank level, come back within five
+        points (the built-in rows are not perfectly transitive: Platinum beats Bronze less than Gold does)."""
+        obs = readme_observations()
+        got = fit(obs)
+        for o in obs:
+            se = (0.25 / o["games"]) ** 0.5
+            margin = max(2.5 * se, 0.05) if o["engine"] == "python" else 2 * se
+            self.assertAlmostEqual(predicted(got, o["a"], o["b"]), o["points"] / o["games"], delta=margin)
+
+    def test_tracker_uses_fitted_ratings_and_falls_back(self):
+        pools = [("gold", "Gold", ["gold/a", "gold/b"]), ("master", "Master", ["master/c"])]
+        t = LadderTracker("me", pools, ratings={"gold/a": 1111, "master/c": 1250})
+        self.assertEqual(t.opponents["gold/a"].rating, 1111)
+        self.assertEqual(t.opponents["gold/b"].rating, RANKS[2].anchor)     # not in the file: band centre
+        d = t.to_dict()
+        self.assertEqual(d["pools"][0]["rating"], round((1111 + 1300) / 2))
+        self.assertEqual(d["pools"][1]["rank"], "Master")                  # the pool keeps its own rank name
+        self.assertEqual(LadderTracker("me", pools, ratings={}).opponents["master/c"].rating, RANKS[5].anchor)
+        self.assertEqual(pool_anchors(["gold", "master"], {"gold/a": 1111, "gold/b": 1211})["gold"], 1161)
+
+    def test_load_ratings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = Path(tmp) / "ratings.json"
+            self.assertEqual(load_ratings(p), {})                          # missing file
+            p.write_text("not json")
+            self.assertEqual(load_ratings(p), {})
+            p.write_text(json.dumps({"decks": {"gold/a": {"rating": 1234.4, "games": 5}}}))
+            self.assertEqual(load_ratings(p), {"gold/a": 1234})
+        if RATINGS_FILE.exists():                                          # the checked-in fit covers every pool deck
+            from mtgsim.ranks import RANKS as POOLS
+            shipped = load_ratings()
+            for pool in POOLS:
+                for deck in pool.decks():
+                    self.assertIn(f"{pool.key}/{deck.stem}", shipped)
 
 
 if __name__ == "__main__":
