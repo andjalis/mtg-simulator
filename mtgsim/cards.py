@@ -198,6 +198,8 @@ class CardDef:
     gift: str = ""                                      # "Gift a card/Food/Treasure/tapped Fish/Octopus": what an opponent gets if promised
     token_double: bool = False                          # "If one or more tokens would be created ..., twice that many"
     anthem_chosen: tuple = ()                           # "Creatures you control of the chosen type get +1/+1"
+    must_be_blocked: bool = False                       # "~ must be blocked if able."
+    blocker_power_rel: bool = False                     # "Creatures with power less than ~'s power can't block it."
     max_blocker_power: int = 0                          # "can't be blocked by creatures with power N or greater"
     no_max_hand: bool = False                           # "You have no maximum hand size."
     must_attack: bool = False                           # "~ attacks each combat if able."
@@ -324,6 +326,18 @@ def _token(m_count, power, toughness, desc, with_kw="", attacking=False, ability
                                                 "artifact": artifact, "pt_per": pt_per})
 
 
+def _distinct_cant_block():
+    return Effect("cant_block_turn", target="creature", data={"distinct": True})
+
+
+_TENS = {"a": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
+
+
+def _tapped(eff):
+    eff.data["tapped"] = True
+    return eff
+
+
 _SRC = r"(?:~|it|he|she)"
 _EFFECT_PATTERNS = [
     (_SRC + r" deals (\d+) damage to any target", lambda m: Effect("damage", int(m[1]), target="any")),
@@ -437,7 +451,16 @@ _EFFECT_PATTERNS = [
     (r"return all attacking creatures to their owner's hand", lambda m: Effect("mass_bounce", data={"only": "attacking"})),
     (r"tap target permanent", lambda m: Effect("tap", 1, target="nonland_perm")),
     (r"each player draws a card", lambda m: Effect("draw_each", 1)),
-    (r"target creature can't block this turn", lambda m: Effect("cant_block_turn", target="creature")),
+    (r"target creature(?: an opponent controls)? can't block this turn", lambda m: Effect("cant_block_turn", target="creature")),
+    (r"(up to (?:one|two|three)|one or two|up to two) target creatures can't block this turn",
+     lambda m: [_distinct_cant_block() for _ in range({"one": 1, "two": 2, "three": 3, "one or two": 2}.get(
+         m[1].split()[-1] if m[1].startswith("up to") else m[1], 2))]),
+    (r"(?:it|that creature|the other) can't block this turn", lambda m: Effect("cant_block_turn", target="prev")),
+    (r"target creature blocks this turn if able", lambda m: Effect("force_block", target="creature")),
+    (r"target creature attacks or blocks this turn if able",
+     lambda m: Effect("force_block", target="creature", data={"attack": True})),
+    (r"(?:it|~) must be blocked (?:this turn|each combat this turn) if able",
+     lambda m: Effect("force_blocked", target="prev" if m[0].lower().startswith("it") else "self")),
     (r"target opponent exiles a card from their hand", lambda m: Effect("opp_exile_hand")),
     (r"return target creature card from your graveyard to the battlefield", lambda m: Effect("reanimate_one")),
     (r"return up to one target permanent card from your graveyard to your hand", lambda m: Effect("regrow_perm")),
@@ -609,6 +632,12 @@ _EFFECT_PATTERNS = [
     (r'create (a) (\d+)/(\d+) ((?:\w+ )+?)creature token with "(.+)"',
      lambda m: _token(m[1], m[2], m[3], m[4], "", False, m[5])),
     (r"create (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
+     lambda m: Effect("token", _num(m[1]), data={"kind": m[2].lower()})),
+    (r"create (a|one|two|three|four|five|six|seven|eight|nine|ten) tapped (treasure|clue|blood|map|lander|food|mutagen) "
+     r"tokens?", lambda m: Effect("token", _TENS.get(m[1].lower(), 1), data={"kind": m[2].lower(), "tapped": True})),
+    (r"create (a|one|two|three|four|five) tapped (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: with ([\w ,]+))?",
+     lambda m: _tapped(_token(m[1], m[2], m[3], m[4], m[5]))),
+    (r"target player creates (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
      lambda m: Effect("token", _num(m[1]), data={"kind": m[2].lower()})),
     (r"its controller creates (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
      lambda m: Effect("token", _num(m[1]), target="that_controller", data={"kind": m[2].lower()})),
@@ -829,7 +858,7 @@ _TRIGGERS = [
     (r"Whenever ~ becomes the target of a spell or ability you control for the first time each turn, (.+)",
      ("targeted_mine",)),
     (r"Whenever you cast a spell, (.+)", ("cast_spell",)),
-    (r"Whenever you cast an? ([A-Z]\w+|creature|artifact|enchantment) spell, (.+)", ("cast_spell",)),
+    (r"Whenever you cast an? ([A-Z]\w+|creature|artifact|enchantment|outlaw) spell, (.+)", ("cast_spell",)),
     (r"Whenever you gain life, (.+)", ("gain_life",)),
     (r"Whenever you attack, (.+)", ("you_attack",)),
     (r"Whenever you attack with one or more ([A-Z]\w+), (.+)", ("you_attack",)),
@@ -956,6 +985,35 @@ def _xq(text: str):
     return None
 
 
+_IF_CONDS = [
+    (r"you attacked this turn", "attacked_turn"),
+    (r"an opponent controls more lands than you", "opp_more_lands"),
+    (r"a creature died this turn", "creature_died"),
+    (r"a creature died under an opponent's control this turn", "opp_creature_died"),
+    (r"you control another (outlaw|\w+)", None),
+    (r"you control (two|three|four) or more tapped creatures", None),
+    (r"you control a creature with power (\d+) or greater", None),
+    (r"you sacrificed a permanent this turn", "sacrificed_turn"),
+]
+
+
+def _if_cond(phrase: str) -> str:
+    """The engine condition name for the "if <phrase>," of a sentence, or ""."""
+    phrase = phrase.strip()
+    for rx, name in _IF_CONDS:
+        m = re.fullmatch(rx, phrase, re.I)
+        if not m:
+            continue
+        if name:
+            return name
+        if "another" in rx:
+            return f"ctl_other:{m[1].capitalize() if m[1].lower() != 'outlaw' else 'outlaw'}"
+        if "tapped" in rx:
+            return f"tapped_creatures>={_N_WORDS.get(m[1].lower(), 2)}"
+        return f"power_ge:{m[1]}"
+    return ""
+
+
 def _parse_effects(text: str, opts: bool = False):
     """Parse a run of sentences into effects. Returns (effects, unmatched_sentences)."""
     effects, unmatched = [], []
@@ -1009,6 +1067,18 @@ def _parse_effects(text: str, opts: bool = False):
             new = _opt_rider(s, effects)
             if new is not None:
                 effects += new
+                continue
+        mi = re.fullmatch(r"if (.+?), (.+)", s, re.I)
+        if mi:
+            cond = _if_cond(mi[1])
+            if cond:
+                for body in (mi[2], re.sub(r"^you ", "", mi[2])):
+                    new, bad = _parse_effects(body[0].upper() + body[1:] + ".")
+                    if new and not bad:
+                        effects += [dataclasses.replace(e, cond=e.cond or cond) for e in new]
+                        break
+                else:
+                    unmatched.append(sentence.strip())
                 continue
         first = len(effects)
         paid = False
@@ -1124,6 +1194,9 @@ def _parse_face(data: dict) -> CardDef:
     text = re.sub(r", where X is the amount of mana spent to cast ~\.", ".", text).replace(
         "the top X cards", f"the top {int(data.get('cmc', 0) or 0)} cards")
 
+    text = re.sub(r"(?m)^((?:Exhaust — )?)Waterbend (\{\d+\}(?:, \{T\})?:)", r"\1\2", text)    # waterbend {N} pays like {N} here
+    text = re.sub(r"(?m)^Ward—Waterbend (\{\d+\})", r"Ward \1", text)
+    text = re.sub(r"(?m)^([A-Za-z ,]*[Ff]irebending \d+[A-Za-z ,]*)$", lambda m: "\n".join(x[0].upper() + x[1:] for x in m[1].split(", ")), text)
     keywords, produces, etb, spell, unsupported, approximations = set(), set(), [], [], [], []
     triggers: list[Trigger] = []
     extra: dict = {"snow": "Snow" in type_line}
@@ -1289,6 +1362,12 @@ def _parse_face(data: dict) -> CardDef:
                          r"(?:the battlefield )?tapped\.", line)
         if m:
             extra["tapped_condition"] = f"behold:{m[1]}"
+            continue
+        if line == "~ must be blocked if able.":
+            extra["must_be_blocked"] = True
+            continue
+        if line == "Creatures with power less than ~'s power can't block it.":
+            extra["blocker_power_rel"] = True
             continue
         if re.fullmatch(r"~ can't block\.", line):
             extra["cant_block"] = True
@@ -1585,6 +1664,10 @@ def _parse_face(data: dict) -> CardDef:
         if m:
             extra["anthem_kw"] = extra.get("anthem_kw", ()) + ((m[1], int(m[2]), int(m[3])),)
             continue
+        m = re.fullmatch(r"Creature tokens you control get \+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + (("Token", int(m[1]), int(m[2]), False),)
+            continue
         m = re.fullmatch(r"(Other )?(Merfolk|[A-Z][a-z]+?)s? you control get \+(\d+)/\+(\d+)\.", line)
         if m and m[2] != "Creature":
             extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
@@ -1679,7 +1762,7 @@ def _parse_face(data: dict) -> CardDef:
         if m:
             extra["anthem"] = (int(m[1]), int(m[2]))
             continue
-        m = re.fullmatch(r"Firebending (\d+|X)(?:, where X is (~'s power|the number of creatures you control))?", line)
+        m = re.fullmatch(r"Firebending (\d+|X)(?:, where X is (~'s power|the number of creatures you control))?\.?", line)
         if m:
             what = "" if m[1] != "X" else ("power" if "power" in m[2] else "creatures")
             triggers.append(Trigger("attacks", [Effect("firebend", 0 if what else int(m[1]), data={"x": what})]))

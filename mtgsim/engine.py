@@ -152,7 +152,8 @@ class Permanent:
                 bp += x.card.anthem_chosen[0]
                 bt += x.card.anthem_chosen[1]
             for sub, pp, tt, other in x.card.anthem_sub:
-                if creature and sub in self.card.subtypes and not (other and x is self):
+                if creature and (sub in self.card.subtypes or (sub == "Token" and self.card.is_token)) \
+                        and not (other and x is self):
                     bp += pp
                     bt += tt
         if what:
@@ -319,6 +320,9 @@ def pool_mana(color: str) -> CardDef:
     return _POOL_MANA[color]
 
 
+OUTLAWS = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock")
+
+
 class Player:
     my_turn = False
     foe = None
@@ -340,6 +344,7 @@ class Player:
         self.plotted: list[CardDef] = []
         self.warp_exile: list[CardDef] = []
         self.exiled_turn: dict = {}        # card name -> turn it was plotted or exiled after warp
+        self.creature_died_turn = False    # one of our creatures died this turn
         self.impulse: list = []            # (card, last turn it may be played): "exile the top card, you may play it"
         self.impulse_new: list = []        # cards the latest exile_top effect exiled
         self._life = 20
@@ -414,6 +419,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if blocker.card.cant_block or blocker.has("cant_block_now") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
         return False
     if attacker.has("flying") and not (blocker.has("flying") or blocker.has("reach")):
+        return False
+    if attacker.card.blocker_power_rel and blocker.power < attacker.power:
         return False
     if attacker.card.min_blocker_power and blocker.power < attacker.card.min_blocker_power:
         return False
@@ -1164,6 +1171,12 @@ class Game:
             tgt = self.hook(p, "choose_target")(self, p, e)
             if tgt is None or not self.legal_target(p, e, tgt):
                 tgt = default_choose_target(self, p, e)
+            if tgt is not None and e.data.get("distinct") and any(
+                    t is tgt for e2, t in zip(effects, out) if e2.kind == e.kind and e2.data.get("distinct")):
+                taken = [t for e2, t in zip(effects, out) if e2.kind == e.kind and e2.data.get("distinct")]
+                tgt = max((x for x in self.legal_targets(p, e) if all(x is not t for t in taken)
+                           and (x.controller is not p) == (tgt.controller is not p)), key=perm_value, default=None) \
+                    if isinstance(tgt, Permanent) else None
             out.append(tgt)
         return out
 
@@ -1299,6 +1312,7 @@ class Game:
             pl.discarded_cards = []
             pl.life_gained_turn = 0
             pl.attacked_with = 0
+            pl.creature_died_turn = False
             if isinstance(pl.graveyard, Graveyard):
                 pl.graveyard.descents = 0
         self.creature_died_turn = False
@@ -1677,6 +1691,25 @@ class Game:
             spell = item.context
             big = isinstance(spell, StackItem) and spell.mana_spent >= 5
             return big if c == "mana>=5" else not big
+        if c == "attacked_turn":
+            return p.attacked_with > 0
+        if c == "creature_died":
+            return self.creature_died_turn
+        if c == "opp_creature_died":
+            return self.opponent(p).creature_died_turn
+        if c == "opp_more_lands":
+            return sum(x.card.is_land for x in self.opponent(p).battlefield) > sum(x.card.is_land for x in p.battlefield)
+        if c == "sacrificed_turn":
+            return p.sacrificed_turn > 0
+        if c.startswith("ctl_other:"):
+            sub = c[10:]
+            group = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock") if sub == "outlaw" else (sub,)
+            src = item.source if item is not None else None
+            return any(x is not src and any(g in x.card.subtypes for g in group) for x in p.battlefield)
+        if c.startswith("tapped_creatures>="):
+            return sum(x.tapped for x in p.creatures) >= int(c[18:])
+        if c.startswith("power_ge:"):
+            return any(x.power >= int(c[9:]) for x in p.creatures)
         if c == "attacked2":
             return p.attacked_with >= 2
         if c == "not_attacked2":
@@ -1834,7 +1867,9 @@ class Game:
                 for trig in perm.triggers:
                     flt = trig.filter
                     if flt.startswith("spell:") and not (flt[6:] in card.subtypes or
-                                                         flt[6:].capitalize() in card.types):
+                                                         flt[6:].capitalize() in card.types or
+                                                         (flt[6:].lower() == "outlaw" and any(
+                                                             o in card.subtypes for o in OUTLAWS))):
                         continue
                     if trig.event == "cast_cmc" and card.cmc < int(trig.filter[5:]):
                         continue
@@ -1970,6 +2005,26 @@ class Game:
         equipment.attached_to = creature
         self.log(f"equips {equipment.card.name} to {creature.card.name}", p)
         return True
+
+    def force_blocks(self, me: Player, attackers: list, blocks: dict) -> dict:
+        """Add the blocks "must be blocked if able" and "blocks this turn if able" demand to the AI's choice."""
+        blocks = {a: list(bl) for a, bl in blocks.items()}
+        taken = {b for bl in blocks.values() for b in bl}
+        for a in sorted(attackers, key=lambda x: -x.power):
+            if not (a.card.must_be_blocked or a.has("must_be_blocked_now")) or blocks.get(a):
+                continue
+            free = [b for b in me.creatures if b not in taken and can_block(b, a)]
+            if free:
+                pick = max(free, key=lambda b: (b.toughness > a.power, b.toughness))
+                blocks.setdefault(a, []).append(pick)
+                taken.add(pick)
+        for b in me.creatures:
+            if b.has("must_block_now") and b not in taken:
+                able = [a for a in attackers if can_block(b, a)]
+                if able:
+                    blocks.setdefault(max(able, key=lambda a: a.power), []).append(b)
+                    taken.add(b)
+        return blocks
 
     def exile_until_leaves(self, src: Permanent, perms: list):
         """Exile perms until src leaves the battlefield (Seam Rip, Pinnacle Starcage)."""
@@ -2251,8 +2306,10 @@ class Game:
                 card = dataclasses.replace(card, activated=[Activated("ability", {"generic": 0}, effects=[
                     Effect("pump", 1, 0, target="creature_mine")], extra_costs={"tap": True}, sorcery=True,
                     text="{T}: Target creature you control gets +1/+0 until end of turn.")])
-            self.enter_battlefield(p, card, tapped_attacking=d.get("attacking", False) and self.step in
-                                   ("declare_attackers", "declare_blockers"))
+            perm = self.enter_battlefield(p, card, tapped_attacking=d.get("attacking", False) and self.step in
+                                          ("declare_attackers", "declare_blockers"))
+            if d.get("tapped"):
+                perm.tapped = True
         self.log(f"creates {n if n is not None else eff.amount} {d.get('kind') or d.get('name')} token(s)", p)
 
     def transform(self, perm: Permanent):
@@ -2750,6 +2807,11 @@ class Game:
         elif k == "cant_block_turn":
             if isinstance(target, Permanent):
                 target.temp_kw.add("cant_block_now")
+        elif k in ("force_block", "force_blocked"):
+            if isinstance(target, Permanent):
+                target.temp_kw.add("must_block_now" if k == "force_block" else "must_be_blocked_now")
+                if eff.data.get("attack"):
+                    target.temp_kw.add("must_attack_now")
         elif k == "opp_exile_hand":
             if opp.hand:
                 card = opp.ai.choose_discard(self, opp)
@@ -3286,6 +3348,7 @@ class Game:
         was_creature = perm.is_creature
         if was_creature:
             self.creature_died_turn = True
+            perm.controller.creature_died_turn = True
         if was_creature and (perm.damage or perm.deathtouched) and \
                 any(x.card.exile_damaged for x in self.opponent(perm.controller).battlefield):
             if self.leave_battlefield(perm, "exile"):   # Etching of Kumano
@@ -3348,7 +3411,8 @@ class Game:
         if self.over:
             return
         attackers = [a for a in p.ai.choose_attackers(self, p, opp) if a.can_attack()]
-        attackers += [a for a in p.creatures if a.card.must_attack and a.can_attack() and a not in attackers]
+        attackers += [a for a in p.creatures if (a.card.must_attack or a.has("must_attack_now")) and a.can_attack()
+                      and a not in attackers]
         self.attackers = list(attackers)
         if not attackers:
             return
@@ -3377,7 +3441,7 @@ class Game:
             return
 
         self.step = "declare_blockers"
-        blocks = opp.ai.choose_blocks(self, opp, p, attackers)
+        blocks = self.force_blocks(opp, attackers, opp.ai.choose_blocks(self, opp, p, attackers))
         used = set()
         legal = {}
         for a in attackers:
@@ -3514,11 +3578,11 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
             theirs = [x for x in theirs if x.toughness <= eff.amount2]
         theirs = [x for x in theirs if not (k == "destroy" and x.has("indestructible"))]
         return max(theirs, key=perm_value, default=None)
-    if k in ("pump", "p1_counters", "double_power", "grant", "explore", "attach_self"):
+    if k in ("pump", "p1_counters", "double_power", "grant", "explore", "attach_self", "force_blocked"):
         return max(mine, key=perm_value, default=None)
     if k == "oring":
         return max(theirs, key=perm_value, default=None)
-    if k in ("stun", "shuffle_away"):
+    if k in ("stun", "shuffle_away", "cant_block_turn", "force_block"):
         return max(theirs, key=perm_value, default=None)
     if k == "unblockable":
         ready = [x for x in mine if x.can_attack() and x.power > 0]
