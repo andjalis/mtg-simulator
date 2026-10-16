@@ -24,7 +24,7 @@ import json
 import random
 import re
 
-from . import auras, copies, removal
+from . import auras, copies, removal, search, xspells
 from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, add_mana, make_token
 from . import modal
 
@@ -1578,8 +1578,9 @@ class Game:
         source = (item.card.name if item and item.card else
                   item.source.card.name if item and isinstance(item.source, Permanent) else "effect")
         cause = f"{source}: {k}"
-        if k == "damage" and eff.data.get("x"):
-            eff = dataclasses.replace(eff, amount=getattr(item, "x", 0))
+        if eff.data.get("x"):      # X is the X paid for the spell
+            n = getattr(item, "x", 0)
+            eff = dataclasses.replace(eff, amount=n, amount2=n if eff.data.get("x2") else eff.amount2)
         if k == "damage" and eff.data.get("count"):
             what = eff.data["count"]
             n = sum(x.card.token_kind == "treasure" if what == "treasures" else x.card.is_artifact
@@ -1943,6 +1944,10 @@ class Game:
             self.log(f"creates {eff.data['card'].name}", p)
         elif k in copies.KINDS:
             copies.resolve(self, p, eff, target, item)
+        elif k in xspells.KINDS:
+            xspells.resolve(self, p, eff, target, item)
+        elif k in search.KINDS:
+            search.resolve(self, p, eff, target, item)
         elif k in auras.KINDS:
             auras.resolve(self, p, eff, target, item)
         elif k in removal.KINDS:
