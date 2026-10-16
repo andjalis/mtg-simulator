@@ -197,3 +197,10 @@ no cards in hand, delirium (four card types in the graveyard), eight permanent c
 subtype you control, six lands. "You control a commander" can never hold here, so it needs no note. Still unmodelled:
 descend, kicked / additional cost paid, max speed, nonland permanent you don't own.
 Fully supported cards 830 → 832 (the other cards with these lines are held back by other ignored lines).
+
+## More triggered abilities (mtgsim/cards.py `_TRIGGERS`, engine events)
+
+New events: beginning of combat on your turn, your second draw / second spell each turn, casting a spell with mana
+value N or greater, "enters or dies", and "is put into a graveyard from the battlefield" (read as dies).
+Fully supported cards 832 → 865. The long tail (becomes tapped, saddled, expend, commit a crime, counters leaving
+or entering) is each only a handful of cards.
