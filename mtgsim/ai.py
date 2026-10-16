@@ -114,11 +114,13 @@ def _aim(card: CardDef, eff, target) -> list:
 
 
 # Effects plan_spell values through _extra_value.
-EXTRA_KINDS = {"tutor", "explore", "oring_all", "pump_all", "double_counters",
+EXTRA_KINDS = {"tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "double_counters",
                "tap", "stun", "mill"}
 
+CARRIER_KINDS = ("pump", "grant", "p1_counters", "unblockable")   # aimed at the creature that attacks
+
 # Effects lethal_setup knows how to add up before combat, and the keywords it models.
-SETUP_KINDS = {"pump", "grant", "p1_counters", "damage", "draw", "scry", "surveil"}
+SETUP_KINDS = {"pump", "grant", "p1_counters", "damage", "draw", "scry", "surveil", "unblockable"}
 SETUP_KEYWORDS = {"double strike", "first strike", "haste", "trample", "flying", "menace"}
 CAST_EVENTS = {"cast_instant_sorcery": lambda c: c.is_instant or c.is_sorcery,
                "cast_noncreature": lambda c: not c.is_creature,
@@ -134,7 +136,7 @@ def _setup_spell(card: CardDef) -> bool:
             return False
         if e.kind == "grant" and (e.data or {}).get("keyword") not in SETUP_KEYWORDS:
             return False
-        if e.kind in ("pump", "grant", "p1_counters") and e.target not in ("creature", "creature_mine"):
+        if e.kind in ("pump", "grant", "p1_counters", "unblockable") and e.target not in ("creature", "creature_mine"):
             return False
         if e.kind == "damage" and e.target not in ("any", "player", "creature", "creature_pw"):
             return False
@@ -472,7 +474,10 @@ class HeuristicAI:
     def _setup_plan(self, game: Game, me: Player, opp: Player, combo):
         """[(card, targets)] if casting combo now makes some attack lethal, else None."""
         carriers = [c for c in me.creatures if not c.tapped and not c.has("defender")]
-        needs_carrier = any(e.kind in ("pump", "grant", "p1_counters") for c in combo for e in c.spell_effects)
+        needs_carrier = any(e.kind in CARRIER_KINDS for c in combo for e in c.spell_effects)
+        caps = [int(e.filter[10:]) for c in combo for e in c.spell_effects
+                if e.kind == "unblockable" and e.filter.startswith("max_power:")]
+        carriers = [c for c in carriers if all(c.power <= cap for cap in caps)]
         burn = [c for c in combo if any(e.kind == "damage" for e in c.spell_effects)]
         blockers = [b for b in opp.creatures if not b.tapped]
         for carrier in (carriers if needs_carrier else [None]):
@@ -494,7 +499,7 @@ class HeuristicAI:
                         out = []
                         for card in combo:
                             out.append((card, [burn_aim.get(card) if e.kind == "damage" else
-                                               carrier if e.kind in ("pump", "grant", "p1_counters") else None
+                                               carrier if e.kind in CARRIER_KINDS else None
                                                for e in card.spell_effects]))
                         # Keyword grants and pumps first, then burn (it may clear a blocker).
                         out.sort(key=lambda x: any(e.kind == "damage" for e in x[0].spell_effects))
@@ -522,8 +527,8 @@ class HeuristicAI:
                         carrier.pump_p += e.amount
                         carrier.pump_t += dt
                         undo_pump.append((carrier, e.amount, dt))
-                    elif e.kind == "grant":
-                        kw = e.data["keyword"]
+                    elif e.kind in ("grant", "unblockable"):
+                        kw = e.data["keyword"] if e.kind == "grant" else "unblockable"
                         if kw not in carrier.temp_kw:
                             carrier.temp_kw.add(kw)
                             undo_kw.append((carrier, kw))
@@ -652,7 +657,8 @@ class HeuristicAI:
             if card.is_creature and precombat and "haste" not in card.keywords and not card.produces \
                     and any(_is_trick(c) for c in me.hand):
                 return None  # keep mana open for the trick; cast it after combat
-            return (card_value(card) + 0.5 * card.cmc + self._etb_value(game, me, card, precombat), None)
+            return (card_value(card) + 0.5 * card.cmc + self._etb_value(game, me, card, precombat)
+                    + self._static_value(game, me, card) - self._sac_cost(game, me, card), None)
         instant = card.instant_speed
         if getattr(card, "modes", None):
             # The engine picks modes and targets (choose_modes); value it the same way.
@@ -744,7 +750,32 @@ class HeuristicAI:
             else:
                 targets.append(None)
                 value += MINOR_EFFECTS.get(eff.kind, 0.0) * max(1, eff.amount)
-        return (value, targets)
+        return (value - self._sac_cost(game, me, card), targets)
+
+    def _sac_cost(self, game: Game, me: Player, card: CardDef) -> float:
+        """What the additional cost "sacrifice an artifact or creature" gives up (cheapest candidate)."""
+        if not getattr(card, "extra_sacrifice", "") or not hasattr(game, "extra_sac_candidates"):
+            return 0.0
+        cands = game.extra_sac_candidates(me, card)
+        if not cands:
+            return 0.0      # pays the generic alternative instead (already in the cost)
+        x = cands[0]
+        return 0.5 if x.card.is_token and not x.is_creature else \
+            (perm_value(x) if x.is_creature else 0.5 * x.card.cmc + 0.5)
+
+    def _static_value(self, game: Game, me: Player, card: CardDef) -> float:
+        """Static abilities card_value doesn't see: +1/+1 per artifact, extra land drops."""
+        value = 0.0
+        what = getattr(card, "pt_per", "")
+        if what and card.is_creature:
+            n = sum(1 for x in me.battlefield
+                    if (x.is_creature if what == "creature" else what.capitalize() in x.card.types))
+            value += n          # each +1/+1 is worth about 1 (half power, half toughness)
+        if getattr(card, "extra_lands", 0) and any(c.is_land for c in me.hand if c is not card):
+            value += 1.0
+        if getattr(card, "lands_from_gy", False) and any(c.is_land for c in me.graveyard):
+            value += 1.0
+        return value
 
     def _extra_value(self, game: Game, me: Player, eff: Effect, card: CardDef, precombat: bool):
         """(target, value) for effects the main switch above has no case for, or None to hold."""
@@ -781,6 +812,17 @@ class HeuristicAI:
             return tgt, 0.5 * eff.amount if k == "stun" else 0.5
         if k == "mill":
             return None, 0.1 * eff.amount
+        if k == "earthbend":
+            # A land becomes an N/N haste creature (0/0 plus N +1/+1 counters) that stays a land.
+            if not any(p.card.is_land for p in me.battlefield):
+                return None
+            return None, 1.0 + 0.75 * eff.amount
+        if k == "unblockable":
+            # Only before combat, and only when a blocker would otherwise stop the attack.
+            tgt = self.choose_target(game, me, eff, card)
+            if not precombat or tgt is None or not any(can_block(b, tgt) for b in opp.creatures):
+                return None
+            return tgt, 0.5 * combat_power(tgt)
         return None, 0.0
 
     def _etb_value(self, game: Game, me: Player, card: CardDef, precombat: bool) -> float:
@@ -792,7 +834,9 @@ class HeuristicAI:
             if eff.kind == "oring":
                 tgt = self.choose_target(game, me, eff, card)
                 value += perm_value(tgt) if tgt is not None else 0.0
-            elif eff.kind in EXTRA_KINDS and eff.target in ("none", "self", "my_creatures"):
+            # An earthbend ETB is left to card_value: valuing it on top made the landfall deck
+            # cast Earthbender Ascension ahead of creatures and lose (47% vs the previous AI).
+            elif eff.kind in EXTRA_KINDS and eff.kind != "earthbend" and eff.target in ("none", "self", "my_creatures"):
                 got = self._extra_value(game, me, eff, card, precombat)
                 value += got[1] if got is not None else 0.0
         return value
