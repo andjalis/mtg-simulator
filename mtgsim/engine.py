@@ -340,6 +340,8 @@ class Player:
         self.plotted: list[CardDef] = []
         self.warp_exile: list[CardDef] = []
         self.exiled_turn: dict = {}        # card name -> turn it was plotted or exiled after warp
+        self.impulse: list = []            # (card, last turn it may be played): "exile the top card, you may play it"
+        self.impulse_new: list = []        # cards the latest exile_top effect exiled
         self._life = 20
         self.lost = False
         self.lands_played = 0
@@ -877,6 +879,11 @@ class Game:
         cost["generic"] = max(0, cost.get("generic", 0) - n)
         if card.extra_discard and card.discard_or_pay and self.spare_cards(p, card) < 1:
             cost["generic"] += card.discard_or_pay
+        if card.behold_or_pay:
+            sub, tax = card.behold_or_pay
+            if not (any(sub in x.card.subtypes for x in p.battlefield) or
+                    any(sub in c.subtypes for c in p.hand if c is not card)):
+                cost["generic"] += tax
         if card.convoke:
             self._convoke_k = min(len(self.convoke_pool(p)), cost.get("generic", 0))
             cost["generic"] -= self._convoke_k
@@ -975,6 +982,9 @@ class Game:
         for c in p.foretold:
             a = next(a for a in c.alt_costs if a.kind == "foretell")
             out.append(self._variant(c, "foretold", a))
+        for c in self.impulse_cards(p):
+            if not c.is_land:
+                out.append(self._variant(c, "impulse"))
         for c in p.granted_fb:
             if c in p.graveyard:
                 out.append(self._variant(c, "flashback", AltCost("flashback", dict(c.mana_cost))))
@@ -985,6 +995,11 @@ class Game:
                     out.append(self._variant(c, "blitz_gy" if a.kind == "blitz" else a.kind, a))
         return out
 
+    def impulse_cards(self, p: Player) -> list:
+        """Exiled cards p may still play (drops the expired ones)."""
+        p.impulse = [(c, t) for c, t in p.impulse if t >= self.turn and c in p.exile]
+        return [c for c, _ in p.impulse]
+
     def _origin(self, card: CardDef):
         return getattr(card, "origin", None) or (card, "", None)
 
@@ -992,7 +1007,7 @@ class Game:
         """The zone a spell_options() variant of this kind is cast from."""
         return {"from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile,
-                "mayhem": p.graveyard}.get(kind, p.hand)
+                "mayhem": p.graveyard, "impulse": p.exile}.get(kind, p.hand)
 
     def _available(self, p: Player, card: CardDef) -> bool:
         base, kind, _ = self._origin(card)
@@ -1701,6 +1716,8 @@ class Game:
         assert face is not None and face.is_land and not p.land_played
         if card in p.hand:
             p.hand.remove(card)
+        elif card in p.exile and card in self.impulse_cards(p):
+            p.exile.remove(card)
         else:   # "You may play lands from your graveyard."
             assert any(x.card.lands_from_gy for x in p.battlefield)
             p.graveyard.remove(card)
@@ -2531,6 +2548,16 @@ class Game:
             for _ in range(min(eff.amount, len(who.library))):
                 who.milled_last.append(who.library.pop())
                 who.graveyard.append(who.milled_last[-1])
+        elif k == "exile_top":
+            p.impulse_new = []
+            for _ in range(min(eff.amount, len(p.library))):
+                c = p.library.pop()
+                p.exile.append(c)
+                p.impulse_new.append(c)
+            self.log(f"exiles the top {len(p.impulse_new)} card(s) of their library", p)
+        elif k == "may_play_exiled":
+            p.impulse += [(c, self.turn + eff.amount) for c in p.impulse_new]
+            p.impulse_new = []
         elif k == "mill_pick":
             cands = [c for c in p.milled_last if c.is_permanent and c in p.graveyard]
             p.picked_last = None
@@ -3560,7 +3587,7 @@ def play_extra_lands(game: Game, me: Player):
     for _ in range(3):
         if me.land_played:
             return
-        lands = [c for c in me.hand if c.is_land]
+        lands = [c for c in me.hand if c.is_land] + [c for c in game.impulse_cards(me) if c.is_land]
         if any(x.card.lands_from_gy for x in me.battlefield):
             lands += [c for c in me.graveyard if c.is_land]
         if not lands:
