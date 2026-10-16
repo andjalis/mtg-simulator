@@ -14,3 +14,14 @@
 2 Ravenous Chupacabra
 2 Gray Merchant of Asphodel
 2 Air Elemental
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+3 Duress
+2 Negate
+3 Last Gasp
+2 Quench
+2 Vampire Nighthawk
+2 Hero's Downfall
+1 Dissolve

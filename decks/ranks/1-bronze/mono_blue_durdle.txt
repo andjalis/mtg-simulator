@@ -9,3 +9,12 @@
 4 Storm Crow
 4 Coral Merfolk
 4 Horned Turtle
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+3 Cancel
+2 Dissolve
+4 Wind Drake
+3 Air Elemental
+3 Quench
