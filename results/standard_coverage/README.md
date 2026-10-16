@@ -281,3 +281,11 @@ Mayhem (cast from the graveyard for its cost if it was discarded this turn) and 
 unblocked attacker and pay the sneak cost; a creature enters tapped and attacking, without going on the stack). The AI
 sneaks when the new creature beats the cheapest unblocked attacker. Not yet: "Empower Jace X", "Discover X". Fully
 supported cards 1,184 → 1,219.
+
+## Valiant, Opus, Repartee and Eerie
+
+Four ability-word triggers. Valiant fires once per turn when a permanent is targeted by its controller's spell or
+ability (trigger abilities that target are not counted yet). Opus compares the mana spent on the instant or sorcery
+(five or more) and supports both the "also" and "instead" forms. Repartee needs a creature among the spell's targets.
+Eerie fires when an enchantment enters (Room unlocking does not exist in the engine). Fully supported cards
+1,219 → 1,246.
