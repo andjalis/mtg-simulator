@@ -13,7 +13,7 @@ import math
 from itertools import combinations
 
 from .cards import CardDef, Effect
-from . import engine
+from . import engine, modal
 from .engine import Game, Permanent, Player, can_block, payable
 
 LETHAL = 1000.0
@@ -839,6 +839,9 @@ class HeuristicAI:
             elif eff.kind in EXTRA_KINDS and eff.kind != "earthbend" and eff.target in ("none", "self", "my_creatures"):
                 got = self._extra_value(game, me, eff, card, precombat)
                 value += got[1] if got is not None else 0.0
+        for t in card.triggers:      # "When ~ enters, choose one —"
+            if t.event == "etb" and t.modes:
+                value += max(0.0, modal.value(game, me, t.modes, least=0))
         return value
 
     def _clears_blocker(self, game: Game, me: Player, tgt, precombat: bool) -> bool:
