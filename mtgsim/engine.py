@@ -2030,6 +2030,24 @@ class Game:
                 for c in rest:
                     p.graveyard.append(c)
                 self.log("manifests dread", p)
+        elif k == "untap_prev":
+            if isinstance(target, Permanent):
+                target.tapped = False
+        elif k == "exile_gy_cards":
+            pool = [(c, pl) for pl in (opp, p) for c in pl.graveyard]
+            pool.sort(key=lambda t: (t[1] is p, -(t[0].cmc + (3 if t[0].is_creature else 0))))
+            first_owner = pool[0][1] if pool else None
+            for c, pl in [t for t in pool if t[1] is first_owner][:eff.amount]:
+                pl.graveyard.remove(c)
+                pl.exile.append(c)
+                self.log(f"exiles {c.name} from {pl}'s graveyard", p)
+        elif k == "gy_bottom":
+            pl = p if eff.data.get("mine") else opp
+            if pl.graveyard:
+                c = max(pl.graveyard, key=lambda x: x.cmc + (3 if x.is_creature else 0))
+                pl.graveyard.remove(c)
+                pl.library.insert(0, c)
+                self.log(f"puts {c.name} on the bottom of {pl}'s library", p)
         elif k == "untap_self":
             src = item.source if item is not None else None
             if src is not None and src in src.controller.battlefield:

@@ -423,6 +423,13 @@ _EFFECT_PATTERNS = [
     (r"(?:~|it|this creature) endures (\d+)", lambda m: Effect("endure", int(m[1]))),
     (r"manifest dread", lambda m: Effect("manifest_dread")),
     (r"untap ~", lambda m: Effect("untap_self")),
+    (r"untap it", lambda m: Effect("untap_prev", target="prev")),
+    (r"it explores", lambda m: Effect("explore", target="prev")),
+    (r"exile up to (one|two) target cards? from (?:a|a single) graveyard",
+     lambda m: Effect("exile_gy_cards", _num(m[1]))),
+    (r"put target card from (a|your) graveyard on the bottom of (?:its owner's|your) library",
+     lambda m: Effect("gy_bottom", data={"mine": m[1] == "your"})),
+    (r"you may mill (a|one|two|three|four|five|\d+) cards?", lambda m: Effect("mill", _num(m[1]))),
     (r"target creature(?: you control)? gets \+(\d+)/\+(\d+) and gains (flying|first strike|double strike|deathtouch|"
      r"lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach) until end of turn",
      lambda m: Effect("pump", int(m[1]), int(m[2]), target="creature", data={"keyword": m[3].lower()})),
