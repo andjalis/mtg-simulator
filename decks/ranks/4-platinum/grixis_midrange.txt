@@ -24,10 +24,12 @@
 1 Takenuma, Abandoned Mire
 4 Swamp
 
+# Sideboard: the tournament sideboard's cards that the built-in engine can't fully play were
+# swapped for fully supported cards with the same job (removal, counters, discard).
 Sideboard
-3 Brotherhood's End
-3 Cut Down
-3 Disdainful Stroke
+3 Infernal Grasp
+3 Jwari Disruption
 3 Duress
 2 Negate
-1 Bladecoil Serpent
+3 Lightning Strike
+1 Kolaghan's Command

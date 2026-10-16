@@ -9,3 +9,13 @@
 4 Lava Spike
 4 Searing Spear
 4 Hill Giant
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+3 Pyroclasm
+3 Volcanic Hammer
+2 Shatter
+3 Goblin Piker
+2 Lava Axe
+2 Gray Ogre

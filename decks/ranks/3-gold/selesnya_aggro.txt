@@ -12,3 +12,14 @@
 4 Rumbling Baloth
 3 Giant Growth
 4 Steel Leaf Champion
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+3 Divine Arrow
+3 Snakeskin Veil
+2 Lone Missionary
+2 Revitalize
+2 Canopy Spider
+2 Inspiring Cleric
+1 Angel of Mercy

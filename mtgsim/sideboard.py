@@ -200,6 +200,24 @@ class Bo3Result:
     # (post-board?, A on the play?) -> [points, games], to compare like with like
     split: dict = field(default_factory=dict)
 
+    # wins_a, wins_b, draws and games count matches, so a Bo3Result can stand in for a
+    # runner.MatchResult (the ladder and LadderTracker read these four)
+    @property
+    def wins_a(self) -> int:
+        return self.match_wins_a
+
+    @property
+    def wins_b(self) -> int:
+        return self.matches - self.match_wins_a - self.match_draws
+
+    @property
+    def draws(self) -> int:
+        return self.match_draws
+
+    @property
+    def games(self) -> int:
+        return self.matches
+
     @property
     def match_win_rate_a(self) -> float:
         return (self.match_wins_a + 0.5 * self.match_draws) / self.matches if self.matches else 0.0

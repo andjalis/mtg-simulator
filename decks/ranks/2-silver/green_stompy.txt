@@ -9,3 +9,13 @@
 4 Giant Growth
 4 Colossal Dreadmaw
 4 Rumbling Baloth
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+3 Canopy Spider
+3 Snapping Gnarlid
+3 Llanowar Visionary
+2 Giant Spider
+2 Feral Roar
+2 Snakeskin Veil

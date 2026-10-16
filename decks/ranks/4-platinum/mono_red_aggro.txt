@@ -10,3 +10,13 @@
 4 Lightning Strike
 4 Kami's Flare
 4 Light Up the Stage
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+3 Abrade
+3 Strangle
+2 Roast
+2 Pyroclasm
+2 Charging Monstrosaur
+3 Shock

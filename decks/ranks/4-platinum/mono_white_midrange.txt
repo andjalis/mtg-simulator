@@ -20,13 +20,13 @@
 1 Farewell
 19 Plains
 
+# Sideboard: the tournament sideboard's cards that the built-in engine can't fully play were
+# swapped for fully supported cards with the same job (removal, counters, discard).
 Sideboard
 2 Depopulate
 2 Elspeth Resplendent
-2 Fateful Absence
-2 Temporary Lockdown
-2 Unlicensed Hearse
-2 Urza's Sylex
-1 Farewell
-1 Sanctuary Warden
-1 Serra Paragon
+3 Fateful Absence
+2 Doomskar
+3 Inspiring Overseer
+2 Revitalize
+1 Divine Arrow

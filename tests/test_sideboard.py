@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from mtgsim.assess import assess
-from mtgsim.carddb import CardDB
+from mtgsim.carddb import ALL_CARDS, CardDB
 from mtgsim.decklist import load_deck_full, parse_decklist, parse_full
 from mtgsim.runner import build_deck
 from mtgsim.sideboard import card_value, classify, plan_sideboard, roles, run_bo3
@@ -105,3 +105,42 @@ class Bo3Tests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RankSideboardTests(unittest.TestCase):
+    @unittest.skipUnless(ALL_CARDS.exists(), "card database not built")
+    def test_bronze_to_platinum_have_full_coverage_sideboards(self):
+        from mtgsim.coverage import FULL, deck_coverage
+        from mtgsim.ranks import RANKS
+        db = CardDB(offline=True)
+        for rank in RANKS[:4]:
+            for path in rank.decks():
+                with self.subTest(deck=path.stem):
+                    d = load_deck_full(path)[1]
+                    self.assertEqual(sum(d.sideboard.values()), 15)
+                    for name, n in d.sideboard.items():
+                        self.assertLessEqual(d.main.get(name, 0) + n, 4, name)
+                    self.assertEqual({r.name: r.status for r in deck_coverage(db, d.sideboard)},
+                                     {name: FULL for name in d.sideboard})
+
+    def test_bo3_result_counts_matches_like_a_match_result(self):
+        db = CardDB(offline=True)
+        r = run_bo3("red", RED, RED_SB, "red2", RED, {}, db, matches=2, seed=3)
+        self.assertEqual(r.games, 2)
+        self.assertEqual(r.wins_a + r.wins_b + r.draws, 2)
+        self.assertEqual(r.wins_a, r.match_wins_a)
+
+
+class Bo3LadderTests(unittest.TestCase):
+    def test_rank_bo3_runs_end_to_end(self):
+        import contextlib
+        import io
+        from mtgsim.__main__ import main
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(io.StringIO()):
+            main([str(ROOT / "decks" / "ranks" / "2-silver" / "red_goblins.txt"), "--ladder", "--bo3", "-n", "1",
+                  "--seed", "2", "--offline", "--pass-rate", "1.01", "--no-report", "--no-grades", "--no-history"])
+        text = out.getvalue()
+        self.assertIn("best-of-three matches", text)
+        self.assertIn("matches)  failed", text)
+        self.assertIn("did not clear the first rank (Bronze)", text)
