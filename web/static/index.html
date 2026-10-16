@@ -355,10 +355,15 @@ function updateTrack(s) {
   const odds = p => d.opponents.filter(o => o.pool === p.key);
   const prog = pools.map(p => p.done ? 1 : Math.min(.92, odds(p).reduce((a, o) => a + o.games, 0) / Math.max(1, odds(p).length * gpo)));
   let cur = pools.findIndex(p => !p.done), pos;
+  // Once a ladder run is over, the token ends on the league of the final rank, the same rank the
+  // climb panel shows. Leagues above it whose matches were won stay marked as such, not as ranks.
+  const lastCleared = pools.reduce((a, p, i) => p.done && p.cleared === true ? i : a, -1);
+  const finalIdx = finished && d.ladder ? pools.findIndex(p => p.key === d.rank.toLowerCase()) : -1;
+  const atRank = finalIdx >= 0 && finalIdx <= lastCleared;
   if (finished || cur < 0) {
     cur = -1;
     const last = pools.reduce((a, p, i) => p.done ? i : a, -1);
-    pos = last < 0 ? -.4 : pools[last].cleared === false ? last - .4 : last;
+    pos = atRank ? finalIdx : last < 0 ? -.4 : pools[last].cleared === false ? last - .4 : last;
   } else {
     const prev = cur > 0 ? cur - 1 : -.4;
     pos = prev + prog[cur] * (cur - prev);
@@ -375,13 +380,14 @@ function updateTrack(s) {
   const nodes = [...lane.querySelectorAll(".node")];
   pools.forEach((p, i) => {
     const el = nodes[i];
-    const st = p.done ? (p.cleared === true ? "cleared" : p.cleared === false ? "failed" : "played") : i === cur ? "current" : "locked";
+    let st = p.done ? (p.cleared === true ? "cleared" : p.cleared === false ? "failed" : "played") : i === cur ? "current" : "locked";
+    if (atRank && st === "cleared") st = i === finalIdx ? "final" : i > finalIdx ? "beat" : st;
     if (A.track[p.key] !== st) {
       const before = A.track[p.key];
       A.track[p.key] = st;
       el.className = "node " + st;
-      el.querySelector(".st").textContent = {cleared: "Cleared", failed: "Stopped", played: "Played", current: "In play", locked: ""}[st];
-      if (st === "cleared" || st === "played") burst(el, tr, st === "cleared" ? `${p.label} cleared` : `${p.label} played`, false);
+      el.querySelector(".st").textContent = {cleared: "Cleared", failed: "Stopped", played: "Played", current: "In play", locked: "", final: "Final rank", beat: "Matches won"}[st];
+      if (st === "cleared" || st === "played" || st === "final") burst(el, tr, st === "final" ? `Final rank · ${p.label}` : st === "cleared" ? `${p.label} cleared` : `${p.label} played`, false);
       else if (st === "failed") burst(el, tr, `Stopped at ${p.label}`, true);
       void before;
     }

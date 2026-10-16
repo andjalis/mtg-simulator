@@ -401,3 +401,9 @@ textarea.locked { animation: deckLock 1.6s ease-out; }
 .track .trail { position: absolute; top: 60px; width: 8px; height: 8px; margin: -4px; border-radius: 50%; z-index: 0; pointer-events: none;
   background: var(--gold); box-shadow: 0 0 10px var(--gold); animation: trail 1.3s ease-out forwards; }
 @keyframes trail { from { opacity: .85; transform: scale(1); } to { opacity: 0; transform: scale(.2); } }
+
+.track .node.final .emblem { filter: drop-shadow(0 0 14px var(--gold)); transform: scale(1.12); }
+.track .node.final .st { color: var(--gold); } .track .node.final .st::before { content: "★ "; }
+.track .node.final .nm { color: var(--gold); }
+.track .node.beat .emblem { filter: grayscale(.5) brightness(.8) drop-shadow(0 0 4px var(--gold-2)); }
+.track .node.beat .st { color: var(--ink-2); }
