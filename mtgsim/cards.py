@@ -136,6 +136,7 @@ class CardDef:
     activated: list = field(default_factory=list)
     anthem: tuple = ()                                  # (power, toughness) for creatures you control
     crew: int = 0
+    saddle: int = 0                                     # Mounts: tap creatures with total power N or more to saddle
     min_blocker_power: int = 0
     keyword_at_counters: tuple = ()                     # (n, keyword): Pelt Collector
     token_kind: str = ""                                # treasure, clue, blood
@@ -597,6 +598,10 @@ _TRIGGERS = [
     (r"Whenever you draw your second card each turn, (.+)", ("draw_second",)),
     (r"Whenever you cast your second spell each turn, (.+)", ("cast_second",)),
     (r"Whenever you cast a spell with mana value (\d+) or greater, (.+)", ("cast_cmc",)),
+    (r"Whenever ~ attacks while saddled, (.+)", ("attacks",)),
+    (r"Whenever ~ becomes tapped, (.+)", ("becomes_tapped",)),
+    (r"Whenever ~ enters or becomes tapped, (.+)", ("etb", "becomes_tapped")),
+    (r"Whenever you expend (\d+), (.+)", ("expend",)),
 ]
 
 
@@ -1025,6 +1030,10 @@ def _parse_face(data: dict) -> CardDef:
         if m:
             extra["anthem"] = (int(m[1]), int(m[2]))
             continue
+        m = re.fullmatch(r"Saddle (\d+)", line)
+        if m:
+            extra["saddle"] = int(m[1])
+            continue
         m = re.fullmatch(r"Crew (\d+)", line)
         if m:
             extra["crew"] = int(m[1])
@@ -1303,6 +1312,12 @@ def _parse_trigger_line(line: str):
         rest = m[m.lastindex]
         if events == ("any_cast",):
             flt = f"cmc<={m[1]}"
+        if "while saddled" in pat or events[-1] == "becomes_tapped":
+            rest = re.sub(r"^it (gets|gains|deals)\b", r"~ \1", re.sub(r"\b(on|untap|to) it\b", r"\1 ~", rest))
+        if events == ("expend",):
+            flt = m[1]
+        if events == ("attacks",) and "while saddled" in pat:
+            flt = "saddled"
         if events == ("cast_cmc",):
             flt = f"cmc>={m[1]}"
         if events == ("cast_spell",) and m.lastindex == 2:
