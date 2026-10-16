@@ -13,7 +13,7 @@ import math
 from itertools import combinations
 
 from .cards import CardDef, Effect
-from . import engine, modal
+from . import copies, engine, modal
 from .engine import Game, Permanent, Player, can_block, find_payment
 
 LETHAL = 1000.0
@@ -115,7 +115,7 @@ def _aim(card: CardDef, eff, target) -> list:
 
 # Effects plan_spell values through _extra_value.
 EXTRA_KINDS = {"tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "double_counters",
-               "tap", "stun", "mill"}
+               "tap", "stun", "mill"} | copies.KINDS
 
 CARRIER_KINDS = ("pump", "grant", "p1_counters", "unblockable")   # aimed at the creature that attacks
 
@@ -782,6 +782,9 @@ class HeuristicAI:
         opp = game.opponent(me)
         k = eff.kind
         ready = [c for c in me.creatures if c.can_attack() and c.power > 0]
+        if k in copies.KINDS:
+            v = copies.value(game, me, eff)
+            return (None, v) if v > 0 else None
         if k == "tutor":
             return None, 2.0      # the best card of a kind, from the library
         if k == "explore":
