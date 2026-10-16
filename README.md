@@ -76,6 +76,21 @@ its latest results. It reads the run history (see `mtgsim.history`), showing eac
 version (marked v2, v3 ... once a list has changed) and its latest rated run; decks tested before
 the history existed still show from `results/ladder/*.json` and `results/assess/*.json`.
 
+### Running games in the browser (prototype)
+
+The built-in engine also runs inside a web browser with [Pyodide](https://pyodide.org), so games
+use the visitor's own computer or phone and a server only has to serve files:
+
+```
+python3 -m mtgsim.browser                  # bundle the engine and the cards of every deck under decks/
+python3 -m http.server -d web/static       # then open http://127.0.0.1:8000/local/
+```
+
+`web/static/local/` runs the engine in Web Workers (one per spare core, up to four), loading
+Pyodide from its CDN. Instead of the 26 MB card database it ships only the cards the bundled decks
+use (about 400 cards, 26 KB gzipped). `scripts/browser_bench.cjs` times it in headless Chromium.
+Forge mode is Java and stays server-side.
+
 ## Deck assessment
 
 ```
