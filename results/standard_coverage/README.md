@@ -317,3 +317,15 @@ destroy artifact/enchantment/flying creature, return up to two creature cards fr
 permanent you control (only chosen to replay an enters ability), Dragonstorm "return ~ when a Dragon enters", lands
 that choose a color, "untap during each other player's untap step" and "enchanted creatures you control get +N/+N".
 Not yet: Firebending (needs a combat mana pool), bites at two targets. Fully supported cards 1,286 → 1,339.
+
+## Forge-flagged cards, Firebending, Discover X follow-ups
+
+Cards the third Forge cross-check named: Izzet Spellementals (Hearth Elemental and Sunderflock cost reductions,
+Sunderflock's mass bounce, Stoke Genius, Get Out's modes, Flow State's two-card clause), Dimir Control (The Theorist's
+opponent draw-step trigger and bounce, Deadly Cover-Up with real "collect evidence 6", graveyard exile), Jund Sacrifice
+(Azog, Obsessive Pursuit, The Sackville-Bagginses) and Azorius Artifact Control (Repurposing Bay, Pinnacle Starcage,
+Petrified Hamlet, The Irencrag, The Mind Stone). Also Hurl into History, Hit the Mother Lode, Overwrite the Multiverse,
+Firebending (red mana that lasts until end of combat), "deals damage to each of two other target creatures" and
+"counter on each of up to two target creatures". Still ignored on flagged decks: Uldaros Theorix (free casting of
+copies), Lively Dirge's Spree modes parse but Spree itself needs checking, Perilous Snare (speed), Braided Net.
+Fully supported cards 1,339 → 1,364.
