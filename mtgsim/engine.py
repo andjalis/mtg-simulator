@@ -79,17 +79,45 @@ class Permanent:
         return sum(1 for x in self.controller.battlefield
                    if (x.is_creature if what == "creature" else what.capitalize() in x.card.types))
 
+    def _pt_bonus(self):
+        """(power, toughness) from anthems, attached equipment and "for each" counts, in one pass
+        over the battlefield; the same sums as anthem, equipment and per_bonus."""
+        bp = bt = per = 0
+        creature = self.is_creature
+        what = self.card.pt_per
+        cap = what.capitalize() if what and what != "creature" else ""
+        for x in self.controller.battlefield:
+            c = x.card
+            if creature:
+                a = c.anthem
+                if a:
+                    bp += a[0]
+                    bt += a[1]
+                if x.attached_to is self:
+                    e = c.equip_bonus
+                    bp += e[0]
+                    bt += e[1]
+            if what and (x.is_creature if what == "creature" else cap in c.types):
+                per += 1
+        return bp + per, bt + per
+
+    def _base(self, power: bool):
+        an = self.animated
+        if an and an.kind == "animate":
+            return an.power if power else an.toughness
+        return (self.card.power if power else self.card.toughness) or 0
+
     @property
     def power(self):
-        base = self.animated.power if self.animated and self.animated.kind == "animate" else (self.card.power or 0)
-        return base + self.pump_p + self.p1 - self.m1 + (self.anthem[0] if self.is_creature else 0) + \
-            sum(e.card.equip_bonus[0] for e in self.equipment) + self.per_bonus
+        c = self.counters
+        return (self._base(True) + self.pump_p + c.get("+1/+1", 0) - c.get("-1/-1", 0)
+                + self._pt_bonus()[0])
 
     @property
     def toughness(self):
-        base = self.animated.toughness if self.animated and self.animated.kind == "animate" else (self.card.toughness or 0)
-        return base + self.pump_t + self.p1 - self.m1 + (self.anthem[1] if self.is_creature else 0) + \
-            sum(e.card.equip_bonus[1] for e in self.equipment) + self.per_bonus
+        c = self.counters
+        return (self._base(False) + self.pump_t + c.get("+1/+1", 0) - c.get("-1/-1", 0)
+                + self._pt_bonus()[1])
 
     @property
     def m1(self): return self.counters.get("-1/-1", 0)
@@ -102,8 +130,10 @@ class Permanent:
             return True
         if self.animated and kw in self.animated.keywords:
             return True
-        if any(kw in e.card.equip_keywords for e in self.equipment):
-            return True
+        if self.is_creature:
+            for x in self.controller.battlefield:
+                if x.attached_to is self and kw in x.card.equip_keywords:
+                    return True
         for k, cond in self.card.cond_keywords:
             if k == kw and self.condition(cond):
                 return True
@@ -124,7 +154,7 @@ class Permanent:
     def is_creature(self):
         if self.impending and self.counters.get("time"):
             return False
-        return self.card.is_creature or self.animated is not None or self.crewed
+        return "Creature" in self.card.types or self.animated is not None or self.crewed
 
     @property
     def is_planeswalker(self): return self.card.is_planeswalker
@@ -294,6 +324,33 @@ def find_payment(sources: list[Permanent], cost: dict):
     return out
 
 
+def payable(sources: list[Permanent], cost: dict) -> bool:
+    """Whether find_payment(sources, cost) would find a payment, without choosing which sources
+    to tap: coloured pips need a matching, and generic mana any slots left over."""
+    pips = [c for c in COLORS + ("C",) for _ in range(cost.get(c, 0))]
+    generic = cost.get("generic", 0)
+    slots = [_mana_of(s) for s in sources for _ in range(max(1, getattr(s.card, "mana_amount", 1)))]
+    if len(pips) + generic > len(slots):
+        return False
+    if not pips:
+        return True
+    pips.sort(key=lambda c: sum(c in m for m in slots))
+    used = [False] * len(slots)
+
+    def assign(i):
+        if i == len(pips):
+            return True
+        for j, m in enumerate(slots):
+            if not used[j] and pips[i] in m:
+                used[j] = True
+                if assign(i + 1):
+                    return True
+                used[j] = False
+        return False
+
+    return assign(0)
+
+
 def add_costs(*costs) -> dict:
     out = {"generic": 0}
     for c in costs:
@@ -400,7 +457,7 @@ class Game:
 
     def can_pay(self, p: Player, cost: dict, extra=None, spell=None) -> bool:
         sources = self.mana_sources(p, spell=spell) + ([extra] if extra else [])
-        return find_payment(sources, cost) is not None
+        return payable(sources, cost)
 
     def pay(self, p: Player, cost: dict, exclude=None, spell="ability") -> list | None:
         """Tap sources for cost (sacrificing Treasure). Returns the sources, or None if unpayable."""
@@ -1065,7 +1122,7 @@ class Game:
             return False
         x = 0
         if "X" in card.mana_cost:     # X: as much as the remaining mana allows
-            while x < 20 and find_payment(self.mana_sources(p, spell=card), {"generic": x + 1}) is not None:
+            while x < 20 and payable(self.mana_sources(p, spell=card), {"generic": x + 1}):
                 x += 1
             if x:
                 payment += self.pay(p, {"generic": x}, spell=card)
@@ -1280,7 +1337,7 @@ class Game:
             return False
         if act.min_charge and perm.counters.get("charge", 0) < act.min_charge:
             return False
-        return find_payment(self.mana_sources(p, perm if c.get("tap") else None, "ability"), act.cost) is not None
+        return payable(self.mana_sources(p, perm if c.get("tap") else None, "ability"), act.cost)
 
     def activate_ability(self, p: Player, perm: Permanent, idx: int, targets=None) -> bool:
         """Pay for and put on the stack a general activated ability ("{2}, {T}: Draw a card.")."""
@@ -2494,7 +2551,7 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
     if not game.can_activate(me, perm, idx):
         return False
     need = add_costs(act.cost, {"generic": reserve})
-    if find_payment(game.mana_sources(me, perm if c.get("tap") else None, "ability"), need) is None:
+    if not payable(game.mana_sources(me, perm if c.get("tap") else None, "ability"), need):
         return False
     value = _mode_value(game, me, act.effects)
     if value <= 0:
@@ -2532,7 +2589,7 @@ def equip_all(game: Game, me: Player):
         if tgt is None:
             continue
         need = add_costs(game.equip_cost(eq, tgt), {"generic": _reserve(game, me)})
-        if find_payment(game.mana_sources(me, spell="ability"), need) is not None:
+        if payable(game.mana_sources(me, spell="ability"), need):
             game.equip(me, eq, tgt)
 
 
@@ -2637,7 +2694,7 @@ def before_attacks(game: Game, me: Player):
             if act.kind not in ("animate", "barrens"):
                 continue
             need = add_costs(act.cost, {"generic": _reserve(game, me)})
-            if find_payment(game.mana_sources(me, exclude=land), need) is not None:
+            if payable(game.mana_sources(me, exclude=land), need):
                 game.activate(me, land, act.kind)
                 break
 
@@ -2707,7 +2764,7 @@ def use_abilities(game: Game, me: Player):
         if (c in me.hand and not c.modes) or c.instant_speed or not game.can_cast_now(me, c):
             continue
         need = add_costs(game.cost_of(me, c), {"generic": _reserve(game, me)})
-        if find_payment(game.mana_sources(me), need) is None:
+        if not payable(game.mana_sources(me), need):
             continue
         if _option_value(game, me, c) > 0:
             game.cast(me, c, None)
