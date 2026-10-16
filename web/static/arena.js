@@ -46,27 +46,35 @@ const Fx = (() => {
   };
 })();
 
-// -- animations: the live climb, the match ticker and the grade reveal ------------------------
-// The run is polled, so each poll is compared with the last one: new games become pips, a
-// change of rank flips the badge, and the grades flip over once when they first arrive.
+// Live trials and saved replays use the same arena rendering and motion.
 let A = {};
 function resetArena() {
-  A = {track: {}, rank: null, mmr: null, opps: {}, pools: new Set(), stamped: new Set(), graded: false, final: false, rows: {}};
+  if (A.timers) A.timers.forEach(clearTimeout);
+  if (A.frame) cancelAnimationFrame(A.frame);
+  A = {track: {}, rank: null, mmr: null, displayedMMR: null, opps: {}, pools: new Set(), stamped: new Set(), graded: false, final: false, rows: {}, timers: new Set(), duels: {}, totals: {wins: 0, losses: 0, draws: 0}};
 }
-// The track, the climb panel and the match ticker: shared by the deck page and the replay page.
 function arenaHTML() {
   return `<div class="arena pre" id="arena">
-      <div class="track" id="track"><div class="callout"></div><div class="wrap"><div class="lane"><div class="rail"><i></i></div><div class="token"><b></b></div></div></div>
+      <div class="climb" id="climb"><div class="badge"><div class="orbit"></div><div class="spin"></div></div>
+        <div><div class="overline">CURRENT RATING</div><div class="rk"></div><div class="mmrv"><span class="n"></span><span class="d"></span></div>
+        <div class="xp" role="progressbar" aria-label="Progress to next rank" aria-valuemin="0" aria-valuemax="100"><i></i></div><div class="sub"></div><div class="live"></div></div>
+        <div class="banner" role="status" aria-live="polite"></div></div>
+      <div class="scoreboard"><div><span>WINS</span><b id="winCount">0</b></div><div><span>LOSSES</span><b id="lossCount">0</b></div><div><span>DRAWS</span><b id="drawCount">0</b></div><div><span>SCORE</span><b id="scoreCount">—</b></div><p class="batch-update" role="status" aria-live="polite">Awaiting the first results</p></div>
+      <div class="track" id="track"><div class="track-heading"><h3>LEAGUE MAP</h3><span>Win ${Math.round(passRate * 100)}% to advance</span></div><div class="callout" role="status" aria-live="polite"></div><div class="wrap"><div class="lane"><div class="rail"><i></i></div><div class="token"><b></b></div></div></div>
         <div class="duels" id="duels"></div></div>
-      <div class="climb" id="climb"><div class="badge"><div class="spin"></div></div>
-        <div><div class="rk"></div><div class="mmrv"><span class="n"></span><span class="d"></span></div>
-        <div class="xp"><i></i></div><div class="sub"></div><div class="live"></div></div>
-        <div class="banner"></div></div>
-      <div class="ticker"><h3>Match ticker</h3><div class="rows" id="ticks" aria-live="off"></div></div>
+      <div class="ticker"><div class="ticker-head"><h3>Battle feed</h3><span><i class="legend-win"></i> Win <i class="legend-loss"></i> Loss <i class="legend-draw"></i> Draw</span></div><div class="rows" id="ticks" aria-live="off"></div><p class="feed-note">Results arrive in batches. Tiles show the latest outcomes, not play order.</p></div>
     </div>`;
 }
-const later = (ms, fn) => calm.matches ? fn() : setTimeout(fn, ms);
-const replay = (el, cls) => { el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); };
+const later = (ms, fn) => {
+  const run = A;
+  if (calm.matches) { fn(); return; }
+  const timer = setTimeout(() => { run.timers.delete(timer); if (A === run) fn(); }, ms);
+  run.timers.add(timer);
+};
+const replay = (el, cls) => {
+  if (calm.matches) return;
+  el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls);
+};
 const oppName = n => n.split("/").pop().replace(/_/g, " ");
 
 function stamp(key) {  // a rank row's cleared / failed chip lands with a stamp the first time it shows
@@ -83,6 +91,7 @@ function updateArena(s) {
     g.innerHTML = s.assessment.html;
     g.querySelectorAll(".card").forEach((c, i) => c.style.setProperty("--i", i));
     if (!calm.matches) g.classList.add("reveal");
+    $("#arena").classList.add("rewards");
   }
 }
 
@@ -92,62 +101,33 @@ function updateArena(s) {
 function buildNodes(pools, deck) {
   const lane = $("#track .lane"), tok = lane.querySelector(".token");
   lane.querySelectorAll(".node").forEach(x => x.remove());
-  lane.style.setProperty("--n", pools.length);
-  pools.forEach(p => {
+  lane.style.setProperty("--n", Math.max(1, pools.length));
+  pools.forEach((p, i) => {
     const r = rankList.find(x => x.key === p.key) || {};
     const el = document.createElement("div");
     el.className = "node locked"; el.dataset.key = p.key;
-    el.innerHTML = `${r.emblem || `<i class="gem rk-${esc(p.key)}"></i>`}<span class="nm">${esc(p.label)}</span><span class="st"></span>`;
+    el.innerHTML = `<span class="node-number">${String(i + 1).padStart(2, "0")}</span>${r.emblem || `<i class="gem rk-${esc(p.key)}"></i>`}<span class="nm">${esc(p.label)}</span><span class="st"></span>`;
     lane.appendChild(el);
   });
   tok.firstChild.textContent = (deck || "?").trim().charAt(0).toUpperCase() || "?";
   tok.title = deck || "";
-  tok.style.left = ((-.4 + .5) / pools.length * 100).toFixed(2) + "%";
+  tok.style.left = ((-.4 + .5) / Math.max(1, pools.length) * 100).toFixed(2) + "%";
 }
 
-// Locking the deck in: the decklist lifts off as a card, flies onto the track and seals into the
-// token that then walks the leagues. `keys` are the leagues about to be played, low to high.
+// Seal the deck token locally: the loadout is hidden once the arena opens.
+// `keys` are the leagues about to be played, low to high.
 function lockIn(keys, name) {
-  Fx.wake(); Fx.play("lock");
+  Fx.play("lock");
   const list = rankList.filter(r => keys.includes(r.key));
   buildNodes(list.map(r => ({key: r.key, label: r.name})), name);
-  const tok = $("#track .token"), src = $("#deck");
-  if (calm.matches || !src.animate) return;
-  tok.classList.add("unsealed");
-  const a = src.getBoundingClientRect(), t = tok.getBoundingClientRect();
-  tok.closest(".track").scrollIntoView({block: "nearest", behavior: "smooth"});
-  const card = document.createElement("div");
-  card.className = "lockcard";
-  card.innerHTML = `<b>${esc(name || "my deck")}</b><span>Locking in…</span>`;
-  Object.assign(card.style, {left: a.left + "px", top: a.top + "px", width: a.width + "px", height: Math.min(a.height, 220) + "px"});
-  document.body.appendChild(card);
-  src.classList.add("locked"); setTimeout(() => src.classList.remove("locked"), 1800);
-  const done = () => {
-    card.remove();
-    const now = tok.getBoundingClientRect();
-    tok.classList.remove("unsealed"); replay(tok, "seal");
-    const c = $("#track .callout");
-    c.textContent = "Deck locked in"; c.classList.remove("bad"); replay(c, "show");
-    void now;
-  };
-  // the track may have scrolled into view meanwhile, so aim at where the token is when we land
-  setTimeout(() => {
-    const t2 = tok.getBoundingClientRect(), cx = t2.left + t2.width / 2, cy = t2.top + t2.height / 2;
-    const h = parseFloat(card.style.height);
-    const anim = card.animate([
-      {transform: "none", opacity: 1, borderRadius: "16px"},
-      {transform: `translate(${(cx - a.left - a.width / 2) * .5}px, ${(cy - a.top - h / 2) * .5 - 50}px) scale(.45) rotate(-5deg)`, opacity: 1, offset: .55},
-      {transform: `translate(${cx - a.left - a.width / 2}px, ${cy - a.top - h / 2}px) scale(${34 / a.width}, ${34 / h}) rotate(0deg)`, opacity: .9, borderRadius: "50%"},
-    ], {duration: 850, easing: "cubic-bezier(.5,0,.2,1)", fill: "forwards"});
-    anim.onfinish = done;
-    setTimeout(() => { if (card.isConnected) done(); }, 1600);
-  }, 250);
+  replay($("#track .token"), "seal");
 }
 
 function updateTrack(s) {
   const d = s.rank.data, pools = d.pools, n = pools.length, gpo = s.games_per_opponent || 1;
   const tr = $("#track"), lane = tr.querySelector(".lane"), tok = lane.querySelector(".token");
-  if (lane.querySelectorAll(".node").length !== n) buildNodes(pools, d.deck);
+  if (!n) return;
+  if ([...lane.querySelectorAll(".node")].map(el => el.dataset.key).join() !== pools.map(p => p.key).join()) buildNodes(pools, d.deck);
   const finished = d.status === "done";
   const odds = p => d.opponents.filter(o => o.pool === p.key);
   const prog = pools.map(p => p.done ? 1 : Math.min(.92, odds(p).reduce((a, o) => a + o.games, 0) / Math.max(1, odds(p).length * gpo)));
@@ -169,7 +149,7 @@ function updateTrack(s) {
   if (tok.style.left && tok.style.left !== left && !calm.matches) {  // a footprint where the token was
     const t = document.createElement("u");
     t.className = "trail"; t.style.left = tok.style.left;
-    lane.appendChild(t); setTimeout(() => t.remove(), 1300);
+    lane.appendChild(t); later(900, () => t.remove());
   }
   tok.style.left = left;
   tok.classList.toggle("rest", finished);
@@ -192,14 +172,23 @@ function updateTrack(s) {
   // the opponents in the league being played (or the last one, once the run is over)
   const focus = cur >= 0 ? pools[cur] : [...pools].reverse().find(p => p.done);
   const duels = $("#duels");
-  if (!focus) { duels.innerHTML = ""; }
-  else {
-    duels.innerHTML = odds(focus).map(o => {
-      const decided = focus.done || o.games >= gpo;
-      const cls = o.games === 0 ? "" : !decided ? "live" : o.win_rate >= passRate ? "win" : "loss";
-      return `<span class="duel ${cls}" title="${esc(oppName(o.name))}"><i></i>${esc(oppName(o.name))}</span>`;
-    }).join("");
-  }
+  const focused = focus ? odds(focus) : [];
+  const names = new Set(focused.map(o => o.name));
+  for (const [name, el] of Object.entries(A.duels)) if (!names.has(name)) { el.remove(); delete A.duels[name]; }
+  focused.forEach(o => {
+    let el = A.duels[o.name];
+    if (!el) {
+      el = A.duels[o.name] = document.createElement("div");
+      el.innerHTML = `<i></i><span></span><b></b>`;
+      el.querySelector("span").textContent = oppName(o.name);
+      duels.appendChild(el);
+    }
+    const decided = focus.done || o.games >= gpo;
+    const cls = o.games === 0 ? "" : !decided ? "live" : o.win_rate >= passRate ? "win" : "loss";
+    el.className = "duel " + cls;
+    el.querySelector("b").textContent = o.games ? `${Math.round(100 * o.win_rate)}% · ${o.games}/${gpo}` : "Waiting";
+    el.title = `${oppName(o.name)}: ${o.games} games, ${cls === "win" ? "threshold met" : cls === "loss" ? "below threshold" : cls === "live" ? "in progress" : "waiting"}`;
+  });
   const wrap = tr.querySelector(".wrap"), cx = (pos + .5) / n * lane.offsetWidth;
   if (lane.offsetWidth > wrap.clientWidth && Math.abs(cx - wrap.clientWidth / 2 - wrap.scrollLeft) > wrap.clientWidth / 4)
     wrap.scrollTo({left: Math.max(0, cx - wrap.clientWidth / 2), behavior: calm.matches ? "auto" : "smooth"});
@@ -214,8 +203,8 @@ function burst(node, tr, text, bad) {
     replay(node, "pop");
     for (let i = 0; i < 10; i++) {
       const b = document.createElement("b");
-      b.className = "sp"; b.style.setProperty("--a", (i * 36) + "deg");
-      node.appendChild(b); setTimeout(() => b.remove(), 1000);
+      b.className = "sp"; b.style.setProperty("--a", (i * 36) + "deg"); b.style.setProperty("--distance", (24 + (i % 3) * 12) + "px");
+      node.appendChild(b); later(1000, () => b.remove());
     }
   }
   const c = tr.querySelector(".callout");
@@ -225,32 +214,30 @@ function burst(node, tr, text, bad) {
 function updateClimb(d) {
   $("#arena").classList.remove("pre");
   const c = $("#climb"), idx = d.ranks.findIndex(r => r.name === d.rank);
+  c.querySelector(".overline").textContent = d.status === "done" ? "FINAL RATING" : "CURRENT RATING";
   const info = rankList.find(r => r.name === d.rank) || {};
   const nxt = d.ranks[idx + 1], floor = d.ranks[idx].floor;
   const pct = nxt ? Math.max(0, Math.min(100, (d.mmr - floor) / (nxt.floor - floor) * 100)) : 100;
   const bar = c.querySelector(".xp > i");
-  const paint = () => {
-    c.style.setProperty("--rc", d.rank_color);
+  const changed = A.rank !== null && idx !== A.rank;
+  c.style.setProperty("--rc", d.rank_color);
+  if (A.rank === null || changed) {
     c.querySelector(".spin").innerHTML = info.emblem || `<i class="gem rk-${esc(d.rank.toLowerCase())}"></i>`;
     c.querySelector(".rk").textContent = d.rank;
-  };
-  if (A.rank === null) { paint(); bar.style.width = pct + "%"; }
-  else if (idx !== A.rank) {
+  }
+  bar.style.width = pct + "%";
+  c.querySelector(".xp").setAttribute("aria-valuenow", String(Math.round(pct)));
+  c.querySelector(".xp").setAttribute("aria-valuetext", nxt ? `${d.to_next} MMR to ${nxt.name}` : "Top rank");
+  if (changed) {
     const up = idx > A.rank;
     if (!A.quiet) Fx.play(up ? "promote" : "demote");
     c.classList.remove("up", "down");
     replay(c, up ? "up" : "down");
-    later(up ? 300 : 280, paint);                         // swap the badge while it is edge-on
-    bar.style.width = up ? "100%" : "0%";                 // finish (or empty) the old bar first
-    later(450, () => {
-      bar.style.transition = "none"; bar.style.width = up ? "0%" : "100%"; void bar.offsetWidth;
-      bar.style.transition = ""; bar.style.width = pct + "%";
-    });
     const b = c.querySelector(".banner");
-    b.textContent = up ? `Promoted · ${d.rank}` : `Demoted · ${d.rank}`;
+    b.textContent = up ? `Rank up · ${d.rank}` : `Rating adjusted · ${d.rank}`;
     b.classList.toggle("down", !up);
     replay(b, "show");
-  } else bar.style.width = pct + "%";
+  }
   A.rank = idx;
 
   tweenMMR(d.mmr);
@@ -261,26 +248,53 @@ function updateClimb(d) {
     A.final = true;
     c.classList.add("final");
     const b = c.querySelector(".banner");
-    later(A.mmr === null ? 0 : 900, () => { b.textContent = `Final rank · ${d.rank}`; b.classList.remove("down"); replay(b, "show"); });
+    later(changed ? 1400 : 0, () => { b.textContent = `Final rank · ${d.rank}`; b.classList.remove("down"); replay(b, "show"); });
   }
+  updateScore(d);
   updateTicker(d);
 }
 
 function tweenMMR(to) {
-  const n = $("#climb .mmrv .n"), dEl = $("#climb .mmrv .d"), from = A.mmr;
+  const n = $("#climb .mmrv .n"), dEl = $("#climb .mmrv .d");
+  if (A.mmr === to) return;
+  if (A.frame) cancelAnimationFrame(A.frame);
+  const previous = A.mmr, from = A.displayedMMR ?? to;
   A.mmr = to;
-  if (from === null || from === to || calm.matches) { n.textContent = `${to} MMR`; return; }
-  const diff = to - from;
-  dEl.textContent = (diff > 0 ? "+" : "") + diff;
-  dEl.className = "d " + (diff > 0 ? "pos" : "neg");
-  replay(dEl, "show");
-  const t0 = performance.now(), dur = 550;
+  if (previous !== null && previous !== to) {
+    const diff = to - previous;
+    dEl.textContent = (diff > 0 ? "+" : "") + diff;
+    dEl.className = "d " + (diff > 0 ? "pos" : "neg");
+    replay(dEl, "show");
+  }
+  if (previous === null || calm.matches) { n.textContent = `${to} MMR`; A.displayedMMR = to; return; }
+  const t0 = performance.now(), run = A;
   const step = t => {
-    const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
-    n.textContent = `${Math.round(from + diff * e)} MMR`;
-    if (k < 1 && A.mmr === to) requestAnimationFrame(step);
+    if (A !== run) return;
+    const k = Math.min(1, (t - t0) / 650), e = 1 - Math.pow(1 - k, 4);
+    A.displayedMMR = from + (to - from) * e;
+    n.textContent = `${Math.round(A.displayedMMR)} MMR`;
+    if (k < 1) A.frame = requestAnimationFrame(step);
   };
-  requestAnimationFrame(step);
+  A.frame = requestAnimationFrame(step);
+}
+
+function updateScore(d) {
+  const totals = d.opponents.reduce((a, o) => ({wins: a.wins + o.wins, losses: a.losses + o.games - o.wins - o.draws, draws: a.draws + o.draws}), {wins: 0, losses: 0, draws: 0});
+  const entries = [["wins", "#winCount"], ["losses", "#lossCount"], ["draws", "#drawCount"]];
+  const changes = [];
+  for (const [key, selector] of entries) {
+    const el = $(selector), diff = totals[key] - A.totals[key];
+    el.textContent = totals[key].toLocaleString();
+    if (diff > 0) { replay(el, "count-up"); changes.push(`+${diff} ${key}`); }
+  }
+  const games = totals.wins + totals.losses + totals.draws;
+  $("#scoreCount").textContent = games ? `${Math.round(100 * (totals.wins + totals.draws * .5) / games)}%` : "—";
+  if (changes.length) {
+    const el = $(".batch-update");
+    el.textContent = `Latest batch · ${changes.join(" · ")}`;
+    replay(el, "arrive");
+  }
+  A.totals = totals;
 }
 
 // New games since the last poll, as win / draw / loss pips. Games come back in chunks, so the
@@ -297,6 +311,7 @@ function spread(w, dr, l) {
 const MAX_PIPS = 48;
 function updateTicker(d) {
   const box = $("#ticks");
+  const oldRects = new Map([...box.children].map(el => [el, el.getBoundingClientRect()]));
   for (const o of d.opponents) {
     const prev = A.opps[o.name] || {games: 0, wins: 0, draws: 0};
     if (o.games <= prev.games) continue;
@@ -316,8 +331,9 @@ function updateTicker(d) {
     pips.slice(-MAX_PIPS).forEach((k, i) => {
       const u = document.createElement("u");
       u.className = k;
+      u.textContent = {w: "✓", d: "−", l: "×"}[k];
       u.title = {w: "win", d: "draw", l: "loss"}[k];
-      u.style.animationDelay = (i * gap).toFixed(0) + "ms";
+      u.style.animationDelay = (calm.matches ? 0 : i * gap).toFixed(0) + "ms";
       strip.appendChild(u);
     });
     while (strip.children.length > MAX_PIPS) strip.firstChild.remove();
@@ -330,8 +346,13 @@ function updateTicker(d) {
     ev.textContent = `${p.label} pool ${p.cleared == null ? "played" : p.cleared ? "cleared" : "failed"}${rate}`;
     box.prepend(ev);
   }
-}
+  // Animate only rows displaced by a new result; unchanged rows keep their DOM and focus.
+  if (!calm.matches) for (const [el, rect] of oldRects) {
+    const dy = rect.top - el.getBoundingClientRect().top;
+    if (dy && el.animate) el.animate([{transform: `translateY(${dy}px)`}, {transform: "translateY(0)"}], {duration: 380, easing: "cubic-bezier(.22,1,.36,1)"});
+  }
 
+}
 
 // -- replaying a saved ladder run: the same walk, rebuilt from the run's own numbers -----------
 // `d` is the saved tracker (pools, opponents, MMR history). Each step is a snapshot as the live

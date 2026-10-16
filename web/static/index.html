@@ -3,55 +3,62 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>MTG Ranked Ladder</title>
+<title>Loadout · MTG Simulator</title>
 </head>
 <body>
-<main class="page">
-  <div class="hero">
-    <h1>Test your deck</h1>
-    <p>Paste a decklist, choose ranks, and see how it fares against the test decks in the built-in engine. The games run on your own device. Ranks/MMR are internal pool scores, not Arena equivalents. Main-deck only; no sideboarding.</p>
-    <p class="flavor">Every list starts at Silver. Only the strongest climb to face the Grandmaster pool.</p>
-  </div>
-  <div class="grid">
-    <section class="frame"><div class="face">
-      <div class="titlebar"><h2>Your deck</h2><span class="pips" aria-hidden="true"><i class="pip w"></i><i class="pip u"></i><i class="pip b"></i><i class="pip r"></i><i class="pip g"></i></span></div>
-      <label class="h" for="name">Deck name</label>
-      <input id="name" type="text" placeholder="my deck">
-      <label class="h" for="deck">Decklist</label>
-      <textarea id="deck" spellcheck="false" placeholder="4 Lightning Bolt&#10;4 Monastery Swiftspear&#10;20 Mountain&#10;..."></textarea>
-      <div class="check" id="check"></div>
-
-      <label class="h">Mode</label>
-      <div class="seg" id="mode">
-        <button data-mode="ladder" class="on">Full climb</button>
-        <button data-mode="tiers">Chosen ranks</button>
-      </div>
-      <div id="ladderOpts">
-        <label class="opt"><input type="checkbox" id="full"> Keep going after a failed rank</label>
-      </div>
-      <div class="tiers" id="tierList" hidden></div>
-
-      <label class="h" for="games">Games per opponent</label>
-      <input id="games" type="number" min="2" step="2" value="100">
-      <label class="opt"><input type="checkbox" id="grade" checked> Grade the deck: meta, mana, speed, consistency</label>
-      <label class="opt"><input type="checkbox" id="fx"> Sound and haptics (off by default)</label>
-      <button class="go" id="go" disabled>Begin the trial</button>
-      <p class="note" id="engine"></p>
-    </div></section>
-
-    <section class="frame"><div class="face">
-      <div class="titlebar"><h2>Results</h2><span class="pips" aria-hidden="true"><i class="pip w"></i><i class="pip u"></i><i class="pip b"></i><i class="pip r"></i><i class="pip g"></i></span></div>
-      <div id="out">
-        <p class="empty">Results appear here. The full climb plays each rank from the lowest up and stops at the first rank
-          where the deck wins less than <span id="passRate">50%</span> of its games.</p>
-        <div class="ladder" id="ladder"></div>
-      </div>
-    </div></section>
-  </div>
+<main class="page trial-page" data-screen="loadout">
+  <header class="game-chrome">
+    <div class="game-brand"><span class="game-mark" aria-hidden="true">✦</span><b>MTG <span>DECK TRIALS</span></b></div>
+    <div class="screen-route" aria-label="Trial stages"><span id="loadoutStep" aria-current="step">01 <b>Loadout</b></span><i aria-hidden="true">/</i><span id="arenaStep">02 <b>Arena</b></span><i aria-hidden="true">/</i><span id="resultsStep">03 <b>Results</b></span></div>
+    <span id="activeDeck" hidden></span>
+    <div class="game-controls"><a class="leaderboard-link" href="/leaderboard">Leaderboard</a><button id="fullscreen" class="chrome-button" aria-pressed="false">⛶ Fullscreen</button></div>
+  </header>
+  <div id="runError" class="trial-error" role="alert" hidden></div>
+  <section id="loadoutScreen" class="trial-screen" aria-labelledby="loadoutTitle">
+    <fieldset id="loadout" class="loadout-fields">
+    <div class="loadout-layout">
+      <section class="frame deck-editor"><div class="face">
+        <div class="titlebar"><h2 id="loadoutTitle" tabindex="-1"><span class="section-num">01</span> Your deck</h2><span class="panel-tag">LOADOUT</span></div>
+        <label class="h" for="name">Deck name</label>
+        <input id="name" type="text" placeholder="Name your challenger">
+        <label class="h" for="deck">Decklist</label>
+        <textarea id="deck" spellcheck="false" placeholder="4 Lightning Bolt&#10;4 Monastery Swiftspear&#10;20 Mountain&#10;..."></textarea>
+        <div class="check" id="check" role="status" aria-live="polite"></div>
+      </div></section>
+      <section class="frame trial-config"><div class="face">
+        <div class="titlebar"><h2><span class="section-num">02</span> Trial settings</h2><span class="panel-tag">MISSION</span></div>
+        <label class="h">Challenge</label>
+        <div class="seg" id="mode"><button data-mode="ladder" class="on" aria-pressed="true">Full climb</button><button data-mode="tiers" aria-pressed="false">Chosen ranks</button></div>
+        <p class="note compact">Reach <span id="passRate">50%</span> score to clear a league. A full climb stops at the first failed league.</p>
+        <div id="ladderOpts"><label class="opt"><input type="checkbox" id="full"> Keep going after a failed rank</label></div>
+        <div class="tiers" id="tierList" hidden></div>
+        <div class="ladder" id="ladder" aria-label="League ranks"></div>
+        <label class="h" for="games">Games per opponent</label>
+        <input id="games" type="number" min="2" step="2" value="100" required>
+        <p class="note compact">More games narrow the estimate and take longer.</p>
+        <label class="opt"><input type="checkbox" id="grade" checked> Reveal deck grades: meta, mana, speed, consistency</label>
+        <label class="opt"><input type="checkbox" id="fx"> Sound and haptics (off by default)</label>
+        <p class="note" id="engine"></p>
+      </div></section>
+    </div>
+    </fieldset>
+    <div class="loadout-actions"><p class="simulation-note">AI vs. AI · Internal ratings · Main-deck games only. Results depend on rules coverage and AI play.</p><div><button id="viewTrial" class="secondary-action" hidden>View last trial</button><button class="go" id="go" disabled><span>Enter the arena</span><span aria-hidden="true">↗</span></button></div></div>
+  </section>
+  <section id="arenaScreen" class="trial-screen" aria-label="Trial arena" hidden>
+    <div class="frame arena-panel"><div class="face"><div id="out"></div></div></div>
+    <div class="arena-actions"><p id="arenaActionHint">Your trial is running. Your loadout will be available when it finishes.</p><div><button id="viewResults" class="secondary-action" hidden>View results →</button><button id="configure" class="secondary-action" disabled>Trial in progress…</button></div></div>
+  </section>
+  <section id="resultsScreen" class="trial-screen" aria-labelledby="resultTitle" hidden>
+    <div class="run-highlight frame"><div class="face" id="runHighlight"></div></div>
+    <div id="grades"></div>
+    <section class="frame results-intelligence" id="more"><div class="face"><div class="titlebar"><h2>Match intelligence</h2><span class="panel-tag">FULL BREAKDOWN</span></div><div id="rest"></div></div></section>
+    <div class="results-actions"><button id="reviewArena" class="secondary-action">← Review arena</button><button id="nextTrial" class="secondary-action">Configure next trial →</button></div>
+    <p class="note simulation-note results-note">Internal simulator ratings · AI vs. AI · Main-deck games only. Intervals measure sampling uncertainty, not rules or pilot bias.</p>
+  </section>
 </main>
 <script src="/static/arena.js"></script>
 <script>
-let mode = "ladder", checkOk = false, checkTimer, polling;  // $, pct, esc, passRate, rankList, calm: arena.js
+let mode = "ladder", checkOk = false, checkTimer, polling, checkVersion = 0;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // -- where the games run ----------------------------------------------------------------------
@@ -153,19 +160,20 @@ api("/api/tiers").then(d => {
     `<label title="${esc(t.decks.join(", "))}"><input type="checkbox" value="${t.key}"${i === d.tiers.length - 1 ? "" : " checked"}>
      <i class="gem rk-${esc(t.key)}"></i><span><b>${esc(t.label)}</b><small>${t.decks.length} decks · ${esc(t.about)}</small></span></label>`).join("");
   const ranks = rankList = d.ranks || [];
-  if ($("#ladder")) $("#ladder").innerHTML = ranks.slice().reverse().map(r =>
+  if ($("#ladder")) $("#ladder").innerHTML = ranks.map(r =>
     `<div class="step">${r.emblem}<b>${esc(r.name)}</b><span>${r.floor ? r.floor + "+ MMR" : "below " + ranks[1].floor + " MMR"}</span></div>`).join("");
 });
 
 document.querySelectorAll("#mode button").forEach(b => b.onclick = () => {
   mode = b.dataset.mode;
-  document.querySelectorAll("#mode button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll("#mode button").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", String(x === b)); });
   $("#tierList").hidden = mode !== "tiers";
   $("#ladderOpts").hidden = mode !== "ladder";
 });
 
 function scheduleCheck() {
   clearTimeout(checkTimer);
+  checkVersion++;
   checkOk = false; $("#go").disabled = true;
   try { localStorage.setItem("mtgsim.deck", $("#deck").value); localStorage.setItem("mtgsim.name", $("#name").value); } catch (e) {}
   if (!$("#deck").value.trim()) { $("#check").innerHTML = ""; return; }
@@ -173,8 +181,10 @@ function scheduleCheck() {
   checkTimer = setTimeout(runCheck, 500);
 }
 async function runCheck() {
+  const version = checkVersion;
   try {
     const c = await api("/api/check", {deck: $("#deck").value});
+    if (version !== checkVersion) return;
     let html = `${c.cards} cards, ${c.distinct} different.`;
     if (c.cards && c.cards < 60) html += ` <span class="warn">Fewer than 60 cards.</span>`;
     if (c.error) html += `<div class="err">${esc(c.error)}</div>`;
@@ -186,6 +196,7 @@ async function runCheck() {
     $("#check").innerHTML = html;
     checkOk = !c.error;
   } catch (e) {
+    if (version !== checkVersion) return;
     $("#check").innerHTML = `<div class="err">${esc(e.message)}</div>`;
   }
   $("#go").disabled = !checkOk || !!polling;
@@ -195,36 +206,99 @@ $("#name").addEventListener("input", () => { try { localStorage.setItem("mtgsim.
 if ($("#deck").value.trim()) scheduleCheck();
 Fx.bind($("#fx"));
 
+function showScreen(screen) {
+  if (polling && screen !== "arena") return;
+  const titles = {loadout: "#loadoutTitle", arena: "#arenaTitle", results: "#resultTitle"};
+  if (!titles[screen] || !$(titles[screen])) return;
+  $(".trial-page").dataset.screen = screen;
+  for (const key of Object.keys(titles)) {
+    $("#" + key + "Screen").hidden = key !== screen;
+    const step = $("#" + key + "Step");
+    if (key === screen) step.setAttribute("aria-current", "step");
+    else step.removeAttribute("aria-current");
+  }
+  $("#activeDeck").hidden = screen === "loadout";
+  replay($("#" + screen + "Screen"), "screen-enter");
+  $(titles[screen]).focus({preventScroll: true});
+  window.scrollTo({top: 0, behavior: "instant"});
+  document.title = screen.charAt(0).toUpperCase() + screen.slice(1) + " · MTG Simulator";
+}
+$("#configure").onclick = $("#nextTrial").onclick = () => showScreen("loadout");
+$("#reviewArena").onclick = () => showScreen("arena");
+$("#viewResults").onclick = () => showScreen("results");
+$("#viewTrial").onclick = () => showScreen(A.snapshot?.status === "done" ? "results" : "arena");
+$("#fullscreen").disabled = !document.fullscreenEnabled;
+$("#fullscreen").onclick = async () => {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch (e) { showTrialError(`Fullscreen could not open: ${e.message}`); }
+};
+document.addEventListener("fullscreenchange", () => {
+  const full = !!document.fullscreenElement;
+  $("#fullscreen").setAttribute("aria-pressed", String(full));
+  $("#fullscreen").textContent = full ? "⛶ Exit fullscreen" : "⛶ Fullscreen";
+});
+
 $("#go").onclick = async () => {
   if (Fx.on) Fx.wake();
   const body = {deck: $("#deck").value, name: $("#name").value, games: +$("#games").value,
                 ladder: mode === "ladder", full: $("#full").checked, grade: $("#grade").checked, where: where()};
   if (mode === "tiers") {
     body.tiers = [...document.querySelectorAll("#tierList input:checked")].map(i => i.value);
-    if (!body.tiers.length) { $("#out").innerHTML = `<p class="no">Pick at least one rank.</p>`; return; }
+    if (!body.tiers.length) { showTrialError("Choose at least one league to enter the arena."); return; }
   }
+  if (!$("#games").reportValidity()) return;
+  polling = true;
+  $("#runError").hidden = true;
+  $("#loadout").disabled = true;
   $("#go").disabled = true;
+  $("#go span").textContent = "Locking in…";
   try {
     const {id} = await api("/api/run", body);
     startArena();
+    $("#activeDeck").textContent = body.name.trim() || "Untitled deck";
+    $("#configure").disabled = true;
+    $("#configure").textContent = "Trial in progress…";
+    $("#arenaActionHint").textContent = "Your trial is running. Your loadout will be available when it finishes.";
+    showScreen("arena");
     lockIn(mode === "tiers" ? body.tiers : rankList.map(r => r.key), body.name || "my deck");
     if (body.where === "device") runOnDevice(id);
     poll(id);
   } catch (e) {
-    $("#out").innerHTML = `<p class="no">${esc(e.message)}</p>`;
-    $("#go").disabled = !checkOk;
+    showTrialError(e.message);
+    finishTrial();
   }
 };
 
+function showTrialError(message) {
+  $("#runError").textContent = message;
+  $("#runError").hidden = false;
+}
+function finishTrial(snapshot) {
+  polling = false;
+  $("#loadout").disabled = false;
+  $("#go").disabled = !checkOk;
+  $("#go span").textContent = "Enter the arena";
+  const hasTrial = !!$("#prog");
+  $("#viewTrial").hidden = !hasTrial;
+  $("#configure").disabled = false;
+  $("#configure").textContent = "Configure next trial →";
+  $("#arenaActionHint").textContent = "Review the completed arena or open the full results.";
+  const complete = snapshot?.status === "done";
+  $("#viewResults").hidden = !complete;
+  $("#viewTrial").textContent = complete ? "View last results" : "View last trial";
+  if (complete) { renderHighlight(snapshot); showScreen("results"); }
+}
 const open = new Set();
 function poll(id) {
   polling = true;
   const tick = async () => {
     let s;
-    try { s = await api("/api/runs/" + id); } catch (e) { $("#out").innerHTML = `<p class="no">${esc(e.message)}</p>`; polling = false; $("#go").disabled = !checkOk; return; }
+    try { s = await api("/api/runs/" + id); } catch (e) { showTrialError(`Connection interrupted. Your trial may still be running: ${e.message}`); $("#prog")?.classList.remove("running"); finishTrial(); return; }
     render(s);
     if (s.status === "queued" || s.status === "running") setTimeout(tick, 700);
-    else { polling = false; $("#go").disabled = !checkOk; }
+    else { finishTrial(s); }
   };
   tick();
 }
@@ -252,10 +326,66 @@ function renderRank(s) {
   });
 }
 
+// -- animations: the live climb, the match ticker and the grade reveal ------------------------
+// The run is polled, so each poll is compared with the last one: new games become pips, a
+// rank changes reveal the badge, and grades arrive once when the assessment finishes.
 function startArena() {
   resetArena();
-  $("#out").innerHTML = `<div id="prog"></div>${arenaHTML()}<div id="grades"></div>
-    <details class="more" id="more"><summary>Details <small>win rates, MMR chart, every opponent</small></summary><div id="rest"></div></details>`;
+  $("#grades").innerHTML = "";
+  $("#grades").classList.remove("reveal");
+  $("#rest").innerHTML = "";
+  $("#runHighlight").innerHTML = "";
+  $("#viewResults").hidden = true;
+  $("#viewTrial").hidden = true;
+  open.clear();
+  $("#go span").textContent = "Trial in progress";
+  $("#out").innerHTML = `<div class="trial-hud" id="prog">
+      <div class="hud-top"><span class="phase" role="status" aria-live="polite">PREPARING</span><span class="hud-count"></span></div>
+      <h2 class="hud-title" id="arenaTitle" tabindex="-1"></h2><div class="hud-detail"></div>
+      <div class="progress" role="progressbar" aria-label="Scheduled games completed" aria-valuemin="0" aria-valuemax="100"><div></div></div>
+      <div class="trial-steps"><span class="active">01 · Deck locked</span><span>02 · League battles</span><span>03 · Deck reveal</span></div>
+      <div class="verdict" hidden></div>
+    </div>${arenaHTML()}
+    <p class="note simulation-note">Internal simulator ratings · AI vs. AI · Main-deck games only. A league clear and an MMR rank measure different things. Draws earn half a point.</p>`;
+}
+function renderHighlight(s) {
+  const d = s.rank?.data;
+  const opponents = d?.opponents || s.tiers.flatMap(t => t.opponents.map(o => ({...o, games: o.wins + o.losses + o.draws, win_rate: o.rate})));
+  const totals = opponents.reduce((a, o) => ({wins: a.wins + o.wins, draws: a.draws + o.draws, games: a.games + o.games}), {wins: 0, draws: 0, games: 0});
+  const losses = totals.games - totals.wins - totals.draws;
+  const best = opponents.filter(o => o.games > 0 && o.win_rate != null).sort((a, b) => b.win_rate - a.win_rate || b.games - a.games)[0];
+  const rank = rankList.find(r => r.name === d?.rank);
+  const metric = (label, value) => `<div><span>${label}</span><b>${esc(value)}</b></div>`;
+  const pools = d?.pools || [];
+  const cleared = pools.filter(p => p.cleared === true).length;
+  $("#runHighlight").innerHTML = `<div class="result-emblem" aria-hidden="true">${rank?.emblem || "✦"}</div>
+    <div class="result-heading"><div class="overline">TRIAL COMPLETE · ${esc(s.deck)}</div><h2 id="resultTitle" tabindex="-1">${d ? `${esc(d.rank)} <span>· ${d.mmr} MMR</span>` : "Your run, revealed"}</h2>
+    <p>${esc(s.verdict || "Selected league battles complete.")}</p>
+    <div class="run-metrics">${metric("GAMES PLAYED", totals.games.toLocaleString())}${metric("WINS / LOSSES / DRAWS", `${totals.wins} / ${losses} / ${totals.draws}`)}${metric("OVERALL SCORE", totals.games ? pct((totals.wins + .5 * totals.draws) / totals.games) : "—")}${metric("PEAK MMR", d?.peak ?? "—")}${metric(s.ladder ? "LEAGUES CLEARED" : "LEAGUES PLAYED", s.ladder ? cleared : pools.filter(p => p.done).length)}</div>
+    ${best ? `<div class="match-highlight"><span>HIGHEST-SCORING MATCHUP</span><b>${esc(oppName(best.name))}</b><span>${pct(best.win_rate)} score · ${best.games} games</span><small>Descriptive result from this run; sample sizes and uncertainty matter.</small></div>` : ""}</div>`;
+  $("#runHighlight").style.setProperty("--rc", d?.rank_color || "var(--gold)");
+}
+
+function updateHUD(s) {
+  const active = s.status === "running", queued = s.status === "queued";
+  const grading = /goldfish|sample hands|meta field/.test(s.current || "");
+  const frac = s.total ? Math.min(1, s.done / s.total) : 0;
+  const el = $("#prog");
+  el.classList.toggle("running", active);
+  el.classList.toggle("finished", s.status === "done");
+  el.querySelector(".phase").textContent = queued ? "IN QUEUE" : s.status === "done" ? "TRIAL COMPLETE" : s.status === "error" ? "TRIAL INTERRUPTED" : grading ? "DECK ANALYSIS" : "LIVE TRIAL";
+  el.querySelector(".hud-title").textContent = queued ? "Your arena is being prepared" : s.status === "done" ? `${s.deck} · trial complete` : s.status === "error" ? "The trial could not finish" : grading ? "Discovering your deck’s strengths" : `Challenging ${s.current || "the leagues"}`;
+  el.querySelector(".hud-detail").textContent = queued ? "Another trial is finishing. Yours will begin automatically." : s.status === "done" ? (s.assessment ? "Your rating is locked. Deck grades and match intelligence are on the results screen." : "Your rating is locked. Open the results screen for match intelligence.") : s.status === "error" ? s.error : grading ? "Playing the meta field, testing speed and sampling hands for your grades." : `Games run ${playedWhere(s)}. Results arrive as batches finish.`;
+  el.querySelector(".hud-count").textContent = s.total ? `${s.done.toLocaleString()} / ${s.total.toLocaleString()} games` : "";
+  const progress = el.querySelector(".progress");
+  progress.hidden = queued || s.status === "error";
+  progress.setAttribute("aria-valuenow", String(Math.round(frac * 100)));
+  progress.firstChild.style.width = `${100 * frac}%`;
+  const stage = s.status === "done" || grading ? 2 : active ? 1 : 0;
+  el.querySelectorAll(".trial-steps span").forEach((step, i) => { step.classList.toggle("active", i === stage); step.classList.toggle("complete", i < stage); });
+  el.querySelector(".verdict").hidden = !s.verdict;
+  el.querySelector(".verdict").textContent = s.verdict || "";
+  $("#arena").classList.toggle("settled", s.status === "done" || s.status === "error");
 }
 
 function playedWhere(s) {
@@ -268,25 +398,17 @@ function playedWhere(s) {
 }
 
 function render(s) {
-  if (!$("#rest")) startArena();
-  let h = "", top = "";
-  if (s.status === "queued") top += `<p class="empty">Waiting for the previous run to finish…</p>`;
-  if (s.status === "running" || s.status === "queued") {
-    const frac = s.total ? s.done / s.total : 0;
-    top += `<div>Playing ${esc(s.current || "…")}: ${s.done} of ${s.total} games ${playedWhere(s)}</div>
-          <div class="progress"><div style="width:${(100 * frac).toFixed(1)}%"></div></div>`;
-  }
-  if (s.status === "error") top += `<p class="no">The run failed: ${esc(s.error)}</p>`;
-  if (s.grade_error && !s.assessment) top += `<p class="note">The deck could not be graded: ${esc(s.grade_error)}</p>`;
-  if (s.verdict) top += `<div class="verdict">${esc(s.verdict)}</div>`;
-  else if (s.status === "done") top += `<div class="verdict">${esc(s.deck)} by rank</div>`;
+  if (!$("#prog")) startArena();
+  A.snapshot = s;
+  let h = "";
+  if (s.grade_error && !s.assessment) h += `<p class="note">The deck could not be graded: ${esc(s.grade_error)}</p>`;
   if (s.tiers.length) {
     h += `<div class="scroll"><table><thead><tr><th>Rank / opponent</th><th class="num">Win rate</th><th>95% CI (line = ${pct(s.pass_rate).replace(".0%", "%")} to clear)</th>
           <th class="num">W–L–D</th><th class="num">Play / draw</th><th class="num">Turns</th>${s.ladder ? "<th></th>" : ""}</tr></thead><tbody>`;
     for (const t of s.tiers) {
       const isOpen = open.has(t.key);
       const w = t.opponents.reduce((a, o) => [a[0] + o.wins, a[1] + o.losses, a[2] + o.draws], [0, 0, 0]);
-      h += `<tr class="tier${isOpen ? " open" : ""}" data-key="${t.key}"><td><span class="lbl"><i class="gem rk-${esc(t.key)}"></i>${esc(t.label)}</span></td><td class="num">${pct(t.rate)}</td>
+      h += `<tr class="tier${isOpen ? " open" : ""}" data-key="${t.key}"><td><button class="lbl rank-toggle" aria-expanded="${isOpen}"><i class="gem rk-${esc(t.key)}"></i>${esc(t.label)}</button></td><td class="num">${pct(t.rate)}</td>
             <td>${meter(t)}</td><td class="num">${w.join("–")}</td><td></td><td></td>
             ${s.ladder ? `<td><span class="chip ${t.cleared ? "ok" : "no"}${stamp(t.key)}">${t.cleared ? "cleared" : "failed"}</span></td>` : ""}</tr>`;
       if (isOpen) for (const o of t.opponents) {
@@ -302,10 +424,15 @@ function render(s) {
     h += `<p class="note">${s.partial.length === 1 ? "One of your cards is" : s.partial.length + " of your cards are"} only partly simulated, so treat these numbers with care.
           The top rank in particular uses cards the built-in engine handles only in part.</p>`;
   updateArena(s);
-  $("#prog").innerHTML = top;
+  updateHUD(s);
   $("#more").hidden = !s.tiers.length && !s.rank;
-  $("#rest").innerHTML = `<div id="rank" hidden></div>` + (h || `<p class="empty">Starting…</p>`);
+  const signature = JSON.stringify([h, s.rank]);
+  if (A.detailsSignature === signature) return;
+  A.detailsSignature = signature;
+  const focusedRank = document.activeElement.closest("tr.tier")?.dataset.key;
+  $("#rest").innerHTML = `<div id="rank" hidden></div>` + h;
   renderRank(s);
+  if (focusedRank) [...$("#rest").querySelectorAll("tr.tier")].find(tr => tr.dataset.key === focusedRank)?.querySelector("button").focus({preventScroll: true});
   $("#rest").querySelectorAll("tr.tier").forEach(tr => tr.onclick = () => {
     open.has(tr.dataset.key) ? open.delete(tr.dataset.key) : open.add(tr.dataset.key);
     render(s);
