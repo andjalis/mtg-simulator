@@ -22,6 +22,7 @@ from __future__ import annotations
 import dataclasses
 import json
 import random
+import re
 
 from .cards import BASIC_MANA, COLORS, AltCost, CardDef, Effect, make_token
 
@@ -47,6 +48,9 @@ class Permanent:
         self.blitz = False
         self.loyalty_used = False
         self.entered_turn = 0
+        self.chosen_type = ""              # Cavern of Souls
+        self.produces_now = None           # set by Game.mana_sources: the colours usable right now
+        self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
 
     @property
     def p1(self): return self.counters.get("+1/+1", 0)
@@ -103,7 +107,8 @@ class Permanent:
                 and (not self.sick or self.has("haste")))
 
     def can_tap_for_mana(self):
-        return bool(self.card.produces) and not self.tapped and not (self.is_creature and self.sick)
+        return bool(self.card.produces or self.card.restricted_produces) and not self.tapped and \
+            not (self.is_creature and self.sick)
 
     def __repr__(self):
         if self.is_creature:
@@ -178,11 +183,18 @@ class StackItem:
 def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if not blocker.is_creature or blocker.tapped:
         return False
+    if blocker.card.cant_block:
+        return False
     if attacker.has("flying") and not (blocker.has("flying") or blocker.has("reach")):
         return False
     if attacker.card.min_blocker_power and blocker.power < attacker.card.min_blocker_power:
         return False
     return True
+
+
+def _mana_of(s) -> frozenset:
+    now = getattr(s, "produces_now", None)
+    return s.card.produces if now is None else now
 
 
 def find_payment(sources: list[Permanent], cost: dict):
@@ -193,16 +205,17 @@ def find_payment(sources: list[Permanent], cost: dict):
     slots = [s for s in sources for _ in range(max(1, getattr(s.card, "mana_amount", 1)))]
     if len(pips) + generic > len(slots):
         return None
-    slots = sorted(slots, key=lambda s: (s.card.token_kind == "treasure", len(s.card.produces), s.is_creature,
-                                         -getattr(s.card, "mana_amount", 1)))
-    pips.sort(key=lambda c: sum(c in s.card.produces for s in slots))
+    # Mana that can only be spent on some spells goes first when it is allowed at all.
+    slots = sorted(slots, key=lambda s: (not s.card.mana_restriction, s.card.token_kind == "treasure",
+                                         len(_mana_of(s)), s.is_creature, -getattr(s.card, "mana_amount", 1)))
+    pips.sort(key=lambda c: sum(c in _mana_of(s) for s in slots))
     used = [False] * len(slots)
 
     def assign(i):
         if i == len(pips):
             return True
         for j, s in enumerate(slots):
-            if not used[j] and pips[i] in s.card.produces:
+            if not used[j] and pips[i] in _mana_of(s):
                 used[j] = True
                 if assign(i + 1):
                     return True
@@ -214,8 +227,8 @@ def find_payment(sources: list[Permanent], cost: dict):
     chosen = [s for j, s in enumerate(slots) if used[j]]
     # Generic mana: first use leftover slots of sources already being tapped, then multi-mana ones.
     rest = [s for j, s in enumerate(slots) if not used[j]]
-    rest.sort(key=lambda s: (s not in chosen, s.card.token_kind == "treasure", -getattr(s.card, "mana_amount", 1),
-                             len(s.card.produces), s.is_creature))
+    rest.sort(key=lambda s: (s not in chosen, not s.card.mana_restriction, s.card.token_kind == "treasure",
+                             -getattr(s.card, "mana_amount", 1), len(_mana_of(s)), s.is_creature))
     if len(rest) < generic:
         return None
     out = []
@@ -283,16 +296,55 @@ class Game:
         """p's AI hook ``name`` if it defines one, else the default policy below."""
         return getattr(p.ai, name, None) or (lambda game, me, *a: DEFAULTS[name](game, me, *a))
 
-    def mana_sources(self, p: Player, exclude=None):
-        return [perm for perm in p.battlefield if perm.can_tap_for_mana() and perm is not exclude]
+    def mana_sources(self, p: Player, exclude=None, spell=None):
+        """p's untapped mana sources. ``spell`` decides what restricted mana (Cavern of Souls) can
+        pay for: a CardDef, "ability" for activated abilities, or None to count it (AI estimates)."""
+        out = []
+        stopped = self.activations_stopped()
+        for perm in p.battlefield:
+            if not perm.can_tap_for_mana() or perm is exclude:
+                continue
+            if stopped and (perm.card.is_artifact or perm.is_creature):
+                continue
+            produces = perm.card.produces
+            if perm.card.restricted_produces and self.mana_allowed(perm, spell):
+                produces = produces | perm.card.restricted_produces
+            if not produces:
+                continue
+            perm.produces_now = produces
+            out.append(perm)
+        return out
 
-    def can_pay(self, p: Player, cost: dict, extra=None) -> bool:
-        sources = self.mana_sources(p) + ([extra] if extra else [])
+    def mana_allowed(self, perm: Permanent, spell) -> bool:
+        """Whether perm's restricted mana may pay for spell (see mana_sources)."""
+        if spell is None:
+            return True
+        if not isinstance(spell, CardDef):
+            return False
+        r = perm.card.mana_restriction
+        if r == "creature":
+            return spell.is_creature
+        if r == "artifact":
+            return spell.is_artifact
+        if r == "instant_sorcery":
+            return spell.is_instant or spell.is_sorcery
+        if r == "chosen_type":
+            return spell.is_creature and perm.chosen_type in spell.subtypes
+        if r.startswith("subtype:"):
+            return bool(set(r[8:].split("|")) & spell.subtypes)
+        return False
+
+    def activations_stopped(self) -> bool:
+        """Clarion Conqueror: activated abilities of artifacts, creatures and planeswalkers can't be activated."""
+        return any(x.card.stops_activations for pl in self.players for x in pl.battlefield)
+
+    def can_pay(self, p: Player, cost: dict, extra=None, spell=None) -> bool:
+        sources = self.mana_sources(p, spell=spell) + ([extra] if extra else [])
         return find_payment(sources, cost) is not None
 
-    def pay(self, p: Player, cost: dict, exclude=None) -> list | None:
+    def pay(self, p: Player, cost: dict, exclude=None, spell="ability") -> list | None:
         """Tap sources for cost (sacrificing Treasure). Returns the sources, or None if unpayable."""
-        payment = find_payment(self.mana_sources(p, exclude), cost)
+        payment = find_payment(self.mana_sources(p, exclude, spell), cost)
         if payment is None:
             return None
         for s in payment:
@@ -388,7 +440,7 @@ class Game:
             if not any(self.can_counter(e, item, p) for e in card.spell_effects if e.kind == "counter"
                        for item in self.stack):
                 return False
-        return self.can_pay(p, self.cost_of(p, card))
+        return self.can_pay(p, self.cost_of(p, card), spell=card)
 
     # ---------------------------------------------------------------- targets
     def targetable(self, obj, by: Player) -> bool:
@@ -466,7 +518,7 @@ class Game:
         return True
 
     def counterable(self, item: StackItem) -> bool:
-        if not item.is_spell or item.card.uncounterable:
+        if not item.is_spell or item.card.uncounterable or getattr(item, "uncounterable", False):
             return False
         if item.card.is_instant or item.card.is_sorcery:
             if any(perm.card.protects_spells for perm in item.controller.battlefield):
@@ -809,7 +861,7 @@ class Game:
         if not self._available(p, card):
             return False
         cost = self.cost_of(p, card)
-        payment = self.pay(p, cost)
+        payment = self.pay(p, cost, spell=card)
         if payment is None:
             return False
         if alt is not None and alt.life:
@@ -836,6 +888,8 @@ class Game:
             targets = self.auto_targets(p, mode_effects) + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")
         item.snow_spent = sum(1 for s in payment if s.card.snow)
+        item.uncounterable = any(s.card.mana_restriction == "chosen_type" and self.mana_allowed(s, card)
+                                 for s in payment)
         item.mana_spent = sum(v for k, v in cost.items() if k != "X")
         if card.is_ability:
             item.kind = "channel"
@@ -859,6 +913,8 @@ class Game:
     def activate_loyalty(self, p: Player, pw: Permanent, idx: int, targets=None) -> bool:
         if pw not in p.battlefield or pw.loyalty_used or idx >= len(pw.card.loyalty_abilities):
             return False
+        if self.activations_stopped():
+            return False
         cost, effects = pw.card.loyalty_abilities[idx]
         if pw.loyalty + cost < 0:
             return False
@@ -879,8 +935,13 @@ class Game:
         return True
 
     def activate(self, p: Player, perm: Permanent, what: str) -> bool:
-        """Non-loyalty activated abilities: Clue, Blood, Bloodtithe Harvester, manlands, crew."""
+        """Non-loyalty activated abilities: Clue, Blood, Bloodtithe Harvester, manlands, crew, and
+        "ability:N" for the card's Nth activated ability (see activate_ability)."""
         if perm not in p.battlefield:
+            return False
+        if what.startswith("ability:"):
+            return self.activate_ability(p, perm, int(what[8:]))
+        if self.activations_stopped() and (perm.card.is_artifact or perm.is_creature):
             return False
         if what == "clue":
             if self.pay(p, {"generic": 2}) is None:
@@ -929,6 +990,82 @@ class Game:
         self.settle()
         return True
 
+    def sacrifice_candidates(self, p: Player, perm: Permanent, what: str) -> list:
+        """Permanents p could sacrifice to pay "Sacrifice a/another WHAT" for perm's ability."""
+        other = what.startswith("other ")
+        what = what[6:] if other else what
+        out = []
+        for x in p.battlefield:
+            if other and x is perm:
+                continue
+            kinds = {"token": x.card.is_token, "artifact": x.card.is_artifact, "creature": x.is_creature,
+                     "treasure": x.card.token_kind == "treasure", "food": x.card.token_kind == "food",
+                     "land": x.card.is_land, "enchantment": "Enchantment" in x.card.types}
+            if any(kinds.get(k.strip()) for k in what.split(" or ")):
+                out.append(x)
+        return sorted(out, key=perm_value)
+
+    def can_activate(self, p: Player, perm: Permanent, idx: int) -> bool:
+        """Whether perm's activated ability idx (kind "ability") can be activated now."""
+        acts = perm.card.activated
+        if perm not in p.battlefield or idx >= len(acts) or acts[idx].kind != "ability":
+            return False
+        act, c = acts[idx], acts[idx].extra_costs
+        if self.activations_stopped() and (perm.card.is_artifact or perm.is_creature or perm.is_planeswalker):
+            return False
+        if c.get("tap") and (perm.tapped or (perm.is_creature and perm.sick)):
+            return False
+        if act.sorcery and not (p is self.active and self.step in ("main1", "main2") and not self.stack):
+            return False
+        if act.once and perm.ability_turns.get(idx) == self.turn:
+            return False
+        if c.get("life") and p.life <= c["life"]:
+            return False
+        if c.get("discard") and len(p.hand) < c["discard"]:
+            return False
+        if c.get("remove_counter") and not perm.counters.get(c["remove_counter"]):
+            return False
+        if c.get("sacrifice") and not self.sacrifice_candidates(p, perm, c["sacrifice"]):
+            return False
+        return find_payment(self.mana_sources(p, perm if c.get("tap") else None, "ability"), act.cost) is not None
+
+    def activate_ability(self, p: Player, perm: Permanent, idx: int, targets=None) -> bool:
+        """Pay for and put on the stack a general activated ability ("{2}, {T}: Draw a card.")."""
+        if not self.can_activate(p, perm, idx):
+            return False
+        act, c = perm.card.activated[idx], perm.card.activated[idx].extra_costs
+        if self.pay(p, act.cost, exclude=perm if c.get("tap") else None) is None:
+            return False
+        perm.ability_turns[idx] = self.turn
+        if c.get("tap"):
+            perm.tapped = True
+        if c.get("life"):
+            self.change_life(p, -c["life"], f"{perm.card.name}: ability cost")
+        for _ in range(c.get("discard", 0)):
+            card = p.ai.choose_discard(self, p)
+            p.hand.remove(card)
+            p.graveyard.append(card)
+            self.log(f"discards {card.name}", p)
+        if c.get("remove_counter"):
+            perm.counters[c["remove_counter"]] -= 1
+        if c.get("sacrifice"):
+            victim = self.sacrifice_candidates(p, perm, c["sacrifice"])[0]
+            self.log(f"sacrifices {victim.card.name}", p)
+            self.dies(victim) if victim.is_creature else self.leave_battlefield(victim, "graveyard")
+        if c.get("sac_self"):
+            self.dies(perm) if perm.is_creature else self.leave_battlefield(perm, "graveyard")
+        elif c.get("exile_self"):
+            self.leave_battlefield(perm, "exile")
+        if targets is None:
+            targets = self.auto_targets(p, act.effects, perm)
+        item = StackItem(p, list(act.effects), list(targets), source=perm, name=f"{perm.card.name} ability",
+                         kind="ability")
+        self.stack.append(item)
+        self.log(f"activates {item}" + (f" -> {targets}" if any(targets) else ""), p)
+        self.check_ward(item)
+        self.settle()
+        return True
+
     def foretell(self, p: Player, card: CardDef) -> bool:
         if card not in p.hand or not any(a.kind == "foretell" for a in card.alt_costs):
             return False
@@ -954,11 +1091,27 @@ class Game:
             perm.tapped = self.turn > 6    # each player's first three turns are game turns 1-6
         elif cond == "not_your_turn":
             perm.tapped = p is not self.active
+        elif cond.startswith("unless_control:"):
+            kinds = cond.split(":", 1)[1].split("|")
+            perm.tapped = not any(is_basic_land(x.card) if k == "basic" else k in x.card.subtypes
+                                  for x in p.battlefield for k in kinds)
+        elif cond.startswith("behold:"):
+            kind = cond.split(":", 1)[1]
+            perm.tapped = not any(kind in c.subtypes for c in [x.card for x in p.battlefield] + p.hand)
         elif cond == "shock":
             if self.hook(p, "pay_shock")(self, p, card):
                 self.change_life(p, -2, f"{card.name}: shock land cost")
             else:
                 perm.tapped = True
+        if card.choose_type == "creature":
+            types: dict = {}
+            for c in p.deck:
+                if c.is_creature:
+                    for t in c.subtypes:
+                        types[t] = types.get(t, 0) + 1
+            perm.chosen_type = max(types, key=types.get, default="")
+        elif card.choose_type == "basic_land":
+            perm.card = dataclasses.replace(card, produces=frozenset({choose_color(self, p)}))
         if card.loyalty:
             perm.counters["loyalty"] = card.loyalty
         if card.etb_counters:
@@ -1129,6 +1282,28 @@ class Game:
                 best = max(tokens, key=lambda t: t.power + t.toughness)
                 self.enter_battlefield(p, best.card)
                 self.log(f"copies {best.card.name}", p)
+        elif k == "p1_counters" and eff.target == "my_creatures":
+            src = item.source if item is not None else None
+            for c in p.creatures:
+                if not (eff.data.get("other") and c is src):
+                    c.counters["+1/+1"] = c.p1 + eff.amount
+        elif k == "pump_all":
+            src = item.source if item is not None else None
+            for c in p.creatures:
+                if eff.data.get("other") and c is src:
+                    continue
+                c.pump_p += eff.amount
+                c.pump_t += eff.amount2
+                if eff.data.get("keyword"):
+                    c.temp_kw.add(eff.data["keyword"])
+        elif k == "tutor":
+            cands = [c for c in p.library if card_matches(c, eff.data["what"])]
+            if cands:
+                card = choose_tutor(self, p, cands)
+                p.library.remove(card)
+                p.hand.append(card)
+                self.log(f"searches for {card.name}", p)
+            self.rng.shuffle(p.library)
         elif k == "p1_counters":
             if isinstance(target, Permanent) and target in target.controller.battlefield:
                 target.counters["+1/+1"] = target.p1 + eff.amount
@@ -1211,6 +1386,9 @@ class Game:
         elif k == "double_power":
             if isinstance(target, Permanent) and target.power > 0:
                 target.pump_p += target.power
+        elif k == "double_counters" and eff.target == "my_creatures":
+            for c in p.creatures:
+                c.counters["+1/+1"] = c.p1 * 2
         elif k == "double_counters":
             if isinstance(target, Permanent) and target.p1:
                 target.counters["+1/+1"] = target.p1 * 2
@@ -1277,7 +1455,7 @@ class Game:
                     self.log(f"discards {card.name} for ward", payer)
                     return
             else:
-                payment = find_payment(self.mana_sources(payer), {"generic": eff.amount})
+                payment = find_payment(self.mana_sources(payer, spell="ability"), {"generic": eff.amount})
                 if payment is not None and self.hook(payer, "pay_unless")(self, payer, eff.amount, target):
                     self.pay(payer, {"generic": eff.amount})
                     self.log(f"pays {eff.amount} for {target}", payer)
@@ -1569,6 +1747,51 @@ def choose_basic(game: Game, me: Player):
     return max(basics, key=lambda c: max((need[col] / (1 + have[col]) for col in c.produces), default=0))
 
 
+_TYPE_WORDS = {"creature", "land", "artifact", "enchantment", "planeswalker", "instant", "sorcery", "battle"}
+
+
+def card_matches(card: CardDef, desc: str) -> bool:
+    """Whether card fits a search description such as "a basic Plains card or a creature card with mana
+    value 1 or less", "a Dragon card", "an instant or sorcery card" or "a card"."""
+    for alt in re.split(r" or (?=an? )", desc.strip()):
+        alt = re.sub(r"^an? ", "", alt)
+        m = re.search(r" with mana value (\d+) or less$", alt)
+        if m:
+            if card.cmc > int(m[1]):
+                continue
+            alt = alt[:m.start()]
+        words = [w for w in alt.replace(" card", "").split() if w not in ("or", "and/or")]
+        ok = True
+        types = [w for w in words if w in _TYPE_WORDS]
+        if types and not any(t.capitalize() in card.types for t in types):
+            ok = False
+        if "basic" in words and not is_basic_land(card):
+            ok = False
+        for w in words:
+            if w[0].isupper() and w not in card.subtypes and w != card.name:
+                ok = False
+        if ok:
+            return True
+    return False
+
+
+def choose_tutor(game: Game, me: Player, cards: list[CardDef]) -> CardDef:
+    """The card to search for: a land when short of lands, else the best spell we can soon cast."""
+    lands = sum(x.card.is_land for x in me.battlefield)
+    if _wants_land(game, me) and any(c.is_land for c in cards):
+        return next(c for c in cards if c.is_land)
+    spells = [c for c in cards if not c.is_land] or cards
+    castable = [c for c in spells if c.cmc <= lands + 1] or spells
+    return max(castable, key=lambda c: (c.cmc, (c.power or 0) + (c.toughness or 0)))
+
+
+def choose_color(game: Game, me: Player) -> str:
+    """The colour a land that enters as a chosen basic land type should make."""
+    have = {col: sum(col in x.card.produces for x in me.battlefield if x.card.is_land) for col in COLORS}
+    need = {col: sum(c.mana_cost.get(col, 0) for c in me.hand + me.library) for col in COLORS}
+    return max(COLORS, key=lambda col: need[col] / (1 + have[col]))
+
+
 def choose_target(game: Game, me: Player, eff: Effect):
     return default_choose_target(game, me, eff)
 
@@ -1716,6 +1939,8 @@ def respond_extras(game: Game, me: Player):
             if idx is not None:
                 return ("loyalty", pw, idx)
     if me is game.active:
+        if game.step == "declare_blockers":
+            return combat_pump(game, me)
         return None
     options = [c for c in game.spell_options(me) if c.instant_speed and game.can_cast_now(me, c)]
     if game.step == "declare_attackers" and game.attackers:
@@ -1731,6 +1956,70 @@ def respond_extras(game: Game, me: Player):
         clues = [x for x in me.battlefield if x.card.token_kind == "clue"]
         if clues and game.can_pay(me, {"generic": 2}):
             return ("activate", clues[0], "clue")
+        ability = choose_ability(game, me, instant=True)
+        if ability is not None:
+            return ability
+    return None
+
+
+def _self_pump(act) -> bool:
+    return all(e.target == "self" and e.kind in ("pump", "grant", "p1_counters") for e in act.effects)
+
+
+def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: int = 0) -> bool:
+    """Whether to activate perm's general ability idx now, outside combat."""
+    act = perm.card.activated[idx]
+    c = act.extra_costs
+    if _self_pump(act) and not any(e.kind == "p1_counters" for e in act.effects):
+        return False    # used in combat (combat_pump)
+    if not game.can_activate(me, perm, idx):
+        return False
+    need = add_costs(act.cost, {"generic": reserve})
+    if find_payment(game.mana_sources(me, perm if c.get("tap") else None, "ability"), need) is None:
+        return False
+    value = _mode_value(game, me, act.effects)
+    if value <= 0:
+        return False
+    if c.get("sac_self") or c.get("exile_self"):
+        if perm.is_creature or perm.is_planeswalker:
+            return value >= perm_value(perm)
+        if perm.card.is_land and sum(x.card.is_land for x in me.battlefield) < 6:
+            return False
+    if c.get("sacrifice"):
+        victim = game.sacrifice_candidates(me, perm, c["sacrifice"])[0]
+        if not victim.card.is_token and perm_value(victim) > 1:
+            return False
+    if c.get("discard") and not choose_rummage(game, me, 1) and len(me.hand) <= 4:
+        return False
+    if c.get("life") and me.life <= 10:
+        return False
+    return True
+
+
+def choose_ability(game: Game, me: Player, instant: bool):
+    """An ("activate", permanent, "ability:N") action worth taking now, or None. With instant=True
+    only abilities without "Activate only as a sorcery"."""
+    for perm in list(me.battlefield):
+        for i, act in enumerate(perm.card.activated):
+            if act.kind != "ability" or (instant and act.sorcery):
+                continue
+            if ability_worth(game, me, perm, i, 0 if instant else _reserve(game, me)):
+                return ("activate", perm, f"ability:{i}")
+    return None
+
+
+def combat_pump(game: Game, me: Player):
+    """After blockers: pump unblocked attackers with their own "+N/+N until end of turn" abilities."""
+    for a in game.attackers:
+        if a.controller is not me or a in game.blocks or a not in me.battlefield:
+            continue
+        for i, act in enumerate(a.card.activated):
+            if act.kind != "ability" or not _self_pump(act) or not game.can_activate(me, a, i):
+                continue
+            if act.extra_costs.get("life") and me.life <= 10:
+                continue
+            if any(e.kind == "pump" and e.amount > 0 for e in act.effects):
+                return ("activate", a, f"ability:{i}")
     return None
 
 
@@ -1875,6 +2164,10 @@ def use_abilities(game: Game, me: Player):
         if _option_value(game, me, c) > 0:
             game.cast(me, c, None)
     if game.step == "main2":
+        for _ in range(10):     # general activated abilities, a few at most
+            ability = choose_ability(game, me, instant=False)
+            if ability is None or not game.do_action(me, ability):
+                break
         for b in [x for x in me.battlefield if x.card.token_kind == "blood"]:
             if choose_rummage(game, me, 1) and game.can_pay(me, {"generic": 1 + _reserve(game, me)}):
                 game.activate(me, b, "blood")
