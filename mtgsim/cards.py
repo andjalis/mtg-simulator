@@ -21,6 +21,9 @@ NUMBERS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5
 COLOR_WORDS = r"(?:white|blue|black|red|green|colorless)"
 
 
+NO_MATCH = object()      # returned by a template builder: "not this template after all"
+
+
 def _num(word: str) -> int:
     return NUMBERS.get(word.lower()) or int(word)
 
@@ -166,6 +169,8 @@ class CardDef:
     pt_per: str = ""                                    # "~ gets +1/+1 for each artifact you control": "artifact"
     extra_sacrifice: str = ""                           # "As an additional cost to cast ~, sacrifice an artifact or creature"
     extra_sac_or_pay: int = 0                           # "... pay {4} or sacrifice ...": the generic alternative
+    clone: dict | None = None                           # "You may have ~ enter as a copy of ..." (mtgsim.copies)
+    cast_copy: dict | None = None                       # "When you cast ~, copy it." (mtgsim.copies)
 
     @property
     def is_land(self): return "Land" in self.types
@@ -596,6 +601,8 @@ def _parse_effects(text: str):
                 m = re.fullmatch(pat, s[5:], flags=re.IGNORECASE)
             if m:
                 eff = build(m)
+                if eff is NO_MATCH:
+                    continue
                 if isinstance(eff, list):
                     effects += eff
                 elif eff is not None:
@@ -1094,6 +1101,10 @@ def _parse_face(data: dict) -> CardDef:
                         r"number of Blood tokens you control\. Activate only as a sorcery\.", line):
             activated.append(Activated("sac_debuff", {"generic": 0}))
             continue
+        clone = _copies.parse_line(line)
+        if clone is not None:
+            extra.update(clone)
+            continue
         act = _parse_ability(line, approximations)
         if act is not None:
             act.min_charge = station_min
@@ -1332,3 +1343,10 @@ def make_token(name: str, power: int, toughness: int, keywords=frozenset(), trig
                    types=frozenset({"Creature", "Artifact"} if artifact else {"Creature"}),
                    subtypes=frozenset(name.split()) - {"Token"}, power=power, toughness=toughness,
                    keywords=frozenset(keywords), triggers=list(triggers or []), is_token=True, pt_per=pt_per)
+
+
+# Copy effects live in their own module; its templates join the ones above.
+from . import copies as _copies  # noqa: E402
+
+_EFFECT_PATTERNS += _copies.EFFECT_PATTERNS
+_SUBS += _copies.SUBS
