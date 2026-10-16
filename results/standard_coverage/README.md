@@ -204,3 +204,10 @@ New events: beginning of combat on your turn, your second draw / second spell ea
 value N or greater, "enters or dies", and "is put into a graveyard from the battlefield" (read as dies).
 Fully supported cards 832 → 865. The long tail (becomes tapped, saddled, expend, commit a crime, counters leaving
 or entering) is each only a handful of cards.
+
+## Becomes tapped, saddle and expend (mtgsim/cards.py, engine)
+
+"Whenever ~ becomes tapped" (fired when it attacks, crews or saddles; mana and cost taps are not tracked),
+"Saddle N" (the AI taps creatures with total power N, summoning-sick ones first, before attacks) with
+"Whenever ~ attacks while saddled", and "Whenever you expend N" (counts mana sources tapped this turn).
+Fully supported cards 865 → 894.
