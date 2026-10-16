@@ -24,7 +24,7 @@ import json
 import random
 import re
 
-from . import copies, removal
+from . import auras, copies, removal
 from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, add_mana, make_token
 from . import modal
 
@@ -54,6 +54,8 @@ class Permanent:
         self.chosen_type = ""              # Cavern of Souls
         self.produces_now = None           # set by Game.mana_sources: the colours usable right now
         self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
+        self.auras: list["Permanent"] = []   # Auras on this permanent (they sit on their caster's battlefield)
+        self.aura_host: "Permanent | None" = None      # the permanent this Aura enchants
         self.attached_to: "Permanent | None" = None    # Equipment: the creature it is attached to
         self.spent_color = ""              # "if {U}{U} was spent to cast it"
         self.exiled_cards: list = []       # (card, owner) exiled until this leaves the battlefield
@@ -101,6 +103,11 @@ class Permanent:
                     bt += e[1]
             if what and (x.is_creature if what == "creature" else cap in c.types):
                 per += 1
+        if creature:
+            for a in self.auras:
+                e = a.card.equip_bonus
+                bp += e[0]
+                bt += e[1]
         return bp + per, bt + per
 
     def _base(self, power: bool):
@@ -135,6 +142,9 @@ class Permanent:
         if self.is_creature:
             for x in self.controller.battlefield:
                 if x.attached_to is self and kw in x.card.equip_keywords:
+                    return True
+            for a in self.auras:
+                if kw in a.card.equip_keywords:
                     return True
         for k, cond in self.card.cond_keywords:
             if k == kw and self.condition(cond):
@@ -175,6 +185,7 @@ class Permanent:
 
     def can_attack(self):
         return (self.is_creature and not self.tapped and not self.has("defender")
+                and not (self.auras and auras.stops_combat(self))
                 and (not self.sick or self.has("haste")))
 
     def can_tap_for_mana(self):
@@ -271,7 +282,7 @@ class StackItem:
 def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if not blocker.is_creature or blocker.tapped:
         return False
-    if blocker.card.cant_block or attacker.has("unblockable"):
+    if blocker.card.cant_block or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
         return False
     if attacker.has("flying") and not (blocker.has("flying") or blocker.has("reach")):
         return False
@@ -604,6 +615,8 @@ class Game:
             return False
         if card.extra_sacrifice and not card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
             return False
+        if card.aura and not auras.hosts(self, p, card):
+            return False
         if not card.instant_speed and not (p is self.active and self.step in ("main1", "main2")
                                            and not self.stack):
             return False
@@ -792,6 +805,8 @@ class Game:
         for perm in p.battlefield:
             if perm.tapped and perm.counters.get("stun"):
                 perm.counters["stun"] -= 1   # a stun counter is removed instead of untapping
+            elif perm.tapped and perm.auras and auras.blocks_untap(perm):
+                pass
             else:
                 perm.tapped = False
             perm.sick = False
@@ -1004,7 +1019,15 @@ class Game:
             base, kind, _ = self._origin(item.card)
             if kind.startswith(("spent_", "evoke_")):
                 self._spent = kind.split("_")[1]
+            self._aura_host = None
+            if base.aura:
+                self._aura_host = auras.choose_host(self, p, base)
+                if self._aura_host is None:
+                    self.log(f"{base.name} has nothing to enchant", p)
+                    p.graveyard.append(base)
+                    return
             perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
+            self._aura_host = None
             self._spent = ""
             if kind in ("blitz", "blitz_gy"):
                 perm.blitz = True
@@ -1486,6 +1509,10 @@ class Game:
         if card.etb_named_counters:
             perm.counters[card.etb_named_counters[0]] = card.etb_named_counters[1]
         p.battlefield.append(perm)
+        host = getattr(self, "_aura_host", None)
+        if host is not None and card.aura:
+            auras.attach(self, perm, host)
+            self._aura_host = None
         if tapped_attacking:
             perm.tapped = True
             self.attackers.append(perm)
@@ -1916,6 +1943,8 @@ class Game:
             self.log(f"creates {eff.data['card'].name}", p)
         elif k in copies.KINDS:
             copies.resolve(self, p, eff, target, item)
+        elif k in auras.KINDS:
+            auras.resolve(self, p, eff, target, item)
         elif k in removal.KINDS:
             removal.resolve(self, p, eff, target, item)
         self.state_based_actions()
@@ -2043,10 +2072,15 @@ class Game:
         owner = perm.controller
         owner.battlefield.remove(perm)
         owner.perm_left_turn = True
+        if perm.card.aura:
+            auras.detach(perm)
         perm.attached_to = None
         for x in owner.battlefield:
             if x.attached_to is perm:
                 x.attached_to = None
+        for a in list(perm.auras):
+            auras.detach(a)
+            self.leave_battlefield(a, "graveyard")
         self.fire(owner, "leaves", perm)
         returning, perm.exiled_cards = perm.exiled_cards, []
         for card, card_owner in returning:
@@ -2284,7 +2318,7 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
             theirs = [x for x in theirs if x.toughness <= eff.amount2]
         theirs = [x for x in theirs if not (k == "destroy" and x.has("indestructible"))]
         return max(theirs, key=perm_value, default=None)
-    if k in ("pump", "p1_counters", "double_power", "grant", "explore"):
+    if k in ("pump", "p1_counters", "double_power", "grant", "explore", "attach_self"):
         return max(mine, key=perm_value, default=None)
     if k == "oring":
         return max(theirs, key=perm_value, default=None)
