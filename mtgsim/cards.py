@@ -52,8 +52,9 @@ class Effect:
 class Trigger:
     event: str
     effects: list
-    filter: str = ""                 # "cmc<=3", "greater_power"
+    filter: str = ""                 # "cmc<=3", "greater_power", "self|other|creature or artifact" (permanent_enters)
     modes: list | None = None        # "choose up to one" triggers: a list of effect lists
+    once: bool = False               # "This ability triggers only once each turn."
 
 
 @dataclass
@@ -142,6 +143,14 @@ class CardDef:
     choose_type: str = ""                               # "creature" (Cavern of Souls), "basic_land"
     cant_block: bool = False
     stops_activations: bool = False                     # Clarion Conqueror
+    # Equipment: equip cost, and what the equipped creature gets.
+    equip_cost: dict | None = None
+    equip_bonus: tuple = (0, 0)
+    equip_keywords: frozenset = frozenset()
+    equip_ward: int = 0
+    equip_discount: int = 0                             # Dwarven Mauler: equip abilities targeting it cost less
+    leyline: bool = False                               # may begin the game on the battlefield
+    cond_keywords: tuple = ()                           # ((keyword, condition), ...): "another:Dwarf", "opp_life<=10"
 
     @property
     def is_land(self): return "Land" in self.types
@@ -259,7 +268,12 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("revolt", int(m[1]), target="prev")),
     (r"exile target creature with mana value less than or equal to the number of plains you control",
      lambda m: Effect("destroy", target="creature", filter="plains")),
-    (r"exile target tapped creature", lambda m: Effect("destroy", target="creature", filter="tapped")),
+    (r"(?:destroy|exile) target tapped creature(?: an opponent controls| you don't control)?",
+     lambda m: Effect("destroy", target="creature", filter="tapped")),
+    (r"(?:destroy|exile) target attacking or blocking creature",
+     lambda m: Effect("destroy", target="creature", filter="attacking_blocking")),
+    (r"(?:destroy|exile) target untapped creature(?: an opponent controls| you don't control)?",
+     lambda m: Effect("destroy", target="creature", filter="untapped")),
     (r"destroy target nonartifact creature", lambda m: Effect("destroy", target="creature", filter="nonartifact")),
     # "non-Angel, non-Demon, non-Dragon" style restrictions are parsed but not enforced.
     (r"(?:destroy|exile) target (?:[\w-]+,? )*?creature(?:, enchantment,)? or planeswalker",
@@ -309,6 +323,8 @@ _EFFECT_PATTERNS = [
     (r"surveil (\d+)", lambda m: Effect("surveil", int(m[1]))),
     (r"DIG (\d+) (\d+)", lambda m: Effect("dig", int(m[1]), int(m[2]))),
     (r"DIGPUT (\d+) (\d+)", lambda m: Effect("dig_put", int(m[1]), int(m[2]))),
+    (r"DIGFILTER (\d+) (.+)", lambda m: Effect("dig", int(m[1]), 1, data={"filter": m[2]})),
+    (r"DIGLANDS (\d+)", lambda m: Effect("dig", 0, int(m[1]), data={"x_lands": True})),
     (r"IMPULSE (\d+)", lambda m: Effect("draw", int(m[1]))),   # "exile the top N, you may play them"
     (r"TARGETDISCARD", lambda m: Effect("discard_choice", 1, target="player")),
     (r"TARGETDISCARDNONCREATURE", lambda m: Effect("discard_choice", 1, target="player", filter="noncreature")),
@@ -404,8 +420,14 @@ _SUBS = [
     (re.compile(r"exile up to one target card from a graveyard\. if a creature card was exiled this way, each "
                 r"opponent loses (\d+) life and you gain \d+ life\.", re.I), lambda m: f"GYHATE {m[1]}."),
     (re.compile(r"look at the top (\w+) cards of your library\. put (\w+) of them into your hand and the "
-                r"rest on the bottom of your library in (?:a|any) random order\.", re.I),
+                r"rest on the bottom of your library(?: in (?:a random|any|any random) order)?\.", re.I),
      lambda m: f"DIG {_num(m[1])} {_num(m[2])}."),
+    (re.compile(r"look at the top (\w+) cards of your library\. you may reveal (an? .+? card) from among them and "
+                r"put it into your hand\. put the rest on the bottom of your library in (?:a random|any) order\.",
+                re.I), lambda m: f"DIGFILTER {_num(m[1])} {m[2]}."),
+    (re.compile(r"look at the top \w+ cards of your library, where X is the number of lands you control\. put "
+                r"(\w+) of those cards into your hand\. put the rest on the bottom of your library in (?:a random|"
+                r"any) order\.", re.I), lambda m: f"DIGLANDS {_num(m[1])}."),
     (re.compile(r"look at the top (\w+) cards of your library\. you may put a permanent card with mana value "
                 r"(\d+) or less from among them onto the battlefield(?: with a shield counter on it)?\. put the rest "
                 r"on the bottom of your library in a random order\.", re.I),
@@ -439,6 +461,9 @@ _TRIGGERS = [
     (r"Whenever another creature you control enters or dies, if that creature's power is greater than ~'s, (.+)",
      ("other_creature_enters", "other_creature_dies")),
     (r"Whenever a land you control enters, (.+)", ("land_enters",)),
+    (r"Whenever (~ or )?(another|an?) ((?:[\w-]+(?:,? or |, | ))*?(?:creature|artifact|enchantment|planeswalker|"
+     r"[A-Z]\w+)s?) you control enters(?: and whenever an? ([A-Z]\w+) you control enters)?, (.+)",
+     ("permanent_enters",)),
     (r"Whenever you draw a card, (.+)", ("you_draw",)),
     (r"Whenever an opponent draws a card, (.+)", ("opp_draw",)),
     (r"Whenever ~ becomes the target of a spell, (.+)", ("targeted_by_spell",)),
@@ -631,6 +656,46 @@ def _parse_face(data: dict) -> CardDef:
             continue
         if re.fullmatch(r"~ can't block\.", line):
             extra["cant_block"] = True
+            continue
+        m = re.fullmatch(r"Equipped creature (?:gets \+(\d+)/\+(\d+))?(?: and )?(?:has (.+?))?\.", line)
+        if m and (m[1] or m[3]):
+            kws, ward, ok = set(), 0, True
+            for k in re.split(r", (?:and )?| and ", m[3] or ""):
+                k = k.strip().lower()
+                if not k:
+                    continue
+                if re.fullmatch(r"ward \{(\d+)\}", k):
+                    ward = int(re.search(r"\d+", k)[0])
+                elif k in KEYWORDS:
+                    kws.add(k)
+                elif k == "hexproof from monocolored":
+                    kws.add("hexproof")
+                    approximations.append("hexproof from monocolored is played as hexproof")
+                else:
+                    ok = False
+            if ok:
+                extra.update(equip_bonus=(int(m[1] or 0), int(m[2] or 0)), equip_keywords=frozenset(kws),
+                             equip_ward=ward)
+                continue
+        m = re.fullmatch(r"Equip (\{[^ .]+\})(\. This ability costs [^.]+ less to activate[^.]*\.)?", line)
+        if m:
+            extra["equip_cost"] = parse_mana_cost(m[1])
+            if m[2]:
+                approximations.append(f"cost reduction ignored:{m[2]}")
+            continue
+        m = re.fullmatch(r"Equip abilities you activate that target ~ cost \{(\d+)\} less to activate\.", line)
+        if m:
+            extra["equip_discount"] = int(m[1])
+            continue
+        if re.fullmatch(r"If (?:~|this card) is in your opening hand, you may begin the game with it on the "
+                        r"battlefield\.", line):
+            extra["leyline"] = True
+            continue
+        m = re.fullmatch(r"~ has ([\w ]+?) as long as (you control another ([A-Z]\w+)|an opponent has (\d+) or less "
+                         r"life)\.", line)
+        if m and m[1].lower() in KEYWORDS:
+            cond = f"another:{m[3]}" if m[3] else f"opp_life<={m[4]}"
+            extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((m[1].lower(), cond),)
             continue
         if line == "Activated abilities of artifacts, creatures, and planeswalkers can't be activated.":
             extra["stops_activations"] = True
@@ -862,6 +927,11 @@ def _parse_face(data: dict) -> CardDef:
             if m and dmg:
                 dmg[0].amount = int(m[1])
                 continue
+            m = re.fullmatch(r"put (\w+) of those cards into your hand instead\.", k)
+            dig = [e for e in kicked_effects if e.kind == "dig"]
+            if m and dig:
+                kicked_effects[kicked_effects.index(dig[0])] = dataclasses.replace(dig[0], amount2=_num(m[1]))
+                continue
             effs, bad = _parse_effects(k)
             kicked_effects += effs
             unsupported += [f"if kicked: {b}" for b in bad]
@@ -961,6 +1031,17 @@ def _parse_ability(line: str, approximations: list):
 
 def _parse_trigger(line: str):
     """(triggers, unmatched, modes list to fill or None) for a triggered ability line, else None."""
+    once = line.endswith(" This ability triggers only once each turn.")
+    if once:
+        line = line[:-len(" This ability triggers only once each turn.")]
+    out = _parse_trigger_line(line)
+    if out is not None and once:
+        for t in out[0]:
+            t.once = True
+    return out
+
+
+def _parse_trigger_line(line: str):
     for pat, events in _TRIGGERS:
         m = re.fullmatch(pat, line)
         if not m:
@@ -971,6 +1052,9 @@ def _parse_trigger(line: str):
             flt = f"cmc<={m[1]}"
         if events[0] == "other_creature_enters":
             flt = "greater_power"
+        if events == ("permanent_enters",):
+            desc = m[3] + (f" or {m[4]}" if m[4] else "")
+            flt = f"{'self' if m[1] else 'noself'}|{'other' if m[2] == 'another' else 'any'}|{desc}"
         if re.fullmatch(r"choose up to one —", rest, flags=re.I):
             modes: list = []
             return [Trigger(e, [], flt, modes) for e in events], [], modes

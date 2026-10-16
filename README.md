@@ -216,9 +216,15 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   unless you control a basic land / an Equipment / a Plains or an Island, or
   behold a Jace, Clarion Conqueror, "can't block", library searches to hand,
   team pumps and counters on each creature you control
+- Equipment: equip costs (and Dwarven Mauler's discount), stat, keyword and ward
+  bonuses, falling off when the creature leaves; the default policy equips the
+  best creature before combat. Leyline Axe starts on the battlefield.
+  Conditional keywords ("as long as you control another Dwarf", "as long as an
+  opponent has 10 or less life"), "whenever another Dwarf or Equipment you
+  control enters" triggers (also once each turn), filtered "look at the top N"
 - London mulligan, drawing from an empty library, hand size, 60-turn cap
 
-Not yet: auras and equipment, X spells, copy effects (Reflection of
+Not yet: auras, equipment tokens and attaching equipment by effects (Thorin), X spells, copy effects (Reflection of
 Kiki-Jiki), casualty (never paid), day/night, Old-Growth Troll's return, Map
 tokens, spree, warp. Modal double-faced cards keep their land face in
 `CardDef.land_face`, played with `Game.play_land(p, card, back=True)`.
