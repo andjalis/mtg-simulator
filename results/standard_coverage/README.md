@@ -239,3 +239,11 @@ Next cheapest: Convoke (8), "enters prepared" (17, a new mechanic), Mobilize, Di
 Convoke taps summoning-sick creatures (or any untapped creature once combat is over) to pay generic mana.
 "Enters prepared": the creature may cast a copy of its spell face once (`Permanent.prepared`, cast as a `prepared`
 spell variant that goes nowhere afterwards). Fully supported cards 1,020 → 1,047.
+
+## Mobilize, endure, manifest dread and disguise (mtgsim/cards.py, engine)
+
+Mobilize N / X: an attack trigger makes tapped and attacking 1/1 Warriors that are sacrificed at the end step.
+Endure N: counters on the source if it is still on the battlefield, otherwise an N/N Spirit. Manifest dread: of the top
+two cards the cheaper becomes a face-down 2/2 and the other goes to the graveyard; manifests are never turned face up.
+Disguise: cast face down for {3} (2/2 with ward 2) only when the full cost can't be paid, and turned up with leftover
+mana after the main phase. Fully supported cards 1,047 → 1,075.
