@@ -66,8 +66,11 @@ Paste a decklist, pick the full climb or chosen ranks and the number of games pe
 and the page shows how far the deck climbs and each rank's win rate with its 95% confidence
 interval; click a rank for every opponent's record, play/draw split and game length. It checks the list
 as you type and flags unknown cards and cards the engine only partly simulates. Above the results it shows the deck's rank, MMR and MMR chart
-(see Ranks and MMR) as games finish. Games run in
-the built-in engine on every CPU core (`--jobs N` to limit, `--port`, `--host`, `--offline`).
+(see Ranks and MMR) as games finish. By default the games run on the visitor's own
+device: the page plays them in Web Workers (Pyodide, one per spare core) and the server only keeps
+score. The server's own process pool (every CPU core, `--jobs N` to limit) plays them when the
+browser can't run the engine, when the tab goes quiet for 15 s, or with `?run=server`. Forge-routed
+decks always run on the server. Other flags: `--port`, `--host`, `--offline`.
 Standard library only, like the rest of the simulator.
 
 The Leaderboard page (`/leaderboard`, JSON at `/api/leaderboard`) ranks every tested deck by MMR:
