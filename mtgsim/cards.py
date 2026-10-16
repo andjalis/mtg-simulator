@@ -175,6 +175,11 @@ class CardDef:
     station: bool = False                               # Station (tap another creature: charge counters)
     extra_lands: int = 0                                # "You may play an additional land on each of your turns."
     lands_from_gy: bool = False                         # "You may play lands from your graveyard."
+    etb_counters_if: tuple = ()                         # ("opp_lost_life", n): "enters with a +1/+1 counter if ..."
+    team_keywords: frozenset = frozenset()              # "Creatures you control have haste."
+    cost_discount: tuple = ()                           # ((filter, n), ...): "Red spells you cast cost {1} less"
+    opp_no_cast: bool = False                           # "Your opponents can't cast spells during your turn."
+    pt_if: tuple = ()                                   # ((condition, power, toughness), ...) conditional pump
     pt_scale: tuple = (1, 1)                            # (power, toughness) gained per counted permanent
     pt_per: str = ""                                    # "~ gets +1/+1 for each artifact you control": "artifact"
     extra_sacrifice: str = ""                           # "As an additional cost to cast ~, sacrifice an artifact or creature"
@@ -419,6 +424,18 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("draw", 1, cond="opp_lost_life")),
     (r"target player discards a card", lambda m: Effect("discard", 1, target="player")),
     (r"each opponent discards a card", lambda m: Effect("discard", 1, target="player")),
+    (r"amass (\w+) (\d+)", lambda m: Effect("amass", int(m[2]), data={"type": m[1].rstrip("s").capitalize()})),
+    (r"(?:defending player|target opponent) loses (\d+) life and you gain (\d+) life",
+     lambda m: [Effect("drain", int(m[1]), target="each_opponent"), Effect("gain_life", int(m[2]))]),
+    (r"you draw a card and lose (\d+) life", lambda m: [Effect("draw", 1), Effect("lose_life", int(m[1]))]),
+    (r"(?:target|each) opponent discards (a|two|three) cards?", lambda m: Effect("discard", _num(m[1]), target="player")),
+    (r"(?:target|each) opponent sacrifices a creature(?: of their choice)?", lambda m: Effect("edict", 1)),
+    (r"another target creature you control gains (deathtouch|first strike|lifelink|trample|haste|indestructible|"
+     r"hexproof|vigilance|menace|reach|flying) until end of turn",
+     lambda m: Effect("grant", target="creature_mine", data={"keyword": m[1].lower()})),
+    (r"put (a|one|two|three) \+1/\+1 counters? on another target creature you control",
+     lambda m: Effect("p1_counters", _num(m[1]), target="creature_mine")),
+    (r"~ deals 1 damage to each of one or two targets", lambda m: Effect("damage", 1, target="any")),
     (r"investigate", lambda m: Effect("token", 1, data={"kind": "clue"})),
     (r"(?:~|it|this creature) endures (\d+)", lambda m: Effect("endure", int(m[1]))),
     (r"manifest dread", lambda m: Effect("manifest_dread")),
@@ -442,9 +459,9 @@ _EFFECT_PATTERNS = [
      lambda m: _token(m[1], m[2], m[3], m[4], m[6], bool(m[5]))),
     (r'create (a) (\d+)/(\d+) ((?:\w+ )+?)creature token with "(.+)"',
      lambda m: _token(m[1], m[2], m[3], m[4], "", False, m[5])),
-    (r"create (a|one|two|three) (treasure|clue|blood|map|lander|food) tokens?",
+    (r"create (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
      lambda m: Effect("token", _num(m[1]), data={"kind": m[2].lower()})),
-    (r"its controller creates (a|one|two|three) (treasure|clue|blood|map|lander|food) tokens?",
+    (r"its controller creates (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
      lambda m: Effect("token", _num(m[1]), target="that_controller", data={"kind": m[2].lower()})),
     (r"target creature you control explores", lambda m: Effect("explore", target="creature_mine")),
     (r"(?:you may )?return ~ from your graveyard to the battlefield", lambda m: Effect("return_self_gy")),
@@ -1055,6 +1072,34 @@ def _parse_face(data: dict) -> CardDef:
         if m:
             extra["keyword_at_counters"] = (_num(m[1]), m[2].lower())
             continue
+        m = re.fullmatch(r"Creatures you control have (haste|trample|vigilance|lifelink|menace|flying|reach)\.", line)
+        if m:
+            extra["team_keywords"] = extra.get("team_keywords", frozenset()) | {m[1]}
+            continue
+        m = re.fullmatch(r"(Red|White|Blue|Black|Green|Instant and sorcery|Creature|Artifact) spells you cast cost "
+                         r"\{(\d+)\} less to cast\.", line)
+        if m:
+            extra["cost_discount"] = extra.get("cost_discount", ()) + ((m[1].lower(), int(m[2])),)
+            continue
+        if line == "Your opponents can't cast spells during your turn.":
+            extra["opp_no_cast"] = True
+            continue
+        m = re.fullmatch(r"During your turn, ~ has (\w+(?: \w+)?)\.", line)
+        if m and m[1].lower() in KEYWORDS:
+            extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((m[1].lower(), "your_turn"),)
+            continue
+        m = re.fullmatch(r"(?:Descend \d+ — |Threshold — )?~ gets \+(\d+)/\+(\d+) as long as there are (four|seven) or more (permanent )?cards in your "
+                         r"graveyard\.", line)
+        if m:
+            cond = ("gy_perm>=" if m[4] else "gy>=") + str(_num(m[3]))
+            extra["pt_if"] = extra.get("pt_if", ()) + ((cond, int(m[1]), int(m[2])),)
+            continue
+        m = re.fullmatch(r"~ enters with a \+1/\+1 counter on it if (an opponent lost life|a creature died|you attacked) "
+                         r"this turn\.", line)
+        if m:
+            extra["etb_counters_if"] = ({"an opponent lost life": "opp_lost_life", "a creature died": "creature_died",
+                                         "you attacked": "attacked"}[m[1]], 1)
+            continue
         m = re.fullmatch(r"Creatures you control get \+(\d+)/\+(\d+)\.", line)
         if m:
             extra["anthem"] = (int(m[1]), int(m[2]))
@@ -1440,6 +1485,7 @@ TOKEN_ABILITIES = {
     "lander": "{2}, {T}, Sacrifice ~: Search your library for a basic land card, put it onto the battlefield "
               "tapped, then shuffle.",
     "food": "{2}, {T}, Sacrifice ~: You gain 3 life.",
+    "mutagen": "{1}, Sacrifice ~: Put a +1/+1 counter on target creature you control. Activate only as a sorcery.",
 }
 
 
