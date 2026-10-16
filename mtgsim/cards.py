@@ -188,8 +188,15 @@ class CardDef:
     team_keywords: frozenset = frozenset()              # "Creatures you control have haste."
     collect_evidence: int = 0                           # "you may collect evidence N" (exile graveyard cards worth N mana value)
     chosen_land_lock: bool = False                      # Petrified Hamlet: choose a land name, stifle it and make it tap for {C}
+    gift: str = ""                                      # "Gift a card/Food/Treasure/tapped Fish": what an opponent gets
+    gy_return: dict | None = None                       # "{1}{B}: Return this card from your graveyard to your hand."
+    gy_exile_draw: dict | None = None                   # "Max speed — {3}, Exile this card from your graveyard: Draw a card."
+    token_double: bool = False                          # "If one or more tokens would be created ..., twice that many"
+    anthem_chosen: tuple = ()                           # "Creatures you control of the chosen type get +1/+1"
+    max_blocker_power: int = 0                          # "can't be blocked by creatures with power N or greater"
     no_max_hand: bool = False                           # "You have no maximum hand size."
     must_attack: bool = False                           # "~ attacks each combat if able."
+    gy_needs_speed: bool = False
     start_engines: bool = False                         # "Start your engines!": speed starts at 1 when it enters or is cast
     anthem_kw: tuple = ()                               # (("flying", 1, 1), ...): "Creatures you control with flying get +1/+1"
     keyword_sub: tuple = ()                             # (("Rhino", "menace", other), ...): "Rhinos you control have menace"
@@ -986,6 +993,27 @@ def _parse_face(data: dict) -> CardDef:
                     if kw:
                         extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((kw, "max_speed"),)
                 continue
+        m = re.fullmatch(r"((?:\{[WUBRGC0-9/]+\})+): Return (?:this card|~) from your graveyard to your hand\.", line)
+        if m:
+            extra["gy_return"] = parse_mana_cost(m[1])
+            continue
+        m = re.fullmatch(r"((?:\{[WUBRGC0-9/]+\})+), Exile this card from your graveyard: Draw a card\.", line)
+        if m:
+            extra["gy_exile_draw"] = parse_mana_cost(m[1])
+            extra["gy_needs_speed"] = gate is not None
+            continue
+        if re.fullmatch(r"If one or more tokens would be created under your control, twice that many of those tokens "
+                        r"are created instead\.", line):
+            extra["token_double"] = True
+            continue
+        m = re.fullmatch(r"Creatures you control of the chosen type get \+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["anthem_chosen"] = (int(m[1]), int(m[2]))
+            continue
+        m = re.fullmatch(r"~ can't be blocked by creatures with power (\d+) or greater\.", line)
+        if m:
+            extra["max_blocker_power"] = int(m[1])
+            continue
         if line == "~ can't be blocked.":
             keywords.add("unblockable")
             continue
@@ -1344,8 +1372,8 @@ def _parse_face(data: dict) -> CardDef:
         if m:
             extra["team_keywords"] = extra.get("team_keywords", frozenset()) | {m[1]}
             continue
-        m = re.fullmatch(r"(Red|White|Blue|Black|Green|Instant and sorcery|Creature|Artifact) spells you cast cost "
-                         r"\{(\d+)\} less to cast\.", line)
+        m = re.fullmatch(r"(Red|White|Blue|Black|Green|Instant and sorcery|Creature|Artifact|Noncreature|[A-Z][a-z]+) "
+                         r"spells you cast cost \{(\d+)\} less to cast\.", line)
         if m:
             extra["cost_discount"] = extra.get("cost_discount", ()) + ((m[1].lower(), int(m[2])),)
             continue
@@ -1371,7 +1399,7 @@ def _parse_face(data: dict) -> CardDef:
         if m:
             extra["anthem_kw"] = extra.get("anthem_kw", ()) + ((m[1], int(m[2]), int(m[3])),)
             continue
-        m = re.fullmatch(r"(Other )?([A-Z][a-z]+?)s you control get \+(\d+)/\+(\d+)\.", line)
+        m = re.fullmatch(r"(Other )?(Merfolk|[A-Z][a-z]+?)s? you control get \+(\d+)/\+(\d+)\.", line)
         if m and m[2] != "Creature":
             extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
             continue
