@@ -290,5 +290,113 @@ class EquipmentTests(Base):
         self.assertEqual(lullaby.spell_effects[0].filter, "tapped")
 
 
+
+SWAMP = card("Swamp", types="Basic Land — Swamp", text="({T}: Add {B}.)")
+DECEIT = card("Deceit", "{4}{U/B}{U/B}", "Creature — Elemental Incarnation", (
+    "When this creature enters, if {U}{U} was spent to cast it, return up to one other target nonland permanent to "
+    "its owner's hand.\nWhen this creature enters, if {B}{B} was spent to cast it, target opponent reveals their "
+    "hand. You choose a nonland card from it. That player discards that card.\nEvoke {U/B}{U/B}"), 5, 5, cmc=6)
+RIDDLER = card("Quantum Riddler", "{3}{U}{U}", "Creature — Sphinx", "Flying\nWhen this creature enters, draw a "
+               "card.\nWarp {1}{U}", 4, 6)
+VINELASHER = card("Iridescent Vinelasher", "{B}", "Creature — Lizard Assassin", "Offspring {2}\nLandfall — "
+                  "Whenever a land you control enters, this creature deals 1 damage to target opponent.", 1, 2)
+SHOWOFF = card("Slickshot Show-Off", "{1}{R}", "Creature — Bird Wizard", "Flying, haste\nPlot {1}{R}", 1, 2)
+STEPS = card("Three Steps Ahead", "{U}", "Instant", "Spree\n+ {1}{U} — Counter target spell.\n+ {2} — Draw two "
+             "cards, then discard a card.")
+CRITIQUE = card("Traumatic Critique", "{X}{2}{R}", "Instant", "Traumatic Critique deals X damage to any target. "
+                "Draw two cards, then discard a card.", cmc=3)
+HYDRA = card("Guiding Hydra", "{X}{G}", "Creature — Hydra", "This creature enters with X +1/+1 counters on it.",
+             0, 0, cmc=1)
+
+
+class CostTests(Base):
+    def test_parsing(self):
+        for c in (DECEIT, RIDDLER, VINELASHER, SHOWOFF, STEPS, CRITIQUE, HYDRA):
+            with self.subTest(card=c.name):
+                self.assertEqual(c.unsupported, [])
+        self.assertEqual(DECEIT.hybrid, ("UB", "UB"))
+        self.assertEqual(DECEIT.spent_colors, frozenset("UB"))
+
+    def test_evoke_with_mana_spent_mode(self):
+        for _ in range(2):
+            self.perm(SWAMP, self.a)
+        self.b.hand = [BEAR, ISLAND]
+        self.a.hand = [DECEIT]
+        names = [c.name for c in self.game.spell_options(self.a)]
+        self.assertIn("Deceit (evoke_B)", names)
+        evoke = next(c for c in self.game.spell_options(self.a) if c.name == "Deceit (evoke_B)")
+        self.assertTrue(self.game.can_cast_now(self.a, evoke))
+        self.game.cast(self.a, evoke)
+        self.game.settle()
+        self.assertEqual(self.b.hand, [ISLAND])          # the B trigger
+        self.assertIn(DECEIT, self.a.graveyard)           # sacrificed
+
+    def test_warp_exiles_and_returns_later(self):
+        for _ in range(2):
+            self.perm(ISLAND, self.a)
+        self.a.hand = [RIDDLER]
+        warp = next(c for c in self.game.spell_options(self.a) if c.name.endswith("(warp)"))
+        self.game.cast(self.a, warp)
+        self.game.settle()
+        self.assertEqual(len(self.a.hand), 1)             # drew a card
+        self.a.library = [ISLAND] * 10
+        self.game.step = "end_step"
+        perm = self.a.creatures[0]
+        self.assertTrue(perm.warped)
+        # The end step exiles it; on a later turn it can be cast from exile.
+        self.a.ai.choose_attackers = lambda g, me, opp: []
+        self.b.ai.choose_attackers = lambda g, me, opp: []
+        self.a.ai.main_phase = lambda g, me: None
+        self.game.take_turn(self.a)
+        self.assertEqual(self.a.warp_exile, [RIDDLER])
+        self.game.turn += 1
+        self.assertIn("Quantum Riddler (from_warp)", [c.name for c in self.game.spell_options(self.a)])
+
+    def test_offspring_makes_a_token_copy(self):
+        for _ in range(3):
+            self.perm(SWAMP, self.a)
+        self.a.hand = [VINELASHER]
+        off = next(c for c in self.game.spell_options(self.a) if c.name.endswith("(offspring)"))
+        self.game.cast(self.a, off)
+        self.game.settle()
+        self.assertEqual(sorted((c.card.name, c.power) for c in self.a.creatures),
+                         [("Iridescent Vinelasher", 1), ("Iridescent Vinelasher token", 1)])
+        self.game.enter_battlefield(self.a, SWAMP)
+        self.game.settle()
+        self.assertEqual(self.b.life, 18)                 # both landfall triggers
+
+    def test_plot_then_cast_free(self):
+        for _ in range(2):
+            self.perm(MOUNTAIN, self.a)
+        self.a.hand = [SHOWOFF]
+        self.assertTrue(self.game.plot(self.a, SHOWOFF))
+        self.assertEqual(self.game.spell_options(self.a), [])
+        self.game.turn += 2
+        for x in self.a.battlefield:
+            x.tapped = True
+        plotted = self.game.spell_options(self.a)[0]
+        self.assertTrue(self.game.can_cast_now(self.a, plotted))
+        self.game.cast(self.a, plotted)
+        self.assertEqual(self.a.creatures[0].card.name, "Slickshot Show-Off")
+
+    def test_spree_and_x(self):
+        self.a.hand = [STEPS]
+        self.assertEqual(sorted(c.name for c in self.game.spell_options(self.a)),
+                         ["Three Steps Ahead (spree_1)", "Three Steps Ahead (spree_2)", "Three Steps Ahead (spree_3)"])
+        both = next(c for c in self.game.spell_options(self.a) if c.name.endswith("_3)"))
+        self.assertEqual(both.mana_cost, {"generic": 3, "U": 2})
+        for _ in range(5):
+            self.perm(MOUNTAIN, self.a)
+        self.a.hand = [CRITIQUE]
+        self.game.cast(self.a, CRITIQUE, [self.b])
+        self.game.settle()
+        self.assertEqual(self.b.life, 18)                  # X = 2
+        for _ in range(4):
+            self.perm(card("Forest", types="Basic Land — Forest", text="({T}: Add {G}.)"), self.a)
+        self.a.hand = [HYDRA]
+        self.game.cast(self.a, HYDRA)
+        self.assertEqual(self.a.creatures[0].power, 3)
+
+
 if __name__ == "__main__":
     unittest.main()
