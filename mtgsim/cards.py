@@ -374,6 +374,15 @@ _EFFECT_PATTERNS = [
     (r"~ gets \+(\d+)/\+(\d+) until end of turn", lambda m: Effect("pump", int(m[1]), int(m[2]), target="self")),
     (r"counter target spell with mana value (\d+)",
      lambda m: Effect("counter", target="spell", filter=f"cmc:{m[1]}")),
+    (r"counter target artifact or creature spell",
+     lambda m: Effect("counter", target="spell", filter="artifact_creature")),
+    (r"discover x, where x is that spell's mana value",
+     lambda m: Effect("discover", 0, target="prev", data={"x_of": "spell"})),
+    (r"if the discovered card's mana value is less than 10, create a number of tapped treasure tokens equal to "
+     r"the difference", lambda m: Effect("discover_treasures")),
+    (r"exile all creatures", lambda m: Effect("exile_all_creatures")),
+    (r"empower jace x, where x is the number of creatures exiled this way",
+     lambda m: Effect("empower", 0, data={"count": "exiled"})),
     (r"counter target (noncreature |creature |instant or sorcery )?spell"
      r"(?: unless its controller pays \{(\d+)\})?",
      lambda m: Effect("counter", int(m[2] or 0), target="spell",
@@ -1201,6 +1210,11 @@ def _parse_face(data: dict) -> CardDef:
         m = re.fullmatch(r"Creatures you control get \+(\d+)/\+(\d+)\.", line)
         if m:
             extra["anthem"] = (int(m[1]), int(m[2]))
+            continue
+        m = re.fullmatch(r"Firebending (\d+|X)(?:, where X is (~'s power|the number of creatures you control))?", line)
+        if m:
+            what = "" if m[1] != "X" else ("power" if "power" in m[2] else "creatures")
+            triggers.append(Trigger("attacks", [Effect("firebend", 0 if what else int(m[1]), data={"x": what})]))
             continue
         if line == "Increment":
             triggers.append(Trigger("cast_spell", [Effect("increment")]))

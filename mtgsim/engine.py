@@ -256,6 +256,10 @@ class Permanent:
         return self.card.name
 
 
+FIREBEND_MANA = CardDef(name="Firebending mana", mana_cost={"generic": 0}, cmc=0, types=frozenset({"Artifact"}),
+                        produces=frozenset({"R"}), is_token=True)
+
+
 class Player:
     my_turn = False
 
@@ -264,6 +268,7 @@ class Player:
         self.deck = deck
         self.ai = ai
         self.library: list[CardDef] = []
+        self.pool: list = []                 # Firebending: one-use red mana until end of combat
         self.hand: list[CardDef] = []
         self.battlefield: list[Permanent] = []
         self.graveyard: list[CardDef] = Graveyard()
@@ -537,6 +542,10 @@ class Game:
                 continue
             perm.produces_now = produces
             out.append(perm)
+        for mana in p.pool:
+            if not mana.tapped and mana is not exclude:
+                mana.produces_now = mana.card.produces
+                out.append(mana)
         return out
 
     def mana_allowed(self, perm: Permanent, spell) -> bool:
@@ -854,6 +863,8 @@ class Game:
             return False
         if eff.filter == "noncreature" and card.is_creature:
             return False
+        if eff.filter == "artifact_creature" and not (card.is_creature or card.is_artifact):
+            return False
         if eff.filter == "instant_sorcery" and not (card.is_instant or card.is_sorcery):
             return False
         if eff.filter.startswith("cmc:") and card.cmc != int(eff.filter[4:]):
@@ -1037,6 +1048,7 @@ class Game:
         if self.over:
             return
         self.combat(p, opp)
+        p.pool.clear()                       # Firebending mana lasts until end of combat
         if self.over:
             return
         self.step = "main2"
@@ -1278,6 +1290,7 @@ class Game:
         else:
             self.log(f"{item} resolves", p)
             prev = None
+            done: list = []
             for i, (eff, tgt) in enumerate(zip(item.effects, item.targets)):   # "would die this turn" must precede the damage
                 if eff.kind == "exile_instead" and i and isinstance(item.targets[i - 1], Permanent):
                     item.targets[i - 1].exile_turn = self.turn
@@ -1289,6 +1302,11 @@ class Game:
                     prev = tgt
                 elif eff.target == "prev":
                     tgt = prev
+                if eff.data.get("distinct") and any(t is tgt for e2, t in zip(item.effects, item.targets)
+                                                    if e2 is not eff and e2.data.get("distinct") and e2.kind == eff.kind
+                                                    and e2 in done):
+                    continue
+                done.append(eff)
                 if not self.check_cond(p, eff, item, prev):
                     continue
                 self.resolve(p, eff, tgt, item, prev)
@@ -2192,6 +2210,8 @@ class Game:
             cnt = eff.data.get("count")
             if cnt == "creatures":
                 amount = len(p.creatures)
+            elif cnt == "exiled":
+                amount = getattr(self, "exiled_creatures", 0)
             elif cnt == "islands":
                 amount = sum("Island" in x.card.subtypes for x in p.battlefield)
             eff = dataclasses.replace(eff, amount=amount)
@@ -2202,18 +2222,46 @@ class Game:
             else:
                 self.enter_battlefield(p, jace_token(eff.amount))
             self.log(f"empowers Jace by {eff.amount}", p)
+        elif k == "firebend":
+            src = item.source if item is not None else None
+            n = eff.amount
+            if eff.data.get("x") == "power" and isinstance(src, Permanent):
+                n = max(0, src.power)
+            elif eff.data.get("x") == "creatures":
+                n = len(p.creatures)
+            for _ in range(n):
+                mana = Permanent(FIREBEND_MANA, p)
+                p.pool.append(mana)
+            self.log(f"adds {n} red mana (firebending)", p)
+        elif k == "exile_all_creatures":
+            victims = [x for pl in self.players for x in pl.creatures]
+            for v in victims:
+                self.leave_battlefield(v, "exile")
+            self.exiled_creatures = len(victims)
+            self.log(f"exiles {len(victims)} creatures", p)
+        elif k == "discover_treasures":
+            found = getattr(p, "discovered_cmc", None)
+            if found is not None and found < 10:
+                for _ in range(10 - found):
+                    perm = self.enter_battlefield(p, make_token("", 0, 0, (), None, "treasure", True))
+                    perm.tapped = True
         elif k == "discover":
             skipped = []
             found = None
+            limit = eff.amount
+            if eff.data.get("x_of"):
+                limit = target.card.cmc if isinstance(target, StackItem) and target.card else 0
+            p.discovered_cmc = None
             while p.library:
                 c = p.library.pop()
-                if not c.is_land and c.cmc <= eff.amount:
+                if not c.is_land and c.cmc <= limit:
                     found = c
                     break
                 skipped.append(c)
             self.rng.shuffle(skipped)
             p.library[0:0] = skipped
             if found is not None:
+                p.discovered_cmc = found.cmc
                 self.log(f"discovers {found.name}", p)
                 if not self.cast_free(p, found):
                     self.log(f"puts {found.name} into their hand", p)
