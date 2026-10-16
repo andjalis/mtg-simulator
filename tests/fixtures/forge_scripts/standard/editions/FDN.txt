@@ -1,0 +1,286 @@
+[metadata]
+Code=FDN
+Name=Foundations
+
+[cards]
+1 Sire of Seven Deaths
+2 Arahbo, the First Fang
+3 Armasaur Guide
+4 Cat Collector
+5 Celestial Armor
+6 Claws Out
+7 Crystal Barricade
+8 Dauntless Veteran
+9 Dazzling Angel
+10 Divine Resilience
+11 Exemplar of Light
+12 Felidar Savior
+13 Fleeting Flight
+14 Guarded Heir
+15 Hare Apparent
+16 Helpful Hunter
+17 Herald of Eternal Dawn
+18 Inspiring Paladin
+19 Joust Through
+20 Luminous Rebuke
+21 Prideful Parent
+22 Raise the Past
+23 Skyknight Squire
+24 Squad Rallier
+25 Sun-Blessed Healer
+26 Twinblade Blessing
+27 Valkyrie's Call
+28 Vanguard Seraph
+29 Arcane Epiphany
+30 Archmage of Runes
+31 Bigfin Bouncer
+32 Cephalid Inkmage
+33 Clinquant Skymage
+34 Curator of Destinies
+35 Drake Hatcher
+36 Elementalist Adept
+37 Erudite Wizard
+38 Faebloom Trick
+39 Grappling Kraken
+40 High Fae Trickster
+41 Homunculus Horde
+42 Icewind Elemental
+43 Inspiration from Beyond
+44 Kaito, Cunning Infiltrator
+45 Kiora, the Rising Tide
+46 Lunar Insight
+47 Mischievous Mystic
+48 Refute
+49 Rune-Sealed Wall
+50 Skyship Buccaneer
+51 Sphinx of Forgotten Lore
+52 Strix Lookout
+53 Uncharted Voyage
+54 Abyssal Harvester
+55 Arbiter of Woe
+56 Billowing Shriekmass
+57 Blasphemous Edict
+58 Bloodthirsty Conqueror
+59 Crypt Feaster
+60 Gutless Plunderer
+61 High-Society Hunter
+62 Hungry Ghoul
+63 Infernal Vessel
+64 Infestation Sage
+65 Midnight Snack
+66 Nine-Lives Familiar
+67 Revenge of the Rats
+68 Sanguine Syphoner
+69 Seeker's Folly
+70 Soul-Shackled Zombie
+71 Stab
+72 Tinybones, Bauble Burglar
+73 Tragic Banshee
+74 Vampire Gourmand
+75 Vampire Soulcaller
+76 Vengeful Bloodwitch
+77 Zul Ashur, Lich Lord
+78 Battlesong Berserker
+79 Boltwave
+80 Bulk Up
+81 Chandra, Flameshaper
+82 Courageous Goblin
+83 Crackling Cyclops
+84 Dragon Trainer
+85 Electroduplicate
+86 Fiery Annihilation
+87 Goblin Boarders
+88 Goblin Negotiation
+89 Gorehorn Raider
+90 Incinerating Blast
+91 Kellan, Planar Trailblazer
+92 Rite of the Dragoncaller
+93 Searslicer Goblin
+94 Slumbering Cerberus
+95 Sower of Chaos
+96 Strongbox Raider
+97 Twinflame Tyrant
+98 Ambush Wolf
+99 Apothecary Stomper
+100 Beast-Kin Ranger
+101 Cackling Prowler
+102 Eager Trufflesnout
+103 Elfsworn Giant
+104 Elvish Regrower
+105 Felling Blow
+106 Loot, Exuberant Explorer
+107 Mossborn Hydra
+108 Needletooth Pack
+109 Preposterous Proportions
+110 Quakestrider Ceratops
+111 Quilled Greatwurm
+112 Spinner of Souls
+113 Sylvan Scavenging
+114 Treetop Snarespinner
+115 Alesha, Who Laughs at Fate
+116 Anthem of Champions
+117 Ashroot Animist
+118 Dreadwing Scavenger
+119 Elenda, Saint of Dusk
+120 Fiendish Panda
+121 Koma, World-Eater
+122 Kykar, Zephyr Awakener
+123 Niv-Mizzet, Visionary
+124 Perforating Artist
+125 Wardens of the Cycle
+126 Zimone, Paradox Sculptor
+127 Banner of Kinship
+128 Fishing Pole
+129 Leyline Axe
+130 Quick-Draw Katana
+131 Ravenous Amulet
+132 Scrawling Crawler
+133 Soulstone Sanctuary
+134 Ajani, Caller of the Pride
+135 Ajani's Pridemate
+136 Angel of Finality
+137 Authority of the Consuls
+138 Banishing Light
+139 Cathar Commando
+140 Day of Judgment
+141 Giada, Font of Hope
+142 Healer's Hawk
+143 Make Your Move
+144 Mischievous Pup
+145 Resolute Reinforcements
+146 Savannah Lions
+147 Serra Angel
+148 Stroke of Midnight
+149 Youthful Valkyrie
+150 Aegis Turtle
+151 Aetherize
+152 Brineborn Cutthroat
+153 Essence Scatter
+154 Extravagant Replication
+155 Fleeting Distraction
+156 Imprisoned in the Moon
+157 Lightshell Duo
+158 Micromancer
+159 Mocking Sprite
+160 An Offer You Can't Refuse
+161 Omniscience
+162 Run Away Together
+163 Self-Reflection
+164 Spectral Sailor
+165 Think Twice
+166 Time Stop
+167 Tolarian Terror
+168 Witness Protection
+169 Bake into a Pie
+170 Burglar Rat
+171 Diregraf Ghoul
+172 Eaten Alive
+173 Exsanguinate
+174 Fake Your Own Death
+175 Hero's Downfall
+176 Liliana, Dreadhorde General
+177 Macabre Waltz
+178 Marauding Blight-Priest
+179 Painful Quandary
+180 Phyrexian Arena
+181 Pilfer
+182 Reassembling Skeleton
+183 Rise of the Dark Realms
+184 Rune-Scarred Demon
+185 Stromkirk Bloodthief
+186 Vampire Nighthawk
+187 Zombify
+188 Abrade
+189 Axgard Cavalry
+190 Brass's Bounty
+191 Brazen Scourge
+192 Burst Lightning
+193 Drakuseth, Maw of Flames
+194 Etali, Primal Storm
+195 Fanatical Firebrand
+196 Firebrand Archer
+197 Firespitter Whelp
+198 Flamewake Phoenix
+199 Frenzied Goblin
+200 Goblin Surprise
+201 Heartfire Immolator
+202 Hidetsugu's Second Rite
+203 Involuntary Employment
+204 Krenko, Mob Boss
+205 Seismic Rupture
+206 Shivan Dragon
+207 Slagstorm
+208 Spitfire Lagac
+209 Sure Strike
+210 Thrill of Possibility
+211 Affectionate Indrik
+212 Bite Down
+213 Blanchwood Armor
+214 Broken Wings
+215 Bushwhack
+216 Doubling Season
+217 Dwynen, Gilt-Leaf Daen
+218 Dwynen's Elite
+219 Elvish Archdruid
+220 Garruk's Uprising
+221 Genesis Wave
+222 Ghalta, Primal Hunger
+223 Giant Growth
+224 Gnarlid Colony
+225 Grow from the Ashes
+226 Inspiring Call
+227 Llanowar Elves
+228 Mild-Mannered Librarian
+229 Nessian Hornbeetle
+230 Overrun
+231 Reclamation Sage
+232 Scavenging Ooze
+233 Snakeskin Veil
+234 Vivien Reid
+235 Wary Thespian
+236 Wildwood Scourge
+237 Balmor, Battlemage Captain
+238 Consuming Aberration
+239 Empyrean Eagle
+240 Good-Fortune Unicorn
+241 Heroic Reinforcements
+242 Lathril, Blade of the Elves
+243 Muldrotha, the Gravetide
+244 Progenitus
+245 Ruby, Daring Tracker
+246 Swiftblade Vindicator
+247 Tatyova, Benthic Druid
+248 Thousand-Year Storm
+249 Adventuring Gear
+250 Burnished Hart
+251 Campus Guide
+252 Gleaming Barrier
+253 Goldvein Pick
+254 Heraldic Banner
+255 Juggernaut
+256 Meteor Golem
+257 Solemn Simulacrum
+258 Swiftfoot Boots
+259 Bloodfell Caves
+260 Blossoming Sands
+261 Dismal Backwater
+262 Evolving Wilds
+263 Jungle Hollow
+264 Rogue's Passage
+265 Rugged Highlands
+266 Scoured Barrens
+267 Secluded Courtyard
+268 Swiftwater Cliffs
+269 Thornwood Falls
+270 Tranquil Cove
+271 Wind-Scarred Crag
+272 Plains
+273 Plains
+274 Island
+275 Island
+276 Swamp
+277 Swamp
+278 Mountain
+279 Mountain
+280 Forest
+281 Forest

@@ -1,0 +1,291 @@
+[metadata]
+Code=MKM
+Name=Murders at Karlov Manor
+
+[cards]
+1 Case of the Shattered Pact
+2 Absolving Lammasu
+3 Assemble the Players
+4 Aurelia's Vindicator
+5 Auspicious Arrival
+6 Call a Surprise Witness
+7 Case File Auditor
+8 Case of the Gateway Express
+9 Case of the Pilfered Proof
+10 Case of the Uneaten Feast
+11 Defenestrated Phantom
+12 Delney, Streetwise Lookout
+13 Doorkeeper Thrull
+14 Due Diligence
+15 Essence of Antiquity
+16 Forum Familiar
+17 Griffnaut Tracker
+18 Haazda Vigilante
+19 Inside Source
+20 Karlov Watchdog
+21 Krovod Haunch
+22 Make Your Move
+23 Makeshift Binding
+24 Marketwatch Phantom
+25 Museum Nightwatch
+26 Neighborhood Guardian
+27 No Witnesses
+28 Not on My Watch
+29 Novice Inspector
+30 On the Job
+31 Perimeter Enforcer
+32 Sanctuary Wall
+33 Seasoned Consultant
+34 Tenth District Hero
+35 Unyielding Gatekeeper
+36 Wojek Investigator
+37 Wrench
+38 Agency Outfitter
+39 Behind the Mask
+40 Benthic Criminologists
+41 Bubble Smuggler
+42 Burden of Proof
+43 Candlestick
+44 Case of the Filched Falcon
+45 Case of the Ransacked Lab
+46 Cold Case Cracker
+47 Conspiracy Unraveler
+48 Coveted Falcon
+49 Crimestopper Sprite
+50 Cryptic Coat
+51 Curious Inquiry
+52 Deduce
+53 Dramatic Accusation
+54 Eliminate the Impossible
+55 Exit Specialist
+56 Fae Flight
+57 Forensic Gadgeteer
+58 Forensic Researcher
+59 Furtive Courier
+60 Hotshot Investigators
+61 Intrude on the Mind
+62 Jaded Analyst
+63 Living Conundrum
+64 Lost in the Maze
+65 Mistway Spy
+66 Out Cold
+67 Proft's Eidetic Memory
+68 Projektor Inspector
+69 Reasonable Doubt
+70 Reenact the Crime
+71 Steamcore Scholar
+72 Sudden Setback
+73 Surveillance Monitor
+74 Unauthorized Exit
+75 Agency Coroner
+76 Alley Assailant
+77 Barbed Servitor
+78 Basilica Stalker
+79 Case of the Gorgon's Kiss
+80 Case of the Stashed Skeleton
+81 Cerebral Confiscation
+82 Clandestine Meddler
+83 Deadly Cover-Up
+84 Extract a Confession
+85 Festerleech
+86 Homicide Investigator
+87 Hunted Bonebrute
+88 Illicit Masquerade
+89 It Doesn't Add Up
+90 Lead Pipe
+91 Leering Onlooker
+92 Long Goodbye
+93 Macabre Reconstruction
+94 Massacre Girl, Known Killer
+95 Murder
+96 Nightdrinker Moroii
+97 Outrageous Robbery
+98 Persuasive Interrogators
+99 Polygraph Orb
+100 Presumed Dead
+101 Repeat Offender
+102 Rot Farm Mortipede
+103 Slice from the Shadows
+104 Slimy Dualleech
+105 Snarling Gorehound
+106 Soul Enervation
+107 Toxin Analysis
+108 Undercity Eliminator
+109 Unscrupulous Agent
+110 Vein Ripper
+111 Anzrag's Rampage
+112 Bolrac-Clan Basher
+113 Case of the Burning Masks
+114 Case of the Crimson Pulse
+115 Caught Red-Handed
+116 The Chase Is On
+117 Concealed Weapon
+118 Connecting the Dots
+119 Convenient Target
+120 Cornered Crook
+121 Crime Novelist
+122 Demand Answers
+123 Expedited Inheritance
+124 Expose the Culprit
+125 Felonious Rage
+126 Frantic Scapegoat
+127 Fugitive Codebreaker
+128 Galvanize
+129 Gearbane Orangutan
+130 Goblin Maskmaker
+131 Harried Dronesmith
+132 Incinerator of the Guilty
+133 Innocent Bystander
+134 Knife
+135 Krenko, Baron of Tin Street
+136 Krenko's Buzzcrusher
+137 Lamplight Phoenix
+138 Offender at Large
+139 Person of Interest
+140 Pyrotechnic Performer
+141 Reckless Detective
+142 Red Herring
+143 Rubblebelt Braggart
+144 Shock
+145 Suspicious Detonation
+146 Torch the Witness
+147 Vengeful Tracker
+148 Aftermath Analyst
+149 Airtight Alibi
+150 Analyze the Pollen
+151 Archdruid's Charm
+152 Audience with Trostani
+153 Axebane Ferox
+154 Bite Down on Crime
+155 Case of the Locked Hothouse
+156 Case of the Trampled Garden
+157 Chalk Outline
+158 Culvert Ambusher
+159 Fanatical Strength
+160 Flourishing Bloom-Kin
+161 Get a Leg Up
+162 Glint Weaver
+163 Greenbelt Radical
+164 Hard-Hitting Question
+165 Hedge Whisperer
+166 Hide in Plain Sight
+167 A Killer Among Us
+168 Loxodon Eavesdropper
+169 Nervous Gardener
+170 Pick Your Poison
+171 Pompous Gadabout
+172 The Pride of Hull Clade
+173 Rope
+174 Rubblebelt Maverick
+175 Sample Collector
+176 Sharp-Eyed Rookie
+177 Slime Against Humanity
+178 They Went This Way
+179 Topiary Panther
+180 Tunnel Tipster
+181 Undergrowth Recon
+182 Vengeful Creeper
+183 Vitu-Ghazi Inspector
+184 Agrus Kos, Spirit of Justice
+185 Alquist Proft, Master Sleuth
+186 Anzrag, the Quake-Mole
+187 Assassin's Trophy
+188 Aurelia, the Law Above
+189 Blood Spatter Analysis
+190 Break Out
+191 Buried in the Garden
+192 Coerced to Kill
+193 Crowd-Control Warden
+194 Curious Cadaver
+195 Deadly Complication
+196 Detective's Satchel
+197 Dog Walker
+198 Doppelgang
+199 Drag the Canal
+200 Etrata, Deadly Fugitive
+201 Evidence Examiner
+202 Ezrim, Agency Chief
+203 Faerie Snoop
+204 Gadget Technician
+205 Gleaming Geardrake
+206 Granite Witness
+207 Ill-Timed Explosion
+208 Insidious Roots
+209 Izoni, Center of the Web
+210 Judith, Carnage Connoisseur
+211 Kaya, Spirits' Justice
+212 Kellan, Inquisitive Prodigy
+213 Kraul Whipcracker
+214 Kylox, Visionary Inventor
+215 Kylox's Voltstrider
+216 Lazav, Wearer of Faces
+217 Leyline of the Guildpact
+218 Lightning Helix
+219 Meddling Youths
+220 Niv-Mizzet, Guildpact
+221 No More Lies
+222 Officious Interrogation
+223 Private Eye
+224 Rakdos, Patron of Chaos
+225 Rakish Scoundrel
+226 Relive the Past
+227 Repulsive Mutation
+228 Riftburst Hellion
+229 Rune-Brand Juggler
+230 Sanguine Savior
+231 Shady Informant
+232 Soul Search
+233 Sumala Sentry
+234 Teysa, Opulent Oligarch
+235 Tin Street Gossip
+236 Tolsimir, Midnight's Light
+237 Treacherous Greed
+238 Trostani, Three Whispers
+239 Undercover Crocodelf
+240 Urgent Necropsy
+241 Vannifar, Evolved Enigma
+242 Warleader's Call
+243 Wispdrinker Vampire
+244 Worldsoul's Rage
+245 Yarus, Roar of the Old Gods
+246 Cease // Desist
+247 Flotsam // Jetsam
+248 Fuss // Bother
+249 Hustle // Bustle
+250 Push // Pull
+251 Cryptex
+252 Gravestone Strider
+253 Lumbering Laundry
+254 Magnetic Snuffler
+255 Magnifying Glass
+256 Sanitation Automaton
+257 Thinking Cap
+258 Branch of Vitu-Ghazi
+259 Commercial District
+260 Elegant Parlor
+261 Escape Tunnel
+262 Hedge Maze
+263 Lush Portico
+264 Meticulous Archive
+265 Public Thoroughfare
+266 Raucous Theater
+267 Scene of the Crime
+268 Shadowy Backstreet
+269 Thundering Falls
+270 Undercity Sewers
+271 Underground Mortuary
+272 Plains
+273 Island
+274 Swamp
+275 Mountain
+276 Forest
+277 Plains
+278 Plains
+279 Island
+280 Island
+281 Swamp
+282 Swamp
+283 Mountain
+284 Mountain
+285 Forest
+286 Forest

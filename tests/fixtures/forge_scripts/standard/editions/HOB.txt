@@ -1,0 +1,203 @@
+[metadata]
+Code=HOB
+Name=The Hobbit
+
+[cards]
+1 Long-Bodied Grey Dog
+2 Old Thrush
+3 Troop of Ponies
+4 Belladonna Took
+5 Bilbo's Gambit
+6 Bofur, Reliable Guardian
+7 Celebrate the Mountain-king
+8 Dáin, Lord of the Iron Hills
+9 Dwarven Provisioner
+10 Dwarven Shortsword
+11 Eagle of the Great Shelf
+12 The Eagles Are Coming!
+13 Esgaroth Garrison
+14 Fíli the Pathfinder
+15 Gleaming Splendor
+16 Iron Hills Blacksmith
+17 Kíli the Resourceful
+18 Lake-town Lookout
+19 Lake-town Toymaker
+20 Magnificent End
+21 Moment of Glory
+22 The Mountain-king's Return
+23 Ori, Keeper of Songs
+24 The Queen of Dale
+25 Roads Go Ever, Ever On
+26 Settle the Wreckage
+27 Stone by Sunlight
+28 Thorin's Last Stand
+29 An Unexpected Party
+30 Velvetwing Butterflies
+31 Vow to Erebor
+32 Bilbo, Luckwearer
+33 Bilbo, Thief in the Night
+34 Bilbo Baggins, Burglar
+35 Confusticate and Bebother
+36 Elrond, Moon-Reader
+37 Elven Raft-Steerer
+38 Elvenking's Harper
+39 Enchanted River's Grasp
+40 Fateful Discovery
+41 Gandalf, Wandering Wizard
+42 Great Gilded Boat
+43 Lakeshore Apothecary
+44 Lake-town Mariners
+45 Long Lake Nuisance
+46 The Lord of the Eagles
+47 Master's Councillors
+48 Mirkwood Meditator
+49 Most Decrepit Old Bird
+50 Old Fat Spider Can't See Me
+51 Plunder the Trollshaws
+52 Ravenhill Flock
+53 Riddles in the Dark
+54 Roll-Roll-Roll-Roll
+55 Sound the Trumpets
+56 Thranduil's Decree
+57 Uncover the Moon-Letters
+58 Uneasy Partings
+59 Wizard's Staff
+60 Along the Crooked Way
+61 Azog, Moria's Ruin
+62 Bilbo's Deadly Slice
+63 Crude Bent Blade
+64 Desolation Prowler
+65 Down, Down to Goblin-town
+66 Dreaded Bat-Cloud
+67 Front Porch Sentries
+68 Gathering of Darkness
+69 Gnashing of Teeth
+70 Gollum, Riddle Master
+71 Gollum, Silent Slinker
+72 Gollum the Abandoned
+73 Great Fierce Bee
+74 Great Ugly-Looking Goblin
+75 Head of the Hunt
+76 Inside Information
+77 The Master of Lake-town
+78 Nighthowl Pursuer
+79 Rage into the Valley
+80 Ravening Warg
+81 Reverent Howl
+82 Rhovanion Rampager
+83 The Sackville-Bagginses
+84 Stir Up Trouble
+85 Stony-Voiced Goblins
+86 Supper for Spiders
+87 Balin, Loremaster
+88 Bombur, Gentle Dreamer
+89 Bothersome Noisemaker
+90 Burn, Burn, Tree and Fern
+91 Dáin Ironfoot
+92 Desert Were-Worm
+93 Desolation of Smaug
+94 Dori, Bearer of Friends
+95 Dwarven Mauler
+96 Gandalf, Goblins' Bane
+97 Gandalf, Spark Starter
+98 Getaway Barrel
+99 Glóin the Mighty
+100 Goblin-town Flunkies
+101 Gundabad Opportunist
+102 Iron Hills Stalwart
+103 Last Light of Durin's Day
+104 The Misty Mountains Cold
+105 Misty Mountains Raider
+106 Óin the Brave
+107 Pinecone Strike
+108 Ragged Short Spear
+109 Smaug, the Great Calamity
+110 Smaug the Magnificent
+111 Smaug's Fury
+112 Snowslope Hunter
+113 Stone-Giant of High Pass
+114 Thorin, Mountain-king
+115 Tidings of War
+116 Attercop
+117 Bejeweled Warg
+118 Beorn, Reluctant Host
+119 Beorn the Fierce
+120 Beorn's Hospitality
+121 Boughside Wanderers
+122 Cantankerous Keepers
+123 Dancing from Dark to Dawn
+124 Down in the Valley
+125 Galion, Elvenking's Butler
+126 Gigantic Big Bear
+127 Guardian of the Halls
+128 Little Bear
+129 Mirkwood Pathmaker
+130 Nasty Little Rabbit
+131 The Notary Hobbits
+132 Old Fat Spider
+133 Ordinary Bear
+134 Part in Friendship
+135 Quarrel
+136 Radagast of Rhosgobel
+137 Through the Forest Gate
+138 Troll Negotiations
+139 Warg Tactics
+140 Wargling
+141 Wilderland Scrounger
+142 Wood Elves
+143 Woodland Weavemaster
+144 Bard, King of Dale
+145 Bard the Bowman
+146 Bard's Company
+147 Bifur, Melodic Rider
+148 Bolg of the North
+149 Bolg's Company
+150 The Chief Warg
+151 Chief Warg's Company
+152 Dáin's Company
+153 Duskwatch Hunter
+154 Dwalin, Weaponmaster
+155 Eagle's Rescue
+156 Fearsome Goblin Pair
+157 Goblin Plate Mail
+158 The Great Goblin
+159 Large Bear
+160 Mirkwood Nurturer
+161 Nori, Teller of Tales
+162 Patient Instructor
+163 Silvan Reveler
+164 Smaug, Wicked Worm
+165 Thorin Oakenshield
+166 Thranduil, Sindarin Liege
+167 Thranduil, the Elvenking
+168 Thranduil's Company
+169 Tom, Bert, and William
+170 The Arkenstone
+171 The Black Arrow
+172 Dwarven Mattock
+173 Giant's Boulder
+174 Glamdring, Foe-hammer
+175 Key to the Side-Door
+176 My Precious
+177 Orcrist, Goblin-cleaver
+178 Sting, Bilbo's Sword
+179 Thrór's Map
+180 Well-Worn Spatula
+181 Elven Passage
+182 Elvenking's Halls
+183 Goblin-town
+184 Hobbit Hole
+185 Iron Hills
+186 Lake-town
+187 The Lonely Mountain
+188 Mirkwood
+189 Plains
+190 Island
+191 Swamp
+192 Mountain
+193 Forest
+194 Plains
+195 Island
+196 Swamp
+197 Mountain
+198 Forest
