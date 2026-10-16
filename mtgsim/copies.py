@@ -11,6 +11,9 @@ engine hands the effect kinds in KINDS to resolve() here.
     When you next cast an instant or sorcery spell this turn, copy that spell [twice].
     Copy target instant or sorcery spell you control.  /  (cast trigger) copy that spell.
 
+    ~ becomes a copy of target creature you control until end of turn.  (reverts in the cleanup step)
+    Copy target activated or triggered ability you control [from a creature source] [X times].
+
 Simplifications: the permanent or spell to copy is picked when the effect resolves (so "target"
 only checks hexproof on the opponent's permanents), the legend rule isn't modelled (so "except it
 isn't legendary" changes nothing), and a token sacrificed "at the beginning of the next end step"
@@ -23,7 +26,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-KINDS = {"copy_perm", "copy_spell", "copy_next_spell", "copy_sac"}
+KINDS = {"copy_perm", "copy_spell", "copy_next_spell", "copy_sac", "become_copy", "copy_ability"}
 
 _KW = (r"flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|"
        r"indestructible|menace|reach|defender|flash|prowess")
@@ -129,9 +132,28 @@ EFFECT_PATTERNS = [
      r"(?:, except the copy isn't legendary)?(?: and you may choose new targets for the cop(?:y|ies))?",
      lambda m: _effect("copy_next_spell", what=m["a"] or m["b"], max_cmc=int(m["cmc"] or 99),
                        n=2 if m["twice"] else 1)),
+    (r"(?:you may have )?(?:~|it|this creature|this permanent) becomes? a copy of (?P<what>target creature you control|"
+     r"another creature you control|target creature|another target creature|up to one other target creature|"
+     r"another creature)(?P<until> until end of turn)?(?:, except (?P<exc>.+?))?(?P<until2> until end of turn)?",
+     lambda m: _become(m)),
+    (r"the \"legend rule\" doesn't apply to permanents you control this turn", lambda m: None),
+    (r"copy target (?:activated or triggered|triggered|activated) ability you control(?P<creature> from a creature "
+     r"source)?(?: (?P<x>X) times)?",
+     lambda m: _effect("copy_ability", creature=bool(m["creature"]), n="x" if m["x"] else 1)),
+    (r"this ability can't be copied(?: and X can't be 0)?", lambda m: None),
     (r"copy the next spell you cast this turn when you cast it",
      lambda m: _effect("copy_next_spell", what="", max_cmc=99, n=1)),
 ]
+
+
+def _become(m):
+    from .cards import NO_MATCH, Effect
+    mods = parse_except(m["exc"]) if m["exc"] else {}
+    if mods is None:
+        return NO_MATCH
+    mine = "you control" in m["what"] or m["what"] == "another creature"
+    return Effect("become_copy", target="none", data={"what": "creature", "who": "mine" if mine else "any",
+                                                       "other": True, "mods": mods})
 
 
 def _effect(kind, **data):
@@ -266,6 +288,14 @@ def value(game, me, eff, source=None) -> float:
         best = sorted((score(x.card) for x in cands), reverse=True)
         v = sum(best) if d.get("each") else best[0] * max(n, 1)
         return v / 2 if d.get("mods", {}).get("sac_end") else v
+    if k == "become_copy":
+        if source is None:
+            return -1
+        cands = candidates(game, me, eff, source)
+        gain = max((score(x.card) for x in cands), default=0) - score(source.card)
+        return gain if gain > 0 else -1
+    if k == "copy_ability":
+        return 2.0 if _abilities(game, me, eff) else -1
     if k == "copy_spell":
         if d.get("of") == "target":
             own = [i for i in game.stack if i.is_spell and i.controller is me and _spell_fits(i.card, d.get("what"))]
@@ -275,6 +305,19 @@ def value(game, me, eff, source=None) -> float:
         return 1.0 if any(_spell_fits(c, d.get("what")) and c.cmc <= d.get("max_cmc", 99)
                           for c in me.hand if not c.is_land) else -1
     return 0.0
+
+
+def _abilities(game, p, eff, item=None) -> list:
+    """The activated or triggered abilities on the stack that eff could copy."""
+    return [i for i in game.stack if not i.is_spell and i.controller is p and i is not item
+            and not any(e.kind == "copy_ability" for e in i.effects)
+            and (not eff.data.get("creature") or (i.source is not None and i.source.is_creature))]
+
+
+def revert(perm):
+    """End of turn: a permanent that became a copy is itself again."""
+    if getattr(perm, "copy_revert", None) is not None:
+        perm.card, perm.copy_revert = perm.copy_revert, None
 
 
 def _spell_fits(card, what) -> bool:
@@ -306,6 +349,36 @@ def resolve(game, p, eff, target, item=None):
             for _ in range(n):
                 game.enter_battlefield(p, make_copy(perm.card, d.get("mods", {})))
             game.log(f"creates {n} token cop{'y' if n == 1 else 'ies'} of {perm.card.name}", p)
+    elif k == "become_copy":
+        target = source
+        if target is None or target not in target.controller.battlefield:
+            return
+        cands = candidates(game, p, eff, target)
+        best = max(cands, key=lambda x: score(x.card), default=None)
+        if best is None:
+            return
+        if getattr(target, "copy_revert", None) is None:
+            target.copy_revert = target.card
+        mods = d.get("mods", {})
+        target.card = make_copy(best.card, mods, token=target.copy_revert.is_token,
+                                name=target.copy_revert.name if mods.get("keep_name") else None)
+        game.log(f"{target.copy_revert.name} becomes a copy of {best.card.name} until end of turn", p)
+    elif k == "copy_ability":
+        from .engine import StackItem
+        found = _abilities(game, p, eff, item)
+        if not found:
+            return
+        orig = found[-1]
+        n = d.get("n", 1)
+        n = getattr(item, "x", 0) if n == "x" else n
+        for _ in range(n):
+            targets = game.auto_targets(p, orig.effects)
+            targets = [t if t is not None else old for t, old in zip(targets, orig.targets)]
+            cp = StackItem(p, list(orig.effects), targets, source=orig.source, name=orig.name, context=orig.context,
+                           kind=orig.kind)
+            cp.x = getattr(orig, "x", 0)
+            game.stack.append(cp)
+        game.log(f"copies {orig.name} x{n}", p)
     elif k == "copy_spell":
         spell = None
         if d.get("of") == "that":
