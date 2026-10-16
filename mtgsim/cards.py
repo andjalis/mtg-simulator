@@ -69,13 +69,21 @@ class AltCost:
 
 @dataclass
 class Activated:
-    kind: str                        # animate, barrens, sac_debuff
+    kind: str                        # animate, barrens, sac_debuff, ability
     cost: dict
     power: int = 0
     toughness: int = 0
     keywords: frozenset = frozenset()
     ward: int = 0
     triggers: list = field(default_factory=list)
+    # kind "ability": a general "COSTS: EFFECTS" ability. extra_costs holds the non-mana costs:
+    # tap, sac_self, exile_self, sacrifice (what to sacrifice: token, artifact, creature, ...),
+    # discard (cards), life, remove_counter (counter name).
+    effects: list = field(default_factory=list)
+    extra_costs: dict = field(default_factory=dict)
+    sorcery: bool = False            # "Activate only as a sorcery."
+    once: bool = False               # "Activate only once each turn."
+    text: str = ""
 
 
 @dataclass
@@ -84,6 +92,7 @@ class CardDef:
     mana_cost: dict
     cmc: int
     types: frozenset
+    subtypes: frozenset = frozenset()                   # creature, land and artifact types: Dragon, Plains, Equipment
     power: int | None = None
     toughness: int | None = None
     keywords: frozenset = frozenset()
@@ -126,6 +135,13 @@ class CardDef:
     extra_life_cost: int = 0                            # "As an additional cost to cast ~, pay N life"
     wither_noncombat: bool = False                      # Soul-Scar Mage: noncombat damage becomes -1/-1 counters
     exile_damaged: bool = False                         # Etching of Kumano: damaged creatures are exiled instead
+    # Mana that may only be spent on some spells: creature, artifact, instant_sorcery, chosen_type
+    # (Cavern of Souls), or subtype:Dragon|Omen. restricted_produces is the colours it limits.
+    mana_restriction: str = ""
+    restricted_produces: frozenset = frozenset()
+    choose_type: str = ""                               # "creature" (Cavern of Souls), "basic_land"
+    cant_block: bool = False
+    stops_activations: bool = False                     # Clarion Conqueror
 
     @property
     def is_land(self): return "Land" in self.types
@@ -350,6 +366,20 @@ _EFFECT_PATTERNS = [
     (r"when you cast your next creature spell this turn, that creature enters with an additional \+1/\+1 counter "
      r"on it", lambda m: Effect("next_creature_counter")),
     (r"ADVERSARY", lambda m: Effect("adversary", data={"cost": {"generic": 2, "R": 1}})),
+    (r"~ gains ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach))(?: and ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)))? until end of turn",
+     lambda m: [Effect("grant", target="self", data={"keyword": k.lower()}) for k in m.groups() if k]),
+    (r"put (a|one|two|three) \+1/\+1 counters? on each (other )?creature you control",
+     lambda m: Effect("p1_counters", _num(m[1]), target="my_creatures", data={"other": bool(m[2])})),
+    (r"(other )?creatures you control get \+(\d+)/\+(\d+)(?: and gain ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)))? until end of turn",
+     lambda m: Effect("pump_all", int(m[2]), int(m[3]), data={"other": bool(m[1]), "keyword": (m[4] or "").lower()})),
+    (r"(other )?creatures you control gain ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) until end of turn",
+     lambda m: Effect("pump_all", 0, 0, data={"other": bool(m[1]), "keyword": m[2].lower()})),
+    (r"double the number of \+1/\+1 counters on each creature you control",
+     lambda m: Effect("double_counters", target="my_creatures")),
+    (r"search your library for (an? .+?), reveal it, put it into your hand, then shuffle",
+     lambda m: Effect("tutor", data={"what": m[1]})),
+    (r"search your library for (an? .+?), put it into your hand, then shuffle",
+     lambda m: Effect("tutor", data={"what": m[1]})),
 ]
 
 _SUBS = [
@@ -380,8 +410,9 @@ _SUBS = [
                 r"(\d+) or less from among them onto the battlefield(?: with a shield counter on it)?\. put the rest "
                 r"on the bottom of your library in a random order\.", re.I),
      lambda m: f"DIGPUT {_num(m[1])} {m[2]}."),
-    (re.compile(r"exile the top (\w+) cards of your library\. until the end of your next turn, you may play "
-                r"those cards\.", re.I), lambda m: f"IMPULSE {_num(m[1])}."),
+    (re.compile(r"exile the top (card|\w+ cards) of your library\. until (?:the end of your next turn|end of turn), you "
+                r"may play (?:that card|those cards)(?: this turn)?\.", re.I),
+     lambda m: f"IMPULSE {1 if m[1] == 'card' else _num(m[1].split()[0])}."),
     (re.compile(r"target player reveals their hand\. you choose a nonland card from it\. that player discards "
                 r"that card\.", re.I), lambda m: "TARGETDISCARD."),
     (re.compile(r"then return a creature or planeswalker card with mana value X or less from your graveyard to "
@@ -563,10 +594,46 @@ def _parse_face(data: dict) -> CardDef:
         if m:
             extra.update(ward=int(m[1]), ward_untapped_only=True)
             continue
-        m = re.fullmatch(r"\{T\}: Add one mana of any color\. (Spend this mana only .+)", line)
+        m = re.fullmatch(r"\{T\}(, Pay 1 life)?: Add (one mana of any color|\{[WUBRGC]\}+)\. Spend this mana only "
+                         r"(.+)\.", line)
         if m:
-            produces |= set(COLORS)
-            unsupported.append(f"mana restriction ignored: {m[1]}")
+            restriction = _mana_restriction(m[3])
+            if restriction is None:
+                produces |= set(COLORS) if "any color" in m[2] else set(re.findall(r"[WUBRGC]", m[2]))
+                unsupported.append(f"mana restriction ignored: Spend this mana only {m[3]}.")
+                continue
+            cols, amount = _parse_mana_ability(m[2])
+            extra["mana_restriction"] = restriction
+            extra["restricted_produces"] = frozenset(cols)
+            if amount > 1:
+                extra["mana_amount"] = amount
+            if m[1]:
+                approximations.append("the 1 life for restricted mana isn't paid")
+            continue
+        if re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a creature type\.", line):
+            extra["choose_type"] = "creature"
+            continue
+        if re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a basic land type\. Then you may pay 2 life\. If you "
+                        r"don't, it enters tapped\.", line):
+            extra.update(choose_type="basic_land", tapped_condition="shock")
+            continue
+        if line == "~ is the chosen type." and extra.get("choose_type") == "basic_land":
+            continue
+        m = re.fullmatch(r"~ enters(?: the battlefield)? tapped unless you control (an? .+?)\.", line)
+        if m and all(re.fullmatch(r"an? (basic land|[A-Z]\w+)", part) for part in m[1].split(" or ")):
+            kinds = [re.fullmatch(r"an? (basic land|[A-Z]\w+)", part)[1] for part in m[1].split(" or ")]
+            extra["tapped_condition"] = "unless_control:" + "|".join("basic" if k == "basic land" else k for k in kinds)
+            continue
+        m = re.fullmatch(r"As ~ enters(?: the battlefield)?, you may behold an? ([A-Z]\w+)\. If you don't, ~ enters "
+                         r"(?:the battlefield )?tapped\.", line)
+        if m:
+            extra["tapped_condition"] = f"behold:{m[1]}"
+            continue
+        if re.fullmatch(r"~ can't block\.", line):
+            extra["cant_block"] = True
+            continue
+        if line == "Activated abilities of artifacts, creatures, and planeswalkers can't be activated.":
+            extra["stops_activations"] = True
             continue
         m = re.fullmatch(r"\{T\}: Add (\{[WUBRG]\}(?: or \{[WUBRG]\})?)\. (Activate only if [^.]+\.)", line)
         if m:
@@ -757,6 +824,10 @@ def _parse_face(data: dict) -> CardDef:
                         r"number of Blood tokens you control\. Activate only as a sorcery\.", line):
             activated.append(Activated("sac_debuff", {"generic": 0}))
             continue
+        act = _parse_ability(line, approximations)
+        if act is not None:
+            activated.append(act)
+            continue
         trig = _parse_trigger(line)
         if trig is not None:
             new, bad, choose_modes = trig
@@ -804,12 +875,88 @@ def _parse_face(data: dict) -> CardDef:
 
     return CardDef(
         name=name, mana_cost=cost, cmc=int(data.get("cmc", 0) or 0), types=types,
+        subtypes=frozenset(type_line.split("—")[1].split()) if "—" in type_line else frozenset(),
         power=stat(data.get("power")), toughness=stat(data.get("toughness")),
         keywords=frozenset(keywords), produces=frozenset(produces), enters_tapped=enters_tapped,
         spell_effects=spell, etb_effects=etb, unsupported=unsupported, approximations=approximations, oracle=oracle,
         triggers=triggers, modes=modes, chapters=chapters, loyalty_abilities=loyalty_abilities,
         alt_costs=alt_costs, activated=activated, **extra,
     )
+
+
+def _mana_restriction(text: str):
+    """What "Spend this mana only ..." allows, or None if the wording isn't one we model."""
+    text = text.lower()
+    if text == "to cast a creature spell of the chosen type, and that spell can't be countered":
+        return "chosen_type"
+    if re.fullmatch(r"to cast (?:a creature spell|creature spells)", text):
+        return "creature"
+    if re.fullmatch(r"to cast (?:an artifact spell|artifact spells)", text):
+        return "artifact"
+    if re.fullmatch(r"to cast (?:an instant or sorcery spell|instant and sorcery spells)", text):
+        return "instant_sorcery"
+    m = re.fullmatch(r"to cast an? (\w+) spell(?: or an? (\w+) spell)?", text)
+    if m:
+        return "subtype:" + "|".join(t.capitalize() for t in m.groups() if t)
+    return None
+
+
+_SACRIFICE_KINDS = {"token", "artifact", "creature", "creature or artifact", "artifact or creature", "treasure",
+                    "food", "land", "enchantment", "other creature", "other artifact"}
+
+
+def _parse_ability_cost(text: str):
+    """(mana cost, other costs) for an activated ability's cost, or None if a part isn't modelled."""
+    mana, extra = {"generic": 0}, {}
+    for part in text.split(", "):
+        m = None
+        if part == "{T}":
+            extra["tap"] = True
+        elif re.fullmatch(r"(\{[0-9WUBRGC/]+\})+", part):
+            mana = add_mana(mana, parse_mana_cost(part))
+        elif part == "Sacrifice ~":
+            extra["sac_self"] = True
+        elif part == "Exile ~":
+            extra["exile_self"] = True
+        elif part == "Discard a card":
+            extra["discard"] = 1
+        elif (m := re.fullmatch(r"Pay (\d+) life", part)):
+            extra["life"] = int(m[1])
+        elif (m := re.fullmatch(r"Remove an? ([\w/+-]+) counter from ~", part)):
+            extra["remove_counter"] = m[1]
+        elif (m := re.fullmatch(r"Sacrifice (?:a|an|another) (.+)", part)) and \
+                m[1].lower() in _SACRIFICE_KINDS:
+            what = m[1].lower()
+            extra["sacrifice"] = ("other " + what if part.startswith("Sacrifice another") else what)
+        else:
+            return None
+    return mana, extra
+
+
+def _parse_ability(line: str, approximations: list):
+    """A general activated ability ("{2}, {T}: Draw a card."), or None."""
+    m = re.fullmatch(r"([^:\"•]+?): (.+)", line)
+    if not m or not (m[1].startswith("{") or m[1].split()[0] in ("Sacrifice", "Discard", "Pay", "Remove", "Exile")):
+        return None
+    cost = _parse_ability_cost(m[1])
+    if cost is None:
+        return None
+    body, sorcery, once, approx = m[2], False, False, []
+    while True:
+        r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|This ability costs [^.]+ "
+                         r"less to activate[^.]*)\.", body)
+        if not r:
+            break
+        body = r[1]
+        sorcery |= r[2] == "Activate only as a sorcery"
+        once |= r[2] == "Activate only once each turn"
+        if r[2].startswith("This ability costs"):
+            approx.append(f"cost reduction ignored: {r[2]}.")
+    effects, bad = _parse_effects(body)
+    if bad or not effects:
+        return None
+    approximations += approx
+    return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=line)
 
 
 def _parse_trigger(line: str):
