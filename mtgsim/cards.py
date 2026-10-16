@@ -86,6 +86,7 @@ class Activated:
     extra_costs: dict = field(default_factory=dict)
     sorcery: bool = False            # "Activate only as a sorcery."
     once: bool = False               # "Activate only once each turn."
+    min_charge: int = 0              # under "STATION N+": needs N charge counters
     text: str = ""
 
 
@@ -158,6 +159,8 @@ class CardDef:
     spree: list = field(default_factory=list)           # spree modes: (extra cost, effects)
     gy_triggers: list = field(default_factory=list)     # triggers that work from the graveyard (Bloodghast)
     ward_life: int = 0                                  # "Ward—Pay N life."
+    etb_named_counters: tuple = ()                      # ("net", 3): "enters with three net counters on it"
+    station: bool = False                               # Station (tap another creature: charge counters)
     extra_lands: int = 0                                # "You may play an additional land on each of your turns."
     lands_from_gy: bool = False                         # "You may play lands from your graveyard."
     pt_per: str = ""                                    # "~ gets +1/+1 for each artifact you control": "artifact"
@@ -319,6 +322,9 @@ _EFFECT_PATTERNS = [
     (r"target opponent exiles a creature they control and their graveyard",
      lambda m: [Effect("edict", 1, data={"exile": True}), Effect("exile_gy")]),
     (r"untap another target permanent", lambda m: Effect("untap_other")),
+    (r"draw a card for each (artifact|creature|land) you control",
+     lambda m: Effect("draw", 0, data={"x_count": m[1]})),
+    (r"put ~ into its owner's library third from the top", lambda m: Effect("tuck_self", 3)),
     (r"(?:you )?draw (a|one|two|three|four|\d+) cards?", lambda m: Effect("draw", _num(m[1]))),
     (r"(?:then )?if you have fewer than (three) cards in hand, draw cards equal to the difference",
      lambda m: Effect("draw_up_to", _num(m[1]))),
@@ -697,6 +703,7 @@ def _parse_face(data: dict) -> CardDef:
         extra["loyalty"] = stat(data["loyalty"]) or 0
 
     kicked: list = []
+    station_min = 0
     for line in (l.strip() for l in text.split("\n")):
         if not line:
             continue
@@ -849,6 +856,23 @@ def _parse_face(data: dict) -> CardDef:
                          line)
         if m:
             extra["etb_counters"] = _num(m[1])
+            continue
+        m = re.fullmatch(r"~ enters with (a|one|two|three|four|five) (\w+) counters? on it\.", line)
+        if m:
+            extra["etb_named_counters"] = (m[2].lower(), _num(m[1]))
+            continue
+        m = re.fullmatch(r"Craft with artifact (\{[^ (]+\})(?: \(.*\))?", line)
+        if m:
+            activated.append(Activated("ability", parse_mana_cost(m[1]), effects=[Effect("craft")],
+                                       extra_costs={"exile_self": True, "craft": "artifact"}, sorcery=True,
+                                       text=line))
+            continue
+        if re.fullmatch(r"Station(?: \(.*\))?", line):
+            extra["station"] = True
+            continue
+        m = re.fullmatch(r"STATION (\d+)\+", line)
+        if m:
+            station_min = int(m[1])
             continue
         m = re.fullmatch(r"\{T\}, Sacrifice ~: (Search your library for a basic land card, put it onto the battlefield "
                          r"tapped, then shuffle\.(?: Then if you control four or more lands, untap that land\.)?)", line)
@@ -1072,6 +1096,7 @@ def _parse_face(data: dict) -> CardDef:
             continue
         act = _parse_ability(line, approximations)
         if act is not None:
+            act.min_charge = station_min
             activated.append(act)
             continue
         trig = _parse_trigger(line)
