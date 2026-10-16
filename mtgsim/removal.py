@@ -78,6 +78,10 @@ def _effect_bounce_own():
 
 def passes(flt: str, perm):
     """True/False for the restrictions defined here, None for any other filter."""
+    if flt == "noncreature":
+        return not perm.is_creature
+    if flt == "creature_or_ench":
+        return perm.is_creature or "Enchantment" in perm.card.types
     if flt == "art_ench_fly":
         return perm.card.is_artifact or "Enchantment" in perm.card.types or (perm.is_creature and perm.has("flying"))
     if flt == "enchantment":
