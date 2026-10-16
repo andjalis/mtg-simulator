@@ -10,3 +10,12 @@
 4 Highland Giant
 4 Mind Rot
 4 Shock
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+4 Walking Corpse
+3 Lava Axe
+3 Deathbloom Thallid
+2 Volcanic Hammer
+3 Duress

@@ -12,3 +12,14 @@
 4 Doom Blade
 2 Murder
 4 Giant Growth
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+3 Duress
+3 Last Gasp
+2 Hero's Downfall
+2 Murder
+2 Canopy Spider
+2 Snakeskin Veil
+1 Giant Spider

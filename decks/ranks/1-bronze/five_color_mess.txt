@@ -16,3 +16,15 @@
 3 Storm Crow
 3 Gray Ogre
 3 Bog Imp
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+2 Coral Merfolk
+2 Pearled Unicorn
+2 Grizzly Bears
+2 Goblin Piker
+2 Typhoid Rats
+2 Lava Axe
+2 Divine Verdict
+1 Craw Wurm

@@ -7,7 +7,9 @@
     python -m mtgsim DECK --rank master [diamond ... | all]    one deck vs whole rank pools (--list-ranks)
     python -m mtgsim DECK ... --coverage                       which cards the built-in engine can't fully play
 
-Add --engine forge --forge-dir PATH to play the games in Forge instead.
+Add --bo3 to play best-of-three matches with sideboarding instead of single games (built-in engine;
+-n then counts matches; see mtgsim.sideboard). Add --engine forge --forge-dir PATH to play the games
+in Forge instead.
 """
 from __future__ import annotations
 
@@ -18,10 +20,11 @@ import sys
 from . import history
 from .carddb import CardDB
 from .coverage import deck_coverage, format_coverage
-from .decklist import load_deck
+from .decklist import load_deck, load_deck_full
 from .forge import ForgeError, run_forge_match
 from .ladder_report import HtmlReport, TerminalView, text_summary
 from .rating import LadderTracker
+from .sideboard import run_bo3
 from .runner import build_deck, run_match, unsupported_report, wilson
 from .ranks import PASS_RATE, RANKS, list_ranks, resolve_ranks
 
@@ -43,6 +46,8 @@ def main(argv=None):
                     help="play the deck against every deck in these ranks (names, numbers 1-7, or all)")
     ap.add_argument("--list-ranks", "--list-tiers", dest="list_ranks", action="store_true",
                     help="show the ranks and their decks")
+    ap.add_argument("--bo3", action="store_true",
+                    help="play best-of-three matches with sideboarding (built-in engine); -n counts matches")
     ap.add_argument("--coverage", action="store_true",
                     help="report which cards the built-in engine plays fully, simplified or partly, then exit")
     ap.add_argument("--report", metavar="HTML",
@@ -69,14 +74,22 @@ def main(argv=None):
         return
     if not args.decks and not (args.coverage and args.rank):
         ap.error("give at least one decklist")
+    if args.bo3 and args.engine != "python":
+        ap.error("--bo3 plays on the built-in engine only (Forge doesn't sideboard between games here)")
     if args.coverage:
         db = CardDB(offline=args.offline)
         paths = list(args.decks) + (args.gauntlet or [])
-        reports = [load_deck(p) for p in paths]
         try:
-            reports += [(f"{t.key}/{p.stem}", load_deck(p)[1]) for t in resolve_ranks(args.rank or []) for p in t.decks()]
+            named = [(None, p) for p in paths] + [(t.key, p) for t in resolve_ranks(args.rank or []) for p in t.decks()]
         except ValueError as e:
             ap.error(str(e))
+        reports = []
+        for key, p in named:
+            name, full = load_deck_full(p)
+            name = f"{key}/{name}" if key else name
+            reports.append((name, full.main))
+            if full.sideboard:
+                reports.append((f"{name} (sideboard)", full.sideboard))
         print("\n\n".join(format_coverage(name, deck_coverage(db, counts)) for name, counts in reports))
         return
 
@@ -89,15 +102,20 @@ def main(argv=None):
             tiers = RANKS if args.ladder and not args.rank else resolve_ranks(args.rank)
         except ValueError as e:
             ap.error(str(e))
-    counts, decks = {}, {}
+    counts, decks, lists = {}, {}, {}   # lists: name -> Decklist (main, sideboard, bring-in notes)
+
+    def add(name, path):
+        lists[name] = load_deck_full(path)[1]
+        counts[name] = lists[name].main
+
     for path in paths:
-        name, counts[name] = load_deck(path)
+        add(load_deck(path)[0], path)
     tier_opps = {}  # rank key -> opponent names; ranks can share deck names, so names carry the rank
     for t in tiers:
         tier_opps[t.key] = []
         for p in t.decks():
             name = f"{t.key}/{p.stem}"
-            counts[name] = load_deck(p)[1]
+            add(name, p)
             tier_opps[t.key].append(name)
     if args.engine == "python":
         db = CardDB(offline=args.offline)
@@ -150,7 +168,11 @@ def main(argv=None):
             before = tracker.mmr
             tracker.start_match(b, args.games)
         on_game = (lambda r: tracker.update_match(b, r.wins_a, r.draws, r.games)) if tracker else None
-        if args.engine == "forge":
+        if args.bo3:
+            la, lb = lists[a], lists[b]
+            res = run_bo3(a, la.main, la.sideboard, b, lb.main, lb.sideboard, db, matches=args.games,
+                          seed=args.seed, bring_in_a=la.bring_in, bring_in_b=lb.bring_in, on_match=on_game)
+        elif args.engine == "forge":
             def progress(done, total):
                 if view and view.live:
                     return  # the live rank line already shows progress
@@ -178,8 +200,8 @@ def main(argv=None):
 
     if tiers:
         run_tiers(names[0], tiers, tier_opps, play, ladder=args.ladder, full=args.full_ladder,
-                  pass_rate=args.pass_rate, tracker=tracker)
-        grades = None if args.no_grades else grade_deck(names[0], counts[names[0]], tracker, report, args)
+                  pass_rate=args.pass_rate, tracker=tracker, unit="matches" if args.bo3 else "games")
+        grades = None if args.no_grades else grade_deck(names[0], lists[names[0]], tracker, report, args)
         if not args.no_history and history.try_record(history.record_ladder, tracker.to_dict(), counts[names[0]],
                                                       engine=args.engine, source="cli"):
             if grades:
@@ -197,16 +219,18 @@ def main(argv=None):
         totals[b][1] += res.games
 
     if len(pairings) > 1:
-        print("Overall win rate")
+        print("Overall match win rate" if args.bo3 else "Overall win rate")
         for n, (w, g) in sorted(totals.items(), key=lambda kv: -kv[1][0] / max(kv[1][1], 1)):
             if g:
                 lo, hi = wilson(w, g)
-                print(f"  {n:<24} {w / g:6.1%}  (95% CI {lo:.1%} to {hi:.1%}, {g} games)")
+                print(f"  {n:<24} {w / g:6.1%}  (95% CI {lo:.1%} to {hi:.1%}, {g} {'matches' if args.bo3 else 'games'})")
 
 
-def run_tiers(me, tiers, tier_opps, play, ladder=False, full=False, pass_rate=PASS_RATE, tracker=None):
+def run_tiers(me, tiers, tier_opps, play, ladder=False, full=False, pass_rate=PASS_RATE, tracker=None,
+              unit="games"):
     """Play `me` against each rank's pool in order. On the ladder, stop at the first rank it fails
-    (win rate below pass_rate against the pool as a whole) unless full is set.
+    (win rate below pass_rate against the pool as a whole) unless full is set. unit names what
+    play() results count: "matches" on a best-of-three ladder, where the rate is the match win rate.
     A rating.LadderTracker, if given, is told when each rank's pool ends and gets the verdict."""
     rows, reached, failed = [], None, None
     for t in tiers:
@@ -218,7 +242,7 @@ def run_tiers(me, tiers, tier_opps, play, ladder=False, full=False, pass_rate=PA
         rate = points / games if games else 0.0
         cleared = rate >= pass_rate
         lo, hi = wilson(points, int(games))
-        rows.append(f"  {t.label:<11} {rate:6.1%}  (95% CI {lo:.1%} to {hi:.1%}, {int(games)} games)"
+        rows.append(f"  {t.label:<11} {rate:6.1%}  (95% CI {lo:.1%} to {hi:.1%}, {int(games)} {unit})"
                     + (("  cleared" if cleared else "  failed") if ladder else ""))
         if tracker:
             tracker.end_pool(t.key, cleared if ladder else None)
@@ -246,13 +270,16 @@ def run_tiers(me, tiers, tier_opps, play, ladder=False, full=False, pass_rate=PA
         print(text_summary(tracker.to_dict()))
 
 
-def grade_deck(me, my_counts, tracker, report, args):
+def grade_deck(me, my_list, tracker, report, args):
     """Grade the deck after a ladder run (see mtgsim.assess), reusing its games against the
-    Grandmaster pool for the meta criterion, then add the grades to the HTML report."""
+    Grandmaster pool for the meta criterion, then add the grades to the HTML report. After a
+    best-of-three ladder the meta games are played fresh (the ladder's results are match results,
+    not game results) and the sideboard criterion is added."""
     from .assess import assess, text_report
 
-    given = {o.name.rsplit("/", 1)[-1]: (o.points, o.games)
-             for o in tracker.opponents.values() if o.pool == "grandmaster" and o.games}
+    my_counts = my_list.main
+    given = {} if args.bo3 else {o.name.rsplit("/", 1)[-1]: (o.points, o.games)
+                                 for o in tracker.opponents.values() if o.pool == "grandmaster" and o.games}
     play = None
     if args.engine == "forge":
         def play(a, a_counts, b, b_counts):
@@ -265,8 +292,9 @@ def grade_deck(me, my_counts, tracker, report, args):
     print("\nGrading the deck (meta, mana, speed, consistency)...", file=sys.stderr)
     try:
         a = assess(me, my_counts, CardDB(offline=args.offline), games=args.games, seed=args.seed,
-                   meta_results=given, play=play,
-                   progress=lambda s: print(f"  {s}...", file=sys.stderr, flush=True))
+                   meta_results=given or None, play=play,
+                   progress=lambda s: print(f"  {s}...", file=sys.stderr, flush=True),
+                   bo3=args.games if args.bo3 else 0, sideboard=my_list.sideboard, bring_in=my_list.bring_in)
     except KeyError as e:
         sys.exit(f"{me}: {e}")
     a["criteria"]["meta"]["details"]["engine"] = args.engine
