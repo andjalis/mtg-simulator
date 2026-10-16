@@ -1,0 +1,291 @@
+[metadata]
+Code=OTJ
+Name=Outlaws of Thunder Junction
+
+[cards]
+1 Another Round
+2 Archangel of Tithes
+3 Armored Armadillo
+4 Aven Interrupter
+5 Bounding Felidar
+6 Bovine Intervention
+7 Bridled Bighorn
+8 Claim Jumper
+9 Dust Animus
+10 Eriette's Lullaby
+11 Final Showdown
+12 Fortune, Loyal Steed
+13 Frontier Seeker
+14 Getaway Glamer
+15 High Noon
+16 Holy Cow
+17 Inventive Wingsmith
+18 Lassoed by the Law
+19 Mystical Tether
+20 Nurturing Pixie
+21 Omenport Vigilante
+22 One Last Job
+23 Outlaw Medic
+24 Prairie Dog
+25 Prosperity Tycoon
+26 Requisition Raid
+27 Rustler Rampage
+28 Shepherd of the Clouds
+29 Sheriff of Safe Passage
+30 Stagecoach Security
+31 Steer Clear
+32 Sterling Keykeeper
+33 Sterling Supplier
+34 Take Up the Shield
+35 Thunder Lasso
+36 Trained Arynx
+37 Vengeful Townsfolk
+38 Wanted Griffin
+39 Archmage's Newt
+40 Canyon Crab
+41 Daring Thunder-Thief
+42 Deepmuck Desperado
+43 Djinn of Fool's Fall
+44 Double Down
+45 Duelist of the Mind
+46 Emergent Haunting
+47 Failed Fording
+48 Fblthp, Lost on the Range
+49 Fleeting Reflection
+50 Geralf, the Fleshwright
+51 Geyser Drake
+52 Harrier Strix
+53 Jailbreak Scheme
+54 The Key to the Vault
+55 Loan Shark
+56 Marauding Sphinx
+57 Metamorphic Blast
+58 Nimble Brigand
+59 Outlaw Stitcher
+60 Peerless Ropemaster
+61 Phantom Interference
+62 Plan the Heist
+63 Razzle-Dazzler
+64 Seize the Secrets
+65 Shackle Slinger
+66 Shifting Grift
+67 Slickshot Lockpicker
+68 Slickshot Vault-Buster
+69 Spring Splasher
+70 Step Between Worlds
+71 Stoic Sphinx
+72 Stop Cold
+73 Take the Fall
+74 This Town Ain't Big Enough
+75 Three Steps Ahead
+76 Visage Bandit
+77 Ambush Gigapede
+78 Binding Negotiation
+79 Blacksnag Buzzard
+80 Blood Hustler
+81 Boneyard Desecrator
+82 Caustic Bronco
+83 Consuming Ashes
+84 Corrupted Conviction
+85 Desert's Due
+86 Desperate Bloodseeker
+87 Fake Your Own Death
+88 Forsaken Miner
+89 Gisa, the Hellraiser
+90 Hollow Marauder
+91 Insatiable Avarice
+92 Kaervek, the Punisher
+93 Lively Dirge
+94 Mourner's Surprise
+95 Neutralize the Guards
+96 Nezumi Linkbreaker
+97 Overzealous Muscle
+98 Pitiless Carnage
+99 Rakish Crew
+100 Rattleback Apothecary
+101 Raven of Fell Omens
+102 Rictus Robber
+103 Rooftop Assassin
+104 Rush of Dread
+105 Servant of the Stinger
+106 Shoot the Sheriff
+107 Skulduggery
+108 Tinybones Joins Up
+109 Tinybones, the Pickpocket
+110 Treasure Dredger
+111 Unfortunate Accident
+112 Unscrupulous Contractor
+113 Vadmir, New Blood
+114 Vault Plunderer
+115 Brimstone Roundup
+116 Calamity, Galloping Inferno
+117 Caught in the Crossfire
+118 Cunning Coyote
+119 Deadeye Duelist
+120 Demonic Ruckus
+121 Discerning Peddler
+122 Explosive Derailment
+123 Ferocification
+124 Gila Courser
+125 Great Train Heist
+126 Hell to Pay
+127 Hellspur Brute
+128 Hellspur Posse Boss
+129 Highway Robbery
+130 Irascible Wolverine
+131 Iron-Fist Pulverizer
+132 Longhorn Sharpshooter
+133 Magda, the Hoardmaster
+134 Magebane Lizard
+135 Mine Raider
+136 Outlaws' Fury
+137 Prickly Pair
+138 Quick Draw
+139 Quilled Charger
+140 Reckless Lackey
+141 Resilient Roadrunner
+142 Return the Favor
+143 Rodeo Pyromancers
+144 Scalestorm Summoner
+145 Scorching Shot
+146 Slickshot Show-Off
+147 Stingerback Terror
+148 Take for a Ride
+149 Terror of the Peaks
+150 Thunder Salvo
+151 Trick Shot
+152 Aloe Alchemist
+153 Ankle Biter
+154 Beastbond Outcaster
+155 Betrayal at the Vault
+156 Bristlepack Sentry
+157 Bristly Bill, Spine Sower
+158 Cactarantula
+159 Colossal Rattlewurm
+160 Dance of the Tumbleweeds
+161 Drover Grizzly
+162 Freestrider Commando
+163 Freestrider Lookout
+164 Full Steam Ahead
+165 Giant Beaver
+166 Gold Rush
+167 Goldvein Hydra
+168 Hardbristle Bandit
+169 Intrepid Stablemaster
+170 Map the Frontier
+171 Ornery Tumblewagg
+172 Outcaster Greenblade
+173 Outcaster Trailblazer
+174 Patient Naturalist
+175 Railway Brawler
+176 Rambling Possum
+177 Raucous Entertainer
+178 Reach for the Sky
+179 Rise of the Varmints
+180 Smuggler's Surprise
+181 Snakeskin Veil
+182 Spinewoods Armadillo
+183 Spinewoods Paladin
+184 Stubborn Burrowfiend
+185 Throw from the Saddle
+186 Trash the Town
+187 Tumbleweed Rising
+188 Voracious Varmint
+189 Akul the Unrepentant
+190 Annie Flash, the Veteran
+191 Annie Joins Up
+192 Assimilation Aegis
+193 At Knifepoint
+194 Badlands Revival
+195 Baron Bertram Graywater
+196 Bonny Pall, Clearcutter
+197 Breeches, the Blastmaker
+198 Bruse Tarl, Roving Rancher
+199 Cactusfolk Sureshot
+200 Congregation Gryff
+201 Doc Aurlock, Grizzled Genius
+202 Eriette, the Beguiler
+203 Ertha Jo, Frontier Mentor
+204 Form a Posse
+205 Ghired, Mirror of the Wilds
+206 The Gitrog, Ravenous Ride
+207 Honest Rutstein
+208 Intimidation Campaign
+209 Jem Lightfoote, Sky Explorer
+210 Jolene, Plundering Pugilist
+211 Kambal, Profiteering Mayor
+212 Kellan Joins Up
+213 Kellan, the Kid
+214 Kraum, Violent Cacophony
+215 Laughing Jasper Flint
+216 Lazav, Familiar Stranger
+217 Lilah, Undefeated Slickshot
+218 Make Your Own Luck
+219 Malcolm, the Eyes
+220 Marchesa, Dealer of Death
+221 Miriam, Herd Whisperer
+222 Obeka, Splitter of Seconds
+223 Oko, the Ringleader
+224 Pillage the Bog
+225 Rakdos Joins Up
+226 Rakdos, the Muscle
+227 Riku of Many Paths
+228 Roxanne, Starfall Savant
+229 Ruthless Lawbringer
+230 Satoru, the Infiltrator
+231 Selvala, Eager Trailblazer
+232 Seraphic Steed
+233 Slick Sequence
+234 Taii Wakeen, Perfect Shot
+235 Vial Smasher, Gleeful Grenadier
+236 Vraska Joins Up
+237 Vraska, the Silencer
+238 Wrangler of the Damned
+239 Wylie Duke, Atiin Hero
+240 Bandit's Haul
+241 Boom Box
+242 Gold Pan
+243 Lavaspur Boots
+244 Luxurious Locomotive
+245 Mobile Homestead
+246 Oasis Gardener
+247 Redrock Sentinel
+248 Silver Deputy
+249 Sterling Hound
+250 Tomb Trawler
+251 Abraded Bluffs
+252 Arid Archway
+253 Bristling Backwoods
+254 Conduit Pylons
+255 Creosote Heath
+256 Eroded Canyon
+257 Festering Gulch
+258 Forlorn Flats
+259 Jagged Barrens
+260 Lonely Arroyo
+261 Lush Oasis
+262 Mirage Mesa
+263 Sandstorm Verge
+264 Soured Springs
+265 Bucolic Ranch
+266 Blooming Marsh
+267 Botanical Sanctum
+268 Concealed Courtyard
+269 Inspiring Vantage
+270 Spirebluff Canal
+271 Jace Reawakened
+272 Plains
+273 Island
+274 Swamp
+275 Mountain
+276 Forest
+277 Plains
+278 Plains
+279 Island
+280 Island
+281 Swamp
+282 Swamp
+283 Mountain
+284 Mountain
+285 Forest
+286 Forest

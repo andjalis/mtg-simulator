@@ -1,0 +1,291 @@
+[metadata]
+Code=TDM
+Name=Tarkir: Dragonstorm
+
+[cards]
+1 Ugin, Eye of the Storms
+2 Anafenza, Unyielding Lineage
+3 Arashin Sunshield
+4 Bearer of Glory
+5 Clarion Conqueror
+6 Coordinated Maneuver
+7 Dalkovan Packbeasts
+8 Descendant of Storms
+9 Dragonback Lancer
+10 Duty Beyond Death
+11 Elspeth, Storm Slayer
+12 Fortress Kin-Guard
+13 Furious Forebear
+14 Lightfoot Technique
+15 Loxodon Battle Priest
+16 Mardu Devotee
+17 Osseous Exhale
+18 Poised Practitioner
+19 Rally the Monastery
+20 Rebellious Strike
+21 Riling Dawnbreaker
+22 Sage of the Skies
+23 Salt Road Packbeast
+24 Smile at Death
+25 Starry-Eyed Skyrider
+26 Static Snare
+27 Stormbeacon Blade
+28 Stormplain Detainment
+29 Sunpearl Kirin
+30 Teeming Dragonstorm
+31 Tempest Hawk
+32 United Battlefront
+33 Voice of Victory
+34 Wayspeaker Bodyguard
+35 Aegis Sculptor
+36 Agent of Kotis
+37 Ambling Stormshell
+38 Bewildering Blizzard
+39 Constrictor Sage
+40 Dirgur Island Dragon
+41 Dispelling Exhale
+42 Dragonologist
+43 Dragonstorm Forecaster
+44 Essence Anchor
+45 Focus the Mind
+46 Fresh Start
+47 Highspire Bell-Ringer
+48 Humbling Elder
+49 Iceridge Serpent
+50 Kishla Trawlers
+51 Marang River Regent
+52 Naga Fleshcrafter
+53 Ringing Strike Mastery
+54 Riverwalk Technique
+55 Roiling Dragonstorm
+56 Sibsig Appraiser
+57 Snowmelt Stag
+58 Spectral Denial
+59 Stillness in Motion
+60 Taigam, Master Opportunist
+61 Temur Devotee
+62 Unending Whisper
+63 Ureni's Rebuff
+64 Veteran Ice Climber
+65 Wingblade Disciple
+66 Wingspan Stride
+67 Winternight Stories
+68 Abzan Devotee
+69 Adorned Crocodile
+70 Aggressive Negotiations
+71 Alchemist's Assistant
+72 Alesha's Legacy
+73 Avenger of the Fallen
+74 Caustic Exhale
+75 Corroding Dragonstorm
+76 Cruel Truths
+77 Delta Bloodflies
+78 Desperate Measures
+79 Dragon's Prey
+80 Feral Deathgorger
+81 Gurmag Rakshasa
+82 Hundred-Battle Veteran
+83 Kin-Tree Nurturer
+84 Krumar Initiate
+85 Nightblade Brigade
+86 Qarsi Revenant
+87 Rot-Curse Rakshasa
+88 Salt Road Skirmish
+89 Sandskitter Outrider
+90 Scavenger Regent
+91 The Sibsig Ceremony
+92 Sidisi, Regent of the Mire
+93 Sinkhole Surveyor
+94 Strategic Betrayal
+95 Unburied Earthcarver
+96 Unrooted Ancestor
+97 Venerated Stormsinger
+98 Wail of War
+99 Worthy Cost
+100 Yathan Tombguard
+101 Breaching Dragonstorm
+102 Channeled Dragonfire
+103 Cori-Steel Cutter
+104 Devoted Duelist
+105 Dracogenesis
+106 Equilibrium Adept
+107 Fire-Rim Form
+108 Fleeting Effigy
+109 Iridescent Tiger
+110 Jeskai Devotee
+111 Magmatic Hellkite
+112 Meticulous Artisan
+113 Molten Exhale
+114 Narset's Rebuke
+115 Overwhelming Surge
+116 Rescue Leopard
+117 Reverberating Summons
+118 Sarkhan, Dragon Ascendant
+119 Seize Opportunity
+120 Shock Brigade
+121 Shocking Sharpshooter
+122 Stadium Headliner
+123 Stormscale Scion
+124 Stormshriek Feral
+125 Summit Intimidator
+126 Sunset Strikemaster
+127 Tersa Lightshatter
+128 Twin Bolt
+129 Underfoot Underdogs
+130 Unsparing Boltcaster
+131 War Effort
+132 Wild Ride
+133 Zurgo's Vanguard
+134 Ainok Wayfarer
+135 Attuned Hunter
+136 Bloomvine Regent
+137 Champion of Dusan
+138 Craterhoof Behemoth
+139 Dragon Sniper
+140 Dragonbroods' Relic
+141 Dusyut Earthcarver
+142 Encroaching Dragonstorm
+143 Formation Breaker
+144 Herd Heirloom
+145 Heritage Reclamation
+146 Inspirited Vanguard
+147 Knockout Maneuver
+148 Krotiq Nestguard
+149 Lasyd Prowler
+150 Nature's Rhythm
+151 Piercing Exhale
+152 Rainveil Rejuvenator
+153 Rite of Renewal
+154 Roamer's Routine
+155 Sage of the Fang
+156 Sagu Pummeler
+157 Sagu Wildling
+158 Sarkhan's Resolve
+159 Snakeskin Veil
+160 Sultai Devotee
+161 Surrak, Elusive Hunter
+162 Synchronized Charge
+163 Trade Route Envoy
+164 Traveling Botanist
+165 Undergrowth Leopard
+166 Warden of the Grove
+167 All-Out Assault
+168 Armament Dragon
+169 Auroral Procession
+170 Awaken the Honored Dead
+171 Barrensteppe Siege
+172 Betor, Kin to All
+173 Bone-Cairn Butcher
+174 Call the Spirit Dragons
+175 Cori Mountain Stalwart
+176 Death Begets Life
+177 Defibrillating Current
+178 Disruptive Stormbrood
+179 Dragonback Assault
+180 Dragonclaw Strike
+181 Effortless Master
+182 Eshki Dragonclaw
+183 Fangkeeper's Familiar
+184 Felothar, Dawn of the Abzan
+185 Flamehold Grappler
+186 Frontline Rush
+187 Frostcliff Siege
+188 Glacial Dragonhunt
+189 Glacierwood Siege
+190 Gurmag Nightwatch
+191 Hardened Tactician
+192 Hollowmurk Siege
+193 Host of the Hereafter
+194 Inevitable Defeat
+195 Jeskai Brushmaster
+196 Jeskai Revelation
+197 Jeskai Shrinekeeper
+198 Karakyk Guardian
+199 Kheru Goldkeeper
+200 Kin-Tree Severance
+201 Kishla Skimmer
+202 Kotis, the Fangkeeper
+203 Lie in Wait
+204 Lotuslight Dancers
+205 Mammoth Bellow
+206 Mardu Siegebreaker
+207 Marshal of the Lost
+208 Monastery Messenger
+209 Narset, Jeskai Waymaster
+210 Neriv, Heart of the Storm
+211 New Way Forward
+212 Perennation
+213 Purging Stormbrood
+214 Rakshasa's Bargain
+215 Rediscover the Way
+216 Reigning Victor
+217 Reputable Merchant
+218 Revival of the Ancestors
+219 Riverwheel Sweep
+220 Roar of Endless Song
+221 Runescale Stormbrood
+222 Severance Priest
+223 Shiko, Paragon of the Way
+224 Skirmish Rhino
+225 Songcrafter Mage
+226 Sonic Shrieker
+227 Stalwart Successor
+228 Temur Battlecrier
+229 Temur Tawnyback
+230 Teval, Arbiter of Virtue
+231 Thunder of Unity
+232 Twinmaw Stormbrood
+233 Ureni, the Song Unending
+234 Whirlwing Stormbrood
+235 Windcrag Siege
+236 Yathan Roadwatcher
+237 Zurgo, Thunder's Decree
+238 Abzan Monument
+239 Boulderborn Dragon
+240 Dragonfire Blade
+241 Dragonstorm Globe
+242 Embermouth Sentinel
+243 Jade-Cast Sentinel
+244 Jeskai Monument
+245 Mardu Monument
+246 Mox Jasper
+247 Sultai Monument
+248 Temur Monument
+249 Watcher of the Wayside
+250 Bloodfell Caves
+251 Blossoming Sands
+252 Cori Mountain Monastery
+253 Dalkovan Encampment
+254 Dismal Backwater
+255 Evolving Wilds
+256 Frontier Bivouac
+257 Great Arashin City
+258 Jungle Hollow
+259 Kishla Village
+260 Maelstrom of the Spirit Dragon
+261 Mistrise Village
+262 Mystic Monastery
+263 Nomad Outpost
+264 Opulent Palace
+265 Rugged Highlands
+266 Sandsteppe Citadel
+267 Scoured Barrens
+268 Swiftwater Cliffs
+269 Thornwood Falls
+270 Tranquil Cove
+271 Wind-Scarred Crag
+272 Plains
+273 Island
+274 Swamp
+275 Mountain
+276 Forest
+277 Plains
+278 Plains
+279 Island
+280 Island
+281 Swamp
+282 Swamp
+283 Mountain
+284 Mountain
+285 Forest
+286 Forest

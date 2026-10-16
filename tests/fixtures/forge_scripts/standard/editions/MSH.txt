@@ -1,0 +1,301 @@
+[metadata]
+Code=MSH
+Name=Marvel Super Heroes
+
+[cards]
+1 Agent 13, Sharon Carter
+2 Agent Maria Hill
+3 Agent of Atlas
+4 Agent Phil Coulson
+5 Agents of S.H.I.E.L.D.
+6 Avengers Assemble!
+7 Borough Backup
+8 Brave Brawler
+9 Captain America, Super-Soldier
+10 Captain America, Wings of Freedom
+11 Captain Marvel, Earth's Protector
+12 Captain Mar-Vell, Space-Born
+13 Colleen Wing, Street Samurai
+14 Crowd of True Believers
+15 Helicarrier Strike
+16 Hero in Training
+17 Invisible Woman, Sue Storm
+18 Jennifer Walters
+19 Kree Commandos
+20 Luke Cage, Power Man
+21 The Mind Stone
+22 Mockingbird, Ace Agent
+23 Monica Rambeau
+24 Murdock's Crusade
+25 Nick Fury, Agent of S.H.I.E.L.D.
+26 Night Nurse, Healer of Heroes
+27 Okoye, Dora Milaje Leader
+28 Origin of the Avengers
+29 Panther Pounce
+30 Patriot, Shield Wielder
+31 Political Triumph
+32 Quake, Agent of S.H.I.E.L.D.
+33 Raft Security Officer
+34 Red Guardian, Super-Soldier
+35 The Sentry, Golden Guardian
+36 S.H.I.E.L.D. Spy Kit
+37 Super Villain Lockup
+38 Super-Soldier Serum
+39 Take Up the Shield
+40 Wakandan Drone Flock
+41 Web Up
+42 White Widow, Free Agent
+43 Aerial Doombot
+44 A.I.M. Scientists
+45 Atlantean Cavalry
+46 Atlantis Attacks
+47 Attuma, Atlantean Warlord
+48 Bold Biochemist
+49 Bruce Banner
+50 Depower
+51 Echo, Perceptive Prodigy
+52 Falcon, Winged Wonder
+53 Falcon's Wing Harness
+54 Frozen in Ice
+55 Futurist Forge
+56 Giant-Sized Flying Ant
+57 Hydraulic Helper
+58 I Am Iron Man
+59 Iron Lad, Diverging Destiny
+60 Ironheart, Clever Champion
+61 Justice, Vance Astrovik
+62 Kang the Conqueror
+63 Kid Loki
+64 Leader, Super-Genius
+65 Loki, God of Mischief
+66 Mister Fantastic, Reed Richards
+67 Ms. Marvel, Kamala Khan
+68 Multiversal Incursion
+69 Namor the Sub-Mariner
+70 Pym Particles
+71 Rewrite History
+72 Secret Invasion
+73 S.H.I.E.L.D. Deployment Drone
+74 S.H.I.E.L.D. Flying Car
+75 Shuri, Wakandan Inventor
+76 Stature, Size Shifter
+77 Super Intelligence
+78 Super Suit
+79 Thirst for Knowledge
+80 Tony Stark
+81 Trickster's Stratagem
+82 We Say Thee Nay!
+83 Wiccan, Rising Magician
+84 The Wondrous Wasp
+85 Agents of HYDRA
+86 Arnim Zola, Bio-Fanatic
+87 Baron Helmut Zemo
+88 Baron Strucker, HYDRA Overlord
+89 Black Widow, Super Spy
+90 Construct a Cosmic Cube
+91 Crossbones, Malicious Mercenary
+92 Cruel Alliance
+93 Dark Deed
+94 Decoy Ploy
+95 Doctor Doom
+96 Doom Reigns Supreme
+97 Elektra, Daughter of the Hand
+98 Grim Reaper, Lethal Legionnaire
+99 Hour of Defeat
+100 HYDRA Infiltration
+101 HYDRA Troopers
+102 Kingpin's Enforcers
+103 Klaw, Sonic Subjugator
+104 Madame Masque
+105 The Masters of Evil
+106 M.O.D.O.K.
+107 Moonstone, Harsh Mistress
+108 Ninja of the Hand
+109 Project Deathlok Soldier
+110 Red Room Recruit
+111 Robot Domination
+112 Ronin, Shadow Stalker
+113 Roxxon Brutes
+114 Stolen Stark Tech
+115 Super-Skrull
+116 Swordsman, Sharp Scoundrel
+117 Thunderbolts Conspiracy
+118 Too Evil to Stay Dead
+119 Unliving Legionnaire
+120 Visions of Villainy
+121 Whiplash, Vengeful Engineer
+122 Widow's Bite
+123 Yellowjacket, Heartless Marauder
+124 Avengers Disassembled
+125 Blazing Crescendo
+126 Crimson Operative
+127 Death to Our Enemies
+128 Evil's Thrall
+129 Fin Fang Foom
+130 Hawkeye, Master Marksman
+131 Hawkeye, Young Avenger
+132 Hawkeye's Bow
+133 Hex Magic
+134 Hire a Crew
+135 HULK SMASH!
+136 Human Torch, Johnny Storm
+137 HYDRA Assault Robot
+138 Iron Fist, Living Weapon
+139 Jessica Jones, Private Eye
+140 K'un-Lun Warrior
+141 Kree Sentinel
+142 Lightning Strike
+143 Loki Laufeyson
+144 Machinesmith Automaton
+145 Misty Knight, Hero for Hire
+146 Mjölnir, Hammer of Thor
+147 Photon Blast Barrage
+148 Quicksilver, Brash Blur
+149 Red Hulk
+150 Repulsor Blast
+151 The Scarlet Witch
+152 Speed, Young Avenger
+153 Stark Industries Executive
+154 Super Speed
+155 Team Tactics
+156 Thor, God of Thunder
+157 Truck Toss
+158 Vision of Love
+159 Volcanic Villain
+160 Wonder Man, Hollywood Hero
+161 Ant-Man's Army
+162 Call Damage Control
+163 Claim the Kingdom
+164 Doc Samson, Super Psychiatrist
+165 Earth's Mightiest Heroes
+166 Epic Fight
+167 Giant Growth
+168 Go Nuts!
+169 Guerrilla Gorilla
+170 Hellcat, Undying Vigilante
+171 Hercules, Prince of Power
+172 Heroic Feast
+173 Hulkling, Burgeoning Bruiser
+174 Ka-Zar of the Savage Land
+175 Knight of Wundagore
+176 Mister Hyde, Monster Within
+177 Mole Man, Moloid Master
+178 Pet Avengers
+179 Powerful Broker
+180 Punishing Punch
+181 Rapid Rescue
+182 Reptil, Dinomorpher
+183 Restorative Technique
+184 Rick Jones, Destined Sidekick
+185 Savage Land Dinosaur
+186 Serpent Specialist
+187 Shang-Chi, Master of Kung Fu
+188 She-Hulk, Jade Defender
+189 Super Strength
+190 The Thing, Ben Grimm
+191 Tigra, Feline Fury
+192 Training Regimen
+193 The Unbeatable Squirrel Girl
+194 Undercover Skrull
+195 Wakandan Royal Guard
+196 White Tiger, Ava Ayala
+197 World War Hulk
+198 Abomination, Terrifying Titan
+199 Absorbing Man
+200 Alien Invasion
+201 Ant-Man, Colony Commander
+202 Ares, God of War
+203 Armor Wars
+204 The Astonishing Ant-Man
+205 Avengers: Under Siege
+206 Beast, Erudite Aerialist
+207 Black Panther, Vanguard
+208 Black Widow, Double Agent
+209 Bullseye, Death Dealer
+210 Captain America, Living Legend
+211 Cloak and Dagger, Entwined
+212 The Coming of Galactus
+213 Daredevil, Man Without Fear
+214 Ghost, Spectral Saboteur
+215 Hulk, Gamma Goliath
+216 Iron Man, Master of Machines
+217 Kang, Temporal Tyrant
+218 Killmonger, Scourge of Wakanda
+219 King T'Challa
+220 The Kingpin of Crime
+221 Madame Hydra
+222 The Mighty Thor, Jane Foster
+223 Moon Girl and Devil Dinosaur
+224 The Ruinous Wrecking Crew
+225 Scientist Supreme of A.I.M.
+226 The Serpent Society
+227 Speedball, New Warrior
+228 Spider-Man, To the Rescue
+229 Spider-Woman, Secret Agent
+230 Storm, Windrider
+231 The Super Hero Civil War
+232 Taskmaster, Mercenary Mimic
+233 Thanos, the Mad Titan
+234 Thor Odinson
+235 Titania, Rugged Rumbler
+236 U.S.Agent, John Walker
+237 Vision Quest
+238 War Machine, Legacy of Iron
+239 Winter Soldier, Icy Assassin
+240 Wolverine, Fierce Fighter
+241 Worlds Within Worlds
+242 A.I.M. Synthoids
+243 Arc Reactor
+244 Captain America's Shield
+245 Cosmic Cube
+246 Dependable Quinjet
+247 H.E.R.B.I.E. Scout Unit
+248 Iron Man Armor
+249 S.H.I.E.L.D. Helicarrier
+250 Super-Adaptoid
+251 The Ten Rings
+252 Ultron, Artificial Malevolence
+253 Ultron Drone
+254 Vibranium Energy Daggers
+255 The Vision
+256 Viv Vision, Teen Synthezoid
+257 A.I.M. Labs
+258 Asgardian Citadel
+259 Avengers Hangar
+260 Avengers Tower
+261 Baxter Building
+262 Birnin Zana Plaza
+263 Castle Doom
+264 Dark Fortress
+265 Fisk Tower
+266 Gathering Place
+267 Gleaming Bastion
+268 Hell's Kitchen
+269 Hidden Lair
+270 Los Diablos Missile Base
+271 Pym Technologies
+272 Stark Industries
+273 Subterranean Cavern
+274 Surveillance Room
+275 Training Compound
+276 Villainous Hideout
+277 Plains
+278 Plains
+279 Island
+280 Island
+281 Swamp
+282 Swamp
+283 Mountain
+284 Mountain
+285 Forest
+286 Forest
+287 Plains
+288 Plains
+289 Island
+290 Island
+291 Swamp
+292 Swamp
+293 Mountain
+294 Mountain
+295 Forest
+296 Forest

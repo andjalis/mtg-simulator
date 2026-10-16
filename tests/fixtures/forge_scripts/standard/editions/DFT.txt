@@ -1,0 +1,296 @@
+[metadata]
+Code=DFT
+Name=Aetherdrift
+
+[cards]
+1 Air Response Unit
+2 Alacrian Armory
+3 Basri, Tomorrow's Champion
+4 Brightfield Glider
+5 Brightfield Mustang
+6 Broadcast Rambler
+7 Bulwark Ox
+8 Canyon Vaulter
+9 Cloudspire Captain
+10 Collision Course
+11 Daring Mechanic
+12 Detention Chariot
+13 Gallant Strike
+14 Gloryheath Lynx
+15 Guardian Sunmare
+16 Guidelight Synergist
+17 Interface Ace
+18 Leonin Surveyor
+19 Lightshield Parry
+20 Lightwheel Enhancements
+21 Lotusguard Disciple
+22 Nesting Bot
+23 Perilous Snare
+24 Pride of the Road
+25 Ride's End
+26 Roadside Assistance
+27 Salvation Engine
+28 Skyseer's Chariot
+29 Spectacular Pileup
+30 Spotcycle Scouter
+31 Sundial, Dawn Tyrant
+32 Swiftwing Assailant
+33 Tune Up
+34 Unswerving Sloth
+35 Valor's Flagship
+36 Voyager Glidecar
+37 Voyager Quickwelder
+38 Aether Syphon
+39 Bounce Off
+40 Caelorna, Coral Tyrant
+41 Diversion Unit
+42 Flood the Engine
+43 Gearseeker Serpent
+44 Glitch Ghost Surveyor
+45 Guidelight Optimizer
+46 Howler's Heavy
+47 Hulldrifter
+48 Keen Buccaneer
+49 Memory Guardian
+50 Midnight Mangler
+51 Mindspring Merfolk
+52 Mu Yanling, Wind Rider
+53 Nimble Thopterist
+54 Possession Engine
+55 Rangers' Refueler
+56 Repurposing Bay
+57 Riverchurn Monument
+58 Roadside Blowout
+59 Sabotage Strategist
+60 Scrounging Skyray
+61 Skystreak Engineer
+62 Slick Imitator
+63 Spectral Interference
+64 Spell Pierce
+65 Spikeshell Harrier
+66 Stall Out
+67 Stock Up
+68 Thopter Fabricator
+69 Trade the Helm
+70 Transit Mage
+71 Trip Up
+72 Unstoppable Plan
+73 Vnwxt, Verbose Host
+74 Waxen Shapethief
+75 Ancient Vendetta
+76 Back on Track
+77 Bloodghast
+78 Carrion Cruiser
+79 Chitin Gravestalker
+80 Cryptcaller Chariot
+81 Cursecloth Wrappings
+82 Deathless Pilot
+83 Demonic Junker
+84 Engine Rat
+85 Gas Guzzler
+86 Gastal Raider
+87 Gonti, Night Minister
+88 Grim Bauble
+89 Grim Javelineer
+90 Hellish Sideswipe
+91 Hour of Victory
+92 Intimidation Tactics
+93 Kalakscion, Hunger Tyrant
+94 The Last Ride
+95 Locust Spray
+96 Maximum Overdrive
+97 Momentum Breaker
+98 Mutant Surveyor
+99 Pactdoll Terror
+100 Quag Feast
+101 Ripclaw Wrangler
+102 Risen Necroregent
+103 Risky Shortcut
+104 Shefet Archfiend
+105 The Speed Demon
+106 Spin Out
+107 Streaking Oilgorger
+108 Syphon Fuel
+109 Wickerfolk Indomitable
+110 Wreckage Wickerfolk
+111 Wretched Doll
+112 Adrenaline Jockey
+113 Boommobile
+114 Burner Rocket
+115 Burnout Bashtronaut
+116 Chandra, Spark Hunter
+117 Clamorous Ironclad
+118 Count on Luck
+119 Crash and Burn
+120 Daretti, Rocketeer Engineer
+121 Draconautics Engineer
+122 Dracosaur Auxiliary
+123 Dynamite Diver
+124 Endrider Catalyzer
+125 Endrider Spikespitter
+126 Fuel the Flames
+127 Full Throttle
+128 Gastal Blockbuster
+129 Gastal Thrillroller
+130 Gilded Ghoda
+131 Goblin Surveyor
+132 Greasewrench Goblin
+133 Hazoret, Godseeker
+134 Howlsquad Heavy
+135 Kickoff Celebrations
+136 Lightning Strike
+137 Magmakin Artillerist
+138 Marauding Mako
+139 Outpace Oblivion
+140 Pacesetter Paragon
+141 Pedal to the Metal
+142 Prowcatcher Specialist
+143 Push the Limit
+144 Reckless Velocitaur
+145 Road Rage
+146 Skycrash
+147 Spire Mechcycle
+148 Thunderhead Gunner
+149 Tyrox, Saurid Tyrant
+150 Afterburner Expert
+151 Agonasaur Rex
+152 Alacrian Jaguar
+153 Autarch Mammoth
+154 Beastrider Vanguard
+155 Bestow Greatness
+156 Broken Wings
+157 Defend the Rider
+158 District Mascot
+159 Dredger's Insight
+160 Earthrumbler
+161 Elvish Refueler
+162 Fang Guardian
+163 Fang-Druid Summoner
+164 Greenbelt Guardian
+165 Hazard of the Dunes
+166 Jibbirik Omnivore
+167 Loxodon Surveyor
+168 Lumbering Worldwagon
+169 March of the World Ooze
+170 Migrating Ketradon
+171 Molt Tender
+172 Ooze Patrol
+173 Oviya, Automech Artisan
+174 Plow Through
+175 Point the Way
+176 Pothole Mole
+177 Regal Imperiosaur
+178 Rise from the Wreck
+179 Run Over
+180 Silken Strength
+181 Stampeding Scurryfoot
+182 Terrian, World Tyrant
+183 Thunderous Velocipede
+184 Veloheart Bike
+185 Venomsac Lagac
+186 Webstrike Elite
+187 Aatchik, Emerald Radian
+188 Apocalypse Runner
+189 Boom Scholar
+190 Boosted Sloop
+191 Brightglass Gearhulk
+192 Broadside Barrage
+193 Broodheart Engine
+194 Captain Howler, Sea Scourge
+195 Caradora, Heart of Alacria
+196 Cloudspire Coordinator
+197 Cloudspire Skycycle
+198 Coalstoke Gearhulk
+199 Debris Beetle
+200 Dune Drifter
+201 Embalmed Ascendant
+202 Explosive Getaway
+203 Far Fortune, End Boss
+204 Fearless Swashbuckler
+205 Gastal Thrillseeker
+206 Guidelight Pathmaker
+207 Haunt the Network
+208 Haunted Hellride
+209 Ketramose, the New Dawn
+210 Kolodin, Triumph Caster
+211 Lagorin, Soul of Alacria
+212 Loot, the Pathfinder
+213 Mendicant Core, Guidelight
+214 Mimeoplasm, Revered One
+215 Oildeep Gearhulk
+216 Pyrewood Gearhulk
+217 Rangers' Aetherhive
+218 Redshift, Rocketeer Chief
+219 Riptide Gearhulk
+220 Rocketeer Boostbuggy
+221 Sab-Sunen, Luxa Embodied
+222 Samut, the Driving Force
+223 Sita Varma, Masked Racer
+224 Skyserpent Seeker
+225 Thundering Broodwagon
+226 Veteran Beastrider
+227 Voyage Home
+228 Winter, Cursed Rider
+229 Zahur, Glory's Past
+230 Aetherjacket
+231 The Aetherspark
+232 Camera Launcher
+233 Guidelight Matrix
+234 Lifecraft Engine
+235 Marketback Walker
+236 Marshals' Pathcruiser
+237 Monument to Endurance
+238 Pit Automaton
+239 Racers' Scoreboard
+240 Radiant Lotus
+241 Rover Blades
+242 Scrap Compactor
+243 Skybox Ferry
+244 Starting Column
+245 Ticket Tortoise
+246 Walking Sarcophagus
+247 Wreck Remover
+248 Amonkhet Raceway
+249 Avishkar Raceway
+250 Bleachbone Verge
+251 Bloodfell Caves
+252 Blossoming Sands
+253 Country Roads
+254 Dismal Backwater
+255 Foul Roads
+256 Jungle Hollow
+257 Muraganda Raceway
+258 Night Market
+259 Reef Roads
+260 Riverpyre Verge
+261 Rocky Roads
+262 Rugged Highlands
+263 Scoured Barrens
+264 Sunbillow Verge
+265 Swiftwater Cliffs
+266 Thornwood Falls
+267 Tranquil Cove
+268 Wastewood Verge
+269 Wild Roads
+270 Willowrush Verge
+271 Wind-Scarred Crag
+272 Plains
+273 Island
+274 Swamp
+275 Mountain
+276 Forest
+277 Plains
+278 Plains
+279 Plains
+280 Island
+281 Island
+282 Island
+283 Swamp
+284 Swamp
+285 Swamp
+286 Mountain
+287 Mountain
+288 Mountain
+289 Forest
+290 Forest
+291 Forest
