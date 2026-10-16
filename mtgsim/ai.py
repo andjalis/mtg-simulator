@@ -14,7 +14,7 @@ import math
 from itertools import combinations
 
 from .cards import CardDef, Effect
-from . import copies, engine, modal
+from . import copies, counting, engine, modal
 from .engine import Game, Permanent, Player, can_block, payable
 
 LETHAL = 1000.0
@@ -782,9 +782,8 @@ class HeuristicAI:
         value = 0.0
         what = getattr(card, "pt_per", "")
         if what and card.is_creature:
-            n = sum(1 for x in me.battlefield
-                    if (x.is_creature if what == "creature" else what.capitalize() in x.card.types))
-            value += n          # each +1/+1 is worth about 1 (half power, half toughness)
+            n = counting.count(game, me, {"what": what, "zone": "battlefield"})
+            value += n * sum(card.pt_scale) / 2          # each +1/+1 is worth about 1 (half power, half toughness)
         if getattr(card, "extra_lands", 0) and any(c.is_land for c in me.hand if c is not card):
             value += 1.0
         if getattr(card, "lands_from_gy", False) and any(c.is_land for c in me.graveyard):

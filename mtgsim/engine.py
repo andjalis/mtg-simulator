@@ -24,7 +24,7 @@ import json
 import random
 import re
 
-from . import auras, copies, removal, search, xspells
+from . import auras, copies, counting, removal, search, xspells
 from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, add_mana, make_token
 from . import modal
 
@@ -80,16 +80,15 @@ class Permanent:
         what = self.card.pt_per
         if not what:
             return 0
-        return sum(1 for x in self.controller.battlefield
-                   if (x.is_creature if what == "creature" else what.capitalize() in x.card.types))
+        return counting.count(None, self.controller, {"what": what, "zone": "battlefield"}, self)
 
     def _pt_bonus(self):
         """(power, toughness) from anthems, attached equipment and "for each" counts, in one pass
         over the battlefield; the same sums as anthem, equipment and per_bonus."""
-        bp = bt = per = 0
+        bp = bt = 0
         creature = self.is_creature
         what = self.card.pt_per
-        cap = what.capitalize() if what and what != "creature" else ""
+        sp, st = self.card.pt_scale
         for x in self.controller.battlefield:
             c = x.card
             if creature:
@@ -101,14 +100,16 @@ class Permanent:
                     e = c.equip_bonus
                     bp += e[0]
                     bt += e[1]
-            if what and (x.is_creature if what == "creature" else cap in c.types):
-                per += 1
+        if what:
+            per = counting.count(None, self.controller, {"what": what, "zone": "battlefield"}, self)
+            bp += per * sp
+            bt += per * st
         if creature:
             for a in self.auras:
                 e = a.card.equip_bonus
                 bp += e[0]
                 bt += e[1]
-        return bp + per, bt + per
+        return bp, bt
 
     def _base(self, power: bool):
         an = self.animated
@@ -1578,6 +1579,9 @@ class Game:
         source = (item.card.name if item and item.card else
                   item.source.card.name if item and isinstance(item.source, Permanent) else "effect")
         cause = f"{source}: {k}"
+        if eff.data.get("per"):    # "for each X you control"
+            src = item.source if item is not None else None
+            eff = dataclasses.replace(eff, amount=eff.amount * counting.count(self, p, eff.data["per"], src))
         if eff.data.get("x"):      # X is the X paid for the spell
             n = getattr(item, "x", 0)
             eff = dataclasses.replace(eff, amount=n, amount2=n if eff.data.get("x2") else eff.amount2)
