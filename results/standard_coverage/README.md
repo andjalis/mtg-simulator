@@ -135,3 +135,21 @@ model toward Forge's, larger than item B. Until then, the prototype is most usef
    `--disagreements`);
 3. a second parser for wording variants of effects the engine already has, worth wiring in only
    after B's templates land, when the "translatable" share should be re-measured.
+
+## Copy effects (mtgsim/copies.py)
+
+Token copies ("create a token that's a copy of target creature you control, except ..."), clones
+("you may have ~ enter as a copy of ..."), "for each ... create a token that's a copy", and copies of
+spells ("when you next cast an instant or sorcery spell this turn, copy that spell", "when you cast ~,
+copy it") now have templates. Fully supported cards 726 → 745 (14.8% → 15.2%); the copy-effects family
+144 → 100 cards. Not modelled: becoming a copy until end of turn, copying abilities, "may cast the copy",
+the legend rule. Targets for copies are chosen when the effect resolves.
+
+## Restricted removal and fights (mtgsim/removal.py)
+
+Destroy/exile with a restriction (enchantment, noncreature artifact, Vehicle, power 4 or greater, flying/reach),
+"fights", "deals damage equal to its power", "untap target creature" and "target creature you control gains
+KEYWORD". Many of these were the lines that kept modal spells partly supported. Fully supported cards
+754 → 779 (15.4% → 15.9%) on top of copy effects (726 → 754 together with modal spells). Not done: the
+"choose both instead" upgrades (teamwork, 5 cards; descend, delirium and the 8-permanent graveyard check, 3 cards)
+are still played without the upgrade and reported as simplified.
