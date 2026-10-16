@@ -1368,7 +1368,7 @@ def make_token(name: str, power: int, toughness: int, keywords=frozenset(), trig
 
 
 # Copy effects live in their own module; its templates join the ones above.
-from . import auras as _auras, copies as _copies, removal as _removal  # noqa: E402
+from . import auras as _auras, copies as _copies, removal as _removal, search as _search, xspells as _xspells  # noqa: E402
 
-_EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS
+_EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS
 _SUBS += _copies.SUBS
