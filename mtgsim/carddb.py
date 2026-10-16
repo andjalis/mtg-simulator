@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import os
-import sqlite3
 import time
 import urllib.request
 from pathlib import Path
@@ -27,8 +26,10 @@ class CardDB:
                 for card in json.loads(path.read_text()):
                     self.raw[card["name"].lower()] = card
         self._defs: dict[str, CardDef] = {}
-        self._all = sqlite3.connect(f"file:{ALL_CARDS}?mode=ro", uri=True,
-                                    check_same_thread=False) if ALL_CARDS.exists() else None
+        self._all = None
+        if ALL_CARDS.exists():
+            import sqlite3  # imported here so the engine also loads where sqlite3 is missing (Pyodide)
+            self._all = sqlite3.connect(f"file:{ALL_CARDS}?mode=ro", uri=True, check_same_thread=False)
 
     def _key(self, name: str) -> str:
         key = name.lower()

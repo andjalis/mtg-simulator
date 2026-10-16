@@ -19,7 +19,6 @@ from __future__ import annotations
 import argparse
 import json
 import re
-import sqlite3
 import subprocess
 import sys
 import tempfile
@@ -203,6 +202,7 @@ def find_cardsfolder(path: Path) -> Path:
 # ---------------------------------------------------------------- writing the database
 
 def write_db(cards, out: Path, source: str) -> int:
+    import sqlite3  # imported here so the engine also loads where sqlite3 is missing (Pyodide)
     out.parent.mkdir(parents=True, exist_ok=True)
     tmp = out.with_suffix(".tmp")
     tmp.unlink(missing_ok=True)

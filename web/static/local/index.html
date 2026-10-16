@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Local Simulation</title>
+<link rel="stylesheet" href="../theme.css">
+<style>
+  main { max-width: 640px; margin: 0 auto; padding: 24px 16px; }
+  h1 { font-family: var(--display); color: var(--gold); font-size: 26px; margin: 0 0 4px; }
+  .note { color: var(--muted); margin: 0 0 20px; }
+  label { display: block; margin: 12px 0 4px; color: var(--ink-2); }
+  select, input, button { width: 100%; font: inherit; padding: 10px; border-radius: 10px;
+    background: var(--inset); color: var(--ink); border: 1px solid var(--line-2); }
+  button { margin-top: 16px; background: var(--gold); color: var(--gold-ink); font-weight: 600; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: wait; }
+  #status { margin-top: 16px; color: var(--ink-2); min-height: 1.5em; }
+  .bar { height: 8px; background: var(--inset); border-radius: 4px; overflow: hidden; margin-top: 8px; }
+  .bar > div { height: 100%; width: 0; background: var(--gold); transition: width .2s; }
+  pre { background: var(--panel); border: 1px solid var(--line); padding: 12px; border-radius: 10px;
+    white-space: pre-wrap; font: 13px/1.5 var(--mono); }
+</style>
+</head>
+<body>
+<main>
+  <h1>Local simulation</h1>
+  <p class="note">The games run in this browser, on your own device, with the same Python engine as the server.</p>
+  <label for="a">Your deck</label><select id="a"></select>
+  <label for="b">Opponent</label><select id="b"></select>
+  <label for="n">Games</label><input id="n" type="number" min="2" max="2000" step="2" value="50">
+  <button id="go" disabled>Loading engine…</button>
+  <div class="bar"><div id="fill"></div></div>
+  <div id="status"></div>
+  <pre id="out" hidden></pre>
+</main>
+<script>
+const qs = new URLSearchParams(location.search);
+const workerUrl = "worker.js" + (qs.get("pyodide") ? "?pyodide=" + encodeURIComponent(qs.get("pyodide")) : "");
+// One Pyodide per worker; each costs about 40 MB of memory, so stay well under the core count.
+const POOL = +qs.get("workers") || Math.max(1, Math.min(4, (navigator.hardwareConcurrency || 2) - 1));
+const $ = id => document.getElementById(id);
+const KEYS = ["games", "wins_a", "wins_b", "draws", "wins_a_on_play", "games_a_on_play", "seconds"];
+let decks = {}, started = 0, loaded = 0, parts = [];
+const t0 = performance.now();
+
+fetch("build/decks.json").then(r => r.json()).then(d => {
+  decks = d;
+  for (const sel of [$("a"), $("b")])
+    sel.innerHTML = Object.keys(d).map(k => `<option>${k}</option>`).join("");
+  $("b").selectedIndex = Math.min(1, $("b").options.length - 1);
+});
+
+const workers = Array.from({length: POOL}, (_, i) => {
+  const w = new Worker(workerUrl);
+  w.onmessage = ({data}) => onMessage(i, data);
+  return w;
+});
+
+function onMessage(i, data) {
+  if (data.type === "ready") {
+    if (++loaded < POOL) return;
+    window.engineLoadMs = performance.now() - t0;
+    $("go").disabled = false; $("go").textContent = "Run on this device";
+    $("status").textContent = `Engine loaded in ${(window.engineLoadMs / 1000).toFixed(1)} s (${POOL} worker${POOL > 1 ? "s" : ""}).`;
+  } else if (data.type === "error") {
+    $("status").textContent = "Error: " + data.message; $("go").disabled = false;
+    window.runError = data.message;
+  } else {
+    parts[i] = {...data.result, done: data.type === "done"};
+    const r = Object.fromEntries(KEYS.map(k => [k, parts.reduce((s, p) => s + (p ? p[k] : 0), 0)]));
+    const n = +$("n").value, wall = (performance.now() - started) / 1000;
+    $("fill").style.width = (100 * r.games / n) + "%";
+    $("status").textContent = `${r.games}/${n} games, ${(1000 * wall / r.games).toFixed(0)} ms per game`;
+    if (parts.every(p => p && p.done)) {
+      const score = (r.wins_a + r.draws / 2) / r.games;
+      $("go").disabled = false;
+      $("out").hidden = false;
+      $("out").textContent = `${$("a").value} vs ${$("b").value}: ${r.games} games on ${POOL} worker(s)\n` +
+        `wins ${r.wins_a}, losses ${r.wins_b}, draws ${r.draws}, score ${(100 * score).toFixed(1)}%\n` +
+        `on the play ${r.wins_a_on_play}/${r.games_a_on_play}\n` +
+        `engine time ${r.seconds.toFixed(2)} s summed over workers, wall time ${wall.toFixed(2)} s`;
+      window.runResult = {...r, wall, workers: POOL};
+    }
+  }
+}
+
+$("go").onclick = () => {
+  $("go").disabled = true; $("out").hidden = true; started = performance.now();
+  window.runResult = null;
+  const pairs = Math.floor(+$("n").value / 2);
+  // Even shares keep play/draw balanced: each worker alternates seats from its first game.
+  const share = i => 2 * (Math.floor(pairs / POOL) + (i < pairs % POOL ? 1 : 0));
+  parts = workers.map((w, i) => share(i) ? null : {games: 0, done: true});
+  workers.forEach((w, i) => share(i) && w.postMessage({
+    type: "run", deckA: decks[$("a").value], deckB: decks[$("b").value],
+    games: share(i), seed: 1 + i, chunk: 10}));
+};
+</script>
+</body>
+</html>
