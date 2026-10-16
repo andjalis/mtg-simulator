@@ -25,13 +25,15 @@ except ImportError:
     LadderTracker = render_fragment = None
 
 try:  # deck grades: meta, mana, speed, consistency (mtgsim/assess.py)
-    from mtgsim.assess import assess, load_metagame
+    from mtgsim.assess import AUTO_THRESHOLD, assess, coverage_share, load_metagame
     from mtgsim.ladder_report import meta_caveat, render_grades
 except ImportError:
     assess = None
 
 CHUNK = 20  # games per task; even, so play and draw stay balanced
 MAX_GAMES = 2000
+FORGE_META_GAMES = 20  # most Forge games per meta matchup; Forge is far slower than the built-in engine
+META_ENGINES = ("forge", "auto", "python")
 
 _db: CardDB | None = None
 _db_lock = threading.Lock()  # CardDB shares one sqlite connection; the server checks decks from many threads
@@ -42,6 +44,27 @@ def _card_db(offline: bool = False) -> CardDB:
     if _db is None or (_db.offline and not offline):
         _db = CardDB(offline=offline)
     return _db
+
+
+def forge_dir() -> str | None:
+    """The Forge install the meta field is played in: $MTGSIM_FORGE_DIR, else $FORGE_HOME; None
+    when neither points at a Forge desktop jar."""
+    folder = os.environ.get("MTGSIM_FORGE_DIR") or os.environ.get("FORGE_HOME")
+    if not folder:
+        return None
+    from mtgsim.forge import ForgeError, find_forge
+    try:
+        return str(find_forge(folder)[0])
+    except ForgeError:
+        return None
+
+
+def _forge_match(me_counts, opp_counts, games, seed, folder):
+    """Play one meta matchup in Forge; returns (points, games)."""
+    from mtgsim.forge import run_forge_match
+    res = run_forge_match("me", me_counts, "opp", opp_counts, games=games, seed=seed, forge_dir=folder,
+                          jobs=max(1, min(games, os.cpu_count() or 1)))
+    return res.wins_a + 0.5 * res.draws, res.games
 
 
 def tier_info() -> list[dict]:
@@ -149,6 +172,8 @@ class Run:
     assessment: dict | None = None
     grade_error: str = ""
     record_history: bool = True
+    meta_engine: str = "forge"    # with a Forge install: forge (whole meta field), auto (low coverage only), python
+    forge_dir: str | None = None  # None: the meta field stays in the built-in engine
     lock: threading.Lock = field(default_factory=threading.Lock)
 
     def opponents(self, tier) -> list[Opponent]:
@@ -221,29 +246,49 @@ class Run:
             history.try_record(history.record_assessment, self.assessment, self.counts, source="web")
 
     def _grade(self, pool, rng, chunks) -> None:
-        """Grade the deck. The meta criterion reuses the games against the Grandmaster pool and
-        plays whichever meta decks the ladder didn't reach; the other criteria are quick."""
+        """Grade the deck. Without Forge the meta criterion reuses the games against the Grandmaster
+        pool and plays whichever meta decks the ladder didn't reach. With a Forge install the meta
+        field is played in Forge: every matchup, or with meta_engine "auto" only those where either
+        deck is below the coverage threshold. The other criteria are quick."""
         self.current = "the meta field"
         results = {o["name"]: (o["wins"] + 0.5 * o["draws"], o["games"])
                    for t in self.rows if t["key"] == "grandmaster" for o in t["opponents"] if o["games"]}
+        engines = dict.fromkeys(results, "python")
         _, archetypes = load_metagame()
-        todo = [a for a in archetypes if a.key not in results]
+        decks = {a.key: load_deck(a.path)[1] for a in archetypes}
+        forge = []
+        if self.forge_dir and self.meta_engine != "python":
+            with _db_lock:
+                db = _card_db(True)
+                mine = coverage_share(db, self.counts)
+                forge = [a for a in archetypes if self.meta_engine == "forge"
+                         or min(mine, coverage_share(db, decks[a.key])) < AUTO_THRESHOLD]
+        todo = [a for a in archetypes if a.key not in results and a not in forge]
+        forge_games = min(self.games, FORGE_META_GAMES)
         with self.lock:
-            self.total += len(todo) * self.games
-        futures = {pool.submit(_play_chunk, self.counts, load_deck(a.path)[1], n, rng.randrange(2**32)): (a, n)
+            self.total += len(todo) * self.games + len(forge) * forge_games
+        for a in forge:
+            self.current = f"the meta field in Forge ({a.name})"
+            results[a.key] = _forge_match(self.counts, decks[a.key], forge_games, rng.randrange(2**31), self.forge_dir)
+            engines[a.key] = "forge"
+            with self.lock:
+                self.done += forge_games
+        self.current = "the meta field"
+        futures = {pool.submit(_play_chunk, self.counts, decks[a.key], n, rng.randrange(2**32)): (a, n)
                    for a in todo for n in chunks}
         for f in as_completed(futures):
             a, n = futures[f]
             r = f.result()
             pts, games = results.get(a.key, (0.0, 0))
             results[a.key] = (pts + r["wins"] + 0.5 * r["draws"], games + r["games"])
+            engines[a.key] = "python"
             with self.lock:
                 self.done += n
         self.current = "goldfish games and sample hands"
         with _db_lock:
             a = assess(self.deck_name, self.counts, _card_db(True), goldfish_games=self.goldfish_games,
-                       samples=self.samples, seed=rng.randrange(2**32), meta_results=results)
-        a["criteria"]["meta"]["details"]["engine"] = "python"
+                       samples=self.samples, seed=rng.randrange(2**32), meta_results=results,
+                       result_engines=engines)
         with self.lock:
             self.assessment = a
 
@@ -258,19 +303,24 @@ class Run:
                 grades = {"html": render_grades(self.assessment), "data": self.assessment,
                           "caveat": meta_caveat(self.assessment)}
         return {"rank": rank, "assessment": grades, "grade_error": self.grade_error,
+                "reliability": self.assessment.get("reliability") if self.assessment else None,
+                "meta_engine": self.meta_engine if self.forge_dir else "python",
                 "deck": self.deck_name, "ladder": self.ladder, "pass_rate": self.pass_rate,
                 "games_per_opponent": self.games, "done": self.done, "total": self.total,
                 "current": self.current, "tiers": self.rows, "verdict": self.verdict}
 
 
 def make_run(deck_name: str, text: str, tiers: list[str] | None, ladder: bool, games: int,
-             full: bool = False, seed: int | None = None, grade: bool = True) -> Run:
+             full: bool = False, seed: int | None = None, grade: bool = True, meta_engine: str = "forge") -> Run:
     if not 2 <= games <= MAX_GAMES:
         raise ValueError(f"games per opponent must be between 2 and {MAX_GAMES}")
     chosen = TIERS if ladder and not tiers else resolve_tiers(tiers or [])
     if not chosen:
         raise ValueError("pick at least one tier")
-    return Run(deck_name or "my deck", parse_decklist(text), chosen, ladder, games, full, seed, grade=grade)
+    if meta_engine not in META_ENGINES:
+        raise ValueError(f"meta engine must be one of {', '.join(META_ENGINES)}")
+    return Run(deck_name or "my deck", parse_decklist(text), chosen, ladder, games, full, seed, grade=grade,
+               meta_engine=meta_engine, forge_dir=forge_dir())
 
 
 def make_pool(jobs: int | None = None) -> ProcessPoolExecutor:
