@@ -211,6 +211,7 @@ class CardDef:
     second_spell_discount: int = 0                      # "The second spell you cast each turn costs {1} less"
     tapped_discount: int = 0                            # "~ costs {3} less to cast if it targets a tapped creature"
     extra_discard: int = 0                              # "As an additional cost to cast ~, discard a card" (1 = or pay {2}: see discard_or_pay)
+    behold_or_pay: tuple = ()                           # ("Elf", 2): "behold an Elf or pay {2}" as an additional cost
     discard_or_pay: int = 0                             # "... discard a card or pay {2}"
     untap_each_untap: bool = False                      # "Untap ~ during each other player's untap step"
     anthem_enchanted: tuple = ()                        # "Enchanted creatures you control get +N/+N"
@@ -518,6 +519,12 @@ _EFFECT_PATTERNS = [
     (r"(?:target player|each opponent) mills (a|one|two|three|four|five|\d+) cards?",
      lambda m: Effect("mill", _num(m[1]), target="player")),
     (r"mill (a|one|two|three|four|five|\d+) cards?", lambda m: Effect("mill", _num(m[1]))),
+    (r"(?:you may )?exile the top (card|one card|two cards|three cards|four cards|\d+ cards) of your library",
+     lambda m: Effect("exile_top", _N_WORDS.get(m[1].split()[0], 1) if m[1] != "card" else 1)
+     if not m[1][0].isdigit() else Effect("exile_top", int(m[1].split()[0]))),
+    (r"(?:you may play (?:that card|those cards|it|them|the exiled cards?) (this turn|until the end of your next turn|"
+     r"until your next end step)|until the end of your next turn, you may play (?:that card|those cards|it|them))",
+     lambda m: Effect("may_play_exiled", 0 if m[1] == "this turn" else 2)),
     (r"tap (?:up to one )?target (?:creature|nonland permanent)(?: an opponent controls| you don't control)?",
      lambda m: Effect("tap", 1, target="creature")),
     (r"tap up to (two|three) target creatures", lambda m: Effect("tap", _num(m[1]), target="creature")),
@@ -1611,6 +1618,10 @@ def _parse_face(data: dict) -> CardDef:
         m = re.fullmatch(r"~ costs \{(\d+)\} less to cast if it targets a tapped creature\.", line)
         if m:
             extra["tapped_discount"] = int(m[1])
+            continue
+        m = re.fullmatch(r"As an additional cost to cast ~, behold an? (\w+) or pay \{(\d+)\}\.", line)
+        if m:
+            extra["behold_or_pay"] = (m[1], int(m[2]))
             continue
         m = re.fullmatch(r"As an additional cost to cast ~, discard a card(?: or pay \{(\d+)\})?\.", line)
         if m:
