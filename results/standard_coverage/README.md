@@ -1,0 +1,120 @@
+# Standard coverage and the Forge script prototype (gap plan item I)
+
+Measured 2026-10-16 on `main` at `272decd`, card database built from Forge (`build_carddb --forge`),
+Forge files from commit `733a221e`. No games were played; both tools read card text only.
+
+## How much of Standard the engine plays
+
+```
+python3 -m mtgsim.standard_coverage          # offline, from tests/fixtures/forge_scripts/standard
+```
+
+```
+Standard: 4,902 distinct non-basic cards from 20 sets (WOE to FRA)
+
+Status                                                Cards   Share
+Fully supported (every line matched by a template)      381    7.8%
+Simplified (all lines matched, some played loosely)      23    0.5%
+Partly supported (at least one line ignored)          4,498   91.8%
+Unknown to the card database                              0    0.0%
+
+Partly supported cards that miss only one line: 1,962
+Rules sentences handled (rough): 27% (3,483 of 12,933)
+
+Most ignored families (cards with at least one ignored line in the family, top 20):
+  triggered (whenever/when)          1,031
+  counters                             821
+  graveyard                            669
+  tokens                               634
+  activated abilities                  564
+  sacrifice                            473
+  exile                                467
+  X costs                              304
+  can't restrictions                   205
+  equipment                            178
+  library search                       147
+  copy effects                         144
+  cost reduction                       118
+  modal (choose)                       114
+  auras/enchant                        108
+  +1/+1 static (anthems)                95
+  set: food                             60
+  mana restrictions                     56
+  transform                             49
+  set: exhaust                          38
+```
+
+The card table and the one-line count reproduce the gap plan exactly. Two numbers differ from the
+plan: the share of rules sentences handled is 27% here, not "about 40%" (the plan's figure was a
+rough split whose method isn't recorded; counting by lines or characters gives 20% to 27% too),
+and the family counts use this tool's own regexes (`FAMILIES` in `standard_coverage.py`), so they
+are close to but not the plan's. Every template PR can now quote the before/after of this report.
+
+## Can Forge's card scripts be translated into engine effects?
+
+```
+python3 -m mtgsim.forge_script --forge FORGE_DIR              # report
+python3 -m mtgsim.forge_script --forge FORGE_DIR --card "Cut Down"   # one card's translation
+```
+
+`mtgsim/forge_script.py` parses Forge scripts (`A:`, `T:`, `S:`, `R:`, `K:`, `SVar:` chains, charms,
+saga chapters, loyalty abilities, faces) and maps 22 Forge APIs (Draw, DealDamage, Destroy,
+ChangeZone, Token, PutCounter, Pump, Dig, Counter ...) to the engine's `Effect` and `Trigger`
+objects, but only for parameter values the engine can represent. Anything else is reported with
+the reason, never guessed.
+
+```
+Forge script translation prototype (Standard, partly supported cards)
+
+Partly supported cards with a Forge script: 4,498 of 4,498
+Ignored lines: 8,397
+  matched to a Forge ability:   7,067 (84.2%)
+  translatable with the mapping: 200 (2.4%)
+  upper bound if every parameter of the mapped APIs were supported: 2,748 (32.7%)
+Cards that would become fully supported: 77 (1.7%)
+Agreement with the templates on fully supported cards: 250 of 276 (90.6%)
+
+```
+
+What blocks the ignored lines that don't translate (8,197 lines):
+
+| Blocker | Lines |
+| --- | --- |
+| A mapped API with parameters outside the engine's vocabulary (conditions, "exiled this way", choices, optional steps, more zones) | 1,914 |
+| Trigger conditions the engine has no event for (beginning of combat, "whenever you attack", life gained, intervening ifs) | 1,351 |
+| No matching Forge ability (keyword-only lines, X costs, notes the templates add) | 1,330 |
+| Static abilities (anthems with conditions, cost changes, "can't block", granted abilities) | 991 |
+| Keywords the engine lacks (equip, enchant, cycling, disguise, warp, plot, saddle, station ...) | 792 |
+| Activated abilities other than mana and loyalty (the engine has no general activated ability) | 774 |
+| APIs with no engine effect at all (Effect, Animate, ImmediateTrigger, PutCounterAll, Sacrifice, Untap, Attach, CopyPermanent ...) | 718 |
+| Variable amounts (X, "for each") | 199 |
+| Replacement effects | 128 |
+
+The check of the mapping itself: on the 276 single-faced cards the templates already play fully,
+the translation gives the same effects for 250 (90.6%). Of the 26 differences, 24 are cards the
+prototype refuses to translate (optional costs, conditions, "non-outlaw" style restrictions). The
+other two are real differences: Eriette's Lullaby is played by the templates as "destroy target
+creature" (the "tapped" restriction is dropped, a template bug for item B), and Thor Odinson has
+prowess twice in its Forge script but once in the templates.
+
+## Recommendation
+
+Don't wire the translation into card loading yet. Forge's scripts are easy to read (84% of the
+ignored lines match a Forge ability by description, and the structure is regular), but the
+engine's effect vocabulary is the bottleneck, not parsing: only 2.4% of the ignored lines
+translate into effects the engine already has, and only 77 more cards (1.7%) would become fully
+supported. Even if every parameter of the 22 mapped APIs were supported, the ceiling is 33% of
+the ignored lines.
+
+What would scale it: the engine needs a general ability model rather than more templates:
+activated abilities with costs (774 lines), continuous statics with conditions (991), more
+trigger events (1,351), remembered objects and conditions inside a chain ("exiled this way",
+"if you do"), and the most common missing APIs (Effect, Animate, ImmediateTrigger,
+PutCounterAll, Sacrifice, Untap, Attach, CopyPermanent). That is a rewrite of the engine's card
+model toward Forge's, larger than item B. Until then, the prototype is most useful as:
+
+1. a ranked to-do list for item B (the "unmapped APIs" and "blocks" lists above, by card count);
+2. a cross-check of the templates against Forge (90.6% agreement; the rest are listed with
+   `--disagreements`);
+3. a second parser for wording variants of effects the engine already has, worth wiring in only
+   after B's templates land, when the "translatable" share should be re-measured.

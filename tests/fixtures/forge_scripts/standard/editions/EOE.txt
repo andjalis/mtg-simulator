@@ -1,0 +1,281 @@
+[metadata]
+Code=EOE
+Name=Edge of Eternities
+
+[cards]
+1 Anticausal Vestige
+2 Tezzeret, Cruel Captain
+3 All-Fates Stalker
+4 Astelli Reclaimer
+5 Auxiliary Boosters
+6 Banishing Light
+7 Beyond the Quiet
+8 Brightspear Zealot
+9 Cosmogrand Zenith
+10 Dawnstrike Vanguard
+11 Dockworker Drone
+12 Dual-Sun Adepts
+13 Dual-Sun Technique
+14 Emergency Eject
+15 Exalted Sunborn
+16 Exosuit Savior
+17 Flight-Deck Coordinator
+18 Focus Fire
+19 Haliya, Guided by Light
+20 Hardlight Containment
+21 Honor
+22 Honored Knight-Captain
+23 Knight Luminary
+24 Lightstall Inquisitor
+25 Lumen-Class Frigate
+26 Luxknight Breacher
+27 Pinnacle Starcage
+28 Pulsar Squadron Ace
+29 Radiant Strike
+30 Rayblade Trooper
+31 Reroute Systems
+32 Rescue Skiff
+33 Scout for Survivors
+34 Seam Rip
+35 The Seriema
+36 Squire's Lightblade
+37 Starfield Shepherd
+38 Starfighter Pilot
+39 Starport Security
+40 Sunstar Chaplain
+41 Sunstar Expansionist
+42 Sunstar Lightsmith
+43 Wedgelight Rammer
+44 Weftblade Enhancer
+45 Zealous Display
+46 Annul
+47 Atomic Microsizer
+48 Cerebral Download
+49 Cloudsculpt Technician
+50 Codecracker Hound
+51 Consult the Star Charts
+52 Cryogen Relic
+53 Cryoshatter
+54 Desculpting Blast
+55 Divert Disaster
+56 Emissary Escort
+57 Gigastorm Titan
+58 Illvoi Galeblade
+59 Illvoi Infiltrator
+60 Illvoi Light Jammer
+61 Illvoi Operative
+62 Lost in Space
+63 Mechan Assembler
+64 Mechan Navigator
+65 Mechan Shieldmate
+66 Mechanozoa
+67 Mental Modulation
+68 Mm'menon, the Right Hand
+69 Moonlit Meditation
+70 Mouth of the Storm
+71 Nanoform Sentinel
+72 Quantum Riddler
+73 Scour for Scrap
+74 Selfcraft Mechan
+75 Sinister Cryologist
+76 Specimen Freighter
+77 Starbreach Whale
+78 Starfield Vocalist
+79 Starwinder
+80 Steelswarm Operator
+81 Synthesizer Labship
+82 Tractor Beam
+83 Unravel
+84 Uthros Psionicist
+85 Uthros Scanship
+86 Weftwalking
+87 Alpharael, Stonechosen
+88 Archenemy's Charm
+89 Beamsaw Prospector
+90 Blade of the Swarm
+91 Chorale of the Void
+92 Comet Crawler
+93 Dark Endurance
+94 Decode Transmissions
+95 Depressurize
+96 Dubious Delicacy
+97 Elegy Acolyte
+98 Embrace Oblivion
+99 Entropic Battlecruiser
+100 Faller's Faithful
+101 Fell Gravship
+102 Gravblade Heavy
+103 Gravkill
+104 Gravpack Monoist
+105 Hullcarver
+106 Hylderblade
+107 Hymn of the Faller
+108 Insatiable Skittermaw
+109 Lightless Evangel
+110 Monoist Circuit-Feeder
+111 Monoist Sentry
+112 Perigee Beckoner
+113 Requiem Monolith
+114 Scrounge for Eternity
+115 Sothera, the Supervoid
+116 Sunset Saboteur
+117 Susurian Dirgecraft
+118 Susurian Voidborn
+119 Swarm Culler
+120 Temporal Intervention
+121 Timeline Culler
+122 Tragic Trajectory
+123 Umbral Collar Zealot
+124 Virus Beetle
+125 Voidforged Titan
+126 Vote Out
+127 Xu-Ifit, Osteoharmonist
+128 Zero Point Ballad
+129 Bombard
+130 Cut Propulsion
+131 Debris Field Crusher
+132 Devastating Onslaught
+133 Drill Too Deep
+134 Frontline War-Rager
+135 Full Bore
+136 Galvanizing Sawship
+137 Invasive Maneuvers
+138 Kav Landseeker
+139 Kavaron Harrier
+140 Kavaron Skywarden
+141 Kavaron Turbodrone
+142 Lithobraking
+143 Melded Moxite
+144 Memorial Team Leader
+145 Memorial Vault
+146 Molecular Modifier
+147 Nebula Dragon
+148 Nova Hellkite
+149 Orbital Plunge
+150 Oreplate Pangolin
+151 Pain for All
+152 Plasma Bolt
+153 Possibility Technician
+154 Red Tiger Mechan
+155 Remnant Elemental
+156 Rig for War
+157 Roving Actuator
+158 Ruinous Rampage
+159 Rust Harvester
+160 Slagdrill Scrapper
+161 Systems Override
+162 Tannuk, Steadfast Second
+163 Terminal Velocity
+164 Terrapact Intimidator
+165 Territorial Bruntar
+166 Vaultguard Trooper
+167 Warmaker Gunship
+168 Weapons Manufacturing
+169 Weftstalker Ardent
+170 Zookeeper Mechan
+171 Atmospheric Greenhouse
+172 Bioengineered Future
+173 Biosynthic Burst
+174 Blooming Stinger
+175 Broodguard Elite
+176 Close Encounter
+177 Diplomatic Relations
+178 Drix Fatemaker
+179 Edge Rover
+180 Eumidian Terrabotanist
+181 Eusocial Engineering
+182 Famished Worldsire
+183 Frenzied Baloth
+184 Fungal Colossus
+185 Galactic Wayfarer
+186 Gene Pollinator
+187 Germinating Wurm
+188 Glacier Godmaw
+189 Harmonious Grovestrider
+190 Hemosymbic Mite
+191 Icecave Crasher
+192 Icetill Explorer
+193 Intrepid Tenderfoot
+194 Larval Scoutlander
+195 Lashwhip Predator
+196 Loading Zone
+197 Meltstrider Eulogist
+198 Meltstrider's Gear
+199 Meltstrider's Resolve
+200 Mightform Harmonizer
+201 Ouroboroid
+202 Pull Through the Weft
+203 Sami's Curiosity
+204 Seedship Agrarian
+205 Seedship Impact
+206 Shattered Wings
+207 Skystinger
+208 Sledge-Class Seedship
+209 Tapestry Warden
+210 Terrasymbiosis
+211 Thawbringer
+212 Alpharael, Dreaming Acolyte
+213 Biomechan Engineer
+214 Biotech Specialist
+215 Cosmogoyf
+216 Dyadrine, Synthesis Amalgam
+217 Genemorph Imago
+218 Haliya, Ascendant Cadet
+219 Infinite Guideline Station
+220 Interceptor Mechan
+221 Mm'menon, Uthros Exile
+222 Mutinous Massacre
+223 Pinnacle Emissary
+224 Ragost, Deft Gastronaut
+225 Sami, Ship's Engineer
+226 Sami, Wildcat Captain
+227 Seedship Broodtender
+228 Singularity Rupture
+229 Space-Time Anomaly
+230 Station Monitor
+231 Syr Vondam, Sunstar Exemplar
+232 Syr Vondam, the Lucent
+233 Tannuk, Memorial Ensign
+234 All-Fates Scroll
+235 Bygone Colossus
+236 Chrome Companion
+237 Dauntless Scrapbot
+238 Dawnsire, Sunstar Dreadnought
+239 The Dominion Bracelet
+240 The Endstone
+241 The Eternity Elevator
+242 Extinguisher Battleship
+243 Nutrient Block
+244 Pinnacle Kill-Ship
+245 Survey Mechan
+246 Thaumaton Torpedo
+247 Thrumming Hivepool
+248 Virulent Silencer
+249 Wurmwall Sweeper
+250 Adagia, Windswept Bastion
+251 Breeding Pool
+252 Command Bridge
+253 Evendo, Waking Haven
+254 Godless Shrine
+255 Kavaron, Memorial World
+256 Sacred Foundry
+257 Secluded Starforge
+258 Stomping Ground
+259 Susur Secundi, Void Altar
+260 Uthros, Titanic Godcore
+261 Watery Grave
+262 Plains
+263 Island
+264 Swamp
+265 Mountain
+266 Forest
+267 Plains
+268 Plains
+269 Island
+270 Island
+271 Swamp
+272 Swamp
+273 Mountain
+274 Mountain
+275 Forest
+276 Forest

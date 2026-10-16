@@ -1,0 +1,281 @@
+[metadata]
+Code=SOS
+Name=Secrets of Strixhaven
+
+[cards]
+1 The Dawning Archaic
+2 Rancorous Archaic
+3 Sundering Archaic
+4 Together as One
+5 Transcendent Archaic
+6 Ajani's Response
+7 Antiquities on the Loose
+8 Ascendant Dustspeaker
+9 Daydream
+10 Dig Site Inventory
+11 Eager Glyphmage
+12 Elite Interceptor
+13 Emeritus of Truce
+14 Ennis, Debate Moderator
+15 Erode
+16 Graduation Day
+17 Group Project
+18 Harsh Annotation
+19 Honorbound Page
+20 Informed Inkwright
+21 Inkshape Demonstrator
+22 Interjection
+23 Joined Researchers
+24 Owlin Historian
+25 Practiced Offense
+26 Primary Research
+27 Quill-Blade Laureate
+28 Rapier Wit
+29 Rehearsed Debater
+30 Restoration Seminar
+31 Shattered Acolyte
+32 Soaring Stoneglider
+33 Spiritcall Enthusiast
+34 Stand Up for Yourself
+35 Stirring Hopesinger
+36 Stone Docent
+37 Summoned Dromedary
+38 Banishing Betrayal
+39 Brush Off
+40 Campus Composer
+41 Chase Inspiration
+42 Deluge Virtuoso
+43 Divergent Equation
+44 Echocasting Symposium
+45 Emeritus of Ideation
+46 Encouraging Aviator
+47 Essence Scatter
+48 Exhibition Tidecaller
+49 Flow State
+50 Fractal Anomaly
+51 Fractalize
+52 Harmonized Trio
+53 Homesickness
+54 Hydro-Channeler
+55 Jadzi, Steward of Fate
+56 Landscape Painter
+57 Mana Sculpt
+58 Mathemagics
+59 Matterbending Mage
+60 Muse Seeker
+61 Muse's Encouragement
+62 Orysa, Tide Choreographer
+63 Pensive Professor
+64 Procrastinate
+65 Quick Study
+66 Run Behind
+67 Skycoach Conductor
+68 Spellbook Seeker
+69 Tester of the Tangential
+70 Textbook Tabulator
+71 Wisdom of Ages
+72 Adventurous Eater
+73 Arcane Omens
+74 Arnyn, Deathbloom Botanist
+75 Burrog Banemaker
+76 Cheerful Osteomancer
+77 Cost of Brilliance
+78 Decorum Dissertation
+79 Dissection Practice
+80 Emeritus of Woe
+81 End of the Hunt
+82 Eternal Student
+83 Foolish Fate
+84 Forum Necroscribe
+85 Grave Researcher
+86 Last Gasp
+87 Lecturing Scornmage
+88 Leech Collector
+89 Masterful Flourish
+90 Melancholic Poet
+91 Moseo, Vein's New Dean
+92 Poisoner's Apprentice
+93 Postmortem Professor
+94 Pox Plague
+95 Pull from the Grave
+96 Rabid Attack
+97 Ral Zarek, Guest Lecturer
+98 Scathing Shadelock
+99 Scheming Silvertongue
+100 Send in the Pest
+101 Sneering Shadewriter
+102 Tragedy Feaster
+103 Ulna Alley Shopkeep
+104 Wander Off
+105 Withering Curse
+106 Ancestral Anger
+107 Archaic's Agony
+108 Artistic Process
+109 Blazing Firesinger
+110 Charging Strifeknight
+111 Choreographed Sparks
+112 Duel Tactics
+113 Emeritus of Conflict
+114 Expressive Firedancer
+115 Flashback
+116 Garrison Excavator
+117 Goblin Glasswright
+118 Heated Argument
+119 Impractical Joke
+120 Improvisation Capstone
+121 Living History
+122 Maelstrom Artisan
+123 Magmablood Archaic
+124 Mica, Reader of Ruins
+125 Molten-Core Maestro
+126 Pigment Wrangler
+127 Rearing Embermare
+128 Rubble Rouser
+129 Seize the Spoils
+130 Steal the Show
+131 Strife Scholar
+132 Tablet of Discovery
+133 Tackle Artist
+134 Thunderdrum Soloist
+135 Tome Blast
+136 Unsubtle Mockery
+137 Zealous Lorecaster
+138 Aberrant Manawurm
+139 Additive Evolution
+140 Ambitious Augmenter
+141 Burrog Barrage
+142 Chelonian Tackle
+143 Comforting Counsel
+144 Efflorescence
+145 Emeritus of Abundance
+146 Emil, Vastlands Roamer
+147 Environmental Scientist
+148 Follow the Lumarets
+149 Germination Practicum
+150 Glorious Decay
+151 Hungry Graffalon
+152 Infirmary Healer
+153 Lumaret's Favor
+154 Mindful Biomancer
+155 Noxious Newt
+156 Oracle's Restoration
+157 Pestbrood Sloth
+158 Planar Engineering
+159 Shopkeeper's Bane
+160 Slumbering Trudge
+161 Snarl Song
+162 Studious First-Year
+163 Tenured Concocter
+164 Thornfist Striker
+165 Topiary Lecturer
+166 Vastlands Scavenger
+167 Wild Hypothesis
+168 Wildgrowth Archaic
+169 Zimone's Experiment
+170 Abigale, Poet Laureate
+171 Abstract Paintmage
+172 Applied Geometry
+173 Ark of Hunger
+174 Aziza, Mage Tower Captain
+175 Berta, Wise Extrapolator
+176 Blech, Loafing Pest
+177 Bogwater Lumaret
+178 Borrowed Knowledge
+179 Cauldron of Essence
+180 Colorstorm Stallion
+181 Colossus of the Blood Age
+182 Conciliator's Duelist
+183 Cuboid Colony
+184 Dina's Guidance
+185 Elemental Mascot
+186 Embrace the Paradox
+187 Essenceknit Scholar
+188 Fix What's Broken
+189 Fractal Mascot
+190 Fractal Tender
+191 Geometer's Arthropod
+192 Grapple with Death
+193 Growth Curve
+194 Hardened Academic
+195 Imperious Inkmage
+196 Inkling Mascot
+197 Killian's Confidence
+198 Kirol, History Buff
+199 Lluwen, Exchange Student
+200 Lorehold Charm
+201 Lorehold, the Historian
+202 Mind into Matter
+203 Mind Roots
+204 Molten Note
+205 Moment of Reckoning
+206 Nita, Forum Conciliator
+207 Old-Growth Educator
+208 Paradox Surveyor
+209 Pest Mascot
+210 Practiced Scrollsmith
+211 Prismari Charm
+212 Prismari, the Inspiration
+213 Proctor's Gaze
+214 Professor Dellian Fel
+215 Pterafractyl
+216 Pursue the Past
+217 Quandrix Charm
+218 Quandrix, the Proof
+219 Rapturous Moment
+220 Render Speechless
+221 Resonating Lute
+222 Root Manipulation
+223 Sanar, Unfinished Genius
+224 Scolding Administrator
+225 Silverquill Charm
+226 Silverquill, the Disputant
+227 Snooping Page
+228 Social Snub
+229 Spectacular Skywhale
+230 Spirit Mascot
+231 Splatter Technique
+232 Stadium Tidalmage
+233 Startled Relic Sloth
+234 Stirring Honormancer
+235 Stress Dream
+236 Suspend Aggression
+237 Tam, Observant Sequencer
+238 Teacher's Pest
+239 Traumatic Critique
+240 Vibrant Outburst
+241 Vicious Rivalry
+242 Visionary's Dance
+243 Wilt in the Heat
+244 Witherbloom Charm
+245 Witherbloom, the Balancer
+246 Zaffai and the Tempests
+247 Biblioplex Tomekeeper
+248 Diary of Dreams
+249 Mage Tower Referee
+250 Page, Loose Leaf
+251 Potioner's Trove
+252 Strixhaven Skycoach
+253 Deathcap Glade
+254 Dreamroot Cascade
+255 Fields of Strife
+256 Forum of Amity
+257 Great Hall of the Biblioplex
+258 Paradox Gardens
+259 Petrified Hamlet
+260 Shattered Sanctum
+261 Skycoach Waypoint
+262 Spectacle Summit
+263 Stormcarved Coast
+264 Sundown Pass
+265 Terramorphic Expanse
+266 Titan's Grave
+267 Plains
+268 Plains
+269 Island
+270 Island
+271 Swamp
+272 Swamp
+273 Mountain
+274 Mountain
+275 Forest
+276 Forest

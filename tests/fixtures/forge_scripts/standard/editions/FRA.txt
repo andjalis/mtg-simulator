@@ -1,0 +1,295 @@
+[metadata]
+Code=FRA
+Name=Reality Fracture
+
+[cards]
+1 Emrakul, the Exigent Doom
+2 Academic Ascent
+3 Blossom-Blessed Angel
+4 Campus Crier
+5 Enlightened Confidant
+6 Fateshaper Aspirant
+7 Flickering Hound
+8 Generous Revival
+9 Germinate Recruits
+10 Graft Surgeon
+11 Guiding Hydra
+12 Hexhaven Battalion
+13 Kindred Judgment
+14 Loyal Tutor
+15 Memory Trap
+16 Predictive Preparations
+17 Prophesied End
+18 Refute Destiny
+19 Repurposed Enforcer
+20 Return to the Light Realms
+21 Shatterwing Pegasus
+22 Surgical Precision
+23 Unflinching Hortimancer
+24 Your Fate Ends Here
+25 Countersculpt
+26 Cruel Calculations
+27 Cryotheory Adept
+28 Diviner of Victory
+29 Divining Duelist
+30 Icy Reception
+31 Infinite Coursework
+32 Jace's Machinations
+33 Mindseeker Oculus
+34 Perfected Theory
+35 Plan for All Outcomes
+36 Precise Redaction
+37 Protege's Awakening
+38 Seasoned Cryomancer
+39 Semester Foreseer
+40 Sphinx of False Conclusions
+41 Sphinx's Approach
+42 Surveillance Phantasm
+43 The Theorist, Jace Beleren
+44 Theorist's Proxy
+45 Undulating Witness
+46 Unsummon
+47 Variable Chaser
+48 Apex Witchstalker
+49 Bloodline Recollector
+50 Break Under Pressure
+51 Cast Away Doubt
+52 Dark Matter Manipulator
+53 Darklight Phoenix
+54 Extended Absence
+55 Extrapolate the Impossible
+56 Last Gasp
+57 Lich's Relic
+58 Multiply by Zero
+59 Overwrite the Multiverse
+60 Rampart Hunter
+61 Rank Rat
+62 Rewrite Regrets
+63 Rise of the Deathbringer
+64 Sanctum Lurker
+65 Screeching Soulbreaker
+66 Silence the Echo
+67 Solve for Disappointment
+68 Terminal Criticism
+69 Theoretical Necromancer
+70 Void Extrapolator
+71 Vraska's Final Mercy
+72 Ajani's Anguish
+73 Artifist Acumen
+74 Awaken the Inferno
+75 Blazing Crescendo
+76 Chandra's Emberling
+77 Command the Stage
+78 Craterclaw Colossus
+79 Curse-Marred Demon
+80 Draconic Visitor
+81 Eardrum Rattler
+82 Essence Burn
+83 Face Yourself
+84 Fulminous Forte
+85 Hallway Heckler
+86 Heartstring Puller
+87 Identity Echo
+88 Master of Barbs
+89 No Admittance
+90 Pompous Battlemage
+91 Pyre Rhymer
+92 Skilled Battlecarver
+93 Stingcaster Mage
+94 Tether Technician
+95 Violent Echoes
+96 Wrath of the Bloodmane
+97 Arcane Amphisbaena
+98 Bestial Incursion
+99 Budding Insurgent
+100 Carnivorous Cultivator
+101 Compel Brutality
+102 Flourishing Grapple
+103 Gardenize
+104 Greenhouse Propagator
+105 Heartwood Crafter
+106 Hexhaven Invigorator
+107 Hungering Puppetbeast
+108 Hunter's Axe
+109 Inspired Tethermage
+110 Omnipresence
+111 Puppet Crafting
+112 Restore with Empathy
+113 Simulacrum Shaper
+114 Something Worth Saving
+115 Sureshot Sower
+116 Tarmogoyf
+117 Tethermage's Advantage
+118 Verdant Kraken
+119 Vinelasher Adept
+120 Wrecking Gecko
+121 Aerid Konstrari
+122 Avatar of Burgeoning Echoes
+123 Blessed Ghoul
+124 Bloombrute
+125 Charge the Sanctum
+126 Clash of Elements
+127 Craftwork Crusher
+128 Denzilore Fatehold
+129 Desperate Futurescribe
+130 Emergency Phytomedic
+131 Entrust the Spark
+132 Fatehold Charm
+133 Fatehold Chronologist
+134 Ferocity of the Hunt
+135 Frostbite Pyromental
+136 Grim Repriser
+137 Ingris Stingerquill
+138 Konstrari Charm
+139 Konstrari Improviser
+140 Kwia Vigorbloom
+141 Mind Meanderer
+142 Null Summoner
+143 Paradox Shaper
+144 Primal Witchstalker
+145 Proctor of Potential
+146 Prudent Fateseer
+147 Recursive Recruitment
+148 Solarium Sentry
+149 Solitary Cell
+150 Stingerquill Charm
+151 Stingerquill Voxmancer
+152 Stinging Vitriol
+153 Tam's Resistance
+154 Tenured Tethermage
+155 Theorix Charm
+156 Theorix Metamage
+157 Twinned Vision
+158 Twisted Fates
+159 Uldaros Theorix
+160 Vigorbloom Charm
+161 Vigorbloom Vanguard
+162 Vindictive Triumph
+163 Warrior's Blades
+164 Whiplash Wordsmith
+165 Woodwork Prodigy
+166 Afterthought Sentry
+167 Archive Arbiter
+168 Codie, Ravenous Codex
+169 The Echoverse Fulcrum
+170 Eye of Jace
+171 Keeper of the Quiet Hour
+172 Living Library
+173 Medic's Kitesail
+174 Murmuring Volume
+175 Dedicated Commons
+176 Deserted Beach
+177 Fatehold Annex
+178 Formidable Commons
+179 Hall of Echoes
+180 Haunted Ridge
+181 Hexhaven Dueling Arena
+182 Innovative Commons
+183 Konstrari Annex
+184 Meticulous Commons
+185 Overgrown Farmland
+186 Rockfall Vale
+187 Roiling Canopy
+188 Room of Refuge
+189 Shipwreck Marsh
+190 Stingerquill Annex
+191 Theorist's Sanctum
+192 Theorix Annex
+193 Transformative Commons
+194 Vigorbloom Annex
+195 Ajani Resolute
+196 Danitha, Sword of Hope
+197 Ghalta the Immovable
+198 Gideon's Memorial
+199 Koth of the Homestead
+200 Liliana the Faultless
+201 Lyra, Archangel of Dawn
+202 Rescue Girl, First Responder
+203 Saheeli, Consul of Oversight
+204 Teyo, Lightshield Expert
+205 Thalia, the Survivor
+206 Tomik, Orzhov Lawmage
+207 Way of the Healer
+208 Way of the Mentor
+209 Yoshimaru, Beloved Companion
+210 Yuriko, Blade of the Mighty
+211 Arni, Humble Scribe
+212 Chandra, Chill of Compliance
+213 Fblthp, Impossibly Lost
+214 Geist of Saint Thalia
+215 Hapatra, the Desert Frost
+216 Jace, Reality Sculptor
+217 Lyra, Tolarian Archangel
+218 Proft, Consulting Detective
+219 Ruric Thar, Biomagus
+220 Samut, Tyrant of Naktamun
+221 Tetsuko Umezawa, Fugitive
+222 Traxos, Academy Guardian
+223 Way of the Cryomancer
+224 Way of the Mind Sculptor
+225 Yargle, Goliath of Otaria
+226 Yuriko, Hope from the Shadows
+227 Danitha, Spear of Agony
+228 Gallia, Tragic Host
+229 Garruk, Veiled Butcher
+230 Gideon the Oathless
+231 Liliana the Repentant
+232 Loot, the Anomaly
+233 Mabel, Bitter Recluse
+234 Massacre Girl, Most Wanted
+235 Proft, Sinister Mastermind
+236 Teyo, Diamondblade Mage
+237 Tinybones, Pocket Nuisance
+238 Way of the Deathbringer
+239 Way of the Necromancer
+240 Winter, Tormented Loner
+241 Yargle, Glutton of Urborg
+242 Ajani Unrelenting
+243 Arni, Renowned Champion
+244 Chandra, Torch of Defiance
+245 Gallia, the Merrymaker
+246 Jiang Yanggu, Alone
+247 Kiora of Fire and Ashes
+248 Koth, the Geomancer
+249 Marwyn, the Clearcutter
+250 Pia, Determined Rebuilder
+251 Samut, Hazoret's Champion
+252 Tetsuko Umezawa, Pursuer
+253 Tomik, Izzet Sparkmage
+254 Way of the Pyromancer
+255 Way of the Warlord
+256 Winter, Team Player
+257 Edgar, Moonlit Sovereign
+258 Fblthp, Knows the Way
+259 Garruk, Curse Breaker
+260 Ghalta the Unstoppable
+261 Jiang Yanggu, Never Alone
+262 Loot, the Nexus
+263 Marwyn, the Preserver
+264 Pia, Aether Ascetic
+265 Ruric Thar, Magecrusher
+266 Titanbones, Towering Heart
+267 Way of the Paradox
+268 Way of the Wildspeaker
+269 Yoshimaru, Scrappy Stray
+270 Edgar, Ancient Bloodlord
+271 Hapatra, the Desert Fang
+272 Karn, Gilded Guardian
+273 Kiora of Salt and Sand
+274 Mabel, Valley Hero
+275 Saheeli, Jewel of Avishkar
+276 Tam, the Possibility
+277 Vraska, Soul of Stone
+278 Vraska, the Cutting Glare
+279 Karn, Argent Defender
+280 Traxos, Scourge Eternal
+281 Plains
+282 Plains
+283 Island
+284 Island
+285 Swamp
+286 Swamp
+287 Mountain
+288 Mountain
+289 Forest
+290 Forest
