@@ -100,6 +100,7 @@ class Activated:
     sorcery: bool = False            # "Activate only as a sorcery."
     once: bool = False               # "Activate only once each turn."
     min_charge: int = 0              # under "STATION N+": needs N charge counters
+    needs_max_speed: bool = False    # "Max speed — COST: EFFECT"
     text: str = ""
     modes: list = field(default_factory=list)    # "COST: Choose one —": a modal.Modes
 
@@ -187,6 +188,9 @@ class CardDef:
     team_keywords: frozenset = frozenset()              # "Creatures you control have haste."
     collect_evidence: int = 0                           # "you may collect evidence N" (exile graveyard cards worth N mana value)
     chosen_land_lock: bool = False                      # Petrified Hamlet: choose a land name, stifle it and make it tap for {C}
+    no_max_hand: bool = False                           # "You have no maximum hand size."
+    must_attack: bool = False                           # "~ attacks each combat if able."
+    start_engines: bool = False                         # "Start your engines!": speed starts at 1 when it enters or is cast
     anthem_kw: tuple = ()                               # (("flying", 1, 1), ...): "Creatures you control with flying get +1/+1"
     keyword_sub: tuple = ()                             # (("Rhino", "menace", other), ...): "Rhinos you control have menace"
     discount_if: tuple = ()                             # (("Wizard", 1), ...): "~ costs {1} less to cast if you control a Wizard"
@@ -468,6 +472,11 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("p1_counters", 0, target="my_creatures", data={"x": "hand"})),
     (r"for each opponent, return up to one target artifact or creature that player controls to its owner's hand",
      lambda m: Effect("bounce", target="nonland_perm", filter="opp")),
+    (r"OPTCOST (\S+) (\d+)", lambda m: Effect("opt_cost_draw", int(m[2]), data={"cost": m[1]})),
+    (r"THREATEN", lambda m: Effect("threaten", target="creature", filter="opp")),
+    (r"MERCENARY (\w+)", lambda m: Effect("token", 0 if m[1].lower() == "x" else _num(m[1]), data={
+        "name": "Mercenary", "power": 1, "toughness": 1, "keywords": frozenset(), "mercenary": True,
+        "x": m[1].lower() == "x"})),
     (r"IRENCRAG", lambda m: Effect("irencrag")),
     (r"harness ~", lambda m: Effect("harness")),
     (r"search your library for a card, put it into your graveyard, then shuffle", lambda m: Effect("tutor_gy")),
@@ -648,6 +657,19 @@ _EFFECT_PATTERNS = [
 ]
 
 _SUBS = [
+    (re.compile(r"you may discard a card\. if you do, draw (a card|two cards)\.", re.I),
+     lambda m: f"OPTCOST discard {_num(m[1].split()[0])}."),
+    (re.compile(r"you may sacrifice (another |an? )?(creature or artifact|artifact or creature|artifact|creature|"
+                r"enchantment or creature|artifact or creature)\. if you do, draw (a card|two cards)\.", re.I),
+     lambda m: f"OPTCOST sac{'other' if (m[1] or '').startswith('another') else ''}:{m[2].replace(' or ', '|')} "
+               f"{_num(m[3].split()[0])}."),
+    (re.compile(r"you may sacrifice an artifact or discard a card\. if you do, draw a card\.", re.I),
+     lambda m: "OPTCOST either 1."),
+    (re.compile(r"gain control of target creature until end of turn\. untap that creature\. it gains haste until end "
+                r"of turn\.", re.I), lambda m: "THREATEN."),
+    (re.compile(r"create (a|an|x|one|two|three) 1/1 red mercenary creature tokens? with \"\{t\}: target creature you "
+                r"control gets \+1/\+0 until end of turn\.\s*activate only as a sorcery\.\"", re.I),
+     lambda m: f"MERCENARY {m[1]}."),
     (re.compile(r"put each card exiled with ~ into its owner's graveyard, then create a 2/2 colorless robot artifact "
                 r"creature token for each card put into a graveyard this way\. sacrifice ~\.", re.I),
      lambda m: "STARCAGE."),
@@ -797,10 +819,22 @@ def _parse_effects(text: str):
     effects, unmatched = [], []
     for rx, rep in _SUBS:
         text = rx.sub(rep, text)
+    gated = False
     for sentence in re.split(r"(?<=\.)\s+", text.strip()):
         s = sentence.strip().rstrip(".").strip()
         if not s:
             continue
+        mp = re.fullmatch(r"you may pay ((?:\{[WUBRGC0-9]+\})+)", s, re.I)
+        if mp:
+            effects.append(Effect("pay_gate", data={"cost": parse_mana_cost(mp[1])}))
+            gated = True
+            continue
+        first = len(effects)
+        paid = False
+        if gated:
+            g = re.fullmatch(r"(?:if you do|when you do), (.+)", s, re.I)
+            if g:
+                s, paid = g[1], True
         for pat, build in _EFFECT_PATTERNS:
             m = re.fullmatch(pat, s, flags=re.IGNORECASE)
             if m is None and s.lower().startswith("then "):
@@ -820,6 +854,9 @@ def _parse_effects(text: str):
                 effects += parts
             else:
                 unmatched.append(sentence.strip())
+        if paid:
+            for eff in effects[first:]:
+                eff.cond = eff.cond or "paid"
     return effects, unmatched
 
 
@@ -838,6 +875,15 @@ def _split_compound(s: str):
         else:
             return out
     return None
+
+
+def _apply_speed_gate(gate, triggers, activated):
+    """Gate what a "Max speed — ..." line just added: its triggers' effects and its activated abilities."""
+    for t in triggers[gate[0]:]:
+        for eff in t.effects:
+            eff.cond = eff.cond or "max_speed"
+    for a in activated[gate[1]:]:
+        a.needs_max_speed = True
 
 
 def _face_types(type_line: str) -> frozenset:
@@ -917,8 +963,47 @@ def _parse_face(data: dict) -> CardDef:
 
     kicked: list = []
     station_min = 0
+    gate = None            # set while parsing a "Max speed — ..." line: what the line added is gated on speed 4
     for line in (l.strip() for l in text.split("\n")):
+        if gate is not None:
+            _apply_speed_gate(gate, triggers, activated)
+            gate = None
         if not line:
+            continue
+        gm = re.fullmatch(r"Max speed — (.+)", line)
+        if gm:
+            gate = len(triggers), len(activated)
+            line = gm[1]
+            m = re.fullmatch(r"~ gets \+(\d+)/\+(\d+)(?: and has ([a-z ]+))?\.", line)
+            if m:
+                extra["pt_if"] = extra.get("pt_if", ()) + (("speed>=4", int(m[1]), int(m[2])),)
+                if m[3] and m[3] in KEYWORDS:
+                    extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((m[3], "max_speed"),)
+                continue
+            m = re.fullmatch(r"~ has ([a-z ]+?)(?: and ([a-z ]+))?\.", line)
+            if m and m[1] in KEYWORDS and (m[2] is None or m[2] in KEYWORDS):
+                for kw in (m[1], m[2]):
+                    if kw:
+                        extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((kw, "max_speed"),)
+                continue
+        if line == "~ can't be blocked.":
+            keywords.add("unblockable")
+            continue
+        if line == "You have no maximum hand size.":
+            extra["no_max_hand"] = True
+            continue
+        if line == "~ attacks each combat if able.":
+            extra["must_attack"] = True
+            continue
+        m = re.fullmatch(r"~ enters with (\w+) -1/-1 counters on it\.", line)
+        if m:
+            extra["etb_named_counters"] = ("-1/-1", _num(m[1]))
+            continue
+        if line == "Job select":
+            triggers.append(Trigger("etb", [Effect("job_select")]))
+            continue
+        if line == "Start your engines!":
+            extra["start_engines"] = True
             continue
         if any(a.startswith("never paid: As an additional cost") for a in approximations):
             line = re.sub(r"\s*If ~'s additional cost was paid, [^.]+\.", "", line).strip()
@@ -1566,6 +1651,8 @@ def _parse_face(data: dict) -> CardDef:
         alt_costs.append(AltCost("kicker", add_mana(cost, extra.pop("kicker")), effects=kicked_effects))
     elif kicked:
         unsupported += [f"if kicked: {k}" for k in kicked]
+    if gate is not None:
+        _apply_speed_gate(gate, triggers, activated)
     extra.pop("is_spree", None)
     extra.pop("_subtypes", None)
     _auras.finish(extra)

@@ -128,6 +128,8 @@ class Permanent:
             n = sum(c.is_permanent for c in gy) if cond.startswith("gy_perm") else len(gy)
             if cond.startswith("lands"):
                 n = sum(x.card.is_land for x in self.controller.battlefield)
+            elif cond.startswith("speed"):
+                n = self.controller.speed
             if n >= int(cond.split(">=")[1]):
                 bp += pp
                 bt += tt
@@ -214,6 +216,8 @@ class Permanent:
         if cond.startswith("another:"):
             kind = cond[8:]
             return any(kind in x.card.subtypes for x in self.controller.battlefield if x is not self)
+        if cond == "max_speed":
+            return self.controller.speed >= 4
         if cond == "your_turn":
             return self.controller.my_turn
         if cond.startswith("opp_life<="):
@@ -284,6 +288,8 @@ FIREBEND_MANA = CardDef(name="Firebending mana", mana_cost={"generic": 0}, cmc=0
 class Player:
     my_turn = False
     foe = None
+    speed = 0
+    speed_turn = -1
 
     def __init__(self, name: str, deck: list[CardDef], ai):
         self.name = name
@@ -486,6 +492,7 @@ def add_costs(*costs) -> dict:
 
 class Game:
     def __init__(self, p1: Player, p2: Player, rng: random.Random, max_turns: int = 60, log: bool = False):
+        self.stolen: list = []        # (permanent, original controller): control returns at end of turn
         self.players = [p1, p2]       # p1 is on the play
         p1.foe, p2.foe = p2, p1
         p1.opponent, p2.opponent = p2, p1
@@ -523,6 +530,10 @@ class Game:
         if delta > 0:
             player.life_gained_turn += delta
             self.fire(player, "gain_life")
+        if delta < 0 and player is not self.active and self.active.speed_turn != self.turn and \
+                0 < self.active.speed < 4:
+            self.active.speed += 1               # an opponent lost life on your turn
+            self.active.speed_turn = self.turn
         if delta and self.log_enabled:
             self.audit("life", seat=self.players.index(player), before=before,
                        delta=delta, after=player.life, cause=cause)
@@ -1131,7 +1142,13 @@ class Game:
         if self.over:
             return
         self.step = "cleanup"
-        while len(p.hand) > 7:
+        for victim, owner in self.stolen:
+            if victim in victim.controller.battlefield:
+                victim.controller.battlefield.remove(victim)
+                victim.controller = owner
+                owner.battlefield.append(victim)
+        self.stolen = []
+        while len(p.hand) > 7 and not any(x.card.no_max_hand for x in p.battlefield):
             card = p.ai.choose_discard(self, p)
             self.discard_card(p, card)
         for perm in p.battlefield + opp.battlefield:
@@ -1395,6 +1412,10 @@ class Game:
             return True
         if c == "host_toughness<=3":
             return item.source is not None and item.source.toughness <= 3
+        if c == "max_speed":
+            return p.speed >= 4
+        if c == "paid":
+            return bool(getattr(item, "gate_paid", False))
         if c == "harnessed":
             return bool(getattr(item.source, "harnessed", False))
         if c == "evidence":
@@ -1748,6 +1769,8 @@ class Game:
             return False
         if c.get("craft") and not self.craft_materials(p, perm):
             return False
+        if act.needs_max_speed and p.speed < 4:
+            return False
         if act.min_charge and perm.counters.get("charge", 0) < act.min_charge:
             return False
         return payable(self.mana_sources(p, perm if c.get("tap") else None, "ability"), self.ability_cost(p, perm, act))
@@ -1851,6 +1874,8 @@ class Game:
         perm = Permanent(card, p)
         perm.front = front
         perm.entered_turn = self.turn
+        if card.start_engines and p.speed == 0:
+            p.speed = 1
         perm.entered_x = x
         perm.prepared = bool(card.prepared and card.back is not None)
         perm.spent_color = getattr(self, "_spent", "")
@@ -1948,6 +1973,10 @@ class Game:
         for _ in range(n if n is not None else eff.amount):
             card = make_token(d.get("name", ""), d.get("power", 0), d.get("toughness", 0), d.get("keywords", ()),
                               d.get("triggers"), d.get("kind", ""), d.get("artifact", False), d.get("pt_per", ""))
+            if d.get("mercenary"):
+                card = dataclasses.replace(card, activated=[Activated("ability", {"generic": 0}, effects=[
+                    Effect("pump", 1, 0, target="creature_mine")], extra_costs={"tap": True}, sorcery=True,
+                    text="{T}: Target creature you control gets +1/+0 until end of turn.")])
             self.enter_battlefield(p, card, tapped_attacking=d.get("attacking", False) and self.step in
                                    ("declare_attackers", "declare_blockers"))
         self.log(f"creates {n if n is not None else eff.amount} {d.get('kind') or d.get('name')} token(s)", p)
@@ -2119,7 +2148,8 @@ class Game:
             who = target if eff.target == "that_controller" and isinstance(target, Player) else p
             n = None
             if eff.data.get("x"):
-                n = getattr(item.source, "entered_x", 0) if item is not None else 0
+                n = (getattr(item.source, "entered_x", 0) if item.source is not None else getattr(item, "x", 0)) \
+                    if item is not None else 0
             self.create_token(who, eff, n)
         elif k == "copy_token":
             tokens = [x for x in p.creatures if x.card.is_token]
@@ -2463,6 +2493,51 @@ class Game:
         elif k == "shrink_all":
             for v in p.creatures + opp.creatures:
                 v.counters["-1/-1"] = v.m1 + eff.amount
+        elif k == "pay_gate":
+            if item is not None:
+                item.gate_paid = False
+                if self.can_pay(p, eff.data["cost"]) and self.hook(p, "pay_optional")(self, p, eff.data["cost"], "gate"):
+                    self.pay(p, eff.data["cost"])
+                    item.gate_paid = True
+        elif k == "opt_cost_draw":
+            src = item.source if item is not None else None
+            cost = eff.data["cost"]
+            paid = False
+            if cost in ("discard", "either") and p.hand:
+                card = p.ai.choose_discard(self, p)
+                if cost == "discard" or (card.is_land and sum(x.card.is_land for x in p.battlefield) >= 5):
+                    self.discard_card(p, card)
+                    paid = True
+            if not paid and cost != "discard":
+                kinds = ("artifact",) if cost == "either" else tuple(cost.split(":", 1)[1].split("|"))
+                spare = [x for x in p.battlefield
+                         if not (cost.startswith("sacother") and x is src)
+                         and any(card_matches(x.card, "a " + k) for k in kinds)
+                         and (x.card.is_token or perm_value(x) <= 2)]
+                if spare:
+                    self.sacrifice(min(spare, key=perm_value))
+                    paid = True
+                elif cost == "either" and p.hand:
+                    self.discard_card(p, p.ai.choose_discard(self, p))
+                    paid = True
+            if paid:
+                self.draw(p, eff.amount)
+        elif k == "job_select":
+            src = item.source if item is not None else None
+            hero = self.enter_battlefield(p, dataclasses.replace(make_token("Hero", 1, 1), subtypes=frozenset({"Hero"})))
+            if src is not None and src in p.battlefield and src.card.equip_cost is not None:
+                src.attached_to = hero
+                self.log(f"{src.card.name} attaches to the Hero", p)
+        elif k == "threaten":
+            if isinstance(target, Permanent) and target in target.controller.battlefield:
+                victim, owner = target, target.controller
+                owner.battlefield.remove(victim)
+                victim.controller = p
+                p.battlefield.append(victim)
+                victim.tapped = False
+                victim.sick = False
+                self.stolen.append((victim, owner))
+                self.log(f"gains control of {victim.card.name}", p)
         elif k == "wheel_self":
             for c in list(p.hand):
                 self.discard_card(p, c)
@@ -2955,6 +3030,7 @@ class Game:
         if self.over:
             return
         attackers = [a for a in p.ai.choose_attackers(self, p, opp) if a.can_attack()]
+        attackers += [a for a in p.creatures if a.card.must_attack and a.can_attack() and a not in attackers]
         self.attackers = list(attackers)
         if not attackers:
             return
