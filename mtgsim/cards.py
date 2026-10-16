@@ -169,6 +169,7 @@ class CardDef:
     station: bool = False                               # Station (tap another creature: charge counters)
     extra_lands: int = 0                                # "You may play an additional land on each of your turns."
     lands_from_gy: bool = False                         # "You may play lands from your graveyard."
+    pt_scale: tuple = (1, 1)                            # (power, toughness) gained per counted permanent
     pt_per: str = ""                                    # "~ gets +1/+1 for each artifact you control": "artifact"
     extra_sacrifice: str = ""                           # "As an additional cost to cast ~, sacrifice an artifact or creature"
     extra_sac_or_pay: int = 0                           # "... pay {4} or sacrifice ...": the generic alternative
@@ -993,9 +994,7 @@ def _parse_face(data: dict) -> CardDef:
         if re.fullmatch(r"You may play lands from your graveyard\.", line):
             extra["lands_from_gy"] = True
             continue
-        m = re.fullmatch(r"~ gets \+1/\+1 for each (artifact|creature|land) you control\.", line)
-        if m:
-            extra["pt_per"] = m[1]
+        if _counting.parse_line(line, extra):
             continue
         m = re.fullmatch(r"As an additional cost to cast ~, (?:pay \{(\d+)\} or )?sacrifice (an? (?:artifact|creature)"
                          r"(?: or (?:artifact|creature))?)\.", line)
@@ -1368,7 +1367,7 @@ def make_token(name: str, power: int, toughness: int, keywords=frozenset(), trig
 
 
 # Copy effects live in their own module; its templates join the ones above.
-from . import auras as _auras, copies as _copies, removal as _removal, search as _search, xspells as _xspells  # noqa: E402
+from . import auras as _auras, copies as _copies, removal as _removal, search as _search, xspells as _xspells, counting as _counting  # noqa: E402
 
-_EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS
-_SUBS += _copies.SUBS
+_EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS
+_SUBS += _copies.SUBS + _counting.SUBS
