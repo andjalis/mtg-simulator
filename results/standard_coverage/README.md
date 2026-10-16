@@ -399,3 +399,25 @@ your next turn": exiled cards go on a per-player playable-exile list with an exp
 "As an additional cost to cast ~, behold a <type> or pay {N}" adds the tax unless you control or hold such a card.
 Fully supported cards 1,755 → 1,776. Not done: exiling from an opponent's library, "choose one of them", behold-and-exile
 costs (Champion cycle), "exiled with ~" cards (Suspend-style stores), cast-from-exile mana restrictions.
+
+## Round 14: conditional sentences, tapped tokens, token anthems
+
+A general "If <condition>, <effect>" sentence rewrite: the condition is looked up in a small table (you attacked this
+turn, an opponent controls more lands than you, a creature died this turn / under an opponent's control, you control
+another <Subtype or outlaw>, two or more tapped creatures, a creature with power N or greater, you sacrificed a permanent
+this turn) and the rest of the sentence is parsed as usual with that condition attached. "Create [N] tapped <Treasure /
+Food / ...> or N/N tokens", "target player creates ... tokens", "Creature tokens you control get +N/+N" and "Whenever you
+cast an outlaw spell" triggers. Fully supported cards 1,776 → 1,802.
+Not done: copies of a trigger's subject ("if it isn't a token, create a token that's a copy of it"), delayed
+sacrifice of created tokens, tokens with quoted abilities that need parsing (Pilot, Spirit with X), Class levels.
+
+## Round 15: forced blocks, waterbend and firebending lines
+
+Combat restrictions: "~ must be blocked if able", "It must be blocked this turn if able", "Target creature blocks this
+turn if able" (and "attacks or blocks"), "Creatures with power less than ~'s power can't block it", "[Up to N / one or
+two] target creatures can't block this turn" (distinct targets are now chosen up front) and "It can't block this turn".
+`Game.force_blocks` adds the demanded blocks to the AI's choice. "Waterbend {N}:" abilities are treated as {N}
+activated abilities (the tap-artifacts-and-creatures payment is not modelled), "Ward—Waterbend {N}" as ward {N}, and
+keyword lists that include "firebending N" are split so each keyword parses. Fully supported cards 1,802 → 1,810.
+Not done: airbend, "waterbend" as an additional cost, granting firebending, "~ attacks each combat if able" granted to
+tokens, Class levels.
