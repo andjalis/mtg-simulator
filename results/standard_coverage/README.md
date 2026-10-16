@@ -153,3 +153,12 @@ KEYWORD". Many of these were the lines that kept modal spells partly supported. 
 754 → 779 (15.4% → 15.9%) on top of copy effects (726 → 754 together with modal spells). Not done: the
 "choose both instead" upgrades (teamwork, 5 cards; descend, delirium and the 8-permanent graveyard check, 3 cards)
 are still played without the upgrade and reported as simplified.
+
+## Auras (mtgsim/auras.py)
+
+Auras are permanents attached to a host: "Enchant creature / creature you control / land ...", "Enchanted creature
+gets +N/+N and has KEYWORD" (also negative), "doesn't untap", "can't attack or block", "when this Aura enters, tap
+enchanted creature", and Equipment that attaches itself when it enters. The host is chosen when the Aura resolves
+(friendly Auras on the caster's best creature, hostile ones on the opponent's best) and an Aura with no legal host
+isn't cast. Fully supported cards 779 → 796 (15.9% → 16.2%). Not done: "you control enchanted creature", "loses all
+abilities", Auras that count things ("for each Forest").
