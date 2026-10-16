@@ -338,3 +338,13 @@ Keyword pumps on the card itself ("~ gets +2/+0 and gains lifelink"), Aura "ench
 have menace", "creatures with flying get +1/+1"), counter-based trample, second-spell and "if you control a Wizard"
 discounts, seven-lands bonus, counter-spell filters, -1/-1 counters, damage to each player, graveyard exile,
 "one or two target creatures" (distinct targets). Fully supported cards 1,364 → 1,455.
+
+## Round 8: speed, threaten, Mercenary tokens, optional-cost draws
+
+Speed: "Start your engines!" sets speed to 1 when the permanent enters; speed rises once per turn when an opponent loses
+life on your turn (max 4); "Max speed —" lines are gated on speed 4 (keywords, +N/+N, triggers, activated abilities).
+"Gain control of target creature until end of turn, untap, haste" (control returns in cleanup). Mercenary tokens with
+their sorcery-speed pump ability and X Mercenary tokens. Job select (Hero token, equipment attaches). "~ can't be
+blocked", "no maximum hand size", "attacks each combat if able", "enters with N -1/-1 counters". "You may discard a
+card / sacrifice a permanent. If you do, draw" and the general "you may pay {N}. If you do / When you do, ..." gate
+(the AI pays whenever it can). Fully supported cards 1,455 → 1,509.
