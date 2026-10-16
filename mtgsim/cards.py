@@ -1349,14 +1349,14 @@ def _parse_trigger_line(line: str):
             rest = spent[2]
         if rest.startswith("if you cast it, "):
             cond, rest = "cast", rest[16:]
-        c = re.fullmatch(r"if (you gained life|you gained and lost life|you've gained (\d+) or more life|an opponent "
+        c = re.fullmatch(r"if (you gained life|you gained and lost life|you descended|you've gained (\d+) or more life|an opponent "
                          r"lost life) this turn, (.+)", rest, flags=re.S) or \
             re.fullmatch(r"(.+?) if (you gained life|you've gained (\d+) or more life) this turn\.", rest, flags=re.S)
         if c:
             phrase, n, rest = (c[1], c[2], c[3]) if not c[1][0].isupper() and c.re.pattern.startswith("if") \
                 else (c[2], c[3], c[1] + ".")
             cond = {"you gained life": "gained_life", "you gained and lost life": "gained_and_lost",
-                    "an opponent lost life": "opp_lost_life"}.get(phrase, f"gained_life>={n}")
+                    "an opponent lost life": "opp_lost_life", "you descended": "descended"}.get(phrase, f"gained_life>={n}")
         if cond:
             rest = rest[0].upper() + rest[1:]
         # "... When you do, if it has four or more quest counters on it, EFFECTS" (Earthbender Ascension)

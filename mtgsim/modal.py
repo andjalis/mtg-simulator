@@ -67,6 +67,7 @@ _UP_COND = [
     (r"there are eight or more permanent cards in your graveyard as you cast (?:this spell|~)", "gy8"),
     (r"you control (?:a|an) (\w+) as you cast (?:this spell|~)", "subtype"),
     (r"you control six or more lands", "lands6"),
+    (r"you descended this turn", "descended"),
     (r"you control a commander(?: as you cast (?:this spell|~))?", "never"),
 ]
 _BULLET = re.compile(r"(?:• ?(?P<paw1>(?:\{P\})+ — )?|(?P<paw2>(?:\{P\})+) — )"
@@ -143,6 +144,8 @@ def upgrade_active(game, me, cond: str, flags=()) -> bool:
         return "teamwork" in flags
     if cond == "no_hand":
         return not me.hand
+    if cond == "descended":
+        return getattr(me.graveyard, "descents", 0) > 0
     if cond == "delirium":
         types = set()
         for c in me.graveyard:

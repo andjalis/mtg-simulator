@@ -217,3 +217,9 @@ Fully supported cards 865 → 894.
 "Whenever a/another creature you control [with a counter on it] dies" and "Whenever an artifact/enchantment/Food you
 control is put into a graveyard from the battlefield". Not modelled: cards leaving a graveyard, "counter is put on ~"
 thresholds (plan counters). Fully supported cards 894 → 905.
+
+## Descend (mtgsim/engine.py `Graveyard`)
+
+Graveyards count the permanent cards put into them this turn, so "if you descended this turn, ..." works as a trigger
+condition and as a "choose both instead" upgrade. Kicker and additional-cost upgrades (two cards) are still unmodelled.
+Fully supported cards 905 → 911.
