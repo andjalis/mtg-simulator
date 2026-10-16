@@ -44,6 +44,14 @@ class Graveyard(list):
             self.descents += 1
         super().append(card)
 
+    left: list | None = None
+
+    def remove(self, card):
+        super().remove(card)
+        if self.left is None:
+            self.left = []
+        self.left.append(card)
+
 
 class Permanent:
     def __init__(self, card: CardDef, controller: "Player"):
@@ -225,6 +233,10 @@ class Permanent:
             return self.controller.speed >= 4
         if cond == "your_turn":
             return self.controller.my_turn
+        if cond.startswith("gy"):
+            gy = self.controller.graveyard
+            n = sum(c.is_permanent for c in gy) if cond.startswith("gy_perm") else len(gy)
+            return n >= int(cond.split(">=")[1])
         if cond.startswith("opp_life<="):
             opp = getattr(self.controller, "opponent", None)
             return opp is not None and opp.life <= int(cond[10:])
@@ -293,6 +305,13 @@ FIREBEND_MANA = CardDef(name="Firebending mana", mana_cost={"generic": 0}, cmc=0
 _POOL_MANA: dict = {}
 
 
+def _gy_desc(desc: str) -> str:
+    """A graveyard-card description in the form copies.fits reads ("noncreature, nonland permanent" is one
+    description; "artifact, creature, or land" lists alternatives)."""
+    desc = desc.replace("and/or", "or").replace(" cards", "").replace(" card", "")
+    return desc if " or " in desc else desc.replace(", ", " ")
+
+
 def pool_mana(color: str) -> CardDef:
     """The CardDef of one floating mana of a colour (see Player.pool)."""
     if color not in _POOL_MANA:
@@ -329,6 +348,7 @@ class Player:
         self.picked_last: CardDef | None = None   # the card mill_pick returned to hand
         self.discarded_last: list[CardDef] = []
         self.discarded_cards: list[CardDef] = []      # discarded this turn (Mayhem)
+        self.granted_fb: list[CardDef] = []           # graveyard cards that gained flashback this turn
         self.mulligans = 0
         self.lost_life_turn = False
         self.perm_left_turn = False
@@ -675,6 +695,51 @@ class Game:
             return counting.count(self, p, {"what": spec[1], "zone": "graveyard"}, src)
         return counting.count(self, p, {"what": spec[1], "zone": "battlefield"}, src)
 
+    def gy_move(self, p: Player, eff: Effect, item):
+        """"Return up to N target <description> cards from your/a graveyard to your hand/the battlefield"."""
+        d = eff.data
+        zones = {"mine": [p], "opp": [self.opponent(p)], "any": [p, self.opponent(p)]}[d["zone"]]
+        cands = []
+        for owner in zones:
+            for c in owner.graveyard:
+                if not copies.fits(c, _gy_desc(d["what"])):
+                    continue
+                if d["cmc"]:
+                    lim, cmp = d["cmc"]
+                    lim = getattr(item, "x", 0) if lim == "x" else lim
+                    if (c.cmc > lim) if cmp == "less" else (c.cmc < lim):
+                        continue
+                cands.append((owner, c))
+        n = eff.amount
+        if d["x_n"]:
+            n = getattr(item, "x", 0)
+        if d["dest"] == "bf":
+            cands = [(o, c) for o, c in cands if c.is_permanent]
+        cands.sort(key=lambda oc: -oc[1].cmc)
+        if eff.amount == 99:
+            picked = list(cands)
+        else:
+            picked = []
+            names = set()
+            for o, c in cands:
+                if len(picked) >= n:
+                    break
+                if d.get("distinct") and c.name in names:
+                    continue
+                names.add(c.name)
+                picked.append((o, c))
+        for owner, card in picked:
+            owner.graveyard.remove(card)
+        for owner, card in picked:
+            if d["dest"] == "hand":
+                p.hand.append(card)
+                self.log(f"returns {card.name} to hand", p)
+            else:
+                perm = self.enter_battlefield(p, card)
+                if d["tapped"]:
+                    perm.tapped = True
+                self.log(f"returns {card.name} to the battlefield", p)
+
     def commits_crime(self, p: Player, targets) -> bool:
         """Whether a spell or ability with these targets is a crime: it targets an opponent, their permanent or
         a card in their graveyard."""
@@ -789,6 +854,8 @@ class Game:
             n = max((x.card.cmc for x in p.battlefield if "Elemental" in x.card.subtypes), default=0)
         elif card.cost_reduction == "power":
             n = sum(max(0, c.power) for c in p.creatures)
+        elif card.cost_reduction.startswith("gy:"):
+            n = sum(copies.fits(c, _gy_desc(card.cost_reduction[3:])) for c in p.graveyard)
         elif card.cost_reduction.startswith("affinity:"):
             n = sum(card_matches(x.card, "a " + card.cost_reduction[9:]) for x in p.battlefield)
         for x in p.battlefield:
@@ -908,6 +975,9 @@ class Game:
         for c in p.foretold:
             a = next(a for a in c.alt_costs if a.kind == "foretell")
             out.append(self._variant(c, "foretold", a))
+        for c in p.granted_fb:
+            if c in p.graveyard:
+                out.append(self._variant(c, "flashback", AltCost("flashback", dict(c.mana_cost))))
         for c in p.graveyard:
             for a in c.alt_costs:
                 if a.kind in ("flashback", "gy_ability") or (a.kind == "blitz" and "graveyard" in a.zone) or \
@@ -969,6 +1039,8 @@ class Game:
 
     def passes_filter(self, eff: Effect, perm: Permanent, by: Player) -> bool:
         f = eff.filter
+        if f.startswith("x:"):
+            return removal.x_passes(f, perm, by)
         r = removal.passes(f, perm)
         if r is not None:
             return r
@@ -1303,6 +1375,8 @@ class Game:
             perm.crewed = False
             perm.saddled = False
         p.next_creature_counters = 0
+        for pl in self.players:
+            pl.granted_fb = []
         self.state_based_actions()
 
     # ------------------------------------------------------- stack/priority
@@ -1384,6 +1458,11 @@ class Game:
                         continue
                 if event == "expend" and trig.filter != str(subject):
                     continue
+                if event == "gy_leave":
+                    desc, during = trig.filter.split("|")
+                    if (during and not perm.controller.my_turn) or \
+                            not any(not desc or copies.fits(c, _gy_desc(desc)) for c in subject):
+                        continue
                 if event in ("ally_dies", "perm_to_gy"):
                     scope, ctr, desc = trig.filter.split("|", 2)
                     if (subject is perm and scope == "other") or (ctr and not subject.counters) or \
@@ -2664,6 +2743,14 @@ class Game:
                 p.graveyard.remove(card)
                 p.hand.append(card)
                 self.log(f"returns {card.name} to hand", p)
+        elif k == "gy_move":
+            self.gy_move(p, eff, item)
+        elif k == "grant_flashback":
+            cands = [c for c in p.graveyard if (c.is_instant or c.is_sorcery) and c.alt_costs is not None]
+            if cands:
+                best = max(cands, key=lambda c: c.cmc)
+                p.granted_fb.append(best)
+                self.log(f"{best.name} gains flashback", p)
         elif k == "regrow_any":
             if p.graveyard:
                 card = max(p.graveyard, key=lambda c: c.cmc)
@@ -3196,6 +3283,11 @@ class Game:
                 self.fire(opp, "opp_creature_dies", other, context=perm.controller)
 
     def state_based_actions(self):
+        for pl in self.players:
+            left = getattr(pl.graveyard, "left", None)
+            if left:
+                pl.graveyard.left = []
+                self.fire(pl, "gy_leave", subject=left)
         changed = True
         while changed:
             changed = False
@@ -3518,6 +3610,9 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
             total += 2 if opp.hand else 0
         elif k == "regrow":
             total += max((c.cmc for c in me.graveyard if c.is_creature), default=-1)
+        elif k == "gy_move":
+            ok = [c.cmc for c in me.graveyard if copies.fits(c, _gy_desc(e.data["what"]))]
+            total += (max(ok) + 1) if ok else -1
         elif k in ("destroy", "bounce", "shuffle_away"):
             total += perm_value(tgt)
         elif k in ("bounce_spell", "counter"):
