@@ -91,5 +91,38 @@ class Play(unittest.TestCase):
         self.assertLessEqual(sum(c.modes.spec.costs[i] for i in chosen), 5)
 
 
+class Upgrades(unittest.TestCase):
+    def setUp(self):
+        self.a = Player("a", [], HeuristicAI())
+        self.b = Player("b", [], HeuristicAI())
+        self.game = Game(self.a, self.b, random.Random(0))
+
+    def test_parsed_without_notes(self):
+        c = card("Gnash", "{1}{G}", "Instant", "Choose one. If you have no cards in hand, choose one or more "
+                 "instead.\n- You gain 2 life.\n- Draw a card.".replace("- ", "• "))
+        self.assertEqual(c.modes.spec.upgrades, [("no_hand", modal.ANY)])
+        self.assertEqual(card_coverage(c).status, "full")
+
+    def test_conditions(self):
+        g, me = self.game, self.a
+        self.assertTrue(modal.upgrade_active(g, me, "no_hand"))
+        self.assertFalse(modal.upgrade_active(g, me, "teamwork"))
+        self.assertTrue(modal.upgrade_active(g, me, "teamwork", {"teamwork"}))
+        self.assertFalse(modal.upgrade_active(g, me, "delirium"))
+        me.graveyard = [card("A", "", "Artifact", ""), card("C", "", "Creature — Elf", "", 1, 1),
+                        card("I", "{1}", "Instant", ""), card("L", "", "Land", "")]
+        self.assertTrue(modal.upgrade_active(g, me, "delirium"))
+
+    def test_teamwork_chooses_both(self):
+        c = card("Go Nuts", "{1}{G}", "Instant", "Teamwork 3 (As an additional cost to cast this spell, you may tap "
+                 "any number of creatures you control with total power 3 or more.)\nChoose one. If this spell was "
+                 "cast using teamwork, choose both instead.\n• You gain 2 life.\n• Draw a card.")
+        self.assertEqual(c.teamwork, 3)
+        self.assertEqual(c.unsupported, [])
+        spec = modal._upgraded(self.game, self.a, c.modes.spec, {"teamwork"})
+        self.assertEqual(spec.most, 2)
+        self.assertEqual(modal._upgraded(self.game, self.a, c.modes.spec, ()).most, 1)
+
+
 if __name__ == "__main__":
     unittest.main()
