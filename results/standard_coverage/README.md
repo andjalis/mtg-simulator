@@ -329,3 +329,12 @@ Firebending (red mana that lasts until end of combat), "deals damage to each of 
 "counter on each of up to two target creatures". Still ignored on flagged decks: Uldaros Theorix (free casting of
 copies), Lively Dirge's Spree modes parse but Spree itself needs checking, Perilous Snare (speed), Braided Net.
 Fully supported cards 1,339 → 1,364.
+
+## Round 7: cheap generic lines
+
+Keyword pumps on the card itself ("~ gets +2/+0 and gains lifelink"), Aura "enchanted creature gains X",
+"destroy target creature or enchantment", "tap target permanent", "each player draws", "can't block this turn",
+"exile a card from their hand", reanimate/regrow variants, subtype and keyword lords ("Other Elves get +1/+1", "Rhinos
+have menace", "creatures with flying get +1/+1"), counter-based trample, second-spell and "if you control a Wizard"
+discounts, seven-lands bonus, counter-spell filters, -1/-1 counters, damage to each player, graveyard exile,
+"one or two target creatures" (distinct targets). Fully supported cards 1,364 → 1,455.
