@@ -272,3 +272,12 @@ filter lands and Prophetic Prism ("{1}, {T}: Add one mana of any color" adds no 
 source and taps), once-per-turn converters ("{1}: Add {W}, {B}, or {G}", no tap needed), "{T}, Tap an untapped creature
 you control: Add one mana of any color", "{T}, Sacrifice ~: Add ...", and "Activate only if you control a Dragon".
 Fully supported cards 1,162 → 1,184.
+
+## Empower, Discover, Mayhem and Sneak
+
+Empower Jace N (a Jace planeswalker token with "-1: Surveil 1" and "-3: Draw a card"; one token grows), Discover N (the
+first nonland card of mana value N or less is cast for free, otherwise it stays in hand, the rest go to the bottom),
+Mayhem (cast from the graveyard for its cost if it was discarded this turn) and Sneak (after blockers, return an
+unblocked attacker and pay the sneak cost; a creature enters tapped and attacking, without going on the stack). The AI
+sneaks when the new creature beats the cheapest unblocked attacker. Not yet: "Empower Jace X", "Discover X". Fully
+supported cards 1,184 → 1,219.
