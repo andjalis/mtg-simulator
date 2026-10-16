@@ -16,6 +16,7 @@ AI can override it; repeated and pawprint modes are chosen here greedily by `_mo
 from __future__ import annotations
 
 import re
+import dataclasses
 from dataclasses import dataclass, field
 
 ANY = 99      # "choose one or more" / "any number": capped at the number of modes
@@ -31,6 +32,7 @@ class ModeSpec:
     unique: str = ""              # "turn" / "ever": a mode that was chosen can't be chosen again
     budget: int = 0               # pawprint: total {P} to spend
     costs: list = field(default_factory=list)    # pawprint cost of each mode
+    upgrades: list = field(default_factory=list)  # (condition, most) from "If X, choose both instead."
 
 
 class Modes(list):
@@ -55,7 +57,18 @@ _HEAD = re.compile(
     r"(?P<more> or both| or more)?(?P<uniq> that hasn't been chosen(?P<turn> this turn)?)?"
     r" ?(?P<end>—|-|\.)(?P<rest>.*)", re.I | re.S)
 _PAW = re.compile(r"Choose up to (\w+) \{P\} worth of modes\.(?P<rest>.*)", re.I | re.S)
-_UPGRADE = re.compile(r"If .+, (?:you may )?choose (?:both|one or more|two|three) instead\.", re.I)
+_UPGRADE = re.compile(r"If (?P<cond>.+), (?:you may )?choose (?P<k>both|one or more|two|three) instead\.", re.I)
+# Conditions of "If X, choose both instead." by wording; the value says what is checked in upgrade_active.
+# "never" conditions can't hold in this simulator (no commanders), so they need no simplification note.
+_UP_COND = [
+    (r"(?:this spell|~) was cast using teamwork", "teamwork"),
+    (r"you have no cards in hand", "no_hand"),
+    (r"there are four or more card types among cards in your graveyard", "delirium"),
+    (r"there are eight or more permanent cards in your graveyard as you cast (?:this spell|~)", "gy8"),
+    (r"you control (?:a|an) (\w+) as you cast (?:this spell|~)", "subtype"),
+    (r"you control six or more lands", "lands6"),
+    (r"you control a commander(?: as you cast (?:this spell|~))?", "never"),
+]
 _BULLET = re.compile(r"(?:• ?(?P<paw1>(?:\{P\})+ — )?|(?P<paw2>(?:\{P\})+) — )"
                      r"(?:[A-Z][\w' ,!-]{0,30}? — )?(?P<body>.+)", re.S)
 
@@ -88,8 +101,16 @@ def parse_header(line: str):
             continue
         if sentence == "You may choose the same mode more than once.":
             spec.repeat = True
-        elif _UPGRADE.fullmatch(sentence):
-            notes.append(f"never upgraded: {sentence}")
+        elif (up := _UPGRADE.fullmatch(sentence)):
+            cond = next(((c, re.fullmatch(rx, up["cond"], re.I)) for rx, c in _UP_COND
+                         if re.fullmatch(rx, up["cond"], re.I)), None)
+            if cond is None:
+                notes.append(f"never upgraded: {sentence}")
+            else:
+                kind, mm = cond
+                if kind == "subtype":
+                    kind = "subtype:" + mm[1].capitalize()
+                spec.upgrades.append((kind, ANY if up["k"].lower() == "one or more" else _COUNT[up["k"].lower()]))
         else:
             return None
     return spec, notes
@@ -114,6 +135,39 @@ def add_mode(modes, effects: list, cost: int = 0):
 
 def _used_key(modes, i):
     return ("mode", id(modes), i)
+
+
+def upgrade_active(game, me, cond: str, flags=()) -> bool:
+    """Whether the condition of an "If X, choose both instead." sentence holds (checked as the spell is cast)."""
+    if cond == "teamwork":
+        return "teamwork" in flags
+    if cond == "no_hand":
+        return not me.hand
+    if cond == "delirium":
+        types = set()
+        for c in me.graveyard:
+            types |= {t for t in c.types if t in _CARD_TYPES}
+        return len(types) >= 4
+    if cond == "gy8":
+        return sum(1 for c in me.graveyard if c.is_permanent) >= 8
+    if cond.startswith("subtype:"):
+        return any(cond[8:] in x.card.subtypes for x in me.battlefield)
+    if cond == "lands6":
+        return sum(1 for x in me.battlefield if x.card.is_land) >= 6
+    return False
+
+
+_CARD_TYPES = {"Artifact", "Battle", "Creature", "Enchantment", "Instant", "Land", "Planeswalker", "Sorcery",
+               "Kindred", "Tribal"}
+
+
+def _upgraded(game, me, spec, flags) -> ModeSpec:
+    """spec with the mode count raised by the first "choose both instead" whose condition holds."""
+    for cond, most in spec.upgrades:
+        if upgrade_active(game, me, cond, flags):
+            return dataclasses.replace(spec, most=most, least=min(spec.least, 1) if most == ANY else spec.least,
+                                       upgrades=[])
+    return spec
 
 
 def _available(game, modes, spec, source) -> list[int]:
@@ -150,9 +204,9 @@ def _greedy(game, me, modes, spec, avail) -> list[int]:
     return picked
 
 
-def select(game, me, modes, source=None, n: int = 1, least: int | None = None) -> list[int]:
+def select(game, me, modes, source=None, n: int = 1, least: int | None = None, flags=()) -> list[int]:
     """Indices of the modes to choose (a mode may repeat). Doesn't record anything."""
-    spec = spec_of(modes, n, least)
+    spec = _upgraded(game, me, spec_of(modes, n, least), flags)
     avail = _available(game, modes, spec, source)
     if not avail:
         return []
@@ -167,9 +221,9 @@ def select(game, me, modes, source=None, n: int = 1, least: int | None = None) -
     return [avail[i] for i in picks]
 
 
-def pick(game, me, modes, source=None, n: int = 1, least: int | None = None) -> list:
+def pick(game, me, modes, source=None, n: int = 1, least: int | None = None, flags=()) -> list:
     """The effects of the chosen modes, in printed order; records "hasn't been chosen" modes."""
-    chosen = sorted(select(game, me, modes, source, n, least))
+    chosen = sorted(select(game, me, modes, source, n, least, flags))
     spec = spec_of(modes, n, least)
     if spec.unique and source is not None:
         for i in chosen:
