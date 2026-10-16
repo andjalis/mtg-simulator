@@ -64,6 +64,7 @@ class Permanent:
         self.blitz = False
         self.loyalty_used = False
         self.entered_turn = 0
+        self.entered_x = 0
         self.chosen_type = ""              # Cavern of Souls
         self.produces_now = None           # set by Game.mana_sources: the colours usable right now
         self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
@@ -221,8 +222,22 @@ class Permanent:
                 and not (self.auras and auras.stops_combat(self))
                 and (not self.sick or self.has("haste")))
 
+    def granted_mana(self) -> frozenset:
+        """Colours other permanents let this one tap for (Enduring Vitality, Great Divide Guide)."""
+        out = frozenset()
+        c = self.card
+        for src in self.controller.battlefield:
+            for scope, cols in src.card.grant_mana:
+                if scope == "creature" and self.is_creature or scope == "land" and c.is_land or \
+                        scope == "creature_token" and self.is_creature and c.is_token or \
+                        scope == "food" and "Food" in c.subtypes or \
+                        scope == "other" and src is not self or \
+                        scope == "land_or_ally" and (c.is_land or "Ally" in c.subtypes):
+                    out |= cols
+        return out
+
     def can_tap_for_mana(self):
-        return bool(self.card.produces or self.card.restricted_produces) and not self.tapped and \
+        return bool(self.card.produces or self.card.restricted_produces or self.granted_mana()) and not self.tapped and \
             not (self.is_creature and self.sick and self.card.mana_filter != "once")
 
     def __repr__(self):
@@ -499,7 +514,7 @@ class Game:
                 continue
             if stopped and (perm.card.is_artifact or perm.is_creature):
                 continue
-            produces = perm.card.produces
+            produces = perm.card.produces | perm.granted_mana()
             c = perm.card
             if c.mana_filter == "once" and perm.ability_turns.get("filter") == self.turn:
                 continue
@@ -1573,6 +1588,14 @@ class Game:
                 out.append(x)
         return sorted(out, key=perm_value)
 
+    def ability_cost(self, p: Player, perm: Permanent, act) -> dict:
+        cost = act.cost
+        if perm.card.is_token and perm.card.is_artifact and cost.get("generic"):
+            n = sum(x.card.token_ability_discount for x in p.battlefield)
+            if n:
+                cost = dict(cost, generic=max(0, cost["generic"] - n))
+        return cost
+
     def can_activate(self, p: Player, perm: Permanent, idx: int) -> bool:
         """Whether perm's activated ability idx (kind "ability") can be activated now."""
         acts = perm.card.activated
@@ -1599,14 +1622,14 @@ class Game:
             return False
         if act.min_charge and perm.counters.get("charge", 0) < act.min_charge:
             return False
-        return payable(self.mana_sources(p, perm if c.get("tap") else None, "ability"), act.cost)
+        return payable(self.mana_sources(p, perm if c.get("tap") else None, "ability"), self.ability_cost(p, perm, act))
 
     def activate_ability(self, p: Player, perm: Permanent, idx: int, targets=None) -> bool:
         """Pay for and put on the stack a general activated ability ("{2}, {T}: Draw a card.")."""
         if not self.can_activate(p, perm, idx):
             return False
         act, c = perm.card.activated[idx], perm.card.activated[idx].extra_costs
-        if self.pay(p, act.cost, exclude=perm if c.get("tap") else None) is None:
+        if self.pay(p, self.ability_cost(p, perm, act), exclude=perm if c.get("tap") else None) is None:
             return False
         perm.ability_turns[idx] = self.turn
         if c.get("tap"):
@@ -1699,6 +1722,7 @@ class Game:
         perm = Permanent(card, p)
         perm.front = front
         perm.entered_turn = self.turn
+        perm.entered_x = x
         perm.prepared = bool(card.prepared and card.back is not None)
         perm.spent_color = getattr(self, "_spent", "")
         others = sum(x.card.is_land for x in p.battlefield)
@@ -1791,7 +1815,7 @@ class Game:
                               d.get("triggers"), d.get("kind", ""), d.get("artifact", False), d.get("pt_per", ""))
             self.enter_battlefield(p, card, tapped_attacking=d.get("attacking", False) and self.step in
                                    ("declare_attackers", "declare_blockers"))
-        self.log(f"creates {eff.amount} {d.get('kind') or d.get('name')} token(s)", p)
+        self.log(f"creates {n if n is not None else eff.amount} {d.get('kind') or d.get('name')} token(s)", p)
 
     def transform(self, perm: Permanent):
         back = perm.card.back
@@ -1945,7 +1969,10 @@ class Game:
             self.draw(p, len(cards))
         elif k == "token":
             who = target if eff.target == "that_controller" and isinstance(target, Player) else p
-            self.create_token(who, eff)
+            n = None
+            if eff.data.get("x"):
+                n = getattr(item.source, "entered_x", 0) if item is not None else 0
+            self.create_token(who, eff, n)
         elif k == "copy_token":
             tokens = [x for x in p.creatures if x.card.is_token]
             if tokens:
@@ -2094,6 +2121,13 @@ class Game:
                     if not card.is_land:
                         who.counters["+1/+1"] = who.p1 + 1
         elif k == "empower":
+            amount = eff.amount
+            cnt = eff.data.get("count")
+            if cnt == "creatures":
+                amount = len(p.creatures)
+            elif cnt == "islands":
+                amount = sum("Island" in x.card.subtypes for x in p.battlefield)
+            eff = dataclasses.replace(eff, amount=amount)
             jace = next((x for x in p.battlefield if x.is_planeswalker and x.card.is_token and "Jace" in x.card.subtypes),
                         None)
             if jace is not None:
