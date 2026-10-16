@@ -1,15 +1,20 @@
 """The simulation side of the web page: check a pasted deck, then play it against tiers.
 
-Games run in a process pool, split into chunks so the page can show progress and use
-every CPU core. The ladder plays tier by tier and stops at the first tier it fails.
+Games are split into chunks so the page can show progress and use every CPU core. By default
+the chunks are played on the visitor's own device: a DevicePool hands them to the page, which
+plays them in Web Workers (Pyodide) and posts the results back. The server's process pool plays
+them instead when the page asks for it or the device goes quiet. The ladder plays tier by tier
+and stops at the first tier it fails.
 """
 from __future__ import annotations
 
 import os
 import random
 import threading
+import time
 import traceback
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from collections import deque
+from concurrent.futures import Future, InvalidStateError, ProcessPoolExecutor, as_completed
 from dataclasses import dataclass, field
 
 from mtgsim import history
@@ -31,6 +36,9 @@ except ImportError:
     assess = None
 
 CHUNK = 20  # games per task; even, so play and draw stay balanced
+DEVICE_CHUNK = 10  # smaller on a visitor's device, so progress shows sooner on a slow phone
+DEVICE_STALL = 15.0  # seconds without word from the device before the server plays its games
+WHERE = ("device", "server")  # where a run's games are played; see App.pool_for in server.py
 MAX_GAMES = 2000
 FORGE_META_GAMES = 20  # most Forge games per meta matchup; Forge is far slower than the built-in engine
 META_ENGINES = ("forge", "auto", "python")
@@ -174,14 +182,24 @@ class Run:
     record_history: bool = True
     meta_engine: str = "forge"    # with a Forge install: forge (whole meta field), auto (low coverage only), python
     forge_dir: str | None = None  # None: the meta field stays in the built-in engine
+    where: str = "server"         # where the games were asked to run: "device" or "server"
+    chunk: int = 0                # games per task; 0 means CHUNK
     lock: threading.Lock = field(default_factory=threading.Lock)
 
     def opponents(self, tier) -> list[Opponent]:
         return [Opponent(tier.key, p.stem, load_deck(p)[1]) for p in tier.decks()]
 
+    def decks(self) -> list[dict]:
+        """Every deck this run may play: the visitor's, each chosen rank's and the meta field's."""
+        out = [self.counts] + [o.counts for t in self.tiers for o in self.opponents(t)]
+        if self.grade and assess:
+            out += [load_deck(a.path)[1] for a in load_metagame()[1]]
+        return out
+
     def execute(self, pool) -> None:
         rng = random.Random(self.seed)
-        chunks = [CHUNK] * (self.games // CHUNK) + ([self.games % CHUNK] if self.games % CHUNK else [])
+        size = self.chunk or CHUNK
+        chunks = [size] * (self.games // size) + ([self.games % size] if self.games % size else [])
         self.total = sum(len(t.decks()) for t in self.tiers) * self.games
         if LadderTracker:
             self.tracker = LadderTracker(self.deck_name, [(t.key, t.label, [f"{t.key}/{p.stem}" for p in t.decks()])
@@ -304,7 +322,7 @@ class Run:
                           "caveat": meta_caveat(self.assessment)}
         return {"rank": rank, "assessment": grades, "grade_error": self.grade_error,
                 "reliability": self.assessment.get("reliability") if self.assessment else None,
-                "meta_engine": self.meta_engine if self.forge_dir else "python",
+                "meta_engine": self.meta_engine if self.forge_dir else "python", "where": self.where,
                 "deck": self.deck_name, "ladder": self.ladder, "pass_rate": self.pass_rate,
                 "games_per_opponent": self.games, "done": self.done, "total": self.total,
                 "current": self.current, "tiers": self.rows, "verdict": self.verdict}
@@ -325,3 +343,105 @@ def make_run(deck_name: str, text: str, tiers: list[str] | None, ladder: bool, g
 
 def make_pool(jobs: int | None = None) -> ProcessPoolExecutor:
     return ProcessPoolExecutor(max_workers=jobs or os.cpu_count() or 1)
+
+
+def card_data(decks) -> list[dict]:
+    """Scryfall-shaped data for just the cards in these decks, for the page's in-browser engine."""
+    with _db_lock:
+        db = _card_db(True)
+        cards = {}
+        for counts in decks:
+            db.ensure(counts)
+            for name in counts:
+                key = db._key(name)
+                cards[key] = db.raw[key]
+    return list(cards.values())
+
+
+class DevicePool:
+    """Plays a run's game chunks on the visitor's device. submit() queues each chunk; the page
+    claims chunks with take(), plays them in Web Workers and hands the results to finish().
+    Anything but a game chunk runs on the server pool, and so does every unfinished chunk once
+    the page has been silent for `stall` seconds or calls release() (no WebAssembly, the engine
+    failed to load, the tab closed)."""
+
+    def __init__(self, server, stall: float = DEVICE_STALL):
+        self.server, self.stall = server, stall
+        self.lock = threading.Lock()
+        self.queue: deque = deque()
+        self.tasks: dict[int, tuple] = {}  # id -> (future, args) until the result arrives
+        self.next_id = 0
+        self.heard = time.monotonic()
+        self.on_server = False
+        self.closed = False
+        self.chunks_on_device = self.chunks_on_server = 0
+        threading.Thread(target=self._watch, daemon=True).start()
+
+    def submit(self, fn, *args):
+        with self.lock:
+            if fn is not _play_chunk or self.on_server:
+                return self._to_server(fn, *args)
+            fut = Future()
+            self.tasks[self.next_id] = (fut, args)
+            self.queue.append(self.next_id)
+            self.next_id += 1
+            return fut
+
+    def _to_server(self, fn, *args):
+        if fn is _play_chunk:
+            self.chunks_on_server += 1
+        return self.server.submit(fn, *args)
+
+    def take(self, n: int) -> list[dict]:
+        """Up to n chunks for the page to play; any call counts as a sign of life."""
+        with self.lock:
+            self.heard = time.monotonic()
+            out = []
+            while self.queue and len(out) < n and not self.on_server:
+                tid = self.queue.popleft()
+                me, opp, games, seed = self.tasks[tid][1]
+                out.append({"id": tid, "me": me, "opp": opp, "games": games, "seed": seed})
+            return out
+
+    def finish(self, tid: int, result: dict) -> None:
+        with self.lock:
+            self.heard = time.monotonic()
+            task = self.tasks.pop(tid, None)
+        if task:
+            try:
+                task[0].set_result({k: int(result[k]) for k in
+                                    ("games", "wins", "losses", "draws", "on_play_wins", "on_play_games", "turns")})
+                self.chunks_on_device += 1
+            except InvalidStateError:
+                pass
+
+    def release(self) -> None:
+        """Play everything left, and everything still to come, on the server."""
+        with self.lock:
+            if self.on_server:
+                return
+            self.on_server = True
+            self.queue.clear()
+            moved, self.tasks = self.tasks, {}
+            for fut, args in moved.values():
+                self._to_server(_play_chunk, *args).add_done_callback(lambda done, fut=fut: _copy(done, fut))
+
+    def close(self) -> None:
+        self.closed = True
+
+    @property
+    def active(self) -> bool:
+        return not (self.closed or self.on_server)
+
+    def _watch(self):
+        while not self.closed and not self.on_server:
+            time.sleep(min(1.0, self.stall / 4))
+            if self.tasks and time.monotonic() - self.heard > self.stall:
+                self.release()
+
+
+def _copy(done: Future, fut: Future) -> None:
+    try:
+        fut.set_result(done.result()) if not done.exception() else fut.set_exception(done.exception())
+    except InvalidStateError:
+        pass

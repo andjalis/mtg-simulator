@@ -9,7 +9,7 @@
 <main class="page">
   <div class="hero">
     <h1>Test your deck</h1>
-    <p>Paste a decklist, choose ranks, and see how it fares against the test decks in the built-in engine. Ranks/MMR are internal pool scores, not Arena equivalents. Main-deck only; no sideboarding.</p>
+    <p>Paste a decklist, choose ranks, and see how it fares against the test decks in the built-in engine. The games run on your own device. Ranks/MMR are internal pool scores, not Arena equivalents. Main-deck only; no sideboarding.</p>
     <p class="flavor">Every list starts at Silver. Only the strongest climb to face the Grandmaster pool.</p>
   </div>
   <div class="grid">
@@ -35,6 +35,7 @@
       <input id="games" type="number" min="2" step="2" value="100">
       <label class="opt"><input type="checkbox" id="grade" checked> Grade the deck: meta, mana, speed, consistency</label>
       <button class="go" id="go" disabled>Begin the trial</button>
+      <p class="note" id="engine"></p>
     </div></section>
 
     <section class="frame"><div class="face">
@@ -53,6 +54,88 @@ const pct = x => x == null ? "–" : (100 * x).toFixed(1) + "%";
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 let mode = "ladder", passRate = 0.5, checkOk = false, checkTimer, polling, rankList = [];
 const calm = matchMedia("(prefers-reduced-motion: reduce)");
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+// -- where the games run ----------------------------------------------------------------------
+// Games run on this device by default: the built-in engine in Web Workers (Pyodide), one per
+// spare core, while the server only keeps score. The server plays them when this browser can't
+// (no Web Workers or WebAssembly, the engine fails to load), when the tab goes quiet, or with
+// ?run=server. where() is the one place that decides; a paid server mode would plug in here.
+const qs = new URLSearchParams(location.search);
+const device = {
+  size: +qs.get("workers") || Math.max(1, Math.min(6, (navigator.hardwareConcurrency || 2) - 1)),
+  supported: typeof Worker === "function" && typeof WebAssembly === "object",
+  workers: [], cards: null, failed: null, results: [], loadMs: null, t0: 0,
+};
+const where = () => qs.get("run") === "server" || !device.supported || device.failed ? "server" : "device";
+const alive = () => device.workers.filter(w => w.ready && !w.dead);
+
+function startDevice() {
+  if (where() !== "device" || device.workers.length) return;
+  device.t0 = performance.now();
+  const url = "/static/device-worker.js" + (qs.get("pyodide") ? "?pyodide=" + encodeURIComponent(qs.get("pyodide")) : "");
+  for (let i = 0; i < device.size; i++) {
+    const w = new Worker(url);
+    Object.assign(w, {ready: false, dead: false, busy: 0});
+    w.onmessage = ({data}) => onDevice(w, data);
+    w.onerror = e => { e.preventDefault(); onDevice(w, {type: "error", message: e.message || "worker failed"}); };
+    device.workers.push(w);
+  }
+  showEngine();
+}
+
+function onDevice(w, data) {
+  if (data.type === "ready") {
+    w.ready = true;
+    if (device.cards) w.postMessage({type: "cards", cards: device.cards});
+    if (device.loadMs === null) device.loadMs = performance.now() - device.t0;
+  } else if (data.type === "result") {
+    w.busy--;
+    device.results.push({id: data.id, ...data.result});
+  } else if (data.type === "error") {
+    // A worker that can't load just drops out; a failed game, or no worker left, hands the run to the server.
+    w.dead = true;
+    if (data.id !== undefined || device.workers.every(x => x.dead)) device.failed = data.message;
+  }
+  showEngine();
+}
+
+function showEngine() {
+  const n = alive().length, el = $("#engine");
+  if (!el) return;
+  if (where() === "server")
+    el.textContent = device.failed ? `Games run on the server: this browser couldn't run the engine (${device.failed}).`
+                                   : "Games run on the server.";
+  else el.textContent = n ? `Games run on this device: engine ready on ${n} core${n > 1 ? "s" : ""}.`
+                          : "Loading the engine on this device…";
+}
+
+// Feed a run's chunks to the workers and post their results, until the server needs no more.
+// Each call is also a heartbeat; without one for a few seconds the server plays the rest itself.
+async function runOnDevice(id) {
+  let asked = false;
+  for (;;) {
+    const ws = alive(), results = device.results.splice(0);
+    const body = {results, release: !!device.failed,
+                  want: device.cards ? Math.max(0, 2 * ws.length - ws.reduce((s, w) => s + w.busy, 0)) : 0};
+    if (!device.cards && !asked) body.cards = asked = true;
+    let r;
+    try { r = await api(`/api/runs/${id}/device`, body); }
+    catch (e) { device.results.unshift(...results); asked = asked && !!device.cards; await sleep(1000); continue; }
+    if (r.cards) {
+      device.cards = r.cards;
+      for (const w of ws) w.postMessage({type: "cards", cards: r.cards});
+    }
+    for (const t of r.tasks) {
+      const w = alive().sort((a, b) => a.busy - b.busy)[0];
+      if (!w) { device.failed = device.failed || "no engine worker left"; break; }
+      w.busy++;
+      w.postMessage({type: "play", ...t});
+    }
+    if (!r.active) return;
+    await sleep(400);
+  }
+}
 
 try { $("#deck").value = localStorage.getItem("mtgsim.deck") || ""; $("#name").value = localStorage.getItem("mtgsim.name") || ""; } catch (e) {}
 
@@ -67,6 +150,7 @@ api("/api/tiers").then(d => {
   passRate = d.pass_rate;
   $("#passRate").textContent = pct(passRate).replace(".0%", "%");
   $("#games").max = d.max_games;
+  startDevice();
   $("#tierList").innerHTML = d.tiers.map((t, i) =>
     `<label title="${esc(t.decks.join(", "))}"><input type="checkbox" value="${t.key}"${i === d.tiers.length - 1 ? "" : " checked"}>
      <i class="gem rk-${esc(t.key)}"></i><span><b>${esc(t.label)}</b><small>${t.decks.length} decks · ${esc(t.about)}</small></span></label>`).join("");
@@ -114,7 +198,7 @@ if ($("#deck").value.trim()) scheduleCheck();
 
 $("#go").onclick = async () => {
   const body = {deck: $("#deck").value, name: $("#name").value, games: +$("#games").value,
-                ladder: mode === "ladder", full: $("#full").checked, grade: $("#grade").checked};
+                ladder: mode === "ladder", full: $("#full").checked, grade: $("#grade").checked, where: where()};
   if (mode === "tiers") {
     body.tiers = [...document.querySelectorAll("#tierList input:checked")].map(i => i.value);
     if (!body.tiers.length) { $("#out").innerHTML = `<p class="no">Pick at least one rank.</p>`; return; }
@@ -123,6 +207,7 @@ $("#go").onclick = async () => {
   try {
     const {id} = await api("/api/run", body);
     startArena();
+    if (body.where === "device") runOnDevice(id);
     poll(id);
   } catch (e) {
     $("#out").innerHTML = `<p class="no">${esc(e.message)}</p>`;
@@ -310,13 +395,22 @@ function updateTicker(d) {
   }
 }
 
+function playedWhere(s) {
+  const c = s.chunks;
+  if (!c) return "on the server";
+  if (c.server && c.device) return "on this device and the server";
+  if (c.server) return "on the server";
+  const n = alive().length;
+  return n ? `on this device (${n} core${n > 1 ? "s" : ""})` : "on this device (loading the engine…)";
+}
+
 function render(s) {
   if (!$("#rest")) startArena();
   let h = "";
   if (s.status === "queued") h += `<p class="empty">Waiting for the previous run to finish…</p>`;
   if (s.status === "running" || s.status === "queued") {
     const frac = s.total ? s.done / s.total : 0;
-    h += `<div>Playing ${esc(s.current || "…")}: ${s.done} of ${s.total} games</div>
+    h += `<div>Playing ${esc(s.current || "…")}: ${s.done} of ${s.total} games ${playedWhere(s)}</div>
           <div class="progress"><div style="width:${(100 * frac).toFixed(1)}%"></div></div>`;
   }
   if (s.status === "error") h += `<p class="no">The run failed: ${esc(s.error)}</p>`;
