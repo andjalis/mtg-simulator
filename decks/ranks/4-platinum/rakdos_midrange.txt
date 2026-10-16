@@ -15,3 +15,15 @@
 4 Bonecrusher Giant
 2 Kolaghan's Command
 4 Tenacious Underdog
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+3 Duress
+2 Infernal Grasp
+2 Abrade
+2 Hero's Downfall
+2 Kolaghan's Command
+2 Play with Fire
+1 Go for the Throat
+1 Strangle

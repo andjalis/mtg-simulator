@@ -11,3 +11,14 @@
 4 Lightning Bolt
 4 Searing Spear
 4 Giant Growth
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+3 Roast
+2 Volcanic Hammer
+2 Snakeskin Veil
+2 Canopy Spider
+2 Pyroclasm
+2 Shock
+2 Charging Monstrosaur

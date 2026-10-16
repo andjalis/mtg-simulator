@@ -19,3 +19,15 @@
 1 Eiganjo, Seat of the Empire
 7 Plains
 6 Island
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+3 Negate
+2 Jwari Disruption
+2 Spell Pierce
+2 Lay Down Arms
+2 Doomskar
+2 Inspiring Overseer
+1 Wedding Announcement
+1 Elspeth Resplendent

@@ -9,3 +9,13 @@
 4 Doom Blade
 4 Mind Rot
 4 Vampire Interloper
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+3 Last Gasp
+2 Murder
+3 Duress
+3 Deathbloom Thallid
+2 Disfigure
+2 Vampire Nighthawk

@@ -10,3 +10,12 @@
 4 Craw Wurm
 4 Ancient Brontodon
 4 Grizzly Bears
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+4 Thornhide Wolves
+4 Grizzled Outrider
+3 Giant Spider
+2 Angel of Mercy
+2 Divine Verdict

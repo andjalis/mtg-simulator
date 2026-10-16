@@ -10,3 +10,13 @@
 4 Serra Angel
 4 Divination
 4 Essence Scatter
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+3 Divine Arrow
+3 Negate
+3 Divine Verdict
+2 Revitalize
+2 Lone Missionary
+2 Cancel

@@ -9,3 +9,13 @@
 4 Esika's Chariot
 4 Ghalta, Primal Hunger
 4 Snakeskin Veil
+
+# Sideboard: written for the built-in engine (every card fully supported), matched to the
+# deck's colours and power level.
+Sideboard
+3 Canopy Spider
+3 Llanowar Visionary
+2 Giant Spider
+3 Snapping Gnarlid
+2 Giant Growth
+2 Feral Roar
