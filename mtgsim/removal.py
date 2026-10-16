@@ -20,6 +20,10 @@ def _destroy(target, flt):
 
 
 EFFECT_PATTERNS = [
+    (r"target creature you control deals damage equal to its power to each of two other target creatures",
+     lambda m: _pair("bite") + [_distinct(_pair("bite")[1])]),
+    (r"put a \+1/\+1 counter on each of up to two target creatures",
+     lambda m: [_distinct(_counter()), _distinct(_counter())]),
     (r"destroy (?:up to one )?target artifact, enchantment, or creature with flying",
      _destroy("nonland_perm", "art_ench_fly")),
     (r"return up to one other target permanent you control to its owner's hand",
@@ -50,6 +54,16 @@ EFFECT_PATTERNS = [
 def _effect(kind, target, data=None, filter=""):
     from .cards import Effect
     return Effect(kind, target=target, data=data or {}, filter=filter)
+
+
+def _distinct(eff):
+    eff.data = dict(eff.data, distinct=True)
+    return eff
+
+
+def _counter():
+    from .cards import Effect
+    return Effect("add_counter", 1, target="creature_mine", data={"counter": "+1/+1"})
 
 
 def _pair(kind, target="creature", flt="opp"):
