@@ -184,8 +184,9 @@ class LadderTracker:
         opps = [o for o in self.opponents.values() if o.pool == key and o.games]
         games = sum(o.games for o in opps)
         points = sum(o.points for o in opps)
+        rates = [o.points / o.games for o in opps]   # mean of matchups: see runner.pool_rate
         self.pool_results[key] = {"games": games, "points": points,
-                                  "rate": points / games if games else None, "cleared": cleared}
+                                  "rate": sum(rates) / len(rates) if rates else None, "cleared": cleared}
         self.current = None
         self._changed()
 

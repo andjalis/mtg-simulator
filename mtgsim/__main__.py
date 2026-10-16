@@ -25,7 +25,7 @@ from .forge import ForgeError, run_forge_match
 from .ladder_report import HtmlReport, TerminalView, text_summary
 from .rating import LadderTracker
 from .sideboard import run_bo3
-from .runner import build_deck, run_match, unsupported_report, wilson
+from .runner import build_deck, pool_rate, run_match, unsupported_report, wilson
 from .ranks import PASS_RATE, RANKS, list_ranks, resolve_ranks
 
 
@@ -48,6 +48,9 @@ def main(argv=None):
                     help="show the ranks and their decks")
     ap.add_argument("--bo3", action="store_true",
                     help="play best-of-three matches with sideboarding (built-in engine); -n counts matches")
+    ap.add_argument("--early-stop", action=argparse.BooleanOptionalAction, default=None,
+                    help="end a matchup once it is clearly won or lost (at least 20 games; default on for "
+                         "--ladder/--rank with the built-in engine, off otherwise)")
     ap.add_argument("--coverage", action="store_true",
                     help="report which cards the built-in engine plays fully, simplified or partly, then exit")
     ap.add_argument("--report", metavar="HTML",
@@ -163,6 +166,8 @@ def main(argv=None):
             tracker.listeners.append(report)
             print(f"Live ranked-ladder report: {report.path}\n")
 
+    stop_early = args.early_stop if args.early_stop is not None else bool(tiers)
+
     def play(a, b):
         if tracker:
             before = tracker.mmr
@@ -186,10 +191,11 @@ def main(argv=None):
             print(file=sys.stderr)
         else:
             res, log = run_match(a, decks[a], b, decks[b], games=args.games, seed=args.seed,
-                                 log_first=args.log, on_game=on_game)
+                                 log_first=args.log, on_game=on_game, stop_early=stop_early)
             if args.log:
                 print("\n".join(log), "\n")
         if tracker:
+            tracker.opponents[b].total = res.games   # less than scheduled when it stopped early
             tracker.update_match(b, res.wins_a, res.draws, res.games)
             view.clear()
             print(res.summary())
@@ -234,14 +240,14 @@ def run_tiers(me, tiers, tier_opps, play, ladder=False, full=False, pass_rate=PA
     A rating.LadderTracker, if given, is told when each rank's pool ends and gets the verdict."""
     rows, reached, failed = [], None, None
     for t in tiers:
-        points = games = 0.0
+        results = []
         for opp in tier_opps[t.key]:
             res = play(me, opp)
-            points += res.wins_a + 0.5 * res.draws
-            games += res.games
-        rate = points / games if games else 0.0
+            results.append((res.wins_a + 0.5 * res.draws, res.games))
+        games = sum(g for _, g in results)
+        rate = pool_rate(results)
         cleared = rate >= pass_rate
-        lo, hi = wilson(points, int(games))
+        lo, hi = wilson(rate * games, int(games))
         rows.append(f"  {t.label:<11} {rate:6.1%}  (95% CI {lo:.1%} to {hi:.1%}, {int(games)} {unit})"
                     + (("  cleared" if cleared else "  failed") if ladder else ""))
         if tracker:
