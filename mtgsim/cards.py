@@ -136,6 +136,8 @@ class CardDef:
     activated: list = field(default_factory=list)
     anthem: tuple = ()                                  # (power, toughness) for creatures you control
     crew: int = 0
+    convoke: bool = False                               # creatures can be tapped to help pay the generic cost
+    prepared: bool = False                              # enters prepared: may cast a copy of its spell (card.back) once
     changeling: bool = False                            # is every creature type
     cycling: dict | None = None                         # {"cost": mana, "land": "" | basic | any | Plains...}
     saddle: int = 0                                     # Mounts: tap creatures with total power N or more to saddle
@@ -1047,6 +1049,12 @@ def _parse_face(data: dict) -> CardDef:
         m = re.fullmatch(r"Creatures you control get \+(\d+)/\+(\d+)\.", line)
         if m:
             extra["anthem"] = (int(m[1]), int(m[2]))
+            continue
+        if line == "Convoke":
+            extra["convoke"] = True
+            continue
+        if line == "~ enters prepared.":
+            extra["prepared"] = True
             continue
         if line == "Changeling":
             extra["changeling"] = True
