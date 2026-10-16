@@ -6,8 +6,10 @@
 GET  /                 the page
 GET  /api/tiers        tiers and their decks
 POST /api/check        {"deck": text}                       -> card counts, unknown and partial cards
-POST /api/run          {"deck", "name", "ladder", "tiers", "games", "full", "seed", "grade"} -> {"id"}
+POST /api/run          {"deck", "name", "ladder", "tiers", "games", "full", "seed", "grade", "where"} -> {"id"}
 GET  /api/runs/<id>    progress and results so far
+POST /api/runs/<id>/device  {"want", "cards", "results", "release"} -> chunks for the page to play
+GET  /engine/mtgsim.zip     the engine's Python source, for the page's Web Workers (Pyodide)
 GET  /leaderboard      every tested deck ranked by MMR (JSON at /api/leaderboard)
 GET  /leaderboard/{history,ladder,assess,run}/<name>   one deck's latest results
 """
@@ -22,6 +24,8 @@ import traceback
 import uuid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+
+from mtgsim.browser import package_zip
 
 from . import leaderboard, sim, theme
 
@@ -45,7 +49,21 @@ class App:
         self.history_path = history_path  # None: mtgsim.history's default store
         self.pool = sim.make_pool(jobs)
         self.runs: dict[str, dict] = {}
-        self.lock = threading.Lock()  # one run at a time; they share the pool anyway
+        self.lock = threading.Lock()  # one server run at a time; they share the pool anyway
+        self._engine_zip = None
+
+    def engine_zip(self) -> bytes:
+        if self._engine_zip is None:
+            self._engine_zip = package_zip()
+        return self._engine_zip
+
+    def pool_for(self, where: str):
+        """Where a run's games are played. "device" (the default) hands them to the visitor's
+        browser and falls back to the server pool; "server" plays them here. A paid server mode
+        would decide here which runs may use the server pool."""
+        if where == "server":
+            return self.pool
+        return sim.DevicePool(self.pool)
 
     def start(self, body: dict) -> str:
         text = body.get("deck", "")
@@ -56,29 +74,67 @@ class App:
                            int(body.get("games", 100)), bool(body.get("full")),
                            None if body.get("seed") in (None, "") else int(body["seed"]),
                            bool(body.get("grade", True)))
+        where = body.get("where") or "device"
+        if where not in sim.WHERE:
+            raise ValueError(f"where must be one of {', '.join(sim.WHERE)}")
+        run.where = where
+        if where == "device":
+            run.chunk = sim.DEVICE_CHUNK
         rid = uuid.uuid4().hex[:12]
-        entry = {"run": run, "status": "queued", "error": None, "check": check}
+        entry = {"run": run, "status": "queued", "error": None, "check": check, "pool": self.pool_for(where)}
         self.runs[rid] = entry
         threading.Thread(target=self._execute, args=(entry,), daemon=True).start()
         return rid
 
     def _execute(self, entry):
-        with self.lock:
-            entry["status"] = "running"
+        pool = entry["pool"]
+        if pool is self.pool:  # server runs queue; device runs use the visitor's CPU and start at once
+            with self.lock:
+                self._play(entry, pool)
+        else:
             try:
-                entry["run"].execute(self.pool)
-                entry["status"] = "done"
-                entry["finished"] = time.time()
-            except Exception as e:  # report to the page rather than dying silently
-                traceback.print_exc()
-                entry["status"], entry["error"] = "error", f"{type(e).__name__}: {e}"
+                self._play(entry, pool)
+            finally:
+                pool.close()
+
+    def _play(self, entry, pool):
+        entry["status"] = "running"
+        try:
+            entry["run"].execute(pool)
+            entry["status"] = "done"
+            entry["finished"] = time.time()
+        except Exception as e:  # report to the page rather than dying silently
+            traceback.print_exc()
+            entry["status"], entry["error"] = "error", f"{type(e).__name__}: {e}"
+
+    def device(self, rid: str, body: dict) -> dict | None:
+        """The page's side of a device run: take its finished chunks, hand it up to `want` more,
+        and the run's card data when it asks. `active` turns false once nothing more will come."""
+        entry = self.runs.get(rid)
+        if not entry:
+            return None
+        pool = entry["pool"]
+        if not isinstance(pool, sim.DevicePool):
+            return {"active": False, "tasks": []}
+        for r in body.get("results") or []:
+            pool.finish(int(r["id"]), r)
+        if body.get("release"):
+            pool.release()
+        out = {"active": pool.active, "tasks": pool.take(max(0, min(64, int(body.get("want") or 0))))}
+        if body.get("cards"):
+            out["cards"] = sim.card_data(entry["run"].decks())
+        return out
 
     def status(self, rid: str) -> dict | None:
         entry = self.runs.get(rid)
         if not entry:
             return None
+        pool = entry["pool"]
+        played = None
+        if isinstance(pool, sim.DevicePool):
+            played = {"device": pool.chunks_on_device, "server": pool.chunks_on_server}
         return {"status": entry["status"], "error": entry["error"], "partial": entry["check"]["partial"],
-                **entry["run"].snapshot()}
+                **entry["run"].snapshot(), "chunks": played}
 
 
     def ladder_data(self, rid: str) -> dict | None:
@@ -125,27 +181,30 @@ def make_handler(app: App):
             return json.loads(self.rfile.read(n) or b"{}")
 
         def do_GET(self):
-            if self.path in ("/", "/index.html"):
+            path = self.path.split("?", 1)[0]  # ?run=server, ?pyodide=... are read by the page
+            if path in ("/", "/index.html"):
                 page = theme.dress((STATIC / "index.html").read_text(encoding="utf-8"), "test")
                 self._send(200, page.encode(), "text/html; charset=utf-8")
-            elif self.path.startswith("/static/"):
-                name = self.path[len("/static/"):]
-                path = STATIC / name
-                if NAME.match(name) and not name.startswith(".") and path.suffix in STATIC_TYPES and path.is_file():
-                    self._send(200, path.read_bytes(), STATIC_TYPES[path.suffix])
+            elif path.startswith("/static/"):
+                name = path[len("/static/"):]
+                file = STATIC / name
+                if NAME.match(name) and not name.startswith(".") and file.suffix in STATIC_TYPES and file.is_file():
+                    self._send(200, file.read_bytes(), STATIC_TYPES[file.suffix])
                 else:
                     self._send(404, {"error": "not found"})
-            elif self.path == "/api/tiers":
+            elif path == "/engine/mtgsim.zip":
+                self._send(200, app.engine_zip(), "application/zip")
+            elif path == "/api/tiers":
                 self._send(200, {"tiers": sim.tier_info(), "ranks": rank_info(), "pass_rate": sim.PASS_RATE,
                                  "max_games": sim.MAX_GAMES})
-            elif self.path == "/api/leaderboard":
+            elif path == "/api/leaderboard":
                 self._send(200, {"decks": app.leaderboard()})
-            elif self.path in ("/leaderboard", "/leaderboard/"):
+            elif path in ("/leaderboard", "/leaderboard/"):
                 self._send(200, leaderboard.render_page(app.leaderboard()).encode(), "text/html; charset=utf-8")
-            elif self.path.startswith("/leaderboard/"):
-                self._deck_page(*(self.path.split("/", 3)[2:] + [""])[:2])
-            elif self.path.startswith("/api/runs/"):
-                st = app.status(self.path.rsplit("/", 1)[1])
+            elif path.startswith("/leaderboard/"):
+                self._deck_page(*(path.split("/", 3)[2:] + [""])[:2])
+            elif path.startswith("/api/runs/"):
+                st = app.status(path.rsplit("/", 1)[1])
                 self._send(200, st) if st else self._send(404, {"error": "no such run"})
             else:
                 self._send(404, {"error": "not found"})
@@ -182,6 +241,9 @@ def make_handler(app: App):
                     self._send(200, sim.check_deck(body.get("deck", ""), offline=app.offline))
                 elif self.path == "/api/run":
                     self._send(200, {"id": app.start(body)})
+                elif self.path.startswith("/api/runs/") and self.path.endswith("/device"):
+                    out = app.device(self.path.split("/")[3], body)
+                    self._send(200, out) if out else self._send(404, {"error": "no such run"})
                 else:
                     self._send(404, {"error": "not found"})
             except (ValueError, TypeError) as e:

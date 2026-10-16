@@ -109,20 +109,81 @@ class WebServerTests(unittest.TestCase):
 
     def test_run_round_trip(self):
         code, body = self.call("/api/run", {"deck": BURN, "name": "burn", "tiers": ["bronze"], "games": 4, "seed": 3,
-                                            "grade": False})
+                                            "grade": False, "where": "server"})
         self.assertEqual(code, 200)
-        rid = json.loads(body)["id"]
-        for _ in range(300):
-            st = json.loads(self.call(f"/api/runs/{rid}")[1])
-            if st["status"] in ("done", "error"):
-                break
-            time.sleep(0.1)
+        st = self.wait(json.loads(body)["id"])
         self.assertEqual(st["status"], "done", st.get("error"))
         self.assertEqual(st["tiers"][0]["key"], "bronze")
+        self.assertIsNone(st["chunks"])
+
+    def wait(self, rid, step=None):
+        for _ in range(300):
+            if step:
+                step()
+            st = json.loads(self.call(f"/api/runs/{rid}")[1])
+            if st["status"] in ("done", "error"):
+                return st
+            time.sleep(0.1)
+        return st
+
+    def test_device_run_plays_in_the_page(self):
+        # Stand in for the page's Web Workers: take chunks, play them, post the results back.
+        code, body = self.call("/api/run", {"deck": BURN, "name": "burn", "tiers": ["bronze"], "games": 4, "seed": 5,
+                                            "grade": False})
+        rid = json.loads(body)["id"]
+        state = {"cards": None, "results": []}
+
+        def page():
+            req = {"want": 4, "results": state["results"], "cards": state["cards"] is None}
+            out = json.loads(self.call(f"/api/runs/{rid}/device", req)[1])
+            state["cards"] = state["cards"] or out.get("cards")
+            state["results"] = [{"id": t["id"], **sim._play_chunk(t["me"], t["opp"], t["games"], t["seed"])}
+                                for t in out["tasks"]]
+
+        st = self.wait(rid, page)
+        self.assertEqual(st["status"], "done", st.get("error"))
+        self.assertEqual(st["where"], "device")
+        self.assertEqual(st["chunks"]["server"], 0)
+        self.assertEqual(st["chunks"]["device"], len(TIERS[0].decks()))
+        names = {c["name"] for c in state["cards"]}
+        self.assertIn("Mountain", names)
+        code, z = self.call("/engine/mtgsim.zip")
+        self.assertEqual((code, z[:2]), (200, b"PK"))
+        code, js = self.call("/static/device-worker.js")
+        self.assertEqual(code, 200)
+        self.assertIn(b"loadPyodide", js)
 
     def test_bad_requests(self):
         self.assertEqual(self.call("/api/run", {"deck": "4 Not A Real Card Xyz", "games": 4})[0], 400)
         self.assertEqual(self.call("/api/runs/nope")[0], 404)
+        self.assertEqual(self.call("/api/runs/nope/device", {})[0], 404)
+        self.assertEqual(self.call("/api/run", {"deck": BURN, "games": 4, "where": "moon"})[0], 400)
+
+
+class DevicePoolTests(unittest.TestCase):
+    def test_quiet_page_falls_back_to_the_server(self):
+        run = sim.make_run("burn", BURN, ["bronze"], ladder=False, games=4, seed=6, grade=False)
+        with ThreadPoolExecutor(2) as server:
+            pool = sim.DevicePool(server, stall=0.4)
+            run.execute(pool)  # nobody takes the chunks, so the server plays them after the stall
+            pool.close()
+        self.assertEqual(run.snapshot()["tiers"][0]["games"], 4 * len(TIERS[0].decks()))
+        self.assertEqual(pool.chunks_on_device, 0)
+        self.assertFalse(pool.active)
+
+    def test_release_moves_claimed_chunks(self):
+        with ThreadPoolExecutor(1) as server:
+            pool = sim.DevicePool(server, stall=60)
+            deck = {"Mountain": 20, "Raging Goblin": 20}
+            futs = [pool.submit(sim._play_chunk, deck, deck, 2, i) for i in range(3)]
+            taken = pool.take(2)
+            self.assertEqual([t["id"] for t in taken], [0, 1])
+            pool.finish(0, sim._play_chunk(deck, deck, 2, 0))
+            pool.release()
+            pool.finish(1, {"games": 99})  # too late: the server already has it
+            self.assertEqual([f.result(timeout=30)["games"] for f in futs], [2, 2, 2])
+            self.assertEqual((pool.chunks_on_device, pool.chunks_on_server), (1, 2))
+            pool.close()
 
 
 if __name__ == "__main__":
