@@ -5,7 +5,7 @@ import unittest
 
 from mtgsim.ai import HeuristicAI
 from mtgsim.cards import card_from_scryfall
-from mtgsim.engine import Game, Permanent, Player, can_block, card_matches
+from mtgsim.engine import Game, Permanent, Player, StackItem, can_block, card_matches
 
 
 def card(name, cost="", types="Creature — Human", text="", power=None, toughness=None, cmc=None):
@@ -788,3 +788,60 @@ class Round3Tests(Base):
         self.assertNotIn(mine, self.a.battlefield)
         self.assertEqual(sorted(x.card.name for x in self.a.creatures), ["Big Dragon", "Bringer of the Last Gift"])
         self.assertEqual([x.card.name for x in self.b.creatures], ["Test Dragon"])
+
+
+KILN = card("Cosmium Kiln", "", "Artifact", (
+    "When this artifact enters, create two 1/1 colorless Gnome artifact creature tokens.\nCreatures you control "
+    "get +1/+1."))
+BRICKS = card("Clay-Fired Bricks", "{1}{W}", "Artifact", (
+    "Craft with artifact {1}{W} ({1}{W}, Exile this artifact, Exile another artifact you control or an artifact "
+    "card from your graveyard: Return this card transformed under its owner's control. Craft only as a sorcery.)"))
+BRICKS.back = KILN
+QUIPU = card("Braided Quipu", "", "Artifact", (
+    "{3}{U}, {T}: Draw a card for each artifact you control, then put this artifact into its owner's library "
+    "third from the top."))
+NET = card("Braided Net", "{2}{U}", "Artifact", "This artifact enters with three net counters on it.")
+PLANET = card("Test Planet", types="Land — Planet", text=(
+    "{T}: Add {W}.\nStation (Tap another creature you control: Put charge counters equal to its power on this "
+    "Planet. Station only as a sorcery.)\nSTATION 3+\n{T}: You gain 3 life."))
+
+
+class CraftStationTests(Base):
+    def test_parsing(self):
+        for c in (BRICKS, KILN, QUIPU, NET, PLANET):
+            with self.subTest(card=c.name):
+                self.assertEqual(c.unsupported, [])
+        self.assertEqual(NET.etb_named_counters, ("net", 3))
+
+    def test_craft_exiles_an_artifact_and_transforms(self):
+        bricks = self.perm(BRICKS, self.a)
+        self.perm(PLAINS, self.a), self.perm(PLAINS, self.a)
+        self.game.active_idx = 0
+        self.assertFalse(self.game.can_activate(self.a, bricks, 0))     # nothing to craft with
+        self.a.graveyard = [BIG_ROCK]
+        self.assertTrue(self.game.activate(self.a, bricks, "ability:0"))
+        self.assertEqual(self.a.exile, [BIG_ROCK])
+        kiln = next(x for x in self.a.battlefield if x.card.name == "Cosmium Kiln")
+        self.assertIs(kiln.front, BRICKS)
+        self.assertEqual(len([x for x in self.a.creatures if x.card.is_token]), 2)
+
+    def test_draw_per_artifact_then_tuck(self):
+        quipu = self.perm(QUIPU, self.a)
+        self.perm(BIG_ROCK, self.a)
+        self.a.library = [ISLAND] * 5
+        item = StackItem(self.a, [], [], source=quipu, kind="ability")
+        for e in QUIPU.activated[0].effects:
+            self.game.resolve(self.a, e, None, item)
+        self.assertEqual(len(self.a.hand), 2)
+        self.assertEqual(self.a.library[-3], QUIPU)
+
+    def test_station_unlocks_abilities(self):
+        planet = self.perm(PLANET, self.a)
+        bear = self.perm(BEAR, self.a)
+        self.game.active_idx = 0
+        self.assertFalse(self.game.can_activate(self.a, planet, 0))
+        self.assertTrue(self.game.station(self.a, planet, bear))
+        self.assertEqual(planet.counters["charge"], 2)
+        bear.tapped = False
+        self.game.station(self.a, planet, bear)
+        self.assertTrue(self.game.can_activate(self.a, planet, 0))

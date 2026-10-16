@@ -1276,6 +1276,10 @@ class Game:
             return False
         if c.get("sacrifice") and not self.sacrifice_candidates(p, perm, c["sacrifice"]):
             return False
+        if c.get("craft") and not self.craft_materials(p, perm):
+            return False
+        if act.min_charge and perm.counters.get("charge", 0) < act.min_charge:
+            return False
         return find_payment(self.mana_sources(p, perm if c.get("tap") else None, "ability"), act.cost) is not None
 
     def activate_ability(self, p: Player, perm: Permanent, idx: int, targets=None) -> bool:
@@ -1301,6 +1305,16 @@ class Game:
             victim = self.sacrifice_candidates(p, perm, c["sacrifice"])[0]
             self.log(f"sacrifices {victim.card.name}", p)
             self.sacrifice(victim)
+        if c.get("craft"):
+            material = self.craft_materials(p, perm)[0]
+            if material in p.graveyard:
+                p.graveyard.remove(material)
+                p.exile.append(material)
+                name = material.name
+            else:
+                self.leave_battlefield(material, "exile")
+                name = material.card.name
+            self.log(f"exiles {name} to craft", p)
         if c.get("sac_self"):
             self.sacrifice(perm)
         elif c.get("exile_self"):
@@ -1313,6 +1327,24 @@ class Game:
         self.log(f"activates {item}" + (f" -> {targets}" if any(targets) else ""), p)
         self.check_ward(item)
         self.settle()
+        return True
+
+    def craft_materials(self, p: Player, perm: Permanent) -> list:
+        """What perm could exile to craft: artifact cards in the graveyard first, then artifact tokens,
+        then the cheapest other artifacts."""
+        gy = [c for c in p.graveyard if c.is_artifact]
+        others = sorted((x for x in p.battlefield if x is not perm and x.card.is_artifact and not x.is_creature),
+                        key=lambda x: (not x.card.is_token, x.card.cmc))
+        return gy + others
+
+    def station(self, p: Player, perm: Permanent, creature: Permanent) -> bool:
+        """Station: tap another untapped creature to put charge counters equal to its power (sorcery speed)."""
+        if not perm.card.station or creature is perm or creature.tapped or not creature.is_creature or \
+                creature not in p.battlefield or not (p is self.active and self.step in ("main1", "main2")):
+            return False
+        creature.tapped = True
+        perm.counters["charge"] = perm.counters.get("charge", 0) + max(0, creature.power)
+        self.log(f"stations {perm.card.name} with {creature.card.name}", p)
         return True
 
     def plot(self, p: Player, card: CardDef) -> bool:
@@ -1382,6 +1414,8 @@ class Game:
             n = x if card.etb_counters == -1 else card.etb_counters
             if n:
                 perm.counters["+1/+1"] = n
+        if card.etb_named_counters:
+            perm.counters[card.etb_named_counters[0]] = card.etb_named_counters[1]
         p.battlefield.append(perm)
         if tapped_attacking:
             perm.tapped = True
@@ -1471,7 +1505,23 @@ class Game:
                 self.destroy(target)
         elif k == "draw":
             who = opp if eff.target == "each_opponent" else p
-            self.draw(who, eff.amount)
+            n = eff.amount
+            if eff.data.get("x_count"):
+                n = sum(card_matches(x.card, "a " + eff.data["x_count"]) for x in p.battlefield)
+            self.draw(who, n)
+        elif k == "craft":
+            card = item.source.front if item and item.source else None
+            if card is not None and card in p.exile and card.back is not None:
+                p.exile.remove(card)
+                perm = self.enter_battlefield(p, card.back)
+                perm.front = card
+                self.log(f"crafts {card.back.name}", p)
+        elif k == "tuck_self":
+            src = item.source if item else None
+            if src is not None and src in p.battlefield and self.leave_battlefield(src, "graveyard"):
+                if not src.front.is_token:
+                    p.graveyard.remove(src.front)
+                    p.library.insert(max(0, len(p.library) - (eff.amount - 1)), src.front)
         elif k == "draw_up_to":
             self.draw(p, max(0, eff.amount - len(p.hand)))
         elif k == "gain_life":
@@ -2662,6 +2712,12 @@ def use_abilities(game: Game, me: Player):
         if _option_value(game, me, c) > 0:
             game.cast(me, c, None)
     if game.step == "main2":
+        for st in [x for x in me.battlefield if x.card.station]:
+            need = max((a.min_charge for a in st.card.activated), default=0)
+            ready = sorted((c for c in me.creatures if c is not st and not c.tapped and c.power > 0),
+                           key=lambda c: c.power)
+            if need and st.counters.get("charge", 0) < need and len(ready) > 1:
+                game.station(me, st, ready[-1])
         for _ in range(10):     # general activated abilities, a few at most
             ability = choose_ability(game, me, instant=False)
             if ability is None or not game.do_action(me, ability):
