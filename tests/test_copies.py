@@ -26,6 +26,13 @@ STORM = card("Double Cast", "{R}", "Instant", (
 ECHO = card("Echo Bolt", "{1}{R}", "Instant", (
     "When you cast this spell, if you've cast another spell this turn, copy it. You may choose new targets "
     "for the copy.\nEcho Bolt deals 2 damage to any target."))
+HALL = card("Hall of Echoes", "", "Land", (
+    "{5}: ~ becomes a copy of target creature you control until end of turn. The \"legend rule\" doesn't apply "
+    "to permanents you control this turn."))
+SPLICE = card("Spell Splice", "{1}{R}", "Creature — Wizard", (
+    "{1}, {T}: Copy target activated or triggered ability you control from a creature source. You may choose new "
+    "targets for the copy."), 1, 1)
+PING = card("Pinger", "{1}", "Creature — Human", "{T}: ~ deals 1 damage to any target.", 1, 1)
 
 
 class CopyTests(unittest.TestCase):
@@ -127,6 +134,34 @@ class CopyTests(unittest.TestCase):
         self.game.cast(self.a, SHOCK, [self.b])
         self.game.cast(self.a, ECHO, [self.b])
         self.assertEqual(self.b.life, 12)               # 2 (Shock) + 2 + 2 (copy)
+
+    def test_becomes_copy_until_end_of_turn(self):
+        self.assertEqual(HALL.unsupported, [])
+        hall = self.perm(HALL, self.a)
+        self.perm(DRAGON3, self.a)
+        for _ in range(5):
+            self.perm(MOUNTAIN, self.a)
+        self.assertTrue(self.game.activate_ability(self.a, hall, 0))
+        self.game.run_priority()
+        self.assertEqual((hall.card.name, hall.power), ("Big Dragon", 3))
+        self.game.step = "end"
+        from mtgsim import copies
+        copies.revert(hall)
+        self.assertEqual(hall.card.name, "Hall of Echoes")
+
+    def test_copy_ability_doubles_a_ping(self):
+        self.assertEqual(SPLICE.unsupported, [])
+        from mtgsim.engine import StackItem
+        from mtgsim import copies
+        self.perm(SPLICE, self.a)
+        ping = self.perm(PING, self.a)
+        self.game.stack.append(StackItem(self.a, list(PING.activated[0].effects), [self.b], source=ping, kind="ability"))
+        eff = SPLICE.activated[0].effects[0]
+        self.assertEqual(eff.kind, "copy_ability")
+        self.game.stack.append(StackItem(self.a, [eff], [None], source=None, kind="ability"))
+        item = self.game.stack.pop()
+        copies.resolve(self.game, self.a, eff, None, item)
+        self.assertEqual(len(self.game.stack), 2)
 
 
 if __name__ == "__main__":
