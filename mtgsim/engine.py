@@ -24,7 +24,7 @@ import json
 import random
 import re
 
-from . import copies
+from . import copies, removal
 from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, add_mana, make_token
 from . import modal
 
@@ -567,6 +567,9 @@ class Game:
 
     def passes_filter(self, eff: Effect, perm: Permanent, by: Player) -> bool:
         f = eff.filter
+        r = removal.passes(f, perm)
+        if r is not None:
+            return r
         if f.startswith("max_cmc:"):
             limit = int(f.split(":")[1])
             if by.perm_left_turn and eff.kind == "destroy":
@@ -605,7 +608,7 @@ class Game:
         if t == "nonland_perm":
             return [x for x in everything if (not x.card.is_land or x.is_creature) and self.passes_filter(eff, x, p)]
         if t == "artifact":
-            return [x for x in everything if x.card.is_artifact]
+            return [x for x in everything if x.card.is_artifact and self.passes_filter(eff, x, p)]
         if t == "artifact_enchantment":
             return [x for x in everything if (x.card.is_artifact or "Enchantment" in x.card.types)
                     and self.passes_filter(eff, x, p)]
@@ -1856,6 +1859,8 @@ class Game:
             self.log(f"creates {eff.data['card'].name}", p)
         elif k in copies.KINDS:
             copies.resolve(self, p, eff, target, item)
+        elif k in removal.KINDS:
+            removal.resolve(self, p, eff, target, item)
         self.state_based_actions()
 
     def deal_damage(self, target, amount: int, by: Player | None = None, cause="noncombat damage"):
@@ -2210,6 +2215,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         if killable:
             return max(killable, key=perm_value)
         return opp if eff.target == "any" else None
+    if k in removal.KINDS:
+        return removal.choose(game, me, eff)
     if k == "mill":
         return opp
     if k == "tap":
