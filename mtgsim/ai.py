@@ -9,6 +9,7 @@ player, kept so the two can be played against each other.
 """
 from __future__ import annotations
 
+import dataclasses
 import math
 from itertools import combinations
 
@@ -653,6 +654,19 @@ class HeuristicAI:
     def plan_spell(self, game: Game, me: Player, card: CardDef, precombat: bool = False):
         """Return (value, targets) if the AI wants to cast card in its main phase, else None."""
         opp = game.opponent(me)
+        if not card.is_permanent and any((e.data or {}).get("x") for e in card.spell_effects):
+            # An X spell: plan it with the largest X the remaining mana pays for.
+            x = 0
+            cost = game.cost_of(me, card)
+            while x < 20 and engine.find_payment(game.mana_sources(me, spell=card), engine.add_costs(
+                    cost, {"generic": x + 1})) is not None:
+                x += 1
+            if x < 1:
+                return None
+            sized = [dataclasses.replace(e, amount=x, amount2=x if e.data.get("x2") else e.amount2,
+                                        data={**e.data, "x": False})
+                     if (e.data or {}).get("x") else e for e in card.spell_effects]
+            return self.plan_spell(game, me, dataclasses.replace(card, spell_effects=sized), precombat)
         if card.is_permanent:
             if card.is_creature and precombat and "haste" not in card.keywords and not card.produces \
                     and any(_is_trick(c) for c in me.hand):
