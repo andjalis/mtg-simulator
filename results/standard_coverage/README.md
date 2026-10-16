@@ -180,3 +180,11 @@ card in your graveyard)", "you gain/lose N life for each X", "put a +1/+1 counte
 N cards, then draw that many". Effects carry ``data["per"]`` and multiply their amount by the count when they resolve.
 Fully supported cards 813 → 827 (16.6% → 16.9%). The remaining counting lines are one-offs ("greatest power among",
 "number of colors of mana spent", "number of differently named ...").
+
+## Become a copy and copy abilities (mtgsim/copies.py)
+
+"~ becomes a copy of target creature you control until end of turn" (the permanent swaps its card and reverts in the
+cleanup step; the legend-rule sentence is ignored on purpose) and "Copy target activated or triggered ability you
+control [from a creature source] [X times]" (pushes copies of the top matching ability on the stack).
+Fully supported cards 827 → 830. Variants that pick a different target ("it becomes a copy of ... until your next
+turn", copies of cards in graveyards) are still ignored.

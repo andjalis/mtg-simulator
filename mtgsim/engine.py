@@ -61,6 +61,7 @@ class Permanent:
         self.exiled_cards: list = []       # (card, owner) exiled until this leaves the battlefield
         self.warped = False
         self.was_cast = False              # "if you cast it"
+        self.copy_revert = None            # the card this permanent is while it is a copy until end of turn
         self.impending = False             # cast for its impending cost: not a creature while it has time counters
 
     @property
@@ -868,6 +869,7 @@ class Game:
             perm.deathtouched = False
             perm.pump_p = perm.pump_t = 0
             perm.temp_kw.clear()
+            copies.revert(perm)
             if not (perm.animated and perm.animated.text in ("earthbend", "permanent")):
                 perm.animated = None
             perm.crewed = False
