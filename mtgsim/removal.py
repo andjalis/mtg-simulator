@@ -1,0 +1,100 @@
+"""Removal and fight templates: destroy/exile with a restriction (enchantment, noncreature artifact,
+Vehicle, power 4 or greater, flying), "fights", "deals damage equal to its power" and "untap target
+creature". Joined to the templates in mtgsim.cards; the engine hands KINDS to resolve() here.
+
+A fight or bite is two effects: ``fight_mark`` picks the creature you control, the next effect picks the
+opponent's creature, and resolve() reads the first target from the stack item.
+"""
+from __future__ import annotations
+
+import re
+
+KINDS = {"fight_mark", "fight", "bite", "untap_target"}
+_KW = "flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach"
+_THEIRS = r"(?:an opponent controls|you don't control)"
+
+
+def _destroy(target, flt):
+    from .cards import Effect
+    return lambda m: Effect("destroy", target=target, filter=flt(m) if callable(flt) else flt)
+
+
+EFFECT_PATTERNS = [
+    (r"(?:destroy|exile) target enchantment(?: an opponent controls| you don't control)?",
+     _destroy("artifact_enchantment", "enchantment")),
+    (r"(?:destroy|exile) target noncreature artifact", _destroy("artifact_enchantment", "noncreature_artifact")),
+    (r"(?:destroy|exile) target Vehicle", _destroy("artifact", "subtype:Vehicle")),
+    (r"exile target artifact", _destroy("artifact", "")),
+    (r"(?:destroy|exile) target creature with power (\d+) or greater",
+     _destroy("creature", lambda m: f"min_power:{m[1]}")),
+    (r"(?:destroy|exile) target creature with (flying|reach)", _destroy("creature", lambda m: f"kw:{m[1].lower()}")),
+    (r"target creature you control fights target creature " + _THEIRS, lambda m: _pair("fight")),
+    (r"target creature you control deals damage equal to its power to target creature " + _THEIRS,
+     lambda m: _pair("bite")),
+    (r"untap target creature", lambda m: _effect("untap_target", "creature")),
+    (rf"target creature you control gains ({_KW}) until end of turn",
+     lambda m: _effect("grant", "creature_mine", data={"keyword": m[1].lower()})),
+]
+
+
+def _effect(kind, target, data=None):
+    from .cards import Effect
+    return Effect(kind, target=target, data=data or {})
+
+
+def _pair(kind):
+    from .cards import Effect
+    return [Effect("fight_mark", target="creature_mine"), Effect(kind, target="creature", filter="opp")]
+
+
+def passes(flt: str, perm):
+    """True/False for the restrictions defined here, None for any other filter."""
+    if flt == "enchantment":
+        return "Enchantment" in perm.card.types
+    if flt == "noncreature_artifact":
+        return perm.card.is_artifact and not perm.is_creature
+    if flt.startswith("subtype:"):
+        return flt[8:] in perm.card.subtypes
+    if flt.startswith("min_power:"):
+        return perm.power >= int(flt[10:])
+    if flt.startswith("kw:"):
+        return perm.has(flt[3:])
+    return None
+
+
+def choose(game, me, eff):
+    """Targets for the kinds here (used by default_choose_target), or the string "n/a"."""
+    mine = [x for x in game.legal_targets(me, eff) if x.controller is me]
+    theirs = [x for x in game.legal_targets(me, eff) if x.controller is not me]
+    from .engine import perm_value
+    if eff.kind in ("fight_mark", "untap_target"):
+        if eff.kind == "untap_target":
+            mine = [x for x in mine if x.tapped]
+        return max(mine, key=lambda x: (x.power, perm_value(x)), default=None)
+    power = max((c.power for c in me.creatures), default=0)
+    kill = [x for x in theirs if x.toughness - x.damage <= power and not x.has("indestructible")]
+    if eff.kind == "fight":     # don't trade down: the creature must also survive or be worth less
+        kill = [x for x in kill if x.power < max((c.toughness for c in me.creatures), default=0)
+                or perm_value(x) >= max((perm_value(c) for c in me.creatures), default=0)]
+    return max(kill, key=perm_value, default=None)
+
+
+def resolve(game, p, eff, target, item):
+    k = eff.kind
+    if k == "untap_target":
+        if target is not None:
+            target.tapped = False
+            game.log(f"untaps {target.card.name}", p)
+        return
+    if k == "fight_mark":
+        return
+    mine = item.targets[0] if item is not None and item.targets else None
+    if mine is None or target is None:
+        return
+    if mine not in mine.controller.battlefield or target not in target.controller.battlefield:
+        return
+    game.log(f"{mine.card.name} {'fights' if k == 'fight' else 'strikes'} {target.card.name}", p)
+    dmg_to_target, dmg_back = mine.power, target.power
+    game.deal_damage(target, dmg_to_target, by=p, cause=f"{mine.card.name}: {k}")
+    if k == "fight":
+        game.deal_damage(mine, dmg_back, by=target.controller, cause=f"{target.card.name}: fight")

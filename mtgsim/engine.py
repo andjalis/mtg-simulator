@@ -24,6 +24,7 @@ import json
 import random
 import re
 
+from . import copies, removal
 from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, add_mana, make_token
 from . import modal
 
@@ -623,6 +624,9 @@ class Game:
 
     def passes_filter(self, eff: Effect, perm: Permanent, by: Player) -> bool:
         f = eff.filter
+        r = removal.passes(f, perm)
+        if r is not None:
+            return r
         if f.startswith("max_cmc:"):
             limit = int(f.split(":")[1])
             if by.perm_left_turn and eff.kind == "destroy":
@@ -661,7 +665,7 @@ class Game:
         if t == "nonland_perm":
             return [x for x in everything if (not x.card.is_land or x.is_creature) and self.passes_filter(eff, x, p)]
         if t == "artifact":
-            return [x for x in everything if x.card.is_artifact]
+            return [x for x in everything if x.card.is_artifact and self.passes_filter(eff, x, p)]
         if t == "artifact_enchantment":
             return [x for x in everything if (x.card.is_artifact or "Enchantment" in x.card.types)
                     and self.passes_filter(eff, x, p)]
@@ -1173,7 +1177,9 @@ class Game:
                     if (trig.event == "cast_spell" or
                             (trig.event == "cast_noncreature" and not card.is_creature) or
                             (trig.event == "cast_instant_sorcery" and (card.is_instant or card.is_sorcery))):
-                        self.queue_trigger(p, trig.effects, perm, perm.card.name, modes=trig.modes)
+                        self.queue_trigger(p, trig.effects, perm, perm.card.name, modes=trig.modes,
+                                           context=item if copies.wants_spell(trig.effects) else None)
+            copies.on_cast(self, p, item)
             for pl in self.players:
                 self.fire(pl, "any_cast", context=p, subject=card)
         self.check_ward(item)
@@ -1433,7 +1439,9 @@ class Game:
         return True
 
     def enter_battlefield(self, p: Player, card: CardDef, tapped_attacking: bool = False, x: int = 0) -> Permanent:
+        card, front = copies.clone_on_enter(self, p, card)
         perm = Permanent(card, p)
+        perm.front = front
         perm.entered_turn = self.turn
         perm.spent_color = getattr(self, "_spent", "")
         others = sum(x.card.is_land for x in p.battlefield)
@@ -1906,6 +1914,10 @@ class Game:
         elif k == "token_copy":
             self.enter_battlefield(p, eff.data["card"])
             self.log(f"creates {eff.data['card'].name}", p)
+        elif k in copies.KINDS:
+            copies.resolve(self, p, eff, target, item)
+        elif k in removal.KINDS:
+            removal.resolve(self, p, eff, target, item)
         self.state_based_actions()
 
     def deal_damage(self, target, amount: int, by: Player | None = None, cause="noncombat damage"):
@@ -2260,6 +2272,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         if killable:
             return max(killable, key=perm_value)
         return opp if eff.target == "any" else None
+    if k in removal.KINDS:
+        return removal.choose(game, me, eff)
     if k == "mill":
         return opp
     if k == "tap":
@@ -2396,6 +2410,11 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
             total += perm_value(tgt)
         elif k in ("bounce_spell", "counter"):
             total += tgt.card.cmc if isinstance(tgt, StackItem) and tgt.card else 1
+        elif k in copies.KINDS:
+            v = copies.value(game, me, e)
+            if v < 0:
+                return -1
+            total += v
         elif k == "unblockable":
             # Only worth it before combat, when the opponent has a blocker.
             if game.step != "main1" or not any(not c.tapped for c in opp.creatures):
