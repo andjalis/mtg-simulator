@@ -68,6 +68,7 @@ class Permanent:
         self.exile_turn = -1
         self.chosen_land = ""
         self.chosen_type = ""              # Cavern of Souls
+        self.net_locked = False            # Braided Net: no activated abilities while it stays tapped
         self.bargained = self.gifted = False   # cast with Bargain / the gift promised
         self.produces_now = None           # set by Game.mana_sources: the colours usable right now
         self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
@@ -287,6 +288,16 @@ class Permanent:
 
 FIREBEND_MANA = CardDef(name="Firebending mana", mana_cost={"generic": 0}, cmc=0, types=frozenset({"Artifact"}),
                         produces=frozenset({"R"}), is_token=True)
+
+
+_POOL_MANA: dict = {}
+
+
+def pool_mana(color: str) -> CardDef:
+    """The CardDef of one floating mana of a colour (see Player.pool)."""
+    if color not in _POOL_MANA:
+        _POOL_MANA[color] = dataclasses.replace(FIREBEND_MANA, name=f"{color} mana", produces=frozenset({color}))
+    return _POOL_MANA[color]
 
 
 class Player:
@@ -663,6 +674,58 @@ class Game:
         if kind == "gy":
             return counting.count(self, p, {"what": spec[1], "zone": "graveyard"}, src)
         return counting.count(self, p, {"what": spec[1], "zone": "battlefield"}, src)
+
+    def commits_crime(self, p: Player, targets) -> bool:
+        """Whether a spell or ability with these targets is a crime: it targets an opponent, their permanent or
+        a card in their graveyard."""
+        opp = self.opponent(p)
+        for t in targets or ():
+            if t is opp or (isinstance(t, Permanent) and t.controller is opp) or \
+                    (isinstance(t, CardDef) and t in opp.graveyard):
+                return True
+        return False
+
+    def pay_gate_cost(self, p: Player, gate: tuple, item) -> bool:
+        """Pay a "you may sacrifice / discard / forage / blight N. If you do, ..." cost when it is cheap for the AI."""
+        kind, what = gate
+        src = item.source if item is not None and isinstance(item.source, Permanent) else None
+        if kind == "sac":
+            other = what.startswith("other ")
+            kinds = tuple(what[6:].split(" or ")) if other else tuple(what.split(" or "))
+            spare = [x for x in p.battlefield if not (other and x is src)
+                     and any(card_matches(x.card, "a " + k.strip()) or (k.strip() == "token" and x.card.is_token)
+                             for k in kinds)
+                     and (x.card.is_token or perm_value(x) <= 2)]
+            if not spare:
+                return False
+            self.sacrifice(min(spare, key=perm_value))
+            return True
+        if kind == "discard":
+            if not p.hand or not (len(p.hand) >= 4 or (any(c.is_land for c in p.hand)
+                                                       and sum(x.card.is_land for x in p.battlefield) >= 5)):
+                return False
+            self.discard_card(p, p.ai.choose_discard(self, p))
+            return True
+        if kind == "forage":
+            if len(p.graveyard) >= 3:
+                for c in list(p.graveyard)[:3]:
+                    p.graveyard.remove(c)
+                    p.exile.append(c)
+                return True
+            foods = [x for x in p.battlefield if x.card.token_kind == "food"]
+            if foods:
+                self.sacrifice(foods[0])
+                return True
+            return False
+        if kind == "blight":
+            n = int(what)
+            victims = [x for x in p.creatures if x.toughness > n and (x.card.is_token or perm_value(x) <= 3)]
+            if not victims:
+                return False
+            v = min(victims, key=perm_value)
+            v.counters["-1/-1"] = v.m1 + n
+            return True
+        return False
 
     def pay_bargain(self, p: Player, card: CardDef) -> bool:
         """Sacrifice a spare artifact, enchantment or token (the cheapest) for Bargain; False if there is none worth it."""
@@ -1183,6 +1246,7 @@ class Game:
         for perm in list(p.battlefield):
             if perm.card.is_saga:
                 self.add_lore(perm)
+        self.fire(p, "main1_begin")
         self.settle()
         if self.over:
             return
@@ -1194,6 +1258,11 @@ class Game:
         if self.over:
             return
         self.step = "main2"
+        self.fire(p, "main2_begin")
+        self.fire(p, "survival")
+        self.settle()
+        if self.over:
+            return
         self.main_phase(p)
         if self.over:
             return
@@ -1325,6 +1394,12 @@ class Game:
                 if trig.filter.startswith("with:") and \
                         not any(trig.filter[5:] in a.card.subtypes for a in self.attackers):
                     continue
+                if event == "survival" and not perm.tapped:
+                    continue
+                if trig.once_game:
+                    if ("tg", i) in perm.ability_turns:
+                        continue
+                    perm.ability_turns[("tg", i)] = self.turn
                 if trig.once:
                     if perm.ability_turns.get(("trigger", i)) == self.turn:
                         continue
@@ -1656,6 +1731,8 @@ class Game:
             item.name = card.name
         self.stack.append(item)
         self.log(f"casts {card.name}" + (f" -> {targets}" if any(targets) else ""), p)
+        if self.commits_crime(p, targets):
+            self.fire(p, "crime")
         if not card.is_ability:
             for perm in list(p.battlefield):
                 for trig in perm.triggers:
@@ -1701,6 +1778,8 @@ class Game:
                          kind="loyalty")
         self.stack.append(item)
         self.log(f"activates {item}" + (f" -> {targets}" if any(targets) else ""), p)
+        if self.commits_crime(p, targets):
+            self.fire(p, "crime")
         self.check_ward(item)
         self.state_based_actions()
         self.settle()
@@ -1822,6 +1901,8 @@ class Game:
 
     def ability_cost(self, p: Player, perm: Permanent, act) -> dict:
         cost = act.cost
+        if act.power_up and perm.entered_turn == self.turn:
+            cost = {k: max(0, v - perm.card.mana_cost.get(k, 0)) if isinstance(v, int) else v for k, v in cost.items()}
         if perm.card.is_token and perm.card.is_artifact and cost.get("generic"):
             n = sum(x.card.token_ability_discount for x in p.battlefield)
             if n:
@@ -1845,6 +1926,12 @@ class Game:
             return False
         if act.once and perm.ability_turns.get(idx) == self.turn:
             return False
+        if act.once_game and ("game", idx) in perm.ability_turns:
+            return False
+        if perm.net_locked:
+            if perm.tapped:
+                return False
+            perm.net_locked = False
         if c.get("life") and p.life <= c["life"]:
             return False
         if c.get("discard") and len(p.hand) < c["discard"]:
@@ -1869,6 +1956,8 @@ class Game:
         if self.pay(p, self.ability_cost(p, perm, act), exclude=perm if c.get("tap") else None) is None:
             return False
         perm.ability_turns[idx] = self.turn
+        if perm.card.activated[idx].once_game:
+            perm.ability_turns[("game", idx)] = self.turn
         if c.get("tap"):
             perm.tapped = True
         if c.get("life"):
@@ -2089,6 +2178,9 @@ class Game:
             target = item.source
         if eff.target == "that_player" and item is not None:
             target = item.context
+        if eff.target == "trigger_subject" and item is not None:
+            target = item.context if isinstance(item.context, Permanent) and item.context in item.context.controller.battlefield \
+                else None
         if eff.target == "that_controller":
             target = prev.controller if isinstance(prev, Permanent) else prev
         k = eff.kind
@@ -2194,8 +2286,10 @@ class Game:
                 self.leave_battlefield(target, "hand")
         elif k == "scry":
             self.scry(p, eff.amount)
+            self.fire(p, "scry_surveil")
         elif k == "surveil":
             self.scry(p, eff.amount, to_graveyard=True)
+            self.fire(p, "scry_surveil")
         elif k == "dig":
             n = item.mana_spent if eff.data.get("x_mana") and item is not None and item.mana_spent else eff.amount
             if eff.data.get("x_lands"):
@@ -2285,7 +2379,7 @@ class Game:
             if eff.data.get("host") and item is not None and isinstance(item.source, Permanent):
                 target = item.source.attached_to
             if isinstance(target, Permanent):
-                target.temp_kw.add(eff.data["keyword"])
+                (target.perm_kw if eff.data.get("perm") else target.temp_kw).add(eff.data["keyword"])
         elif k == "add_counter":
             if isinstance(target, Permanent):
                 name = eff.data.get("counter", "+1/+1")
@@ -2443,6 +2537,10 @@ class Game:
             else:
                 self.enter_battlefield(p, jace_token(eff.amount))
             self.log(f"empowers Jace by {eff.amount}", p)
+        elif k == "add_mana":
+            for color in eff.data["colors"]:
+                p.pool.append(Permanent(pool_mana(color), p))
+            self.log(f"adds {''.join(eff.data['colors'])}", p)
         elif k == "firebend":
             src = item.source if item is not None else None
             n = eff.amount
@@ -2592,7 +2690,9 @@ class Game:
         elif k == "pay_gate":
             if item is not None:
                 item.gate_paid = False
-                if self.can_pay(p, eff.data["cost"]) and self.hook(p, "pay_optional")(self, p, eff.data["cost"], "gate"):
+                if "gate" in eff.data:
+                    item.gate_paid = self.pay_gate_cost(p, eff.data["gate"], item)
+                elif self.can_pay(p, eff.data["cost"]) and self.hook(p, "pay_optional")(self, p, eff.data["cost"], "gate"):
                     self.pay(p, eff.data["cost"])
                     item.gate_paid = True
         elif k == "opt_cost_draw":
@@ -2779,6 +2879,8 @@ class Game:
         elif k == "tap":
             if isinstance(target, Permanent):
                 target.tapped = True
+                if eff.data.get("net"):
+                    target.net_locked = True
             for _ in range(eff.amount - 1):   # "tap up to two target creatures": the next best ones
                 extra = default_choose_target(self, p, eff)
                 if extra is not None:
@@ -3034,6 +3136,7 @@ class Game:
         p.hand.remove(card)
         p.graveyard.append(card)
         p.discarded_cards.append(card)
+        self.fire(p, "you_discard")
 
     def cast_free(self, p: Player, card: CardDef) -> bool:
         """Cast card without paying its mana cost (Discover); it stays in hand if it can't be cast."""
@@ -3145,6 +3248,8 @@ class Game:
         for a in attackers:
             self.fire(p, "attacks", a)
             self.fire(p, "creature_attacks")
+        if len(attackers) == 1:
+            self.fire(p, "attacks_alone", context=attackers[0])
         self.fire(p, "you_attack")
         self.run_priority(until_empty_stack=False)
         attackers = [a for a in self.attackers if a in p.battlefield]

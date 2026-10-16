@@ -68,6 +68,7 @@ class Trigger:
     filter: str = ""                 # "cmc<=3", "greater_power", "self|other|creature or artifact" (permanent_enters)
     modes: list | None = None        # "choose up to one" triggers: a list of effect lists
     once: bool = False               # "This ability triggers only once each turn."
+    once_game: bool = False          # "This ability triggers only once."
 
 
 @dataclass
@@ -101,6 +102,8 @@ class Activated:
     once: bool = False               # "Activate only once each turn."
     min_charge: int = 0              # under "STATION N+": needs N charge counters
     needs_max_speed: bool = False    # "Max speed — COST: EFFECT"
+    once_game: bool = False          # Exhaust / Power-up: each such ability is activated only once
+    power_up: bool = False           # Power-up: costs its mana cost less if the creature entered this turn
     text: str = ""
     modes: list = field(default_factory=list)    # "COST: Choose one —": a modal.Modes
 
@@ -481,6 +484,9 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("p1_counters", 0, target="my_creatures", data={"x": "hand"})),
     (r"for each opponent, return up to one target artifact or creature that player controls to its owner's hand",
      lambda m: Effect("bounce", target="nonland_perm", filter="opp")),
+    (r"add ((?:\{[WUBRG]\})+)", lambda m: Effect("add_mana", data={"colors": re.findall(r"[WUBRG]", m[1])})),
+    (r"transform ~", lambda m: Effect("transform", target="self")),
+    (r"NETTAP", lambda m: Effect("tap", 1, target="nonland_perm", data={"net": True})),
     (r"OPTCOST (\S+) (\d+)", lambda m: Effect("opt_cost_draw", int(m[2]), data={"cost": m[1]})),
     (r"THREATEN", lambda m: Effect("threaten", target="creature", filter="opp")),
     (r"MERCENARY (\w+)", lambda m: Effect("token", 0 if m[1].lower() == "x" else _num(m[1]), data={
@@ -522,7 +528,7 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("stun", _num(m[1]), target="creature", filter="tapped")),
     (r"target creature(?: you control)? with power (\d+) or less can't be blocked this turn",
      lambda m: Effect("unblockable", target="creature_mine", filter=f"max_power:{m[1]}")),
-    (r"target creature you control can't be blocked this turn",
+    (r"(?:up to one )?target creature you control can't be blocked this turn",
      lambda m: Effect("unblockable", target="creature_mine")),
     (r"earthbend (\w+)", lambda m: Effect("earthbend", _num(m[1]))),
     (r"GOBLINGUIDE", lambda m: Effect("reveal_land", target="each_opponent")),
@@ -617,7 +623,7 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("damage", 0, target="any", data={"count": m[1].lower()})),
     (r"its controller investigates", lambda m: Effect("token", 1, target="that_controller", data={"kind": "clue"})),
     (r"create a token that's a copy of target token you control", lambda m: Effect("copy_token")),
-    (r"put (a|one|two|three) \+1/\+1 counters? on (?:up to one )?target creature(?: you control)?",
+    (r"put (a|one|two|three) \+1/\+1 counters? on (?:up to one )?target creature(?: or Vehicle)?(?: you control)?",
      lambda m: Effect("p1_counters", _num(m[1]), target="creature_mine")),
     (r"put (a|one|two|three) \+1/\+1 counters? on ~", lambda m: Effect("p1_counters", _num(m[1]), target="self")),
     (r"ELSPETHPLUS", lambda m: Effect("p1_counters", 1, target="creature_mine", data={"keyword": "flying"})),
@@ -631,6 +637,11 @@ _EFFECT_PATTERNS = [
      lambda m: [Effect("grant", target="prev", data={"keyword": k.lower()}) for k in m.groups() if k]),
     (r"~ also deals (\d+) damage to that creature's controller",
      lambda m: Effect("damage", int(m[1]), target="that_controller")),
+    (r"(?:it|that creature) gets \+(\d+)/\+(\d+)(?: and gains ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach))(?: and ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)))?)? until end of turn",
+     lambda m: [Effect("pump", int(m[1]), int(m[2]), target="prev")] +
+     [Effect("grant", target="prev", data={"keyword": k.lower()}) for k in (m[3], m[4]) if k]),
+    (r"(?:it|that creature) gains ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) and ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) until end of turn",
+     lambda m: [Effect("grant", target="prev", data={"keyword": k.lower()}) for k in (m[1], m[2])]),
     (r"it gains (hexproof|first strike|haste|indestructible|trample|lifelink|flying|vigilance|menace) until end of turn",
      lambda m: Effect("grant", target="prev", data={"keyword": m[1].lower()})),
     (r"target creature gains ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) and ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) until end of turn",
@@ -643,6 +654,14 @@ _EFFECT_PATTERNS = [
     (r"that creature deals (\d+) damage to each opponent", lambda m: Effect("damage", int(m[1]), target="player")),
     (r"target creature gains (double strike|first strike|trample|haste|hexproof|indestructible) until end of turn",
      lambda m: Effect("grant", target="creature", data={"keyword": m[1].lower()})),
+    (r"put (?:a|an) ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) counter on (target creature|~|it)",
+     lambda m: Effect("grant", target=_kw_target(m[2]), data={"keyword": m[1].lower(), "perm": True})),
+    (r"put (a|two) \+1/\+1 counters? and (?:a|an) ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) counter on (target creature|~|it)",
+     lambda m: [Effect("p1_counters", _num(m[1]), target=_kw_target(m[3])),
+                Effect("grant", target="prev" if m[3] != "~" else "self", data={"keyword": m[2].lower(), "perm": True})]),
+    (r"put (?:a|an) ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) counter, (?:a|an) ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) counter, and (?:a|an) ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) counter on target creature",
+     lambda m: [Effect("grant", target="creature_mine", data={"keyword": m[1].lower(), "perm": True})] +
+     [Effect("grant", target="prev", data={"keyword": m[i].lower(), "perm": True}) for i in (2, 3)]),
     (r"put an? (\w+) counter on ~", lambda m: Effect("add_counter", 1, target="self", data={"counter": m[1].lower()})),
     (r"if you attacked with two or more creatures this turn, draw a card",
      lambda m: Effect("draw", 1, cond="attacked2")),
@@ -678,6 +697,8 @@ _EFFECT_PATTERNS = [
 ]
 
 _SUBS = [
+    (re.compile(r"tap another target nonland permanent\. its activated abilities can't be activated for as long as it "
+                r"remains tapped\.", re.I), lambda m: "NETTAP."),
     (re.compile(r"you may discard a card\. if you do, draw (a card|two cards)\.", re.I),
      lambda m: f"OPTCOST discard {_num(m[1].split()[0])}."),
     (re.compile(r"you may sacrifice (another |an? )?(creature or artifact|artifact or creature|artifact|creature|"
@@ -806,6 +827,9 @@ _TRIGGERS = [
     (r"At the beginning of your upkeep, (.+)", ("upkeep",)),
     (r"At the beginning of each opponent's draw step, (.+)", ("opp_draw_step",)),
     (r"At the beginning of your end step, (.+)", ("end_step",)),
+    (r"At the beginning of your first main phase, (.+)", ("main1_begin",)),
+    (r"Survival — At the beginning of your second main phase, if ~ is tapped, (.+)", ("survival",)),
+    (r"At the beginning of your second main phase, (.+)", ("main2_begin",)),
     (r"Whenever a creature an opponent controls dies, (.+)", ("opp_creature_dies",)),
     (r"Whenever another creature you control enters or dies, if that creature's power is greater than ~'s, (.+)",
      ("other_creature_enters", "other_creature_dies")),
@@ -823,6 +847,10 @@ _TRIGGERS = [
     (r"At the beginning of combat on your turn, (.+)", ("begin_combat",)),
     (r"Whenever you draw your second card each turn, (.+)", ("draw_second",)),
     (r"Whenever you cast your second spell each turn, (.+)", ("cast_second",)),
+    (r"Whenever a creature you control attacks alone, (.+)", ("attacks_alone",)),
+    (r"Whenever you commit a crime, (.+)", ("crime",)),
+    (r"Whenever you scry or surveil, (.+)", ("scry_surveil",)),
+    (r"Whenever you discard (?:a card|one or more cards), (.+)", ("you_discard",)),
     (r"Whenever you cast a spell with mana value (\d+) or greater, (.+)", ("cast_cmc",)),
     (r"Whenever ~ attacks while saddled, (.+)", ("attacks",)),
     (r"Whenever ~ becomes tapped, (.+)", ("becomes_tapped",)),
@@ -862,6 +890,10 @@ def _opt_rider(s: str, effects: list):
     return new
 
 
+def _kw_target(what: str) -> str:
+    return {"~": "self", "it": "prev"}.get(what, "creature_mine")
+
+
 def _xq(text: str):
     """The quantity in ", where X is ...": a tuple the engine evaluates, or None when it isn't a known one."""
     t = text.strip().rstrip(".")
@@ -885,6 +917,8 @@ def _xq(text: str):
     m = re.fullmatch(r"the number of ([\w -]+?) cards? in your graveyard", t, re.I)
     if m:
         return ("gy", _singular(m[1]))
+    if tl == "the number of cards in your graveyard":
+        return ("gy", "")
     m = re.fullmatch(r"the number of ([\w -]+?) you control", t, re.I)
     if m and " with " not in m[1] and " that " not in m[1]:
         return ("count", _singular(m[1]))
@@ -904,6 +938,23 @@ def _parse_effects(text: str, opts: bool = False):
         mp = re.fullmatch(r"you may pay ((?:\{[WUBRGC0-9]+\})+)", s, re.I)
         if mp:
             effects.append(Effect("pay_gate", data={"cost": parse_mana_cost(mp[1])}))
+            gated = True
+            continue
+        mg = re.fullmatch(r"you may (?:(sacrifice (?:another |an? )(?:artifact, enchantment, or token|[a-z]+(?: or [a-z]+)?))"
+                          r"|(discard a card)|(forage)|blight (\d+))", s, re.I)
+        if mg:
+            if mg[1]:
+                what = mg[1].lower().split(" ", 1)[1]
+                other = what.startswith("another ")
+                kinds = re.sub(r"^(?:another|an?) ", "", what).replace(", or ", " or ").replace(", ", " or ")
+                gate = ("sac", ("other " if other else "") + kinds)
+            elif mg[2]:
+                gate = ("discard", "")
+            elif mg[3]:
+                gate = ("forage", "")
+            else:
+                gate = ("blight", mg[4])
+            effects.append(Effect("pay_gate", data={"gate": gate}))
             gated = True
             continue
         mx = re.fullmatch(r"(.+?),? where X is (.+)", s, re.I)
@@ -1367,7 +1418,8 @@ def _parse_face(data: dict) -> CardDef:
             alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2]), hybrid=tuple(
                 a + b for a, b in re.findall(r"\{([WUBRG])/([WUBRG])\}", m[2]))))
             continue
-        m = re.fullmatch(r"(\{[^:]+\}), Exile (?:~|this card) from your graveyard: (.+)", line)
+        m = re.fullmatch(r"(?:Renew — )?(\{[^:]+\}), Exile (?:~|this card) from your graveyard: (.+?)"
+                         r"(?: Activate only as a sorcery\.)?", line)
         if m:
             effs, bad = _parse_effects(m[2])
             if effs and not bad:
@@ -1724,7 +1776,10 @@ def _parse_face(data: dict) -> CardDef:
         if clone is not None:
             extra.update(clone)
             continue
-        act = _parse_ability(line, approximations)
+        mp = re.fullmatch(r"(Power-up|Exhaust) — (.+)", line)
+        act = _parse_ability(mp[2] if mp else line, approximations)
+        if act is not None and mp:
+            act.once_game, act.power_up, act.text = True, mp[1] == "Power-up", line
         if act is not None:
             act.min_charge = station_min
             activated.append(act)
@@ -1897,10 +1952,16 @@ def _parse_trigger(line: str):
     once = line.endswith(" This ability triggers only once each turn.")
     if once:
         line = line[:-len(" This ability triggers only once each turn.")]
+    once_game = line.endswith(" This ability triggers only once.")
+    if once_game:
+        line = line[:-len(" This ability triggers only once.")]
     out = _parse_trigger_line(line)
     if out is not None and once:
         for t in out[0]:
             t.once = True
+    if out is not None and once_game:
+        for t in out[0]:
+            t.once_game = True
     return out
 
 
@@ -1989,6 +2050,10 @@ def _parse_trigger_line(line: str):
             if cond:
                 effs = [dataclasses.replace(e, cond=cond) for e in effs]
         effs += later
+        if events == ("attacks_alone",):
+            for e in effs:
+                if e.target == "prev":
+                    e.target = "trigger_subject"
         if not effs:
             return [], bad or [line], None
         return [Trigger(e, effs, flt, once=events == ("targeted_mine",)) for e in events], bad, None
