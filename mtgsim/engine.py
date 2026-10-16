@@ -28,6 +28,8 @@ from . import auras, copies, counting, removal, search, xspells
 from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, add_mana, make_token
 from . import modal
 
+TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
+COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "artifact", "artifact_enchantment",
             "player", "spell")
 
@@ -114,6 +116,12 @@ class Permanent:
                     e = c.equip_bonus
                     bp += e[0]
                     bt += e[1]
+        for cond, pp, tt in self.card.pt_if:
+            gy = self.controller.graveyard
+            n = sum(c.is_permanent for c in gy) if cond.startswith("gy_perm") else len(gy)
+            if n >= int(cond.split(">=")[1]):
+                bp += pp
+                bt += tt
         if what:
             per = counting.count(None, self.controller, {"what": what, "zone": "battlefield"}, self)
             bp += per * sp
@@ -164,6 +172,10 @@ class Permanent:
         for k, cond in self.card.cond_keywords:
             if k == kw and self.condition(cond):
                 return True
+        if kw in TEAM_KEYWORDS and self.is_creature:
+            for x in self.controller.battlefield:
+                if kw in x.card.team_keywords:
+                    return True
         if self.card.keyword_at_counters and self.p1 >= self.card.keyword_at_counters[0]:
             return kw == self.card.keyword_at_counters[1]
         return kw == "haste" and self.blitz
@@ -172,6 +184,8 @@ class Permanent:
         if cond.startswith("another:"):
             kind = cond[8:]
             return any(kind in x.card.subtypes for x in self.controller.battlefield if x is not self)
+        if cond == "your_turn":
+            return self.controller.my_turn
         if cond.startswith("opp_life<="):
             opp = getattr(self.controller, "opponent", None)
             return opp is not None and opp.life <= int(cond[10:])
@@ -216,6 +230,8 @@ class Permanent:
 
 
 class Player:
+    my_turn = False
+
     def __init__(self, name: str, deck: list[CardDef], ai):
         self.name = name
         self.deck = deck
@@ -394,6 +410,7 @@ class Game:
         self.rng = rng
         self.max_turns = max_turns
         self.turn = 0
+        self.creature_died_turn = False
         self.active_idx = 0
         self.winner: Player | None = None
         self.log_enabled = log
@@ -513,6 +530,12 @@ class Game:
             n = sum(max(0, c.power) for c in p.creatures)
         elif card.cost_reduction.startswith("affinity:"):
             n = sum(card_matches(x.card, "a " + card.cost_reduction[9:]) for x in p.battlefield)
+        for x in p.battlefield:
+            for flt, k in x.card.cost_discount:
+                if (flt in ("instant and sorcery",) and (card.is_instant or card.is_sorcery)) or \
+                        (flt in COLOR_WORDS and cost.get(COLOR_WORDS[flt], 0)) or \
+                        (flt in ("creature", "artifact") and flt.capitalize() in card.types):
+                    n += k
         cost["generic"] = max(0, cost.get("generic", 0) - n)
         if card.convoke:
             self._convoke_k = min(len(self.convoke_pool(p)), cost.get("generic", 0))
@@ -642,6 +665,8 @@ class Game:
         if alt is not None and alt.life and p.life <= alt.life:
             return False
         if card.extra_life_cost and p.life <= card.extra_life_cost:
+            return False
+        if self.active is not p and any(x.card.opp_no_cast for x in self.opponent(p).battlefield):
             return False
         if card.extra_sacrifice and not card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
             return False
@@ -877,10 +902,12 @@ class Game:
         opp = self.opponent(p)
         for pl in self.players:
             pl.lost_life_turn = pl.perm_left_turn = False
+            pl.my_turn = pl is p
             pl.life_gained_turn = 0
             pl.attacked_with = 0
             if isinstance(pl.graveyard, Graveyard):
                 pl.graveyard.descents = 0
+        self.creature_died_turn = False
         self.step = "untap"
         for perm in p.battlefield:
             if perm.tapped and perm.counters.get("stun"):
@@ -1654,6 +1681,8 @@ class Game:
             n = x if card.etb_counters == -1 else card.etb_counters
             if n:
                 perm.counters["+1/+1"] = n
+        if card.etb_counters_if and self._etb_cond(p, card.etb_counters_if[0]):
+            perm.counters["+1/+1"] = perm.p1 + card.etb_counters_if[1]
         if card.etb_named_counters:
             perm.counters[card.etb_named_counters[0]] = card.etb_named_counters[1]
         p.battlefield.append(perm)
@@ -1986,6 +2015,16 @@ class Game:
                 perm = self.enter_battlefield(p, ench)
                 perm.front = card
                 self.log(f"returns {card.name} as an enchantment", p)
+        elif k == "amass":
+            kind = eff.data["type"]
+            army = next((x for x in p.creatures if "Army" in x.card.subtypes), None)
+            if army is None:
+                self.enter_battlefield(p, dataclasses.replace(make_token(f"{kind} Army", 0, 0), etb_counters=eff.amount))
+            else:
+                if kind not in army.card.subtypes:
+                    army.card = dataclasses.replace(army.card, subtypes=army.card.subtypes | {kind})
+                army.counters["+1/+1"] = army.p1 + eff.amount
+            self.log(f"amasses {kind} {eff.amount}", p)
         elif k == "edict":
             victims = sorted(opp.creatures, key=perm_value)[:eff.amount]
             for v in victims:
@@ -2313,8 +2352,17 @@ class Game:
                     self.queue_trigger(p, trig.effects, other, other.card.name)
         self.dies(perm) if perm.is_creature else self.leave_battlefield(perm, "graveyard")
 
+    def _etb_cond(self, p: Player, cond: str) -> bool:
+        if cond == "opp_lost_life":
+            return self.opponent(p).lost_life_turn
+        if cond == "creature_died":
+            return self.creature_died_turn
+        return p.attacked_with > 0
+
     def dies(self, perm: Permanent):
         was_creature = perm.is_creature
+        if was_creature:
+            self.creature_died_turn = True
         if was_creature and (perm.damage or perm.deathtouched) and \
                 any(x.card.exile_damaged for x in self.opponent(perm.controller).battlefield):
             if self.leave_battlefield(perm, "exile"):   # Etching of Kumano
