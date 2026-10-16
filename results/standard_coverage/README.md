@@ -366,3 +366,14 @@ resolution by a counted quantity (permanents you control, graveyard cards, a cre
 speed, life gained this turn, counters on ~, the greatest power or toughness). Pronoun riders ("that creature gets
 -5/-5", "destroy that creature", "it also gains flying and lifelink"). Fully supported cards 1,519 → 1,565.
 Left out: "costs {N} less if bargained" (the cost is needed before the choice).
+
+## Round 11: Power-up, Exhaust, Renew, keyword counters, pay gates, new trigger events
+
+Power-up and Exhaust abilities (each only once; Power-up costs its mana cost less on the turn the creature entered),
+Renew (exile from the graveyard at sorcery speed), keyword counters (flying, trample, lifelink ... as permanent
+keywords), Braided Net locks, "put a +1/+1 counter on target creature or Vehicle". "You may sacrifice / discard a
+card / forage / blight N. If you do ..." gates (the AI pays when it is cheap: a token, a land it can spare, three
+graveyard cards). New trigger events: first and second main phase (with Survival, "if ~ is tapped", and "This ability
+triggers only once"), a creature attacking alone, committing a crime (targeting an opponent, their permanent or
+their graveyard), scrying or surveilling, discarding. "Add {R}{R}" effects. Fully supported cards 1,565 → 1,669.
+Not done: Level up and Class levels, "When you do" reflexive triggers with their own targets, cards leaving the graveyard.
