@@ -47,10 +47,15 @@ def _read(path: Path) -> dict | None:
         return None
 
 
+def can_replay(d: dict) -> bool:
+    """Whether a saved ladder result has what the replay needs: pools, opponents and MMR history."""
+    return all(d.get(k) for k in ("pools", "opponents", "history", "ranks"))
+
+
 def ladder_entry(d: dict, tested: float, link: str, source: str) -> dict:
     return {"deck": d.get("deck") or "?", "mmr": d["mmr"], "rank": d["rank"],
             "rank_color": d.get("rank_color") or _color(d["rank"]), "games": d.get("games"),
-            "tested": tested, "link": link, "source": source, "grades": None}
+            "tested": tested, "link": link, "source": source, "grades": None, "replay": can_replay(d)}
 
 
 def from_files(results: Path = RESULTS) -> list[dict]:
@@ -94,6 +99,7 @@ def from_history(path=None) -> list[dict]:
         out.append({"deck": deck, "mmr": None if run["mmr"] is None else round(run["mmr"]), "rank": run["rank"],
                     "rank_color": _color(run["rank"]), "games": run["games"], "tested": tested,
                     "link": f"/leaderboard/history/{run['id']}", "source": "history", "version": latest_v,
+                    "replay": run["kind"] != "assess" and can_replay(run["result"]),
                     "grades": graded["grades"] if graded else None})
     return out
 
@@ -189,8 +195,9 @@ def render_page(rows: list[dict], now: float | None = None) -> str:
             cells += "".join(f"<td><span class='g g{e(g.get(k) or '')}' title='{label}'>{e(g.get(k) or '–')}</span></td>"
                              for k, label in CRITERIA)
         when = datetime.fromtimestamp(r["tested"]).strftime("%Y-%m-%d %H:%M")
+        play = f"<a class=play href='{e(r['link'])}?replay=1' title='Replay the climb'>▶ Replay</a>" if r.get("replay") else ""
         cells += (f"<td class=note title='{when}'>{_ago(r['tested'], now)}</td>"
-                  f"<td class=n><a href='{e(r['link'])}'>Results ›</a></td>")
+                  f"<td class=n>{play}<a href='{e(r['link'])}'>Results ›</a></td>")
         body.append(f"<tr class=p{r['place']}>{cells}</tr>")
     table = (f"<div class=scroll><table class=lb><thead>{head}</thead><tbody>{''.join(body)}</tbody></table></div>"
              if rows else "<p class=empty>No decks tested yet. Run one from the <a href='/'>deck page</a>.</p>")
@@ -217,3 +224,19 @@ def render_assessment(d: dict) -> str:
              f"</tr></thead><tbody>{rows}</tbody></table></div>")
     return theme.page(f"{d.get('deck', 'Deck')} assessment",
                       f"<div class=report>{hero}{theme.frame('Deck grades', table)}</div>", "leaderboard")
+
+
+def replay_panel(d: dict) -> tuple[str, str]:
+    """The replay frame for a saved ladder run: (html to put above the report, scripts for the end
+    of the page), or two empty strings when the run lacks what the replay needs."""
+    if not can_replay(d):
+        return "", ""
+    data = json.dumps(d).replace("</", "<\\/")
+    panel = theme.frame("Replay the climb",
+                        "<div class=replaybar><button class=go id=rp-play>▶ Replay the climb</button>"
+                        "<button class=ghost id=rp-skip>Skip to result</button>"
+                        "<label class=opt><input type=checkbox id=fx> Sound and haptics</label></div>"
+                        "<div id=rp-host></div>", "replay")
+    scripts = (f'<script type="application/json" id="run-data">{data}</script>'
+               '<script src="/static/arena.js"></script><script>initReplay()</script>')
+    return panel, scripts
