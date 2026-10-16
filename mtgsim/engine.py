@@ -26,7 +26,7 @@ import random
 import re
 
 from . import auras, copies, counting, removal, search, xspells
-from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, add_mana, make_token
+from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, add_mana, jace_token, make_token
 from . import modal
 
 TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
@@ -254,6 +254,7 @@ class Player:
         self.milled_last: list[CardDef] = []     # the cards the last mill put into the graveyard
         self.picked_last: CardDef | None = None   # the card mill_pick returned to hand
         self.discarded_last: list[CardDef] = []
+        self.discarded_cards: list[CardDef] = []      # discarded this turn (Mayhem)
         self.mulligans = 0
         self.lost_life_turn = False
         self.perm_left_turn = False
@@ -680,7 +681,8 @@ class Game:
             out.append(self._variant(c, "foretold", a))
         for c in p.graveyard:
             for a in c.alt_costs:
-                if a.kind in ("flashback", "gy_ability") or (a.kind == "blitz" and "graveyard" in a.zone):
+                if a.kind in ("flashback", "gy_ability") or (a.kind == "blitz" and "graveyard" in a.zone) or \
+                        (a.kind == "mayhem" and c in p.discarded_cards):
                     out.append(self._variant(c, "blitz_gy" if a.kind == "blitz" else a.kind, a))
         return out
 
@@ -690,7 +692,8 @@ class Game:
     def _zone(self, p: Player, kind: str) -> list:
         """The zone a spell_options() variant of this kind is cast from."""
         return {"from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
-                "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile}.get(kind, p.hand)
+                "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile,
+                "mayhem": p.graveyard}.get(kind, p.hand)
 
     def _available(self, p: Player, card: CardDef) -> bool:
         base, kind, _ = self._origin(card)
@@ -925,8 +928,7 @@ class Game:
                 continue
             if self.pay(p, spec["cost"]) is None:
                 continue
-            p.hand.remove(card)
-            p.graveyard.append(card)
+            self.discard_card(p, card)
             self.log(f"cycles {card.name}", p)
             if spec["land"]:
                 want = spec["land"]
@@ -946,6 +948,7 @@ class Game:
         for pl in self.players:
             pl.lost_life_turn = pl.perm_left_turn = False
             pl.my_turn = pl is p
+            pl.discarded_cards = []
             pl.life_gained_turn = 0
             pl.attacked_with = 0
             if isinstance(pl.graveyard, Graveyard):
@@ -1010,8 +1013,7 @@ class Game:
         self.step = "cleanup"
         while len(p.hand) > 7:
             card = p.ai.choose_discard(self, p)
-            p.hand.remove(card)
-            p.graveyard.append(card)
+            self.discard_card(p, card)
         for perm in p.battlefield + opp.battlefield:
             perm.damage = 0
             perm.deathtouched = False
@@ -1458,8 +1460,7 @@ class Game:
             if not p.hand or self.pay(p, {"generic": 1}, exclude=perm) is None:
                 return False
             card = p.ai.choose_discard(self, p)
-            p.hand.remove(card)
-            p.graveyard.append(card)
+            self.discard_card(p, card)
             self.leave_battlefield(perm, "graveyard")
             self.log(f"uses a Blood token, discarding {card.name}", p)
             self.draw(p)
@@ -1594,8 +1595,7 @@ class Game:
             self.change_life(p, -c["life"], f"{perm.card.name}: ability cost")
         for _ in range(c.get("discard", 0)):
             card = p.ai.choose_discard(self, p)
-            p.hand.remove(card)
-            p.graveyard.append(card)
+            self.discard_card(p, card)
             self.log(f"discards {card.name}", p)
         if c.get("remove_counter"):
             perm.counters[c["remove_counter"]] -= 1
@@ -1899,14 +1899,12 @@ class Game:
                 # One basic land instead of the larger discard (Thirst for Discovery); for an
                 # AI that is nearly always the cheaper option.
                 card = max(basics, key=lambda c: sum(c.name == x.name for x in who.hand))
-                who.hand.remove(card)
-                who.graveyard.append(card)
+                self.discard_card(who, card)
                 self.log(f"discards {card.name}", who)
             who.discarded_last = []
             for _ in range(0 if basics else min(eff.amount, len(who.hand))):
                 card = who.ai.choose_discard(self, who)
-                who.hand.remove(card)
-                who.graveyard.append(card)
+                self.discard_card(who, card)
                 who.discarded_last.append(card)
                 self.log(f"discards {card.name}", who)
         elif k == "discard_choice":
@@ -1917,8 +1915,7 @@ class Game:
                     if card not in legal:
                         card = max(legal, key=lambda c: c.cmc, default=None)
                 if card is not None:
-                    target.hand.remove(card)
-                    target.graveyard.append(card)
+                    self.discard_card(target, card)
                     self.log(f"makes {target} discard {card.name}", p)
         elif k == "rummage":
             cards = self.hook(p, "choose_rummage")(self, p, eff.amount)
@@ -2024,8 +2021,7 @@ class Game:
             cands = [c for c in p.library if card_matches(c, eff.data["desc"])]
             if p.hand and cands:
                 card = p.ai.choose_discard(self, p)
-                p.hand.remove(card)
-                p.graveyard.append(card)
+                self.discard_card(p, card)
                 found = choose_tutor(self, p, cands)
                 p.library.remove(found)
                 p.hand.append(found)
@@ -2058,6 +2054,29 @@ class Game:
                 perm = self.enter_battlefield(p, ench)
                 perm.front = card
                 self.log(f"returns {card.name} as an enchantment", p)
+        elif k == "empower":
+            jace = next((x for x in p.battlefield if x.is_planeswalker and x.card.is_token and "Jace" in x.card.subtypes),
+                        None)
+            if jace is not None:
+                jace.counters["loyalty"] = jace.loyalty + eff.amount
+            else:
+                self.enter_battlefield(p, jace_token(eff.amount))
+            self.log(f"empowers Jace by {eff.amount}", p)
+        elif k == "discover":
+            skipped = []
+            found = None
+            while p.library:
+                c = p.library.pop()
+                if not c.is_land and c.cmc <= eff.amount:
+                    found = c
+                    break
+                skipped.append(c)
+            self.rng.shuffle(skipped)
+            p.library[0:0] = skipped
+            if found is not None:
+                self.log(f"discovers {found.name}", p)
+                if not self.cast_free(p, found):
+                    self.log(f"puts {found.name} into their hand", p)
         elif k == "land_swap":
             lands = [x for x in opp.battlefield if x.card.is_land and not is_basic_land(x.card) and self.targetable(x, p)]
             if lands:
@@ -2305,8 +2324,7 @@ class Game:
             elif eff.data.get("discard"):
                 if payer.hand and self.hook(payer, "pay_unless")(self, payer, 0, target):
                     card = payer.ai.choose_discard(self, payer)
-                    payer.hand.remove(card)
-                    payer.graveyard.append(card)
+                    self.discard_card(payer, card)
                     self.log(f"discards {card.name} for ward", payer)
                     return
             else:
@@ -2411,6 +2429,34 @@ class Game:
                 if trig.event == "sacrifice" and card_matches(perm.card, trig.filter):
                     self.queue_trigger(p, trig.effects, other, other.card.name)
         self.dies(perm) if perm.is_creature else self.leave_battlefield(perm, "graveyard")
+
+    def discard_card(self, p: Player, card: CardDef):
+        p.hand.remove(card)
+        p.graveyard.append(card)
+        p.discarded_cards.append(card)
+
+    def cast_free(self, p: Player, card: CardDef) -> bool:
+        """Cast card without paying its mana cost (Discover); it stays in hand if it can't be cast."""
+        p.hand.append(card)
+        return self.cast(p, self._variant(card, "free", AltCost("free", {"generic": 0})))
+
+    def sneak(self, p: Player, card: CardDef, alt: AltCost, attacker: Permanent) -> bool:
+        """Sneak: pay the sneak cost and return an unblocked attacker; the creature enters tapped and attacking."""
+        target = self.attack_targets.get(attacker, self.opponent(p))
+        if self.pay(p, alt.cost, spell=card) is None:
+            return False
+        self.leave_battlefield(attacker, "hand")
+        self.log(f"sneaks in {card.name}, returning {attacker.card.name}", p)
+        p.hand.remove(card)
+        if card.is_creature:
+            perm = self.enter_battlefield(p, card, tapped_attacking=True)
+            self.attackers.append(perm)
+            self.attack_targets[perm] = target
+            self.settle()
+        else:
+            p.hand.append(card)
+            self.cast(p, self._variant(card, "sneak", AltCost("sneak", {"generic": 0})))
+        return True
 
     def _etb_cond(self, p: Player, cond: str) -> bool:
         if cond == "opp_lost_life":
@@ -2519,6 +2565,7 @@ class Game:
         p.ai.after_blocks(self, p, attackers, blocks)
         if self.over:
             return
+        self.hook(p, "sneak")(self, p, attackers, blocks)
         self.run_priority(until_empty_stack=False)
         if self.over:
             return
@@ -3186,7 +3233,26 @@ def use_abilities(game: Game, me: Player):
                 game.foretell(me, card)
 
 
+def default_sneak(game: Game, me: Player, attackers, blocks):
+    """Sneak a creature in for its sneak cost when it beats the cheapest unblocked attacker it would return."""
+    loose = sorted((a for a in attackers if a in me.battlefield and a not in blocks), key=perm_value)
+    if not loose:
+        return
+    for card in sorted(me.hand, key=lambda c: -c.cmc):
+        alt = next((a for a in card.alt_costs if a.kind == "sneak"), None)
+        if alt is None or not game.can_pay(me, alt.cost):
+            continue
+        weakest = loose[0]
+        if card.is_creature:
+            worth = (card.power or 0) > weakest.power and card.cmc > weakest.card.cmc
+        else:
+            worth = weakest.card.is_token or weakest.card.cmc <= 2
+        if worth and game.sneak(me, card, alt, weakest):
+            return
+
+
 DEFAULTS = {
+    "sneak": default_sneak,
     "respond": respond, "choose_target": choose_target, "choose_modes": default_choose_modes,
     "scry": scry, "choose_dig": choose_dig, "pay_unless": pay_unless, "pay_optional": pay_optional,
     "pay_shock": pay_shock, "choose_discard_from": choose_discard_from, "choose_rummage": choose_rummage,

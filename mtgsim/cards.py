@@ -428,6 +428,8 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("draw", 1, cond="opp_lost_life")),
     (r"target player discards a card", lambda m: Effect("discard", 1, target="player")),
     (r"each opponent discards a card", lambda m: Effect("discard", 1, target="player")),
+    (r"empower jace (\d+)", lambda m: Effect("empower", int(m[1]))),
+    (r"discover (\d+)", lambda m: Effect("discover", int(m[1]))),
     (r"STUNLANDSWAP", lambda m: Effect("land_swap")),
     (r"(\w+) and (\w+)s you control gain (indestructible|hexproof|vigilance|trample|haste|lifelink|first strike|deathtouch) "
      r"until end of turn",
@@ -1184,6 +1186,10 @@ def _parse_face(data: dict) -> CardDef:
             alt_costs.append(AltCost(kind, parse_mana_cost(m[2]),
                                      zone={"flashback": "graveyard", "foretell": "foretold"}.get(kind, "hand")))
             continue
+        m = re.fullmatch(r"(Mayhem|Sneak) (\{[^ ]+\})", line)
+        if m:
+            alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2]), zone="graveyard" if m[1] == "Mayhem" else "hand"))
+            continue
         m = re.fullmatch(r"Blitz—(\{[^,]+\}), Pay (\d+) life\.", line)
         if m:
             alt_costs.append(AltCost("blitz", parse_mana_cost(m[1]), zone="hand", life=int(m[2])))
@@ -1544,3 +1550,16 @@ from . import auras as _auras, copies as _copies, removal as _removal, search as
 
 _EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS
 _SUBS += _copies.SUBS + _counting.SUBS
+
+
+_JACE = None
+
+
+def jace_token(loyalty: int) -> CardDef:
+    """The blue Jace planeswalker token that Empower creates."""
+    global _JACE
+    if _JACE is None:
+        _JACE = card_from_scryfall({"name": "Jace", "mana_cost": "", "cmc": 0, "type_line": "Planeswalker — Jace",
+                                    "oracle_text": "\u22121: Surveil 1.\n\u22123: Draw a card.", "loyalty": "0"})
+        _JACE = dataclasses.replace(_JACE, is_token=True)
+    return dataclasses.replace(_JACE, loyalty=loyalty)
