@@ -180,6 +180,7 @@ class CardDef:
     cost_discount: tuple = ()                           # ((filter, n), ...): "Red spells you cast cost {1} less"
     opp_no_cast: bool = False                           # "Your opponents can't cast spells during your turn."
     pt_if: tuple = ()                                   # ((condition, power, toughness), ...) conditional pump
+    host_triggers: list = field(default_factory=list)   # Role tokens: triggers of the enchanted creature
     mana_filter: str = ""                               # "tap": {1},{T}: add any colour; "once": {1}: add .... once each turn
     mana_tap_other: str = ""                            # "creature"/"permanent": also tap an untapped one as a cost
     mana_sac: bool = False                              # "{T}, Sacrifice ~: Add one mana of any color."
@@ -430,6 +431,13 @@ _EFFECT_PATTERNS = [
     (r"each opponent discards a card", lambda m: Effect("discard", 1, target="player")),
     (r"empower jace (\d+)", lambda m: Effect("empower", int(m[1]))),
     (r"discover (\d+)", lambda m: Effect("discover", int(m[1]))),
+    (r"(?:~|it|he|she) connives", lambda m: Effect("connive", target="prev")),
+    (r"(?:up to one )?target creature you control connives", lambda m: Effect("connive", target="creature_mine")),
+    (r"create an? (royal|monster|wicked|cursed|sorcerer|young hero|virtuous) role token attached to "
+     r"(it|that creature|(?:up to one )?(?:another |other )?target creature you control|target creature an opponent controls)",
+     lambda m: Effect("role", target="prev" if m[2] in ("it", "that creature") else
+                      "creature" if "opponent" in m[2] else "creature_mine",
+                      filter="opp" if "opponent" in m[2] else "", data={"role": m[1].lower()})),
     (r"STUNLANDSWAP", lambda m: Effect("land_swap")),
     (r"(\w+) and (\w+)s you control gain (indestructible|hexproof|vigilance|trample|haste|lifelink|first strike|deathtouch) "
      r"until end of turn",
@@ -1586,3 +1594,23 @@ def jace_token(loyalty: int) -> CardDef:
                                     "oracle_text": "\u22121: Surveil 1.\n\u22123: Draw a card.", "loyalty": "0"})
         _JACE = dataclasses.replace(_JACE, is_token=True)
     return dataclasses.replace(_JACE, loyalty=loyalty)
+
+
+_ROLES = {
+    "royal": dict(equip_bonus=(1, 1), equip_ward=1),
+    "monster": dict(equip_bonus=(1, 1), equip_keywords=frozenset({"trample"})),
+    "wicked": dict(equip_bonus=(1, 1)),
+    "cursed": dict(aura_flags=frozenset({"base_1_1"}), aura_hostile=True),
+    "sorcerer": dict(host_triggers=[Trigger("attacks", [Effect("scry", 1)])]),
+    "young hero": dict(host_triggers=[Trigger("attacks", [Effect("add_counter", 1, target="self", cond="host_toughness<=3",
+                                                                    data={"counter": "+1/+1"})])]),
+    "virtuous": dict(),
+}
+
+
+def role_token(role: str) -> CardDef:
+    """A Role token: an Aura that gives the enchanted creature a bonus (Royal, Monster, Wicked, Cursed, ...)."""
+    spec = dict(_ROLES[role])
+    triggers = [Trigger("leaves", [Effect("drain", 1, target="each_opponent")])] if role == "wicked" else []
+    return CardDef(name=f"{role.title()} Role", mana_cost={"generic": 0}, cmc=0, types=frozenset({"Enchantment"}),
+                   subtypes=frozenset({"Aura", "Role"}), is_token=True, aura="creature", triggers=triggers, **spec)
