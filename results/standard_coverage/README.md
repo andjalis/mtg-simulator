@@ -289,3 +289,12 @@ ability (trigger abilities that target are not counted yet). Opus compares the m
 (five or more) and supports both the "also" and "instead" forms. Repartee needs a creature among the spell's targets.
 Eerie fires when an enchantment enters (Room unlocking does not exist in the engine). Fully supported cards
 1,219 → 1,246.
+
+## Roles, Connive and follow-up bites
+
+Role tokens are Auras on the creature (Royal +1/+1 and ward 1, Monster +1/+1 trample, Wicked +1/+1 and drains when it
+leaves, Cursed base 1/1, Sorcerer scry on attack, Young Hero counter on attack at toughness 3 or less; a new Role
+replaces the old one). Connive draws, discards (the AI's choice) and adds a +1/+1 counter for a nonland discard.
+"It deals damage equal to its power to ..." and "it fights ..." after a first target, and bite spells that can hit a
+planeswalker. Not yet: Virtuous Role, bites at two targets, "if it would die, exile it instead". Fully supported cards
+1,246 → 1,281.
