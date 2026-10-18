@@ -325,6 +325,65 @@ body:has(.trial-page) .brand b { letter-spacing: .02em; font-family: var(--body)
 .climb .xp > i { position: absolute; inset: 0 auto 0 0; width: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--rc) 60%, #7060bc), var(--rc)); border-radius: inherit; transition: width .7s cubic-bezier(.22,1,.36,1), background .3s; }
 .climb .sub { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .climb .live { margin-top: 7px; font-size: 11px; color: var(--ink-2); overflow-wrap: anywhere; }
+.climb.pool-focus { display: block; padding: 20px !important; }
+.climb.analysis-focus { display: block; padding: 24px !important; }
+.arena > [hidden] { display: none !important; }
+.analysis-focus h3 { margin: 16px 0; font-size: 26px; letter-spacing: -.03em; }
+.analysis-focus p { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.analysis-remaining { display: block; margin: 24px 0; font: 600 21px var(--mono); color: var(--gold); }
+.pool-focus-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.follow-pool { border: 1px solid var(--line); border-radius: 7px; background: transparent; color: var(--ink-2); padding: 8px 10px; font: 11px var(--body); cursor: pointer; }
+.pool-focus-hero { display: flex; align-items: center; gap: 20px; margin: 18px 0; }
+.pool-emblem { flex: none; width: 66px; height: 78px; display: grid; place-items: center; }
+.pool-emblem .emblem { width: 100%; height: 100%; filter: drop-shadow(0 4px 14px color-mix(in srgb, var(--rc) 20%, transparent)); }
+.pool-focus h3 { font-size: clamp(24px, 2.5vw, 34px); font-weight: 650; letter-spacing: -.03em; margin: 4px 0; line-height: 1.2; }
+.pool-state { font: 9px var(--mono); letter-spacing: .1em; color: var(--rc); }
+.pool-focus[data-state=live] .pool-state::before { content: '● '; animation: status-breathe 2s ease-in-out infinite; }
+.pool-summary { font-size: 11px; color: var(--muted); margin: 7px 0 0; line-height: 1.6; }
+.pool-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); padding-top: 14px; gap: 12px; }
+.pool-stats span { display: block; font-size: 8px; color: var(--muted); letter-spacing: .06em; }
+.pool-stats b { font: 600 20px/1.9 var(--mono); color: var(--ink); }
+.pool-score-meter { height: 5px; position: relative; background: #ffffff12; border-radius: 3px; margin-top: 9px; }
+.pool-score-meter i { display: block; height: 100%; background: var(--rc); border-radius: inherit; transition: width .5s; }
+.pool-score-meter > span { position: absolute; top: -3px; width: 2px; height: 11px; background: var(--ink); }
+.pool-target { color: var(--muted); font-size: 10px; margin: 9px 0 16px; }
+.pool-roster { display: grid; gap: 7px; max-height: 240px; overflow-y: auto; scrollbar-width: thin; }
+.opponent-card { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 12px; padding: 11px 12px 14px; width: 100%; text-align: left; border: 1px solid var(--line); border-radius: 8px; background: #0b101c; color: var(--ink-2); cursor: pointer; overflow: hidden; }
+.opponent-card:hover { border-color: var(--rc); }
+.opponent-card[aria-pressed=true] { border-color: var(--rc); background: color-mix(in srgb, var(--rc) 10%, #0b101c); }
+.opponent-name { font: 500 11px var(--body); overflow-wrap: anywhere; }
+.opponent-status { grid-column: 1; font: 9px var(--mono); color: var(--muted); }
+.opponent-card b { grid-column: 2; grid-row: 1 / 3; font: 600 14px var(--mono); }
+.opponent-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: #ffffff06; }
+.opponent-progress i { display: block; height: 100%; background: var(--rc); transition: width .5s; }
+.opponent-focus { border-top: 1px solid var(--line); margin-top: 15px; padding-top: 13px; }
+.opponent-focus-title { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.opponent-focus-title > span { color: var(--muted); font: 8px var(--mono); }
+.opponent-focus-title b { color: var(--ink-2); font: 500 11px var(--body); overflow-wrap: anywhere; }
+.match-record { display: flex; gap: 24px; margin-top: 10px; font: 600 22px var(--mono); }
+.match-record small { font: 10px var(--body); color: var(--muted); }
+.match-record .won { color: var(--good); } .match-record .lost { color: var(--bad); }
+.opponent-focus p { color: var(--muted); font: 10px var(--body); margin: 8px 0 0; }
+.track .node { border: 0; background: transparent; cursor: pointer; font-family: var(--body); border-radius: 8px; }
+.track .node.selected { background: #b6a2ff0b; box-shadow: inset 0 0 0 1px #b6a2ff44; }
+.track .node:hover { background: #b6a2ff10; }
+.pool-enter { animation: pool-enter .4s ease-out; }
+.batch-flash { animation: batch-flash .8s ease-out; }
+@media (min-width: 1100px) {
+  #arenaScreen .arena { grid-template-rows: auto minmax(0, 1fr) auto; }
+  #arenaScreen .pool-focus ~ .ticker .rows { max-height: 300px; }
+}
+@keyframes pool-enter { from { opacity: .35; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes batch-flash { from { background-color: #b6a2ff28; } }
+@media (max-width: 600px) {
+  .climb.pool-focus { padding: 16px !important; }
+  .pool-focus-hero { gap: 14px; }
+  .pool-emblem { width: 46px; height: 56px; }
+  .pool-focus h3 { font-size: 24px; }
+  .pool-stats b { font-size: 17px; }
+  .follow-pool { min-height: 44px; }
+  .match-record { gap: 14px; font-size: 19px; }
+}
 .climb .banner { position: absolute; left: 0; right: 0; bottom: 0; min-height: 27px; opacity: 0; pointer-events: none; text-align: center; padding: 6px 12px; font-size: 10px; font-weight: 650; letter-spacing: .09em; text-transform: uppercase; color: var(--rc); background: color-mix(in srgb, var(--rc) 10%, #131827); border-top: 1px solid color-mix(in srgb, var(--rc) 15%, transparent); }
 .climb .banner.down { color: var(--bad); }
 .climb .banner.show { animation: notice 2.8s cubic-bezier(.22,1,.36,1) both; }

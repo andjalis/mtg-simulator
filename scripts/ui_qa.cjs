@@ -13,6 +13,97 @@ const artifacts = process.env.UI_ARTIFACTS || '/tmp/mtgsim-ui-artifacts';
   await fs.mkdir(artifacts, {recursive: true});
   const browser = await chromium.launch({executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium', headless: true});
   try {
+    // Deterministic transport fixtures exercise pool inspection without submitting a trial.
+    const poolContext = await browser.newContext({viewport: {width: 1440, height: 1000}, reducedMotion: 'reduce'});
+    await poolContext.addInitScript(() => sessionStorage.setItem('mtgsim.trial', 'pool-focus-qa'));
+    const poolPage = await poolContext.newPage(), poolErrors = [];
+    poolPage.on('pageerror', e => poolErrors.push(e.message));
+    const data = {deck: 'Pool close-up QA', status: 'running', ladder: true, rank: 'Silver', rank_color: '#aaa',
+      mmr: 1067, peak: 1146, games: 70, to_next: 133, history: [[0, 1000], [70, 1067]], current: null,
+      ranks: [{name: 'Bronze', floor: 0}, {name: 'Silver', floor: 1000}, {name: 'Gold', floor: 1200}],
+      pools: [{key: 'bronze', label: 'Bronze', done: true, cleared: true, rate: .7},
+        {key: 'silver', label: 'Silver', done: true, cleared: true, rate: .6},
+        {key: 'gold', label: 'Gold', done: false}, {key: 'platinum', label: 'Platinum', done: false}],
+      opponents: [{name: 'bronze/a', pool: 'bronze', games: 20, total: 20, wins: 14, draws: 0, win_rate: .7},
+        {name: 'silver/a', pool: 'silver', games: 20, total: 20, wins: 12, draws: 0, win_rate: .6},
+        {name: 'gold/pressure', pool: 'gold', games: 10, total: 100, wins: 8, draws: 0, win_rate: .8},
+        {name: 'gold/control', pool: 'gold', games: 20, total: 20, wins: 18, draws: 0, win_rate: .9},
+        {name: 'platinum/a', pool: 'platinum', games: 0, total: 100, wins: 0, draws: 0, win_rate: null}]};
+    const snapshot = {status: 'running', deck: data.deck, rank: {data, html: ''}, where: 'device',
+      done: 70, total: 300, current: 'Gold', tiers: [], pass_rate: .5, games_per_opponent: 100};
+    let handoffs = 0;
+    await poolPage.route('**/api/runs/pool-focus-qa/device', r => {
+      assert.deepEqual(r.request().postDataJSON(), {release: true});
+      handoffs++;
+      return r.fulfill({json: {active: false, tasks: []}});
+    });
+    await poolPage.route('**/api/runs/pool-focus-qa', r => r.fulfill({json: snapshot}));
+    await poolPage.goto(base + '/?run=server', {waitUntil: 'domcontentloaded'});
+    await poolPage.locator('#poolFocusTitle').filter({hasText: 'Gold opponents'}).waitFor();
+    await poolPage.waitForFunction(() => document.title.includes('pool-focus-qa'));
+    await poolPage.waitForTimeout(50);
+    assert.equal(handoffs, 1, 'reload hands abandoned browser work to server');
+    assert.equal(await poolPage.locator('.pool-score').innerText(), '85.0%');
+    assert.equal(await poolPage.locator('.pool-count').innerText(), '1 / 2');
+    assert(!(await poolPage.locator('#climb').innerText()).includes('MMR'), 'close-up follows Gold opponents despite Silver MMR');
+    await poolPage.getByRole('button', {name: 'Inspect Bronze opponent pool'}).click();
+    assert.equal(await poolPage.locator('#poolFocusTitle').innerText(), 'Bronze opponents');
+    assert.equal(await poolPage.locator('.pool-score').innerText(), '70.0%');
+    assert.equal(await poolPage.locator('#track .node.current .nm').innerText(), 'Gold');
+    await poolPage.locator('.follow-pool').click();
+    const control = poolPage.getByRole('button', {name: /control.*Finished/});
+    await control.focus(); await poolPage.keyboard.press('Space');
+    assert.match(await poolPage.locator('.opponent-focus').innerText(), /18 wins/);
+    await poolPage.evaluate(s => {
+      const o = s.rank.data.opponents.find(o => o.name === 'gold/pressure');
+      Object.assign(o, {games: 20, wins: 15, win_rate: .75});
+      s.rank.data.games += 10; s.done += 10; render(s);
+    }, snapshot);
+    assert(await control.evaluate(e => e === document.activeElement), 'updates preserve keyboard focus');
+    assert.match(await poolPage.locator('.opponent-focus').innerText(), /18 wins/);
+    await poolPage.getByRole('button', {name: 'Inspect Platinum opponent pool'}).click();
+    assert.equal(await poolPage.locator('.pool-state').innerText(), 'UPCOMING POOL');
+    assert.equal(await poolPage.locator('.pool-score').innerText(), '–');
+    await poolPage.locator('.follow-pool').click();
+    await poolPage.screenshot({path: artifacts + '/pool-closeup-desktop.png', fullPage: true});
+    for (const width of [320, 390, 768]) {
+      await poolPage.setViewportSize({width, height: 900});
+      assert(await poolPage.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'close-up fits viewport ' + width);
+      assert((await poolPage.locator('.opponent-card').first().boundingBox()).height >= 44);
+      await poolPage.screenshot({path: artifacts + '/pool-closeup-' + width + '.png', fullPage: true});
+    }
+    data.pools.find(p => p.key === 'gold').done = true;
+    snapshot.current = 'Platinum';
+    await poolPage.evaluate(s => render(s), snapshot);
+    assert.equal(await poolPage.locator('#poolFocusTitle').innerText(), 'Platinum opponents');
+    await poolPage.getByRole('button', {name: 'Inspect Gold opponent pool'}).click();
+    assert.equal(await poolPage.locator('#poolFocusTitle').innerText(), 'Gold opponents');
+    assert.equal(await poolPage.locator('#track .node.current .nm').innerText(), 'Platinum');
+    await poolPage.locator('.follow-pool').click();
+    snapshot.current = 'the meta field';
+    snapshot.done = 230; snapshot.total = 300;
+    await poolPage.evaluate(s => render(s), snapshot);
+    assert(await poolPage.locator('#analysisFocus').isVisible());
+    assert(await poolPage.locator('#climb').isHidden());
+    assert.match(await poolPage.locator('.analysis-remaining').innerText(), /70 matchup games remaining/);
+    assert.equal(await poolPage.locator('#track .node.current').count(), 0, 'grading must not mark the next pool live');
+    await poolPage.getByRole('button', {name: 'Inspect Gold opponent pool'}).click();
+    assert(await poolPage.locator('#climb').isVisible());
+    await poolPage.getByRole('button', {name: 'Back to analysis'}).click();
+    assert(await poolPage.locator('#analysisFocus').isVisible());
+    snapshot.current = 'goldfish games and sample hands';
+    await poolPage.evaluate(s => render(s), snapshot);
+    assert.match(await poolPage.locator('#analysisFocusTitle').innerText(), /hands and speed/);
+    snapshot.status = data.status = 'done';
+    data.pools.forEach(p => p.done = true);
+    await poolPage.evaluate(s => { render(s); finishTrial(s); }, snapshot);
+    assert(await poolPage.locator('#resultsScreen').isVisible());
+    await poolPage.locator('#reviewArena').click();
+    assert.equal(await poolPage.locator('.pool-state').innerText(), 'POOL COMPLETE');
+    assert.deepEqual(poolErrors, []);
+    await poolContext.close();
+    console.log('PASS: pool close-up, map selection, follow live, keyboard inspection, batch updates, mobile');
+    if (process.env.UI_POOL_ONLY === '1') return;
     const context = await browser.newContext({viewport: {width: 1440, height: 1000}});
     const page = await context.newPage();
     const errors = [];

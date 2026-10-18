@@ -8,6 +8,7 @@ GET  /api/tiers        tiers and their decks
 POST /api/check        {"deck": text}                       -> card counts, unknown and partial cards
 POST /api/run          {"deck", "name", "ladder", "tiers", "games", "full", "seed", "grade", "where"} -> {"id"}
 GET  /api/runs/<id>    progress and results so far
+GET  /api/runs         trial IDs and concise progress summaries
 POST /api/runs/<id>/device  {"want", "cards", "results", "release"} -> chunks for the page to play
 GET  /engine/mtgsim.zip     the engine's Python source, for the page's Web Workers (Pyodide)
 GET  /leaderboard      every tested deck ranked by MMR (JSON at /api/leaderboard)
@@ -165,6 +166,13 @@ class App:
             out["cards"] = sim.card_data(entry["run"].decks())
         return out
 
+    def run_list(self) -> list[dict]:
+        return [{"id": rid, "status": entry["status"], "error": entry["error"],
+                 "deck": entry["run"].deck_name, "done": entry["run"].done,
+                 "total": entry["run"].total, "current": entry["run"].current,
+                 "where": entry["run"].where}
+                for rid, entry in list(self.runs.items())]
+
     def status(self, rid: str) -> dict | None:
         entry = self.runs.get(rid)
         if not entry:
@@ -245,6 +253,8 @@ def make_handler(app: App):
                 self._send(200, leaderboard.render_page(app.leaderboard()).encode(), "text/html; charset=utf-8")
             elif path.startswith("/leaderboard/"):
                 self._deck_page(*(path.split("/", 3)[2:] + [""])[:2])
+            elif path == "/api/runs":
+                self._send(200, {"runs": app.run_list()})
             elif path.startswith("/api/runs/"):
                 st = app.status(path.rsplit("/", 1)[1])
                 self._send(200, st) if st else self._send(404, {"error": "no such run"})

@@ -55,12 +55,18 @@ function resetArena() {
 }
 function arenaHTML() {
   return `<div class="arena pre" id="arena">
-      <div class="climb" id="climb"><div class="badge"><div class="orbit"></div><div class="spin"></div></div>
-        <div><div class="overline">LIVE RATING</div><div class="rk"></div><div class="mmrv"><span class="n"></span><span class="d"></span></div>
-        <div class="xp" role="progressbar" aria-label="Progress to next rank" aria-valuemin="0" aria-valuemax="100"><i></i></div><div class="sub"></div><div class="live"></div></div>
-        <div class="banner" role="status" aria-live="polite"></div></div>
-      <div class="scoreboard"><div><span>WINS</span><b id="winCount">0</b></div><div><span>LOSSES</span><b id="lossCount">0</b></div><div><span>DRAWS</span><b id="drawCount">0</b></div><div><span>SCORE</span><b id="scoreCount">—</b></div><p class="batch-update" role="status" aria-live="polite">Awaiting the first results</p></div>
-      <div class="track" id="track"><div class="track-heading"><h3>OPPONENT POOLS</h3><span>${Math.round(passRate * 100)}% score to clear</span></div><p class="note compact">The arrow marks the opponents being tested. Your final MMR rank is revealed when the trial finishes.</p><div class="pool-progress" role="status" aria-live="polite"></div><div class="callout" role="status" aria-live="polite"></div><div class="wrap"><div class="lane"><div class="rail"><i></i></div><div class="token"><b></b></div></div></div>
+      <section class="climb pool-focus" id="climb" aria-labelledby="poolFocusTitle">
+        <div class="pool-focus-top"><span class="overline">POOL CLOSE-UP</span><button class="follow-pool" type="button" hidden>Follow live pool →</button></div>
+        <div class="pool-focus-hero"><div class="pool-emblem" aria-hidden="true"></div><div><span class="pool-state"></span><h3 id="poolFocusTitle">Preparing opponents</h3><p class="pool-summary"></p></div></div>
+        <div class="pool-stats"><div><span>POOL SCORE</span><b class="pool-score">—</b></div><div><span>MATCHUPS FINISHED</span><b class="pool-count">0 / 0</b></div><div><span>GAMES PLAYED</span><b class="pool-games">0</b></div></div>
+        <div class="pool-score-meter" role="meter" aria-label="Pool score" aria-valuemin="0" aria-valuemax="100"><i></i><span></span></div>
+        <div class="pool-target"></div>
+        <div class="pool-roster" aria-label="Opponent matchups"></div>
+        <div class="opponent-focus" aria-live="off"></div>
+      </section>
+      <section class="climb analysis-focus" id="analysisFocus" hidden aria-labelledby="analysisFocusTitle"><span class="overline">DECK ANALYSIS</span><h3 id="analysisFocusTitle">Testing meta matchups</h3><p class="analysis-description"></p><b class="analysis-remaining"></b><p class="note">Pool battles have finished. You can still select a pool on the map to review its matchups.</p></section>
+      <div class="scoreboard"><div><span>TRIAL WINS</span><b id="winCount">0</b></div><div><span>TRIAL LOSSES</span><b id="lossCount">0</b></div><div><span>TRIAL DRAWS</span><b id="drawCount">0</b></div><div><span>TRIAL SCORE</span><b id="scoreCount">—</b></div><p class="batch-update" role="status" aria-live="polite">Awaiting the first results</p></div>
+      <div class="track" id="track"><div class="track-heading"><h3>OPPONENT POOLS</h3><span>${Math.round(passRate * 100)}% score to clear</span></div><p class="note compact">The arrow follows the live pool. Select any pool to inspect its matchups above.</p><div class="pool-progress" role="status" aria-live="polite"></div><div class="callout" role="status" aria-live="polite"></div><div class="wrap"><div class="lane"><div class="rail"><i></i></div><div class="token"><b></b></div></div></div>
         <div class="duels" id="duels"></div></div>
       <div class="ticker"><div class="ticker-head"><h3>Battle feed</h3><span><i class="legend-win"></i> Win <i class="legend-loss"></i> Loss <i class="legend-draw"></i> Draw</span></div><div class="rows" id="ticks" aria-live="off"></div><p class="feed-note">Results arrive in batches. Tiles show the latest outcomes, not play order.</p></div>
     </div>`;
@@ -84,6 +90,18 @@ function stamp(key) {  // a rank row's cleared / failed chip lands with a stamp 
 }
 
 function updateArena(s) {
+  A.snapshot = s;
+  A.analysis = s.status === "running" && /meta field|goldfish|sample hands/.test(s.current || "");
+  const analysis = $("#analysisFocus");
+  analysis.hidden = !A.analysis || !!A.focusPool;
+  $("#climb").hidden = A.analysis && !A.focusPool;
+  if (A.analysis) {
+    const sampling = /goldfish|sample hands/.test(s.current || "");
+    analysis.querySelector("h3").textContent = sampling ? "Testing hands and speed" : "Testing meta matchups";
+    analysis.querySelector(".analysis-description").textContent = sampling ? "Matchup games are complete. The deck grades are being calculated."
+      : "Playing the assessment opponents to calculate your deck grades.";
+    analysis.querySelector(".analysis-remaining").textContent = sampling ? "Finishing deck grades…" : `${Math.max(0, s.total - s.done)} matchup games remaining`;
+  }
   if (s.rank) { updateTrack(s); updateClimb(s.rank.data); }
   if (s.assessment && !A.graded) {
     A.graded = true;
@@ -103,7 +121,11 @@ function buildNodes(pools, deck) {
   lane.style.setProperty("--n", Math.max(1, pools.length));
   pools.forEach((p, i) => {
     const r = rankList.find(x => x.key === p.key) || {};
-    const el = document.createElement("div");
+    const el = document.createElement("button");
+    el.type = "button";
+    el.setAttribute("aria-controls", "climb");
+    el.setAttribute("aria-label", `Inspect ${p.label} opponent pool`);
+    el.onclick = () => { A.focusPool = p.key; updateArena(A.snapshot); };
     el.className = "node locked"; el.dataset.key = p.key;
     el.innerHTML = `<span class="node-number">${String(i + 1).padStart(2, "0")}</span>${r.emblem || `<i class="gem rk-${esc(p.key)}"></i>`}<span class="nm">${esc(p.label)}</span><span class="st"></span>`;
     lane.appendChild(el);
@@ -127,7 +149,7 @@ function updateTrack(s) {
   const tr = $("#track"), lane = tr.querySelector(".lane"), tok = lane.querySelector(".token");
   if (!n) return;
   if ([...lane.querySelectorAll(".node")].map(el => el.dataset.key).join() !== pools.map(p => p.key).join()) buildNodes(pools, d.deck);
-  const finished = d.status === "done";
+  const finished = d.status === "done" || A.analysis;
   const odds = p => d.opponents.filter(o => o.pool === p.key);
   let cur = pools.findIndex(p => !p.done), pos;
   // This map always tracks opponent pools. MMR has its own rank badge.
@@ -160,6 +182,9 @@ function updateTrack(s) {
       else if (st === "failed") burst(el, tr, `Stopped at ${p.label}`, true);
       void before;
     }
+    const selected = (A.focusPool || activePool(d, A.analysis)?.key) === p.key;
+    el.classList.toggle("selected", selected);
+    el.setAttribute("aria-pressed", String(selected));
   });
   // the opponents in the league being played (or the last one, once the run is over)
   const focus = cur >= 0 ? pools[cur] : [...pools].reverse().find(p => p.done);
@@ -169,7 +194,7 @@ function updateTrack(s) {
   const completed = focused.filter(o => o.games >= (o.total || gpo)).length;
   tr.querySelector(".pool-progress").textContent = focus
     ? cur >= 0 ? `${focus.label} opponents · ${completed}/${focused.length} matchups finished`
-      : `Trial finished · ${pools.filter(p => p.done).length}/${n} pools tested`
+      : `${A.analysis ? "Pool battles complete" : "Trial finished"} · ${pools.filter(p => p.done).length}/${n} pools tested`
     : "Waiting for the first opponent pool";
   const names = new Set(focused.map(o => o.name));
   for (const [name, el] of Object.entries(A.duels)) if (!names.has(name)) { el.remove(); delete A.duels[name]; }
@@ -210,75 +235,102 @@ function burst(node, tr, text, bad) {
   c.textContent = text; c.classList.toggle("bad", !!bad); replay(c, "show");
 }
 
-function updateClimb(d) {
-  $("#arena").classList.remove("pre");
-  const c = $("#climb"), idx = d.ranks.findIndex(r => r.name === d.rank);
-  const finished = d.status === "done";
-  c.querySelector(".overline").textContent = finished ? "FINAL MMR RANK" : "LIVE RATING";
-  const info = rankList.find(r => r.name === d.rank) || {};
-  const nxt = d.ranks[idx + 1], floor = d.ranks[idx].floor;
-  const pct = nxt ? Math.max(0, Math.min(100, (d.mmr - floor) / (nxt.floor - floor) * 100)) : 100;
-  const bar = c.querySelector(".xp > i");
-  const changed = A.rank !== null && idx !== A.rank;
-  c.style.setProperty("--rc", finished ? d.rank_color : "#b6a2ff");
-  c.querySelector(".spin").innerHTML = finished
-    ? info.emblem || `<i class="gem rk-${esc(d.rank.toLowerCase())}"></i>`
-    : '<span class="mmr-estimate-symbol" aria-hidden="true">≈</span>';
-  c.querySelector(".rk").textContent = finished ? d.rank : "MMR estimate";
-  bar.style.width = pct + "%";
-  c.querySelector(".xp").setAttribute("aria-valuenow", String(Math.round(pct)));
-  c.querySelector(".xp").hidden = !finished;
-  c.querySelector(".xp").setAttribute("aria-valuetext", nxt ? `${d.to_next} MMR to ${nxt.name}` : "Top rank");
-  if (changed) {
-    const up = idx > A.rank;
-    if (!A.quiet) Fx.play(up ? "promote" : "demote");
-    c.classList.remove("up", "down");
-    replay(c, up ? "up" : "down");
-    const b = c.querySelector(".banner");
-    b.textContent = finished ? `Final rating · ${d.rank}` : up ? "MMR estimate increased" : "MMR estimate adjusted";
-    b.classList.toggle("down", !up);
-    replay(b, "show");
-  }
-  A.rank = idx;
-
-  tweenMMR(d.mmr);
-  c.querySelector(".sub").textContent = finished
-    ? `${nxt ? `${d.to_next} MMR to ${nxt.name}` : "Top rank"} · peak ${d.peak} · ${d.games} games`
-    : `${d.games} games · peak ${d.peak} MMR · final rank pending`;
-  const cur = d.current;
-  c.querySelector(".live").textContent = d.status === "running" && cur ? `Now playing ${oppName(cur.opponent)} · ${cur.games}/${cur.total}` : "";
-  if (d.status === "done" && !A.final) {
-    A.final = true;
-    c.classList.add("final");
-    const b = c.querySelector(".banner");
-    later(changed ? 1400 : 0, () => { b.textContent = `Final rank · ${d.rank}`; b.classList.remove("down"); replay(b, "show"); });
-  }
-  updateScore(d);
-  updateTicker(d);
+// The close-up and the map share pool identity; MMR is reserved for final results.
+function activePool(d, analysis = false) {
+  return d.status !== "done" && !analysis && d.pools.find(p => !p.done)
+    || [...d.pools].reverse().find(p => p.done) || d.pools[0];
 }
 
-function tweenMMR(to) {
-  const n = $("#climb .mmrv .n"), dEl = $("#climb .mmrv .d");
-  if (A.mmr === to) return;
-  if (A.frame) cancelAnimationFrame(A.frame);
-  const previous = A.mmr, from = A.displayedMMR ?? to;
-  A.mmr = to;
-  if (previous !== null && previous !== to) {
-    const diff = to - previous;
-    dEl.textContent = (diff > 0 ? "+" : "") + diff;
-    dEl.className = "d " + (diff > 0 ? "pos" : "neg");
-    replay(dEl, "show");
+function poolFocusData(d, requested, gamesPerOpponent = 1, analysis = false) {
+  const live = activePool(d, analysis);
+  const pool = d.pools.find(p => p.key === requested) || live;
+  if (!pool) return null;
+  const opponents = d.opponents.filter(o => o.pool === pool.key).map(o => {
+    const total = o.total || gamesPerOpponent;
+    return {...o, total, finished: pool.done || (o.games > 0 && o.games >= total),
+      losses: o.games - o.wins - o.draws};
+  });
+  const played = opponents.filter(o => o.games > 0);
+  const score = pool.done && pool.rate != null ? pool.rate : played.length
+    ? played.reduce((sum, o) => sum + (o.wins + o.draws * .5) / o.games, 0) / played.length : null;
+  return {pool, live, opponents, score, completed: opponents.filter(o => o.finished).length,
+    games: opponents.reduce((sum, o) => sum + o.games, 0)};
+}
+
+function updateClimb(d) {
+  $("#arena").classList.remove("pre");
+  const panel = $("#climb");
+  const focus = poolFocusData(d, A.focusPool, A.snapshot?.games_per_opponent || 1, A.analysis);
+  if (!focus) return;
+  const {pool, live, opponents, score, completed, games} = focus;
+  const info = rankList.find(r => r.key === pool.key) || {};
+  const changedPool = A.displayedPool !== pool.key;
+  panel.style.setProperty("--rc", info.color || "#b6a2ff");
+  if (changedPool) {
+    panel.querySelector(".pool-emblem").innerHTML = info.emblem || `<i class="gem rk-${esc(pool.key)}"></i>`;
+    panel.querySelector("h3").textContent = `${pool.label} opponents`;
+    panel.querySelector(".pool-roster").replaceChildren();
+    A.focusCards = {};
+    A.focusOpponent = null;
+    A.displayedPool = pool.key;
+    replay(panel.querySelector(".pool-focus-hero"), "pool-enter");
   }
-  if (previous === null || calm.matches) { n.textContent = `${to} MMR`; A.displayedMMR = to; return; }
-  const t0 = performance.now(), run = A;
-  const step = t => {
-    if (A !== run) return;
-    const k = Math.min(1, (t - t0) / 650), e = 1 - Math.pow(1 - k, 4);
-    A.displayedMMR = from + (to - from) * e;
-    n.textContent = `${Math.round(A.displayedMMR)} MMR`;
-    if (k < 1) A.frame = requestAnimationFrame(step);
-  };
-  A.frame = requestAnimationFrame(step);
+  const state = pool.done ? pool.cleared === true ? "POOL CLEARED" : pool.cleared === false ? "POOL NOT CLEARED" : "POOL COMPLETE"
+    : pool.key === live?.key && d.status !== "done" ? "LIVE POOL" : "UPCOMING POOL";
+  panel.querySelector(".pool-state").textContent = state;
+  panel.dataset.state = pool.done ? pool.cleared === false ? "failed" : "done" : pool.key === live?.key ? "live" : "waiting";
+  panel.querySelector(".pool-summary").textContent = pool.done ? "Select a matchup to review its results."
+    : games ? "Results update as batches finish. Select a matchup to follow it." : "Waiting for the first results from these opponents.";
+  panel.querySelector(".pool-score").textContent = pct(score);
+  panel.querySelector(".pool-count").textContent = `${completed} / ${opponents.length}`;
+  panel.querySelector(".pool-games").textContent = games.toLocaleString();
+  const target = A.snapshot?.pass_rate ?? d.pass_rate ?? passRate;
+  const meter = panel.querySelector(".pool-score-meter");
+  meter.firstElementChild.style.width = `${100 * (score ?? 0)}%`;
+  meter.lastElementChild.style.left = `${100 * target}%`;
+  meter.hidden = score == null;
+  meter.setAttribute("aria-valuenow", String(Math.round(100 * (score ?? 0))));
+  panel.querySelector(".pool-target").textContent = `Clear target: ${pct(target)} score · draws count half`;
+  panel.querySelector(".pool-score").title = "Average score across matchups with results. Draws count as half a win.";
+  const follow = panel.querySelector(".follow-pool");
+  follow.hidden = !A.focusPool || (!A.analysis && pool.key === live?.key);
+  follow.textContent = A.analysis ? "Back to analysis →" : d.status === "done" ? "View last pool →" : "Follow live pool →";
+  follow.onclick = () => { A.focusPool = null; updateArena(A.snapshot); };
+
+  for (const o of opponents) {
+    let row = A.focusCards[o.name];
+    if (!row) {
+      row = A.focusCards[o.name] = document.createElement("button");
+      row.type = "button"; row.className = "opponent-card";
+      row.innerHTML = '<span class="opponent-name"></span><span class="opponent-status"></span><b></b><span class="opponent-progress"><i></i></span>';
+      row.querySelector(".opponent-name").textContent = oppName(o.name);
+      row.onclick = () => { A.focusOpponent = o.name; updateClimb(A.snapshot.rank.data); };
+      panel.querySelector(".pool-roster").appendChild(row);
+    }
+    if (row.dataset.games !== undefined && Number(row.dataset.games) !== o.games) replay(row, "batch-flash");
+    row.dataset.games = String(o.games);
+    row.querySelector(".opponent-status").textContent = o.finished ? `Finished · ${o.games} games` : o.games ? `Playing · ${o.games}/${o.total}` : "Waiting";
+    row.querySelector("b").textContent = o.games ? pct((o.wins + o.draws * .5) / o.games) : "—";
+    row.querySelector(".opponent-progress i").style.width = `${o.finished ? 100 : Math.min(100, o.games / o.total * 100)}%`;
+  }
+  if (!opponents.some(o => o.name === A.focusOpponent)) {
+    A.focusOpponent = opponents.find(o => o.games && !o.finished)?.name || opponents.find(o => o.games)?.name || opponents[0]?.name;
+  }
+  const selected = opponents.find(o => o.name === A.focusOpponent);
+  for (const o of opponents) A.focusCards[o.name].setAttribute("aria-pressed", String(o === selected));
+  const detail = panel.querySelector(".opponent-focus");
+  if (selected) {
+    const signature = JSON.stringify([selected.name, selected.games, selected.wins, selected.draws, selected.finished]);
+    if (A.focusSignature !== signature) {
+      A.focusSignature = signature;
+      detail.innerHTML = `<div class="opponent-focus-title"><span>FOLLOWING MATCHUP</span><b>${esc(oppName(selected.name))}</b></div>
+        <div class="match-record"><span class="won">${selected.wins} <small>wins</small></span><span class="lost">${selected.losses} <small>losses</small></span><span>${selected.draws} <small>draws</small></span></div>
+        <p>${selected.finished ? "Matchup finished" : selected.games ? "More results on the way" : "This matchup has not started"} · ${selected.games}/${selected.total} games</p>`;
+      replay(detail, "arrive");
+    }
+  } else detail.replaceChildren();
+  updateScore(d);
+  updateTicker(d);
 }
 
 function updateScore(d) {

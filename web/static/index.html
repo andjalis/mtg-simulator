@@ -248,7 +248,9 @@ function showScreen(screen) {
   replay($("#" + screen + "Screen"), "screen-enter");
   $(titles[screen]).focus({preventScroll: true});
   window.scrollTo({top: 0, behavior: "instant"});
-  document.title = screen.charAt(0).toUpperCase() + screen.slice(1) + " · MTG Simulator";
+  let trialId = "";
+  try { trialId = sessionStorage.getItem("mtgsim.trial") || ""; } catch (e) {}
+  document.title = screen.charAt(0).toUpperCase() + screen.slice(1) + " · MTG Simulator" + (trialId ? " · " + trialId : "");
 }
 $("#configure").onclick = $("#nextTrial").onclick = () => showScreen("loadout");
 $("#reviewArena").onclick = () => showScreen("arena");
@@ -359,7 +361,12 @@ async function restoreTrial() {
     showScreen("arena");
     render(s);
     if (s.status === "queued" || s.status === "running") {
-      if (s.where === "device") { startDevice(); runOnDevice(id); }
+      if (s.where === "device") {
+        // A reload destroyed the old workers, including their claimed batches.
+        // Preserve their futures by moving all unfinished work to the server;
+        // new heartbeats alone would keep those abandoned claims alive forever.
+        await api(`/api/runs/${id}/device`, {release: true});
+      }
       poll(id);
     } else finishTrial(s);
   } catch (e) {

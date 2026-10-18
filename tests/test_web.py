@@ -176,6 +176,21 @@ class WebServerTests(unittest.TestCase):
         self.assertEqual(self.call("/api/runs/nope/device", {})[0], 404)
         self.assertEqual(self.call("/api/run", {"deck": BURN, "games": 4, "where": "moon"})[0], 400)
 
+    def test_runs_can_be_found_without_browser_console(self):
+        with patch("web.server.threading.Thread"):
+            rid = self.app.start({"deck": BURN, "name": "inspect QA", "tiers": ["bronze"],
+                                  "games": 2, "grade": False, "where": "server"})
+        try:
+            code, body = self.call("/api/runs")
+            self.assertEqual(code, 200)
+            row = next(r for r in json.loads(body)["runs"] if r["id"] == rid)
+            self.assertEqual(row["deck"], "inspect QA")
+            self.assertEqual(row["status"], "queued")
+            self.assertEqual(row["done"], 0)
+            self.assertNotIn("rank", row)
+        finally:
+            del self.app.runs[rid]
+
 
     def test_malformed_request_values(self):
         for path in ("/api/check", "/api/run"):

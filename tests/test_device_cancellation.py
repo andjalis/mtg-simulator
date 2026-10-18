@@ -8,6 +8,24 @@ from web import sim
 
 
 class DeviceCancellationTests(unittest.TestCase):
+    def test_reconnect_handoff_recovers_work_claimed_by_old_browser(self):
+        with ThreadPoolExecutor(1) as server:
+            pool = sim.DevicePool(server, stall=0.1)
+            try:
+                future = pool.submit(sim._play_chunk, {"Mountain": 60}, {"Mountain": 60}, 2, 1)
+                self.assertEqual(len(pool.take(1)), 1)
+                # A new page can keep polling without owning the old page's work.
+                deadline = time.monotonic() + 0.25
+                while time.monotonic() < deadline:
+                    self.assertEqual(pool.take(0), [])
+                    time.sleep(0.02)
+                self.assertFalse(future.done())
+                self.assertFalse(pool.on_server)
+                pool.release()  # the reconnect handler must explicitly hand it off
+                self.assertEqual(future.result(timeout=5)["games"], 2)
+            finally:
+                pool.close()
+
     def test_cancelled_browser_future_notifies_completion_waiters(self):
         with ThreadPoolExecutor(1) as server:
             pool = sim.DevicePool(server, stall=60)
