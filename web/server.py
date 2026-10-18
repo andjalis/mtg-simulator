@@ -131,8 +131,8 @@ class App:
         entry["status"] = "running"
         try:
             entry["run"].execute(pool)
-            entry["status"] = "done"
             entry["finished"] = time.time()
+            entry["status"] = "done"
         except Exception as e:  # report to the page rather than dying silently
             traceback.print_exc()
             entry["status"], entry["error"] = "error", f"{type(e).__name__}: {e}"
@@ -146,11 +146,21 @@ class App:
         pool = entry["pool"]
         if not isinstance(pool, sim.DevicePool):
             return {"active": False, "tasks": []}
-        for r in body.get("results") or []:
-            pool.finish(int(r["id"]), r)
+        results = body.get("results", [])
+        if not isinstance(results, list) or any(not isinstance(r, dict) or type(r.get("id")) is not int
+                                               or r["id"] < 0 for r in results):
+            raise ValueError("results must be a list of chunks with nonnegative integer ids")
+        want = body.get("want", 0)
+        if type(want) is not int or not 0 <= want <= 64:
+            raise ValueError("want must be an integer between 0 and 64")
+        for key in ("release", "cards"):
+            if key in body and not isinstance(body[key], bool):
+                raise ValueError(f"{key} must be a boolean")
+        for r in results:
+            pool.finish(r["id"], r)
         if body.get("release"):
             pool.release()
-        out = {"active": pool.active, "tasks": pool.take(max(0, min(64, int(body.get("want") or 0))))}
+        out = {"active": pool.active, "tasks": pool.take(want)}
         if body.get("cards"):
             out["cards"] = sim.card_data(entry["run"].decks())
         return out

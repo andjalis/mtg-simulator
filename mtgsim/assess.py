@@ -141,9 +141,12 @@ def assess_meta(name: str, archetypes: list[Archetype], results: dict[str, tuple
     points = sum(results[a.key][0] for a in played)
     games = sum(results[a.key][1] for a in played)
     lo, hi = wilson(points, games)
-    # spread of the weighted rate: each matchup's binomial variance, weighted
-    var = sum((a.weight / w_total) ** 2 * (r := results[a.key][0] / results[a.key][1]) * (1 - r) / results[a.key][1]
-              for a in played)
+    # Simultaneous Wilson bounds avoid zero uncertainty for unanimous small samples.
+    # Bonferroni adjusts for multiple matchups; Wilson coverage is approximate,
+    # particularly when draws contribute fractional points.
+    z = statistics.NormalDist().inv_cdf(1 - 0.05 / (2 * len(played))) if played else 1.96
+    weighted_ci = [sum(a.weight / w_total * wilson(*results[a.key], z=z)[end] for a in played)
+                   for end in (0, 1)] if played else [0.0, 1.0]
     rank, nxt = rank_for(mmr), next_rank(mmr)
     rating = {"mmr": round(mmr), "rank": rank.name, "rank_color": rank.color,
               "next_rank": nxt.name if nxt else None, "to_next": round(nxt.floor - mmr) if nxt else None,
@@ -157,8 +160,8 @@ def assess_meta(name: str, archetypes: list[Archetype], results: dict[str, tuple
                + (f"; weakest against {worst.name}" if worst else ""))
     details = {
         "weighted_win_rate": round(weighted, 4),
-        "weighted_ci": [round(max(0.0, weighted - 1.96 * math.sqrt(var)), 4),
-                        round(min(1.0, weighted + 1.96 * math.sqrt(var)), 4)],
+        "weighted_ci": [round(max(0.0, weighted_ci[0]), 4), round(min(1.0, weighted_ci[1]), 4)],
+        "weighted_ci_method": "approximate weighted simultaneous Wilson bounds (Bonferroni-adjusted, 95%)",
         "unweighted_win_rate": round(points / games, 4) if games else None,
         "unweighted_ci": [round(lo, 4), round(hi, 4)],
         "games": games,
@@ -274,8 +277,7 @@ def color_pips(mana_cost: str) -> dict[str, int]:
 def p_on_curve(deck_size: int, lands: int, sources: int, pips: int, turn: int, on_play: bool = True) -> float:
     """Chance of at least `pips` sources of a colour among the cards seen by `turn`, given at least
     `turn` lands among them (Karsten's condition: the question is colour, not land count)."""
-    seen = 7 + turn - (1 if on_play else 0)
-    total = math.comb(deck_size, seen)
+    seen = min(deck_size, 7 + turn - (1 if on_play else 0))
     num = den = 0
     others = deck_size - lands
     for s in range(0, min(sources, seen) + 1):
@@ -413,6 +415,8 @@ def _castable(card: CardDef, lands_in_play: list[CardDef]) -> bool:
 def assess_consistency(deck: list[CardDef], samples: int = 20000, key_cards: list[str] | None = None,
                        seed: int | None = None) -> dict:
     """Sample opening hands (with the AI's mulligan and bottom rules) and the next draws, on the play."""
+    if not isinstance(samples, int) or isinstance(samples, bool) or samples <= 0:
+        raise ValueError("consistency samples must be a positive integer")
     rng = random.Random(seed)
     ai = HeuristicAI()
     names = {c.name for c in deck}
@@ -623,6 +627,8 @@ def main(argv=None):
     ap.add_argument("--jobs", type=int, default=1)
     ap.add_argument("--clock", type=int, default=120)
     args = ap.parse_args(argv)
+    if args.samples <= 0:
+        ap.error("--samples must be positive")
 
     name, full = load_deck_full(args.deck)
     counts = full.main

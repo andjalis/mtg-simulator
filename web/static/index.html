@@ -118,6 +118,8 @@ function showEngine() {
 // Feed a run's chunks to the workers and post their results, until the server needs no more.
 // Each call is also a heartbeat; without one for a few seconds the server plays the rest itself.
 async function runOnDevice(id) {
+  // Every trial may use different decks: refresh the workers' card data for this run.
+  device.cards = null;
   let asked = false;
   for (;;) {
     const ws = alive(), results = device.results.splice(0);

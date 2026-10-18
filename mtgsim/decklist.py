@@ -42,6 +42,9 @@ def parse_full(text: str) -> Decklist:
         sb_line = re.match(r"^sb:\s*", line, re.I)
         if sb_line:
             line = line[sb_line.end():]
+        elif line.casefold() in {"deck", "mainboard", "main deck"}:
+            target = out.main
+            continue
         elif SIDEBOARD.match(line):
             if line.lower().startswith("maybeboard"):
                 break
@@ -51,7 +54,11 @@ def parse_full(text: str) -> Decklist:
             continue  # a heading such as "Creatures (6)" or "Qty  Card Name  Color"
         note = ""
         if "\t" in line:
-            cols = [c.strip() for c in line.split("\t") if c.strip()]
+            # Empty cells still occupy columns: dropping them can turn a
+            # color into a card name or discard the fourth-column note.
+            cols = [c.strip() for c in line.split("\t")]
+            if len(cols) < 2 or not cols[1]:
+                continue
             line = f"{cols[0]} {cols[1]}"
             note = cols[3] if len(cols) > 3 else ""
         m = LINE.match(line)

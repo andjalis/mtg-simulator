@@ -432,12 +432,23 @@ class DevicePool:
 
     def finish(self, tid: int, result: dict) -> None:
         with self.lock:
+            task = self.tasks.get(tid)
+            if not task:
+                return  # a late result after fallback or cancellation
+            keys = ("games", "wins", "losses", "draws", "on_play_wins", "on_play_games", "turns")
+            if not isinstance(result, dict) or any(type(result.get(k)) is not int or result[k] < 0 for k in keys):
+                raise ValueError("chunk results must contain nonnegative integer statistics")
+            stats = {k: result[k] for k in keys}
+            if (stats["games"] != task[1][2] or
+                    stats["wins"] + stats["losses"] + stats["draws"] != stats["games"] or
+                    stats["on_play_games"] != (stats["games"] + 1) // 2 or
+                    stats["on_play_wins"] > min(stats["wins"], stats["on_play_games"]) or
+                    stats["wins"] - stats["on_play_wins"] > stats["games"] - stats["on_play_games"]):
+                raise ValueError("chunk statistics do not match the assigned games")
             self.heard = time.monotonic()
-            task = self.tasks.pop(tid, None)
-        if task:
+            del self.tasks[tid]
             try:
-                task[0].set_result({k: int(result[k]) for k in
-                                    ("games", "wins", "losses", "draws", "on_play_wins", "on_play_games", "turns")})
+                task[0].set_result(stats)
                 self.chunks_on_device += 1
             except InvalidStateError:
                 pass

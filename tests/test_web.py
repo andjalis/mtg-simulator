@@ -185,6 +185,26 @@ class WebServerTests(unittest.TestCase):
                 self.assertEqual(self.call("/api/run", {"deck": BURN, "tiers": ["bronze"],
                                                        "games": 2, **extra})[0], 400)
 
+    def test_malformed_device_requests_preserve_assigned_work(self):
+        with patch("web.server.threading.Thread"):
+            rid = self.app.start({"deck": BURN, "tiers": ["bronze"], "games": 2, "grade": False})
+        pool = self.app.runs[rid]["pool"]
+        try:
+            future = pool.submit(sim._play_chunk, {"Mountain": 60}, {"Mountain": 60}, 2, 1)
+            tid = pool.take(1)[0]["id"]
+            for body in ({"results": [{}]}, {"results": "bad"}, {"results": [None]},
+                         {"want": float("inf")}, {"want": -1}, {"cards": "false"},
+                         {"results": [{"id": tid}]}):
+                with self.subTest(body=body):
+                    self.assertEqual(self.call(f"/api/runs/{rid}/device", body)[0], 400)
+                    self.assertFalse(future.done())
+                    self.assertIn(tid, pool.tasks)
+            self.assertEqual(self.call(f"/api/runs/{rid}/device", {"release": True})[0], 200)
+            self.assertEqual(future.result(timeout=10)["games"], 2)
+        finally:
+            pool.close()
+            del self.app.runs[rid]
+
     def test_history_survives_new_app_session(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "history.sqlite3"

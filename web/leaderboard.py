@@ -42,7 +42,8 @@ def _color(rank: str) -> str:
 
 def _read(path: Path) -> dict | None:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else None
     except (OSError, ValueError):
         return None
 
@@ -66,7 +67,9 @@ def from_files(results: Path = RESULTS) -> list[dict]:
             out.append(ladder_entry(d, p.stat().st_mtime, f"/leaderboard/ladder/{p.stem}", "ladder"))
     for p in sorted((results / "assess").glob("*.json")):
         d = _read(p)
-        if not d or "criteria" not in d:
+        if (not d or not isinstance(d.get("criteria"), dict)
+                or not all(isinstance(c, dict) for c in d["criteria"].values())
+                or (d.get("rating") is not None and not isinstance(d["rating"], dict))):
             continue
         tested = p.stat().st_mtime
         try:  # the file's date is the day it was assessed; keep the file time if it's that day
@@ -173,7 +176,7 @@ def _podium(rows: list[dict]) -> str:
     cells = "".join(
         f'<section class="frame"><div class="face"><span class="pl">{("FIRST", "SECOND", "THIRD")[i]}</span>'
         f'{_badge(r)}<a class="nm" href="{e(r["link"])}">{e(r["deck"])}</a>'
-        f'<span class="mm">{e(r["rank"])} · {r["mmr"]} MMR</span></div></section>' for i, r in enumerate(top))
+        f'<span class="mm">{e(r["rank"] or "Unrated")} · {r["mmr"]} MMR</span></div></section>' for i, r in enumerate(top))
     return f'<div class="podium">{cells}</div>'
 
 
@@ -211,10 +214,10 @@ def render_assessment(d: dict) -> str:
     e = html.escape
     r = d.get("rating") or {}
     rows = "".join(f"<tr><td class=deck>{e(c.get('label', k))}</td><td><span class='g g{e(c.get('grade', ''))}'>"
-                   f"{e(c.get('grade', ''))}</span></td><td class=n>{c.get('score', '')}</td>"
+                   f"{e(c.get('grade', ''))}</span></td><td class=n>{e(str(c.get('score', '')))}</td>"
                    f"<td class=note style='font-size:14px'>{e(c.get('summary', ''))}</td></tr>"
                    for k, c in d.get("criteria", {}).items())
-    rating = f"{e(r['rank'])} · {r['mmr']} MMR" if r.get("rank") else "Unrated"
+    rating = f"{e(r['rank'])} · {e(str(r.get('mmr', '')))} MMR" if r.get("rank") else "Unrated"
     badge = emblem(r["rank"], r.get("rank_color") or _color(r["rank"])) if emblem and r.get("rank") else ""
     badge = badge.replace('class="emblem"', 'class="emblem" width="72" height="80"')
     hero = (f"<a class=back href='/leaderboard'>‹ Leaderboard</a><div class=hero style='display:flex;gap:18px;"

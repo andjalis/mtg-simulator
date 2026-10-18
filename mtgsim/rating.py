@@ -61,7 +61,7 @@ def load_ratings(path: Path | str | None = None) -> dict[str, int]:
     try:
         doc = json.loads(Path(path or RATINGS_FILE).read_text(encoding="utf-8"))
         return {name: int(d["rating"]) for name, d in doc.get("decks", {}).items()}
-    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+    except (OSError, ValueError, KeyError, TypeError, AttributeError, OverflowError):
         return {}
 
 
