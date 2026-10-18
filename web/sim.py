@@ -185,6 +185,7 @@ class Run:
     early_stop: bool = True       # stop a matchup once it is clearly won or lost (runner.clear_result)
     where: str = "server"         # where the games were asked to run: "device" or "server"
     chunk: int = 0                # games per task; 0 means CHUNK
+    history_path: object = None
     lock: threading.Lock = field(default_factory=threading.Lock)
 
     def opponents(self, tier) -> list[Opponent]:
@@ -280,9 +281,11 @@ class Run:
             with self.lock:
                 self.tracker.finish(self.verdict)
             if self.record_history:
-                history.try_record(history.record_ladder, self.tracker.to_dict(), self.counts, source="web")
+                history.try_record(history.record_ladder, self.tracker.to_dict(), self.counts, source="web",
+                                   path=self.history_path)
         if self.record_history and self.assessment:
-            history.try_record(history.record_assessment, self.assessment, self.counts, source="web")
+            history.try_record(history.record_assessment, self.assessment, self.counts, source="web",
+                               path=self.history_path)
 
     def _grade(self, pool, rng, chunks) -> None:
         """Grade the deck. Without Forge the meta criterion reuses the games against the Grandmaster
