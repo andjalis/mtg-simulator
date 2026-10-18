@@ -1,0 +1,6 @@
+test_legend_groups_and_other_controllers (tests.test_rules_contracts.RulesContracts.test_legend_groups_and_other_controllers) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

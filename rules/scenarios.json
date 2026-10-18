@@ -1,0 +1,262 @@
+{
+  "schema": 1,
+  "scope": "targeting-legend-equip-v1",
+  "scenarios": [
+    {
+      "id": "target_type_membership",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_target_type_membership",
+      "capabilities": [
+        "targets.creature"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 115, 601.2c, 608.2b",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "target_controller_shroud_presence",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_target_controller_shroud_presence",
+      "capabilities": [
+        "targets.creature"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 115, 601.2c, 608.2b",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "target_type_changes_before_resolution",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_target_type_changes_before_resolution",
+      "capabilities": [
+        "targets.creature"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 115, 601.2c, 608.2b",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "filtered_planeswalker_and_animated_land",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_filtered_planeswalker_and_animated_land",
+      "capabilities": [
+        "targets.creature"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 115, 601.2c, 608.2b",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "invalid_explicit_cast_does_not_pay",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_invalid_explicit_cast_does_not_pay",
+      "capabilities": [
+        "targets.creature"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 115, 601.2c, 608.2b",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "legend_controller_chooses",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_legend_controller_chooses",
+      "capabilities": [
+        "sba.legend"
+      ],
+      "direct_cards": [
+        "Isamaru, Hound of Konda"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 704.5j",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "legend_not_destruction_or_sacrifice",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_legend_not_destruction_or_sacrifice",
+      "capabilities": [
+        "sba.legend"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 704.5j",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "legend_groups_and_other_controllers",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_legend_groups_and_other_controllers",
+      "capabilities": [
+        "sba.legend"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 704.5j",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "legend_control_change_routes_to_owner",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_legend_control_change_routes_to_owner",
+      "capabilities": [
+        "sba.legend"
+      ],
+      "direct_cards": [
+        "Isamaru, Hound of Konda"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 704.5j",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "legend_choice_precedes_lethal_removal",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_legend_choice_precedes_lethal_removal",
+      "capabilities": [
+        "sba.legend"
+      ],
+      "direct_cards": [
+        "Isamaru, Hound of Konda"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 704.5j",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "equip_queues_then_attaches",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_equip_queues_then_attaches",
+      "capabilities": [
+        "stack.equip"
+      ],
+      "direct_cards": [
+        "Shuko"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 301.5, 602, 702.6a",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "equip_target_removed_in_response",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_equip_target_removed_in_response",
+      "capabilities": [
+        "stack.equip"
+      ],
+      "direct_cards": [
+        "Shuko"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 301.5, 602, 702.6a",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "equip_source_leaves_and_returns",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_equip_source_leaves_and_returns",
+      "capabilities": [
+        "stack.equip"
+      ],
+      "direct_cards": [
+        "Shuko"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 301.5, 602, 702.6a",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "equip_target_changes_controller",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_equip_target_changes_controller",
+      "capabilities": [
+        "stack.equip"
+      ],
+      "direct_cards": [
+        "Shuko"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 301.5, 602, 702.6a",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "equip_source_changes_controller",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_equip_source_changes_controller",
+      "capabilities": [
+        "stack.equip"
+      ],
+      "direct_cards": [
+        "Shuko"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 301.5, 602, 702.6a",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "equip_invalid_action_preserves_state",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_equip_invalid_action_preserves_state",
+      "capabilities": [
+        "stack.equip"
+      ],
+      "direct_cards": [
+        "Shuko"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 301.5, 602, 702.6a",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "equip_animated_source_cannot_attach",
+      "version": 1,
+      "test": "tests.test_rules_contracts.RulesContracts.test_equip_animated_source_cannot_attach",
+      "capabilities": [
+        "stack.equip"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 301.5, 602, 702.6a",
+        "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    }
+  ]
+}

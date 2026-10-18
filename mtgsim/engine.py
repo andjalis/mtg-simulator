@@ -131,7 +131,8 @@ class Permanent:
 
     @property
     def equipment(self):
-        return [x for x in self.controller.battlefield if x.attached_to is self] if self.is_creature else []
+        players = [self.controller] + ([self.controller.foe] if self.controller.foe is not None else [])
+        return [x for p in players for x in p.battlefield if x.attached_to is self] if self.is_creature else []
 
     @property
     def p1(self): return self.counters.get("+1/+1", 0)
@@ -165,10 +166,9 @@ class Permanent:
                 if c.anthem_enchanted and self.auras:
                     bp += c.anthem_enchanted[0]
                     bt += c.anthem_enchanted[1]
-                if x.attached_to is self:
-                    e = c.equip_bonus
-                    bp += e[0]
-                    bt += e[1]
+        for equipment in self.equipment:
+            bp += equipment.card.equip_bonus[0]
+            bt += equipment.card.equip_bonus[1]
         for cond, pp, tt in self.card.pt_if:
             gy = self.controller.graveyard
             n = sum(c.is_permanent for c in gy) if cond.startswith("gy_perm") else len(gy)
@@ -239,8 +239,8 @@ class Permanent:
         if self.animated and kw in self.animated.keywords:
             return True
         if self.is_creature:
-            for x in self.controller.battlefield:
-                if x.attached_to is self and kw in x.card.equip_keywords:
+            for x in self.equipment:
+                if kw in x.card.equip_keywords:
                     return True
             for a in self.auras:
                 if kw in a.card.equip_keywords:
@@ -1234,11 +1234,11 @@ class Game:
         if t == "creature":
             return creatures
         if t == "creature_pw":
-            return creatures + [x for x in everything if x.is_planeswalker]
+            return [x for x in everything if (x.is_creature or x.is_planeswalker) and self.passes_filter(eff, x, p)]
         if t == "creature_mine":
             return [c for c in creatures if c.controller is p]
         if t == "nonland_perm":
-            return [x for x in everything if (not x.card.is_land or x.is_creature) and self.passes_filter(eff, x, p)]
+            return [x for x in everything if not x.card.is_land and self.passes_filter(eff, x, p)]
         if t == "land":
             return [x for x in everything if x.card.is_land and self.passes_filter(eff, x, p)]
         if t == "artifact":
@@ -1255,15 +1255,8 @@ class Game:
         return []
 
     def legal_target(self, p: Player, eff: Effect, tgt) -> bool:
-        if tgt is None or not self.targetable(tgt, p):
-            return False
-        if eff.target == "land" and (not isinstance(tgt, Permanent) or not tgt.card.is_land):
-            return False
-        if eff.target == "player" and eff.filter == "opp" and tgt is p:
-            return False
-        if isinstance(tgt, Permanent):
-            return self.passes_filter(eff, tgt, p)
-        return True
+        """Use the same type, controller, filter and presence checks as enumeration."""
+        return any(tgt is candidate for candidate in self.legal_targets(p, eff))
 
     def can_counter(self, eff: Effect, item: StackItem, by: Player | None = None) -> bool:
         if eff.kind not in ("counter", "bounce_spell") or not item.is_spell or item not in self.stack:
@@ -1966,6 +1959,12 @@ class Game:
         base, kind, alt = self._origin(card)
         if not self._available(p, card):
             return False
+        # Reject explicitly illegal targets before paying or moving the card.
+        # Missing targets still use the existing automatic choice path below.
+        if not card.is_permanent and targets is not None:
+            if any(e.target in TARGETED and t is not None and not self.legal_target(p, e, t)
+                   for e, t in zip(card.spell_effects, targets)):
+                return False
         cost = self.cost_of(p, card, assist=False)
         convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
         assisted = card.improvise or card.delve
@@ -2196,8 +2195,12 @@ class Game:
             return False
         if self.pay(p, self.equip_cost(equipment, creature)) is None:
             return False
-        equipment.attached_to = creature
-        self.log(f"equips {equipment.card.name} to {creature.card.name}", p)
+        item = StackItem(p, [Effect("equip", target="creature_mine")], [creature],
+                         source=equipment, name=f"{equipment.card.name} equip", kind="ability")
+        self.stack.append(item)
+        self.log(f"activates {item} -> {creature.card.name}", p)
+        self.check_ward(item)
+        self.settle()
         return True
 
     def force_blocks(self, me: Player, attackers: list, blocks: dict) -> dict:
@@ -2623,6 +2626,13 @@ class Game:
             self.change_life(who, eff.amount, cause)
         elif k == "drain":
             self.change_life(opp, -eff.amount, cause)
+        elif k == "equip":
+            equipment = item.source if item is not None else None
+            if equipment is not None and equipment in equipment.controller.battlefield and \
+                    "Equipment" in equipment.card.subtypes and not equipment.is_creature and \
+                    isinstance(target, Permanent) and self.legal_target(p, eff, target) and target is not equipment:
+                equipment.attached_to = target
+                self.log(f"equips {equipment.card.name} to {target.card.name}", p)
         elif k == "pump":
             if isinstance(target, Permanent) and target in target.controller.battlefield:
                 target.pump_p += eff.amount
@@ -3558,7 +3568,7 @@ class Game:
         if perm.card.aura:
             auras.detach(perm)
         perm.attached_to = None
-        for x in controller.battlefield:
+        for x in [x for player in self.players for x in player.battlefield]:
             if x.attached_to is perm:
                 x.attached_to = None
         for a in list(perm.auras):
@@ -3684,6 +3694,20 @@ class Game:
         changed = True
         while changed:
             changed = False
+            # Choose from the pre-action state, before removing lethal creatures.
+            # The legend rule is a graveyard move, neither destruction nor sacrifice.
+            legend_losers = []
+            for p in self.players:
+                groups = {}
+                for perm in p.battlefield:
+                    if perm.card.legendary:
+                        groups.setdefault(perm.card.name, []).append(perm)
+                for group in groups.values():
+                    if len(group) > 1:
+                        keep = self.hook(p, "choose_legend")(self, p, tuple(group))
+                        if not any(keep is candidate for candidate in group):
+                            keep = group[0]
+                        legend_losers.extend(perm for perm in group if perm is not keep)
             for p in self.players:
                 for perm in list(p.battlefield):
                     if perm.is_planeswalker and perm.loyalty <= 0:
@@ -3703,6 +3727,10 @@ class Game:
                             perm.counters["+1/+1"] -= cancelled
                             perm.counters["-1/-1"] -= cancelled
                             changed = True
+            for perm in legend_losers:
+                if perm in perm.controller.battlefield:
+                    self.dies(perm)
+                    changed = True
         for p in self.players:
             if p.counters.get("poison", 0) >= 10:
                 if not p.lost:
@@ -4469,6 +4497,7 @@ def default_sneak(game: Game, me: Player, attackers, blocks):
 
 
 DEFAULTS = {
+    "choose_legend": lambda game, me, choices: max(choices, key=perm_value),
     "choose_learn": learning.choose,
     "choose_rebound": lambda game, me, card: True,
     "choose_cascade": lambda game, me, card: True,

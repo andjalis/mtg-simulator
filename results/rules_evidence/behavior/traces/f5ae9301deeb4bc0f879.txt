@@ -1,0 +1,6 @@
+test_equip_source_leaves_and_returns (tests.test_rules_contracts.RulesContracts.test_equip_source_leaves_and_returns) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

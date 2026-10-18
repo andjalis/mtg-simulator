@@ -210,6 +210,19 @@ Text that does not match is ignored and reported. Template coverage helps identi
 it cannot prove correct rules execution or quantify how trustworthy a win rate is.
 The [rules architecture audit and implementation plan](results/rules_architecture/README.md)
 documents reproduced gaps, Forge integration limits, and a proposed behavior-evidence report.
+The first behavior-evidence slice is available separately from template coverage:
+
+```sh
+python3 -m mtgsim.behavior_coverage --run --save results/behavior-coverage
+python3 -m mtgsim.behavior_coverage --ledger results/behavior-coverage/ledger.json --save results/behavior-review
+```
+
+It maps 17 explicit scenarios for targeting, the normal legend rule and normal equip
+to a versioned [capability catalog](rules/capabilities.json). Reports retain failures,
+missing/stale evidence and separate direct card tests from inferred capability evidence.
+Use a fresh directory for a new run. Complete card rules support remains unmeasured;
+rules outside that scope are unclassified. A source checkout with tests and the offline
+database is required. See [the scenario scope](rules/README.md).
 
 `--coverage` reports this per deck without playing: each card is template-matched, simplified (played in a looser way, such as a fetch land cracked as
 soon as it enters or an optional extra cost never paid), partly supported (the
@@ -457,7 +470,7 @@ an open-source (GPL-3) Java rules engine with broader card support and its own A
 Forge is an independent comparison tool, not a ground-truth oracle: card scripts, rules
 and pilot decisions can be wrong. Agreement between engines does not validate human win rates.
 
-Setup (needs git, Java 17+ and Maven; a few minutes, about 1.5 GB):
+Setup (needs git, a JDK 17+ including `javac`, and Maven; about 1.5 GB):
 
 ```
 scripts/install_forge.sh ~/forge

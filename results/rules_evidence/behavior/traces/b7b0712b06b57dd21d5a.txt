@@ -1,0 +1,6 @@
+test_target_type_changes_before_resolution (tests.test_rules_contracts.RulesContracts.test_target_type_changes_before_resolution) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

@@ -61,12 +61,17 @@ def main():
         game._priority_depth = 1
         activated = game.equip(a, equipment, creature)
         attached = equipment.attached_to is creature
+        stack_size = len(game.stack)
+        if game.stack:
+            game.resolve_top()
+        after = equipment.attached_to is creature
         observations.append({"id": "equip-response-window", "cards": ["Shuko", "Grizzly Bears"],
                              "activated": activated, "expected_stack_size": 1,
-                             "observed_stack_size": len(game.stack),
+                             "observed_stack_size": stack_size,
                              "expected_attached_before_resolution": False,
                              "observed_attached_before_resolution": attached,
-                             "passed": activated and len(game.stack) == 1 and not attached})
+                             "observed_attached_after_resolution": after,
+                             "passed": activated and stack_size == 1 and not attached and after})
 
         game, a, b = new_game()
         land = game.enter_battlefield(b, cards["Island"])

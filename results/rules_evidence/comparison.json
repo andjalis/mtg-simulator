@@ -1,0 +1,67 @@
+{
+  "agree": 3,
+  "both_conform": 3,
+  "compared": 3,
+  "excluded": [
+    "forge-import-exile: Python importer, not Forge runtime"
+  ],
+  "inputs": {
+    "builtin_sha256": "4124bf2fa443f836269a2d3ea1e6d20b6bd912d331f99a8da7faae943327d74a",
+    "forge_log_sha256": "3dcaa0ed2048da6433dcec0700e7efc9f38153cbd57ece5f591ba4af1366ee34"
+  },
+  "observations": [
+    {
+      "agree": true,
+      "builtin": {
+        "observed_remaining": 1
+      },
+      "builtin_conforms": true,
+      "expected": {
+        "observed_remaining": 1
+      },
+      "forge": {
+        "observed_remaining": 1
+      },
+      "forge_conforms": true,
+      "id": "legend-rule"
+    },
+    {
+      "agree": true,
+      "builtin": {
+        "validation_accepts_land": false
+      },
+      "builtin_conforms": true,
+      "expected": {
+        "validation_accepts_land": false
+      },
+      "forge": {
+        "validation_accepts_land": false
+      },
+      "forge_conforms": true,
+      "id": "target-type-validation"
+    },
+    {
+      "agree": true,
+      "builtin": {
+        "observed_attached_after_resolution": true,
+        "observed_attached_before_resolution": false,
+        "observed_stack_size": 1
+      },
+      "builtin_conforms": true,
+      "expected": {
+        "observed_attached_after_resolution": true,
+        "observed_attached_before_resolution": false,
+        "observed_stack_size": 1
+      },
+      "forge": {
+        "observed_attached_after_resolution": true,
+        "observed_attached_before_resolution": false,
+        "observed_stack_size": 1
+      },
+      "forge_conforms": true,
+      "id": "equip-response-window"
+    }
+  ],
+  "schema": 1,
+  "scope": "Three bounded common assertion sets; no full-card correctness claim"
+}

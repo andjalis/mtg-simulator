@@ -1,0 +1,192 @@
+{
+  "records": [
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "3c7f536618f9aa5f10e2c1850c1d9000f54e0bbbb7e8a07b44911596358d4c35",
+      "scenario_id": "target_type_membership",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/7bbe564c6bea81a9e50a.txt",
+      "trace_sha256": "f0d4e3375720dc29eb05098328d29b82ae432e4c2df1dafc18369a2dfaf8c7b5"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "1d4bbd328f3873fdb4eff6ec075eaed02ae3c4e3e9f3722874dfd6eb081889f8",
+      "scenario_id": "target_controller_shroud_presence",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/d6bf3a7eda65e04efccc.txt",
+      "trace_sha256": "9393c64f9d6ccbbe24352fc27b5a1b25b7537f2bfe53b41ceab1300bb3b7c8e7"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "2be480092a1a5d0041109e60c88661063e3f2e9f02d3419f587d2d1c00fbc4a3",
+      "scenario_id": "target_type_changes_before_resolution",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/b7b0712b06b57dd21d5a.txt",
+      "trace_sha256": "1c5ae9e8bfa6c8a5ba5ab600cb838b182d717ac9f9202e98fd43339367be865a"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "bfdcd88185b3bb1c2060cc13f2c8182949500b71ef4d4650203be6e945de3994",
+      "scenario_id": "filtered_planeswalker_and_animated_land",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/46e70030af4f97f62a21.txt",
+      "trace_sha256": "a40fff88fb87e8499104582d54d7ea29b989de5647976bd3a8e86b86cbfcfc92"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "518b72f0afe74f203fe88e785736b22cafa82f3a25bbe10a0937195b059f3bf4",
+      "scenario_id": "invalid_explicit_cast_does_not_pay",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/dffb577e5dab47f62b9a.txt",
+      "trace_sha256": "311faa145018a45f612cd89d1752632af02a2815b51900862c93eee2a718d212"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "4504f05052c58a5fc92c3ba064c622aaa506aa8776af3bb5d9d96ca88d5e6c34",
+      "scenario_id": "legend_controller_chooses",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/b38574e0d5d425f5e650.txt",
+      "trace_sha256": "194c8d39b6cfcb152d3794e799e2844e4cde8a0fc9f82fc62bc40884a993aba0"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "aa95bb53bba5bc059d9abdeb894d801acc344843f788bc8e8128214c741bdb8a",
+      "scenario_id": "legend_not_destruction_or_sacrifice",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/fd272153dd2b44950b8d.txt",
+      "trace_sha256": "d7ebd791d8889e1a9647b6be0fc805cd87c8ee3ba6cf3a7871e1b30b057fe296"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "65c082cfcc8a3c6a8b8537f80b92aba9f920f8ca19b730b556a51cf542d17eab",
+      "scenario_id": "legend_groups_and_other_controllers",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/8ad962e7df7ec18944ad.txt",
+      "trace_sha256": "edec29269edef2a77ce06a0f7ad6522e4e33c4fdd1fd4dce5c4fa5261d3f41c1"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "61ff2b5d4ab2666a0358a60e364a825f5863a908287bfe8d3c6bd5291d48e2a8",
+      "scenario_id": "legend_control_change_routes_to_owner",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/1f0932f315ff5384a793.txt",
+      "trace_sha256": "def4a56e5688cd7aeb1cefe8b982d06fb35aa49304c44edf037e43bdb1cbacdc"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "25a934e09b0329e357b294cdc7727ccfb79b522c8e160f73e318649ce615180c",
+      "scenario_id": "legend_choice_precedes_lethal_removal",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/82de8c27880889158391.txt",
+      "trace_sha256": "8a385b6eabf6246b5258ab8349cf5d80bbd98ffcce6d9ff2063810948b473f21"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "84f888a2bfd674efb223efa840869ad7c342496080ad1179c52424cdb04e1598",
+      "scenario_id": "equip_queues_then_attaches",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/5afd3e4004a834bc52c0.txt",
+      "trace_sha256": "af1bc0b07cfee4a336a5dc9ca11de36a2058ec601ea07dbe20062d8e4f2a0d75"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "f9416394ff938972e7fda88978df06f17ba4afc922c18e1dffa34ef1bb08d026",
+      "scenario_id": "equip_target_removed_in_response",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/e66dab2467ead668e0c8.txt",
+      "trace_sha256": "b22720511a7560a7e5e14b82276eb885eebfa1a79a1aa50dbbf18f386bb1366c"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "3dde5d1e6a65e43745e20622bf43ff6c536375d856357ff2793c4b4e9e8a8efe",
+      "scenario_id": "equip_source_leaves_and_returns",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/f5ae9301deeb4bc0f879.txt",
+      "trace_sha256": "08d9ba2275e8ac2308d244495f2d4142369d0e2413aabf2ae09e5e424ffcbed9"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "2283f1182be3291f3f84fe94a344cb23dc9fb5999f823300c5abf0e1537ea8a2",
+      "scenario_id": "equip_target_changes_controller",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/7bb893b7d9802e4cf9b6.txt",
+      "trace_sha256": "2d052432d656c6ed211ce72e19660681b96e28426a548a92f1515c94c24e56f1"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "b188d6dac0eea7fc4931e80f3848f3b154fab3f7cebb8ecb11c2be8fc7beb83f",
+      "scenario_id": "equip_source_changes_controller",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/e215fd479abe27d28f14.txt",
+      "trace_sha256": "7b3c5a15b146d6ba2e99b4afef7b0d9d7ba315790d4a2438b294fa932cb18e10"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "2b0f4e39dfa667130afd74fb38566c12787fe6e09531f28fb96252b40c0dcd53",
+      "scenario_id": "equip_invalid_action_preserves_state",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/45a6eefdb5a1bc065017.txt",
+      "trace_sha256": "df9d85d0bcbcf27c2f5ee2bc36040f104c19ad317b4442afde2c65ed5a0b8343"
+    },
+    {
+      "engine": "builtin",
+      "outcome": "pass",
+      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "scenario_hash": "1bf68f9ba185e63542a41d8357ddb9ad738b6b76ea96655e3b926269bf9154fd",
+      "scenario_id": "equip_animated_source_cannot_attach",
+      "schema": 1,
+      "tests_run": 1,
+      "trace": "traces/2ebf50637db90dcbea9d.txt",
+      "trace_sha256": "3f58873f6faf28f22c6cdd89191bf19e5d70b979af2b62180ef9010d83b05b28"
+    }
+  ],
+  "schema": 1
+}

@@ -1,0 +1,22 @@
+{
+  "forge_indexed_card_names": 34086,
+  "jar_name": "forge-gui-desktop-2.0.16-SNAPSHOT-jar-with-dependencies.jar",
+  "jar_sha256": "0498be91702d8330263cd0381f4a5f6551b40558c01bf1ad2ab93fc0e8d36fb5",
+  "java_probe_sha256": "161a6042f98a71f4dc263b0165eb826be50de21652ab495cb9de85ee00e51504",
+  "java_version": [
+    "java version \"21.0.12.1\" 2026-08-18 LTS",
+    "Java(TM) SE Runtime Environment (build 21.0.12.1+1-LTS-4)",
+    "Java HotSpot(TM) 64-Bit Server VM (build 21.0.12.1+1-LTS-4, mixed mode, sharing)"
+  ],
+  "jdk_archive_sha256": "12f870b21301b42292558a3f872ce543affa2b86cb6458591c78388c41ddb111",
+  "maven_version": "3.9.11",
+  "note": "Card-name availability is not complete rules support; full resources and runtime identity are in engine-smoke/results.json.",
+  "schema": 1,
+  "source_pin": {
+    "commit": "77b6f5ae95f7f11d5a718c52a977470131db0fe1",
+    "repository": "https://github.com/Card-Forge/forge.git",
+    "schema": 1,
+    "scope": "Controlled rules probe; no claim of all-card correctness or custom-AI integration",
+    "version": "2.0.16-SNAPSHOT"
+  }
+}

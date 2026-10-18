@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "scope": "targeting-legend-equip-v1",
+  "capabilities": [
+    {
+      "id": "targets.creature",
+      "description": "Target type and controller validation",
+      "state": "implemented_subset",
+      "subset": "Enumeration and resolution use the same current-state membership checks.",
+      "restrictions": "Protection, player hexproof and the complete targeting rules are outside this scope.",
+      "requires": [],
+      "implementation": [
+        "mtgsim/engine.py"
+      ]
+    },
+    {
+      "id": "sba.legend",
+      "description": "Normal two-player legend rule",
+      "state": "implemented_subset",
+      "subset": "Choose one legendary permanent per name and controller; route losers to their owners without destruction/sacrifice.",
+      "restrictions": "Effects that waive or modify the legend rule and a general simultaneous-event pipeline are outside this scope.",
+      "requires": [],
+      "implementation": [
+        "mtgsim/engine.py"
+      ]
+    },
+    {
+      "id": "stack.equip",
+      "description": "Normal equip activation",
+      "state": "implemented_subset",
+      "subset": "Sorcery timing; queue activation; revalidate target and source at resolution.",
+      "restrictions": "Alternative equip permissions, reconfigure and general attachment effects are outside this scope.",
+      "requires": ["targets.creature"],
+      "implementation": [
+        "mtgsim/engine.py"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+test_equip_queues_then_attaches (tests.test_rules_contracts.RulesContracts.test_equip_queues_then_attaches) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

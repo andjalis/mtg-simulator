@@ -15,7 +15,7 @@ Grandmaster, MMR), deck assessment, and a web page (`web/`). The built-in engine
 
 ```
 python3 -m mtgsim.build_carddb                 # once per clone; builds mtgsim/data/cards.sqlite3 (~13 s)
-python3 -m unittest discover -s tests -t .     # tests (~15 s, 98 tests, all should pass)
+python3 -m unittest discover -s tests -t .     # full suite (can take a few minutes)
 python3 -m mtgsim A.txt B.txt -n 1000          # matchup
 python3 -m mtgsim A.txt --gauntlet B.txt C.txt # one deck vs several
 python3 -m mtgsim A.txt B.txt -n 1 --log       # play-by-play of one game
@@ -62,9 +62,10 @@ a fake Forge directory and don't need a real install; a real Forge run needs Jav
 - **Card data is generated.** Do not commit `mtgsim/data/cards.sqlite3`. Rebuild it with
   `build_carddb` when needed. Card text the engine doesn't match is ignored on purpose, so
   coverage gaps show up in `--coverage` and in run output; do not hide them.
-- **The engine is incomplete by design.** Auras, equipment, X spells, copy effects, day/night and
-  several other mechanics are listed as not yet supported in the README. Don't add a card-specific
-  hack when a general template is the right fix.
+- **The engine is incomplete by design.** Support varies by mechanic; check the README's
+  implemented subsets and remaining gaps. Don't add a
+  card-specific hack when a general template is the right fix. Template recognition is separate
+  from behavior evidence (`python3 -m mtgsim.behavior_coverage`, `rules/`).
 - **Results are measurements.** Changes to AI heuristics should be checked against `BaselineAI`
   or the rank ladder (`--ladder`, `--gauntlet`), not only against tests. Record notable numbers in
   `AI_RESULTS.md` rather than in code comments.
