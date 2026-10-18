@@ -843,6 +843,12 @@ class ResolveMixin:
             if isinstance(src, Permanent) and src in src.controller.battlefield:
                 self.exile_until_leaves(src, [x for pl in self.players for x in pl.battlefield if x is not src and
                                               (x.is_creature or x.card.is_artifact) and x.card.cmc <= eff.amount])
+        elif k == "level_up":
+            src = item.source if item is not None else None
+            if isinstance(src, Permanent) and src in src.controller.battlefield:
+                src.counters["level"] = eff.data["to"]
+                self.log(f"{src.card.name} becomes level {eff.data['to']}", p)
+                self.fire(p, "class_level", src, subject=eff.data["to"])
         elif k == "return_self_gy":
             card = item.context if item is not None else None
             if item is not None and item.context_ref is not None:

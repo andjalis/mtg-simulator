@@ -93,6 +93,8 @@ class StackMixin:
                         continue
                     elif not card_matches(subject.card, "a " + re.sub(r",? or (?!greater)|, ", " or a ", desc)):
                         continue
+                if event == "class_level" and trig.filter != str(subject):
+                    continue
                 if event == "expend" and trig.filter != str(subject):
                     continue
                 if event == "gy_leave":

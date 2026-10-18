@@ -111,6 +111,14 @@ class TurnsMixin:
             self.cycle_spare(p)
             self.turn_face_up(p)
             self.graveyard_abilities(p)
+            self.level_up_classes(p)
+
+    def level_up_classes(self, p: Player):
+        """Gain the next level of a Class with the mana left after the main phase."""
+        for perm in list(p.battlefield):
+            for idx, act in enumerate(perm.card.activated):
+                if act.extra_costs.get("level_from") is not None and not self.over and self.can_activate(p, perm, idx):
+                    self.activate_ability(p, perm, idx)
 
     def graveyard_abilities(self, p: Player):
         """Return-from-graveyard and exile-to-draw abilities, with the mana left after the main phase."""

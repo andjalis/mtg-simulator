@@ -67,6 +67,7 @@ class Trigger:
     modes: list | None = None        # "choose up to one" triggers: a list of effect lists
     once: bool = False               # "This ability triggers only once each turn."
     once_game: bool = False          # "This ability triggers only once."
+    min_level: int = 0               # Class: the trigger works once the Class is at least this level
 
 
 @dataclass
@@ -274,6 +275,9 @@ class CardDef:
 
     @property
     def is_saga(self): return bool(self.chapters)
+
+    @property
+    def is_class(self): return "Class" in self.subtypes
 
     @property
     def instant_speed(self): return self.is_instant or "flash" in self.keywords
