@@ -272,6 +272,15 @@ def run_bo3(name_a: str, main_a: dict[str, int], side_a: dict[str, int],
     plan_a = plan_sideboard(main_a, side_a, db, classify(g1_b), bring_in_a)
     plan_b = plan_sideboard(main_b, side_b, db, classify(g1_a), bring_in_b)
     post_a, post_b = build_deck(db, plan_a.deck), build_deck(db, plan_b.deck)
+    def outside(side, plan):
+        counts = dict(side)
+        for name, n in plan.ins.items():
+            counts[name] -= n
+        for name, n in plan.outs.items():
+            counts[name] = counts.get(name, 0) + n
+        return build_deck(db, {name: n for name, n in counts.items() if n > 0})
+    side1_a, side1_b = build_deck(db, side_a), build_deck(db, side_b)
+    side2_a, side2_b = outside(side_a, plan_a), outside(side_b, plan_b)
     res = Bo3Result(name_a, name_b, plan_a, plan_b)
     for m in range(matches):
         a_on_play = m % 2 == 0
@@ -279,8 +288,8 @@ def run_bo3(name_a: str, main_a: dict[str, int], side_a: dict[str, int],
         game_no = 0
         while score_a < 2 and score_b < 2 and game_no < 3:
             deck_a, deck_b = (g1_a, g1_b) if game_no == 0 else (post_a, post_b)
-            a = Player(name_a, deck_a, HeuristicAI())
-            b = Player(name_b, deck_b, HeuristicAI())
+            a = Player(name_a, deck_a, HeuristicAI(), sideboard=side1_a if game_no == 0 else side2_a)
+            b = Player(name_b, deck_b, HeuristicAI(), sideboard=side1_b if game_no == 0 else side2_b)
             winner = Game(*((a, b) if a_on_play else (b, a)), rng=rng).play()
             pts = 1.0 if winner is a else 0.0 if winner is b else 0.5
             score_a += pts

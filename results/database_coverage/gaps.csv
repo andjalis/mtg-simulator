@@ -1,25 +1,25 @@
 kind,gap,potential_full_matches,affected_cards,examples
-family,unclassified,8635,13725,A Chaotic Night in Vegas; A Real Handful; AWOL
-family,triggered (whenever/when),2471,4537,A Good Day to Die; A Good Day to Pie; Aang and Katara
-family,activated abilities,2341,3340,A Container of Booster Packs; A-Town; Aang's Iceberg
-family,counters,2113,3463,"Abomination, Irradiated Brute; Aboroth; Abzan Charm"
-family,graveyard,1521,2966,"""Rumors of My Death . . .""; A Good Day to Pie; Aang, A Lot to Learn"
-family,sacrifice,1362,2469,Aang's Iceberg; Abjure; Abyssal Gatekeeper
-family,tokens,1154,2391,"Aang and Katara; Aatchik, Emerald Radian; Abyssal Harvester"
-family,exile,1084,2422,"""Rumors of My Death . . .""; A Container of Booster Packs; Abstergo Entertainment"
+family,unclassified,8597,13644,A Chaotic Night in Vegas; A Real Handful; AWOL
+family,triggered (whenever/when),2479,4537,A Good Day to Die; A Good Day to Pie; Aang and Katara
+family,activated abilities,2294,3262,A Container of Booster Packs; A-Town; Aang's Iceberg
+family,counters,2116,3462,"Abomination, Irradiated Brute; Aboroth; Abzan Charm"
+family,graveyard,1528,2966,"""Rumors of My Death . . .""; A Good Day to Pie; Aang, A Lot to Learn"
+family,sacrifice,1357,2453,Aang's Iceberg; Abjure; Abyssal Gatekeeper
+family,tokens,1161,2391,"Aang and Katara; Aatchik, Emerald Radian; Abyssal Harvester"
+family,exile,1085,2422,"""Rumors of My Death . . .""; A Container of Booster Packs; Abstergo Entertainment"
 family,auras/enchant,1001,1258,Abduction; Aboshan's Desire; Absorbing Man
-family,can't restrictions,781,1532,Abeyance; Abyssal Persecutor; Academic Probation
-family,X costs,670,1281,Aang and Katara; Abaddon the Despoiler; Aberrant Manawurm
-family,equipment,490,686,Ace's Baseball Bat; Acid Web Spider; Adaptive Omnitool
-family,copy effects,339,710,Aboleth Spawn; Absorb Identity; Absorbing Man
-family,library search,270,542,Aerial Surveyor; Amrou Scout; Angel's Herald
-family,cost reduction,206,422,Absorb Energy; Acolyte of Bahamut; Ancient Stone Idol
+family,can't restrictions,755,1481,Abeyance; Abyssal Persecutor; Academic Probation
+family,X costs,671,1281,Aang and Katara; Abaddon the Despoiler; Aberrant Manawurm
+family,equipment,490,685,Ace's Baseball Bat; Acid Web Spider; Adaptive Omnitool
+family,copy effects,340,710,Aboleth Spawn; Absorb Identity; Absorbing Man
+family,library search,272,542,Aerial Surveyor; Amrou Scout; Angel's Herald
+family,cost reduction,208,422,Absorb Energy; Acolyte of Bahamut; Ancient Stone Idol
 family,+1/+1 static (anthems),134,279,Aardwolf's Advantage; Akoum Battlesinger; Always Watching
-family,transform,82,185,"Afflicted Deserter // Werewolf Ransacker; Ambitious Farmhand // Seasoned Cathar; Archangel Avacyn // Avacyn, the Purifier"
+family,transform,83,185,"Afflicted Deserter // Werewolf Ransacker; Ambitious Farmhand // Seasoned Cathar; Archangel Avacyn // Avacyn, the Purifier"
 family,mana restrictions,81,155,Abstract Paintmage; Adarkar Unicorn; Altar of the Lost
-family,set: threshold,62,93,Aboshan's Desire; Barbarian Ring; Battlefield Scrounger
+family,set: threshold,63,93,Aboshan's Desire; Barbarian Ring; Battlefield Scrounger
 family,set: food,59,125,Academy Manufactor; Ant-Man's Army; Applejack
-family,modal (choose),28,281,Atomic Microsizer; Beamsplitter Mage; Cabal Interrogator
+family,modal (choose),29,281,Atomic Microsizer; Beamsplitter Mage; Cabal Interrogator
 family,set: exhaust,19,30,Afterburner Expert; Audacious Knuckleblade; Boom Scholar
 family,set: flurry,12,14,Aligned Heart; Cori Mountain Stalwart; Cori-Steel Cutter
 family,set: suspect,10,21,Caught Red-Handed; Convenient Target; Frantic Scapegoat
@@ -55,13 +55,10 @@ family,set: firebend,0,1,"Avatar Aang // Aang, Master of Elements"
 family,set: station,0,1,"Pirk, Heroic Captain"
 family,set: survival,0,1,"Moira Brown, Guide Author"
 family,set: valiant,0,1,Ajani's Aid
-exact_wording,it can't be regenerated.,20,49,Annihilate; Befoul; Cruel Revival
 exact_wording,the ring tempts you.,18,30,"Bilbo, Retired Burglar; Birthday Escape; Bombadil's Song"
-exact_wording,{b}: regenerate ~.,17,31,Darkling Stalker; Drudge Reavers; Drudge Skeletons
 exact_wording,protection from black,15,28,Cemetery Gate; Chameleon Colossus; Darkwatch Elves
 exact_wording,you may draw a card.,14,42,"Aesi, Tyrant of Gyre Strait; Aven Fisher; Fallowsage"
 exact_wording,return a land you control to its owner's hand.,14,15,Azorius Chancery; Boros Garrison; Dimir Aqueduct
-exact_wording,learn.,13,21,Arcane Subtraction; Cram Session; Enthusiastic Study
 exact_wording,protection from white,13,21,Black Knight; Defender of Chaos; Disciple of Malice
 exact_wording,"when ~ becomes the target of a spell or ability, sacrifice it.",13,15,Frost Walker; Gossamer Phantasm; Illusionary Servant
 exact_wording,exile ~.,12,100,Ascend from Avernus; Divergent Equation; Flood of Recollection
@@ -69,29 +66,28 @@ exact_wording,backup 1,12,20,Boon-Bringer Valkyrie; Chomping Kavu; Consuming Aet
 exact_wording,"it has ""sacrifice ~: add {c}.""",12,17,Blisterpod; Brood Butcher; Carrier Thrall
 exact_wording,target creature gains flying until end of turn.,12,16,Cloak of Feathers; Defy Gravity; Gale Swooper
 exact_wording,you may put a +1/+1 counter on ~.,12,16,Bojuka Brigand; Graypelt Hunter; Hada Freeblade
-exact_wording,{g}: regenerate ~.,12,16,Ancient Silverback; Charging Troll; Cudgel Troll
+exact_wording,flanking,11,27,Benalish Cavalry; Burning Shield Askari; Cadaverous Knight
 exact_wording,~ can't attack unless defending player controls an island.,11,26,Armored Galleon; Deep-Sea Serpent; Ethereal Whiskergill
 exact_wording,myriad,11,19,Caller of the Pack; Chittering Dispatcher; Conclave Evangelist
 exact_wording,~ doesn't untap during your untap step.,10,38,Basalt Monolith; Brass Gnat; Brass Man
-exact_wording,flanking,10,27,Benalish Cavalry; Burning Shield Askari; Fallen Askari
+exact_wording,bushido 1,10,25,Araba Mothrider; Cursed Ronin; Devoted Retainer
 exact_wording,toxic 1,10,25,Annex Sentry; Bilious Skulldweller; Blightbelly Rat
 exact_wording,return target permanent to its owner's hand.,10,21,Aether Helix; Boomerang; Dematerialize
 exact_wording,retrace,10,18,Call the Skybreaker; Cenn's Enlistment; Embrace the Unknown
 exact_wording,{t}: prevent the next 1 damage that would be dealt to any target this turn.,10,16,Alabaster Wall; Benevolent Ancestor; Clergy en-Vec
+exact_wording,unleash,10,14,Bloodfray Giant; Carnival Hellsteed; Dead Reveler
 exact_wording,~ enters tapped unless you control two or more basic lands.,10,10,Canopy Vista; Cinder Glade; Eclipsed Steppe
 exact_wording,~ enters tapped unless you have two or more opponents.,10,10,Bountiful Promenade; Luxury Suite; Morphic Pool
-exact_wording,bushido 1,9,25,Araba Mothrider; Cursed Ronin; Devoted Retainer
 exact_wording,return it to its owner's hand.,9,25,Brilliant Halo; Despondency; Endless Cockroaches
 exact_wording,evolve,9,23,Adaptive Snapjaw; Battering Krasis; Clinging Anemones
 exact_wording,prevent all combat damage that would be dealt this turn.,9,22,Angelsong; Darkness; Fog
-exact_wording,{1}{b}: regenerate ~.,9,20,Carrion Wall; Cinderbones; Lim-Dûl's High Guard
 exact_wording,living weapon,9,19,Batterbone; Batterskull; Colossal Dreadmask
 exact_wording,~ can't be blocked by more than one creature.,9,19,"Bristling Boar; Charging Rhino; Huang Zhong, Shu General"
 exact_wording,exile target card from a graveyard.,9,18,Beckon Apparition; Coffin Purge; Cremate
+exact_wording,renown 1,9,15,Akroan Sergeant; Firefiend Elemental; Knight of the Pilgrim's Road
 exact_wording,banding,9,14,Benalish Hero; Benalish Infantry; Icatian Phalanx
-exact_wording,unleash,9,14,Bloodfray Giant; Carnival Hellsteed; Dead Reveler
 exact_wording,create a tapped powerstone token.,9,13,Argothian Opportunist; Excavation Explosion; Geology Enthusiast
-exact_wording,{1}{g}: regenerate ~.,9,13,Blight Mamba; Carnassid; Gorilla Chieftain
+exact_wording,"they have ""sacrifice ~: add {c}.""",9,12,Birthing Hulk; Brood Monitor; Call the Scions
 exact_wording,~ can block an additional creature each combat.,9,12,Foriysian Brigade; Foriysian Interceptor; Ghastbark Twins
 exact_wording,fabricate 1,9,10,Accomplished Automaton; Ambitious Aetherborn; Glint-Sleeve Artisan
 exact_wording,you may fetchbasic.,9,9,Farhaven Elf; Forestfolk; Lumbering Worldwagon
@@ -100,16 +96,16 @@ exact_wording,protection from red,8,22,Defender of Law; Disciple of Law; Galina'
 exact_wording,mentor,8,20,Barging Sergeant; Blade Instructor; Boros Challenger
 exact_wording,venture into the dungeon.,8,19,Clattering Skeletons; Fates' Reversal; Planar Ally
 exact_wording,extort,8,18,Basilica Guards; Basilica Screecher; Kingpin's Pet
+exact_wording,sacrifice a creature.,8,18,Accursed Centaur; Commander Greven il-Vec; Demonic Appetite
 exact_wording,"if that spell is countered this way, exile it instead of putting it into its owner's graveyard.",8,16,Assert Authority; Deny Existence; Deny the Divine
 exact_wording,cipher,8,15,Call of the Nightwing; Last Thoughts; Mental Vapors
 exact_wording,enlist,8,15,Argivian Cavalier; Barkweave Crusher; Benalish Faithbonder
-exact_wording,renown 1,8,15,Akroan Sergeant; Firefiend Elemental; Knight of the Pilgrim's Road
 exact_wording,"if a creature dealt damage this way would die this turn, exile it instead.",8,14,Anger of the Gods; Annihilating Fire; Crush the Weak
 exact_wording,it doesn't untap during its controller's next untap step.,8,14,Apes of Rath; Chill of the Grave; Chillbringer
 exact_wording,put target creature on top of its owner's library.,8,12,Anchor to the Aether; Excommunicate; Forced Retreat
-exact_wording,"they have ""sacrifice ~: add {c}.""",8,12,Brood Monitor; Call the Scions; Corpsehatch
 exact_wording,that creature doesn't untap during its controller's next untap step.,8,11,Abominable Treefolk; Frost Lynx; Frost Trickster
 exact_wording,you may tap target creature.,8,10,Alaborn Cavalier; Angelic Benediction; Flanking Troops
+exact_wording,you may have ~ assign its combat damage as though it weren't blocked.,8,9,"Deathcoil Wurm; Imaryll, Elfhame Elite; Lone Wolf"
 exact_wording,"flying, protection from red",8,8,Abbey Gargoyles; Aven Smokeweaver; Freewind Falcon
 exact_wording,~ enters tapped unless your opponents control eight or more lands.,8,8,Turbulent Crater; Turbulent Fen; Turbulent Moor
 exact_wording,target player discards two cards.,7,18,Abyssal Horror; Aggressive Sabotage; Fill with Fright
@@ -120,16 +116,17 @@ exact_wording,umbra armor,7,16,Boar Umbra; Drake Umbra; Eel Umbra
 exact_wording,riot,7,13,Burning-Tree Vandal; Clamor Shaman; Frenzied Arynx
 exact_wording,support 2.,7,12,Aerie Auxiliary; Captured by Lagacs; Expedition Raptor
 exact_wording,bloodthirst 1,7,11,Battering Wurm; Blood Ogre; Bloodrage Vampire
+exact_wording,its controller loses 2 life.,7,10,Countersquall; Death Bomb; Despoil
 exact_wording,"look at the top four cards of your library, then put them back in any order.",7,9,Crystal Seer; Discombobulate; Inkfathom Divers
 exact_wording,target creature can't be blocked this turn.,7,9,Artful Dodge; Enter the Enigma; Infiltrate
 exact_wording,target creature you control gains protection from the color of your choice until end of turn.,7,9,Center Soul; Emerge Unscathed; Gods Willing
-exact_wording,you may have ~ assign its combat damage as though it weren't blocked.,7,9,"Deathcoil Wurm; Imaryll, Elfhame Elite; Lone Wolf"
 exact_wording,protection from artifacts,7,8,Nacatl Savage; Needlebug; Tel-Jilad Archers
 exact_wording,"at the beginning of the end step, return ~ to its owner's hand.",7,7,Archwing Dragon; Glitterfang; Mark of Fury
 exact_wording,"heroic — whenever you cast a spell that targets ~, put a +1/+1 counter on ~.",7,7,"Akroan Skyguard; Brigone, Soldier of Meletis; Dawnbringer Charioteers"
 exact_wording,partner,6,70,"Akiri, Line-Slinger; Alena, Kessig Trapper; Kydele, Chosen of Kruphix"
 exact_wording,you control enchanted creature.,6,28,Control Magic; Grafted Identity; Mind Control
 exact_wording,assist,6,16,Bloodborn Scoundrels; Bring Down; Charging Binox
+exact_wording,each player discards a card.,6,14,Cunning Lethemancer; Earsplitting Rats; Miasmic Mummy
 exact_wording,battle cry,6,13,Accorder Paladin; Goblin Wardriver; Kuldotha Ringleader
 exact_wording,jump-start,6,13,Chemister's Insight; Direct Current; Maximize Altitude
 exact_wording,phasing,6,12,Breezekeeper; Merfolk Raiders; Sandbar Crocodile
@@ -139,11 +136,11 @@ exact_wording,draft a card from ~'s spellbook.,6,11,"Boseiju Pathlighter; Curseb
 exact_wording,if kicked: it enters with two +1/+1 counters on it.,6,11,Academy Drake; Aether Figment; Ghastly Gloomhunter
 exact_wording,all creatures able to block ~ do so.,6,10,Breaker of Armies; Elvish Bard; Ochran Assassin
 exact_wording,each player sacrifices a creature of their choice.,6,10,Abyssal Gatekeeper; Fleshbag Marauder; Innocent Blood
-exact_wording,its controller loses 2 life.,6,10,Countersquall; Despoil; Hideous End
 exact_wording,"search your library for a card, put that card into your hand, then shuffle.",6,10,Demonic Tutor; Diabolic Intent; Diabolic Tutor
 exact_wording,those creatures don't untap during their controller's next untap step.,6,10,Decision Paralysis; Frost Breath; Frostveil Ambush
 exact_wording,"whenever ~ deals damage, you gain that much life.",6,10,El-Hajjâj; Horned Cheetah; Kjeldoran Gargoyle
 exact_wording,~ costs {1} less to cast for each creature in your party.,6,10,Deadly Alliance; Journey to Oblivion; Sea Gate Colossus
+exact_wording,bushido 2,6,9,Battle-Mad Ronin; Inner-Chamber Guard; Jade Avenger
 exact_wording,"whenever a creature dealt damage by ~ this turn dies, put a +1/+1 counter on ~.",6,9,Blood Cultist; Predator Ooze; Sengir Bats
 exact_wording,"as an additional cost to cast ~, exile a creature card from your graveyard.",6,8,Cobbled Lancer; Headless Skaab; Makeshift Mauler
 exact_wording,protection from blue,6,8,Bloated Toad; Guma; Karoo Meerkat
@@ -163,19 +160,18 @@ exact_wording,untap that creature.,5,35,Galadhrim Bow; Savage Surge; Stony Stren
 exact_wording,choose a background,5,32,"Erinis, Gloom Stalker; Ganax, Astral Hunter; Livaan, Cultist of Tiamat"
 exact_wording,fuse,5,21,Alive // Well; Breaking // Entering; Profit // Loss
 exact_wording,you take the initiative.,5,21,Aarakocra Sneak; Avenging Hunter; Explore the Underdark
-exact_wording,sacrifice a creature.,5,18,Accursed Centaur; Commander Greven il-Vec; Demonic Appetite
 exact_wording,sacrifice it at the beginning of the next end step.,5,16,Hungry for More; Macabre Mockery; Molten Duplication
 exact_wording,for mirrodin!,5,15,Dragonwing Glider; Goldwarden's Helm; Mirran Bardiche
 exact_wording,skulk,5,15,Farbog Revenant; Furtive Homunculus; Pale Rider of Trostad
 exact_wording,sunburst,5,15,Baton of Courage; Skyreach Manta; Solarion
 exact_wording,cast ~ only during the declare attackers step and only if you've been attacked this step.,5,14,Assassin's Blade; Eightfold Maze; Just Fate
-exact_wording,each player discards a card.,5,14,Cunning Lethemancer; Miasmic Mummy; Serum Raker
 exact_wording,destroy target artifact or land.,5,12,Demolish; Sunder from Within; Violent Impact
 exact_wording,untap all creatures you control.,5,12,Mobilize; To Arms!; Unswerving Sloth
 exact_wording,~'s power and toughness are each equal to the number of cards in your hand.,5,12,"Kagemaro, First to Suffer; Maro; Psychosis Crawler"
 exact_wording,"if you do, return this card from your graveyard to your hand.",5,11,Masked Admirers; Redtooth Vanguard; Shambling Cie'th
 exact_wording,populate.,5,11,Growing Ranks; Rootborn Defenses; Song of the Worldsoul
-exact_wording,bushido 2,5,9,Battle-Mad Ronin; Inner-Chamber Guard; Jade Avenger
+exact_wording,that player discards a card.,5,11,Blazing Specter; Chilling Apparition; Fell Flagship
+exact_wording,you gain life equal to that creature's toughness.,5,10,Heal the Scars; Proper Burial; Sheltering Word
 exact_wording,destroy target permanent.,5,9,Angel of Despair; Desert Twister; Meteor Sword
 exact_wording,dethrone,5,9,Enraged Revolutionary; Grenzo's Cutthroat; Marchesa's Emissary
 exact_wording,ingest,5,9,Benthic Infiltrator; Culling Drone; Mist Intruder
@@ -188,6 +184,8 @@ exact_wording,you gain life equal to the life lost this way.,5,8,Agent of Masks;
 exact_wording,{r}: enchanted creature gets +1/+0 until end of turn.,5,8,Crown of Flames; Firebreathing; Ghitu Firebreathing
 exact_wording,"if damage would be dealt to ~, prevent that damage. remove a +1/+1 counter from ~.",5,7,Phantom Flock; Phantom Nantuko; Phantom Nomad
 exact_wording,"if you don't, put a +1/+1 counter on ~.",5,7,Ainok Wayfarer; Blanchwood Prowler; Ostrich-Horse
+exact_wording,target creature gains deathtouch until end of turn.,5,7,Bladebrand; Lace with Moonglove; Necrobite
+exact_wording,"whenever ~ deals combat damage to a creature, tap that creature and it doesn't untap during its controller's next untap step.",5,7,Frostwalk Bastion; Kashi-Tribe Reaver; Kashi-Tribe Warriors
 exact_wording,{2}: add one mana of any color.,5,7,Crossroads Candleguide; Energy Refractor; Prismite
 exact_wording,{t}: untap target land.,5,7,Blossom Dryad; Juniper Order Druid; Ley Druid
 exact_wording,~ has first strike as long as it's attacking.,5,7,Blood Petal Celebrant; Kor Scythemaster; Soltari Lancer
@@ -211,11 +209,9 @@ exact_wording,{u}: ~ gains shroud until end of turn.,5,5,Advanced Hoverguard; Gi
 exact_wording,split second,4,24,Krosan Grip; Siege Smash; Sudden Death
 exact_wording,untap those creatures.,4,13,Gleam of Resistance; Tenacity; Virtue of Loyalty // Ardenvale Fealty
 exact_wording,"until end of turn, you don't lose this mana as steps and phases end.",4,13,Brazen Collector; Colossal Plow; Sakura-Tribe Springcaller
-exact_wording,that player discards a card.,4,11,Blazing Specter; Fell Flagship; Frightful Delusion
 exact_wording,training,4,11,Apprentice Sharpshooter; Gryff Rider; Rural Recruit
 exact_wording,you have hexproof.,4,11,Aegis of the Gods; Leyline of Sanctity; Spirit of the Hearth
 exact_wording,morph {u},4,10,Aphetto Alchemist; Disruptive Pitmage; Monastery Flock
-exact_wording,you gain life equal to that creature's toughness.,4,10,Proper Burial; Sheltering Word; Tribute to Hunger
 exact_wording,"you may cast ~ as though it had flash. if you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step.",4,10,Lightning Reflexes; Parapet; Soar
 exact_wording,you may put a verse counter on ~.,4,10,Lilting Refrain; Midsummer Revel; Torch Song
 exact_wording,each creature you control with a +1/+1 counter on it has trample.,4,9,Crowned Ceratok; Drix Fatemaker; Duskshell Crawler
@@ -230,12 +226,12 @@ exact_wording,"exile target creature you control, then return that card to the b
 exact_wording,look at target player's hand.,4,7,Clairvoyance; Gitaxian Probe; Ingenious Thief
 exact_wording,madness {1}{r},4,7,Alchemist's Greeting; Bloodmad Vampire; Senseless Rage
 exact_wording,modular 2,4,7,Arcbound Hybrid; Arcbound Prototype; Arcbound Whelp
-exact_wording,target creature gains deathtouch until end of turn.,4,7,Bladebrand; Lace with Moonglove; Poison the Blade
-exact_wording,"whenever ~ deals combat damage to a creature, tap that creature and it doesn't untap during its controller's next untap step.",4,7,Frostwalk Bastion; Kashi-Tribe Warriors; Matsu-Tribe Birdstalker
 exact_wording,bolster 2.,4,6,Abzan Skycaptain; Honor's Reward; Pinion Feast
 exact_wording,each player can't cast more than one spell each turn.,4,6,Arcane Laboratory; Eidolon of Rhetoric; High Noon
 exact_wording,each player loses 2 life.,4,6,Bad Deal; Crushing Disappointment; Rabid Bloodsucker
 exact_wording,"flying, protection from black",4,6,Duskrider Falcon; Melesse Spirit; Nightwind Glider
+exact_wording,if kicked: it enters with a +1/+1 counter on it.,4,6,Ardent Soldier; Kavu Aggressor; Pincer Spider
+exact_wording,protection from green,4,6,Spectral Lynx; Vodalian Zombie; Woodlot Crawler
 exact_wording,soulshift 4,4,6,Hundred-Talon Kami; Scuttling Death; Torii Watchward
 exact_wording,transmute {1}{u}{u},4,6,Dizzy Spell; Drift of Phantasms; Muddle the Mixture
 exact_wording,"whenever another creature dies, put a +1/+1 counter on ~.",4,6,"Elenda, the Dusk Rose; Havengul Vampire; Swarm of Bloodflies"
@@ -245,6 +241,7 @@ exact_wording,attacking creatures get +2/+0 until end of turn.,4,5,Army of Allah
 exact_wording,creatures your opponents control get -1/-0.,4,5,Azorius Skyguard; Cumber Stone; Dampening Pulse
 exact_wording,destroy target creature that was dealt damage this turn.,4,5,Final-Sting Faerie; Lurking Deadeye; Mirrodin Avenged
 exact_wording,fabricate 2,4,5,Angel of Invention; Elegant Edgecrafters; Visionary Augmenter
+exact_wording,madness {b},4,5,Alms of the Vein; Big Game Hunter; Dark Withering
 exact_wording,noncreature spells cost {1} more to cast.,4,5,"Glowrider; Thalia, Guardian of Thraben; Thorn of Amethyst"
 exact_wording,put a -1/-1 counter on target creature you control.,4,5,Baleful Ammit; Crocodile of the Crossing; Manticore of the Gauntlet
 exact_wording,return a permanent you control to its owner's hand.,4,5,Cache Raiders; Dream Stalker; Emancipation Angel
@@ -284,23 +281,22 @@ exact_wording,melee,3,12,Deputized Protester; Menagerie Liberator; Wings of the 
 exact_wording,"enchanted creature can't attack or block, and its activated abilities can't be activated.",3,10,Arrest; Lawmage's Binding; Prison Sentence
 exact_wording,target player sacrifices a creature of their choice.,3,9,Chainer's Edict; Diabolic Edict; Grave Exchange
 exact_wording,vanishing 3,3,9,Aven Riftwatcher; Deadwood Treefolk; Deep Forest Hermit
+exact_wording,you may cast ~ as though it had flash if you pay {2} more to cast it.,3,9,Ghitu Fire; Mystical Tether; Rout
 exact_wording,copy target instant or sorcery spell.,3,8,Dualcaster Mage; Reverberate; Twincast
 exact_wording,discard your hand.,3,8,One with Nothing; Peer Past the Veil; Song of Creation
-exact_wording,regenerate target creature.,3,8,Death Ward; Mending Touch; Refresh
 exact_wording,~ can't be blocked except by three or more creatures.,3,8,Rampaging Ceratops; Relentless X-ATM092; Troll of Khazad-dûm
 exact_wording,amplify 1,3,7,Aven Warhawk; Glowering Rogon; Zombie Brute
 exact_wording,demonstrate,3,7,Excavation Technique; Incarnation Technique; Replication Technique
 exact_wording,devour 2,3,7,Feaster of Fools; Predator Dragon; Thorn-Thrash Viashino
 exact_wording,"enchanted permanent can't attack or block, and its activated abilities can't be activated.",3,7,Petrify; Secure Detention; Suppression Bonds
 exact_wording,tap target creature defending player controls.,3,7,Fiend Binder; Master of Diversion; Star-Crowned Stag
+exact_wording,you gain life equal to its toughness.,3,7,Angelic Chorus; Sever Soul; South Wind Avatar
 exact_wording,{1}: ~ becomes the creature type of your choice until end of turn.,3,7,Mistform Dreamer; Mistform Skyreaver; Mistform Stalker
 exact_wording,afterlife 1,3,6,Imperious Oligarch; Orzhov Enforcer; Syndicate Messenger
 exact_wording,all creatures able to block target creature this turn do so.,3,6,Alluring Scent; Bloodscent; Taunting Challenge
 exact_wording,change the target of target spell with a single target.,3,6,Deflection; Shunt; Swerve
 exact_wording,draw that many cards.,3,6,Fear of Failed Tests; Glint-Eye Nephilim; Professor Hulk
-exact_wording,if kicked: it enters with a +1/+1 counter on it.,3,6,Ardent Soldier; Kavu Aggressor; Pincer Spider
 exact_wording,incubate 2.,3,6,Essence of Orthodoxy; Marauding Dreadship; Sculpted Perfection
-exact_wording,protection from green,3,6,Vodalian Zombie; Woodlot Crawler; Zombie Outlander
 exact_wording,soulshift 3,3,6,Burr Grafter; Gibbering Kami; Kami of Empty Graves
 exact_wording,spells your opponents cast that target ~ cost {2} more to cast.,3,6,"Boreal Elemental; Charix, the Raging Isle; Sphinx of New Prahv"
 exact_wording,"when enchanted creature dies, return that card to the battlefield under your control.",3,6,False Demise; Minion's Return; Unhallowed Pact
@@ -316,7 +312,6 @@ exact_wording,enchanted creature has protection from the chosen color. this effe
 exact_wording,enchanted creature has shroud.,3,5,Alexi's Cloak; Diplomatic Immunity; Robe of Mirrors
 exact_wording,"if it's your turn, scry 2.",3,5,Fated Conflagration; Fated Infatuation; Fated Intervention
 exact_wording,"if you control a commander, you may cast ~ without paying its mana cost.",3,5,Deadly Rollick; Fierce Guardianship; Flawless Maneuver
-exact_wording,madness {b},3,5,Alms of the Vein; Dark Withering; Kitchen Imp
 exact_wording,manifest the top card of your library.,3,5,Guardian of the Forgotten; Soul Summons; Sultai Emissary
 exact_wording,paradigm,3,5,Decorum Dissertation; Germination Practicum; Restoration Seminar
 exact_wording,suspect it.,3,5,Caught Red-Handed; It Doesn't Add Up; Person of Interest
@@ -329,7 +324,6 @@ exact_wording,you gain life equal to its mana value.,3,5,Divine Offering; Serene
 exact_wording,you may destroy target artifact.,3,5,Batterhorn; Bumbling Pangolin; Wild Celebrants
 exact_wording,you may put a -1/-1 counter on target creature.,3,5,Cartouche of Ambition; Festering Mummy; Necropede
 exact_wording,you may tap or untap target creature.,3,5,Bounding Krasis; Elite Interceptor // Rejoinder; Sewer-veillance Cam
-exact_wording,{2}{g}: regenerate ~.,3,5,Living Airship; Tangle Hulk; Votary of the Conclave
 exact_wording,~ can't be blocked by walls.,3,5,Bog Rats; Juggernaut; Rampart Crawler
 exact_wording,~ can't block and can't be blocked.,3,5,Changeling Outcast; Inkfathom Infiltrator; Tormented Soul
 exact_wording,~ deals damage to target creature equal to the number of lands you control.,3,5,Ground Assault; Rumbling Rockslide; Stonefury
@@ -357,8 +351,8 @@ exact_wording,put target creature into its owner's library second from the top.,
 exact_wording,put target nonland permanent on top of its owner's library.,3,4,Nevermaker; Set Adrift; Totally Lost
 exact_wording,rampage 2,3,4,Craw Giant; Frost Giant; Wolverine Pack
 exact_wording,reconfigure {4},3,4,Armguard Familiar; Leech Gauntlet; Webspinner Cuff
-exact_wording,regenerate it.,3,4,Boon of Erebos; Butcher's Glee; Unnatural Endurance
 exact_wording,return another creature you control to its owner's hand.,3,4,Ambush Krotiq; Havengul Skaab; Yarok's Wavecrasher
+exact_wording,sacrifice ~ unless you pay {g}{g}.,3,4,Child of Gaea; Darba; Hungry Mist
 exact_wording,target player loses 2 life and you gain 2 life.,3,4,Bloodhunter Bat; Tendrils of Agony; Vampire's Kiss
 exact_wording,"when ~ attacks or blocks, sacrifice it at end of combat.",3,4,Fog Elemental; Mardu Blazebringer; Runaway Carriage
 exact_wording,"whenever you attack with two or more creatures, draw a card.",3,4,Chivalric Alliance; Escarpment Fortress; Military Intelligence
@@ -379,6 +373,9 @@ exact_wording,~ can't be blocked by creatures with flying.,3,4,Gnat Alley Creepe
 exact_wording,~ can't block creatures with power 2 or greater.,3,4,Brassclaw Orcs; Ironclaw Buzzardiers; Ironclaw Orcs
 exact_wording,~ deals 1 damage to each attacking creature.,3,4,Marrow Shards; Rain of Blades; Sandstorm
 exact_wording,~ deals damage to target creature equal to the number of mountains you control.,3,4,Rockslide Ambush; Seismic Strike; Spitting Earth
+exact_wording,~ gets +1/+1 as long as you control a plains.,3,4,Arctic Aven; Hedge Troll; Sunblade Elf
+exact_wording,~ gets +1/+1 as long as you control a swamp.,3,4,Crimson Muckwader; Mire Kavu; Sedge Troll
+exact_wording,• return target permanent to its owner's hand.,3,4,Crosis's Charm; Grixis Charm; Silumgar's Command
 exact_wording,• target player discards two cards.,3,4,Consult the Necrosages; Esper Charm; Shredder's Revenge
 exact_wording,activated abilities of artifacts can't be activated.,3,3,Collector Ouphe; Null Rod; Stony Silence
 exact_wording,"artifacts, creatures, and lands your opponents control enter tapped.",3,3,Frozen Aether; Kismet; Loxodon Gatekeeper
@@ -424,6 +421,7 @@ exact_wording,tap all creatures your opponents control.,3,3,"Bond of Discipline;
 exact_wording,tap an untapped creature you control: ~ gets +1/+1 until end of turn.,3,3,Bramblesnap; Llanowar Behemoth; Topan Ascetic
 exact_wording,target nonland permanent's owner puts it on their choice of the top or bottom of their library.,3,3,Desynchronize; Trip Up; Vanish from Sight
 exact_wording,target player gains x life.,3,3,Infirmary Healer // Stream of Life; Stream of Life; Who // What // When // Where // Why
+exact_wording,"threshold — as long as there are seven or more cards in your graveyard, ~ gets +2/+2 and can't block.",3,3,Childhood Horror; Dirty Wererat; Frightcrawler
 exact_wording,untap all nonland permanents you control.,3,3,Dramatic Reversal; Paradox Engine; Unstoppable Plan
 exact_wording,vanishing 4,3,3,Calciderm; Four Knocks; Omenpath to Naya
 exact_wording,"void — at the beginning of your end step, if a nonland permanent left the battlefield this turn or a spell was warped this turn, put a +1/+1 counter on ~.",3,3,Insatiable Skittermaw; Interceptor Mechan; Kavaron Skywarden
@@ -433,6 +431,7 @@ exact_wording,"whenever a player casts a white spell, you may pay {1}. if you do
 exact_wording,"whenever an opponent discards a card, that player loses 2 life.",3,3,Fell Specter; Liliana's Caress; Raiders' Wake
 exact_wording,"whenever enchanted creature deals damage to an opponent, you may draw a card.",3,3,Curiosity; Keen Sense; Ophidian Eye
 exact_wording,"whenever ~ attacks and isn't blocked, defending player gets a poison counter.",3,3,Crypt Cobra; Suq'Ata Assassin; Swamp Mosquito
+exact_wording,"whenever ~ becomes blocked by a creature, ~ gets +1/+1 until end of turn.",3,3,Cave Tiger; Pygmy Troll; Rabid Wolverines
 exact_wording,"whenever ~ becomes blocked, it gets +1/+1 until end of turn.",3,3,Deeproot Warrior; Norwood Warrior; Trained Cheetah
 exact_wording,"whenever ~ blocks a creature with flying, ~ gets +2/+0 until end of turn.",3,3,High-Rise Sawjack; Netcaster Spider; Snarespinner
 exact_wording,"whenever ~ blocks a creature, that creature doesn't untap during its controller's next untap step.",3,3,Cleric of Chill Depths; Labyrinth Minotaur; Wall of Frost
@@ -459,7 +458,6 @@ exact_wording,~ costs {1} less to cast for each creature that attacked this turn
 exact_wording,~ deals 1 damage to each creature without flying.,3,3,Seismic Shudder; Shake the Foundations; Tremor
 exact_wording,"~ deals 3 damage divided as you choose among one, two, or three targets.",3,3,Arc Lightning; Flames of the Firebrand; Magic Missile
 exact_wording,• return two target creature cards that share a creature type from your graveyard to your hand.,3,3,Raise the Draugr; Return from Extinction; Unbury
-exact_wording,they can't be regenerated.,2,34,Damnation; Wrath of God
 exact_wording,cumulative upkeep {1},2,23,Mesmeric Trance; Soldevi Simulacrum
 exact_wording,double team,2,16,Lizardfolk Librarians; Soldiers of the Watch
 exact_wording,skip your draw step.,2,14,Wild Wasteland; Yawgmoth's Bargain
@@ -470,7 +468,6 @@ exact_wording,morph {2}{u},2,11,Ascending Aven; Mystic of the Hidden Way
 exact_wording,shuffle ~ into its owner's library.,2,10,Beacon of Destruction; Beacon of Unrest
 exact_wording,devour 1,2,9,Gluttonous Slime; Gorger Wurm
 exact_wording,untap them.,2,9,Rally to Battle; Rallying Roar
-exact_wording,you may cast ~ as though it had flash if you pay {2} more to cast it.,2,9,Ghitu Fire; Mystical Tether
 exact_wording,"each player shuffles their hand and graveyard into their library, then draws seven cards.",2,8,Echo of Eons; Timetwister
 exact_wording,"if you would gain life, you gain that much life plus 1 instead.",2,8,Heron of Hope; Knight of Dawn's Light
 exact_wording,"{t}, remove a charge counter from ~: add one mana of any color.",2,8,Mirrodin's Core; Tendo Ice Bridge
@@ -480,7 +477,6 @@ exact_wording,return it to the battlefield under its owner's control at the begi
 exact_wording,target creature's owner puts it on their choice of the top or bottom of their library.,2,7,Misleading Motes; Uncharted Voyage
 exact_wording,target player draws x cards.,2,7,Braingeyser; Stroke of Genius
 exact_wording,you control enchanted permanent.,2,7,Confiscate; Lay Claim
-exact_wording,you gain life equal to its toughness.,2,7,Angelic Chorus; South Wind Avatar
 exact_wording,your opponents can't gain life.,2,7,"Knight of Dusk's Shadow; Tibalt, Rakish Instigator"
 exact_wording,~ can block any number of creatures.,2,7,Palace Guard; Wall of Glare
 exact_wording,cumulative upkeep {u},2,6,Illusionary Forces; Illusionary Wall
@@ -489,7 +485,6 @@ exact_wording,destroy all nonland permanents.,2,6,Ondu Inversion // Ondu Skyruin
 exact_wording,"if you would gain life, you gain twice that much life instead.",2,6,Boon Reflection; Rhox Faithmender
 exact_wording,prevent all damage that would be dealt to ~.,2,6,"Cho-Manno, Revolutionary; Dawn Elemental"
 exact_wording,tap x target creatures.,2,6,Glimpse the Sun God; Word of Binding
-exact_wording,{2}{b}: regenerate ~.,2,6,Asphodel Wanderer; Deathbellow Raider
 exact_wording,all creatures have haste.,2,5,Concordant Crossroads; Mass Hysteria
 exact_wording,bloodthirst 3,2,5,Carnage Wurm; Ghor-Clan Savage
 exact_wording,buyback {2},2,5,Haze of Rage; Mystic Speculation
@@ -536,7 +531,6 @@ exact_wording,put it on the bottom of its owner's library.,2,4,Fell Horseman // 
 exact_wording,renown 2,2,4,Citadel Castellan; Rhox Maulers
 exact_wording,return target spell to its owner's hand.,2,4,Reprieve; Spellscorn Coven // Take It Back
 exact_wording,return two target creatures to their owners' hands.,2,4,Essence Fracture; Undo
-exact_wording,sacrifice ~ unless you pay {g}{g}.,2,4,Darba; Hungry Mist
 exact_wording,spells you cast cost {1} less to cast.,2,4,Racers' Scoreboard; Stone Calendar
 exact_wording,target opponent chooses a creature they control.,2,4,Imperial Edict; Wei Assassins
 exact_wording,target player discards a card at random.,2,4,Sanity Gnawers; Specter's Wail
@@ -555,9 +549,7 @@ exact_wording,~ can't be blocked by blue creatures.,2,4,Lightning Mare; Mudbrawl
 exact_wording,~ deals 2 damage to that creature's controller.,2,4,Blur of Blades; Consign to the Pit
 exact_wording,~ deals 4 damage divided as you choose among any number of targets.,2,4,Amethyst Dragon // Explosive Crystal; Pyrotechnics
 exact_wording,~ deals x damage to each creature.,2,4,Savage Twister; Starstorm
-exact_wording,~ gets +1/+1 as long as you control a plains.,2,4,Arctic Aven; Sunblade Elf
 exact_wording,• exile target card from a graveyard.,2,4,Cleanup Crew; Return to Nature
-exact_wording,• return target permanent to its owner's hand.,2,4,Grixis Charm; Silumgar's Command
 exact_wording,• target creature gains flying until end of turn.,2,4,"Evolution Charm; Graviton, Fundamental Force"
 exact_wording,• ~ deals 4 damage to target creature with flying.,2,4,Shredded Sails; Thunderbolt
 exact_wording,all sliver creatures have haste.,2,3,Heart Sliver; Reflex Sliver
@@ -575,7 +567,6 @@ exact_wording,destroy all equipment attached to that creature.,2,3,Blastfire Bol
 exact_wording,destroy all lands.,2,3,Armageddon; Ravages of War
 exact_wording,destroy target creature or land.,2,3,Lava Flow; Wrecking Ball
 exact_wording,destroy target equipment.,2,3,Rustspore Ram; Turn to Dust
-exact_wording,discard a card: regenerate ~.,2,3,Patchwork Gnomes; Tunneler Wurm
 exact_wording,"distribute three +1/+1 counters among one, two, or three target creatures you control.",2,3,Armament Dragon; Defend the Celestus
 exact_wording,double target creature's power until end of turn.,2,3,"Bulk Up; Mr. Orfeo, the Boulder"
 exact_wording,echo {3}{r},2,3,Avalanche Riders; Stingscourger
@@ -614,6 +605,7 @@ exact_wording,madness {u},2,3,Just the Wind; Obsessive Search
 exact_wording,mana restriction ignored: spend this mana only to cast an artifact spell or activate an ability of an artifact source.,2,3,Cargo Ship; Oaken Siren
 exact_wording,morph {4}{g},2,3,Sagu Archer; Spitting Gourna
 exact_wording,morph {4}{r},2,3,Ainok Tracker; Charging Slateback
+exact_wording,morph {g},2,3,Branchsnap Lorian; Kin-Tree Warden
 exact_wording,players play with their hands revealed.,2,3,Revelation; Wandering Eye
 exact_wording,prevent all damage that would be dealt by enchanted creature.,2,3,Defang; Muzzle
 exact_wording,put target attacking or blocking creature on top of its owner's library.,2,3,Warrant // Warden; Whisk Away
@@ -638,8 +630,6 @@ exact_wording,target opponent discards a card at random.,2,3,Black Cat; Mind Kni
 exact_wording,target opponent puts a card from their hand on top of their library.,2,3,Chimney Imp; Chittering Rats
 exact_wording,target player discards three cards.,2,3,Fugue; Three Tragedies
 exact_wording,"threshold — as long as there are seven or more cards in your graveyard, ~ gets +1/+1 and has flying.",2,3,Mystic Penitent; Mystic Zealot
-exact_wording,"threshold — as long as there are seven or more cards in your graveyard, ~ gets +2/+2 and can't block.",2,3,Childhood Horror; Frightcrawler
-exact_wording,"whenever ~ becomes blocked by a creature, ~ gets +1/+1 until end of turn.",2,3,Cave Tiger; Rabid Wolverines
 exact_wording,"whenever ~ becomes the target of a spell or ability an opponent controls, draw a card.",2,3,"Old Fat Spider; Ruric Thar, Biomagus"
 exact_wording,"whenever ~ becomes the target of a spell or ability for the first time each turn, counter that spell or ability.",2,3,Jetting Glasskite; Shimmering Glasskite
 exact_wording,"whenever ~ becomes unattached from a permanent, sacrifice that permanent.",2,3,Grafted Exoskeleton; Grafted Wargear
@@ -662,7 +652,6 @@ exact_wording,{2}: ~ becomes colorless until end of turn.,2,3,Ancient Kavu; Ragi
 exact_wording,{2}{u}: ~ can't be blocked this turn.,2,3,Agent of Horizons; Drownyard Amalgam
 exact_wording,"{3}, {t}: search your library for a mercenary permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",2,3,Cateran Kidnappers; Rathi Assassin
 exact_wording,{b}: ~ deals 1 damage to each creature and each player.,2,3,Pestilence Demon; Thrashing Wumpus
-exact_wording,{b}{g}: regenerate ~.,2,3,Hellkite Overlord; Rakshasa Deathdealer
 exact_wording,{g}: target creature blocks ~ this turn if able.,2,3,Rampant Elephant; Tangle Angler
 exact_wording,{g}: ~ becomes the color of your choice until end of turn.,2,3,Caldera Kavu; Kavu Chameleon
 exact_wording,"{t}: draw a card and reveal it. if it isn't a land card, discard it.",2,3,Fa'adiyah Seer; Sindbad
@@ -770,6 +759,7 @@ exact_wording,"during turns other than yours, spells you cast cost {1} less to c
 exact_wording,"during your turn, equipped creature gets +2/+0 and has first strike.",2,2,Javelin of Lightning; Quick-Draw Katana
 exact_wording,"during your turn, your opponents can't cast spells or activate abilities of artifacts, creatures, or enchantments.",2,2,"Grand Abolisher; Myrel, Shield of Argive"
 exact_wording,"during your turn, ~ gets +0/+2.",2,2,Hardy Veteran; Sporeback Wolf
+exact_wording,each creature card in your graveyard has scavenge. the scavenge cost is equal to its mana cost.,2,2,"Varolz, the Scar-Striped; Young Deathclaws"
 exact_wording,each creature deals damage to itself equal to its power.,2,2,Solar Blaze; Wave of Reckoning
 exact_wording,each creature you control can block an additional creature each combat.,2,2,Brave the Sands; High Ground
 exact_wording,each creature you control can't be blocked by more than one creature.,2,2,"Familiar Ground; Yuan Shao, the Indecisive"
@@ -778,6 +768,7 @@ exact_wording,each creature you control with power 4 or greater can't be blocked
 exact_wording,each land is a swamp in addition to its other land types.,2,2,"Blanket of Night; Urborg, Tomb of Yawgmoth"
 exact_wording,"each player chooses any number of creatures they control with total power 4 or less, then sacrifices all other creatures they control.",2,2,Destined Confrontation; Slaughter the Strong
 exact_wording,each player sacrifices two creatures of their choice.,2,2,Abyssal Gorestalker; Barter in Blood
+exact_wording,echo {1}{g},2,2,Acridian; Albino Troll
 exact_wording,echo {1}{g}{g},2,2,Cradle Guard; Uktabi Drake
 exact_wording,echo {1}{r},2,2,Goblin War Buggy; Mogg War Marshal
 exact_wording,echo {5}{r},2,2,Firemaw Kavu; Hammerheim Deadeye
@@ -884,7 +875,6 @@ exact_wording,sacrifice it unless you sacrifice a forest.,2,2,Plant Elemental; R
 exact_wording,sacrifice it unless {u} was spent to cast it.,2,2,Azorius Herald; Patagia Viper
 exact_wording,"sacrifice ~: it deals 1 damage to any target. activate only during your turn, before attackers are declared.",2,2,Fire Bowman; Goblin Firestarter
 exact_wording,sacrifice ~: prevent all combat damage that would be dealt this turn.,2,2,Kami of False Hope; Spore Frog
-exact_wording,sacrifice ~: regenerate target artifact.,2,2,Pteron Ghost; Welding Jar
 exact_wording,scavenge {4}{g}{g},2,2,Deadbridge Goliath; Thrashing Mossdog
 exact_wording,"search your library for a card, put that card into your graveyard, then shuffle.",2,2,Entomb; Vile Entomber
 exact_wording,"search your library for an artifact card with mana value x or less, put it onto the battlefield, then shuffle.",2,2,Reshape; Whir of Invention
@@ -921,6 +911,7 @@ exact_wording,target player discards x cards at random.,2,2,Mind Shatter; Mind T
 exact_wording,target player gains 8 life.,2,2,Natural Spring; Sylvan Bounty
 exact_wording,target player loses 1 life.,2,2,Piranha Marsh; Smoldering Tar
 exact_wording,target player loses 4 life and you gain 4 life.,2,2,Absorb Vis; Soul Feast
+exact_wording,that creature's controller creates a 3/3 green frog lizard creature token.,2,2,Incubation // Incongruity; Rapid Hybridization
 exact_wording,the owner of target creature an opponent controls puts it into their library second from the top or on the bottom.,2,2,"Happy Hogan, Bodyguard; Trickster's Stratagem"
 exact_wording,"they have ""when ~ dies, it deals 1 damage to any target.""",2,2,Dance with Devils; Devils' Playground
 exact_wording,toxic 3,2,2,Tyrranax Atrocity; Venomous Brutalizer
@@ -986,6 +977,7 @@ exact_wording,you control enchanted land.,2,2,Annex; Conquer
 exact_wording,you create a treasure token.,2,2,Flick a Coin; Hornswoggle
 exact_wording,you gain 2 life for each card in your hand.,2,2,Gerrard's Wisdom; Presence of the Wise
 exact_wording,you gain life equal to your devotion to green.,2,2,Nylea's Disciple; Setessan Petitioner
+exact_wording,you lose life equal to that creature's toughness.,2,2,Devour in Shadow; Vendetta
 exact_wording,you may cast a spell with mana value 3 or less from your hand without paying its mana cost.,2,2,Sram's Expertise; Yahenni's Expertise
 exact_wording,you may cast it from your graveyard as an adventure until the end of your next turn.,2,2,Hildibrand Manderville // Gentleman's Rise; Mosswood Dreadknight // Dread Whispers
 exact_wording,you may destroy target artifact that player controls.,2,2,Caustic Wasps; Rustmouth Ogre
@@ -1018,7 +1010,6 @@ exact_wording,"{3}, {t}: tap target creature you control and target creature of 
 exact_wording,{3}: ~ gets +3/-1 until end of turn and can attack this turn as though it didn't have defender. activate only once each turn.,2,2,Mobile Fort; Walking Wall
 exact_wording,{3}{u}{u}: counter target enchantment spell.,2,2,Arenson's Aura; Teferi's Care
 exact_wording,{4}{u}: target creature can't be blocked this turn.,2,2,Coralhelm Guide; Elvenking's Harper
-exact_wording,"{b}, sacrifice a creature: regenerate ~.",2,2,Corrupted Harvester; Skeletal Kathari
 exact_wording,"{g}, {t}, sacrifice a forest: regenerate target creature.",2,2,Tel-Jilad Lifebreather; Village Elder
 exact_wording,{r/p}: ~ gets +1/+0 until end of turn.,2,2,Immolating Souleater; Moltensteel Dragon
 exact_wording,{r}: target creature can't block ~ this turn.,2,2,Screeching Griffin; Spin Engine
@@ -1055,7 +1046,6 @@ exact_wording,"{u}, sacrifice ~: counter target spell that targets a creature yo
 exact_wording,"{u}, {t}: you may tap or untap target creature.",2,2,Niblis of the Breath; Puppeteer
 exact_wording,{u}: ~ gains islandwalk until end of turn.,2,2,Deeptread Merrow; Shore Snapper
 exact_wording,{u}{u}: tap target creature without flying.,2,2,Cephalid Retainer; Flood
-exact_wording,"{w}, {t}: regenerate target artifact.",2,2,Loxodon Mender; Metallurgeon
 exact_wording,{w}: enchanted creature gets +0/+1 until end of turn.,2,2,Armor of Faith; Holy Armor
 exact_wording,{w}: target permanent becomes white until end of turn.,2,2,Aurora Griffin; Cloudchaser Kestrel
 exact_wording,{w}: ~ can attack this turn as though it didn't have defender.,2,2,Mirror Wall; Wall of One Thousand Cuts
@@ -1099,6 +1089,7 @@ exact_wording,~ has flying as long as it's enchanted.,2,2,Fledgling Osprey; Skyr
 exact_wording,~ has flying as long as it's modified.,2,2,Obstinate Gargoyle; Skyward Spider
 exact_wording,~ has hexproof as long as it hasn't dealt damage yet.,2,2,"Karakyk Guardian; Palladia-Mors, the Ruiner"
 exact_wording,~ has protection from the chosen color.,2,2,Order of the Stars; Voice of All
+exact_wording,~'s power and toughness are each equal to the number of creature cards in all graveyards.,2,2,Cruel Somnophage // Can't Wake Up; Mortivore
 exact_wording,• destroy target creature that was dealt damage this turn.,2,2,Hooded Assassin; Qutrub Forayer
 exact_wording,• put target creature on top of its owner's library.,2,2,Jeskai Charm; Swirling Torrent
 exact_wording,• return target spell or creature to its owner's hand.,2,2,Brutal Expulsion; Fatehold Charm
@@ -1129,6 +1120,7 @@ exact_wording,madness {1}{b},1,7,Murderous Compulsion
 exact_wording,other green creatures you control get +1/+1.,1,7,"Meng Huo, Barbarian King"
 exact_wording,partner—friends forever,1,7,"Elmar, Ulvenwald Informant"
 exact_wording,put a +1/+1 counter on enchanted creature.,1,7,Forced Adaptation
+exact_wording,sacrifice ~ unless you discard a card.,1,7,Masticore
 exact_wording,specialize {2},1,7,"Gale, Conduit of the Arcane"
 exact_wording,"when ~ is put into a graveyard from anywhere, shuffle it into its owner's library.",1,7,Worldspine Wurm
 exact_wording,~ perpetually gets +1/+1.,1,7,Wary Zone Guard
@@ -1156,11 +1148,12 @@ exact_wording,ninjutsu {1}{u},1,5,Sakashima's Student
 exact_wording,put a stun counter on each of them.,1,5,Homesickness
 exact_wording,return it to its owner's hand at the beginning of the next end step.,1,5,The Locust God
 exact_wording,that player discards two cards.,1,5,Ozai's Cruelty
+exact_wording,transmute {1}{b}{b},1,5,Dimir House Guard
 exact_wording,undaunted,1,5,Sublime Exhalation
 exact_wording,unearth {1}{b},1,5,Viscera Dragger
 exact_wording,you gain life equal to that card's mana value.,1,5,Razor Hippogriff
-exact_wording,{2}: regenerate ~.,1,5,Clay Statue
 exact_wording,~ enters with an oil counter on it.,1,5,Bladed Ambassador
+exact_wording,~ enters with six +1/+1 counters on it.,1,5,Spike Hatcher
 exact_wording,affinity for equipment,1,4,Oxidda Finisher
 exact_wording,afflict 3,1,4,Manticore Eternal
 exact_wording,cards in graveyards can't be the targets of spells or abilities.,1,4,Ground Seal
@@ -1182,7 +1175,6 @@ exact_wording,"look at the top three cards of your library, then put them back i
 exact_wording,morph {3}{w},1,4,Sage-Eye Harrier
 exact_wording,morph {4}{u},1,4,Glacial Stalker
 exact_wording,put a +1/+1 counter on that creature.,1,4,Good-Fortune Unicorn
-exact_wording,sacrifice a creature: regenerate ~.,1,4,Nim Shambler
 exact_wording,sacrifice ~ unless you pay {g}.,1,4,Wild Leotau
 exact_wording,tap any number of untapped creatures you control.,1,4,Devout Invocation
 exact_wording,target player takes an extra turn after this one.,1,4,Time Warp
@@ -1194,7 +1186,6 @@ exact_wording,vehicles you control become artifact creatures until end of turn.,
 exact_wording,"when ~ dies or is put into exile from the battlefield, you may put it into its owner's library third from the top.",1,4,God-Eternal Oketra
 exact_wording,"whenever one or more creatures you control deal combat damage to a player, draw a card.",1,4,"Spider-Man 2099, Miguel O'Hara"
 exact_wording,~ can't be blocked as long as it's attacking alone.,1,4,Dream Prowler
-exact_wording,~ gets +1/+1 as long as you control a swamp.,1,4,Mire Kavu
 exact_wording,~ gets +1/+1 for each oil counter on it.,1,4,Necrosquito
 exact_wording,~ is all colors.,1,4,Transguild Courier
 exact_wording,~'s power is equal to the number of cards in your hand.,1,4,Sylvan Yeti
@@ -1235,7 +1226,6 @@ exact_wording,land creatures you control have vigilance.,1,3,Earthbending Studen
 exact_wording,"look at the top three cards of target player's library, then put them back in any order.",1,3,Architects of Will
 exact_wording,morph {3}{b},1,3,Sootfeather Flock
 exact_wording,morph {4}{r}{r},1,3,Rockshard Elemental
-exact_wording,morph {g},1,3,Branchsnap Lorian
 exact_wording,other permanents you control have hexproof.,1,3,Privileged Position
 exact_wording,prevent all damage that would be dealt to it this turn.,1,3,Djeru's Resolve
 exact_wording,prevent the next 4 damage that would be dealt to any target this turn.,1,3,Mending Hands
@@ -1263,6 +1253,7 @@ exact_wording,transmute {1}{u}{b},1,3,Dimir Infiltrator
 exact_wording,untap enchanted creature.,1,3,Triclopean Sight
 exact_wording,"when enchanted land becomes tapped, destroy it.",1,3,Blight
 exact_wording,"when you do, tap target creature an opponent controls.",1,3,Faebloom Trick
+exact_wording,"when ~ becomes the target of a spell, sacrifice it.",1,3,Dream Strix
 exact_wording,"whenever a creature you control with power 4 or greater enters, draw a card.",1,3,Garruk's Uprising
 exact_wording,"whenever one or more creatures you control deal combat damage to a player, create a treasure token.",1,3,Professional Face-Breaker
 exact_wording,"whenever you surveil, put a +1/+1 counter on ~.",1,3,Dimir Spybug
@@ -1325,6 +1316,7 @@ exact_wording,"at the beginning of the upkeep of enchanted creature's controller
 exact_wording,"at the beginning of the upkeep of enchanted creature's controller, that player loses 1 life.",1,2,Soul Bleed
 exact_wording,"at the beginning of the upkeep of enchanted creature's controller, ~ deals 1 damage to that player.",1,2,Wanderlust
 exact_wording,"at the beginning of the upkeep of enchanted creature's controller, ~ deals 2 damage to that player.",1,2,Parasitic Bond
+exact_wording,"at this turn's next end of combat, destroy all creatures that blocked or were blocked by it this turn.",1,2,Gaze of the Gorgon
 exact_wording,attach it to target legendary creature you control.,1,2,Mithril Coat
 exact_wording,attach target equipment you control to up to one target creature you control.,1,2,Iron Hills Stalwart
 exact_wording,attach ~ to target creature you control.,1,2,Mantle of Tides
@@ -1356,6 +1348,7 @@ exact_wording,creatures with forestwalk can be blocked as though they didn't hav
 exact_wording,creatures with plainswalk can be blocked as though they didn't have plainswalk.,1,2,Great Wall
 exact_wording,creatures you control gain shroud until end of turn.,1,2,Tortoise Formation
 exact_wording,creatures you control have first strike.,1,2,Knighthood
+exact_wording,creatures you control have hexproof.,1,2,Asceticism
 exact_wording,creatures you control of the chosen color get +1/+1.,1,2,Hall of Triumph
 exact_wording,creatures you control with counters on them have trample.,1,2,Dominion Supervisor
 exact_wording,creatures your opponents control attack each combat if able.,1,2,Angler Turtle
@@ -1383,7 +1376,6 @@ exact_wording,draw a card if that creature has a +1/+1 counter on it.,1,2,Oblivi
 exact_wording,"during your turn, equipped creature has flying.",1,2,Hookblade
 exact_wording,"during your turn, prevent all damage that would be dealt to ~.",1,2,Guardian Naga // Banishing Coils
 exact_wording,"during your turn, ~ gets +2/+0.",1,2,Dapper Shieldmate
-exact_wording,each creature card in your graveyard has scavenge. the scavenge cost is equal to its mana cost.,1,2,Young Deathclaws
 exact_wording,each creature you control with a counter on it has ward {1}.,1,2,"Matt Murdock, Justice Seeker"
 exact_wording,each opponent can't cast instant or sorcery spells during that player's next turn.,1,2,Sphinx's Decree
 exact_wording,each opponent can't draw more than one card each turn.,1,2,"Narset, Parter of Veils"
@@ -1401,7 +1393,6 @@ exact_wording,each player sacrifices a nontoken creature of their choice.,1,2,Ac
 exact_wording,each player sacrifices x lands of their choice.,1,2,Tectonic Break
 exact_wording,"each player shuffles the cards from their hand into their library, then draws that many cards.",1,2,Winds of Change
 exact_wording,each player shuffles their graveyard into their library.,1,2,Mnemonic Nexus
-exact_wording,echo {1}{g},1,2,Acridian
 exact_wording,echo {3},1,2,Ticking Gnomes
 exact_wording,embalm {3}{u},1,2,Tah-Crop Skirmisher
 exact_wording,enchanted artifact is a creature with base power and toughness 5/5 in addition to its other types.,1,2,Ensoul Artifact
@@ -1523,7 +1514,6 @@ exact_wording,return up to two target nonland permanents to their owners' hands.
 exact_wording,return x target nonland permanents to their owners' hands.,1,2,Distorting Wake
 exact_wording,sacrifice a creature: target opponent gains control of ~.,1,2,Jinxed Idol
 exact_wording,sacrifice all creatures you control.,1,2,Death Pit Offering
-exact_wording,sacrifice another creature: regenerate ~.,1,2,Vampire Warlord
 exact_wording,sacrifice it at the beginning of your next end step.,1,2,Harried Dronesmith
 exact_wording,sacrifice that token at end of combat.,1,2,Kavaron Harrier
 exact_wording,sacrifice two lands.,1,2,Lotus Field
@@ -1567,8 +1557,8 @@ exact_wording,target player loses 3 life and you gain 3 life.,1,2,Sovereign's Bi
 exact_wording,"target player mills half their library, rounded down.",1,2,Traumatize
 exact_wording,target player shuffles up to three target cards from their graveyard into their library.,1,2,Memory's Journey
 exact_wording,that creature can't attack or block for as long as you control ~.,1,2,Extraction Specialist
-exact_wording,that creature's controller creates a 3/3 green frog lizard creature token.,1,2,Incubation // Incongruity
 exact_wording,that permanent loses indestructible until end of turn.,1,2,Soul Sear
+exact_wording,that player discards a card at random.,1,2,Rakdos Ringleader
 exact_wording,that player discards that many cards.,1,2,Needle Specter
 exact_wording,the owner of target nonland permanent puts it into their library second from the top or on the bottom.,1,2,Temporal Cleansing
 exact_wording,then you put a creature card from a graveyard onto the battlefield under your control.,1,2,Extract from Darkness
@@ -1681,7 +1671,6 @@ exact_wording,"{b}{b}, {t}: target player loses 2 life and you gain 2 life.",1,2
 exact_wording,"{g}, {t}: add one mana of any color.",1,2,Ceta Disciple
 exact_wording,"{r}, sacrifice ~: it deals damage equal to its power to target creature.",1,2,Cinder Shade
 exact_wording,"{r}, {t}: ~ deals 1 damage to any target and 1 damage to you.",1,2,Granger Guildmage
-exact_wording,{r}: regenerate ~.,1,2,Uthden Troll
 exact_wording,{r}: ~ gains protection from red until end of turn.,1,2,Keeper of Kookus
 exact_wording,"{r}: ~ gets +1/+0 until end of turn. if this ability has been activated four or more times this turn, sacrifice ~ at the beginning of the next end step.",1,2,Dragon Whelp
 exact_wording,{s}: regenerate ~.,1,2,Rimebound Dead
@@ -1691,7 +1680,6 @@ exact_wording,"{t}, remove any number of storage counters from ~: add {r} for ea
 exact_wording,"{t}, remove any number of storage counters from ~: add {u} for each storage counter removed this way.",1,2,Saprazzan Cove
 exact_wording,"{t}, remove any number of storage counters from ~: add {w} for each storage counter removed this way.",1,2,Fountain of Cho
 exact_wording,"{t}, sacrifice ~: add three mana of any one color.",1,2,Black Lotus
-exact_wording,{t}: destroy target creature. it can't be regenerated.,1,2,Visara the Dreadful
 exact_wording,{t}: prevent the next 2 damage that would be dealt to target artifact creature this turn.,1,2,Argivian Blacksmith
 exact_wording,{t}: target creature gains flying until end of turn.,1,2,Wind Dancer
 exact_wording,{t}: target land becomes an island until end of turn.,1,2,Tidal Warrior
@@ -1700,7 +1688,6 @@ exact_wording,{t}: untap two target lands.,1,2,Argothian Elder
 exact_wording,{u}: untap enchanted creature.,1,2,Freed from the Real
 exact_wording,{u}: ~ can't be blocked this turn.,1,2,Blockade Runner
 exact_wording,{u}{u}: ~ phases out.,1,2,Rainbow Efreet
-exact_wording,{w}: regenerate ~.,1,2,Revered Dead
 exact_wording,"{w}{w}, {t}: target creature gains protection from the color of your choice until end of turn.",1,2,Thornscape Master
 exact_wording,~ can't attack or block unless you control another creature with power 4 or greater.,1,2,Tiger-Dillo
 exact_wording,~ can't be blocked as long as you've drawn two or more cards this turn.,1,2,Tome Anima
@@ -1739,14 +1726,12 @@ exact_wording,~ has all activated abilities of all creature cards exiled with it
 exact_wording,~ has trample as long as it has a +1/+1 counter on it.,1,2,Baloth Pup
 exact_wording,~ is every creature type .,1,2,Mistform Ultimus
 exact_wording,~ phases out.,1,2,Crystal Golem
-exact_wording,~'s power and toughness are each equal to the number of creature cards in all graveyards.,1,2,Cruel Somnophage // Can't Wake Up
 exact_wording,~'s power and toughness are each equal to the number of creatures on the battlefield.,1,2,Beast of Burden
 exact_wording,~'s power and toughness are each equal to the total number of cards in all players' hands.,1,2,"Multani, Maro-Sorcerer"
 exact_wording,~'s power is equal to the greatest mana value among creatures you control.,1,2,Towering Gibbon
 exact_wording,• creatures without flying can't block this turn.,1,2,Destructive Tampering
 exact_wording,• destroy target creature with defender.,1,2,Deface
 exact_wording,"• exile target creature you control, then return it to the battlefield under its owner's control.",1,2,Settle Beyond Reality
-exact_wording,• regenerate each creature you control.,1,2,Golgari Charm
 exact_wording,• target opponent exiles an enchantment they control.,1,2,Early Winter
 exact_wording,• target opponent sacrifices an enchantment of their choice.,1,2,Pharika's Libation
 exact_wording,• target permanent you control gains hexproof and indestructible until end of turn.,1,2,Defend the Rider
@@ -1806,7 +1791,6 @@ exact_wording,"[−8]: you get an emblem with ""whenever an opponent casts their
 exact_wording,"[−8]: you get an emblem with ""whenever an opponent is dealt combat damage by one or more creatures you control, if that player lost less than 8 life this turn, they lose life equal to the difference.""",1,1,"Lolth, Spider Queen"
 exact_wording,"[−9]: you get an emblem with ""whenever a creature you control deals combat damage to a player, that player loses the game.""",1,1,"Vraska, Golgari Queen"
 exact_wording,"[−9]: you get an emblem with ""whenever a player casts a spell, you create a 2/1 blue ninja creature token.""",1,1,"Kaito, Cunning Infiltrator"
-exact_wording,a creature dealt damage this way can't be regenerated this turn.,1,1,Incinerate
 exact_wording,a person outside the game becomes your teammate.,1,1,Better Than One
 exact_wording,"a player who controls more permanents than each other player can't play lands or cast artifact, creature, or enchantment spells. that player may sacrifice a permanent of their choice for that player to ignore this effect until end of turn.",1,1,Damping Engine
 exact_wording,"a random creature card in your hand perpetually gets +x/+x, where x is the amount of life you gained.",1,1,Golden Sidekick
@@ -2164,6 +2148,7 @@ exact_wording,"as long as this card is in your graveyard and you control a mount
 exact_wording,"as long as this card is in your graveyard and you control a plains, creatures you control have first strike.",1,1,Valor
 exact_wording,"as long as this card is in your graveyard and you control a swamp, creatures you control have swampwalk.",1,1,Filth
 exact_wording,"as long as this card is in your graveyard and you control an island, creatures you control have flying.",1,1,Wonder
+exact_wording,"as long as this card is in your graveyard, if you would learn, you may instead return this card to the battlefield.",1,1,Retriever Phoenix
 exact_wording,"as long as this card is in your graveyard, lands you control have ""{t}: add {g} or {w}.""",1,1,Riftstone Portal
 exact_wording,"as long as you are way behind, ~ gets +3/+3 and has indestructible.",1,1,Knight of Lost Causes
 exact_wording,"as long as you aren't playing with sleeves, ~ gets +1/+1 and has trample.",1,1,Fear of Unsleeved Decks
@@ -2429,9 +2414,11 @@ exact_wording,"at the beginning of each end step, if you put a counter on a crea
 exact_wording,"at the beginning of each end step, if you put a counter on ~ this turn, create a 0/0 green and blue fractal creature token and put three +1/+1 counters on it.",1,1,Fractal Tender
 exact_wording,"at the beginning of each end step, if you've cast both a creature spell and a noncreature spell this turn, create a clue token, a food token, and a treasure token.",1,1,Fae Offering
 exact_wording,"at the beginning of each end step, if ~ attacked or blocked this turn, its owner shuffles it into their library.",1,1,Inferno Hellion
+exact_wording,"at the beginning of each end step, if ~ regenerated this turn, create a 0/1 blue starfish creature token for each time it regenerated this turn.",1,1,Spiny Starfish
 exact_wording,"at the beginning of each end step, if ~ was dealt damage this turn, put a +0/+1 counter on it.",1,1,Wall of Resistance
 exact_wording,"at the beginning of each end step, put a +1/+1 counter on ~ for each creature put into your graveyard from the battlefield this turn.",1,1,"Asmira, Holy Avenger"
 exact_wording,"at the beginning of each end step, put a +1/+1 counter on ~ for each creature that died this turn.",1,1,Khabál Ghoul
+exact_wording,"at the beginning of each end step, put a corpse counter on ~ for each creature that died this turn.",1,1,Scavenging Ghoul
 exact_wording,"at the beginning of each end step, put x +1/+1 counters on each creature you control, where x is the number of creatures that died under your control this turn.",1,1,Priest of the Crossing
 exact_wording,"at the beginning of each end step, you may have ~'s base power and toughness each become equal to the greatest number of spells and abilities from different sources that were on the stack simultaneously that turn.",1,1,Geometric Weird
 exact_wording,"at the beginning of each of your main phases, if you haven't added mana with this ability this turn, you may add x mana of any one color, where x is the number of islands target opponent controls.",1,1,Carpet of Flowers
@@ -2684,6 +2671,7 @@ exact_wording,bloodthirst 6,1,1,Furyborn Hellkite
 exact_wording,blue creatures you control can't be blocked.,1,1,Deepchannel Mentor
 exact_wording,"blue legendary creatures you control have ""bands with other legendary creatures.""",1,1,Seafarer's Quay
 exact_wording,"blue magic — when ~ enters, you may cast target instant or sorcery card from a graveyard, and mana of any type can be spent to cast that spell. if that spell would be put into a graveyard, exile it instead.",1,1,Quistis Trepe
+exact_wording,blue spells and red spells you cast cost {1} less to cast.,1,1,Nightscape Familiar
 exact_wording,blue spells you cast cost {u} more to cast.,1,1,Sapphire Leech
 exact_wording,boast — sacrifice another creature or artifact: ~ deals damage equal to 2 plus the sacrificed permanent's mana value to any target.,1,1,Broadside Bombardiers
 exact_wording,boast — {1}: exile the top card of your library. you may play that card this turn.,1,1,Tuskeri Firewalker
@@ -2711,6 +2699,7 @@ exact_wording,bushido 5,1,1,"Konda, Lord of Eiganjo"
 exact_wording,buyback costs cost {2} less.,1,1,Memory Crystal
 exact_wording,buyback {5},1,1,Whispers of the Muse
 exact_wording,"buyback—pay 3 life, discard a card at random.",1,1,Flowstone Flood
+exact_wording,buyback—pay 4 life.,1,1,Slaughter
 exact_wording,cards in graveyards lose all abilities.,1,1,Yixlid Jailer
 exact_wording,cards in the winning deck of the latest mythic championship cost {1} more to cast.,1,1,Metagamer
 exact_wording,"cards in your hand that share a card type with that spell perpetually gain ""~ costs {1} less to cast.""",1,1,Absorb Energy
@@ -3135,6 +3124,7 @@ exact_wording,"create x 1/1 colorless phyrexian mite artifact creature tokens wi
 exact_wording,create x 1/1 colorless shapeshifter creature tokens with changeling.,1,1,Springleaf Parade
 exact_wording,create x 1/1 green and white citizen creature tokens.,1,1,Grand Crescendo
 exact_wording,create x 1/1 green forest dryad land creature tokens.,1,1,Awaken the Woods
+exact_wording,"create x 1/1 green saproling creature tokens, where x is that artifact's mana value.",1,1,Artifact Mutation
 exact_wording,"create x 1/1 green saproling creature tokens, where x is that enchantment's mana value.",1,1,Aura Mutation
 exact_wording,create x 1/1 green saproling creature tokens.,1,1,Supply // Demand
 exact_wording,"create x 1/1 red elemental creature tokens with ""whenever ~ becomes tapped, it deals 1 damage to target player.""",1,1,Wildfire Awakener
@@ -3537,6 +3527,7 @@ exact_wording,discard a card: ~ gains protection from the color of your choice u
 exact_wording,discard a card: ~ gains shroud until end of turn and can't be blocked this turn.,1,1,Cephalid Inkshrouder
 exact_wording,discard a card: ~ gets +1/+1 and becomes the color of your choice until end of turn.,1,1,Wild Mongrel
 exact_wording,discard a card: ~ gets -2/-0 until end of turn. any player may activate this ability.,1,1,Oona's Prowler
+exact_wording,discard a creature card: put a +1/+1 counter on ~.,1,1,Lotleth Troll
 exact_wording,discard a creature card: ~ gets +2/+2 and gains trample until end of turn. activate only once each turn.,1,1,Erstwhile Trooper
 exact_wording,discard a historic card: ~ gains indestructible until end of turn.,1,1,Sanctum Spirit
 exact_wording,discard a land card: create a 2/2 green bear creature token.,1,1,Ayula's Influence
@@ -4387,7 +4378,6 @@ exact_wording,"equipped creature has first strike and gets +x/+0, where x is the
 exact_wording,"equipped creature has menace and mobilize x, where x is its power.",1,1,Infantry Shield
 exact_wording,"equipped creature has menace, deathtouch, annihilator 1, and ""whenever an opponent sacrifices a nontoken permanent, put that card onto the battlefield under your control unless that player pays 3 life.""",1,1,Nazgûl Battle-Mace
 exact_wording,equipped creature has myriad.,1,1,Blade of Selves
-exact_wording,equipped creature has nonbasic landwalk.,1,1,Trailblazer's Boots
 exact_wording,"equipped creature has reach, ""{2}, {t}: tap target artifact or creature,"" and ""{8}, {t}: discover 10.""",1,1,Swashbuckler's Whip
 exact_wording,"equipped creature has trample and ""whenever ~ deals combat damage to a player, put that many +1/+1 counters on it.""",1,1,Power Fist
 exact_wording,equipped creature has trample and can't be blocked by more than one creature.,1,1,Vorrac Battlehorns
@@ -4531,6 +4521,7 @@ exact_wording,"exile up to one target artifact, creature, or enchantment you con
 exact_wording,"exile up to one target creature you control, then return it to the battlefield under its owner's control.",1,1,"Oji, the Exquisite Blade"
 exact_wording,"exile up to one target creature you own, then return it to the battlefield under your control.",1,1,"Meneldor, Swift Savior"
 exact_wording,exile up to one target equipment attached to that creature.,1,1,Fiery Annihilation
+exact_wording,exile up to one target instant or sorcery card from a graveyard.,1,1,Rise of Extus
 exact_wording,"exile up to one target nontoken artifact or creature, then return that card to the battlefield tapped under its owner's control.",1,1,"The Mighty Thor, Jane Foster"
 exact_wording,exile up to three target cards from graveyards.,1,1,Pit of Offerings
 exact_wording,exile up to three target enchantments.,1,1,Barrier Breach
@@ -4588,6 +4579,7 @@ exact_wording,find ways to always attack,1,1,Attacking
 exact_wording,"fire breath — when ~ enters, it deals 4 damage to each opponent.",1,1,Red Dragon
 exact_wording,"fire cross — whenever ~ deals combat damage to a player, you may cast target instant or sorcery card with mana value 3 or less from your graveyard without paying its mana cost. if that spell would be put into your graveyard, exile it instead.",1,1,Seifer Almasy
 exact_wording,"first strike, protection from black and from red",1,1,Paladin en-Vec
+exact_wording,"first strike, protection from legendary creatures",1,1,Tsabo Tavoc
 exact_wording,"first strike, protection from odd collector numbers",1,1,Knight of the Kitchen Sink
 exact_wording,"first strike, protection from red and from white",1,1,Phyrexian Crusader
 exact_wording,"first strike, protection from white",1,1,Blood Knight
@@ -4642,6 +4634,7 @@ exact_wording,"for each attacking creature, its owner puts it on their choice of
 exact_wording,"for each card drawn this way, discard a card unless you sacrifice a permanent.",1,1,Read the Runes
 exact_wording,"for each color, return up to one target creature card of that color from your graveyard to your hand.",1,1,Rogues' Gallery
 exact_wording,"for each creature card milled this way, create a 1/1 green saproling creature token.",1,1,Tribune of Rot
+exact_wording,"for each creature destroyed this way, its controller creates a 1/1 white spirit creature token with flying.",1,1,March of Souls
 exact_wording,"for each creature target player controls, create a token that's a copy of that creature, except it has haste and ""at the beginning of the end step, if you don't control a planeswalker, sacrifice ~.""",1,1,Face Yourself
 exact_wording,"for each creature target player controls, create a token that's a copy of that creature.",1,1,Clone Legion
 exact_wording,"for each creature token on the battlefield, its controller creates a token that's a copy of that creature.",1,1,Parallel Evolution
@@ -4752,6 +4745,7 @@ exact_wording,"gotcha — if an opponent touches the table with their hand, you 
 exact_wording,"gotcha — if an opponent touches their face, you may say ""gotcha!"" when you do, return this card from your graveyard to your hand.",1,1,Touch and Go
 exact_wording,"grandeur — discard another card named ~, sacrifice two mountains: ~ deals 4 damage to any target.",1,1,"Skoa, Embermage"
 exact_wording,grandeur — discard another card named ~: reveal cards from the top of your library until you reveal an instant or sorcery card. put that card into your hand and the rest on the bottom of your library in a random order.,1,1,"Page, Loose Leaf"
+exact_wording,"grandeur — discard another card named ~: search your library for up to two swamp cards, put them onto the battlefield tapped, then shuffle.",1,1,"Korlash, Heir to Blackblade"
 exact_wording,"grandeur — discard another card named ~: ~ gets +x/+x until end of turn, where x is its power.",1,1,Tarox Bladewing
 exact_wording,"grant an advantage — if you would roll one or more dice, instead roll that many dice plus one and ignore the lowest roll.",1,1,Pixie Guide
 exact_wording,grazing type,1,1,Dairy Cow
@@ -5204,6 +5198,7 @@ exact_wording,if kicked: those creatures get +2/+1 until end of turn instead.,1,
 exact_wording,"if kicked: whenever a creature you control dies this turn, draw a card.",1,1,Warhost's Frenzy
 exact_wording,if kicked: you may put a land card from your hand onto the battlefield.,1,1,Joint Exploration
 exact_wording,if kicked: zombie creatures you control get an additional +2/+2 until end of turn.,1,1,Strength of Night
+exact_wording,if kicked: ~ deals damage equal to that creature's power to the creature's controller.,1,1,Agonizing Demise
 exact_wording,"if mana from a treasure was spent to cast it, create a treasure token for each mana from a treasure spent to cast it.",1,1,Marut
 exact_wording,"if mana from a treasure was spent to cast it, it gains first strike and haste until end of turn.",1,1,Jaded Sell-Sword
 exact_wording,"if mana from a treasure was spent to cast ~, instead that player reveals their hand, you choose a nonland card from it, then that player discards that card.",1,1,Devour Intellect
@@ -5307,6 +5302,7 @@ exact_wording,"if there are no zombies on the battlefield, ~ deals 1 damage to y
 exact_wording,"if there are one or more oil counters on ~, seek a card with mana value equal to the number of oil counters on ~, then remove an oil counter from ~.",1,1,Glistening Extractor
 exact_wording,"if there are seven or more cards in your graveyard, exile a card at random from your graveyard.",1,1,Tersa Lightshatter
 exact_wording,"if there are seven or more lands on the battlefield, sacrifice ~ and destroy all lands.",1,1,Impending Disaster
+exact_wording,"if there are ten or more creature cards total in all graveyards, ~ costs {6} less to cast.",1,1,Avatar of Woe
 exact_wording,"if there are three or more creature cards in your graveyard, draw a card.",1,1,Gaea's Courser
 exact_wording,"if there are three or more creature cards in your graveyard, put a +1/+1 counter on ~.",1,1,Gixian Skullflayer
 exact_wording,"if there are three or more creature cards in your graveyard, you gain 5 life.",1,1,Webweaver Changeling
@@ -5405,6 +5401,7 @@ exact_wording,"if you control a ral planeswalker, ~ gets +1/+0 for each card in 
 exact_wording,"if you control a red permanent, you may have ~ deal 1 damage to that player.",1,1,Kederekt Parasite
 exact_wording,"if you control a swamp, you may have that player discard a card.",1,1,Slavering Nulls
 exact_wording,"if you control a swamp, you may pay 2 life rather than pay ~'s mana cost.",1,1,Rouse
+exact_wording,"if you control a swamp, you may pay 4 life rather than pay ~'s mana cost.",1,1,Snuff Out
 exact_wording,"if you control a tapped creature, create a 1/1 white warrior creature token with vigilance.",1,1,Supply Caravan
 exact_wording,"if you control a teferi planeswalker, draw a card.",1,1,Historian of Zhalfir
 exact_wording,"if you control a time lord, the next spell you cast this turn has cascade and you may planeswalk.",1,1,TARDIS
@@ -5763,6 +5760,7 @@ exact_wording,"infusion — when ~ enters, target creature an opponent controls 
 exact_wording,"inquisition agents — whenever equipped creature attacks, create a 2/2 white astartes warrior creature token with vigilance that's attacking. then attacking creatures gain menace until end of turn.",1,1,Inquisitorial Rosette
 exact_wording,"inspired — whenever ~ becomes untapped, draw a card.",1,1,Sphinx's Disciple
 exact_wording,"inspired — whenever ~ becomes untapped, each opponent discards a card, then each opponent mills a card.",1,1,Siren of the Silent Song
+exact_wording,"inspired — whenever ~ becomes untapped, each opponent loses 1 life. you gain life equal to the life lost this way.",1,1,Servant of Tymaret
 exact_wording,"inspired — whenever ~ becomes untapped, it gets +2/+0 until end of turn.",1,1,Kragma Butcher
 exact_wording,"inspired — whenever ~ becomes untapped, put a +1/+1 counter on it.",1,1,Pheres-Band Tromper
 exact_wording,"inspired — whenever ~ becomes untapped, reveal the top card of your library and put that card into your hand. you lose life equal to that card's mana value.",1,1,Pain Seer
@@ -5921,9 +5919,11 @@ exact_wording,its controller creates a 1/1 colorless shapeshifter creature token
 exact_wording,its controller creates a 1/1 white and black inkling creature token with flying.,1,1,Harsh Annotation
 exact_wording,its controller creates a 1/1 white human creature token.,1,1,Stroke of Midnight
 exact_wording,its controller creates a 1/1 white soldier creature token.,1,1,Secure the Scene
+exact_wording,its controller creates a 1/1 white spirit creature token with flying.,1,1,Afterlife
 exact_wording,its controller creates a 2/2 white ox creature token.,1,1,Bovine Intervention
 exact_wording,its controller creates a 3/2 red and white spirit creature token.,1,1,Reduce to Memory
 exact_wording,its controller creates a 3/3 colorless golem artifact creature token.,1,1,Cavalier of Dawn
+exact_wording,its controller creates a 3/3 green ape creature token.,1,1,Pongify
 exact_wording,its controller creates a 4/4 blue and red elemental creature token.,1,1,Resculpt
 exact_wording,its controller creates a 4/4 white angel creature token with flying.,1,1,Angelic Ascension
 exact_wording,its controller gains life equal to its mana value.,1,1,Illumination
@@ -5971,7 +5971,6 @@ exact_wording,"lands you control have ""{t}: create a treasure token.""",1,1,Boo
 exact_wording,lands you control have hexproof.,1,1,"Marwyn, the Preserver"
 exact_wording,leap of faith — {3}: target creature gains flying until end of turn.,1,1,Towering Viewpoint
 exact_wording,legendary creatures you control get +2/+1 and have ward {1}.,1,1,Flowering of the White Tree
-exact_wording,legendary landwalk,1,1,"Ayumi, the Last Visitor"
 exact_wording,lethal damage dealt to creatures you control is determined by their power rather than their toughness.,1,1,"Zilortha, Strength Incarnate"
 exact_wording,"lethal voice — whenever ~ becomes the target of a spell or ability an opponent controls, destroy target nonland permanent that player controls.",1,1,"Black Bolt, Inhuman King"
 exact_wording,library ninjutsu {1}{u},1,1,Panglacial Shinobi
@@ -6060,6 +6059,7 @@ exact_wording,manifest the top two cards of your library.,1,1,Ethereal Ambush
 exact_wording,"mark of chaos ascendant — during your turn, spells you cast from your hand with mana value x or less have cascade, where x is the total amount of life your opponents have lost this turn.",1,1,Abaddon the Despoiler
 exact_wording,"medicus ministorum — when ~ enters, return target creature card from your graveyard to the battlefield. you gain life equal to its mana value.",1,1,Sister Hospitaller
 exact_wording,megamorph {1}{w},1,1,Misthoof Kirin
+exact_wording,megamorph {3}{b},1,1,Marang River Skeleton
 exact_wording,megamorph {3}{u},1,1,Ojutai Interceptor
 exact_wording,megamorph {4}{r}{r},1,1,Stormcrag Elemental
 exact_wording,megamorph {5}{g},1,1,Aerie Bowmasters
@@ -6171,7 +6171,6 @@ exact_wording,nonartifact spells cost {1} more to cast.,1,1,Lodestone Golem
 exact_wording,nonartifact spells you cast have improvise.,1,1,Inspiring Statuary
 exact_wording,nonbasic lands are islands.,1,1,Harbinger of the Seas
 exact_wording,nonbasic lands don't untap during their controllers' untap steps.,1,1,Back to Basics
-exact_wording,nonbasic landwalk,1,1,Dryad Sophisticate
 exact_wording,nonblack creatures get -1/-1 until end of turn.,1,1,Festergloom
 exact_wording,noncreature spellcasting,1,1,Spells
 exact_wording,noncreature spells you cast cost {1} less to cast as long as there are three or more lesson cards in your graveyard.,1,1,Gran-Gran
@@ -6347,15 +6346,12 @@ exact_wording,"partner with silvar, devourer of the free",1,1,"Trynn, Champion o
 exact_wording,pay 1 life: add {c}. activate only once each turn.,1,1,Kozilek's Translator
 exact_wording,pay 1 life: add {c}. spend this mana only to cast a spell from your graveyard.,1,1,Lord of the Forsaken
 exact_wording,pay 1 life: prevent the next 1 damage that would be dealt to ~ this turn.,1,1,Ethereal Champion
-exact_wording,pay 1 life: regenerate ~.,1,1,Mischievous Poltergeist
 exact_wording,"pay 1 life: until your next upkeep, target permanent can't phase out.",1,1,Spatial Binding
 exact_wording,"pay 2 life, sacrifice another creature: search your library for a card, put that card into your hand, then shuffle.",1,1,"Razaketh, the Foulblooded"
 exact_wording,pay 2 life: copy target activated or triggered ability you control from an artifact source. you may choose new targets for the copy. activate only during your turn and only once each turn.,1,1,Scientist Supreme of A.I.M.
 exact_wording,pay 2 life: prevent the next 1 damage that would be dealt to target creature this turn.,1,1,Martyrs' Tomb
 exact_wording,pay 2 life: regenerate enchanted creature.,1,1,Soul Channeling
-exact_wording,pay 2 life: regenerate ~.,1,1,Deepwood Ghoul
 exact_wording,pay 3 life: return this card from your graveyard to your hand. activate only if you had an angel or berserker enter the battlefield under your control this turn.,1,1,Cleaving Reaper
-exact_wording,pay 4 life: regenerate ~.,1,1,Marrow Bats
 exact_wording,pay 7 life: draw seven cards.,1,1,Griselbrand
 exact_wording,"pay 8 life: each creature you control gains indestructible until end of turn. then, draw a card for each creature you control.",1,1,Avacyn and Griselbrand
 exact_wording,"pay half your life, rounded up: ~ becomes a 4/4 phyrexian horror creature with flying.",1,1,Lurking Evil
@@ -6523,6 +6519,7 @@ exact_wording,put a +1/+1 counter on it for each land you control.,1,1,"Zanarkan
 exact_wording,put a +1/+1 counter on it for each other squirrel and/or food you control.,1,1,Honored Dreyleader
 exact_wording,put a +1/+1 counter on it instead if it's a mount.,1,1,Throw from the Saddle
 exact_wording,"put a +1/+1 counter on it, then create a number of 1/1 red goblin creature tokens equal to ~'s power.",1,1,"Krenko, Tin Street Kingpin"
+exact_wording,put a +1/+1 counter on target attacking creature and untap it.,1,1,Sparring Regimen
 exact_wording,put a +1/+1 counter on target beast creature you control.,1,1,Advocate of the Beast
 exact_wording,put a +1/+1 counter on target creature an opponent controls.,1,1,Sunset Saboteur
 exact_wording,put a +1/+1 counter on target creature and a +1/+1 counter on up to one target merfolk.,1,1,River Heralds' Boon
@@ -6693,7 +6690,6 @@ exact_wording,red spells and white spells you cast cost {1} less to cast.,1,1,Th
 exact_wording,red spells cost {2} more to cast.,1,1,Chill
 exact_wording,red spells you cast cost {r} more to cast.,1,1,Ruby Leech
 exact_wording,redistribute any number of players' life totals.,1,1,Reverse the Sands
-exact_wording,regenerate each creature you control.,1,1,Wrap in Vigor
 exact_wording,regenerate target permanent.,1,1,Reknit
 exact_wording,reinforce 1—{1}{g},1,1,Earthbrawn
 exact_wording,reinforce 2—{2}{g},1,1,Fowl Strike
@@ -6736,6 +6732,7 @@ exact_wording,replicate {1}{u},1,1,Train of Thought
 exact_wording,replicate {r},1,1,Shattering Spree
 exact_wording,replicate—pay {e}{e}{e}.,1,1,Reiterating Bolt
 exact_wording,"restart the turn, except with ~ in exile.",1,1,Do-Over
+exact_wording,return a black creature you control to its owner's hand.,1,1,Skull Collector
 exact_wording,"return a card at random from your graveyard to your hand, then reorder your graveyard as you choose.",1,1,Fossil Find
 exact_wording,return a creature you control to its owner's hand unless you compliment an opponent.,1,1,Chivalrous Chevalier
 exact_wording,"return a creature you control to its owner's hand, then destroy all creatures.",1,1,Time Wipe
@@ -6825,6 +6822,7 @@ exact_wording,return target permanent to its owner's hand if that permanent shar
 exact_wording,"return target permanent to its owner's hand, then that player discards a card.",1,1,Dinrova Horror
 exact_wording,return target permanent you control and target permanent you don't control to their owners' hands.,1,1,Aether Tradewinds
 exact_wording,return target spell or creature to its owner's hand.,1,1,Unsubstantiate
+exact_wording,return target spell or permanent with mana value 1 or greater to its owner's hand.,1,1,Divide by Zero
 exact_wording,return that card to the battlefield instead if you control a mount.,1,1,Shepherd of the Clouds
 exact_wording,return the exiled cards to their owner's graveyard.,1,1,Gravegouger
 exact_wording,return three lands you control to their owner's hand: return ~ to its owner's hand.,1,1,Pearl Lake Ancient
@@ -6900,7 +6898,6 @@ exact_wording,sacrifice a creature: add one mana of any color.,1,1,Phyrexian Alt
 exact_wording,sacrifice a creature: destroy target artifact. activate only during your upkeep and only once each turn.,1,1,Gate to Phyrexia
 exact_wording,"sacrifice a creature: draw cards equal to the sacrificed creature's power, then discard three cards.",1,1,Greater Good
 exact_wording,sacrifice a creature: regenerate enchanted creature.,1,1,Dark Privilege
-exact_wording,sacrifice a creature: regenerate target creature.,1,1,Fanatical Devotion
 exact_wording,sacrifice a creature: target player discards two cards. activate only as a sorcery.,1,1,Sadistic Hypnotist
 exact_wording,sacrifice a creature: target player mills cards equal to the sacrificed creature's power.,1,1,Altar of Dementia
 exact_wording,"sacrifice a creature: the next time a source of your choice would deal damage to any target this turn, prevent that damage.",1,1,Martyr's Cause
@@ -6943,7 +6940,6 @@ exact_wording,"sacrifice a white creature: for each attacking red creature, prev
 exact_wording,"sacrifice all creatures you control, then create that many 4/4 red hellion creature tokens.",1,1,Hellion Eruption
 exact_wording,sacrifice all non-ogre creatures you control.,1,1,"Yukora, the Prisoner"
 exact_wording,sacrifice an artifact: add {c}{c}.,1,1,Krark-Clan Ironworks
-exact_wording,sacrifice an artifact: regenerate ~.,1,1,Rusted Slasher
 exact_wording,sacrifice an artifact: target artifact gains indestructible until end of turn.,1,1,"Slobad, Goblin Tinkerer"
 exact_wording,sacrifice an artifact: ~ deals 1 damage to each creature without flying.,1,1,Krark-Clan Shaman
 exact_wording,"sacrifice an atog creature: ~ gets +x/+x until end of turn, where x is the sacrificed creature's power.",1,1,Atogatog
@@ -7027,7 +7023,6 @@ exact_wording,sacrifice ~: creatures your opponents control get -1/-1 until end 
 exact_wording,sacrifice ~: destroy all non-wall creatures blocking enchanted creature.,1,1,Coils of the Medusa
 exact_wording,"sacrifice ~: destroy target artifact or enchantment. if that permanent was a legendary enchantment, draw a card. activate only as a sorcery.",1,1,Budding Insurgent
 exact_wording,sacrifice ~: destroy target ninja.,1,1,Nezumi Shadow-Watcher
-exact_wording,sacrifice ~: destroy target nonblack creature. it can't be regenerated.,1,1,Seal of Doom
 exact_wording,sacrifice ~: destroy target noncreature artifact or noncreature enchantment. activate only as a sorcery.,1,1,Guerrilla Gorilla
 exact_wording,sacrifice ~: draw a card. activate only if an opponent has eight or more cards in their graveyard.,1,1,Merfolk Windrobber
 exact_wording,sacrifice ~: enchanted creature and other creatures that share a creature type with it gain flying until end of turn.,1,1,Crown of Ascension
@@ -7063,6 +7058,7 @@ exact_wording,sacrifice ~: target creature loses protection from black until end
 exact_wording,sacrifice ~: target creature you control with a +1/+1 counter on it gains lifelink and indestructible until end of turn.,1,1,Ollenbock Escort
 exact_wording,sacrifice ~: target player can't play lands this turn.,1,1,Pardic Miner
 exact_wording,sacrifice ~: target player discards two cards. activate only as a sorcery.,1,1,Brain Weevil
+exact_wording,sacrifice ~: target player discards two cards. activate only during your upkeep.,1,1,Augur of Skulls
 exact_wording,sacrifice ~: target player loses 1 life and you gain 1 life.,1,1,Death Cultist
 exact_wording,sacrifice ~: target player loses 1 life.,1,1,Bile Urchin
 exact_wording,"sacrifice ~: the next time a source of your choice would deal damage to any target this turn, prevent that damage.",1,1,Sanctum Guardian
@@ -7143,6 +7139,7 @@ exact_wording,seek a card with mana value equal to the number of cards in your h
 exact_wording,seek a card with the highest mana value among cards in your library with mana value less than or equal to the amount of life you gained this turn.,1,1,"Cerise, Slayer of Fear"
 exact_wording,seek a card with the same mana value as that spell.,1,1,Kindred Denial
 exact_wording,"seek a creature card with lesser mana value, then put it onto the battlefield.",1,1,Cabaretti Revels
+exact_wording,seek a multicolored card.,1,1,Interdisciplinary Studies
 exact_wording,seek a permanent card with mana value equal to the number of lands you control.,1,1,Geistpack Alpha
 exact_wording,"seek an artifact card from among the top ten cards of your library, then shuffle.",1,1,Trove Mage
 exact_wording,seek an elf card.,1,1,Skyshroud Lookout
@@ -7207,6 +7204,7 @@ exact_wording,sorcery spells cost {3} more to cast.,1,1,Squeeze
 exact_wording,"soulshift 4, soulshift 4",1,1,Forked-Branch Garami
 exact_wording,soulshift 8,1,1,Body of Jukai
 exact_wording,specialize {2}. activate only if a player has 13 or less life.,1,1,"Shadowheart, Sharran Cleric"
+exact_wording,"spell mastery — if there are two or more instant and/or sorcery cards in your graveyard, also regenerate each other creature you control.",1,1,Dark Dabbling
 exact_wording,"spell mastery — if there are two or more instant and/or sorcery cards in your graveyard, creatures you control gain indestructible until end of turn.",1,1,Gideon's Phalanx
 exact_wording,"spell mastery — if there are two or more instant and/or sorcery cards in your graveyard, scry 2.",1,1,Calculated Dismissal
 exact_wording,"spell mastery — if there are two or more instant and/or sorcery cards in your graveyard, that creature enters with two additional +1/+1 counters on it.",1,1,Necromantic Summons
@@ -7563,6 +7561,7 @@ exact_wording,target noncreature artifact you control becomes an 8/8 robot villa
 exact_wording,target opponent creates a 3/3 green dinosaur creature token with trample.,1,1,Baffling End
 exact_wording,target opponent creates a 4/4 black horror creature token.,1,1,Hunted Lammasu
 exact_wording,target opponent creates five 1/1 red goblin creature tokens.,1,1,Hunted Phantasm
+exact_wording,target opponent creates four 1/1 blue faerie creature tokens with flying.,1,1,Hunted Troll
 exact_wording,"target opponent creates the void, a legendary 5/5 black horror villain creature token with flying, indestructible, and ""the void attacks each combat if able.""",1,1,"The Sentry, Golden Guardian"
 exact_wording,target opponent creates three 2/2 white knight creature tokens with first strike.,1,1,Hunted Dragon
 exact_wording,target opponent creates two 1/1 white dog creature tokens.,1,1,Hunted Bonebrute
@@ -7577,6 +7576,7 @@ exact_wording,"target opponent discards two cards, mills a card, and loses 1 lif
 exact_wording,"target opponent discards two cards, mills two cards, and loses 2 life.",1,1,Demogorgon's Clutches
 exact_wording,target opponent draws a card and you draw three cards.,1,1,Sphinx of Enlightenment
 exact_wording,target opponent exiles two cards from their hand and loses 2 life.,1,1,Witness the End
+exact_wording,target opponent gains 2 life.,1,1,Soldevi Steam Beast
 exact_wording,target opponent gains control of all other permanents you control.,1,1,Sky Swallower
 exact_wording,target opponent gains control of it.,1,1,Sleeper Agent
 exact_wording,target opponent gains control of target creature.,1,1,Wrong Turn
@@ -7691,6 +7691,7 @@ exact_wording,tasty,1,1,Seasoned Weaponsmith
 exact_wording,teach {1}{r},1,1,Pyromancy 101
 exact_wording,teleport — {3}{w}: ~ phases out.,1,1,Blink Dog
 exact_wording,"temporal foresight — when ~ enters, reveal cards from the top of your library until you reveal a nonland card with mana value 3 or greater. exile that card with three time counters on it. if it doesn't have suspend, it gains suspend. put the rest of the revealed cards on the bottom of your library in a random order.",1,1,Sibylline Soothsayer
+exact_wording,that artifact's controller gains life equal to its mana value.,1,1,Crumble
 exact_wording,that creature becomes black until end of turn.,1,1,Singe
 exact_wording,that creature can't be blocked this turn.,1,1,Stealth Mission
 exact_wording,that creature can't become untapped for as long as you control ~.,1,1,"Spider-Woman, Secret Agent"
@@ -7992,6 +7993,7 @@ exact_wording,untap target nonattacking creature.,1,1,Alarum
 exact_wording,untap target nonland permanent.,1,1,Thistledown Players
 exact_wording,untap target nonlegendary creature and gain control of it until end of turn.,1,1,Blind with Anger
 exact_wording,untap target permanent.,1,1,Burst of Energy
+exact_wording,untap up to four lands you control.,1,1,Wrath of Leknif
 exact_wording,untap up to four lands.,1,1,Rewind
 exact_wording,untap up to one other target creature.,1,1,Triceraton Regenta
 exact_wording,untap up to one target creature.,1,1,Zephyr Winder
@@ -8619,6 +8621,7 @@ exact_wording,"whenever a creature becomes the target of a spell or ability, ret
 exact_wording,"whenever a creature blocks a black or red creature, the blocking creature gets +1/+1 until end of turn.",1,1,Righteous Indignation
 exact_wording,"whenever a creature blocks this turn, its controller gets a poison counter.",1,1,Noxious Assault
 exact_wording,"whenever a creature blocks this turn, its controller loses 1 life.",1,1,Mage Hunters' Onslaught
+exact_wording,"whenever a creature blocks, that creature's controller loses 1 life.",1,1,Carnage Gladiator
 exact_wording,"whenever a creature card is put into an opponent's graveyard from anywhere, you gain 1 life.",1,1,Profane Memento
 exact_wording,"whenever a creature card is put into an opponent's graveyard from anywhere, you may have ~ become a copy of that card, except its name is ~, it's legendary in addition to its other types, and it has hexproof and this ability.",1,1,"Lazav, Dimir Mastermind"
 exact_wording,"whenever a creature deals combat damage to one of your opponents, its controller may draw a card.",1,1,"Edric, Spymaster of Trest"
@@ -8710,6 +8713,7 @@ exact_wording,"whenever a creature you control deals combat damage to an opponen
 exact_wording,"whenever a creature you control deals combat damage, you gain that much life.",1,1,Noble Purpose
 exact_wording,"whenever a creature you control dealt damage this way dies this turn, add {r}.",1,1,Reckless Blaze
 exact_wording,"whenever a creature you control dies while this card is in your graveyard, you may pay {1}{w}. if you do, return this card from your graveyard to your hand.",1,1,Furious Forebear
+exact_wording,"whenever a creature you control enters this turn, put a +1/+1 counter on it and it gains haste until end of turn.",1,1,First Day of Class
 exact_wording,"whenever a creature you control explores, put a +1/+1 counter on ~ and you gain 3 life.",1,1,Wildgrowth Walker
 exact_wording,"whenever a creature you control explores, put a +1/+1 counter on ~.",1,1,Shadowed Caravel
 exact_wording,"whenever a creature you control explores, target creature an opponent controls gets -2/-2 until end of turn.",1,1,Lurking Chupacabra
@@ -9674,6 +9678,7 @@ exact_wording,"whenever you cast an instant or sorcery spell from your hand, you
 exact_wording,"whenever you cast an instant or sorcery spell that targets a creature you control, exile that card instead of putting it into your graveyard as it resolves. if you do, return it to your hand at the beginning of the next end step.",1,1,"Feather, the Redeemed"
 exact_wording,"whenever you cast an instant or sorcery spell that targets an artifact or land, copy that spell. you may choose new targets for the copy. put two +1/+1 counters on ~.",1,1,Fin Fang Foom
 exact_wording,"whenever you cast an instant or sorcery spell that targets only a single creature you control, copy that spell. you may choose new targets for the copy.",1,1,Leyline of Resonance
+exact_wording,"whenever you cast an instant or sorcery spell that targets only a single nonland permanent an opponent controls, if another opponent controls one or more nonland permanents that spell could target, choose one of those permanents. copy that spell. the copy targets the chosen permanent.",1,1,Exterminator Magmarch
 exact_wording,"whenever you cast an instant or sorcery spell that targets only ~, copy that spell for each other creature you control that the spell could target. each copy targets a different one of those creatures.",1,1,"Zada, Hedron Grinder"
 exact_wording,"whenever you cast an instant or sorcery spell that targets only ~, if you control one or more other creatures that spell could target, choose one of those creatures. copy that spell. the copy targets the chosen creature.",1,1,Beamsplitter Mage
 exact_wording,"whenever you cast an instant or sorcery spell that targets only ~, you may pay {2}. if you do, copy that spell. you may choose new targets for the copy.",1,1,Reflective Golem
@@ -9981,6 +9986,7 @@ exact_wording,"whenever ~ becomes blocked by an artifact creature, destroy that 
 exact_wording,"whenever ~ becomes blocked by an artifact creature, ~ gets +3/+3 until end of turn.",1,1,Tel-Jilad Wolf
 exact_wording,"whenever ~ becomes blocked, clash with an opponent. if you win, ~ deals 4 damage to each creature blocking it.",1,1,Fire Juggler
 exact_wording,"whenever ~ becomes blocked, create a 1/1 red goblin creature token.",1,1,Tin Street Cadet
+exact_wording,"whenever ~ becomes blocked, defending player discards a card at random.",1,1,Corrupt Official
 exact_wording,"whenever ~ becomes blocked, defending player discards all the cards in their hand, then draws that many cards.",1,1,Robber Fly
 exact_wording,"whenever ~ becomes blocked, defending player loses 4 life.",1,1,Vedalken Ghoul
 exact_wording,"whenever ~ becomes blocked, defending player mills three cards.",1,1,Flint Golem
@@ -10093,6 +10099,7 @@ exact_wording,"whenever ~ deals combat damage to a creature, put a +1/+1 counter
 exact_wording,"whenever ~ deals combat damage to a creature, tap that creature. that creature doesn't untap during its controller's next untap step.",1,1,Mercurial Kite
 exact_wording,"whenever ~ deals combat damage to a creature, that creature becomes a copy of ~.",1,1,Permeating Mass
 exact_wording,"whenever ~ deals combat damage to a creature, that creature's controller loses 2 life unless they pay {2}.",1,1,Death Charmer
+exact_wording,"whenever ~ deals combat damage to a creature, that creature's controller loses that much life.",1,1,Flayed Nim
 exact_wording,"whenever ~ deals combat damage to a creature, you gain 2 life unless that creature's controller pays {2}.",1,1,Soul Charmer
 exact_wording,"whenever ~ deals combat damage to a player for the first time each turn, untap all attacking creatures. after this combat phase, there is an additional combat phase.",1,1,"Raphael, Tag Team Tough"
 exact_wording,"whenever ~ deals combat damage to a player or battle, put up to one target nonland permanent card with mana value 3 or less from a graveyard onto the battlefield under its owner's control.",1,1,"Bilbo, Unexpected Adventurer"
@@ -10335,6 +10342,8 @@ exact_wording,you gain 3 life for each black creature target opponent controls.,
 exact_wording,you gain 3 life for each creature attacking you.,1,1,Blessed Reversal
 exact_wording,you gain 5 life and incubate 5.,1,1,Tangled Skyline
 exact_wording,you gain control of all enchantments.,1,1,Aura Thief
+exact_wording,you gain control of all equipment that were attached to it.,1,1,Murderous Spoils
+exact_wording,you gain control of that creature if it regenerates this way.,1,1,Debt of Loyalty
 exact_wording,you gain hexproof until your next turn.,1,1,Blossoming Calm
 exact_wording,you gain life and draw cards equal to its power.,1,1,Lifeblood Hydra
 exact_wording,you gain life equal to that card's power.,1,1,Mirkwood Elk
@@ -10372,6 +10381,7 @@ exact_wording,you lose 1 life unless you control another colorless creature.,1,1
 exact_wording,you lose 2 life for each card in your hand.,1,1,Demonic Lore
 exact_wording,you lose 2 life if you don't control an ogre.,1,1,Scourge of Numai
 exact_wording,you lose 2 life unless you control another pirate.,1,1,Fathom Fleet Boarder
+exact_wording,"you lose 2 life, you sacrifice two creatures, and target opponent draws two cards.",1,1,Lord of Tresserhorn
 exact_wording,you lose 3 life if you don't control a demon.,1,1,Raving Oni-Slave
 exact_wording,you lose 4 life unless you attacked this turn.,1,1,Bellowing Saddlebrute
 exact_wording,you lose life equal to that permanent's mana value.,1,1,Feed the Swarm
@@ -10518,6 +10528,7 @@ exact_wording,you may have it deal damage to target creature equal to the number
 exact_wording,you may have it deal damage to target creature or planeswalker equal to the number of goblins you control.,1,1,Munitions Expert
 exact_wording,you may have it deal that much damage to target creature that player controls.,1,1,Mordant Dragon
 exact_wording,you may have it fight another target creature.,1,1,Atzocan Archer
+exact_wording,you may have it gain reach until end of turn.,1,1,Academic Dispute
 exact_wording,"you may have moritte enter as a copy of a permanent you control, except it's legendary and snow in addition to its other types and, if it's a creature, it enters with two additional +1/+1 counters on it and has changeling.",1,1,Moritte of the Frost
 exact_wording,you may have shapeshifters you control become copies of that creature until end of turn.,1,1,Absorb Identity
 exact_wording,you may have target creature block it this turn if able.,1,1,Giant Ambush Beetle
@@ -10845,7 +10856,6 @@ exact_wording,"{1}, tap an untapped creature you control: untap enchanted creatu
 exact_wording,"{1}, tap an untapped desert you control: you gain 1 life.",1,1,Dune Diviner
 exact_wording,"{1}, throw ~ into the air at least two feet above your head while seated: if you catch ~ with one hand, prevent all damage a source of your choice would deal to you this turn and tap ~. otherwise, sacrifice it.",1,1,Clay Pigeon
 exact_wording,"{1}, {t}, discard a card: another target creature or planeswalker you control gains hexproof until end of turn.",1,1,Liliana the Faultless
-exact_wording,"{1}, {t}, discard a card: regenerate target creature.",1,1,Medicine Bag
 exact_wording,"{1}, {t}, discard a card: target noncreature artifact becomes an artifact creature with power and toughness each equal to its mana value until end of turn.",1,1,Toymaker
 exact_wording,"{1}, {t}, discard a legendary card: draw a card.",1,1,Solitary Cell
 exact_wording,"{1}, {t}, exile a creature card from your graveyard: create a token that's a copy of the exiled card, except it's a 0/0 construct artifact in addition to its other types and it has ""~ gets +1/+1 for each construct you control."" it gains haste until end of turn. activate only as a sorcery.",1,1,Dollhouse of Horrors
@@ -10962,7 +10972,6 @@ exact_wording,"{1}: if you control equipment named ~, sword of kaldra, and shiel
 exact_wording,{1}: prevent the next 1 damage that would be dealt to ~ this turn.,1,1,Revered Elder
 exact_wording,{1}: regenerate target creature with power 5 or greater.,1,1,Vagrant Plowbeasts
 exact_wording,{1}: regenerate target golem you control.,1,1,Vital Splicer
-exact_wording,{1}: regenerate ~.,1,1,Living Wall
 exact_wording,"{1}: regenerate ~. when it regenerates this way, put a -1/-1 counter on it.",1,1,Matopi Golem
 exact_wording,{1}: target colorless creature gains haste until end of turn.,1,1,Forerunner of Slaughter
 exact_wording,{1}: target creature with power 5 or greater gains first strike until end of turn.,1,1,Rakeclaw Gargantuan
@@ -11000,10 +11009,8 @@ exact_wording,"{1}: ~ gains your choice of flying, deathtouch, or lifelink until
 exact_wording,{1}: ~ gets +1/-1 and gains flying until end of turn.,1,1,Flowstone Thopter
 exact_wording,"{1}: ~'s power becomes the toughness of target creature blocking or being blocked by ~ minus 1 until end of turn, and its toughness becomes 1 plus the power of that creature until end of turn.",1,1,Sworn Defender
 exact_wording,"{1}{b/g}, exile two cards from your graveyard: draft a card from ~'s spellbook.",1,1,"Ishkanah, Broodmother"
-exact_wording,{1}{b/g}: regenerate ~.,1,1,Odious Trow
 exact_wording,{1}{b/g}{b/g}: move a +1/+1 counter from target creature onto a second target creature.,1,1,Daghatar the Adamant
 exact_wording,{1}{b/r}: switch a killbot or ~ in your hand with one on the battlefield.,1,1,Mary O'Kill
-exact_wording,"{1}{b}, discard a card: regenerate ~.",1,1,Viashino Skeleton
 exact_wording,"{1}{b}, discard a card: return this card from your graveyard to your hand. activate only during your upkeep.",1,1,Undead Gladiator
 exact_wording,"{1}{b}, discard a creature card: draw a card. if the discarded card was a zombie card, create a tapped 2/2 black zombie creature token.",1,1,Necromancer's Stockpile
 exact_wording,"{1}{b}, discard a creature card: ~ gets +x/+x until end of turn, where x is the discarded card's mana value.",1,1,Volrath the Fallen
@@ -11017,7 +11024,6 @@ exact_wording,"{1}{b}, exile ~: create a 1/2 black bat creature token with flyin
 exact_wording,"{1}{b}, growl: regenerate ~.",1,1,Bad Ass
 exact_wording,"{1}{b}, remove a +1/+1 counter from ~: all other creatures get -1/-1 until end of turn.",1,1,Festercreep
 exact_wording,"{1}{b}, reveal this card from your hand, say ""it's coming"": this card deals 1 damage to target opponent or planeswalker. activate only during your upkeep and only once each turn.",1,1,Infernal Spawn of Evil
-exact_wording,"{1}{b}, sacrifice a creature: regenerate ~.",1,1,Wake of Vultures
 exact_wording,"{1}{b}, sacrifice a creature: return this card from your graveyard to your hand.",1,1,"Tymaret, the Murder King"
 exact_wording,"{1}{b}, sacrifice a creature: target player loses 1 life and you gain 1 life.",1,1,Gnawing Zombie
 exact_wording,"{1}{b}, sacrifice another creature or a treasure: draw a card.",1,1,Skullport Merchant
@@ -11062,7 +11068,6 @@ exact_wording,"{1}{b}{b}, {t}: target player discards a card unless they put a c
 exact_wording,{1}{b}{b}: ~ gets -3/-0 and gains forestwalk until end of turn.,1,1,Veldrane of Sengir
 exact_wording,"{1}{b}{g}, exile ~ from your graveyard: target creature you control perpetually gains menace. activate only as a sorcery.",1,1,"Wilson, Fearsome Bear"
 exact_wording,"{1}{b}{g}, {t}: target forest becomes a 4/4 black and green elemental horror creature. it's still a land.",1,1,Woodwraith Corrupter
-exact_wording,{1}{b}{g}: regenerate ~.,1,1,Trestle Troll
 exact_wording,"{1}{b}{r}, {t}: each player discards a card. activate only as a sorcery.",1,1,"Rix Maadi, Dungeon Palace"
 exact_wording,"{1}{b}{r}: note the name of target instant or sorcery card in your graveyard and put it onto the battlefield face down. it's a 3/3 creature with ""whenever ~ deals combat damage to a player, you may create a copy of the card with the noted name. you may cast the copy without paying its mana cost"" and ""if ~ would leave the battlefield, exile it instead of putting it anywhere else.""",1,1,Magar of the Magic Strings
 exact_wording,"{1}{b}{r}{g}, sacrifice a saproling: return this card and up to one other target creature card from your graveyard to the battlefield. activate only as a sorcery.",1,1,Slimefoot and Squee
@@ -11320,7 +11325,6 @@ exact_wording,"{2}, sacrifice ~: exile target creature. return the exiled card t
 exact_wording,"{2}, sacrifice ~: it deals 2 damage to each attacking creature without flying.",1,1,Leonin Bladetrap
 exact_wording,"{2}, sacrifice ~: it deals 2 damage to each player who doesn't have max speed.",1,1,Outpace Oblivion
 exact_wording,"{2}, sacrifice ~: it deals damage to any target equal to the number of contraptions you control.",1,1,Contraption Cannon
-exact_wording,"{2}, sacrifice ~: learn.",1,1,Overgrown Arch
 exact_wording,"{2}, tap an untapped creature you control: you gain 2 life. activate only as a sorcery.",1,1,Volrath's Gardens
 exact_wording,"{2}, tap two untapped humans you control: tap target creature an opponent controls.",1,1,Sanctuary Lockdown
 exact_wording,"{2}, {q}: add one mana of any color.",1,1,Pili-Pala
@@ -11430,6 +11434,7 @@ exact_wording,"{2}, {t}: target opponent gains control of another target permane
 exact_wording,"{2}, {t}: target permanent you control becomes the color of your choice.",1,1,Alchor's Tomb
 exact_wording,"{2}, {t}: target player exiles a card from their graveyard. if it's a creature card, you gain 2 life.",1,1,Graveyard Shovel
 exact_wording,"{2}, {t}: the next time a source of your choice would deal damage to you this turn, prevent that damage. exile cards from the top of your library equal to the damage prevented this way.",1,1,Bone Mask
+exact_wording,"{2}, {t}: this turn, when target creature you control attacks and isn't blocked, it assigns no combat damage this turn and you put a cube counter on ~.",1,1,Delif's Cube
 exact_wording,"{2}, {t}: untap target attacking creature you control. prevent all combat damage that would be dealt to and dealt by that creature this turn.",1,1,Ebony Horse
 exact_wording,"{2}, {t}: until end of turn, target creature you control gains flying and has base toughness 1.",1,1,Chariot of the Sun
 exact_wording,"{2}, {t}: when you next cast an instant or sorcery spell that targets only a single opponent or a single permanent an opponent controls this turn, for each other opponent, choose that player or a permanent they control, copy that spell, and the copy targets the chosen player or permanent.",1,1,"Zevlor, Elturel Exile"
@@ -11513,9 +11518,9 @@ exact_wording,"{2}{b}, remove two counters from ~: target creature gets -2/-2 un
 exact_wording,"{2}{b}, sacrifice a creature: target opponent reveals their hand. you choose a card from it. that player discards that card. activate only as a sorcery.",1,1,Corpse Traders
 exact_wording,"{2}{b}, sacrifice another creature or planeswalker: put two +1/+1 counters on ~.",1,1,Dreadmalkin
 exact_wording,"{2}{b}, sacrifice another creature: draw a card. if the sacrificed creature was suspected, draw two cards instead.",1,1,Agency Coroner
+exact_wording,"{2}{b}, sacrifice two other creatures: destroy target creature.",1,1,Eater of Hope
 exact_wording,"{2}{b}, sacrifice ~: destroy target treefolk or forest.",1,1,Boggart Loggers
 exact_wording,"{2}{b}, tap an untapped creature you control: return this card from your graveyard to the battlefield tapped.",1,1,Purple Pentapus
-exact_wording,"{2}{b}, {t}, discard a card: destroy target nonblack creature. it can't be regenerated.",1,1,Notorious Assassin
 exact_wording,"{2}{b}, {t}, discard a card: each other player loses 2 life. you gain life equal to the life lost this way.",1,1,Urborg Syphon-Mage
 exact_wording,"{2}{b}, {t}, exile a creature you control: return target creature card from your graveyard to the battlefield. activate only as a sorcery.",1,1,Altar of Bhaal // Bone Offering
 exact_wording,"{2}{b}, {t}, exile ~: until end of turn, you may play lands and cast spells from your graveyard. if a card would be put into your graveyard from anywhere this turn, exile that card instead.",1,1,Magus of the Will
@@ -11710,7 +11715,6 @@ exact_wording,"{3}, return a land you control to its owner's hand: counter targe
 exact_wording,"{3}, return a land you control to its owner's hand: target creature you control gains shroud until end of turn.",1,1,Soratami Rainshaper
 exact_wording,"{3}, return three lands you control to their owner's hand: return target creature to its owner's hand.",1,1,Soratami Mirror-Mage
 exact_wording,"{3}, sacrifice a creature or planeswalker: you gain 1 life and draw a card.",1,1,Spark Reaper
-exact_wording,"{3}, sacrifice ~: regenerate target creature.",1,1,Herbal Poultice
 exact_wording,"{3}, {t} or {b}, {t}: return target artifact creature card from your graveyard to your hand.",1,1,Skeleton Shard
 exact_wording,"{3}, {t} or {g}, {t}: target creature gains trample until end of turn.",1,1,Heartwood Shard
 exact_wording,"{3}, {t} or {r}, {t}: ~ deals 1 damage to any target.",1,1,Granite Shard
@@ -11788,7 +11792,6 @@ exact_wording,"{3}: if your library has ten or more cards in it, target opponent
 exact_wording,"{3}: look at the top three cards of target player's library, then put them back in any order.",1,1,Elemental Augury
 exact_wording,{3}: put a +1/+1 counter on ~. any player may activate this ability.,1,1,Feral Hydra
 exact_wording,"{3}: put target artifact, instant, or sorcery card from a graveyard on the bottom of its owner's library.",1,1,Keeper of the Cadence
-exact_wording,{3}: regenerate ~.,1,1,Diabolic Machine
 exact_wording,"{3}: sacrifice ~. if you do, scry 2.",1,1,Aang's Iceberg
 exact_wording,{3}: switch ~'s power and toughness until end of turn.,1,1,Myr Quadropod
 exact_wording,{3}: tap ~. it gains indestructible until end of turn.,1,1,Drudge Sentinel
@@ -11824,9 +11827,9 @@ exact_wording,"{3}{b}, {t}, sacrifice a human: destroy target creature.",1,1,Ski
 exact_wording,"{3}{b}, {t}, sacrifice two creatures: return target creature card from your graveyard to the battlefield with a finality counter on it. activate only as a sorcery.",1,1,Grim Reaper's Scythe
 exact_wording,"{3}{b}, {t}: put a shadow counter on target creature. for as long as that creature has a shadow counter on it, it's a wraith in addition to its other types.",1,1,"Minas Morgul, Dark Fortress"
 exact_wording,"{3}{b}, {t}: seek a nonland card. activate only once.",1,1,Gate of the Black Dragon
+exact_wording,"{3}{b}, {t}: target creature gains swampwalk until end of turn.",1,1,Restless Bones
 exact_wording,"{3}{b}, {t}: target opponent loses 2 life, then reveals a card at random from their hand.",1,1,Hired Torturer
 exact_wording,{3}{b}: destroy target blocking creature at end of combat.,1,1,Silent Assassin
-exact_wording,{3}{b}: regenerate ~.,1,1,Duty-Bound Dead
 exact_wording,{3}{b}: return this card from your graveyard to the battlefield tapped with two +1/+1 counters on it.,1,1,Retrofitted Transmogrant
 exact_wording,{3}{b}: squirrels you control get +1/+0 and gain menace until end of turn.,1,1,Drey Keeper
 exact_wording,{3}{b}: target opponent loses 2 life and you gain 2 life. activate only if you control a liliana planeswalker.,1,1,Desiccated Naga
@@ -12048,7 +12051,6 @@ exact_wording,"{5}{b}{b}, sacrifice ~: target player loses x life, where x is ~'
 exact_wording,"{5}{b}{b}{b}: until end of turn, ~ gains ""whenever equipped creature deals combat damage to a player, that player loses the game.""",1,1,Vorpal Sword
 exact_wording,"{5}{g}, sacrifice ~: create x 1/1 green minion creature tokens named moloid, where x is the number of permanent cards in your graveyard. the tokens have ""whenever ~ attacks, you may mill a card."" activate only as a sorcery.",1,1,Return of the Mole Man
 exact_wording,{5}{g}: put a +1/+1 counter on target enchantment creature. it gains trample until end of turn.,1,1,Bearer of Memory
-exact_wording,{5}{g}: regenerate ~.,1,1,Selesnya Sentry
 exact_wording,"{5}{g}: until end of turn, other elves you control gain vigilance and get +1/+1 for each +1/+1 counter on ~.",1,1,"Haldir, Lórien Lieutenant"
 exact_wording,{5}{g}: ~ gets +3/+3 and becomes a bear berserker until end of turn. activate only once each turn.,1,1,Ursine Champion
 exact_wording,{5}{g}{g}: put seven +1/+1 counters on target noncreature land you control. it becomes a 0/0 fungus creature with haste. it's still a land.,1,1,Tendril of the Mycotyrant
@@ -12072,6 +12074,7 @@ exact_wording,"{6}, {t}, sacrifice ~: search your library for any number of arti
 exact_wording,"{6}, {t}: prevent all damage that would be dealt to you this turn by creatures with flying.",1,1,Scarecrow
 exact_wording,"{6}, {t}: return target permanent you both own and control to your hand.",1,1,Obelisk of Undoing
 exact_wording,"{6}, {t}: search your library for a card, put that card into your hand, then shuffle.",1,1,Planar Portal
+exact_wording,"{6}, {t}: search your library for a mercenary permanent card with mana value 6 or less, put it onto the battlefield, then shuffle.",1,1,Cateran Overlord
 exact_wording,"{6}, {t}: search your library for a rebel permanent card with mana value 5 or less, put it onto the battlefield, then shuffle.",1,1,Ramosian Commander
 exact_wording,"{6}, {t}: two target players exchange life totals.",1,1,Soul Conduit
 exact_wording,"{6}, {t}: ~ assembles a contraption.",1,1,Steamflogger Temp
@@ -12099,7 +12102,6 @@ exact_wording,"{8}: until end of turn, ~ gets +1/+1 for each permanent card in y
 exact_wording,{8}: ~ and up to one other target creature each get +3/+3 until end of turn.,1,1,Razorgrass Invoker
 exact_wording,{8}: ~ has base power and toughness 10/10 until end of turn. activate only if you control an oko planeswalker.,1,1,Bramblefort Fink
 exact_wording,"{b/g}, remove a -1/-1 counter from a creature you control: ~ gets +3/+3 until end of turn.",1,1,Quillspike
-exact_wording,"{b/g}, remove a -1/-1 counter from ~: regenerate ~.",1,1,Deity of Scars
 exact_wording,"{b/g}, {t}: add {b}{b}, {b}{g}, or {g}{g}.",1,1,Twilight Mire
 exact_wording,{b/g}{b/g}: exile target card from a graveyard. you gain 1 life.,1,1,Creakwood Ghoul
 exact_wording,{b/p}: ~ gains infect until end of turn.,1,1,Pestilent Souleater
@@ -12164,7 +12166,6 @@ exact_wording,"{b}{b}, pay half your life, rounded up: destroy target nonblack c
 exact_wording,{b}{b}: counter target green spell.,1,1,Deathgrip
 exact_wording,{b}{b}: creatures with shadow get +1/+0 until end of turn and creatures without shadow get -1/-0 until end of turn.,1,1,Stronghold Overseer
 exact_wording,{b}{b}: destroy target creature blocking ~.,1,1,Knight of Dusk
-exact_wording,{b}{b}: regenerate ~.,1,1,"Skithiryx, the Blight Dragon"
 exact_wording,"{b}{b}: return this card from your graveyard to the battlefield, then sacrifice a creature. activate only during your upkeep.",1,1,Nim Devourer
 exact_wording,{b}{b}: target creature gains shadow until end of turn.,1,1,Dauthi Embrace
 exact_wording,"{b}{b}: ~ perpetually gets -1/-1, then return it to the battlefield. activate only if ~ is in your graveyard and its toughness is 2 or greater.",1,1,Diminished Returner
@@ -12184,7 +12185,6 @@ exact_wording,"{g/u}, {t}: add {g}{g}, {g}{u}, or {u}{u}.",1,1,Flooded Grove
 exact_wording,{g/u}: ~ gets +1/+3 and gains flying until end of turn. activate only once each turn and only if an opponent controls a creature with flying.,1,1,Groundling Pouncer
 exact_wording,{g/u}{g/u}: target creature you control becomes the color or colors of your choice until end of turn.,1,1,Swirling Spriggan
 exact_wording,"{g/w}, {t}: add {g}{g}, {g}{w}, or {w}{w}.",1,1,Wooded Bastion
-exact_wording,"{g}, discard a card: regenerate ~.",1,1,Centaur Veteran
 exact_wording,"{g}, discard a creature card: return target land card from your graveyard to the battlefield tapped.",1,1,Floral Evoker
 exact_wording,"{g}, discard a creature card: search your library for a creature card, reveal that card, put it into your hand, then shuffle.",1,1,Survival of the Fittest
 exact_wording,"{g}, sacrifice a creature: reveal cards from the top of your library until you reveal a creature card. put that card into your hand and the rest on the bottom of your library in a random order.",1,1,Evolutionary Leap
@@ -12198,14 +12198,12 @@ exact_wording,"{g}, sacrifice ~: exile target noncreature artifact or noncreatur
 exact_wording,"{g}, sacrifice ~: until end of turn, target land becomes a 3/3 creature that's still a land.",1,1,Lifespark Spellbomb
 exact_wording,"{g}, {t}, discard a card: create a 1/1 green elf druid creature token named llanowar elves. it has ""{t}: add {g}.""",1,1,Llanowar Mentor
 exact_wording,"{g}, {t}, discard a card: prevent all combat damage that would be dealt this turn.",1,1,Dawnstrider
-exact_wording,"{g}, {t}, discard a card: regenerate target creature.",1,1,Rushwood Herbalist
 exact_wording,"{g}, {t}, discard a card: until end of turn, if you tap a land for mana, it produces one mana of a color of your choice instead of any other type and amount.",1,1,Harvest Mage
 exact_wording,"{g}, {t}, discard a creature card: search your library for a creature card, reveal it, put it into your hand, then shuffle.",1,1,Fauna Shaman
 exact_wording,"{g}, {t}, sacrifice ~ and another green creature: search your library for a green creature card, put it onto the battlefield, then shuffle.",1,1,Magus of the Order
 exact_wording,"{g}, {t}: choose target opponent who controls more creatures than you do as you activate this ability. create a 2/2 green beast creature token.",1,1,Keeper of the Beasts
 exact_wording,"{g}, {t}: look at the top two cards of your library, then put them back in any order.",1,1,Gilt-Leaf Seer
 exact_wording,"{g}, {t}: put a +1/+1 counter on each frog, rabbit, raccoon, or squirrel you control that entered the battlefield this turn.",1,1,Oakhollow Village
-exact_wording,"{g}, {t}: regenerate target creature.",1,1,Yavimaya Hollow
 exact_wording,"{g}, {t}: return target card with a ½ on it from your graveyard to your hand.",1,1,Fraction Jackson
 exact_wording,"{g}, {t}: reveal cards from the top of your library until you reveal a basic land card. put that card into your hand and all other cards revealed this way into your graveyard.",1,1,Hermit Druid
 exact_wording,"{g}, {t}: target attacking creature gets +2/+2 until end of turn.",1,1,Kithkin Daggerdare
@@ -12236,7 +12234,6 @@ exact_wording,{g}{g}: put a spore counter on target fungus.,1,1,Fungal Bloom
 exact_wording,{g}{g}: tap target creature with flying.,1,1,Storm Front
 exact_wording,{g}{g}: ~ becomes a 4/3 centaur creature in addition to its other types until end of turn.,1,1,Still Life
 exact_wording,"{g}{g}{g}, {t}: target creature gains flying until end of turn.",1,1,Pixie Queen
-exact_wording,"{g}{g}{g}{g}, {t}: regenerate target creature.",1,1,Niall Silvain
 exact_wording,{g}{g}{g}{g}{g}: untap target land you control. it becomes a 5/5 elemental creature with haste. it's still a land.,1,1,Wakeroot Elemental
 exact_wording,"{g}{u}, {t}: double the number of each kind of counter on target artifact, creature, or land.",1,1,Vorel of the Hull Clade
 exact_wording,"{g}{u}, {t}: put a +1/+1 counter on each creature that entered this turn.",1,1,"Novijen, Heart of Progress"
@@ -12244,10 +12241,8 @@ exact_wording,"{g}{u}, {t}: you may cast spells this turn as though they had fla
 exact_wording,"{g}{u}: target creature can't be blocked this turn. if that creature is a snake, it gets +2/+2 until end of turn.",1,1,"Kaseto, Orochi Archmage"
 exact_wording,{g}{u}: ~ becomes a 2/3 green and blue crab artifact creature with hexproof until end of turn.,1,1,Simic Keyrune
 exact_wording,"{g}{w}, discard a card: put a +1/+1 counter on target creature or that creature gains banding, first strike, or trample.",1,1,Nature's Blessing
-exact_wording,"{g}{w}, sacrifice ~: regenerate each creature you control.",1,1,Loxodon Hierarch
 exact_wording,{g}{w}: ~ becomes a 3/3 green and white wolf artifact creature until end of turn.,1,1,Selesnya Keyrune
 exact_wording,"{g}{w}{u}, {t}: prevent all combat damage that would be dealt this turn. activate only before the combat damage step.",1,1,Angus Mackenzie
-exact_wording,"{g}{w}{u}, {t}: regenerate target creature.",1,1,Ragnar
 exact_wording,"{g}{w}{w}, {t}, sacrifice ~: put a +1/+1 counter on each of up to two target creatures you control. they gain vigilance and lifelink until end of turn. activate only as a sorcery.",1,1,Bretagard Stronghold
 exact_wording,"{p}{p}{p} — until the end of your next turn, whenever you cast a spell, ~ deals 2 damage to up to one target creature.",1,1,Season of the Bold
 exact_wording,"{r/g}, {t}: add {r}{r}, {r}{g}, or {g}{g}.",1,1,Fire-Lit Thicket
@@ -12332,7 +12327,6 @@ exact_wording,{r}{g}{w}: ~ and each other creature with the same name as it get 
 exact_wording,{r}{r}: attach ~ to target creature you control.,1,1,Sparring Collar
 exact_wording,{r}{r}: target creature gets +1/-1 until end of turn.,1,1,Flowstone Overseer
 exact_wording,{r}{r}{r}: regenerate enchanted creature.,1,1,The Brute
-exact_wording,{r}{r}{r}: regenerate ~.,1,1,Eron the Relentless
 exact_wording,"{r}{w}, exile ~: exile all creatures you control. at the beginning of the next combat, return those cards to the battlefield under their owner's control and those creatures gain haste until end of turn.",1,1,Legion's Initiative
 exact_wording,"{r}{w}, unattach ~: search your library for a red or white instant card with mana value 4 or less and cast that card without paying its mana cost. then shuffle.",1,1,Sunforger
 exact_wording,"{r}{w}, {t}, tell a joke you haven't told this game to someone outside the game: create a 1/1 white clown robot artifact creature token. if that person laughed, the token gains haste until end of turn.",1,1,"Pietra, Crafter of Clowns"
@@ -12970,9 +12964,7 @@ exact_wording,{u}{u}: shuffle enchanted creature into its owner's library.,1,1,D
 exact_wording,{u}{u}: target creature you control gains flying until end of turn. sacrifice it at the beginning of the next end step.,1,1,Krovikan Elementalist
 exact_wording,"{u}{u}{b}{b}: target player loses x life and mills x cards, where x is the number of zombies you control.",1,1,Lich Lord of Unx
 exact_wording,"{u}{u}{u}, {t}: return target permanent to its owner's hand.",1,1,Temporal Adept
-exact_wording,{u}{u}{u}: regenerate ~.,1,1,Ghost Ship
 exact_wording,"{w/b}, {t}: add {w}{w}, {w}{b}, or {b}{b}.",1,1,Fetid Heath
-exact_wording,{w/b}{w/b}{w/b}: regenerate target creature.,1,1,Suture Spirit
 exact_wording,"{w/p}, {t}: tap target creature.",1,1,Blinding Souleater
 exact_wording,"{w/u}, {q}: look at the top card of your library. you may exile that card.",1,1,Puresight Merrow
 exact_wording,"{w/u}, {t}: add {w}{w}, {w}{u}, or {u}{u}.",1,1,Mystic Gate
@@ -13028,7 +13020,6 @@ exact_wording,"{w}: the next time an artifact source of your choice would deal d
 exact_wording,"{w}: until end of turn, ~ becomes a monk avatar creature in addition to its other types and gains ""~'s power and toughness are each equal to the number of lore counters on it.""",1,1,Myth Realized
 exact_wording,{w}: ~ can block an additional creature this turn.,1,1,Mounted Archers
 exact_wording,{w}: ~ gains shadow until end of turn.,1,1,Soltari Emissary
-exact_wording,"{w}{b}, pay 3 life: regenerate ~.",1,1,Sentry of the Underworld
 exact_wording,"{w}{b}, {t}: prevent all combat damage that would be dealt by target creature this turn.",1,1,Lady Evangela
 exact_wording,{w}{b}: ~ becomes a 1/4 white and black thrull artifact creature with lifelink until end of turn.,1,1,Orzhov Keyrune
 exact_wording,{w}{b}: ~ gains fear and vigilance until end of turn.,1,1,Scornful Aether-Lich
@@ -13046,6 +13037,7 @@ exact_wording,"{w}{u}{b}{r}{g}: until end of turn, ~ becomes a dragon, gets +5/+
 exact_wording,"{w}{u}{b}{r}{g}: until end of turn, ~ becomes an angel, gets +3/+3, and gains flying and lifelink.",1,1,Paragon of the Amesha
 exact_wording,{w}{u}{b}{r}{g}: you may play target elemental card from your graveyard without paying its mana cost.,1,1,Horde of Notions
 exact_wording,{w}{u}{b}{r}{g}: ~ gets +2/+2 and gains fear until end of turn. target creature gets -2/-2 until end of turn. activate only during your turn.,1,1,Fleshformer
+exact_wording,"{w}{w}, {t}, sacrifice ~: counter target spell that targets an enchantment.",1,1,Vigilant Martyr
 exact_wording,"{w}{w}, {t}: destroy target black permanent.",1,1,Northern Paladin
 exact_wording,"{w}{w}, {t}: destroy target red permanent.",1,1,Southern Paladin
 exact_wording,"{w}{w}, {t}: prevent the next 4 damage that would be dealt this turn to target creature you control. tap that creature. it doesn't untap during your next untap step.",1,1,Samite Alchemist
@@ -13056,7 +13048,6 @@ exact_wording,{w}{w}: ~ gains protection from the artist of your choice until en
 exact_wording,{w}{w}: ~ gains protection from the color of your choice until end of turn.,1,1,Knight of Dawn
 exact_wording,"{w}{w}{b}, {t}, sacrifice ~ and a creature you control: create a 4/4 white angel warrior creature token with flying and vigilance. activate only as a sorcery.",1,1,Great Hall of Starnheim
 exact_wording,"{w}{w}{u}{u}{b}{b}{r}{r}{g}{g}, {t}, sacrifice ~: target player loses the game.",1,1,Door to Nothingness
-exact_wording,{w}{w}{w}: regenerate ~.,1,1,Malach of the Dawn
 exact_wording,"{x}, discard a card with mana value x: ~ deals x damage to any target.",1,1,Knollspine Invocation
 exact_wording,"{x}, sacrifice ~: create x 1/1 green snake creature tokens. activate only as a sorcery.",1,1,Snake Basket
 exact_wording,"{x}, sacrifice ~: destroy each artifact, creature, and enchantment with mana value x or less.",1,1,Pernicious Deed
@@ -13647,6 +13638,7 @@ exact_wording,"~ gets +x/+x, where x is your highest commander tax among your co
 exact_wording,~ gets -1/-1 for each creature card in your library.,1,1,Avoided Stairwurm
 exact_wording,~ gets -1/-1 for each other creature on the battlefield.,1,1,Mogg Squad
 exact_wording,~ gets -2/-0 as long as two or more creatures are blocking it.,1,1,Rampaging Cyclops
+exact_wording,~ gets -2/-2 as long as black is the most common color among all permanents or is tied for most common.,1,1,Goham Djinn
 exact_wording,~ gets -2/-2 as long as blue is the most common color among all permanents or is tied for most common.,1,1,Zanam Djinn
 exact_wording,~ gets -2/-2 as long as green is the most common color among all permanents or is tied for most common.,1,1,Sulam Djinn
 exact_wording,~ gets -2/-2 as long as red is the most common color among all permanents or is tied for most common.,1,1,Halam Djinn
@@ -13792,7 +13784,6 @@ exact_wording,• destroy target artifact token.,1,1,Pinecone Strike
 exact_wording,• destroy target colorless nonland permanent.,1,1,Goblin Cratermaker
 exact_wording,• destroy target creature with any part of its head higher than the bar.,1,1,Bar Entry
 exact_wording,• destroy target equipment.,1,1,Molten Rebuke
-exact_wording,"• destroy target nonartifact, nonblack creature. it can't be regenerated.",1,1,Feast or Famine
 exact_wording,"• destroy target noncreature, nonland permanent with mana value 1 or less.",1,1,Molten Collapse
 exact_wording,• destroy target vampire.,1,1,Cleansing Ray
 exact_wording,• destroy target wall.,1,1,Chaos Charm
@@ -13935,6 +13926,7 @@ exact_wording,"at the beginning of each upkeep, if no spells were cast last turn
 exact_wording,that player discards that card.,0,30,Acquisitions Expert; Addle; Bala Ged Thief
 exact_wording,ascend,0,28,"Andúril, Narsil Reforged; Arch of Orazca; Deadeye Brawler"
 exact_wording,doctor's companion,0,27,"Ace, Fearless Rebel; Adric, Mathematical Genius; Amy Pond"
+exact_wording,they can't be regenerated.,0,27,Abu Ja'far; Child of Alara; Consume the Meek
 exact_wording,"if ~ would be put into a graveyard from anywhere, exile it instead.",0,25,Baithook Angler // Hook-Haunt Drifter; Beloved Beggar // Generous Soul; Binding Geist // Spectral Binding
 exact_wording,look at the top five cards of your library.,0,25,"Aang, at the Crossroads // Aang, Destined Savior; Advice from the Fae; Ancient Stirrings"
 exact_wording,soulbond,0,25,Deadeye Navigator; Diregraf Escort; Donna Noble
@@ -13963,6 +13955,7 @@ exact_wording,hidden agenda,0,14,Adriana's Valor; Assemble the Rank and Vile; Br
 exact_wording,reveal the top card of your library.,0,14,Coiling Oracle; Collectigull // Only the Best; Countryside Crusher
 exact_wording,draft this card face up.,0,13,Agent of Acquisitions; Animus of Predation; Archdemon of Paliano
 exact_wording,exile that card.,0,13,Agonizing Remorse; Biting-Palm Ninja; Break Expectations
+exact_wording,it can't be regenerated.,0,13,Brainspoil; Detonate; Drop of Honey
 exact_wording,living metal,0,13,"Arcee, Sharpshooter // Arcee, Acrobatic Coupe; Blitzwing, Cruel Tormentor // Blitzwing, Adaptive Assailant; Cyclonus, the Saboteur // Cyclonus, Cybertronian Fighter"
 exact_wording,put one of them into your hand and the rest into your graveyard.,0,13,"Commune with Evil; Discerning Taste; Firja, Judge of Valor"
 exact_wording,"if that spell would be put into your graveyard, exile it instead.",0,12,Daring Waverider; Diviner of Mist; Dreadhorde Arcanist
@@ -14018,7 +14011,6 @@ exact_wording,put the rest on the bottom of your library in any order.,0,7,Colle
 exact_wording,reveal the top six cards of your library.,0,7,"Adéwalé, Breaker of Chains; Allure of the Unknown; Bounty of Skemfar"
 exact_wording,reveal the top three cards of your library.,0,7,Beast Hunt; Borborygmos Enraged; Chromescale Drake
 exact_wording,"reveal those cards, put them into your hand, then shuffle.",0,7,Aang's Journey; Conflux; Nissa's Encouragement
-exact_wording,sacrifice ~ unless you discard a card.,0,7,Argentum Masticore; Great Desert Hellion; Masticore
 exact_wording,starting intensity 0,0,7,"Arek, False Goldwarden; Awestruck Cygnet; Chittering Skullspeaker"
 exact_wording,that creature gains haste.,0,7,"""Ach! Hans, Run!""; Cauldron Dance; Cosmic Sovereign"
 exact_wording,tiered,0,7,Cloud's Limit Break; Fire Magic; Ice Magic
@@ -14110,7 +14102,6 @@ exact_wording,shuffle your library.,0,5,Ancestral Knowledge; Dance with Calamity
 exact_wording,that player discards those cards.,0,5,Abandon Hope; Extortion; Last Rites
 exact_wording,"the next time a source of your choice would deal damage to you this turn, prevent that damage.",0,5,Deflecting Palm; Intervention Pact; Invulnerability
 exact_wording,then shuffle your library.,0,5,Mangara's Tome; Morality Shift; Naughty // Nice
-exact_wording,transmute {1}{b}{b},0,5,Brainspoil; Dimir House Guard; Dimir Machinations
 exact_wording,tribute 2,0,5,Flame-Wreathed Phoenix; Oracle of Bones; Ornitharch
 exact_wording,untap that permanent.,0,5,Frenzied Fugue; Join the Winning Team; Systems Override
 exact_wording,"when this card specializes from your graveyard, return it from your graveyard to the battlefield. it perpetually gains ""~ can't block.""",0,5,"Karlach, Tiefling Berserker; Karlach, Tiefling Guardian; Karlach, Tiefling Punisher"
@@ -14144,7 +14135,6 @@ exact_wording,~ enters tapped with two charge counters on it.,0,5,Vivid Crag; Vi
 exact_wording,~ enters tapped with two depletion counters on it.,0,5,Hickory Woodlot; Peat Bog; Remote Farm
 exact_wording,~ enters with a divinity counter on it if you cast it from your hand.,0,5,Myojin of Cleansing Fire; Myojin of Infinite Rage; Myojin of Life's Web
 exact_wording,~ enters with an indestructible counter on it if you cast it from your hand.,0,5,Myojin of Blooming Dawn; Myojin of Cryptic Dreams; Myojin of Grim Betrayal
-exact_wording,~ enters with six +1/+1 counters on it.,0,5,Clockwork Dragon; Floodchaser; Hexavus
 exact_wording,~ escapes with a +1/+1 counter on it.,0,5,Charred Graverobber; Loathsome Chimera; Ox of Agonas
 exact_wording,~ has indestructible as long as it has a divinity counter on it.,0,5,Myojin of Cleansing Fire; Myojin of Infinite Rage; Myojin of Life's Web
 exact_wording,• put a +1/+1 counter on ~.,0,5,"Gala Greeters; Gollum, Riddle Master; Lita, Little Orphan Amphibian"
@@ -14359,7 +14349,6 @@ exact_wording,"when there are no creatures on the battlefield, sacrifice ~.",0,3
 exact_wording,"when you do, choose one —",0,3,Cemetery Desecrator; Dialogue Tree; Voltstorm Angel
 exact_wording,"when you do, return target creature card from your graveyard to the battlefield.",0,3,"Kroxa and Kunoros; The Falcon, Airship Restored; Young Necromancer"
 exact_wording,"when you do, return target creature card from your graveyard to your hand.",0,3,Doombot Harbinger; Edgar's Awakening; Undead Butler
-exact_wording,"when ~ becomes the target of a spell, sacrifice it.",0,3,Departed Deckhand; Dream Strix; Labyrinth Guardian
 exact_wording,"when ~ is put into a graveyard from anywhere, its owner shuffles their graveyard into their library.",0,3,"Emrakul, the Aeons Torn; Kozilek, Butcher of Truth; Ulamog, the Infinite Gyre"
 exact_wording,"when ~ leaves the battlefield, that creature's controller sacrifices it.",0,3,Animate Dead; Dance of the Dead; Necromancy
 exact_wording,"whenever enchanted land becomes tapped, its controller loses 2 life.",0,3,Contaminated Ground; Corrupted Roots; Pooling Venom
@@ -14482,7 +14471,6 @@ exact_wording,"at the beginning of each player's upkeep, that player untaps a la
 exact_wording,"at the beginning of the next end step, return that card to the battlefield under its owner's control.",0,2,"Drive to Work; Phelia, Exuberant Shepherd"
 exact_wording,"at the beginning of the next end step, sacrifice it.",0,2,Momo's Heist; Spinal Embrace
 exact_wording,"at the beginning of your next end step, sacrifice those tokens.",0,2,Foggy Swamp Visions; Mardu Siegebreaker
-exact_wording,"at this turn's next end of combat, destroy all creatures that blocked or were blocked by it this turn.",0,2,Gaze of the Gorgon; Venomous Breath
 exact_wording,attach it to up to one target creature you control.,0,2,Assassin Gauntlet; Phantom Blade
 exact_wording,attach it to ~.,0,2,"Ogre Geargrabber; U.S.Agent, John Walker"
 exact_wording,augment {2}{g},0,2,Monkey-; Serpentine
@@ -14546,7 +14534,6 @@ exact_wording,creatures target player controls can't block this turn.,0,2,Ember 
 exact_wording,creatures with flying don't untap during their controllers' untap steps.,0,2,Blizzard; Energy Storm
 exact_wording,creatures you control can't have -1/-1 counters put on them.,0,2,"Darksteel Angel; Melira, Sylvok Outcast"
 exact_wording,creatures you control gain vigilance and trample until end of turn.,0,2,Overwhelming Encounter; Storm the Seedcore
-exact_wording,creatures you control have hexproof.,0,2,Archetype of Endurance; Asceticism
 exact_wording,creatures your opponents control can't block this turn.,0,2,Cosmotronic Wave; Hazardous Blast
 exact_wording,cumulative upkeep {b},0,2,Phobian Phantasm; Phyrexian Etchings
 exact_wording,cumulative upkeep {r},0,2,Brand of Ill Omen; Heat Wave
@@ -14919,7 +14906,6 @@ exact_wording,target unblocked attacking creature becomes blocked.,0,2,Curtain o
 exact_wording,that creature's controller gains life equal to its power.,0,2,"Captain Marvel, Shooting Star; Solitude"
 exact_wording,that land doesn't untap during its controller's next untap step.,0,2,Chandra's Revolution; Stensia Innkeeper
 exact_wording,that land is an island in addition to its other types for as long as it has a flood counter on it.,0,2,"Aquitect's Will; Xolatoyac, the Smiling Flood"
-exact_wording,that player discards a card at random.,0,2,"Rakdos Ringleader; Urgoros, the Empty One"
 exact_wording,that player exiles cards from the top of their library until they exile a nonland card.,0,2,"Bismuth Mindrender; Black Widow, Super Spy"
 exact_wording,that player exiles cards from the top of their library until they exile an instant or sorcery card.,0,2,"Dazzling Sphinx; Gríma, Saruman's Footman"
 exact_wording,"the ""legend rule"" doesn't apply to permanents you control.",0,2,Mirror Box; Sakashima of a Thousand Faces
@@ -15008,7 +14994,6 @@ exact_wording,"you gain 2 life.""",0,2,Kibo's Bananamobile; Peel Out
 exact_wording,you gain 4 life for each creature tapped this way.,0,2,Harmony of Nature; Marshaling the Troops
 exact_wording,"you get {e}{e} , then you may pay any amount of {e}.",0,2,Aether Spike; Die Young
 exact_wording,you lose 2 life for each age counter on it.,0,2,Krovikan Whispers; Phyrexian Etchings
-exact_wording,you lose life equal to that creature's toughness.,0,2,Devour in Shadow; Vendetta
 exact_wording,you may cast a spell from among them without paying its mana cost.,0,2,Abstract Performance; Extract Brain
 exact_wording,you may cast an instant or sorcery spell with mana value x or less from among them without paying its mana cost.,0,2,Muse Vortex; Summons of Saruman
 exact_wording,you may cast any number of spells from among cards exiled this way without paying their mana costs.,0,2,"Hellcarver Demon; Kefka, Dancing Mad"
@@ -15074,7 +15059,6 @@ exact_wording,your opponents can't cast spells during combat.,0,2,"Marisi, Break
 exact_wording,your opponents can't cast spells with the chosen name.,0,2,Council of the Absolute; Gideon's Intervention
 exact_wording,your opponents can't cast spells with the same name as a card exiled with ~.,0,2,"Circu, Dimir Lobotomist; Godsend"
 exact_wording,{0}: untap enchanted creature. activate only during your turn and only once each turn.,0,2,Instill Energy; Nature's Chosen
-exact_wording,"{1}, remove a +1/+1 counter from ~: regenerate ~.",0,2,Golgari Grave-Troll; Spike Hatcher
 exact_wording,"{1}, sacrifice ~: exile target card from a graveyard. draw a card.",0,2,Phyrexian Furnace; Scrabbling Claws
 exact_wording,"{1}, sacrifice ~: it deals damage equal to its power to any target.",0,2,Skarrgan Skybreaker; Voldaren Thrillseeker
 exact_wording,"{1}, {t}: untap another target artifact.",0,2,Manifold Key; Sonic Screwdriver
@@ -16566,7 +16550,6 @@ exact_wording,"as long as there are three or more different kinds of counters am
 exact_wording,"as long as there is exactly one tide counter on ~, all blue creatures get -2/-0.",0,1,Tidal Influence
 exact_wording,"as long as there is exactly one tide counter on ~, it gets -1/-1.",0,1,Homarid
 exact_wording,"as long as this card is face up during the draft, you can't look at booster packs and must draft cards at random. after you draft three cards this way, turn this card face down.",0,1,Archdemon of Paliano
-exact_wording,"as long as this card is in your graveyard, if you would learn, you may instead return this card to the battlefield.",0,1,Retriever Phoenix
 exact_wording,"as long as this card is the top card of your library, you may look at it any time and you may cast it.",0,1,Pearl Lake Warden // Nesting Instinct
 exact_wording,"as long as this card's intensity is 3 or more, it has base power and toughness 4/4, has flying and vigilance, and is named radiant swan.",0,1,Awestruck Cygnet
 exact_wording,"as long as three or more hands are touching ~, it has lifelink.",0,1,A Real Handful
@@ -16927,8 +16910,6 @@ exact_wording,"at the beginning of each end step, if you were dealt 4 or more da
 exact_wording,"at the beginning of each end step, if you've drawn three or more cards this turn, create a 3/3 blue angel creature token with flying.",0,1,"Lyra, Tolarian Archangel"
 exact_wording,"at the beginning of each end step, if your team gained life this turn, create two 1/1 white warrior creature tokens.",0,1,"Regna, the Redeemer"
 exact_wording,"at the beginning of each end step, if ~ dealt damage to another creature this turn, put a +1/+1 counter on him.",0,1,"Wolverine, Best There Is"
-exact_wording,"at the beginning of each end step, if ~ regenerated this turn, create a 0/1 blue starfish creature token for each time it regenerated this turn.",0,1,Spiny Starfish
-exact_wording,"at the beginning of each end step, put a corpse counter on ~ for each creature that died this turn.",0,1,Scavenging Ghoul
 exact_wording,"at the beginning of each end step, put a slime counter on each creature you don't control.",0,1,"Toxrill, the Corrosive"
 exact_wording,"at the beginning of each end step, remove all depletion counters from ~.",0,1,Force Bubble
 exact_wording,"at the beginning of each end step, you may pay 4 life. if you do, create a number of 1/1 black vampire knight creature tokens with lifelink equal to the number of cards you've drawn this turn.",0,1,Elenda and Azor
@@ -17263,7 +17244,6 @@ exact_wording,"blue creature cards in your hand perpetually gain ""evoke—exile
 exact_wording,blue creature spells you cast cost {1} less to cast.,0,1,Kefnet's Monument
 exact_wording,blue creatures can't block creatures you control.,0,1,Heat Wave
 exact_wording,blue creatures get +1/+1.,0,1,Sunken City
-exact_wording,blue spells and red spells you cast cost {1} less to cast.,0,1,Nightscape Familiar
 exact_wording,blurry,0,1,Blurry Beeble
 exact_wording,boars you control can't be blocked by more than one creature.,0,1,"Rocksteady, Crash Courser"
 exact_wording,boast abilities you activate cost {1} less to activate for each dragon you control.,0,1,Dragonkin Berserker
@@ -17285,7 +17265,6 @@ exact_wording,buyback {1}{u},0,1,Innocuous Insect
 exact_wording,buyback {2}{g},0,1,Wurmcalling
 exact_wording,buyback {2}{u},0,1,Mind Games
 exact_wording,buyback {2}{w}{w},0,1,Evangelize
-exact_wording,buyback—pay 4 life.,0,1,Slaughter
 exact_wording,buyback—sacrifice three islands.,0,1,Walk the Aeons
 exact_wording,c is the hypotenuse.,0,1,Xerex Squire
 exact_wording,calculate the hypotenuse of another creature you control.,0,1,Xerex Squire
@@ -17944,7 +17923,6 @@ exact_wording,"create x 1/1 black fungus creature tokens with ""~ can't block,""
 exact_wording,create x 1/1 colorless hero creature tokens.,0,1,Champions from Beyond
 exact_wording,create x 1/1 green and white alien insect creature tokens with flying.,0,1,"Vrestin, Menoptra Leader"
 exact_wording,"create x 1/1 green elf warrior creature tokens, where x is the number of attacking creatures.",0,1,Galadhrim Ambush
-exact_wording,"create x 1/1 green saproling creature tokens, where x is that artifact's mana value.",0,1,Artifact Mutation
 exact_wording,create x 1/1 red elemental cat creature tokens with haste.,0,1,Firecat Blitz
 exact_wording,"create x 1/1 red phyrexian goblin creature tokens, where x is the mana value of that spell.",0,1,"Ovika, Enigma Goliath"
 exact_wording,"create x 1/1 sand warrior creature tokens that are red, green, and white at the beginning of your next upkeep, where x is the number of lands you control at that time.",0,1,Hazezon Tamar
@@ -18355,7 +18333,6 @@ exact_wording,discard a card: you may cast a creature spell from your graveyard 
 exact_wording,discard a card: ~ can't be blocked this turn.,0,1,Ghostly Pilferer
 exact_wording,discard a card: ~ gains flying and protection from green and from white until end of turn.,0,1,Grotesque Hybrid
 exact_wording,discard a card: ~ gains indestructible until end of turn. tap him.,0,1,Witch-king of Angmar
-exact_wording,discard a creature card: put a +1/+1 counter on ~.,0,1,Lotleth Troll
 exact_wording,"discard a creature card: ~ gets +2/+2 until end of turn. if ~ is an aura, enchanted creature gets +2/+2 until end of turn instead.",0,1,Erebos's Emissary
 exact_wording,discard a land card: conjure a card named hollowhenge beast into your hand. you may also activate this ability while ~ is in your graveyard.,0,1,Hollowhenge Wrangler
 exact_wording,discard a land card: put two charge counters on ~.,0,1,Lightning Storm
@@ -19654,7 +19631,6 @@ exact_wording,exile up to one target attacking or blocking creature until ~ leav
 exact_wording,exile up to one target black card from your graveyard and copy it.,0,1,"Kaervek, the Punisher"
 exact_wording,exile up to one target creature you control without flying.,0,1,Salvation Swan
 exact_wording,exile up to one target creature you control.,0,1,S.H.I.E.L.D. Flying Car
-exact_wording,exile up to one target instant or sorcery card from a graveyard.,0,1,Rise of Extus
 exact_wording,exile up to one target instant or sorcery card from your graveyard and copy it.,0,1,Renegade Bull
 exact_wording,exile up to one target instant or sorcery card with mana value 1 from your graveyard.,0,1,"Massimo, the Magician"
 exact_wording,exile up to one target legendary artifact card or legendary land card from a graveyard and put a discovery counter on it.,0,1,"Lara Croft, Tomb Raider"
@@ -19715,7 +19691,6 @@ exact_wording,"fire of tzeentch — whenever you cast an instant or sorcery spel
 exact_wording,"firebending x, where x is the number of experience counters you have.",0,1,"Zuko, Firebending Master"
 exact_wording,"first contact — whenever ~ or another creature you control with power 3 or less enters, put a quest counter on ~.",0,1,Overseer of Vault 76
 exact_wording,"first strike, protection from god creatures",0,1,"Sigrid, God-Favored"
-exact_wording,"first strike, protection from legendary creatures",0,1,Tsabo Tavoc
 exact_wording,"first strike, protection from multicolored",0,1,Argentum Masticore
 exact_wording,firstest strike,0,1,Throat Wolf
 exact_wording,fixed commander ninjutsu {3}{b}{g},0,1,"Monet, Sensei of the Sewers"
@@ -19833,7 +19808,6 @@ exact_wording,"for each creature card exiled this way, create a token that's a c
 exact_wording,"for each creature card put into a graveyard this way, you create a tapped 2/2 black zombie creature token.",0,1,Dread Summons
 exact_wording,"for each creature card revealed this way, create a token that's a copy of that card, except it's 1/1, it's a spirit in addition to its other types, and it has flying.",0,1,Haunting Imitation
 exact_wording,"for each creature chosen this way, create a token that's a copy of it.",0,1,March of Progress
-exact_wording,"for each creature destroyed this way, its controller creates a 1/1 white spirit creature token with flying.",0,1,March of Souls
 exact_wording,"for each creature destroyed this way, its controller creates a 4/4 red dragon creature token with flying.",0,1,Descent of the Dragons
 exact_wording,"for each creature exiled this way, its controller creates a 2/2 green boar creature token.",0,1,Curse of the Swine
 exact_wording,"for each creature exiled this way, its controller creates a 4/4 blue sphinx creature token with flying.",0,1,Hour of Need
@@ -20088,7 +20062,6 @@ exact_wording,graft 6,0,1,Cytospawn Shambler
 exact_wording,"grand strategist — at the beginning of combat on your turn, another target artifact creature you control gets +2/+2 and gains menace until end of turn.",0,1,Imotekh the Stormlord
 exact_wording,"grand summon — {t}: add one mana of any color. when you next cast a creature spell this turn, that creature enters with two additional +1/+1 counters on it.",0,1,"Yuna, Grand Summoner"
 exact_wording,"grandeur — discard another card named ~: create an x/x green wurm creature token, where x is the number of lands you control.",0,1,"Baru, Fist of Krosa"
-exact_wording,"grandeur — discard another card named ~: search your library for up to two swamp cards, put them onto the battlefield tapped, then shuffle.",0,1,"Korlash, Heir to Blackblade"
 exact_wording,"grandeur — discard another card named ~: target player can't cast spells this turn, and creatures that player controls can't attack this turn.",0,1,"Oriss, Samite Guardian"
 exact_wording,"grandeur — discard another card named ~: target player returns a creature they control to its owner's hand, then repeats this process for an artifact, an enchantment, and a land.",0,1,"Linessa, Zephyr Mage"
 exact_wording,"grav-cannon — when ~ enters, destroy up to one target artifact or enchantment.",0,1,Space Marine Devastator
@@ -20810,7 +20783,6 @@ exact_wording,if kicked: those creatures get -2/-2 until end of turn instead.,0,
 exact_wording,if kicked: untap all forests put onto the battlefield this way.,0,1,Hunting Wilds
 exact_wording,if kicked: you gain life equal to that card's mana value.,0,1,Sheoldred's Restoration
 exact_wording,if kicked: you gain life equal to the life lost this way.,0,1,Blood Tribute
-exact_wording,if kicked: ~ deals damage equal to that creature's power to the creature's controller.,0,1,Agonizing Demise
 exact_wording,"if knowledge gets more votes or the vote is tied, draw three cards.",0,1,Plea for Power
 exact_wording,"if mana from a treasure was spent to cast it, this class deals damage equal to that spell's mana value to each opponent.",0,1,Alchemist's Talent
 exact_wording,"if mana from a treasure was spent to cast it, you draw a card and lose 1 life.",0,1,"Smaug, Wicked Worm"
@@ -20981,7 +20953,6 @@ exact_wording,"if there are no omen counters on ~, the player with the highest l
 exact_wording,"if there are no reflection tokens on the battlefield, create a 2/2 white reflection creature token.",0,1,Spirit Mirror
 exact_wording,"if there are no time counters on ~, sacrifice it.",0,1,Tourach's Gate
 exact_wording,"if there are six or more permanent cards in your graveyard, transform ~.",0,1,"Exdeath, Void Warlock // Neo Exdeath, Dimension's End"
-exact_wording,"if there are ten or more creature cards total in all graveyards, ~ costs {6} less to cast.",0,1,Avatar of Woe
 exact_wording,"if there are thirty or more counters among artifacts and creatures you control, ~ deals 10 damage to each opponent.",0,1,Lux Artillery
 exact_wording,"if there are three or more artifact and/or creature cards in your graveyard, ~ becomes prepared.",0,1,Lorehold Archivist // Restore Relic
 exact_wording,"if there are three or more omen counters on ~, untap it, then transform it.",0,1,Foreboding Statue // Forsaken Thresher
@@ -21177,7 +21148,6 @@ exact_wording,"if you control a planet, ~ deals 4 damage to any target.",0,1,Vol
 exact_wording,"if you control a red or green permanent, draw a card, then discard a card.",0,1,Ceta Sanctuary
 exact_wording,"if you control a red permanent and a green permanent, instead draw two cards, then discard a card.",0,1,Ceta Sanctuary
 exact_wording,"if you control a swamp, destroy target nonblack creature.",0,1,Horobi's Whisper
-exact_wording,"if you control a swamp, you may pay 4 life rather than pay ~'s mana cost.",0,1,Snuff Out
 exact_wording,"if you control a tapped creature, seek a nonland permanent card with mana value x or less, where x is the number of tapped creatures you control.",0,1,"Buxton, Decorated Host"
 exact_wording,"if you control a treefolk, draw a card.",0,1,Rootgrapple
 exact_wording,"if you control a villain with greater mana value than that creature, gain control of that creature until the end of your next turn instead.",0,1,Evil's Thrall
@@ -22265,7 +22235,6 @@ exact_wording,infusion — look at the top four cards of your library.,0,1,Follo
 exact_wording,inklings can't attack you or planeswalkers you control.,0,1,Combat Calligrapher
 exact_wording,"insatiable hunger — ~ attacks an opponent with the most life among your opponents each combat if able unless you control a creature named silver surfer, ~'s herald.",0,1,"Galactus, Devourer of Worlds"
 exact_wording,"insects you control and insect cards in your graveyard, hand, and library perpetually gain toxic 1.",0,1,Phyresis Roach
-exact_wording,"inspired — whenever ~ becomes untapped, each opponent loses 1 life. you gain life equal to the life lost this way.",0,1,Servant of Tymaret
 exact_wording,"instant and sorcery cards in your hand perpetually gain ""~ costs {1} less to cast.""",0,1,Charged Conjuration
 exact_wording,instant and sorcery spells you cast cost {1} less to cast for each experience counter you have.,0,1,Mizzix of the Izmagnus
 exact_wording,"instant and sorcery spells you cast cost {x} less to cast, where x is equipped creature's power.",0,1,"Glamdring, Foe-hammer // Gleam of Death"
@@ -22437,8 +22406,6 @@ exact_wording,it's still an enchantment.,0,1,Cacophony Unleashed
 exact_wording,its base power and toughness become equal to ~'s power and toughness until end of turn.,0,1,"Galion, Elvenking's Butler"
 exact_wording,its base power and toughness perpetually become 2/2.,0,1,Blood Age Muster
 exact_wording,its base power perpetually becomes equal to ~'s power.,0,1,Forgefire Automaton
-exact_wording,its controller creates a 1/1 white spirit creature token with flying.,0,1,Afterlife
-exact_wording,its controller creates a 3/3 green ape creature token.,0,1,Pongify
 exact_wording,its controller creates a 3/3 green beast creature token.,0,1,Beast Within
 exact_wording,its controller creates a 3/3 green elephant creature token.,0,1,Generous Gift
 exact_wording,"its controller creates a token that's a copy of it, except it's not legendary and it's an artifact in addition to its other types.",0,1,Dedicated Dollmaker
@@ -22720,7 +22687,6 @@ exact_wording,megalegendary,0,1,"Vazal, the Compleat"
 exact_wording,megamorph {2}{b},0,1,Silumgar Assassin
 exact_wording,megamorph {2}{r},0,1,Atarka Efreet
 exact_wording,megamorph {2}{w},0,1,Hidden Dragonslayer
-exact_wording,megamorph {3}{b},0,1,Marang River Skeleton
 exact_wording,megamorph {3}{g},0,1,Guardian Shield-Bearer
 exact_wording,megamorph {3}{g}{g},0,1,Salt Road Ambushers
 exact_wording,megamorph {4}{g},0,1,Deathmist Raptor
@@ -23470,7 +23436,6 @@ exact_wording,put a +1/+1 counter on it for each unique vowel on that sticker.,0
 exact_wording,put a +1/+1 counter on it if it's autumn.,0,1,Spirit of the Season
 exact_wording,put a +1/+1 counter on it if the exiled card's mana value is 4 or greater.,0,1,Summoner's Sending
 exact_wording,put a +1/+1 counter on shang-chi.,0,1,Shang-Chi and the Ten Rings
-exact_wording,put a +1/+1 counter on target attacking creature and untap it.,0,1,Sparring Regimen
 exact_wording,put a +1/+1 counter on target cat you control.,0,1,"Olag and Miau, New Friends"
 exact_wording,put a +1/+1 counter on target creature and goad it.,0,1,"Bhaal, Lord of Murder"
 exact_wording,put a +1/+1 counter on target creature or enchantment you control.,0,1,"Heliod, Sun-Crowned"
@@ -23844,7 +23809,6 @@ exact_wording,remove a -1/-1 counter from target creature you control and put a 
 exact_wording,remove a cage counter from ~.,0,1,Seer of the Bright Side
 exact_wording,remove a charge counter from ~: add one mana of any color. activate only once each turn.,0,1,Mana Bloom
 exact_wording,remove a charge counter from ~: add {c}. any player may activate this ability but only during their turn before the end step.,0,1,Mana Cache
-exact_wording,remove a corpse counter from ~: regenerate ~.,0,1,Scavenging Ghoul
 exact_wording,remove a divinity counter from ~: destroy all lands.,0,1,Myojin of Infinite Rage
 exact_wording,remove a divinity counter from ~: destroy all other creatures.,0,1,Myojin of Cleansing Fire
 exact_wording,remove a divinity counter from ~: each opponent discards their hand.,0,1,Myojin of Night's Reach
@@ -23947,7 +23911,6 @@ exact_wording,replicate {3}{u},0,1,Mimeofacture
 exact_wording,replicate {u}{r},0,1,Leap of Flame
 exact_wording,replicate—tap an untapped dalek you control.,0,1,Exterminate!
 exact_wording,replicate—tap an untapped horror you control.,0,1,Psionic Ritual
-exact_wording,return a black creature you control to its owner's hand.,0,1,Skull Collector
 exact_wording,return a blue creature you control to its owner's hand.,0,1,Trusted Advisor
 exact_wording,return a creature card from your graveyard to the battlefield and attach ~ to it.,0,1,Last Voyage of the _____
 exact_wording,return a creature card from your graveyard to the battlefield with a number of +1/+1 counters on it equal to that result.,0,1,Grave Endeavor
@@ -24028,7 +23991,6 @@ exact_wording,return target nontoken creature to its owner's hand.,0,1,Soothing 
 exact_wording,"return target nontoken, nonland permanent to its owner's hand.",0,1,Vesuvan Mist
 exact_wording,return target permanent card in an opponent's graveyard to the battlefield under their control.,0,1,Jailbreak
 exact_wording,return target sliver to its owner's hand.,0,1,Vedalken Aethermage
-exact_wording,return target spell or permanent with mana value 1 or greater to its owner's hand.,0,1,Divide by Zero
 exact_wording,return target tapped creature an opponent controls to its owner's hand.,0,1,Point to the Scoreboard
 exact_wording,return that card and the sacrificed card to the battlefield under your control at the beginning of your next upkeep.,0,1,Rescue from the Underworld
 exact_wording,return that card to its owner's hand at the beginning of the next end step.,0,1,"Liesa, Forgotten Archangel"
@@ -24316,11 +24278,9 @@ exact_wording,sacrifice ~: prevent all damage a red source of your choice would 
 exact_wording,"sacrifice ~: prevent the next x damage that would be dealt this turn to any number of targets, divided as you choose, where x is the number of verse counters on ~.",0,1,Serra's Hymn
 exact_wording,sacrifice ~: put two charge counters on target artifact.,0,1,Coretapper
 exact_wording,sacrifice ~: regenerate all werewolf creatures you control.,0,1,Full Moon's Rise
-exact_wording,sacrifice ~: regenerate target creature.,0,1,Vigilant Martyr
 exact_wording,sacrifice ~: return each creature card exiled with ~ to the battlefield under your control.,0,1,Cold Storage
 exact_wording,"sacrifice ~: surveil 3, then draw three cards. activate only if ~ has five or more unlock counters on it.",0,1,Cryptex
 exact_wording,sacrifice ~: target creature gains protection from the chosen color until end of turn.,0,1,Floating Shield
-exact_wording,sacrifice ~: target player discards two cards. activate only during your upkeep.,0,1,Augur of Skulls
 exact_wording,sacrifice ~: the chosen creature gains indestructible until end of turn.,0,1,Dauntless Bodyguard
 exact_wording,"sacrifice ~: the next time a source of your choice would deal damage to enchanted creature this turn, prevent that damage.",0,1,Kithkin Armor
 exact_wording,"sacrifice ~: until end of turn, face-up nontoken creatures you control gain ""when ~ dies, manifest the top card of your library.""",0,1,Whisperwood Elemental
@@ -24475,7 +24435,6 @@ exact_wording,seek a land card and put it onto the battlefield.,0,1,Pearl Lake W
 exact_wording,seek a land card with a basic land type.,0,1,"Lukamina, Moon Druid"
 exact_wording,seek a land card.,0,1,Hollowhenge Wrangler
 exact_wording,"seek a mountain card, a forest card, and a non-mountain, non-forest land card.",0,1,Song of Seasons
-exact_wording,seek a multicolored card.,0,1,Interdisciplinary Studies
 exact_wording,seek a non-shark card.,0,1,"Arius, Flyby Trawler"
 exact_wording,seek a nonbasic land card.,0,1,Traverse Valley
 exact_wording,seek a nonland artifact card with mana value x or less and put it onto the battlefield.,0,1,Plunderer's Prize
@@ -24570,7 +24529,6 @@ exact_wording,"spear of the void dragon — whenever ~ attacks, each opponent sa
 exact_wording,specialize {1},0,1,"Lae'zel, Githyanki Warrior"
 exact_wording,specialize {5}. this ability costs {3} less to activate if there are two or more instant and/or sorcery cards in your graveyard.,0,1,"Imoen, Trickster Friend"
 exact_wording,"spell mastery — if there are two or more instant and/or sorcery cards in your graveyard, add {b}{b}{b}.",0,1,Dark Petition
-exact_wording,"spell mastery — if there are two or more instant and/or sorcery cards in your graveyard, also regenerate each other creature you control.",0,1,Dark Dabbling
 exact_wording,"spell mastery — if there are two or more instant and/or sorcery cards in your graveyard, put up to two creature cards from among the revealed cards into your hand instead of one.",0,1,Gather the Pack
 exact_wording,"spell mastery — if there are two or more instant and/or sorcery cards in your graveyard, search your library for up to three basic forest cards instead of two.",0,1,Nissa's Pilgrimage
 exact_wording,"spell mastery — if there are two or more instant and/or sorcery cards in your graveyard, untap those lands.",0,1,Animist's Awakening
@@ -24961,7 +24919,6 @@ exact_wording,target opponent creates a 2/4 white ox creature token and you draw
 exact_wording,target opponent creates a carnival of souls token.,0,1,Davvol's Birthdaymobile
 exact_wording,target opponent creates a tapped baneslayer angel token.,0,1,Balefang the Unslayable
 exact_wording,"target opponent creates an x/x blue orb creature token with flying, where x is the number of +1/+1 counters on ~.",0,1,Phantasmal Sphere
-exact_wording,target opponent creates four 1/1 blue faerie creature tokens with flying.,0,1,Hunted Troll
 exact_wording,target opponent creates three 0/1 white goat creature tokens.,0,1,Clackbridge Troll
 exact_wording,target opponent creates three walker tokens.,0,1,"Hansk, Slayer Zealot"
 exact_wording,target opponent creates two 0/2 green plant creature tokens with defender.,0,1,Dowsing Dagger // Lost Vale
@@ -24976,7 +24933,6 @@ exact_wording,target opponent exiles the top 2 cards of their library face down.
 exact_wording,target opponent exiles the top 3 cards of their library.,0,1,Villainous Wealth
 exact_wording,"target opponent exiles the top card of their library, a card at random from their graveyard, and a card at random from their hand.",0,1,Crabomination
 exact_wording,target opponent exiles the top three cards of their library.,0,1,Bloodsoaked Insight // Sanguine Morass
-exact_wording,target opponent gains 2 life.,0,1,Soldevi Steam Beast
 exact_wording,target opponent gains 5 life.,0,1,Fiery Justice
 exact_wording,target opponent gains control of up to one target creature you control.,0,1,"Jon Irenicus, Shattered One"
 exact_wording,target opponent gains control of ~ and puts a charge counter on it.,0,1,Jinxed Choker
@@ -25122,7 +25078,6 @@ exact_wording,tempting offer — return a creature card from your graveyard to t
 exact_wording,tempting offer — search your library for a land card and put it onto the battlefield.,0,1,Tempt with Discovery
 exact_wording,"tempting offer — when ~ enters the battlefield, create a token from the menu. each opponent may also create a token from the menu. for each opponent who does, you create a token of the same type.",0,1,Maître Tree
 exact_wording,"terror from the deep — when ~ enters, it fights up to one target creature an opponent controls. if that creature would die this turn, exile it instead.",0,1,Mawloc
-exact_wording,that artifact's controller gains life equal to its mana value.,0,1,Crumble
 exact_wording,that card gains flashback {0} until end of turn instead if ~ is saddled.,0,1,Archmage's Newt
 exact_wording,that card gains warp {0} until end of turn.,0,1,Gravitic Herald
 exact_wording,that card is now on an adventure for you.,0,1,Adventurer Beguiler
@@ -25863,7 +25818,6 @@ exact_wording,untap that creature and roll a six-sided die.,0,1,Hammer Helper
 exact_wording,untap those creatures and they gain haste until end of turn.,0,1,Seize the Spotlight
 exact_wording,untap those permanents.,0,1,Scrambleverse
 exact_wording,untap two target creatures.,0,1,Hope and Glory
-exact_wording,untap up to four lands you control.,0,1,Wrath of Leknif
 exact_wording,untap up to four target artifacts and/or creatures.,0,1,Katara's Reversal
 exact_wording,untap up to four target creatures.,0,1,"Invasion of Segovia // Caetus, Sea Tyrant of Segovia"
 exact_wording,untap up to one target kraken and put a stun counter on up to one target nonland permanent.,0,1,The Watcher in the Water
@@ -26795,7 +26749,6 @@ exact_wording,"whenever a creature attacks, you may gain 1 life.",0,1,Patron of 
 exact_wording,"whenever a creature becomes blocked by a creature with lesser power, destroy the blocking creature.",0,1,No Quarter
 exact_wording,"whenever a creature blocks a creature with lesser power, destroy the attacking creature.",0,1,No Quarter
 exact_wording,"whenever a creature blocks this turn, it gets +0/+1 until end of turn.",0,1,Battle Cry
-exact_wording,"whenever a creature blocks, that creature's controller loses 1 life.",0,1,Carnage Gladiator
 exact_wording,"whenever a creature card is put into an opponent's graveyard from anywhere, you may pay life equal to its mana value. if you do, put it onto the battlefield under your control. it's a warlock in addition to its other types.",0,1,"Lorcan, Warlock Collector"
 exact_wording,"whenever a creature card is put into an opponent's graveyard from their library, exile that card and create a 2/2 black zombie creature token.",0,1,Undead Alchemist
 exact_wording,"whenever a creature card is put into your graveyard from anywhere, remove an omen counter from ~. then if it has no omen counters on it, transform it.",0,1,Soulcipher Board // Cipherbound Spirit
@@ -26884,7 +26837,6 @@ exact_wording,"whenever a creature you control deals combat damage, put a blaze 
 exact_wording,"whenever a creature you control dies or is put into the command zone, if it had one or more +1/+1 counters on it, you may put that many +1/+1 counters on target creature.",0,1,"Reyhan, Last of the Abzan"
 exact_wording,"whenever a creature you control enchanted by a chef role attacks or blocks, it gets +x/+x until end of turn, where x is ~'s power.",0,1,Ratatwotwo
 exact_wording,"whenever a creature you control enters during combat, you may attach target equipment you control to target creature you control.",0,1,"Noctis, Heir Apparent"
-exact_wording,"whenever a creature you control enters this turn, put a +1/+1 counter on it and it gains haste until end of turn.",0,1,First Day of Class
 exact_wording,"whenever a creature you control exploits a creature, put a +1/+1 counter on each creature you control.",0,1,Colonel Autumn
 exact_wording,"whenever a creature you control exploits a non-human creature, draw a card. if the exploited creature had power 3 or greater, create a treasure token.",0,1,"Henry Wu, InGen Geneticist"
 exact_wording,"whenever a creature you control exploits a nontoken creature, create a 2/2 black zombie creature token.",0,1,Skull Skaab
@@ -27843,7 +27795,6 @@ exact_wording,"whenever you cast an instant or sorcery spell from your hand, you
 exact_wording,"whenever you cast an instant or sorcery spell from your library, copy it. you may choose new targets for the copy.",0,1,"Melek, Izzet Paragon"
 exact_wording,"whenever you cast an instant or sorcery spell or activate an ability, if that spell's mana cost or that ability's activation cost contains {x}, copy that spell or ability. you may choose new targets for the copy.",0,1,Unbound Flourishing
 exact_wording,"whenever you cast an instant or sorcery spell that has the same name as a card in your graveyard, you may put a quest counter on ~.",0,1,Pyromancer Ascension
-exact_wording,"whenever you cast an instant or sorcery spell that targets only a single nonland permanent an opponent controls, if another opponent controls one or more nonland permanents that spell could target, choose one of those permanents. copy that spell. the copy targets the chosen permanent.",0,1,Exterminator Magmarch
 exact_wording,"whenever you cast an instant or sorcery spell that targets only ~ or activate an ability that targets only ~, copy that spell or ability. you may choose new targets for the copy. this ability triggers only once each turn.",0,1,Bill Potts
 exact_wording,"whenever you cast an instant or sorcery spell that's both the chosen college's colors or a creature spell of the chosen creature type, copy it. you may choose new targets for the copy.",0,1,The Strixhaven-Lorwyn Rover
 exact_wording,"whenever you cast an instant or sorcery spell while ~ has two or more quest counters on it, you may copy that spell. you may choose new targets for the copy.",0,1,Pyromancer Ascension
@@ -28068,7 +28019,6 @@ exact_wording,"whenever ~ becomes blocked by a creature, the blocking creature g
 exact_wording,"whenever ~ becomes blocked by a non-wall creature, destroy that creature at end of combat.",0,1,Infernal Medusa
 exact_wording,"whenever ~ becomes blocked by a wall, destroy that wall at end of combat.",0,1,Battering Ram
 exact_wording,"whenever ~ becomes blocked, choose one —",0,1,"Bill Ferny, Bree Swindler"
-exact_wording,"whenever ~ becomes blocked, defending player discards a card at random.",0,1,Corrupt Official
 exact_wording,"whenever ~ becomes blocked, it gets +6/+3 until end of turn.",0,1,Lim-Dûl's Paladin
 exact_wording,"whenever ~ becomes blocked, untap up to three lands you control.",0,1,Azusa's Many Journeys // Likeness of the Seeker
 exact_wording,"whenever ~ becomes blocked, you may untap ~ and remove it from combat.",0,1,Gustcloak Cavalier
@@ -28103,7 +28053,6 @@ exact_wording,"whenever ~ deals combat damage to a creature, if that creature is
 exact_wording,"whenever ~ deals combat damage to a creature, if that creature was dealt excess damage this turn, you get x {e}, where x is that excess damage.",0,1,Overclocked Electromancer
 exact_wording,"whenever ~ deals combat damage to a creature, put a -1/-1 counter on that creature.",0,1,Obelisk Spider
 exact_wording,"whenever ~ deals combat damage to a creature, tap that creature. it doesn't untap during its controller's next untap step.",0,1,Queen of Ice // Rage of Winter
-exact_wording,"whenever ~ deals combat damage to a creature, that creature's controller loses that much life.",0,1,Flayed Nim
 exact_wording,"whenever ~ deals combat damage to a player or battle, choose any number —",0,1,Rankle and Torbran
 exact_wording,"whenever ~ deals combat damage to a player or battle, look at that many cards from the top of your library. you may reveal a creature or land card from among them and put it into your hand. put the rest on the bottom of your library in a random order.",0,1,Doomskar Warrior
 exact_wording,"whenever ~ deals combat damage to a player or battle, return target creature card from your graveyard to the battlefield.",0,1,Archpriest of Shadows
@@ -28472,9 +28421,7 @@ exact_wording,you gain 3 life plus an additional 3 life for each additional {1}{
 exact_wording,you gain 4 life if an opponent has more life than you.,0,1,"Beza, the Bounding Spring"
 exact_wording,you gain 4 life if this is the first time this ability has resolved this turn.,0,1,"Omnath, Locus of Creation"
 exact_wording,you gain 5 life if it's winter.,0,1,Spirit of the Season
-exact_wording,you gain control of all equipment that were attached to it.,0,1,Murderous Spoils
 exact_wording,you gain control of that creature for as long as it has a shield counter on it.,0,1,Shield Broker
-exact_wording,you gain control of that creature if it regenerates this way.,0,1,Debt of Loyalty
 exact_wording,you gain control of that creature until end of turn.,0,1,The Nipton Lottery
 exact_wording,you gain control of that land until end of turn.,0,1,Wellspring
 exact_wording,you gain control of those creatures.,0,1,Rags // Riches
@@ -28549,7 +28496,6 @@ exact_wording,"you lose 2 life and draw two cards, then clash with an opponent."
 exact_wording,you lose 2 life for each creature destroyed this way.,0,1,Rain of Daggers
 exact_wording,you lose 2 life for each creature that died this way.,0,1,Reign of Terror
 exact_wording,you lose 2 life unless you control a villain.,0,1,The Spot's Portal
-exact_wording,"you lose 2 life, you sacrifice two creatures, and target opponent draws two cards.",0,1,Lord of Tresserhorn
 exact_wording,"you lose 2 life.""",0,1,Hellish Rebuke
 exact_wording,you lose 3 life for each card returned this way.,0,1,Revival Experiment
 exact_wording,you lose 3 life for each card you put into your hand this way.,0,1,"Blex, Vexing Pest // Search for Blex"
@@ -28839,7 +28785,6 @@ exact_wording,you may have it deal 2 damage to target creature that player contr
 exact_wording,you may have it deal 2 damage to target creature.,0,1,Igneous Elemental
 exact_wording,you may have it deal 3 damage to target creature that player controls.,0,1,Snapping Thragg
 exact_wording,you may have it deal damage equal to its power to target creature defending player controls.,0,1,Cyclops Gladiator
-exact_wording,you may have it gain reach until end of turn.,0,1,Academic Dispute
 exact_wording,you may have it get +4/+0 until end of turn.,0,1,Attack-in-the-Box
 exact_wording,"you may have other attacking creatures get +x/+x until end of turn, where x is ~'s power.",0,1,Cultivator of Blades
 exact_wording,"you may have target creature get +x/+x until end of turn, where x is ~'s power.",0,1,Resilient Khenra
@@ -29459,7 +29404,6 @@ exact_wording,{1}{b}: target creature gains lifelink until end of turn.,0,1,Joru
 exact_wording,"{1}{b}{b}, {t}: return target creature card from your graveyard to the battlefield. it gains ""if ~ would leave the battlefield, exile it instead of putting it anywhere else."" activate only as a sorcery.",0,1,"Geth, Thane of Contracts"
 exact_wording,"{1}{b}{b}: each creature you control with flying, deathtouch, and/or lifelink gets +1/+0 until end of turn.",0,1,"Henrika Domnathi // Henrika, Infernal Seer"
 exact_wording,"{1}{b}{b}: if ~ is a phyrexian, put a +1/+1 counter on it, then you draw a card and you lose 1 life.",0,1,Evolved Sleeper
-exact_wording,{1}{b}{b}: regenerate ~.,0,1,Cadaverous Knight
 exact_wording,"{1}{b}{g}, sacrifice another creature: each opponent loses life equal to the sacrificed creature's power.",0,1,"Jarad, Golgari Lich Lord"
 exact_wording,{1}{b}{g}: put a plague counter on ~ or remove a plague counter from it.,0,1,Plague Boiler
 exact_wording,{1}{b}{g}: target creature gets +1/+1 and gains intimidate until end of turn.,0,1,Korozda Guildmage
@@ -29467,9 +29411,7 @@ exact_wording,{1}{b}{g}: target creature you control with toxic gains deathtouch
 exact_wording,{1}{b}{g}: ~ fights another target creature.,0,1,"Polukranos, Unchained"
 exact_wording,"{1}{b}{r}, sacrifice another creature or artifact: until end of turn, other creatures you control get +1/+0 and gain menace and haste.",0,1,Junkyard Genius
 exact_wording,{1}{b}{r}: put a -1/-1 counter on another target creature.,0,1,The Scorpion God
-exact_wording,{1}{b}{r}: regenerate ~.,0,1,Carnage Gladiator
 exact_wording,"{1}{c}, sacrifice an eldrazi: ~ deals 2 damage to any target.",0,1,Spawn-Gang Commander
-exact_wording,{1}{c}: regenerate ~.,0,1,Birthing Hulk
 exact_wording,{1}{g/u}: ~ and target frog you control can't be blocked this turn except by creatures with flying or reach.,0,1,"Tatsunari, Toad Rider"
 exact_wording,"{1}{g/w}{g/w}: if ~ is a scout, it becomes a kithkin soldier with base power and toughness 4/5.",0,1,Figure of Fable
 exact_wording,"{1}{g}, discard this card: return target land card from your graveyard to the battlefield tapped.",0,1,"Altanak, the Thrice-Called"
@@ -29491,7 +29433,6 @@ exact_wording,{1}{g}: adapt 2.,0,1,Evolution Witness
 exact_wording,"{1}{g}: exile target card from a graveyard. if a creature card is exiled this way, create a 1/1 black and green pest creature token with ""when ~ dies, you gain 1 life.""",0,1,Feral Appetite
 exact_wording,{1}{g}: move a +1/+1 counter from target creature onto another target creature with the same controller.,0,1,Simic Guildmage
 exact_wording,{1}{g}: regenerate target creature with a +1/+1 counter on it.,0,1,Sporeback Troll
-exact_wording,{1}{g}: regenerate target creature.,0,1,Asceticism
 exact_wording,{1}{g}: return target human you control to its owner's hand. ~ gains indestructible until end of turn.,0,1,"Kogla, the Titan Ape"
 exact_wording,{1}{g}: target creature gains deathtouch until end of turn.,0,1,"Trostani, Three Whispers"
 exact_wording,{1}{g}: turn ~ face down.,0,1,Obscuring Aether
@@ -29511,7 +29452,6 @@ exact_wording,"{1}{r}, discard your hand, sacrifice ~: put all cards exiled with
 exact_wording,"{1}{r}, remove five charge counters from ~: it deals 5 damage to any target.",0,1,Firemind's Research
 exact_wording,"{1}{r}, sacrifice ~: discard your hand, then draw cards equal to the number of stash counters on ~.",0,1,Hoarder's Overflow
 exact_wording,"{1}{r}, sacrifice ~: it deals damage equal to twice the number of hot cards in your graveyard to target creature or planeswalker.",0,1,Don't Try This at Home
-exact_wording,"{1}{r}, {t}, discard a card: ~ deals 3 damage to any target. a creature dealt damage this way can't be regenerated this turn.",0,1,"Jaya Ballard, Task Mage"
 exact_wording,"{1}{r}, {t}, discard your hand: until end of turn, whenever a creature you control with power 2 or less deals combat damage to a player, draw a card.",0,1,"Subira, Tulzidi Caravanner"
 exact_wording,"{1}{r}, {t}, remove x +1/+1 counters from ~: it deals x damage to any target.",0,1,"Auntie Blyte, Bad Influence"
 exact_wording,"{1}{r}, {t}, sacrifice ~: cast any number of cards exiled with ~ without paying their mana costs.",0,1,Izzet Chemister
@@ -29636,7 +29576,6 @@ exact_wording,"{2}, exile this card from your hand: target land gains ""{t}: add
 exact_wording,"{2}, exile two cards from your graveyard: create a tapped 2/2 black zombie creature token.",0,1,"Varina, Lich Queen"
 exact_wording,"{2}, forage: put a +1/+1 counter on each other squirrel you control.",0,1,"Camellia, the Seedmiser"
 exact_wording,"{2}, pay 2 life: choose one. activate only once.",0,1,Subversive Acolyte
-exact_wording,"{2}, remove a cube counter from ~: regenerate target creature.",0,1,Delif's Cube
 exact_wording,"{2}, remove two +1/+1 counters from among artifacts you control: draw a card.",0,1,"Iron Spider, Stark Upgrade"
 exact_wording,"{2}, remove two oil counters from ~: it gets +2/+2 until end of turn.",0,1,"Migloz, Maze Crusher"
 exact_wording,"{2}, sacrifice a clue: return this card from your graveyard to your hand.",0,1,Unshakable Tail
@@ -29718,7 +29657,6 @@ exact_wording,"{2}, {t}: target nonsnow basic land becomes snow.",0,1,Arcum's We
 exact_wording,"{2}, {t}: target opponent mills three cards. put a land card from their graveyard onto the battlefield tapped under your control. it gains ""if ~ would leave the battlefield, exile it instead of putting it anywhere else.""",0,1,"Realmbreaker, the Invasion Tree"
 exact_wording,"{2}, {t}: target snow land is no longer snow.",0,1,Arcum's Weathervane
 exact_wording,"{2}, {t}: target vehicle you control becomes an artifact creature until end of turn.",0,1,Guidelight Matrix
-exact_wording,"{2}, {t}: this turn, when target creature you control attacks and isn't blocked, it assigns no combat damage this turn and you put a cube counter on ~.",0,1,Delif's Cube
 exact_wording,"{2}, {t}: untap target creature you control. it phases out until ~ leaves the battlefield.",0,1,The Moment
 exact_wording,"{2}, {t}: when you next activate an exhaust ability that isn't a mana ability this turn, copy it. you may choose new targets for the copy.",0,1,Pit Automaton
 exact_wording,"{2}, {t}: you may copy the exiled card. if you do, you may cast the copy without paying its mana cost.",0,1,Isochron Scepter
@@ -29774,7 +29712,6 @@ exact_wording,"{2}{b}, put a creature card exiled with ~ into its owner's gravey
 exact_wording,"{2}{b}, sacrifice a creature: each other player sacrifices a creature.",0,1,Shattergang Brothers
 exact_wording,"{2}{b}, sacrifice another enchantment: ~ gets +x/+0 until end of turn, where x is the sacrificed enchantment's mana value.",0,1,Demon of Fate's Design
 exact_wording,"{2}{b}, sacrifice another vampire or zombie: put two +1/+1 counters on ~.",0,1,"Kalitas, Traitor of Ghet"
-exact_wording,"{2}{b}, sacrifice two other creatures: destroy target creature.",0,1,Eater of Hope
 exact_wording,"{2}{b}, sacrifice x artifacts: return target creature card with power x or less from your graveyard to the battlefield. x can't be 0.",0,1,Ruthless Technomancer
 exact_wording,"{2}{b}, {t}, exile a creature card from your graveyard: draw a card.",0,1,"Egon, God of Death // Throne of Death"
 exact_wording,"{2}{b}, {t}, sacrifice another creature: target opponent loses life equal to the sacrificed creature's toughness.",0,1,Catapult Fodder // Catapult Captain
@@ -29982,7 +29919,6 @@ exact_wording,{3}{b/p}: transform ~. activate only as a sorcery.,0,1,Pyretic Pra
 exact_wording,"{3}{b}, exile this card from your graveyard: the ring tempts you.",0,1,Gollum's Bite
 exact_wording,"{3}{b}, sacrifice an artifact or creature: return this card from your graveyard to the battlefield. activate only as a sorcery.",0,1,Grafted Butcher
 exact_wording,"{3}{b}, sacrifice x foods: creatures you control get +x/+0 and gain menace until end of turn.",0,1,Insatiable Frugivore
-exact_wording,"{3}{b}, {t}: target creature gains swampwalk until end of turn.",0,1,Restless Bones
 exact_wording,{3}{b}: destroy enchanted land.,0,1,Pooling Venom
 exact_wording,{3}{b}: level 3,0,1,Bandit's Talent
 exact_wording,{3}{b}: return target creature card with a sticker on it from your graveyard to the battlefield. that creature gains haste. exile it at the beginning of the next end step. activate only as a sorcery.,0,1,Scampire
@@ -30199,7 +30135,6 @@ exact_wording,"{6}, roll a d8: monstrosity x, where x is the result.",0,1,Clay G
 exact_wording,"{6}, {t}, remove all charge counters from ~: create a 0/0 green and blue fractal creature token. put x +1/+1 counters on it, where x is the number of charge counters removed this way.",0,1,Geometric Nexus
 exact_wording,"{6}, {t}, sacrifice ~: put each creature card exiled with ~ onto the battlefield under your control with a flying counter on it. each of them is a 1/1 spirit in addition to its other types. activate only as a sorcery.",0,1,Ghost Vacuum
 exact_wording,"{6}, {t}: create a white-bordered blue elemental creature token. it has noted power and toughness and up to two noted abilities. erase whatever text you use this way.",0,1,The Whiteboarder
-exact_wording,"{6}, {t}: search your library for a mercenary permanent card with mana value 6 or less, put it onto the battlefield, then shuffle.",0,1,Cateran Overlord
 exact_wording,"{6}, {t}: tap target creature. it doesn't untap during its controller's untap step for as long as ~ remains tapped.",0,1,Deserter's Quarters
 exact_wording,"{6}: create a heartwood token. then ~ gets +x/+0 until end of turn, where x is the number of artifacts you control.",0,1,Aerid Konstrari
 exact_wording,"{6}: create a token that's a copy of target creature card exiled with ~, except it's a 6/6 green dinosaur creature with trample. activate only as a sorcery.",0,1,Dino DNA
@@ -30232,16 +30167,13 @@ exact_wording,{9}: untap ~. activate only during your upkeep.,0,1,Colossus of Sa
 exact_wording,{9}{g/p}: transform ~. activate only as a sorcery.,0,1,"Etali, Primal Conqueror // Etali, Primal Sickness"
 exact_wording,{b/g}: level 2,0,1,Advanced Floral Invocations
 exact_wording,"{b/p}{b/p}, exile three creature cards from your graveyard: put an indestructible counter on ~.",0,1,"Drivnod, Carnage Dominus"
-exact_wording,"{b}, discard a card: regenerate ~.",0,1,Dirty Wererat
 exact_wording,"{b}, discard a card: ~ gains indestructible until end of turn. tap it.",0,1,Necromancer's Familiar
 exact_wording,"{b}, discard this card: target creature gets -3/-1 until end of turn.",0,1,"Proft, Sinister Mastermind"
 exact_wording,"{b}, exile two creature cards from your graveyard: create a 1/1 black skeleton creature token. it has ""{b}: regenerate ~.""",0,1,Drudge Spell
-exact_wording,"{b}, pay 5 life: regenerate ~.",0,1,Numai Outcast
 exact_wording,"{b}, put a -1/-1 counter on a creature you control: prevent the next 2 damage that would be dealt to target player or planeswalker this turn.",0,1,Wandering Mage
 exact_wording,"{b}, reveal this card from your hand: put a prey counter on target creature. activate only during your turn.",0,1,"Tetzimoc, Primal Death"
 exact_wording,"{b}, sacrifice a creature: return this card from your graveyard to your hand. activate only as a sorcery.",0,1,"Gollum, Patient Plotter"
 exact_wording,"{b}, sacrifice a swamp: you gain 1 life and draw a card.",0,1,Lochmere Serpent
-exact_wording,"{b}, sacrifice another creature: regenerate ~.",0,1,Eater of Hope
 exact_wording,"{b}, sacrifice six creatures named ~: search your library for a demon creature card, put it onto the battlefield, then shuffle.",0,1,Shadowborn Apostle
 exact_wording,"{b}, sacrifice x creatures: target player draws x cards and gains x life. put x +1/+1 counters on ~.",0,1,"Krav, the Unredeemed"
 exact_wording,"{b}, sacrifice x squirrels: target creature gets +x/-x until end of turn.",0,1,"Chatterfang, Squirrel General"
@@ -30268,7 +30200,6 @@ exact_wording,{b}: ~ gains swampwalk until end of turn and deals 1 damage to you
 exact_wording,{b}: ~ gains undying until end of turn.,0,1,Endling
 exact_wording,"{b}{b}, sacrifice ~: it deals 3 damage to each creature and each player.",0,1,Festering Evil
 exact_wording,"{b}{b}, {t}, sacrifice ~ and thirteen blood tokens: each opponent loses 13 life and you gain 13 life.",0,1,Glass-Cast Heart
-exact_wording,"{b}{b}, {t}: destroy target legendary creature. it can't be regenerated.",0,1,Tsabo Tavoc
 exact_wording,{b}{b}: attach ~ to target creature you control.,0,1,Cranial Plating
 exact_wording,{b}{b}: return this card from your graveyard to your hand.,0,1,Grim Reminder
 exact_wording,{b}{b}: ~ gains swampwalk until end of turn and deals 2 damage to you.,0,1,Wormwood Treefolk
@@ -30868,7 +30799,6 @@ exact_wording,{u}: exile ~. return it to the battlefield under its owner's contr
 exact_wording,"{u}: if target spell has only one target and that target is ~, change that spell's target to another creature.",0,1,Quicksilver Dragon
 exact_wording,{u}: prevent the next 1 damage that would be dealt to target cleric or wizard creature this turn.,0,1,Wandering Mage
 exact_wording,"{u}: put ~ and each creature blocking or blocked by it on top of their owners' libraries, then those players shuffle.",0,1,Vortex Elemental
-exact_wording,{u}: regenerate ~.,0,1,Spiny Starfish
 exact_wording,{u}: return ~ to its owner's hand. target opponent may draw a card.,0,1,Phelddagrif
 exact_wording,{u}: target artifact creature becomes blue until end of turn.,0,1,Grand Architect
 exact_wording,{u}: target creature becomes an artifact in addition to its other types until end of turn.,0,1,Neurok Transmuter
@@ -30959,7 +30889,6 @@ exact_wording,"{w}{u}{b}{r}{g}: reveal the top 8 cards of your library. put each
 exact_wording,{w}{u}{b}{r}{g}: reveal the top eight cards of your library. put each playtest card among them into your hand. put the rest on the bottom of your library in a random order.,0,1,"You, Iterative Playtester"
 exact_wording,"{w}{u}{b}{r}{g}: untap all attacking creatures. they gain trample, lifelink, and haste until end of turn. after this phase, there is an additional combat phase. activate only during combat.",0,1,"Najeela, the Blade-Blossom"
 exact_wording,"{w}{u}{u}, {t}, pay x {e}: draw x cards.",0,1,Sphinx of the Revelation
-exact_wording,"{w}{w}, {t}, sacrifice ~: counter target spell that targets an enchantment.",0,1,Vigilant Martyr
 exact_wording,"{w}{w}, {t}, untap two tapped creatures you control: draw a card.",0,1,Halo Fountain
 exact_wording,"{w}{w}, {t}: destroy target permanent of the chosen color.",0,1,Pentarch Paladin
 exact_wording,"{w}{w}: +0/+0, +1/+0 or +2/+0 until end of turn chosen at random.",0,1,Rainbow Knights
@@ -31458,7 +31387,6 @@ exact_wording,"~ gets +x/+x, where x is the greatest number of stored results on
 exact_wording,"~ gets +x/+y, where x is the exiled creature card's power and y is its toughness.",0,1,Phyrexian Ingester
 exact_wording,~ gets -1/-1 for each card in the chosen player's hand.,0,1,Nyxathid
 exact_wording,~ gets -1/-1 for each card in your opponents' hands.,0,1,Enemy of Enlightenment
-exact_wording,~ gets -2/-2 as long as black is the most common color among all permanents or is tied for most common.,0,1,Goham Djinn
 exact_wording,"~ gets -x/-x until end of turn, where x is that card's mana value.",0,1,Putrid Cyclops
 exact_wording,~ has all abilities of ability stickers on other permanents you own and cards in your graveyard.,0,1,Clandestine Chameleon
 exact_wording,~ has all abilities of the last chosen plane.,0,1,Polis the Planeshifter
@@ -31809,7 +31737,6 @@ exact_wording,• destroy target land creature or nonbasic land.,0,1,Bumi Bash
 exact_wording,• destroy target land with an activated ability that isn't a mana ability.,0,1,Ravager Wurm
 exact_wording,• destroy target multicolored permanent.,0,1,Null Elemental Blast
 exact_wording,• destroy target non-aura enchantment.,0,1,Emerald Charm
-exact_wording,• destroy target nonblack creature. it can't be regenerated.,0,1,Crosis's Charm
 exact_wording,"• destroy target noncreature, nonland permanent with mana value 2 or less.",0,1,Witherbloom Command
 exact_wording,• destroy target nontoken artifact or enchantment an opponent controls. incubate 2.,0,1,Sunder the Gateway
 exact_wording,• destroy target permanent if it's blue.,0,1,Pyroblast
@@ -32050,7 +31977,6 @@ exact_wording,• put x time counters on target permanent with a time counter on
 exact_wording,• put your commander into your hand from the command zone.,0,1,Road of Return
 exact_wording,• put ~ on top of its owner's library.,0,1,Gandalf the Grey
 exact_wording,• rampant growth,0,1,Growth Charm
-exact_wording,• regenerate target creature.,0,1,Dawn Charm
 exact_wording,• regenerate target green creature.,0,1,Seedling Charm
 exact_wording,• regrowth,0,1,Growth Charm
 exact_wording,• release juno — return target historic permanent card from your graveyard to the battlefield. it enters with two additional +1/+1 counters on it if it's a creature.,0,1,What Must Be Done

@@ -4,9 +4,9 @@ Measured 2026-10-18 against the current working tree.
 
 | Status | Cards | Share |
 | --- | ---: | ---: |
-| Fully template-matched | 8,385 | 24.01% |
+| Fully template-matched | 8,533 | 24.43% |
 | Matched with recorded simplifications | 97 | 0.28% |
-| Partly supported | 26,440 | 75.71% |
+| Partly supported | 26,292 | 75.29% |
 | Could not parse | 0 | 0.00% |
 | Total | 34,922 | 100% |
 
@@ -18,39 +18,36 @@ Fully template-matched means no rules text is reported as ignored or simplified.
 
 A potential full match has every ignored line in the listed gap and no recorded simplifications. These are upper bounds: an entire family may need many implementations. Families overlap, so counts must not be summed. Exact wording groups ignore case and whitespace, preserve numbers, and do not merge differently worded effects.
 
-Unclassified wording affects 13,725 cards; 8,635 have all their remaining gaps unclassified. This bucket is separate from the effect-family ranking.
+Unclassified wording affects 13,644 cards; 8,597 have all their remaining gaps unclassified. This bucket is separate from the effect-family ranking.
 
 ### Effect families
 
 | Gap | Potential full matches | Cards affected | Examples |
 | --- | ---: | ---: | --- |
-| triggered (whenever/when) | 2,471 | 4,537 | A Good Day to Die; A Good Day to Pie; Aang and Katara |
-| activated abilities | 2,341 | 3,340 | A Container of Booster Packs; A-Town; Aang's Iceberg |
-| counters | 2,113 | 3,463 | Abomination, Irradiated Brute; Aboroth; Abzan Charm |
-| graveyard | 1,521 | 2,966 | "Rumors of My Death . . ."; A Good Day to Pie; Aang, A Lot to Learn |
-| sacrifice | 1,362 | 2,469 | Aang's Iceberg; Abjure; Abyssal Gatekeeper |
-| tokens | 1,154 | 2,391 | Aang and Katara; Aatchik, Emerald Radian; Abyssal Harvester |
-| exile | 1,084 | 2,422 | "Rumors of My Death . . ."; A Container of Booster Packs; Abstergo Entertainment |
+| triggered (whenever/when) | 2,479 | 4,537 | A Good Day to Die; A Good Day to Pie; Aang and Katara |
+| activated abilities | 2,294 | 3,262 | A Container of Booster Packs; A-Town; Aang's Iceberg |
+| counters | 2,116 | 3,462 | Abomination, Irradiated Brute; Aboroth; Abzan Charm |
+| graveyard | 1,528 | 2,966 | "Rumors of My Death . . ."; A Good Day to Pie; Aang, A Lot to Learn |
+| sacrifice | 1,357 | 2,453 | Aang's Iceberg; Abjure; Abyssal Gatekeeper |
+| tokens | 1,161 | 2,391 | Aang and Katara; Aatchik, Emerald Radian; Abyssal Harvester |
+| exile | 1,085 | 2,422 | "Rumors of My Death . . ."; A Container of Booster Packs; Abstergo Entertainment |
 | auras/enchant | 1,001 | 1,258 | Abduction; Aboshan's Desire; Absorbing Man |
-| can't restrictions | 781 | 1,532 | Abeyance; Abyssal Persecutor; Academic Probation |
-| X costs | 670 | 1,281 | Aang and Katara; Abaddon the Despoiler; Aberrant Manawurm |
-| equipment | 490 | 686 | Ace's Baseball Bat; Acid Web Spider; Adaptive Omnitool |
-| copy effects | 339 | 710 | Aboleth Spawn; Absorb Identity; Absorbing Man |
-| library search | 270 | 542 | Aerial Surveyor; Amrou Scout; Angel's Herald |
-| cost reduction | 206 | 422 | Absorb Energy; Acolyte of Bahamut; Ancient Stone Idol |
+| can't restrictions | 755 | 1,481 | Abeyance; Abyssal Persecutor; Academic Probation |
+| X costs | 671 | 1,281 | Aang and Katara; Abaddon the Despoiler; Aberrant Manawurm |
+| equipment | 490 | 685 | Ace's Baseball Bat; Acid Web Spider; Adaptive Omnitool |
+| copy effects | 340 | 710 | Aboleth Spawn; Absorb Identity; Absorbing Man |
+| library search | 272 | 542 | Aerial Surveyor; Amrou Scout; Angel's Herald |
+| cost reduction | 208 | 422 | Absorb Energy; Acolyte of Bahamut; Ancient Stone Idol |
 | +1/+1 static (anthems) | 134 | 279 | Aardwolf's Advantage; Akoum Battlesinger; Always Watching |
 
 ### Exact ignored wording
 
 | Gap | Potential full matches | Cards affected | Examples |
 | --- | ---: | ---: | --- |
-| it can't be regenerated. | 20 | 49 | Annihilate; Befoul; Cruel Revival |
 | the ring tempts you. | 18 | 30 | Bilbo, Retired Burglar; Birthday Escape; Bombadil's Song |
-| {b}: regenerate ~. | 17 | 31 | Darkling Stalker; Drudge Reavers; Drudge Skeletons |
 | protection from black | 15 | 28 | Cemetery Gate; Chameleon Colossus; Darkwatch Elves |
 | you may draw a card. | 14 | 42 | Aesi, Tyrant of Gyre Strait; Aven Fisher; Fallowsage |
 | return a land you control to its owner's hand. | 14 | 15 | Azorius Chancery; Boros Garrison; Dimir Aqueduct |
-| learn. | 13 | 21 | Arcane Subtraction; Cram Session; Enthusiastic Study |
 | protection from white | 13 | 21 | Black Knight; Defender of Chaos; Disciple of Malice |
 | when ~ becomes the target of a spell or ability, sacrifice it. | 13 | 15 | Frost Walker; Gossamer Phantasm; Illusionary Servant |
 | exile ~. | 12 | 100 | Ascend from Avernus; Divergent Equation; Flood of Recollection |
@@ -58,6 +55,9 @@ Unclassified wording affects 13,725 cards; 8,635 have all their remaining gaps u
 | it has "sacrifice ~: add {c}." | 12 | 17 | Blisterpod; Brood Butcher; Carrier Thrall |
 | target creature gains flying until end of turn. | 12 | 16 | Cloak of Feathers; Defy Gravity; Gale Swooper |
 | you may put a +1/+1 counter on ~. | 12 | 16 | Bojuka Brigand; Graypelt Hunter; Hada Freeblade |
-| {g}: regenerate ~. | 12 | 16 | Ancient Silverback; Charging Troll; Cudgel Troll |
+| flanking | 11 | 27 | Benalish Cavalry; Burning Shield Askari; Cadaverous Knight |
+| ~ can't attack unless defending player controls an island. | 11 | 26 | Armored Galleon; Deep-Sea Serpent; Ethereal Whiskergill |
+| myriad | 11 | 19 | Caller of the Pack; Chittering Dispatcher; Conclave Evangelist |
+| ~ doesn't untap during your untap step. | 10 | 38 | Basalt Monolith; Brass Gnat; Brass Man |
 
 [Every card](cards.csv) · [All ranked gaps](gaps.csv) · [Machine-readable summary](summary.json)

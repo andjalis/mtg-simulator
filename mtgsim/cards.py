@@ -19,6 +19,7 @@ KEYWORDS = {
     "flash", "hexproof", "shroud", "indestructible", "prowess", "swampwalk", "forestwalk", "mountainwalk",
     "infect", "devoid", "exalted", "fear", "horsemanship", "undying", "persist", "wither", "rebound",
     "storm", "cascade", "islandwalk", "plainswalk", "shadow", "intimidate",
+    "nonbasic landwalk", "legendary landwalk",
 }
 BASIC_MANA = {"Plains": "W", "Island": "U", "Swamp": "B", "Mountain": "R", "Forest": "G"}
 NUMBERS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
@@ -248,6 +249,8 @@ class CardDef:
     delve: bool = False
     cascade: int = 0
     storm: int = 0
+    basic: bool = False
+    legendary: bool = False
 
     @property
     def colors(self) -> frozenset:
@@ -363,6 +366,12 @@ def _tapped(eff):
 
 _SRC = r"(?:~|it|he|she)"
 _EFFECT_PATTERNS = [
+    (r"learn", lambda m: Effect("learn")),
+    (r"regenerate (~|it|target creature(?: you control)?|target artifact)",
+     lambda m: Effect("regenerate", 1, target={"~": "self", "it": "prev", "target creature": "creature",
+                     "target creature you control": "creature_mine", "target artifact": "artifact"}[m[1].lower()])),
+    (r"regenerate (each|all) creatures?( you control)?",
+     lambda m: Effect("regenerate", 1, target="creatures_mine" if m[2] else "each_creature")),
     (r"draw (a card|one card|(?:\d+|two|three|four|five|six|seven|eight|nine|ten) cards) at the beginning of "
      r"(the next turn's upkeep|your next upkeep)",
      lambda m: Effect("draw_delayed", _num(m[1].split()[0]),
@@ -1048,6 +1057,14 @@ def _parse_effects(text: str, opts: bool = False):
         s = sentence.strip().rstrip(".").strip()
         if not s:
             continue
+        if re.fullmatch(r"(?:it|they|those creatures) can't be regenerated", s, re.I) and effects and \
+                effects[-1].kind in ("destroy", "wrath", "wrath_pw"):
+            effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
+            continue
+        if re.fullmatch(r"(?:a creature|creatures) dealt damage this way can't be regenerated this turn", s, re.I) \
+                and effects and effects[-1].kind == "damage":
+            effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
+            continue
         conditional = milling.parse_conditional(s, effects)
         if conditional is not None:
             effects += conditional
@@ -1232,7 +1249,7 @@ def _parse_face(data: dict) -> CardDef:
     text = re.sub(r"(?m)^([A-Za-z ,]*[Ff]irebending \d+[A-Za-z ,]*)$", lambda m: "\n".join(x[0].upper() + x[1:] for x in m[1].split(", ")), text)
     keywords, produces, etb, spell, unsupported, approximations = set(), set(), [], [], [], []
     triggers: list[Trigger] = []
-    extra: dict = {"snow": "Snow" in type_line,
+    extra: dict = {"snow": "Snow" in type_line, "basic": "Basic" in type_line, "legendary": "Legendary" in type_line,
                    "color_override": frozenset(data["colors"]) if "colors" in data else None}
     modes: list = []
     chapters: list = []

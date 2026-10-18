@@ -25,7 +25,7 @@ import json
 import random
 import re
 
-from . import auras, cast_triggers, copies, counting, graveyard, milling, proliferate, removal, returns, search, xspells
+from . import auras, cast_triggers, copies, counting, graveyard, learning, milling, proliferate, regeneration, removal, returns, search, xspells
 from .cards import BASIC_MANA, COLORS, KEYWORDS, Activated, AltCost, CardDef, Effect, Trigger, add_mana, jace_token, make_token, role_token
 from . import modal
 
@@ -113,6 +113,8 @@ class Permanent:
         self.net_locked = False            # Braided Net: no activated abilities while it stays tapped
         self.bargained = self.gifted = False   # cast with Bargain / the gift promised
         self.produces_now = None           # set by Game.mana_sources: the colours usable right now
+        self.regeneration_shields = 0
+        self.regeneration_blocked = False
         self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
         self.auras: list["Permanent"] = []   # Auras on this permanent (they sit on their caster's battlefield)
         self.aura_host: "Permanent | None" = None      # the permanent this Aura enchants
@@ -383,7 +385,7 @@ class Player:
     speed = 0
     speed_turn = -1
 
-    def __init__(self, name: str, deck: list[CardDef], ai):
+    def __init__(self, name: str, deck: list[CardDef], ai, *, sideboard=()):
         self.name = name
         self.deck = deck
         self.ai = ai
@@ -393,6 +395,7 @@ class Player:
         self.battlefield: list[Permanent] = []
         self.graveyard: list[CardDef] = Graveyard()
         self.exile: list[CardDef] = TrackedZone()
+        self.sideboard: list[CardDef] = list(sideboard or ())
         self.on_adventure: list[CardDef] = []
         self.foretold: list[CardDef] = []
         self.plotted: list[CardDef] = []
@@ -480,6 +483,12 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
                                     ("plainswalk", "Plains"))):
         return False
     if blocker.card.block_only_flying and not attacker.has("flying"):
+        return False
+    if attacker.has("nonbasic landwalk") and any(x.card.is_land and not is_basic_land(x.card)
+                                                for x in blocker.controller.battlefield):
+        return False
+    if attacker.has("legendary landwalk") and any(x.card.is_land and x.card.legendary
+                                                 for x in blocker.controller.battlefield):
         return False
     if attacker.has("flying") and not (blocker.has("flying") or blocker.has("reach")):
         return False
@@ -1534,6 +1543,8 @@ class Game:
             perm.deathtouched = False
             perm.pump_p = perm.pump_t = 0
             perm.temp_kw.clear()
+            perm.regeneration_shields = 0
+            perm.regeneration_blocked = False
             copies.revert(perm)
             if not (perm.animated and perm.animated.text in ("earthbend", "permanent")):
                 perm.animated = None
@@ -2105,7 +2116,7 @@ class Game:
         if perm not in p.battlefield:
             return False
         if what.startswith("ability:"):
-            return self.activate_ability(p, perm, int(what[8:]))
+            return self.activate_ability(p, perm, int(what[8:]), targets=target)
         if what.startswith("equip"):
             return self.equip(p, perm, target)
         if self.activations_stopped() and (perm.card.is_artifact or perm.is_creature):
@@ -2560,12 +2571,16 @@ class Game:
             src = (item.source if item.source is not None else item.card) if item is not None else None
             if eff.target == "each_creature":
                 for perm in p.creatures + opp.creatures:
+                    if eff.data.get("no_regen") and eff.amount > 0:
+                        perm.regeneration_blocked = True
                     self.deal_damage(perm, eff.amount, by=p, cause=cause, source=src)
             elif eff.target == "each_opp_and_pw":
                 self.deal_damage(opp, eff.amount, by=p, cause=cause, source=src)
                 for pw in opp.planeswalkers:
                     self.deal_damage(pw, eff.amount, by=p, cause=cause, source=src)
             else:
+                if eff.data.get("no_regen") and eff.amount > 0 and isinstance(target, Permanent) and target.is_creature:
+                    target.regeneration_blocked = True
                 self.deal_damage(target, eff.amount, by=p, cause=cause, source=src)
         elif k == "destroy":
             if isinstance(target, Permanent) and target in target.controller.battlefield:
@@ -2573,7 +2588,7 @@ class Game:
                 if eff.data.get("azog") and target is src:
                     return
                 ctl, power = target.controller, max(0, target.power)
-                self.destroy(target)
+                self.destroy(target, no_regen=eff.data.get("no_regen", False))
                 if eff.data.get("azog"):
                     if power:
                         self.resolve(ctl, Effect("amass", power, data={"type": eff.data["azog"]}), None, item)
@@ -2630,10 +2645,10 @@ class Game:
                 target.pump_t -= eff.amount2
         elif k == "wrath":
             for perm in p.creatures + opp.creatures:
-                self.destroy(perm)
+                self.destroy(perm, no_regen=eff.data.get("no_regen", False))
         elif k == "wrath_pw":
             for perm in p.planeswalkers + opp.planeswalkers:
-                self.destroy(perm)
+                self.destroy(perm, no_regen=eff.data.get("no_regen", False))
         elif k == "bounce":
             if isinstance(target, Permanent) and target in target.controller.battlefield:
                 self.log(f"{target.card.name} returns to hand", p)
@@ -2682,6 +2697,14 @@ class Game:
                 if card is not None:
                     self.discard_card(target, card)
                     self.log(f"makes {target} discard {card.name}", p)
+        elif k == "regenerate":
+            victims = (p.creatures if eff.target == "creatures_mine" else p.creatures + opp.creatures
+                       if eff.target == "each_creature" else [target])
+            for perm in victims:
+                if isinstance(perm, Permanent) and perm in perm.controller.battlefield:
+                    perm.regeneration_shields += eff.amount
+        elif k == "learn":
+            learning.resolve(self, p)
         elif k == "rummage":
             cards = self.hook(p, "choose_rummage")(self, p, eff.amount)
             for c in cards:
@@ -3499,10 +3522,29 @@ class Game:
         for c in rest:
             p.library.insert(0, c)
 
-    def destroy(self, perm: Permanent):
+    def destroy(self, perm: Permanent, *, no_regen=False):
+        if perm not in perm.controller.battlefield:
+            return False
         if perm.has("indestructible"):
-            return
+            return False
+        if not no_regen and not perm.regeneration_blocked and perm.regeneration_shields:
+            perm.regeneration_shields -= 1
+            was_tapped = perm.tapped
+            perm.tapped = True
+            perm.damage = 0
+            perm.deathtouched = False
+            if perm in self.attackers:
+                self.attackers.remove(perm)
+            self.attack_targets.pop(perm, None)
+            self.blocks.pop(perm, None)
+            for blockers in self.blocks.values():
+                blockers[:] = [b for b in blockers if b is not perm]
+            self.log(f"regenerates {perm.card.name}", perm.controller)
+            if not was_tapped:
+                self.fire(perm.controller, "becomes_tapped", perm)
+            return True
         self.dies(perm)
+        return True
 
     def leave_battlefield(self, perm: Permanent, to: str):
         """Move a permanent off the battlefield (to graveyard / hand / exile). Tokens vanish."""
@@ -3652,7 +3694,7 @@ class Game:
                             self.dies(perm)
                             changed = True
                         elif (perm.damage >= perm.toughness or perm.deathtouched) and not perm.has("indestructible"):
-                            self.dies(perm)
+                            self.destroy(perm)
                             changed = True
                     # Dying objects retain their counters as last-known information.
                     if perm in p.battlefield:
@@ -3859,7 +3901,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
 
 
 def is_basic_land(c) -> bool:
-    return c.is_land and (c.name in BASIC_MANA or c.name.startswith("Snow-Covered ") or c.name == "Wastes")
+    return c.is_land and (c.basic or c.name in BASIC_MANA or c.name == "Wastes" or
+                         c.name.startswith("Snow-Covered ") and c.name[len("Snow-Covered "):] in BASIC_MANA)
 
 
 def choose_basic(game: Game, me: Player):
@@ -3957,6 +4000,10 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
         k = e.kind
         if k == "proliferate":
             total += e.amount * proliferate.value(game, me)
+        elif k == "learn":
+            total += learning.value(game, me)
+        elif k == "regenerate":
+            pass  # shields are selected in response to threats, not in safe main phases
         elif k == "wrath":
             total += sum(map(perm_value, opp.creatures)) - sum(map(perm_value, me.creatures))
         elif k == "wrath_pw":
@@ -4034,6 +4081,9 @@ def respond(game: Game, me: Player):
     from removal, kill attackers, flash in The Wandering Emperor to exile an attacker, and
     use leftover mana at the opponent's end step on removal, flash creatures, card draw and
     Clues. Returns an action (see Game.do_action) or None to pass."""
+    protect = regeneration.respond(game, me)
+    if protect is not None:
+        return protect
     opp = game.opponent(me)
     options = {c.name: c for c in game.spell_options(me) if c.instant_speed and game.can_cast_now(me, c)}
     top = game.stack[-1] if game.stack else None
@@ -4093,6 +4143,9 @@ def respond_extras(game: Game, me: Player):
     in when attacked, use her abilities the turn she enters), and at the opponent's end step
     Clues plus instant-speed options cast from other zones or with modes (flashback, adventure,
     channel, Kolaghan's Command)."""
+    protect = regeneration.respond(game, me)
+    if protect is not None:
+        return protect
     if game.stack:
         return None
     for pw in me.planeswalkers:
@@ -4416,6 +4469,7 @@ def default_sneak(game: Game, me: Player, attackers, blocks):
 
 
 DEFAULTS = {
+    "choose_learn": learning.choose,
     "choose_rebound": lambda game, me, card: True,
     "choose_cascade": lambda game, me, card: True,
     "choose_proliferate": proliferate.choose,

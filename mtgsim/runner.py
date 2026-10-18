@@ -128,7 +128,8 @@ def fresh_ai(ai):
 
 
 def run_match(name_a, deck_a, name_b, deck_b, games=1000, seed=None, ai_a=None, ai_b=None,
-              log_first=False, on_game=None, log_game=None, stop_early=False) -> tuple[MatchResult, list[str]]:
+              log_first=False, on_game=None, log_game=None, stop_early=False,
+              sideboard_a=None, sideboard_b=None) -> tuple[MatchResult, list[str]]:
     """on_game(res), if given, is called with the running MatchResult after every game. With
     stop_early the match ends once its result is clear (see clear_result); the games it does play
     are the same as the first games of a full run with this seed."""
@@ -136,8 +137,8 @@ def run_match(name_a, deck_a, name_b, deck_b, games=1000, seed=None, ai_a=None, 
     res = MatchResult(name_a, name_b)
     first_log: list[str] = []
     for i in range(games):
-        a = Player(name_a, deck_a, fresh_ai(ai_a))
-        b = Player(name_b, deck_b, fresh_ai(ai_b))
+        a = Player(name_a, deck_a, fresh_ai(ai_a), sideboard=sideboard_a)
+        b = Player(name_b, deck_b, fresh_ai(ai_b), sideboard=sideboard_b)
         a_on_play = i % 2 == 0
         game = Game(*((a, b) if a_on_play else (b, a)), rng=rng,
                     log=log_game is not None or (log_first and i == 0))

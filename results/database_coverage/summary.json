@@ -2,17 +2,17 @@
   "measured_on": "2026-10-18",
   "total": 34922,
   "counts": {
-    "full": 8385,
+    "full": 8533,
     "simplified": 97,
-    "partial": 26440,
+    "partial": 26292,
     "parse_error": 0
   },
   "parse_errors": [],
   "ranking_method": "Potential full matches have every ignored line in the gap and no recorded simplifications. Counts are upper bounds, overlap, and must not be summed.",
   "unclassified": {
     "gap": "unclassified",
-    "affected_cards": 13725,
-    "potential_full_matches": 8635,
+    "affected_cards": 13644,
+    "potential_full_matches": 8597,
     "examples": [
       "A Chaotic Night in Vegas",
       "A Real Handful",
@@ -23,7 +23,7 @@
     {
       "gap": "triggered (whenever/when)",
       "affected_cards": 4537,
-      "potential_full_matches": 2471,
+      "potential_full_matches": 2479,
       "examples": [
         "A Good Day to Die",
         "A Good Day to Pie",
@@ -32,8 +32,8 @@
     },
     {
       "gap": "activated abilities",
-      "affected_cards": 3340,
-      "potential_full_matches": 2341,
+      "affected_cards": 3262,
+      "potential_full_matches": 2294,
       "examples": [
         "A Container of Booster Packs",
         "A-Town",
@@ -42,8 +42,8 @@
     },
     {
       "gap": "counters",
-      "affected_cards": 3463,
-      "potential_full_matches": 2113,
+      "affected_cards": 3462,
+      "potential_full_matches": 2116,
       "examples": [
         "Abomination, Irradiated Brute",
         "Aboroth",
@@ -53,7 +53,7 @@
     {
       "gap": "graveyard",
       "affected_cards": 2966,
-      "potential_full_matches": 1521,
+      "potential_full_matches": 1528,
       "examples": [
         "\"Rumors of My Death . . .\"",
         "A Good Day to Pie",
@@ -62,8 +62,8 @@
     },
     {
       "gap": "sacrifice",
-      "affected_cards": 2469,
-      "potential_full_matches": 1362,
+      "affected_cards": 2453,
+      "potential_full_matches": 1357,
       "examples": [
         "Aang's Iceberg",
         "Abjure",
@@ -73,7 +73,7 @@
     {
       "gap": "tokens",
       "affected_cards": 2391,
-      "potential_full_matches": 1154,
+      "potential_full_matches": 1161,
       "examples": [
         "Aang and Katara",
         "Aatchik, Emerald Radian",
@@ -83,7 +83,7 @@
     {
       "gap": "exile",
       "affected_cards": 2422,
-      "potential_full_matches": 1084,
+      "potential_full_matches": 1085,
       "examples": [
         "\"Rumors of My Death . . .\"",
         "A Container of Booster Packs",
@@ -102,8 +102,8 @@
     },
     {
       "gap": "can't restrictions",
-      "affected_cards": 1532,
-      "potential_full_matches": 781,
+      "affected_cards": 1481,
+      "potential_full_matches": 755,
       "examples": [
         "Abeyance",
         "Abyssal Persecutor",
@@ -113,7 +113,7 @@
     {
       "gap": "X costs",
       "affected_cards": 1281,
-      "potential_full_matches": 670,
+      "potential_full_matches": 671,
       "examples": [
         "Aang and Katara",
         "Abaddon the Despoiler",
@@ -122,7 +122,7 @@
     },
     {
       "gap": "equipment",
-      "affected_cards": 686,
+      "affected_cards": 685,
       "potential_full_matches": 490,
       "examples": [
         "Ace's Baseball Bat",
@@ -133,7 +133,7 @@
     {
       "gap": "copy effects",
       "affected_cards": 710,
-      "potential_full_matches": 339,
+      "potential_full_matches": 340,
       "examples": [
         "Aboleth Spawn",
         "Absorb Identity",
@@ -143,7 +143,7 @@
     {
       "gap": "library search",
       "affected_cards": 542,
-      "potential_full_matches": 270,
+      "potential_full_matches": 272,
       "examples": [
         "Aerial Surveyor",
         "Amrou Scout",
@@ -153,7 +153,7 @@
     {
       "gap": "cost reduction",
       "affected_cards": 422,
-      "potential_full_matches": 206,
+      "potential_full_matches": 208,
       "examples": [
         "Absorb Energy",
         "Acolyte of Bahamut",
@@ -173,16 +173,6 @@
   ],
   "exact_wording": [
     {
-      "gap": "it can't be regenerated.",
-      "affected_cards": 49,
-      "potential_full_matches": 20,
-      "examples": [
-        "Annihilate",
-        "Befoul",
-        "Cruel Revival"
-      ]
-    },
-    {
       "gap": "the ring tempts you.",
       "affected_cards": 30,
       "potential_full_matches": 18,
@@ -190,16 +180,6 @@
         "Bilbo, Retired Burglar",
         "Birthday Escape",
         "Bombadil's Song"
-      ]
-    },
-    {
-      "gap": "{b}: regenerate ~.",
-      "affected_cards": 31,
-      "potential_full_matches": 17,
-      "examples": [
-        "Darkling Stalker",
-        "Drudge Reavers",
-        "Drudge Skeletons"
       ]
     },
     {
@@ -230,16 +210,6 @@
         "Azorius Chancery",
         "Boros Garrison",
         "Dimir Aqueduct"
-      ]
-    },
-    {
-      "gap": "learn.",
-      "affected_cards": 21,
-      "potential_full_matches": 13,
-      "examples": [
-        "Arcane Subtraction",
-        "Cram Session",
-        "Enthusiastic Study"
       ]
     },
     {
@@ -313,13 +283,43 @@
       ]
     },
     {
-      "gap": "{g}: regenerate ~.",
-      "affected_cards": 16,
-      "potential_full_matches": 12,
+      "gap": "flanking",
+      "affected_cards": 27,
+      "potential_full_matches": 11,
       "examples": [
-        "Ancient Silverback",
-        "Charging Troll",
-        "Cudgel Troll"
+        "Benalish Cavalry",
+        "Burning Shield Askari",
+        "Cadaverous Knight"
+      ]
+    },
+    {
+      "gap": "~ can't attack unless defending player controls an island.",
+      "affected_cards": 26,
+      "potential_full_matches": 11,
+      "examples": [
+        "Armored Galleon",
+        "Deep-Sea Serpent",
+        "Ethereal Whiskergill"
+      ]
+    },
+    {
+      "gap": "myriad",
+      "affected_cards": 19,
+      "potential_full_matches": 11,
+      "examples": [
+        "Caller of the Pack",
+        "Chittering Dispatcher",
+        "Conclave Evangelist"
+      ]
+    },
+    {
+      "gap": "~ doesn't untap during your untap step.",
+      "affected_cards": 38,
+      "potential_full_matches": 10,
+      "examples": [
+        "Basalt Monolith",
+        "Brass Gnat",
+        "Brass Man"
       ]
     }
   ]

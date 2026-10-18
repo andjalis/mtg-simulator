@@ -1,0 +1,296 @@
+{
+  "measured_on": "2026-10-18",
+  "database_before": {
+    "full": 8385,
+    "simplified": 97,
+    "partial": 26440,
+    "parse_error": 0
+  },
+  "database_after": {
+    "full": 8533,
+    "simplified": 97,
+    "partial": 26292,
+    "parse_error": 0
+  },
+  "newly_fully_matched_by_previous_gap": {
+    "{G}: Regenerate ~.": [
+      "Ancient Silverback",
+      "Charging Troll",
+      "Cudgel Troll",
+      "Horned Troll",
+      "Locust Swarm",
+      "Mire Boa",
+      "Ranger en-Vec",
+      "River Boa",
+      "Silvos, Rogue Elemental",
+      "Wall of Brambles",
+      "Wall of Pine Needles",
+      "Yavimaya Gnats"
+    ],
+    "It can't be regenerated.": [
+      "Annihilate",
+      "Befoul",
+      "Cruel Revival",
+      "Dark Banishing",
+      "Dark Hatchling",
+      "Death Mutation",
+      "Death Rattle",
+      "Execute",
+      "Expunge",
+      "Flesh to Dust",
+      "Oxidize",
+      "Phyrexian Bloodstock",
+      "Purge",
+      "Putrefy",
+      "Reprisal",
+      "Slay",
+      "Smother",
+      "Terminate",
+      "Terror"
+    ],
+    "Learn.": [
+      "Arcane Subtraction",
+      "Cram Session",
+      "Enthusiastic Study",
+      "Field Trip",
+      "Guiding Voice",
+      "Hunt for Specimens",
+      "Igneous Inspiration",
+      "Pop Quiz",
+      "Study Break"
+    ],
+    "{2}{B}: Regenerate ~.": [
+      "Asphodel Wanderer",
+      "Deathbellow Raider"
+    ],
+    "Legendary landwalk": [
+      "Ayumi, the Last Visitor"
+    ],
+    "{1}{G}: Regenerate ~.": [
+      "Blight Mamba",
+      "Carnassid",
+      "Gorilla Chieftain",
+      "Krakilin",
+      "Skyshroud Troll",
+      "Tel-Jilad Exile",
+      "Thrun, the Last Troll",
+      "Troll Ascetic",
+      "Wolfir Avenger"
+    ],
+    "Regenerate it.": [
+      "Boon of Erebos",
+      "Butcher's Glee",
+      "Unnatural Endurance"
+    ],
+    "{1}{B}: Regenerate ~.": [
+      "Carrion Wall",
+      "Cinderbones",
+      "Lim-D\u00fbl's High Guard",
+      "Manor Skeleton",
+      "Pewter Golem",
+      "Sanguine Guard",
+      "Screeching Harpy",
+      "Skeletal Changeling",
+      "Slith Bloodletter"
+    ],
+    "{G}, Discard a card: Regenerate ~.": [
+      "Centaur Veteran"
+    ],
+    "{2}: Regenerate ~.": [
+      "Clay Statue"
+    ],
+    "{B}, Sacrifice a creature: Regenerate ~.": [
+      "Corrupted Harvester",
+      "Skeletal Kathari"
+    ],
+    "They can't be regenerated.": [
+      "Damnation",
+      "Wrath of God"
+    ],
+    "{B}: Regenerate ~.": [
+      "Darkling Stalker",
+      "Drudge Reavers",
+      "Drudge Skeletons",
+      "Dutiful Thrull",
+      "Fog of Gnats",
+      "Kathari Remnant",
+      "Metathran Zombie",
+      "Phyrexian Monitor",
+      "Restless Dead",
+      "Skeletal Wurm",
+      "Tattered Drake",
+      "Toxic Nim",
+      "Twisted Abomination",
+      "Unworthy Dead",
+      "Walking Dead",
+      "Wall of Bone",
+      "Will-o'-the-Wisp"
+    ],
+    "Regenerate target creature.": [
+      "Death Ward",
+      "Mending Touch",
+      "Refresh"
+    ],
+    "Pay 2 life: Regenerate ~.": [
+      "Deepwood Ghoul"
+    ],
+    "{B/G}, Remove a -1/-1 counter from ~: Regenerate ~.": [
+      "Deity of Scars"
+    ],
+    "{3}: Regenerate ~.": [
+      "Diabolic Machine"
+    ],
+    "Nonbasic landwalk": [
+      "Dryad Sophisticate"
+    ],
+    "{3}{B}: Regenerate ~.": [
+      "Duty-Bound Dead"
+    ],
+    "{R}{R}{R}: Regenerate ~.": [
+      "Eron the Relentless"
+    ],
+    "learn.": [
+      "Eyetwitch",
+      "Gnarled Professor",
+      "Poet's Quill",
+      "Professor of Symbology"
+    ],
+    "Sacrifice a creature: Regenerate target creature.": [
+      "Fanatical Devotion"
+    ],
+    "\u2022 Destroy target nonartifact, nonblack creature. It can't be regenerated.": [
+      "Feast or Famine"
+    ],
+    "{U}{U}{U}: Regenerate ~.": [
+      "Ghost Ship"
+    ],
+    "\u2022 Regenerate each creature you control.": [
+      "Golgari Charm"
+    ],
+    "{B}{G}: Regenerate ~.": [
+      "Hellkite Overlord",
+      "Rakshasa Deathdealer"
+    ],
+    "{3}, Sacrifice ~: Regenerate target creature.": [
+      "Herbal Poultice"
+    ],
+    "A creature dealt damage this way can't be regenerated this turn.": [
+      "Incinerate"
+    ],
+    "{R}: Regenerate ~.\n{G}: Regenerate ~.": [
+      "Jungle Troll"
+    ],
+    "{2}{G}: Regenerate ~.": [
+      "Living Airship",
+      "Tangle Hulk",
+      "Votary of the Conclave"
+    ],
+    "{1}: Regenerate ~.": [
+      "Living Wall"
+    ],
+    "{G}{W}, Sacrifice ~: Regenerate each creature you control.": [
+      "Loxodon Hierarch"
+    ],
+    "{W}, {T}: Regenerate target artifact.": [
+      "Loxodon Mender",
+      "Metallurgeon"
+    ],
+    "{W}{W}{W}: Regenerate ~.": [
+      "Malach of the Dawn"
+    ],
+    "Pay 4 life: Regenerate ~.": [
+      "Marrow Bats"
+    ],
+    "{1}, {T}, Discard a card: Regenerate target creature.": [
+      "Medicine Bag"
+    ],
+    "Pay 1 life: Regenerate ~.": [
+      "Mischievous Poltergeist"
+    ],
+    "{G}{G}{G}{G}, {T}: Regenerate target creature.": [
+      "Niall Silvain"
+    ],
+    "Sacrifice a creature: Regenerate ~.": [
+      "Nim Shambler"
+    ],
+    "{2}{B}, {T}, Discard a card: Destroy target nonblack creature. It can't be regenerated.": [
+      "Notorious Assassin"
+    ],
+    "{1}{B/G}: Regenerate ~.": [
+      "Odious Trow"
+    ],
+    "{2}, Sacrifice ~: Learn.": [
+      "Overgrown Arch"
+    ],
+    "Discard a card: Regenerate ~.": [
+      "Patchwork Gnomes",
+      "Tunneler Wurm"
+    ],
+    "Sacrifice ~: Regenerate target artifact.": [
+      "Pteron Ghost",
+      "Welding Jar"
+    ],
+    "{G}{W}{U}, {T}: Regenerate target creature.": [
+      "Ragnar"
+    ],
+    "{W}: Regenerate ~.": [
+      "Revered Dead"
+    ],
+    "{G}, {T}, Discard a card: Regenerate target creature.": [
+      "Rushwood Herbalist"
+    ],
+    "Sacrifice an artifact: Regenerate ~.": [
+      "Rusted Slasher"
+    ],
+    "Sacrifice ~: Destroy target nonblack creature. It can't be regenerated.": [
+      "Seal of Doom"
+    ],
+    "{5}{G}: Regenerate ~.": [
+      "Selesnya Sentry"
+    ],
+    "{W}{B}, Pay 3 life: Regenerate ~.": [
+      "Sentry of the Underworld"
+    ],
+    "{B}{B}: Regenerate ~.": [
+      "Skithiryx, the Blight Dragon"
+    ],
+    "Malice: It can't be regenerated.": [
+      "Spite // Malice"
+    ],
+    "{W/B}{W/B}{W/B}: Regenerate target creature.": [
+      "Suture Spirit"
+    ],
+    "Equipped creature has nonbasic landwalk.": [
+      "Trailblazer's Boots"
+    ],
+    "{1}{B}{G}: Regenerate ~.": [
+      "Trestle Troll"
+    ],
+    "{R}: Regenerate ~.": [
+      "Uthden Troll"
+    ],
+    "Sacrifice another creature: Regenerate ~.": [
+      "Vampire Warlord"
+    ],
+    "{1}{B}, Discard a card: Regenerate ~.": [
+      "Viashino Skeleton"
+    ],
+    "{T}: Destroy target creature. It can't be regenerated.": [
+      "Visara the Dreadful"
+    ],
+    "{1}{B}, Sacrifice a creature: Regenerate ~.": [
+      "Wake of Vultures"
+    ],
+    "Regenerate each creature you control.": [
+      "Wrap in Vigor"
+    ],
+    "{G}, {T}: Regenerate target creature.": [
+      "Yavimaya Hollow"
+    ]
+  },
+  "standard_full_before": 1843,
+  "standard_full_after": 1843,
+  "standard_total": 4902,
+  "tests_run": 848,
+  "tests_skipped": 1
+}

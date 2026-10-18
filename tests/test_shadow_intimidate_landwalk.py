@@ -106,5 +106,5 @@ class ShadowIntimidateLandwalk(unittest.TestCase):
         self.assertFalse(can_block(b,a))
 
     def test_other_landwalk_and_shadow_exceptions_remain_visible(self):
-        self.assertTrue(card('Other',text='Nonbasic landwalk').unsupported)
+        self.assertTrue(card('Other',text='Desertwalk').unsupported)
         self.assertTrue(card('Other',text="This creature can block creatures with shadow as though they didn't have shadow.").unsupported)

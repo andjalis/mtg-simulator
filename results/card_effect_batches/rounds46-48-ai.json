@@ -1,0 +1,197 @@
+{
+  "seed": 20261018,
+  "alternating_play_draw": true,
+  "results": {
+    "regeneration": {
+      "games": 40,
+      "heuristic_wins": 18,
+      "baseline_wins": 21,
+      "draws": 1,
+      "score_ci95": [
+        0.31815899152667554,
+        0.6134128489171039
+      ],
+      "events": {
+        "regenerations": 688,
+        "learn_choices": 0
+      },
+      "deck": [
+        {
+          "copies": 24,
+          "name": "Island",
+          "cost": {
+            "generic": 0
+          },
+          "text": "({T}: Add {U}.)",
+          "types": [
+            "Land"
+          ],
+          "power": null,
+          "toughness": null
+        },
+        {
+          "copies": 12,
+          "name": "Fixture Bear",
+          "cost": {
+            "generic": 2
+          },
+          "text": "",
+          "types": [
+            "Creature"
+          ],
+          "power": 2,
+          "toughness": 2
+        },
+        {
+          "copies": 12,
+          "name": "Fixture Regenerator",
+          "cost": {
+            "generic": 2
+          },
+          "text": "{1}: Regenerate this creature.",
+          "types": [
+            "Creature"
+          ],
+          "power": 2,
+          "toughness": 2
+        },
+        {
+          "copies": 8,
+          "name": "Fixture Giant",
+          "cost": {
+            "generic": 4
+          },
+          "text": "",
+          "types": [
+            "Creature"
+          ],
+          "power": 4,
+          "toughness": 4
+        },
+        {
+          "copies": 2,
+          "name": "Fixture Removal",
+          "cost": {
+            "generic": 2
+          },
+          "text": "Destroy target creature.",
+          "types": [
+            "Sorcery"
+          ],
+          "power": null,
+          "toughness": null
+        },
+        {
+          "copies": 2,
+          "name": "Fixture Final Removal",
+          "cost": {
+            "generic": 2
+          },
+          "text": "Destroy target creature. It can't be regenerated.",
+          "types": [
+            "Sorcery"
+          ],
+          "power": null,
+          "toughness": null
+        }
+      ],
+      "sideboard": []
+    },
+    "learn": {
+      "games": 40,
+      "heuristic_wins": 21,
+      "baseline_wins": 19,
+      "draws": 0,
+      "score_ci95": [
+        0.37497106853929735,
+        0.6706477044981831
+      ],
+      "events": {
+        "regenerations": 0,
+        "learn_choices": 612
+      },
+      "deck": [
+        {
+          "copies": 24,
+          "name": "Island",
+          "cost": {
+            "generic": 0
+          },
+          "text": "({T}: Add {U}.)",
+          "types": [
+            "Land"
+          ],
+          "power": null,
+          "toughness": null
+        },
+        {
+          "copies": 12,
+          "name": "Fixture Bear",
+          "cost": {
+            "generic": 2
+          },
+          "text": "",
+          "types": [
+            "Creature"
+          ],
+          "power": 2,
+          "toughness": 2
+        },
+        {
+          "copies": 8,
+          "name": "Fixture Student",
+          "cost": {
+            "generic": 2
+          },
+          "text": "When this creature enters, learn.",
+          "types": [
+            "Creature"
+          ],
+          "power": 2,
+          "toughness": 2
+        },
+        {
+          "copies": 8,
+          "name": "Fixture Learn",
+          "cost": {
+            "generic": 1
+          },
+          "text": "Learn.",
+          "types": [
+            "Sorcery"
+          ],
+          "power": null,
+          "toughness": null
+        },
+        {
+          "copies": 8,
+          "name": "Fixture Giant",
+          "cost": {
+            "generic": 4
+          },
+          "text": "",
+          "types": [
+            "Creature"
+          ],
+          "power": 4,
+          "toughness": 4
+        }
+      ],
+      "sideboard": [
+        {
+          "copies": 8,
+          "name": "Fixture Lesson",
+          "cost": {
+            "generic": 2
+          },
+          "text": "Draw two cards.",
+          "types": [
+            "Sorcery"
+          ],
+          "power": null,
+          "toughness": null
+        }
+      ]
+    }
+  }
+}

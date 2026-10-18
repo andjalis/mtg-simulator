@@ -1,5 +1,25 @@
 # AI before/after
 
+## Card-effects integration check, 2026-10-18 (rounds 46–48)
+
+Two synthetic 60-card mirrors exercise regeneration and learn with HeuristicAI
+against BaselineAI on the same rules engine. Each ran 40 games, seed 20261018,
+alternating play/draw (20 each); draws count as half a win. The learn mirror gives
+each player the same eight-card Lesson sideboard, reset for every game.
+
+| Fixture | Heuristic wins | Baseline wins | Draws | Heuristic score, approximate 95% CI |
+| --- | ---: | ---: | ---: | --- |
+| Regeneration | 18 | 21 | 1 | 46.2% (31.8%–61.3%) |
+| Learn | 21 | 19 | 0 | 52.5% (37.5%–67.1%) |
+
+The games resolved 688 regenerations and 612 learn choices. Both intervals include
+50%, so these small fixtures do not establish a pilot-performance difference.
+They are integration checks, not before/after measurements or tournament-deck
+performance claims. Pure regeneration actions are held for threats, and both
+pilots value learn's available Lesson or discard-and-draw option.
+Exact deck definitions, sideboards, outcomes and event counts are in
+[`results/card_effect_batches/rounds46-48-ai.json`](results/card_effect_batches/rounds46-48-ai.json).
+
 ## Card-effects integration check, 2026-10-18 (rounds 38–45)
 
 Two synthetic 60-card mirrors exercise the added mechanics with HeuristicAI

@@ -26,6 +26,7 @@ from .ladder_report import HtmlReport, TerminalView, text_summary
 from .rating import LadderTracker
 from .sideboard import run_bo3
 from .runner import build_deck, pool_rate, run_match, unsupported_report, wilson
+from .learning import has_learn
 from .ranks import PASS_RATE, RANKS, list_ranks, resolve_ranks
 
 
@@ -126,11 +127,14 @@ def main(argv=None):
             name = f"{t.key}/{p.stem}"
             add(name, p)
             tier_opps[t.key].append(name)
+    outside = {}
     if args.engine == "python":
         db = CardDB(offline=args.offline)
         for name in counts:
             try:
                 decks[name] = build_deck(db, counts[name])
+                if any(has_learn(c) for c in decks[name]):
+                    outside[name] = build_deck(db, lists[name].sideboard)
             except KeyError as e:
                 sys.exit(f"{name}: {e}")
 
@@ -197,7 +201,8 @@ def main(argv=None):
             print(file=sys.stderr)
         else:
             res, log = run_match(a, decks[a], b, decks[b], games=args.games, seed=args.seed,
-                                 log_first=args.log, on_game=on_game, stop_early=stop_early)
+                                 log_first=args.log, on_game=on_game, stop_early=stop_early,
+                                 sideboard_a=outside.get(a), sideboard_b=outside.get(b))
             if args.log:
                 print("\n".join(log), "\n")
         if tracker:

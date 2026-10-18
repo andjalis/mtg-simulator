@@ -761,3 +761,50 @@ Exact additions are in
 [`../card_effect_batches/rounds38-45-coverage.json`](../card_effect_batches/rounds38-45-coverage.json).
 The complete card inventory and ranked gaps are in
 [`../database_coverage/README.md`](../database_coverage/README.md).
+
+## Rounds 46–48: regeneration, learn and extended landwalk (2026-10-18)
+
+Regeneration creates shields for self, targeted creatures/artifacts or a group of
+creatures. Each shield replaces one destruction, including lethal marked damage
+or deathtouch, by clearing damage, tapping the permanent and removing it from
+combat. Sacrifice, zero toughness and zero loyalty bypass shields. Shields and
+turn-long regeneration prohibitions expire at cleanup. Destruction and damage
+riders that prevent regeneration retain their proper scope. Combat prediction
+models shield consumption and removal from subsequent damage steps. Default
+priority policies use regeneration in response to threats rather than spending
+mana on pure regeneration actions in safe main phases.
+
+Learn supports taking and revealing a Lesson from the player's sideboard,
+discarding a card then drawing, or declining both. Single-game CLI runs, the
+Python runner and best-of-three matches supply a fresh outside-game pool each
+game. Post-board games use the sideboard left after the planned swaps, including
+cards boarded out. The `choose_learn` hook exposes the three choices. Lessons in
+exile, the library or an opponent's sideboard do not qualify. Both AI pilots value
+the available Lesson or rummage option.
+
+Nonbasic and legendary landwalk check the defending player's actual land
+supertypes. Basic and legendary metadata survive card parsing and copying;
+nonbasic snow duals remain nonbasic. Ordinary basic landwalk behavior is retained.
+
+| Scope | Before | After |
+| --- | ---: | ---: |
+| Entire database: fully template-matched | 8,385 / 34,922 (24.01%) | 8,533 / 34,922 (24.43%) |
+| Matched with recorded simplifications | 97 | 97 |
+| Partly matched | 26,440 | 26,292 |
+| Standard: fully template-matched | 1,843 / 4,902 | 1,843 / 4,902 |
+| Standard: handled rules sentences | 7,721 / 12,926 | 7,721 / 12,926 |
+
+The 148 new full matches comprise 131 regeneration/prevention cards, 14 learn
+cards and three landwalk cards. Examples include Troll Ascetic, River Boa,
+Damnation, Wrath of God, Welding Jar, Professor of Symbology, Field Trip,
+Dryad Sophisticate, Trailblazer's Boots and Ayumi, the Last Visitor.
+No database parse errors were found. Full matches measure text-template coverage,
+not complete Magic rules conformance.
+
+Validation: 848 tests ran successfully, one skipped. Two 40-game synthetic mirrors
+resolved 688 regenerations and 612 learn choices; outcomes are in `AI_RESULTS.md`.
+The fixture comparisons do not establish a pilot-performance difference.
+Exact additions and before/after counts are in
+[`../card_effect_batches/rounds46-48-coverage.json`](../card_effect_batches/rounds46-48-coverage.json).
+The complete card inventory and ranked gaps are in
+[`../database_coverage/README.md`](../database_coverage/README.md).

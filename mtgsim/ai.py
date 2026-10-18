@@ -14,7 +14,7 @@ import math
 from itertools import combinations
 
 from .cards import CardDef, Effect
-from . import copies, counting, engine, modal, proliferate
+from . import copies, counting, engine, learning, modal, proliferate
 from .engine import Game, Permanent, Player, can_block, payable
 
 LETHAL = 1000.0
@@ -115,7 +115,7 @@ def _aim(card: CardDef, eff, target) -> list:
 
 
 # Effects plan_spell values through _extra_value.
-EXTRA_KINDS = {"tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "double_counters",
+EXTRA_KINDS = {"tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "double_counters", "learn",
                "tap", "stun", "mill", "proliferate"} | copies.KINDS
 
 CARRIER_KINDS = ("pump", "grant", "p1_counters", "unblockable")   # aimed at the creature that attacks
@@ -158,7 +158,7 @@ def _is_counter(card: CardDef) -> bool:
 
 def fight(a: Permanent, b: Permanent) -> tuple[bool, bool]:
     """(a dies, b dies) if a and b deal combat damage to each other."""
-    if any(c.has(k) for c in (a, b) for k in ("infect", "wither")):
+    if any(c.has(k) for c in (a, b) for k in ("infect", "wither")) or a.regeneration_shields or b.regeneration_shields:
         dead = fight_group(a, [b])[0]
         return a in dead, b in dead
     a_first = a.has("first strike") or a.has("double strike")
@@ -204,15 +204,17 @@ def fight_group(a: Permanent, blockers, bonus=0, include_poison=False) -> tuple:
     power = lambda c: c.power + (bonus if c is a else 0) - minus[c]
     toughness = lambda c: c.toughness + (bonus if c is a else 0) - minus[c]
     dt, dead = set(), set()
+    removed = set()
+    shields = {c: c.regeneration_shields if not c.regeneration_blocked else 0 for c in group}
     to_player = att_gain = def_gain = poison = 0
     first = any(_strikes_first(c) for c in group)
 
     def step(deals_now):
         nonlocal to_player, att_gain, def_gain, poison
-        if a in dead:
+        if a in dead or a in removed:
             return
         hits = []
-        alive = [b for b in blockers if b not in dead]
+        alive = [b for b in blockers if b not in dead and b not in removed]
         if deals_now(a) and power(a) > 0:
             if not blockers:
                 hits.append((a, None, power(a)))
@@ -249,9 +251,18 @@ def fight_group(a: Permanent, blockers, bonus=0, include_poison=False) -> tuple:
                 else:
                     def_gain += amt
         for c in group:
-            if c not in dead and (toughness(c) <= 0 or
-                    (c in dt or dmg[c] >= toughness(c)) and not c.has("indestructible")):
+            if c in dead or c in removed:
+                continue
+            if toughness(c) <= 0:
                 dead.add(c)
+            elif (c in dt or dmg[c] >= toughness(c)) and not c.has("indestructible"):
+                if shields[c]:
+                    shields[c] -= 1
+                    dmg[c] = 0
+                    dt.discard(c)
+                    removed.add(c)
+                else:
+                    dead.add(c)
 
     if first:
         step(_strikes_first)
@@ -819,6 +830,8 @@ class HeuristicAI:
         ready = [c for c in me.creatures if c.can_attack() and c.power > 0]
         if k == "proliferate":
             return None, eff.amount * proliferate.value(game, me)
+        if k == "learn":
+            return None, learning.value(game, me)
         if k in copies.KINDS:
             v = copies.value(game, me, eff)
             return (None, v) if v > 0 else None

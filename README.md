@@ -298,6 +298,16 @@ to select another local database.
   and puts the other exiled cards on the library bottom in random order
 - Shadow restricts both attacking and blocking creatures to those with shadow;
   intimidate restricts blockers to artifact creatures or creatures sharing a color
+- Nonbasic and legendary landwalk use the defending player's land supertypes
+- Regeneration shields replace destruction, tap the permanent, clear its damage
+  and remove it from combat. They expire at cleanup and cannot prevent sacrifice
+  or zero toughness. Regeneration-prevention riders on destruction and damage apply
+- Learn offers a Lesson from the player's sideboard, discard-then-draw, or neither.
+  The CLI supplies sideboards for single games and best-of-three games; the latter
+  use the cards left outside the deck after sideboarding. Python callers can pass
+  `sideboard=` to `Player` or `sideboard_a=` / `sideboard_b=` to `run_match`.
+  The `choose_learn(game, me, lessons)` hook returns `("lesson", card)`,
+  `("discard", card)`, or `None`
 - Infect deals poison counters to players and -1/-1 counters to creatures, in
   combat and through damage abilities or fights. Devoid makes a card colorless
   while retaining its colored mana requirements. Exalted instances stack when
