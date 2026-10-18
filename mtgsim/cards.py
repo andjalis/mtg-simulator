@@ -10,16 +10,17 @@ import dataclasses
 import re
 from dataclasses import dataclass, field
 
-from . import modal
+from . import graveyard, milling, modal, returns
 
 COLORS = ("W", "U", "B", "R", "G")
 KEYWORDS = {
     "flying", "reach", "haste", "trample", "first strike", "double strike",
     "deathtouch", "lifelink", "vigilance", "defender", "menace",
-    "flash", "hexproof", "indestructible", "prowess",
+    "flash", "hexproof", "indestructible", "prowess", "swampwalk",
 }
 BASIC_MANA = {"Plains": "W", "Island": "U", "Swamp": "B", "Mountain": "R", "Forest": "G"}
-NUMBERS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7}
+NUMBERS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+           "eight": 8, "nine": 9, "ten": 10}
 COLOR_WORDS = r"(?:white|blue|black|red|green|colorless)"
 
 
@@ -47,7 +48,7 @@ class Effect:
     kind: str
     amount: int = 0
     amount2: int = 0
-    # any, creature, creature_pw, creature_mine, nonland_perm, artifact, player, spell, opp_spell,
+    # any, creature, creature_pw, creature_mine, nonland_perm, land, artifact, player, spell, opp_spell,
     # self, prev (the previous effect's target), that_player, that_controller, each_opponent,
     # each_creature, opp_creatures, each_opp_and_pw, none
     target: str = "none"
@@ -106,6 +107,7 @@ class Activated:
     power_up: bool = False           # Power-up: costs its mana cost less if the creature entered this turn
     text: str = ""
     modes: list = field(default_factory=list)    # "COST: Choose one —": a modal.Modes
+    condition: str = ""              # graveyard activation restriction: delirium, gy8
 
 
 @dataclass
@@ -194,6 +196,7 @@ class CardDef:
     gift: str = ""                                      # "Gift a card/Food/Treasure/tapped Fish": what an opponent gets
     gy_return: dict | None = None                       # "{1}{B}: Return this card from your graveyard to your hand."
     gy_exile_draw: dict | None = None                   # "Max speed — {3}, Exile this card from your graveyard: Draw a card."
+    gy_activated: list = field(default_factory=list)    # Activated abilities that return this card to the battlefield
     bargain: bool = False                               # "Bargain": may sacrifice an artifact, enchantment or token as an additional cost
     gift: str = ""                                      # "Gift a card/Food/Treasure/tapped Fish/Octopus": what an opponent gets if promised
     token_double: bool = False                          # "If one or more tokens would be created ..., twice that many"
@@ -340,6 +343,7 @@ def _tapped(eff):
 
 _SRC = r"(?:~|it|he|she)"
 _EFFECT_PATTERNS = [
+    (r"proliferate(?: (twice|again))?", lambda m: Effect("proliferate", 2 if (m[1] or "").lower() == "twice" else 1)),
     (_SRC + r" deals (\d+) damage to any target", lambda m: Effect("damage", int(m[1]), target="any")),
     (_SRC + r" deals X damage to any target", lambda m: Effect("damage", 0, target="any", data={"x": True})),
     (_SRC + r" deals (\d+) damage to target attacking or blocking creature",
@@ -386,8 +390,6 @@ _EFFECT_PATTERNS = [
     (r"destroy target artifact", lambda m: Effect("destroy", target="artifact")),
     (r"(?:destroy|exile) target artifact or enchantment(?: an opponent controls)?",
      lambda m: Effect("destroy", target="artifact_enchantment", filter="opp")),
-    (r"you may put a permanent card from among the (?:cards milled this way|milled cards) into your hand",
-     lambda m: Effect("mill_pick")),
     (r"if you control a Squirrel or returned a Squirrel card to your hand this way, create a food token",
      lambda m: Effect("token", 1, data={"kind": "food"}, cond="squirrel")),
     (r"(?:you may )?return (?:a|up to one) (?:non-\w+ )?creature card(?: or a planeswalker card)? from your "
@@ -539,9 +541,6 @@ _EFFECT_PATTERNS = [
     (r"IMPULSE (\d+)", lambda m: Effect("draw", int(m[1]))),   # "exile the top N, you may play them"
     (r"TARGETDISCARD", lambda m: Effect("discard_choice", 1, target="player")),
     (r"TARGETDISCARDNONCREATURE", lambda m: Effect("discard_choice", 1, target="player", filter="noncreature")),
-    (r"(?:target player|each opponent) mills (a|one|two|three|four|five|\d+) cards?",
-     lambda m: Effect("mill", _num(m[1]), target="player")),
-    (r"mill (a|one|two|three|four|five|\d+) cards?", lambda m: Effect("mill", _num(m[1]))),
     (r"(?:you may )?exile the top (card|one card|two cards|three cards|four cards|\d+ cards) of your library",
      lambda m: Effect("exile_top", _N_WORDS.get(m[1].split()[0], 1) if m[1] != "card" else 1)
      if not m[1][0].isdigit() else Effect("exile_top", int(m[1].split()[0]))),
@@ -618,7 +617,6 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("exile_gy_cards", _num(m[1]))),
     (r"put target card from (a|your) graveyard on the bottom of (?:its owner's|your) library",
      lambda m: Effect("gy_bottom", data={"mine": m[1] == "your"})),
-    (r"you may mill (a|one|two|three|four|five|\d+) cards?", lambda m: Effect("mill", _num(m[1]))),
     (r"target creature(?: you control)? gets \+(\d+)/\+(\d+) and gains (flying|first strike|double strike|deathtouch|"
      r"lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach) until end of turn",
      lambda m: Effect("pump", int(m[1]), int(m[2]), target="creature", data={"keyword": m[3].lower()})),
@@ -642,7 +640,8 @@ _EFFECT_PATTERNS = [
     (r"its controller creates (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
      lambda m: Effect("token", _num(m[1]), target="that_controller", data={"kind": m[2].lower()})),
     (r"target creature you control explores", lambda m: Effect("explore", target="creature_mine")),
-    (r"(?:you may )?return ~ from your graveyard to the battlefield", lambda m: Effect("return_self_gy")),
+    (r"(?:you may )?return ~ from your graveyard to the battlefield( tapped)?",
+     lambda m: Effect("return_self_gy", data={"tapped": bool(m[1])})),
     (r"~ explores", lambda m: Effect("explore", target="self")),
     (r"its controller (?:may search their library|searches their library) for a basic land card, puts? it onto the "
      r"battlefield tapped, then shuffles?", lambda m: Effect("fetch_basic", target="that_controller")),
@@ -690,7 +689,7 @@ _EFFECT_PATTERNS = [
     (r"that creature deals (\d+) damage to each opponent", lambda m: Effect("damage", int(m[1]), target="player")),
     (r"target creature gains (double strike|first strike|trample|haste|hexproof|indestructible) until end of turn",
      lambda m: Effect("grant", target="creature", data={"keyword": m[1].lower()})),
-    (r"return (all |(?:up to )?(?:one|two|three|four|five|six|x) (?:other )?target |(?:up to one )?target |an? )?"
+    (r"(?:you may )?(?:return|put) (all |(?:up to )?(?:one|two|three|four|five|six|x) (?:other )?target |(?:up to one )?target |an? )?"
      r"([\w ,/'-]+?) cards?(?: each)?(?: with mana value (\d+|x) or (less|greater))? from (your|a|an opponent's) "
      r"graveyard (to your hand|(?:onto|to) the battlefield)( tapped)?(?: under your control)?",
      lambda m: _gy_move(m)),
@@ -845,6 +844,7 @@ _SUBS = [
 ]
 
 _TRIGGERS = [
+    (r"Whenever you proliferate, (.+)", ("proliferate",)),
     (r"When(?:ever)? ~ enters or attacks, (.+)", ("etb", "attacks")),
     (r"When ~ enters and at the beginning of your upkeep, (.+)", ("etb", "upkeep")),
     (r"When(?:ever)? ~ enters?(?: the battlefield)?, (.+)", ("etb",)),
@@ -1024,6 +1024,14 @@ def _parse_effects(text: str, opts: bool = False):
         s = sentence.strip().rstrip(".").strip()
         if not s:
             continue
+        conditional = milling.parse_conditional(s, effects)
+        if conditional is not None:
+            effects += conditional
+            continue
+        rider = returns.parse_rider(s)
+        if rider is not None:
+            effects += rider
+            continue
         mp = re.fullmatch(r"you may pay ((?:\{[WUBRGC0-9]+\})+)", s, re.I)
         if mp:
             effects.append(Effect("pay_gate", data={"cost": parse_mana_cost(mp[1])}))
@@ -1139,8 +1147,9 @@ def _apply_speed_gate(gate, triggers, activated):
 
 def _face_types(type_line: str) -> frozenset:
     main_types = type_line.split("—")[0]
-    return frozenset(t for t in ("Land", "Creature", "Instant", "Sorcery", "Artifact",
-                                 "Enchantment", "Planeswalker", "Battle") if t in main_types)
+    return frozenset("Kindred" if t == "Tribal" else t for t in
+                     ("Land", "Creature", "Instant", "Sorcery", "Artifact", "Enchantment", "Planeswalker",
+                      "Battle", "Kindred", "Tribal") if t in main_types)
 
 
 def card_from_scryfall(data: dict) -> CardDef:
@@ -1250,6 +1259,14 @@ def _parse_face(data: dict) -> CardDef:
         m = re.fullmatch(r"((?:\{[WUBRGC0-9/]+\})+): Return (?:this card|~) from your graveyard to your hand\.", line)
         if m:
             extra["gy_return"] = parse_mana_cost(m[1])
+            continue
+        if graveyard.is_return_ability(line):
+            act = graveyard.parse_ability(line, approximations)
+            if act is None:
+                unsupported.append(line)
+            else:
+                act.needs_max_speed = gate is not None
+                extra.setdefault("gy_activated", []).append(act)
             continue
         m = re.fullmatch(r"((?:\{[WUBRGC0-9/]+\})+), Exile this card from your graveyard: Draw a card\.", line)
         if m:
@@ -1641,6 +1658,12 @@ def _parse_face(data: dict) -> CardDef:
                          r"spells you cast cost \{(\d+)\} less to cast\.", line)
         if m:
             extra["cost_discount"] = extra.get("cost_discount", ()) + ((m[1].lower(), int(m[2])),)
+            continue
+        m = re.fullmatch(r"(?:(Permanent|Creature|Artifact|Enchantment) )?[Ss]pells you cast that have an Adventure "
+                         r"cost \{(\d+)\} less to cast\.", line)
+        if m:
+            scope = (m[1] or "all").lower()
+            extra["cost_discount"] = extra.get("cost_discount", ()) + ((f"has_adventure:{scope}", int(m[2])),)
             continue
         m = re.fullmatch(r"(Creatures|Lands|Creature tokens|Foods|Other permanents|Each land and Ally) you control "
                          r"(?:have|has) \"\{T\}: Add (one mana of any color|\{[WUBRGC]\})\.\"", line)
@@ -2221,9 +2244,10 @@ def make_token(name: str, power: int, toughness: int, keywords=frozenset(), trig
 
 
 # Copy effects live in their own module; its templates join the ones above.
-from . import auras as _auras, copies as _copies, removal as _removal, search as _search, xspells as _xspells, counting as _counting  # noqa: E402
+from . import auras as _auras, copies as _copies, removal as _removal, search as _search, xspells as _xspells, counting as _counting, milling as _milling  # noqa: E402
 
 _EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS
+_EFFECT_PATTERNS += _milling.EFFECT_PATTERNS
 _SUBS += _copies.SUBS + _counting.SUBS
 
 

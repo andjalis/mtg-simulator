@@ -14,7 +14,7 @@ import math
 from itertools import combinations
 
 from .cards import CardDef, Effect
-from . import copies, counting, engine, modal
+from . import copies, counting, engine, modal, proliferate
 from .engine import Game, Permanent, Player, can_block, payable
 
 LETHAL = 1000.0
@@ -116,7 +116,7 @@ def _aim(card: CardDef, eff, target) -> list:
 
 # Effects plan_spell values through _extra_value.
 EXTRA_KINDS = {"tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "double_counters",
-               "tap", "stun", "mill"} | copies.KINDS
+               "tap", "stun", "mill", "proliferate"} | copies.KINDS
 
 CARRIER_KINDS = ("pump", "grant", "p1_counters", "unblockable")   # aimed at the creature that attacks
 
@@ -795,6 +795,8 @@ class HeuristicAI:
         opp = game.opponent(me)
         k = eff.kind
         ready = [c for c in me.creatures if c.can_attack() and c.power > 0]
+        if k == "proliferate":
+            return None, eff.amount * proliferate.value(game, me)
         if k in copies.KINDS:
             v = copies.value(game, me, eff)
             return (None, v) if v > 0 else None
@@ -925,6 +927,8 @@ class HeuristicAI:
             pool = opp.creatures + [x for x in getattr(opp, "planeswalkers", []) if not x.is_creature]
             if eff.target == "nonland_perm":
                 pool = [x for x in opp.battlefield if not x.card.is_land or x.is_creature]
+            elif eff.target == "land":
+                pool = [x for x in opp.battlefield if x.card.is_land]
             elif eff.target == "artifact":
                 pool = [x for x in opp.battlefield if getattr(x.card, "is_artifact", False)]
             if eff.kind in ("tap", "stun"):

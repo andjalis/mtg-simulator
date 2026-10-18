@@ -1,5 +1,21 @@
 # AI before/after
 
+## Card-effects integration check, 2026-10-18 (rounds 23–25)
+
+Two 60-card synthetic mirrors check that the new land targets and proliferate policy work in played games.
+Each uses HeuristicAI against BaselineAI for 40 games, seed 20261018, alternating play/draw (20 each).
+Both pilots use the same current rules engine. These small samples compare pilots, not engine versions.
+
+| Fixture | Heuristic wins | Baseline wins | Draws | Heuristic score, approximate 95% CI |
+| --- | ---: | ---: | ---: | --- |
+| Land denial | 15 | 25 | 0 | 37.5% (24.2%–53.0%) |
+| Counter growth | 17 | 23 | 0 | 42.5% (28.5%–57.8%) |
+
+The land-denial mirror resolved 210 land destructions; counter growth resolved 325 proliferations.
+Both intervals include 50%, so these measurements do not establish a pilot-performance difference.
+Exact fixture definitions and outcome counts are in
+[`results/card_effect_batches/rounds23-25-ai.json`](results/card_effect_batches/rounds23-25-ai.json).
+
 `BaselineAI` is the first AI (with the engine's default policies for instants,
 abilities and alternative casts). `HeuristicAI` is the rewritten one, now the
 default. All numbers are on the current engine (stack, triggers, adventures,

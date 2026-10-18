@@ -20,6 +20,8 @@ def _destroy(target, flt):
 
 
 EFFECT_PATTERNS = [
+    (r"destroy (?:up to one )?target (nonbasic )?land(?: (an opponent controls|you don't control))?",
+     lambda m: _effect("destroy", "land", filter="land:" + ("nonbasic:" if m[1] else "") + ("opp" if m[2] else ""))),
     (r"target creature you control deals damage equal to its power to each of two other target creatures",
      lambda m: _pair("bite") + [_distinct(_pair("bite")[1])]),
     (r"put a \+1/\+1 counter on each of up to two target creatures",

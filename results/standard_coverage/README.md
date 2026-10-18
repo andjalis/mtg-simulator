@@ -421,3 +421,154 @@ activated abilities (the tap-artifacts-and-creatures payment is not modelled), "
 keyword lists that include "firebending N" are split so each keyword parses. Fully supported cards 1,802 → 1,810.
 Not done: airbend, "waterbend" as an additional cost, granting firebending, "~ attacks each combat if able" granted to
 tokens, Class levels.
+
+## Round 16: milling and filtered recovery
+
+General milling wording covers "you [may] mill", "target player/opponent mills", "that player mills",
+"each opponent mills" and "each player mills", with word or numeric amounts. "Each opponent" is untargeted;
+"target opponent" excludes the caster. Recovery selects one, up to N, all, or each matching card from the
+cards just milled. Card types, subtypes, and unions such as "instant, sorcery, or Faerie" and
+"creature and/or land" are supported. Destinations are hand, library top, or battlefield (optionally tapped).
+Battlefield returns use the usual entry handling and triggers. Optional recovery uses the library-search policy.
+
+Measured 2026-10-18 with the existing offline database: fully template-matched Standard cards
+1,807 → 1,821 of 4,902; handled rules sentences 7,640 → 7,676 of 12,926. These before/after figures use the
+same database and do not replace the historical measurements above. Examples newly fully matched include
+Bramble Familiar, Picklock Prankster, Dredger's Insight, and Vastlands Scavenger.
+
+Still unsupported: recovering an opponent's milled cards, "cards that have an Adventure", conditional
+rewards based on what was milled, and counter riders on battlefield returns.
+
+## Round 17: counters on graveyard returns
+
+Battlefield returns can carry "with a finality counter on it" or "with N additional +1/+1 counters on it",
+including X paid for the spell and plural returns. The base effect must also parse. "Put target ... card
+from a graveyard onto the battlefield under your control" uses the same return handling. Counters and
+tapped status apply before entry triggers and state checks, so counters can keep a returned 0/0 alive.
+Finality redirects a move to the graveyard to exile, without death triggers or creature-death flags;
+bouncing the permanent clears its counters as usual. Milled-card battlefield returns also accept these riders.
+
+Still unsupported: activated abilities that return themselves from the graveyard, shield counter riders,
+and return chains whose base effects remain unsupported. Existing graveyard returns continue to select
+cards at resolution using the engine's return policy.
+
+## Round 18: conditional milling rewards
+
+"If a <type/subtype> card was milled this way, <effect>" and "<effect> if a <type/subtype> card is milled
+this way" parse the reward normally and apply the condition to each effect in it. Conditions also support
+"you milled a ... card this way", "one or more", and "N or more" matching cards, including unions of types.
+A multitype card counts once. Each resolving stack item stores its own last mill for each player: rewards
+still see recovered cards, and cannot use a previous resolution's mill. Unknown conditions and rewards
+remain reported as unsupported. This adds the Lesson-card reward on Sparring Dummy.
+
+Still unsupported: comparisons between milled cards (shared types or different names), "repeat this process",
+and rewards that refer to a different player's mill.
+
+## Round 19: recovery of cards with Adventures
+
+"Put all cards that have an Adventure from among the milled cards into your hand" uses the actual Adventure
+face on the card definition. Single-card and up-to-N variants use the same selection handling. Creature and
+noncreature Adventure cards qualify; unrelated back faces do not. Returned cards retain both playable faces.
+This matches Beluna Grandsquall's Seek Thrills recovery text, while her separate cost-reduction line remains
+unsupported, so she remains partly supported in the card-level report.
+
+Measured 2026-10-18 against the same existing offline database as round 16:
+
+| Batch | Fully template-matched cards | Handled rules sentences |
+| --- | ---: | ---: |
+| Before these three batches | 1,821 | 7,676 |
+| Round 17: return counters | 1,830 | 7,693 |
+| Round 18: milling rewards | 1,831 | 7,696 |
+| Round 19: Adventure recovery | 1,831 | 7,697 |
+
+Totals remain 4,902 Standard cards and 12,926 rules sentences. These are parser coverage measurements,
+not a claim that every game interaction on these cards is implemented.
+
+## Round 20: activated returns from the graveyard
+
+"COST: Return this card from your graveyard to the battlefield [tapped] [with a finality counter on it]"
+is stored separately from battlefield abilities. Supported costs are mana, discarding cards, and paying life;
+normal return counter riders also apply. Activation checks the source zone, costs, sorcery timing, max speed,
+and explicit delirium or descend-8 restrictions. The source stays in the graveyard while its ability is on
+the stack and returns only if it is still there when the ability resolves. The default main-phase policy
+uses these abilities with available mana. They are abilities rather than spells, so spell casting triggers
+and spell counterspells do not apply.
+
+Still unsupported: exiling other graveyard cards as a cost, transformed or attached returns, once-per-turn
+limits on these graveyard abilities, and activation conditions that require untracked events (such as
+noncombat damage or scrying earlier in the turn). These lines remain visible in coverage.
+
+## Round 21: shared card types and repeating mill processes
+
+"If N cards that share a card type were milled this way, EFFECT" checks for one type common to at least N
+of the cards. Multitype cards may match any of their card types, while supertypes and subtypes do not count.
+Kindred is recognised as a card type; legacy Tribal wording is normalised to Kindred.
+
+The Tale of Tamiyo's first three chapters now run "mill two; if they share a type, draw and repeat" in order.
+Each iteration uses the new mill, draws before milling again, and stops on a failed match or a loss from
+drawing an empty library. Only a preceding unconditional self-mill followed by fixed card draws supports
+"repeat this process"; other repeating chains remain unsupported. Tamiyo's fourth chapter still has ignored
+exile/copy/cast-permission text, so the card remains partly supported.
+
+## Round 22: discounts for spells that have Adventures
+
+"Permanent spells you cast that have an Adventure cost {N} less to cast" (Beluna Grandsquall), and corresponding
+creature/artifact/enchantment or unqualified spell wording, reduce generic mana for the cast face. The
+permanent face qualifies in hand and after its Adventure; its Adventure spell does not inherit that face's
+characteristics. Discounts stack with other applicable reductions, preserve coloured costs, and apply only
+while the provider is on its controller's battlefield. Beluna is now fully template-matched, including
+the Adventure recovery implemented in round 19. Conditional discount wording remains unsupported.
+
+Measured 2026-10-18 against the same existing offline database:
+
+| Batch | Fully template-matched cards | Handled rules sentences |
+| --- | ---: | ---: |
+| Before these three batches | 1,831 | 7,697 |
+| Round 20: graveyard activations | 1,837 | 7,709 |
+| Round 21: shared-type mill rewards | 1,837 | 7,710 |
+| Round 22: Adventure discounts | 1,838 | 7,711 |
+
+Totals remain 4,902 Standard cards and 12,926 rules sentences.
+
+## Rounds 23–25: land destruction, swampwalk, proliferate
+
+Targeted land destruction has its own land target class, with optional nonbasic and opponent-control
+restrictions. Target selection, resolution checks, hexproof, ward, indestructible, and subsequent
+"its controller" effects use the existing removal handling. The default and heuristic policies select
+legal opponent lands. Type unions and additional restrictions outside these templates remain unsupported.
+
+Swampwalk uses the shared blocking check: no creature can block the attacker if the defending player
+controls a land with the Swamp subtype. Dual lands and snow-covered Swamps qualify; a land's name or
+ability to make black mana alone does not. Both combat resolution and AI combat decisions use this check.
+Other landwalk keywords remain unsupported.
+
+Proliferate chooses any number of counter-bearing permanents and players at resolution and adds one
+counter of every existing kind on each chosen object. It does not target, introduce absent counter types,
+or allow selecting only some counter kinds on a chosen object. All counters change before Saga chapter
+triggers are queued. "Proliferate twice" and "whenever you proliferate" triggers are supported. Player
+counters are stored explicitly, with poison loss at ten counters. Keyword counters are tracked as counters,
+and opposing +1/+1 and -1/-1 counters cancel during state checks. Other mechanics that create or use player
+counters still require their own templates and continue to appear as gaps.
+
+The default proliferate policy scores known counter types on each whole object and skips choices whose
+net score is not positive. An optional `choose_proliferate(game, me)` hook, or an explicit selection passed
+to `Game.proliferate`, can choose other legal objects, including objects with unfamiliar counter types.
+These choices are policy decisions; the counter additions handle every stored counter kind.
+
+Measured 2026-10-18 against the same offline database, with before/after full-match lists saved in
+[`../card_effect_batches/rounds23-25-coverage.json`](../card_effect_batches/rounds23-25-coverage.json):
+
+| Scope | Before | After |
+| --- | ---: | ---: |
+| Entire database: fully template-matched | 7,922 / 34,922 | 8,043 / 34,922 |
+| Standard: fully template-matched | 1,838 / 4,902 | 1,841 / 4,902 |
+| Standard: handled rules sentences | 7,711 / 12,926 | 7,716 / 12,926 |
+
+The 121 newly fully matched database entries break down as 53 land-destruction cards, 24 swampwalk cards,
+and 44 proliferate cards, classified by their previously ignored text. This includes more than the earlier
+exact-wording estimates because the implementations also cover variants and abilities with those effects.
+No parser errors were found across the entire database. The current full report is
+[`../database_coverage/README.md`](../database_coverage/README.md).
+
+Two 40-game synthetic mirrors against BaselineAI exercised 210 land destructions and 325 proliferations;
+outcomes and confidence intervals are recorded in `AI_RESULTS.md`.

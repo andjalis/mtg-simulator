@@ -215,11 +215,27 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
 (`--coverage --tier all`). These labels describe template recognition, not verified rules correctness. Use
 `--engine forge` for a broader implementation and review both engines' logs.
 
+Measure the entire offline database, including basic lands and cards outside Standard:
+
+```bash
+python3 -m mtgsim.database_coverage
+python3 -m mtgsim.database_coverage --save results/database_coverage --progress
+python3 -m mtgsim.database_coverage --json --top 10
+```
+
+The saved report includes totals, a per-card CSV, and missing effects ranked by potential new full matches.
+An eligible card must have every ignored line in the listed gap and no recorded simplifications.
+Family rankings are upper bounds that overlap; exact-wording rankings group case and whitespace variants
+while preserving amounts. Parser failures are counted separately, and the command finishes the census
+and saves its results before returning exit code 1. A missing database returns 2. Use `MTGSIM_CARDDB`
+to select another local database.
+
 ## What the engine covers
 
 - Lands and mana: dual, tapped and conditionally tapped lands, shock lands
   (pay 2 life or enter tapped), fast lands, fetch lands and basic-land
   search, mana creatures, Sol Ring, Treasure
+- Targeted land destruction, including nonbasic and opponent-control restrictions
 - The stack with priority passing: both players can respond to every spell and
   trigger, and get priority with an empty stack in the declare attackers,
   declare blockers and end steps. Counterspells (including "unless its
@@ -248,9 +264,23 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   creature-type restrictions like "non-Dragon" are ignored), bounce, discard
   (Thoughtseize), card draw, scry, surveil, "look at the top N", rummaging,
   life gain/loss/drain, pump tricks, -N/-N effects, board wipes
+- Milling yourself, a target player/opponent, or each player/opponent; recovering
+  milled cards by type or subtype to hand, the battlefield, or the library top,
+  including multiple cards, cards with Adventures, and tapped battlefield returns;
+  conditional rewards for milling matching cards
+- Finality and additional +1/+1 counters on battlefield returns (including X paid);
+  counters apply as the permanent enters, and finality replaces dying with exile
+- Activated graveyard returns with mana, discard and life costs, sorcery timing,
+  and delirium/descend-8 restrictions; shared-type mill rewards and repeated
+  mill/check/draw processes; discounts for spells that have Adventures
 - Creatures with flying, reach, haste, vigilance, defender, menace, trample,
   first strike, double strike, deathtouch, lifelink, hexproof, indestructible,
   "can't be blocked by power 2 or less"
+- Swampwalk against a defending player who controls a Swamp, including dual lands
+- Proliferate on counter-bearing permanents and players, including repeated
+  proliferation, Saga chapters, keyword counters, and poison loss at ten counters.
+  The optional `choose_proliferate(game, me)` AI hook returns objects to choose;
+  every existing counter type on each chosen object increases together
 - Activated abilities in general ("{2}, {T}, Sacrifice this: ..."): mana, tap,
   sacrifice, discard, life and counter costs, "only as a sorcery", "only once
   each turn"; the default policy uses them with spare mana, and self-pumps on

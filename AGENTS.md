@@ -20,6 +20,7 @@ python3 -m mtgsim A.txt B.txt -n 1000          # matchup
 python3 -m mtgsim A.txt --gauntlet B.txt C.txt # one deck vs several
 python3 -m mtgsim A.txt B.txt -n 1 --log       # play-by-play of one game
 python3 -m mtgsim A.txt --coverage             # which cards the engine can't fully play
+python3 -m mtgsim.database_coverage --save results/database_coverage  # all cards and ranked gaps
 python3 -m mtgsim A.txt --ladder -n 200        # rank ladder, built-in engine
 python3 -m mtgsim.assess DECK.txt              # four graded criteria
 python3 -m web                                 # http://127.0.0.1:8000
@@ -69,6 +70,13 @@ a fake Forge directory and don't need a real install; a real Forge run needs Jav
   `AI_RESULTS.md` rather than in code comments.
 - **Pure stdlib.** The web page and server use only the standard library too.
 - **Git.** Commit or push only when asked. Work on a branch, not `main`, unless told otherwise.
+
+## Follow-up suggestions
+
+For this project only, finish completed tasks with 1–5 relevant follow-up tasks,
+numbered starting at 1. The user can reply with a number, several numbers, or
+"all" to request the corresponding tasks from the latest list. Execute selected
+tasks in manageable batches. Do not carry this preference into other projects.
 
 ## Delegated work (`ask`)
 

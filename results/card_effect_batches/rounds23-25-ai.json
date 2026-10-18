@@ -1,0 +1,163 @@
+{
+  "seed": 20261018,
+  "alternating_play_draw": true,
+  "results": {
+    "land_denial": {
+      "games": 40,
+      "heuristic_wins": 15,
+      "baseline_wins": 25,
+      "draws": 0,
+      "events": {
+        "proliferations": 0,
+        "destroyed_lands": 210
+      },
+      "deck": [
+        {
+          "name": "Mountain",
+          "copies": 24,
+          "cost": {
+            "generic": 0
+          },
+          "oracle": "({T}: Add {R}.)",
+          "types": [
+            "Land"
+          ],
+          "power": null,
+          "toughness": null
+        },
+        {
+          "name": "Fixture Bear",
+          "copies": 12,
+          "cost": {
+            "generic": 2
+          },
+          "oracle": "",
+          "types": [
+            "Creature"
+          ],
+          "power": 2,
+          "toughness": 2
+        },
+        {
+          "name": "Fixture Giant",
+          "copies": 8,
+          "cost": {
+            "generic": 4
+          },
+          "oracle": "",
+          "types": [
+            "Creature"
+          ],
+          "power": 4,
+          "toughness": 4
+        },
+        {
+          "name": "Fixture Stone Rain",
+          "copies": 12,
+          "cost": {
+            "generic": 2,
+            "R": 1
+          },
+          "oracle": "Destroy target land.",
+          "types": [
+            "Sorcery"
+          ],
+          "power": null,
+          "toughness": null
+        },
+        {
+          "name": "Shock",
+          "copies": 4,
+          "cost": {
+            "generic": 0,
+            "R": 1
+          },
+          "oracle": "Shock deals 2 damage to any target.",
+          "types": [
+            "Instant"
+          ],
+          "power": null,
+          "toughness": null
+        }
+      ]
+    },
+    "counter_growth": {
+      "games": 40,
+      "heuristic_wins": 17,
+      "baseline_wins": 23,
+      "draws": 0,
+      "events": {
+        "proliferations": 325,
+        "destroyed_lands": 0
+      },
+      "deck": [
+        {
+          "name": "Island",
+          "copies": 24,
+          "cost": {
+            "generic": 0
+          },
+          "oracle": "({T}: Add {U}.)",
+          "types": [
+            "Land"
+          ],
+          "power": null,
+          "toughness": null
+        },
+        {
+          "name": "Fixture Seedling",
+          "copies": 12,
+          "cost": {
+            "generic": 2
+          },
+          "oracle": "~ enters with two +1/+1 counters on it.",
+          "types": [
+            "Creature"
+          ],
+          "power": 0,
+          "toughness": 0
+        },
+        {
+          "name": "Fixture Sentinel",
+          "copies": 8,
+          "cost": {
+            "generic": 4
+          },
+          "oracle": "~ enters with four +1/+1 counters on it.",
+          "types": [
+            "Creature"
+          ],
+          "power": 0,
+          "toughness": 0
+        },
+        {
+          "name": "Fixture Plan",
+          "copies": 8,
+          "cost": {
+            "generic": 1,
+            "U": 1
+          },
+          "oracle": "Draw a card. Proliferate.",
+          "types": [
+            "Sorcery"
+          ],
+          "power": null,
+          "toughness": null
+        },
+        {
+          "name": "Fixture Proliferate",
+          "copies": 8,
+          "cost": {
+            "generic": 1
+          },
+          "oracle": "Proliferate.",
+          "types": [
+            "Sorcery"
+          ],
+          "power": null,
+          "toughness": null
+        }
+      ]
+    }
+  }
+}
