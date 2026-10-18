@@ -248,6 +248,32 @@ class AITests(unittest.TestCase):
             self.a.battlefield.append(Permanent(rock, self.a))
         self.assertEqual(ai._static_value(g, me, construct), 2)
 
+    def test_spree_reanimation_and_instant_draw_with_a_map_get_cast(self):
+        for _ in range(5):
+            perm("Swamp", self.a)
+        dirge = DB.get("Lively Dirge")
+        self.a.graveyard = [DB.get("Gene Pollinator")]
+        self.a.hand = [dirge]
+        variants = {c.name: c for c in self.game.spell_options(self.a) if c.name.startswith("Lively Dirge")}
+        self.assertGreater(self.a.ai.plan_spell(self.game, self.a, variants["Lively Dirge (spree_2)"])[0], 2)
+        self.a.graveyard = []
+        self.assertEqual(self.a.ai.plan_spell(self.game, self.a, variants["Lively Dirge (spree_2)"])[0], 0)
+        offering = DB.get("Fanatical Offering")
+        perm("Gene Pollinator", self.a)
+        self.a.hand = [offering]
+        self.game.active_idx = 1
+        self.game.step = "end_step"
+        choice = self.a.ai.end_of_turn(self.game, self.a, [offering])
+        self.assertIsNotNone(choice)
+        self.assertEqual(choice[0], offering)
+
+    def test_second_red_source_counts_for_double_red_spell(self):
+        perm("Mountain", self.a)
+        self.a.hand = [DB.get("Smaug the Magnificent"), DB.get("Mountain"), DB.get("Swamp")]
+        self.game.step = "main1"
+        self.a.ai.play_land(self.game, self.a)
+        self.assertEqual(sorted(p.card.name for p in self.a.battlefield), ["Mountain", "Mountain"])
+
 
 if __name__ == "__main__":
     unittest.main()

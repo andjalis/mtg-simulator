@@ -115,7 +115,7 @@ def _aim(card: CardDef, eff, target) -> list:
 
 
 # Effects plan_spell values through _extra_value.
-EXTRA_KINDS = {"tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "double_counters", "learn",
+EXTRA_KINDS = {"reanimate_total", "reanimate_one", "tutor_gy", "regrow_perm", "regrow_any", "tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "double_counters", "learn",
                "tap", "stun", "mill", "proliferate"} | copies.KINDS
 
 CARRIER_KINDS = ("pump", "grant", "p1_counters", "unblockable")   # aimed at the creature that attacks
@@ -658,9 +658,16 @@ class HeuristicAI:
 
         def score(card):
             gain = castable_with(card) - now
-            colors_needed = {k for c in me.hand if not c.is_land for k in c.mana_cost if k in "WUBRG"}
-            have = {col for p in me.battlefield for col in p.card.produces}
-            new_colors = len((card.produces - have) & colors_needed)
+            # Coloured sources we still lack for the pips in hand: {R}{R} wants two red lands, so a
+            # second red source counts as much as the first (Smaug the Magnificent, {2}{R}{R}).
+            pips = {}
+            for c in me.hand:
+                if not c.is_land:
+                    for k, v in c.mana_cost.items():
+                        if k in "WUBRG":
+                            pips[k] = max(pips.get(k, 0), v)
+            new_colors = sum(1 for col in card.produces if col in pips and
+                             sum(col in p.card.produces for p in me.battlefield if p.card.is_land) < pips[col])
             # A tapped land is best played on a turn where it costs nothing.
             tapped_bonus = 1 if card.enters_tapped and gain <= 0 else 0
             return (gain, new_colors, tapped_bonus, -len(card.produces))
@@ -715,7 +722,7 @@ class HeuristicAI:
             return (v, None) if v > 0 else None
         if not card.spell_effects:
             return None  # nothing we know how to do with it
-        targets, value = [], 0.0
+        targets, value, pending = [], 0.0, []
         for eff in card.spell_effects:
             if eff.kind == "pump" or eff.target == "spell" or _is_trick(card):
                 return None  # tricks go in after_blocks / respond, counters in respond
@@ -736,7 +743,9 @@ class HeuristicAI:
                 targets.append(tgt)
                 value += perm_value(tgt) + 1 if eff.kind != "bounce" else 0.5 * tgt.card.cmc + 1
             elif eff.kind in EXTRA_KINDS or (eff.kind == "p1_counters" and eff.target == "my_creatures"):
-                got = self._extra_value(game, me, eff, card, precombat)
+                got = self._extra_value(game, me, eff, card, precombat, pending)
+                if eff.kind == "tutor_gy" and self._library_creature(me) is not None:
+                    pending.append(self._library_creature(me))
                 if got is None:
                     return None
                 targets.append(got[0])
@@ -823,7 +832,36 @@ class HeuristicAI:
             value += 1.0
         return value
 
-    def _extra_value(self, game: Game, me: Player, eff: Effect, card: CardDef, precombat: bool):
+    def _graveyard_value(self, me: Player, eff: Effect, pending=()) -> float:
+        """Value of returning cards from our graveyard, as the engine picks them (highest mana value
+        first). pending: cards an earlier effect of the same spell will put there (Lively Dirge's
+        "search your library for a card, put it into your graveyard" before the reanimation)."""
+        yard = list(me.graveyard) + list(pending)
+        k = eff.kind
+        if k == "tutor_gy":
+            # Worth little alone; worth a creature once something returns it (counted by pending).
+            return 0.3
+        if k == "reanimate_total":
+            budget, got = eff.amount, 0.0
+            for c in sorted((c for c in yard if c.is_creature), key=lambda c: -c.cmc)[:6]:
+                if c.cmc <= budget and got < 2 * 99:
+                    budget -= c.cmc
+                    got += card_value(c) + 0.5 * c.cmc
+            return got
+        pool = {"reanimate_one": [c for c in yard if c.is_creature],
+                "regrow_perm": [c for c in yard if c.is_permanent],
+                "regrow_any": yard}[k]
+        if not pool:
+            return 0.0
+        best = max(pool, key=lambda c: c.cmc)
+        return card_value(best) + 0.5 * best.cmc if k != "regrow_any" else 1.0 + 0.5 * best.cmc
+
+    def _library_creature(self, me: Player):
+        """The creature a "search your library ... put it into your graveyard" effect will bin."""
+        yard = [c for c in me.library if c.is_creature]
+        return max(yard, key=lambda c: c.cmc, default=None)
+
+    def _extra_value(self, game: Game, me: Player, eff: Effect, card: CardDef, precombat: bool, pending=()):
         """(target, value) for effects the main switch above has no case for, or None to hold."""
         opp = game.opponent(me)
         k = eff.kind
@@ -835,6 +873,8 @@ class HeuristicAI:
         if k in copies.KINDS:
             v = copies.value(game, me, eff)
             return (None, v) if v > 0 else None
+        if k in ("reanimate_total", "reanimate_one", "regrow_perm", "regrow_any", "tutor_gy"):
+            return None, self._graveyard_value(me, eff, pending)
         if k == "tutor":
             return None, 2.0      # the best card of a kind, from the library
         if k == "explore":
@@ -1170,10 +1210,12 @@ class HeuristicAI:
                 value, targets = card_value(card), None
             elif _is_trick(card) or any(e.target == "spell" for e in card.spell_effects):
                 continue
-            elif all(e.kind in ("draw", "dig", "scry", "surveil", "discard", "gain_life") for e in card.spell_effects):
-                plan = self.plan_spell(game, me, CardDef(card.name, card.mana_cost, card.cmc,
-                                                         card.types - {"Instant"} | {"Sorcery"},
-                                                         spell_effects=card.spell_effects), False)
+            elif all(e.kind in ("draw", "dig", "scry", "surveil", "discard", "gain_life") or
+                     (e.kind == "token" and "power" not in (e.data or {})) for e in card.spell_effects):
+                # Cantrips and "draw two and create a Map" at the end step; judged as the sorcery
+                # they would be in our own main phase (keeping an additional sacrifice cost).
+                plan = self.plan_spell(game, me, dataclasses.replace(
+                    card, types=card.types - {"Instant"} | {"Sorcery"}, keywords=card.keywords - {"flash"}), False)
                 if plan is None:
                     continue
                 value, targets = plan
