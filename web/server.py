@@ -34,6 +34,34 @@ STATIC = Path(__file__).parent / "static"
 MAX_BODY = 1 << 20
 
 
+def validate_body(body: dict, *, run: bool = False) -> None:
+    if not isinstance(body, dict):
+        raise ValueError("request body must be a JSON object")
+    if not isinstance(body.get("deck", ""), str):
+        raise ValueError("deck must be text")
+    if not run:
+        return
+    if not isinstance(body.get("name", ""), str):
+        raise ValueError("name must be text")
+    tiers = body.get("tiers")
+    if tiers is not None and (not isinstance(tiers, list) or
+                              any(not isinstance(t, str) for t in tiers)):
+        raise ValueError("tiers must be a list of rank names")
+    for key in ("ladder", "full", "grade"):
+        if key in body and not isinstance(body[key], bool):
+            raise ValueError(f"{key} must be a boolean")
+    for key in ("games", "seed"):
+        if key not in body or (key == "seed" and body[key] in (None, "")):
+            continue
+        value = body[key]
+        if isinstance(value, bool) or not isinstance(value, (int, str)):
+            raise ValueError(f"{key} must be an integer")
+        try:
+            int(value)
+        except ValueError:
+            raise ValueError(f"{key} must be an integer") from None
+
+
 class App:
     def __init__(self, jobs: int | None = None, offline: bool = False, results: Path = leaderboard.RESULTS,
                  history_path=None):
@@ -45,6 +73,7 @@ class App:
         self.lock = threading.Lock()  # one run at a time; they share the pool anyway
 
     def start(self, body: dict) -> str:
+        validate_body(body, run=True)
         text = body.get("deck", "")
         check = sim.check_deck(text, offline=self.offline)
         if check.get("error"):
@@ -53,6 +82,7 @@ class App:
                            int(body.get("games", 100)), bool(body.get("full")),
                            None if body.get("seed") in (None, "") else int(body["seed"]),
                            bool(body.get("grade", True)))
+        run.history_path = self.history_path
         rid = uuid.uuid4().hex[:12]
         entry = {"run": run, "status": "queued", "error": None, "check": check}
         self.runs[rid] = entry
@@ -111,9 +141,11 @@ def make_handler(app: App):
 
         def _body(self) -> dict:
             n = int(self.headers.get("Content-Length") or 0)
-            if n > MAX_BODY:
+            if not 0 <= n <= MAX_BODY:
                 raise ValueError("request too large")
-            return json.loads(self.rfile.read(n) or b"{}")
+            body = json.loads(self.rfile.read(n) or b"{}")
+            validate_body(body)
+            return body
 
         def do_GET(self):
             if self.path in ("/", "/index.html"):

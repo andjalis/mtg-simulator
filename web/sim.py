@@ -149,6 +149,7 @@ class Run:
     assessment: dict | None = None
     grade_error: str = ""
     record_history: bool = True
+    history_path: object = None
     lock: threading.Lock = field(default_factory=threading.Lock)
 
     def opponents(self, tier) -> list[Opponent]:
@@ -216,9 +217,11 @@ class Run:
             with self.lock:
                 self.tracker.finish(self.verdict)
             if self.record_history:
-                history.try_record(history.record_ladder, self.tracker.to_dict(), self.counts, source="web")
+                history.try_record(history.record_ladder, self.tracker.to_dict(), self.counts, source="web",
+                                   path=self.history_path)
         if self.record_history and self.assessment:
-            history.try_record(history.record_assessment, self.assessment, self.counts, source="web")
+            history.try_record(history.record_assessment, self.assessment, self.counts, source="web",
+                               path=self.history_path)
 
     def _grade(self, pool, rng, chunks) -> None:
         """Grade the deck. The meta criterion reuses the games against the Grandmaster pool and

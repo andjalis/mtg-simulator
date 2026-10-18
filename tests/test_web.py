@@ -1,18 +1,31 @@
 import json
+import os
 import threading
 import time
+import tempfile
 import unittest
 import urllib.error
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+from unittest.mock import patch
 
+from mtgsim import history
 from mtgsim.tiers import TIERS
 from web import sim
 from web.server import App, make_handler
 
 BURN = (Path(__file__).resolve().parent.parent / "decks" / "ranks" / "3-gold" / "boros_burn.txt").read_text()
+
+
+def setUpModule():
+    # Exercise persistence without adding test decks to the user's leaderboard.
+    tmp = tempfile.TemporaryDirectory()
+    unittest.addModuleCleanup(tmp.cleanup)
+    env = patch.dict(os.environ, {"MTGSIM_HISTORY": str(Path(tmp.name) / "history.sqlite3")})
+    env.start()
+    unittest.addModuleCleanup(env.stop)
 
 
 class WebSimTests(unittest.TestCase):
@@ -116,6 +129,38 @@ class WebServerTests(unittest.TestCase):
     def test_bad_requests(self):
         self.assertEqual(self.call("/api/run", {"deck": "4 Not A Real Card Xyz", "games": 4})[0], 400)
         self.assertEqual(self.call("/api/runs/nope")[0], 404)
+
+    def test_malformed_request_values(self):
+        for path in ("/api/check", "/api/run"):
+            for body in ([], "deck", 42, {"deck": None}, {"deck": []}):
+                with self.subTest(path=path, body=body):
+                    self.assertEqual(self.call(path, body)[0], 400)
+        for extra in ({"name": None}, {"tiers": [None]}, {"tiers": "bronze"},
+                      {"games": float("inf")}, {"games": 2.5}, {"games": True},
+                      {"seed": []}, {"ladder": "false"}, {"grade": "false"}):
+            with self.subTest(extra=extra):
+                self.assertEqual(self.call("/api/run", {"deck": BURN, "tiers": ["bronze"],
+                                                       "games": 2, **extra})[0], 400)
+
+    def test_history_survives_new_app_session(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "history.sqlite3"
+            first = App(jobs=1, offline=True, results=Path(tmp), history_path=path)
+            try:
+                with patch("web.server.threading.Thread"):
+                    rid = first.start({"deck": BURN, "name": "session-burn", "tiers": ["bronze"],
+                                       "games": 2, "seed": 17, "grade": False})
+                first._execute(first.runs[rid])
+                self.assertEqual(first.status(rid)["status"], "done")
+                self.assertEqual(len(history.runs("session-burn", path)), 1)
+            finally:
+                first.pool.shutdown()
+            second = App(jobs=1, offline=True, results=Path(tmp), history_path=path)
+            try:
+                rows = second.leaderboard()
+                self.assertEqual([r["deck"] for r in rows], ["session-burn"])
+            finally:
+                second.pool.shutdown()
 
 
 if __name__ == "__main__":
