@@ -51,9 +51,17 @@ def p1_counters(game, p, eff, target, item, **_):
     if eff.target == 'my_creatures':
         src = item.source if item is not None else None
         n = len(p.hand) if eff.data.get("x") == "hand" else eff.amount
+        only = eff.data.get("only", "")
         for c in p.creatures:
-            if not (eff.data.get("other") and c is src):
-                c.counters["+1/+1"] = c.p1 + n
+            if eff.data.get("other") and c is src:
+                continue
+            if only == "tapped" and not c.tapped:
+                continue
+            if only == "legendary" and not c.card.legendary:
+                continue
+            if only not in ("", "tapped", "legendary") and only not in c.card.subtypes:
+                continue
+            c.counters["+1/+1"] = c.p1 + n
     else:
         if isinstance(target, Permanent) and target in target.controller.battlefield:
             target.counters["+1/+1"] = target.p1 + eff.amount

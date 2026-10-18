@@ -253,6 +253,10 @@ class TurnsMixin:
             return
         self.step = "end_step"
         self.fire(p, "end_step")
+        waiting, self.blinked = self.blinked, []
+        for card, owner in waiting:
+            self.enter_battlefield(owner, card)
+            self.log(f"{card.name} returns to the battlefield", owner)
         for perm in list(p.battlefield):
             if perm.impending and perm.counters.get("time"):
                 perm.counters["time"] -= 1
