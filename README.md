@@ -405,7 +405,7 @@ winner, final life and player-turns. `seat` is the index in play order (0 went f
 The AI class makes the main decisions (mulligans, main phase, attacks, blocks,
 `respond` when it has priority). Everything else goes through optional hooks;
 an AI that doesn't define one gets the default policy of the same name in
-`engine.py`:
+`mtgsim/engine/policy.py`:
 
 | Hook | Default |
 | --- | --- |
@@ -430,11 +430,13 @@ adventures, flashback, foretold cards, blitz, channel; cast them with
 
 | File | Role |
 | --- | --- |
-| `mtgsim/cards.py` | Scryfall JSON to `CardDef`; oracle-text templates |
+| `mtgsim/cards/` | Card model (`model.py`), oracle-text templates (`patterns.py`), Scryfall JSON to `CardDef` (`parse.py`), tokens (`tokens.py`) |
+| `mtgsim/removal.py`, `copies.py`, `auras.py`, ... | Template modules: one mechanic family each, joined to the tables in `cards/` |
 | `mtgsim/carddb.py` | Card lookup and Scryfall fetch/cache |
 | `mtgsim/build_carddb.py` | Builds `data/cards.sqlite3` from Scryfall bulk data or Forge |
 | `mtgsim/decklist.py` | Decklist parsing |
-| `mtgsim/engine.py` | Game state, turns, the stack and priority, triggers, combat, default response policy |
+| `mtgsim/engine/` | The rules engine: objects (`state.py`), mana payment (`mana.py`), the `Game` class (`game.py`) built from costs, targets, turns, stack, play, resolve, effects and combat modules, and the default decisions (`policy.py`) |
+| `mtgsim/identity.py`, `rules_events.py`, `continuous.py`, `actions.py` | Rules foundation: card identities and zones, rules events, scoped continuous effects, transactional actions |
 | `mtgsim/ai.py` | `HeuristicAI` (default) and `BaselineAI` (the first, simpler player, kept for comparison) |
 | `mtgsim/runner.py` | Match loop, statistics |
 | `mtgsim/ranks.py` | Ranks and the ladder (`decks/ranks/`); `tiers.py` is its old name |

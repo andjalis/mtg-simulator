@@ -1,0 +1,1240 @@
+"""Parsing a card: Scryfall JSON to CardDef, faces, effects, activated and triggered abilities."""
+from __future__ import annotations
+
+import dataclasses
+import re
+
+from .. import graveyard, milling, modal, returns
+from .. import auras as _auras, copies as _copies, counting as _counting
+from .model import (
+    Activated, AltCost, BASIC_MANA, COLORS, CardDef, Effect, KEYWORDS, NO_MATCH, NUMBERS, Trigger, _num, add_mana,
+    parse_mana_cost,
+)
+from .patterns import _EFFECT_PATTERNS, _SUBS, _TRIGGERS, _if_cond, _opt_rider, _parse_mana_ability, _xq
+
+
+def _parse_effects(text: str, opts: bool = False):
+    """Parse a run of sentences into effects. Returns (effects, unmatched_sentences)."""
+    effects, unmatched = [], []
+    for rx, rep in _SUBS:
+        text = rx.sub(rep, text)
+    gated = False
+    for sentence in re.split(r"(?<=\.)\s+", text.strip()):
+        s = sentence.strip().rstrip(".").strip()
+        if not s:
+            continue
+        if re.fullmatch(r"(?:it|they|those creatures) can't be regenerated", s, re.I) and effects and \
+                effects[-1].kind in ("destroy", "wrath", "wrath_pw"):
+            effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
+            continue
+        if re.fullmatch(r"(?:a creature|creatures) dealt damage this way can't be regenerated this turn", s, re.I) \
+                and effects and effects[-1].kind == "damage":
+            effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
+            continue
+        conditional = milling.parse_conditional(s, effects)
+        if conditional is not None:
+            effects += conditional
+            continue
+        rider = returns.parse_rider(s)
+        if rider is not None:
+            effects += rider
+            continue
+        mp = re.fullmatch(r"you may pay ((?:\{[WUBRGC0-9]+\})+)", s, re.I)
+        if mp:
+            effects.append(Effect("pay_gate", data={"cost": parse_mana_cost(mp[1])}))
+            gated = True
+            continue
+        mg = re.fullmatch(r"you may (?:(sacrifice (?:another |an? )(?:artifact, enchantment, or token|[a-z]+(?: or [a-z]+)?))"
+                          r"|(discard a card)|(forage)|blight (\d+))", s, re.I)
+        if mg:
+            if mg[1]:
+                what = mg[1].lower().split(" ", 1)[1]
+                other = what.startswith("another ")
+                kinds = re.sub(r"^(?:another|an?) ", "", what).replace(", or ", " or ").replace(", ", " or ")
+                gate = ("sac", ("other " if other else "") + kinds)
+            elif mg[2]:
+                gate = ("discard", "")
+            elif mg[3]:
+                gate = ("forage", "")
+            else:
+                gate = ("blight", mg[4])
+            effects.append(Effect("pay_gate", data={"gate": gate}))
+            gated = True
+            continue
+        mx = re.fullmatch(r"(.+?),? where X is (.+)", s, re.I)
+        if mx and re.search(r"\bX\b", mx[1]) and _xq(mx[2]):
+            spec = _xq(mx[2])
+            new, bad = [], True
+            for one in ("1", "one", "a"):
+                body = re.sub(r"\bX\b", one, mx[1])
+                if one != "1":
+                    body = re.sub(r"\b(creature |artifact )?tokens\b", r"\1token", body)
+                new, bad = _parse_effects(body + ".")
+                if new and not bad:
+                    break
+            if new and not bad:
+                for e in new:
+                    e.data["xq"] = spec
+                    e.data["xq_size"] = bool(re.search(r"\bX/X\b", mx[1]))
+                effects += new
+                continue
+        if opts:
+            new = _opt_rider(s, effects)
+            if new is not None:
+                effects += new
+                continue
+        mi = re.fullmatch(r"if (.+?), (.+)", s, re.I)
+        if mi:
+            cond = _if_cond(mi[1])
+            if cond:
+                for body in (mi[2], re.sub(r"^you ", "", mi[2])):
+                    new, bad = _parse_effects(body[0].upper() + body[1:] + ".")
+                    if new and not bad:
+                        effects += [dataclasses.replace(e, cond=e.cond or cond) for e in new]
+                        break
+                else:
+                    unmatched.append(sentence.strip())
+                continue
+        first = len(effects)
+        paid = False
+        if gated:
+            g = re.fullmatch(r"(?:if you do|when you do), (.+)", s, re.I)
+            if g:
+                s, paid = g[1], True
+        for pat, build in _EFFECT_PATTERNS:
+            m = re.fullmatch(pat, s, flags=re.IGNORECASE)
+            if m is None and s.lower().startswith("then "):
+                m = re.fullmatch(pat, s[5:], flags=re.IGNORECASE)
+            if m:
+                eff = build(m)
+                if eff is NO_MATCH:
+                    continue
+                if isinstance(eff, list):
+                    effects += eff
+                elif eff is not None:
+                    effects.append(eff)
+                break
+        else:
+            parts = _split_compound(s)
+            if parts:
+                effects += parts
+            else:
+                unmatched.append(sentence.strip())
+        if paid:
+            for eff in effects[first:]:
+                eff.cond = eff.cond or "paid"
+    return effects, unmatched
+
+
+def _split_compound(s: str):
+    """Effects for "A, then B" / "A and B" when every part matches a template, else None."""
+    for sep in (r",? then ", r" and "):
+        pieces = re.split(sep, s, maxsplit=1, flags=re.I)
+        if len(pieces) != 2:
+            continue
+        out = []
+        for piece in pieces:
+            effs, bad = _parse_effects(piece[0].upper() + piece[1:] + ".")
+            if bad or not effs:
+                break
+            out += effs
+        else:
+            return out
+    return None
+
+
+def _apply_speed_gate(gate, triggers, activated):
+    """Gate what a "Max speed — ..." line just added: its triggers' effects and its activated abilities."""
+    for t in triggers[gate[0]:]:
+        for eff in t.effects:
+            eff.cond = eff.cond or "max_speed"
+    for a in activated[gate[1]:]:
+        a.needs_max_speed = True
+
+
+def _face_types(type_line: str) -> frozenset:
+    main_types = type_line.split("—")[0]
+    return frozenset("Kindred" if t == "Tribal" else t for t in
+                     ("Land", "Creature", "Instant", "Sorcery", "Artifact", "Enchantment", "Planeswalker",
+                      "Battle", "Kindred", "Tribal") if t in main_types)
+
+
+def card_from_scryfall(data: dict) -> CardDef:
+    faces = data.get("card_faces")
+    if faces and not data.get("oracle_text"):
+        card = _parse_face({**data, **faces[0]})
+        if len(faces) > 1:
+            back = faces[1]
+            back_types = back.get("type_line", "")
+            if "Adventure" in back_types:
+                card.adventure = _parse_face(back)
+            elif "Land" in back_types and not card.is_land:
+                card.land_face = _parse_face(back)   # modal double-faced: may be played as this land
+            elif re.search(r"Daybound|Nightbound", card.oracle):
+                pass  # day/night isn't tracked; the day side stays
+            else:
+                card.back = _parse_face(back)
+        return card
+    return _parse_face(data)
+
+
+def _cost_line(m):
+    return parse_mana_cost(m)
+
+
+def _parse_face(data: dict) -> CardDef:
+    name = data["name"].split(" // ")[0]
+    type_line = data.get("type_line", "").split(" // ")[0]
+    types = _face_types(type_line)
+    cost = parse_mana_cost(data.get("mana_cost", "").split(" // ")[0])
+
+    def stat(v):
+        try:
+            return int(v)
+        except (TypeError, ValueError):
+            return 0 if v is not None else None
+
+    oracle = data.get("oracle_text", "") or ""
+    text = re.sub(r"\([^)]*\)", "", oracle)
+    text = text.replace(name, "~")
+    if "," in name and "Legendary" in type_line:
+        text = re.sub(rf"\b{re.escape(name.split(',')[0])}\b", "~", text)  # "Iymrith" for "Iymrith, Desert Doom"
+    elif "Legendary" in type_line and " " in name and " the " not in name and len(name.split()[0]) >= 4 and \
+            name.split()[0] not in ("The", "Lord", "Lady", "King", "Queen", "Sir") and \
+            re.search(rf"\b{re.escape(name.split()[0])}\b", text):
+        text = re.sub(rf"\b{re.escape(name.split()[0])}\b", "~", text)  # "Ajani" for "Ajani Resolute"
+    elif " the " in name and "Legendary" in type_line:
+        text = re.sub(rf"\b{re.escape(name.split(' the ')[0])}\b", "~", text)  # "Smaug the Magnificent"
+    text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment)\b", "~",
+                  text, flags=re.I)
+    text = re.sub(r", where X is the amount of mana spent to cast ~\.", ".", text).replace(
+        "the top X cards", f"the top {int(data.get('cmc', 0) or 0)} cards")
+
+    text = re.sub(r"(?m)^((?:Exhaust — )?)Waterbend (\{\d+\}(?:, \{T\})?:)", r"\1\2", text)    # waterbend {N} pays like {N} here
+    text = re.sub(r"(?m)^Ward—Waterbend (\{\d+\})", r"Ward \1", text)
+    text = re.sub(r"(?m)^([A-Za-z ,]*[Ff]irebending \d+[A-Za-z ,]*)$", lambda m: "\n".join(x[0].upper() + x[1:] for x in m[1].split(", ")), text)
+    keywords, produces, etb, spell, unsupported, approximations = set(), set(), [], [], [], []
+    triggers: list[Trigger] = []
+    extra: dict = {"snow": "Snow" in type_line, "basic": "Basic" in type_line, "legendary": "Legendary" in type_line,
+                   "color_override": frozenset(data["colors"]) if "colors" in data else None}
+    modes: list = []
+    chapters: list = []
+    loyalty_abilities: list = []
+    alt_costs: list = []
+    activated: list = []
+    enters_tapped = False
+    mode_sink = None     # where bullet lines go: modes of the spell or of the last trigger
+    for sub in type_line.split("—")[-1].split():
+        if sub in BASIC_MANA and "Land" in types:
+            produces.add(BASIC_MANA[sub])
+    raw_cost = data.get("mana_cost", "").split(" // ")[0]
+    extra["hybrid"] = tuple(a + b for a, b in re.findall(r"\{([WUBRG])/([WUBRG])\}", raw_cost))
+    if data.get("loyalty"):
+        extra["loyalty"] = stat(data["loyalty"]) or 0
+
+    kicked: list = []
+    station_min = 0
+    gate = None            # set while parsing a "Max speed — ..." line: what the line added is gated on speed 4
+    for line in (l.strip() for l in text.split("\n")):
+        if gate is not None:
+            _apply_speed_gate(gate, triggers, activated)
+            gate = None
+        if not line:
+            continue
+        gm = re.fullmatch(r"Max speed — (.+)", line)
+        if gm:
+            gate = len(triggers), len(activated)
+            line = gm[1]
+            m = re.fullmatch(r"~ gets \+(\d+)/\+(\d+)(?: and has ([a-z ]+))?\.", line)
+            if m:
+                extra["pt_if"] = extra.get("pt_if", ()) + (("speed>=4", int(m[1]), int(m[2])),)
+                if m[3] and m[3] in KEYWORDS:
+                    extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((m[3], "max_speed"),)
+                continue
+            m = re.fullmatch(r"~ has ([a-z ]+?)(?: and ([a-z ]+))?\.", line)
+            if m and m[1] in KEYWORDS and (m[2] is None or m[2] in KEYWORDS):
+                for kw in (m[1], m[2]):
+                    if kw:
+                        extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((kw, "max_speed"),)
+                continue
+        if line == "Bargain":
+            extra["bargain"] = True
+            continue
+        m = re.fullmatch(r"Gift (a card|a Food|a Treasure|a tapped Fish|an Octopus)", line)
+        if m:
+            extra["gift"] = m[1].split(" ", 1)[1].lower()
+            continue
+        m = re.fullmatch(r"((?:\{[WUBRGC0-9/]+\})+): Return (?:this card|~) from your graveyard to your hand\.", line)
+        if m:
+            extra["gy_return"] = parse_mana_cost(m[1])
+            continue
+        if graveyard.is_return_ability(line):
+            act = graveyard.parse_ability(line, approximations)
+            if act is None:
+                unsupported.append(line)
+            else:
+                act.needs_max_speed = gate is not None
+                extra.setdefault("gy_activated", []).append(act)
+            continue
+        m = re.fullmatch(r"((?:\{[WUBRGC0-9/]+\})+), Exile this card from your graveyard: Draw a card\.", line)
+        if m:
+            extra["gy_exile_draw"] = parse_mana_cost(m[1])
+            extra["gy_needs_speed"] = gate is not None
+            continue
+        if re.fullmatch(r"If one or more tokens would be created under your control, twice that many of those tokens "
+                        r"are created instead\.", line):
+            extra["token_double"] = True
+            continue
+        m = re.fullmatch(r"Creatures you control of the chosen type get \+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["anthem_chosen"] = (int(m[1]), int(m[2]))
+            continue
+        m = re.fullmatch(r"~ can't be blocked by creatures with power (\d+) or greater\.", line)
+        if m:
+            extra["max_blocker_power"] = int(m[1])
+            continue
+        if line == "~ can't be blocked.":
+            keywords.add("unblockable")
+            continue
+        if line == "You have no maximum hand size.":
+            extra["no_max_hand"] = True
+            continue
+        if line == "~ attacks each combat if able.":
+            extra["must_attack"] = True
+            continue
+        m = re.fullmatch(r"~ enters with (\w+) -1/-1 counters on it\.", line)
+        if m:
+            extra["etb_named_counters"] = ("-1/-1", _num(m[1]))
+            continue
+        if line == "Job select":
+            triggers.append(Trigger("etb", [Effect("job_select")]))
+            continue
+        if line == "Start your engines!":
+            extra["start_engines"] = True
+            continue
+        if any(a.startswith("never paid: As an additional cost") for a in approximations):
+            line = re.sub(r"\s*If ~'s additional cost was paid, [^.]+\.", "", line).strip()
+            if not line:
+                continue
+        kicked += re.findall(r"If ~ was kicked, (.+?\.)", line)
+        line = re.sub(r"\s*If ~ was kicked, .+?\.", "", line).strip()
+        line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant) — (?=When|At|If)", "", line)
+        parts = [p.strip().lower() for p in line.split(",")]
+        if all(p in KEYWORDS or re.fullmatch(r"ward \{\d+\}", p) for p in parts):
+            for p in parts:
+                if p.startswith("ward"):
+                    extra["ward"] = int(re.search(r"\d+", p)[0])
+                else:
+                    keywords.add(p)
+                    if p == "exalted":
+                        extra["exalted"] = extra.get("exalted", 0) + 1
+                    elif p in ("cascade", "storm"):
+                        extra[p] = extra.get(p, 0) + 1
+            continue
+        bullet = modal.parse_bullet(line) if mode_sink is not None else None
+        if bullet is not None:
+            effs, bad = _parse_effects(bullet[1])
+            if bad or not effs:
+                unsupported.append(line)
+            else:
+                modal.add_mode(mode_sink, effs, bullet[0])
+            continue
+        mode_sink = None
+        m = re.fullmatch(r"Ward—Pay (\d+) life\.", line)
+        if m:
+            extra["ward_life"] = int(m[1])
+            continue
+        if re.fullmatch(r"Ward—Discard a card\.", line):
+            extra["ward_discard"] = True
+            continue
+        m = re.fullmatch(r"~ has ward \{(\d+)\} as long as it's untapped\.", line, flags=re.I)
+        if m:
+            extra.update(ward=int(m[1]), ward_untapped_only=True)
+            continue
+        m = re.fullmatch(r"\{T\}(, Pay 1 life)?: Add (one mana of any color|\{[WUBRGC]\}+)\. Spend this mana only "
+                         r"(.+)\.", line)
+        if m:
+            restriction = _mana_restriction(m[3])
+            if restriction is None:
+                produces |= set(COLORS) if "any color" in m[2] else set(re.findall(r"[WUBRGC]", m[2]))
+                unsupported.append(f"mana restriction ignored: Spend this mana only {m[3]}.")
+                continue
+            cols, amount = _parse_mana_ability(m[2])
+            extra["mana_restriction"] = restriction
+            extra["restricted_produces"] = frozenset(cols)
+            if amount > 1:
+                extra["mana_amount"] = amount
+            if m[1]:
+                approximations.append("the 1 life for restricted mana isn't paid")
+            continue
+        if re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a creature type\.", line):
+            extra["choose_type"] = "creature"
+            continue
+        if re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a basic land type\. Then you may pay 2 life\. If you "
+                        r"don't, it enters tapped\.", line):
+            extra.update(choose_type="basic_land", tapped_condition="shock")
+            continue
+        if line == "~ is the chosen type." and extra.get("choose_type") == "basic_land":
+            continue
+        m = re.fullmatch(r"~ enters(?: the battlefield)? tapped unless you control (an? .+?)\.", line)
+        if m and all(re.fullmatch(r"an? (basic land|[A-Z]\w+)", part) for part in m[1].split(" or ")):
+            kinds = [re.fullmatch(r"an? (basic land|[A-Z]\w+)", part)[1] for part in m[1].split(" or ")]
+            extra["tapped_condition"] = "unless_control:" + "|".join("basic" if k == "basic land" else k for k in kinds)
+            continue
+        if re.fullmatch(r"~ enters(?: the battlefield)? tapped unless you control a planeswalker\.", line):
+            extra["tapped_condition"] = "unless_pw"
+            continue
+        if re.fullmatch(r"~ enters(?: the battlefield)? tapped unless a player has (\d+) or less life\.", line):
+            extra["tapped_condition"] = "unless_player_life<=" + re.search(r"(\d+)", line)[1]
+            continue
+        m = re.fullmatch(r"As ~ enters(?: the battlefield)?, you may behold an? ([A-Z]\w+)\. If you don't, ~ enters "
+                         r"(?:the battlefield )?tapped\.", line)
+        if m:
+            extra["tapped_condition"] = f"behold:{m[1]}"
+            continue
+        if line == "~ must be blocked if able.":
+            extra["must_be_blocked"] = True
+            continue
+        if line == "Creatures with power less than ~'s power can't block it.":
+            extra["blocker_power_rel"] = True
+            continue
+        if re.fullmatch(r"~ can't block\.", line):
+            extra["cant_block"] = True
+            continue
+        if line == "~ can block only creatures with flying.":
+            extra["block_only_flying"] = True
+            continue
+        m = re.fullmatch(r"Equipped creature (?:gets \+(\d+)/\+(\d+))?(?: and )?(?:has (.+?))?\.", line)
+        if m and (m[1] or m[3]):
+            kws, ward, ok = set(), 0, True
+            for k in re.split(r", (?:and )?| and ", m[3] or ""):
+                k = k.strip().lower()
+                if not k:
+                    continue
+                if re.fullmatch(r"ward \{(\d+)\}", k):
+                    ward = int(re.search(r"\d+", k)[0])
+                elif k in KEYWORDS:
+                    kws.add(k)
+                elif k == "hexproof from monocolored":
+                    kws.add("hexproof")
+                    approximations.append("hexproof from monocolored is played as hexproof")
+                else:
+                    ok = False
+            if ok:
+                extra.update(equip_bonus=(int(m[1] or 0), int(m[2] or 0)), equip_keywords=frozenset(kws),
+                             equip_ward=ward)
+                continue
+        m = re.fullmatch(r"Equip (\{[^ .]+\})(\. This ability costs [^.]+ less to activate[^.]*\.)?", line)
+        if m:
+            extra["equip_cost"] = parse_mana_cost(m[1])
+            if m[2]:
+                approximations.append(f"cost reduction ignored:{m[2]}")
+            continue
+        m = re.fullmatch(r"Equip abilities you activate that target ~ cost \{(\d+)\} less to activate\.", line)
+        if m:
+            extra["equip_discount"] = int(m[1])
+            continue
+        if re.fullmatch(r"If (?:~|this card) is in your opening hand, you may begin the game with it on the "
+                        r"battlefield\.", line):
+            extra["leyline"] = True
+            continue
+        m = re.fullmatch(r"~ has ([\w ]+?) as long as (you control another ([A-Z]\w+)|an opponent has (\d+) or less "
+                         r"life)\.", line)
+        if m and m[1].lower() in KEYWORDS:
+            cond = f"another:{m[3]}" if m[3] else f"opp_life<={m[4]}"
+            extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((m[1].lower(), cond),)
+            continue
+        if line == "Activated abilities of artifacts, creatures, and planeswalkers can't be activated.":
+            extra["stops_activations"] = True
+            continue
+        if re.fullmatch(r"\{1\}, \{T\}: Add one mana of any color\.", line):
+            produces |= set(COLORS)
+            extra["mana_filter"] = "tap"
+            continue
+        m = re.fullmatch(r"\{1\}: Add (one mana of any color|\{[WUBRG]\}, \{[WUBRG]\}, or \{[WUBRG]\})\. (?:~ becomes that "
+                         r"color until end of turn\. )?Activate only once each turn\.", line)
+        if m:
+            produces |= set(COLORS) if "any color" in m[1] else set(re.findall(r"[WUBRG]", m[1]))
+            extra["mana_filter"] = "once"
+            continue
+        m = re.fullmatch(r"\{T\}, Tap an untapped (creature|permanent) you control: Add one mana of any color\.", line)
+        if m:
+            produces |= set(COLORS)
+            extra["mana_tap_other"] = m[1]
+            continue
+        if line == "{T}, Sacrifice ~: Add one mana of any color.":
+            produces |= set(COLORS)
+            extra["mana_sac"] = True
+            continue
+        m = re.fullmatch(r"\{T\}: Add one mana of any color\. Activate only if you control an? (\w+)\.", line)
+        if m:
+            produces |= set(COLORS)
+            extra["mana_cond"] = m[1]
+            continue
+        m = re.fullmatch(r"\{T\}: Add (\{[WUBRG]\}(?: or \{[WUBRG]\})?)\. (Activate only if [^.]+\.)", line)
+        if m:
+            produces |= set(re.findall(r"[WUBRG]", m[1]))
+            approximations.append(f"condition ignored: {m[2]}")
+            continue
+        if re.fullmatch(r"\{T\}, Pay 1 life: Add one mana of any color\.", line):
+            produces |= set(COLORS)
+            approximations.append("the 1 life for coloured mana isn't paid")
+            continue
+        if re.fullmatch(r"~ enters tapped unless it's your first, second, or third turn of the game\.", line):
+            extra["tapped_condition"] = "after_turn3"
+            continue
+        if re.fullmatch(r"~ enters tapped if it's not your turn\.", line):
+            extra["tapped_condition"] = "not_your_turn"
+            continue
+        m = re.fullmatch(r"\{T\}: Add ([^.]+)\.(?: ~ deals 1 damage to you\.)?", line)
+        if m:
+            cols, amount = _parse_mana_ability(m[1])
+            produces |= cols
+            extra["mana_amount"] = max(amount, extra.get("mana_amount", 1))
+            continue
+        if re.fullmatch(r"~ enters(?: the battlefield)? tapped\.", line):
+            enters_tapped = True
+            continue
+        if re.fullmatch(r"~ enters(?: the battlefield)? tapped unless you control two or more other lands\.", line):
+            extra["tapped_condition"] = "unless_2_lands"
+            continue
+        if re.fullmatch(r"~ enters(?: the battlefield)? tapped unless you control two or fewer other lands\.", line):
+            extra["tapped_condition"] = "unless_le_2_lands"
+            continue
+        m = re.fullmatch(r"~ enters(?: the battlefield)? with (a|one|two|three|four|five) \+1/\+1 counters? on it\.",
+                         line)
+        if m:
+            extra["etb_counters"] = _num(m[1])
+            continue
+        m = re.fullmatch(r"~ enters with (a|one|two|three|four|five) (\w+) counters? on it\.", line)
+        if m:
+            extra["etb_named_counters"] = (m[2].lower(), _num(m[1]))
+            continue
+        m = re.fullmatch(r"Craft with artifact (\{[^ (]+\})(?: \(.*\))?", line)
+        if m:
+            activated.append(Activated("ability", parse_mana_cost(m[1]), effects=[Effect("craft")],
+                                       extra_costs={"exile_self": True, "craft": "artifact"}, sorcery=True,
+                                       text=line))
+            continue
+        if re.fullmatch(r"Station(?: \(.*\))?", line):
+            extra["station"] = True
+            continue
+        m = re.fullmatch(r"STATION (\d+)\+", line)
+        if m:
+            station_min = int(m[1])
+            continue
+        m = re.fullmatch(r"\{T\}, Sacrifice ~: (Search your library for a basic land card, put it onto the battlefield "
+                         r"tapped, then shuffle\.(?: Then if you control four or more lands, untap that land\.)?)", line)
+        if m and "Land" in types:
+            effs, _ = _parse_effects(m[1])
+            approximations.append("cracked as soon as it enters")
+            effs[0].data["sacrifice"] = True
+            triggers.append(Trigger("etb", effs))
+            etb += effs
+            continue
+        if re.fullmatch(r"If a source you control would deal noncombat damage to a creature an opponent controls, put "
+                        r"that many -1/-1 counters on that creature instead\.", line):
+            extra["wither_noncombat"] = True
+            continue
+        if re.fullmatch(r"If a creature dealt damage this turn by a source you controlled would die, exile it "
+                        r"instead\.", line):
+            extra["exile_damaged"] = True
+            continue
+        if line in ("Daybound", "Nightbound"):
+            approximations.append("day/night isn't tracked: it stays on its front face")
+            continue
+        if re.fullmatch(r"Casualty \d+", line):
+            approximations.append(f"never paid: {line}")
+            continue
+        m = re.fullmatch(r"Impending (\d+)—(\{[^ ]+\})", line)
+        if m:
+            alt_costs.append(AltCost("impending", parse_mana_cost(m[2]), counters=int(m[1])))
+            continue
+        m = re.fullmatch(r"Spells your opponents cast that target ~ cost an additional (\d+) life to cast\.", line)
+        if m:
+            approximations.append(f"as ward (pay {m[1]} life): {line}")
+            extra["ward_life"] = int(m[1])
+            continue
+        m = re.fullmatch(r"(Warp|Evoke|Offspring|Plot) (\{[^ ]+\})", line)
+        if m:
+            alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2]), hybrid=tuple(
+                a + b for a, b in re.findall(r"\{([WUBRG])/([WUBRG])\}", m[2]))))
+            continue
+        m = re.fullmatch(r"(?:Renew — )?(\{[^:]+\}), Exile (?:~|this card) from your graveyard: (.+?)"
+                         r"(?: Activate only as a sorcery\.)?", line)
+        if m:
+            effs, bad = _parse_effects(m[2])
+            if effs and not bad:
+                alt_costs.append(AltCost("gy_ability", parse_mana_cost(m[1]), zone="graveyard", effects=effs))
+                continue
+        m = re.fullmatch(r"Harmonize (\{[^ ]+\})", line)
+        if m:
+            alt_costs.append(AltCost("flashback", parse_mana_cost(m[1]), zone="graveyard"))
+            approximations.append("harmonize: tapping a creature to reduce the cost isn't used")
+            continue
+        if line == "Spree":
+            extra["is_spree"] = True
+            continue
+        m = re.fullmatch(r"\+ (\{[^ ]+\}) — (.+)", line)
+        if m and extra.get("is_spree"):
+            effs, bad = _parse_effects(m[2])
+            if effs and not bad:
+                extra.setdefault("spree", []).append((parse_mana_cost(m[1]), effs))
+            else:
+                unsupported.append(line)
+            continue
+        m = re.fullmatch(r"~ enters(?: the battlefield)? with X \+1/\+1 counters on it\.", line)
+        if m:
+            extra["etb_counters"] = -1
+            continue
+        m = re.fullmatch(r"Kicker (\{[^ ]+\})", line)
+        if m:
+            extra["kicker"] = parse_mana_cost(m[1])
+            continue
+        m = re.fullmatch(r"Teamwork (\d+)(?: \(.*\))?", line)
+        if m:
+            extra["teamwork"] = int(m[1])
+            continue
+        m = re.fullmatch(r"As an additional cost to cast ~, you may collect evidence (\d+)\.", line)
+        if m:
+            extra["collect_evidence"] = int(m[1])
+            continue
+        if re.fullmatch(r"As an additional cost to cast ~, you may [^.]+\.", line):
+            approximations.append(f"never paid: {line}")
+            continue
+        if re.fullmatch(r"If ~'s additional cost was paid, [^.]+\.", line) and approximations:
+            continue
+        m = re.fullmatch(r"As an additional cost to cast ~, (?:discard a card or )?pay (\d+) life\.", line)
+        if m:
+            extra["extra_life_cost"] = int(m[1])
+            continue
+        if re.fullmatch(r"If you control two or more other lands, ~ enters(?: the battlefield)? tapped\.", line):
+            extra["tapped_condition"] = "if_2_lands"
+            continue
+        if re.fullmatch(r"As ~ enters(?: the battlefield)?, you may pay 2 life\. If you don't, it enters "
+                        r"(?:the battlefield )?tapped\.", line):
+            extra["tapped_condition"] = "shock"
+            continue
+        if re.fullmatch(r"~ can't be countered\.", line):
+            extra["uncounterable"] = True
+            continue
+        if re.fullmatch(r"Instant and sorcery spells you control can't be countered\.", line):
+            extra["protects_spells"] = True
+            continue
+        m = re.fullmatch(r"~ costs \{1\} less to cast for each ([\w, /-]+?) cards? in your graveyard\.", line)
+        if m and m[1] != "instant and sorcery":
+            extra["cost_reduction"] = "gy:" + m[1].replace("and/or", "or")
+            continue
+        if re.fullmatch(r"~ costs \{1\} less to cast for each instant and sorcery card in your graveyard\.", line):
+            extra["cost_reduction"] = "instant_sorcery_gy"
+            continue
+        if re.fullmatch(r"~ costs \{X\} less to cast, where X is the number of cards in your graveyard that are instant "
+                        r"cards, sorcery cards, and/or have an Adventure\.", line):
+            extra["cost_reduction"] = "instant_sorcery_adventure_gy"
+            continue
+        if re.fullmatch(r"~ costs \{X\} less to cast, where X is the greatest mana value among Elementals you control\.",
+                        line):
+            extra["cost_reduction"] = "greatest_elemental"
+            continue
+        if re.fullmatch(r"~ costs \{X\} less to cast, where X is the total power of creatures you control\.", line):
+            extra["cost_reduction"] = "power"
+            continue
+        m = re.fullmatch(r"Affinity for (\w+?)s", line)
+        if m:
+            extra["cost_reduction"] = "affinity:" + m[1]
+            continue
+        if re.fullmatch(r"You may play an additional land on each of your turns\.", line):
+            extra["extra_lands"] = 1
+            continue
+        if re.fullmatch(r"You may play lands from your graveyard\.", line):
+            extra["lands_from_gy"] = True
+            continue
+        if _counting.parse_line(line, extra):
+            continue
+        m = re.fullmatch(r"As an additional cost to cast ~, (?:pay \{(\d+)\} or )?sacrifice (an? (?:artifact|creature)"
+                         r"(?: or (?:artifact|creature))?)\.", line)
+        if m:
+            extra["extra_sacrifice"] = m[2]
+            extra["extra_sac_or_pay"] = int(m[1] or 0)
+            continue
+        m = re.fullmatch(r"~ can't be blocked by creatures with power (\d+) or less\.", line)
+        if m:
+            extra["min_blocker_power"] = int(m[1]) + 1
+            continue
+        m = re.fullmatch(r"As long as ~ has (three) or more \+1/\+1 counters on it, it has (\w+)\.", line)
+        if m:
+            extra["keyword_at_counters"] = (_num(m[1]), m[2].lower())
+            continue
+        m = re.fullmatch(r"Creatures you control have (haste|trample|vigilance|lifelink|menace|flying|reach)\.", line)
+        if m:
+            extra["team_keywords"] = extra.get("team_keywords", frozenset()) | {m[1]}
+            continue
+        m = re.fullmatch(r"(Red|White|Blue|Black|Green|Instant and sorcery|Creature|Artifact|Noncreature|[A-Z][a-z]+) "
+                         r"spells you cast cost \{(\d+)\} less to cast\.", line)
+        if m:
+            extra["cost_discount"] = extra.get("cost_discount", ()) + ((m[1].lower(), int(m[2])),)
+            continue
+        m = re.fullmatch(r"(?:(Permanent|Creature|Artifact|Enchantment) )?[Ss]pells you cast that have an Adventure "
+                         r"cost \{(\d+)\} less to cast\.", line)
+        if m:
+            scope = (m[1] or "all").lower()
+            extra["cost_discount"] = extra.get("cost_discount", ()) + ((f"has_adventure:{scope}", int(m[2])),)
+            continue
+        m = re.fullmatch(r"(Creatures|Lands|Creature tokens|Foods|Other permanents|Each land and Ally) you control "
+                         r"(?:have|has) \"\{T\}: Add (one mana of any color|\{[WUBRGC]\})\.\"", line)
+        if m:
+            scope = {"creatures": "creature", "lands": "land", "creature tokens": "creature_token", "foods": "food",
+                     "other permanents": "other", "each land and ally": "land_or_ally"}[m[1].lower()]
+            cols = frozenset(COLORS) if "any color" in m[2] else frozenset(re.findall(r"[WUBRGC]", m[2]))
+            extra["grant_mana"] = extra.get("grant_mana", ()) + ((scope, cols),)
+            continue
+        if line in ("When this land enters, choose a land card name.", "When ~ enters, choose a land card name.") or \
+                line.startswith("Activated abilities of sources with the chosen name can't be activated") or \
+                line == 'Lands with the chosen name have "{T}: Add {C}."':
+            extra["chosen_land_lock"] = True
+            continue
+        if line == "∞ — At the beginning of your end step, exile up to one other target nonland permanent you control, "\
+                   "then return that card to the battlefield under its owner's control.":
+            triggers.append(Trigger("end_step", [Effect("blink_own", cond="harnessed")]))
+            continue
+        m = re.fullmatch(r"Creatures you control with (flying|trample|menace|first strike|lifelink|deathtouch) get "
+                         r"\+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["anthem_kw"] = extra.get("anthem_kw", ()) + ((m[1], int(m[2]), int(m[3])),)
+            continue
+        m = re.fullmatch(r"Creature tokens you control get \+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + (("Token", int(m[1]), int(m[2]), False),)
+            continue
+        m = re.fullmatch(r"(Other )?(Merfolk|[A-Z][a-z]+?)s? you control get \+(\d+)/\+(\d+)\.", line)
+        if m and m[2] != "Creature":
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
+            continue
+        m = re.fullmatch(r"(Other )?([A-Z][a-z]+?)s you control have (menace|trample|flying|vigilance|haste|lifelink|"
+                         r"first strike|double strike|deathtouch|reach|indestructible)\.", line)
+        if m and m[2] != "Creature":
+            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((m[2], m[3], bool(m[1])),)
+            continue
+        m = re.fullmatch(r"~ costs \{(\d+)\} less to cast if you control an? ([A-Z]\w+)\.", line)
+        if m:
+            extra["discount_if"] = extra.get("discount_if", ()) + ((m[2], int(m[1])),)
+            continue
+        m = re.fullmatch(r"(Other )?(?!Enchanted)([A-Z][\w-]+) creatures you control get \+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
+            continue
+        m = re.fullmatch(r"Creatures you control with \+1/\+1 counters on them have (trample|flying|vigilance|haste|lifelink|"
+                         r"first strike|deathtouch|menace|reach|indestructible)\.", line)
+        if m:
+            extra["counter_team_keywords"] = extra.get("counter_team_keywords", frozenset()) | {m[1]}
+            continue
+        m = re.fullmatch(r"The second spell you cast each turn costs \{(\d+)\} less to cast\.", line)
+        if m:
+            extra["second_spell_discount"] = int(m[1])
+            continue
+        m = re.fullmatch(r"As long as you control seven or more lands, ~ gets \+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["pt_if"] = extra.get("pt_if", ()) + (("lands>=7", int(m[1]), int(m[2])),)
+            continue
+        m = re.fullmatch(r"~ costs \{(\d+)\} less to cast if it targets a tapped creature\.", line)
+        if m:
+            extra["tapped_discount"] = int(m[1])
+            continue
+        m = re.fullmatch(r"As an additional cost to cast ~, behold an? (\w+) or pay \{(\d+)\}\.", line)
+        if m:
+            extra["behold_or_pay"] = (m[1], int(m[2]))
+            continue
+        m = re.fullmatch(r"As an additional cost to cast ~, discard a card(?: or pay \{(\d+)\})?\.", line)
+        if m:
+            extra["extra_discard"] = 1
+            extra["discard_or_pay"] = int(m[1] or 0)
+            continue
+        if line == "Untap ~ during each other player's untap step.":
+            extra["untap_each_untap"] = True
+            continue
+        m = re.fullmatch(r"Enchanted creatures you control get \+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["anthem_enchanted"] = (int(m[1]), int(m[2]))
+            continue
+        if line in ("~ enters tapped. As it enters, choose a color.", "As ~ enters, choose a color."):
+            extra["choose_type"] = "basic_land"
+            produces |= set(COLORS)
+            if line.startswith("~ enters"):
+                enters_tapped = True
+            continue
+        m = re.fullmatch(r"Activated abilities of artifact tokens you control cost \{(\d+)\} less to activate\.", line)
+        if m:
+            extra["token_ability_discount"] = int(m[1])
+            continue
+        if line == "Your opponents can't cast spells during your turn.":
+            extra["opp_no_cast"] = True
+            continue
+        m = re.fullmatch(r"During your turn, ~ has (\w+(?: \w+)?)\.", line)
+        if m and m[1].lower() in KEYWORDS:
+            extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((m[1].lower(), "your_turn"),)
+            continue
+        m = re.fullmatch(r"(?:Descend \d+ — |Threshold — )?~ (?:gets \+(\d+)/\+(\d+) and has ([a-z ]+?)|has ([a-z ]+?)|"
+                         r"(can't be blocked)) as long as there are (\w+) or more (permanent )?cards in your graveyard\.",
+                         line)
+        if m and m[6].lower() in NUMBERS:
+            kw = "unblockable" if m[5] else (m[3] or m[4])
+            if kw in KEYWORDS or kw == "unblockable":
+                cond = ("gy_perm>=" if m[7] else "gy>=") + str(_num(m[6]))
+                if m[1]:
+                    extra["pt_if"] = extra.get("pt_if", ()) + ((cond, int(m[1]), int(m[2])),)
+                extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((kw, cond),)
+                continue
+        m = re.fullmatch(r"(?:Descend \d+ — |Threshold — )?~ gets \+(\d+)/\+(\d+) as long as there are (four|seven) or more (permanent )?cards in your "
+                         r"graveyard\.", line)
+        if m:
+            cond = ("gy_perm>=" if m[4] else "gy>=") + str(_num(m[3]))
+            extra["pt_if"] = extra.get("pt_if", ()) + ((cond, int(m[1]), int(m[2])),)
+            continue
+        m = re.fullmatch(r"~ enters with a \+1/\+1 counter on it if (an opponent lost life|a creature died|you attacked) "
+                         r"this turn\.", line)
+        if m:
+            extra["etb_counters_if"] = ({"an opponent lost life": "opp_lost_life", "a creature died": "creature_died",
+                                         "you attacked": "attacked"}[m[1]], 1)
+            continue
+        m = re.fullmatch(r"Creatures you control get \+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["anthem"] = (int(m[1]), int(m[2]))
+            continue
+        m = re.fullmatch(r"Firebending (\d+|X)(?:, where X is (~'s power|the number of creatures you control))?\.?", line)
+        if m:
+            what = "" if m[1] != "X" else ("power" if "power" in m[2] else "creatures")
+            triggers.append(Trigger("attacks", [Effect("firebend", 0 if what else int(m[1]), data={"x": what})]))
+            continue
+        if line == "Increment":
+            triggers.append(Trigger("cast_spell", [Effect("increment")]))
+            continue
+        m = re.fullmatch(r"Mobilize (\d+|X)(?:, where X is the number of creature cards in your graveyard)?", line)
+        if m:
+            sac = Trigger("end_step", [Effect("copy_sac", target="self")])
+            eff = Effect("token", 1 if m[1] == "X" else int(m[1]), data={
+                "name": "Warrior", "power": 1, "toughness": 1, "keywords": frozenset(), "attacking": True,
+                "triggers": [sac], "artifact": False, "pt_per": ""})
+            if m[1] == "X":
+                eff.data["per"] = {"what": "creature", "zone": "graveyard"}
+            triggers.append(Trigger("attacks", [eff]))
+            continue
+        m = re.fullmatch(r"Disguise (\{[^ ]+\})", line)
+        if m:
+            alt_costs.append(AltCost("disguise", parse_mana_cost(m[1])))
+            continue
+        if line == "Convoke":
+            extra["convoke"] = True
+            continue
+        if line in ("Improvise", "Delve"):
+            extra[line.lower()] = True
+            continue
+        if line == "~ enters prepared.":
+            extra["prepared"] = True
+            continue
+        if line == "Changeling":
+            extra["changeling"] = True
+            continue
+        m = re.fullmatch(r"(Cycling|Basic landcycling|Landcycling|(?:Plains|Island|Swamp|Mountain|Forest)cycling) "
+                         r"(\{[^ ]+\})", line)
+        if m:
+            kind = m[1].lower()
+            extra["cycling"] = {"cost": parse_mana_cost(m[2]), "land": "" if kind == "cycling" else
+                                "basic" if kind == "basic landcycling" else "any" if kind == "landcycling" else
+                                m[1][:-7]}
+            continue
+        m = re.fullmatch(r"Saddle (\d+)", line)
+        if m:
+            extra["saddle"] = int(m[1])
+            continue
+        m = re.fullmatch(r"Crew (\d+)", line)
+        if m:
+            extra["crew"] = int(m[1])
+            continue
+        m = re.fullmatch(r"(Flashback|Foretell|Spectacle) (\{[^ ]+\})", line)
+        if m:
+            kind = m[1].lower()
+            alt_costs.append(AltCost(kind, parse_mana_cost(m[2]),
+                                     zone={"flashback": "graveyard", "foretell": "foretold"}.get(kind, "hand")))
+            continue
+        m = re.fullmatch(r"(Mayhem|Sneak) (\{[^ ]+\})", line)
+        if m:
+            alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2]), zone="graveyard" if m[1] == "Mayhem" else "hand"))
+            continue
+        m = re.fullmatch(r"Blitz—(\{[^,]+\}), Pay (\d+) life\.", line)
+        if m:
+            alt_costs.append(AltCost("blitz", parse_mana_cost(m[1]), zone="hand", life=int(m[2])))
+            continue
+        if re.fullmatch(r"You may cast ~ from your graveyard using its blitz ability\.", line):
+            for a in alt_costs:
+                if a.kind == "blitz":
+                    a.zone = "hand+graveyard"
+            continue
+        m = re.fullmatch(r"You may pay (\{[^ ]+\}) rather than pay ~'s mana cost\.", line)
+        if m:
+            alt_costs.append(AltCost("alt", parse_mana_cost(m[1])))
+            continue
+        m = re.fullmatch(r"If the \{[^ ]+\} cost was paid, an opponent draws a card\.", line)
+        if m and alt_costs and alt_costs[-1].kind == "alt":
+            alt_costs[-1].extra.append(Effect("draw", 1, target="each_opponent"))
+            continue
+        m = re.fullmatch(r"Channel — (\{[^,]+\}), Discard ~: (.+?)(?: This ability costs \{1\} less to activate "
+                         r"for each legendary creature you control\.)?", line)
+        if m:
+            effs, bad = _parse_effects(m[2])
+            if effs and not bad:
+                alt_costs.append(AltCost("channel", parse_mana_cost(m[1]), effects=effs))
+                continue
+        if re.fullmatch(r"As long as ~ entered this turn, you may activate (?:her|his|its) loyalty abilities any "
+                        r"time you could cast an instant\.", line):
+            extra["pw_instant_on_entry"] = True
+            continue
+        m = re.fullmatch(r"\[([+−-]?\d+)\]: ?(.+)", line) or \
+            ("Planeswalker" in types and re.fullmatch(r"([+−-]?\d+): ?(.+)", line))
+        if m:
+            effs, bad = _parse_effects(m[2])
+            if effs:
+                loyalty_abilities.append((int(m[1].replace("−", "-")), effs))
+            unsupported += [f"[{m[1]}]: {b}" for b in bad]
+            continue
+        m = re.fullmatch(r"((?:I|II|III|IV|V)(?:, (?:I|II|III|IV|V))*) — (.+)", line)
+        if m:
+            effs, bad = _parse_effects(m[2])
+            for numeral in m[1].split(", "):
+                idx = ["I", "II", "III", "IV", "V"].index(numeral)
+                while len(chapters) <= idx:
+                    chapters.append([])
+                chapters[idx] += effs
+            unsupported += [f"{m[1]} — {b}" for b in bad]
+            continue
+        m = re.fullmatch(r"(\{[^:]+\}): Until end of turn, ~ becomes an? (\d+)/(\d+) [\w ]*? creature"
+                         r"(?: with (ward \{\d+\}|[\w ,]+|\"[^\"]+\"))?\.? It's still a land\.", line)
+        if m:
+            act = Activated("animate", parse_mana_cost(m[1]), int(m[2]), int(m[3]))
+            ability = m[4] or ""
+            if ability.startswith("ward"):
+                act.ward = int(re.search(r"\d+", ability)[0])
+            elif ability.startswith('"'):
+                inner = ability.strip('"')
+                trig = _parse_trigger(inner)
+                if trig:
+                    act.triggers = trig[0]
+            elif ability:
+                act.keywords = frozenset(k.strip().lower() for k in ability.split(",") if k.strip().lower() in KEYWORDS)
+            activated.append(act)
+            continue
+        m = re.fullmatch(r"(\{[^:]+\}): ~ becomes an? (\d+)/(\d+) creature with (\w+) and all creature types\. "
+                         r"It's still a land\.", line)
+        if m:   # permanently (Soulstone Sanctuary)
+            activated.append(Activated("animate", parse_mana_cost(m[1]), int(m[2]), int(m[3]),
+                                       keywords=frozenset({m[4].lower()}) & KEYWORDS, text="permanent"))
+            continue
+        m = re.fullmatch(r"(\{[^:]+\}): ~ becomes an? (\d+)/(\d+) [\w ]*? creature(?: with ([\w ,]+))? until end of "
+                         r"turn\. It's still a land\.", line)
+        if m:
+            kws = frozenset(k.strip().lower() for k in re.split(r",| and ", m[4] or "") if k.strip().lower() in KEYWORDS)
+            activated.append(Activated("animate", parse_mana_cost(m[1]), int(m[2]), int(m[3]), keywords=kws))
+            continue
+        m = re.fullmatch(r"(\{[^:]+\}): Put two \+1/\+1 counters on ~\. Then you may have it become a 0/0 \w+ "
+                         r"creature until end of turn\. It's still a land\.", line)
+        if m:
+            activated.append(Activated("barrens", parse_mana_cost(m[1])))
+            continue
+        if re.fullmatch(r"\{T\}, Sacrifice ~: Target creature gets -X/-X until end of turn, where X is twice the "
+                        r"number of Blood tokens you control\. Activate only as a sorcery\.", line):
+            activated.append(Activated("sac_debuff", {"generic": 0}))
+            continue
+        extra["_subtypes"] = type_line
+        if _auras.parse_line(line, extra, types):
+            continue
+        clone = _copies.parse_line(line)
+        if clone is not None:
+            extra.update(clone)
+            continue
+        mp = re.fullmatch(r"(Power-up|Exhaust) — (.+)", line)
+        act = _parse_ability(mp[2] if mp else line, approximations)
+        if act is not None and mp:
+            act.once_game, act.power_up, act.text = True, mp[1] == "Power-up", line
+        if act is not None:
+            act.min_charge = station_min
+            activated.append(act)
+            if isinstance(act.modes, modal.Modes):
+                mode_sink = act.modes
+            continue
+        opt_cond = ""
+        mo = re.fullmatch(r"(When ~ enters), if (it was bargained|the gift was promised), (.+)", line)
+        if mo and (extra.get("bargain") or extra.get("gift")):
+            line = f"{mo[1]}, {mo[3]}"
+            opt_cond = "bargained" if "bargained" in mo[2] else "gifted"
+        trig = _parse_trigger(line)
+        if trig is not None:
+            new, bad, choose_modes = trig
+            if opt_cond:
+                for t in new:
+                    for e in t.effects:
+                        e.cond = e.cond or opt_cond
+            triggers += new
+            if choose_modes is not None:
+                mode_sink = choose_modes
+            for t in new:
+                if t.event == "etb":
+                    etb += t.effects
+            unsupported += bad
+            continue
+        if not types.isdisjoint({"Instant", "Sorcery"}):
+            head = modal.parse_header(line)
+            if head is not None and not modes:
+                modes = modal.Modes(spec=head[0])
+                extra["modes_choose"] = min(head[0].most, 9)
+                approximations += head[1]
+                mode_sink = modes
+                continue
+            effs, bad = _parse_effects(line, opts=bool(extra.get("bargain") or extra.get("gift")))
+            spell += effs
+            unsupported += bad
+            continue
+        unsupported.append(line)
+    if "X is the amount of mana spent to cast" in oracle:
+        for e in spell:
+            if e.kind == "dig":
+                e.data["x_mana"] = True
+    if "kicker" in extra:
+        kicked_effects = [dataclasses.replace(e) for e in spell]
+        for k in kicked:
+            m = re.fullmatch(r"it deals (\d+) damage instead\.", k)
+            dmg = [e for e in kicked_effects if e.kind == "damage"]
+            if m and dmg:
+                dmg[0].amount = int(m[1])
+                continue
+            m = re.fullmatch(r"put (\w+) of those cards into your hand instead\.", k)
+            dig = [e for e in kicked_effects if e.kind == "dig"]
+            if m and dig:
+                kicked_effects[kicked_effects.index(dig[0])] = dataclasses.replace(dig[0], amount2=_num(m[1]))
+                continue
+            effs, bad = _parse_effects(k)
+            kicked_effects += effs
+            unsupported += [f"if kicked: {b}" for b in bad]
+        alt_costs.append(AltCost("kicker", add_mana(cost, extra.pop("kicker")), effects=kicked_effects))
+    elif kicked:
+        unsupported += [f"if kicked: {k}" for k in kicked]
+    if gate is not None:
+        _apply_speed_gate(gate, triggers, activated)
+    extra.pop("is_spree", None)
+    extra.pop("_subtypes", None)
+    _auras.finish(extra)
+    extra["gy_triggers"] = [t for t in triggers if any(e.kind == "return_self_gy" for e in t.effects)]
+    triggers = [t for t in triggers if t not in extra["gy_triggers"]]
+    extra["spent_colors"] = frozenset(t.effects[0].cond[6:] for t in triggers
+                                      if t.effects and t.effects[0].cond.startswith("spent:"))
+    if "prowess" in keywords:
+        triggers.append(Trigger("cast_noncreature", [Effect("pump", 1, 1, target="self")]))
+    # Triggers with "choose up to one" get their bullet modes; drop ones that ended up empty.
+    triggers = [t for t in triggers if t.effects or t.modes]
+
+    return CardDef(
+        name=name, mana_cost=cost, cmc=int(data.get("cmc", 0) or 0), types=types,
+        subtypes=frozenset(type_line.split("—")[1].split()) if "—" in type_line else frozenset(),
+        power=stat(data.get("power")), toughness=stat(data.get("toughness")),
+        keywords=frozenset(keywords), produces=frozenset(produces), enters_tapped=enters_tapped,
+        spell_effects=spell, etb_effects=etb, unsupported=unsupported, approximations=approximations, oracle=oracle,
+        triggers=triggers, modes=modes, chapters=chapters, loyalty_abilities=loyalty_abilities,
+        alt_costs=alt_costs, activated=activated, **extra,
+    )
+
+
+def _mana_restriction(text: str):
+    """What "Spend this mana only ..." allows, or None if the wording isn't one we model."""
+    text = text.lower()
+    if text == "to cast a creature spell of the chosen type, and that spell can't be countered":
+        return "chosen_type"
+    if re.fullmatch(r"to cast (?:a creature spell|creature spells)", text):
+        return "creature"
+    if re.fullmatch(r"to cast (?:an artifact spell|artifact spells)", text):
+        return "artifact"
+    if re.fullmatch(r"to cast (?:an instant or sorcery spell|instant and sorcery spells)", text):
+        return "instant_sorcery"
+    m = re.fullmatch(r"to cast an? (\w+) spell(?: or an? (\w+) spell)?", text)
+    if m:
+        return "subtype:" + "|".join(t.capitalize() for t in m.groups() if t)
+    return None
+
+
+_SACRIFICE_KINDS = {"token", "artifact", "creature", "creature or artifact", "artifact or creature", "treasure",
+                    "food", "land", "enchantment", "other creature", "other artifact"}
+
+
+def _parse_ability_cost(text: str):
+    """(mana cost, other costs) for an activated ability's cost, or None if a part isn't modelled."""
+    mana, extra = {"generic": 0}, {}
+    for part in text.split(", "):
+        m = None
+        if part == "{T}":
+            extra["tap"] = True
+        elif re.fullmatch(r"(\{[0-9WUBRGC/]+\})+", part):
+            mana = add_mana(mana, parse_mana_cost(part))
+        elif part == "Sacrifice ~":
+            extra["sac_self"] = True
+        elif part == "Exile ~":
+            extra["exile_self"] = True
+        elif part == "Discard a card":
+            extra["discard"] = 1
+        elif (m := re.fullmatch(r"Pay (\d+) life", part)):
+            extra["life"] = int(m[1])
+        elif (m := re.fullmatch(r"Remove an? ([\w/+-]+) counter from ~", part)):
+            extra["remove_counter"] = m[1]
+        elif (m := re.fullmatch(r"Sacrifice (?:a|an|another) (.+)", part)) and \
+                m[1].lower() in _SACRIFICE_KINDS:
+            what = m[1].lower()
+            extra["sacrifice"] = ("other " + what if part.startswith("Sacrifice another") else what)
+        elif (m := re.fullmatch(r"Sacrifice (two|three|four|five) ([A-Za-z]+?)s", part)) and \
+                m[2].lower() in _SACRIFICE_KINDS:
+            extra["sacrifice"] = m[2].lower()
+            extra["sac_n"] = _num(m[1])
+        else:
+            return None
+    return mana, extra
+
+
+def _parse_ability(line: str, approximations: list):
+    """A general activated ability ("{2}, {T}: Draw a card."), or None."""
+    m = re.fullmatch(r"([^:\"•]+?): (.+)", line)
+    if not m or not (m[1].startswith("{") or m[1].split()[0] in ("Sacrifice", "Discard", "Pay", "Remove", "Exile")):
+        return None
+    cost = _parse_ability_cost(m[1])
+    if cost is None:
+        return None
+    body, sorcery, once, approx = m[2], False, False, []
+    while True:
+        r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|This ability costs [^.]+ "
+                         r"less to activate[^.]*)\.", body)
+        if not r:
+            break
+        body = r[1]
+        sorcery |= r[2] == "Activate only as a sorcery"
+        once |= r[2] == "Activate only once each turn"
+        if r[2].startswith("This ability costs"):
+            approx.append(f"cost reduction ignored: {r[2]}.")
+    head = modal.parse_header(body)
+    if head is not None and not head[1]:
+        approximations += approx
+        return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=line,
+                         modes=modal.Modes(spec=head[0]))
+    effects, bad = _parse_effects(body)
+    if bad or not effects:
+        return None
+    approximations += approx
+    return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=line)
+
+
+def _parse_trigger(line: str):
+    """(triggers, unmatched, modes list to fill or None) for a triggered ability line, else None."""
+    once = line.endswith(" This ability triggers only once each turn.")
+    if once:
+        line = line[:-len(" This ability triggers only once each turn.")]
+    once_game = line.endswith(" This ability triggers only once.")
+    if once_game:
+        line = line[:-len(" This ability triggers only once.")]
+    out = _parse_trigger_line(line)
+    if out is not None and once:
+        for t in out[0]:
+            t.once = True
+    if out is not None and once_game:
+        for t in out[0]:
+            t.once_game = True
+    return out
+
+
+def _parse_trigger_line(line: str):
+    for pat, events in _TRIGGERS:
+        m = re.fullmatch(pat, line)
+        if not m:
+            continue
+        flt = ""
+        rest = m[m.lastindex]
+        if events == ("any_cast",):
+            flt = f"cmc<={m[1]}"
+        if "while saddled" in pat or events[-1] == "becomes_tapped":
+            rest = re.sub(r"^it (gets|gains|deals)\b", r"~ \1", re.sub(r"\b(on|untap|to) it\b", r"\1 ~", rest))
+        if events == ("expend",):
+            flt = m[1]
+        if events == ("gy_leave",):
+            flt = f"{m[1] or ''}|{'turn' if m[2] else ''}"
+        if events == ("ally_dies",):
+            flt = f"{'other' if m[1] == 'another' else 'any'}|{'counter' if m[3] else ''}|{m[2]}"
+        if events == ("perm_to_gy",):
+            flt = f"{'other' if m[1] == 'another' else 'any'}||{m[2]}"
+        if events == ("attacks",) and "while saddled" in pat:
+            flt = "saddled"
+        if events == ("cast_instant_sorcery",) and "that targets a creature" in pat:
+            flt = "targets_creature"
+        if events == ("targeted_mine",):
+            rest = re.sub(r"^it (gets|gains|deals)\b", r"~ \1", re.sub(r"\b(on|untap|to) it\b", r"\1 ~", rest))
+        if events == ("cast_cmc",):
+            flt = f"cmc>={m[1]}"
+        if events == ("cast_spell",) and m.lastindex == 2:
+            flt = f"spell:{m[1]}"
+        if events == ("sacrifice",):
+            flt = m[1]
+        if events == ("you_attack",) and m.lastindex == 2:
+            flt = f"with:{m[1].rstrip('s')}"
+        if events[0] == "other_creature_enters":
+            flt = "greater_power"
+        if events == ("permanent_enters",):
+            desc = m[3] + (f" or {m[5]}" if m[5] else "") + (m[4] or "")
+            flt = f"{'self' if m[1] else 'noself'}|{'other' if m[2] == 'another' else 'any'}|{desc}"
+        head = modal.parse_header(rest)
+        if head is not None and not head[1]:
+            modes = modal.Modes(spec=head[0])
+            return [Trigger(e, [], flt, modes) for e in events], [], modes
+        spent = re.fullmatch(r"if \{([WUBRG])\}\{\1\} was spent to cast it, (.+)", rest, flags=re.S)
+        cond = f"spent:{spent[1]}" if spent else ""
+        if spent:
+            rest = spent[2]
+        if rest.startswith("if you cast it, "):
+            cond, rest = "cast", rest[16:]
+        c = re.fullmatch(r"if (you gained life|you gained and lost life|you descended|you've gained (\d+) or more life|an opponent "
+                         r"lost life) this turn, (.+)", rest, flags=re.S) or \
+            re.fullmatch(r"(.+?) if (you gained life|you've gained (\d+) or more life) this turn\.", rest, flags=re.S)
+        if c:
+            phrase, n, rest = (c[1], c[2], c[3]) if not c[1][0].isupper() and c.re.pattern.startswith("if") \
+                else (c[2], c[3], c[1] + ".")
+            cond = {"you gained life": "gained_life", "you gained and lost life": "gained_and_lost",
+                    "an opponent lost life": "opp_lost_life", "you descended": "descended"}.get(phrase, f"gained_life>={n}")
+        if cond:
+            rest = rest[0].upper() + rest[1:]
+        # "... When you do, if it has four or more quest counters on it, EFFECTS" (Earthbender Ascension)
+        reflex = re.fullmatch(r"(.+?) When you do, if it has (\w+) or more (\w+) counters on it, (.+)", rest, flags=re.S)
+        later: list = []
+        if reflex:
+            rest = reflex[1]
+            later, bad2 = _parse_effects(reflex[4][0].upper() + reflex[4][1:])
+            if bad2:
+                return [], bad2, None
+            later = [dataclasses.replace(e, cond=f"counters:{reflex[3]}>={_num(reflex[2])}") for e in later]
+        opus = re.fullmatch(r"(.+?\.) If five or more mana was spent to cast that spell, (.+)", rest, flags=re.S)
+        unless = re.fullmatch(r"(.+?\.) Then (.+?) unless five or more mana was spent to cast that spell\.?", rest, flags=re.S)
+        if opus:
+            instead = opus[2].rstrip(".").endswith(" instead")
+            second = re.sub(r" instead$", "", opus[2].rstrip(".")).replace("~ also ", "~ ")
+            first, bad = _parse_effects(opus[1])
+            more, bad2 = _parse_effects(second[0].upper() + second[1:] + ".")
+            bad += bad2
+            effs = [dataclasses.replace(e, cond="mana<5") for e in first] if instead else first
+            effs += [dataclasses.replace(e, cond="mana>=5") for e in more]
+        elif unless:
+            first, bad = _parse_effects(unless[1])
+            more, bad2 = _parse_effects(unless[2][0].upper() + unless[2][1:] + ".")
+            bad += bad2
+            effs = first + [dataclasses.replace(e, cond="mana<5") for e in more]
+        else:
+            effs, bad = _parse_effects(rest)
+            if cond:
+                effs = [dataclasses.replace(e, cond=cond) for e in effs]
+        effs += later
+        if events == ("attacks_alone",):
+            for e in effs:
+                if e.target == "prev":
+                    e.target = "trigger_subject"
+        if not effs:
+            return [], bad or [line], None
+        return [Trigger(e, effs, flt, once=events == ("targeted_mine",)) for e in events], bad, None
+    return None

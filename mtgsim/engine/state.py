@@ -1,0 +1,523 @@
+"""Game objects: permanents, players and stack items, plus shared rules constants."""
+from __future__ import annotations
+
+import dataclasses
+import re
+
+from .. import auras, counting
+from ..cards import BASIC_MANA, KEYWORDS, CardDef, Effect, Trigger
+from .. import continuous
+from ..identity import CardInstance, CardZone, Graveyard, instance
+
+
+TrackedZone = CardZone  # public compatibility alias
+
+TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
+COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
+TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "land", "artifact", "artifact_enchantment",
+            "player", "spell")
+
+
+class Permanent:
+    @property
+    def tapped(self):
+        return self._tapped
+
+    @tapped.setter
+    def tapped(self, value):
+        self._tapped = value
+        if not value and getattr(self, "net_locked", False):
+            self.net_locked = False
+
+    @property
+    def animated(self):
+        return self._animated
+
+    @animated.setter
+    def animated(self, value):
+        self._animated = value
+        game = getattr(self.controller, "_game", None)
+        if value is not None and game is not None:
+            self.animation_timestamp = game.next_effect_timestamp()
+
+    @property
+    def front(self):
+        return self._front
+
+    @front.setter
+    def front(self, card):
+        self._front = instance(card, getattr(self, "controller", None))
+        if self._front.owner is not None:
+            self.owner = self._front.owner
+
+    def __init__(self, card: CardDef, controller: "Player"):
+        self.card = card
+        self.front = instance(card, controller)  # physical card behind this battlefield object
+        self.controller = controller
+        self.owner = self.front.owner
+        self.tapped = card.enters_tapped
+        self.sick = True
+        self.damage = 0
+        self.deathtouched = False
+        self.pump_p = 0
+        self.pump_t = 0
+        self.counters: dict[str, int] = {}
+        self.temp_kw: set[str] = set()     # until end of turn
+        self.perm_kw: set[str] = set()     # from keyword counters
+        self.animated = None               # Activated: a manland that is a creature until end of turn
+        self.crewed = False
+        self.blitz = False
+        self.loyalty_used = False
+        self.entered_turn = 0
+        self.entered_x = 0
+        self.exile_turn = -1
+        self.chosen_land = ""
+        self.chosen_type = ""              # Cavern of Souls
+        self.net_locked = False            # Braided Net: no activated abilities while it stays tapped
+        self.bargained = self.gifted = False   # cast with Bargain / the gift promised
+        self.produces_now = None           # set by Game.mana_sources: the colours usable right now
+        self.regeneration_shields = 0
+        self.regeneration_blocked = False
+        self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
+        self.auras: list["Permanent"] = []   # Auras on this permanent (they sit on their caster's battlefield)
+        self.aura_host: "Permanent | None" = None      # the permanent this Aura enchants
+        self.attached_to: "Permanent | None" = None    # Equipment: the creature it is attached to
+        self.spent_color = ""              # "if {U}{U} was spent to cast it"
+        self.exiled_cards: list = []       # (card, owner) exiled until this leaves the battlefield
+        self.warped = False
+        self.was_cast = False              # "if you cast it"
+        self.hidden = None                 # the real card of a face-down (disguised) creature
+        self.prepared = False              # a prepared creature may cast a copy of its spell
+        self.saddled = False               # a Mount saddled this turn
+        self.copy_revert = None            # the card this permanent is while it is a copy until end of turn
+        self.impending = False             # cast for its impending cost: not a creature while it has time counters
+
+    @property
+    def equipment(self):
+        players = [self.controller] + ([self.controller.foe] if self.controller.foe is not None else [])
+        return [x for p in players for x in p.battlefield if x.attached_to is self] if self.is_creature else []
+
+    @property
+    def p1(self): return self.counters.get("+1/+1", 0)
+
+    @property
+    def anthem(self):
+        return [sum(x) for x in zip((0, 0), *(p.card.anthem for p in self.controller.battlefield if p.card.anthem))]
+
+    @property
+    def per_bonus(self) -> int:
+        """"~ gets +1/+1 for each artifact you control"."""
+        what = self.card.pt_per
+        if not what:
+            return 0
+        return counting.count(None, self.controller, {"what": what, "zone": "battlefield"}, self)
+
+    def _pt_bonus(self):
+        """(power, toughness) from anthems, attached equipment and "for each" counts, in one pass
+        over the battlefield; the same sums as anthem, equipment and per_bonus."""
+        bp = bt = 0
+        creature = self.is_creature
+        what = self.card.pt_per
+        sp, st = self.card.pt_scale
+        for x in self.controller.battlefield:
+            c = x.card
+            if creature:
+                a = c.anthem
+                if a:
+                    bp += a[0]
+                    bt += a[1]
+                if c.anthem_enchanted and self.auras:
+                    bp += c.anthem_enchanted[0]
+                    bt += c.anthem_enchanted[1]
+        for equipment in self.equipment:
+            bp += equipment.card.equip_bonus[0]
+            bt += equipment.card.equip_bonus[1]
+        for cond, pp, tt in self.card.pt_if:
+            gy = self.controller.graveyard
+            n = sum(c.is_permanent for c in gy) if cond.startswith("gy_perm") else len(gy)
+            if cond.startswith("lands"):
+                n = sum(x.card.is_land for x in self.controller.battlefield)
+            elif cond.startswith("speed"):
+                n = self.controller.speed
+            if n >= int(cond.split(">=")[1]):
+                bp += pp
+                bt += tt
+        for x in self.controller.battlefield:
+            for kw, pp, tt in x.card.anthem_kw:
+                if creature and self.has(kw):
+                    bp += pp
+                    bt += tt
+            if creature and x.card.anthem_chosen and x.chosen_type and x.chosen_type in self.card.subtypes:
+                bp += x.card.anthem_chosen[0]
+                bt += x.card.anthem_chosen[1]
+            for sub, pp, tt, other in x.card.anthem_sub:
+                if creature and (sub in self.card.subtypes or (sub == "Token" and self.card.is_token)) \
+                        and not (other and x is self):
+                    bp += pp
+                    bt += tt
+        if what:
+            per = counting.count(None, self.controller, {"what": what, "zone": "battlefield"}, self)
+            bp += per * sp
+            bt += per * st
+        if creature:
+            for a in self.auras:
+                e = a.card.equip_bonus
+                bp += e[0]
+                bt += e[1]
+                if "per_enchantment" in a.card.aura_flags:     # Virtuous Role
+                    n = sum("Enchantment" in y.card.types for y in self.controller.battlefield)
+                    bp += n
+                    bt += n
+        return bp, bt
+
+    @property
+    def power(self):
+        if hasattr(self, "last_pt") and self not in self.controller.battlefield:
+            return self.last_pt[0]
+        return continuous.pt(self)[0]
+
+    @property
+    def toughness(self):
+        if hasattr(self, "last_pt") and self not in self.controller.battlefield:
+            return self.last_pt[1]
+        return continuous.pt(self)[1]
+
+    @property
+    def m1(self): return self.counters.get("-1/-1", 0)
+
+    @property
+    def loyalty(self): return self.counters.get("loyalty", 0)
+
+    def has(self, kw):
+        return continuous.keyword(self, kw, self._has_unlayered(kw))
+
+    def _has_unlayered(self, kw):
+        if kw in self.card.keywords or kw in self.temp_kw or kw in self.perm_kw or (kw in KEYWORDS and self.counters.get(kw, 0) > 0):
+            return True
+        if self.animated and kw in self.animated.keywords:
+            return True
+        if self.is_creature:
+            for x in self.equipment:
+                if kw in x.card.equip_keywords:
+                    return True
+            for a in self.auras:
+                if kw in a.card.equip_keywords:
+                    return True
+        for k, cond in self.card.cond_keywords:
+            if k == kw and self.condition(cond):
+                return True
+        if any(sub in self.card.subtypes and k == kw and not (other and x is self)
+               for x in self.controller.battlefield for sub, k, other in x.card.keyword_sub):
+            return True
+        if self.is_creature and self.p1 > 0 and any(kw in x.card.counter_team_keywords
+                                                    for x in self.controller.battlefield):
+            return True
+        if kw in TEAM_KEYWORDS and self.is_creature:
+            for x in self.controller.battlefield:
+                if kw in x.card.team_keywords:
+                    return True
+        if self.card.keyword_at_counters and self.p1 >= self.card.keyword_at_counters[0]:
+            return kw == self.card.keyword_at_counters[1]
+        return kw == "haste" and self.blitz
+
+    def condition(self, cond: str) -> bool:
+        if cond.startswith("another:"):
+            kind = cond[8:]
+            return any(kind in x.card.subtypes for x in self.controller.battlefield if x is not self)
+        if cond == "max_speed":
+            return self.controller.speed >= 4
+        if cond == "your_turn":
+            return self.controller.my_turn
+        if cond.startswith("gy"):
+            gy = self.controller.graveyard
+            n = sum(c.is_permanent for c in gy) if cond.startswith("gy_perm") else len(gy)
+            return n >= int(cond.split(">=")[1])
+        if cond.startswith("opp_life<="):
+            opp = getattr(self.controller, "opponent", None)
+            return opp is not None and opp.life <= int(cond[10:])
+        return False
+
+    @property
+    def is_creature(self):
+        if self.impending and self.counters.get("time"):
+            return False
+        return "Creature" in self.card.types or self.animated is not None or self.crewed
+
+    @property
+    def is_planeswalker(self): return self.card.is_planeswalker
+
+    @property
+    def exalted_count(self):
+        count = self.card.exalted or int("exalted" in self.card.keywords)
+        count += int("exalted" in self.temp_kw) + int("exalted" in self.perm_kw)
+        count += sum(kw == "exalted" and self.condition(cond) for kw, cond in self.card.cond_keywords)
+        count += int(self.animated is not None and "exalted" in self.animated.keywords)
+        count += int(self.counters.get("exalted", 0) > 0)
+        if self.is_creature:
+            count += sum("exalted" in e.card.equip_keywords for e in self.equipment + self.auras)
+            count += sum(sub in self.card.subtypes and kw == "exalted" and not (other and x is self)
+                         for x in self.controller.battlefield for sub, kw, other in x.card.keyword_sub)
+            if self.p1:
+                count += sum("exalted" in x.card.counter_team_keywords for x in self.controller.battlefield)
+        if self.card.keyword_at_counters:
+            n, kw = self.card.keyword_at_counters
+            count += int(kw == "exalted" and self.p1 >= n)
+        return count
+
+    @property
+    def triggers(self):
+        exalted = [Trigger("attacks_alone", [Effect("pump", 1, 1, target="trigger_subject")])
+                   for _ in range(self.exalted_count)]
+        return list(self.card.triggers) + (list(self.animated.triggers) if self.animated else []) + exalted
+
+    @property
+    def ward(self) -> int:
+        if self.animated and self.animated.ward:
+            return self.animated.ward
+        if self.card.ward_untapped_only and self.tapped:
+            return 0
+        return max([self.card.ward] + [e.card.equip_ward for e in self.equipment] +
+                   [a.card.equip_ward for a in self.auras])
+
+    def can_attack(self):
+        return (self.is_creature and not self.tapped and not self.has("defender")
+                and not (self.auras and auras.stops_combat(self))
+                and (not self.sick or self.has("haste")))
+
+    def granted_mana(self) -> frozenset:
+        """Colours other permanents let this one tap for (Enduring Vitality, Great Divide Guide)."""
+        out = frozenset()
+        c = self.card
+        if c.is_land and any(x.card.chosen_land_lock and x.chosen_land == c.name
+                             for pl in (self.controller, self.controller.foe) if pl is not None for x in pl.battlefield):
+            out |= {"C"}                                  # Petrified Hamlet
+        for src in self.controller.battlefield:
+            for scope, cols in src.card.grant_mana:
+                if scope == "creature" and self.is_creature or scope == "land" and c.is_land or \
+                        scope == "creature_token" and self.is_creature and c.is_token or \
+                        scope == "food" and "Food" in c.subtypes or \
+                        scope == "other" and src is not self or \
+                        scope == "land_or_ally" and (c.is_land or "Ally" in c.subtypes):
+                    out |= cols
+        return out
+
+    def can_tap_for_mana(self):
+        return bool(self.card.produces or self.card.restricted_produces or self.granted_mana()) and not self.tapped and \
+            not (self.is_creature and self.sick and self.card.mana_filter != "once")
+
+    def __repr__(self):
+        if self.is_creature:
+            return f"{self.card.name}({self.power}/{self.toughness})"
+        if self.is_planeswalker:
+            return f"{self.card.name}[{self.loyalty}]"
+        return self.card.name
+
+
+FIREBEND_MANA = CardDef(name="Firebending mana", mana_cost={"generic": 0}, cmc=0, types=frozenset({"Artifact"}),
+                        produces=frozenset({"R"}), is_token=True)
+
+
+_POOL_MANA: dict = {}
+
+
+def _gy_desc(desc: str) -> str:
+    """A graveyard-card description in the form copies.fits reads ("noncreature, nonland permanent" is one
+    description; "artifact, creature, or land" lists alternatives)."""
+    desc = desc.replace("and/or", "or").replace(" cards", "").replace(" card", "")
+    return desc if " or " in desc else desc.replace(", ", " ")
+
+
+def pool_mana(color: str) -> CardDef:
+    """The CardDef of one floating mana of a colour (see Player.pool)."""
+    if color not in _POOL_MANA:
+        _POOL_MANA[color] = dataclasses.replace(FIREBEND_MANA, name=f"{color} mana", produces=frozenset({color}))
+    return _POOL_MANA[color]
+
+
+OUTLAWS = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock")
+
+
+class Player:
+    CARD_ZONES = frozenset({"library", "hand", "graveyard", "exile", "sideboard",
+                            "on_adventure", "foretold", "plotted", "warp_exile"})
+
+    def __setattr__(self, name, value):
+        if name in self.CARD_ZONES:
+            cls = Graveyard if name == "graveyard" else CardZone
+            if not isinstance(value, cls) or value.owner is not self:
+                value = cls(value, owner=self, name=name)
+        object.__setattr__(self, name, value)
+
+    my_turn = False
+    foe = None
+    speed = 0
+    speed_turn = -1
+
+    def __init__(self, name: str, deck: list[CardDef], ai, *, sideboard=()):
+        self.name = name
+        self.deck = deck
+        self.ai = ai
+        self.library: list[CardDef] = []
+        self.pool: list = []                 # Firebending: one-use red mana until end of combat
+        self.hand: list[CardDef] = []
+        self.battlefield: list[Permanent] = []
+        self.graveyard: list[CardDef] = Graveyard()
+        self.exile: list[CardDef] = TrackedZone()
+        self.sideboard: list[CardDef] = list(sideboard or ())
+        self.on_adventure: list[CardDef] = []
+        self.foretold: list[CardDef] = []
+        self.plotted: list[CardDef] = []
+        self.warp_exile: list[CardDef] = []
+        self.exiled_turn: dict = {}        # card name -> turn it was plotted or exiled after warp
+        self.creature_died_turn = False    # one of our creatures died this turn
+        self.impulse: list = []            # (card, last turn it may be played): "exile the top card, you may play it"
+        self.impulse_new: list = []        # cards the latest exile_top effect exiled
+        self._life = 20
+        self.lost = False
+        self.lands_played = 0
+        self.sacrificed_turn = 0
+        self.milled_last: list[CardDef] = []     # the cards the last mill put into the graveyard
+        self.counters: dict[str, int] = {}     # poison, energy, experience, and other player counters
+        self.picked_last: CardDef | None = None   # the card mill_pick returned to hand
+        self.discarded_last: list[CardDef] = []
+        self.discarded_cards: list[CardDef] = []      # discarded this turn (Mayhem)
+        self.granted_fb: list[CardDef] = []           # graveyard cards that gained flashback this turn
+        self.mulligans = 0
+        self.lost_life_turn = False
+        self.perm_left_turn = False
+        self.attacked_with = 0
+        self.next_creature_counters = 0
+        self.life_gained_turn = 0
+
+    @property
+    def life(self): return self._life
+
+    @property
+    def land_played(self) -> bool:
+        """Whether this turn's land drops are used up (Icetill Explorer gives another)."""
+        return self.lands_played > sum(x.card.extra_lands for x in self.battlefield)
+
+    @land_played.setter
+    def land_played(self, value):
+        self.lands_played = 99 if value else 0
+
+    @life.setter
+    def life(self, value):
+        if value < self._life:
+            self.lost_life_turn = True
+        self._life = value
+
+    @property
+    def creatures(self): return [p for p in self.battlefield if p.is_creature]
+
+    @property
+    def planeswalkers(self): return [p for p in self.battlefield if p.is_planeswalker]
+
+    def __repr__(self): return self.name
+
+
+class StackItem:
+    """A spell, copy, or ability waiting to resolve. ``card`` is None for abilities."""
+
+    def __init__(self, controller: Player, effects: list, targets: list, card: CardDef | None = None,
+                 source: Permanent | None = None, name: str = "", context=None, kind: str = ""):
+        self.controller = controller
+        self.effects = effects
+        self.targets = targets
+        self.card = card
+        self.source = source
+        self.name = name or (card.name if card else "ability")
+        self.context = context      # e.g. the player whose creature died, for "that player loses 2 life"
+        self.context_ref = (context.zone.reference(context) if isinstance(context, CardInstance)
+                            and isinstance(context.zone, CardZone) and context in context.zone else None)
+        self.kind = kind or ("spell" if card else "trigger")   # spell, copy, trigger, chapter, loyalty
+        self.snow_spent = 0
+        self.mana_spent = 0
+
+    @property
+    def is_spell(self): return self.kind in ("spell", "copy")
+
+    def __repr__(self):
+        return self.name if self.is_spell else f"{self.name} {self.kind}"
+
+
+def can_block(blocker: Permanent, attacker: Permanent) -> bool:
+    if not blocker.is_creature or blocker.tapped:
+        return False
+    if blocker.card.cant_block or blocker.has("cant_block_now") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
+        return False
+    if any(attacker.has(keyword) and any(x.card.is_land and subtype in x.card.subtypes
+                                        for x in blocker.controller.battlefield)
+           for keyword, subtype in (("swampwalk", "Swamp"), ("forestwalk", "Forest"),
+                                    ("mountainwalk", "Mountain"), ("islandwalk", "Island"),
+                                    ("plainswalk", "Plains"))):
+        return False
+    if blocker.card.block_only_flying and not attacker.has("flying"):
+        return False
+    if attacker.has("nonbasic landwalk") and any(x.card.is_land and not is_basic_land(x.card)
+                                                for x in blocker.controller.battlefield):
+        return False
+    if attacker.has("legendary landwalk") and any(x.card.is_land and x.card.legendary
+                                                 for x in blocker.controller.battlefield):
+        return False
+    if attacker.has("flying") and not (blocker.has("flying") or blocker.has("reach")):
+        return False
+    if attacker.has("fear") and not (blocker.card.is_artifact or "B" in blocker.card.colors):
+        return False
+    if attacker.has("horsemanship") and not blocker.has("horsemanship"):
+        return False
+    if attacker.has("shadow") != blocker.has("shadow"):
+        return False
+    if attacker.has("intimidate") and not (blocker.card.is_artifact or blocker.card.colors & attacker.card.colors):
+        return False
+    if attacker.card.blocker_power_rel and blocker.power < attacker.power:
+        return False
+    if attacker.card.min_blocker_power and blocker.power < attacker.card.min_blocker_power:
+        return False
+    if attacker.card.max_blocker_power and blocker.power >= attacker.card.max_blocker_power:
+        return False
+    return True
+
+
+
+def is_basic_land(c) -> bool:
+    return c.is_land and (c.basic or c.name in BASIC_MANA or c.name == "Wastes" or
+                         c.name.startswith("Snow-Covered ") and c.name[len("Snow-Covered "):] in BASIC_MANA)
+
+
+
+_TYPE_WORDS = {"creature", "land", "artifact", "enchantment", "planeswalker", "instant", "sorcery", "battle"}
+
+
+def card_matches(card: CardDef, desc: str) -> bool:
+    """Whether card fits a search description such as "a basic Plains card or a creature card with mana
+    value 1 or less", "a Dragon card", "an instant or sorcery card" or "a card"."""
+    for alt in re.split(r" or (?=an? )", desc.strip()):
+        alt = re.sub(r"^an? ", "", alt)
+        m = re.search(r" with mana value (\d+) or (less|greater)$", alt)
+        if m:
+            if (card.cmc > int(m[1])) if m[2] == "less" else (card.cmc < int(m[1])):
+                continue
+            alt = alt[:m.start()]
+        kw = re.search(r" with (flying|reach|haste|trample|lifelink|deathtouch)$", alt)
+        if kw:
+            if kw[1] not in card.keywords:
+                continue
+            alt = alt[:kw.start()]
+        words = [w for w in alt.replace(" card", "").split() if w not in ("or", "and/or")]
+        ok = True
+        if "token" in words:
+            ok = card.is_token
+            words.remove("token")
+        types = [w for w in words if w in _TYPE_WORDS]
+        if types and not any(t.capitalize() in card.types for t in types):
+            ok = False
+        if "basic" in words and not is_basic_land(card):
+            ok = False
+        for w in words:
+            if w[0].isupper() and w not in card.subtypes and w != card.name and not \
+                    (card.changeling and card.is_creature):
+                ok = False
+        if ok:
+            return True
+    return False

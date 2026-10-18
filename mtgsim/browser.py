@@ -37,8 +37,9 @@ def deck_name(path: Path) -> str:
 def package_zip() -> bytes:
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-        for f in sorted(Path(__file__).parent.glob("*.py")):
-            z.write(f, f"mtgsim/{f.name}")
+        pkg = Path(__file__).parent
+        for f in sorted(pkg.rglob("*.py")):
+            z.write(f, f"mtgsim/{f.relative_to(pkg).as_posix()}")
         z.write(Path(__file__).parent / "data" / "builtin_cards.json", "mtgsim/data/builtin_cards.json")
     return buf.getvalue()
 

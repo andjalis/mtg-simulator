@@ -10,7 +10,7 @@
       "restrictions": "Protection, player hexproof and the complete targeting rules are outside this scope.",
       "requires": [],
       "implementation": [
-        "mtgsim/engine.py"
+        "mtgsim/engine/targets.py"
       ]
     },
     {
@@ -21,7 +21,7 @@
       "restrictions": "Effects that waive or modify the legend rule and a general simultaneous-event pipeline are outside this scope.",
       "requires": [],
       "implementation": [
-        "mtgsim/engine.py"
+        "mtgsim/engine/effects.py"
       ]
     },
     {
@@ -34,7 +34,7 @@
         "targets.creature"
       ],
       "implementation": [
-        "mtgsim/engine.py"
+        "mtgsim/engine/play.py"
       ]
     },
     {
@@ -46,7 +46,8 @@
       "requires": [],
       "implementation": [
         "mtgsim/identity.py",
-        "mtgsim/engine.py"
+        "mtgsim/engine/turns.py",
+        "mtgsim/engine/state.py"
       ]
     },
     {
@@ -60,7 +61,8 @@
       ],
       "implementation": [
         "mtgsim/rules_events.py",
-        "mtgsim/engine.py"
+        "mtgsim/engine/stack.py",
+        "mtgsim/engine/effects.py"
       ]
     },
     {
@@ -87,7 +89,8 @@
         "replacement.supported"
       ],
       "implementation": [
-        "mtgsim/engine.py"
+        "mtgsim/engine/effects.py",
+        "mtgsim/engine/resolve.py"
       ]
     },
     {
@@ -101,7 +104,8 @@
         "events.dispatch"
       ],
       "implementation": [
-        "mtgsim/engine.py",
+        "mtgsim/engine/effects.py",
+        "mtgsim/engine/resolve.py",
         "mtgsim/graveyard.py"
       ]
     },
@@ -116,7 +120,8 @@
       ],
       "implementation": [
         "mtgsim/actions.py",
-        "mtgsim/engine.py"
+        "mtgsim/engine/play.py",
+        "mtgsim/engine/stack.py"
       ]
     },
     {
@@ -130,7 +135,8 @@
       ],
       "implementation": [
         "mtgsim/continuous.py",
-        "mtgsim/engine.py",
+        "mtgsim/engine/state.py",
+        "mtgsim/engine/turns.py",
         "mtgsim/auras.py"
       ]
     }
