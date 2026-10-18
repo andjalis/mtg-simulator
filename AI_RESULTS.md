@@ -1,5 +1,62 @@
 # AI before/after
 
+## Card-effects integration check, 2026-10-18 (rounds 38–45)
+
+Two synthetic 60-card mirrors exercise the added mechanics with HeuristicAI
+against BaselineAI on the same rules engine. Each ran 40 games, seed 20261018,
+alternating play/draw (20 each); draws count as half a win.
+
+| Fixture | Heuristic wins | Baseline wins | Draws | Heuristic score, approximate 95% CI |
+| --- | ---: | ---: | ---: | --- |
+| Wither and persist | 25 | 13 | 2 | 65.0% (49.5%–77.9%) |
+| Storm, cascade and rebound | 16 | 24 | 0 | 40.0% (26.3%–55.4%) |
+
+Both intervals include 50%; these samples do not establish a pilot-performance
+difference. They are fixture-specific integration checks, not before/after
+measurements or tournament-deck performance claims. The later fixes for multiple
+native storm/cascade instances and wither on damage spells do not alter these
+fixtures, which use single instances and wither creatures.
+Exact deck definitions and outcomes are in
+[`results/card_effect_batches/rounds38-45-ai.json`](results/card_effect_batches/rounds38-45-ai.json).
+
+## Card-effects integration check, 2026-10-18 (rounds 35–37)
+
+Two synthetic 60-card mirrors exercise payment assistance and undying with
+HeuristicAI against BaselineAI on the same rules engine. Each ran 40 games,
+seed 20261018, alternating play/draw (20 each). Draws count as half a win.
+
+| Fixture | Heuristic wins | Baseline wins | Draws | Heuristic score, approximate 95% CI |
+| --- | ---: | ---: | ---: | --- |
+| Improvise | 18 | 21 | 1 | 46.2% (31.8%–61.3%) |
+| Delve and undying | 22 | 15 | 3 | 58.8% (43.4%–72.6%) |
+
+Both confidence intervals include 50%; these small fixtures do not establish a
+pilot-performance difference. These are integration checks, not before/after
+measurements of the rules changes or tournament-deck performance claims. The
+payment policies use available artifacts and graveyard cards before mana for
+generic costs; the heuristic and baseline pilots share those rules and policies.
+Exact deck definitions and results are in
+[`results/card_effect_batches/rounds35-37-ai.json`](results/card_effect_batches/rounds35-37-ai.json).
+
+## Card-effects integration check, 2026-10-18 (rounds 26–28)
+
+Two 60-card synthetic mirrors exercise infect and exalted with HeuristicAI against
+BaselineAI on the same rules engine. Each ran 40 games, seed 20261018, alternating
+play/draw (20 each). Draws count as half a win.
+
+| Fixture | Heuristic wins | Baseline wins | Draws | Heuristic score, approximate 95% CI |
+| --- | ---: | ---: | ---: | --- |
+| Infect | 35 | 4 | 1 | 88.8% (75.4%–95.3%) |
+| Exalted | 36 | 1 | 3 | 93.8% (81.8%–98.0%) |
+
+These are small fixture-specific pilot comparisons, not a before/after measurement
+of the AI changes or evidence of performance on tournament decks. They confirm
+that games using the new mechanics complete and that the current heuristic pilot
+outperforms the baseline in these fixtures. Devoid's color and cost semantics are
+covered by regression tests rather than a separate mirror.
+Exact deck definitions and counts are in
+[`results/card_effect_batches/rounds26-28-ai.json`](results/card_effect_batches/rounds26-28-ai.json).
+
 ## Card-effects integration check, 2026-10-18 (rounds 23–25)
 
 Two 60-card synthetic mirrors check that the new land targets and proliferate policy work in played games.

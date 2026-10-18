@@ -16,7 +16,9 @@ COLORS = ("W", "U", "B", "R", "G")
 KEYWORDS = {
     "flying", "reach", "haste", "trample", "first strike", "double strike",
     "deathtouch", "lifelink", "vigilance", "defender", "menace",
-    "flash", "hexproof", "indestructible", "prowess", "swampwalk",
+    "flash", "hexproof", "shroud", "indestructible", "prowess", "swampwalk", "forestwalk", "mountainwalk",
+    "infect", "devoid", "exalted", "fear", "horsemanship", "undying", "persist", "wither", "rebound",
+    "storm", "cascade", "islandwalk", "plainswalk", "shadow", "intimidate",
 }
 BASIC_MANA = {"Plains": "W", "Island": "U", "Swamp": "B", "Mountain": "R", "Forest": "G"}
 NUMBERS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
@@ -239,6 +241,21 @@ class CardDef:
     aura_hostile: bool = False                          # goes on an opponent's permanent
     clone: dict | None = None                           # "You may have ~ enter as a copy of ..." (mtgsim.copies)
     cast_copy: dict | None = None                       # "When you cast ~, copy it." (mtgsim.copies)
+    color_override: frozenset | None = None             # explicit face colours / colour indicator
+    exalted: int = 0                                    # native instances (they stack)
+    block_only_flying: bool = False
+    improvise: bool = False
+    delve: bool = False
+    cascade: int = 0
+    storm: int = 0
+
+    @property
+    def colors(self) -> frozenset:
+        if "devoid" in self.keywords:
+            return frozenset()
+        if self.color_override is not None:
+            return self.color_override
+        return frozenset(c for c in COLORS if self.mana_cost.get(c) or any(c in pip for pip in self.hybrid))
 
     @property
     def is_land(self): return "Land" in self.types
@@ -326,7 +343,10 @@ def _token(m_count, power, toughness, desc, with_kw="", attacking=False, ability
     return Effect("token", _num(m_count), data={"name": " ".join(subtypes) or "Token", "power": int(power),
                                                 "toughness": int(toughness), "keywords": kws,
                                                 "attacking": attacking, "triggers": triggers,
-                                                "artifact": artifact, "pt_per": pt_per})
+                                                "artifact": artifact, "pt_per": pt_per,
+                                                "colors": frozenset(c for word, c in zip(
+                                                    ("white", "blue", "black", "red", "green"), "WUBRG")
+                                                    if word in desc.lower().split())})
 
 
 def _distinct_cant_block():
@@ -343,6 +363,10 @@ def _tapped(eff):
 
 _SRC = r"(?:~|it|he|she)"
 _EFFECT_PATTERNS = [
+    (r"draw (a card|one card|(?:\d+|two|three|four|five|six|seven|eight|nine|ten) cards) at the beginning of "
+     r"(the next turn's upkeep|your next upkeep)",
+     lambda m: Effect("draw_delayed", _num(m[1].split()[0]),
+                      data={"upkeep": "you" if m[2].lower() == "your next upkeep" else "any"})),
     (r"proliferate(?: (twice|again))?", lambda m: Effect("proliferate", 2 if (m[1] or "").lower() == "twice" else 1)),
     (_SRC + r" deals (\d+) damage to any target", lambda m: Effect("damage", int(m[1]), target="any")),
     (_SRC + r" deals X damage to any target", lambda m: Effect("damage", 0, target="any", data={"x": True})),
@@ -1208,7 +1232,8 @@ def _parse_face(data: dict) -> CardDef:
     text = re.sub(r"(?m)^([A-Za-z ,]*[Ff]irebending \d+[A-Za-z ,]*)$", lambda m: "\n".join(x[0].upper() + x[1:] for x in m[1].split(", ")), text)
     keywords, produces, etb, spell, unsupported, approximations = set(), set(), [], [], [], []
     triggers: list[Trigger] = []
-    extra: dict = {"snow": "Snow" in type_line}
+    extra: dict = {"snow": "Snow" in type_line,
+                   "color_override": frozenset(data["colors"]) if "colors" in data else None}
     modes: list = []
     chapters: list = []
     loyalty_abilities: list = []
@@ -1318,6 +1343,10 @@ def _parse_face(data: dict) -> CardDef:
                     extra["ward"] = int(re.search(r"\d+", p)[0])
                 else:
                     keywords.add(p)
+                    if p == "exalted":
+                        extra["exalted"] = extra.get("exalted", 0) + 1
+                    elif p in ("cascade", "storm"):
+                        extra[p] = extra.get(p, 0) + 1
             continue
         bullet = modal.parse_bullet(line) if mode_sink is not None else None
         if bullet is not None:
@@ -1388,6 +1417,9 @@ def _parse_face(data: dict) -> CardDef:
             continue
         if re.fullmatch(r"~ can't block\.", line):
             extra["cant_block"] = True
+            continue
+        if line == "~ can block only creatures with flying.":
+            extra["block_only_flying"] = True
             continue
         m = re.fullmatch(r"Equipped creature (?:gets \+(\d+)/\+(\d+))?(?: and )?(?:has (.+?))?\.", line)
         if m and (m[1] or m[3]):
@@ -1810,6 +1842,9 @@ def _parse_face(data: dict) -> CardDef:
         if line == "Convoke":
             extra["convoke"] = True
             continue
+        if line in ("Improvise", "Delve"):
+            extra[line.lower()] = True
+            continue
         if line == "~ enters prepared.":
             extra["prepared"] = True
             continue
@@ -2229,7 +2264,7 @@ TOKEN_ABILITIES = {
 
 
 def make_token(name: str, power: int, toughness: int, keywords=frozenset(), triggers=None, kind: str = "",
-               artifact: bool = False, pt_per: str = "") -> CardDef:
+               artifact: bool = False, pt_per: str = "", colors=frozenset()) -> CardDef:
     """A token's CardDef. kind is treasure/clue/blood for artifact tokens."""
     if kind:
         produces = frozenset(COLORS) if kind == "treasure" else frozenset()
@@ -2240,7 +2275,7 @@ def make_token(name: str, power: int, toughness: int, keywords=frozenset(), trig
     return CardDef(name=f"{name} token", mana_cost={"generic": 0}, cmc=0,
                    types=frozenset({"Creature", "Artifact"} if artifact else {"Creature"}),
                    subtypes=frozenset(name.split()) - {"Token"}, power=power, toughness=toughness,
-                   keywords=frozenset(keywords), triggers=list(triggers or []), is_token=True, pt_per=pt_per)
+                   keywords=frozenset(keywords), triggers=list(triggers or []), is_token=True, pt_per=pt_per, color_override=frozenset(colors))
 
 
 # Copy effects live in their own module; its templates join the ones above.

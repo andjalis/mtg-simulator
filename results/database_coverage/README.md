@@ -4,9 +4,9 @@ Measured 2026-10-18 against the current working tree.
 
 | Status | Cards | Share |
 | --- | ---: | ---: |
-| Fully template-matched | 8,043 | 23.03% |
+| Fully template-matched | 8,385 | 24.01% |
 | Matched with recorded simplifications | 97 | 0.28% |
-| Partly supported | 26,782 | 76.69% |
+| Partly supported | 26,440 | 75.71% |
 | Could not parse | 0 | 0.00% |
 | Total | 34,922 | 100% |
 
@@ -18,46 +18,46 @@ Fully template-matched means no rules text is reported as ignored or simplified.
 
 A potential full match has every ignored line in the listed gap and no recorded simplifications. These are upper bounds: an entire family may need many implementations. Families overlap, so counts must not be summed. Exact wording groups ignore case and whitespace, preserve numbers, and do not merge differently worded effects.
 
-Unclassified wording affects 14,290 cards; 8,973 have all their remaining gaps unclassified. This bucket is separate from the effect-family ranking.
+Unclassified wording affects 13,725 cards; 8,635 have all their remaining gaps unclassified. This bucket is separate from the effect-family ranking.
 
 ### Effect families
 
 | Gap | Potential full matches | Cards affected | Examples |
 | --- | ---: | ---: | --- |
-| triggered (whenever/when) | 2,406 | 4,537 | A Good Day to Die; A Good Day to Pie; Aang and Katara |
-| activated abilities | 2,323 | 3,340 | A Container of Booster Packs; A-Town; Aang's Iceberg |
-| counters | 2,082 | 3,463 | Abomination, Irradiated Brute; Aboroth; Abzan Charm |
-| graveyard | 1,483 | 2,966 | "Rumors of My Death . . ."; A Good Day to Pie; Aang, A Lot to Learn |
-| sacrifice | 1,318 | 2,469 | Aang's Iceberg; Abjure; Abyssal Gatekeeper |
-| tokens | 1,139 | 2,391 | Aang and Katara; Aatchik, Emerald Radian; Abyssal Harvester |
-| exile | 1,053 | 2,422 | "Rumors of My Death . . ."; A Container of Booster Packs; Abstergo Entertainment |
-| auras/enchant | 994 | 1,258 | Abduction; Aboshan's Desire; Absorbing Man |
-| can't restrictions | 761 | 1,532 | Abeyance; Abyssal Persecutor; Academic Probation |
-| X costs | 662 | 1,281 | Aang and Katara; Abaddon the Despoiler; Aberrant Manawurm |
-| equipment | 493 | 692 | Ace's Baseball Bat; Acid Web Spider; Adaptive Omnitool |
-| copy effects | 334 | 710 | Aboleth Spawn; Absorb Identity; Absorbing Man |
-| library search | 264 | 542 | Aerial Surveyor; Amrou Scout; Angel's Herald |
-| cost reduction | 201 | 422 | Absorb Energy; Acolyte of Bahamut; Ancient Stone Idol |
-| +1/+1 static (anthems) | 133 | 279 | Aardwolf's Advantage; Akoum Battlesinger; Always Watching |
+| triggered (whenever/when) | 2,471 | 4,537 | A Good Day to Die; A Good Day to Pie; Aang and Katara |
+| activated abilities | 2,341 | 3,340 | A Container of Booster Packs; A-Town; Aang's Iceberg |
+| counters | 2,113 | 3,463 | Abomination, Irradiated Brute; Aboroth; Abzan Charm |
+| graveyard | 1,521 | 2,966 | "Rumors of My Death . . ."; A Good Day to Pie; Aang, A Lot to Learn |
+| sacrifice | 1,362 | 2,469 | Aang's Iceberg; Abjure; Abyssal Gatekeeper |
+| tokens | 1,154 | 2,391 | Aang and Katara; Aatchik, Emerald Radian; Abyssal Harvester |
+| exile | 1,084 | 2,422 | "Rumors of My Death . . ."; A Container of Booster Packs; Abstergo Entertainment |
+| auras/enchant | 1,001 | 1,258 | Abduction; Aboshan's Desire; Absorbing Man |
+| can't restrictions | 781 | 1,532 | Abeyance; Abyssal Persecutor; Academic Probation |
+| X costs | 670 | 1,281 | Aang and Katara; Abaddon the Despoiler; Aberrant Manawurm |
+| equipment | 490 | 686 | Ace's Baseball Bat; Acid Web Spider; Adaptive Omnitool |
+| copy effects | 339 | 710 | Aboleth Spawn; Absorb Identity; Absorbing Man |
+| library search | 270 | 542 | Aerial Surveyor; Amrou Scout; Angel's Herald |
+| cost reduction | 206 | 422 | Absorb Energy; Acolyte of Bahamut; Ancient Stone Idol |
+| +1/+1 static (anthems) | 134 | 279 | Aardwolf's Advantage; Akoum Battlesinger; Always Watching |
 
 ### Exact ignored wording
 
 | Gap | Potential full matches | Cards affected | Examples |
 | --- | ---: | ---: | --- |
-| infect | 24 | 45 | Blackcleave Goblin; Blighted Agent; Blightwidow |
-| devoid | 23 | 134 | Blinding Drone; Complete Disregard; Consuming Sinkhole |
-| exalted | 22 | 35 | Akrasan Squire; Aven Squire; Battlegrace Angel |
-| ~ can block only creatures with flying. | 22 | 31 | Battlefield Percher; Belbe's Percher; Brazen Borrower // Petty Theft |
-| storm | 21 | 40 | Astral Steel; Brain Freeze; Chatterstorm |
-| it can't be regenerated. | 19 | 49 | Annihilate; Befoul; Cruel Revival |
+| it can't be regenerated. | 20 | 49 | Annihilate; Befoul; Cruel Revival |
 | the ring tempts you. | 18 | 30 | Bilbo, Retired Burglar; Birthday Escape; Bombadil's Song |
-| cascade | 17 | 34 | Annoyed Altisaur; Bituminous Blast; Bloodbraid Elf |
-| forestwalk | 17 | 26 | Cat Warriors; Elite Cat Warrior; Emerald Oryx |
-| improvise | 16 | 24 | Arc Reactor; Barricade Breaker; Bastion Inventor |
-| shroud | 15 | 38 | Argothian Enchantress; Blurred Mongoose; Deadly Insect |
-| rebound | 15 | 36 | Artful Maneuver; Faithless Salvaging; Fantastic Elasticity |
-| {b}: regenerate ~. | 15 | 31 | Darkling Stalker; Drudge Reavers; Drudge Skeletons |
-| draw a card at the beginning of the next turn's upkeep. | 14 | 47 | Blessed Wine; Carrier Pigeons; Feral Instinct |
-| fear | 14 | 37 | Crowd of Cinders; Dross Golem; Dross Prowler |
+| {b}: regenerate ~. | 17 | 31 | Darkling Stalker; Drudge Reavers; Drudge Skeletons |
+| protection from black | 15 | 28 | Cemetery Gate; Chameleon Colossus; Darkwatch Elves |
+| you may draw a card. | 14 | 42 | Aesi, Tyrant of Gyre Strait; Aven Fisher; Fallowsage |
+| return a land you control to its owner's hand. | 14 | 15 | Azorius Chancery; Boros Garrison; Dimir Aqueduct |
+| learn. | 13 | 21 | Arcane Subtraction; Cram Session; Enthusiastic Study |
+| protection from white | 13 | 21 | Black Knight; Defender of Chaos; Disciple of Malice |
+| when ~ becomes the target of a spell or ability, sacrifice it. | 13 | 15 | Frost Walker; Gossamer Phantasm; Illusionary Servant |
+| exile ~. | 12 | 100 | Ascend from Avernus; Divergent Equation; Flood of Recollection |
+| backup 1 | 12 | 20 | Boon-Bringer Valkyrie; Chomping Kavu; Consuming Aetherborn |
+| it has "sacrifice ~: add {c}." | 12 | 17 | Blisterpod; Brood Butcher; Carrier Thrall |
+| target creature gains flying until end of turn. | 12 | 16 | Cloak of Feathers; Defy Gravity; Gale Swooper |
+| you may put a +1/+1 counter on ~. | 12 | 16 | Bojuka Brigand; Graypelt Hunter; Hada Freeblade |
+| {g}: regenerate ~. | 12 | 16 | Ancient Silverback; Charging Troll; Cudgel Troll |
 
 [Every card](cards.csv) · [All ranked gaps](gaps.csv) · [Machine-readable summary](summary.json)

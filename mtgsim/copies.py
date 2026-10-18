@@ -404,7 +404,8 @@ def copy_spell(game, p, spell):
     from .engine import StackItem
     card = spell.card
     if card.is_permanent:
-        card = dataclasses.replace(card, is_token=True)
+        face = getattr(card, "cast_face", None) or game._origin(card)[0]
+        card = dataclasses.replace(face, is_token=True)
     targets = game.auto_targets(p, spell.effects)
     targets = [t if t is not None else old for t, old in zip(targets, spell.targets)]
     copy = StackItem(p, list(spell.effects), targets, card=card, name=f"copy of {spell.card.name}", kind="copy")
@@ -420,6 +421,7 @@ def on_cast(game, p, item):
     if counts.get("turn") != game.turn:
         counts = {"turn": game.turn}
     before = counts.get(p.name, 0)
+    item.storm_count = sum(counts.get(who.name, 0) for who in game.players)
     counts[p.name] = before + 1
     game.spells_cast = counts
     spec = getattr(item.card, "cast_copy", None)

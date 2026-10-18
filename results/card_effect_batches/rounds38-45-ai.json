@@ -1,0 +1,150 @@
+{
+  "seed": 20261018,
+  "alternating_play_draw": true,
+  "results": {
+    "wither_persist": {
+      "games": 40,
+      "heuristic_wins": 25,
+      "baseline_wins": 13,
+      "draws": 2,
+      "score_ci95": [
+        0.4950559699353738,
+        0.7786566682895085
+      ],
+      "deck": [
+        {
+          "copies": 24,
+          "name": "Island",
+          "cost": {
+            "generic": 0
+          },
+          "text": "({T}: Add {U}.)",
+          "types": [
+            "Land"
+          ],
+          "power": null,
+          "toughness": null
+        },
+        {
+          "copies": 12,
+          "name": "Fixture Wither",
+          "cost": {
+            "generic": 2
+          },
+          "text": "Wither",
+          "types": [
+            "Creature"
+          ],
+          "power": 2,
+          "toughness": 2
+        },
+        {
+          "copies": 12,
+          "name": "Fixture Persist",
+          "cost": {
+            "generic": 3
+          },
+          "text": "Persist",
+          "types": [
+            "Creature"
+          ],
+          "power": 3,
+          "toughness": 3
+        },
+        {
+          "copies": 12,
+          "name": "Fixture Bear",
+          "cost": {
+            "generic": 2
+          },
+          "text": "",
+          "types": [
+            "Creature"
+          ],
+          "power": 2,
+          "toughness": 2
+        }
+      ]
+    },
+    "storm_cascade_rebound": {
+      "games": 40,
+      "heuristic_wins": 16,
+      "baseline_wins": 24,
+      "draws": 0,
+      "score_ci95": [
+        0.2634811061240136,
+        0.5540438017260649
+      ],
+      "deck": [
+        {
+          "copies": 24,
+          "name": "Island",
+          "cost": {
+            "generic": 0
+          },
+          "text": "({T}: Add {U}.)",
+          "types": [
+            "Land"
+          ],
+          "power": null,
+          "toughness": null
+        },
+        {
+          "copies": 8,
+          "name": "Fixture Storm",
+          "cost": {
+            "generic": 1,
+            "U": 1
+          },
+          "text": "Storm\nCreate a 1/1 blue Bird creature token with flying.",
+          "types": [
+            "Sorcery"
+          ],
+          "power": null,
+          "toughness": null
+        },
+        {
+          "copies": 8,
+          "name": "Fixture Cascader",
+          "cost": {
+            "generic": 4,
+            "U": 1
+          },
+          "text": "Cascade",
+          "types": [
+            "Creature"
+          ],
+          "power": 4,
+          "toughness": 4
+        },
+        {
+          "copies": 8,
+          "name": "Fixture Rebound",
+          "cost": {
+            "generic": 1,
+            "U": 1
+          },
+          "text": "Rebound\nDraw a card.",
+          "types": [
+            "Sorcery"
+          ],
+          "power": null,
+          "toughness": null
+        },
+        {
+          "copies": 12,
+          "name": "Fixture Bear",
+          "cost": {
+            "generic": 2
+          },
+          "text": "",
+          "types": [
+            "Creature"
+          ],
+          "power": 2,
+          "toughness": 2
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "measured_on": "2026-10-18",
+  "database_before": {
+    "full": 8224,
+    "simplified": 97,
+    "partial": 26601,
+    "parse_error": 0
+  },
+  "database_after": {
+    "full": 8268,
+    "simplified": 97,
+    "partial": 26557,
+    "parse_error": 0
+  },
+  "newly_fully_matched_by_previous_gap": {
+    "Improvise": [
+      "Arc Reactor",
+      "Barricade Breaker",
+      "Bastion Inventor",
+      "Battle at the Bridge",
+      "Enraged Giant",
+      "Foundry Assembler",
+      "Freejam Regent",
+      "Herald of Anguish",
+      "Maverick Thopterist",
+      "Metallic Rebuke",
+      "Reverse Engineer",
+      "Sly Requisitioner",
+      "Sweatworks Brawler",
+      "Synth Infiltrator",
+      "Universal Surveillance",
+      "Wind-Kin Raiders"
+    ],
+    "Delve": [
+      "Become Immense",
+      "Dig Through Time",
+      "Gurmag Angler",
+      "Hooting Mandrills",
+      "Literal Delver of Secrets",
+      "Logic Knot",
+      "Magmatic Sinkhole",
+      "Murderous Cut",
+      "Shambling Attendants",
+      "Sibsig Muckdraggers",
+      "Sultai Scavenger",
+      "Tasigur's Cruelty",
+      "Tombstalker",
+      "Treasure Cruise"
+    ],
+    "Undying": [
+      "Butcher Ghoul",
+      "Evernight Shade",
+      "Geralf's Messenger",
+      "Geralf's Mindcrusher",
+      "Hound of Griselbrand",
+      "Howlgeist",
+      "Nearheath Stalker",
+      "Pyreheart Wolf",
+      "Sightless Ghoul",
+      "Stormbound Geist",
+      "Strangleroot Geist",
+      "Vengeful Vampire",
+      "Vorapede",
+      "Young Wolf"
+    ]
+  },
+  "standard_full_before": 1841,
+  "standard_full_after": 1842,
+  "standard_total": 4902
+}

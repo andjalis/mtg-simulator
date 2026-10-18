@@ -572,3 +572,192 @@ No parser errors were found across the entire database. The current full report 
 
 Two 40-game synthetic mirrors against BaselineAI exercised 210 land destructions and 325 proliferations;
 outcomes and confidence intervals are recorded in `AI_RESULTS.md`.
+
+
+## Rounds 26–28: infect, devoid and exalted (2026-10-18)
+
+Infect replaces damage results with poison counters on players and -1/-1 counters
+on creatures, including combat, damage abilities and fights. Lifelink, deathtouch,
+first/double strike and trample still apply. Devoid makes the card colorless without
+changing its casting cost or devotion contribution. Colored tokens preserve their
+colors. Exalted creates one stack trigger per instance when exactly one creature
+attacks, including instances on nonattacking permanents. Combat predictions account
+for infect counters, poison lethal and the lone attacker's exalted bonuses.
+
+| Scope | Before | After |
+| --- | ---: | ---: |
+| Entire database: fully template-matched | 8,043 / 34,922 (23.03%) | 8,112 / 34,922 (23.23%) |
+| Matched with recorded simplifications | 97 | 97 |
+| Partly matched | 26,782 | 26,713 |
+| Standard: fully template-matched | 1,841 / 4,902 | 1,841 / 4,902 |
+| Standard: handled rules sentences | 7,716 / 12,926 | 7,716 / 12,926 |
+
+All 69 newly fully matched entries had exactly one of the new keywords as their
+remaining gap: infect 24, devoid 23, exalted 22. No database parse errors were found.
+Examples include Glistener Elf, Blighted Agent, Viral Drake, Reality Hemorrhage,
+Noble Hierarch, Qasali Pridemage and Rafiq of the Many. Full means every card-text
+line matches the simulator's templates; it does not certify complete Magic rules
+conformance. The current engine still has the limitations documented in the main README.
+
+Exact additions are saved in
+[`../card_effect_batches/rounds26-28-coverage.json`](../card_effect_batches/rounds26-28-coverage.json).
+The complete sortable card inventory and remaining gaps are in
+[`../database_coverage/README.md`](../database_coverage/README.md).
+Two 40-game fixture mirrors against BaselineAI are recorded in `AI_RESULTS.md`.
+
+## Rounds 29–31: flying-only blockers, forestwalk/mountainwalk and shroud (2026-10-18)
+
+Permanents with "can block only creatures with flying" reject ground attackers;
+the restriction does not grant flying or reach. The shared blocking check applies
+this rule in combat and in the AI's block search. Forestwalk and mountainwalk use
+the defending player's land subtypes, including tapped duals and snow lands. Names
+and mana production alone do not qualify, and removing the matching land restores
+normal blocking legality.
+
+Shroud prevents either player from targeting the permanent. Spells recheck this
+when resolving, so gaining shroud in response can invalidate their targets.
+Equip and the default equip-target selection also enforce targetability. Existing
+attachments, untargeted effects, self abilities and combat damage still work.
+
+| Scope | Before | After |
+| --- | ---: | ---: |
+| Entire database: fully template-matched | 8,112 / 34,922 (23.23%) | 8,183 / 34,922 (23.43%) |
+| Matched with recorded simplifications | 97 | 97 |
+| Partly matched | 26,713 | 26,642 |
+| Standard: fully template-matched | 1,841 / 4,902 | 1,841 / 4,902 |
+| Standard: handled rules sentences | 7,716 / 12,926 | 7,716 / 12,926 |
+
+The 71 new full matches comprise 22 flying-only blockers, 33 landwalk cards
+(including mixed keyword lists), and 16 shroud cards (including Lightning Greaves).
+Other additions include Brazen Borrower // Petty Theft, Wall of Denial, Simic Sky
+Swallower, Mirri, Cat Warrior and Stalker Hag. No database parse errors were found.
+Full matches measure text-template coverage, not complete Magic rules conformance.
+
+Exact additions and before/after counts are in
+[`../card_effect_batches/rounds29-31-coverage.json`](../card_effect_batches/rounds29-31-coverage.json).
+The complete card inventory and remaining gaps are in
+[`../database_coverage/README.md`](../database_coverage/README.md).
+
+## Rounds 32–34: fear, horsemanship and delayed upkeep draws (2026-10-18)
+
+Fear permits blocking only by artifact creatures or black creatures. This uses
+actual card colors, so a black mana symbol on a nonartifact creature with devoid
+does not qualify. Horsemanship permits blocking only by creatures with
+horsemanship; flying and reach alone do not qualify. Both restrictions combine
+with other blocking rules and feed the engine's combat and the AI's block search.
+
+"Draw ... at the beginning of the next turn's upkeep" and "... your next upkeep"
+create one-shot delayed triggered abilities. Each uses the stack, retains its
+original controller, and survives its source leaving play or changing controller.
+A delayed draw created during an upkeep waits for a later upkeep. A spell that
+fails to resolve does not create its delayed ability. Ordinary draw triggers and
+empty-library losses still apply when the delayed ability resolves. Other delayed
+actions and timings remain visible as coverage gaps.
+
+| Scope | Before | After |
+| --- | ---: | ---: |
+| Entire database: fully template-matched | 8,183 / 34,922 (23.43%) | 8,224 / 34,922 (23.55%) |
+| Matched with recorded simplifications | 97 | 97 |
+| Partly matched | 26,642 | 26,601 |
+| Standard: fully template-matched | 1,841 / 4,902 | 1,841 / 4,902 |
+| Standard: handled rules sentences | 7,716 / 12,926 | 7,716 / 12,926 |
+
+The 41 newly fully matched entries comprise 14 fear cards, 13 horsemanship cards,
+and 14 delayed-draw cards. Examples include Shriekmaw, Dross Golem, Wort, Boggart
+Auntie, Lu Meng, Wu General, Carrier Pigeons and Mystic Melting. No database parse
+errors were found. Full matches measure text-template coverage, not complete Magic
+rules conformance.
+
+Exact additions and before/after counts are in
+[`../card_effect_batches/rounds32-34-coverage.json`](../card_effect_batches/rounds32-34-coverage.json).
+The complete card inventory and remaining gaps are in
+[`../database_coverage/README.md`](../database_coverage/README.md).
+
+## Rounds 35–37: improvise, delve and undying (2026-10-18)
+
+Improvise taps untapped artifacts, including summoning-sick artifact creatures,
+to help pay generic costs. Delve exiles graveyard cards for generic costs. Neither
+pays colored or explicit {C} requirements. Planning does not spend resources;
+casting commits the chosen taps and exiles, and countering the spell does not
+refund them. Assistance includes X costs and follows ordinary cost reductions.
+Artifact mana sources cannot also improvise the same payment; helpers needed by
+colored mana abilities are reserved. Multi-mana artifacts can use their mana
+abilities instead of contributing only one generic payment through improvise.
+
+Undying checks the creature's +1/+1 counters when it dies, then uses the stack to
+return its card under its owner's control with a +1/+1 counter already present
+for entry triggers. Exile replacements and tokens do not return. Physical copies
+are distinguished even when they share a CardDef name; leaving and reentering the
+graveyard invalidates an earlier undying return. Deaths retain their last-known
+counters, so lethal damage and counter cancellation do not grant an extra return.
+
+Two 40-game synthetic mirrors against BaselineAI completed; outcomes and confidence
+intervals are recorded in `AI_RESULTS.md`. They are fixture-specific integration
+checks and do not establish a pilot-performance difference.
+
+| Scope | Before | After |
+| --- | ---: | ---: |
+| Entire database: fully template-matched | 8,224 / 34,922 (23.55%) | 8,268 / 34,922 (23.68%) |
+| Matched with recorded simplifications | 97 | 97 |
+| Partly matched | 26,601 | 26,557 |
+| Standard: fully template-matched | 1,841 / 4,902 | 1,842 / 4,902 |
+| Standard: handled rules sentences | 7,716 / 12,926 | 7,718 / 12,926 |
+
+The 44 new full matches comprise 16 improvise cards, 14 delve cards and 14 undying
+cards. Examples include Metallic Rebuke, Reverse Engineer, Dig Through Time,
+Treasure Cruise, Gurmag Angler, Young Wolf and Strangleroot Geist. No database
+parse errors were found. Full matches measure text-template coverage, not complete
+Magic rules conformance.
+
+Exact additions and before/after counts are in
+[`../card_effect_batches/rounds35-37-coverage.json`](../card_effect_batches/rounds35-37-coverage.json).
+The complete card inventory and remaining gaps are in
+[`../database_coverage/README.md`](../database_coverage/README.md).
+
+## Rounds 38–45: death returns, cast triggers and evasion (2026-10-18)
+
+Three further batches extend the shared rules infrastructure:
+
+- Persist uses the same graveyard-incarnation tracking as undying, checking for
+  -1/-1 counters at death and returning with a -1/-1 counter. Wither uses infect's
+  counter-damage handling on creatures while dealing normal damage to players;
+  combat predictions account for first-strike counter damage reducing later power.
+- Rebound exiles a resolving spell cast from hand and creates a one-shot trigger
+  for its controller's next upkeep. Its optional free recast uses fresh targets,
+  obeys casting restrictions and does not rebound again. Countered or fizzled
+  spells do not rebound; leaving exile invalidates that delayed permission.
+- Storm snapshots earlier spells cast by both players that turn, including those
+  countered, then copies its spell through a separate trigger. Copies are not cast,
+  and permanent-spell copies enter as tokens. Cascade is a cast trigger that
+  searches by strictly lower mana value, offers a free cast during resolution,
+  and bottoms the other revealed cards in random order. Its free cast can trigger
+  storm or cascade, and a legal Adventure face retains its Adventure destination.
+- Islandwalk and plainswalk complete the basic landwalk set. Shadow restricts
+  both attackers and blockers; intimidate uses actual shared colors or artifact
+  creature status. These restrictions combine with flying, fear and other rules.
+
+Regression tests cover overlapping restrictions, independent identical physical
+cards, countered originals and triggers, free-cast timing, target changes, declined
+casts, and source or zone changes. Two 40-game synthetic mirrors against BaselineAI
+exercise counter damage/death returns and storm/cascade/rebound; results are saved
+alongside the coverage additions and summarized in `AI_RESULTS.md`.
+
+| Scope | Before | After |
+| --- | ---: | ---: |
+| Entire database: fully template-matched | 8,268 / 34,922 (23.68%) | 8,385 / 34,922 (24.01%) |
+| Matched with recorded simplifications | 97 | 97 |
+| Partly matched | 26,557 | 26,440 |
+| Standard: fully template-matched | 1,842 / 4,902 | 1,843 / 4,902 |
+| Standard: handled rules sentences | 7,718 / 12,926 | 7,721 / 12,926 |
+
+The 117 new full matches include Kitchen Finks, Glen Elendra Archmage,
+Puncture Blast, Staggershock, Grapeshot, Bloodbraid Elf, Apex Devastator,
+Maelstrom Wanderer, Inkwell Leviathan and Bladetusk Boar. Multiple native storm
+and cascade instances trigger independently; wither damage spells use their
+own keyword abilities. No database parse errors were found. Full matches measure
+text-template coverage, not complete Magic rules conformance.
+
+Exact additions are in
+[`../card_effect_batches/rounds38-45-coverage.json`](../card_effect_batches/rounds38-45-coverage.json).
+The complete card inventory and ranked gaps are in
+[`../database_coverage/README.md`](../database_coverage/README.md).

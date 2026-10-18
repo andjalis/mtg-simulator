@@ -1,0 +1,138 @@
+{
+  "seed": 20261018,
+  "alternating_play_draw": true,
+  "results": {
+    "infect": {
+      "games": 40,
+      "heuristic_wins": 35,
+      "baseline_wins": 4,
+      "draws": 1,
+      "score_ci95": [
+        0.7540383492391732,
+        0.9530526328417726
+      ],
+      "deck": [
+        {
+          "copies": 24,
+          "name": "Plains",
+          "cost": {
+            "generic": 0
+          },
+          "text": "({T}: Add {W}.)",
+          "power": null,
+          "toughness": null
+        },
+        {
+          "copies": 12,
+          "name": "Infect small",
+          "cost": {
+            "generic": 1,
+            "W": 1
+          },
+          "text": "Infect",
+          "power": 1,
+          "toughness": 2
+        },
+        {
+          "copies": 8,
+          "name": "Infect large",
+          "cost": {
+            "generic": 3,
+            "W": 1
+          },
+          "text": "Infect, trample",
+          "power": 3,
+          "toughness": 3
+        },
+        {
+          "copies": 8,
+          "name": "First striker",
+          "cost": {
+            "generic": 2,
+            "W": 1
+          },
+          "text": "First strike",
+          "power": 2,
+          "toughness": 3
+        },
+        {
+          "copies": 8,
+          "name": "Guard",
+          "cost": {
+            "generic": 1,
+            "W": 1
+          },
+          "text": "",
+          "power": 2,
+          "toughness": 3
+        }
+      ]
+    },
+    "exalted": {
+      "games": 40,
+      "heuristic_wins": 36,
+      "baseline_wins": 1,
+      "draws": 3,
+      "score_ci95": [
+        0.8179000099720578,
+        0.980428518183849
+      ],
+      "deck": [
+        {
+          "copies": 24,
+          "name": "Plains",
+          "cost": {
+            "generic": 0
+          },
+          "text": "({T}: Add {W}.)",
+          "power": null,
+          "toughness": null
+        },
+        {
+          "copies": 12,
+          "name": "Exalted small",
+          "cost": {
+            "generic": 0,
+            "W": 1
+          },
+          "text": "Exalted",
+          "power": 1,
+          "toughness": 1
+        },
+        {
+          "copies": 8,
+          "name": "Exalted flyer",
+          "cost": {
+            "generic": 2,
+            "W": 1
+          },
+          "text": "Flying, exalted",
+          "power": 2,
+          "toughness": 2
+        },
+        {
+          "copies": 8,
+          "name": "Lifelinker",
+          "cost": {
+            "generic": 2,
+            "W": 1
+          },
+          "text": "Lifelink",
+          "power": 2,
+          "toughness": 3
+        },
+        {
+          "copies": 8,
+          "name": "Guard",
+          "cost": {
+            "generic": 1,
+            "W": 1
+          },
+          "text": "",
+          "power": 2,
+          "toughness": 3
+        }
+      ]
+    }
+  }
+}

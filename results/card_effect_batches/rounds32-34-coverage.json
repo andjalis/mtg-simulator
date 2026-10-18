@@ -1,0 +1,68 @@
+{
+  "measured_on": "2026-10-18",
+  "database_before": {
+    "full": 8183,
+    "simplified": 97,
+    "partial": 26642,
+    "parse_error": 0
+  },
+  "database_after": {
+    "full": 8224,
+    "simplified": 97,
+    "partial": 26601,
+    "parse_error": 0
+  },
+  "newly_fully_matched_by_previous_gap": {
+    "Horsemanship": [
+      "Barbarian General",
+      "Cao Ren, Wei Commander",
+      "Lady Zhurong, Warrior Queen",
+      "Lu Meng, Wu General",
+      "Shu Cavalry",
+      "Shu Elite Companions",
+      "Wei Elite Companions",
+      "Wei Scout",
+      "Wei Strike Force",
+      "Wu Elite Cavalry",
+      "Wu Light Cavalry",
+      "Yellow Scarves Cavalry",
+      "Yellow Scarves General"
+    ],
+    "Draw a card at the beginning of the next turn's upkeep.": [
+      "Blessed Wine",
+      "Feral Instinct",
+      "Fevered Strength",
+      "Flare",
+      "Force Void",
+      "Lightning Blow",
+      "Mind Ravel",
+      "Mystic Melting",
+      "Ray of Erasure",
+      "Touch of Death"
+    ],
+    "draw a card at the beginning of the next turn's upkeep.": [
+      "Carrier Pigeons",
+      "Krovikan Fetish",
+      "Pyknite",
+      "Ritual of Steel"
+    ],
+    "Fear": [
+      "Crowd of Cinders",
+      "Dross Golem",
+      "Dross Prowler",
+      "Gluttonous Zombie",
+      "Nezumi Cutthroat",
+      "Prickly Boggart",
+      "Ratcatcher",
+      "Razortooth Rats",
+      "Severed Legion",
+      "Shriekmaw",
+      "Squirming Mass",
+      "Undercity Shade",
+      "Woebearer",
+      "Wort, Boggart Auntie"
+    ]
+  },
+  "standard_full": 1841,
+  "standard_total": 4902
+}

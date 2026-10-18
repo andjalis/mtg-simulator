@@ -60,7 +60,7 @@ class Swampwalk(unittest.TestCase):
         self.assertIn(self.attacker, self.a.battlefield)
 
     def test_other_landwalk_remains_visible(self):
-        c = card("Test Forestwalker", types="Creature", text="Forestwalk", power=2, toughness=2)
+        c = card("Test Desertwalker", types="Creature", text="Desertwalk", power=2, toughness=2)
         self.assertTrue(c.unsupported)
 
 

@@ -2,17 +2,17 @@
   "measured_on": "2026-10-18",
   "total": 34922,
   "counts": {
-    "full": 8043,
+    "full": 8385,
     "simplified": 97,
-    "partial": 26782,
+    "partial": 26440,
     "parse_error": 0
   },
   "parse_errors": [],
   "ranking_method": "Potential full matches have every ignored line in the gap and no recorded simplifications. Counts are upper bounds, overlap, and must not be summed.",
   "unclassified": {
     "gap": "unclassified",
-    "affected_cards": 14290,
-    "potential_full_matches": 8973,
+    "affected_cards": 13725,
+    "potential_full_matches": 8635,
     "examples": [
       "A Chaotic Night in Vegas",
       "A Real Handful",
@@ -23,7 +23,7 @@
     {
       "gap": "triggered (whenever/when)",
       "affected_cards": 4537,
-      "potential_full_matches": 2406,
+      "potential_full_matches": 2471,
       "examples": [
         "A Good Day to Die",
         "A Good Day to Pie",
@@ -33,7 +33,7 @@
     {
       "gap": "activated abilities",
       "affected_cards": 3340,
-      "potential_full_matches": 2323,
+      "potential_full_matches": 2341,
       "examples": [
         "A Container of Booster Packs",
         "A-Town",
@@ -43,7 +43,7 @@
     {
       "gap": "counters",
       "affected_cards": 3463,
-      "potential_full_matches": 2082,
+      "potential_full_matches": 2113,
       "examples": [
         "Abomination, Irradiated Brute",
         "Aboroth",
@@ -53,7 +53,7 @@
     {
       "gap": "graveyard",
       "affected_cards": 2966,
-      "potential_full_matches": 1483,
+      "potential_full_matches": 1521,
       "examples": [
         "\"Rumors of My Death . . .\"",
         "A Good Day to Pie",
@@ -63,7 +63,7 @@
     {
       "gap": "sacrifice",
       "affected_cards": 2469,
-      "potential_full_matches": 1318,
+      "potential_full_matches": 1362,
       "examples": [
         "Aang's Iceberg",
         "Abjure",
@@ -73,7 +73,7 @@
     {
       "gap": "tokens",
       "affected_cards": 2391,
-      "potential_full_matches": 1139,
+      "potential_full_matches": 1154,
       "examples": [
         "Aang and Katara",
         "Aatchik, Emerald Radian",
@@ -83,7 +83,7 @@
     {
       "gap": "exile",
       "affected_cards": 2422,
-      "potential_full_matches": 1053,
+      "potential_full_matches": 1084,
       "examples": [
         "\"Rumors of My Death . . .\"",
         "A Container of Booster Packs",
@@ -93,7 +93,7 @@
     {
       "gap": "auras/enchant",
       "affected_cards": 1258,
-      "potential_full_matches": 994,
+      "potential_full_matches": 1001,
       "examples": [
         "Abduction",
         "Aboshan's Desire",
@@ -103,7 +103,7 @@
     {
       "gap": "can't restrictions",
       "affected_cards": 1532,
-      "potential_full_matches": 761,
+      "potential_full_matches": 781,
       "examples": [
         "Abeyance",
         "Abyssal Persecutor",
@@ -113,7 +113,7 @@
     {
       "gap": "X costs",
       "affected_cards": 1281,
-      "potential_full_matches": 662,
+      "potential_full_matches": 670,
       "examples": [
         "Aang and Katara",
         "Abaddon the Despoiler",
@@ -122,8 +122,8 @@
     },
     {
       "gap": "equipment",
-      "affected_cards": 692,
-      "potential_full_matches": 493,
+      "affected_cards": 686,
+      "potential_full_matches": 490,
       "examples": [
         "Ace's Baseball Bat",
         "Acid Web Spider",
@@ -133,7 +133,7 @@
     {
       "gap": "copy effects",
       "affected_cards": 710,
-      "potential_full_matches": 334,
+      "potential_full_matches": 339,
       "examples": [
         "Aboleth Spawn",
         "Absorb Identity",
@@ -143,7 +143,7 @@
     {
       "gap": "library search",
       "affected_cards": 542,
-      "potential_full_matches": 264,
+      "potential_full_matches": 270,
       "examples": [
         "Aerial Surveyor",
         "Amrou Scout",
@@ -153,7 +153,7 @@
     {
       "gap": "cost reduction",
       "affected_cards": 422,
-      "potential_full_matches": 201,
+      "potential_full_matches": 206,
       "examples": [
         "Absorb Energy",
         "Acolyte of Bahamut",
@@ -163,7 +163,7 @@
     {
       "gap": "+1/+1 static (anthems)",
       "affected_cards": 279,
-      "potential_full_matches": 133,
+      "potential_full_matches": 134,
       "examples": [
         "Aardwolf's Advantage",
         "Akoum Battlesinger",
@@ -173,59 +173,9 @@
   ],
   "exact_wording": [
     {
-      "gap": "infect",
-      "affected_cards": 45,
-      "potential_full_matches": 24,
-      "examples": [
-        "Blackcleave Goblin",
-        "Blighted Agent",
-        "Blightwidow"
-      ]
-    },
-    {
-      "gap": "devoid",
-      "affected_cards": 134,
-      "potential_full_matches": 23,
-      "examples": [
-        "Blinding Drone",
-        "Complete Disregard",
-        "Consuming Sinkhole"
-      ]
-    },
-    {
-      "gap": "exalted",
-      "affected_cards": 35,
-      "potential_full_matches": 22,
-      "examples": [
-        "Akrasan Squire",
-        "Aven Squire",
-        "Battlegrace Angel"
-      ]
-    },
-    {
-      "gap": "~ can block only creatures with flying.",
-      "affected_cards": 31,
-      "potential_full_matches": 22,
-      "examples": [
-        "Battlefield Percher",
-        "Belbe's Percher",
-        "Brazen Borrower // Petty Theft"
-      ]
-    },
-    {
-      "gap": "storm",
-      "affected_cards": 40,
-      "potential_full_matches": 21,
-      "examples": [
-        "Astral Steel",
-        "Brain Freeze",
-        "Chatterstorm"
-      ]
-    },
-    {
       "gap": "it can't be regenerated.",
       "affected_cards": 49,
-      "potential_full_matches": 19,
+      "potential_full_matches": 20,
       "examples": [
         "Annihilate",
         "Befoul",
@@ -243,59 +193,9 @@
       ]
     },
     {
-      "gap": "cascade",
-      "affected_cards": 34,
-      "potential_full_matches": 17,
-      "examples": [
-        "Annoyed Altisaur",
-        "Bituminous Blast",
-        "Bloodbraid Elf"
-      ]
-    },
-    {
-      "gap": "forestwalk",
-      "affected_cards": 26,
-      "potential_full_matches": 17,
-      "examples": [
-        "Cat Warriors",
-        "Elite Cat Warrior",
-        "Emerald Oryx"
-      ]
-    },
-    {
-      "gap": "improvise",
-      "affected_cards": 24,
-      "potential_full_matches": 16,
-      "examples": [
-        "Arc Reactor",
-        "Barricade Breaker",
-        "Bastion Inventor"
-      ]
-    },
-    {
-      "gap": "shroud",
-      "affected_cards": 38,
-      "potential_full_matches": 15,
-      "examples": [
-        "Argothian Enchantress",
-        "Blurred Mongoose",
-        "Deadly Insect"
-      ]
-    },
-    {
-      "gap": "rebound",
-      "affected_cards": 36,
-      "potential_full_matches": 15,
-      "examples": [
-        "Artful Maneuver",
-        "Faithless Salvaging",
-        "Fantastic Elasticity"
-      ]
-    },
-    {
       "gap": "{b}: regenerate ~.",
       "affected_cards": 31,
-      "potential_full_matches": 15,
+      "potential_full_matches": 17,
       "examples": [
         "Darkling Stalker",
         "Drudge Reavers",
@@ -303,23 +203,123 @@
       ]
     },
     {
-      "gap": "draw a card at the beginning of the next turn's upkeep.",
-      "affected_cards": 47,
-      "potential_full_matches": 14,
+      "gap": "protection from black",
+      "affected_cards": 28,
+      "potential_full_matches": 15,
       "examples": [
-        "Blessed Wine",
-        "Carrier Pigeons",
-        "Feral Instinct"
+        "Cemetery Gate",
+        "Chameleon Colossus",
+        "Darkwatch Elves"
       ]
     },
     {
-      "gap": "fear",
-      "affected_cards": 37,
+      "gap": "you may draw a card.",
+      "affected_cards": 42,
       "potential_full_matches": 14,
       "examples": [
-        "Crowd of Cinders",
-        "Dross Golem",
-        "Dross Prowler"
+        "Aesi, Tyrant of Gyre Strait",
+        "Aven Fisher",
+        "Fallowsage"
+      ]
+    },
+    {
+      "gap": "return a land you control to its owner's hand.",
+      "affected_cards": 15,
+      "potential_full_matches": 14,
+      "examples": [
+        "Azorius Chancery",
+        "Boros Garrison",
+        "Dimir Aqueduct"
+      ]
+    },
+    {
+      "gap": "learn.",
+      "affected_cards": 21,
+      "potential_full_matches": 13,
+      "examples": [
+        "Arcane Subtraction",
+        "Cram Session",
+        "Enthusiastic Study"
+      ]
+    },
+    {
+      "gap": "protection from white",
+      "affected_cards": 21,
+      "potential_full_matches": 13,
+      "examples": [
+        "Black Knight",
+        "Defender of Chaos",
+        "Disciple of Malice"
+      ]
+    },
+    {
+      "gap": "when ~ becomes the target of a spell or ability, sacrifice it.",
+      "affected_cards": 15,
+      "potential_full_matches": 13,
+      "examples": [
+        "Frost Walker",
+        "Gossamer Phantasm",
+        "Illusionary Servant"
+      ]
+    },
+    {
+      "gap": "exile ~.",
+      "affected_cards": 100,
+      "potential_full_matches": 12,
+      "examples": [
+        "Ascend from Avernus",
+        "Divergent Equation",
+        "Flood of Recollection"
+      ]
+    },
+    {
+      "gap": "backup 1",
+      "affected_cards": 20,
+      "potential_full_matches": 12,
+      "examples": [
+        "Boon-Bringer Valkyrie",
+        "Chomping Kavu",
+        "Consuming Aetherborn"
+      ]
+    },
+    {
+      "gap": "it has \"sacrifice ~: add {c}.\"",
+      "affected_cards": 17,
+      "potential_full_matches": 12,
+      "examples": [
+        "Blisterpod",
+        "Brood Butcher",
+        "Carrier Thrall"
+      ]
+    },
+    {
+      "gap": "target creature gains flying until end of turn.",
+      "affected_cards": 16,
+      "potential_full_matches": 12,
+      "examples": [
+        "Cloak of Feathers",
+        "Defy Gravity",
+        "Gale Swooper"
+      ]
+    },
+    {
+      "gap": "you may put a +1/+1 counter on ~.",
+      "affected_cards": 16,
+      "potential_full_matches": 12,
+      "examples": [
+        "Bojuka Brigand",
+        "Graypelt Hunter",
+        "Hada Freeblade"
+      ]
+    },
+    {
+      "gap": "{g}: regenerate ~.",
+      "affected_cards": 16,
+      "potential_full_matches": 12,
+      "examples": [
+        "Ancient Silverback",
+        "Charging Troll",
+        "Cudgel Troll"
       ]
     }
   ]

@@ -1,0 +1,104 @@
+{
+  "measured_on": "2026-10-18",
+  "database_before": {
+    "full": 8112,
+    "simplified": 97,
+    "partial": 26713,
+    "parse_error": 0
+  },
+  "database_after": {
+    "full": 8183,
+    "simplified": 97,
+    "partial": 26642,
+    "parse_error": 0
+  },
+  "newly_fully_matched_by_previous_gap": {
+    "Shroud": [
+      "Argothian Enchantress",
+      "Blurred Mongoose",
+      "Deadly Insect",
+      "Deft Duelist",
+      "Elvish Lookout",
+      "Hawkeater Moth",
+      "Humble Budoka",
+      "Kalonian Behemoth",
+      "Kodama of the North Tree",
+      "Mist Leopard",
+      "Nimble Mongoose",
+      "Pincher Beetles",
+      "Simic Sky Swallower",
+      "Wall of Denial",
+      "Zephid"
+    ],
+    "~ can block only creatures with flying.": [
+      "Battlefield Percher",
+      "Belbe's Percher",
+      "Brazen Borrower // Petty Theft",
+      "Cloud Djinn",
+      "Cloud Dragon",
+      "Cloud Elemental",
+      "Cloud Pirates",
+      "Cloud Spirit",
+      "Cloud Sprite",
+      "Gloomwidow",
+      "Hoverguard Observer",
+      "Long-Finned Skywhale",
+      "Novellamental",
+      "Rishadan Airship",
+      "Scrapskin Drake",
+      "Skywinder Drake",
+      "Stratozeppelid",
+      "Stronghold Zeppelin",
+      "Tattered Haunter",
+      "Vaporkin",
+      "Wanderlight Spirit",
+      "Welkin Tern"
+    ],
+    "Mountainwalk": [
+      "Canyon Wildcat",
+      "Cavern Crawler",
+      "Cliff Threader",
+      "Colos Yearling",
+      "Dwarven Grunt",
+      "Glissa's Courier",
+      "Goblin Mountaineer",
+      "Goblin Spelunkers",
+      "Hillcomber Giant",
+      "Mountain Goat",
+      "Rock Badger",
+      "Sokenzan Bruiser",
+      "Zodiac Dog",
+      "Zodiac Goat"
+    ],
+    "Forestwalk": [
+      "Cat Warriors",
+      "Elite Cat Warrior",
+      "Emerald Oryx",
+      "Heartwood Treefolk",
+      "Jukai Messenger",
+      "Koth's Courier",
+      "Leaf Dancer",
+      "Lynx",
+      "Rushwood Dryad",
+      "Shanodin Dryads",
+      "Slinking Serpent",
+      "Somberwald Dryad",
+      "Willow Dryad",
+      "Zendikar Farguide",
+      "Zodiac Monkey",
+      "Zodiac Rabbit",
+      "Zodiac Tiger"
+    ],
+    "Equipped creature has haste and shroud.": [
+      "Lightning Greaves"
+    ],
+    "First strike, forestwalk, vigilance": [
+      "Mirri, Cat Warrior"
+    ],
+    "Swampwalk, forestwalk": [
+      "Stalker Hag"
+    ]
+  },
+  "standard_full": 1841,
+  "standard_total": 4902
+}

@@ -1,0 +1,169 @@
+{
+  "measured_on": "2026-10-18",
+  "database_before": {
+    "full": 8268,
+    "simplified": 97,
+    "partial": 26557,
+    "parse_error": 0
+  },
+  "database_after": {
+    "full": 8385,
+    "simplified": 97,
+    "partial": 26440,
+    "parse_error": 0
+  },
+  "newly_fully_matched_by_previous_gap": {
+    "Intimidate": [
+      "Academy Raider",
+      "Accursed Spirit",
+      "Bladetusk Boar",
+      "Heirs of Stromkirk",
+      "Highborn Ghoul",
+      "Krenko's Enforcer",
+      "Spectral Rider"
+    ],
+    "Cascade": [
+      "Annoyed Altisaur",
+      "Ardent Plea",
+      "Bituminous Blast",
+      "Bloodbraid Elf",
+      "Boarding Party",
+      "Captured Sunlight",
+      "Demonic Dread",
+      "Enlisted Wurm",
+      "Etherium-Horn Sorcerer",
+      "Ethersworn Sphinx",
+      "Forceful Denial",
+      "Heralds of Tzeentch",
+      "Maelstrom Colossus",
+      "Meteoric Mace",
+      "Natural Reclamation",
+      "Shardless Agent",
+      "Stormcaller's Boon",
+      "Violent Outburst"
+    ],
+    "Cascade, cascade, cascade, cascade": [
+      "Apex Devastator"
+    ],
+    "Rebound": [
+      "Artful Maneuver",
+      "Faithless Salvaging",
+      "Fantastic Elasticity",
+      "Great Teacher's Decree",
+      "It's Clobberin' Time!",
+      "Ojutai's Summons",
+      "Prey's Vengeance",
+      "Profound Journey",
+      "Quantum Misalignment",
+      "Sight Beyond Sight",
+      "Staggershock",
+      "Terramorph",
+      "Trumpeting Herd",
+      "Virulent Swipe",
+      "Void Squall"
+    ],
+    "Storm": [
+      "Astral Steel",
+      "Brain Freeze",
+      "Chatterstorm",
+      "Chatterstorm and Awaken the Woods",
+      "Crow Storm",
+      "Dragonstorm",
+      "Elemental Eruption",
+      "Empty the Warrens",
+      "Flusterstorm",
+      "Grapeshot",
+      "Hindering Touch",
+      "Hunting Pack",
+      "Krosan Adaptation",
+      "Radstorm",
+      "Reaping the Graves",
+      "Scattershot",
+      "Sprouting Vines",
+      "Stormscale Scion",
+      "Stormscale Wurm",
+      "Volcanic Awakening",
+      "Weather the Storm"
+    ],
+    "Islandwalk": [
+      "Benthic Behemoth",
+      "Benthic Djinn",
+      "Bull Hippo",
+      "Devouring Deep",
+      "Grayscaled Gharial",
+      "Inkwell Leviathan",
+      "Merrow Harbinger",
+      "Pale Bears",
+      "River Bear",
+      "Rootwater Commando",
+      "Segovian Leviathan",
+      "Zodiac Horse"
+    ],
+    "Equipped creature gets +1/+0 and has wither.": [
+      "Blight Sickle"
+    ],
+    "Wither": [
+      "Boggart Ram-Gang",
+      "Duergar Cave-Guard",
+      "Harvest Gwyllion",
+      "Inescapable Brute",
+      "Juvenile Gloomwidow",
+      "Oona's Gatewarden",
+      "Puncture Blast",
+      "Rustrazor Butcher",
+      "Scuzzback Scrapper",
+      "Sickle Ripper",
+      "Smoldering Butcher",
+      "Twinblade Slasher",
+      "Wildslayer Elves"
+    ],
+    "Shadow": [
+      "Dauthi Jackal",
+      "Dauthi Marauder",
+      "Dauthi Mercenary",
+      "Dauthi Slayer",
+      "Soltari Champion",
+      "Soltari Crusader",
+      "Soltari Foot Soldier",
+      "Soltari Trooper",
+      "Thalakos Scout",
+      "Thalakos Seer",
+      "Thalakos Sentry"
+    ],
+    "Equipped creature has intimidate.": [
+      "Executioner's Hood"
+    ],
+    "Persist": [
+      "Glen Elendra Archmage",
+      "Gravelgill Axeshark",
+      "Grazing Kelpie",
+      "Kitchen Finks",
+      "Kithkin Spellduster",
+      "Lesser Masticore",
+      "Lingering Tormentor",
+      "Putrid Goblin",
+      "Restless Apparition",
+      "Safehold Elite",
+      "Scuzzback Marauders",
+      "Trapjaw Kelpie"
+    ],
+    "Cascade\nRebound": [
+      "Into the Time Vortex"
+    ],
+    "Cascade, cascade": [
+      "Maelstrom Wanderer"
+    ],
+    "Wither\nPersist": [
+      "Rendclaw Trow"
+    ],
+    "Plainswalk": [
+      "Righteous Avengers",
+      "Zodiac Rooster"
+    ]
+  },
+  "standard_full_before": 1842,
+  "standard_full_after": 1843,
+  "standard_total": 4902,
+  "tests_run": 811,
+  "tests_skipped": 1
+}

@@ -158,6 +158,9 @@ def _is_counter(card: CardDef) -> bool:
 
 def fight(a: Permanent, b: Permanent) -> tuple[bool, bool]:
     """(a dies, b dies) if a and b deal combat damage to each other."""
+    if any(c.has(k) for c in (a, b) for k in ("infect", "wither")):
+        dead = fight_group(a, [b])[0]
+        return a in dead, b in dead
     a_first = a.has("first strike") or a.has("double strike")
     b_first = b.has("first strike") or b.has("double strike")
     a_kills, b_kills = kills(a, b), kills(b, a)
@@ -189,7 +192,7 @@ def _strikes_first(c) -> bool:
     return c.has("first strike") or c.has("double strike")
 
 
-def fight_group(a: Permanent, blockers) -> tuple:
+def fight_group(a: Permanent, blockers, bonus=0, include_poison=False) -> tuple:
     """Resolve one attacker and its (ordered) blockers on copies, mirroring Game.combat_damage.
 
     Fights are independent of each other, so a whole combat is the sum of its groups.
@@ -197,23 +200,26 @@ def fight_group(a: Permanent, blockers) -> tuple:
     """
     group = [a, *blockers]
     dmg = {c: c.damage for c in group}
+    minus = {c: 0 for c in group}
+    power = lambda c: c.power + (bonus if c is a else 0) - minus[c]
+    toughness = lambda c: c.toughness + (bonus if c is a else 0) - minus[c]
     dt, dead = set(), set()
-    to_player = att_gain = def_gain = 0
+    to_player = att_gain = def_gain = poison = 0
     first = any(_strikes_first(c) for c in group)
 
     def step(deals_now):
-        nonlocal to_player, att_gain, def_gain
+        nonlocal to_player, att_gain, def_gain, poison
         if a in dead:
             return
         hits = []
         alive = [b for b in blockers if b not in dead]
-        if deals_now(a) and a.power > 0:
+        if deals_now(a) and power(a) > 0:
             if not blockers:
-                hits.append((a, None, a.power))
+                hits.append((a, None, power(a)))
             else:
-                remaining = a.power
+                remaining = power(a)
                 for i, b in enumerate(alive):
-                    lethal = 1 if a.has("deathtouch") else max(0, b.toughness - dmg[b])
+                    lethal = 1 if a.has("deathtouch") else max(0, toughness(b) - dmg[b])
                     last = i == len(alive) - 1
                     amt = remaining if (last and not a.has("trample")) else min(remaining, lethal)
                     if amt:
@@ -222,13 +228,19 @@ def fight_group(a: Permanent, blockers) -> tuple:
                 if remaining > 0 and a.has("trample"):
                     hits.append((a, None, remaining))
         for b in alive:
-            if deals_now(b) and b.power > 0:
-                hits.append((b, a, b.power))
+            if deals_now(b) and power(b) > 0:
+                hits.append((b, a, power(b)))
         for src, tgt, amt in hits:
             if tgt is None:
-                to_player += amt
+                if src.has("infect"):
+                    poison += amt
+                else:
+                    to_player += amt
             else:
-                dmg[tgt] += amt
+                if src.has("infect") or src.has("wither"):
+                    minus[tgt] += amt
+                else:
+                    dmg[tgt] += amt
                 if src.has("deathtouch"):
                     dt.add(tgt)
             if src.has("lifelink"):
@@ -237,43 +249,53 @@ def fight_group(a: Permanent, blockers) -> tuple:
                 else:
                     def_gain += amt
         for c in group:
-            if c not in dead and (c in dt or dmg[c] >= c.toughness) and not c.has("indestructible"):
+            if c not in dead and (toughness(c) <= 0 or
+                    (c in dt or dmg[c] >= toughness(c)) and not c.has("indestructible")):
                 dead.add(c)
 
     if first:
         step(_strikes_first)
     step(lambda c: not first or c.has("double strike") or not c.has("first strike"))
-    return dead, to_player, att_gain, def_gain
+    result = dead, to_player, att_gain, def_gain
+    return result + (poison,) if include_poison else result
 
 
-def simulate_combat(attackers, blocks, cache=None):
+def simulate_combat(attackers, blocks, cache=None, include_poison=False):
     """Sum of fight_group over all attackers; blocks maps attacker -> ordered blockers."""
-    dead, to_player, att_gain, def_gain = set(), 0, 0, 0
+    attackers = list(attackers)
+    bonus = (sum(x.exalted_count for x in attackers[0].controller.battlefield)
+             if len(attackers) == 1 and not attackers[0].controller.attacked_with else 0)
+    dead, to_player, att_gain, def_gain, poison = set(), 0, 0, 0, 0
     for a in attackers:
         bl = tuple(blocks.get(a, ()))
-        key = (a, bl)
+        key = (a, bl, bonus)
         if cache is not None and key in cache:
             r = cache[key]
         else:
-            r = fight_group(a, bl)
+            r = fight_group(a, bl, bonus, include_poison=True)
             if cache is not None:
                 cache[key] = r
         dead |= r[0]
         to_player += r[1]
         att_gain += r[2]
         def_gain += r[3]
-    return dead, to_player, att_gain, def_gain
+        poison += r[4]
+    result = dead, to_player, att_gain, def_gain
+    return result + (poison,) if include_poison else result
 
 
 def combat_score(attackers, blocks, att: Player, dfn: Player, att_reach=0, def_reach=0, cache=None):
     """Value of a combat outcome from the attacker's side (the defender's is the negative)."""
-    dead, to_player, att_gain, def_gain = simulate_combat(attackers, blocks, cache)
+    dead, to_player, att_gain, def_gain, poison = simulate_combat(attackers, blocks, cache, include_poison=True)
     def_life = dfn.life - to_player + def_gain
     att_life = att.life + att_gain
-    if def_life <= 0:
+    old_poison = dfn.counters.get("poison", 0)
+    if def_life <= 0 or old_poison + poison >= 10:
         return LETHAL, dead, def_life
     score = (life_value(att_life - def_reach) - life_value(att.life - def_reach)
              - (life_value(def_life - att_reach) - life_value(dfn.life - att_reach)))
+    if poison:
+        score += life_value(2 * (10 - old_poison)) - life_value(2 * (10 - old_poison - poison))
     for c in dead:
         score += card_value(c.card) if c.controller is dfn else -card_value(c.card)
     return score, dead, def_life

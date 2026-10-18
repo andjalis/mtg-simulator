@@ -276,7 +276,32 @@ to select another local database.
 - Creatures with flying, reach, haste, vigilance, defender, menace, trample,
   first strike, double strike, deathtouch, lifelink, hexproof, indestructible,
   "can't be blocked by power 2 or less"
-- Swampwalk against a defending player who controls a Swamp, including dual lands
+- Swampwalk, forestwalk, mountainwalk, islandwalk and plainswalk against a defending player with the
+  corresponding land subtype, including dual lands; flying-only blocking restrictions
+- Shroud prevents either player from targeting a permanent, including equip;
+  untargeted effects and already attached Equipment and Auras still work
+- Fear restricts blocking to black or artifact creatures; horsemanship requires
+  a blocker with horsemanship. These restrictions combine with flying and landwalk
+- Delayed draws at the beginning of the next turn's upkeep or your next upkeep;
+  each draw triggers once, uses the stack, and survives its source leaving play
+- Improvise taps untapped artifacts and delve exiles graveyard cards to pay generic
+  costs, including X; colored and {C} requirements still need mana. Costs remain
+  paid if the spell is countered
+- Undying returns a creature that died without +1/+1 counters under its owner's
+  control with a +1/+1 counter, provided its card has stayed in the graveyard
+- Persist likewise returns creatures that died without -1/-1 counters, with a
+  -1/-1 counter. Wither deals creature damage as -1/-1 counters and player damage normally
+- Rebound exiles a spell cast from hand as it resolves and offers one free recast
+  during your next upkeep. The recast uses fresh targets and does not rebound again
+- Storm copies a spell for each earlier spell cast by either player that turn;
+  copies are not cast. Cascade exiles to a cheaper nonland card, offers a free cast,
+  and puts the other exiled cards on the library bottom in random order
+- Shadow restricts both attacking and blocking creatures to those with shadow;
+  intimidate restricts blockers to artifact creatures or creatures sharing a color
+- Infect deals poison counters to players and -1/-1 counters to creatures, in
+  combat and through damage abilities or fights. Devoid makes a card colorless
+  while retaining its colored mana requirements. Exalted instances stack when
+  exactly one creature attacks; combat predictions include these bonuses and poison
 - Proliferate on counter-bearing permanents and players, including repeated
   proliferation, Saga chapters, keyword counters, and poison loss at ten counters.
   The optional `choose_proliferate(game, me)` AI hook returns objects to choose;

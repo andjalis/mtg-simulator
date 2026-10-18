@@ -1,0 +1,152 @@
+{
+  "seed": 20261018,
+  "alternating_play_draw": true,
+  "results": {
+    "improvise": {
+      "games": 40,
+      "heuristic_wins": 18,
+      "baseline_wins": 21,
+      "draws": 1,
+      "score_ci95": [
+        0.31815899152667554,
+        0.6134128489171039
+      ],
+      "deck": [
+        {
+          "copies": 24,
+          "name": "Island",
+          "cost": {
+            "generic": 0
+          },
+          "text": "({T}: Add {U}.)",
+          "types": [
+            "Land"
+          ],
+          "power": null,
+          "toughness": null
+        },
+        {
+          "copies": 12,
+          "name": "Fixture Gear",
+          "cost": {
+            "generic": 1
+          },
+          "text": "",
+          "types": [
+            "Artifact"
+          ],
+          "power": null,
+          "toughness": null
+        },
+        {
+          "copies": 12,
+          "name": "Fixture Improviser",
+          "cost": {
+            "generic": 5,
+            "U": 1
+          },
+          "text": "Improvise",
+          "types": [
+            "Artifact",
+            "Creature"
+          ],
+          "power": 4,
+          "toughness": 4
+        },
+        {
+          "copies": 12,
+          "name": "Fixture Bear",
+          "cost": {
+            "generic": 2
+          },
+          "text": "",
+          "types": [
+            "Creature"
+          ],
+          "power": 2,
+          "toughness": 2
+        }
+      ]
+    },
+    "delve_undying": {
+      "games": 40,
+      "heuristic_wins": 22,
+      "baseline_wins": 15,
+      "draws": 3,
+      "score_ci95": [
+        0.43390806198171744,
+        0.7257576436494639
+      ],
+      "deck": [
+        {
+          "copies": 24,
+          "name": "Island",
+          "cost": {
+            "generic": 0
+          },
+          "text": "({T}: Add {U}.)",
+          "types": [
+            "Land"
+          ],
+          "power": null,
+          "toughness": null
+        },
+        {
+          "copies": 12,
+          "name": "Fixture Undying",
+          "cost": {
+            "generic": 1,
+            "U": 1
+          },
+          "text": "Undying",
+          "types": [
+            "Creature"
+          ],
+          "power": 2,
+          "toughness": 1
+        },
+        {
+          "copies": 8,
+          "name": "Fixture Delver",
+          "cost": {
+            "generic": 5,
+            "U": 1
+          },
+          "text": "Delve",
+          "types": [
+            "Creature"
+          ],
+          "power": 4,
+          "toughness": 4
+        },
+        {
+          "copies": 8,
+          "name": "Fixture Bear",
+          "cost": {
+            "generic": 2
+          },
+          "text": "",
+          "types": [
+            "Creature"
+          ],
+          "power": 2,
+          "toughness": 2
+        },
+        {
+          "copies": 8,
+          "name": "Fixture Mill",
+          "cost": {
+            "generic": 0,
+            "U": 1
+          },
+          "text": "Mill three cards.",
+          "types": [
+            "Sorcery"
+          ],
+          "power": null,
+          "toughness": null
+        }
+      ]
+    }
+  }
+}
