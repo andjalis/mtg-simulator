@@ -17,18 +17,22 @@ power, toughness, loyalty, defense, colors, color_identity, keywords, layout, ca
 from __future__ import annotations
 
 import argparse
+import gzip
+import io
 import json
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
 import time
 import unicodedata
 import urllib.request
+from urllib.parse import urlsplit
 from pathlib import Path
 
 DEFAULT_DB = Path(__file__).parent / "data" / "cards.sqlite3"
-SCRYFALL_BULK = "https://api.scryfall.com/bulk-data/oracle-cards"
+SCRYFALL_BULK = "https://api.scryfall.com/bulk-data/oracle_cards"
 FORGE_GIT = "https://github.com/Card-Forge/forge"
 FORGE_CARDS = "forge-gui/res/cardsfolder"
 
@@ -48,8 +52,35 @@ def normalize(name: str) -> str:
 
 # ---------------------------------------------------------------- Scryfall bulk data
 
+def _scryfall_records(path: Path):
+    """Read gzip by its signature, and distinguish legacy arrays from JSON Lines."""
+    with path.open("rb") as raw:
+        compressed = raw.read(2) == b"\x1f\x8b"
+        raw.seek(0)
+        with io.TextIOWrapper(gzip.GzipFile(fileobj=raw) if compressed else raw,
+                              encoding="utf-8-sig") as stream:
+            first = ""
+            while not first:
+                char = stream.read(1)
+                if not char:
+                    raise ValueError(f"{path.name}: empty Scryfall bulk file")
+                first = char.strip()
+            stream.seek(0)
+            if first == "[":
+                yield from json.load(stream)
+            else:
+                for line_number, line in enumerate(stream, 1):
+                    if line.strip():
+                        try:
+                            yield json.loads(line)
+                        except json.JSONDecodeError as e:
+                            raise ValueError(f"{path.name}: invalid JSON on line {line_number}: {e}") from e
+
+
 def scryfall_cards(path: Path):
-    for card in json.loads(path.read_text(encoding="utf-8")):
+    for index, card in enumerate(_scryfall_records(path), 1):
+        if not isinstance(card, dict) or not isinstance(card.get("name"), str) or not card["name"].strip():
+            raise ValueError(f"{path.name}: record {index} must be a card object with a nonempty name")
         if card.get("layout") in SKIP_LAYOUTS:
             continue
         out = {k: card[k] for k in KEEP if k in card}
@@ -59,11 +90,23 @@ def scryfall_cards(path: Path):
 
 
 def download_scryfall(dest: Path) -> Path:
-    req = urllib.request.Request(SCRYFALL_BULK, headers={"User-Agent": "mtgsim/0.1", "Accept": "application/json"})
+    headers = {"User-Agent": "mtgsim/0.1", "Accept": "application/json"}
+    req = urllib.request.Request(SCRYFALL_BULK, headers=headers)
     with urllib.request.urlopen(req, timeout=30) as resp:
-        uri = json.load(resp)["download_uri"]
-    path = dest / "oracle-cards.json"
-    urllib.request.urlretrieve(uri, path)
+        metadata = json.load(resp)
+    if not isinstance(metadata, dict):
+        raise ValueError("Scryfall bulk metadata must be a JSON object")
+    uri = metadata.get("jsonl_download_uri") or metadata.get("download_uri")
+    if not isinstance(uri, str) or urlsplit(uri).scheme != "https" or not urlsplit(uri).netloc:
+        raise ValueError("Scryfall bulk metadata requires an HTTPS jsonl_download_uri or download_uri")
+    path = dest / "oracle-cards.bulk"
+    req = urllib.request.Request(uri, headers=headers)
+    try:
+        with urllib.request.urlopen(req, timeout=120) as resp, path.open("wb") as out:
+            shutil.copyfileobj(resp, out)
+    except Exception:
+        path.unlink(missing_ok=True)
+        raise
     return path
 
 
@@ -204,41 +247,52 @@ def find_cardsfolder(path: Path) -> Path:
 def write_db(cards, out: Path, source: str) -> int:
     import sqlite3  # imported here so the engine also loads where sqlite3 is missing (Pyodide)
     out.parent.mkdir(parents=True, exist_ok=True)
-    tmp = out.with_suffix(".tmp")
-    tmp.unlink(missing_ok=True)
-    con = sqlite3.connect(tmp)
-    con.executescript("""
-        CREATE TABLE cards (key TEXT PRIMARY KEY, name TEXT, mana_cost TEXT, cmc REAL, type_line TEXT,
-            oracle_text TEXT, power TEXT, toughness TEXT, colors TEXT, layout TEXT, data TEXT);
-        CREATE TABLE names (alias TEXT PRIMARY KEY, key TEXT);
-        CREATE TABLE meta (k TEXT PRIMARY KEY, v TEXT);
-    """)
-    n = 0
-    for card in cards:
-        key = normalize(card["name"])
-        faces = card.get("card_faces") or []
-        text = card.get("oracle_text") or "\n//\n".join(f.get("oracle_text", "") for f in faces)
-        front = faces[0] if faces else card
-        con.execute("INSERT OR REPLACE INTO cards VALUES (?,?,?,?,?,?,?,?,?,?,?)", (
-            key, card["name"], card.get("mana_cost", ""), card.get("cmc", 0), card.get("type_line", ""),
-            text, front.get("power"), front.get("toughness"), "".join(card.get("colors") or []),
-            card.get("layout", "normal"), json.dumps(card, ensure_ascii=False, separators=(",", ":"))))
-        aliases = [key] + [normalize(f["name"]) for f in faces if f.get("name")]
-        for i, alias in enumerate(aliases):  # full name and front face win over back faces
-            con.execute(f"INSERT OR {'REPLACE' if i < 2 else 'IGNORE'} INTO names VALUES (?,?)", (alias, key))
-        n += 1
-    con.executemany("INSERT INTO meta VALUES (?,?)", [
-        ("source", source), ("built", time.strftime("%Y-%m-%d %H:%M:%S")), ("cards", str(n))])
-    con.commit()
-    con.execute("VACUUM")
-    con.close()
-    tmp.replace(out)
-    return n
+    # Build beside the destination so replacement is atomic, even across filesystems.
+    with tempfile.NamedTemporaryFile(dir=out.parent, prefix=out.name + ".", suffix=".tmp",
+                                     delete=False) as staging:
+        tmp = Path(staging.name)
+    con = None
+    try:
+        con = sqlite3.connect(tmp)
+        con.executescript("""
+            CREATE TABLE cards (key TEXT PRIMARY KEY, name TEXT, mana_cost TEXT, cmc REAL, type_line TEXT,
+                oracle_text TEXT, power TEXT, toughness TEXT, colors TEXT, layout TEXT, data TEXT);
+            CREATE TABLE names (alias TEXT PRIMARY KEY, key TEXT);
+            CREATE TABLE meta (k TEXT PRIMARY KEY, v TEXT);
+        """)
+        n = 0
+        for card in cards:
+            key = normalize(card["name"])
+            faces = card.get("card_faces") or []
+            text = card.get("oracle_text") or "\n//\n".join(f.get("oracle_text", "") for f in faces)
+            front = faces[0] if faces else card
+            con.execute("INSERT OR REPLACE INTO cards VALUES (?,?,?,?,?,?,?,?,?,?,?)", (
+                key, card["name"], card.get("mana_cost", ""), card.get("cmc", 0), card.get("type_line", ""),
+                text, front.get("power"), front.get("toughness"), "".join(card.get("colors") or []),
+                card.get("layout", "normal"), json.dumps(card, ensure_ascii=False, separators=(",", ":"))))
+            aliases = [key] + [normalize(f["name"]) for f in faces if f.get("name")]
+            for i, alias in enumerate(aliases):  # full name and front face win over back faces
+                con.execute(f"INSERT OR {'REPLACE' if i < 2 else 'IGNORE'} INTO names VALUES (?,?)", (alias, key))
+            n += 1
+        if not n:
+            raise ValueError("No playable cards found; keeping the existing database")
+        con.executemany("INSERT INTO meta VALUES (?,?)", [
+            ("source", source), ("built", time.strftime("%Y-%m-%d %H:%M:%S")), ("cards", str(n))])
+        con.commit()
+        con.execute("VACUUM")
+        con.close()
+        con = None
+        tmp.replace(out)
+        return n
+    finally:
+        if con is not None:
+            con.close()
+        tmp.unlink(missing_ok=True)
 
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--scryfall", type=Path, help="Scryfall bulk JSON file (Oracle Cards or Default Cards)")
+    p.add_argument("--scryfall", type=Path, help="Scryfall bulk JSON array or JSON Lines file (optionally gzip-compressed)")
     p.add_argument("--forge", type=Path, help="Forge checkout, release or cardsfolder")
     p.add_argument("--source", choices=("auto", "scryfall", "forge"), default="auto",
                    help="what to download when no local file is given (default: Scryfall, else Forge)")
@@ -247,6 +301,7 @@ def main(argv=None):
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp = Path(tmp)
+        n = None
         if args.scryfall:
             cards, source = scryfall_cards(args.scryfall), f"scryfall:{args.scryfall.name}"
         elif args.forge:
@@ -257,9 +312,11 @@ def main(argv=None):
                 try:
                     print("Downloading Scryfall Oracle Cards bulk data...", file=sys.stderr)
                     cards, source = scryfall_cards(download_scryfall(tmp)), "scryfall:oracle-cards"
-                except Exception as e:  # blocked network, Scryfall down
+                    n = write_db(cards, args.out, source)
+                except Exception as e:  # download, decompression, parsing or database failure
                     if args.source == "scryfall":
-                        sys.exit(f"Scryfall download failed: {e}")
+                        sys.exit(f"Scryfall build failed: {e}")
+                    cards = None
                     print(f"Scryfall unavailable ({e}); using Forge's card scripts", file=sys.stderr)
             if cards is None:
                 print(f"Cloning Forge card scripts from {FORGE_GIT}...", file=sys.stderr)
@@ -267,7 +324,11 @@ def main(argv=None):
                 rev = subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=folder,
                                      capture_output=True, text=True).stdout.strip()
                 cards, source = forge_cards(folder), f"forge:{rev}"
-        n = write_db(cards, args.out, source)
+        if n is None:
+            try:
+                n = write_db(cards, args.out, source)
+            except Exception as e:
+                sys.exit(f"Card database build failed ({source}): {e}")
     print(f"Wrote {n} cards to {args.out} ({args.out.stat().st_size / 1e6:.1f} MB, source {source})")
 
 

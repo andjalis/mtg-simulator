@@ -168,17 +168,20 @@ faces. Names match regardless of case or accents, and a face name such as
 the Scryfall API. `--offline` skips Scryfall.
 
 The database (about 27 MB) is not checked in to git. Build it once after cloning,
-and again to refresh it (about 20 seconds, needs git); the tests need it:
+and again to refresh it (needs network access; the Forge fallback also needs git); the tests need it:
 
 ```
 python3 -m mtgsim.build_carddb                          # Scryfall bulk data if reachable, else Forge
-python3 -m mtgsim.build_carddb --scryfall oracle-cards.json   # a Scryfall bulk file you downloaded
+python3 -m mtgsim.build_carddb --scryfall oracle-cards.jsonl.gz  # a downloaded bulk file
 python3 -m mtgsim.build_carddb --forge ~/forge          # a Forge checkout or release
 ```
 
-The current copy was built from [Forge](https://github.com/Card-Forge/forge)'s
-card scripts, because Scryfall and MTGJSON are blocked where it was built.
-Forge's data has no sets or format legality.
+The builder reads Scryfall's current bulk metadata to find the download URL. It supports
+gzip-compressed JSON Lines and legacy JSON arrays, including local files passed with
+`--scryfall` (either format, with or without gzip). Download or parsing failures automatically
+fall back to [Forge](https://github.com/Card-Forge/forge)'s card scripts; use `--source scryfall`
+to require Scryfall and report a failure instead. The existing database is replaced only after
+a successful, nonempty build. Forge's data has no sets or format legality.
 
 Each card's rules text is matched against templates the engine understands.
 Text that does not match is ignored and reported. Template coverage helps identify gaps;
