@@ -75,6 +75,28 @@ browser can't run the engine, when the tab goes quiet for 15 s, or with `?run=se
 decks always run on the server. Other flags: `--port`, `--host`, `--offline`.
 Standard library only, like the rest of the simulator.
 
+Web trials accept 1–1000 main-deck cards; lists below 60 cards show a warning.
+Refreshing the page reconnects to the last trial in that browser tab while the
+server still has it. Connection errors offer a retry instead of losing access
+to the trial.
+Reloading an active browser-run trial moves unfinished batches to the server,
+since the previous page's workers are gone. The trial ID is included in its
+browser title; `/api/runs` lists progress summaries for the current server process.
+
+The live arena opens a close-up of the active opponent pool, with its score,
+clear target, matchup progress and individual records. Select a pool on the map
+or an opponent card to inspect it; **Follow live pool** returns to the action.
+The separate trial totals cover all pools. MMR and the final rating badge are
+shown on the results screen.
+
+Optional browser QA uses Playwright without adding application dependencies:
+start an isolated server with `MTGSIM_HISTORY=/tmp/ui-history.sqlite3 python3 -m web --offline --jobs 2 --port 8137`,
+install Playwright with `npm install --prefix /tmp/mtgsim-ui playwright`, then run
+`NODE_PATH=/tmp/mtgsim-ui/node_modules node scripts/ui_qa.cjs`.
+It uses `/usr/bin/chromium` by default (`CHROMIUM_PATH` overrides it).
+The pass plays a small real trial and uses mocked transport for interrupted-run
+recovery; screenshots go to `/tmp/mtgsim-ui-artifacts`.
+
 The Leaderboard page (`/leaderboard`, JSON at `/api/leaderboard`) ranks every tested deck by MMR:
 its rank badge, MMR, the S-F grades from its latest assessment, when it was tested and a link to
 its latest results. It reads the run history (see `mtgsim.history`), showing each deck's latest

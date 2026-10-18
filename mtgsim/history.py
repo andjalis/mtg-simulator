@@ -108,6 +108,9 @@ def record(deck: str, counts: dict[str, int], kind: str, result: dict, *, engine
     fp = fingerprint(counts)
     now = _now()
     with _connect(path) as con:
+        # Serialize version allocation across independent CLI/web sessions. The
+        # existence check and MAX(version) must see the same locked snapshot.
+        con.execute("BEGIN IMMEDIATE")
         if not con.execute("SELECT 1 FROM versions WHERE deck = ? AND fingerprint = ?", (deck, fp)).fetchone():
             n = con.execute("SELECT COALESCE(MAX(version), 0) + 1 FROM versions WHERE deck = ?", (deck,)).fetchone()[0]
             con.execute("INSERT INTO versions VALUES (?, ?, ?, ?, ?)",

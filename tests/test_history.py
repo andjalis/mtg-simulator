@@ -1,4 +1,5 @@
 import io
+from concurrent.futures import ThreadPoolExecutor
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -34,6 +35,30 @@ class HistoryTests(unittest.TestCase):
 
     def tearDown(self):
         self.tmp.cleanup()
+
+    def test_concurrent_sessions_allocate_unique_versions(self):
+        # Separate connections model independent CLI and web sessions writing
+        # different versions of the same deck at once.
+        history.record("burn", {"Mountain": 1}, "rank", {}, path=self.db)
+        def save(n):
+            return history.record("burn", {"Mountain": n}, "rank", {}, path=self.db)
+        with ThreadPoolExecutor(max_workers=12) as pool:
+            ids = list(pool.map(save, range(2, 26)))
+        self.assertEqual(len(set(ids)), 24)
+        versions = history.versions("burn", self.db)
+        self.assertEqual([v["version"] for v in versions], list(range(1, 26)))
+        self.assertEqual(len(history.runs("burn", self.db)), 25)
+
+    def test_concurrent_sessions_record_same_version(self):
+        history.record("burn", V1, "rank", {}, path=self.db)
+        def save(_):
+            return history.record("burn", V2, "rank", {}, path=self.db)
+        with ThreadPoolExecutor(max_workers=12) as pool:
+            ids = list(pool.map(save, range(24)))
+        self.assertEqual(len(set(ids)), 24)
+        versions = history.versions("burn", self.db)
+        self.assertEqual([v["version"] for v in versions], [1, 2])
+        self.assertEqual(len(versions[1]["runs"]), 24)
 
     def test_fingerprint_ignores_order_and_case(self):
         self.assertEqual(history.fingerprint({"Shock": 4, "Mountain": 20}),

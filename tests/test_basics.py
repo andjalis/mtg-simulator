@@ -27,6 +27,15 @@ class DecklistTests(unittest.TestCase):
                 "Sideboard (3)\n3\tDuress\tBlack\tControl\n")
         self.assertEqual(parse_decklist(text), {"Tolarian Terror": 1, "Jwari Disruption": 2})
 
+    def test_comments_do_not_start_sideboard(self):
+        for comment in ("# spells", "// spells"):
+            self.assertEqual(parse_decklist(f"60 Mountain\n{comment}\n4 Shock"),
+                             {"Mountain": 60, "Shock": 4})
+
+    def test_comment_after_double_faced_card(self):
+        self.assertEqual(parse_decklist("2 Jwari Disruption // Jwari Ruins // comment"),
+                         {"Jwari Disruption": 2})
+
 
 class CardParsingTests(unittest.TestCase):
     def test_burn_and_keywords(self):

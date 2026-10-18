@@ -3150,12 +3150,12 @@ class Game:
         if isinstance(target, Player):
             self.change_life(target, -amount, cause)
         elif isinstance(target, Permanent) and target in target.controller.battlefield:
-            if target.is_planeswalker and not target.is_creature:
+            if target.is_planeswalker:
                 target.counters["loyalty"] = target.loyalty - amount
-            elif by is not None and target.controller is not by and \
+            if target.is_creature and by is not None and target.controller is not by and \
                     any(x.card.wither_noncombat for x in by.battlefield):
                 target.counters["-1/-1"] = target.m1 + amount   # Soul-Scar Mage
-            else:
+            elif target.is_creature or not target.is_planeswalker:
                 target.damage += amount
 
     def adversary(self, p: Player, item, eff: Effect):
@@ -3383,16 +3383,16 @@ class Game:
             changed = False
             for p in self.players:
                 for perm in list(p.battlefield):
-                    if perm.is_creature:
+                    if perm.is_planeswalker and perm.loyalty <= 0:
+                        self.dies(perm)
+                        changed = True
+                    elif perm.is_creature:
                         if perm.toughness <= 0:
                             self.dies(perm)
                             changed = True
                         elif (perm.damage >= perm.toughness or perm.deathtouched) and not perm.has("indestructible"):
                             self.dies(perm)
                             changed = True
-                    elif perm.is_planeswalker and perm.loyalty <= 0:
-                        self.dies(perm)
-                        changed = True
         for p in self.players:
             if p.life <= 0:
                 if not p.lost:
@@ -3506,12 +3506,13 @@ class Game:
                 self.change_life(tgt, -amt, f"{src.card.name}: combat damage")
                 self.fire(src.controller, "combat_damage_player", src)
                 self.fire(src.controller, "ally_combat_damage")
-            elif tgt.is_planeswalker and not tgt.is_creature:
-                tgt.counters["loyalty"] = tgt.loyalty - amt
             else:
-                tgt.damage += amt
-                if src.has("deathtouch"):
-                    tgt.deathtouched = True
+                if tgt.is_planeswalker:
+                    tgt.counters["loyalty"] = tgt.loyalty - amt
+                if tgt.is_creature:
+                    tgt.damage += amt
+                    if src.has("deathtouch"):
+                        tgt.deathtouched = True
             if src.has("lifelink"):
                 self.change_life(src.controller, amt, f"{src.card.name}: lifelink")
         self.state_based_actions()

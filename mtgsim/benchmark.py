@@ -91,9 +91,11 @@ def record(res) -> dict:
 
 
 def reusable(entry, games, folder):
-    if not entry or entry.get("status") != "complete":
+    if not isinstance(entry, dict) or entry.get("status") != "complete":
         return False
     r = entry.get("result", {})
+    if not isinstance(r, dict):
+        return False
     return (r.get("games") == games and
             all(type(r.get(k)) is int and r[k] >= 0 for k in ("wins_a", "wins_b", "draws")) and
             sum(r[k] for k in ("wins_a", "wins_b", "draws")) == games and
@@ -203,6 +205,9 @@ def run(args):
         checkpoint = out / "results.json"
         if checkpoint.exists():
             state = json.loads(checkpoint.read_text())
+            if (not isinstance(state, dict) or not isinstance(state.get("results"), dict)
+                    or not isinstance(state.get("coverage"), dict)):
+                raise ValueError("Resume refused: malformed checkpoint. Use a new --out directory.")
             if state.get("identity") != identity or state.get("status") == "invalid":
                 raise ValueError("Resume refused: inputs/code/data/runtime/settings changed or run invalid. Use a new --out directory.")
         else:
@@ -220,7 +225,7 @@ def run(args):
         # Invalidate missing/corrupted artifacts before showing any resumed results.
         for key, entry in state["results"].items():
             if not reusable(entry, args.games, out):
-                entry["status"] = "incomplete"
+                state["results"][key] = {**entry, "status": "incomplete"} if isinstance(entry, dict) else {"status": "incomplete"}
         atomic_json(checkpoint, state)
         write_report(out / "report.md", state)
         for a, b in manifest["matchups"]:
