@@ -59,7 +59,8 @@ class CoverageReportTests(unittest.TestCase):
                     kinds |= {e.kind for e in effects}
         kinds -= {"revolt"}   # Fatal Push's revolt is a targeting filter, not an effect of its own
         from mtgsim import auras, copies, removal, search, xspells    # effect kinds resolved by their own module
-        handled = auras.KINDS | copies.KINDS | removal.KINDS | search.KINDS | xspells.KINDS
+        from mtgsim.engine.kinds import HANDLERS
+        handled = auras.KINDS | copies.KINDS | removal.KINDS | search.KINDS | xspells.KINDS | set(HANDLERS)
         self.assertEqual({k for k in kinds if f'"{k}"' not in source and k not in handled}, set())
 
 

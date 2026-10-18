@@ -90,7 +90,8 @@
       ],
       "implementation": [
         "mtgsim/engine/effects.py",
-        "mtgsim/engine/resolve.py"
+        "mtgsim/engine/resolve.py",
+        "mtgsim/engine/kinds/permanents.py"
       ]
     },
     {
@@ -106,6 +107,7 @@
       "implementation": [
         "mtgsim/engine/effects.py",
         "mtgsim/engine/resolve.py",
+        "mtgsim/engine/kinds/graveyard.py",
         "mtgsim/graveyard.py"
       ]
     },
