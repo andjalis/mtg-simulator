@@ -109,3 +109,54 @@ Follow-up checks:
   interactive browser rendering test.
 
 No real Forge games or Python 3.10/3.13 runtime checks were added in this follow-up.
+
+## Six-agent interface review
+
+Six additional agents used Playwright and Chromium to review desktop forms,
+mobile layouts, the trial lifecycle, network recovery, keyboard accessibility,
+and leaderboard/saved results. Tested widths were 320, 390, 768, and 1440px.
+
+Fixed confirmed UX bugs:
+
+- Mobile users had no leaderboard link, and completed results also hid it.
+  Navigation now stays available; the saved-results header wraps at narrow widths.
+- Small mobile controls now have at least 44px-high touch targets.
+- Overlapping league names at 320px now wrap into three columns.
+- Zero-count lists enabled starting an empty trial; huge quantities enabled
+  potentially enormous card expansion. Zero quantities are ignored, and web
+  validation/run creation enforces 1–1000 cards before expansion.
+- Correcting rank selections left an old error visible. Loadout edits now clear
+  stale form errors.
+- A failed rank-list request silently left the page unconfigured. The page now
+  explains the failure, offers retry, and blocks starting until ranks load.
+- Refreshing an active or completed trial lost its run ID. The browser tab now
+  retains it in session storage and restores the same run. Interrupted polling
+  exposes a reconnect action; an expired run clears the saved ID and explains
+  how to start again. This does not preserve in-memory runs across server restarts.
+- Failed trials incorrectly used the completed-trial navigation hint. The hint
+  now distinguishes incomplete trials.
+- Saved replay independently rounded wins and draws, sometimes showing 150%
+  score and negative losses. Replay prefixes now use a consistent sequence of
+  outcomes. Regression checks cover every valid W/D/L combination for 1–12 games
+  at two replay subdivisions.
+- Repeated leaderboard action links lacked deck-specific accessible names;
+  those links now identify each deck. The actions column and internal-rating
+  wording are explicit.
+
+`scripts/ui_qa.cjs` is the repeatable integrated Playwright regression pass.
+It passed against an isolated real server, including a 10-game trial, saved-results
+refresh without resubmission, invalid forms, retry, mobile layout/navigation and
+touch targets. Mocked transport tests separately passed active-trial refresh,
+polling interruption, and reconnect. No unhandled browser errors occurred.
+Expired-session recovery and blocked browser-engine download/server fallback
+also passed. Final full Python suite: **523 tests passed** in 166 seconds
+(`/tmp/mtgsim-ux-final-suite.log`); `git diff --check` passed.
+Log: `/tmp/mtgsim-ux/final-playwright.log`; screenshots:
+`/tmp/mtgsim-ui-artifacts/`. Agent-specific scripts/screenshots are under
+`/tmp/mtgsim-ux/`.
+
+Keyboard start, result-heading focus, Space/Enter table expansion, configuration
+focus, and explicit reduced-motion checks passed. An initial reduced-motion
+finding was withdrawn after isolated reproduction showed the existing rule works.
+Tests used Chromium on Linux, including emulated mobile viewports, not physical
+phones or other browser engines.
