@@ -1,0 +1,6 @@
+test_duplicate_definition_creates_distinct_physical_cards (tests.test_identity_events.IdentityEvents.test_duplicate_definition_creates_distinct_physical_cards) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

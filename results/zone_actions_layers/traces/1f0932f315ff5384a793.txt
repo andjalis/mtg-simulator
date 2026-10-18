@@ -1,0 +1,6 @@
+test_legend_control_change_routes_to_owner (tests.test_rules_contracts.RulesContracts.test_legend_control_change_routes_to_owner) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

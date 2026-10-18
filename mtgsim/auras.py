@@ -109,6 +109,7 @@ def choose_host(game, p, card):
 
 
 def attach(game, aura, host):
+    aura.attachment_timestamp = game.next_effect_timestamp()
     aura.aura_host = host
     host.auras.append(aura)
     game.log(f"{aura.card.name} enchants {host.card.name}", aura.controller)

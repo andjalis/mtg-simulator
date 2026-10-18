@@ -1,0 +1,6 @@
+test_multiple_returns_each_receive_counters_and_enter_tapped (tests.test_return_counters.ReturnCounters.test_multiple_returns_each_receive_counters_and_enter_tapped) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

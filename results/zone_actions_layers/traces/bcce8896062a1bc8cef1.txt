@@ -1,0 +1,6 @@
+test_one_shield_consumed_per_destruction (tests.test_regeneration.Regeneration.test_one_shield_consumed_per_destruction) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

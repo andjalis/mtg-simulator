@@ -27,8 +27,9 @@ import re
 
 from . import auras, cast_triggers, copies, counting, graveyard, learning, milling, proliferate, regeneration, removal, returns, search, xspells
 from .cards import BASIC_MANA, COLORS, KEYWORDS, Activated, AltCost, CardDef, Effect, Trigger, add_mana, jace_token, make_token, role_token
-from . import modal, rules_events
+from . import modal, rules_events, continuous
 from .identity import CardInstance, CardZone, Graveyard, instance
+from .actions import atomic_action, perform, can_perform
 
 TrackedZone = CardZone  # public compatibility alias
 
@@ -39,6 +40,27 @@ TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "
 
 
 class Permanent:
+    @property
+    def tapped(self):
+        return self._tapped
+
+    @tapped.setter
+    def tapped(self, value):
+        self._tapped = value
+        if not value and getattr(self, "net_locked", False):
+            self.net_locked = False
+
+    @property
+    def animated(self):
+        return self._animated
+
+    @animated.setter
+    def animated(self, value):
+        self._animated = value
+        game = getattr(self.controller, "_game", None)
+        if value is not None and game is not None:
+            self.animation_timestamp = game.next_effect_timestamp()
+
     @property
     def front(self):
         return self._front
@@ -169,25 +191,17 @@ class Permanent:
                     bt += n
         return bp, bt
 
-    def _base(self, power: bool):
-        an = self.animated
-        if self.auras and any("base_1_1" in a.card.aura_flags for a in self.auras):
-            return 1                                    # Cursed Role
-        if an and an.kind == "animate":
-            return an.power if power else an.toughness
-        return (self.card.power if power else self.card.toughness) or 0
-
     @property
     def power(self):
-        c = self.counters
-        return (self._base(True) + self.pump_p + c.get("+1/+1", 0) - c.get("-1/-1", 0)
-                + self._pt_bonus()[0])
+        if hasattr(self, "last_pt") and self not in self.controller.battlefield:
+            return self.last_pt[0]
+        return continuous.pt(self)[0]
 
     @property
     def toughness(self):
-        c = self.counters
-        return (self._base(False) + self.pump_t + c.get("+1/+1", 0) - c.get("-1/-1", 0)
-                + self._pt_bonus()[1])
+        if hasattr(self, "last_pt") and self not in self.controller.battlefield:
+            return self.last_pt[1]
+        return continuous.pt(self)[1]
 
     @property
     def m1(self): return self.counters.get("-1/-1", 0)
@@ -196,6 +210,9 @@ class Permanent:
     def loyalty(self): return self.counters.get("loyalty", 0)
 
     def has(self, kw):
+        return continuous.keyword(self, kw, self._has_unlayered(kw))
+
+    def _has_unlayered(self, kw):
         if kw in self.card.keywords or kw in self.temp_kw or kw in self.perm_kw or (kw in KEYWORDS and self.counters.get(kw, 0) > 0):
             return True
         if self.animated and kw in self.animated.keywords:
@@ -594,6 +611,9 @@ class Game:
     def __init__(self, p1: Player, p2: Player, rng: random.Random, max_turns: int = 60, log: bool = False):
         self.stolen: list = []        # (permanent, original controller): control returns at end of turn
         self.players = [p1, p2]       # p1 is on the play
+        self.effect_clock = 0
+        self.continuous_effects = []
+        p1._game = p2._game = self
         p1.foe, p2.foe = p2, p1
         p1.opponent, p2.opponent = p2, p1
         self.rng = rng
@@ -1115,7 +1135,7 @@ class Game:
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile,
                 "mayhem": p.graveyard, "impulse": p.exile, "rebound": p.exile,
                 "cascade": p.exile, "cascade_adventure": p.exile,
-                "rebound_adventure": p.exile}.get(kind, p.hand)
+                "rebound_adventure": p.exile, "discover": p.exile}.get(kind, p.hand)
 
     def _available(self, p: Player, card: CardDef) -> bool:
         base, kind, _ = self._origin(card)
@@ -1287,14 +1307,37 @@ class Game:
         return out
 
     # --------------------------------------------------------------- setup
+    def zone_arrived(self, card, destination):
+        """One event boundary for legacy list moves and explicit movement helpers."""
+        pending = card.pending_move
+        if pending is None:
+            return  # a fixture/blueprint insertion has no source zone
+        before, origin, actor, source, replacements = pending
+        card.pending_move = None
+        self.rule_events.emit(rules_events.RulesEvent("zone_change", actor, source=source,
+            subject=card, before=before, destination=destination.name,
+            source_zone=origin, reason=getattr(self, "_zone_reason", "move"), replacements=replacements))
+
+    def next_effect_timestamp(self):
+        self.effect_clock += 1
+        return self.effect_clock
+
+    def add_continuous_effect(self, target, operation, **options):
+        return continuous.add(self, target, operation, **options)
+
+    def expire_continuous_effects(self):
+        self.continuous_effects[:] = [e for e in self.continuous_effects if not e.until_eot]
+
     def move_card(self, card, source, destination, *, reason="move"):
         """Move one exact physical card between nonbattlefield zones."""
         card = source.get(card)
-        before = rules_events.card_snapshot(card, source.owner)
-        source.remove(card)
-        destination.append(card)
-        self.rule_events.emit(rules_events.RulesEvent("zone_change", source.owner,
-            subject=card, before=before, destination=destination.name, reason=reason, source_zone=source.name))
+        previous = getattr(self, "_zone_reason", "move")
+        self._zone_reason = reason
+        try:
+            source.remove(card)
+            destination.append(card)
+        finally:
+            self._zone_reason = previous
         return card
 
     def draw(self, p: Player, n: int = 1):
@@ -1381,6 +1424,7 @@ class Game:
             elif card.gy_exile_draw and (not card.gy_needs_speed or p.speed >= 4) and p.library \
                     and self.pay(p, card.gy_exile_draw) is not None:
                 p.graveyard.remove(card)
+                p.exile.append(card)
                 self.log(f"exiles {card.name} from the graveyard to draw", p)
                 self.draw(p, 1)
 
@@ -1533,6 +1577,7 @@ class Game:
             perm.crewed = False
             perm.saddled = False
         p.next_creature_counters = 0
+        self.expire_continuous_effects()
         for pl in self.players:
             pl.granted_fb = []
         self.state_based_actions()
@@ -1558,7 +1603,7 @@ class Game:
     def settle(self):
         """Outside a priority loop: let players respond to whatever was just put on the
         stack (or triggered) and resolve until the stack is empty."""
-        if self._priority_depth == 0 and (self.stack or self.pending) and not self.over:
+        if not getattr(self, "_action_depth", 0) and self._priority_depth == 0 and (self.stack or self.pending) and not self.over:
             self.run_priority(until_empty_stack=True)
 
     def run_priority(self, until_empty_stack: bool = True):
@@ -1602,14 +1647,10 @@ class Game:
         or ``("activate", permanent, what)`` with what in clue/blood/sac_debuff/animate/barrens."""
         if not action:
             return False
-        if action[0] == "loyalty":
-            return self.activate_loyalty(p, action[1], action[2], action[3] if len(action) > 3 else None)
-        if action[0] == "activate":
-            return self.activate(p, action[1], action[2], *action[3:])
-        card, targets = action
-        if not self.can_cast_now(p, card):
-            return False
-        return self.cast(p, card, targets)
+        return perform(self, p, action)
+
+    def can_perform(self, p: Player, action) -> bool:
+        return can_perform(self, p, action)
 
     def queue_trigger(self, controller: Player, effects: list, source: Permanent | None = None,
                       name: str = "", context=None, targets: list | None = None, kind: str = "trigger",
@@ -1925,8 +1966,7 @@ class Game:
             p.graveyard.remove(card)
         p.lands_played += 1
         self.log(f"plays {face.name}", p)
-        perm = self.enter_battlefield(p, face)
-        perm.front = card    # the whole card goes to the graveyard
+        self.enter_battlefield(p, face, physical_card=card)
         self.settle()
 
     def convoke_pool(self, p: Player) -> list:
@@ -1953,13 +1993,14 @@ class Game:
         self.log(f"taps {[c.card.name for c in chosen]} (teamwork {card.teamwork})", p)
         return True
 
+    @atomic_action
     def cast(self, p: Player, card: CardDef, targets: list | None = None) -> bool:
         """Pay for card and put it on the stack. ``card`` may be a hand card or one of
         spell_options() (adventure, flashback, ...). Outside a priority loop (an AI's main
         phase) the stack is then resolved, with the opponent able to respond, before
         returning. Timing isn't checked here; AIs should use can_cast_now."""
         base, kind, alt = self._origin(card)
-        if not self._available(p, card):
+        if not self.can_cast_now(p, card, during_resolution=True):
             return False
         zone = self._zone(p, kind)
         if base in zone:
@@ -1969,12 +2010,22 @@ class Game:
             else:
                 card.origin = (actual, kind, alt)
             base = actual
-        # Reject explicitly illegal targets before paying or moving the card.
-        # Missing targets still use the existing automatic choice path below.
-        if not card.is_permanent and targets is not None:
-            if any(e.target in TARGETED and t is not None and not self.legal_target(p, e, t)
-                   for e, t in zip(card.spell_effects, targets)):
-                return False
+        effects = [] if card.is_permanent else list(card.spell_effects)
+        targets = list(targets or [])
+        targets += [None] * (len(effects) - len(targets))
+        if card.tapped_discount and not card.is_permanent:
+            tapped = self.tapped_targets(p, card)
+            idx = next((i for i, e in enumerate(effects) if e.target in TARGETED), None)
+            if tapped and idx is not None and targets[idx] not in tapped:
+                targets[idx] = max(tapped, key=perm_value)
+        missing = [i for i, e in enumerate(effects) if e.target in TARGETED and targets[i] is None]
+        if missing:   # targets the AI didn't pick (effects it doesn't know about)
+            filled = self.auto_targets(p, [effects[i] for i in missing])
+            for i, t in zip(missing, filled):
+                targets[i] = t
+        if not self.valid_action_targets(p, effects, targets):
+            return False
+        sacrifice_required = bool(card.extra_sacrifice and self.extra_sac_candidates(p, card))
         cost = self.cost_of(p, card, assist=False)
         convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
         assisted = card.improvise or card.delve
@@ -2008,7 +2059,9 @@ class Game:
             self.change_life(p, -alt.life, f"{card.name}: alternative cost")
         if card.extra_life_cost:
             self.change_life(p, -card.extra_life_cost, f"{card.name}: additional cost")
-        if card.extra_sacrifice and self.extra_sac_candidates(p, card):
+        if sacrifice_required and not self.extra_sac_candidates(p, card):
+            return False
+        if sacrifice_required:
             victim = self.extra_sac_candidates(p, card)[0]
             self.log(f"sacrifices {victim.card.name} for {card.name}", p)
             self.sacrifice(victim)
@@ -2018,39 +2071,35 @@ class Game:
             del p.exile[next(i for i, c in enumerate(p.exile) if c is base)]
         else:
             self._zone(p, kind).remove(base)
+        if card.extra_discard and not card.discard_or_pay and not p.hand:
+            return False
         if card.extra_discard and p.hand:
             pitched = p.ai.choose_discard(self, p)
+            if pitched not in p.hand:
+                return False
             self.discard_card(p, pitched)
             self.log(f"discards {pitched.name} for {card.name}", p)
         if kind == "channel":
             p.graveyard.append(base)
         elif kind == "gy_ability":
             p.exile.append(base)
-        effects = [] if card.is_permanent else list(card.spell_effects)
-        targets = list(targets or [])
-        targets += [None] * (len(effects) - len(targets))
-        if card.tapped_discount and not card.is_permanent:
-            tapped = self.tapped_targets(p, card)
-            idx = next((i for i, e in enumerate(effects) if e.target in TARGETED), None)
-            if tapped and idx is not None and targets[idx] not in tapped:
-                targets[idx] = max(tapped, key=perm_value)
-        missing = [i for i, e in enumerate(effects) if e.target in TARGETED and targets[i] is None]
-        if missing:   # targets the AI didn't pick (effects it doesn't know about)
-            filled = self.auto_targets(p, [effects[i] for i in missing])
-            for i, t in zip(missing, filled):
-                targets[i] = t
         flags = set()
         if card.teamwork and card.modes and self.pay_teamwork(p, card):
             flags.add("teamwork")
         if card.modes:
             mode_effects = modal.pick(self, p, card.modes, n=card.modes_choose, flags=flags)
             effects = mode_effects + effects
-            targets = self.auto_targets(p, mode_effects) + targets
+            mode_targets = self.auto_targets(p, mode_effects)
+            if not self.valid_action_targets(p, mode_effects, mode_targets):
+                return False
+            targets = mode_targets + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")
         # Prepared spells are copies; channel/graveyard abilities leave their
         # physical source in its actual zone rather than moving it onto the stack.
         item.physical_card = base if kind not in ("prepared", "channel", "gy_ability") else None
         if item.physical_card is not None:
+            item.move_origin = base.pending_move
+            base.pending_move = None
             base.generation += 1
             base.zone = item
         item.cast_from_hand = self._zone(p, kind) is p.hand and kind not in ("free", "channel", "gy_ability", "prepared")
@@ -2067,6 +2116,10 @@ class Game:
             item.card = None
             item.name = card.name
         self.stack.append(item)
+        if item.physical_card is not None and item.move_origin is not None:
+            before, origin, actor, _, _ = item.move_origin
+            self.rule_events.emit(rules_events.RulesEvent("zone_change", p, subject=base,
+                before=before, source_zone=origin, destination="stack", reason="cast"))
         self.log(f"casts {card.name}" + (f" -> {targets}" if any(targets) else ""), p)
         if self.commits_crime(p, targets):
             self.fire(p, "crime")
@@ -2099,8 +2152,9 @@ class Game:
         self.settle()
         return True
 
+    @atomic_action
     def activate_loyalty(self, p: Player, pw: Permanent, idx: int, targets=None) -> bool:
-        if pw not in p.battlefield or pw.loyalty_used or idx >= len(pw.card.loyalty_abilities):
+        if pw not in p.battlefield or pw.loyalty_used or idx < 0 or idx >= len(pw.card.loyalty_abilities):
             return False
         if self.activations_stopped():
             return False
@@ -2109,6 +2163,9 @@ class Game:
             return False
         instant_ok = pw.card.pw_instant_on_entry and pw.entered_turn == self.turn
         if not instant_ok and not (p is self.active and self.step in ("main1", "main2") and not self.stack):
+            return False
+        targets = self.auto_targets(p, effects, pw) if targets is None else list(targets)
+        if not self.valid_action_targets(p, effects, targets):
             return False
         pw.counters["loyalty"] = pw.loyalty + cost
         pw.loyalty_used = True
@@ -2125,6 +2182,7 @@ class Game:
         self.settle()
         return True
 
+    @atomic_action
     def activate(self, p: Player, perm: Permanent, what: str, target=None) -> bool:
         """Non-loyalty activated abilities: Clue, Blood, Bloodtithe Harvester, manlands, crew, and
         "ability:N" for the card's Nth activated ability (see activate_ability)."""
@@ -2146,6 +2204,8 @@ class Game:
             if not p.hand or self.pay(p, {"generic": 1}, exclude=perm) is None:
                 return False
             card = p.ai.choose_discard(self, p)
+            if card not in p.hand:
+                return False
             self.discard_card(p, card)
             self.leave_battlefield(perm, "graveyard")
             self.log(f"uses a Blood token, discarding {card.name}", p)
@@ -2196,6 +2256,7 @@ class Game:
         cost["generic"] = max(0, cost.get("generic", 0) - creature.card.equip_discount)
         return cost
 
+    @atomic_action
     def equip(self, p: Player, equipment: Permanent, creature: Permanent | None = None) -> bool:
         """Equip {N}: attach equipment to a creature p controls, at sorcery speed."""
         if equipment not in p.battlefield or equipment.card.equip_cost is None:
@@ -2276,7 +2337,7 @@ class Game:
     def can_activate(self, p: Player, perm: Permanent, idx: int) -> bool:
         """Whether perm's activated ability idx (kind "ability") can be activated now."""
         acts = perm.card.activated
-        if perm not in p.battlefield or idx >= len(acts) or acts[idx].kind != "ability":
+        if perm not in p.battlefield or idx < 0 or idx >= len(acts) or acts[idx].kind != "ability":
             return False
         act, c = acts[idx], acts[idx].extra_costs
         if perm.card.is_land and any(x.card.chosen_land_lock and x.chosen_land == perm.card.name
@@ -2292,10 +2353,8 @@ class Game:
             return False
         if act.once_game and ("game", idx) in perm.ability_turns:
             return False
-        if perm.net_locked:
-            if perm.tapped:
-                return False
-            perm.net_locked = False
+        if perm.net_locked and perm.tapped:
+            return False
         if c.get("life") and p.life <= c["life"]:
             return False
         if c.get("discard") and len(p.hand) < c["discard"]:
@@ -2312,11 +2371,19 @@ class Game:
             return False
         return payable(self.mana_sources(p, perm if c.get("tap") else None, "ability"), self.ability_cost(p, perm, act))
 
+    def valid_action_targets(self, p, effects, targets):
+        return all(e.target not in TARGETED or (i < len(targets) and
+                   self.legal_target(p, e, targets[i])) for i, e in enumerate(effects))
+
+    @atomic_action
     def activate_ability(self, p: Player, perm: Permanent, idx: int, targets=None) -> bool:
         """Pay for and put on the stack a general activated ability ("{2}, {T}: Draw a card.")."""
         if not self.can_activate(p, perm, idx):
             return False
         act, c = perm.card.activated[idx], perm.card.activated[idx].extra_costs
+        targets = self.auto_targets(p, act.effects, perm) if targets is None else list(targets)
+        if not self.valid_action_targets(p, act.effects, targets):
+            return False
         if self.pay(p, self.ability_cost(p, perm, act), exclude=perm if c.get("tap") else None) is None:
             return False
         perm.ability_turns[idx] = self.turn
@@ -2328,17 +2395,25 @@ class Game:
             self.change_life(p, -c["life"], f"{perm.card.name}: ability cost")
         for _ in range(c.get("discard", 0)):
             card = p.ai.choose_discard(self, p)
+            if card not in p.hand:
+                return False
             self.discard_card(p, card)
             self.log(f"discards {card.name}", p)
         if c.get("remove_counter"):
             perm.counters[c["remove_counter"]] -= 1
         if c.get("sacrifice"):
-            victim = self.sacrifice_candidates(p, perm, c["sacrifice"])[0]
+            candidates = self.sacrifice_candidates(p, perm, c["sacrifice"])
+            if not candidates:
+                return False
+            victim = candidates[0]
             self.log(f"sacrifices {victim.card.name}", p)
             perm.last_sacrificed_cmc = victim.card.cmc
             self.sacrifice(victim)
         if c.get("craft"):
-            material = self.craft_materials(p, perm)[0]
+            materials = self.craft_materials(p, perm)
+            if not materials:
+                return False
+            material = materials[0]
             if material in p.graveyard:
                 p.graveyard.remove(material)
                 p.exile.append(material)
@@ -2358,6 +2433,8 @@ class Game:
             mode_effects = modal.pick(self, p, act.modes, perm)
             effects += mode_effects
             targets = list(targets) + self.auto_targets(p, mode_effects, perm)
+            if not self.valid_action_targets(p, mode_effects, targets[-len(mode_effects):]):
+                return False
         item = StackItem(p, effects, list(targets), source=perm, name=f"{perm.card.name} ability",
                          kind="ability")
         self.stack.append(item)
@@ -2409,16 +2486,21 @@ class Game:
         return True
 
     def enter_battlefield(self, p: Player, card: CardDef, tapped_attacking: bool = False, x: int = 0,
-                          *, tapped: bool = False, counters: dict | None = None) -> Permanent:
+                          *, tapped: bool = False, counters: dict | None = None,
+                          physical_card: CardDef | None = None) -> Permanent:
         if card.is_token:
             # Reusable token blueprints create a new physical token each time.
             card = CardInstance(card)
         card, front = copies.clone_on_enter(self, p, card)
         perm = Permanent(card, p)
-        perm.front = instance(front, p)
+        perm.front = instance(physical_card if physical_card is not None else front, p)
         perm.owner = perm.front.owner
-        before = rules_events.card_snapshot(perm.front, p)
-        source_zone = "stack" if isinstance(perm.front.zone, StackItem) else perm.front.last_zone
+        pending = perm.front.pending_move
+        before = pending[0] if pending is not None else rules_events.card_snapshot(perm.front, p)
+        source_zone = pending[1] if pending is not None else perm.front.last_zone
+        if isinstance(perm.front.zone, StackItem):
+            source_zone = "stack"
+        perm.front.pending_move = None
         perm.front.generation += 1
         perm.front.zone = perm
         perm.entered_turn = self.turn
@@ -2636,8 +2718,7 @@ class Game:
             card = item.source.front if item and item.source else None
             if card is not None and card in p.exile and card.back is not None:
                 p.exile.remove(card)
-                perm = self.enter_battlefield(p, card.back)
-                perm.front = card
+                self.enter_battlefield(p, card.back, physical_card=card)
                 self.log(f"crafts {card.back.name}", p)
         elif k == "tuck_self":
             src = item.source if item else None
@@ -2923,8 +3004,7 @@ class Game:
             if card is not None and card in p.graveyard:
                 p.graveyard.remove(card)
                 ench = dataclasses.replace(card, types=card.types - {"Creature"}, power=None, toughness=None)
-                perm = self.enter_battlefield(p, ench)
-                perm.front = card
+                self.enter_battlefield(p, ench, physical_card=card)
                 self.log(f"returns {card.name} as an enchantment", p)
         elif k == "role":
             host = target if isinstance(target, Permanent) else (item.source if item is not None else None)
@@ -3207,17 +3287,20 @@ class Game:
             p.discovered_cmc = None
             while p.library:
                 c = p.library.pop()
+                p.exile.append(c)
                 if not c.is_land and c.cmc <= limit:
                     found = c
                     break
                 skipped.append(c)
-            self.rng.shuffle(skipped)
-            p.library[0:0] = skipped
             if found is not None:
                 p.discovered_cmc = found.cmc
                 self.log(f"discovers {found.name}", p)
                 if not self.cast_free(p, found):
                     self.log(f"puts {found.name} into their hand", p)
+            self.rng.shuffle(skipped)
+            for c in skipped:
+                p.exile.remove(c)
+            p.library[0:0] = skipped
         elif k == "land_swap":
             lands = [x for x in opp.battlefield if x.card.is_land and not is_basic_land(x.card) and self.targetable(x, p)]
             if lands:
@@ -3284,8 +3367,7 @@ class Game:
                 keep, rest = top[0], top[1:]       # manifest the cheaper card, the other goes to the graveyard
                 perm = self.enter_battlefield(p, CardDef(name="Manifest", mana_cost={"generic": 0}, cmc=0,
                                                          types=frozenset({"Creature"}), power=2, toughness=2,
-                                                         is_token=True))
-                perm.front = keep
+                                                         is_token=False), physical_card=keep)
                 for c in rest:
                     p.graveyard.append(c)
                 self.log("manifests dread", p)
@@ -3580,6 +3662,8 @@ class Game:
         to = intent.destination
         before = rules_events.snapshot(perm)
         controller, owner = perm.controller, perm.owner
+        perm.last_pt = before.power or 0, before.toughness or 0
+        perm.front.pending_move = (before, "battlefield", controller, perm, intent.applied)
         controller.battlefield.remove(perm)
         perm.last_destination = to
         perm.front.generation += 1
@@ -3606,9 +3690,11 @@ class Game:
             self.attackers.remove(perm)
         if not perm.front.is_token:
             {"graveyard": owner.graveyard, "hand": owner.hand, "exile": owner.exile}[to].append(perm.front)
-        self.rule_events.emit(rules_events.RulesEvent("zone_change", controller, source=perm,
-            before=before, destination=to, reason="leave_battlefield", replacements=intent.applied,
-            source_zone="battlefield"))
+        if perm.front.is_token:
+            self.rule_events.emit(rules_events.RulesEvent("zone_change", controller, source=perm,
+                before=before, destination=to, reason="leave_battlefield", replacements=intent.applied,
+                source_zone="battlefield"))
+            perm.front.pending_move = None
         if to == "graveyard":
             self.fire(owner, "perm_to_gy", subject=perm)
             self.fire(owner, "perm_to_gy", perm, subject=perm)
@@ -3636,9 +3722,13 @@ class Game:
         self.fire(p, "you_discard")
 
     def cast_free(self, p: Player, card: CardDef) -> bool:
-        """Cast card without paying its mana cost (Discover); it stays in hand if it can't be cast."""
-        p.hand.append(card)
-        return self.cast(p, self._variant(card, "free", AltCost("free", {"generic": 0})))
+        """Cast a discovered card from exile, or put it into hand if it cannot be cast."""
+        if card not in p.exile:
+            p.exile.append(card)
+        if self.cast(p, self._variant(card, "discover", AltCost("discover", {"generic": 0}))):
+            return True
+        self.move_card(card, p.exile, p.hand, reason="discover-to-hand")
+        return False
 
     def sneak(self, p: Player, card: CardDef, alt: AltCost, attacker: Permanent) -> bool:
         """Sneak: pay the sneak cost and return an unblocked attacker; the creature enters tapped and attacking."""

@@ -1,0 +1,6 @@
+test_legend_controller_chooses (tests.test_rules_contracts.RulesContracts.test_legend_controller_chooses) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

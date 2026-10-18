@@ -1,0 +1,6 @@
+test_regeneration_preserves_object_and_emits_event (tests.test_identity_events.IdentityEvents.test_regeneration_preserves_object_and_emits_event) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

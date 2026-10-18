@@ -1,0 +1,6 @@
+test_base_animation_role_timestamps_both_orders (tests.test_zone_actions_layers.ZoneActionsLayers.test_base_animation_role_timestamps_both_orders) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

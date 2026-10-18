@@ -1,0 +1,6 @@
+test_bounce_clears_finality_on_reentry (tests.test_return_counters.ReturnCounters.test_bounce_clears_finality_on_reentry) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

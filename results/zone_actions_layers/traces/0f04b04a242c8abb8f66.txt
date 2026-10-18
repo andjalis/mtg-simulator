@@ -1,0 +1,6 @@
+test_discover_uses_exile_without_hand_detour (tests.test_zone_actions_layers.ZoneActionsLayers.test_discover_uses_exile_without_hand_detour) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

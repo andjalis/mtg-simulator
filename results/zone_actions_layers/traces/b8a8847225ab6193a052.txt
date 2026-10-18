@@ -1,0 +1,6 @@
+test_missing_required_target_cannot_pay_or_cast (tests.test_zone_actions_layers.ZoneActionsLayers.test_missing_required_target_cannot_pay_or_cast) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

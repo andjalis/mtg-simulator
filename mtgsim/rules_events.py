@@ -48,8 +48,21 @@ class EventBus:
     def __init__(self, capture=False):
         self.listeners = []
         self.history = [] if capture else None
+        self.frames = []
+
+    def begin(self):
+        self.frames.append([])
+
+    def finish(self, commit):
+        events = self.frames.pop()
+        if commit:
+            for event in events:
+                self.emit(event)
 
     def emit(self, event):
+        if self.frames:
+            self.frames[-1].append(event)
+            return
         if self.history is not None:
             self.history.append(event)
         for listener in tuple(self.listeners):

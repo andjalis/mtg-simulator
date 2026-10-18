@@ -1,0 +1,6 @@
+test_legacy_moves_and_reorder (tests.test_zone_actions_layers.ZoneActionsLayers.test_legacy_moves_and_reorder) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

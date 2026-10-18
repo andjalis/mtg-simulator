@@ -1,0 +1,6 @@
+test_additional_counters_preserve_native_counters (tests.test_return_counters.ReturnCounters.test_additional_counters_preserve_native_counters) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

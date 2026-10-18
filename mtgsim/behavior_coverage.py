@@ -130,7 +130,13 @@ def evidence_status(rows, *, complete=False, capabilities_supported=True):
 def card_row(card, scenarios, catalog):
     """Join actual parsed metadata with bounded direct/capability scenario evidence."""
     requirements = {"zones.object_identity"} if any(c["id"] == "zones.object_identity" for c in catalog["capabilities"]) else set()
+    known = {c["id"] for c in catalog["capabilities"]}
     for face in _faces(card):
+        if not face.is_land and "actions.atomic" in known:
+            requirements.add("actions.atomic")
+        if "continuous.pt_keywords" in known and (face.is_creature or face.aura_flags or
+                any(a.kind == "animate" for a in face.activated)):
+            requirements.add("continuous.pt_keywords")
         if face.legendary:
             requirements.add("sba.legend")
         if face.equip_cost is not None:

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "identity-events-removal-returns-v2",
+  "scope": "zone-actions-layers-v3",
   "capabilities": [
     {
       "id": "targets.creature",
@@ -53,8 +53,8 @@
       "id": "events.dispatch",
       "description": "Typed supported-rule events",
       "state": "implemented_subset",
-      "subset": "Existing trigger delivery, battlefield changes, draw/discard and migrated generic zone moves emit typed events with snapshots.",
-      "restrictions": "Some older effect paths still mutate identity-aware zones directly; no complete replay log or simultaneous-event scheduler.",
+      "subset": "Trigger delivery and paired identity-aware CardZone, stack and battlefield moves emit typed events with pre-move snapshots; action transactions buffer observers until commit.",
+      "restrictions": "Fixture insertion, removal without an eventual destination, card views and copies are not paired moves. No complete replay log or simultaneous-event scheduler.",
       "requires": [
         "zones.object_identity"
       ],
@@ -103,6 +103,35 @@
       "implementation": [
         "mtgsim/engine.py",
         "mtgsim/graveyard.py"
+      ]
+    },
+    {
+      "id": "actions.atomic",
+      "description": "Shared action dispatch and transactional engine costs",
+      "state": "implemented_subset",
+      "subset": "Action and legacy tuples share execution; can_perform probes that same path with rollback. Cast, general activation, legacy activation, loyalty and equip restore engine objects, zones, references, RNG and buffered events on failure. Required static targets are checked before costs.",
+      "restrictions": "Policy hooks must be pure choices; external policy state and process-local identity allocation are not rolled back. Low-level cast permits effect-granted timing; do_action enforces timing. Land plays, cycling and other special actions remain separate APIs. No complete cost-choice search or priority-permission model.",
+      "requires": [
+        "events.dispatch"
+      ],
+      "implementation": [
+        "mtgsim/actions.py",
+        "mtgsim/engine.py"
+      ]
+    },
+    {
+      "id": "continuous.pt_keywords",
+      "description": "Scoped continuous power/toughness and keyword ordering",
+      "state": "implemented_subset",
+      "subset": "Timestamped base P/T for animations and Cursed Roles; registered keyword grant/removal, base setting, modifiers, counters and switching; explicit same-layer dependencies, cycle fallback, source lifetimes, end-of-turn expiry and last-known P/T.",
+      "restrictions": "No copy/control/text/type/color layers, characteristic-defining effects, Oracle dependency inference or parser expansion. Registered keyword operations follow the existing keyword baseline; legacy keyword grants are not all timestamped. Dependencies must be supplied explicitly.",
+      "requires": [
+        "zones.object_identity"
+      ],
+      "implementation": [
+        "mtgsim/continuous.py",
+        "mtgsim/engine.py",
+        "mtgsim/auras.py"
       ]
     }
   ]

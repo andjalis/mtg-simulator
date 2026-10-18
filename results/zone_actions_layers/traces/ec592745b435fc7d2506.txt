@@ -1,0 +1,6 @@
+test_regeneration_does_not_fire_death_or_entry_triggers (tests.test_regeneration.Regeneration.test_regeneration_does_not_fire_death_or_entry_triggers) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

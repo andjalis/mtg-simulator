@@ -1,0 +1,6 @@
+test_invalid_activation_target_and_negative_index (tests.test_zone_actions_layers.ZoneActionsLayers.test_invalid_activation_target_and_negative_index) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

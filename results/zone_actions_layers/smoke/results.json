@@ -1,0 +1,1193 @@
+{
+  "coverage": {
+    "aggro": "aggro: 93% matched by templates (including simplifications) (56 fully template-matched, 4 partly supported; 60 cards)\n   4 Kumano Faces Kakkazan [partial]\n       ignored: II \u2014 When you next cast a creature spell this turn, that creature enters with an additional +1/+1 counter on it.",
+    "combo": "combo: 87% matched by templates (including simplifications) (52 fully template-matched, 8 partly supported; 60 cards)\n   4 Lava Dart [partial]\n       ignored: Flashback\u2014Sacrifice a Mountain.\n   4 Temur Battle Rage [partial]\n       ignored: Ferocious \u2014 That creature also gains trample until end of turn if you control a creature with power 4 or greater.",
+    "control": "control: 97% matched by templates (including simplifications) (55 fully template-matched, 3 simplified, 2 partly supported; 60 cards)\n   1 Eiganjo, Seat of the Empire [partial]\n       ignored: Channel \u2014 {2}{W}, Discard this card: It deals 4 damage to target attacking or blocking creature. This ability costs {1} less to activate for each legendary creature you control.\n   1 Otawara, Soaring City [partial]\n       ignored: Channel \u2014 {3}{U}, Discard this card: Return target artifact, creature, enchantment, or planeswalker to its owner's hand. This ability costs {1} less to activate for each legendary creature you control.\n   3 Make Disappear [simplified]\n       simplified: never paid: Casualty 1",
+    "midrange": "midrange: 87% matched by templates (including simplifications) (48 fully template-matched, 4 simplified, 8 partly supported; 60 cards)\n   4 Fatal Push [partial]\n       ignored: Revolt \u2014 Destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn.\n   4 Tenacious Underdog [partial]\n       ignored: You may cast this card from your graveyard using its blitz ability.\n   4 Graveyard Trespasser [simplified]\n       simplified: day/night isn't tracked: it stays on its front face"
+  },
+  "created": "2026-10-18T18:09:42.592156+00:00",
+  "decks": {
+    "aggro": {
+      "archetype": "aggro",
+      "id": "aggro",
+      "main_deck": {
+        "Bloodthirsty Adversary": 4,
+        "Bonecrusher Giant": 4,
+        "Eidolon of the Great Revel": 4,
+        "Kami's Flare": 4,
+        "Kumano Faces Kakkazan": 4,
+        "Light Up the Stage": 4,
+        "Lightning Strike": 4,
+        "Monastery Swiftspear": 4,
+        "Mountain": 20,
+        "Play with Fire": 4,
+        "Soul-Scar Mage": 4
+      },
+      "path": "/workspace/mtg-simulator/decks/ranks/4-platinum/mono_red_aggro.txt",
+      "reason": "Pressure, burn, prowess and adventure decisions.",
+      "sha256": "dffba908d82e2f11cb2f7168ae578605dbf5be544e6e53eee930d1b18c0495d2"
+    },
+    "combo": {
+      "archetype": "combo",
+      "id": "combo",
+      "main_deck": {
+        "Assault Strobe": 4,
+        "Brute Force": 4,
+        "Expedite": 4,
+        "Gut Shot": 4,
+        "Kiln Fiend": 4,
+        "Lava Dart": 4,
+        "Lightning Bolt": 4,
+        "Monastery Swiftspear": 4,
+        "Mountain": 20,
+        "Shock": 4,
+        "Temur Battle Rage": 4
+      },
+      "path": "/workspace/mtg-simulator/decks/combo/kiln_fiend_strobe.txt",
+      "reason": "Compact curated Kiln Fiend + double-strike fixture: cast triggers, keyword grants, pump and burn sequencing.",
+      "sha256": "14fa59be5100082a343a7ea62a2baaa03d8b016b56367e6c23bcf97972670871"
+    },
+    "control": {
+      "archetype": "control",
+      "id": "control",
+      "main_deck": {
+        "Adarkar Wastes": 4,
+        "Consider": 4,
+        "Depopulate": 3,
+        "Deserted Beach": 4,
+        "Doomskar": 2,
+        "Eiganjo, Seat of the Empire": 1,
+        "Elspeth Resplendent": 2,
+        "Fateful Absence": 4,
+        "Hall of Storm Giants": 2,
+        "Island": 6,
+        "Lay Down Arms": 2,
+        "Make Disappear": 3,
+        "Memory Deluge": 4,
+        "Otawara, Soaring City": 1,
+        "Plains": 7,
+        "Saw It Coming": 2,
+        "The Wandering Emperor": 4,
+        "Thirst for Discovery": 2,
+        "Wedding Announcement": 3
+      },
+      "path": "/workspace/mtg-simulator/decks/ranks/4-platinum/azorius_control.txt",
+      "reason": "Counters, sweepers, planeswalkers and delayed win conditions.",
+      "sha256": "97fddd5b4a8b7af1a5df3b9d52fb0154cad9df7b4fc193a183228a22e747b5ba"
+    },
+    "midrange": {
+      "archetype": "midrange",
+      "id": "midrange",
+      "main_deck": {
+        "Blood Crypt": 4,
+        "Bloodtithe Harvester": 4,
+        "Bonecrusher Giant": 4,
+        "Den of the Bugbear": 3,
+        "Fable of the Mirror-Breaker": 4,
+        "Fatal Push": 4,
+        "Go for the Throat": 3,
+        "Graveyard Trespasser": 4,
+        "Haunted Ridge": 2,
+        "Kolaghan's Command": 2,
+        "Mountain": 5,
+        "Sheoldred, the Apocalypse": 3,
+        "Sulfurous Springs": 4,
+        "Swamp": 6,
+        "Tenacious Underdog": 4,
+        "Thoughtseize": 4
+      },
+      "path": "/workspace/mtg-simulator/decks/ranks/4-platinum/rakdos_midrange.txt",
+      "reason": "Discard, removal, threats and graveyard/transform decisions.",
+      "sha256": "75aa2935ca3e946e2f8cba77a50a8feecfd6125af1c1a84f70ce1f842f85bc1a"
+    }
+  },
+  "identity": "e3f3d16feefc4a6e3ccb2ec5dd8969b2f3ac432a803b8ff62af550dba7f419e0",
+  "manifest": {
+    "decks": [
+      {
+        "archetype": "aggro",
+        "id": "aggro",
+        "path": "../decks/ranks/4-platinum/mono_red_aggro.txt",
+        "reason": "Pressure, burn, prowess and adventure decisions."
+      },
+      {
+        "archetype": "midrange",
+        "id": "midrange",
+        "path": "../decks/ranks/4-platinum/rakdos_midrange.txt",
+        "reason": "Discard, removal, threats and graveyard/transform decisions."
+      },
+      {
+        "archetype": "control",
+        "id": "control",
+        "path": "../decks/ranks/4-platinum/azorius_control.txt",
+        "reason": "Counters, sweepers, planeswalkers and delayed win conditions."
+      },
+      {
+        "archetype": "combo",
+        "id": "combo",
+        "path": "../decks/combo/kiln_fiend_strobe.txt",
+        "reason": "Compact curated Kiln Fiend + double-strike fixture: cast triggers, keyword grants, pump and burn sequencing."
+      }
+    ],
+    "human_evidence": [],
+    "matchups": [
+      [
+        "aggro",
+        "midrange"
+      ],
+      [
+        "aggro",
+        "control"
+      ],
+      [
+        "midrange",
+        "control"
+      ],
+      [
+        "combo",
+        "midrange"
+      ]
+    ],
+    "missing_coverage": [
+      "combo: one compact curated fixture only (Kiln Fiend); no copy-effect combos (Reflection of Kiki-Jiki copying is unsupported) and no tournament-sourced combo list"
+    ],
+    "missing_evidence": "No verified human main-deck game dataset applicable to these exact lists and conditions. No human matchup expectations are asserted. Tournament BO3 match rates and archetype popularity are not main-deck game evidence.",
+    "name": "Small archetype diagnostic",
+    "schema": 1,
+    "scope": "Repository fixtures, main-deck games only. Mixed card pools; no claim of format legality, tournament provenance or current metagame representativeness."
+  },
+  "provenance": {
+    "decks": {
+      "aggro": {
+        "archetype": "aggro",
+        "id": "aggro",
+        "main_deck": {
+          "Bloodthirsty Adversary": 4,
+          "Bonecrusher Giant": 4,
+          "Eidolon of the Great Revel": 4,
+          "Kami's Flare": 4,
+          "Kumano Faces Kakkazan": 4,
+          "Light Up the Stage": 4,
+          "Lightning Strike": 4,
+          "Monastery Swiftspear": 4,
+          "Mountain": 20,
+          "Play with Fire": 4,
+          "Soul-Scar Mage": 4
+        },
+        "path": "/workspace/mtg-simulator/decks/ranks/4-platinum/mono_red_aggro.txt",
+        "reason": "Pressure, burn, prowess and adventure decisions.",
+        "sha256": "dffba908d82e2f11cb2f7168ae578605dbf5be544e6e53eee930d1b18c0495d2"
+      },
+      "combo": {
+        "archetype": "combo",
+        "id": "combo",
+        "main_deck": {
+          "Assault Strobe": 4,
+          "Brute Force": 4,
+          "Expedite": 4,
+          "Gut Shot": 4,
+          "Kiln Fiend": 4,
+          "Lava Dart": 4,
+          "Lightning Bolt": 4,
+          "Monastery Swiftspear": 4,
+          "Mountain": 20,
+          "Shock": 4,
+          "Temur Battle Rage": 4
+        },
+        "path": "/workspace/mtg-simulator/decks/combo/kiln_fiend_strobe.txt",
+        "reason": "Compact curated Kiln Fiend + double-strike fixture: cast triggers, keyword grants, pump and burn sequencing.",
+        "sha256": "14fa59be5100082a343a7ea62a2baaa03d8b016b56367e6c23bcf97972670871"
+      },
+      "control": {
+        "archetype": "control",
+        "id": "control",
+        "main_deck": {
+          "Adarkar Wastes": 4,
+          "Consider": 4,
+          "Depopulate": 3,
+          "Deserted Beach": 4,
+          "Doomskar": 2,
+          "Eiganjo, Seat of the Empire": 1,
+          "Elspeth Resplendent": 2,
+          "Fateful Absence": 4,
+          "Hall of Storm Giants": 2,
+          "Island": 6,
+          "Lay Down Arms": 2,
+          "Make Disappear": 3,
+          "Memory Deluge": 4,
+          "Otawara, Soaring City": 1,
+          "Plains": 7,
+          "Saw It Coming": 2,
+          "The Wandering Emperor": 4,
+          "Thirst for Discovery": 2,
+          "Wedding Announcement": 3
+        },
+        "path": "/workspace/mtg-simulator/decks/ranks/4-platinum/azorius_control.txt",
+        "reason": "Counters, sweepers, planeswalkers and delayed win conditions.",
+        "sha256": "97fddd5b4a8b7af1a5df3b9d52fb0154cad9df7b4fc193a183228a22e747b5ba"
+      },
+      "midrange": {
+        "archetype": "midrange",
+        "id": "midrange",
+        "main_deck": {
+          "Blood Crypt": 4,
+          "Bloodtithe Harvester": 4,
+          "Bonecrusher Giant": 4,
+          "Den of the Bugbear": 3,
+          "Fable of the Mirror-Breaker": 4,
+          "Fatal Push": 4,
+          "Go for the Throat": 3,
+          "Graveyard Trespasser": 4,
+          "Haunted Ridge": 2,
+          "Kolaghan's Command": 2,
+          "Mountain": 5,
+          "Sheoldred, the Apocalypse": 3,
+          "Sulfurous Springs": 4,
+          "Swamp": 6,
+          "Tenacious Underdog": 4,
+          "Thoughtseize": 4
+        },
+        "path": "/workspace/mtg-simulator/decks/ranks/4-platinum/rakdos_midrange.txt",
+        "reason": "Discard, removal, threats and graveyard/transform decisions.",
+        "sha256": "75aa2935ca3e946e2f8cba77a50a8feecfd6125af1c1a84f70ce1f842f85bc1a"
+      }
+    },
+    "manifest": {
+      "decks": [
+        {
+          "archetype": "aggro",
+          "id": "aggro",
+          "path": "../decks/ranks/4-platinum/mono_red_aggro.txt",
+          "reason": "Pressure, burn, prowess and adventure decisions."
+        },
+        {
+          "archetype": "midrange",
+          "id": "midrange",
+          "path": "../decks/ranks/4-platinum/rakdos_midrange.txt",
+          "reason": "Discard, removal, threats and graveyard/transform decisions."
+        },
+        {
+          "archetype": "control",
+          "id": "control",
+          "path": "../decks/ranks/4-platinum/azorius_control.txt",
+          "reason": "Counters, sweepers, planeswalkers and delayed win conditions."
+        },
+        {
+          "archetype": "combo",
+          "id": "combo",
+          "path": "../decks/combo/kiln_fiend_strobe.txt",
+          "reason": "Compact curated Kiln Fiend + double-strike fixture: cast triggers, keyword grants, pump and burn sequencing."
+        }
+      ],
+      "human_evidence": [],
+      "matchups": [
+        [
+          "aggro",
+          "midrange"
+        ],
+        [
+          "aggro",
+          "control"
+        ],
+        [
+          "midrange",
+          "control"
+        ],
+        [
+          "combo",
+          "midrange"
+        ]
+      ],
+      "missing_coverage": [
+        "combo: one compact curated fixture only (Kiln Fiend); no copy-effect combos (Reflection of Kiki-Jiki copying is unsupported) and no tournament-sourced combo list"
+      ],
+      "missing_evidence": "No verified human main-deck game dataset applicable to these exact lists and conditions. No human matchup expectations are asserted. Tournament BO3 match rates and archetype popularity are not main-deck game evidence.",
+      "name": "Small archetype diagnostic",
+      "schema": 1,
+      "scope": "Repository fixtures, main-deck games only. Mixed card pools; no claim of format legality, tournament provenance or current metagame representativeness."
+    },
+    "runtime": {
+      "card_data": {
+        "/home/agent/.cache/mtgsim/cards.json": null,
+        "/workspace/mtg-simulator/mtgsim/data/builtin_cards.json": "4e4b35335b1e2bb9964370adf9e66bab4b9a720b99d26aeb91da6eee66e1e5a9",
+        "/workspace/mtg-simulator/mtgsim/data/cards.sqlite3": "eddc1ae21a3f0dd3b4f2e21d67c24f398fc9252e3bf99d0fd7feb56574b0108c",
+        "/workspace/mtg-simulator/mtgsim/data/cards.sqlite3-wal": null
+      },
+      "code": {
+        "__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "__main__.py": "5155583c16a3eaf8bea2ab74e2943b61c32e963fcc1ae91ab617b5582c3c9687",
+        "actions.py": "a5f8a5539752b6e463e5cc7d561e3198c4e67e0782eb8265ba4c8aeb2efabf1f",
+        "ai.py": "8aa2cc7e29d1a88b019c5569c8f3d85de87018190b1f60b6cfc3a8c28c6c4584",
+        "assess.py": "3d10d470c5b11a26262f1db272937505ae04347d7776570732ba4cbf37778dab",
+        "auras.py": "e81dccd72bbc3a0588e46083cf2e1a66c36f9d7a09c2fcd9b942d219021c7070",
+        "behavior_coverage.py": "cb78610ba3cec4df5401e4fe4a786e4617ec422b951d38a4f687c4d1977d4d2c",
+        "benchmark.py": "bf571b43d70cf8622acc3eb5f277dad78cd142aabae81c1c5f6faedc40cefbfa",
+        "browser.py": "2a89b0857eee75c139af26f157a774a62590e0623ce0afa1cf6b152d720fdc25",
+        "build_carddb.py": "14db9221952d6703ac4aa0e70a0a6b56a26e9c08b0c1853ea73a1ca137451c66",
+        "calibrate.py": "906395f11d22d5dff371d3cbd480bec818a2eea1f6fe4c371e7b47b9965f7213",
+        "carddb.py": "c71dad602d65e5ec67340d130e1429fd82be66307d971bac9df3b332f7670031",
+        "cards.py": "9470487ae3dbdb718516614f2d5c104281848ed259766592368be88f018097d3",
+        "cast_triggers.py": "1322e7abea62bdcdf7b50e038e0ede08fc80ecbba3027f05fded4e1ba761032f",
+        "continuous.py": "08ff3daf0d8468a5e2dc8f696f777c21d7cbaf2033a1476fe89d3c972c53b694",
+        "copies.py": "8ee62e0e8c7c77a84c2449de1884dcf451d575ef0aed9c05f23bdde6984bfaf5",
+        "counting.py": "8eb764a3400f057f9598afacdc1343890c88bab5b47fcb9e32022c3b928145e9",
+        "coverage.py": "a14a57a00b03feef0b0a2e0fbbfa6a522a225d555ab71eac73213cb2ee85c20a",
+        "crosscheck.py": "cda2872c6183c381cb5452d2ed8f93c8678f46be75a88e0c498915ef23882232",
+        "database_coverage.py": "95e17ab1621787c71048c5f3c91d1d49c7406e61a7730cacb18e132c404d4d6f",
+        "decklist.py": "56be11cd9a79670274e13cde620197b8b91fed8440061a8c59318acf58fc9af5",
+        "engine.py": "ab74113d8e7d2305f33ab6f0a73f844465b8c96f9a4816d73f55f10f684a4229",
+        "forge.py": "ac1af91f5f7a68b5bc734d679d097cfc57e2c87f7c056022b5af07acd1f299b5",
+        "forge_script.py": "2cc53e4ae2e0e8d8bd4134696e91bd4223a1d506382311d3d185d414dc6f599c",
+        "graveyard.py": "6924debcacdf3c2911e43cc2b2a2deec882a7d0bbb6c0061fb564813a85690ea",
+        "history.py": "15b8078ef9e5b4d93da70e6105d7dfcb427e909485e720597f12188229e3f8a6",
+        "identity.py": "476fe05a8ebe6c914c39d39aa47b1a7f894c10accc4414305602ff94d460b754",
+        "ladder_report.py": "4247499a737b5a6c81f77175e19e9313ea4c601cf920b465491ce75ef4120b4e",
+        "learning.py": "bac7df309571e8140a18923d5615fd029d91e542cea17d68f9a320d44e63ded1",
+        "milling.py": "1f71884471889c26123c23c474d09f8f991bf450e8f6a33dc672f395fea17cf3",
+        "modal.py": "0106c1a4e3b6d3b5aef20b890e49155be981ec7cf6307c17c0e2ab28b59df738",
+        "proliferate.py": "3953c3f7a896dac621333061a6b35511537ec88fc277f69438d8dd597b2caa7b",
+        "provenance.py": "b7d5d1f8786a742b4f7b80ded39db84004f840fa12468a731121f9f76f5ed166",
+        "ranks.py": "28c201eeb689bbb7aab6a6322597e616837827db82f50f1af151abeaaf4e14f2",
+        "rating.py": "75ca79c855e786aab5ae49f5e4763f449c7f134acbd5eead7298a0bf09364983",
+        "regeneration.py": "4cf5cc81a02665a9970e7d5bbffa056a6b54fb5c9182a3aa5d1d3e8c10ab4b83",
+        "removal.py": "4acb6683dcff00139a01caf000a8a834f6bfe38d7d6e7bc9355ae8b340cf0a72",
+        "returns.py": "da833ae02a546bed236bf6e83caa3b75bd3bc7497b3896f029b1305965ee55fd",
+        "rules_compare.py": "8454e508f9f36276a1198867ffa231fec8843e5da2a57c8d35bbe2a48239cf06",
+        "rules_events.py": "2086f20b62f64a1438dead9cbfecfe3fa8a56263b02df88f6dcaa63ca58b9c32",
+        "runner.py": "363515204055b38f8ea6a93f7f1ddcbec3bccff0dc582ee2f873c1624f0c00d7",
+        "search.py": "43074c5c9efaaf9867ad5e30622aa85006cc83a01ce857169d3124bb7898d7c9",
+        "sideboard.py": "04e8ed68907bf256ac8d0d93a9de924fe3c9ef231d3070dadd2911f50582ce04",
+        "standard_coverage.py": "12ca87a314940d124a8f5f3fd757fd21905aa4005f2ff928c3ff08dde5838be7",
+        "tiers.py": "d23bdf963746759a6d8045805815a7f993b3c3bb0b7ea151094583a50ae8c7b3",
+        "xspells.py": "80d708200e394c815a23fa6c080acf94dad9e42da7965fe78e1c192f386817b0"
+      },
+      "platform": "Linux-6.18.55-x86_64-with-glibc2.41",
+      "python": "3.12.14",
+      "schema": 1
+    },
+    "settings": {
+      "builtin_logs": "first",
+      "clock": 30,
+      "engines": [
+        "builtin"
+      ],
+      "games": 20,
+      "jobs": 1,
+      "offline": true,
+      "seed": 1,
+      "worker_timeout": null
+    }
+  },
+  "results": {
+    "aggro-vs-control/builtin": {
+      "artifacts": {
+        "logs/aggro-vs-control/builtin/4d96468f3779/first-game.log": "461691eedc42329af7ec8357c992e7c25423267088cdaa0f8df0f1aed8809d7f"
+      },
+      "engine": "builtin",
+      "log_dir": "logs/aggro-vs-control/builtin/4d96468f3779",
+      "result": {
+        "deck_a": "aggro",
+        "deck_b": "control",
+        "draw_rate": 0.0,
+        "draws": 0,
+        "draws_a_on_draw": 0,
+        "draws_a_on_play": 0,
+        "game_metadata": [
+          {
+            "first_player": 0,
+            "game_number": 1,
+            "player_turns": 21,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 2,
+            "player_turns": 27,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 3,
+            "player_turns": 13,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 4,
+            "player_turns": 12,
+            "winner": 0
+          },
+          {
+            "first_player": 0,
+            "game_number": 5,
+            "player_turns": 11,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 6,
+            "player_turns": 12,
+            "winner": 0
+          },
+          {
+            "first_player": 0,
+            "game_number": 7,
+            "player_turns": 11,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 8,
+            "player_turns": 20,
+            "winner": 0
+          },
+          {
+            "first_player": 0,
+            "game_number": 9,
+            "player_turns": 17,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 10,
+            "player_turns": 17,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 11,
+            "player_turns": 9,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 12,
+            "player_turns": 21,
+            "winner": 0
+          },
+          {
+            "first_player": 0,
+            "game_number": 13,
+            "player_turns": 11,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 14,
+            "player_turns": 24,
+            "winner": 0
+          },
+          {
+            "first_player": 0,
+            "game_number": 15,
+            "player_turns": 24,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 16,
+            "player_turns": 25,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 17,
+            "player_turns": 18,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 18,
+            "player_turns": 23,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 19,
+            "player_turns": 21,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 20,
+            "player_turns": 21,
+            "winner": 1
+          }
+        ],
+        "games": 20,
+        "games_a_on_draw": 10,
+        "games_a_on_play": 10,
+        "play_draw_known": true,
+        "score_a": 0.65,
+        "splits": {
+          "draw": {
+            "draws": 0,
+            "games": 10,
+            "losses": 5,
+            "win_ci95": [
+              0.2365895936154873,
+              0.7634104063845127
+            ],
+            "win_probability": 0.5,
+            "wins": 5
+          },
+          "play": {
+            "draws": 0,
+            "games": 10,
+            "losses": 2,
+            "win_ci95": [
+              0.49015684672072346,
+              0.9433190520193067
+            ],
+            "win_probability": 0.8,
+            "wins": 8
+          }
+        },
+        "turn_unit": "player-turn",
+        "turns": [
+          21,
+          27,
+          13,
+          12,
+          11,
+          12,
+          11,
+          20,
+          17,
+          17,
+          9,
+          21,
+          11,
+          24,
+          24,
+          25,
+          18,
+          23,
+          21,
+          21
+        ],
+        "unknown_first_player": 0,
+        "unknown_game_length": 0,
+        "win_ci95": [
+          0.43285051021946475,
+          0.8188104521320554
+        ],
+        "win_probability_a": 0.65,
+        "wins_a": 13,
+        "wins_a_on_draw": 5,
+        "wins_a_on_play": 8,
+        "wins_b": 7
+      },
+      "result_sha256": "fbbb52db492b8f239d70aa94910371262521240e5444bc880836a6f232bfad50",
+      "status": "complete"
+    },
+    "aggro-vs-midrange/builtin": {
+      "artifacts": {
+        "logs/aggro-vs-midrange/builtin/ebc680f0533d/first-game.log": "a86c6ffbdb4cbe754e56eb44bd9c4aa29d289a6b48c9fb77c1dbb18bacf6b0bc"
+      },
+      "engine": "builtin",
+      "log_dir": "logs/aggro-vs-midrange/builtin/ebc680f0533d",
+      "result": {
+        "deck_a": "aggro",
+        "deck_b": "midrange",
+        "draw_rate": 0.0,
+        "draws": 0,
+        "draws_a_on_draw": 0,
+        "draws_a_on_play": 0,
+        "game_metadata": [
+          {
+            "first_player": 0,
+            "game_number": 1,
+            "player_turns": 11,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 2,
+            "player_turns": 21,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 3,
+            "player_turns": 13,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 4,
+            "player_turns": 17,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 5,
+            "player_turns": 22,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 6,
+            "player_turns": 15,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 7,
+            "player_turns": 14,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 8,
+            "player_turns": 15,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 9,
+            "player_turns": 16,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 10,
+            "player_turns": 13,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 11,
+            "player_turns": 10,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 12,
+            "player_turns": 13,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 13,
+            "player_turns": 11,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 14,
+            "player_turns": 21,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 15,
+            "player_turns": 16,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 16,
+            "player_turns": 17,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 17,
+            "player_turns": 15,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 18,
+            "player_turns": 14,
+            "winner": 0
+          },
+          {
+            "first_player": 0,
+            "game_number": 19,
+            "player_turns": 9,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 20,
+            "player_turns": 17,
+            "winner": 1
+          }
+        ],
+        "games": 20,
+        "games_a_on_draw": 10,
+        "games_a_on_play": 10,
+        "play_draw_known": true,
+        "score_a": 0.3,
+        "splits": {
+          "draw": {
+            "draws": 0,
+            "games": 10,
+            "losses": 9,
+            "win_ci95": [
+              0.01787574951572113,
+              0.4041563854975721
+            ],
+            "win_probability": 0.1,
+            "wins": 1
+          },
+          "play": {
+            "draws": 0,
+            "games": 10,
+            "losses": 5,
+            "win_ci95": [
+              0.2365895936154873,
+              0.7634104063845127
+            ],
+            "win_probability": 0.5,
+            "wins": 5
+          }
+        },
+        "turn_unit": "player-turn",
+        "turns": [
+          11,
+          21,
+          13,
+          17,
+          22,
+          15,
+          14,
+          15,
+          16,
+          13,
+          10,
+          13,
+          11,
+          21,
+          16,
+          17,
+          15,
+          14,
+          9,
+          17
+        ],
+        "unknown_first_player": 0,
+        "unknown_game_length": 0,
+        "win_ci95": [
+          0.14547527396899385,
+          0.5189767762289793
+        ],
+        "win_probability_a": 0.3,
+        "wins_a": 6,
+        "wins_a_on_draw": 1,
+        "wins_a_on_play": 5,
+        "wins_b": 14
+      },
+      "result_sha256": "d251195d7cd43d9cde283f94c11caad96fe8dbc26a56fef59ede6fb3de56c38d",
+      "status": "complete"
+    },
+    "combo-vs-midrange/builtin": {
+      "artifacts": {
+        "logs/combo-vs-midrange/builtin/7853fc7c0e32/first-game.log": "b1a6a6b179569966a2c23ffe2661de7865bee488e5bf4c4ab1c1c76faa670ee8"
+      },
+      "engine": "builtin",
+      "log_dir": "logs/combo-vs-midrange/builtin/7853fc7c0e32",
+      "result": {
+        "deck_a": "combo",
+        "deck_b": "midrange",
+        "draw_rate": 0.0,
+        "draws": 0,
+        "draws_a_on_draw": 0,
+        "draws_a_on_play": 0,
+        "game_metadata": [
+          {
+            "first_player": 0,
+            "game_number": 1,
+            "player_turns": 5,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 2,
+            "player_turns": 11,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 3,
+            "player_turns": 14,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 4,
+            "player_turns": 6,
+            "winner": 0
+          },
+          {
+            "first_player": 0,
+            "game_number": 5,
+            "player_turns": 12,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 6,
+            "player_turns": 11,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 7,
+            "player_turns": 15,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 8,
+            "player_turns": 11,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 9,
+            "player_turns": 5,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 10,
+            "player_turns": 17,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 11,
+            "player_turns": 12,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 12,
+            "player_turns": 11,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 13,
+            "player_turns": 12,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 14,
+            "player_turns": 13,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 15,
+            "player_turns": 12,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 16,
+            "player_turns": 19,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 17,
+            "player_turns": 5,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 18,
+            "player_turns": 15,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 19,
+            "player_turns": 12,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 20,
+            "player_turns": 11,
+            "winner": 1
+          }
+        ],
+        "games": 20,
+        "games_a_on_draw": 10,
+        "games_a_on_play": 10,
+        "play_draw_known": true,
+        "score_a": 0.25,
+        "splits": {
+          "draw": {
+            "draws": 0,
+            "games": 10,
+            "losses": 9,
+            "win_ci95": [
+              0.01787574951572113,
+              0.4041563854975721
+            ],
+            "win_probability": 0.1,
+            "wins": 1
+          },
+          "play": {
+            "draws": 0,
+            "games": 10,
+            "losses": 6,
+            "win_ci95": [
+              0.16817758120350967,
+              0.6873304525498135
+            ],
+            "win_probability": 0.4,
+            "wins": 4
+          }
+        },
+        "turn_unit": "player-turn",
+        "turns": [
+          5,
+          11,
+          14,
+          6,
+          12,
+          11,
+          15,
+          11,
+          5,
+          17,
+          12,
+          11,
+          12,
+          13,
+          12,
+          19,
+          5,
+          15,
+          12,
+          11
+        ],
+        "unknown_first_player": 0,
+        "unknown_game_length": 0,
+        "win_ci95": [
+          0.11186005278940306,
+          0.4687050099580635
+        ],
+        "win_probability_a": 0.25,
+        "wins_a": 5,
+        "wins_a_on_draw": 1,
+        "wins_a_on_play": 4,
+        "wins_b": 15
+      },
+      "result_sha256": "6d0b1c7d979abf410cab99f6ddb56f3613115d7e8feca17b80b972855eab6eba",
+      "status": "complete"
+    },
+    "midrange-vs-control/builtin": {
+      "artifacts": {
+        "logs/midrange-vs-control/builtin/5e930199e69d/first-game.log": "a7f8017298f405b94389f678df83ebb5da99212b9e5caf447c6913b89fd7a3ad"
+      },
+      "engine": "builtin",
+      "log_dir": "logs/midrange-vs-control/builtin/5e930199e69d",
+      "result": {
+        "deck_a": "midrange",
+        "deck_b": "control",
+        "draw_rate": 0.0,
+        "draws": 0,
+        "draws_a_on_draw": 0,
+        "draws_a_on_play": 0,
+        "game_metadata": [
+          {
+            "first_player": 0,
+            "game_number": 1,
+            "player_turns": 23,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 2,
+            "player_turns": 24,
+            "winner": 0
+          },
+          {
+            "first_player": 0,
+            "game_number": 3,
+            "player_turns": 16,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 4,
+            "player_turns": 18,
+            "winner": 0
+          },
+          {
+            "first_player": 0,
+            "game_number": 5,
+            "player_turns": 11,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 6,
+            "player_turns": 25,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 7,
+            "player_turns": 19,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 8,
+            "player_turns": 18,
+            "winner": 0
+          },
+          {
+            "first_player": 0,
+            "game_number": 9,
+            "player_turns": 21,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 10,
+            "player_turns": 13,
+            "winner": 0
+          },
+          {
+            "first_player": 0,
+            "game_number": 11,
+            "player_turns": 30,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 12,
+            "player_turns": 19,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 13,
+            "player_turns": 32,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 14,
+            "player_turns": 29,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 15,
+            "player_turns": 15,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 16,
+            "player_turns": 13,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 17,
+            "player_turns": 30,
+            "winner": 1
+          },
+          {
+            "first_player": 1,
+            "game_number": 18,
+            "player_turns": 15,
+            "winner": 1
+          },
+          {
+            "first_player": 0,
+            "game_number": 19,
+            "player_turns": 19,
+            "winner": 0
+          },
+          {
+            "first_player": 1,
+            "game_number": 20,
+            "player_turns": 30,
+            "winner": 0
+          }
+        ],
+        "games": 20,
+        "games_a_on_draw": 10,
+        "games_a_on_play": 10,
+        "play_draw_known": true,
+        "score_a": 0.55,
+        "splits": {
+          "draw": {
+            "draws": 0,
+            "games": 10,
+            "losses": 5,
+            "win_ci95": [
+              0.2365895936154873,
+              0.7634104063845127
+            ],
+            "win_probability": 0.5,
+            "wins": 5
+          },
+          "play": {
+            "draws": 0,
+            "games": 10,
+            "losses": 4,
+            "win_ci95": [
+              0.3126695474501863,
+              0.8318224187964901
+            ],
+            "win_probability": 0.6,
+            "wins": 6
+          }
+        },
+        "turn_unit": "player-turn",
+        "turns": [
+          23,
+          24,
+          16,
+          18,
+          11,
+          25,
+          19,
+          18,
+          21,
+          13,
+          30,
+          19,
+          32,
+          29,
+          15,
+          13,
+          30,
+          15,
+          19,
+          30
+        ],
+        "unknown_first_player": 0,
+        "unknown_game_length": 0,
+        "win_ci95": [
+          0.34208200830759966,
+          0.741804979142907
+        ],
+        "win_probability_a": 0.55,
+        "wins_a": 11,
+        "wins_a_on_draw": 5,
+        "wins_a_on_play": 6,
+        "wins_b": 9
+      },
+      "result_sha256": "034083fabc8200913f1a0500213fd3e272ffef34f45f9b04fe3470b133eb9013",
+      "status": "complete"
+    }
+  },
+  "schema": 1,
+  "status": "complete"
+}

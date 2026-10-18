@@ -1,0 +1,6 @@
+test_persist_fails_after_graveyard_zone_change (tests.test_persist_wither_rebound.PersistWitherRebound.test_persist_fails_after_graveyard_zone_change) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

@@ -1,10 +1,10 @@
 # Bounded behavior evidence
 
-`capabilities.json` declares eight supported subsets. `scenarios.json` maps 53
+`capabilities.json` declares ten supported subsets. `scenarios.json` maps 74
 unittest methods to those subsets, records expected-value references and identifies
 direct card fixtures. Setup, action sequences and assertions are the linked test
 methods in `tests/test_rules_contracts.py`, `test_identity_events.py`, `test_regeneration.py`,
-`test_return_counters.py` and `test_persist_wither_rebound.py`; their source and all test helpers enter
+`test_return_counters.py`, `test_persist_wither_rebound.py` and `test_zone_actions_layers.py`; their source and all test helpers enter
 the evidence identity. Synthetic or modified card fixtures are capability evidence,
 and are not assigned as direct evidence for the real card.
 
@@ -26,12 +26,10 @@ scenarios, including its dependencies. Card rows retain unclassified requirement
 outside this initial scope, so no card receives a claim of complete rules support.
 Per-card requirements currently recognize the base identity requirement, parsed
 legend/equip metadata, creature targets, removal/regeneration and selected graveyard
-return effects, plus declared dependencies; this is an intentionally
+return effects, nonland action handling, creature/animation/Role P/T handling, plus declared dependencies; this is an intentionally
 incomplete classifier. Existing template coverage APIs/statuses remain unchanged.
 Legacy tests without explicit manifest entries do not count as mapped evidence.
-Casting now rejects explicitly supplied illegal targets before payment. Automatic
-target selection and the wider casting/cost transaction pipeline remain outside
-this batch; this does not introduce a general legal-action API.
+Casting validates required static targets before payment; action transactions cover failed payment and choice paths. See the API scope below.
 Expectations are maintained from the cited rules and card text; this is not an
 externally certified rules suite. Update the manifest version when expectations,
 scope or required scenarios change.
@@ -62,15 +60,14 @@ by list multiplication or inserted into two card zones simultaneously.
 
 `game.rule_events` delivers typed `RulesEvent` records to `listeners`; logged games
 also retain `history`. Normal runs avoid retaining that history. Battlefield changes
-and migrated draw/discard/generic moves record source/destination and immutable
-snapshots. Existing supported trigger delivery runs through this event boundary.
+and paired CardZone/stack transfers record source/destination and immutable
+pre-move snapshots. Legacy remove/pop plus append paths use the same boundary.
+Initial fixture insertion and reordering do not emit paired movement events. Existing supported trigger delivery runs through this event boundary.
 Regeneration and supported death-to-exile replacements share a bounded pipeline;
 applicability is recomputed after each choice and each replacement applies once.
 `choose_replacement(game, me, choices, intent)` can select among applicable IDs;
 the default picks the first. These changes do not implement arbitrary replacement
-scripts, a complete replay log or simultaneous-event scheduling. Some older effect
-paths still mutate identity-aware zones directly and do not emit a paired zone-change
-event. See the capability restrictions before relying on complete event coverage.
+scripts, a complete replay log or simultaneous-event scheduling. A removal without an eventual destination has no paired event; copies and characteristic views are not physical moves. See the capability restrictions before relying on event coverage.
 
 The historical [coverage design](../results/rules_architecture/coverage-design.md)
 describes later slices (broader requirement classification, source spans and more
@@ -109,3 +106,37 @@ not equivalent to full-game win-rate agreement, and not evidence that every Forg
 card or every interaction works. New scenarios need an explicit setup/action mapping.
 The Java probe references external Forge test APIs without copying their implementation.
 The existing Forge script fixture provenance remains in `tests/fixtures/forge_scripts/README.md`.
+
+## Actions and scoped continuous effects
+
+`Action(kind, source, option=None, targets=None)` and the existing action tuples go
+through `game.do_action(player, action)`. `game.can_perform(player, action)` probes
+the same path and restores engine state and RNG. Cast, equip, loyalty and general
+or legacy activation APIs use nested transactions: invalid choices, unavailable
+additional costs, exceptions and rejected targets restore existing objects in
+place, including physical generations, tapped state, life, counters, pending
+triggers and logs. Event observers receive buffered events only after commit;
+priority and resolution begin afterward. Policies must return choices without
+external side effects. Policy-owned state and physical-ID allocation are not
+rolled back. `cast` retains its low-level timing permission for effect-granted
+casts; `do_action` enforces ordinary casting timing. Land play, cycling and other
+special actions remain separate. This is not a complete priority-permission or
+cost-choice search system; the current payment policy can reject an action even
+when a different combination of resources could have paid it.
+
+`game.add_continuous_effect(permanent, operation, ...)` supports `grant`, `remove`,
+`set_base`, `modify` and `switch`. The engine applies keyword operations, base P/T,
+modifiers, counters and switching in that order. Animations and Cursed Role
+attachments get timestamps, so a newer base-setting effect wins. Same-layer
+`depends_on` IDs override timestamp order; cycle edges fall back to timestamps.
+Optional `source` binds an effect to a battlefield source; omitting it allows a
+resolved effect to survive its source. `until_eot=True` expires at cleanup. Saved
+last-known P/T survives departure and effects do not follow the new battlefield
+object after reentry. No new Oracle templates are claimed by this API.
+
+Copy, control, text, type, color and characteristic-defining layers, inferred
+Oracle dependencies and comprehensive keyword-grant timestamps remain outside
+this slice. Registered keyword operations follow the existing keyword baseline.
+The mapped cases exercise these bounded contracts, not every card interaction.
+
+Alternate land faces, crafted backs, enchantment returns and manifested views supply their physical card before battlefield entry is published. Discover emits library-to-exile moves, casts the found card directly from exile or moves it into hand, then returns the other cards to the library. These traces do not establish full face-down or Discover conformance.

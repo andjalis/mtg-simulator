@@ -1,0 +1,50 @@
+AUDIT {"event": "start", "player_turn": 0, "players": ["combo", "midrange"], "first_player": 0, "life": [20, 20], "turn_unit": "player-turn"}
+AUDIT {"event": "keep", "player_turn": 0, "seat": 0, "mulligans": 0, "hand": ["Assault Strobe", "Shock", "Mountain", "Mountain", "Mountain", "Monastery Swiftspear", "Brute Force"]}
+AUDIT {"event": "mulligan", "player_turn": 0, "seat": 1, "hand": ["Tenacious Underdog", "Graveyard Trespasser", "Graveyard Trespasser", "Thoughtseize", "Fable of the Mirror-Breaker", "Tenacious Underdog", "Bonecrusher Giant"], "mulligans": 1}
+AUDIT {"event": "mulligan", "player_turn": 0, "seat": 1, "hand": ["Sheoldred, the Apocalypse", "Thoughtseize", "Fatal Push", "Graveyard Trespasser", "Blood Crypt", "Fable of the Mirror-Breaker", "Bonecrusher Giant"], "mulligans": 2}
+AUDIT {"event": "keep", "player_turn": 0, "seat": 1, "mulligans": 2, "hand": ["Tenacious Underdog", "Mountain", "Thoughtseize", "Tenacious Underdog", "Mountain"]}
+T1 combo: plays Mountain
+T1 combo: casts Monastery Swiftspear
+T1 combo: Monastery Swiftspear resolves
+T1 combo: attacks with [Monastery Swiftspear(1/2)]
+AUDIT {"event": "life", "player_turn": 1, "seat": 1, "before": 20, "delta": -1, "after": 19, "cause": "Monastery Swiftspear: combat damage"}
+T2 midrange: plays Mountain
+T3 combo: plays Mountain
+T3 combo: casts Assault Strobe -> [Monastery Swiftspear(1/2)]
+T3 combo: Monastery Swiftspear trigger goes on the stack
+T3 combo: Monastery Swiftspear trigger resolves
+T3 combo: Assault Strobe resolves
+T3 combo: casts Monastery Swiftspear
+T3 combo: Monastery Swiftspear resolves
+T3 combo: attacks with [Monastery Swiftspear(2/3), Monastery Swiftspear(1/2)]
+AUDIT {"event": "life", "player_turn": 3, "seat": 1, "before": 19, "delta": -2, "after": 17, "cause": "Monastery Swiftspear: combat damage"}
+AUDIT {"event": "life", "player_turn": 3, "seat": 1, "before": 17, "delta": -2, "after": 15, "cause": "Monastery Swiftspear: combat damage"}
+AUDIT {"event": "life", "player_turn": 3, "seat": 1, "before": 15, "delta": -1, "after": 14, "cause": "Monastery Swiftspear: combat damage"}
+T4 midrange: plays Mountain
+T5 combo: plays Mountain
+T5 combo: casts Brute Force -> [Monastery Swiftspear(1/2)]
+T5 combo: Monastery Swiftspear trigger goes on the stack
+T5 combo: Monastery Swiftspear trigger goes on the stack
+T5 combo: Monastery Swiftspear trigger resolves
+T5 combo: Monastery Swiftspear trigger resolves
+T5 combo: Brute Force resolves
+T5 combo: casts Shock -> [midrange]
+T5 combo: Monastery Swiftspear trigger goes on the stack
+T5 combo: Monastery Swiftspear trigger goes on the stack
+T5 combo: Monastery Swiftspear trigger resolves
+T5 combo: Monastery Swiftspear trigger resolves
+T5 combo: Shock resolves
+AUDIT {"event": "life", "player_turn": 5, "seat": 1, "before": 14, "delta": -2, "after": 12, "cause": "Shock: damage"}
+T5 combo: casts Lava Dart -> [midrange]
+T5 combo: Monastery Swiftspear trigger goes on the stack
+T5 combo: Monastery Swiftspear trigger goes on the stack
+T5 combo: Monastery Swiftspear trigger resolves
+T5 combo: Monastery Swiftspear trigger resolves
+T5 combo: Lava Dart resolves
+AUDIT {"event": "life", "player_turn": 5, "seat": 1, "before": 12, "delta": -1, "after": 11, "cause": "Lava Dart: damage"}
+T5 combo: attacks with [Monastery Swiftspear(7/8), Monastery Swiftspear(4/5)]
+AUDIT {"event": "life", "player_turn": 5, "seat": 1, "before": 11, "delta": -7, "after": 4, "cause": "Monastery Swiftspear: combat damage"}
+AUDIT {"event": "life", "player_turn": 5, "seat": 1, "before": 4, "delta": -4, "after": 0, "cause": "Monastery Swiftspear: combat damage"}
+AUDIT {"event": "loss", "player_turn": 5, "seat": 1, "cause": "life total 0 or less"}
+T5 midrange: game over, winner: combo
+AUDIT {"event": "result", "player_turn": 5, "winner": 0, "life": [20, 0], "lost": [false, true], "reason": "loss", "player_turns": 5}

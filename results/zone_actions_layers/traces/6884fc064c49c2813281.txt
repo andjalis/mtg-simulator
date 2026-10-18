@@ -1,0 +1,6 @@
+test_shield_prevents_dying_even_with_finality (tests.test_regeneration.Regeneration.test_shield_prevents_dying_even_with_finality) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

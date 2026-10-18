@@ -1,0 +1,6 @@
+test_base_modifiers_counters_switch_order (tests.test_zone_actions_layers.ZoneActionsLayers.test_base_modifiers_counters_switch_order) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

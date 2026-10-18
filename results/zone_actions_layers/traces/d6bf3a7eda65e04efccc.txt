@@ -1,0 +1,6 @@
+test_target_controller_shroud_presence (tests.test_rules_contracts.RulesContracts.test_target_controller_shroud_presence) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

@@ -1,0 +1,6 @@
+test_token_dies_even_though_no_card_remains_in_graveyard (tests.test_identity_events.IdentityEvents.test_token_dies_even_though_no_card_remains_in_graveyard) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

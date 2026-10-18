@@ -25,6 +25,7 @@ class CardInstance(CardDef):
         self.owner = None
         self.zone = None
         self.last_zone = ""
+        self.pending_move = None
 
     def __eq__(self, other):
         if isinstance(other, CardInstance):
@@ -64,7 +65,9 @@ class CardZone(list):
         self.owner, self.name = owner, name
         self.left = []
         self.versions = {}
+        self.initializing = True
         self.extend(cards)
+        self.initializing = False
 
     def index(self, card, start=0, stop=None):
         stop = len(self) if stop is None else stop
@@ -89,16 +92,42 @@ class CardZone(list):
         card = instance(card, self.owner)
         if isinstance(card.zone, CardZone) and card in card.zone:
             raise ValueError("remove the physical card from its source zone before insertion")
+        if card.pending_move is None and card.zone is not None:
+            if getattr(card.zone, "physical_card", None) is not card:
+                raise ValueError("remove the physical card from the battlefield before insertion")
+            from .rules_events import card_snapshot
+            controller = getattr(card.zone, "controller", self.owner)
+            card.pending_move = (card_snapshot(card, controller), "stack", controller, None, ())
         card.generation += 1
         card.zone = self
         self.versions[card.physical_id] = card.generation
         return card
 
     def append(self, card):
-        super().append(self._arrive(card))
+        card = self._arrive(card)
+        super().append(card)
+        self._added(card)
 
     def insert(self, index, card):
-        super().insert(index, self._arrive(card))
+        card = self._arrive(card)
+        super().insert(index, card)
+        self._added(card)
+
+    def _added(self, card):
+        game = getattr(self.owner, "_game", None)
+        if game is not None and not self.initializing:
+            game.zone_arrived(card, self)
+
+    def _depart(self, card):
+        if getattr(self.owner, "_game", None) is not None:
+            from .rules_events import card_snapshot
+            card.pending_move = (card_snapshot(card, self.owner), self.name, self.owner, None, ())
+        card.generation += 1
+        card.last_zone = self.name
+        card.zone = None
+        self.versions[card.physical_id] = card.generation
+        if self.track_departures:
+            self.left.append(card)
 
     def extend(self, cards):
         for card in list(cards):
@@ -112,12 +141,7 @@ class CardZone(list):
         removed = self[key] if isinstance(key, slice) else [self[key]]
         super().__delitem__(key)
         for card in removed:
-            card.generation += 1
-            card.last_zone = self.name
-            card.zone = None
-            self.versions[card.physical_id] = card.generation
-            if self.track_departures:
-                self.left.append(card)
+            self._depart(card)
 
     def __setitem__(self, key, value):
         incoming = list(value) if isinstance(key, slice) else [value]
@@ -132,16 +156,14 @@ class CardZone(list):
                 raise ValueError("remove the physical card from its source zone before insertion")
         for card in before:
             if not any(card is c for c in after):
-                card.generation += 1
-                card.last_zone = self.name
-                card.zone = None
-                self.versions[card.physical_id] = card.generation
-                if self.track_departures:
-                    self.left.append(card)
+                self._depart(card)
         for card in prepared:
             if not any(card is c for c in before):
                 self._arrive(card)
         list.__setitem__(self, slice(None), after)
+        for card in prepared:
+            if not any(card is c for c in before):
+                self._added(card)
 
     def __imul__(self, count):
         if count <= 0:
@@ -190,6 +212,11 @@ class Graveyard(CardZone):
         super().__init__(*args, **kwargs)
 
     def append(self, card):
+        previous = self.descents
         if card.is_permanent and not card.is_token:
             self.descents += 1
-        super().append(card)
+        try:
+            super().append(card)
+        except Exception:
+            self.descents = previous
+            raise

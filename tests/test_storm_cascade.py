@@ -152,11 +152,15 @@ class StormCascade(unittest.TestCase):
         self.assertNotIn(found,self.a.graveyard)
 
     def test_cascade_obeys_opponents_casting_restriction(self):
-        lock = self.game.enter_battlefield(self.b, dataclasses.replace(ISLAND,opp_no_cast=True))
         found = card('Found', types='Sorcery', text='You gain 3 life.',cmc=1)
         self.a.library = [found]
         self.game.active_idx = 1
-        self.cast('Cascade',types='Instant',cmc=3)
+        # Cast legally first, then establish the lock in response before the
+        # cascade trigger resolves. The initiating spell is also subject to it.
+        with patch.object(self.game, 'settle'):
+            self.cast('Cascade',types='Instant',cmc=3)
+        self.game.enter_battlefield(self.b, dataclasses.replace(ISLAND,opp_no_cast=True))
+        self.game.settle()
         self.assertEqual(self.a.library, [found])
         self.assertEqual(self.a.life, 20)
 

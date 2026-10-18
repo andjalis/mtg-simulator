@@ -1,0 +1,6 @@
+test_manifest_view_preserves_physical_entry_and_death (tests.test_zone_actions_layers.ZoneActionsLayers.test_manifest_view_preserves_physical_entry_and_death) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "identity-events-removal-returns-v2",
+  "scope": "zone-actions-layers-v3",
   "scenarios": [
     {
       "id": "target_type_membership",
@@ -791,6 +791,300 @@
         "kind": "rules-and-scenario-expectations",
         "reference": "CR 400.7; objects remaining in their zones; ownership across face changes",
         "review": "Bounded maintained fixture assertions; not external certification."
+      }
+    },
+    {
+      "id": "legacy_moves_and_reorder",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_legacy_moves_and_reorder",
+      "capabilities": [
+        "events.dispatch"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 400.7, 603, 608",
+        "review": "Scoped expectations in linked synthetic fixtures; no external rules certification."
+      }
+    },
+    {
+      "id": "spell_stack_trace",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_spell_stack_trace",
+      "capabilities": [
+        "events.dispatch"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 400.7, 603, 608",
+        "review": "Scoped expectations in linked synthetic fixtures; no external rules certification."
+      }
+    },
+    {
+      "id": "special_zone_and_battlefield_trace",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_special_zone_and_battlefield_trace",
+      "capabilities": [
+        "events.dispatch"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 400.7, 603, 608",
+        "review": "Scoped expectations in linked synthetic fixtures; no external rules certification."
+      }
+    },
+    {
+      "id": "failed_discard_restores_paid_mana_and_observers",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_failed_discard_restores_paid_mana_and_observers",
+      "capabilities": [
+        "actions.atomic"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2, 602.2, 728",
+        "review": "Scoped expectations in linked synthetic fixtures; no external rules certification."
+      }
+    },
+    {
+      "id": "nested_transaction_and_rng_rollback",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_nested_transaction_and_rng_rollback",
+      "capabilities": [
+        "actions.atomic"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2, 602.2, 728",
+        "review": "Scoped expectations in linked synthetic fixtures; no external rules certification."
+      }
+    },
+    {
+      "id": "action_probe_matches_execution_and_preserves_state",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_action_probe_matches_execution_and_preserves_state",
+      "capabilities": [
+        "actions.atomic"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2, 602.2, 728",
+        "review": "Scoped expectations in linked synthetic fixtures; no external rules certification."
+      }
+    },
+    {
+      "id": "invalid_activation_target_and_negative_index",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_invalid_activation_target_and_negative_index",
+      "capabilities": [
+        "actions.atomic"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2, 602.2, 728",
+        "review": "Scoped expectations in linked synthetic fixtures; no external rules certification."
+      }
+    },
+    {
+      "id": "target_can_be_sacrificed_as_cost",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_target_can_be_sacrificed_as_cost",
+      "capabilities": [
+        "actions.atomic"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2, 602.2, 728",
+        "review": "Scoped expectations in linked synthetic fixtures; no external rules certification."
+      }
+    },
+    {
+      "id": "base_animation_role_timestamps_both_orders",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_base_animation_role_timestamps_both_orders",
+      "capabilities": [
+        "continuous.pt_keywords"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 613.1f, 613.4, 613.7, 613.8",
+        "review": "Scoped expectations in linked synthetic fixtures; no external rules certification."
+      }
+    },
+    {
+      "id": "base_modifiers_counters_switch_order",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_base_modifiers_counters_switch_order",
+      "capabilities": [
+        "continuous.pt_keywords"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 613.1f, 613.4, 613.7, 613.8",
+        "review": "Scoped expectations in linked synthetic fixtures; no external rules certification."
+      }
+    },
+    {
+      "id": "keyword_removal_and_grant_timestamps",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_keyword_removal_and_grant_timestamps",
+      "capabilities": [
+        "continuous.pt_keywords"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 613.1f, 613.4, 613.7, 613.8",
+        "review": "Scoped expectations in linked synthetic fixtures; no external rules certification."
+      }
+    },
+    {
+      "id": "explicit_dependencies_override_timestamp_and_cycles_terminate",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_explicit_dependencies_override_timestamp_and_cycles_terminate",
+      "capabilities": [
+        "continuous.pt_keywords"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 613.1f, 613.4, 613.7, 613.8",
+        "review": "Scoped expectations in linked synthetic fixtures; no external rules certification."
+      }
+    },
+    {
+      "id": "source_lifetime_expiry_and_last_known_pt",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_source_lifetime_expiry_and_last_known_pt",
+      "capabilities": [
+        "continuous.pt_keywords"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 613.1f, 613.4, 613.7, 613.8",
+        "review": "Scoped expectations in linked synthetic fixtures; no external rules certification."
+      }
+    },
+    {
+      "id": "overlapping_mana_and_sacrifice_costs_roll_back",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_overlapping_mana_and_sacrifice_costs_roll_back",
+      "capabilities": [
+        "actions.atomic"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2, 602.2, 613.8, 728",
+        "review": "Scoped synthetic interaction fixture; not externally certified."
+      }
+    },
+    {
+      "id": "committed_costs_are_visible_before_resolution",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_committed_costs_are_visible_before_resolution",
+      "capabilities": [
+        "actions.atomic"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2, 602.2, 613.8, 728",
+        "review": "Scoped synthetic interaction fixture; not externally certified."
+      }
+    },
+    {
+      "id": "missing_required_target_cannot_pay_or_cast",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_missing_required_target_cannot_pay_or_cast",
+      "capabilities": [
+        "actions.atomic"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2, 602.2, 613.8, 728",
+        "review": "Scoped synthetic interaction fixture; not externally certified."
+      }
+    },
+    {
+      "id": "dependency_cycles_preserve_external_dependencies",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_dependency_cycles_preserve_external_dependencies",
+      "capabilities": [
+        "continuous.pt_keywords"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2, 602.2, 613.8, 728",
+        "review": "Scoped synthetic interaction fixture; not externally certified."
+      }
+    },
+    {
+      "id": "discover_uses_exile_without_hand_detour",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_discover_uses_exile_without_hand_detour",
+      "capabilities": [
+        "events.dispatch"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 400.7; discover and manifest dread rules (CR 701); double-faced cards (CR 712)",
+        "review": "Synthetic physical movement assertions only; not full mechanic conformance."
+      }
+    },
+    {
+      "id": "manifest_view_preserves_physical_entry_and_death",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_manifest_view_preserves_physical_entry_and_death",
+      "capabilities": [
+        "events.dispatch"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 400.7; discover and manifest dread rules (CR 701); double-faced cards (CR 712)",
+        "review": "Synthetic physical movement assertions only; not full mechanic conformance."
+      }
+    },
+    {
+      "id": "alternate_face_uses_physical_card_in_entry_event",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_alternate_face_uses_physical_card_in_entry_event",
+      "capabilities": [
+        "events.dispatch"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 400.7; discover and manifest dread rules (CR 701); double-faced cards (CR 712)",
+        "review": "Synthetic physical movement assertions only; not full mechanic conformance."
+      }
+    },
+    {
+      "id": "discover_uncastable_card_moves_from_exile_to_hand",
+      "version": 1,
+      "test": "tests.test_zone_actions_layers.ZoneActionsLayers.test_discover_uncastable_card_moves_from_exile_to_hand",
+      "capabilities": [
+        "events.dispatch"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 400.7; discover and manifest dread rules (CR 701); double-faced cards (CR 712)",
+        "review": "Synthetic physical movement assertions only; not full mechanic conformance."
       }
     }
   ]

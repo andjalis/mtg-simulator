@@ -1,0 +1,6 @@
+test_graveyard_trigger_snapshot_taken_when_queued (tests.test_identity_events.IdentityEvents.test_graveyard_trigger_snapshot_taken_when_queued) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

@@ -1,0 +1,6 @@
+test_failed_discard_restores_paid_mana_and_observers (tests.test_zone_actions_layers.ZoneActionsLayers.test_failed_discard_restores_paid_mana_and_observers) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

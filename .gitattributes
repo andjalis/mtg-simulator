@@ -1,3 +1,4 @@
 # Preserve captured third-party output exactly, including its trailing spaces.
 results/rules_evidence/forge-probe.log -whitespace
 results/identity_events/forge-probe.log -whitespace
+results/zone_actions_layers/forge-probe.log -whitespace

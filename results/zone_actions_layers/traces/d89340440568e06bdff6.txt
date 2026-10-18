@@ -1,0 +1,6 @@
+test_committed_costs_are_visible_before_resolution (tests.test_zone_actions_layers.ZoneActionsLayers.test_committed_costs_are_visible_before_resolution) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

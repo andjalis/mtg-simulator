@@ -1,0 +1,6 @@
+test_target_can_be_sacrificed_as_cost (tests.test_zone_actions_layers.ZoneActionsLayers.test_target_can_be_sacrificed_as_cost) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK
