@@ -36,7 +36,7 @@ a fake Forge directory and don't need a real install; a real Forge run needs Jav
 
 | Path | Role |
 | --- | --- |
-| `mtgsim/engine/` | Rules engine package: `state.py` (Permanent, Player, StackItem), `mana.py`, `game.py` (`Game` = the mixins below), `costs.py`, `targets.py`, `turns.py`, `stack.py`, `play.py`, `resolve.py` (effect kinds), `effects.py` (damage, destroy, dies, SBA), `combat.py`, `policy.py` (default decisions) |
+| `mtgsim/engine/` | Rules engine package: `state.py` (Permanent, Player, StackItem), `mana.py`, `game.py` (`Game` = the mixins below), `costs.py`, `targets.py`, `turns.py`, `stack.py`, `play.py`, `resolve.py` (shared amount rules, then dispatch), `kinds/` (one handler per effect kind), `effects.py` (damage, destroy, dies, SBA), `combat.py`, `policy.py` (default decisions) |
 | `mtgsim/ai.py` | `HeuristicAI` (default) and `BaselineAI` (old player, kept for comparison) |
 | `mtgsim/cards/`, `carddb.py` | Card package: `model.py` (CardDef, Effect, ...), `patterns.py` (template tables), `parse.py` (oracle text to CardDef), `tokens.py`; `carddb.py` is lookup order and Scryfall fallback |
 | `mtgsim/identity.py`, `rules_events.py`, `continuous.py`, `actions.py` | Rules foundation: physical card identities and zones, shared rules events, scoped continuous effects, transactional actions |
@@ -67,7 +67,8 @@ a fake Forge directory and don't need a real install; a real Forge run needs Jav
   coverage gaps show up in `--coverage` and in run output; do not hide them.
 - **Where new code goes.** A new mechanic family gets its own template module (like `removal.py`) exporting
   `EFFECT_PATTERNS`/`SUBS`, joined at the end of `cards/__init__.py`, with any engine helper it needs in that
-  module. Small general templates go in `cards/patterns.py`; new effect kinds in `engine/resolve.py`; rules
+  module. Small general templates go in `cards/patterns.py`; new effect kinds as an `@kind(...)` handler in the
+  matching `engine/kinds/` family module (damage, cards, graveyard, permanents, stats, other); rules
   systems (zones, events, layers, SBA) in `engine/` or the rules-foundation modules. `mtgsim.engine` and
   `mtgsim.cards` re-export every name, so `from mtgsim.engine import Game` keeps working.
 - **The engine is incomplete by design.** Support varies by mechanic; check the README's

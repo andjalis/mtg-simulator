@@ -435,7 +435,7 @@ adventures, flashback, foretold cards, blitz, channel; cast them with
 | `mtgsim/carddb.py` | Card lookup and Scryfall fetch/cache |
 | `mtgsim/build_carddb.py` | Builds `data/cards.sqlite3` from Scryfall bulk data or Forge |
 | `mtgsim/decklist.py` | Decklist parsing |
-| `mtgsim/engine/` | The rules engine: objects (`state.py`), mana payment (`mana.py`), the `Game` class (`game.py`) built from costs, targets, turns, stack, play, resolve, effects and combat modules, and the default decisions (`policy.py`) |
+| `mtgsim/engine/` | The rules engine: objects (`state.py`), mana payment (`mana.py`), the `Game` class (`game.py`) built from costs, targets, turns, stack, play, resolve, effects and combat modules, effect-kind handlers (`kinds/`), and the default decisions (`policy.py`) |
 | `mtgsim/identity.py`, `rules_events.py`, `continuous.py`, `actions.py` | Rules foundation: card identities and zones, rules events, scoped continuous effects, transactional actions |
 | `mtgsim/ai.py` | `HeuristicAI` (default) and `BaselineAI` (the first, simpler player, kept for comparison) |
 | `mtgsim/runner.py` | Match loop, statistics |
