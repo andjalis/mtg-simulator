@@ -193,3 +193,40 @@ Full suite: **525 tests passed** in 179 seconds
 (`/tmp/mtgsim-stall-final-suite.log`). The subsequently added live-rating regression
 passed separately with rating/replay/cancellation checks (14 tests), and Playwright
 verified numeric live MMR followed by the named badge only upon completion.
+
+## Opponent-pool close-up prototype
+
+Replaced the live MMR panel with the active opponent pool's badge, pool score,
+clear target, completed-matchup count, game count, interactive opponent cards,
+and the selected matchup's W/L/D record. Map nodes are keyboard-accessible
+buttons; selecting another pool pins the close-up until Follow live pool is used.
+The map arrow continues to identify the actual live pool. Batch updates preserve
+opponent selection and keyboard focus; overall counters are labeled Trial.
+MMR remains on the final results screen.
+
+Validation: **14 focused interface/replay/HTTP regressions passed**
+(`/tmp/mtgsim-pool-focus-tests.log`). Playwright's deterministic transport fixtures
+passed pool selection, return to live, opponent inspection with Space, focus
+preservation across batches, automatic pool advance, completed-result navigation,
+and overflow/touch checks at 320/390/768px, plus 1440px desktop inspection
+(`/tmp/mtgsim-pool-focus-playwright.log`). Screenshots:
+`/tmp/mtgsim-ui-artifacts/pool-closeup-*.png`.
+
+## Reload during browser-run grading
+
+The user's visible trial was in Deck analysis at 1160/1230 games while the
+close-up incorrectly showed the next unplayed Gold pool. Reproduced a second
+stall mechanism: after old workers claim tasks and a page reload destroys them,
+the new page's heartbeats keep those tasks pending forever. Explicit pool release
+completes the same futures on the server. Reconnection now performs that handoff
+for running device trials, preserving completed results without restarting the
+server. Browser titles include the trial ID for diagnosis.
+
+Grading now displays a dedicated analysis panel with the remaining matchup-game
+count or hand/speed-analysis stage. The pool map rests at the last tested pool;
+past pools can still be inspected, with a Back to analysis action.
+
+Added a claimed-work/reconnect regression and Playwright coverage for the handoff,
+grading stages and review navigation (`/tmp/mtgsim-reconnect-analysis-playwright.log`).
+Also added read-only `/api/runs` summaries for diagnosis after the next normal
+server restart; the running user's server was not restarted just to add that API.

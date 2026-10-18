@@ -79,6 +79,15 @@ Web trials accept 1–1000 main-deck cards; lists below 60 cards show a warning.
 Refreshing the page reconnects to the last trial in that browser tab while the
 server still has it. Connection errors offer a retry instead of losing access
 to the trial.
+Reloading an active browser-run trial moves unfinished batches to the server,
+since the previous page's workers are gone. The trial ID is included in its
+browser title; `/api/runs` lists progress summaries for the current server process.
+
+The live arena opens a close-up of the active opponent pool, with its score,
+clear target, matchup progress and individual records. Select a pool on the map
+or an opponent card to inspect it; **Follow live pool** returns to the action.
+The separate trial totals cover all pools. MMR and the final rating badge are
+shown on the results screen.
 
 Optional browser QA uses Playwright without adding application dependencies:
 start an isolated server with `MTGSIM_HISTORY=/tmp/ui-history.sqlite3 python3 -m web --offline --jobs 2 --port 8137`,
