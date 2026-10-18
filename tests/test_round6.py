@@ -1,7 +1,7 @@
 """Discover X follow-ups, Firebending, two-target bites."""
 import unittest
 
-from tests.test_templates import BEAR, ISLAND, MOUNTAIN, card
+from tests.test_templates import BEAR, ISLAND, card
 from tests.test_empower_discover import Base
 
 HURL = card("Test Hurl", "{3}{U}{U}", "Instant",

@@ -1,11 +1,8 @@
 """X Mutagen tokens, artifact-token ability discount, Empower X."""
-import random
 import unittest
 
-from mtgsim.ai import HeuristicAI
-from mtgsim.engine import Game, Permanent, Player
 
-from tests.test_templates import BEAR, ISLAND, card
+from tests.test_templates import BEAR, card
 from tests.test_empower_discover import Base
 
 OOZE = card("Test Ooze", "{X}{G}{G}", "Legendary Creature — Ooze",

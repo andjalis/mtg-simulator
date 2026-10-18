@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from mtgsim import benchmark, provenance
+from mtgsim import provenance
 from tests import test_benchmark
 
 

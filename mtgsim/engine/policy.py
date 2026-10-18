@@ -238,7 +238,6 @@ def respond(game: Game, me: Player):
     protect = regeneration.respond(game, me)
     if protect is not None:
         return protect
-    opp = game.opponent(me)
     options = {c.name: c for c in game.spell_options(me) if c.instant_speed and game.can_cast_now(me, c)}
     top = game.stack[-1] if game.stack else None
     if top is not None:

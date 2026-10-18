@@ -6,7 +6,7 @@ from unittest.mock import patch
 
 from mtgsim.ai import HeuristicAI
 from mtgsim.cards import Effect, make_token
-from mtgsim.engine import Game, Graveyard, Player, StackItem
+from mtgsim.engine import Game, Player
 from tests.test_templates import BEAR, ISLAND, card
 
 

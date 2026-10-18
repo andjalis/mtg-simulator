@@ -1,7 +1,7 @@
 """Cards the Forge cross-check flagged: Izzet, Dimir, Jund and Azorius decks."""
 import unittest
 
-from tests.test_templates import BEAR, ISLAND, MOUNTAIN, SWAMP, PLAINS, card
+from tests.test_templates import BEAR, ISLAND, SWAMP, PLAINS, card
 from tests.test_empower_discover import Base
 
 HEARTH = card("Test Hearth", "{5}{R}", "Creature — Elemental",

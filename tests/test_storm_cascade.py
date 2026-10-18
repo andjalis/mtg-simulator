@@ -1,5 +1,4 @@
 """Cast-triggered keywords must survive removal of their spell and never cast copies."""
-import collections
 import dataclasses
 import random
 import unittest

@@ -7,7 +7,6 @@ tapped. The AI takes the best match (engine.choose_tutor) and always searches wh
 """
 from __future__ import annotations
 
-import re
 
 KINDS = {"search"}
 _NUM = {"one": 1, "two": 2, "three": 3, "four": 4}

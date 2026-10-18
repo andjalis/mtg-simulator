@@ -297,15 +297,14 @@ def grade_deck(me, my_list, tracker, report, args):
     my_counts = my_list.main
     given = {} if args.bo3 else {o.name.rsplit("/", 1)[-1]: (o.points, o.games)
                                  for o in tracker.opponents.values() if o.pool == "grandmaster" and o.games}
-    play = None
-    if args.engine == "forge":
-        def play(a, a_counts, b, b_counts):
-            try:
-                res = run_forge_match(a, a_counts, b, b_counts, games=args.games, seed=args.seed,
-                                      forge_dir=args.forge_dir, java=args.java, clock=args.clock, jobs=args.jobs)
-            except ForgeError as e:
-                sys.exit(f"Forge: {e}")
-            return res.wins_a + 0.5 * res.draws, res.games
+    def forge_play(a, a_counts, b, b_counts):
+        try:
+            res = run_forge_match(a, a_counts, b, b_counts, games=args.games, seed=args.seed,
+                                  forge_dir=args.forge_dir, java=args.java, clock=args.clock, jobs=args.jobs)
+        except ForgeError as e:
+            sys.exit(f"Forge: {e}")
+        return res.wins_a + 0.5 * res.draws, res.games
+    play = forge_play if args.engine == "forge" else None
     print("\nGrading the deck (meta, mana, speed, consistency)...", file=sys.stderr)
     try:
         a = assess(me, my_counts, CardDB(offline=args.offline), games=args.games, seed=args.seed,

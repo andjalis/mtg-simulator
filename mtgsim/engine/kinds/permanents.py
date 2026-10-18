@@ -286,7 +286,7 @@ def manifest_dread(game, p, **_):
     if top:
         top.sort(key=lambda c: copies.score(c))
         keep, rest = top[0], top[1:]       # manifest the cheaper card, the other goes to the graveyard
-        perm = game.enter_battlefield(p, CardDef(name="Manifest", mana_cost={"generic": 0}, cmc=0,
+        game.enter_battlefield(p, CardDef(name="Manifest", mana_cost={"generic": 0}, cmc=0,
                                                  types=frozenset({"Creature"}), power=2, toughness=2,
                                                  is_token=False), physical_card=keep)
         for c in rest:
