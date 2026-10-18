@@ -413,6 +413,9 @@ class DevicePool:
             if fn is not _play_chunk or self.on_server:
                 return self._to_server(fn, *args)
             fut = Future()
+            # A real executor acknowledges cancellation before as_completed can
+            # yield it. Browser tasks have no executor thread to do that work.
+            fut.add_done_callback(_notify_device_cancellation)
             self.tasks[self.next_id] = (fut, args)
             self.queue.append(self.next_id)
             self.next_id += 1
@@ -483,6 +486,11 @@ class DevicePool:
             time.sleep(min(1.0, self.stall / 4))
             if self.tasks and time.monotonic() - self.heard > self.stall:
                 self.release()
+
+
+def _notify_device_cancellation(fut: Future) -> None:
+    if fut.cancelled():
+        fut.set_running_or_notify_cancel()
 
 
 def _copy(done: Future, fut: Future) -> None:

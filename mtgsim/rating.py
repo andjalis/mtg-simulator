@@ -237,7 +237,7 @@ class LadderTracker:
                         "win_rate": cur.win_rate} if cur else None,
             "ranks": [{"name": r.name, "floor": r.floor, "color": r.color} for r in RANKS],
             "pools": pools,
-            "opponents": [{"name": o.name, "pool": o.pool, "rating": o.rating, "games": o.games,
+            "opponents": [{"name": o.name, "pool": o.pool, "rating": o.rating, "games": o.games, "total": o.total,
                            "wins": o.wins, "draws": o.draws, "win_rate": o.win_rate}
                           for o in self.opponents.values()],
             "history": [[g, round(m, 1)] for g, m in self.history],

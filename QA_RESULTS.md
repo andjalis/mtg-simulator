@@ -160,3 +160,36 @@ focus, and explicit reduced-motion checks passed. An initial reduced-motion
 finding was withdrawn after isolated reproduction showed the existing rule works.
 Tests used Chromium on Linux, including emulated mobile viewports, not physical
 phones or other browser engines.
+
+## Live trial stalled at 270 games
+
+Inspected trial `6b7e42957ea9`: status running, 270/3770 games, Bronze pool,
+device execution, no server game workers. All five Bronze matchups had reached
+their full or early-stop limits (20, 100, 20, 30, 100 games).
+
+Root cause: `DevicePool` creates plain futures. Cancelling them at an early-stop
+decision leaves them in the cancelled state without the executor acknowledgment
+that `as_completed` requires. The completion loop then waits indefinitely.
+A cancellation callback now sends that acknowledgment. A focused regression
+failed before the fix and passes afterward; an integration test drives browser
+chunks through early stops and verifies that the entire run finishes.
+
+The saved snapshot also explained the rating/map confusion: Silver at 1067 MMR
+is the estimated rating; Bronze is the opponent pool under test. A further user
+trial reaching Gold confirmed that two simultaneous named ranks remained confusing.
+Live play now shows only a numeric MMR estimate with a neutral symbol, withholds the
+named MMR rank and rank-threshold progress until completion, keeps the arrow above
+the active opponent pool, and leaves the final
+arrow at the last tested pool rather than moving it to an MMR rank. Matchup totals
+include early-stop limits so completed 20-game matchups read 20/20 rather than 20/100.
+
+The original trial snapshot was preserved at
+`~/.local/state/mtgsim/diagnostics/6b7e42957ea9.json` before restarting the server.
+An isolated Playwright check using that snapshot verified Silver/1067 alongside
+the Bronze arrow, shortened matchup totals, and consistent finished-pool placement
+(`/tmp/mtgsim-stall-map.log`). Focused checks: 14 rating/replay/cancellation tests,
+10 cancellation/device/early-stop tests, and 9 HTTP/cancellation tests passed.
+Full suite: **525 tests passed** in 179 seconds
+(`/tmp/mtgsim-stall-final-suite.log`). The subsequently added live-rating regression
+passed separately with rating/replay/cancellation checks (14 tests), and Playwright
+verified numeric live MMR followed by the named badge only upon completion.

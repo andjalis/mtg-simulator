@@ -56,11 +56,11 @@ function resetArena() {
 function arenaHTML() {
   return `<div class="arena pre" id="arena">
       <div class="climb" id="climb"><div class="badge"><div class="orbit"></div><div class="spin"></div></div>
-        <div><div class="overline">CURRENT RATING</div><div class="rk"></div><div class="mmrv"><span class="n"></span><span class="d"></span></div>
+        <div><div class="overline">LIVE RATING</div><div class="rk"></div><div class="mmrv"><span class="n"></span><span class="d"></span></div>
         <div class="xp" role="progressbar" aria-label="Progress to next rank" aria-valuemin="0" aria-valuemax="100"><i></i></div><div class="sub"></div><div class="live"></div></div>
         <div class="banner" role="status" aria-live="polite"></div></div>
       <div class="scoreboard"><div><span>WINS</span><b id="winCount">0</b></div><div><span>LOSSES</span><b id="lossCount">0</b></div><div><span>DRAWS</span><b id="drawCount">0</b></div><div><span>SCORE</span><b id="scoreCount">—</b></div><p class="batch-update" role="status" aria-live="polite">Awaiting the first results</p></div>
-      <div class="track" id="track"><div class="track-heading"><h3>LEAGUE MAP</h3><span>Win ${Math.round(passRate * 100)}% to advance</span></div><div class="callout" role="status" aria-live="polite"></div><div class="wrap"><div class="lane"><div class="rail"><i></i></div><div class="token"><b></b></div></div></div>
+      <div class="track" id="track"><div class="track-heading"><h3>OPPONENT POOLS</h3><span>${Math.round(passRate * 100)}% score to clear</span></div><p class="note compact">The arrow marks the opponents being tested. Your final MMR rank is revealed when the trial finishes.</p><div class="pool-progress" role="status" aria-live="polite"></div><div class="callout" role="status" aria-live="polite"></div><div class="wrap"><div class="lane"><div class="rail"><i></i></div><div class="token"><b></b></div></div></div>
         <div class="duels" id="duels"></div></div>
       <div class="ticker"><div class="ticker-head"><h3>Battle feed</h3><span><i class="legend-win"></i> Win <i class="legend-loss"></i> Loss <i class="legend-draw"></i> Draw</span></div><div class="rows" id="ticks" aria-live="off"></div><p class="feed-note">Results arrive in batches. Tiles show the latest outcomes, not play order.</p></div>
     </div>`;
@@ -95,9 +95,8 @@ function updateArena(s) {
   }
 }
 
-// The league track: one node per league, left to right. The token walks along the rail while the
-// league's opponents are being played, and the node pops when the league is cleared or cracks
-// when the deck is stopped there.
+// One node per opponent pool. The arrow marks the pool being tested; each node
+// records whether that pool was cleared, played, or stopped the trial.
 function buildNodes(pools, deck) {
   const lane = $("#track .lane"), tok = lane.querySelector(".token");
   lane.querySelectorAll(".node").forEach(x => x.remove());
@@ -109,9 +108,9 @@ function buildNodes(pools, deck) {
     el.innerHTML = `<span class="node-number">${String(i + 1).padStart(2, "0")}</span>${r.emblem || `<i class="gem rk-${esc(p.key)}"></i>`}<span class="nm">${esc(p.label)}</span><span class="st"></span>`;
     lane.appendChild(el);
   });
-  tok.firstChild.textContent = (deck || "?").trim().charAt(0).toUpperCase() || "?";
-  tok.title = deck || "";
-  tok.style.left = ((-.4 + .5) / Math.max(1, pools.length) * 100).toFixed(2) + "%";
+  tok.firstChild.textContent = "↓";
+  tok.title = `${deck || "Your deck"}: opponent pool being tested`;
+  tok.style.left = (.5 / Math.max(1, pools.length) * 100).toFixed(2) + "%";
 }
 
 // Seal the deck token locally: the loadout is hidden once the arena opens.
@@ -130,20 +129,14 @@ function updateTrack(s) {
   if ([...lane.querySelectorAll(".node")].map(el => el.dataset.key).join() !== pools.map(p => p.key).join()) buildNodes(pools, d.deck);
   const finished = d.status === "done";
   const odds = p => d.opponents.filter(o => o.pool === p.key);
-  const prog = pools.map(p => p.done ? 1 : Math.min(.92, odds(p).reduce((a, o) => a + o.games, 0) / Math.max(1, odds(p).length * gpo)));
   let cur = pools.findIndex(p => !p.done), pos;
-  // Once a ladder run is over, the token ends on the league of the final rank, the same rank the
-  // climb panel shows. Leagues above it whose matches were won stay marked as such, not as ranks.
-  const lastCleared = pools.reduce((a, p, i) => p.done && p.cleared === true ? i : a, -1);
-  const finalIdx = finished && d.ladder ? pools.findIndex(p => p.key === d.rank.toLowerCase()) : -1;
-  const atRank = finalIdx >= 0 && finalIdx <= lastCleared;
+  // This map always tracks opponent pools. MMR has its own rank badge.
   if (finished || cur < 0) {
     cur = -1;
     const last = pools.reduce((a, p, i) => p.done ? i : a, -1);
-    pos = atRank ? finalIdx : last < 0 ? -.4 : pools[last].cleared === false ? last - .4 : last;
+    pos = last < 0 ? 0 : last;
   } else {
-    const prev = cur > 0 ? cur - 1 : -.4;
-    pos = prev + prog[cur] * (cur - prev);
+    pos = cur;
   }
   const left = ((pos + .5) / n * 100).toFixed(2) + "%";
   if (tok.style.left && tok.style.left !== left && !calm.matches) {  // a footprint where the token was
@@ -158,7 +151,6 @@ function updateTrack(s) {
   pools.forEach((p, i) => {
     const el = nodes[i];
     let st = p.done ? (p.cleared === true ? "cleared" : p.cleared === false ? "failed" : "played") : i === cur ? "current" : "locked";
-    if (atRank && st === "cleared") st = i === finalIdx ? "final" : i > finalIdx ? "beat" : st;
     if (A.track[p.key] !== st) {
       const before = A.track[p.key];
       A.track[p.key] = st;
@@ -171,8 +163,14 @@ function updateTrack(s) {
   });
   // the opponents in the league being played (or the last one, once the run is over)
   const focus = cur >= 0 ? pools[cur] : [...pools].reverse().find(p => p.done);
+  tok.title = focus ? `${d.deck}: ${cur >= 0 ? "testing" : "last tested"} ${focus.label} opponents` : d.deck;
   const duels = $("#duels");
   const focused = focus ? odds(focus) : [];
+  const completed = focused.filter(o => o.games >= (o.total || gpo)).length;
+  tr.querySelector(".pool-progress").textContent = focus
+    ? cur >= 0 ? `${focus.label} opponents · ${completed}/${focused.length} matchups finished`
+      : `Trial finished · ${pools.filter(p => p.done).length}/${n} pools tested`
+    : "Waiting for the first opponent pool";
   const names = new Set(focused.map(o => o.name));
   for (const [name, el] of Object.entries(A.duels)) if (!names.has(name)) { el.remove(); delete A.duels[name]; }
   focused.forEach(o => {
@@ -183,10 +181,11 @@ function updateTrack(s) {
       el.querySelector("span").textContent = oppName(o.name);
       duels.appendChild(el);
     }
-    const decided = focus.done || o.games >= gpo;
+    const scheduled = o.total || gpo;
+    const decided = focus.done || o.games >= scheduled;
     const cls = o.games === 0 ? "" : !decided ? "live" : o.win_rate >= passRate ? "win" : "loss";
     el.className = "duel " + cls;
-    el.querySelector("b").textContent = o.games ? `${Math.round(100 * o.win_rate)}% · ${o.games}/${gpo}` : "Waiting";
+    el.querySelector("b").textContent = o.games ? `${Math.round(100 * o.win_rate)}% · ${o.games}/${scheduled}` : "Waiting";
     el.title = `${oppName(o.name)}: ${o.games} games, ${cls === "win" ? "threshold met" : cls === "loss" ? "below threshold" : cls === "live" ? "in progress" : "waiting"}`;
   });
   const wrap = tr.querySelector(".wrap"), cx = (pos + .5) / n * lane.offsetWidth;
@@ -214,19 +213,21 @@ function burst(node, tr, text, bad) {
 function updateClimb(d) {
   $("#arena").classList.remove("pre");
   const c = $("#climb"), idx = d.ranks.findIndex(r => r.name === d.rank);
-  c.querySelector(".overline").textContent = d.status === "done" ? "FINAL RATING" : "CURRENT RATING";
+  const finished = d.status === "done";
+  c.querySelector(".overline").textContent = finished ? "FINAL MMR RANK" : "LIVE RATING";
   const info = rankList.find(r => r.name === d.rank) || {};
   const nxt = d.ranks[idx + 1], floor = d.ranks[idx].floor;
   const pct = nxt ? Math.max(0, Math.min(100, (d.mmr - floor) / (nxt.floor - floor) * 100)) : 100;
   const bar = c.querySelector(".xp > i");
   const changed = A.rank !== null && idx !== A.rank;
-  c.style.setProperty("--rc", d.rank_color);
-  if (A.rank === null || changed) {
-    c.querySelector(".spin").innerHTML = info.emblem || `<i class="gem rk-${esc(d.rank.toLowerCase())}"></i>`;
-    c.querySelector(".rk").textContent = d.rank;
-  }
+  c.style.setProperty("--rc", finished ? d.rank_color : "#b6a2ff");
+  c.querySelector(".spin").innerHTML = finished
+    ? info.emblem || `<i class="gem rk-${esc(d.rank.toLowerCase())}"></i>`
+    : '<span class="mmr-estimate-symbol" aria-hidden="true">≈</span>';
+  c.querySelector(".rk").textContent = finished ? d.rank : "MMR estimate";
   bar.style.width = pct + "%";
   c.querySelector(".xp").setAttribute("aria-valuenow", String(Math.round(pct)));
+  c.querySelector(".xp").hidden = !finished;
   c.querySelector(".xp").setAttribute("aria-valuetext", nxt ? `${d.to_next} MMR to ${nxt.name}` : "Top rank");
   if (changed) {
     const up = idx > A.rank;
@@ -234,14 +235,16 @@ function updateClimb(d) {
     c.classList.remove("up", "down");
     replay(c, up ? "up" : "down");
     const b = c.querySelector(".banner");
-    b.textContent = up ? `Rank up · ${d.rank}` : `Rating adjusted · ${d.rank}`;
+    b.textContent = finished ? `Final rating · ${d.rank}` : up ? "MMR estimate increased" : "MMR estimate adjusted";
     b.classList.toggle("down", !up);
     replay(b, "show");
   }
   A.rank = idx;
 
   tweenMMR(d.mmr);
-  c.querySelector(".sub").textContent = `${nxt ? `${d.to_next} MMR to ${nxt.name}` : "Top rank"} · peak ${d.peak} · ${d.games} games`;
+  c.querySelector(".sub").textContent = finished
+    ? `${nxt ? `${d.to_next} MMR to ${nxt.name}` : "Top rank"} · peak ${d.peak} · ${d.games} games`
+    : `${d.games} games · peak ${d.peak} MMR · final rank pending`;
   const cur = d.current;
   c.querySelector(".live").textContent = d.status === "running" && cur ? `Now playing ${oppName(cur.opponent)} · ${cur.games}/${cur.total}` : "";
   if (d.status === "done" && !A.final) {

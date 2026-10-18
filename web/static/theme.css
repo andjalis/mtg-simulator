@@ -348,6 +348,7 @@ body:has(.trial-page) .brand b { letter-spacing: .02em; font-family: var(--body)
 .track-heading { display: flex; justify-content: space-between; gap: 10px; padding: 0 4px; }
 .track h3, .ticker h3 { font: 650 10px var(--body); letter-spacing: .12em; color: var(--ink-2); margin: 0; }
 .track-heading > span { font-size: 10px; color: var(--muted); }
+.mmr-estimate-symbol { font: 64px/1 var(--body); color: var(--gold); }
 .track .wrap { overflow-x: auto; scrollbar-width: thin; padding: 0 2px 8px; margin-top: 14px; }
 .track .lane { --n: 7; position: relative; display: grid; grid-template-columns: repeat(var(--n), minmax(78px, 1fr)); min-width: calc(var(--n) * 78px); }
 .track .rail { position: absolute; left: calc(100% / var(--n) / 2); right: calc(100% / var(--n) / 2); top: 60px; height: 2px; background: #2b3046; }
