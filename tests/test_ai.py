@@ -269,7 +269,7 @@ class AITests(unittest.TestCase):
 
     def test_second_red_source_counts_for_double_red_spell(self):
         perm("Mountain", self.a)
-        self.a.hand = [DB.get("Smaug the Magnificent"), DB.get("Mountain"), DB.get("Swamp")]
+        self.a.hand = [DB.get("Smaug the Magnificent"), DB.get("Swamp"), DB.get("Mountain")]
         self.game.step = "main1"
         self.a.ai.play_land(self.game, self.a)
         self.assertEqual(sorted(p.card.name for p in self.a.battlefield), ["Mountain", "Mountain"])
