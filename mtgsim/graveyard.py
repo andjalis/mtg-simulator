@@ -57,6 +57,7 @@ def activate(game, p, card, idx):
     from .engine import StackItem
     if not can_activate(game, p, card, idx):
         return False
+    card = p.graveyard.get(card)
     act = card.gy_activated[idx]
     if game.pay(p, act.cost) is None:
         return False

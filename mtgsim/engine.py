@@ -27,7 +27,10 @@ import re
 
 from . import auras, cast_triggers, copies, counting, graveyard, learning, milling, proliferate, regeneration, removal, returns, search, xspells
 from .cards import BASIC_MANA, COLORS, KEYWORDS, Activated, AltCost, CardDef, Effect, Trigger, add_mana, jace_token, make_token, role_token
-from . import modal
+from . import modal, rules_events
+from .identity import CardInstance, CardZone, Graveyard, instance
+
+TrackedZone = CardZone  # public compatibility alias
 
 TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
 COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
@@ -35,63 +38,22 @@ TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "
             "player", "spell")
 
 
-class TrackedZone(list):
-    """Track zone incarnations so delayed abilities cannot find a card that left and returned."""
-    track_departures = False
-
-    def append(self, card):
-        super().append(card)
-        self._bump(card)
-
-    def _bump(self, card):
-        if not hasattr(self, "versions"):
-            self.versions = {}
-        self.versions[id(card)] = self.version(card) + 1
-
-    def version(self, card):
-        return getattr(self, "versions", {}).get(id(card), 0)
-
-    left: list | None = None
-
-    def remove(self, card):
-        del self[self.index(card)]
-
-    def __delitem__(self, key):
-        removed = self[key] if isinstance(key, slice) else [self[key]]
-        super().__delitem__(key)
-        for card in removed:
-            self._bump(card)
-            if self.track_departures:
-                if self.left is None:
-                    self.left = []
-                self.left.append(card)
-
-    def pop(self, index=-1):
-        card = self[index]
-        del self[index]
-        return card
-
-    def clear(self):
-        del self[:]
-
-
-class Graveyard(TrackedZone):
-    """Count permanent cards put here this turn (descend), and cards that leave."""
-    descents = 0
-    track_departures = True
-
-    def append(self, card):
-        if card.is_permanent and not card.is_token:
-            self.descents += 1
-        super().append(card)
-
-
 class Permanent:
+    @property
+    def front(self):
+        return self._front
+
+    @front.setter
+    def front(self, card):
+        self._front = instance(card, getattr(self, "controller", None))
+        if self._front.owner is not None:
+            self.owner = self._front.owner
+
     def __init__(self, card: CardDef, controller: "Player"):
         self.card = card
-        self.front = card             # the card that goes to the graveyard (transformed cards)
+        self.front = instance(card, controller)  # physical card behind this battlefield object
         self.controller = controller
-        self.owner = controller
+        self.owner = self.front.owner
         self.tapped = card.enters_tapped
         self.sick = True
         self.damage = 0
@@ -380,6 +342,16 @@ OUTLAWS = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock")
 
 
 class Player:
+    CARD_ZONES = frozenset({"library", "hand", "graveyard", "exile", "sideboard",
+                            "on_adventure", "foretold", "plotted", "warp_exile"})
+
+    def __setattr__(self, name, value):
+        if name in self.CARD_ZONES:
+            cls = Graveyard if name == "graveyard" else CardZone
+            if not isinstance(value, cls) or value.owner is not self:
+                value = cls(value, owner=self, name=name)
+        object.__setattr__(self, name, value)
+
     my_turn = False
     foe = None
     speed = 0
@@ -460,6 +432,8 @@ class StackItem:
         self.source = source
         self.name = name or (card.name if card else "ability")
         self.context = context      # e.g. the player whose creature died, for "that player loses 2 life"
+        self.context_ref = (context.zone.reference(context) if isinstance(context, CardInstance)
+                            and isinstance(context.zone, CardZone) and context in context.zone else None)
         self.kind = kind or ("spell" if card else "trigger")   # spell, copy, trigger, chapter, loyalty
         self.snow_spent = 0
         self.mana_spent = 0
@@ -630,6 +604,7 @@ class Game:
         self.winner: Player | None = None
         self.log_enabled = log
         self.events: list[str] = []
+        self.rule_events = rules_events.EventBus(capture=log)
         self.step = "main1"
         self.stack: list[StackItem] = []
         self.pending: list[tuple] = []   # triggered abilities waiting to be put on the stack
@@ -1023,7 +998,7 @@ class Game:
 
     # ------------------------------------------------------- casting options
     def _variant(self, card: CardDef, kind: str, alt: AltCost | None = None) -> CardDef:
-        key = (card.name, kind)
+        key = (getattr(card, "physical_id", id(card)), getattr(card, "generation", 0), kind)
         if key not in self._variants:
             if kind == "adventure":
                 v = dataclasses.replace(card.adventure)
@@ -1040,6 +1015,7 @@ class Game:
                         list(alt.extra)
                     v.cost_reduction = ""
             v.origin = (card, kind, alt)
+            v.origin_generation = getattr(card, "generation", None)
             self._variants[key] = v
         return self._variants[key]
 
@@ -1143,6 +1119,9 @@ class Game:
 
     def _available(self, p: Player, card: CardDef) -> bool:
         base, kind, _ = self._origin(card)
+        generation = getattr(card, "origin_generation", None)
+        if generation is not None and generation != getattr(base, "generation", None):
+            return False
         if kind == "prepared":
             return any(x.card is base and x.prepared for x in p.battlefield)
         return base in self._zone(p, kind)
@@ -1308,6 +1287,16 @@ class Game:
         return out
 
     # --------------------------------------------------------------- setup
+    def move_card(self, card, source, destination, *, reason="move"):
+        """Move one exact physical card between nonbattlefield zones."""
+        card = source.get(card)
+        before = rules_events.card_snapshot(card, source.owner)
+        source.remove(card)
+        destination.append(card)
+        self.rule_events.emit(rules_events.RulesEvent("zone_change", source.owner,
+            subject=card, before=before, destination=destination.name, reason=reason, source_zone=source.name))
+        return card
+
     def draw(self, p: Player, n: int = 1):
         for _ in range(n):
             if not p.library:
@@ -1316,7 +1305,7 @@ class Game:
                 p.lost = True
                 self.log("loses by drawing from an empty library", p)
                 return
-            p.hand.append(p.library.pop())
+            self.move_card(p.library[-1], p.library, p.hand, reason="draw")
             self.fire(p, "you_draw")
             drawn = getattr(p, "drawn_turn", (0, 0))
             p.drawn_turn = (self.turn, drawn[1] + 1 if drawn[0] == self.turn else 1)
@@ -1330,8 +1319,8 @@ class Game:
                    life=[p.life for p in self.players], turn_unit="player-turn")
         for p in self.players:
             while True:
-                p.library = list(p.deck)
-                self.rng.shuffle(p.library)
+                p.library = [CardInstance(c) for c in p.deck]
+                p.library.shuffle(self.rng)
                 p.hand = []
                 self.draw(p, 7)
                 if p.mulligans >= 2 or p.ai.keep_hand(p.hand, p.mulligans):
@@ -1437,7 +1426,7 @@ class Game:
                     p.library.remove(found)
                     p.hand.append(found)
                     self.log(f"fetches {found.name}", p)
-                self.rng.shuffle(p.library)
+                p.library.shuffle(self.rng)
             else:
                 self.draw(p)
             self.settle()
@@ -1625,10 +1614,18 @@ class Game:
     def queue_trigger(self, controller: Player, effects: list, source: Permanent | None = None,
                       name: str = "", context=None, targets: list | None = None, kind: str = "trigger",
                       modes=None):
-        self.pending.append((controller, effects, source, name, context, targets, kind, modes))
+        ref = (context.zone.reference(context) if isinstance(context, CardInstance)
+               and isinstance(context.zone, CardZone) and context in context.zone else None)
+        self.pending.append((controller, effects, source, name, context, targets, kind, modes, ref))
 
     def fire(self, p: Player, event: str, source: Permanent | None = None, context=None, subject=None):
-        """Queue the triggers for event: of ``source`` if given, else of p's permanents."""
+        """Deliver a typed event, then queue the existing supported trigger listeners."""
+        before = rules_events.snapshot(source) if source is not None and (self.rule_events.history is not None
+            or self.rule_events.listeners) else None
+        self.rule_events.emit(rules_events.RulesEvent(event, p, source, context, subject, before))
+        self._dispatch_trigger_event(p, event, source, context, subject)
+
+    def _dispatch_trigger_event(self, p, event, source=None, context=None, subject=None):
         perms = [source] if source is not None else list(p.battlefield)
         for perm in perms:
             for i, trig in enumerate(perm.triggers):
@@ -1698,7 +1695,7 @@ class Game:
         pending, self.pending = self.pending, []
         order = [self.active, self.opponent(self.active)]
         pending.sort(key=lambda t: order.index(t[0]))
-        for controller, effects, source, name, context, targets, kind, modes in pending:
+        for controller, effects, source, name, context, targets, kind, modes, ref in pending:
             if modes:
                 effects = list(effects) + modal.pick(self, controller, modes, source, least=0)
                 if not effects:
@@ -1706,6 +1703,7 @@ class Game:
             if targets is None:
                 targets = self.auto_targets(controller, effects, source)
             item = StackItem(controller, effects, targets, source=source, name=name, context=context, kind=kind)
+            item.context_ref = ref
             self.stack.append(item)
             self.log(f"{item} goes on the stack" + (f" -> {targets}" if any(targets) else ""), controller)
             self.check_ward(item)
@@ -1824,7 +1822,7 @@ class Game:
             owner.exile.append(base)
         elif ("rebound" in item.card.keywords and getattr(item, "cast_from_hand", False)
               and getattr(item, "resolved", False)):
-            exiled = dataclasses.replace(base)
+            exiled = base
             if not isinstance(owner.exile, TrackedZone):
                 owner.exile = TrackedZone(owner.exile)
             owner.exile.append(exiled)
@@ -1912,6 +1910,10 @@ class Game:
     # -------------------------------------------------------------- actions
     def play_land(self, p: Player, card: CardDef, back: bool = False):
         """Play a land from hand; with back=True, a modal double-faced card's land face."""
+        for zone in (p.hand, p.exile, p.graveyard):
+            if card in zone:
+                card = zone.get(card)
+                break
         face = card.land_face if back else card
         assert face is not None and face.is_land and not p.land_played
         if card in p.hand:
@@ -1959,6 +1961,14 @@ class Game:
         base, kind, alt = self._origin(card)
         if not self._available(p, card):
             return False
+        zone = self._zone(p, kind)
+        if base in zone:
+            actual = zone.get(base)
+            if card is base:
+                card = actual
+            else:
+                card.origin = (actual, kind, alt)
+            base = actual
         # Reject explicitly illegal targets before paying or moving the card.
         # Missing targets still use the existing automatic choice path below.
         if not card.is_permanent and targets is not None:
@@ -2037,6 +2047,12 @@ class Game:
             effects = mode_effects + effects
             targets = self.auto_targets(p, mode_effects) + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")
+        # Prepared spells are copies; channel/graveyard abilities leave their
+        # physical source in its actual zone rather than moving it onto the stack.
+        item.physical_card = base if kind not in ("prepared", "channel", "gy_ability") else None
+        if item.physical_card is not None:
+            base.generation += 1
+            base.zone = item
         item.cast_from_hand = self._zone(p, kind) is p.hand and kind not in ("free", "channel", "gy_ability", "prepared")
         item.snow_spent = sum(1 for s in payment if s.card.snow)
         item.x = x
@@ -2394,9 +2410,17 @@ class Game:
 
     def enter_battlefield(self, p: Player, card: CardDef, tapped_attacking: bool = False, x: int = 0,
                           *, tapped: bool = False, counters: dict | None = None) -> Permanent:
+        if card.is_token:
+            # Reusable token blueprints create a new physical token each time.
+            card = CardInstance(card)
         card, front = copies.clone_on_enter(self, p, card)
         perm = Permanent(card, p)
-        perm.front = front
+        perm.front = instance(front, p)
+        perm.owner = perm.front.owner
+        before = rules_events.card_snapshot(perm.front, p)
+        source_zone = "stack" if isinstance(perm.front.zone, StackItem) else perm.front.last_zone
+        perm.front.generation += 1
+        perm.front.zone = perm
         perm.entered_turn = self.turn
         if card.start_engines and p.speed == 0:
             p.speed = 1
@@ -2460,6 +2484,8 @@ class Game:
             perm.counters[kind] = perm.counters.get(kind, 0) + n
         perm.tapped |= tapped
         p.battlefield.append(perm)
+        self.rule_events.emit(rules_events.RulesEvent("zone_change", p, source=perm,
+            before=before, source_zone=source_zone, destination="battlefield", reason="enter_battlefield"))
         host = getattr(self, "_aura_host", None)
         if host is not None and card.aura:
             auras.attach(self, perm, host)
@@ -2756,7 +2782,7 @@ class Game:
                 p.library.remove(card)
                 p.hand.append(card)
                 self.log(f"searches for {card.name}", p)
-            self.rng.shuffle(p.library)
+            p.library.shuffle(self.rng)
         elif k == "p1_counters":
             if isinstance(target, Permanent) and target in target.controller.battlefield:
                 target.counters["+1/+1"] = target.p1 + eff.amount
@@ -2871,7 +2897,7 @@ class Game:
                 found = choose_tutor(self, p, cands)
                 p.library.remove(found)
                 p.hand.append(found)
-                self.rng.shuffle(p.library)
+                p.library.shuffle(self.rng)
                 self.log(f"discards {card.name} and searches for {found.name}", p)
         elif k == "stun_discarded":
             n = sum(not c.is_land for c in p.discarded_last)
@@ -2890,7 +2916,7 @@ class Game:
                     if self.leave_battlefield(perm, "graveyard") and not perm.front.is_token:
                         owner.graveyard.remove(perm.front)
                         owner.library.append(perm.front)
-                        self.rng.shuffle(owner.library)
+                        owner.library.shuffle(self.rng)
                     self.log(f"shuffles {perm.card.name} into its owner's library", p)
         elif k == "return_as_enchantment":
             card = item.source.front if item and item.source else None
@@ -2975,7 +3001,7 @@ class Game:
                         opp.exile.append(c)
                         if zone is opp.hand:
                             from_hand += 1
-                self.rng.shuffle(opp.library)
+                opp.library.shuffle(self.rng)
                 self.draw(opp, from_hand)
                 self.log(f"exiles every {pick.name} of {opp}", p)
         elif k == "tutor_gy":
@@ -2983,7 +3009,7 @@ class Game:
                 card = max(p.library, key=lambda c: (c.is_creature, c.cmc))
                 p.library.remove(card)
                 p.graveyard.append(card)
-                self.rng.shuffle(p.library)
+                p.library.shuffle(self.rng)
                 self.log(f"puts {card.name} from library into graveyard", p)
         elif k == "reanimate_total":
             budget, count = eff.amount, 0
@@ -3004,7 +3030,7 @@ class Game:
                     p.library.remove(card)
                     self.enter_battlefield(p, card)
                     self.log(f"fetches {card.name}", p)
-                self.rng.shuffle(p.library)
+                p.library.shuffle(self.rng)
         elif k == "starcage":
             src = item.source if item is not None else None
             if src is not None:
@@ -3091,8 +3117,8 @@ class Game:
                     opp.graveyard.remove(card)
                     opp.exile.append(card)
             else:
-                opp.exile.extend(opp.graveyard)
-                del opp.graveyard[:]
+                for card in list(opp.graveyard):
+                    self.move_card(card, opp.graveyard, opp.exile, reason="exile_graveyard")
         elif k == "damage_each_player":
             for pl in self.players:
                 self.change_life(pl, -eff.amount, cause)
@@ -3204,7 +3230,7 @@ class Game:
                     perm = self.enter_battlefield(opp, land)
                     perm.tapped = True
                     perm.counters["stun"] = 1
-                    self.rng.shuffle(opp.library)
+                    opp.library.shuffle(self.rng)
         elif k == "grant_types":
             for x in p.battlefield:
                 if any(t in x.card.subtypes for t in eff.data["types"]):
@@ -3240,8 +3266,8 @@ class Game:
                         self.enter_battlefield(pl, card)
                 self.log(f"{pl} returns {len(before[pl.name])} creatures", p)
         elif k == "exile_gy":
-            opp.exile += opp.graveyard
-            opp.graveyard.clear()
+            for card in list(opp.graveyard):
+                self.move_card(card, opp.graveyard, opp.exile, reason="exile_graveyard")
             self.log(f"{opp} exiles their graveyard", p)
         elif k == "endure":
             src = target if isinstance(target, Permanent) else (item.source if item is not None else None)
@@ -3330,7 +3356,7 @@ class Game:
                 perm = self.enter_battlefield(who, land)
                 lands = sum(x.card.is_land for x in who.battlefield)
                 perm.tapped = not (eff.data.get("untap4") and lands >= 4)
-            self.rng.shuffle(who.library)
+            who.library.shuffle(self.rng)
         elif k == "double_power":
             if isinstance(target, Permanent) and target.power > 0:
                 target.pump_p += target.power
@@ -3365,6 +3391,8 @@ class Game:
                                               (x.is_creature or x.card.is_artifact) and x.card.cmc <= eff.amount])
         elif k == "return_self_gy":
             card = item.context if item is not None else None
+            if item is not None and item.context_ref is not None:
+                card = item.context_ref.find(p.graveyard)
             if isinstance(card, CardDef) and card in p.graveyard:
                 p.graveyard.remove(card)
                 self.log(f"returns {card.name} from the graveyard", p)
@@ -3495,63 +3523,51 @@ class Game:
         self.log(f"{target} is countered", p)
 
     def scry(self, p: Player, n: int, to_graveyard: bool = False):
-        cards = [p.library.pop() for _ in range(min(n, len(p.library)))]
+        cards = list(reversed(p.library[-min(n, len(p.library)):])) if n else []
         bottom = self.hook(p, "scry")(self, p, list(cards))
-        for c in reversed(cards):
-            if c not in bottom:
-                p.library.append(c)
-        for c in bottom:
-            if to_graveyard:
-                p.graveyard.append(c)
-            else:
-                p.library.insert(0, c)
+        prefix = [c for c in p.library if c not in cards]
+        if to_graveyard:
+            for c in bottom:
+                self.move_card(c, p.library, p.graveyard, reason="surveil")
+        p.library.reorder(([] if to_graveyard else list(reversed(bottom))) + prefix +
+                          [c for c in reversed(cards) if c not in bottom])
 
     def dig(self, p: Player, n: int, keep: int, desc: str | None = None):
-        cards = [p.library.pop() for _ in range(min(n, len(p.library)))]
+        cards = list(reversed(p.library[-min(n, len(p.library)):])) if n else []
         allowed = [c for c in cards if card_matches(c, desc.replace(" or ", " or a "))] if desc else cards
         chosen = list(self.hook(p, "choose_dig")(self, p, list(allowed), keep))[:keep] if allowed else []
         rest = list(cards)
         for c in chosen:
             rest.remove(c)
-            p.hand.append(c)
+            self.move_card(c, p.library, p.hand, reason="dig")
         self.rng.shuffle(rest)
-        for c in rest:
-            p.library.insert(0, c)
+        p.library.reorder(list(reversed(rest)) + [c for c in p.library if c not in rest])
         self.log(f"digs {n}, keeps {chosen}", p)
 
     def dig_put(self, p: Player, n: int, max_cmc: int, count: int = 1, noncreature: bool = False):
-        cards = [p.library.pop() for _ in range(min(n, len(p.library)))]
+        cards = list(reversed(p.library[-min(n, len(p.library)):])) if n else []
         cands = [c for c in cards if c.is_permanent and not c.is_land and c.cmc <= max_cmc
                  and not (noncreature and c.is_creature)]
         rest = list(cards)
         for card in sorted(cands, key=lambda c: -c.cmc)[:count]:
             rest.remove(card)
             self.log(f"puts {card.name} onto the battlefield", p)
+            p.library.remove(card)
             self.enter_battlefield(p, card)
         self.rng.shuffle(rest)
-        for c in rest:
-            p.library.insert(0, c)
+        p.library.reorder(list(reversed(rest)) + [c for c in p.library if c not in rest])
 
     def destroy(self, perm: Permanent, *, no_regen=False):
         if perm not in perm.controller.battlefield:
             return False
         if perm.has("indestructible"):
             return False
-        if not no_regen and not perm.regeneration_blocked and perm.regeneration_shields:
-            perm.regeneration_shields -= 1
-            was_tapped = perm.tapped
-            perm.tapped = True
-            perm.damage = 0
-            perm.deathtouched = False
-            if perm in self.attackers:
-                self.attackers.remove(perm)
-            self.attack_targets.pop(perm, None)
-            self.blocks.pop(perm, None)
-            for blockers in self.blocks.values():
-                blockers[:] = [b for b in blockers if b is not perm]
-            self.log(f"regenerates {perm.card.name}", perm.controller)
-            if not was_tapped:
-                self.fire(perm.controller, "becomes_tapped", perm)
+        intent = rules_events.destruction(self, perm, no_regen)
+        if intent.prevented:
+            before = rules_events.snapshot(perm)
+            rules_events.regenerate(self, perm)
+            self.rule_events.emit(rules_events.RulesEvent("destruction_replaced", perm.controller,
+                source=perm, before=before, reason="destroy", replacements=intent.applied))
             return True
         self.dies(perm)
         return True
@@ -3560,10 +3576,15 @@ class Game:
         """Move a permanent off the battlefield (to graveyard / hand / exile). Tokens vanish."""
         if perm not in perm.controller.battlefield:
             return False
-        if to == "graveyard" and perm.counters.get("finality", 0):
-            to = "exile"
+        intent = rules_events.zone_destination(self, perm, to)
+        to = intent.destination
+        before = rules_events.snapshot(perm)
         controller, owner = perm.controller, perm.owner
         controller.battlefield.remove(perm)
+        perm.last_destination = to
+        perm.front.generation += 1
+        perm.front.last_zone = "battlefield"
+        perm.front.zone = None
         controller.perm_left_turn = True
         if perm.card.aura:
             auras.detach(perm)
@@ -3585,6 +3606,9 @@ class Game:
             self.attackers.remove(perm)
         if not perm.front.is_token:
             {"graveyard": owner.graveyard, "hand": owner.hand, "exile": owner.exile}[to].append(perm.front)
+        self.rule_events.emit(rules_events.RulesEvent("zone_change", controller, source=perm,
+            before=before, destination=to, reason="leave_battlefield", replacements=intent.applied,
+            source_zone="battlefield"))
         if to == "graveyard":
             self.fire(owner, "perm_to_gy", subject=perm)
             self.fire(owner, "perm_to_gy", perm, subject=perm)
@@ -3607,8 +3631,7 @@ class Game:
         self.dies(perm) if perm.is_creature else self.leave_battlefield(perm, "graveyard")
 
     def discard_card(self, p: Player, card: CardDef):
-        p.hand.remove(card)
-        p.graveyard.append(card)
+        card = self.move_card(card, p.hand, p.graveyard, reason="discard")
         p.discarded_cards.append(card)
         self.fire(p, "you_discard")
 
@@ -3643,32 +3666,19 @@ class Game:
         return p.attacked_with > 0
 
     def dies(self, perm: Permanent):
-        if perm.counters.get("finality", 0):
-            if self.leave_battlefield(perm, "exile"):
-                self.log(f"{perm.card.name} is exiled instead of dying", perm.controller)
+        if perm not in perm.controller.battlefield:
             return
         was_creature = perm.is_creature
+        death_returns = [keyword for keyword, count in (("undying", perm.p1), ("persist", perm.m1))
+                         if was_creature and perm.has(keyword) and count == 0 and not perm.front.is_token]
+        if not self.leave_battlefield(perm, "graveyard"):
+            return
+        if perm.last_destination != "graveyard":
+            self.log(f"{perm.card.name} is exiled instead of dying", perm.controller)
+            return
         if was_creature:
             self.creature_died_turn = True
             perm.controller.creature_died_turn = True
-        if was_creature and (perm.damage or perm.deathtouched) and \
-                any(x.card.exile_damaged for x in self.opponent(perm.controller).battlefield):
-            if self.leave_battlefield(perm, "exile"):   # Etching of Kumano
-                self.log(f"{perm.card.name} is exiled instead of dying", perm.controller)
-            return
-        if perm.exile_turn == self.turn:
-            if self.leave_battlefield(perm, "exile"):
-                self.log(f"{perm.card.name} is exiled instead of dying", perm.controller)
-            return
-        death_returns = [keyword for keyword, count in (("undying", perm.p1), ("persist", perm.m1))
-                         if was_creature and perm.has(keyword) and count == 0 and not perm.front.is_token]
-        if death_returns:
-            # Distinguish physical copies despite CardDef equality being based on name.
-            perm.front = dataclasses.replace(perm.front)
-            if not isinstance(perm.owner.graveyard, Graveyard):
-                perm.owner.graveyard = Graveyard(perm.owner.graveyard)
-        if not self.leave_battlefield(perm, "graveyard"):
-            return
         self.log(f"{perm.card.name} dies", perm.controller)
         if was_creature:
             for keyword in death_returns:
@@ -4497,6 +4507,7 @@ def default_sneak(game: Game, me: Player, attackers, blocks):
 
 
 DEFAULTS = {
+    "choose_replacement": lambda game, me, choices, event: choices[0],
     "choose_legend": lambda game, me, choices: max(choices, key=perm_value),
     "choose_learn": learning.choose,
     "choose_rebound": lambda game, me, card: True,

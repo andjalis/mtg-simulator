@@ -48,17 +48,19 @@ class Round13(unittest.TestCase):
 
     def test_exiled_card_is_castable_this_turn_only(self):
         self.a.library = [ISLAND] * 5 + [BIG]
+        physical_big = self.a.library[-1]
         self.cast(PEEK, [MOUNTAIN, MOUNTAIN])
         self.assertIn(BIG, self.a.exile)
-        self.assertTrue(any(self.game._origin(c)[0] is BIG for c in self.game.spell_options(self.a)))
+        self.assertTrue(any(self.game._origin(c)[0] is physical_big for c in self.game.spell_options(self.a)))
         self.game.turn = 2
-        self.assertFalse(any(self.game._origin(c)[0] is BIG for c in self.game.spell_options(self.a)))
+        self.assertFalse(any(self.game._origin(c)[0] is physical_big for c in self.game.spell_options(self.a)))
 
     def test_next_turn_window_and_land_drop(self):
         self.a.library = [ISLAND] * 5 + [PLAINS, BIG]
+        physical_cards = self.a.library[-2:]
         self.cast(LONG, [MOUNTAIN] * 3)
         self.game.turn = 3          # our next turn
-        self.assertEqual(set(map(id, self.game.impulse_cards(self.a))), {id(PLAINS), id(BIG)})
+        self.assertEqual(set(map(id, self.game.impulse_cards(self.a))), set(map(id, physical_cards)))
         self.game.play_land(self.a, PLAINS)
         self.assertNotIn(PLAINS, self.a.exile)
         self.assertEqual(self.a.lands_played, 1)
@@ -69,10 +71,10 @@ class Round13(unittest.TestCase):
         victim = self.perm(BIG, self.b)
         self.cast(JAILER, [PLAINS] * 3)
         self.assertNotIn(victim, self.b.battlefield)
-        jail = next(x for x in self.a.battlefield if x.card is JAILER)
+        jail = next(x for x in self.a.battlefield if x.card.name == JAILER.name)
         self.game.leave_battlefield(jail, "graveyard")
         self.game.settle()
-        self.assertTrue(any(x.card is BIG for x in self.b.battlefield))
+        self.assertTrue(any(x.front is victim.front for x in self.b.battlefield))
 
     def test_assassin_is_not_a_legal_target(self):
         self.perm(ASSASSIN, self.b)

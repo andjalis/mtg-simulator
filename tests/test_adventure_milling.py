@@ -35,8 +35,9 @@ class AdventureMilling(unittest.TestCase):
     def test_all_adventures_include_noncreatures_and_duplicates(self):
         creature, artifact = adventurer(), adventurer("Test Adventuring Relic", "Artifact")
         self.a.library = [creature, artifact, creature, BEAR, ISLAND]
+        physical_adventures = [c for c in self.a.library if c.adventure is not None]
         self.cast("Mill five cards. Put all cards that have an Adventure from among the milled cards into your hand.")
-        self.assertCountEqual(self.a.hand, [creature, creature, artifact])
+        self.assertCountEqual(self.a.hand, physical_adventures)
         self.assertIn(BEAR, self.a.graveyard)
         self.assertIn(ISLAND, self.a.graveyard)
 

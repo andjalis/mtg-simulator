@@ -101,9 +101,10 @@ class Round16(unittest.TestCase):
 
     def test_permanent_pick_compatibility(self):
         self.a.library = [SHOCK, ISLAND]
+        physical_island = self.a.library[-1]
         self.cast("Mill two cards. You may put a permanent card from among the cards milled this way into your hand.")
         self.assertEqual(self.a.hand, [ISLAND])
-        self.assertIs(self.a.picked_last, ISLAND)
+        self.assertIs(self.a.picked_last, physical_island)
 
     def test_battlefield_recovery_fires_etb_and_enters_tapped(self):
         creature = card("Test Milled Healer", "{2}", "Creature — Elf",

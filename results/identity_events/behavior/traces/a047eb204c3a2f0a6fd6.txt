@@ -1,0 +1,6 @@
+test_replacement_choice_and_no_false_death_flags (tests.test_identity_events.IdentityEvents.test_replacement_choice_and_no_false_death_flags) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

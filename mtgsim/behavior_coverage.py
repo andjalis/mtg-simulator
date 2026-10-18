@@ -129,15 +129,23 @@ def evidence_status(rows, *, complete=False, capabilities_supported=True):
 
 def card_row(card, scenarios, catalog):
     """Join actual parsed metadata with bounded direct/capability scenario evidence."""
-    requirements = set()
+    requirements = {"zones.object_identity"} if any(c["id"] == "zones.object_identity" for c in catalog["capabilities"]) else set()
     for face in _faces(card):
         if face.legendary:
             requirements.add("sba.legend")
         if face.equip_cost is not None:
             requirements.add("stack.equip")
         effects = list(face.spell_effects) + [e for t in face.triggers for e in t.effects]
+        effects += [e for a in face.activated for e in a.effects]
         if any(e.target in ("creature", "creature_mine", "creature_pw") for e in effects):
             requirements.add("targets.creature")
+        if any(e.kind in ("destroy", "wrath", "wrath_pw", "bounce") for e in effects):
+            requirements.add("removal.core")
+        if any(e.kind == "regenerate" for e in effects):
+            requirements.add("replacement.supported")
+        if face.gy_activated or face.keywords & {"persist", "undying"} or any(
+                e.kind in ("return_self_gy", "gy_move", "reanimate_one") for e in effects):
+            requirements.add("graveyard.return")
     caps = {c["id"]: c for c in catalog["capabilities"]}
     pending = list(requirements)
     while pending:
@@ -157,7 +165,7 @@ def card_row(card, scenarios, catalog):
             "untested_requirements": sorted(c for c in requirements if not any(
                 c in s["capabilities"] and s["outcome"] == "pass" for s in related)),
             "requirements_complete": False,
-            "unclassified_requirements": ["Rules outside targeting-legend-equip-v1 are not assessed"],
+            "unclassified_requirements": ["Rules beyond the declared capability subsets are not assessed"],
             "evidence_status": evidence_status(list(unique.values()), capabilities_supported=not gaps)}
 
 
@@ -201,15 +209,18 @@ def save(report, folder):
     folder = Path(folder)
     folder.mkdir(parents=True, exist_ok=True)
     fields = ["name", "template_status", "required_capabilities", "declared_gaps", "current_direct_scenarios",
-              "current_capability_scenarios", "failures", "untested_requirements", "evidence_status", "error"]
+              "current_capability_scenario_count", "failures", "untested_requirements", "evidence_status", "error"]
     with (folder / "cards.csv").open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore", lineterminator="\n")
         writer.writeheader()
         for row in report["cards"]:
+            row = dict(row, current_capability_scenario_count=len(row.get("current_capability_scenarios", [])))
             writer.writerow({k: json.dumps(v) if isinstance(v, list) else v for k, v in row.items()})
     atomic_json(folder / "report.json", {k: v for k, v in report.items() if k != "cards"} | {
         "cards_csv_sha256": file_hash(folder / "cards.csv"),
-        "card_requirements_scope": "Only three capability families assessed; remaining rules unclassified. "
+        "cards_csv_schema": 2,
+        "inferred_scenario_lookup": "Join required_capabilities to scenarios[].capabilities; CSV records their unique count.",
+        "card_requirements_scope": "Only declared capability subsets assessed; remaining rules unclassified. "
                                    "No card is designated completely rules-supported."})
     lines = ["# Behavior evidence", "", f"Scope: `{report['scope']}`. Identity: `{report['run_identity']}`.", "",
              f"Inventory: {report['card_denominator']:,} distinct local database entries. "

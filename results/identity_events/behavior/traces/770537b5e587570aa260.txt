@@ -1,0 +1,6 @@
+test_library_look_and_put_back_preserve_unmoved_objects (tests.test_identity_events.IdentityEvents.test_library_look_and_put_back_preserve_unmoved_objects) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

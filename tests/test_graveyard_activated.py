@@ -30,7 +30,7 @@ class GraveyardActivated(unittest.TestCase):
         self.a.graveyard.append(c)
         for _ in range(mana):
             self.game.enter_battlefield(self.a, ISLAND)
-        return c
+        return self.a.graveyard[-1]
 
     def test_return_enters_tapped_with_finality(self):
         c = self.prepare("{3}: Return this card from your graveyard to the battlefield tapped with a finality counter on it.")

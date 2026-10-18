@@ -33,6 +33,7 @@ def resolve(game, p):
     if not isinstance(card, CardDef):
         return
     if mode == 'lesson' and card in lessons:
+        card = p.sideboard.get(card)
         p.sideboard.remove(card)
         p.hand.append(card)
         game.log(f'reveals {card.name} (learn), putting it into hand', p)

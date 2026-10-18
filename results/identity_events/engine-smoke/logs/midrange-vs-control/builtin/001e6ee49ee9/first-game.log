@@ -1,0 +1,180 @@
+AUDIT {"event": "start", "player_turn": 0, "players": ["midrange", "control"], "first_player": 0, "life": [20, 20], "turn_unit": "player-turn"}
+AUDIT {"event": "keep", "player_turn": 0, "seat": 0, "mulligans": 0, "hand": ["Haunted Ridge", "Fatal Push", "Kolaghan's Command", "Bonecrusher Giant", "Go for the Throat", "Sulfurous Springs", "Mountain"]}
+AUDIT {"event": "keep", "player_turn": 0, "seat": 1, "mulligans": 0, "hand": ["Island", "Eiganjo, Seat of the Empire", "Otawara, Soaring City", "Consider", "Lay Down Arms", "Island", "Plains"]}
+T1 midrange: plays Haunted Ridge
+T2 control: plays Deserted Beach
+T3 midrange: plays Mountain
+T4 control: plays Island
+T4 midrange: casts Stomp -> [control]
+T4 midrange: Stomp resolves
+AUDIT {"event": "life", "player_turn": 4, "seat": 1, "before": 20, "delta": -2, "after": 18, "cause": "Stomp: damage"}
+T5 midrange: plays Sulfurous Springs
+T5 midrange: casts Bonecrusher Giant (from_adventure)
+T5 midrange: Bonecrusher Giant (from_adventure) resolves
+T5 control: casts Consider
+T5 control: Consider resolves
+T6 control: plays Eiganjo, Seat of the Empire
+T7 midrange: plays Sulfurous Springs
+T7 midrange: casts Bloodtithe Harvester
+T7 midrange: Bloodtithe Harvester resolves
+T7 midrange: Bloodtithe Harvester trigger goes on the stack
+T7 midrange: Bloodtithe Harvester trigger resolves
+T7 midrange: creates 1 blood token(s)
+T7 midrange: attacks with [Bonecrusher Giant(4/3)]
+T7 control: casts Fateful Absence -> [Bonecrusher Giant(4/3), None]
+T7 midrange: Bonecrusher Giant trigger goes on the stack
+T7 midrange: Bonecrusher Giant trigger resolves
+AUDIT {"event": "life", "player_turn": 7, "seat": 1, "before": 18, "delta": -2, "after": 16, "cause": "Bonecrusher Giant: damage"}
+T7 control: Fateful Absence resolves
+T7 midrange: Bonecrusher Giant dies
+T7 midrange: creates 1 clue token(s)
+T8 control: plays Otawara, Soaring City
+T8 midrange: cracks a Clue
+T9 midrange: casts Bloodtithe Harvester
+T9 midrange: Bloodtithe Harvester resolves
+T9 midrange: Bloodtithe Harvester trigger goes on the stack
+T9 midrange: Bloodtithe Harvester trigger resolves
+T9 midrange: creates 1 blood token(s)
+T9 midrange: casts Bloodtithe Harvester
+T9 midrange: Bloodtithe Harvester resolves
+T9 midrange: Bloodtithe Harvester trigger goes on the stack
+T9 midrange: Bloodtithe Harvester trigger resolves
+T9 midrange: creates 1 blood token(s)
+T9 midrange: attacks with [Bloodtithe Harvester(3/2)]
+T9 control: casts Fateful Absence -> [Bloodtithe Harvester(3/2), None]
+T9 control: Fateful Absence resolves
+T9 midrange: Bloodtithe Harvester dies
+T9 midrange: creates 1 clue token(s)
+T10 control: plays Island
+T11 midrange: casts Sheoldred, the Apocalypse
+T11 midrange: Sheoldred, the Apocalypse resolves
+T11 midrange: attacks with [Bloodtithe Harvester(3/2), Bloodtithe Harvester(3/2)]
+AUDIT {"event": "life", "player_turn": 11, "seat": 1, "before": 16, "delta": -3, "after": 13, "cause": "Bloodtithe Harvester: combat damage"}
+AUDIT {"event": "life", "player_turn": 11, "seat": 1, "before": 13, "delta": -3, "after": 10, "cause": "Bloodtithe Harvester: combat damage"}
+T11 control: casts Memory Deluge
+T11 control: Memory Deluge resolves
+T11 control: digs 4, keeps [<Doomskar>, <The Wandering Emperor>]
+T11 control: casts Consider
+T11 control: Consider resolves
+T11 midrange: Sheoldred, the Apocalypse trigger goes on the stack
+T11 midrange: Sheoldred, the Apocalypse trigger resolves
+AUDIT {"event": "life", "player_turn": 11, "seat": 1, "before": 10, "delta": -2, "after": 8, "cause": "Sheoldred, the Apocalypse: lose_life"}
+T12 midrange: Sheoldred, the Apocalypse trigger goes on the stack
+T12 midrange: Sheoldred, the Apocalypse trigger resolves
+AUDIT {"event": "life", "player_turn": 12, "seat": 1, "before": 8, "delta": -2, "after": 6, "cause": "Sheoldred, the Apocalypse: lose_life"}
+T12 control: plays Plains
+T12 control: casts Doomskar
+T12 control: Doomskar resolves
+T12 midrange: Bloodtithe Harvester dies
+T12 midrange: Bloodtithe Harvester dies
+T12 midrange: Sheoldred, the Apocalypse dies
+T13 midrange: casts Fable of the Mirror-Breaker
+T13 midrange: Fable of the Mirror-Breaker resolves
+T13 midrange: Fable of the Mirror-Breaker chapter 1 chapter goes on the stack
+T13 midrange: Fable of the Mirror-Breaker chapter 1 chapter resolves
+T13 midrange: creates 1 Goblin Shaman token(s)
+T14 control: plays Island
+T14 control: casts The Wandering Emperor
+T14 control: The Wandering Emperor resolves
+T14 control: casts Lay Down Arms -> [Goblin Shaman token(2/2), None]
+T14 control: Lay Down Arms resolves
+T14 midrange: Goblin Shaman token dies
+AUDIT {"event": "life", "player_turn": 14, "seat": 0, "before": 20, "delta": 3, "after": 23, "cause": "Lay Down Arms: gain_life"}
+T14 control: activates The Wandering Emperor [-1] loyalty
+T14 control: The Wandering Emperor [-1] loyalty resolves
+T14 control: creates 1 Samurai token(s)
+T15 midrange: Fable of the Mirror-Breaker chapter 2 chapter goes on the stack
+T15 midrange: Fable of the Mirror-Breaker chapter 2 chapter resolves
+T15 midrange: plays Swamp
+T16 control: plays Adarkar Wastes
+T16 control: activates The Wandering Emperor [+1] loyalty -> [Samurai token(2/2), None]
+T16 control: The Wandering Emperor [+1] loyalty resolves
+T16 control: attacks with [Samurai token(3/3)]
+AUDIT {"event": "life", "player_turn": 16, "seat": 0, "before": 23, "delta": -3, "after": 20, "cause": "Samurai token: combat damage"}
+T16 control: foretells a card
+T16 midrange: chooses modes 1, 2
+T16 midrange: casts Kolaghan's Command -> [None, control]
+T16 midrange: Kolaghan's Command resolves
+T16 midrange: returns Sheoldred, the Apocalypse to hand
+T16 control: discards Thirst for Discovery
+T16 midrange: cracks a Clue
+T17 midrange: Fable of the Mirror-Breaker chapter 3 chapter goes on the stack
+T17 midrange: Fable of the Mirror-Breaker chapter 3 chapter resolves
+T17 midrange: Fable of the Mirror-Breaker transforms into Reflection of Kiki-Jiki
+T17 midrange: plays Sulfurous Springs
+T17 midrange: casts Sheoldred, the Apocalypse
+T17 midrange: Sheoldred, the Apocalypse resolves
+T17 midrange: casts Tenacious Underdog
+T17 control: casts Make Disappear -> [Tenacious Underdog]
+T17 control: Make Disappear resolves
+T17 control: Tenacious Underdog is countered
+T18 midrange: Sheoldred, the Apocalypse trigger goes on the stack
+T18 midrange: Sheoldred, the Apocalypse trigger resolves
+AUDIT {"event": "life", "player_turn": 18, "seat": 1, "before": 6, "delta": -2, "after": 4, "cause": "Sheoldred, the Apocalypse: lose_life"}
+T18 control: casts Doomskar (foretold)
+T18 control: Doomskar (foretold) resolves
+T18 control: Samurai token dies
+T18 midrange: Reflection of Kiki-Jiki dies
+T18 midrange: Sheoldred, the Apocalypse dies
+T18 control: activates The Wandering Emperor [-1] loyalty
+T18 control: The Wandering Emperor [-1] loyalty resolves
+T18 control: creates 1 Samurai token(s)
+T19 midrange: plays Blood Crypt
+AUDIT {"event": "life", "player_turn": 19, "seat": 0, "before": 20, "delta": -2, "after": 18, "cause": "Blood Crypt: shock land cost"}
+T19 control: casts Memory Deluge
+T19 control: Memory Deluge resolves
+T19 control: digs 4, keeps [<Depopulate>, <Wedding Announcement>]
+T20 control: casts Wedding Announcement
+T20 control: Wedding Announcement resolves
+T20 control: activates The Wandering Emperor [+1] loyalty -> [Samurai token(2/2), None]
+T20 control: The Wandering Emperor [+1] loyalty resolves
+T20 control: attacks with [Samurai token(3/3)]
+AUDIT {"event": "life", "player_turn": 20, "seat": 0, "before": 18, "delta": -3, "after": 15, "cause": "Samurai token: combat damage"}
+T20 control: Wedding Announcement trigger goes on the stack
+T20 control: Wedding Announcement trigger resolves
+T20 control: creates 1 Human token(s)
+T20 midrange: chooses modes 1, 2
+T20 midrange: casts Kolaghan's Command -> [None, control]
+T20 midrange: Kolaghan's Command resolves
+T20 midrange: returns Sheoldred, the Apocalypse to hand
+T20 control: discards Depopulate
+T21 midrange: casts Sheoldred, the Apocalypse
+T21 midrange: Sheoldred, the Apocalypse resolves
+T21 midrange: casts Graveyard Trespasser
+T21 midrange: Graveyard Trespasser resolves
+T21 midrange: Graveyard Trespasser trigger goes on the stack
+T21 midrange: Graveyard Trespasser trigger resolves
+T22 midrange: Sheoldred, the Apocalypse trigger goes on the stack
+T22 midrange: Sheoldred, the Apocalypse trigger resolves
+AUDIT {"event": "life", "player_turn": 22, "seat": 1, "before": 4, "delta": -2, "after": 2, "cause": "Sheoldred, the Apocalypse: lose_life"}
+T22 control: plays Island
+T22 control: activates The Wandering Emperor [+1] loyalty -> [Samurai token(3/3), None]
+T22 control: The Wandering Emperor [+1] loyalty resolves
+T22 control: Wedding Announcement trigger goes on the stack
+T22 control: Wedding Announcement trigger resolves
+T22 control: creates 1 Human token(s)
+T23 midrange: Sheoldred, the Apocalypse trigger goes on the stack
+T23 midrange: Sheoldred, the Apocalypse trigger resolves
+AUDIT {"event": "life", "player_turn": 23, "seat": 0, "before": 15, "delta": 2, "after": 17, "cause": "Sheoldred, the Apocalypse: gain_life"}
+T23 midrange: casts Fable of the Mirror-Breaker
+T23 midrange: Fable of the Mirror-Breaker resolves
+T23 midrange: Fable of the Mirror-Breaker chapter 1 chapter goes on the stack
+T23 midrange: Fable of the Mirror-Breaker chapter 1 chapter resolves
+T23 midrange: creates 1 Goblin Shaman token(s)
+T23 midrange: casts Go for the Throat -> [Samurai token(4/4)]
+T23 midrange: Go for the Throat resolves
+T23 control: Samurai token dies
+T23 midrange: casts Fatal Push -> [Human token(1/1)]
+T23 midrange: Fatal Push resolves
+T23 control: Human token dies
+T23 midrange: attacks with [Sheoldred, the Apocalypse(4/5), Graveyard Trespasser(3/3)]
+T23 midrange: Graveyard Trespasser trigger goes on the stack
+T23 midrange: Graveyard Trespasser trigger resolves
+T23 control: casts Memory Deluge (flashback)
+T23 control: Memory Deluge (flashback) resolves
+T23 control: digs 7, keeps [<Depopulate>, <Wedding Announcement>]
+AUDIT {"event": "life", "player_turn": 23, "seat": 1, "before": 2, "delta": -4, "after": -2, "cause": "Sheoldred, the Apocalypse: combat damage"}
+AUDIT {"event": "life", "player_turn": 23, "seat": 1, "before": -2, "delta": -3, "after": -5, "cause": "Graveyard Trespasser: combat damage"}
+AUDIT {"event": "loss", "player_turn": 23, "seat": 1, "cause": "life total 0 or less"}
+T23 control: game over, winner: midrange
+AUDIT {"event": "result", "player_turn": 23, "winner": 0, "life": [17, -5], "lost": [false, true], "reason": "loss", "player_turns": 23}

@@ -1,0 +1,6 @@
+test_legend_choice_precedes_lethal_removal (tests.test_rules_contracts.RulesContracts.test_legend_choice_precedes_lethal_removal) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

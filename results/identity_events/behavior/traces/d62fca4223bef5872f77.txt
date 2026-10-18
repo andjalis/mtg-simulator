@@ -1,0 +1,6 @@
+test_persist_lethal_counters_use_last_known_values (tests.test_persist_wither_rebound.PersistWitherRebound.test_persist_lethal_counters_use_last_known_values) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

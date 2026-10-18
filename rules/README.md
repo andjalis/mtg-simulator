@@ -1,9 +1,10 @@
 # Bounded behavior evidence
 
-`capabilities.json` declares three supported subsets. `scenarios.json` maps 17
+`capabilities.json` declares eight supported subsets. `scenarios.json` maps 53
 unittest methods to those subsets, records expected-value references and identifies
 direct card fixtures. Setup, action sequences and assertions are the linked test
-methods in `tests/test_rules_contracts.py`; their source and all test helpers enter
+methods in `tests/test_rules_contracts.py`, `test_identity_events.py`, `test_regeneration.py`,
+`test_return_counters.py` and `test_persist_wither_rebound.py`; their source and all test helpers enter
 the evidence identity. Synthetic or modified card fixtures are capability evidence,
 and are not assigned as direct evidence for the real card.
 
@@ -23,8 +24,9 @@ directory for each new execution; report-only commands can reevaluate old eviden
 `scoped_suite_passes` applies only to a capability's declared subset and required
 scenarios, including its dependencies. Card rows retain unclassified requirements
 outside this initial scope, so no card receives a claim of complete rules support.
-Per-card requirements currently recognize parsed legend/equip metadata and creature
-targets in spells/triggers, plus declared dependencies; this is an intentionally
+Per-card requirements currently recognize the base identity requirement, parsed
+legend/equip metadata, creature targets, removal/regeneration and selected graveyard
+return effects, plus declared dependencies; this is an intentionally
 incomplete classifier. Existing template coverage APIs/statuses remain unchanged.
 Legacy tests without explicit manifest entries do not count as mapped evidence.
 Casting now rejects explicitly supplied illegal targets before payment. Automatic
@@ -33,6 +35,42 @@ this batch; this does not introduce a general legal-action API.
 Expectations are maintained from the cited rules and card text; this is not an
 externally certified rules suite. Update the manifest version when expectations,
 scope or required scenarios change.
+
+CSV schema 2 records a unique inferred scenario count per card. Join its
+`required_capabilities` to the scenarios in `report.json` for the scenario IDs;
+direct scenario IDs remain explicit. This avoids repeating the base identity suite
+tens of thousands of times in the inventory file. A shared capability pass is not
+a direct test of every card that depends on it.
+
+## Card identity and event API
+
+Player card zones contain `CardInstance` objects with process-local `physical_id`,
+immutable original owner, and a changing `generation`. Definitions from CardDB are
+not modified. Physical instances compare by identity; raw `CardDef` comparisons and
+zone lookups retain name-based compatibility. Use an instance, not a definition,
+when selecting a particular copy. Cast variants retain their exact origin and a
+generation check; battlefield faces keep the physical card in `Permanent.front`.
+Copies of spells such as prepared spells do not move their source onto the stack.
+
+`zone.reference(card)` returns a frozen `ZoneRef`; `ref.find(zone)` returns the
+matching current object or `None`. Graveyard-return ability references are captured
+when activated/queued, before opponents can move the card. Replacing a same-name
+copy cannot satisfy the reference. Use `zone.shuffle(rng)` or `zone.reorder(cards)`
+for reordering; these preserve generations. Looking at and putting back cards with
+scry/dig also preserves unmoved objects. Physical instances cannot be duplicated
+by list multiplication or inserted into two card zones simultaneously.
+
+`game.rule_events` delivers typed `RulesEvent` records to `listeners`; logged games
+also retain `history`. Normal runs avoid retaining that history. Battlefield changes
+and migrated draw/discard/generic moves record source/destination and immutable
+snapshots. Existing supported trigger delivery runs through this event boundary.
+Regeneration and supported death-to-exile replacements share a bounded pipeline;
+applicability is recomputed after each choice and each replacement applies once.
+`choose_replacement(game, me, choices, intent)` can select among applicable IDs;
+the default picks the first. These changes do not implement arbitrary replacement
+scripts, a complete replay log or simultaneous-event scheduling. Some older effect
+paths still mutate identity-aware zones directly and do not emit a paired zone-change
+event. See the capability restrictions before relying on complete event coverage.
 
 The historical [coverage design](../results/rules_architecture/coverage-design.md)
 describes later slices (broader requirement classification, source spans and more

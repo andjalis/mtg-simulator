@@ -84,7 +84,9 @@ class BehaviorCoverageTests(unittest.TestCase):
         self.assertTrue(other["current_capability_scenarios"])
         self.assertFalse(legend["requirements_complete"])
         self.assertNotEqual(legend["evidence_status"], "scoped_suite_passes")
-        self.assertEqual(bc.card_row(BEAR, rows, self.catalog)["evidence_status"], "not_measured")
+        vanilla = bc.card_row(BEAR, rows, self.catalog)
+        self.assertFalse(vanilla["current_direct_scenarios"])
+        self.assertEqual(vanilla["evidence_status"], "some_scenarios_pass")
 
     def test_unknown_or_untested_requirement_visible(self):
         row = bc.card_row(ISAMARU, [], {"capabilities": []})

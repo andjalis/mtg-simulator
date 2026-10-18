@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "targeting-legend-equip-v1",
+  "scope": "identity-events-removal-returns-v2",
   "capabilities": [
     {
       "id": "targets.creature",
@@ -30,9 +30,79 @@
       "state": "implemented_subset",
       "subset": "Sorcery timing; queue activation; revalidate target and source at resolution.",
       "restrictions": "Alternative equip permissions, reconfigure and general attachment effects are outside this scope.",
-      "requires": ["targets.creature"],
+      "requires": [
+        "targets.creature"
+      ],
       "implementation": [
         "mtgsim/engine.py"
+      ]
+    },
+    {
+      "id": "zones.object_identity",
+      "description": "Physical cards and zone incarnations",
+      "state": "implemented_subset",
+      "subset": "Distinct physical cards in player zones, canonical casting origins, frozen zone references, owner preservation.",
+      "restrictions": "Definition lookups remain compatible with raw CardDef values. Temporary faces retain their physical front; general card permissions are not assessed.",
+      "requires": [],
+      "implementation": [
+        "mtgsim/identity.py",
+        "mtgsim/engine.py"
+      ]
+    },
+    {
+      "id": "events.dispatch",
+      "description": "Typed supported-rule events",
+      "state": "implemented_subset",
+      "subset": "Existing trigger delivery, battlefield changes, draw/discard and migrated generic zone moves emit typed events with snapshots.",
+      "restrictions": "Some older effect paths still mutate identity-aware zones directly; no complete replay log or simultaneous-event scheduler.",
+      "requires": [
+        "zones.object_identity"
+      ],
+      "implementation": [
+        "mtgsim/rules_events.py",
+        "mtgsim/engine.py"
+      ]
+    },
+    {
+      "id": "replacement.supported",
+      "description": "Supported destruction and death replacements",
+      "state": "implemented_subset",
+      "subset": "Regeneration, no-regeneration restrictions, finality, marked exile and damaged-creature exile share replacement handling.",
+      "restrictions": "Only registered existing effects; no general printed-text replacement parser or arbitrary replacement interactions.",
+      "requires": [
+        "events.dispatch"
+      ],
+      "implementation": [
+        "mtgsim/rules_events.py"
+      ]
+    },
+    {
+      "id": "removal.core",
+      "description": "Destruction, sacrifice and bounce interactions",
+      "state": "implemented_subset",
+      "subset": "Target resolution, regeneration versus destruction, and bounce/reentry reset in mapped scenarios.",
+      "restrictions": "Protection, complete continuous layers and arbitrary removal restrictions remain outside this suite.",
+      "requires": [
+        "targets.creature",
+        "replacement.supported"
+      ],
+      "implementation": [
+        "mtgsim/engine.py"
+      ]
+    },
+    {
+      "id": "graveyard.return",
+      "description": "Mapped graveyard and death returns",
+      "state": "implemented_subset",
+      "subset": "Owner routing, persist/undying references, activated self-return invalidation and entry counters.",
+      "restrictions": "Not every graveyard targeting permission, replacement or return mechanic is classified.",
+      "requires": [
+        "zones.object_identity",
+        "events.dispatch"
+      ],
+      "implementation": [
+        "mtgsim/engine.py",
+        "mtgsim/graveyard.py"
       ]
     }
   ]

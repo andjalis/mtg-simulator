@@ -58,14 +58,16 @@ class Round12(unittest.TestCase):
     def test_returns_creatures_up_to_the_mana_limit(self):
         ogre = card("Ogre", "{4}", "Creature — Ogre", "", 5, 5)
         self.a.graveyard += [BEAR, BEAR, ogre]
+        physical_bears = list(self.a.graveyard[:2])
         self.cast(RAISE, [SWAMP] * 3)
-        self.assertEqual(sum(x.card is BEAR for x in self.a.battlefield), 2)
+        self.assertEqual({x.front.physical_id for x in self.a.creatures}, {c.physical_id for c in physical_bears})
         self.assertIn(ogre, self.a.graveyard)
 
     def test_returns_a_noncreature_permanent_tapped(self):
         self.a.graveyard += [BEAR, ART]
+        physical_artifact = self.a.graveyard[-1]
         self.cast(RELIC, [SWAMP] * 2)
-        back = [x for x in self.a.battlefield if x.card is ART]
+        back = [x for x in self.a.battlefield if x.front is physical_artifact]
         self.assertEqual(len(back), 1)
         self.assertTrue(back[0].tapped)
         self.assertIn(BEAR, self.a.graveyard)

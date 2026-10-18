@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "targeting-legend-equip-v1",
+  "scope": "identity-events-removal-returns-v2",
   "scenarios": [
     {
       "id": "target_type_membership",
@@ -256,6 +256,541 @@
         "kind": "rules-and-card-text",
         "reference": "CR 301.5, 602, 702.6a",
         "review": "Implemented expectations recorded in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_duplicate_definition_creates_distinct_physical_cards",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_duplicate_definition_creates_distinct_physical_cards",
+      "capabilities": [
+        "zones.object_identity"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_zone_reference_expires_after_leave_and_return",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_zone_reference_expires_after_leave_and_return",
+      "capabilities": [
+        "zones.object_identity"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_reordering_preserves_zone_objects",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_reordering_preserves_zone_objects",
+      "capabilities": [
+        "zones.object_identity"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_slice_and_bulk_moves_track_every_copy",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_slice_and_bulk_moves_track_every_copy",
+      "capabilities": [
+        "zones.object_identity"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_cast_resolve_die_preserves_physical_identity",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_cast_resolve_die_preserves_physical_identity",
+      "capabilities": [
+        "zones.object_identity"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_duplicate_alternate_options_bind_exact_origins",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_duplicate_alternate_options_bind_exact_origins",
+      "capabilities": [
+        "zones.object_identity"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_stale_alternate_option_cannot_cast_returned_object",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_stale_alternate_option_cannot_cast_returned_object",
+      "capabilities": [
+        "zones.object_identity"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_graveyard_ability_cannot_follow_leave_and_return",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_graveyard_ability_cannot_follow_leave_and_return",
+      "capabilities": [
+        "zones.object_identity",
+        "graveyard.return"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_graveyard_trigger_snapshot_taken_when_queued",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_graveyard_trigger_snapshot_taken_when_queued",
+      "capabilities": [
+        "zones.object_identity",
+        "events.dispatch",
+        "graveyard.return"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_owner_survives_reanimation_by_opponent",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_owner_survives_reanimation_by_opponent",
+      "capabilities": [
+        "zones.object_identity",
+        "events.dispatch",
+        "graveyard.return"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_regeneration_preserves_object_and_emits_event",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_regeneration_preserves_object_and_emits_event",
+      "capabilities": [
+        "zones.object_identity",
+        "events.dispatch",
+        "replacement.supported"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_replacement_choice_and_no_false_death_flags",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_replacement_choice_and_no_false_death_flags",
+      "capabilities": [
+        "zones.object_identity",
+        "events.dispatch",
+        "replacement.supported"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_zone_event_retains_last_known_counters",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_zone_event_retains_last_known_counters",
+      "capabilities": [
+        "zones.object_identity",
+        "events.dispatch"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_each_replacement_applies_at_most_once",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_each_replacement_applies_at_most_once",
+      "capabilities": [
+        "zones.object_identity",
+        "events.dispatch",
+        "replacement.supported"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_event_bus_delivers_draw_then_trigger",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_event_bus_delivers_draw_then_trigger",
+      "capabilities": [
+        "zones.object_identity",
+        "events.dispatch"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_token_dies_even_though_no_card_remains_in_graveyard",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_token_dies_even_though_no_card_remains_in_graveyard",
+      "capabilities": [
+        "zones.object_identity",
+        "events.dispatch",
+        "graveyard.return"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7 (new objects), 603 (triggers), 614/616 (replacement effects)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_regeneration.test_one_shield_consumed_per_destruction",
+      "version": 1,
+      "test": "tests.test_regeneration.Regeneration.test_one_shield_consumed_per_destruction",
+      "capabilities": [
+        "replacement.supported",
+        "removal.core"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 701.7 (destroy), 701.15 (regenerate), 701.17 (sacrifice)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_regeneration.test_sacrifice_zero_toughness_and_zero_loyalty_ignore_shield",
+      "version": 1,
+      "test": "tests.test_regeneration.Regeneration.test_sacrifice_zero_toughness_and_zero_loyalty_ignore_shield",
+      "capabilities": [
+        "replacement.supported",
+        "removal.core"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 701.7 (destroy), 701.15 (regenerate), 701.17 (sacrifice)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_regeneration.test_indestructible_does_not_consume_shield",
+      "version": 1,
+      "test": "tests.test_regeneration.Regeneration.test_indestructible_does_not_consume_shield",
+      "capabilities": [
+        "replacement.supported",
+        "removal.core"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 701.7 (destroy), 701.15 (regenerate), 701.17 (sacrifice)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_regeneration.test_shield_prevents_dying_even_with_finality",
+      "version": 1,
+      "test": "tests.test_regeneration.Regeneration.test_shield_prevents_dying_even_with_finality",
+      "capabilities": [
+        "replacement.supported",
+        "removal.core"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 701.7 (destroy), 701.15 (regenerate), 701.17 (sacrifice)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_regeneration.test_regeneration_does_not_fire_death_or_entry_triggers",
+      "version": 1,
+      "test": "tests.test_regeneration.Regeneration.test_regeneration_does_not_fire_death_or_entry_triggers",
+      "capabilities": [
+        "replacement.supported",
+        "removal.core"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 701.7 (destroy), 701.15 (regenerate), 701.17 (sacrifice)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_regeneration.test_destroy_cant_be_regenerated_rider",
+      "version": 1,
+      "test": "tests.test_regeneration.Regeneration.test_destroy_cant_be_regenerated_rider",
+      "capabilities": [
+        "replacement.supported",
+        "removal.core"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 701.7 (destroy), 701.15 (regenerate), 701.17 (sacrifice)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_regeneration.test_wrath_cant_be_regenerated_rider",
+      "version": 1,
+      "test": "tests.test_regeneration.Regeneration.test_wrath_cant_be_regenerated_rider",
+      "capabilities": [
+        "replacement.supported",
+        "removal.core"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 701.7 (destroy), 701.15 (regenerate), 701.17 (sacrifice)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_regeneration.test_regeneration_removes_attacker_and_blocker_from_combat",
+      "version": 1,
+      "test": "tests.test_regeneration.Regeneration.test_regeneration_removes_attacker_and_blocker_from_combat",
+      "capabilities": [
+        "replacement.supported",
+        "removal.core"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 701.7 (destroy), 701.15 (regenerate), 701.17 (sacrifice)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_return_counters.test_additional_counters_preserve_native_counters",
+      "version": 1,
+      "test": "tests.test_return_counters.ReturnCounters.test_additional_counters_preserve_native_counters",
+      "capabilities": [
+        "graveyard.return",
+        "removal.core"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7, 614; named return and finality card text in fixture",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_return_counters.test_counter_prevents_zero_toughness_death",
+      "version": 1,
+      "test": "tests.test_return_counters.ReturnCounters.test_counter_prevents_zero_toughness_death",
+      "capabilities": [
+        "graveyard.return",
+        "removal.core"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7, 614; named return and finality card text in fixture",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_return_counters.test_multiple_returns_each_receive_counters_and_enter_tapped",
+      "version": 1,
+      "test": "tests.test_return_counters.ReturnCounters.test_multiple_returns_each_receive_counters_and_enter_tapped",
+      "capabilities": [
+        "graveyard.return",
+        "removal.core"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7, 614; named return and finality card text in fixture",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_return_counters.test_mana_value_and_opponents_graveyard",
+      "version": 1,
+      "test": "tests.test_return_counters.ReturnCounters.test_mana_value_and_opponents_graveyard",
+      "capabilities": [
+        "graveyard.return",
+        "removal.core"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7, 614; named return and finality card text in fixture",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_return_counters.test_finality_exiles_without_death_events",
+      "version": 1,
+      "test": "tests.test_return_counters.ReturnCounters.test_finality_exiles_without_death_events",
+      "capabilities": [
+        "graveyard.return",
+        "removal.core"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7, 614; named return and finality card text in fixture",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_return_counters.test_bounce_clears_finality_on_reentry",
+      "version": 1,
+      "test": "tests.test_return_counters.ReturnCounters.test_bounce_clears_finality_on_reentry",
+      "capabilities": [
+        "graveyard.return",
+        "removal.core"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7, 614; named return and finality card text in fixture",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_persist_wither_rebound.test_persist_returns_once_with_minus_counter",
+      "version": 1,
+      "test": "tests.test_persist_wither_rebound.PersistWitherRebound.test_persist_returns_once_with_minus_counter",
+      "capabilities": [
+        "graveyard.return"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7, 603, 702 (persist/undying)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_persist_wither_rebound.test_persist_fails_after_graveyard_zone_change",
+      "version": 1,
+      "test": "tests.test_persist_wither_rebound.PersistWitherRebound.test_persist_fails_after_graveyard_zone_change",
+      "capabilities": [
+        "graveyard.return"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7, 603, 702 (persist/undying)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_persist_wither_rebound.test_persist_and_undying_share_card_but_only_one_returns",
+      "version": 1,
+      "test": "tests.test_persist_wither_rebound.PersistWitherRebound.test_persist_and_undying_share_card_but_only_one_returns",
+      "capabilities": [
+        "graveyard.return"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7, 603, 702 (persist/undying)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_persist_wither_rebound.test_persist_lethal_counters_use_last_known_values",
+      "version": 1,
+      "test": "tests.test_persist_wither_rebound.PersistWitherRebound.test_persist_lethal_counters_use_last_known_values",
+      "capabilities": [
+        "graveyard.return"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7, 603, 702 (persist/undying)",
+        "review": "Bounded maintained test expectations; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_library_look_and_put_back_preserve_unmoved_objects",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_library_look_and_put_back_preserve_unmoved_objects",
+      "capabilities": [
+        "zones.object_identity",
+        "events.dispatch"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7; objects remaining in their zones; ownership across face changes",
+        "review": "Bounded maintained fixture assertions; not external certification."
+      }
+    },
+    {
+      "id": "test_identity_events.test_rebinding_transformed_front_preserves_owner",
+      "version": 1,
+      "test": "tests.test_identity_events.IdentityEvents.test_rebinding_transformed_front_preserves_owner",
+      "capabilities": [
+        "zones.object_identity",
+        "events.dispatch"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-scenario-expectations",
+        "reference": "CR 400.7; objects remaining in their zones; ownership across face changes",
+        "review": "Bounded maintained fixture assertions; not external certification."
       }
     }
   ]

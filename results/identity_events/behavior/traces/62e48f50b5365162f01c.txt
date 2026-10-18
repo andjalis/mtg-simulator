@@ -1,0 +1,6 @@
+test_persist_and_undying_share_card_but_only_one_returns (tests.test_persist_wither_rebound.PersistWitherRebound.test_persist_and_undying_share_card_but_only_one_returns) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

@@ -163,10 +163,11 @@ class StormCascade(unittest.TestCase):
     def test_cascade_does_not_consume_previously_exiled_identical_card(self):
         found = card('Found',types='Creature',cmc=1,power=2,toughness=2)
         self.a.exile.append(found)
+        previously_exiled = self.a.exile[-1]
         self.a.library = [found]
         self.cast('Cascade',cmc=3)
         self.assertEqual(len(self.a.exile),1)
-        self.assertIs(self.a.exile[0],found)
+        self.assertIs(self.a.exile[0],previously_exiled)
         self.assertEqual(self.a.creatures[0].card.name,'Found')
 
     def test_cascade_can_chain_and_counts_each_cast(self):

@@ -46,7 +46,7 @@ def resolve(game, p, eff, target, item):
         who.library.remove(card)
         found.append(card)
         game.log(f"searches for {card.name}", who)
-    game.rng.shuffle(who.library)
+    who.library.shuffle(game.rng)
     for card in found:
         if d["dest"] == "hand":
             who.hand.append(card)

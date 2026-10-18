@@ -217,7 +217,8 @@ python3 -m mtgsim.behavior_coverage --run --save results/behavior-coverage
 python3 -m mtgsim.behavior_coverage --ledger results/behavior-coverage/ledger.json --save results/behavior-review
 ```
 
-It maps 17 explicit scenarios for targeting, the normal legend rule and normal equip
+It maps 53 explicit scenarios for identity, events, supported replacements, removal,
+graveyard returns, targeting, the normal legend rule and normal equip
 to a versioned [capability catalog](rules/capabilities.json). Reports retain failures,
 missing/stale evidence and separate direct card tests from inferred capability evidence.
 Use a fresh directory for a new run. Complete card rules support remains unmeasured;

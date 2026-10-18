@@ -1,0 +1,6 @@
+test_cast_resolve_die_preserves_physical_identity (tests.test_identity_events.IdentityEvents.test_cast_resolve_die_preserves_physical_identity) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

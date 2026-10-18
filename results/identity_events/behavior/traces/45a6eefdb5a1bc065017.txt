@@ -1,0 +1,6 @@
+test_equip_invalid_action_preserves_state (tests.test_rules_contracts.RulesContracts.test_equip_invalid_action_preserves_state) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

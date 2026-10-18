@@ -27,6 +27,7 @@ def cast_exiled(game, p, card, kind, *, limit=None):
         free = dataclasses.replace(face, name=f'{face.name} ({kind})', mana_cost={'generic': 0}, hybrid=())
         origin_kind = f'{kind}_adventure' if face is not card else kind
         free.origin = (card, origin_kind, AltCost(origin_kind, {'generic': 0}))
+        free.origin_generation = getattr(card, 'generation', None)
         # The chosen spell face supplies its own effects and permanent characteristics.
         free.cast_face = face
         targets = game.auto_targets(p, free.spell_effects)
@@ -47,7 +48,7 @@ def resolve(game, p, eff, item):
     revealed = []
     found = None
     while p.library:
-        card = dataclasses.replace(p.library.pop())
+        card = p.library.pop()
         p.exile.append(card)
         revealed.append(card)
         if not card.is_land and card.cmc < eff.amount:

@@ -1,0 +1,6 @@
+test_finality_exiles_without_death_events (tests.test_return_counters.ReturnCounters.test_finality_exiles_without_death_events) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

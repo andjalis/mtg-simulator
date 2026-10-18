@@ -1,0 +1,6 @@
+test_rebinding_transformed_front_preserves_owner (tests.test_identity_events.IdentityEvents.test_rebinding_transformed_front_preserves_owner) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

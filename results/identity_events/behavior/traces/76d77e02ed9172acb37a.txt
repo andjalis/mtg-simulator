@@ -1,0 +1,6 @@
+test_counter_prevents_zero_toughness_death (tests.test_return_counters.ReturnCounters.test_counter_prevents_zero_toughness_death) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

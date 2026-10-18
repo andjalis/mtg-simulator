@@ -1,0 +1,6 @@
+test_reordering_preserves_zone_objects (tests.test_identity_events.IdentityEvents.test_reordering_preserves_zone_objects) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

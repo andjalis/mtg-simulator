@@ -822,7 +822,7 @@ class CraftStationTests(Base):
         self.assertTrue(self.game.activate(self.a, bricks, "ability:0"))
         self.assertEqual(self.a.exile, [BIG_ROCK])
         kiln = next(x for x in self.a.battlefield if x.card.name == "Cosmium Kiln")
-        self.assertIs(kiln.front, BRICKS)
+        self.assertIs(kiln.front, bricks.front)
         self.assertEqual(len([x for x in self.a.creatures if x.card.is_token]), 2)
 
     def test_draw_per_artifact_then_tuck(self):

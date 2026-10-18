@@ -1,0 +1,6 @@
+test_stale_alternate_option_cannot_cast_returned_object (tests.test_identity_events.IdentityEvents.test_stale_alternate_option_cannot_cast_returned_object) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

@@ -1,0 +1,6 @@
+test_sacrifice_zero_toughness_and_zero_loyalty_ignore_shield (tests.test_regeneration.Regeneration.test_sacrifice_zero_toughness_and_zero_loyalty_ignore_shield) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK
