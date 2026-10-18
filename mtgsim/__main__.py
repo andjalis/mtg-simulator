@@ -108,6 +108,12 @@ def main(argv=None):
     counts, decks, lists = {}, {}, {}   # lists: name -> Decklist (main, sideboard, bring-in notes)
 
     def add(name, path):
+        # Exported lists often share a filename (for example deck.txt). Keep
+        # both entries rather than replacing the first deck in a gauntlet.
+        base, suffix = name, 2
+        while name in lists:
+            name = f"{base} ({suffix})"
+            suffix += 1
         lists[name] = load_deck_full(path)[1]
         counts[name] = lists[name].main
 

@@ -75,7 +75,10 @@ def forge_card_names(folder: Path) -> set[str] | None:
     if base.is_dir():
         for f in base.rglob("*.txt"):
             read(f.read_text(encoding="utf-8", errors="replace"))
-    elif (base / "cardsfolder.zip").exists():
+    # Release installs can keep scripts in an archive inside this directory,
+    # optionally alongside loose scripts. Checking it with elif makes the
+    # archive unreachable because its parent directory necessarily exists.
+    if (base / "cardsfolder.zip").exists():
         with zipfile.ZipFile(base / "cardsfolder.zip") as z:
             for info in z.infolist():
                 if info.filename.endswith(".txt"):

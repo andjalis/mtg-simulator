@@ -106,5 +106,17 @@ def artifacts(folder: Path) -> dict:
 
 
 def valid_artifacts(folder: Path, expected: dict) -> bool:
-    return bool(expected) and all((folder / p).is_file() and file_hash(folder / p) == sha
-                                  for p, sha in expected.items())
+    if not isinstance(expected, dict) or not expected:
+        return False
+    root = folder.resolve()
+    try:
+        for name, sha in expected.items():
+            if not isinstance(name, str) or not isinstance(sha, str):
+                return False
+            path = folder / name
+            if (Path(name).is_absolute() or not path.resolve().is_relative_to(root)
+                    or not path.is_file() or file_hash(path) != sha):
+                return False
+    except (OSError, ValueError):
+        return False
+    return True

@@ -1,8 +1,10 @@
 # QA pass — 2026-10-18
 
 Tested the built-in simulator through separate CLI processes, HTTP requests,
-and a saved-run/new-app session. Changes are uncommitted on
-`feature/simulation-validation`.
+and a saved-run/new-app session. The initial fixes were committed on
+`feature/simulation-validation` and merged into the updated local `main`.
+The first verification below describes that initial pass; the parallel follow-up
+tested the newer main branch and additional fixes.
 
 ## Bugs reproduced and fixed
 
@@ -48,3 +50,62 @@ This pass does not establish comprehensive Magic rules correctness or accurate
 human matchup predictions. No real Forge games or interactive browser rendering
 were tested; Forge wrapper tests are included in the full suite. Python 3.10/3.13
 were not available as part of this run's checks.
+
+## Parallel follow-up after merging current main
+
+Nine agents reviewed separate areas in batches (three workers at a time),
+covering engine state, CLI/history, browser sessions, statistics, parsing,
+Forge, checkpoint provenance, reports, and assessment.
+
+Additional reproduced defects fixed:
+
+- Creature planeswalkers failed to lose loyalty when damaged and survived
+  at zero loyalty. Damage now applies to both relevant types; zero loyalty
+  kills them even with indestructible.
+- Concurrent history writers allocated duplicate deck version numbers.
+  Version lookup/allocation now runs in an immediate SQLite transaction.
+- Deck files with equal filename stems silently overwrote one another in CLI
+  matchups and gauntlets. Display labels now disambiguate the lists.
+- Malformed device results removed the pending future before validating it,
+  permanently hanging runs; impossible statistics were also accepted.
+  Validation now preserves pending work for retries/server fallback, and bad
+  device API inputs return HTTP 400.
+- A subsequent browser trial retained the first trial's card data. Each trial
+  now refreshes workers before assigning games.
+- Arena Companion-before-Deck exports lost their main deck; empty table cells
+  lost sideboard notes or imported colors as cards. Section resets and table
+  column positions are now preserved.
+- Nonfinite saved ratings crashed rather than using the documented fallback.
+- Forge's compressed card-script archive was unreachable behind a directory
+  check, disabling validation for archive-only installs.
+- Malformed checkpoint/result/artifact structures crashed resume. Invalid
+  entries now replay; invalid checkpoint containers produce a clear error.
+  Artifact references must resolve inside their output directory.
+- Malformed saved report containers/criteria and missing podium ranks crashed
+  leaderboard rendering. Invalid files are skipped, missing ranks get a fallback,
+  and saved assessment scores/MMR are HTML escaped.
+- Unanimous tiny samples reported zero assessment uncertainty. Weighted bounds
+  now use approximate Bonferroni-adjusted Wilson intervals with an explicit
+  method label. Tiny-deck mana calculations now use the available card count;
+  invalid consistency sample counts receive a useful error.
+
+Follow-up checks:
+
+- First merged full suite: **484 tests passed** in 170 seconds, before the
+  additional regressions were all present (`/tmp/mtgsim-merged-qa.log`).
+- Engine stress harness: **120 seeded games**, six pairings and alternating
+  starting seats, with **30,796 state checks passed**. The checks covered
+  battlefield identity/controller, surviving toughness/loyalty, lethal damage,
+  deathtouch, and loss flags (`/tmp/mtgsim-engine-fuzz.py`).
+- Focused integrated regressions: **31 passed**
+  (`/tmp/mtgsim-parallel-focused.log`); device/browser/HTTP suite:
+  **16 passed** (`/tmp/mtgsim-parallel-web-qa.log`).
+- Individual reviews also ran existing Forge, assessment, rating, sideboard,
+  benchmark, and report tests; the final full suite supersedes these counts.
+- Final expanded full suite: **520 tests passed** in 165 seconds
+  (`/tmp/mtgsim-parallel-final-suite.log`). `git diff --check` passed.
+- Browser JavaScript regression runs the actual extracted session function
+  under Node. It checks worker card refresh between trials; it is not a full
+  interactive browser rendering test.
+
+No real Forge games or Python 3.10/3.13 runtime checks were added in this follow-up.
