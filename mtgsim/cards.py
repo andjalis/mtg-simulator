@@ -510,6 +510,8 @@ _EFFECT_PATTERNS = [
     (r"exile all creatures", lambda m: Effect("exile_all_creatures")),
     (r"empower jace x, where x is the number of creatures exiled this way",
      lambda m: Effect("empower", 0, data={"count": "exiled"})),
+    (r"COUNTERTW (\d+) (\d+)",
+     lambda m: Effect("counter", int(m[1]), target="spell", data={"tw": int(m[2])})),
     (r"counter target creature or enchantment spell",
      lambda m: Effect("counter", target="spell", filter="creature_ench")),
     (r"counter target (noncreature |creature |instant or sorcery )?spell"
@@ -771,6 +773,8 @@ _EFFECT_PATTERNS = [
 ]
 
 _SUBS = [
+    (re.compile(r"counter target spell unless its controller pays \{(\d+)\}\. counter that spell unless its controller pays "
+                r"\{(\d+)\} instead if ~ was cast using teamwork\.", re.I), lambda m: f"COUNTERTW {m[1]} {m[2]}."),
     (re.compile(r"tap another target nonland permanent\. its activated abilities can't be activated for as long as it "
                 r"remains tapped\.", re.I), lambda m: "NETTAP."),
     (re.compile(r"you may discard a card\. if you do, draw (a card|two cards)\.", re.I),
@@ -910,7 +914,7 @@ _TRIGGERS = [
      ("other_creature_enters", "other_creature_dies")),
     (r"Whenever a land you control enters, (.+)", ("land_enters",)),
     (r"When(?:ever)? (~ or )?(another|an?) ((?:[\w-]+(?:,? or |, | ))*?(?:creature|artifact|enchantment|planeswalker|"
-     r"[A-Z]\w+)s?) you control( with mana value \d+ or greater)? enters(?: and whenever an? ([A-Z]\w+) you control "
+     r"[A-Z]\w+)s?) you control( with mana value \d+ or greater| with (?:flying|reach|haste|trample|lifelink|deathtouch))? enters(?: and whenever an? ([A-Z]\w+) you control "
      r"enters| and whenever you fully unlock a Room)?, (.+)",
      ("permanent_enters",)),
     (r"Whenever you draw a card, (.+)", ("you_draw",)),
@@ -2119,6 +2123,10 @@ def _parse_ability_cost(text: str):
                 m[1].lower() in _SACRIFICE_KINDS:
             what = m[1].lower()
             extra["sacrifice"] = ("other " + what if part.startswith("Sacrifice another") else what)
+        elif (m := re.fullmatch(r"Sacrifice (two|three|four|five) ([A-Za-z]+?)s", part)) and \
+                m[2].lower() in _SACRIFICE_KINDS:
+            extra["sacrifice"] = m[2].lower()
+            extra["sac_n"] = _num(m[1])
         else:
             return None
     return mana, extra
