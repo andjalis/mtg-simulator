@@ -189,6 +189,8 @@ class Permanent:
     def loyalty(self): return self.counters.get("loyalty", 0)
 
     def has(self, kw):
+        if self.auras and kw in KEYWORDS and any("loses_abilities" in a.card.aura_flags for a in self.auras):
+            return False
         return continuous.keyword(self, kw, self._has_unlayered(kw))
 
     def _has_unlayered(self, kw):
@@ -268,7 +270,11 @@ class Permanent:
     def triggers(self):
         exalted = [Trigger("attacks_alone", [Effect("pump", 1, 1, target="trigger_subject")])
                    for _ in range(self.exalted_count)]
-        return list(self.card.triggers) + (list(self.animated.triggers) if self.animated else []) + exalted
+        mine = self.card.triggers
+        if self.card.is_class:
+            level = self.counters.get("level", 1)
+            mine = [t for t in mine if t.min_level <= level]
+        return list(mine) + (list(self.animated.triggers) if self.animated else []) + exalted
 
     @property
     def ward(self) -> int:

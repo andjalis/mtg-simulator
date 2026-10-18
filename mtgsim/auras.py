@@ -42,6 +42,19 @@ def parse_line(line: str, extra: dict, types) -> bool:
     if re.fullmatch(r"Enchanted creature can't attack or block\.", line):
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"cant_attack_block"}
         return True
+    m = re.fullmatch(r"Enchanted (?:creature|permanent) loses all abilities(?: and doesn't untap during its controller's "
+                     r"untap step)?\.", line)
+    if m:
+        flags = {"loses_abilities"} | ({"no_untap"} if "untap" in line else set())
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | flags
+        extra.setdefault("_approx", []).append("loses all abilities: only keywords are removed")
+        return True
+    m = re.fullmatch(r"Enchanted creature gets ([+−-])(\d+)/([+−-])(\d+) and loses all abilities\.", line)
+    if m:
+        extra["equip_bonus"] = (_n(m[1], m[2]), _n(m[3], m[4]))
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"loses_abilities"}
+        extra.setdefault("_approx", []).append("loses all abilities: only keywords are removed")
+        return True
     m = re.fullmatch(rf"Enchanted creature (?:gets ([+−-])(\d+)/([+−-])(\d+))?(?:,? and |, | )?"
                      rf"(?:has ((?:{_KW})(?:(?:, | and |, and )(?:{_KW}))*))?\.", line)
     if m and (m[1] or m[5]):

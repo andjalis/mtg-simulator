@@ -205,7 +205,7 @@ def _parse_face(data: dict) -> CardDef:
         text = re.sub(rf"\b{re.escape(name.split()[0])}\b", "~", text)  # "Ajani" for "Ajani Resolute"
     elif " the " in name and "Legendary" in type_line:
         text = re.sub(rf"\b{re.escape(name.split(' the ')[0])}\b", "~", text)  # "Smaug the Magnificent"
-    text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment)\b", "~",
+    text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment|class)\b", "~",
                   text, flags=re.I)
     text = re.sub(r", where X is the amount of mana spent to cast ~\.", ".", text).replace(
         "the top X cards", f"the top {int(data.get('cmc', 0) or 0)} cards")
@@ -214,6 +214,7 @@ def _parse_face(data: dict) -> CardDef:
     text = re.sub(r"(?m)^Ward—Waterbend (\{\d+\})", r"Ward \1", text)
     text = re.sub(r"(?m)^([A-Za-z ,]*[Ff]irebending \d+[A-Za-z ,]*)$", lambda m: "\n".join(x[0].upper() + x[1:] for x in m[1].split(", ")), text)
     keywords, produces, etb, spell, unsupported, approximations = set(), set(), [], [], [], []
+    level_marks: list = []      # Class: (level, number of triggers parsed before that level's lines)
     triggers: list[Trigger] = []
     extra: dict = {"snow": "Snow" in type_line, "basic": "Basic" in type_line, "legendary": "Legendary" in type_line,
                    "color_override": frozenset(data["colors"]) if "colors" in data else None}
@@ -318,7 +319,14 @@ def _parse_face(data: dict) -> CardDef:
                 continue
         kicked += re.findall(r"If ~ was kicked, (.+?\.)", line)
         line = re.sub(r"\s*If ~ was kicked, .+?\.", "", line).strip()
-        line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant) — (?=When|At|If)", "", line)
+        lv = re.fullmatch(r"((?:\{[WUBRGC0-9/]+\})+): Level (\d+)", line)
+        if lv:
+            n = int(lv[2])
+            activated.append(Activated("ability", parse_mana_cost(lv[1]), effects=[Effect("level_up", data={"to": n})],
+                                       extra_costs={"level_from": n - 1}, sorcery=True, text=line))
+            level_marks.append((n, len(triggers)))
+            continue
+        line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious) — (?=When|At|If)", "", line)
         parts = [p.strip().lower() for p in line.split(",")]
         if all(p in KEYWORDS or re.fullmatch(r"ward \{\d+\}", p) for p in parts):
             for p in parts:
@@ -404,7 +412,10 @@ def _parse_face(data: dict) -> CardDef:
         if line == "~ can block only creatures with flying.":
             extra["block_only_flying"] = True
             continue
-        m = re.fullmatch(r"Equipped creature (?:gets \+(\d+)/\+(\d+))?(?: and )?(?:has (.+?))?\.", line)
+        m = re.fullmatch(r"Equipped creature (?:gets \+(\d+)/\+(\d+))?(?: and )?(?:has (.+?))?"
+                         r"(?:(?: and )?is an? ([A-Z]\w+) in addition to its other types)?\.", line)
+        if m and m[4]:
+            approximations.append(f"the {m[4]} type isn't added")
         if m and (m[1] or m[3]):
             kws, ward, ok = set(), 0, True
             for k in re.split(r", (?:and )?| and ", m[3] or ""):
@@ -945,6 +956,7 @@ def _parse_face(data: dict) -> CardDef:
             continue
         extra["_subtypes"] = type_line
         if _auras.parse_line(line, extra, types):
+            approximations += extra.pop("_approx", [])
             continue
         clone = _copies.parse_line(line)
         if clone is not None:
@@ -1018,6 +1030,10 @@ def _parse_face(data: dict) -> CardDef:
         unsupported += [f"if kicked: {k}" for k in kicked]
     if gate is not None:
         _apply_speed_gate(gate, triggers, activated)
+    for i, (n, start) in enumerate(level_marks):
+        end = level_marks[i + 1][1] if i + 1 < len(level_marks) else len(triggers)
+        for t in triggers[start:end]:
+            t.min_level = n
     extra.pop("is_spree", None)
     extra.pop("_subtypes", None)
     _auras.finish(extra)
@@ -1154,7 +1170,7 @@ def _parse_trigger_line(line: str):
             flt = f"cmc<={m[1]}"
         if "while saddled" in pat or events[-1] == "becomes_tapped":
             rest = re.sub(r"^it (gets|gains|deals)\b", r"~ \1", re.sub(r"\b(on|untap|to) it\b", r"\1 ~", rest))
-        if events == ("expend",):
+        if events == ("expend",) or events == ("class_level",):
             flt = m[1]
         if events == ("gy_leave",):
             flt = f"{m[1] or ''}|{'turn' if m[2] else ''}"

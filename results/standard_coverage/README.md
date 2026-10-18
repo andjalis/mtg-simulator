@@ -808,3 +808,13 @@ Exact additions and before/after counts are in
 [`../card_effect_batches/rounds46-48-coverage.json`](../card_effect_batches/rounds46-48-coverage.json).
 The complete card inventory and ranked gaps are in
 [`../database_coverage/README.md`](../database_coverage/README.md).
+
+## Round 17: Class levels, abilities-removing Auras, ability-word prefixes
+
+- Class cards: `{cost}: Level N` is a sorcery-speed ability that is only legal at level N−1 and sets the `level` counter.
+  "When this Class becomes level N, …" fires on the level-up; triggers and statics parsed after a level marker are gated
+  by `Trigger.min_level`.
+- "Enchanted creature loses all abilities" (optionally with −N/−N or "doesn't untap") removes keywords only; flagged as
+  an approximation in `--coverage`.
+- Equipment that grants a creature type, and the ability words Alliance, Void, Delirium, Hellbent, Metalcraft,
+  Threshold and Ferocious are now recognised.
