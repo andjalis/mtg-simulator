@@ -2084,8 +2084,10 @@ class Game:
         elif kind == "gy_ability":
             p.exile.append(base)
         flags = set()
-        if card.teamwork and card.modes and self.pay_teamwork(p, card):
+        teamwork_paid = False
+        if card.teamwork and (card.modes or any(e.data.get("tw") for e in effects)) and self.pay_teamwork(p, card):
             flags.add("teamwork")
+            teamwork_paid = True
         if card.modes:
             mode_effects = modal.pick(self, p, card.modes, n=card.modes_choose, flags=flags)
             effects = mode_effects + effects
@@ -2105,6 +2107,7 @@ class Game:
         item.cast_from_hand = self._zone(p, kind) is p.hand and kind not in ("free", "channel", "gy_ability", "prepared")
         item.snow_spent = sum(1 for s in payment if s.card.snow)
         item.x = x
+        item.teamwork = teamwork_paid
         item.evidence = self.collect_evidence(p, card)
         item.bargained = bool(card.bargain) and self.pay_bargain(p, card)
         item.gifted = bool(card.gift)
@@ -2361,7 +2364,7 @@ class Game:
             return False
         if c.get("remove_counter") and not perm.counters.get(c["remove_counter"]):
             return False
-        if c.get("sacrifice") and not self.sacrifice_candidates(p, perm, c["sacrifice"]):
+        if c.get("sacrifice") and len(self.sacrifice_candidates(p, perm, c["sacrifice"])) < c.get("sac_n", 1):
             return False
         if c.get("craft") and not self.craft_materials(p, perm):
             return False
@@ -2401,7 +2404,7 @@ class Game:
             self.log(f"discards {card.name}", p)
         if c.get("remove_counter"):
             perm.counters[c["remove_counter"]] -= 1
-        if c.get("sacrifice"):
+        for _ in range(c.get("sac_n", 1) if c.get("sacrifice") else 0):
             candidates = self.sacrifice_candidates(p, perm, c["sacrifice"])
             if not candidates:
                 return False
@@ -2747,6 +2750,8 @@ class Game:
                 if eff.data.get("keyword"):
                     target.temp_kw.add(eff.data["keyword"])
         elif k in ("counter", "bounce_spell"):
+            if eff.data.get("tw") and getattr(item, "teamwork", False):
+                eff = dataclasses.replace(eff, amount=eff.data["tw"])
             self.counter(p, eff, target)
         elif k == "lose_life":
             who = target if eff.target in ("that_player", "that_controller") and isinstance(target, Player) else p
@@ -4056,6 +4061,11 @@ def card_matches(card: CardDef, desc: str) -> bool:
             if (card.cmc > int(m[1])) if m[2] == "less" else (card.cmc < int(m[1])):
                 continue
             alt = alt[:m.start()]
+        kw = re.search(r" with (flying|reach|haste|trample|lifelink|deathtouch)$", alt)
+        if kw:
+            if kw[1] not in card.keywords:
+                continue
+            alt = alt[:kw.start()]
         words = [w for w in alt.replace(" card", "").split() if w not in ("or", "and/or")]
         ok = True
         if "token" in words:
@@ -4332,9 +4342,9 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
         if perm.card.is_land and sum(x.card.is_land for x in me.battlefield) < 6:
             return False
     if c.get("sacrifice"):
-        victim = game.sacrifice_candidates(me, perm, c["sacrifice"])[0]
-        if not victim.card.is_token and perm_value(victim) > 1:
-            return False
+        for victim in game.sacrifice_candidates(me, perm, c["sacrifice"])[:c.get("sac_n", 1)]:
+            if not victim.card.is_token and perm_value(victim) > 1:
+                return False
     if c.get("discard") and not choose_rummage(game, me, 1) and len(me.hand) <= 4:
         return False
     if c.get("life") and me.life <= 10:
