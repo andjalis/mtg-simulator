@@ -4,6 +4,10 @@ from mtgsim.decklist import parse_full
 
 
 class ParserSessionQATests(unittest.TestCase):
+    def test_zero_quantities_do_not_create_cards(self):
+        self.assertEqual(parse_full("0 Mountain").main, {})
+        self.assertEqual(parse_full("0 Unknown\n60 Mountain").main, {"Mountain": 60})
+
     def test_arena_companion_precedes_deck(self):
         deck = parse_full("Companion\n1 Jegantha, the Wellspring\n\n"
                           "Deck\n60 Mountain\n\nSideboard\n2 Shock")

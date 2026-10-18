@@ -36,6 +36,10 @@ class WebSimTests(unittest.TestCase):
         bad = sim.check_deck("4 Lightning Bolt\n4 Not A Real Card Xyz", offline=True)
         self.assertEqual(bad["unknown"], ["Not A Real Card Xyz"])
         self.assertIn("error", sim.check_deck("hello", offline=True))
+        for text in ("0 Mountain", "999999999999999 Mountain"):
+            self.assertIn("error", sim.check_deck(text, offline=True))
+            with self.assertRaises(ValueError):
+                sim.make_run("bad", text, ["bronze"], False, 2, grade=False)
 
     def test_ladder_stops_at_failed_tier(self):
         run = sim.make_run("burn", BURN, None, ladder=True, games=4, seed=1, grade=False)

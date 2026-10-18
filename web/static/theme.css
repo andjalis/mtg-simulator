@@ -224,7 +224,8 @@ tr.opp td:first-child { padding-left: 44px; }
   .masthead .brand small { display: none; }
   .brand b { font-size: 15px; }
   .wheel { width: 28px; height: 28px; }
-  .masthead .in { gap: 8px; }
+  .masthead .in { gap: 8px; flex-wrap: wrap; }
+  .masthead nav { flex-wrap: wrap; }
   .masthead nav a { padding: 6px 10px; }
   .frame > .face { padding: 0 12px 14px; }
 }
@@ -568,10 +569,12 @@ body:has(.trial-page)::before { content: ''; position: fixed; inset: 0; pointer-
   .game-chrome .screen-route { gap: 8px; padding-left: 12px; }
   .game-chrome .screen-route span { gap: 5px; }
   .game-chrome .screen-route b { font-size: 10px; }
-  .leaderboard-link { display: none; }
+  .leaderboard-link { display: inline-flex; align-items: center; min-height: 44px; }
   #activeDeck { display: none; }
   .game-controls { margin-left: auto; }
-  .chrome-button { padding: 6px 8px; font-size: 10px; }
+  .chrome-button { padding: 6px 8px; font-size: 10px; min-height: 44px; }
+  .trial-page .seg button, .trial-page .opt, .trial-page .secondary-action { min-height: 44px; }
+  .trial-page .ladder { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
   .loadout-layout > .frame > .face { padding: 0 16px 18px; }
   .loadout-actions { align-items: stretch; flex-direction: column-reverse; gap: 14px; }
   .loadout-actions > div { flex-wrap: wrap; }
@@ -590,7 +593,6 @@ body:has(.trial-page)::before { content: ''; position: fixed; inset: 0; pointer-
 .lb a.play { margin-right: 10px; white-space: nowrap; }
 
 /* The post-trial screen leads with the run, then exposes all evidence underneath. */
-[data-screen=results] .leaderboard-link { display: none; }
 #resultsScreen { max-width: 1600px; margin: 0 auto; }
 .run-highlight { margin-bottom: 22px; }
 .trial-page .run-highlight > .face { display: grid; grid-template-columns: 150px minmax(0, 1fr); align-items: center; gap: 28px; padding: 30px; background: radial-gradient(ellipse at 0 50%, color-mix(in srgb, var(--rc) 10%, transparent), transparent 60%), var(--panel); }

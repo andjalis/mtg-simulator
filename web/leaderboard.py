@@ -186,10 +186,11 @@ def render_page(rows: list[dict], now: float | None = None) -> str:
     show_grades = any(r["grades"] for r in rows)
     head = "<tr><th>#</th><th>Rank</th><th>Deck</th><th class=n>MMR</th>"
     head += "".join(f"<th>{label}</th>" for _, label in CRITERIA) if show_grades else ""
-    head += "<th>Tested</th><th></th></tr>"
+    head += "<th>Tested</th><th>Actions</th></tr>"
     body = []
     for r in rows:
         rank = r["rank"] or "Unrated"
+        deck_label = e(r["deck"])
         cells = (f"<td class=place>{r['place']}</td><td><div class=rk>{_badge(r)}<span>{e(rank)}</span></div></td>"
                  f"<td class=deck>{e(r['deck'])}{_v(r)}</td>"
                  f"<td class='n mmrv'>{'' if r['mmr'] is None else r['mmr']}</td>")
@@ -198,14 +199,14 @@ def render_page(rows: list[dict], now: float | None = None) -> str:
             cells += "".join(f"<td><span class='g g{e(g.get(k) or '')}' title='{label}'>{e(g.get(k) or '–')}</span></td>"
                              for k, label in CRITERIA)
         when = datetime.fromtimestamp(r["tested"]).strftime("%Y-%m-%d %H:%M")
-        play = f"<a class=play href='{e(r['link'])}?replay=1' title='Replay the climb'>▶ Replay</a>" if r.get("replay") else ""
+        play = f"<a class=play href='{e(r['link'])}?replay=1' aria-label='Replay the climb for {deck_label}' title='Replay the climb'>▶ Replay</a>" if r.get("replay") else ""
         cells += (f"<td class=note title='{when}'>{_ago(r['tested'], now)}</td>"
-                  f"<td class=n>{play}<a href='{e(r['link'])}'>Results ›</a></td>")
+                  f"<td class=n>{play}<a href='{e(r['link'])}' aria-label='Results for {deck_label}'>Results ›</a></td>")
         body.append(f"<tr class=p{r['place']}>{cells}</tr>")
     table = (f"<div class=scroll><table class=lb><thead>{head}</thead><tbody>{''.join(body)}</tbody></table></div>"
              if rows else "<p class=empty>No decks tested yet. Run one from the <a href='/'>deck page</a>.</p>")
-    hero = ("<div class=hero><h1>Leaderboard</h1><p>Every tested deck, ranked by MMR from its latest run.</p>"
-            "<p class=flavor>Seven ranks stand between a fresh list and the Grandmaster pool.</p></div>")
+    hero = ("<div class=hero><h1>Leaderboard</h1><p>Every tested deck, ranked by MMR from its latest rated run.</p>"
+            "<p class=flavor>Internal pool ranks and MMR; these are not Arena rankings.</p></div>")
     return theme.page("Deck leaderboard", hero + _podium(rows) + theme.frame("Standings", table), "leaderboard")
 
 

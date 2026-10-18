@@ -40,6 +40,7 @@ DEVICE_CHUNK = 10  # smaller on a visitor's device, so progress shows sooner on 
 DEVICE_STALL = 15.0  # seconds without word from the device before the server plays its games
 WHERE = ("device", "server")  # where a run's games are played; see App.pool_for in server.py
 MAX_GAMES = 2000
+MAX_DECK_CARDS = 1000  # bound card expansion for interactive requests
 FORGE_META_GAMES = 20  # most Forge games per meta matchup; Forge is far slower than the built-in engine
 META_ENGINES = ("forge", "auto", "python")
 
@@ -87,6 +88,9 @@ def check_deck(text: str, offline: bool = False) -> dict:
     out = {"cards": sum(counts.values()), "distinct": len(counts), "unknown": [], "partial": []}
     if not counts:
         out["error"] = "No cards found. Each line should look like \"4 Lightning Bolt\"."
+        return out
+    if out["cards"] > MAX_DECK_CARDS:
+        out["error"] = f"Web trials support at most {MAX_DECK_CARDS} cards per deck."
         return out
     with _db_lock:
         return _check(counts, out, _card_db(offline))
@@ -361,7 +365,10 @@ def make_run(deck_name: str, text: str, tiers: list[str] | None, ladder: bool, g
         raise ValueError("pick at least one tier")
     if meta_engine not in META_ENGINES:
         raise ValueError(f"meta engine must be one of {', '.join(META_ENGINES)}")
-    return Run(deck_name or "my deck", parse_decklist(text), chosen, ladder, games, full, seed, grade=grade,
+    counts = parse_decklist(text)
+    if not 1 <= sum(counts.values()) <= MAX_DECK_CARDS:
+        raise ValueError(f"Web trials require between 1 and {MAX_DECK_CARDS} cards per deck.")
+    return Run(deck_name or "my deck", counts, chosen, ladder, games, full, seed, grade=grade,
                meta_engine=meta_engine, forge_dir=forge_dir())
 
 

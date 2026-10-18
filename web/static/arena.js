@@ -369,8 +369,14 @@ function replaySteps(d, per = 2) {
     opps.forEach((o, oi) => {
       const src = d.opponents[oi];
       if (o.pool !== p.key || !src.games) return;
+      // Use one consistent outcome sequence for every prefix. Rounding wins and draws
+      // independently can produce more outcomes than games (and scores above 100%).
+      const outcomes = spread(src.wins, src.draws, src.games - src.wins - src.draws);
       for (let k = 1; k <= per; k++) {
-        const g = Math.round(src.games * k / per), wins = Math.round(src.wins * k / per), draws = Math.round(src.draws * k / per);
+        const g = Math.round(src.games * k / per);
+        if (g <= o.games) continue;
+        const prefix = outcomes.slice(0, g);
+        const wins = prefix.filter(x => x === "w").length, draws = prefix.filter(x => x === "d").length;
         played += g - o.games;
         Object.assign(o, {games: g, wins, draws, win_rate: (wins + .5 * draws) / g});
         const m = mmrAt(played), r = rankAt(m), nxt = ranks[ranks.indexOf(r) + 1];

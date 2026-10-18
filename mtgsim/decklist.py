@@ -62,7 +62,7 @@ def parse_full(text: str) -> Decklist:
             line = f"{cols[0]} {cols[1]}"
             note = cols[3] if len(cols) > 3 else ""
         m = LINE.match(line)
-        if not m:
+        if not m or int(m[1]) == 0:
             continue
         name = m[2].split(" // ")[0].strip()  # double-faced / split cards by their front face
         dest = out.sideboard if sb_line else target

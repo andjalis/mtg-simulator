@@ -14,6 +14,8 @@
     <div class="game-controls"><a class="leaderboard-link" href="/leaderboard">Leaderboard</a><button id="fullscreen" class="chrome-button" aria-pressed="false">⛶ Fullscreen</button></div>
   </header>
   <div id="runError" class="trial-error" role="alert" hidden></div>
+  <button id="retrySetup" class="secondary-action" hidden>Retry loading ranks</button>
+  <button id="retryTrial" class="secondary-action" hidden>Reconnect to trial</button>
   <section id="loadoutScreen" class="trial-screen" aria-labelledby="loadoutTitle">
     <fieldset id="loadout" class="loadout-fields">
     <div class="loadout-layout">
@@ -58,7 +60,7 @@
 </main>
 <script src="/static/arena.js"></script>
 <script>
-let mode = "ladder", checkOk = false, checkTimer, polling, checkVersion = 0;
+let mode = "ladder", checkOk = false, checkTimer, polling, checkVersion = 0, tiersReady = false;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 // -- where the games run ----------------------------------------------------------------------
@@ -149,24 +151,46 @@ try { $("#deck").value = localStorage.getItem("mtgsim.deck") || ""; $("#name").v
 async function api(path, body) {
   const r = await fetch(path, body ? {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)} : {});
   const data = await r.json();
-  if (!r.ok) throw new Error(data.error || r.statusText);
+  if (!r.ok) { const error = new Error(data.error || r.statusText); error.status = r.status; throw error; }
   return data;
 }
 
-api("/api/tiers").then(d => {
+async function loadTiers() {
+ try {
+  const d = await api("/api/tiers");
   passRate = d.pass_rate;
   $("#passRate").textContent = pct(passRate).replace(".0%", "%");
   $("#games").max = d.max_games;
   startDevice();
+  showEngine();
   $("#tierList").innerHTML = d.tiers.map((t, i) =>
     `<label title="${esc(t.decks.join(", "))}"><input type="checkbox" value="${t.key}"${i === d.tiers.length - 1 ? "" : " checked"}>
      <i class="gem rk-${esc(t.key)}"></i><span><b>${esc(t.label)}</b><small>${t.decks.length} decks · ${esc(t.about)}</small></span></label>`).join("");
   const ranks = rankList = d.ranks || [];
   if ($("#ladder")) $("#ladder").innerHTML = ranks.map(r =>
     `<div class="step">${r.emblem}<b>${esc(r.name)}</b><span>${r.floor ? r.floor + "+ MMR" : "below " + ranks[1].floor + " MMR"}</span></div>`).join("");
-});
+  tiersReady = true;
+  $("#retrySetup").hidden = true;
+  $("#runError").hidden = true;
+  $("#go").disabled = !checkOk || !!polling;
+ } catch (e) {
+  tiersReady = false;
+  $("#go").disabled = true;
+  showTrialError(`Could not load ranks: ${e.message}. Retry when your connection is available.`);
+  $("#retrySetup").hidden = false;
+ }
+}
+$("#retrySetup").onclick = async () => { await loadTiers(); await restoreTrial(); };
+const setupPromise = loadTiers();
+
+function clearLoadoutError() {
+  if (!polling && tiersReady && $(".trial-page").dataset.screen === "loadout") $("#runError").hidden = true;
+}
+$("#tierList").addEventListener("change", clearLoadoutError);
+$("#games").addEventListener("input", clearLoadoutError);
 
 document.querySelectorAll("#mode button").forEach(b => b.onclick = () => {
+  clearLoadoutError();
   mode = b.dataset.mode;
   document.querySelectorAll("#mode button").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-pressed", String(x === b)); });
   $("#tierList").hidden = mode !== "tiers";
@@ -174,6 +198,7 @@ document.querySelectorAll("#mode button").forEach(b => b.onclick = () => {
 });
 
 function scheduleCheck() {
+  clearLoadoutError();
   clearTimeout(checkTimer);
   checkVersion++;
   checkOk = false; $("#go").disabled = true;
@@ -201,7 +226,7 @@ async function runCheck() {
     if (version !== checkVersion) return;
     $("#check").innerHTML = `<div class="err">${esc(e.message)}</div>`;
   }
-  $("#go").disabled = !checkOk || !!polling;
+  $("#go").disabled = !checkOk || !tiersReady || !!polling;
 }
 $("#deck").addEventListener("input", scheduleCheck);
 $("#name").addEventListener("input", () => { try { localStorage.setItem("mtgsim.name", $("#name").value); } catch (e) {} });
@@ -243,6 +268,7 @@ document.addEventListener("fullscreenchange", () => {
 });
 
 $("#go").onclick = async () => {
+  if (!tiersReady || !checkOk || polling) return;
   if (Fx.on) Fx.wake();
   const body = {deck: $("#deck").value, name: $("#name").value, games: +$("#games").value,
                 ladder: mode === "ladder", full: $("#full").checked, grade: $("#grade").checked, where: where()};
@@ -258,6 +284,8 @@ $("#go").onclick = async () => {
   $("#go span").textContent = "Locking in…";
   try {
     const {id} = await api("/api/run", body);
+    try { sessionStorage.setItem("mtgsim.trial", id); } catch (e) {}
+    $("#retryTrial").hidden = true;
     startArena();
     $("#activeDeck").textContent = body.name.trim() || "Untitled deck";
     $("#configure").disabled = true;
@@ -280,14 +308,15 @@ function showTrialError(message) {
 function finishTrial(snapshot) {
   polling = false;
   $("#loadout").disabled = false;
-  $("#go").disabled = !checkOk;
+  $("#go").disabled = !checkOk || !tiersReady;
   $("#go span").textContent = "Enter the arena";
   const hasTrial = !!$("#prog");
   $("#viewTrial").hidden = !hasTrial;
   $("#configure").disabled = false;
   $("#configure").textContent = "Configure next trial →";
-  $("#arenaActionHint").textContent = "Review the completed arena or open the full results.";
   const complete = snapshot?.status === "done";
+  $("#arenaActionHint").textContent = complete ? "Review the completed arena or open the full results."
+    : "This trial did not finish here. You can review its progress or configure another trial.";
   $("#viewResults").hidden = !complete;
   $("#viewTrial").textContent = complete ? "View last results" : "View last trial";
   if (complete) { renderHighlight(snapshot); showScreen("results"); }
@@ -297,13 +326,52 @@ function poll(id) {
   polling = true;
   const tick = async () => {
     let s;
-    try { s = await api("/api/runs/" + id); } catch (e) { showTrialError(`Connection interrupted. Your trial may still be running: ${e.message}`); $("#prog")?.classList.remove("running"); finishTrial(); return; }
+    try { s = await api("/api/runs/" + id); } catch (e) {
+      if (e.status === 404) { try { sessionStorage.removeItem("mtgsim.trial"); } catch (ignored) {} }
+      showTrialError(`Connection interrupted. Your trial may still be running: ${e.message}`);
+      $("#retryTrial").hidden = e.status === 404;
+      $("#prog")?.classList.remove("running"); finishTrial(); return;
+    }
     render(s);
     if (s.status === "queued" || s.status === "running") setTimeout(tick, 700);
     else { finishTrial(s); }
   };
   tick();
 }
+
+async function restoreTrial() {
+  let id;
+  try { id = sessionStorage.getItem("mtgsim.trial"); } catch (e) {}
+  if (!id || polling) return;
+  polling = true;
+  $("#go").disabled = true;
+  await setupPromise;
+  if (!tiersReady) { polling = false; return; }
+  try {
+    const s = await api("/api/runs/" + encodeURIComponent(id));
+    startArena();
+    $("#activeDeck").textContent = s.deck;
+    $("#runError").hidden = true;
+    $("#retryTrial").hidden = true;
+    $("#loadout").disabled = true;
+    $("#configure").disabled = true;
+    $("#configure").textContent = "Trial in progress…";
+    showScreen("arena");
+    render(s);
+    if (s.status === "queued" || s.status === "running") {
+      if (s.where === "device") { startDevice(); runOnDevice(id); }
+      poll(id);
+    } else finishTrial(s);
+  } catch (e) {
+    polling = false;
+    $("#go").disabled = !checkOk || !tiersReady;
+    if (e.status === 404) { try { sessionStorage.removeItem("mtgsim.trial"); } catch (ignored) {} }
+    $("#retryTrial").hidden = e.status === 404;
+    showTrialError(e.status === 404 ? "The previous trial is no longer available. You can configure a new trial."
+      : `Could not reconnect to your trial: ${e.message}. Use Reconnect to trial to try again.`);
+  }
+}
+$("#retryTrial").onclick = restoreTrial;
 
 function meter(r) {
   if (r.rate == null) return "";
@@ -440,6 +508,7 @@ function render(s) {
     render(s);
   });
 }
+restoreTrial();
 </script>
 </body>
 </html>
