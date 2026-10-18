@@ -8,7 +8,7 @@ from unittest.mock import patch
 from mtgsim import behavior_coverage as bc
 from mtgsim.cards import CardDef
 from mtgsim.provenance import digest, file_hash
-from tests.test_rules_contracts import ISAMARU, SHUKO
+from tests.test_rules_contracts import ISAMARU
 from tests.test_templates import BEAR
 
 

@@ -5,7 +5,7 @@ import unittest
 from mtgsim.ai import HeuristicAI
 from mtgsim.engine import Game, Permanent, Player
 
-from tests.test_templates import BEAR, ISLAND, MOUNTAIN, card
+from tests.test_templates import BEAR, MOUNTAIN, card
 
 HELLKITE = card("Hellkite", "{4}{R}", "Creature — Dragon", "Flying\\nWhen this creature enters, destroy target nonbasic land an "
                 "opponent controls. Its controller searches their library for a basic land card, puts it onto the battlefield "

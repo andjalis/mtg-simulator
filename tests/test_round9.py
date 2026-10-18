@@ -5,7 +5,7 @@ import unittest
 from mtgsim.ai import HeuristicAI
 from mtgsim.engine import Game, Permanent, Player, can_block
 
-from tests.test_templates import BEAR, ISLAND, card
+from tests.test_templates import BEAR, card
 
 RECUR = card("Test Recur", "{B}", "Creature — Zombie", "{1}{B}: Return this card from your graveyard to your hand.", 1, 1)
 SNEAK = card("Test Sneak", "{2}", "Creature — Rogue", "~ can't be blocked by creatures with power 3 or greater.", 2, 2)

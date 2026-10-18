@@ -1,7 +1,7 @@
 """Cheap generic lines: keyword pumps, lords, second-spell discount, removal variants."""
 import unittest
 
-from tests.test_templates import BEAR, ISLAND, MOUNTAIN, card
+from tests.test_templates import BEAR, MOUNTAIN, card
 from tests.test_empower_discover import Base
 
 LINES = {

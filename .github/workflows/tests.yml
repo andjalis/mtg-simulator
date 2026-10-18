@@ -38,3 +38,55 @@ jobs:
 
       - name: Run tests
         run: python3 -m unittest discover -s tests -t . -v
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # pyflakes is a CI-only tool; the simulator itself stays standard library only.
+      - name: Install pyflakes
+        run: python3 -m pip install pyflakes==4.0.3
+
+      - name: Run pyflakes
+        run: python3 scripts/lint.py
+
+  parse-diff:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Cache key
+        id: week
+        run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache card database
+        id: carddb
+        uses: actions/cache@v4
+        with:
+          path: mtgsim/data/cards.sqlite3
+          key: carddb-${{ hashFiles('mtgsim/build_carddb.py') }}-${{ steps.week.outputs.week }}
+
+      - name: Build card database
+        if: steps.carddb.outputs.cache-hit != 'true'
+        run: python3 -m mtgsim.build_carddb
+
+      # Parse every card with the base branch's code and with this PR's, and list what changed.
+      # Fails only when a card that parsed before now raises.
+      - name: Compare card parsing with the base branch
+        run: |
+          git worktree add ../base ${{ github.event.pull_request.base.sha }}
+          PYTHONPATH=../base python3 scripts/parse_diff.py dump ../base.tsv
+          python3 scripts/parse_diff.py dump ../head.tsv
+          python3 scripts/parse_diff.py compare ../base.tsv ../head.tsv

@@ -746,7 +746,7 @@ def format_report(rep: ScriptReport, partial_total: int, top: int = 20) -> str:
     if rep.compared:
         lines.append(f"Agreement with the templates on fully supported cards: {rep.agree} of {rep.compared} "
                      f"({pct(rep.agree, rep.compared)})")
-    lines += ["", f"Per mapped Forge API: cards with an ignored line using it, and how many of those lines translate:"]
+    lines += ["", "Per mapped Forge API: cards with an ignored line using it, and how many of those lines translate:"]
     for api in sorted(HANDLERS, key=lambda a: -rep.api_cards[a]):
         if rep.api_cards[api]:
             lines.append(f"  {api:<16}{rep.api_cards[api]:>6,} cards  {rep.api_cards_ok[api]:>6,} translate "

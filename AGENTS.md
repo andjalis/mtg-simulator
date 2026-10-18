@@ -27,7 +27,10 @@ python3 -m web                                 # http://127.0.0.1:8000
 ```
 
 Python 3.10+ only, standard library only. Do not add dependencies. CI (`.github/workflows/tests.yml`)
-runs the tests on Python 3.10, 3.13 and 3.14; keep code compatible with all three. Card-database tests are
+runs the tests on Python 3.10, 3.13 and 3.14; keep code compatible with all three. It also runs pyflakes
+(`python3 scripts/lint.py`, after `pip install pyflakes`; findings fail the build) and, on pull requests,
+`scripts/parse_diff.py`, which lists every card whose parse changed against the base branch and fails if a
+card starts raising. Card-database tests are
 skipped when `cards.sqlite3` is missing, so build it before trusting a green run. The Forge tests use
 a fake Forge directory and don't need a real install; a real Forge run needs Java 17+, Maven and
 `scripts/install_forge.sh` (about 1.5 GB).

@@ -2,12 +2,11 @@
 import dataclasses
 import random
 import unittest
-from unittest.mock import patch
 
 from mtgsim.ai import BaselineAI
 from mtgsim.cards import Effect
-from mtgsim.engine import Game, Player, StackItem
-from mtgsim.identity import CardInstance, CardZone
+from mtgsim.engine import Game, Player
+from mtgsim.identity import CardInstance
 from mtgsim.rules_events import MoveIntent, Replacement, replace_event
 from tests.test_templates import BEAR, ISLAND, card
 

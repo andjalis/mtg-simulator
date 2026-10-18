@@ -5,7 +5,7 @@ import unittest
 from mtgsim.ai import HeuristicAI
 from mtgsim.engine import Game, Permanent, Player, find_payment, payable
 
-from tests.test_templates import BEAR, ISLAND, MOUNTAIN, PLAINS, card
+from tests.test_templates import BEAR, MOUNTAIN, card
 
 FILTER = card("Capital City", types="Land", text="{T}: Add {C}.\n{1}, {T}: Add one mana of any color.".replace("{T}: Add {C}.\n", ""))
 DEVOTEE = card("Abzan Devotee", "{1}{W}", "Creature — Human", "{1}: Add {W}, {B}, or {G}. Activate only once each turn.", 1, 1)

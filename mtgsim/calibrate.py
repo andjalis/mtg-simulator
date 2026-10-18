@@ -25,7 +25,7 @@ from concurrent.futures import ProcessPoolExecutor
 from datetime import date
 
 from .ranks import RANKS as POOLS
-from .rating import BAND, RANKS, RATINGS_FILE, expected, rank_for
+from .rating import RANKS, RATINGS_FILE, expected, rank_for
 
 SHRINK = 4          # virtual drawn games between each deck and its rank's mean rating
 C = math.log(10) / 400

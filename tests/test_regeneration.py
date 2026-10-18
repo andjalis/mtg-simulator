@@ -4,8 +4,8 @@ import unittest
 from unittest.mock import patch
 from mtgsim.ai import HeuristicAI, fight_group
 from mtgsim.cards import Effect
-from mtgsim.engine import Game, Player, StackItem, ability_worth
-from tests.test_templates import BEAR, ISLAND, card
+from mtgsim.engine import Game, Player, ability_worth
+from tests.test_templates import ISLAND, card
 
 
 class Regeneration(unittest.TestCase):

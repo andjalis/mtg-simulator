@@ -1,7 +1,6 @@
 """Recruit, Increment, discard costs, tapped-target discounts and other cheap lines."""
 import unittest
 
-from mtgsim.cards import make_token
 
 from tests.test_templates import BEAR, ISLAND, MOUNTAIN, PLAINS, card
 from tests.test_empower_discover import Base
