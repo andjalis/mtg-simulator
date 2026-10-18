@@ -208,6 +208,8 @@ a successful, nonempty build. Forge's data has no sets or format legality.
 Each card's rules text is matched against templates the engine understands.
 Text that does not match is ignored and reported. Template coverage helps identify gaps;
 it cannot prove correct rules execution or quantify how trustworthy a win rate is.
+The [rules architecture audit and implementation plan](results/rules_architecture/README.md)
+documents reproduced gaps, Forge integration limits, and a proposed behavior-evidence report.
 
 `--coverage` reports this per deck without playing: each card is template-matched, simplified (played in a looser way, such as a fetch land cracked as
 soon as it enters or an optional extra cost never paid), partly supported (the

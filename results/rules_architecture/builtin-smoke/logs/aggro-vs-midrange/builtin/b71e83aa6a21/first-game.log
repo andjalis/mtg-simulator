@@ -1,0 +1,59 @@
+AUDIT {"event": "start", "player_turn": 0, "players": ["aggro", "midrange"], "first_player": 0, "life": [20, 20], "turn_unit": "player-turn"}
+AUDIT {"event": "keep", "player_turn": 0, "seat": 0, "mulligans": 0, "hand": ["Mountain", "Bloodthirsty Adversary", "Kami's Flare", "Lightning Strike", "Lightning Strike", "Mountain", "Mountain"]}
+AUDIT {"event": "mulligan", "player_turn": 0, "seat": 1, "hand": ["Tenacious Underdog", "Graveyard Trespasser", "Graveyard Trespasser", "Thoughtseize", "Fable of the Mirror-Breaker", "Tenacious Underdog", "Bonecrusher Giant"], "mulligans": 1}
+AUDIT {"event": "mulligan", "player_turn": 0, "seat": 1, "hand": ["Sheoldred, the Apocalypse", "Thoughtseize", "Fatal Push", "Graveyard Trespasser", "Blood Crypt", "Fable of the Mirror-Breaker", "Bonecrusher Giant"], "mulligans": 2}
+AUDIT {"event": "keep", "player_turn": 0, "seat": 1, "mulligans": 2, "hand": ["Tenacious Underdog", "Mountain", "Thoughtseize", "Tenacious Underdog", "Mountain"]}
+T1 aggro: plays Mountain
+T2 midrange: plays Mountain
+T3 aggro: plays Mountain
+T3 aggro: casts Bloodthirsty Adversary
+T3 aggro: Bloodthirsty Adversary resolves
+T3 aggro: Bloodthirsty Adversary trigger goes on the stack
+T3 aggro: Bloodthirsty Adversary trigger resolves
+T3 aggro: attacks with [Bloodthirsty Adversary(2/2)]
+AUDIT {"event": "life", "player_turn": 3, "seat": 1, "before": 20, "delta": -2, "after": 18, "cause": "Bloodthirsty Adversary: combat damage"}
+T4 midrange: plays Mountain
+T5 aggro: plays Mountain
+T5 aggro: casts Kumano Faces Kakkazan
+T5 aggro: Kumano Faces Kakkazan resolves
+T5 aggro: Kumano Faces Kakkazan chapter 1 chapter goes on the stack
+T5 aggro: Kumano Faces Kakkazan chapter 1 chapter resolves
+AUDIT {"event": "life", "player_turn": 5, "seat": 1, "before": 18, "delta": -1, "after": 17, "cause": "Kumano Faces Kakkazan: damage"}
+T5 aggro: attacks with [Bloodthirsty Adversary(2/2)]
+AUDIT {"event": "life", "player_turn": 5, "seat": 1, "before": 17, "delta": -2, "after": 15, "cause": "Bloodthirsty Adversary: combat damage"}
+T6 midrange: plays Mountain
+T7 aggro: Kumano Faces Kakkazan chapter 2 chapter goes on the stack
+T7 aggro: Kumano Faces Kakkazan chapter 2 chapter resolves
+T7 aggro: plays Mountain
+T7 aggro: attacks with [Bloodthirsty Adversary(2/2)]
+AUDIT {"event": "life", "player_turn": 7, "seat": 1, "before": 15, "delta": -2, "after": 13, "cause": "Bloodthirsty Adversary: combat damage"}
+T8 aggro: casts Lightning Strike -> [midrange]
+T8 aggro: Lightning Strike resolves
+AUDIT {"event": "life", "player_turn": 8, "seat": 1, "before": 13, "delta": -3, "after": 10, "cause": "Lightning Strike: damage"}
+T8 aggro: casts Lightning Strike -> [midrange]
+T8 aggro: Lightning Strike resolves
+AUDIT {"event": "life", "player_turn": 8, "seat": 1, "before": 10, "delta": -3, "after": 7, "cause": "Lightning Strike: damage"}
+T9 aggro: Kumano Faces Kakkazan chapter 3 chapter goes on the stack
+T9 aggro: Kumano Faces Kakkazan chapter 3 chapter resolves
+T9 aggro: Kumano Faces Kakkazan transforms into Etching of Kumano
+T9 aggro: casts Kumano Faces Kakkazan
+T9 aggro: Kumano Faces Kakkazan resolves
+T9 aggro: Kumano Faces Kakkazan chapter 1 chapter goes on the stack
+T9 aggro: Kumano Faces Kakkazan chapter 1 chapter resolves
+AUDIT {"event": "life", "player_turn": 9, "seat": 1, "before": 7, "delta": -1, "after": 6, "cause": "Kumano Faces Kakkazan: damage"}
+T9 aggro: attacks with [Bloodthirsty Adversary(2/2), Etching of Kumano(2/2)]
+AUDIT {"event": "life", "player_turn": 9, "seat": 1, "before": 6, "delta": -2, "after": 4, "cause": "Bloodthirsty Adversary: combat damage"}
+AUDIT {"event": "life", "player_turn": 9, "seat": 1, "before": 4, "delta": -2, "after": 2, "cause": "Etching of Kumano: combat damage"}
+T11 aggro: Kumano Faces Kakkazan chapter 2 chapter goes on the stack
+T11 aggro: Kumano Faces Kakkazan chapter 2 chapter resolves
+T11 aggro: casts Kumano Faces Kakkazan
+T11 aggro: Kumano Faces Kakkazan resolves
+T11 aggro: Kumano Faces Kakkazan chapter 1 chapter goes on the stack
+T11 aggro: Kumano Faces Kakkazan chapter 1 chapter resolves
+AUDIT {"event": "life", "player_turn": 11, "seat": 1, "before": 2, "delta": -1, "after": 1, "cause": "Kumano Faces Kakkazan: damage"}
+T11 aggro: attacks with [Bloodthirsty Adversary(2/2), Etching of Kumano(2/2)]
+AUDIT {"event": "life", "player_turn": 11, "seat": 1, "before": 1, "delta": -2, "after": -1, "cause": "Bloodthirsty Adversary: combat damage"}
+AUDIT {"event": "life", "player_turn": 11, "seat": 1, "before": -1, "delta": -2, "after": -3, "cause": "Etching of Kumano: combat damage"}
+AUDIT {"event": "loss", "player_turn": 11, "seat": 1, "cause": "life total 0 or less"}
+T11 midrange: game over, winner: aggro
+AUDIT {"event": "result", "player_turn": 11, "winner": 0, "life": [20, -3], "lost": [false, true], "reason": "loss", "player_turns": 11}

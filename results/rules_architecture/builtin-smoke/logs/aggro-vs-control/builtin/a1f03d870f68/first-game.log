@@ -1,0 +1,149 @@
+AUDIT {"event": "start", "player_turn": 0, "players": ["aggro", "control"], "first_player": 0, "life": [20, 20], "turn_unit": "player-turn"}
+AUDIT {"event": "keep", "player_turn": 0, "seat": 0, "mulligans": 0, "hand": ["Mountain", "Bloodthirsty Adversary", "Kami's Flare", "Lightning Strike", "Lightning Strike", "Mountain", "Mountain"]}
+AUDIT {"event": "keep", "player_turn": 0, "seat": 1, "mulligans": 0, "hand": ["Island", "Eiganjo, Seat of the Empire", "Otawara, Soaring City", "Consider", "Lay Down Arms", "Island", "Plains"]}
+T1 aggro: plays Mountain
+T2 control: plays Deserted Beach
+T3 aggro: plays Mountain
+T3 aggro: casts Bloodthirsty Adversary
+T3 aggro: Bloodthirsty Adversary resolves
+T3 aggro: Bloodthirsty Adversary trigger goes on the stack
+T3 aggro: Bloodthirsty Adversary trigger resolves
+T3 aggro: attacks with [Bloodthirsty Adversary(2/2)]
+AUDIT {"event": "life", "player_turn": 3, "seat": 1, "before": 20, "delta": -2, "after": 18, "cause": "Bloodthirsty Adversary: combat damage"}
+T4 control: plays Island
+T5 aggro: plays Mountain
+T5 aggro: casts Kumano Faces Kakkazan
+T5 aggro: Kumano Faces Kakkazan resolves
+T5 aggro: Kumano Faces Kakkazan chapter 1 chapter goes on the stack
+T5 aggro: Kumano Faces Kakkazan chapter 1 chapter resolves
+AUDIT {"event": "life", "player_turn": 5, "seat": 1, "before": 18, "delta": -1, "after": 17, "cause": "Kumano Faces Kakkazan: damage"}
+T5 aggro: attacks with [Bloodthirsty Adversary(2/2)]
+AUDIT {"event": "life", "player_turn": 5, "seat": 1, "before": 17, "delta": -2, "after": 15, "cause": "Bloodthirsty Adversary: combat damage"}
+T5 control: casts Consider
+T5 control: Consider resolves
+T6 control: plays Eiganjo, Seat of the Empire
+T7 aggro: Kumano Faces Kakkazan chapter 2 chapter goes on the stack
+T7 aggro: Kumano Faces Kakkazan chapter 2 chapter resolves
+T7 aggro: plays Mountain
+T7 aggro: attacks with [Bloodthirsty Adversary(2/2)]
+T7 control: casts Fateful Absence -> [Bloodthirsty Adversary(2/2), None]
+T7 control: Fateful Absence resolves
+T7 aggro: Bloodthirsty Adversary dies
+T7 aggro: creates 1 clue token(s)
+T8 control: plays Otawara, Soaring City
+T8 aggro: cracks a Clue
+T9 aggro: Kumano Faces Kakkazan chapter 3 chapter goes on the stack
+T9 aggro: Kumano Faces Kakkazan chapter 3 chapter resolves
+T9 aggro: Kumano Faces Kakkazan transforms into Etching of Kumano
+T9 aggro: casts Kumano Faces Kakkazan
+T9 aggro: Kumano Faces Kakkazan resolves
+T9 aggro: Kumano Faces Kakkazan chapter 1 chapter goes on the stack
+T9 aggro: Kumano Faces Kakkazan chapter 1 chapter resolves
+AUDIT {"event": "life", "player_turn": 9, "seat": 1, "before": 15, "delta": -1, "after": 14, "cause": "Kumano Faces Kakkazan: damage"}
+T9 aggro: casts Kumano Faces Kakkazan
+T9 aggro: Kumano Faces Kakkazan resolves
+T9 aggro: Kumano Faces Kakkazan chapter 1 chapter goes on the stack
+T9 aggro: Kumano Faces Kakkazan chapter 1 chapter resolves
+AUDIT {"event": "life", "player_turn": 9, "seat": 1, "before": 14, "delta": -1, "after": 13, "cause": "Kumano Faces Kakkazan: damage"}
+T9 aggro: attacks with [Etching of Kumano(2/2)]
+AUDIT {"event": "life", "player_turn": 9, "seat": 1, "before": 13, "delta": -2, "after": 11, "cause": "Etching of Kumano: combat damage"}
+T9 control: casts Memory Deluge
+T9 control: Memory Deluge resolves
+T9 control: digs 4, keeps [<Doomskar>, <Consider>]
+T10 control: plays Island
+T10 control: casts The Wandering Emperor
+T10 control: The Wandering Emperor resolves
+T10 control: activates The Wandering Emperor [-2] loyalty -> [Etching of Kumano(2/2), None]
+T10 control: The Wandering Emperor [-2] loyalty resolves
+T10 aggro: Etching of Kumano dies
+AUDIT {"event": "life", "player_turn": 10, "seat": 1, "before": 11, "delta": 2, "after": 13, "cause": "The Wandering Emperor: gain_life"}
+T10 aggro: casts Lightning Strike -> [The Wandering Emperor[1]]
+T10 aggro: Lightning Strike resolves
+T10 control: The Wandering Emperor dies
+T11 aggro: Kumano Faces Kakkazan chapter 2 chapter goes on the stack
+T11 aggro: Kumano Faces Kakkazan chapter 2 chapter goes on the stack
+T11 aggro: Kumano Faces Kakkazan chapter 2 chapter resolves
+T11 aggro: Kumano Faces Kakkazan chapter 2 chapter resolves
+T11 aggro: casts Eidolon of the Great Revel
+T11 aggro: Eidolon of the Great Revel resolves
+T11 control: casts Consider
+T11 aggro: Eidolon of the Great Revel trigger goes on the stack
+T11 aggro: Eidolon of the Great Revel trigger resolves
+AUDIT {"event": "life", "player_turn": 11, "seat": 1, "before": 13, "delta": -2, "after": 11, "cause": "Eidolon of the Great Revel: damage"}
+T11 control: Consider resolves
+T12 control: plays Plains
+T12 control: foretells a card
+T13 aggro: Kumano Faces Kakkazan chapter 3 chapter goes on the stack
+T13 aggro: Kumano Faces Kakkazan chapter 3 chapter goes on the stack
+T13 aggro: Kumano Faces Kakkazan chapter 3 chapter resolves
+T13 aggro: Kumano Faces Kakkazan transforms into Etching of Kumano
+T13 aggro: Kumano Faces Kakkazan chapter 3 chapter resolves
+T13 aggro: Kumano Faces Kakkazan transforms into Etching of Kumano
+T13 aggro: casts Soul-Scar Mage
+T13 aggro: Eidolon of the Great Revel trigger goes on the stack
+T13 aggro: Eidolon of the Great Revel trigger resolves
+AUDIT {"event": "life", "player_turn": 13, "seat": 0, "before": 20, "delta": -2, "after": 18, "cause": "Eidolon of the Great Revel: damage"}
+T13 aggro: Soul-Scar Mage resolves
+T13 aggro: attacks with [Etching of Kumano(2/2), Etching of Kumano(2/2), Eidolon of the Great Revel(2/2)]
+T13 control: casts Fateful Absence -> [Eidolon of the Great Revel(2/2), None]
+T13 aggro: Eidolon of the Great Revel trigger goes on the stack
+T13 aggro: Eidolon of the Great Revel trigger resolves
+AUDIT {"event": "life", "player_turn": 13, "seat": 1, "before": 11, "delta": -2, "after": 9, "cause": "Eidolon of the Great Revel: damage"}
+T13 control: Fateful Absence resolves
+T13 aggro: Eidolon of the Great Revel dies
+T13 aggro: creates 1 clue token(s)
+AUDIT {"event": "life", "player_turn": 13, "seat": 1, "before": 9, "delta": -2, "after": 7, "cause": "Etching of Kumano: combat damage"}
+AUDIT {"event": "life", "player_turn": 13, "seat": 1, "before": 7, "delta": -2, "after": 5, "cause": "Etching of Kumano: combat damage"}
+T14 control: plays Island
+T14 control: casts Doomskar (foretold)
+T14 control: Doomskar (foretold) resolves
+T14 aggro: Etching of Kumano dies
+T14 aggro: Etching of Kumano dies
+T14 aggro: Soul-Scar Mage dies
+T14 aggro: casts Lightning Strike -> [control]
+T14 control: casts Make Disappear -> [Lightning Strike]
+T14 control: Make Disappear resolves
+T14 control: Lightning Strike is countered
+T15 aggro: plays Mountain
+T16 control: plays Adarkar Wastes
+T16 control: foretells a card
+T16 aggro: cracks a Clue
+T17 aggro: plays Mountain
+T17 aggro: casts Light Up the Stage
+T17 aggro: Light Up the Stage resolves
+T17 control: casts Thirst for Discovery
+T17 control: Thirst for Discovery resolves
+T17 control: discards Adarkar Wastes
+T17 control: discards Memory Deluge
+T18 control: plays Hall of Storm Giants
+T18 aggro: casts Play with Fire -> [control, None]
+T18 aggro: Play with Fire resolves
+AUDIT {"event": "life", "player_turn": 18, "seat": 1, "before": 5, "delta": -2, "after": 3, "cause": "Play with Fire: damage"}
+T19 aggro: plays Mountain
+T19 aggro: casts Soul-Scar Mage
+T19 aggro: Soul-Scar Mage resolves
+T19 control: casts Memory Deluge (flashback)
+T19 control: Memory Deluge (flashback) resolves
+T19 control: digs 7, keeps [<Depopulate>, <Wedding Announcement>]
+T20 control: plays Deserted Beach
+T20 control: casts Wedding Announcement
+T20 control: Wedding Announcement resolves
+T20 control: casts Lay Down Arms -> [Soul-Scar Mage(1/2), None]
+T20 control: Lay Down Arms resolves
+T20 aggro: Soul-Scar Mage dies
+AUDIT {"event": "life", "player_turn": 20, "seat": 0, "before": 18, "delta": 3, "after": 21, "cause": "Lay Down Arms: gain_life"}
+T20 control: Wedding Announcement trigger goes on the stack
+T20 control: Wedding Announcement trigger resolves
+T20 control: creates 1 Human token(s)
+T21 aggro: casts Bloodthirsty Adversary
+T21 aggro: Bloodthirsty Adversary resolves
+T21 aggro: Bloodthirsty Adversary trigger goes on the stack
+T21 aggro: Bloodthirsty Adversary trigger resolves
+T21 aggro: casts a copy of Light Up the Stage -> [None]
+T21 aggro: copy of Light Up the Stage resolves
+T21 aggro: casts Lightning Strike -> [control]
+T21 aggro: Lightning Strike resolves
+AUDIT {"event": "life", "player_turn": 21, "seat": 1, "before": 3, "delta": -3, "after": 0, "cause": "Lightning Strike: damage"}
+AUDIT {"event": "loss", "player_turn": 21, "seat": 1, "cause": "life total 0 or less"}
+T21 control: game over, winner: aggro
+AUDIT {"event": "result", "player_turn": 21, "winner": 0, "life": [21, 0], "lost": [false, true], "reason": "loss", "player_turns": 21}
