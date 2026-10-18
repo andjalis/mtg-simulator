@@ -29,6 +29,10 @@ def parse_full(text: str) -> Decklist:
     out = Decklist()
     target = out.main
     for raw in text.splitlines():
+        # Only a genuinely blank line separates an MTGO sideboard. Comments
+        # may appear between main-deck sections, including after card 60.
+        if raw.lstrip().startswith(("#", "//")):
+            continue
         line = raw.split("//")[0] if "//" in raw and not re.search(r"\w\s//\s\w", raw) else raw
         line = line.split("#")[0].strip()
         if not line:
