@@ -15,8 +15,10 @@ _THEIRS = r"(?:an opponent controls|you don't control)"
 
 
 def _destroy(target, flt):
-    from .cards import Effect
-    return lambda m: Effect("destroy", target=target, filter=flt(m) if callable(flt) else flt)
+    def build(m):
+        from .cards import Effect  # at match time: this module loads before cards
+        return Effect("destroy", target=target, filter=flt(m) if callable(flt) else flt)
+    return build
 
 
 EFFECT_PATTERNS = [

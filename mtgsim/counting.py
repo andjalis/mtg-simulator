@@ -47,9 +47,8 @@ def _n(w: str) -> int:
 
 
 def _per(kind, scope="battlefield", **kw):
-    from .cards import Effect
-
     def build(m):
+        from .cards import Effect  # at match time: this module loads before cards
         what = _singular(m["what"])
         return Effect(kind, kw.get("amount", 1), target=kw.get("target", "none"),
                       data={"per": {"what": what, "zone": scope}})
