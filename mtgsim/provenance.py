@@ -48,7 +48,8 @@ def runtime_identity(include_forge=False, forge_dir=None, java="java") -> dict:
     data = {str(p.resolve()): file_hash(p) for p in
             (carddb.BUILTIN, carddb.CACHE, carddb.ALL_CARDS,
              Path(str(carddb.ALL_CARDS) + "-wal"))}
-    identity = {"schema": 1, "code": {p.name: file_hash(p) for p in sorted((ROOT / "mtgsim").glob("*.py"))},
+    identity = {"schema": 1, "code": {p.relative_to(ROOT / "mtgsim").as_posix(): file_hash(p)
+                                       for p in sorted((ROOT / "mtgsim").rglob("*.py"))},
                 "card_data": data, "python": platform.python_version(), "platform": platform.platform()}
     if include_forge:
         folder, jar = find_forge(forge_dir)

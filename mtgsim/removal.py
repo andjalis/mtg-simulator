@@ -92,7 +92,7 @@ def _removal_pattern(m):
     from .cards import Effect, NO_MATCH
     types = [t for t in re.split(r",? or |, ", m[2]) if t]
     if not (m[3] or m[4]) and len(types) == 1 and types[0] in ("creature", "artifact", "enchantment"):
-        return NO_MATCH            # the plain templates in cards.py handle these
+        return NO_MATCH            # the plain templates in cards/patterns.py handle these
     kind = types[0] if len(types) == 1 and types[0] in ("creature", "artifact") else "nonland_perm"
     stat = {"mana value": "cmc", "power": "power", "toughness": "toughness"}.get(m[4], "")
     cond = f"{stat}{'<=' if m[6] == 'less' else '>='}{m[5]}" if stat else ""

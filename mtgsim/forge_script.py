@@ -14,7 +14,7 @@ parameter outside the known subset, is reported as untranslatable with the reaso
 The report answers one question for item I of the gap plan: if the engine read Forge scripts
 instead of (or after) its oracle-text templates, how much of Standard's ignored text would it
 cover, and which Forge APIs would have to be added to the engine to cover more? It does not
-change how cards are loaded (`cards.py` owns that).
+change how cards are loaded (`mtgsim/cards/` owns that).
 
 Checks of the mapping itself: on the cards the oracle templates already play fully, the
 translation is compared with the templates' effects (`agreement` in the report).
@@ -220,7 +220,7 @@ def _change_zone(p):
     _only(p, {"ValidTgts", "Origin", "Destination", "Defined"}, "ChangeZone")
     route = (p.get("Origin"), p.get("Destination"))
     val = p.get("ValidTgts", "")
-    if route == ("Battlefield", "Exile") and val in _DESTROY_TGT:     # cards.py plays exile as destroy
+    if route == ("Battlefield", "Exile") and val in _DESTROY_TGT:     # the cards package plays exile as destroy
         return [Effect("destroy", target=_DESTROY_TGT[val])]
     if route == ("Battlefield", "Hand") and val in ("Permanent.nonLand", "Permanent.nonLand+OppCtrl", "Creature",
                                                      "Creature.OppCtrl", "Permanent.nonLand+YouDontCtrl"):

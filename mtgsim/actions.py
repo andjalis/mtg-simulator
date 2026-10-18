@@ -39,7 +39,7 @@ class Transaction:
             self.capture_dict(obj, _DEFINITION_FIELDS | {'definition'})
         elif isinstance(obj, CardDef):
             self.capture_dict(obj, _DEFINITION_FIELDS)
-        elif type(obj).__module__ == 'mtgsim.engine':
+        elif type(obj).__module__.startswith('mtgsim.engine.'):
             self.capture_dict(obj)
 
     def capture_dict(self, obj, skip=frozenset()):

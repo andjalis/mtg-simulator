@@ -7,7 +7,7 @@ and pawprint modes ("Choose up to five {P} worth of modes." with "{P}{P} — EFF
 modes ("• Puff Piece — EFFECT") lose their name. An upgrade sentence ("If this spell was cast
 using teamwork, choose both instead.") is played without the upgrade and reported as simplified.
 
-`cards.py` parses headers and bullet lines with `parse_header` / `parse_bullet` and keeps the
+`cards/parse.py` parses headers and bullet lines with `parse_header` / `parse_bullet` and keeps the
 modes in a `Modes` list, which carries its `ModeSpec`. The engine calls `pick` when a modal spell,
 trigger or ability goes on the stack, and `value` to judge whether one is worth casting. The
 simple case (at most N modes, each once) goes through the player's ``choose_modes`` hook, so an
