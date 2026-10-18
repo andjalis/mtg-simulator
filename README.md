@@ -20,7 +20,7 @@ python3 -m unittest discover -s tests -t .       # tests
 
 Needs only Python 3.10+, no packages.
 
-GitHub Actions runs the tests on Python 3.10 and 3.13 for every push and pull request
+GitHub Actions runs the tests on Python 3.10, 3.13 and 3.14 for every push and pull request
 (`.github/workflows/tests.yml`); the card database is rebuilt there once a week and cached.
 
 ## Decklists
@@ -47,7 +47,7 @@ from and how the ranks were checked.
 
 Ranks and MMR are internal scores against these fixed pools, not Arena ranks/MMR,
 player skill ratings or calibrated tournament predictions. Pool anchors are assigned,
-not inferred from human results. A ladder or tier run uses these labels: Bronze, Silver, Gold, Platinum,
+not inferred from human results. A ladder or rank run uses these labels: Bronze, Silver, Gold, Platinum,
 Diamond, Master and Grandmaster, each a 200-point MMR band (Silver starts at 1000, Grandmaster at
 2000). Each rank's opponent pool is anchored at the middle of that rank's band (a custom pool not named
 after a rank is spread over the bands in order), and the deck's MMR is its
@@ -228,8 +228,8 @@ database is required. See [the scenario scope](rules/README.md).
 
 `--coverage` reports this per deck without playing: each card is template-matched, simplified (played in a looser way, such as a fetch land cracked as
 soon as it enters or an optional extra cost never paid), partly supported (the
-ignored text is listed) or unknown. It works on decklists and on whole tiers
-(`--coverage --tier all`). These labels describe template recognition, not verified rules correctness. Use
+ignored text is listed) or unknown. It works on decklists and on whole rank pools
+(`--coverage --rank all`). These labels describe template recognition, not verified rules correctness. Use
 `--engine forge` for a broader implementation and review both engines' logs.
 
 Measure the entire offline database, including basic lands and cards outside Standard:

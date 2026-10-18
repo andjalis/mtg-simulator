@@ -15,7 +15,7 @@ Grandmaster, MMR), deck assessment, and a web page (`web/`). The built-in engine
 
 ```
 python3 -m mtgsim.build_carddb                 # once per clone; builds mtgsim/data/cards.sqlite3 (~13 s)
-python3 -m unittest discover -s tests -t .     # full suite (can take a few minutes)
+python3 -m unittest discover -s tests -t .     # full suite (900+ tests, about five minutes)
 python3 -m mtgsim A.txt B.txt -n 1000          # matchup
 python3 -m mtgsim A.txt --gauntlet B.txt C.txt # one deck vs several
 python3 -m mtgsim A.txt B.txt -n 1 --log       # play-by-play of one game
@@ -27,7 +27,7 @@ python3 -m web                                 # http://127.0.0.1:8000
 ```
 
 Python 3.10+ only, standard library only. Do not add dependencies. CI (`.github/workflows/tests.yml`)
-runs the tests on Python 3.10 and 3.13; keep code compatible with both. Card-database tests are
+runs the tests on Python 3.10, 3.13 and 3.14; keep code compatible with all three. Card-database tests are
 skipped when `cards.sqlite3` is missing, so build it before trusting a green run. The Forge tests use
 a fake Forge directory and don't need a real install; a real Forge run needs Java 17+, Maven and
 `scripts/install_forge.sh` (about 1.5 GB).
@@ -39,6 +39,9 @@ a fake Forge directory and don't need a real install; a real Forge run needs Jav
 | `mtgsim/engine.py` | Game state, turns, stack and priority, triggers, combat, default response policy |
 | `mtgsim/ai.py` | `HeuristicAI` (default) and `BaselineAI` (old player, kept for comparison) |
 | `mtgsim/cards.py`, `carddb.py` | Card data; oracle-text templates; lookup order and Scryfall fallback |
+| `mtgsim/identity.py`, `rules_events.py`, `continuous.py`, `actions.py` | Rules foundation: physical card identities and zones, shared rules events, scoped continuous effects, transactional actions |
+| `mtgsim/removal.py`, `copies.py`, `auras.py`, `search.py`, ... | Template modules: one mechanic family each (patterns plus engine helpers) |
+| `mtgsim/behavior_coverage.py`, `rules/` | Behavior evidence: capability catalog, scenario map, evidence ledgers |
 | `mtgsim/build_carddb.py` | Builds the card DB from Scryfall bulk data or Forge scripts |
 | `mtgsim/decklist.py` | Decklist parsing |
 | `mtgsim/runner.py` | Match loop and statistics |
