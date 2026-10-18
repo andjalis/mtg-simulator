@@ -1,0 +1,2 @@
+# Preserve captured third-party output exactly, including its trailing spaces.
+results/rules_evidence/forge-probe.log -whitespace

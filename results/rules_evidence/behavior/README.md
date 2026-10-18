@@ -1,6 +1,6 @@
 # Behavior evidence
 
-Scope: `targeting-legend-equip-v1`. Identity: `d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983`.
+Scope: `targeting-legend-equip-v1`. Identity: `b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51`.
 
 Inventory: 34,922 distinct local database entries. Required scenarios: 17.
 

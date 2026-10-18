@@ -53,7 +53,7 @@
   ],
   "card_denominator": 34922,
   "card_requirements_scope": "Only three capability families assessed; remaining rules unclassified. No card is designated completely rules-supported.",
-  "cards_csv_sha256": "2f214c23eb52b8827ee223c5e3e77bbefca3d87783245839ea02806d1efbf1ef",
+  "cards_csv_sha256": "d999b7d78b7f17e3e38af8d89e86acf494b2b6269ce429d132799ef3b4bac49a",
   "cards_with_current_direct_evidence": 2,
   "cards_with_only_current_capability_evidence": 7031,
   "complete_rules_support": "not measured",
@@ -64,7 +64,7 @@
     "pass": 17,
     "stale": 0
   },
-  "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+  "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
   "scenario_denominator": 17,
   "scenarios": [
     {

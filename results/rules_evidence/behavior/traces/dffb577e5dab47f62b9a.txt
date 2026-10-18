@@ -1,6 +1,6 @@
 test_invalid_explicit_cast_does_not_pay (tests.test_rules_contracts.RulesContracts.test_invalid_explicit_cast_does_not_pay) ... ok
 
 ----------------------------------------------------------------------
-Ran 1 test in 0.000s
+Ran 1 test in 0.001s
 
 OK

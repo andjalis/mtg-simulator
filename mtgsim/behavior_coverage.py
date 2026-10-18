@@ -203,7 +203,7 @@ def save(report, folder):
     fields = ["name", "template_status", "required_capabilities", "declared_gaps", "current_direct_scenarios",
               "current_capability_scenarios", "failures", "untested_requirements", "evidence_status", "error"]
     with (folder / "cards.csv").open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore")
+        writer = csv.DictWriter(f, fieldnames=fields, extrasaction="ignore", lineterminator="\n")
         writer.writeheader()
         for row in report["cards"]:
             writer.writerow({k: json.dumps(v) if isinstance(v, list) else v for k, v in row.items()})

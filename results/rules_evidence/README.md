@@ -65,7 +65,8 @@ the Forge runtime. Production loading does not use that importer.
 
 - Full Python suite: 877 tests ran, 876 passed, one skipped. The two subsequently
   added comparator tests also passed separately. [Full output](python-tests.txt)
-  and [comparator output](comparison-tests.txt).
+  and [comparator output](comparison-tests.txt). All 31 focused rules/report/comparison
+  checks also passed after the final CSV formatting fix ([output](focused-tests.txt)).
 - All 17 behavior scenarios pass; reporting checks cover stale hashes, duplicates,
   unknown/missing mappings, absent evidence, real assertion failures and skips,
   dependency cycles and direct-versus-inferred evidence.

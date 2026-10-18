@@ -3,18 +3,18 @@
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "3c7f536618f9aa5f10e2c1850c1d9000f54e0bbbb7e8a07b44911596358d4c35",
       "scenario_id": "target_type_membership",
       "schema": 1,
       "tests_run": 1,
       "trace": "traces/7bbe564c6bea81a9e50a.txt",
-      "trace_sha256": "f0d4e3375720dc29eb05098328d29b82ae432e4c2df1dafc18369a2dfaf8c7b5"
+      "trace_sha256": "809f04d0f941d62f3d22204d3ad8220ff69be2f02d32c0779481b87125e315cf"
     },
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "1d4bbd328f3873fdb4eff6ec075eaed02ae3c4e3e9f3722874dfd6eb081889f8",
       "scenario_id": "target_controller_shroud_presence",
       "schema": 1,
@@ -25,7 +25,7 @@
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "2be480092a1a5d0041109e60c88661063e3f2e9f02d3419f587d2d1c00fbc4a3",
       "scenario_id": "target_type_changes_before_resolution",
       "schema": 1,
@@ -36,7 +36,7 @@
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "bfdcd88185b3bb1c2060cc13f2c8182949500b71ef4d4650203be6e945de3994",
       "scenario_id": "filtered_planeswalker_and_animated_land",
       "schema": 1,
@@ -47,18 +47,18 @@
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "518b72f0afe74f203fe88e785736b22cafa82f3a25bbe10a0937195b059f3bf4",
       "scenario_id": "invalid_explicit_cast_does_not_pay",
       "schema": 1,
       "tests_run": 1,
       "trace": "traces/dffb577e5dab47f62b9a.txt",
-      "trace_sha256": "311faa145018a45f612cd89d1752632af02a2815b51900862c93eee2a718d212"
+      "trace_sha256": "6091493a5f7288dced62eb9ef9caf11403b3a4eecf1478a982886ae142cd0c40"
     },
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "4504f05052c58a5fc92c3ba064c622aaa506aa8776af3bb5d9d96ca88d5e6c34",
       "scenario_id": "legend_controller_chooses",
       "schema": 1,
@@ -69,7 +69,7 @@
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "aa95bb53bba5bc059d9abdeb894d801acc344843f788bc8e8128214c741bdb8a",
       "scenario_id": "legend_not_destruction_or_sacrifice",
       "schema": 1,
@@ -80,7 +80,7 @@
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "65c082cfcc8a3c6a8b8537f80b92aba9f920f8ca19b730b556a51cf542d17eab",
       "scenario_id": "legend_groups_and_other_controllers",
       "schema": 1,
@@ -91,7 +91,7 @@
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "61ff2b5d4ab2666a0358a60e364a825f5863a908287bfe8d3c6bd5291d48e2a8",
       "scenario_id": "legend_control_change_routes_to_owner",
       "schema": 1,
@@ -102,7 +102,7 @@
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "25a934e09b0329e357b294cdc7727ccfb79b522c8e160f73e318649ce615180c",
       "scenario_id": "legend_choice_precedes_lethal_removal",
       "schema": 1,
@@ -113,7 +113,7 @@
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "84f888a2bfd674efb223efa840869ad7c342496080ad1179c52424cdb04e1598",
       "scenario_id": "equip_queues_then_attaches",
       "schema": 1,
@@ -124,7 +124,7 @@
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "f9416394ff938972e7fda88978df06f17ba4afc922c18e1dffa34ef1bb08d026",
       "scenario_id": "equip_target_removed_in_response",
       "schema": 1,
@@ -135,7 +135,7 @@
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "3dde5d1e6a65e43745e20622bf43ff6c536375d856357ff2793c4b4e9e8a8efe",
       "scenario_id": "equip_source_leaves_and_returns",
       "schema": 1,
@@ -146,7 +146,7 @@
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "2283f1182be3291f3f84fe94a344cb23dc9fb5999f823300c5abf0e1537ea8a2",
       "scenario_id": "equip_target_changes_controller",
       "schema": 1,
@@ -157,7 +157,7 @@
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "b188d6dac0eea7fc4931e80f3848f3b154fab3f7cebb8ecb11c2be8fc7beb83f",
       "scenario_id": "equip_source_changes_controller",
       "schema": 1,
@@ -168,7 +168,7 @@
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "2b0f4e39dfa667130afd74fb38566c12787fe6e09531f28fb96252b40c0dcd53",
       "scenario_id": "equip_invalid_action_preserves_state",
       "schema": 1,
@@ -179,7 +179,7 @@
     {
       "engine": "builtin",
       "outcome": "pass",
-      "run_identity": "d7a5fb2a126929ffa3f063572f1c7c1f1b96b7de09b769f0338e4554a8d4e983",
+      "run_identity": "b28f29f7da590f81315b3824aab86120b65daf3b62c820236368ccbd875b9e51",
       "scenario_hash": "1bf68f9ba185e63542a41d8357ddb9ad738b6b76ea96655e3b926269bf9154fd",
       "scenario_id": "equip_animated_source_cannot_attach",
       "schema": 1,

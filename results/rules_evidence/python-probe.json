@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "source_commit": "26b8fe4515823155fc828e8a907bd5eff1423f25",
+  "source_commit": "14a0375fe884b295dce0525de0fb00791eef6497",
   "scope": "Four bounded architecture observations; not card conformance coverage",
   "runtime": {
     "schema": 1,
@@ -10,7 +10,7 @@
       "ai.py": "8aa2cc7e29d1a88b019c5569c8f3d85de87018190b1f60b6cfc3a8c28c6c4584",
       "assess.py": "3d10d470c5b11a26262f1db272937505ae04347d7776570732ba4cbf37778dab",
       "auras.py": "9384b66181a85eb990860be24bc5f8655370a73f606a2ad4d605195026ff4bf9",
-      "behavior_coverage.py": "184d6fa34302bbce0322a0ab330c2a29b62e7415bf895f5fed7da14deae4fcbc",
+      "behavior_coverage.py": "971dee7846c075caceb3964e873d2b54ff15585f6856288cd0759a871da5aea0",
       "benchmark.py": "bf571b43d70cf8622acc3eb5f277dad78cd142aabae81c1c5f6faedc40cefbfa",
       "browser.py": "2a89b0857eee75c139af26f157a774a62590e0623ce0afa1cf6b152d720fdc25",
       "build_carddb.py": "14db9221952d6703ac4aa0e70a0a6b56a26e9c08b0c1853ea73a1ca137451c66",
