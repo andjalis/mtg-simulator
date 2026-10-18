@@ -1,0 +1,335 @@
+{
+ "grandmaster/boros_dragons vs grandmaster/izzet_spellementals": {
+  "ignored_a": [
+   2,
+   18,
+   [
+    "Momo, Friendly Flier",
+    "Sarkhan, Dragon Ascendant"
+   ]
+  ],
+  "ignored_b": [
+   0,
+   19,
+   []
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.72,
+   "wins_a": 216,
+   "wins_b": 84
+  }
+ },
+ "grandmaster/izzet_spellementals vs grandmaster/mono_green_landfall": {
+  "ignored_a": [
+   0,
+   19,
+   []
+  ],
+  "ignored_b": [
+   2,
+   15,
+   [
+    "Demolition Field",
+    "Esper Origins"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.4333,
+   "wins_a": 130,
+   "wins_b": 170
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/boros_dragons": {
+  "ignored_a": [
+   0,
+   26,
+   []
+  ],
+  "ignored_b": [
+   2,
+   18,
+   [
+    "Momo, Friendly Flier",
+    "Sarkhan, Dragon Ascendant"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.1667,
+   "wins_a": 50,
+   "wins_b": 250
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/dimir_midrange": {
+  "ignored_a": [
+   0,
+   26,
+   []
+  ],
+  "ignored_b": [
+   4,
+   24,
+   [
+    "Kaito, Bane of Nightmares",
+    "The Wondrous Wasp",
+    "Tishana's Tidebinder",
+    "Wan Shi Tong, Librarian"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.4267,
+   "wins_a": 128,
+   "wins_b": 172
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/izzet_spellementals": {
+  "ignored_a": [
+   0,
+   26,
+   []
+  ],
+  "ignored_b": [
+   0,
+   19,
+   []
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.5167,
+   "wins_a": 155,
+   "wins_b": 145
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/jund_sacrifice": {
+  "ignored_a": [
+   0,
+   26,
+   []
+  ],
+  "ignored_b": [
+   0,
+   23,
+   []
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.71,
+   "wins_a": 213,
+   "wins_b": 87
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/mono_green_landfall": {
+  "ignored_a": [
+   0,
+   26,
+   []
+  ],
+  "ignored_b": [
+   2,
+   15,
+   [
+    "Demolition Field",
+    "Esper Origins"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.3867,
+   "wins_a": 116,
+   "wins_b": 184
+  }
+ },
+ "master/azorius_artifact_control vs master/dimir_control": {
+  "ignored_a": [
+   0,
+   26,
+   []
+  ],
+  "ignored_b": [
+   1,
+   22,
+   [
+    "Uldaros Theorix"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.37,
+   "wins_a": 111,
+   "wins_b": 189
+  }
+ },
+ "master/dimir_control vs grandmaster/jund_sacrifice": {
+  "ignored_a": [
+   1,
+   22,
+   [
+    "Uldaros Theorix"
+   ]
+  ],
+  "ignored_b": [
+   0,
+   23,
+   []
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.5733,
+   "wins_a": 172,
+   "wins_b": 128
+  }
+ },
+ "ub_snow_control vs bronze/land_glut": {
+  "ignored_a": [
+   0,
+   24,
+   []
+  ],
+  "ignored_b": [
+   0,
+   8,
+   []
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.79,
+   "wins_a": 237,
+   "wins_b": 63
+  }
+ },
+ "ub_snow_control vs grandmaster/dimir_midrange": {
+  "ignored_a": [
+   0,
+   24,
+   []
+  ],
+  "ignored_b": [
+   4,
+   24,
+   [
+    "Kaito, Bane of Nightmares",
+    "The Wondrous Wasp",
+    "Tishana's Tidebinder",
+    "Wan Shi Tong, Librarian"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.4767,
+   "wins_a": 143,
+   "wins_b": 157
+  }
+ },
+ "ub_snow_control vs grandmaster/jund_sacrifice": {
+  "ignored_a": [
+   0,
+   24,
+   []
+  ],
+  "ignored_b": [
+   0,
+   23,
+   []
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.6833,
+   "wins_a": 205,
+   "wins_b": 95
+  }
+ },
+ "ub_snow_control vs grandmaster/mono_green_landfall": {
+  "ignored_a": [
+   0,
+   24,
+   []
+  ],
+  "ignored_b": [
+   2,
+   15,
+   [
+    "Demolition Field",
+    "Esper Origins"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.5033,
+   "wins_a": 151,
+   "wins_b": 149
+  }
+ },
+ "ub_snow_control vs master/azorius_artifact_control": {
+  "ignored_a": [
+   0,
+   24,
+   []
+  ],
+  "ignored_b": [
+   0,
+   26,
+   []
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.43,
+   "wins_a": 129,
+   "wins_b": 171
+  }
+ },
+ "ub_snow_control vs silver/green_stompy": {
+  "ignored_a": [
+   0,
+   24,
+   []
+  ],
+  "ignored_b": [
+   0,
+   10,
+   []
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.7533,
+   "wins_a": 226,
+   "wins_b": 74
+  }
+ },
+ "ub_snow_control vs silver/uw_flyers": {
+  "ignored_a": [
+   0,
+   24,
+   []
+  ],
+  "ignored_b": [
+   0,
+   11,
+   []
+  ],
+  "python_new": {
+   "draws": 1,
+   "games": 300,
+   "win_rate_a": 0.8817,
+   "wins_a": 264,
+   "wins_b": 35
+  }
+ }
+}

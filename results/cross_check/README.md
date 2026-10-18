@@ -109,3 +109,17 @@ The full Forge run took about 4 hours on 4 cores.
 | platinum/azorius_control vs platinum/mono_green_stompy | 48% | 19% | 48% | +1% | +0.1 | 0 / 1 |  |
 | ub_snow_control vs platinum/rakdos_midrange | 35% | 34% | 35% | -0% | -0.0 | 0 / 0 |  |
 | platinum/azorius_control vs platinum/mono_red_aggro | 30% | 12% | 30% | +0% | +0.0 | 0 / 0 |  |
+
+## Forge pilot notes
+
+Forge's AI does not play every card it is given, so decks that rely on them read low in this
+comparison. Seen so far (Forge logs of 112 games of Dimir Control vs Jund Sacrifice, 2026-10-18):
+
+- **Seasoned Cryomancer** (4 copies in Dimir Control): cast 0 times. Forge's AI only discards or mills
+  it. The built-in AI casts it about once per game.
+- **Uldaros Theorix** (2 copies): cast 0 times in Forge, 0.27 per game in the built-in engine.
+
+Making Cryomancer and Theorix uncastable in the built-in engine moves Dimir Control vs Jund from 52%
+to 37 to 43%, which is 10 to 15 of the 30+ point gap to Forge. When a matchup disagrees, check
+`compare_dimir_jund_logs.py` (cards cast per game in Forge logs vs built-in games) before assuming
+a rules or card bug. See `RERUN_5_2026-10-18.md`.
