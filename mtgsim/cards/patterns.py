@@ -444,8 +444,11 @@ _EFFECT_PATTERNS = [
     (r"ADVERSARY", lambda m: Effect("adversary", data={"cost": {"generic": 2, "R": 1}})),
     (r"~ gains ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach))(?: and ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)))? until end of turn",
      lambda m: [Effect("grant", target="self", data={"keyword": k.lower()}) for k in m.groups() if k]),
-    (r"put (a|one|two|three) \+1/\+1 counters? on each (other )?creature you control",
-     lambda m: Effect("p1_counters", _num(m[1]), target="my_creatures", data={"other": bool(m[2])})),
+    (r"BLINKEND", lambda m: Effect("blink_end", target="creature_mine")),
+    (r"put (a|one|two|three) \+1/\+1 counters? on each (other )?(tapped |legendary )?(creature|[A-Z][a-z]+) you control",
+     lambda m: Effect("p1_counters", _num(m[1]), target="my_creatures",
+                      data={"other": bool(m[2]), "only": (m[3] or "").strip() or
+                            (m[4] if m[4] != "creature" else "")})),
     (r"(other )?creatures you control get \+(\d+)/\+(\d+)(?: and gain ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)))? until end of turn",
      lambda m: Effect("pump_all", int(m[2]), int(m[3]), data={"other": bool(m[1]), "keyword": (m[4] or "").lower()})),
     (r"(other )?creatures you control gain (KW) and get \+(\d+)/\+(\d+) until end of turn".replace("KW", "(?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)"),
@@ -461,6 +464,8 @@ _EFFECT_PATTERNS = [
 ]
 
 _SUBS = [
+    (re.compile(r"exile (?:another )?target creature you control\. return (?:it|that card) to the battlefield under its "
+                r"owner's control at the beginning of the next end step\.", re.I), lambda m: "BLINKEND."),
     (re.compile(r"counter target spell unless its controller pays \{(\d+)\}\. counter that spell unless its controller pays "
                 r"\{(\d+)\} instead if ~ was cast using teamwork\.", re.I), lambda m: f"COUNTERTW {m[1]} {m[2]}."),
     (re.compile(r"tap another target nonland permanent\. its activated abilities can't be activated for as long as it "

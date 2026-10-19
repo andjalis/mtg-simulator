@@ -818,3 +818,9 @@ The complete card inventory and ranked gaps are in
   an approximation in `--coverage`.
 - Equipment that grants a creature type, and the ability words Alliance, Void, Delirium, Hellbent, Metalcraft,
   Threshold and Ferocious are now recognised.
+
+## Round 18: counters on filtered creature sets and end-step blink
+
+- "Put N +1/+1 counters on each (other) tapped / legendary / <subtype> creature you control" (`only` filter on `p1_counters`).
+- "Exile target creature you control. Return it to the battlefield under its owner's control at the beginning of the next
+  end step" (`blink_end`, returned from `Game.blinked` after the end-step triggers).

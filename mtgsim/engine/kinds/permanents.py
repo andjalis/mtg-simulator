@@ -177,6 +177,15 @@ def blink_own(game, p, item, **_):
             game.enter_battlefield(p, card)
 
 
+@kind("blink_end")
+def blink_end(game, p, target, **_):
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        owner, card = target.controller, target.front
+        if game.leave_battlefield(target, "exile"):
+            owner.exile.remove(card)
+            game.blinked.append((card, owner))
+
+
 @kind("irencrag")
 def irencrag(game, p, item, **_):
     src = item.source if item is not None else None
