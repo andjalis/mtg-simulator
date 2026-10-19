@@ -9,7 +9,8 @@ from .. import auras as _auras
 from .model import (
     Activated, AltCost, BASIC_MANA, CardDef, Effect, NO_MATCH, Trigger, _num, add_mana, parse_mana_cost,
 )
-from .patterns import _EFFECT_PATTERNS, _SUBS, _TRIGGERS, _if_cond, _opt_rider, _xq
+from .clauses import _SUBS, _TRIGGERS, _if_cond, _opt_rider, _xq
+from .patterns import _EFFECT_PATTERNS
 
 
 def _parse_effects(text: str, opts: bool = False):

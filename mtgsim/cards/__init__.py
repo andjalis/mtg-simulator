@@ -4,8 +4,9 @@ Oracle text is matched sentence by sentence against a small set of templates.
 Anything that does not match is recorded in CardDef.unsupported so reports can
 say which cards are only partially simulated.
 
-Modules: model (data classes), patterns (oracle-text templates), parse (card parsing) and
-tokens. Mechanic modules such as removal.py and copies.py add their templates at the end of this file.
+Modules: model (data classes), patterns (effect templates), clauses (substitutions, trigger templates
+and clause helpers), parse and face_lines (card parsing) and tokens. Mechanic modules such as removal.py
+and copies.py add their templates at the end of this file.
 """
 from __future__ import annotations
 
@@ -19,9 +20,10 @@ from .model import (
     Trigger, AltCost, Activated, CardDef, parse_mana_cost, add_mana,
 )
 from .patterns import (
-    _parse_mana_ability, _token, _distinct_cant_block, _TENS, _tapped, _SRC, _EFFECT_PATTERNS, _SUBS, _TRIGGERS,
-    _OPT_RIDER, _opt_rider, _N_WORDS, _gy_move, _kw_target, _xq, _IF_CONDS, _if_cond,
+    _parse_mana_ability, _token, _distinct_cant_block, _TENS, _tapped, _SRC, _EFFECT_PATTERNS, _N_WORDS, _gy_move,
+    _kw_target,
 )
+from .clauses import _SUBS, _TRIGGERS, _OPT_RIDER, _opt_rider, _xq, _IF_CONDS, _if_cond
 from .parse import (
     _parse_effects, _split_compound, _apply_speed_gate, _face_types, card_from_scryfall, _cost_line, _parse_face,
     _mana_restriction, _SACRIFICE_KINDS, _parse_ability_cost, _parse_ability, _parse_trigger, _parse_trigger_line,
