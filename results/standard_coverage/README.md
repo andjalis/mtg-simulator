@@ -853,3 +853,14 @@ The complete card inventory and ranked gaps are in
   Tidebinder (no keywords, triggers, activated or loyalty abilities while the Tidebinder stays). The AI flashes it in
   against a valuable permanent's ability or a planeswalker activation.
 - Not done: Kaito, Bane of Nightmares (Ninjutsu, "during your turn he is a 3/4 Ninja", the Ninja emblem).
+
+## Dimir Midrange: Kaito, Bane of Nightmares
+
+- Ninjutsu: alt cost `ninjutsu`, played through the sneak hook (the AI returns its weakest unblocked attacker); the
+  card enters tapped and attacking even when it is not a creature card.
+- "During your turn, as long as ~ has loyalty counters on him, he's a 3/4 Ninja creature and has hexproof":
+  `CardDef.turn_creature`, applied by `animate_turn_creatures` at the start of the controller's turn and when the
+  card enters on that turn; the end-of-turn cleanup removes it.
+- Emblems: `Player.emblems` holds (creature type, +power, +toughness); "you get an emblem with 'Ninjas you control get
+  +1/+1'" is the `emblem` kind. Other emblem texts are not parsed.
+- Not done: Kaito's -9 emblem, combat damage dealt to Kaito as a creature does not remove loyalty counters.

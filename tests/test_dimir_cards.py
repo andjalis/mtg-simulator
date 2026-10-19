@@ -71,3 +71,50 @@ class Tidebinder(Dimir):
         self.assertFalse(self.game.can_activate(self.b, pinger, 0))
         self.game.leave_battlefield(tide, "graveyard")
         self.assertTrue(pinger.has("flying"))
+
+
+import dataclasses
+
+KAITO = dataclasses.replace(card(
+    "Test Kaito", "{2}{U}{B}", "Legendary Planeswalker — Kaito",
+    "Ninjutsu {1}{U}{B}\nDuring your turn, as long as ~ has one or more loyalty counters on him, he's a 3/4 Ninja "
+    "creature and has hexproof.\n[+1]: You get an emblem with \"Ninjas you control get +1/+1.\"\n[−2]: Draw a card."),
+    loyalty=4)
+BEAR2 = card("Test Bear Two", "{2}", "Creature — Bear", "", 2, 2)
+
+
+class Kaito(Dimir):
+    def test_template(self):
+        self.assertEqual(KAITO.unsupported, [])
+
+    def test_creature_on_own_turn_only(self):
+        perm = self.game.enter_battlefield(self.a, KAITO)
+        self.assertTrue(perm.is_creature)
+        self.assertEqual((perm.power, perm.toughness), (3, 4))
+        self.assertIn("Ninja", perm.card.subtypes)
+        self.assertTrue(perm.has("hexproof"))
+        perm.animated = None   # the end-of-turn cleanup
+        self.assertFalse(perm.is_creature)
+
+    def test_emblem_pumps_ninjas(self):
+        perm = self.game.enter_battlefield(self.a, KAITO)
+        self.game.activate_loyalty(self.a, perm, 0)
+        self.game.settle()
+        self.assertEqual(self.a.emblems, [("Ninja", 1, 1)])
+        self.assertEqual((perm.power, perm.toughness), (4, 5))
+
+    def test_ninjutsu_returns_unblocked_attacker(self):
+        bear = self.game.enter_battlefield(self.a, BEAR2)
+        bear.sick = False
+        self.game.attackers.append(bear)
+        self.game.attack_targets[bear] = self.b
+        self.a.hand.append(KAITO)
+        swamp = card("Swamp", types="Basic Land — Swamp", text="({T}: Add {B}.)")
+        for land in (ISLAND, ISLAND, swamp):
+            self.a.battlefield.append(Permanent(land, self.a))
+        alt = KAITO.alt_costs[0]
+        self.assertTrue(self.game.sneak(self.a, KAITO, alt, bear))
+        kaito = next(x for x in self.a.battlefield if x.card.name == KAITO.name)
+        self.assertTrue(kaito.tapped)
+        self.assertIn(kaito, self.game.attackers)
+        self.assertIn(BEAR2, self.a.hand)

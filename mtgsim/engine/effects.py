@@ -243,7 +243,7 @@ class EffectsMixin:
         self.leave_battlefield(attacker, "hand")
         self.log(f"sneaks in {card.name}, returning {attacker.card.name}", p)
         p.hand.remove(card)
-        if card.is_creature:
+        if card.is_creature or alt.kind == "ninjutsu":
             perm = self.enter_battlefield(p, card, tapped_attacking=True)
             self.attackers.append(perm)
             self.attack_targets[perm] = target

@@ -457,6 +457,8 @@ _EFFECT_PATTERNS = [
     (r"ADVERSARY", lambda m: Effect("adversary", data={"cost": {"generic": 2, "R": 1}})),
     (r"~ gains ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach))(?: and ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)))? until end of turn",
      lambda m: [Effect("grant", target="self", data={"keyword": k.lower()}) for k in m.groups() if k]),
+    (r'you get an emblem with "([A-Z][a-z]+)s you control get \+(\d+)/\+(\d+)\.?"',
+     lambda m: Effect("emblem", _num(m[2]), _num(m[3]), data={"subtype": m[1]})),
     (r"COUNTERABILITY", lambda m: Effect("counter_ability")),
     (r"BLINKEND", lambda m: Effect("blink_end", target="creature_mine")),
     (r"put (a|one|two|three) \+1/\+1 counters? on each (other )?(tapped |legendary )?(creature|[A-Z][a-z]+) you control",

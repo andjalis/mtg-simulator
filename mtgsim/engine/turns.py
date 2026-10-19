@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from .. import auras, copies, graveyard
-from ..cards import CardDef, Effect
+from ..cards import Activated, CardDef, Effect
 from .. import rules_events, continuous
 from ..identity import CardInstance, Graveyard
 from .state import is_basic_land
@@ -13,6 +13,13 @@ if TYPE_CHECKING:
 
 
 class TurnsMixin:
+    def animate_turn_creatures(self, p: Player):
+        """"During your turn, as long as ~ has loyalty counters, it's a 3/4 Ninja creature" (Kaito)."""
+        for perm in p.battlefield:
+            if perm.card.turn_creature and perm.animated is None and perm.loyalty > 0:
+                power, toughness, subs, kws = perm.card.turn_creature
+                perm.animated = Activated("animate", {}, power, toughness, frozenset(kws), subtypes=frozenset(subs))
+
     def zone_arrived(self, card, destination):
         """One event boundary for legacy list moves and explicit movement helpers."""
         pending = card.pending_move
@@ -218,6 +225,7 @@ class TurnsMixin:
             perm.loyalty_used = False
         p.land_played = False
         p.sacrificed_turn = 0
+        self.animate_turn_creatures(p)
         self.step = "upkeep"
         self.begin_upkeep(p)
         self.settle()
