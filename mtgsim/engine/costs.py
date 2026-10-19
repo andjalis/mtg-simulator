@@ -445,6 +445,7 @@ class CostsMixin:
         out += [self._variant(c, "from_adventure") for c in p.on_adventure]
         out += [self._variant(c, "plotted", AltCost("plotted", {"generic": 0})) for c in p.plotted
                 if p.exiled_turn.get(c.name, 0) < self.turn]
+        out += [self._variant(c, "airbent", AltCost("airbent", {"generic": 2})) for c in p.airbent]
         out += [self._variant(c, "from_warp") for c in p.warp_exile if p.exiled_turn.get(c.name, 0) < self.turn]
         for c in p.foretold:
             a = next(a for a in c.alt_costs if a.kind == "foretell")
@@ -473,7 +474,7 @@ class CostsMixin:
     def _zone(self, p: Player, kind: str) -> list:
         """The zone a spell_options() variant of this kind is cast from."""
         return {"from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
-                "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile,
+                "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile, "airbent": p.airbent,
                 "mayhem": p.graveyard, "impulse": p.exile, "rebound": p.exile,
                 "cascade": p.exile, "cascade_adventure": p.exile,
                 "rebound_adventure": p.exile, "discover": p.exile}.get(kind, p.hand)

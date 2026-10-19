@@ -135,3 +135,47 @@ class Wasp(Dimir):
         self.assertFalse(victim.has("flying"))
         self.game.leave_battlefield(wasp, "graveyard")
         self.assertTrue(victim.has("flying"))
+
+
+RAIDER = card("Test Raider", "{2}{R}", "Sorcery", "Create two 1/1 red Goblin creature tokens. Sacrifice them at the beginning of the next end step.")
+
+
+class EndStepTokens(Dimir):
+    def test_tokens_leave_at_end_step(self):
+        self.assertEqual(RAIDER.unsupported, [])
+        eff = RAIDER.spell_effects[0]
+        self.assertEqual(eff.data.get("end"), "sacrifice")
+        self.game.create_token(self.a, eff)
+        self.assertEqual(len(self.a.creatures), 2)
+        self.assertEqual(len(self.game.end_cleanup), 2)
+
+    def test_end_of_turn_cleanup_runs(self):
+        eff = RAIDER.spell_effects[0]
+        self.game.main_phase = lambda p: self.game.create_token(p, eff) if p is self.a and not self.a.creatures else None
+        self.game.take_turn(self.a)
+        self.assertEqual(len(self.a.creatures), 0)
+        self.assertEqual(self.game.end_cleanup, [])
+
+
+BENDER = card("Test Bender", "{1}{W}", "Instant", "Airbend target nonland permanent.")
+
+
+class Airbend(Dimir):
+    def test_exiled_and_castable_for_two(self):
+        self.assertEqual(BENDER.unsupported, [])
+        bear = Permanent(BEAR2, self.b)
+        self.b.battlefield.append(bear)
+        self.game.resolve(self.a, BENDER.spell_effects[0], bear)
+        self.assertNotIn(bear, self.b.battlefield)
+        self.assertIn(BEAR2, self.b.airbent)
+        for _ in range(2):
+            self.b.battlefield.append(Permanent(ISLAND, self.b))
+        self.game.step = "main1"
+        self.game.active_idx = 1
+        options = [c for c in self.game.spell_options(self.b) if c.name.startswith(BEAR2.name)]
+        self.assertEqual(len(options), 1)
+        self.assertTrue(self.game.can_cast_now(self.b, options[0]))
+        self.game.cast(self.b, options[0])
+        self.game.settle()
+        self.assertTrue(any(x.card.name == BEAR2.name for x in self.b.battlefield))
+        self.assertEqual(self.b.airbent, [])

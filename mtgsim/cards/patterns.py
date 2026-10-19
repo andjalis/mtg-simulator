@@ -175,6 +175,8 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("shrink", _num(m[1]), target="creature", filter="opp")),
     (r"put (a|one|two) -1/-1 counters? on each creature", lambda m: Effect("shrink_all", _num(m[1]))),
     (r"return all attacking creatures to their owner's hand", lambda m: Effect("mass_bounce", data={"only": "attacking"})),
+    (r"airbend (?:up to one )?(?:another |other )?target (?:(nonland permanent)|creature( you control)?)(?: or spell)?",
+     lambda m: Effect("airbend", target="nonland_perm" if m[1] else "creature_mine" if m[2] else "creature")),
     (r"tap target permanent", lambda m: Effect("tap", 1, target="nonland_perm")),
     (r"each player draws a card", lambda m: Effect("draw_each", 1)),
     (r"target creature(?: an opponent controls)? can't block this turn", lambda m: Effect("cant_block_turn", target="creature")),

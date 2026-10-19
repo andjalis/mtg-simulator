@@ -263,6 +263,14 @@ class TurnsMixin:
         if self.over:
             return
         self.step = "end_step"
+        leaving, self.end_cleanup = self.end_cleanup, []
+        for perm, how in leaving:
+            if perm in perm.controller.battlefield:
+                self.log(f"{perm.card.name} is {'sacrificed' if how == 'sacrifice' else 'exiled'} at end of turn", perm.controller)
+                if how == "sacrifice":
+                    self.sacrifice(perm)
+                else:
+                    self.leave_battlefield(perm, "exile")
         self.fire(p, "end_step")
         waiting, self.blinked = self.blinked, []
         for card, owner in waiting:

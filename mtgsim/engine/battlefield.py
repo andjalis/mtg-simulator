@@ -168,6 +168,8 @@ class BattlefieldMixin:
                                           ("declare_attackers", "declare_blockers"))
             if d.get("tapped"):
                 perm.tapped = True
+            if d.get("end"):
+                self.end_cleanup.append((perm, d["end"]))
         self.log(f"creates {n if n is not None else eff.amount} {d.get('kind') or d.get('name')} token(s)", p)
 
     def transform(self, perm: Permanent):
