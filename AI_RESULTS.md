@@ -1,5 +1,23 @@
 # AI before/after
 
+## Forge cross-check, Dimir Midrange and Izzet at 100+ Forge games, 2026-10-19
+
+Built-in engine on `main` at `cf77c02` (300 games per matchup, seed 1, `results/cross_check/rerun_flagged_9.json`).
+Forge was played 100 games of Azorius Artifact Control vs Dimir Midrange (seed 11, `forge_100_dimid.json`)
+and a second 100 vs Izzet (seed 21, `forge_100_izzet2.json`), which combine with the earlier 100 (78/100) into
+160/200.
+
+| Matchup | Last round | Now | Forge | Gap now | z |
+|---|---|---|---|---|---|
+| Azorius Artifact Control vs Dimir Midrange | 58% | 55% | 36% (100 games) | +19 | +3.3 |
+| Azorius Artifact Control vs Izzet | 55% | 68% | 80% (200 games) | -12 | -2.9 |
+
+- **Forge's 28% on Dimir Midrange was a small-sample low**: at 100 games it is 36%. Our side is still 19
+  points above, so the matchup stays flagged. Dimir Midrange still has four ignored cards (Kaito, Bane of
+  Nightmares; The Wondrous Wasp; Tishana's Tidebinder; Wan Shi Tong, Librarian); re-check once the card
+  thread adds them.
+- **Izzet is no longer flagged**: 55% to 68% after the control AI fixes, against Forge's 80% (gap 23 to 12).
+
 ## Forge cross-check after the control and combo AI fixes, 2026-10-19
 
 Built-in engine on `main` at `29851a4` (300 games per matchup, seed 1) against Forge's results (first
