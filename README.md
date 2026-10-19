@@ -23,7 +23,8 @@ Needs only Python 3.10+, no packages.
 GitHub Actions runs the tests on Python 3.10, 3.13 and 3.14 for every push and pull request
 (`.github/workflows/tests.yml`); the card database is rebuilt there once a week and cached. The same
 workflow runs pyflakes (`scripts/lint.py`) and, on pull requests, lists every card whose parse differs
-from the base branch (`scripts/parse_diff.py`, shown in the job summary).
+from the base branch (`scripts/parse_diff.py`, shown in the job summary and as a PR comment;
+`python3 scripts/parse_diff.py local` runs the same comparison on your working tree).
 
 ## Decklists
 
