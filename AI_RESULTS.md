@@ -1,5 +1,16 @@
 # AI before/after
 
+## Artifact Control vs Dimir Midrange with every card matched, 2026-10-19
+
+Built-in engine on `main` at `c39b034` (300 games, seed 1, `results/cross_check/rerun_flagged_11.json`) after
+The Wondrous Wasp landed (PR 17). Dimir Midrange now has no ignored cards. Forge is 36% over 100 games.
+
+| Matchup | Last round | Now | Forge | Gap now | z |
+|---|---|---|---|---|---|
+| Azorius Artifact Control vs Dimir Midrange | 42% | 39% | 36% (100 games) | +3 | +0.5 |
+
+- **Matches Forge**: 55% before the card additions, 39% now, within noise of Forge's 36%.
+
 ## Artifact Control vs Dimir Midrange after the card thread's additions, 2026-10-19
 
 Built-in engine on `main` at `a76c7d4` (300 games, seed 1, `results/cross_check/rerun_flagged_10.json`) after
