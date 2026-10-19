@@ -32,7 +32,10 @@ class TurnsMixin:
         return continuous.add(self, target, operation, **options)
 
     def expire_continuous_effects(self):
+        expired = [e for e in self.continuous_effects if e.until_eot]
         self.continuous_effects[:] = [e for e in self.continuous_effects if not e.until_eot]
+        for effect in expired:
+            continuous.refresh(effect.target)
 
     def move_card(self, card, source, destination, *, reason="move"):
         """Move one exact physical card between nonbattlefield zones."""

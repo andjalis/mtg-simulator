@@ -1,6 +1,8 @@
 """Game methods for game events that effects and rules cause: damage, destroy, sacrifice, dying, state-based actions."""
 from __future__ import annotations
 
+from .. import continuous
+
 from .. import auras
 from ..cards import AltCost, CardDef, Effect
 from .. import rules_events
@@ -160,10 +162,14 @@ class EffectsMixin:
         intent = rules_events.zone_destination(self, perm, to)
         to = intent.destination
         before = rules_events.snapshot(perm)
+        perm.last_card = perm.card
         controller, owner = perm.controller, perm.owner
         perm.last_pt = before.power or 0, before.toughness or 0
         perm.front.pending_move = (before, "battlefield", controller, perm, intent.applied)
         controller.battlefield.remove(perm)
+        for effect in self.continuous_effects:
+            if effect.source is perm:
+                continuous.refresh(effect.target)
         perm.last_destination = to
         perm.front.generation += 1
         perm.front.last_zone = "battlefield"

@@ -105,6 +105,11 @@ def _perm_copy(m, **data):
 
 
 def _target_copy(m):
+    # The current permanent selector handles noun phrases, not relative clauses.
+    # Keep restrictions such as "that entered ... this turn" visible as gaps.
+    if re.search(r"\b(?:that|which)\b", m["what"], re.I):
+        from .cards import NO_MATCH
+        return NO_MATCH
     n = _num(m["n"]) if m["n"] else 1
     scope = (m["scope"] or "").strip()
     return _perm_copy(m, what=m["what"], n=n, other=bool(m["other"]),
@@ -351,7 +356,7 @@ def resolve(game, p, eff, target, item=None):
         chosen = cands if d.get("each") else [max(cands, key=lambda x: score(x.card))]
         for perm in chosen:
             for _ in range(n):
-                game.enter_battlefield(p, make_copy(perm.card, d.get("mods", {})))
+                game.enter_battlefield(p, make_copy(perm.copiable_card, d.get("mods", {})))
             game.log(f"creates {n} token cop{'y' if n == 1 else 'ies'} of {perm.card.name}", p)
     elif k == "become_copy":
         target = source
@@ -362,9 +367,9 @@ def resolve(game, p, eff, target, item=None):
         if best is None:
             return
         if getattr(target, "copy_revert", None) is None:
-            target.copy_revert = target.card
+            target.copy_revert = target.copiable_card
         mods = d.get("mods", {})
-        target.card = make_copy(best.card, mods, token=target.copy_revert.is_token,
+        target.card = make_copy(best.copiable_card, mods, token=target.copy_revert.is_token,
                                 name=target.copy_revert.name if mods.get("keep_name") else None)
         game.log(f"{target.copy_revert.name} becomes a copy of {best.card.name} until end of turn", p)
     elif k == "copy_ability":
@@ -471,7 +476,7 @@ def clone_on_enter(game, p, card):
         best = max(pool, key=lambda x: score(x.card), default=None)
         if best is None:
             return card, card
-        src_card = best.card
+        src_card = best.copiable_card
     copied = make_copy(src_card, spec["mods"], token=card.is_token,
                        name=card.name if spec["mods"].get("keep_name") else None)
     if spec["tapped"]:
