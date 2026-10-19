@@ -91,6 +91,7 @@ class Activated:
     power: int = 0
     toughness: int = 0
     keywords: frozenset = frozenset()
+    subtypes: frozenset = frozenset()    # creature types it becomes (Kaito: Ninja)
     ward: int = 0
     triggers: list = field(default_factory=list)
     # kind "ability": a general "COSTS: EFFECTS" ability. extra_costs holds the non-mana costs:
@@ -140,6 +141,7 @@ class CardDef:
     modes_choose: int = 1
     loyalty: int = 0
     loyalty_abilities: list = field(default_factory=list)   # (cost, effects)
+    turn_creature: tuple = ()                           # Kaito: (power, toughness, subtypes, keywords) during your turn
     pw_instant_on_entry: bool = False                   # The Wandering Emperor
     chapters: list = field(default_factory=list)        # saga chapters: one effect list each
     back: "CardDef | None" = None                       # transformed face

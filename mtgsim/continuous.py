@@ -95,7 +95,9 @@ def characteristics(permanent, base):
     if animation is not None or getattr(permanent, '_crewed', False):
         stamp = max(getattr(permanent, 'animation_timestamp', 0) if animation else 0,
                     getattr(permanent, 'crew_timestamp', 0) if permanent._crewed else 0)
-        effects.append(ContinuousEffect(-100, permanent, 'add_types', stamp, types=frozenset({'Creature'})))
+        became = animation.subtypes if animation is not None and animation.subtypes else None
+        effects.append(ContinuousEffect(-100, permanent, 'add_types', stamp, types=frozenset({'Creature'}),
+                                        subtypes=None if became is None else base.subtypes | became))
     if not effects:
         return base
     key = (id(base), tuple((e.id, e.timestamp) for e in effects))

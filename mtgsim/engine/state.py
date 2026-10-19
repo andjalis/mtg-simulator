@@ -181,6 +181,10 @@ class Permanent:
                         and not (other and x is self):
                     bp += pp
                     bt += tt
+        for sub, pp, tt in self.controller.emblems:
+            if creature and sub in self.card.subtypes:
+                bp += pp
+                bt += tt
         if what:
             per = counting.count(None, self.controller, {"what": what, "zone": "battlefield"}, self)
             bp += per * sp
@@ -401,6 +405,7 @@ class Player:
         self.ai = ai
         self.library: list[CardDef] = []
         self.pool: list = []                 # Firebending: one-use red mana until end of combat
+        self.emblems: list = []              # (creature type, +power, +toughness): "Ninjas you control get +1/+1"
         self.hand: list[CardDef] = []
         self.battlefield: list[Permanent] = []
         self.graveyard: list[CardDef] = Graveyard()

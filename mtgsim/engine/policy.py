@@ -614,11 +614,13 @@ def default_sneak(game: Game, me: Player, attackers, blocks):
     if not loose:
         return
     for card in sorted(me.hand, key=lambda c: -c.cmc):
-        alt = next((a for a in card.alt_costs if a.kind == "sneak"), None)
+        alt = next((a for a in card.alt_costs if a.kind in ("sneak", "ninjutsu")), None)
         if alt is None or not game.can_pay(me, alt.cost):
             continue
         weakest = loose[0]
-        if card.is_creature:
+        if card.turn_creature:
+            worth = weakest.card.is_token or weakest.card.cmc <= 2 or card.turn_creature[0] > weakest.power
+        elif card.is_creature:
             worth = (card.power or 0) > weakest.power and card.cmc > weakest.card.cmc
         else:
             worth = weakest.card.is_token or weakest.card.cmc <= 2

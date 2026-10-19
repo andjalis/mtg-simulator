@@ -729,6 +729,15 @@ def _face_keyword_ability_lines(st, line):
             alt_costs.append(AltCost(kind, parse_mana_cost(m[2]),
                                      zone={"flashback": "graveyard", "foretell": "foretold"}.get(kind, "hand")))
             return None
+        m = re.fullmatch(r"Ninjutsu (\{[^ ]+\})", line)
+        if m:
+            alt_costs.append(AltCost("ninjutsu", parse_mana_cost(m[1]), zone="hand"))
+            return None
+        m = re.fullmatch(r"During your turn, as long as ~ has one or more loyalty counters on (?:him|her|it), "
+                         r"(?:he|she|it)'s an? (\d+)/(\d+) ([A-Z][a-z]+) creature(?: and has (hexproof))?\.", line)
+        if m:
+            extra["turn_creature"] = (int(m[1]), int(m[2]), (m[3],), (m[4],) if m[4] else ())
+            return None
         m = re.fullmatch(r"(Mayhem|Sneak) (\{[^ ]+\})", line)
         if m:
             alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2]), zone="graveyard" if m[1] == "Mayhem" else "hand"))

@@ -9,6 +9,12 @@ from ..state import FIREBEND_MANA, Permanent, StackItem, pool_mana
 from . import kind
 
 
+@kind("emblem")
+def emblem(game, p, eff, **_):
+    p.emblems.append((eff.data["subtype"], eff.amount, eff.amount2))
+    game.log(f"gets an emblem: {eff.data['subtype']}s get +{eff.amount}/+{eff.amount2}", p)
+
+
 @kind("counter_ability")
 def counter_ability(game, p, item, **_):
     """Counter the newest activated or triggered ability an opponent controls; if its source is an
