@@ -18,7 +18,7 @@ AI doesn't make are taken by the default policies in engine/policy.py;
 an AI can override each one by defining the hook of the same name (see README).
 
 Modules: state (objects), mana (payment), game (the Game class) and its mixins
-costs, targets, turns, stack, play, resolve, effects and combat; policy (default decisions).
+costs, targets, turns, stack, play, abilities, battlefield, resolve, effects and combat; policy (default decisions).
 """
 from __future__ import annotations
 
@@ -53,6 +53,8 @@ from .targets import TargetsMixin
 from .turns import TurnsMixin
 from .stack import StackMixin
 from .play import PlayMixin
+from .abilities import AbilitiesMixin
+from .battlefield import BattlefieldMixin
 from .resolve import ResolveMixin
 from .effects import EffectsMixin
 from .combat import CombatMixin

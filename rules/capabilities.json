@@ -34,7 +34,7 @@
         "targets.creature"
       ],
       "implementation": [
-        "mtgsim/engine/play.py"
+        "mtgsim/engine/abilities.py"
       ]
     },
     {
@@ -123,6 +123,7 @@
       "implementation": [
         "mtgsim/actions.py",
         "mtgsim/engine/play.py",
+        "mtgsim/engine/abilities.py",
         "mtgsim/engine/stack.py"
       ]
     },

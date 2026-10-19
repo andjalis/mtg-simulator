@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from .. import auras, cast_triggers, copies, counting, removal, search, xspells
+from .. import counting
 from ..cards import Effect
 from .state import Permanent, Player, StackItem
 from .kinds import HANDLERS, NO_SBA
@@ -49,16 +49,4 @@ class ResolveMixin:
             if handler(self, p=p, eff=eff, target=target, item=item, prev=prev, opp=opp, k=k, source=source,
                        cause=cause) is NO_SBA:
                 return
-        elif k in cast_triggers.KINDS:
-            cast_triggers.resolve(self, p, eff, item)
-        elif k in copies.KINDS:
-            copies.resolve(self, p, eff, target, item)
-        elif k in xspells.KINDS:
-            xspells.resolve(self, p, eff, target, item)
-        elif k in search.KINDS:
-            search.resolve(self, p, eff, target, item)
-        elif k in auras.KINDS:
-            auras.resolve(self, p, eff, target, item)
-        elif k in removal.KINDS:
-            removal.resolve(self, p, eff, target, item)
         self.state_based_actions()
