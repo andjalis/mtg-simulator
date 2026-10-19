@@ -1,0 +1,151 @@
+{
+ "grandmaster/izzet_spellementals vs grandmaster/mono_green_landfall": {
+  "ignored_a": [
+   0,
+   19,
+   []
+  ],
+  "ignored_b": [
+   2,
+   15,
+   [
+    "Demolition Field",
+    "Esper Origins"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.5033,
+   "wins_a": 151,
+   "wins_b": 149
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/boros_dragons": {
+  "ignored_a": [
+   0,
+   26,
+   []
+  ],
+  "ignored_b": [
+   2,
+   18,
+   [
+    "Momo, Friendly Flier",
+    "Sarkhan, Dragon Ascendant"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.25,
+   "wins_a": 75,
+   "wins_b": 225
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/dimir_midrange": {
+  "ignored_a": [
+   0,
+   26,
+   []
+  ],
+  "ignored_b": [
+   4,
+   24,
+   [
+    "Kaito, Bane of Nightmares",
+    "The Wondrous Wasp",
+    "Tishana's Tidebinder",
+    "Wan Shi Tong, Librarian"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.5833,
+   "wins_a": 175,
+   "wins_b": 125
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/izzet_spellementals": {
+  "ignored_a": [
+   0,
+   26,
+   []
+  ],
+  "ignored_b": [
+   0,
+   19,
+   []
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.5533,
+   "wins_a": 166,
+   "wins_b": 134
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/jund_sacrifice": {
+  "ignored_a": [
+   0,
+   26,
+   []
+  ],
+  "ignored_b": [
+   0,
+   23,
+   []
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.61,
+   "wins_a": 183,
+   "wins_b": 117
+  }
+ },
+ "master/azorius_artifact_control vs grandmaster/mono_green_landfall": {
+  "ignored_a": [
+   0,
+   26,
+   []
+  ],
+  "ignored_b": [
+   2,
+   15,
+   [
+    "Demolition Field",
+    "Esper Origins"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.4333,
+   "wins_a": 130,
+   "wins_b": 170
+  }
+ },
+ "master/azorius_artifact_control vs master/dimir_control": {
+  "ignored_a": [
+   0,
+   26,
+   []
+  ],
+  "ignored_b": [
+   1,
+   22,
+   [
+    "Uldaros Theorix"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.5033,
+   "wins_a": 151,
+   "wins_b": 149
+  }
+ }
+}
