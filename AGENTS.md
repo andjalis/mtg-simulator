@@ -8,7 +8,7 @@ work in the code.
 
 A Magic: The Gathering simulator in pure Python. `mtgsim` plays AI-vs-AI games between decklists
 and reports win rates with 95% CIs, split by play/draw. It also runs a rank ladder (Bronze to
-Grandmaster, MMR), deck assessment, and a web page (`web/`). The built-in engine is the default;
+Grandmaster, MMR), and deck assessment. The built-in engine is the default;
 `--engine forge` drives the external Forge rules engine for real tournament decks.
 
 ## Setup and commands
@@ -23,7 +23,6 @@ python3 -m mtgsim A.txt --coverage             # which cards the engine can't fu
 python3 -m mtgsim.database_coverage --save results/database_coverage  # all cards and ranked gaps
 python3 -m mtgsim A.txt --ladder -n 200        # rank ladder, built-in engine
 python3 -m mtgsim.assess DECK.txt              # four graded criteria
-python3 -m web                                 # http://127.0.0.1:8000
 ```
 
 Python 3.10+ only, standard library only. Do not add dependencies. CI (`.github/workflows/tests.yml`)
@@ -54,7 +53,6 @@ a fake Forge directory and don't need a real install; a real Forge run needs Jav
 | `mtgsim/coverage.py` | `--coverage` reporting |
 | `mtgsim/forge.py`, `crosscheck.py` | Forge mode; engine vs Forge cross-check |
 | `mtgsim/data/` | `builtin_cards.json`, `metagame.json`, and the generated `cards.sqlite3` (gitignored) |
-| `web/` | `server.py` (HTTP API), `sim.py` (process pool), `static/index.html` |
 | `decks/` | Sample lists; `decks/ranks/` has the rank pools (see `decks/ranks/README.md`) |
 | `results/` | Saved runs; `results/ladder/` is gitignored (live ladder output) |
 | `tests/` | `unittest` files, one per area |
@@ -81,7 +79,7 @@ a fake Forge directory and don't need a real install; a real Forge run needs Jav
 - **Results are measurements.** Changes to AI heuristics should be checked against `BaselineAI`
   or the rank ladder (`--ladder`, `--gauntlet`), not only against tests. Record notable numbers in
   `AI_RESULTS.md` rather than in code comments.
-- **Pure stdlib.** The web page and server use only the standard library too.
+- **Pure stdlib.**
 - **Git.** Commit or push only when asked. Work on a branch, not `main`, unless told otherwise.
 
 ## Follow-up suggestions

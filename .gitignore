@@ -22,4 +22,4 @@ results/benchmark*/
 results/history.sqlite3
 
 # In-browser engine bundle (python3 -m mtgsim.browser)
-web/static/local/build/
+build/browser/

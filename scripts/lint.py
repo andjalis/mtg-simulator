@@ -13,7 +13,7 @@ from pathlib import Path
 from pyflakes import api, messages, reporter
 
 ROOT = Path(__file__).resolve().parent.parent
-PATHS = ["mtgsim", "web", "tests", "scripts"]
+PATHS = ["mtgsim", "tests", "scripts"]
 
 
 class Collect(reporter.Reporter):

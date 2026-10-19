@@ -185,28 +185,6 @@ class ReliabilityTests(unittest.TestCase):
         self.assertEqual(out["reliability"]["level"], "high")
         self.assertAlmostEqual(out["reliability"]["forge_share"], 0.5)
 
-    def test_web_run_plays_the_meta_field_in_forge(self):
-        from unittest import mock
-        from web import sim
-        run = sim.make_run("burn", as_text(RED), ["bronze"], ladder=False, games=2, seed=1)
-        run.forge_dir, run.goldfish_games, run.samples, run.record_history = "/fake/forge", 2, 50, False
-        played = []
-
-        def fake_forge(me, opp, games, seed, folder):
-            played.append(folder)
-            return 1.0, games
-
-        with mock.patch.object(sim, "_forge_match", fake_forge), sim.make_pool(1) as pool:
-            run.execute(pool)
-        self.assertEqual(run.grade_error, "")
-        snap = run.snapshot()
-        _, archetypes = load_metagame()
-        self.assertEqual(played, ["/fake/forge"] * len(archetypes))
-        self.assertEqual(snap["meta_engine"], "forge")
-        self.assertEqual(snap["reliability"]["level"], "high")
-        self.assertEqual(snap["reliability"]["forge_share"], 1.0)
-        self.assertEqual(snap["assessment"]["data"]["criteria"]["meta"]["details"]["engine"], "forge")
-
 
 class GradesReportTests(unittest.TestCase):
     def test_grades_in_html_report(self):

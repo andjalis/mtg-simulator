@@ -1,6 +1,6 @@
 """Run the built-in engine in a web browser (Pyodide), so games use the visitor's own CPU.
 
-    python3 -m mtgsim.browser                       # bundle every deck under decks/ into web/static/local/build
+    python3 -m mtgsim.browser                       # bundle every deck under decks/ into build/browser
     python3 -m mtgsim.browser A.txt B.txt --out DIR # only the cards these decks use
 
 The bundle has three files the page loads next to Pyodide:
@@ -9,7 +9,7 @@ The bundle has three files the page loads next to Pyodide:
   26 MB cards.sqlite3 (Pyodide's core has no sqlite3 module, and the download would be too big),
 - decks.json: each bundled deck's main deck, by name.
 
-In the browser, web/static/local/worker.js unpacks the zip and calls run_local() a few games at a
+In the browser, a page worker unpacks the zip and calls run_local() a few games at a
 time, so it can report progress between chunks.
 """
 from __future__ import annotations
@@ -27,7 +27,7 @@ from .decklist import load_deck_full
 from .runner import build_deck, run_match
 
 ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_OUT = ROOT / "web" / "static" / "local" / "build"
+DEFAULT_OUT = ROOT / "build" / "browser"
 
 
 def deck_name(path: Path) -> str:

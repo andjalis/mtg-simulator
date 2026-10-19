@@ -60,65 +60,11 @@ rewritten as the run goes (it reloads itself in a browser until the run finishes
 badge, the MMR climb over the rank bands and win rates by opponent; `DECK.json` beside it holds
 the same data. `--report PATH` writes it elsewhere and `--no-report` skips it.
 
-## Web page
+## Web front end
 
-```
-python3 -m web            # then open http://127.0.0.1:8000
-```
-
-Paste a decklist, pick the full climb or chosen ranks and the number of games per opponent,
-and the page shows how far the deck climbs and each rank's win rate with its 95% confidence
-interval; click a rank for every opponent's record, play/draw split and game length. It checks the list
-as you type and flags unknown cards and cards the engine only partly simulates. Above the results it shows the deck's rank, MMR and MMR chart
-(see Ranks and MMR) as games finish. By default the games run on the visitor's own
-device: the page plays them in Web Workers (Pyodide, one per spare core) and the server only keeps
-score. The server's own process pool (every CPU core, `--jobs N` to limit) plays them when the
-browser can't run the engine, when the tab goes quiet for 15 s, or with `?run=server`. Forge-routed
-decks always run on the server. Other flags: `--port`, `--host`, `--offline`.
-Standard library only, like the rest of the simulator.
-
-Web trials accept 1–1000 main-deck cards; lists below 60 cards show a warning.
-Refreshing the page reconnects to the last trial in that browser tab while the
-server still has it. Connection errors offer a retry instead of losing access
-to the trial.
-Reloading an active browser-run trial moves unfinished batches to the server,
-since the previous page's workers are gone. The trial ID is included in its
-browser title; `/api/runs` lists progress summaries for the current server process.
-
-The live arena opens a close-up of the active opponent pool, with its score,
-clear target, matchup progress and individual records. Select a pool on the map
-or an opponent card to inspect it; **Follow live pool** returns to the action.
-The separate trial totals cover all pools. MMR and the final rating badge are
-shown on the results screen.
-
-Optional browser QA uses Playwright without adding application dependencies:
-start an isolated server with `MTGSIM_HISTORY=/tmp/ui-history.sqlite3 python3 -m web --offline --jobs 2 --port 8137`,
-install Playwright with `npm install --prefix /tmp/mtgsim-ui playwright`, then run
-`NODE_PATH=/tmp/mtgsim-ui/node_modules node scripts/ui_qa.cjs`.
-It uses `/usr/bin/chromium` by default (`CHROMIUM_PATH` overrides it).
-The pass plays a small real trial and uses mocked transport for interrupted-run
-recovery; screenshots go to `/tmp/mtgsim-ui-artifacts`.
-
-The Leaderboard page (`/leaderboard`, JSON at `/api/leaderboard`) ranks every tested deck by MMR:
-its rank badge, MMR, the S-F grades from its latest assessment, when it was tested and a link to
-its latest results. It reads the run history (see `mtgsim.history`), showing each deck's latest
-version (marked v2, v3 ... once a list has changed) and its latest rated run; decks tested before
-the history existed still show from `results/ladder/*.json` and `results/assess/*.json`.
-
-### Running games in the browser (prototype)
-
-The built-in engine also runs inside a web browser with [Pyodide](https://pyodide.org), so games
-use the visitor's own computer or phone and a server only has to serve files:
-
-```
-python3 -m mtgsim.browser                  # bundle the engine and the cards of every deck under decks/
-python3 -m http.server -d web/static       # then open http://127.0.0.1:8000/local/
-```
-
-`web/static/local/` runs the engine in Web Workers (one per spare core, up to four), loading
-Pyodide from its CDN. Instead of the 26 MB card database it ships only the cards the bundled decks
-use (about 400 cards, 26 KB gzipped). `scripts/browser_bench.cjs` times it in headless Chromium.
-Forge mode is Java and stays server-side.
+The engine has no web front end in this repository. `python3 -m mtgsim.browser` still bundles the
+engine and the cards of the decks under `decks/` (written to `build/browser/`, or `--out DIR`) for
+a page that runs it in the browser with [Pyodide](https://pyodide.org); the page itself lives elsewhere.
 
 ## Deck assessment
 
@@ -159,8 +105,8 @@ A "Bring in vs." note adds weight. Lands are never swapped and the loser of a ga
 next. Decks without a sideboard (all of Bronze to Gold and some Platinum decks) play their main deck
 every game.
 
-`mtgsim.assess.assess()` returns the same thing as plain JSON for the web page and reports.
-The web page and the `--ladder`/`--rank` HTML report show these grades as cards under the rank
+`mtgsim.assess.assess()` returns the same thing as plain JSON for front ends and reports.
+The `--ladder`/`--rank` HTML report show these grades as cards under the rank
 (the report's JSON gains an `assessment` key); they reuse the games already played against the
 Grandmaster pool and play the rest of the meta field. Turn them off with `--no-grades` or the
 page's "Grade the deck" box. In the built-in engine the meta grade is a rough guide, and the page
@@ -170,7 +116,7 @@ Refresh `metagame.json` when the metagame moves.
 ## Run history: compare versions of a deck
 
 Every ladder, rank and assessment run is saved when it finishes, from the command line and the
-web page, in `results/history.sqlite3` (set `MTGSIM_HISTORY` for another file, `--no-history` to
+front-end runs, in `results/history.sqlite3` (set `MTGSIM_HISTORY` for another file, `--no-history` to
 skip). A deck's versions are told apart by a fingerprint of its exact main deck, so editing the
 list and re-testing it adds version 2, 3 and so on.
 
@@ -445,7 +391,6 @@ adventures, flashback, foretold cards, blitz, channel; cast them with
 | `mtgsim/rating.py` | MMR, ranks and `LadderTracker` (live state of a ladder run, as JSON) |
 | `mtgsim/ladder_report.py` | Live terminal line, text summary and HTML report of a ladder run |
 | `mtgsim/forge.py` | Forge mode: .dck export, running Forge's `sim`, parsing results |
-| `web/` | The web page: `server.py` (HTTP API), `sim.py` (runs ranks in a process pool), `static/index.html` |
 | `decks/` | Sample decklists and the rank pools |
 | `results/` | Saved test runs, such as `results/ub_snow_control/` |
 | `AI_RESULTS.md` | Measurements of the AI against the baseline player |
