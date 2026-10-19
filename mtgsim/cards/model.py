@@ -215,6 +215,8 @@ class CardDef:
     anthem_sub: tuple = ()                              # (("Elf", 1, 1, other), ...): "Other Elf creatures you control get +1/+1"
     counter_team_keywords: frozenset = frozenset()      # "Creatures you control with +1/+1 counters on them have trample"
     second_spell_discount: int = 0                      # "The second spell you cast each turn costs {1} less"
+    cond_discount: tuple = ()                           # (("creature_died", 3), ...): see discounts.py
+    per_discount: tuple = ()                            # (("attacking", 1), ...): {N} less for each ...
     tapped_discount: int = 0                            # "~ costs {3} less to cast if it targets a tapped creature"
     extra_discard: int = 0                              # "As an additional cost to cast ~, discard a card" (1 = or pay {2}: see discard_or_pay)
     behold_or_pay: tuple = ()                           # ("Elf", 2): "behold an Elf or pay {2}" as an additional cost

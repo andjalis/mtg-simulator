@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING
 
-from .. import auras, copies, counting, returns, costs
+from .. import auras, copies, counting, discounts, returns, costs
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
@@ -274,6 +274,13 @@ class CostsMixin:
         return [t for t in self.legal_targets(p, eff)
                 if isinstance(t, Permanent) and t.is_creature and t.tapped and t.controller is not p]
 
+    def discount_targets(self, p: Player, card: CardDef) -> list:
+        """Creatures a "costs less if it targets ..." spell could aim at."""
+        eff = next((e for e in card.spell_effects if e.target in TARGETED), None)
+        if eff is None:
+            return []
+        return [t for t in self.legal_targets(p, eff) if isinstance(t, Permanent) and t.is_creature]
+
     def cost_of(self, p: Player, card: CardDef, *, assist=True) -> dict:
         """The mana cost after cost reductions (Tolarian Terror, Ghalta)."""
         cost = dict(card.mana_cost)
@@ -312,6 +319,11 @@ class CostsMixin:
                 n += k
         if card.tapped_discount and self.tapped_targets(p, card):
             n += card.tapped_discount
+        for key, k in card.cond_discount:
+            if discounts.holds(self, p, card, key):
+                n += k
+        for key, k in card.per_discount:
+            n += k * discounts.count(self, p, key)
         cost["generic"] = max(0, cost.get("generic", 0) - n)
         if card.extra_discard and card.discard_or_pay and self.spare_cards(p, card) < 1:
             cost["generic"] += card.discard_or_pay

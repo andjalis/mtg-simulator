@@ -879,3 +879,15 @@ The complete card inventory and ranked gaps are in
 - Airbend (creature or nonland permanent, "up to one", "other", "or spell" read as creature): the permanent is
   exiled into its owner's `airbent` zone and may be cast for {2}. "Airbend ... you control" nonland permanents and
   the "airbend all other creatures" mode are not parsed.
+
+## Conditional cost reductions, sacrifice-or-pay costs, "another creature gets +N/+N"
+
+- `discounts.py`: "~ costs {N} less to cast if <condition>" and "... for each <thing>" (generic reductions only).
+  Conditions: a creature died this turn, you've cast another spell this turn, you control a legendary creature,
+  your opponents control N or more creatures, delirium, and "it targets an attacking / blocking / tapped / flying
+  creature or a <Subtype>". Counts: attacking creatures, creatures that attacked this turn, creatures with power N or
+  greater, colors among your permanents. Ability-word prefixes (Delirium, Vivid, Flurry) are dropped.
+  Not done: colored reductions, "costs more", "if it's bargained", crime/graveyard-turn conditions.
+- Additional costs "sacrifice a creature or planeswalker or pay {N}" (any mix of artifact, creature, enchantment,
+  planeswalker, with or without the pay option).
+- "Another target creature you control gets +N/+M [and gains <keyword>] until end of turn" (the +X forms are not parsed).
