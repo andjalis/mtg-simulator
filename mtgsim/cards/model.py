@@ -13,7 +13,7 @@ KEYWORDS = {
     "flash", "hexproof", "shroud", "indestructible", "prowess", "swampwalk", "forestwalk", "mountainwalk",
     "infect", "devoid", "exalted", "fear", "horsemanship", "undying", "persist", "wither", "rebound",
     "storm", "cascade", "islandwalk", "plainswalk", "shadow", "intimidate",
-    "nonbasic landwalk", "legendary landwalk",
+    "nonbasic landwalk", "legendary landwalk", "decayed",
 }
 BASIC_MANA = {"Plains": "W", "Island": "U", "Swamp": "B", "Mountain": "R", "Forest": "G"}
 NUMBERS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,

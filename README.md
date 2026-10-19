@@ -166,8 +166,8 @@ python3 -m mtgsim.behavior_coverage --run --save results/behavior-coverage
 python3 -m mtgsim.behavior_coverage --ledger results/behavior-coverage/ledger.json --save results/behavior-review
 ```
 
-It maps 97 explicit scenarios for identity, events, joint cost planning, transactional
-actions, type/color and P/T continuous effects, phase triggers, supported replacements,
+It maps 116 explicit scenarios for identity, events, joint cost planning, transactional
+actions, type/color and P/T continuous effects, phase conditions, decayed, supported replacements,
 removal, graveyard returns, targeting,
 the normal legend rule and normal equip
 to a versioned [capability catalog](rules/capabilities.json). Reports retain failures,

@@ -328,5 +328,11 @@ def token_copy(game, p, eff, **_):
 
 @kind("sacrifice_self")
 def sacrifice_self(game, p, eff, target, **_):
-    if isinstance(target, Permanent) and target in target.controller.battlefield:
+    if isinstance(target, Permanent) and target.controller is p and target in p.battlefield:
         game.sacrifice(target)
+
+
+@kind("decayed_delay")
+def decayed_delay(game, p, target, **_):
+    if isinstance(target, Permanent):
+        game.delayed_end_combat.append((p, target))
