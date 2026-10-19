@@ -1,0 +1,23 @@
+{
+ "master/azorius_artifact_control vs grandmaster/dimir_midrange": {
+  "ignored_a": [
+   0,
+   26,
+   []
+  ],
+  "ignored_b": [
+   1,
+   24,
+   [
+    "The Wondrous Wasp"
+   ]
+  ],
+  "python_new": {
+   "draws": 0,
+   "games": 300,
+   "win_rate_a": 0.42,
+   "wins_a": 126,
+   "wins_b": 174
+  }
+ }
+}

@@ -1,5 +1,18 @@
 # AI before/after
 
+## Artifact Control vs Dimir Midrange after the card thread's additions, 2026-10-19
+
+Built-in engine on `main` at `a76c7d4` (300 games, seed 1, `results/cross_check/rerun_flagged_10.json`) after
+Kaito, Tishana's Tidebinder and Wan Shi Tong, Librarian landed (PRs 11 and 15). The Wondrous Wasp is still
+ignored. Forge is the 36% over 100 games from the section below.
+
+| Matchup | Last round | Now | Forge | Gap now | z |
+|---|---|---|---|---|---|
+| Azorius Artifact Control vs Dimir Midrange | 55% | 42% | 36% (100 games) | +6 | +1.1 |
+
+- **No longer flagged**: the three added cards moved our side down 13 points, which confirms the gap was
+  mostly the missing cards. Re-check once the Wasp is added.
+
 ## Forge cross-check, Dimir Midrange and Izzet at 100+ Forge games, 2026-10-19
 
 Built-in engine on `main` at `cf77c02` (300 games per matchup, seed 1, `results/cross_check/rerun_flagged_9.json`).
