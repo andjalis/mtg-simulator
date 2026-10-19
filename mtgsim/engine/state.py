@@ -433,6 +433,7 @@ class Player:
         self.mulligans = 0
         self.lost_life_turn = False
         self.perm_left_turn = False
+        self.entered_nonland_turn = 0     # nonland permanents that entered under this player's control this turn
         self.attacked_with = 0
         self.next_creature_counters = 0
         self.life_gained_turn = 0

@@ -141,6 +141,7 @@ _TRIGGERS = [
     (r"When(?:ever)? ~ enters or attacks, (.+)", ("etb", "attacks")),
     (r"When ~ enters and at the beginning of your upkeep, (.+)", ("etb", "upkeep")),
     (r"When(?:ever)? ~ enters?(?: the battlefield)?, (.+)", ("etb",)),
+    (r"Whenever ~ attacks while (?!saddled)(.+)", ("attacks",)),
     (r"Whenever ~ attacks, (.+)", ("attacks",)),
     (r"When(?:ever)? ~ dies, (?:if it was a creature, )?(.+)", ("dies",)),
     (r"Whenever ~ deals combat damage to a player, (.+)", ("combat_damage_player",)),
@@ -150,6 +151,7 @@ _TRIGGERS = [
     (r"Whenever you cast an instant or sorcery spell that targets a creature, (.+)", ("cast_instant_sorcery",)),
     (r"Whenever ~ becomes the target of a spell or ability you control for the first time each turn, (.+)",
      ("targeted_mine",)),
+    (r"Whenever you cast a spell during an opponent's turn, (.+)", ("cast_spell",)),
     (r"Whenever you cast a spell, (.+)", ("cast_spell",)),
     (r"Whenever you cast an? ([A-Z]\w+|creature|artifact|enchantment|outlaw) spell, (.+)", ("cast_spell",)),
     (r"Whenever you gain life, (.+)", ("gain_life",)),
@@ -276,8 +278,8 @@ _IF_CONDS = [
 
 def _if_cond(phrase: str) -> str:
     """The engine condition name for the "if <phrase>," of a sentence, or ""."""
-    from .. import phase_conditions
-    condition = phase_conditions.parse(phrase)
+    from .. import phase_conditions, turn_conditions
+    condition = phase_conditions.parse(phrase) or turn_conditions.parse(phrase)
     if condition:
         return condition
     phrase = phrase.strip()

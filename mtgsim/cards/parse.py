@@ -448,6 +448,8 @@ def _parse_trigger_line(line: str):
             rest = re.sub(r"^it (gets|gains|deals)\b", r"~ \1", re.sub(r"\b(on|untap|to) it\b", r"\1 ~", rest))
         if events == ("cast_cmc",):
             flt = f"cmc>={m[1]}"
+        if events == ("cast_spell",) and "during an opponent's turn" in pat:
+            flt = "opp_turn"
         if events == ("cast_spell",) and m.lastindex == 2:
             flt = f"spell:{m[1]}"
         if events == ("sacrifice",):
@@ -467,6 +469,15 @@ def _parse_trigger_line(line: str):
         cond = f"spent:{spent[1]}" if spent else ""
         if spent:
             rest = spent[2]
+        if events == ("attacks",) and pat == "Whenever ~ attacks while (?!saddled)(.+)":
+            rest = "if " + rest
+            intervening = True
+        gate_if = re.fullmatch(r"if (.+?), (.+)", rest, flags=re.S)
+        if gate_if and gate_if[1].lower().startswith(("you control", "there are", "a permanent left", "two or more",
+                                                      "three or more", "four or more", "you don't control")):
+            gated = _if_cond(gate_if[1])
+            if gated:
+                cond, rest = gated, gate_if[2]
         cast_if = re.match(r"if you cast (?:it|him|her|them), ", rest)
         if cast_if:
             cond, rest = "cast", rest[cast_if.end():]

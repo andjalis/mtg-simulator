@@ -106,6 +106,8 @@ class BattlefieldMixin:
             perm.counters[kind] = perm.counters.get(kind, 0) + n
         perm.tapped |= tapped
         p.battlefield.append(perm)
+        if not card.is_land:
+            p.entered_nonland_turn += 1
         if card.turn_creature and p is self.active:
             self.animate_turn_creatures(p)
         self.rule_events.emit(rules_events.RulesEvent("zone_change", p, source=perm,
