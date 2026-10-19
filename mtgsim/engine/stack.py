@@ -275,7 +275,11 @@ class StackMixin:
         if kind in ("adventure", "cascade_adventure", "rebound_adventure"):
             owner.on_adventure.append(base)
         elif kind == "flashback":
-            owner.exile.append(base)
+            if getattr(item, "flip_gy", False) and item.card.back is not None:
+                self.enter_battlefield(owner, item.card.back, counters={"finality": 1}, physical_card=base)
+                self.log(f"{item.card.name} returns transformed", owner)
+            else:
+                owner.exile.append(base)
         elif ("rebound" in item.card.keywords and getattr(item, "cast_from_hand", False)
               and getattr(item, "resolved", False)):
             exiled = base

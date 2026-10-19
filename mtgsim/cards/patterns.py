@@ -268,8 +268,11 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("exile_top", _N_WORDS.get(m[1].split()[0], 1) if m[1] != "card" else 1)
      if not m[1][0].isdigit() else Effect("exile_top", int(m[1].split()[0]))),
     (r"(?:you may play (?:that card|those cards|it|them|the exiled cards?) (this turn|until the end of your next turn|"
-     r"until your next end step)|until the end of your next turn, you may play (?:that card|those cards|it|them))",
-     lambda m: Effect("may_play_exiled", 0 if m[1] == "this turn" else 2)),
+     r"until your next end step)|until the end of your next turn, you may play (?:that card|those cards|it|them)|"
+     r"until end of turn, you may play (?:that card|those cards|it|them))",
+     lambda m: Effect("may_play_exiled", 0 if m[1] == "this turn" or m[1] is None and "next" not in m[0]
+                      else 2)),
+    (r"choose one of them", lambda m: Effect("choose_one_exiled")),
     (r"tap (?:up to one )?target (?:creature|nonland permanent)(?: an opponent controls| you don't control)?",
      lambda m: Effect("tap", 1, target="creature")),
     (r"tap up to (two|three) target creatures", lambda m: Effect("tap", _num(m[1]), target="creature")),
@@ -315,6 +318,10 @@ _EFFECT_PATTERNS = [
                       "creature" if "opponent" in m[2] else "creature_mine",
                       filter="opp" if "opponent" in m[2] else "", data={"role": m[1].lower()})),
     (r"STUNLANDSWAP", lambda m: Effect("land_swap")),
+    (r"THEORIX (\d+)", lambda m: Effect("gy_type_spree", int(m[1]))),
+    (r"FLIPFROMGY", lambda m: Effect("flip_from_gy")),
+    (r"REVEALTOP (permanent|land|creature)", lambda m: Effect("reveal_top_to_hand", data={"what": m[1]})),
+    (r"BOTHLANDSWAP", lambda m: Effect("land_swap", data={"both": True})),
     (r"(\w+) and (\w+)s you control gain (indestructible|hexproof|vigilance|trample|haste|lifelink|first strike|deathtouch) "
      r"until end of turn",
      lambda m: Effect("grant_types", data={"types": (m[1], m[2]), "keyword": m[3].lower()})),
@@ -526,6 +533,16 @@ _SUBS = [
     (re.compile(r"destroy target nonbasic land an opponent controls\. its controller searches their library for a basic "
                 r"land card, puts it (?:onto|on) the battlefield tapped with a stun counter on it, then shuffles\.", re.I),
      lambda m: "STUNLANDSWAP."),
+    (re.compile(r"exile up to one target nonland card of each card type from your graveyard\. copy those cards\. you may "
+                r"cast any number of spells with total mana value (\d+) or less from among the copies without paying "
+                r"their mana costs\.", re.I), lambda m: f"THEORIX {m[1]}."),
+    (re.compile(r"if (?:this spell|~) was cast from a graveyard, exile it, then put it onto the battlefield transformed "
+                r"under its owner's control with a finality counter on it\.", re.I), lambda m: "FLIPFROMGY."),
+    (re.compile(r"reveal the top card of your library\. if it's an? (permanent|land|creature) card, put it into your "
+                r"hand\.", re.I), lambda m: f"REVEALTOP {m[1].lower()}."),
+    (re.compile(r"destroy target nonbasic land an opponent controls\. that land's controller may search their library for "
+                r"a basic land card, put it onto the battlefield, then shuffle\. you may search your library for a basic "
+                r"land card, put it onto the battlefield, then shuffle\.", re.I), lambda m: "BOTHLANDSWAP."),
     (re.compile(r"choose up to one target creature\. put a \+1/\+1 counter and a counter from among flying, first "
                 r"strike, lifelink, or vigilance on it\.", re.I), lambda m: "ELSPETHPLUS."),
     (re.compile(r"exile up to one target card from a graveyard\. if a creature card was exiled this way, each "

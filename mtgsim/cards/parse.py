@@ -353,6 +353,8 @@ def _face_special_lines(st, line):
         if line == "Bargain":
             extra["bargain"] = True
             return None
+        if "Copy those cards. You may cast any number of spells" in line:
+            approximations.append("the exiled cards themselves are cast, not token copies")
         m = re.fullmatch(r"Gift (a card|a Food|a Treasure|a tapped Fish|an Octopus)", line)
         if m:
             extra["gift"] = m[1].split(" ", 1)[1].lower()
@@ -1346,8 +1348,9 @@ def _parse_trigger_line(line: str):
         cond = f"spent:{spent[1]}" if spent else ""
         if spent:
             rest = spent[2]
-        if rest.startswith("if you cast it, "):
-            cond, rest = "cast", rest[16:]
+        cast_if = re.match(r"if you cast (?:it|him|her|them), ", rest)
+        if cast_if:
+            cond, rest = "cast", rest[cast_if.end():]
         c = re.fullmatch(r"if (you gained life|you gained and lost life|you descended|you've gained (\d+) or more life|an opponent "
                          r"lost life) this turn, (.+)", rest, flags=re.S) or \
             re.fullmatch(r"(.+?) if (you gained life|you've gained (\d+) or more life) this turn\.", rest, flags=re.S)

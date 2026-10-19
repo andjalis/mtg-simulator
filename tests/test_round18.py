@@ -33,7 +33,7 @@ class Round18(unittest.TestCase):
         t, h1, h2, bear = self.perm(TAPPER), self.perm(HERO), self.perm(HERO), self.perm(BEAR)
         t.tapped = True
         self.game.resolve(self.a, TAPPER.triggers[0].effects[0], None)
-        self.assertEqual((t.p1, h1.p1, bear.p1), (1, 0, 0))
+        self.assertEqual((t.p1, h1.p1, h2.p1, bear.p1), (1, 0, 0, 0))
         eff = HERO.activated[0].effects[0]
         self.assertEqual(eff.data["only"], "Hero")
         self.assertTrue(eff.data["other"])
@@ -46,6 +46,16 @@ class Round18(unittest.TestCase):
         self.game.resolve(self.a, flicker.spell_effects[0], bear)
         self.assertNotIn(bear, self.a.battlefield)
         self.assertEqual(len(self.game.blinked), 1)
+
+    def test_choose_one_of_exiled(self):
+        digger = card("Test Digger", "{2}{R}", "Sorcery", "Exile the top two cards of your library. Choose one of them. "
+                      "You may play that card this turn.")
+        self.assertEqual(digger.unsupported, [])
+        self.a.library.extend([BEAR, ISLAND])
+        for eff in digger.spell_effects:
+            self.game.resolve(self.a, eff, None)
+        self.assertEqual(len(self.a.impulse), 1)
+        self.assertEqual(self.a.impulse[0][0].name, BEAR.name)
 
 
 if __name__ == "__main__":

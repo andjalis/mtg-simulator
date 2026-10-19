@@ -824,3 +824,20 @@ The complete card inventory and ranked gaps are in
 - "Put N +1/+1 counters on each (other) tapped / legendary / <subtype> creature you control" (`only` filter on `p1_counters`).
 - "Exile target creature you control. Return it to the battlefield under its owner's control at the beginning of the next
   end step" (`blink_end`, returned from `Game.blinked` after the end-step triggers).
+
+## Round 19: "choose one of them" after exiling the top cards
+
+- "Exile the top N cards of your library. Choose one of them. You may play that card this turn / until the end of your
+  next turn / until end of turn" (`choose_one_exiled` keeps the best exiled card playable; the rest stay exiled).
+- Not done: "Sacrifice that token at the beginning of the next end step" after token creation needs `create_token` to
+  report the tokens it made; deferred until the `engine/play.py` split lands.
+
+## Forge comparison cards: Demolition Field, Esper Origins, Uldaros Theorix
+
+- Demolition Field: destroys a nonbasic land; both players fetch a basic land untapped (`land_swap` with `both`).
+- Esper Origins: flashback now puts the card onto the battlefield as Summon: Esper Maduin with a finality counter
+  (`flip_from_gy`, handled when the flashback spell finishes resolving); chapter I reveals the top card and takes it
+  if it is a permanent (`reveal_top_to_hand`).
+- Uldaros Theorix: exiles the best nonland card of each type from the graveyard and casts free spells totalling mana
+  value 6 or less (`gy_type_spree`). Approximation, flagged in `--coverage`: the exiled cards themselves are cast,
+  not token copies.
