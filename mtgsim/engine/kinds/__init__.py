@@ -4,7 +4,7 @@ A handler is `@kind("name", ...) def name(game, p, eff, target, ...)`. It receiv
 whichever of p, eff, target, item, prev, opp, k, source and cause it names (and **_ for the rest),
 after resolve has applied the shared amount rules (per / xq / x). Returning NO_SBA skips the
 state-based check that otherwise follows. Put a new kind in the family module it belongs to;
-mechanic modules with their own KINDS set (copies.py, removal.py, ...) are dispatched after these.
+mechanics.py registers the KINDS sets of mechanic modules with their own resolve() (copies.py, removal.py, ...).
 """
 from __future__ import annotations
 
@@ -21,4 +21,4 @@ def kind(*names):
     return register
 
 
-from . import cards, damage, graveyard, other, permanents, stats  # noqa: E402,F401  (registers the handlers)
+from . import cards, damage, graveyard, mechanics, other, permanents, stats  # noqa: E402,F401  (registers the handlers)
