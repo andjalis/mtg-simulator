@@ -151,6 +151,10 @@ def card_row(card, scenarios, catalog):
             requirements.add("stack.equip")
         effects = list(face.spell_effects) + [e for t in face.triggers for e in t.effects]
         effects += [e for a in face.activated for e in a.effects]
+        if "tokens.named_abilities" in known and any(e.kind == "token" and any(e.data.get(key) for key in
+                ("token_name", "legendary", "triggers", "pt_per", "cant_block", "sacrifice_mana", "temp_keywords"))
+                for e in effects + list(face.etb_effects)):
+            requirements.add("tokens.named_abilities")
         if "keywords.decayed" in known and ("decayed" in face.keywords or any(
                 e.kind == "token" and "decayed" in e.data.get("keywords", ())
                 for e in effects + list(face.etb_effects))):

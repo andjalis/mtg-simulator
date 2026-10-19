@@ -230,6 +230,7 @@ class CardDef:
     mana_filter: str = ""                               # "tap": {1},{T}: add any colour; "once": {1}: add .... once each turn
     mana_tap_other: str = ""                            # "creature"/"permanent": also tap an untapped one as a cost
     mana_sac: bool = False                              # "{T}, Sacrifice ~: Add one mana of any color."
+    mana_sac_no_tap: bool = False                       # sacrifice for mana without a tap cost (Spawn/Scion)
     mana_cond: str = ""                                 # "Dragon": only while you control one
     pt_scale: tuple = (1, 1)                            # (power, toughness) gained per counted permanent
     pt_per: str = ""                                    # "~ gets +1/+1 for each artifact you control": "artifact"

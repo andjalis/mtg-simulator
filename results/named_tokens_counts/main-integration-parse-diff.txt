@@ -1,0 +1,4 @@
+parsing with /tmp/tmpqifk8xnm/base/mtgsim
+parsing with /workspace/mtg-engine-public/mtgsim
+Base: f629764b2871
+Card parsing: 0 of 34922 cards parse differently from the base branch.

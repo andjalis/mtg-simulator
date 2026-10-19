@@ -24,18 +24,30 @@ def _token(m_count, power, toughness, desc, with_kw="", attacking=False, ability
     subtypes = [w for w in words if not re.fullmatch(COLOR_WORDS, w, re.I) and w.lower() != "and"]
     requested = [k.strip().lower() for k in re.split(r",\s*(?:and\s+)?|\s+and\s+", with_kw or "") if k.strip()]
     kws = frozenset(k for k in requested if k in KEYWORDS)
-    triggers, pt_per = [], ""
+    triggers, pt_per, cant_block, sacrifice_mana = [], "", False, None
     if ability:
-        per = re.fullmatch(r"(?:This (?:token|creature)|~) gets \+1/\+1 for each (\w+?)s? you control\.?", ability)
-        parsed = None if per else _parse_trigger(ability.rstrip("."). replace("this creature", "~") + ".")
+        ability = re.sub(r"\bthis (?:token|creature)\b", "~", ability, flags=re.I).strip()
+        if not ability:
+            return NO_MATCH
+        cant_block = bool(re.fullmatch(r"~ can't block\.?", ability, re.I))
+        sacrifice_mana = re.fullmatch(r"Sacrifice ~: Add (?:\{([WUBRGC])\}|(one mana of any color))\.?", ability, re.I)
+        per = re.fullmatch(r"~ gets \+1/\+1 for each (\w+?)s? you control\.?", ability, re.I)
+        parsed = None if per or cant_block or sacrifice_mana else _parse_trigger(ability[0].upper() + ability[1:].rstrip(".") + ".")
+        if not per and not cant_block and not sacrifice_mana and (not parsed or not parsed[0] or parsed[1] or parsed[2] is not None):
+            return NO_MATCH
         triggers = parsed[0] if parsed else []
         pt_per = per[1] if per else ""
-    artifact = "artifact" in subtypes
-    subtypes = [w for w in subtypes if w != "artifact"]
+    artifact = any(w.lower() == "artifact" for w in subtypes)
+    enchantment = any(w.lower() == "enchantment" for w in subtypes)
+    subtypes = [w for w in subtypes if w.lower() not in ("artifact", "enchantment")]
     return Effect("token", _num(m_count), data={"name": " ".join(subtypes) or "Token", "power": int(power),
                                                 "toughness": int(toughness), "keywords": kws,
                                                 "attacking": attacking, "triggers": triggers,
                                                 "artifact": artifact, "pt_per": pt_per,
+                                                **({"cant_block": True} if cant_block else {}),
+                                                **({"enchantment": True} if enchantment else {}),
+                                                **({"sacrifice_mana": tuple(COLORS) if sacrifice_mana[2] else
+                                                    (sacrifice_mana[1].upper(),)} if sacrifice_mana else {}),
                                                 **({"unparsed_token_keywords": tuple(k for k in requested if k not in KEYWORDS)}
                                                    if any(k not in KEYWORDS for k in requested) else {}),
                                                 "colors": frozenset(c for word, c in zip(
@@ -358,7 +370,7 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("discard", _num(m[1]), data={"unless": "basic_land"})),
     (r"(?:then )?discard (a|one|two|three) cards?(?: unless .*)?", lambda m: Effect("discard", _num(m[1]))),
     (r"RUMMAGE (\d+)", lambda m: Effect("rummage", int(m[1]))),
-    (r"create (a|one|two|three|four|five) (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: named [\w' ,-]+?)?(?: that's "
+    (r"create (a|one|two|three|four|five) (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: that's "
      r"(tapped and attacking))?(?: with ([\w ,]+))?",
      lambda m: _token(m[1], m[2], m[3], m[4], m[6], bool(m[5]))),
     (r'create (a) (\d+)/(\d+) ((?:\w+ )+?)creature token with "(.+)"',
@@ -394,7 +406,8 @@ _EFFECT_PATTERNS = [
     (r"create a token that's a copy of target token you control", lambda m: Effect("copy_token")),
     (r"put (a|one|two|three) \+1/\+1 counters? on (?:up to one )?target creature(?: or Vehicle)?(?: you control)?",
      lambda m: Effect("p1_counters", _num(m[1]), target="creature_mine")),
-    (r"put (a|one|two|three) \+1/\+1 counters? on ~", lambda m: Effect("p1_counters", _num(m[1]), target="self")),
+    (r"put (a|one|two|three|four|five|six|seven|eight|nine|ten|\d+) \+1/\+1 counters? on ~",
+     lambda m: Effect("p1_counters", _num(m[1]), target="self")),
     (r"put x \+1/\+1 counters on (?:~|him|her|it)", lambda m: Effect("p1_counters", 0, target="self", data={"x": "entered"})),
     (r"(?:then )?draw half x cards, rounded down", lambda m: Effect("draw", 0, data={"x_half": True})),
     (r"ELSPETHPLUS", lambda m: Effect("p1_counters", 1, target="creature_mine", data={"keyword": "flying"})),
@@ -524,8 +537,6 @@ _SUBS = [
                 r"instant card and a sorcery card in your graveyard, instead put two of them into your hand and the "
                 r"rest on the bottom of your library in any order\.", re.I),
      lambda m: f"DIGFLOW {_num(m[1])}."),
-    (re.compile(r"(create a \d+/\d+ (?:\w+ )+?creature token) named [\w' ,-]+?\. it gains haste until end of turn\.",
-                re.I), lambda m: f"{m[1]} with haste."),
     (re.compile(r"you may discard a card\. if you do, draw a card\.", re.I), lambda m: "RUMMAGE 1."),
     (re.compile(r"each opponent loses X life, where X is your devotion to (white|blue|black|red|green)\. you gain "
                 r"life equal to the life lost this way\.", re.I),

@@ -33,3 +33,8 @@ from .. import auras as _auras, copies as _copies, removal as _removal, search a
 _EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS
 _EFFECT_PATTERNS += _milling.EFFECT_PATTERNS
 _SUBS += _copies.SUBS + _counting.SUBS
+
+# Specific named/quoted-token forms must run before the broad creature-token template.
+from .. import token_templates as _token_templates  # noqa: E402
+_EFFECT_PATTERNS[:0] = _token_templates.EFFECT_PATTERNS
+_SUBS += _token_templates.SUBS

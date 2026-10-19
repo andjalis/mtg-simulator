@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 class CostsMixin:
     def mana_sources(self, p: Player, exclude=None, spell=None):
-        """p's untapped mana sources. ``spell`` decides what restricted mana (Cavern of Souls) can
+        """p's usable mana sources. ``spell`` decides what restricted mana (Cavern of Souls) can
         pay for: a CardDef, "ability" for activated abilities, or None to count it (AI estimates)."""
         out = []
         stopped = self.activations_stopped()
@@ -80,14 +80,14 @@ class CostsMixin:
         return costs.spell_plan(self, p, card, cost, exclude=convoked + improvised) is not None
 
     def pay(self, p: Player, cost: dict, exclude=None, spell="ability", *, exclude_many=()) -> list | None:
-        """Tap sources for cost (sacrificing Treasure). Returns the sources, or None if unpayable."""
+        """Pay with sources, tapping only when required and sacrificing consumed sources."""
         payment = find_payment([s for s in self.mana_sources(p, exclude, spell) if s not in exclude_many], cost)
         if payment is None:
             return None
         for s in payment:
             if s.card.mana_filter == "once":
                 s.ability_turns["filter"] = self.turn
-            else:
+            elif not s.card.mana_sac_no_tap:
                 s.tapped = True
             if s.card.token_kind == "treasure" or s.card.mana_sac:
                 self.sacrifice(s)

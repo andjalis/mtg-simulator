@@ -1,0 +1,20 @@
+{
+  "code_identity": "b334b76eb0a3a594136ddedd2d9975d2c5320bbce448548eee72c214a4c65ea9",
+  "main_commit": "f629764",
+  "resolution": "Retained expanded fixed counter counts plus upstream X counters and half-X draw templates.",
+  "tests": {
+    "failures": 0,
+    "passed": 960,
+    "run": 961,
+    "seconds": 143.384,
+    "skipped": 1
+  },
+  "parse_preflight": {
+    "command": "python3 scripts/parse_diff.py local --show 5",
+    "exit_code": 0,
+    "reported_changed_parses": 0,
+    "new_exceptions": 0,
+    "limitation": "Name-only repr comparison does not detect effect-field differences."
+  },
+  "lint_findings": 0
+}
