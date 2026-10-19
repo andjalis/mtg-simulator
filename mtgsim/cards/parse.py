@@ -31,6 +31,11 @@ def _parse_effects(text: str, opts: bool = False):
                 and effects and effects[-1].kind == "damage":
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
             continue
+        end_rider = re.fullmatch(r"(sacrifice|exile) (?:it|that token|the token|them|those tokens|the tokens) at the "
+                                 r"beginning of (?:the|your) next end step", s, re.I)
+        if end_rider and effects and effects[-1].kind == "token":
+            effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, end=end_rider[1].lower()))
+            continue
         conditional = milling.parse_conditional(s, effects)
         if conditional is not None:
             effects += conditional

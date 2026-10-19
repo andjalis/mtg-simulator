@@ -385,7 +385,7 @@ OUTLAWS = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock")
 
 class Player:
     CARD_ZONES = frozenset({"library", "hand", "graveyard", "exile", "sideboard",
-                            "on_adventure", "foretold", "plotted", "warp_exile"})
+                            "on_adventure", "foretold", "plotted", "warp_exile", "airbent"})
 
     def __setattr__(self, name, value):
         if name in self.CARD_ZONES:
@@ -414,6 +414,7 @@ class Player:
         self.on_adventure: list[CardDef] = []
         self.foretold: list[CardDef] = []
         self.plotted: list[CardDef] = []
+        self.airbent: list[CardDef] = []   # exiled by airbend: its owner may cast it for {2}
         self.warp_exile: list[CardDef] = []
         self.exiled_turn: dict = {}        # card name -> turn it was plotted or exiled after warp
         self.creature_died_turn = False    # one of our creatures died this turn

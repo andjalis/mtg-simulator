@@ -122,6 +122,7 @@ def _face_special_lines(st, line):
             level_marks.append((n, len(triggers)))
             return None
         line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious) — (?=When|At|If)", "", line)
+        line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
         parts = [p.strip().lower() for p in line.split(",")]
         if all(p in KEYWORDS or re.fullmatch(r"ward \{\d+\}", p) for p in parts):
             for p in parts:

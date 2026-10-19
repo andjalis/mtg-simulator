@@ -173,9 +173,12 @@ def untap_other(game, p, item, **_):
 
 
 @kind("tap")
-def tap(game, p, eff, target, **_):
+def tap(game, p, eff, target, item=None, **_):
     if isinstance(target, Permanent):
         target.tapped = True
+        src = item.source if item is not None else None
+        if eff.data.get("silence") and isinstance(src, Permanent):
+            target.silenced_by = src      # loses all abilities while the source stays out
         if eff.data.get("net"):
             target.net_locked = True
     for _ in range(eff.amount - 1):   # "tap up to two target creatures": the next best ones

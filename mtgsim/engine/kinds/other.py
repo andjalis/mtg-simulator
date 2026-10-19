@@ -9,6 +9,17 @@ from ..state import FIREBEND_MANA, Permanent, StackItem, pool_mana
 from . import kind
 
 
+@kind("airbend")
+def airbend(game, p, target, **_):
+    """Exile a permanent; its owner may cast it for {2} for as long as it stays exiled."""
+    if isinstance(target, Permanent) and target in target.controller.battlefield and \
+            game.leave_battlefield(target, "exile") and not target.front.is_token:
+        owner = target.owner
+        owner.exile.remove(target.front)
+        owner.airbent.append(target.front)
+        game.log(f"airbends {target.card.name}", p)
+
+
 @kind("emblem")
 def emblem(game, p, eff, **_):
     p.emblems.append((eff.data["subtype"], eff.amount, eff.amount2))

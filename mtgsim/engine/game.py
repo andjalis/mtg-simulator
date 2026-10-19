@@ -25,6 +25,7 @@ if TYPE_CHECKING:
 class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, AbilitiesMixin, BattlefieldMixin,
            ResolveMixin, EffectsMixin, CombatMixin):
     def __init__(self, p1: Player, p2: Player, rng: random.Random, max_turns: int = 60, log: bool = False):
+        self.end_cleanup: list = []   # (token, "sacrifice" | "exile"): goes away at the beginning of the next end step
         self.blinked: list = []       # (card, owner): returns at the beginning of the next end step
         self.stolen: list = []        # (permanent, original controller): control returns at end of turn
         self.players = [p1, p2]       # p1 is on the play

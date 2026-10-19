@@ -9,6 +9,8 @@ from .patterns import _N_WORDS
 
 
 _SUBS = [
+    (re.compile(r"tap up to one target creature\. it loses all abilities for as long as ~ remains on the battlefield\.",
+                re.I), lambda m: "TAPSILENCE."),
     (re.compile(r"counter up to one target activated or triggered ability\. if an ability of an artifact, creature, or "
                 r"planeswalker is countered this way, that permanent loses all abilities for as long as ~ remains on the "
                 r"battlefield\.", re.I), lambda m: "COUNTERABILITY."),

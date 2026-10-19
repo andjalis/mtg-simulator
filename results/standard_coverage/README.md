@@ -864,3 +864,18 @@ The complete card inventory and ranked gaps are in
 - Emblems: `Player.emblems` holds (creature type, +power, +toughness); "you get an emblem with 'Ninjas you control get
   +1/+1'" is the `emblem` kind. Other emblem texts are not parsed.
 - Not done: Kaito's -9 emblem, combat damage dealt to Kaito as a creature does not remove loyalty counters.
+
+## The Wondrous Wasp and named triggers
+
+- "Tap up to one target creature. It loses all abilities for as long as ~ remains on the battlefield" is the `tap`
+  effect with `silence`, which sets `silenced_by` like Tishana's Tidebinder.
+- A named trigger line ("Wasp's Sting — When ~ enters, ...") drops its name before parsing.
+
+## Tokens that leave at the next end step, and airbend
+
+- "Create ... tokens. Sacrifice / Exile them (that token, it) at the beginning of the next end step" sets `end` on
+  the `token` effect; `create_token` queues each token in `Game.end_cleanup`, and the end step removes them before
+  its own triggers fire (also "your next end step", read as the same end step).
+- Airbend (creature or nonland permanent, "up to one", "other", "or spell" read as creature): the permanent is
+  exiled into its owner's `airbent` zone and may be cast for {2}. "Airbend ... you control" nonland permanents and
+  the "airbend all other creatures" mode are not parsed.
