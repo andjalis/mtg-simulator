@@ -6,6 +6,8 @@ import random
 from typing import TYPE_CHECKING
 
 from .. import rules_events
+from .abilities import AbilitiesMixin
+from .battlefield import BattlefieldMixin
 from .combat import CombatMixin
 from .costs import CostsMixin
 from .effects import EffectsMixin
@@ -20,7 +22,8 @@ if TYPE_CHECKING:
     from .state import Permanent, Player, StackItem
 
 
-class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, ResolveMixin, EffectsMixin, CombatMixin):
+class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, AbilitiesMixin, BattlefieldMixin,
+           ResolveMixin, EffectsMixin, CombatMixin):
     def __init__(self, p1: Player, p2: Player, rng: random.Random, max_turns: int = 60, log: bool = False):
         self.blinked: list = []       # (card, owner): returns at the beginning of the next end step
         self.stolen: list = []        # (permanent, original controller): control returns at end of turn

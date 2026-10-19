@@ -19,9 +19,13 @@ in this execution environment; the public main does contain the gzip/JSON Lines
 download fix, but that does not verify every change on that local-only branch.
 
 AI behavior, Forge measurements and private gauntlet code are outside this batch.
-The existing Round 18 test discards an unused local variable, fixing public main's
-lint failure with the identical one-line cleanup already included in the separate
-AI PR #2. That shared cleanup is the only overlap observed with that PR.
+While validation ran, public main advanced to
+`29851a4`, merging the engine file split, AI fixes and Forge results. This branch
+reconciles the file split by keeping casting in `play.py` and moving the activation
+planner changes to `abilities.py`. The merged Round 18 test combined two different
+lint cleanups and referenced an undefined `h2`; this branch retains the second-Hero
+assertion and restores its variable. Upstream AI behavior and Forge results are
+preserved as merged, with no additional changes to either.
 
 Validation and inventory results are recorded in `validation.json`. Full database
 CSVs and scenario traces are generated locally instead of checking large duplicate

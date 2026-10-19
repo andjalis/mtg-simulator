@@ -1,84 +1,84 @@
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmp4lgk3yen/out/report.md
+complete: /tmp/tmpvb45s4ch/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmp3eqzsx03/out/report.md
+complete: /tmp/tmp9lr1g10b/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Fingerprinting code, decks, card data and selected runtime resources…
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/forge: 2 games
 Failed a-vs-b/forge: incomplete
-incomplete: /tmp/tmp4dq_x0k_/out/report.md
+incomplete: /tmp/tmp0da9hgzb/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/forge: 2 games
 Failed a-vs-b/forge: incomplete
-incomplete: /tmp/tmp4dq_x0k_/out/report.md
+incomplete: /tmp/tmp0da9hgzb/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-invalid: /tmp/tmphibqycos/out/report.md
+invalid: /tmp/tmppbz39_v6/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmp31r4o3ns/out/report.md
+complete: /tmp/tmpfaugo9no/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmp31r4o3ns/out/report.md
+complete: /tmp/tmpfaugo9no/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmpe4v4jlx8/out/report.md
+complete: /tmp/tmpkolahee5/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Reuse a-vs-b/builtin
-complete: /tmp/tmpe4v4jlx8/out/report.md
+complete: /tmp/tmpkolahee5/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmpe4v4jlx8/out/report.md
+complete: /tmp/tmpkolahee5/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmp_irutbrh/out/report.md
+complete: /tmp/tmpuubo30_2/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmp_irutbrh/out/report.md
+complete: /tmp/tmpuubo30_2/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmp_irutbrh/out/report.md
+complete: /tmp/tmpuubo30_2/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmp_irutbrh/out/report.md
+complete: /tmp/tmpuubo30_2/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmp_irutbrh/out/report.md
+complete: /tmp/tmpuubo30_2/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmpnaz5wmun/out/report.md
+complete: /tmp/tmpoog8he_c/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmpnaz5wmun/out/report.md
+complete: /tmp/tmpoog8he_c/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmptgd096om/out/report.md
+complete: /tmp/tmpswv0vlre/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmptgd096om/out/report.md
+complete: /tmp/tmpswv0vlre/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmpb1kj_hdn/out/report.md
+complete: /tmp/tmpk0_qvxyn/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmpb1kj_hdn/out/report.md
+complete: /tmp/tmpk0_qvxyn/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmpwh42pzxg/out/report.md
+complete: /tmp/tmpneva6hwr/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmpwh42pzxg/out/report.md
+complete: /tmp/tmpneva6hwr/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmpeulxbe_0/out/report.md
+complete: /tmp/tmp7zw6_om1/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Run a-vs-b/builtin: 2 games
-complete: /tmp/tmpeulxbe_0/out/report.md
+complete: /tmp/tmp7zw6_om1/out/report.md
 Fingerprinting code, decks, card data and selected runtime resources…
 Fingerprinting code, decks, card data and selected runtime resources…
 Fingerprinting code, decks, card data and selected runtime resources…
@@ -93,6 +93,6 @@ Grading the deck (meta, mana, speed, consistency)...
   goldfish...
   consistency...
 ----------------------------------------------------------------------
-Ran 904 tests in 178.217s
+Ran 909 tests in 100.567s
 
 OK (skipped=1)

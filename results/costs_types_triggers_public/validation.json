@@ -1,6 +1,6 @@
 {
   "base_commit": "5bb050e302a1771baee7102127182786a2b3f363",
-  "code_identity": "a129de8c5a5dea63fb6632b9a87e42a7bd01b0c7a47189acd92fdd2e71c3d38e",
+  "code_identity": "d062c76d9321465fb572392695e945a8cb3fe1d9cfdacc46e19f33e84bfb3172",
   "database_sha256": "eddc1ae21a3f0dd3b4f2e21d67c24f398fc9252e3bf99d0fd7feb56574b0108c",
   "inventory_total": 34922,
   "baseline_counts": {
@@ -19,25 +19,22 @@
   "corrected_false_full_matches": 27,
   "tests": {
     "command": "python3 -m unittest discover -s tests -t . -q",
-    "run": 904,
-    "passed": 903,
+    "run": 909,
+    "passed": 908,
     "skipped": 1,
     "failures": 0,
-    "seconds": 178.217
+    "seconds": 100.567,
+    "status": "passed"
   },
   "lint": {
     "command": "python3 scripts/lint.py",
     "findings": 0
   },
   "behavior": {
-    "run_identity": "37b27c286e5e736d9296e441dce63233b4e60ba8368c306ce9444b4d4bca2023",
+    "run_identity": "6ac31c270e571cbbca3f9ba9f13496318517793fdb4e1005f32fa909ffb95567",
     "scenario_denominator": 97,
     "outcomes": {
-      "error": 0,
-      "fail": 0,
-      "not_run": 0,
-      "pass": 97,
-      "stale": 0
+      "pass": 97
     },
     "card_denominator": 34922,
     "cards_with_current_direct_evidence": 9,
@@ -110,5 +107,10 @@
     "new_exceptions": 0,
     "reported_changes": 0,
     "limitation": "The existing script compares name-only repr(CardDef); coverage-delta.json records the real inventory changes."
+  },
+  "validated_against_main": "29851a4c55296002672a8d0833345d1dd0da2afd",
+  "inventory_after_reconciliation": {
+    "parser_and_coverage_sources_unchanged": true,
+    "note": "Inventory was measured before reconciliation. Only AI and engine runtime modules changed afterward; parser, templates, card database and template classifiers are unchanged. Scoped behavior evidence was rerun against the reconciled tree."
   }
 }
