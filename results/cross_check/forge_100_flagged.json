@@ -1,0 +1,26 @@
+{
+ "master/dimir_control vs grandmaster/jund_sacrifice": [
+  19,
+  81,
+  0,
+  100
+ ],
+ "master/azorius_artifact_control vs master/dimir_control": [
+  62,
+  38,
+  0,
+  100
+ ],
+ "grandmaster/izzet_spellementals vs grandmaster/mono_green_landfall": [
+  65,
+  35,
+  0,
+  100
+ ],
+ "master/azorius_artifact_control vs grandmaster/izzet_spellementals": [
+  78,
+  22,
+  0,
+  100
+ ]
+}
