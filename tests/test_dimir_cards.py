@@ -179,3 +179,57 @@ class Airbend(Dimir):
         self.game.settle()
         self.assertTrue(any(x.card.name == BEAR2.name for x in self.b.battlefield))
         self.assertEqual(self.b.airbent, [])
+
+
+DISC_DIED = card("Test Dread", "{3}{B}", "Instant", "~ costs {3} less to cast if a creature died this turn.\nDestroy target creature.")
+DISC_BLOCK = card("Test Strike", "{3}{U}", "Instant", "~ costs {1} less to cast if it targets a blocking creature.\nTap target creature.")
+DISC_ATK = card("Test Surge", "{4}{U}", "Instant", "~ costs {1} less to cast for each attacking creature.\nTap target creature.")
+
+
+class Discounts(Dimir):
+    def test_conditional_discount(self):
+        self.assertEqual(DISC_DIED.unsupported, [])
+        self.assertEqual(self.game.cost_of(self.a, DISC_DIED).get("generic"), 3)
+        self.game.creature_died_turn = True
+        self.assertEqual(self.game.cost_of(self.a, DISC_DIED).get("generic"), 0)
+
+    def test_targets_blocking_creature(self):
+        self.assertEqual(DISC_BLOCK.unsupported, [])
+        blocker = Permanent(BEAR2, self.b)
+        attacker = Permanent(BEAR2, self.a)
+        self.a.battlefield.append(attacker)
+        self.b.battlefield.append(blocker)
+        self.assertEqual(self.game.cost_of(self.a, DISC_BLOCK).get("generic"), 3)
+        self.game.attackers = [attacker]
+        self.game.blocks = {attacker: [blocker]}
+        self.assertEqual(self.game.cost_of(self.a, DISC_BLOCK).get("generic"), 2)
+
+    def test_per_attacking_creature(self):
+        self.assertEqual(DISC_ATK.unsupported, [])
+        a1, a2 = Permanent(BEAR2, self.a), Permanent(BEAR2, self.a)
+        self.game.attackers = [a1, a2]
+        self.assertEqual(self.game.cost_of(self.a, DISC_ATK).get("generic"), 2)
+
+
+SAC_PAY = card("Silent Echo", "{1}{B}", "Instant", "As an additional cost to cast ~, sacrifice a creature or planeswalker or pay {3}.\nDestroy target creature.")
+
+
+class AdditionalCosts(Dimir):
+    def test_sacrifice_or_pay(self):
+        self.assertEqual(SAC_PAY.unsupported, [])
+        self.assertEqual(SAC_PAY.extra_sac_or_pay, 3)
+        self.assertEqual(self.game.cost_of(self.a, SAC_PAY).get("generic"), 4)
+        self.a.battlefield.append(Permanent(BEAR2, self.a))
+        self.assertEqual(self.game.cost_of(self.a, SAC_PAY).get("generic", 0), 1)
+
+
+class AnotherPump(Dimir):
+    def test_another_creature_pump(self):
+        fox = card("Cunning Fox", "{2}{R}", "Creature — Fox",
+                   "Whenever ~ attacks, another target creature you control gets +1/+0 and gains haste until end of turn.", 2, 2)
+        self.assertEqual(fox.unsupported, [])
+        bear = Permanent(BEAR2, self.a)
+        self.a.battlefield.append(bear)
+        self.game.resolve(self.a, fox.triggers[0].effects[0], bear)
+        self.assertEqual(bear.power, 3)
+        self.assertTrue(bear.has("haste"))

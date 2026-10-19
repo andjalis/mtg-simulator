@@ -142,6 +142,9 @@ _EFFECT_PATTERNS = [
     (r"each opponent loses (\d+) life and you gain (\d+) life",
      lambda m: [Effect("drain", int(m[1]), target="each_opponent"), Effect("gain_life", int(m[2]))]),
     (r"DEVOTIONDRAIN ([WUBRG])", lambda m: Effect("drain_devotion", data={"color": m[1]})),
+    (r"another target creature you control gets \+(\d+)/\+(\d+)(?: and gains (flying|first strike|double strike|deathtouch|"
+     r"lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach))? until end of turn",
+     lambda m: Effect("pump", int(m[1]), int(m[2]), target="creature_mine", data={"keyword": m[3].lower()} if m[3] else {})),
     (r"target creature(?: you control)? gets \+(\d+)/\+(\d+) until end of turn",
      lambda m: Effect("pump", int(m[1]), int(m[2]), target="creature")),
     (r"~ gets ([+-]\d+)/([+-]\d+) until end of turn",

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from .. import graveyard, modal
+from .. import discounts, graveyard, modal
 from .. import auras as _auras, copies as _copies, counting as _counting
 from .model import Activated, AltCost, COLORS, Effect, KEYWORDS, NUMBERS, Trigger, _num, parse_mana_cost
 from .patterns import _parse_mana_ability
@@ -509,11 +509,11 @@ def _face_cost_and_static_lines(st, line):
             return None
         if _counting.parse_line(line, extra):
             return None
-        m = re.fullmatch(r"As an additional cost to cast ~, (?:pay \{(\d+)\} or )?sacrifice (an? (?:artifact|creature)"
-                         r"(?: or (?:artifact|creature))?)\.", line)
+        m = re.fullmatch(r"As an additional cost to cast ~, (?:pay \{(\d+)\} or )?sacrifice (an? (?:artifact|creature|enchantment|"
+                         r"planeswalker)(?: or (?:artifact|creature|enchantment|planeswalker))*)(?: or pay \{(\d+)\})?\.", line)
         if m:
             extra["extra_sacrifice"] = m[2]
-            extra["extra_sac_or_pay"] = int(m[1] or 0)
+            extra["extra_sac_or_pay"] = int(m[1] or m[3] or 0)
             return None
         m = re.fullmatch(r"~ can't be blocked by creatures with power (\d+) or less\.", line)
         if m:
@@ -593,6 +593,16 @@ def _face_cost_and_static_lines(st, line):
         m = re.fullmatch(r"As long as you control seven or more lands, ~ gets \+(\d+)/\+(\d+)\.", line)
         if m:
             extra["pt_if"] = extra.get("pt_if", ()) + (("lands>=7", int(m[1]), int(m[2])),)
+            return None
+        m = re.fullmatch(r"(?:(?:Delirium|Vivid|Flurry) — )?~ costs \{(\d+)\} less to cast if (.+)\.", line)
+        key = discounts.parse_condition(m[2]) if m else None
+        if key:
+            extra["cond_discount"] = extra.get("cond_discount", ()) + ((key, int(m[1])),)
+            return None
+        m = re.fullmatch(r"(?:(?:Delirium|Vivid|Flurry) — )?~ costs \{(\d+)\} less to cast for each (.+)\.", line)
+        key = discounts.parse_per(m[2]) if m else None
+        if key:
+            extra["per_discount"] = extra.get("per_discount", ()) + ((key, int(m[1])),)
             return None
         m = re.fullmatch(r"~ costs \{(\d+)\} less to cast if it targets a tapped creature\.", line)
         if m:
