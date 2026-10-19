@@ -9,6 +9,49 @@ from ..state import FIREBEND_MANA, Permanent, StackItem, pool_mana
 from . import kind
 
 
+@kind("gy_type_spree")
+def gy_type_spree(game, p, eff, **_):
+    """Uldaros Theorix: exile the best nonland card of each type from the graveyard, then cast free spells among
+    them with total mana value <= the limit. Approximation: the cards themselves are cast, not token copies."""
+    best = {}
+    for c in p.graveyard:
+        if c.is_land:
+            continue
+        for t in ("Artifact", "Creature", "Enchantment", "Instant", "Planeswalker", "Sorcery", "Battle"):
+            if t in c.types and (t not in best or c.cmc > best[t].cmc):
+                best[t] = c
+    chosen = list(dict.fromkeys(best.values()))
+    for c in chosen:
+        game.move_card(c, p.graveyard, p.exile, reason="exile")
+    picked, total = [], 0
+    for c in sorted(chosen, key=lambda c: -c.cmc):
+        if total + c.cmc <= eff.amount:
+            picked.append(c)
+            total += c.cmc
+    for c in picked:
+        game.cast_free(p, c)
+    game.log(f"exiles {len(chosen)} cards and casts {len(picked)} free", p)
+
+
+@kind("flip_from_gy")
+def flip_from_gy(game, item, **_):
+    if item is not None:
+        item.flip_gy = True
+
+
+@kind("reveal_top_to_hand")
+def reveal_top_to_hand(game, p, eff, **_):
+    if not p.library:
+        return
+    top = p.library[-1]
+    what = eff.data["what"]
+    ok = top.is_land if what == "land" else top.is_creature if what == "creature" \
+        else not ({"Instant", "Sorcery"} & set(top.types))
+    game.log(f"reveals {top.name}", p)
+    if ok:
+        p.hand.append(p.library.pop())
+
+
 @kind("craft")
 def craft(game, p, item, **_):
     card = item.source.front if item and item.source else None

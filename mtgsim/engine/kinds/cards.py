@@ -149,6 +149,13 @@ def exile_top(game, p, eff, **_):
     game.log(f"exiles the top {len(p.impulse_new)} card(s) of their library", p)
 
 
+@kind("choose_one_exiled")
+def choose_one_exiled(game, p, **_):
+    if len(p.impulse_new) > 1:
+        keep = max(p.impulse_new, key=lambda c: (not c.is_land, c.cmc))
+        p.impulse_new = [keep]
+
+
 @kind("may_play_exiled")
 def may_play_exiled(game, p, eff, **_):
     p.impulse += [(c, game.turn + eff.amount) for c in p.impulse_new]

@@ -239,19 +239,21 @@ def discover_treasures(game, p, **_):
 
 
 @kind("land_swap")
-def land_swap(game, p, opp, **_):
+def land_swap(game, p, eff, opp, **_):
     lands = [x for x in opp.battlefield if x.card.is_land and not is_basic_land(x.card) and game.targetable(x, p)]
     if lands:
         victim = max(lands, key=perm_value)
         game.destroy(victim)
-        land = choose_basic(game, opp)
-        if land is not None:
-            opp.library.remove(land)
-            game.log(f"fetches {land.name}", opp)
-            perm = game.enter_battlefield(opp, land)
-            perm.tapped = True
-            perm.counters["stun"] = 1
-            opp.library.shuffle(game.rng)
+        for who in ((opp, p) if eff.data.get("both") else (opp,)):
+            land = choose_basic(game, who)
+            if land is not None:
+                who.library.remove(land)
+                game.log(f"fetches {land.name}", who)
+                perm = game.enter_battlefield(who, land)
+                if not eff.data.get("both"):
+                    perm.tapped = True
+                    perm.counters["stun"] = 1
+            who.library.shuffle(game.rng)
 
 
 @kind("amass")

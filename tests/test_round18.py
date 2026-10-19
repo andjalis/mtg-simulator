@@ -47,6 +47,16 @@ class Round18(unittest.TestCase):
         self.assertNotIn(bear, self.a.battlefield)
         self.assertEqual(len(self.game.blinked), 1)
 
+    def test_choose_one_of_exiled(self):
+        digger = card("Test Digger", "{2}{R}", "Sorcery", "Exile the top two cards of your library. Choose one of them. "
+                      "You may play that card this turn.")
+        self.assertEqual(digger.unsupported, [])
+        self.a.library.extend([BEAR, ISLAND])
+        for eff in digger.spell_effects:
+            self.game.resolve(self.a, eff, None)
+        self.assertEqual(len(self.a.impulse), 1)
+        self.assertEqual(self.a.impulse[0][0].name, BEAR.name)
+
 
 if __name__ == "__main__":
     unittest.main()
