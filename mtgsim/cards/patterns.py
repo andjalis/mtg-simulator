@@ -22,7 +22,7 @@ def _token(m_count, power, toughness, desc, with_kw="", attacking=False, ability
     from .parse import _parse_trigger  # deferred: parse imports this module
     words = desc.split()
     subtypes = [w for w in words if not re.fullmatch(COLOR_WORDS, w, re.I) and w.lower() != "and"]
-    requested = [k.strip().lower() for k in re.split(r",| and ", with_kw or "") if k.strip()]
+    requested = [k.strip().lower() for k in re.split(r",\s*(?:and\s+)?|\s+and\s+", with_kw or "") if k.strip()]
     kws = frozenset(k for k in requested if k in KEYWORDS)
     triggers, pt_per = [], ""
     if ability:
@@ -762,6 +762,10 @@ _IF_CONDS = [
 
 def _if_cond(phrase: str) -> str:
     """The engine condition name for the "if <phrase>," of a sentence, or ""."""
+    from .. import phase_conditions
+    condition = phase_conditions.parse(phrase)
+    if condition:
+        return condition
     phrase = phrase.strip()
     for rx, name in _IF_CONDS:
         m = re.fullmatch(rx, phrase, re.I)

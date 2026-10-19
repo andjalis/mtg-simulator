@@ -137,7 +137,7 @@ def card_row(card, scenarios, catalog):
             requirements.add("costs.joint")
         if "continuous.types_colors" in known and face.is_permanent:
             requirements.add("continuous.types_colors")
-        if "triggers.phase" in known and any(t.event in ("each_upkeep", "opp_upkeep", "each_end_step")
+        if "triggers.phase" in known and any(t.event in ("upkeep", "end_step", "each_upkeep", "opp_upkeep", "each_end_step")
                                             for t in face.triggers):
             requirements.add("triggers.phase")
         if not face.is_land and "actions.atomic" in known:
@@ -151,6 +151,10 @@ def card_row(card, scenarios, catalog):
             requirements.add("stack.equip")
         effects = list(face.spell_effects) + [e for t in face.triggers for e in t.effects]
         effects += [e for a in face.activated for e in a.effects]
+        if "keywords.decayed" in known and ("decayed" in face.keywords or any(
+                e.kind == "token" and "decayed" in e.data.get("keywords", ())
+                for e in effects + list(face.etb_effects))):
+            requirements.add("keywords.decayed")
         if any(e.target in ("creature", "creature_mine", "creature_pw") for e in effects):
             requirements.add("targets.creature")
         if any(e.kind in ("destroy", "wrath", "wrath_pw", "bounce") for e in effects):

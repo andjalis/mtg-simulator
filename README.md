@@ -166,8 +166,8 @@ python3 -m mtgsim.behavior_coverage --run --save results/behavior-coverage
 python3 -m mtgsim.behavior_coverage --ledger results/behavior-coverage/ledger.json --save results/behavior-review
 ```
 
-It maps 97 explicit scenarios for identity, events, joint cost planning, transactional
-actions, type/color and P/T continuous effects, phase triggers, supported replacements,
+It maps 116 explicit scenarios for identity, events, joint cost planning, transactional
+actions, type/color and P/T continuous effects, phase conditions, decayed, supported replacements,
 removal, graveyard returns, targeting,
 the normal legend rule and normal equip
 to a versioned [capability catalog](rules/capabilities.json). Reports retain failures,
@@ -380,7 +380,7 @@ adventures, flashback, foretold cards, blitz, channel; cast them with
 
 | File | Role |
 | --- | --- |
-| `mtgsim/cards/` | Card model (`model.py`), oracle-text templates (`patterns.py`), Scryfall JSON to `CardDef` (`parse.py`), tokens (`tokens.py`) |
+| `mtgsim/cards/` | Card model (`model.py`), oracle-text templates (`patterns.py`), Scryfall JSON to `CardDef` (`parse.py`, with the per-line parsers in `face_lines.py`), tokens (`tokens.py`) |
 | `mtgsim/removal.py`, `copies.py`, `auras.py`, ... | Template modules: one mechanic family each, joined to the tables in `cards/` |
 | `mtgsim/carddb.py` | Card lookup and Scryfall fetch/cache |
 | `mtgsim/build_carddb.py` | Builds `data/cards.sqlite3` from Scryfall bulk data or Forge |
