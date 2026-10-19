@@ -1,5 +1,31 @@
 # AI before/after
 
+## Forge cross-check after the control and combo AI fixes, 2026-10-19
+
+Built-in engine on `main` at `29851a4` (300 games per matchup, seed 1) against Forge's results (first
+player's win rate, draws half). The AI changes since the last round are the Jund and control-deck fixes
+(PRs 88 and 2). Forge numbers are unchanged from `results/cross_check/`; Azorius Artifact Control vs Boros
+Dragons was re-run at 100 games (seed 11, `forge_100_boros.json`) because 40 games left the gap unreadable.
+Counts are in `results/cross_check/rerun_flagged_8.json`.
+
+| Matchup | Last round | Now | Forge | Gap now | z |
+|---|---|---|---|---|---|
+| Izzet vs Mono-Green Landfall | 42% | 50% | 65% (100 games) | -15 | -2.5 |
+| Azorius Artifact Control vs Boros Dragons | 16% | 25% | 34% (100 games) | -9 | -1.7 |
+| Azorius Artifact Control vs Dimir Midrange | 47% | 58% | 28% (40 games) | +31 | +3.7 |
+| Azorius Artifact Control vs Izzet | 55% | 55% | 78% (100 games) | -23 | -4.0 |
+| Azorius Artifact Control vs Jund | 55% | 61% | 50% (40 games) | +11 | +1.3 |
+| Azorius Artifact Control vs Mono-Green Landfall | 41% | 43% | 40% (40 games) | +3 | +0.4 |
+| Azorius Artifact Control vs Dimir Control | 38% | 50% | 62% (100 games) | -12 | -2.0 |
+
+- **Closer to Forge:** Izzet vs Landfall (gap 23 to 15, no longer flagged), Artifact Control vs Dimir
+  Control (24 to 12, no longer flagged) and Artifact Control vs Boros Dragons (19 to 9; Forge's 40-game
+  35% held up at 34% over 100).
+- **Further from Forge:** Artifact Control vs Dimir Midrange went from +19 to +31 and is now flagged.
+  The Dimir Midrange deck still has four ignored cards (Kaito, The Wondrous Wasp, Tishana's Tidebinder,
+  Wan Shi Tong), which Forge plays and the built-in engine does not.
+- **Unchanged:** Artifact Control vs Izzet is still flagged (55% vs Forge's 78%).
+
 ## Card-effects integration check, 2026-10-18 (rounds 46–48)
 
 Two synthetic 60-card mirrors exercise regeneration and learn with HeuristicAI
