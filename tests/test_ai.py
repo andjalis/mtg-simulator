@@ -274,6 +274,70 @@ class AITests(unittest.TestCase):
         self.a.ai.play_land(self.game, self.a)
         self.assertEqual(sorted(p.card.name for p in self.a.battlefield), ["Mountain", "Mountain"])
 
+    def test_flash_artifact_with_damage_waits_for_a_tapped_attacker(self):
+        for _ in range(2):
+            perm("Plains", self.a)
+        blades = DB.get("Spring-Loaded Sawblades")
+        self.game.step = "main1"
+        self.assertIsNone(self.a.ai.plan_spell(self.game, self.a, blades, True))
+        self.a.hand = [blades]
+        tusker = perm("Grizzly Bears", self.b)
+        tusker.tapped = True
+        self.game.active_idx = 1
+        self.game.step = "declare_attackers"
+        self.game.attackers = [tusker]
+        choice = self.a.ai.respond(self.game, self.a)
+        self.assertEqual(choice[0], blades)
+
+    def test_symmetric_artifact_sweep_is_not_cast_into_our_own_board(self):
+        for _ in range(4):
+            perm("Plains", self.a)
+        for name in ("Candy Trail", "Cryogen Relic", "Cryogen Relic"):
+            perm(name, self.a)
+        perm("Grizzly Bears", self.b)
+        starcage = DB.get("Pinnacle Starcage")
+        self.game.step = "main1"
+        plan = self.a.ai.plan_spell(self.game, self.a, starcage, True)
+        self.assertTrue(plan is None or plan[0] <= 0)
+        self.a.battlefield = [p for p in self.a.battlefield if p.card.name == "Plains"]
+        self.assertGreater(self.a.ai.plan_spell(self.game, self.a, starcage, True)[0], 0)
+
+    def test_narrow_counters_take_the_first_real_target(self):
+        for _ in range(6):
+            perm("Forest", self.a)
+        for _ in range(2):
+            perm("Island", self.b)
+        self.b.hand = [DB.get("Spell Snare")] + [DB.get("Island")] * 3
+        self.a.hand = [DB.get("Grizzly Bears")]
+        self.game.cast(self.a, DB.get("Grizzly Bears"))
+        self.assertEqual(self.a.creatures, [])
+        self.assertEqual(len(self.b.graveyard), 1)
+
+    def test_modal_counter_counters_a_creature_spell(self):
+        for _ in range(6):
+            perm("Forest", self.a)
+        for _ in range(2):
+            perm("Island", self.b)
+        self.b.hand = [DB.get("Get Out")]
+        self.a.hand = [DB.get("Kalonian Tusker")]
+        self.game.cast(self.a, DB.get("Kalonian Tusker"))
+        self.assertEqual(self.a.creatures, [])
+        self.assertEqual(self.b.hand, [])
+
+    def test_x_instant_is_cast_at_its_largest_x_on_an_attacker(self):
+        for name in ("Steam Vents", "Island", "Island", "Mountain", "Mountain"):
+            perm(name, self.a)
+        critique = DB.get("Traumatic Critique")
+        self.a.hand = [critique]
+        tusker = perm("Kalonian Tusker", self.b)
+        tusker.tapped = True
+        self.game.active_idx = 1
+        self.game.step = "declare_attackers"
+        self.game.attackers = [tusker]
+        choice = self.a.ai.respond(self.game, self.a)
+        self.assertEqual(choice[0], critique)
+        self.assertIs(choice[1][0], tusker)
+
 
 if __name__ == "__main__":
     unittest.main()
