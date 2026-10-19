@@ -324,3 +324,9 @@ def oring_all(game, eff, item, **_):
 def token_copy(game, p, eff, **_):
     game.enter_battlefield(p, eff.data["card"])
     game.log(f"creates {eff.data['card'].name}", p)
+
+
+@kind("sacrifice_self")
+def sacrifice_self(game, p, eff, target, **_):
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        game.sacrifice(target)

@@ -152,8 +152,18 @@ def _product(choices):
     return out
 
 
+def _counter_effects(card: CardDef) -> list:
+    """The counter effects of a spell, or of its first mode that counters ("counter target creature spell
+    or choose one")."""
+    effs = [e for e in card.spell_effects if e.kind == "counter"]
+    if effs or not getattr(card, "modes", None):
+        return effs
+    return next(([e for e in mode if e.kind == "counter"] for mode in card.modes
+                 if any(e.kind == "counter" for e in mode)), [])
+
+
 def _is_counter(card: CardDef) -> bool:
-    return any(e.kind == "counter" for e in card.spell_effects)
+    return bool(_counter_effects(card))
 
 
 def fight(a: Permanent, b: Permanent) -> tuple[bool, bool]:
@@ -691,27 +701,37 @@ class HeuristicAI:
         eff = opp.life - (reach(me) - extra_reach)
         return life_value(eff) - life_value(eff - amount)
 
+    @staticmethod
+    def _sized(game: Game, me: Player, card: CardDef):
+        """An X spell with X fixed at the largest value the remaining mana pays for, else None."""
+        x = 0
+        cost = game.cost_of(me, card)
+        while x < 20 and engine.find_payment(game.mana_sources(me, spell=card), engine.add_costs(
+                cost, {"generic": x + 1})) is not None:
+            x += 1
+        if x < 1:
+            return None
+        sized = [dataclasses.replace(e, amount=x, amount2=x if e.data.get("x2") else e.amount2,
+                                    data={**e.data, "x": False})
+                 if (e.data or {}).get("x") else e for e in card.spell_effects]
+        return dataclasses.replace(card, spell_effects=sized)
+
     def plan_spell(self, game: Game, me: Player, card: CardDef, precombat: bool = False):
         """Return (value, targets) if the AI wants to cast card in its main phase, else None."""
         opp = game.opponent(me)
         if not card.is_permanent and any((e.data or {}).get("x") for e in card.spell_effects):
-            # An X spell: plan it with the largest X the remaining mana pays for.
-            x = 0
-            cost = game.cost_of(me, card)
-            while x < 20 and engine.find_payment(game.mana_sources(me, spell=card), engine.add_costs(
-                    cost, {"generic": x + 1})) is not None:
-                x += 1
-            if x < 1:
-                return None
-            sized = [dataclasses.replace(e, amount=x, amount2=x if e.data.get("x2") else e.amount2,
-                                        data={**e.data, "x": False})
-                     if (e.data or {}).get("x") else e for e in card.spell_effects]
-            return self.plan_spell(game, me, dataclasses.replace(card, spell_effects=sized), precombat)
+            sized = self._sized(game, me, card)
+            return None if sized is None else self.plan_spell(game, me, sized, precombat)
         if card.is_permanent:
             if card.is_creature and precombat and "haste" not in card.keywords and not card.produces \
                     and any(_is_trick(c) for c in me.hand):
                 return None  # keep mana open for the trick; cast it after combat
-            return (card_value(card) + 0.5 * card.cmc + self._etb_value(game, me, card, precombat)
+            if me is game.active and not card.is_creature and self._flash_removal(card):
+                return None  # a flash "when this enters, deal damage to a creature": cast it on their turn
+            etb = self._etb_value(game, me, card, precombat)
+            if etb < 0:
+                return None  # its enters trigger costs us more than the permanent is worth
+            return (card_value(card) + 0.5 * card.cmc + etb
                     + self._static_value(game, me, card) - self._sac_cost(game, me, card), None)
         instant = card.instant_speed
         if getattr(card, "modes", None):
@@ -918,6 +938,14 @@ class HeuristicAI:
             return tgt, 0.5 * combat_power(tgt)
         return None, 0.0
 
+    @staticmethod
+    def _flash_removal(card: CardDef) -> bool:
+        """A flash noncreature permanent whose enters trigger damages or removes a creature."""
+        if "flash" not in card.keywords:
+            return False
+        effects = [e for t in card.triggers if t.event == "etb" for e in t.effects] or list(card.etb_effects)
+        return any(e.kind in ("damage", "destroy", "bounce") and e.target in CREATURE_TARGETS for e in effects)
+
     def _etb_value(self, game: Game, me: Player, card: CardDef, precombat: bool) -> float:
         """Extra value of a permanent's enters-the-battlefield removal, tutor or explore."""
         # Mirrors Game.enter_battlefield: etb_effects only fire on a card without an etb trigger.
@@ -927,6 +955,10 @@ class HeuristicAI:
             if eff.kind == "oring":
                 tgt = self.choose_target(game, me, eff, card)
                 value += perm_value(tgt) if tgt is not None else 0.0
+            elif eff.kind == "oring_all":   # symmetric: it exiles our own small permanents too
+                hit = lambda x: (x.is_creature or x.card.is_artifact) and x.card.cmc <= eff.amount
+                value += sum(perm_value(x) for x in game.opponent(me).battlefield if hit(x)) - \
+                    sum(perm_value(x) for x in me.battlefield if hit(x))
             # An earthbend ETB is left to card_value: valuing it on top made the landfall deck
             # cast Earthbender Ascension ahead of creatures and lose (47% vs the previous AI).
             elif eff.kind in EXTRA_KINDS and eff.kind != "earthbend" and eff.target in ("none", "self", "my_creatures"):
@@ -1024,9 +1056,23 @@ class HeuristicAI:
         """Priority with something on the stack, or in an empty-stack window.
         Returns (card, targets) or None to pass."""
         options = [c for c in _spell_options(game, me) if c.instant_speed and game.can_cast_now(me, c)
-                   and not getattr(c, "modes", None)]   # modal instants: engine.respond_extras
+                   and (not getattr(c, "modes", None) or _counter_effects(c))]   # other modal: respond_extras
+        real = {}
+        for c in list(options):     # an instant with X (Traumatic Critique) is judged at the largest X
+            if any((e.data or {}).get("x") for e in c.spell_effects):
+                sized = self._sized(game, me, c)
+                options.remove(c)
+                if sized is not None:
+                    options.append(sized)
+                    real[id(sized)] = c
         if not options:
             return None
+        play = self._respond(game, me, options)
+        if play is not None and id(play[0]) in real:
+            return real[id(play[0])], play[1]
+        return play
+
+    def _respond(self, game: Game, me: Player, options):
         if game.stack:
             top = game.stack[-1]
             if top.controller is me:
@@ -1112,7 +1158,7 @@ class HeuristicAI:
         opp = game.opponent(me)
         counters = []
         for card in options:
-            effs = [e for e in card.spell_effects if e.kind == "counter"]
+            effs = _counter_effects(card)
             if not effs or not all(game.can_counter(e, item, me) for e in effs):
                 continue
             tax = max(e.amount for e in effs)
@@ -1124,6 +1170,11 @@ class HeuristicAI:
         threat = self.threat(game, me, item)
         # Spend a counter on anything that matters; be pickier while they hold more cards.
         bar = 3.0 + (1.5 if len(opp.hand) >= 3 else 0.0)
+        # A narrow counter (Spell Snare, Get Out) has few targets: it takes the first one that matters.
+        narrow = [c for c in counters if any(e.filter for e in _counter_effects(c))]
+        if narrow:
+            counters = narrow
+            bar = 2.5
         if threat < bar:
             return None
         card = min(counters, key=lambda c: (c.cmc, card_value(c)))
@@ -1161,7 +1212,14 @@ class HeuristicAI:
         for card in options:
             if card.is_creature:
                 continue
-            plan = self._removal_on(game, me, card, attackers)
+            if card.is_permanent:      # flash artifact: its enters trigger picks a tapped attacker
+                if not self._flash_removal(card):
+                    continue
+                etb = [e for t in card.triggers if t.event == "etb" for e in t.effects] or list(card.etb_effects)
+                plan = self._removal_on(game, me, dataclasses.replace(card, spell_effects=etb), attackers)
+                plan = None if plan is None else (plan[0], None)
+            else:
+                plan = self._removal_on(game, me, card, attackers)
             if plan is None:
                 continue
             value = plan[0]
@@ -1208,6 +1266,8 @@ class HeuristicAI:
         for card in options:
             if card.is_creature:
                 value, targets = card_value(card), None
+            elif card.is_permanent and not card.spell_effects and not card.is_land:
+                value, targets = card_value(card) + 0.5 * card.cmc, None   # flash artifact, unused this turn
             elif _is_trick(card) or any(e.target == "spell" for e in card.spell_effects):
                 continue
             elif all(e.kind in ("draw", "dig", "scry", "surveil", "discard", "gain_life") or

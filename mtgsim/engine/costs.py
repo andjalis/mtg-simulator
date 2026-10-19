@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING
 
-from .. import auras, copies, counting, returns
+from .. import auras, copies, counting, returns, costs
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
@@ -75,8 +75,9 @@ class CostsMixin:
 
     def spell_payable(self, p: Player, card: CardDef) -> bool:
         cost = self.cost_of(p, card, assist=False)
+        convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
         cost, improvised, _ = self.assist_payment(p, card, cost) if card.improvise or card.delve else (cost, [], [])
-        return payable([s for s in self.mana_sources(p, spell=card) if s not in improvised], cost)
+        return costs.spell_plan(self, p, card, cost, exclude=convoked + improvised) is not None
 
     def pay(self, p: Player, cost: dict, exclude=None, spell="ability", *, exclude_many=()) -> list | None:
         """Tap sources for cost (sacrificing Treasure). Returns the sources, or None if unpayable."""
@@ -440,7 +441,7 @@ class CostsMixin:
                 if a.kind in ("alt", "kicker") or (a.kind == "spectacle" and opp.lost_life_turn) or \
                         (a.kind == "blitz" and "hand" in a.zone):
                     out.append(self._variant(c, a.kind, a))
-        out += [self._variant(x.card, "prepared") for x in p.battlefield if x.prepared and x.card.back is not None]
+        out += [self._variant(x.front, "prepared") for x in p.battlefield if x.prepared and x.card.back is not None]
         out += [self._variant(c, "from_adventure") for c in p.on_adventure]
         out += [self._variant(c, "plotted", AltCost("plotted", {"generic": 0})) for c in p.plotted
                 if p.exiled_turn.get(c.name, 0) < self.turn]
@@ -483,7 +484,7 @@ class CostsMixin:
         if generation is not None and generation != getattr(base, "generation", None):
             return False
         if kind == "prepared":
-            return any(x.card is base and x.prepared for x in p.battlefield)
+            return any(x.front is base and x.prepared for x in p.battlefield)
         return base in self._zone(p, kind)
 
     def can_cast_now(self, p: Player, card: CardDef, *, during_resolution=False) -> bool:

@@ -78,12 +78,21 @@ class StackMixin:
             or self.rule_events.listeners) else None
         self.rule_events.emit(rules_events.RulesEvent(event, p, source, context, subject, before))
         self._dispatch_trigger_event(p, event, source, context, subject)
+        if source is None and event in ("upkeep", "end_step"):
+            for controller in self.players:
+                self.fire(controller, "each_upkeep" if event == "upkeep" else "each_end_step", context=p)
+                if event == "upkeep" and controller is not p:
+                    self.fire(controller, "opp_upkeep", context=p)
 
     def _dispatch_trigger_event(self, p, event, source=None, context=None, subject=None):
         perms = [source] if source is not None else list(p.battlefield)
         for perm in perms:
             for i, trig in enumerate(perm.triggers):
                 if trig.event != event:
+                    continue
+                if trig.intervening_if and not self.check_cond(perm.controller,
+                        Effect("condition", cond=trig.intervening_if),
+                        StackItem(perm.controller, [], [], source=perm, context=context), None):
                     continue
                 if event == "permanent_enters":
                     me_ok, other, desc = trig.filter.split("|", 2)
@@ -296,6 +305,8 @@ class StackMixin:
         c = eff.cond
         if not c:
             return True
+        if c == "phase_player_empty_hand":
+            return isinstance(getattr(item, "context", None), Player) and not item.context.hand
         if c[0] == "!":
             sub = Effect(eff.kind, cond=c[1:])
             return not self.check_cond(p, sub, item, prev)
