@@ -33,7 +33,7 @@ class Round18(unittest.TestCase):
         t, h1, h2, bear = self.perm(TAPPER), self.perm(HERO), self.perm(HERO), self.perm(BEAR)
         t.tapped = True
         self.game.resolve(self.a, TAPPER.triggers[0].effects[0], None)
-        self.assertEqual((t.p1, h1.p1, bear.p1), (1, 0, 0))
+        self.assertEqual((t.p1, h1.p1, h2.p1, bear.p1), (1, 0, 0, 0))
         eff = HERO.activated[0].effects[0]
         self.assertEqual(eff.data["only"], "Hero")
         self.assertTrue(eff.data["other"])
