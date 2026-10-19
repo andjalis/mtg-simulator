@@ -18,7 +18,7 @@ class AbilitiesMixin:
     def activate_loyalty(self, p: Player, pw: Permanent, idx: int, targets=None) -> bool:
         if pw not in p.battlefield or pw.loyalty_used or idx < 0 or idx >= len(pw.card.loyalty_abilities):
             return False
-        if self.activations_stopped():
+        if self.activations_stopped() or pw.silenced:
             return False
         cost, effects = pw.card.loyalty_abilities[idx]
         if pw.loyalty + cost < 0:
@@ -191,6 +191,8 @@ class AbilitiesMixin:
         """Whether perm's activated ability idx (kind "ability") can be activated now."""
         acts = perm.card.activated
         if perm not in p.battlefield or idx < 0 or idx >= len(acts) or acts[idx].kind != "ability":
+            return False
+        if perm.silenced:
             return False
         act, c = acts[idx], acts[idx].extra_costs
         if perm.card.is_land and any(x.card.chosen_land_lock and x.chosen_land == perm.card.name

@@ -98,6 +98,7 @@ class Permanent:
         self.exile_turn = -1
         self.chosen_land = ""
         self.chosen_type = ""              # Cavern of Souls
+        self.silenced_by = None            # Tishana's Tidebinder: loses all abilities while it stays out
         self.net_locked = False            # Braided Net: no activated abilities while it stays tapped
         self.bargained = self.gifted = False   # cast with Bargain / the gift promised
         self.produces_now = None           # set by Game.mana_sources: the colours usable right now
@@ -213,7 +214,14 @@ class Permanent:
     @property
     def loyalty(self): return self.counters.get("loyalty", 0)
 
+    @property
+    def silenced(self):
+        by = self.silenced_by
+        return by is not None and by in by.controller.battlefield
+
     def has(self, kw):
+        if self.silenced_by is not None and kw in KEYWORDS and self.silenced:
+            return False
         if self.auras and kw in KEYWORDS and any("loses_abilities" in a.card.aura_flags for a in self.auras):
             return False
         return continuous.keyword(self, kw, self._has_unlayered(kw))
@@ -293,6 +301,8 @@ class Permanent:
 
     @property
     def triggers(self):
+        if self.silenced_by is not None and self.silenced:
+            return []
         exalted = [Trigger("attacks_alone", [Effect("pump", 1, 1, target="trigger_subject")])
                    for _ in range(self.exalted_count)]
         mine = self.card.triggers

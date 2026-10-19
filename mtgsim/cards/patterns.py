@@ -408,6 +408,8 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("p1_counters", _num(m[1]), target="creature_mine")),
     (r"put (a|one|two|three|four|five|six|seven|eight|nine|ten|\d+) \+1/\+1 counters? on ~",
      lambda m: Effect("p1_counters", _num(m[1]), target="self")),
+    (r"put x \+1/\+1 counters on (?:~|him|her|it)", lambda m: Effect("p1_counters", 0, target="self", data={"x": "entered"})),
+    (r"(?:then )?draw half x cards, rounded down", lambda m: Effect("draw", 0, data={"x_half": True})),
     (r"ELSPETHPLUS", lambda m: Effect("p1_counters", 1, target="creature_mine", data={"keyword": "flying"})),
     (r"(?:it|~) deals (\d+) damage", lambda m: Effect("damage", int(m[1]), target="prev")),
     (r"that creature gets -(\d+)/-(\d+) until end of turn",
@@ -468,6 +470,7 @@ _EFFECT_PATTERNS = [
     (r"ADVERSARY", lambda m: Effect("adversary", data={"cost": {"generic": 2, "R": 1}})),
     (r"~ gains ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach))(?: and ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)))? until end of turn",
      lambda m: [Effect("grant", target="self", data={"keyword": k.lower()}) for k in m.groups() if k]),
+    (r"COUNTERABILITY", lambda m: Effect("counter_ability")),
     (r"BLINKEND", lambda m: Effect("blink_end", target="creature_mine")),
     (r"put (a|one|two|three) \+1/\+1 counters? on each (other )?(tapped |legendary )?(creature|[A-Z][a-z]+) you control",
      lambda m: Effect("p1_counters", _num(m[1]), target="my_creatures",
@@ -488,6 +491,9 @@ _EFFECT_PATTERNS = [
 ]
 
 _SUBS = [
+    (re.compile(r"counter up to one target activated or triggered ability\. if an ability of an artifact, creature, or "
+                r"planeswalker is countered this way, that permanent loses all abilities for as long as ~ remains on the "
+                r"battlefield\.", re.I), lambda m: "COUNTERABILITY."),
     (re.compile(r"exile (?:another )?target creature you control\. return (?:it|that card) to the battlefield under its "
                 r"owner's control at the beginning of the next end step\.", re.I), lambda m: "BLINKEND."),
     (re.compile(r"counter target spell unless its controller pays \{(\d+)\}\. counter that spell unless its controller pays "
@@ -608,6 +614,7 @@ _SUBS = [
 _TRIGGERS = [
     (r"When ~ becomes level (\d+), (.+)", ("class_level",)),
     (r"Whenever you proliferate, (.+)", ("proliferate",)),
+    (r"Whenever an opponent searches their library, (.+)", ("opp_searches",)),
     (r"When(?:ever)? ~ enters or attacks, (.+)", ("etb", "attacks")),
     (r"When ~ enters and at the beginning of your upkeep, (.+)", ("etb", "upkeep")),
     (r"When(?:ever)? ~ enters?(?: the battlefield)?, (.+)", ("etb",)),

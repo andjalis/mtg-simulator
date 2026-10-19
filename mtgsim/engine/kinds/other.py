@@ -9,6 +9,23 @@ from ..state import FIREBEND_MANA, Permanent, StackItem, pool_mana
 from . import kind
 
 
+@kind("counter_ability")
+def counter_ability(game, p, item, **_):
+    """Counter the newest activated or triggered ability an opponent controls; if its source is an
+    artifact, creature or planeswalker that stays out, it loses all abilities while this does."""
+    me = item.source if item is not None else None
+    for it in reversed(game.stack):
+        if it is item or it.is_spell or it.controller is p:
+            continue
+        game.stack.remove(it)
+        game.log(f"counters {it.name}", p)
+        src = it.source
+        if isinstance(src, Permanent) and src in src.controller.battlefield and me is not None and \
+                (src.card.is_artifact or src.is_creature or src.is_planeswalker):
+            src.silenced_by = me
+        return
+
+
 @kind("gy_type_spree")
 def gy_type_spree(game, p, eff, **_):
     """Uldaros Theorix: exile the best nonland card of each type from the graveyard, then cast free spells among

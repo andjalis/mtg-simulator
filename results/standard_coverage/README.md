@@ -841,3 +841,15 @@ The complete card inventory and ranked gaps are in
 - Uldaros Theorix: exiles the best nonland card of each type from the graveyard and casts free spells totalling mana
   value 6 or less (`gy_type_spree`). Approximation, flagged in `--coverage`: the exiled cards themselves are cast,
   not token copies.
+
+## Dimir Midrange: Wan Shi Tong, Librarian and Tishana's Tidebinder
+
+- Wan Shi Tong: "put X +1/+1 counters on him" (`p1_counters` with `x: entered`), "draw half X cards, rounded down"
+  (`draw` with `x_half`) and "whenever an opponent searches their library" (event `opp_searches`, fired by
+  `Game.library_searched` from every search site: tutors, basic-land fetches, the search template, Deadly-style
+  searches and Demolition Field).
+- Tishana's Tidebinder: `counter_ability` removes the newest activated or triggered ability an opponent has on the
+  stack; if its source is an artifact, creature or planeswalker still out, that permanent is `silenced_by` the
+  Tidebinder (no keywords, triggers, activated or loyalty abilities while the Tidebinder stays). The AI flashes it in
+  against a valuable permanent's ability or a planeswalker activation.
+- Not done: Kaito, Bane of Nightmares (Ninjutsu, "during your turn he is a 3/4 Ninja", the Ninja emblem).
