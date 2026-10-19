@@ -72,6 +72,10 @@ class StackMixin:
                and isinstance(context.zone, CardZone) and context in context.zone else None)
         self.pending.append((controller, effects, source, name, context, targets, kind, modes, ref))
 
+    def library_searched(self, who: Player):
+        """Whoever searched `who`'s library: its opponent's "whenever an opponent searches" listeners."""
+        self.fire(self.opponent(who), "opp_searches")
+
     def fire(self, p: Player, event: str, source: Permanent | None = None, context=None, subject=None):
         """Deliver a typed event, then queue the existing supported trigger listeners."""
         before = rules_events.snapshot(source) if source is not None and (self.rule_events.history is not None

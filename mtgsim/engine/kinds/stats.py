@@ -64,7 +64,11 @@ def p1_counters(game, p, eff, target, item, **_):
             c.counters["+1/+1"] = c.p1 + n
     else:
         if isinstance(target, Permanent) and target in target.controller.battlefield:
-            target.counters["+1/+1"] = target.p1 + eff.amount
+            n = eff.amount
+            if eff.data.get("x") == "entered":
+                src = item.source if item is not None else None
+                n = getattr(src, "entered_x", 0) or getattr(item, "x", 0)
+            target.counters["+1/+1"] = target.p1 + n
             if eff.data.get("keyword"):
                 target.perm_kw.add(eff.data["keyword"])
 
