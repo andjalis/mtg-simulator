@@ -132,6 +132,14 @@ def card_row(card, scenarios, catalog):
     requirements = {"zones.object_identity"} if any(c["id"] == "zones.object_identity" for c in catalog["capabilities"]) else set()
     known = {c["id"] for c in catalog["capabilities"]}
     for face in _faces(card):
+        if "costs.joint" in known and (face.extra_sacrifice or any(
+                set(a.extra_costs) & {"sacrifice", "craft", "sac_self", "exile_self"} for a in face.activated)):
+            requirements.add("costs.joint")
+        if "continuous.types_colors" in known and face.is_permanent:
+            requirements.add("continuous.types_colors")
+        if "triggers.phase" in known and any(t.event in ("each_upkeep", "opp_upkeep", "each_end_step")
+                                            for t in face.triggers):
+            requirements.add("triggers.phase")
         if not face.is_land and "actions.atomic" in known:
             requirements.add("actions.atomic")
         if "continuous.pt_keywords" in known and (face.is_creature or face.aura_flags or

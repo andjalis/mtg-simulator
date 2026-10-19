@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 from .. import auras, cast_triggers, copies, proliferate
 from ..cards import Activated, CardDef, Effect, make_token
-from .. import modal, rules_events
+from .. import modal, rules_events, costs
 from ..identity import CardInstance, instance
 from ..actions import atomic_action
 from .mana import payable
@@ -94,7 +94,6 @@ class PlayMixin:
                 targets[i] = t
         if not self.valid_action_targets(p, effects, targets):
             return False
-        sacrifice_required = bool(card.extra_sacrifice and self.extra_sac_candidates(p, card))
         cost = self.cost_of(p, card, assist=False)
         convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
         assisted = card.improvise or card.delve
@@ -103,12 +102,16 @@ class PlayMixin:
             for n in range(1, 21):
                 trial = dict(cost, generic=cost.get("generic", 0) + n)
                 remaining, tapped, _ = self.assist_payment(p, card, trial)
-                if not payable([s for s in self.mana_sources(p, spell=card) if s not in tapped], remaining):
+                if costs.spell_plan(self, p, card, remaining, exclude=convoked + tapped) is None:
                     break
                 x = n
             cost["generic"] = cost.get("generic", 0) + x
         cost, improvised, delved = self.assist_payment(p, card, cost) if assisted else (cost, [], [])
-        payment = self.pay(p, cost, spell=card, exclude_many=improvised)
+        plan = costs.spell_plan(self, p, card, cost, exclude=convoked + improvised)
+        if plan is None:
+            return False
+        cost = plan.cost
+        payment = self.pay(p, cost, spell=card, exclude_many=plan.exclude)
         if payment is None:
             return False
         for c in convoked:
@@ -120,22 +123,22 @@ class PlayMixin:
             p.graveyard.remove(c)
             p.exile.append(c)
         if "X" in card.mana_cost and not assisted:     # X: as much as the remaining mana allows
-            while x < 20 and payable(self.mana_sources(p, spell=card), {"generic": x + 1}):
+            while x < 20 and payable([s for s in self.mana_sources(p, spell=card) if s not in plan.exclude], {"generic": x + 1}):
                 x += 1
             if x:
-                payment += self.pay(p, {"generic": x}, spell=card)
+                payment += self.pay(p, {"generic": x}, spell=card, exclude_many=plan.exclude)
         if alt is not None and alt.life:
             self.change_life(p, -alt.life, f"{card.name}: alternative cost")
         if card.extra_life_cost:
             self.change_life(p, -card.extra_life_cost, f"{card.name}: additional cost")
-        if sacrifice_required and not self.extra_sac_candidates(p, card):
-            return False
-        if sacrifice_required:
-            victim = self.extra_sac_candidates(p, card)[0]
+        if plan.sacrifice is not None:
+            victim = plan.sacrifice
+            if victim not in p.battlefield:
+                return False
             self.log(f"sacrifices {victim.card.name} for {card.name}", p)
             self.sacrifice(victim)
         if kind == "prepared":
-            next(x for x in p.battlefield if x.card is base and x.prepared).prepared = False
+            next(x for x in p.battlefield if x.front is base and x.prepared).prepared = False
         elif kind in ("rebound", "cascade", "cascade_adventure", "rebound_adventure"):
             del p.exile[next(i for i, c in enumerate(p.exile) if c is base)]
         else:
@@ -443,7 +446,7 @@ class PlayMixin:
             return False
         if act.min_charge and perm.counters.get("charge", 0) < act.min_charge:
             return False
-        return payable(self.mana_sources(p, perm if c.get("tap") else None, "ability"), self.ability_cost(p, perm, act))
+        return costs.ability_plan(self, p, perm, act, self.ability_cost(p, perm, act)) is not None
 
     def valid_action_targets(self, p, effects, targets):
         return all(e.target not in TARGETED or (i < len(targets) and
@@ -458,7 +461,8 @@ class PlayMixin:
         targets = self.auto_targets(p, act.effects, perm) if targets is None else list(targets)
         if not self.valid_action_targets(p, act.effects, targets):
             return False
-        if self.pay(p, self.ability_cost(p, perm, act), exclude=perm if c.get("tap") else None) is None:
+        plan = costs.ability_plan(self, p, perm, act, self.ability_cost(p, perm, act))
+        if plan is None or self.pay(p, plan.cost, exclude_many=plan.exclude) is None:
             return False
         perm.ability_turns[idx] = self.turn
         if perm.card.activated[idx].once_game:
@@ -475,19 +479,16 @@ class PlayMixin:
             self.log(f"discards {card.name}", p)
         if c.get("remove_counter"):
             perm.counters[c["remove_counter"]] -= 1
-        for _ in range(c.get("sac_n", 1) if c.get("sacrifice") else 0):
-            candidates = self.sacrifice_candidates(p, perm, c["sacrifice"])
-            if not candidates:
+        for victim in plan.victims:
+            if victim not in p.battlefield:
                 return False
-            victim = candidates[0]
             self.log(f"sacrifices {victim.card.name}", p)
             perm.last_sacrificed_cmc = victim.card.cmc
             self.sacrifice(victim)
         if c.get("craft"):
-            materials = self.craft_materials(p, perm)
-            if not materials:
+            material = plan.craft
+            if material is None or material not in p.graveyard and material not in p.battlefield:
                 return False
-            material = materials[0]
             if material in p.graveyard:
                 p.graveyard.remove(material)
                 p.exile.append(material)

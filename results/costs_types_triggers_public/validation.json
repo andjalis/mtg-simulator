@@ -1,0 +1,114 @@
+{
+  "base_commit": "5bb050e302a1771baee7102127182786a2b3f363",
+  "code_identity": "a129de8c5a5dea63fb6632b9a87e42a7bd01b0c7a47189acd92fdd2e71c3d38e",
+  "database_sha256": "eddc1ae21a3f0dd3b4f2e21d67c24f398fc9252e3bf99d0fd7feb56574b0108c",
+  "inventory_total": 34922,
+  "baseline_counts": {
+    "full": 8583,
+    "simplified": 103,
+    "partial": 26236,
+    "parse_error": 0
+  },
+  "current_counts": {
+    "full": 8592,
+    "simplified": 103,
+    "partial": 26227,
+    "parse_error": 0
+  },
+  "new_full_matches": 36,
+  "corrected_false_full_matches": 27,
+  "tests": {
+    "command": "python3 -m unittest discover -s tests -t . -q",
+    "run": 904,
+    "passed": 903,
+    "skipped": 1,
+    "failures": 0,
+    "seconds": 178.217
+  },
+  "lint": {
+    "command": "python3 scripts/lint.py",
+    "findings": 0
+  },
+  "behavior": {
+    "run_identity": "37b27c286e5e736d9296e441dce63233b4e60ba8368c306ce9444b4d4bca2023",
+    "scenario_denominator": 97,
+    "outcomes": {
+      "error": 0,
+      "fail": 0,
+      "not_run": 0,
+      "pass": 97,
+      "stale": 0
+    },
+    "card_denominator": 34922,
+    "cards_with_current_direct_evidence": 9,
+    "cards_with_only_current_capability_evidence": 34913,
+    "complete_rules_support": "not measured"
+  },
+  "capabilities": [
+    {
+      "id": "targets.creature",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "sba.legend",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "stack.equip",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "zones.object_identity",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "events.dispatch",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "replacement.supported",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "removal.core",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "graveyard.return",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "actions.atomic",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "continuous.pt_keywords",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "costs.joint",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "continuous.types_colors",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "triggers.phase",
+      "evidence_status": "scoped_suite_passes"
+    }
+  ],
+  "lookup_parity_samples": 100,
+  "parse_errors": [],
+  "public_history_path_scan": {
+    "method": "git log --all --name-only over fresh public clone; scanned for web/, test_web and browser QA paths",
+    "matches": 0
+  },
+  "local_only_scryfall_branch": "Unavailable in this workspace; public main includes commit 663db8c Fix Scryfall bulk downloads and support gzip JSON Lines. Do not delete the original checkout based on this check.",
+  "parse_diff": {
+    "cards_compared": 34922,
+    "new_exceptions": 0,
+    "reported_changes": 0,
+    "limitation": "The existing script compares name-only repr(CardDef); coverage-delta.json records the real inventory changes."
+  }
+}

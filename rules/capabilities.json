@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "zone-actions-layers-v3",
+  "scope": "costs-types-triggers-v4",
   "capabilities": [
     {
       "id": "targets.creature",
@@ -140,6 +140,55 @@
         "mtgsim/engine/state.py",
         "mtgsim/engine/turns.py",
         "mtgsim/auras.py"
+      ]
+    },
+    {
+      "id": "costs.joint",
+      "description": "Joint mana and supported sacrifice/craft planning",
+      "state": "implemented_subset",
+      "subset": "Enumerate supported required sacrifice sets and one craft material, reserve sources consumed for other costs, permit mana tapping before sacrifice, and choose an additional-mana alternative where supported. Spell and ability validation use the same plan as payment, including reserved X resources.",
+      "restrictions": "Uses existing mana, convoke, improvise and delve policies; no arbitrary multi-cost solver, mana-ability search or global X/resource optimization. Existing cost reduction formulas and optional cost policies retain their bounds.",
+      "requires": [
+        "actions.atomic"
+      ],
+      "implementation": [
+        "mtgsim/costs.py",
+        "mtgsim/engine/costs.py",
+        "mtgsim/engine/play.py"
+      ]
+    },
+    {
+      "id": "continuous.types_colors",
+      "description": "Scoped type, subtype and color layer views",
+      "state": "implemented_subset",
+      "subset": "Registered set/add/remove type, subtype and color operations are ordered in layers 4 and 5. Effective characteristics feed existing permanent rules checks; animations and crew use timestamps, copiable values exclude these effects, and departure retains last-known characteristics.",
+      "restrictions": "No Oracle parser for arbitrary type/color effects, automatic subtype/type association or land-type mana/ability changes. Callers supply subtype changes explicitly. Copy/control/text layers, characteristic-defining abilities and complete legacy timestamp integration remain outside scope.",
+      "requires": [
+        "continuous.pt_keywords"
+      ],
+      "implementation": [
+        "mtgsim/continuous.py",
+        "mtgsim/engine/state.py",
+        "mtgsim/engine/effects.py",
+        "mtgsim/engine/turns.py",
+        "mtgsim/copies.py"
+      ]
+    },
+    {
+      "id": "triggers.phase",
+      "description": "Each-player and opponent upkeep/end-step triggers",
+      "state": "implemented_subset",
+      "subset": "Each upkeep, each player upkeep, each opponent upkeep, each end step and the end step queue APNAP triggers. Phase-player context routes supported effects; recognized intervening conditions are checked when triggered and on resolution. Source sacrifice and return work across opposing turns.",
+      "restrictions": "Two-player supported phases only; unsupported conditions, Madness and other unparsed clauses remain visible. No arbitrary phase scheduling, complete APNAP ordering choices or broad reflexive-trigger implementation.",
+      "requires": [
+        "events.dispatch"
+      ],
+      "implementation": [
+        "mtgsim/cards/model.py",
+        "mtgsim/cards/parse.py",
+        "mtgsim/cards/patterns.py",
+        "mtgsim/engine/stack.py",
+        "mtgsim/engine/kinds/permanents.py"
       ]
     }
   ]

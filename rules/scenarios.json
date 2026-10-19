@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "zone-actions-layers-v3",
+  "scope": "costs-types-triggers-v4",
   "scenarios": [
     {
       "id": "target_type_membership",
@@ -1085,6 +1085,341 @@
         "kind": "rules-and-card-text",
         "reference": "CR 400.7; discover and manifest dread rules (CR 701); double-faced cards (CR 712)",
         "review": "Synthetic physical movement assertions only; not full mechanic conformance."
+      }
+    },
+    {
+      "id": "reserve_treasure_and_pay_with_land",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_reserve_treasure_and_pay_with_land",
+      "capabilities": [
+        "costs.joint"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2f-h, 602.2",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "search_other_victim_for_colored_mana",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_search_other_victim_for_colored_mana",
+      "capabilities": [
+        "costs.joint"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2f-h, 602.2",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "tap_for_mana_then_sacrifice_same_permanent",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_tap_for_mana_then_sacrifice_same_permanent",
+      "capabilities": [
+        "costs.joint"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2f-h, 602.2",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "optional_tax_when_only_victim_must_pay_mana",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_optional_tax_when_only_victim_must_pay_mana",
+      "capabilities": [
+        "costs.joint"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2f-h, 602.2",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "x_payment_preserves_reserved_victim",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_x_payment_preserves_reserved_victim",
+      "capabilities": [
+        "costs.joint"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2f-h, 602.2",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "ability_and_craft_reserve_mana_consumables",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_ability_and_craft_reserve_mana_consumables",
+      "capabilities": [
+        "costs.joint"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2f-h, 602.2",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "type_changes_affect_targets_without_changing_physical_card",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_type_changes_affect_targets_without_changing_physical_card",
+      "capabilities": [
+        "continuous.types_colors"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 400.7, 613.1d-e, 707",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "type_and_subtype_timestamp_order",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_type_and_subtype_timestamp_order",
+      "capabilities": [
+        "continuous.types_colors"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 400.7, 613.1d-e, 707",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "color_layers_override_devoid_without_changing_mana_value",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_color_layers_override_devoid_without_changing_mana_value",
+      "capabilities": [
+        "continuous.types_colors"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 400.7, 613.1d-e, 707",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "type_timestamp_interacts_with_animation",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_type_timestamp_interacts_with_animation",
+      "capabilities": [
+        "continuous.types_colors"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 400.7, 613.1d-e, 707",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "source_lifetime_and_last_known_type_color",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_source_lifetime_and_last_known_type_color",
+      "capabilities": [
+        "continuous.types_colors"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 400.7, 613.1d-e, 707",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "copy_uses_copiable_values_not_type_color_effects",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_copy_uses_copiable_values_not_type_color_effects",
+      "capabilities": [
+        "continuous.types_colors"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 400.7, 613.1d-e, 707",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "baleful_force_triggers_on_both_upkeeps",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_baleful_force_triggers_on_both_upkeeps",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [
+        "Baleful Force"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 603.3b, 603.4; linked offline Oracle text",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "copper_tablet_targets_the_upkeep_player",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_copper_tablet_targets_the_upkeep_player",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [
+        "Copper Tablet"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 603.3b, 603.4; linked offline Oracle text",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "verdant_force_uses_controller_on_opponents_upkeep",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_verdant_force_uses_controller_on_opponents_upkeep",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [
+        "Verdant Force"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 603.3b, 603.4; linked offline Oracle text",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "end_step_source_actions_on_opponents_turn",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_end_step_source_actions_on_opponents_turn",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [
+        "Arc Runner",
+        "Archwing Dragon"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 603.3b, 603.4; linked offline Oracle text",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "angelic_accord_intervening_if_at_trigger_and_resolution",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_angelic_accord_intervening_if_at_trigger_and_resolution",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [
+        "Angelic Accord"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 603.3b, 603.4; linked offline Oracle text",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "asylum_visitor_context_condition_keeps_madness_gap",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_asylum_visitor_context_condition_keeps_madness_gap",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [
+        "Asylum Visitor"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 603.3b, 603.4; linked offline Oracle text",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "opponent_only_upkeep_and_apnap_order",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_opponent_only_upkeep_and_apnap_order",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 603.3b, 603.4; linked offline Oracle text",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "unrecognized_phase_condition_stays_partial",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_unrecognized_phase_condition_stays_partial",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 603.3b, 603.4; linked offline Oracle text",
+        "review": "Bounded assertions in linked tests; direct fixtures load the actual offline card definitions. No external rules certification."
+      }
+    },
+    {
+      "id": "multiple_sacrifices_reserve_all_consumed_sources",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_multiple_sacrifices_reserve_all_consumed_sources",
+      "capabilities": [
+        "costs.joint"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2, 603.4; linked unmodified Oracle fixtures",
+        "review": "Scoped interaction or explicit-gap assertions; not complete card conformance."
+      }
+    },
+    {
+      "id": "morbid_intervening_condition_is_checked_before_queuing",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_morbid_intervening_condition_is_checked_before_queuing",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2, 603.4; linked unmodified Oracle fixtures",
+        "review": "Scoped interaction or explicit-gap assertions; not complete card conformance."
+      }
+    },
+    {
+      "id": "unknown_token_keywords_and_copy_restrictions_stay_visible",
+      "version": 1,
+      "test": "tests.test_costs_types_triggers.CostsTypesTriggers.test_unknown_token_keywords_and_copy_restrictions_stay_visible",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 601.2, 603.4; linked unmodified Oracle fixtures",
+        "review": "Scoped interaction or explicit-gap assertions; not complete card conformance."
       }
     }
   ]

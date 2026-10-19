@@ -1,0 +1,2922 @@
+{
+  "base_commit": "5bb050e302a1771baee7102127182786a2b3f363",
+  "total": 34922,
+  "before": {
+    "full": 8583,
+    "simplified": 103,
+    "partial": 26236,
+    "parse_error": 0
+  },
+  "after": {
+    "full": 8592,
+    "simplified": 103,
+    "partial": 26227,
+    "parse_error": 0
+  },
+  "promoted_to_full": [
+    "Angelic Accord",
+    "Arc Runner",
+    "Archwing Dragon",
+    "Baleful Force",
+    "Ball Lightning",
+    "Celestial Force",
+    "Copper Tablet",
+    "Crested Sunmare",
+    "Curse of Chains",
+    "Frostbite Pyromental",
+    "Glitterfang",
+    "Goblin Boom Keg",
+    "Goblin Cannon",
+    "Griffin Aerie",
+    "Groundbreaker",
+    "Hopeful Vigil",
+    "Indulging Patrician",
+    "Lone Rider // It That Rides as One",
+    "Magmatic Force",
+    "Mark of Fury",
+    "Old Flitterfang",
+    "Putrefax",
+    "Reaper from the Abyss",
+    "Regal Bloodlord",
+    "Spark Elemental",
+    "Spark Trooper",
+    "The Gaffer",
+    "Three Bowls of Porridge",
+    "Valkyrie Harbinger",
+    "Vashta Nerada",
+    "Verdant Force",
+    "Viashino Cutthroat",
+    "Viashino Sandscout",
+    "Viashino Sandsprinter",
+    "Viashino Sandstalker",
+    "Worry Beads"
+  ],
+  "previous_full_now_partial": [
+    "Abundant Countryside",
+    "Bat Colony",
+    "Birthing Boughs",
+    "Black Market Connections",
+    "Crow Storm",
+    "Depose // Deploy",
+    "Errand of Duty",
+    "Eyes in the Skies",
+    "Falcon Abomination",
+    "Fire Nation Attacks",
+    "Flip the Switch",
+    "Giant Caterpillar",
+    "Hobbling Zombie",
+    "Horncaller's Chant",
+    "Irregular Cohort",
+    "Leonin Warleader",
+    "Parhelion II",
+    "Phyrexian Swarmlord",
+    "Rotten Reunion",
+    "Rukh Egg",
+    "Schema Thief",
+    "Spider Spawning",
+    "Startle",
+    "Stone-Giant of High Pass",
+    "The Hive",
+    "Transluminant",
+    "Wall of Kelp"
+  ],
+  "net_full_gain": 9,
+  "classification_corrections": "Previously swallowed token keywords/trailing clauses and relative copy selectors are now reported as gaps. Template matching is distinct from complete rules support.",
+  "changes": [
+    {
+      "name": "Abhorrent Oculus",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "As an additional cost to cast ~, exile six cards from your graveyard.\nAt the beginning of each opponent's upkeep, manifest dread.",
+      "ignored_after": "As an additional cost to cast ~, exile six cards from your graveyard."
+    },
+    {
+      "name": "Abundant Countryside",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "{6}, {T}: Create a 1/1 colorless Shapeshifter creature token with changeling."
+    },
+    {
+      "name": "Afflicted Deserter // Werewolf Ransacker",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nWerewolf Ransacker: Whenever ~ transforms into ~, you may destroy target artifact. If that artifact is put into a graveyard this way, ~ deals 3 damage to that artifact's controller.\nWerewolf Ransacker: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nWerewolf Ransacker: Whenever ~ transforms into ~, you may destroy target artifact. If that artifact is put into a graveyard this way, ~ deals 3 damage to that artifact's controller.\nWerewolf Ransacker: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Alexios, Deimos of Kosmos",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "~ attacks each combat if able, can't be sacrificed, and can't attack its owner.\nAt the beginning of each player's upkeep, that player gains control of ~, untaps it, and puts a +1/+1 counter on it. It gains haste until end of turn.",
+      "ignored_after": "~ attacks each combat if able, can't be sacrificed, and can't attack its owner.\nthat player gains control of ~, untaps it, and puts a +1/+1 counter on it."
+    },
+    {
+      "name": "Ancient Runes",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, ~ deals damage to that player equal to the number of artifacts they control.",
+      "ignored_after": "~ deals damage to that player equal to the number of artifacts they control."
+    },
+    {
+      "name": "Angelic Accord",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of each end step, if you gained 4 or more life this turn, create a 4/4 white Angel creature token with flying.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Another Night in Vegas",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "• Wake Up! — Return target creature card from a graveyard to its owner's hand.\n• VIP Line Access — Search your library for a card, then shuffle and put that card on top.\n• Life of the Party — Whenever a spell is cast this turn, you gain 2 life.\n• Breakfast at Dawn — Create two Food tokens. Sacrifice ~.",
+      "ignored_after": "• Wake Up! — Return target creature card from a graveyard to its owner's hand.\n• VIP Line Access — Search your library for a card, then shuffle and put that card on top.\n• Life of the Party — Whenever a spell is cast this turn, you gain 2 life."
+    },
+    {
+      "name": "Arachnus Web",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Enchanted creature can't attack or block, and its activated abilities can't be activated.\nAt the beginning of the end step, if enchanted creature's power is 4 or greater, destroy ~.",
+      "ignored_after": "Enchanted creature can't attack or block, and its activated abilities can't be activated.\nif enchanted creature's power is 4 or greater, destroy ~."
+    },
+    {
+      "name": "Arc Runner",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of the end step, sacrifice ~.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Archfiend of Despair",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Your opponents can't gain life.\nAt the beginning of each end step, each opponent loses life equal to the life that player lost this turn.",
+      "ignored_after": "Your opponents can't gain life.\neach opponent loses life equal to the life that player lost this turn."
+    },
+    {
+      "name": "Archmage Ascension",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if you drew two or more cards this turn, you may put a quest counter on ~.\nAs long as ~ has six or more quest counters on it, if you would draw a card, you may instead search your library for a card, put that card into your hand, then shuffle.",
+      "ignored_after": "if you drew two or more cards this turn, you may put a quest counter on ~.\nAs long as ~ has six or more quest counters on it, if you would draw a card, you may instead search your library for a card, put that card into your hand, then shuffle."
+    },
+    {
+      "name": "Archwing Dragon",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of the end step, return ~ to its owner's hand.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Asmira, Holy Avenger",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, put a +1/+1 counter on ~ for each creature put into your graveyard from the battlefield this turn.",
+      "ignored_after": "put a +1/+1 counter on ~ for each creature put into your graveyard from the battlefield this turn."
+    },
+    {
+      "name": "Assault Suit",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Equipped creature gets +2/+2, has haste, can't attack you or planeswalkers you control, and can't be sacrificed.\nAt the beginning of each opponent's upkeep, you may have that player gain control of equipped creature until end of turn. If you do, untap it.",
+      "ignored_after": "Equipped creature gets +2/+2, has haste, can't attack you or planeswalkers you control, and can't be sacrificed.\nyou may have that player gain control of equipped creature until end of turn.\nIf you do, untap it."
+    },
+    {
+      "name": "Asylum Visitor",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, if that player has no cards in hand, you draw a card and you lose 1 life.\nMadness {1}{B}",
+      "ignored_after": "Madness {1}{B}"
+    },
+    {
+      "name": "Avatar Aang // Aang, Master of Elements",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever you waterbend, earthbend, firebend, or airbend, draw a card. Then if you've done all four this turn, transform ~.\nAang, Master of Elements: Spells you cast cost {W}{U}{B}{R}{G} less to cast.\nAang, Master of Elements: At the beginning of each upkeep, you may transform ~. If you do, you gain 4 life, draw four cards, put four +1/+1 counters on him, and he deals 4 damage to each opponent.",
+      "ignored_after": "Whenever you waterbend, earthbend, firebend, or airbend, draw a card. Then if you've done all four this turn, transform ~.\nAang, Master of Elements: Spells you cast cost {W}{U}{B}{R}{G} less to cast.\nAang, Master of Elements: you may transform ~.\nAang, Master of Elements: If you do, you gain 4 life, draw four cards, put four +1/+1 counters on him, and he deals 4 damage to each opponent."
+    },
+    {
+      "name": "Avengers Assemble!",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if you attacked with a Hero this turn or a Hero entered the battlefield under your control this turn, draw a card.",
+      "ignored_after": "if you attacked with a Hero this turn or a Hero entered the battlefield under your control this turn, draw a card."
+    },
+    {
+      "name": "Awakening",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, untap all creatures and lands.",
+      "ignored_after": "untap all creatures and lands."
+    },
+    {
+      "name": "Baleful Force",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of each upkeep, you draw a card and you lose 1 life.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Ball Lightning",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of the end step, sacrifice ~.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Bandit's Talent",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "each opponent discards two cards unless they discard a nonland card.\nAt the beginning of each opponent's upkeep, if that player has one or fewer cards in hand, they lose 2 life.\nAt the beginning of your draw step, draw an additional card for each opponent who has one or fewer cards in hand.",
+      "ignored_after": "each opponent discards two cards unless they discard a nonland card.\nif that player has one or fewer cards in hand, they lose 2 life.\nAt the beginning of your draw step, draw an additional card for each opponent who has one or fewer cards in hand."
+    },
+    {
+      "name": "Barbed Wire",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, ~ deals 1 damage to that player.\n{2}: Prevent the next 1 damage that would be dealt by ~ this turn.",
+      "ignored_after": "{2}: Prevent the next 1 damage that would be dealt by ~ this turn."
+    },
+    {
+      "name": "Bat Colony",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: flying for each mana from a cave spent to cast it"
+    },
+    {
+      "name": "Bat-",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if an opponent lost 3 or more life this turn,\nAugment {1}{B}",
+      "ignored_after": "if an opponent lost 3 or more life this turn,\nAugment {1}{B}"
+    },
+    {
+      "name": "Beledros Witherbloom",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, create a 1/1 black and green Pest creature token with \"When ~ dies, you gain 1 life.\"\nPay 10 life: Untap all lands you control. Activate only once each turn.",
+      "ignored_after": "Pay 10 life: Untap all lands you control. Activate only once each turn."
+    },
+    {
+      "name": "Belonging",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Encore {6}{W}{W}",
+      "ignored_after": "Unsupported token keywords: changeling\nEncore {6}{W}{W}"
+    },
+    {
+      "name": "Bennie Bracks, Zoologist",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if you created a token this turn, draw a card.",
+      "ignored_after": "if you created a token this turn, draw a card."
+    },
+    {
+      "name": "Biovisionary",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, if you control four or more creatures named ~, you win the game.",
+      "ignored_after": "if you control four or more creatures named ~, you win the game."
+    },
+    {
+      "name": "Birth of the Imperium",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "III — Draw two cards for each opponent who controls fewer creatures than you.",
+      "ignored_after": "I — Unsupported token keywords: vigilance for each opponent you have\nIII — Draw two cards for each opponent who controls fewer creatures than you."
+    },
+    {
+      "name": "Birthing Boughs",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "{4}, {T}: Create a 2/2 colorless Shapeshifter creature token with changeling."
+    },
+    {
+      "name": "Black Market Connections",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "• Hire a Mercenary — Create a 3/2 colorless Shapeshifter creature token with changeling. You lose 3 life."
+    },
+    {
+      "name": "Blistering Firecat",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, sacrifice ~.\nMorph {R}{R}",
+      "ignored_after": "Morph {R}{R}"
+    },
+    {
+      "name": "Blitz Hellion",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, ~'s owner shuffles it into their library.",
+      "ignored_after": "~'s owner shuffles it into their library."
+    },
+    {
+      "name": "Blood Clock",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player returns a permanent they control to its owner's hand unless they pay 2 life.",
+      "ignored_after": "that player returns a permanent they control to its owner's hand unless they pay 2 life."
+    },
+    {
+      "name": "Bloodchief Ascension",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if an opponent lost 2 or more life this turn, you may put a quest counter on ~.\nWhenever a card is put into an opponent's graveyard from anywhere, if ~ has three or more quest counters on it, you may have that player lose 2 life. If you do, you gain 2 life.",
+      "ignored_after": "if an opponent lost 2 or more life this turn, you may put a quest counter on ~.\nWhenever a card is put into an opponent's graveyard from anywhere, if ~ has three or more quest counters on it, you may have that player lose 2 life. If you do, you gain 2 life."
+    },
+    {
+      "name": "Bloodline Recollector // Ancestral Craving",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if three or more creatures died this turn, ~ becomes prepared.",
+      "ignored_after": "if three or more creatures died this turn, ~ becomes prepared."
+    },
+    {
+      "name": "Boarded Window",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Creatures attacking you get -1/-0.\nAt the beginning of each end step, if you were dealt 4 or more damage this turn, exile ~.",
+      "ignored_after": "Creatures attacking you get -1/-0.\nif you were dealt 4 or more damage this turn, exile ~."
+    },
+    {
+      "name": "Bottled Cloister",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, exile all cards from your hand face down.\nreturn all cards you own exiled with ~ to your hand, then draw a card.",
+      "ignored_after": "exile all cards from your hand face down.\nreturn all cards you own exiled with ~ to your hand, then draw a card."
+    },
+    {
+      "name": "Bottomless Pit",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player discards a card at random.",
+      "ignored_after": "that player discards a card at random."
+    },
+    {
+      "name": "Braids, Cabal Minion",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player sacrifices an artifact, creature, or land of their choice.",
+      "ignored_after": "that player sacrifices an artifact, creature, or land of their choice."
+    },
+    {
+      "name": "Braids, Conjurer Adept",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player may put an artifact, creature, or land card from their hand onto the battlefield.",
+      "ignored_after": "that player may put an artifact, creature, or land card from their hand onto the battlefield."
+    },
+    {
+      "name": "Breakneck Rider // Neck Breaker",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nNeck Breaker: Attacking creatures you control get +1/+0 and have trample.\nNeck Breaker: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nNeck Breaker: Attacking creatures you control get +1/+0 and have trample.\nNeck Breaker: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Briarbridge Patrol",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever ~ deals damage to one or more creatures, investigate.\nAt the beginning of each end step, if you sacrificed three or more Clues this turn, you may put a creature card from your hand onto the battlefield.",
+      "ignored_after": "Whenever ~ deals damage to one or more creatures, investigate.\nif you sacrificed three or more Clues this turn, you may put a creature card from your hand onto the battlefield."
+    },
+    {
+      "name": "Brimaz, Blight of Oreskos",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever you cast a Phyrexian creature or artifact creature spell, incubate X, where X is that spell's mana value.\nAt the beginning of each end step, if a Phyrexian died under your control this turn, proliferate.",
+      "ignored_after": "Whenever you cast a Phyrexian creature or artifact creature spell, incubate X, where X is that spell's mana value.\nif a Phyrexian died under your control this turn, proliferate."
+    },
+    {
+      "name": "Brooding Saurian",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, each player gains control of all nontoken permanents they own.",
+      "ignored_after": "each player gains control of all nontoken permanents they own."
+    },
+    {
+      "name": "Budoka Pupil // Ichiga, Who Topples Oaks",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever you cast a Spirit or Arcane spell, you may put a ki counter on ~.\nAt the beginning of the end step, if there are two or more ki counters on ~, you may flip it.",
+      "ignored_after": "Whenever you cast a Spirit or Arcane spell, you may put a ki counter on ~.\nif there are two or more ki counters on ~, you may flip it."
+    },
+    {
+      "name": "Call of the Full Moon",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if a player cast two or more spells last turn, sacrifice ~.",
+      "ignored_after": "if a player cast two or more spells last turn, sacrifice ~."
+    },
+    {
+      "name": "Call to the Grave",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player sacrifices a non-Zombie creature of their choice.\nAt the beginning of the end step, if no creatures are on the battlefield, sacrifice ~.",
+      "ignored_after": "that player sacrifices a non-Zombie creature of their choice.\nif no creatures are on the battlefield, sacrifice ~."
+    },
+    {
+      "name": "Callow Jushi // Jaraku the Interloper",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever you cast a Spirit or Arcane spell, you may put a ki counter on ~.\nAt the beginning of the end step, if there are two or more ki counters on ~, you may flip it.",
+      "ignored_after": "Whenever you cast a Spirit or Arcane spell, you may put a ki counter on ~.\nif there are two or more ki counters on ~, you may flip it."
+    },
+    {
+      "name": "Celestial Force",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of each upkeep, you gain 3 life.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Chaos Moon",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, count the number of permanents. If the number is odd, until end of turn, red creatures get +1/+1 and whenever a player taps a Mountain for mana, that player adds an additional {R}. If the number is even, until end of turn, red creatures get -1/-1 and if a player taps a Mountain for mana, that Mountain produces colorless mana instead of any other type.",
+      "ignored_after": "count the number of permanents.\nIf the number is odd, until end of turn, red creatures get +1/+1 and whenever a player taps a Mountain for mana, that player adds an additional {R}.\nIf the number is even, until end of turn, red creatures get -1/-1 and if a player taps a Mountain for mana, that Mountain produces colorless mana instead of any other type."
+    },
+    {
+      "name": "Cold Snap",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Cumulative upkeep {2}\nAt the beginning of each player's upkeep, ~ deals damage to that player equal to the number of snow lands they control.",
+      "ignored_after": "Cumulative upkeep {2}\n~ deals damage to that player equal to the number of snow lands they control."
+    },
+    {
+      "name": "Colfenor's Urn",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever a creature with toughness 4 or greater is put into your graveyard from the battlefield, you may exile it.\nAt the beginning of the end step, if three or more cards have been exiled with ~, sacrifice it. If you do, return those cards to the battlefield under their owner's control.",
+      "ignored_after": "Whenever a creature with toughness 4 or greater is put into your graveyard from the battlefield, you may exile it.\nif three or more cards have been exiled with ~, sacrifice it.\nIf you do, return those cards to the battlefield under their owner's control."
+    },
+    {
+      "name": "Command the Stage",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Create a 2/2 colorless Wizard Soldier creature token named Cadet, then put a +1/+1 counter on each other Wizard token you control.\nAt the beginning of each upkeep, if an opponent was dealt noncombat damage last turn, return this card from your graveyard to your hand.",
+      "ignored_after": "Create a 2/2 colorless Wizard Soldier creature token named Cadet, then put a +1/+1 counter on each other Wizard token you control.\nif an opponent was dealt noncombat damage last turn, return this card from your graveyard to your hand."
+    },
+    {
+      "name": "Concerted Effort",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, creatures you control gain flying until end of turn if a creature you control has flying. The same is true for fear, first strike, double strike, landwalk, protection, trample, and vigilance.",
+      "ignored_after": "creatures you control gain flying until end of turn if a creature you control has flying.\nThe same is true for fear, first strike, double strike, landwalk, protection, trample, and vigilance."
+    },
+    {
+      "name": "Convicted Killer // Branded Howler",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nBranded Howler: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nBranded Howler: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Copper Tablet",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of each player's upkeep, ~ deals 1 damage to that player.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Cramped Bunker",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, that player moves a permanent they control to touch ~ and no other permanents. If the player can't, destroy each permanent they control that isn't touching ~, then sacrifice it.",
+      "ignored_after": "that player moves a permanent they control to touch ~ and no other permanents.\nIf the player can't, destroy each permanent they control that isn't touching ~, then sacrifice it."
+    },
+    {
+      "name": "Crescendo of War",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, put a strife counter on ~.\nAttacking creatures get +1/+0 for each strife counter on ~.\nBlocking creatures you control get +1/+0 for each strife counter on ~.",
+      "ignored_after": "Attacking creatures get +1/+0 for each strife counter on ~.\nBlocking creatures you control get +1/+0 for each strife counter on ~."
+    },
+    {
+      "name": "Crested Sunmare",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of each end step, if you gained life this turn, create a 5/5 white Horse creature token.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Crow Storm",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: flying named storm crow"
+    },
+    {
+      "name": "Cruel Administrator",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Raid — ~ enters with a +1/+1 counter on it if you attacked this turn.",
+      "ignored_after": "Raid — ~ enters with a +1/+1 counter on it if you attacked this turn.\nUnsupported token keywords: firebending 1"
+    },
+    {
+      "name": "Cunning Bandit // Azamuki, Treachery Incarnate",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever you cast a Spirit or Arcane spell, you may put a ki counter on ~.\nAt the beginning of the end step, if there are two or more ki counters on ~, you may flip it.\nAzamuki, Treachery Incarnate: Remove a ki counter from ~: Gain control of target creature until end of turn.",
+      "ignored_after": "Whenever you cast a Spirit or Arcane spell, you may put a ki counter on ~.\nif there are two or more ki counters on ~, you may flip it.\nAzamuki, Treachery Incarnate: Remove a ki counter from ~: Gain control of target creature until end of turn."
+    },
+    {
+      "name": "Curse of Chains",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of each upkeep, tap enchanted creature.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Curse of the Cabal",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Target player sacrifices half the permanents they control of their choice, rounded down.\nSuspend 2—{2}{B}{B}\nAt the beginning of each player's upkeep, if this card is suspended, that player may sacrifice a permanent of their choice.\nIf the player does, put two time counters on this card.",
+      "ignored_after": "Target player sacrifices half the permanents they control of their choice, rounded down.\nSuspend 2—{2}{B}{B}\nif this card is suspended, that player may sacrifice a permanent of their choice.\nIf the player does, put two time counters on this card."
+    },
+    {
+      "name": "Dark Suspicions",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, that player loses X life, where X is the number of cards in that player's hand minus the number of cards in your hand.",
+      "ignored_after": "that player loses X life, where X is the number of cards in that player's hand minus the number of cards in your hand."
+    },
+    {
+      "name": "Davriel, Rogue Shadowmage",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, if that player has one or fewer cards in hand, ~ deals 2 damage to them.",
+      "ignored_after": "if that player has one or fewer cards in hand, ~ deals 2 damage to them."
+    },
+    {
+      "name": "Davros, Dalek Creator",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Then each opponent who lost 3 or more life this turn faces a villainous choice — You draw a card, or that player discards a card.",
+      "ignored_after": "Unsupported token keywords: menace if an opponent lost 3 or more life this turn\nThen each opponent who lost 3 or more life this turn faces a villainous choice — You draw a card, or that player discards a card."
+    },
+    {
+      "name": "Daybreak Ranger // Nightfall Predator",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "{T}: ~ deals 2 damage to target creature with flying.\nAt the beginning of each upkeep, if no spells were cast last turn, transform ~.\nNightfall Predator: {R}, {T}: ~ fights target creature.\nNightfall Predator: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "{T}: ~ deals 2 damage to target creature with flying.\nif no spells were cast last turn, transform ~.\nNightfall Predator: {R}, {T}: ~ fights target creature.\nNightfall Predator: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Deathreap Ritual",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if a creature died this turn, you may draw a card.",
+      "ignored_after": "if a creature died this turn, you may draw a card."
+    },
+    {
+      "name": "Defiler of Souls",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player sacrifices a monocolored creature of their choice.",
+      "ignored_after": "that player sacrifices a monocolored creature of their choice."
+    },
+    {
+      "name": "Demonic Covenant",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever one or more Demons you control attack a player, you draw a card and lose 1 life.\nIf two cards that share all their card types were milled this way, sacrifice ~.",
+      "ignored_after": "Whenever one or more Demons you control attack a player, you draw a card and lose 1 life.\nUnsupported token keywords: then mill two cards\nIf two cards that share all their card types were milled this way, sacrifice ~."
+    },
+    {
+      "name": "Depose // Deploy",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Deploy: Unsupported token keywords: then you gain 1 life for each creature you control"
+    },
+    {
+      "name": "Desolation",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, each player who tapped a land for mana this turn sacrifices a land of their choice. ~ deals 2 damage to each player who sacrificed a Plains this way.",
+      "ignored_after": "each player who tapped a land for mana this turn sacrifices a land of their choice.\n~ deals 2 damage to each player who sacrificed a Plains this way."
+    },
+    {
+      "name": "Destructive Flow",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player sacrifices a nonbasic land of their choice.",
+      "ignored_after": "that player sacrifices a nonbasic land of their choice."
+    },
+    {
+      "name": "Devout Invocation",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Tap any number of untapped creatures you control.",
+      "ignored_after": "Tap any number of untapped creatures you control.\nUnsupported token keywords: flying for each creature tapped this way"
+    },
+    {
+      "name": "Dimir Strandcatcher",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "surveil X, where X is the number of opponents being attacked.\nAt the beginning of each end step, if three or more cards were put into your graveyard from anywhere other than the battlefield this turn, draw a card.",
+      "ignored_after": "surveil X, where X is the number of opponents being attacked.\nif three or more cards were put into your graveyard from anywhere other than the battlefield this turn, draw a card."
+    },
+    {
+      "name": "Diregraf Horde",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "When you do, exile up to two target cards from graveyards.",
+      "ignored_after": "Unsupported token keywords: decayed\nWhen you do, exile up to two target cards from graveyards."
+    },
+    {
+      "name": "Discordant Spirit",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if it's an opponent's turn, put a +1/+1 counter on ~ for each 1 damage dealt to you this turn.\nremove all +1/+1 counters from ~.",
+      "ignored_after": "if it's an opponent's turn, put a +1/+1 counter on ~ for each 1 damage dealt to you this turn.\nremove all +1/+1 counters from ~."
+    },
+    {
+      "name": "Doom Foretold",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player sacrifices a nonland, nontoken permanent of their choice. If that player can't, they discard a card, they lose 2 life, you draw a card, you gain 2 life, you create a 2/2 white Knight creature token with vigilance, then you sacrifice ~.",
+      "ignored_after": "that player sacrifices a nonland, nontoken permanent of their choice.\nIf that player can't, they discard a card, they lose 2 life, you draw a card, you gain 2 life, you create a 2/2 white Knight creature token with vigilance, then you sacrifice ~."
+    },
+    {
+      "name": "Dragon Broodmother",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, create a 1/1 red and green Dragon creature token with flying and devour 2.",
+      "ignored_after": "Unsupported token keywords: devour 2"
+    },
+    {
+      "name": "Dream Tides",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Creatures don't untap during their controllers' untap steps.\nAt the beginning of each player's upkeep, that player may choose any number of tapped nongreen creatures they control and pay {2} for each creature chosen this way. If the player does, untap those creatures.",
+      "ignored_after": "Creatures don't untap during their controllers' untap steps.\nthat player may choose any number of tapped nongreen creatures they control and pay {2} for each creature chosen this way.\nIf the player does, untap those creatures."
+    },
+    {
+      "name": "Dreamborn Muse",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player mills X cards, where X is the number of cards in their hand.",
+      "ignored_after": "that player mills X cards, where X is the number of cards in their hand."
+    },
+    {
+      "name": "Dreampod Druid",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if ~ is enchanted, create a 1/1 green Saproling creature token.",
+      "ignored_after": "if ~ is enchanted, create a 1/1 green Saproling creature token."
+    },
+    {
+      "name": "Dress Down",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Creatures lose all abilities.\nAt the beginning of the end step, sacrifice ~.",
+      "ignored_after": "Creatures lose all abilities."
+    },
+    {
+      "name": "Dunerider Outlaw",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Protection from green\nAt the beginning of each end step, if ~ dealt damage to an opponent this turn, put a +1/+1 counter on it.",
+      "ignored_after": "Protection from green\nif ~ dealt damage to an opponent this turn, put a +1/+1 counter on it."
+    },
+    {
+      "name": "Duskwatch Recruiter // Krallenhorde Howler",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nKrallenhorde Howler: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nKrallenhorde Howler: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Dust Stalker",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if you control no other colorless creatures, return ~ to its owner's hand.",
+      "ignored_after": "if you control no other colorless creatures, return ~ to its owner's hand."
+    },
+    {
+      "name": "Dystopia",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Cumulative upkeep—Pay 1 life.\nAt the beginning of each player's upkeep, that player sacrifices a green or white permanent of their choice.",
+      "ignored_after": "Cumulative upkeep—Pay 1 life.\nthat player sacrifices a green or white permanent of their choice."
+    },
+    {
+      "name": "Ebony Owl Netsuke",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, if that player has seven or more cards in hand, ~ deals 4 damage to that player.",
+      "ignored_after": "if that player has seven or more cards in hand, ~ deals 4 damage to that player."
+    },
+    {
+      "name": "Eccentric Pestfinder // Turn Stones",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if you gained life this turn, ~ becomes prepared.\nTurn Stones: For each opponent, you create a 1/1 black and green Pest creature token with \"When ~ dies, you gain 1 life.\"",
+      "ignored_after": "~ becomes prepared.\nTurn Stones: For each opponent, you create a 1/1 black and green Pest creature token with \"When ~ dies, you gain 1 life.\""
+    },
+    {
+      "name": "Elenda and Azor",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "you may pay {X}{W}{U}{B}.\nIf you do, draw X cards.\nAt the beginning of each end step, you may pay 4 life. If you do, create a number of 1/1 black Vampire Knight creature tokens with lifelink equal to the number of cards you've drawn this turn.",
+      "ignored_after": "you may pay {X}{W}{U}{B}.\nIf you do, draw X cards.\nyou may pay 4 life.\nIf you do, create a number of 1/1 black Vampire Knight creature tokens with lifelink equal to the number of cards you've drawn this turn."
+    },
+    {
+      "name": "Elkin Lair",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player exiles a card at random from their hand. The player may play that card this turn. At the beginning of the next end step, if the player hasn't played the card, they put it into their graveyard.",
+      "ignored_after": "that player exiles a card at random from their hand.\nThe player may play that card this turn.\nAt the beginning of the next end step, if the player hasn't played the card, they put it into their graveyard."
+    },
+    {
+      "name": "Emberwilde Djinn",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player may pay {R}{R} or 2 life. If the player does, they gain control of ~.",
+      "ignored_after": "that player may pay {R}{R} or 2 life.\nIf the player does, they gain control of ~."
+    },
+    {
+      "name": "Ephara, God of the Polis",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "As long as your devotion to white and blue is less than seven, ~ isn't a creature.\nAt the beginning of each upkeep, if you had another creature enter the battlefield under your control last turn, draw a card.",
+      "ignored_after": "As long as your devotion to white and blue is less than seven, ~ isn't a creature.\nif you had another creature enter the battlefield under your control last turn, draw a card."
+    },
+    {
+      "name": "Errand of Duty",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: banding"
+    },
+    {
+      "name": "Eyes in the Skies",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: then populate"
+    },
+    {
+      "name": "Fae Offering",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if you've cast both a creature spell and a noncreature spell this turn, create a Clue token, a Food token, and a Treasure token.",
+      "ignored_after": "if you've cast both a creature spell and a noncreature spell this turn, create a Clue token, a Food token, and a Treasure token."
+    },
+    {
+      "name": "Fairgrounds Trumpeter",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if a +1/+1 counter was put on a permanent under your control this turn, put a +1/+1 counter on ~.",
+      "ignored_after": "if a +1/+1 counter was put on a permanent under your control this turn, put a +1/+1 counter on ~."
+    },
+    {
+      "name": "Faithful Squire // Kaiso, Memory of Loyalty",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever you cast a Spirit or Arcane spell, you may put a ki counter on ~.\nAt the beginning of the end step, if there are two or more ki counters on ~, you may flip it.\nKaiso, Memory of Loyalty: Remove a ki counter from ~: Prevent all damage that would be dealt to target creature this turn.",
+      "ignored_after": "Whenever you cast a Spirit or Arcane spell, you may put a ki counter on ~.\nif there are two or more ki counters on ~, you may flip it.\nKaiso, Memory of Loyalty: Remove a ki counter from ~: Prevent all damage that would be dealt to target creature this turn."
+    },
+    {
+      "name": "Falcon Abomination",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: decayed"
+    },
+    {
+      "name": "Fatespinner",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, that player chooses draw step, main phase, or combat phase. The player skips each instance of the chosen step or phase this turn.",
+      "ignored_after": "that player chooses draw step, main phase, or combat phase.\nThe player skips each instance of the chosen step or phase this turn."
+    },
+    {
+      "name": "Feast on the Fallen",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if an opponent lost life last turn, put a +1/+1 counter on target creature you control.",
+      "ignored_after": "if an opponent lost life last turn, put a +1/+1 counter on target creature you control."
+    },
+    {
+      "name": "Festival of Embers",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "During your turn, you may cast instant and sorcery spells from your graveyard by paying 1 life in addition to their other costs.\nIf a card or token would be put into your graveyard from anywhere, exile it instead.\n{1}{R}: Sacrifice ~.",
+      "ignored_after": "During your turn, you may cast instant and sorcery spells from your graveyard by paying 1 life in addition to their other costs.\nIf a card or token would be put into your graveyard from anywhere, exile it instead."
+    },
+    {
+      "name": "Fire Nation Attacks",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: firebending 1"
+    },
+    {
+      "name": "Fire Nation Occupation",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever you cast a spell during an opponent's turn, create a 2/2 red Soldier creature token with firebending 1.",
+      "ignored_after": "Unsupported token keywords: firebending 1\nWhenever you cast a spell during an opponent's turn, create a 2/2 red Soldier creature token with firebending 1."
+    },
+    {
+      "name": "Firebender Ascension",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever a creature you control attacking causes a triggered ability of that creature to trigger, put a quest counter on ~. Then if it has four or more quest counters on it, you may copy that ability. You may choose new targets for the copy.",
+      "ignored_after": "Unsupported token keywords: firebending 1\nWhenever a creature you control attacking causes a triggered ability of that creature to trigger, put a quest counter on ~. Then if it has four or more quest counters on it, you may copy that ability. You may choose new targets for the copy."
+    },
+    {
+      "name": "First Response",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if you lost life last turn, create a 1/1 white Soldier creature token.",
+      "ignored_after": "if you lost life last turn, create a 1/1 white Soldier creature token."
+    },
+    {
+      "name": "Flip the Switch",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: decayed"
+    },
+    {
+      "name": "Force Bubble",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "If damage would be dealt to you, put that many depletion counters on ~ instead.\nWhen there are four or more depletion counters on ~, sacrifice it.\nAt the beginning of each end step, remove all depletion counters from ~.",
+      "ignored_after": "If damage would be dealt to you, put that many depletion counters on ~ instead.\nWhen there are four or more depletion counters on ~, sacrifice it.\nremove all depletion counters from ~."
+    },
+    {
+      "name": "Form of the Dragon",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, your life total becomes 5.\nCreatures without flying can't attack you.",
+      "ignored_after": "your life total becomes 5.\nCreatures without flying can't attack you."
+    },
+    {
+      "name": "Forsaken Wastes",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Players can't gain life.\nAt the beginning of each player's upkeep, that player loses 1 life.\nthat spell's controller loses 5 life.",
+      "ignored_after": "Players can't gain life.\nthat spell's controller loses 5 life."
+    },
+    {
+      "name": "Fractal Tender",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if you put a counter on ~ this turn, create a 0/0 green and blue Fractal creature token and put three +1/+1 counters on it.",
+      "ignored_after": "if you put a counter on ~ this turn, create a 0/0 green and blue Fractal creature token and put three +1/+1 counters on it."
+    },
+    {
+      "name": "Fraying Line",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "put a rope counter on target creature you control.\nAt the beginning of each player's upkeep, that player may pay {2}. If they do, they put a rope counter on a creature they control. Otherwise, exile ~ and each creature without a rope counter on it, then remove all rope counters from all creatures.",
+      "ignored_after": "put a rope counter on target creature you control.\nthat player may pay {2}.\nIf they do, they put a rope counter on a creature they control.\nOtherwise, exile ~ and each creature without a rope counter on it, then remove all rope counters from all creatures."
+    },
+    {
+      "name": "Fraying Sanity",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Enchant player\nAt the beginning of each end step, enchanted player mills X cards, where X is the number of cards put into their graveyard from anywhere this turn.",
+      "ignored_after": "Enchant player\nenchanted player mills X cards, where X is the number of cards put into their graveyard from anywhere this turn."
+    },
+    {
+      "name": "Free-for-All",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "exile all creatures face down.\nAt the beginning of each player's upkeep, that player chooses a card exiled with ~ at random and puts it onto the battlefield.\nput all cards exiled with it into their owners' graveyards.",
+      "ignored_after": "exile all creatures face down.\nthat player chooses a card exiled with ~ at random and puts it onto the battlefield.\nput all cards exiled with it into their owners' graveyards."
+    },
+    {
+      "name": "Frodo, Adventurous Hobbit",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Partner with Sam, Loyal Attendant\nif you gained 3 or more life this turn, the Ring tempts you.\nThen if ~ is your Ring-bearer and the Ring has tempted you two or more times this game, draw a card.",
+      "ignored_after": "Partner with Sam, Loyal Attendant\nThe Ring tempts you.\nThen if ~ is your Ring-bearer and the Ring has tempted you two or more times this game, draw a card."
+    },
+    {
+      "name": "Frostbite Pyromental",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of the end step, sacrifice ~.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Furnace Punisher",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, ~ deals 2 damage to that player unless they control two or more basic lands.",
+      "ignored_after": "~ deals 2 damage to that player unless they control two or more basic lands."
+    },
+    {
+      "name": "Gate to the Aether",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player reveals the top card of their library. If it's an artifact, creature, enchantment, or land card, the player may put it onto the battlefield.",
+      "ignored_after": "that player reveals the top card of their library.\nIf it's an artifact, creature, enchantment, or land card, the player may put it onto the battlefield."
+    },
+    {
+      "name": "Gatstaf Arsonists // Gatstaf Ravagers",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nGatstaf Ravagers: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nGatstaf Ravagers: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Gatstaf Shepherd // Gatstaf Howler",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nGatstaf Howler: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nGatstaf Howler: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Gau, Feral Youth",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Rage — Whenever ~ attacks, put a +1/+1 counter on it.\nAt the beginning of each end step, if a card left your graveyard this turn, ~ deals damage equal to its power to each opponent.",
+      "ignored_after": "Rage — Whenever ~ attacks, put a +1/+1 counter on it.\nif a card left your graveyard this turn, ~ deals damage equal to its power to each opponent."
+    },
+    {
+      "name": "Geier Reach Bandit // Vildin-Pack Alpha",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nVildin-Pack Alpha: you may transform it.\nVildin-Pack Alpha: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nVildin-Pack Alpha: you may transform it.\nVildin-Pack Alpha: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Geometric Weird",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, you may have ~'s base power and toughness each become equal to the greatest number of spells and abilities from different sources that were on the stack simultaneously that turn.",
+      "ignored_after": "you may have ~'s base power and toughness each become equal to the greatest number of spells and abilities from different sources that were on the stack simultaneously that turn."
+    },
+    {
+      "name": "Ghirapur Orrery",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Each player may play an additional land on each of their turns.\nAt the beginning of each player's upkeep, if that player has no cards in hand, that player draws three cards.",
+      "ignored_after": "Each player may play an additional land on each of their turns.\nThat player draws three cards."
+    },
+    {
+      "name": "Giant Caterpillar",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "{G}, Sacrifice ~: Create a 1/1 green Insect creature token with flying named Butterfly at the beginning of the next end step."
+    },
+    {
+      "name": "Gibbering Descent",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player loses 1 life and discards a card.\nHellbent — Skip your upkeep step if you have no cards in hand.\nMadness {2}{B}{B}",
+      "ignored_after": "that player loses 1 life and discards a card.\nHellbent — Skip your upkeep step if you have no cards in hand.\nMadness {2}{B}{B}"
+    },
+    {
+      "name": "Gibbering Fiend",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, if there are four or more card types among cards in your graveyard, ~ deals 1 damage to that player.",
+      "ignored_after": "if there are four or more card types among cards in your graveyard, ~ deals 1 damage to that player."
+    },
+    {
+      "name": "Ginger, Queen of Sweets",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "you become the monarch.\nAt the beginning of each upkeep, if you're the monarch, create a Gingerbrute token.",
+      "ignored_after": "you become the monarch.\nif you're the monarch, create a Gingerbrute token."
+    },
+    {
+      "name": "Glen Elendra's Answer",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Counter all spells your opponents control and all abilities your opponents control.",
+      "ignored_after": "Counter all spells your opponents control and all abilities your opponents control.\nUnsupported token keywords: flying for each spell, ability countered this way"
+    },
+    {
+      "name": "Glimmervoid",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, if you control no artifacts, sacrifice ~.",
+      "ignored_after": "if you control no artifacts, sacrifice ~."
+    },
+    {
+      "name": "Glitterfang",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of the end step, return ~ to its owner's hand.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Goblin Boom Keg",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "sacrifice ~.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Goblin Cannon",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "{2}: ~ deals 1 damage to any target. Sacrifice ~.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Goblin Pyromancer",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Goblin creatures get +3/+0 until end of turn.\nAt the beginning of the end step, destroy all Goblins.",
+      "ignored_after": "Goblin creatures get +3/+0 until end of turn.\ndestroy all Goblins."
+    },
+    {
+      "name": "Goliath Hatchery",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Corrupted — At the beginning of your upkeep, if an opponent has three or more poison counters, choose a creature you control, then draw cards equal to its total toxic value.",
+      "ignored_after": "Unsupported token keywords: toxic 1\nCorrupted — At the beginning of your upkeep, if an opponent has three or more poison counters, choose a creature you control, then draw cards equal to its total toxic value."
+    },
+    {
+      "name": "Greener Pastures",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, if that player controls more lands than each other player, the player creates a 1/1 green Saproling creature token.",
+      "ignored_after": "if that player controls more lands than each other player, the player creates a 1/1 green Saproling creature token."
+    },
+    {
+      "name": "Griffin Aerie",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "if you gained 3 or more life this turn, create a 2/2 white Griffin creature token with flying.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Grizzled Outcasts // Krallenhorde Wantons",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nKrallenhorde Wantons: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nKrallenhorde Wantons: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Groundbreaker",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of the end step, sacrifice ~.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Gwaihir, Greatest of the Eagles",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "target attacking creature gains flying until end of turn.\nAt the beginning of each end step, if you gained 3 or more life this turn, create a 3/3 white Bird creature token with flying and \"Whenever ~ attacks, target attacking creature gains flying until end of turn.\"",
+      "ignored_after": "target attacking creature gains flying until end of turn.\nCreate a 3/3 white Bird creature token with flying and \"Whenever ~ attacks, target attacking creature gains flying until end of turn.\""
+    },
+    {
+      "name": "HYDRA Troopers",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Otherwise, mill two cards.",
+      "ignored_after": "Unsupported token keywords: menace if there are two or more creature cards in your graveyard\nOtherwise, mill two cards."
+    },
+    {
+      "name": "Half-Orc, Half-",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if an opponent was dealt damage this turn,\nAugment {1}{R}{R}",
+      "ignored_after": "if an opponent was dealt damage this turn,\nAugment {1}{R}{R}"
+    },
+    {
+      "name": "Hall of Gemstone",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player chooses a color. Until end of turn, lands tapped for mana produce mana of the chosen color instead of any other color.",
+      "ignored_after": "that player chooses a color.\nUntil end of turn, lands tapped for mana produce mana of the chosen color instead of any other color."
+    },
+    {
+      "name": "Hanweir Watchkeep // Bane of Hanweir",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nBane of Hanweir: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nBane of Hanweir: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Havoc Festival",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Players can't gain life.\nAt the beginning of each player's upkeep, that player loses half their life, rounded up.",
+      "ignored_after": "Players can't gain life.\nthat player loses half their life, rounded up."
+    },
+    {
+      "name": "Hell's Thunder",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, sacrifice ~.\nUnearth {4}{R}",
+      "ignored_after": "Unearth {4}{R}"
+    },
+    {
+      "name": "Hellfire Mongrel",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, if that player has two or fewer cards in hand, ~ deals 2 damage to that player.",
+      "ignored_after": "if that player has two or fewer cards in hand, ~ deals 2 damage to that player."
+    },
+    {
+      "name": "Hellspark Elemental",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, sacrifice ~.\nUnearth {1}{R}",
+      "ignored_after": "Unearth {1}{R}"
+    },
+    {
+      "name": "Hermit of the Natterknolls // Lone Wolf of the Natterknolls",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever an opponent casts a spell during your turn, draw a card.\nAt the beginning of each upkeep, if no spells were cast last turn, transform ~.\nLone Wolf of the Natterknolls: Whenever an opponent casts a spell during your turn, draw two cards.\nLone Wolf of the Natterknolls: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "Whenever an opponent casts a spell during your turn, draw a card.\nif no spells were cast last turn, transform ~.\nLone Wolf of the Natterknolls: Whenever an opponent casts a spell during your turn, draw two cards.\nLone Wolf of the Natterknolls: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Hinterland Hermit // Hinterland Scourge",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nHinterland Scourge: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nHinterland Scourge: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Hinterland Logger // Timber Shredder",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nTimber Shredder: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nTimber Shredder: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Hired Muscle // Scarmaker",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever you cast a Spirit or Arcane spell, you may put a ki counter on ~.\nAt the beginning of the end step, if there are two or more ki counters on ~, you may flip it.\nScarmaker: Remove a ki counter from ~: Target creature gains fear until end of turn.",
+      "ignored_after": "Whenever you cast a Spirit or Arcane spell, you may put a ki counter on ~.\nif there are two or more ki counters on ~, you may flip it.\nScarmaker: Remove a ki counter from ~: Target creature gains fear until end of turn."
+    },
+    {
+      "name": "Hobbling Zombie",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: decayed"
+    },
+    {
+      "name": "Hokori, Dust Drinker",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Lands don't untap during their controllers' untap steps.\nAt the beginning of each player's upkeep, that player untaps a land they control.",
+      "ignored_after": "Lands don't untap during their controllers' untap steps.\nthat player untaps a land they control."
+    },
+    {
+      "name": "Hollowborn Barghest",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "if you have no cards in hand, each opponent loses 2 life.\nAt the beginning of each opponent's upkeep, if that player has no cards in hand, they lose 2 life.",
+      "ignored_after": "if you have no cards in hand, each opponent loses 2 life."
+    },
+    {
+      "name": "Hopeful Vigil",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "{2}{W}: Sacrifice ~.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Hopeless Nightmare",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "each opponent discards a card and loses 2 life.\n{2}{B}: Sacrifice ~.",
+      "ignored_after": "each opponent discards a card and loses 2 life."
+    },
+    {
+      "name": "Horncaller's Chant",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: then populate"
+    },
+    {
+      "name": "Huntmaster of the Fells // Ravager of the Fells",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever ~ enters or transforms into ~, create a 2/2 green Wolf creature token and you gain 2 life.\nAt the beginning of each upkeep, if no spells were cast last turn, transform ~.\nRavager of the Fells: Whenever ~ transforms into ~, it deals 2 damage to target opponent or planeswalker and 2 damage to up to one target creature that player or that planeswalker's controller controls.\nRavager of the Fells: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "Whenever ~ enters or transforms into ~, create a 2/2 green Wolf creature token and you gain 2 life.\nif no spells were cast last turn, transform ~.\nRavager of the Fells: Whenever ~ transforms into ~, it deals 2 damage to target opponent or planeswalker and 2 damage to up to one target creature that player or that planeswalker's controller controls.\nRavager of the Fells: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Ichorid",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, sacrifice ~.\nif this card is in your graveyard, you may exile a black creature card other than this card from your graveyard.\nIf you do, return this card to the battlefield.",
+      "ignored_after": "if this card is in your graveyard, you may exile a black creature card other than this card from your graveyard.\nIf you do, return this card to the battlefield."
+    },
+    {
+      "name": "Illustrious Wanderglyph",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Ascend\nOther artifact creatures you control get +2/+2 as long as you have the city's blessing.\nAt the beginning of each upkeep, create a 1/1 colorless Gnome artifact creature token.",
+      "ignored_after": "Ascend\nOther artifact creatures you control get +2/+2 as long as you have the city's blessing."
+    },
+    {
+      "name": "Impetuous Devils",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "When ~ attacks, up to one target creature defending player controls blocks it this combat if able.\nAt the beginning of the end step, sacrifice ~.",
+      "ignored_after": "When ~ attacks, up to one target creature defending player controls blocks it this combat if able."
+    },
+    {
+      "name": "Indulging Patrician",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "if you gained 3 or more life this turn, each opponent loses 3 life.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Infernal Genesis",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player mills a card. Then they create X 1/1 black Minion creature tokens, where X is the milled card's mana value.",
+      "ignored_after": "Then they create X 1/1 black Minion creature tokens, where X is the milled card's mana value."
+    },
+    {
+      "name": "Inferno Hellion",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if ~ attacked or blocked this turn, its owner shuffles it into their library.",
+      "ignored_after": "if ~ attacked or blocked this turn, its owner shuffles it into their library."
+    },
+    {
+      "name": "Instigator Gang // Wildblood Pack",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nWildblood Pack: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nWildblood Pack: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Intermediate Chirography",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever you lose life for the first time each turn, put a +1/+1 counter on target creature you control.\nAt the beginning of each end step, if a modified creature died under your control this turn, create a 2/1 white and black Inkling creature token with flying.",
+      "ignored_after": "Whenever you lose life for the first time each turn, put a +1/+1 counter on target creature you control.\nif a modified creature died under your control this turn, create a 2/1 white and black Inkling creature token with flying."
+    },
+    {
+      "name": "Invasion of Eldraine // Prickle Faeries",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "When this Siege enters, target opponent discards two cards.\nPrickle Faeries: At the beginning of each opponent's upkeep, if that player has two or fewer cards in hand, ~ deals 2 damage to them.",
+      "ignored_after": "When this Siege enters, target opponent discards two cards.\nPrickle Faeries: if that player has two or fewer cards in hand, ~ deals 2 damage to them."
+    },
+    {
+      "name": "Iron Maiden",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, ~ deals X damage to that player, where X is the number of cards in their hand minus 4.",
+      "ignored_after": "~ deals X damage to that player, where X is the number of cards in their hand minus 4."
+    },
+    {
+      "name": "Irregular Cohort",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: changeling"
+    },
+    {
+      "name": "Joined Researchers // Secret Rendezvous",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if an opponent has more cards in hand than you, ~ becomes prepared.\nSecret Rendezvous: You and target opponent each draw three cards.",
+      "ignored_after": "if an opponent has more cards in hand than you, ~ becomes prepared.\nSecret Rendezvous: You and target opponent each draw three cards."
+    },
+    {
+      "name": "Jungle Patrol",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Sacrifice a token named Wood: Add {R}.",
+      "ignored_after": "{1}{G}, {T}: Create a 0/1 green Wall creature token with defender named Wood.\nSacrifice a token named Wood: Add {R}."
+    },
+    {
+      "name": "Jötun Owl Keeper",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Cumulative upkeep {W} or {U}",
+      "ignored_after": "Cumulative upkeep {W} or {U}\nUnsupported token keywords: flying for each age counter on it"
+    },
+    {
+      "name": "Kami of Transience",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if an enchantment was put into your graveyard from the battlefield this turn, you may return this card from your graveyard to your hand.",
+      "ignored_after": "if an enchantment was put into your graveyard from the battlefield this turn, you may return this card from your graveyard to your hand."
+    },
+    {
+      "name": "Karma",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, ~ deals damage to that player equal to the number of Swamps they control.",
+      "ignored_after": "~ deals damage to that player equal to the number of Swamps they control."
+    },
+    {
+      "name": "Karona, False God",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player untaps ~ and gains control of it.\ncreatures of the creature type of your choice get +3/+3 until end of turn.",
+      "ignored_after": "that player untaps ~ and gains control of it.\ncreatures of the creature type of your choice get +3/+3 until end of turn."
+    },
+    {
+      "name": "Kessig Forgemaster // Flameheart Werewolf",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever ~ blocks or becomes blocked by a creature, ~ deals 1 damage to that creature.\nAt the beginning of each upkeep, if no spells were cast last turn, transform ~.\nFlameheart Werewolf: Whenever ~ blocks or becomes blocked by a creature, ~ deals 2 damage to that creature.\nFlameheart Werewolf: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "Whenever ~ blocks or becomes blocked by a creature, ~ deals 1 damage to that creature.\nif no spells were cast last turn, transform ~.\nFlameheart Werewolf: Whenever ~ blocks or becomes blocked by a creature, ~ deals 2 damage to that creature.\nFlameheart Werewolf: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Khabál Ghoul",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, put a +1/+1 counter on ~ for each creature that died this turn.",
+      "ignored_after": "put a +1/+1 counter on ~ for each creature that died this turn."
+    },
+    {
+      "name": "Kitsune Mystic // Autumn-Tail, Kitsune Sage",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, if ~ is enchanted by two or more Auras, flip it.\nAutumn-Tail, Kitsune Sage: {1}: Attach target Aura attached to a creature to another creature.",
+      "ignored_after": "if ~ is enchanted by two or more Auras, flip it.\nAutumn-Tail, Kitsune Sage: {1}: Attach target Aura attached to a creature to another creature."
+    },
+    {
+      "name": "Koma and Toski, Compleated",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, create a 1/1 Phyrexian Serpent Squirrel artifact creature token named Toski's Coil with \"Whenever ~ deals combat damage to a player, draw a card.\"\nSacrifice another Serpent or Squirrel: Choose one —\n• Target creature attacks this turn if able. Its activated abilities can't be activated this turn.\n• ~ gains indestructible until end of turn.",
+      "ignored_after": "create a 1/1 Phyrexian Serpent Squirrel artifact creature token named Toski's Coil with \"Whenever ~ deals combat damage to a player, draw a card.\"\nSacrifice another Serpent or Squirrel: Choose one —\n• Target creature attacks this turn if able. Its activated abilities can't be activated this turn.\n• ~ gains indestructible until end of turn."
+    },
+    {
+      "name": "Koma, Cosmos Serpent",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, create a 3/3 blue Serpent creature token named ~'s Coil.\nSacrifice another Serpent: Choose one —\n• Tap target permanent. Its activated abilities can't be activated this turn.\n• ~ gains indestructible until end of turn.",
+      "ignored_after": "create a 3/3 blue Serpent creature token named ~'s Coil.\nSacrifice another Serpent: Choose one —\n• Tap target permanent. Its activated abilities can't be activated this turn.\n• ~ gains indestructible until end of turn."
+    },
+    {
+      "name": "Krovikan Horror",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, if this card is in your graveyard with a creature card directly above it, you may return this card to your hand.",
+      "ignored_after": "if this card is in your graveyard with a creature card directly above it, you may return this card to your hand."
+    },
+    {
+      "name": "Krovikan Vampire",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if a creature dealt damage by ~ this turn died, put that card onto the battlefield under your control. Sacrifice it when you lose control of ~.",
+      "ignored_after": "if a creature dealt damage by ~ this turn died, put that card onto the battlefield under your control.\nSacrifice it when you lose control of ~."
+    },
+    {
+      "name": "Kruin Outlaw // Terror of Kruin Pass",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nTerror of Kruin Pass: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nTerror of Kruin Pass: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Kuon, Ogre Ascendant // Kuon's Essence",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, if three or more creatures died this turn, flip ~.\nKuon's Essence: At the beginning of each player's upkeep, that player sacrifices a creature of their choice.",
+      "ignored_after": "if three or more creatures died this turn, flip ~.\nKuon's Essence: that player sacrifices a creature of their choice."
+    },
+    {
+      "name": "Laboratory Drudge",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, draw a card if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn.",
+      "ignored_after": "draw a card if you've cast a spell from a graveyard or activated an ability of a card in a graveyard this turn."
+    },
+    {
+      "name": "Lambholt Elder // Silverpelt Werewolf",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nSilverpelt Werewolf: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nSilverpelt Werewolf: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Lambholt Pacifist // Lambholt Butcher",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "~ can't attack unless you control a creature with power 4 or greater.\nAt the beginning of each upkeep, if no spells were cast last turn, transform ~.\nLambholt Butcher: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "~ can't attack unless you control a creature with power 4 or greater.\nif no spells were cast last turn, transform ~.\nLambholt Butcher: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Lasting Tarfire",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if you put a counter on a creature this turn, ~ deals 2 damage to each opponent.",
+      "ignored_after": "if you put a counter on a creature this turn, ~ deals 2 damage to each opponent."
+    },
+    {
+      "name": "Lathiel, the Bounteous Dawn",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if you gained life this turn, distribute up to that many +1/+1 counters among any number of other target creatures.",
+      "ignored_after": "Distribute up to that many +1/+1 counters among any number of other target creatures."
+    },
+    {
+      "name": "Lavaborn Muse",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, if that player has two or fewer cards in hand, ~ deals 3 damage to that player.",
+      "ignored_after": "if that player has two or fewer cards in hand, ~ deals 3 damage to that player."
+    },
+    {
+      "name": "Lavabrink Floodgates",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player may put a doom counter on ~ or remove a doom counter from it. Then if it has three or more doom counters on it, sacrifice ~. When you do, it deals 6 damage to each creature.",
+      "ignored_after": "that player may put a doom counter on ~ or remove a doom counter from it.\nThen if it has three or more doom counters on it, sacrifice ~.\nWhen you do, it deals 6 damage to each creature."
+    },
+    {
+      "name": "Leonin Warleader",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: lifelink that are tapped, attacking"
+    },
+    {
+      "name": "Ley Line",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player may put a +1/+1 counter on target creature of their choice.",
+      "ignored_after": "that player may put a +1/+1 counter on target creature of their choice."
+    },
+    {
+      "name": "Lighthouse Chronologist",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Level up {U}\nLEVEL 4-6\n2/4\nLEVEL 7+\n3/5\nAt the beginning of each end step, if it's not your turn, take an extra turn after this one.",
+      "ignored_after": "Level up {U}\nLEVEL 4-6\n2/4\nLEVEL 7+\n3/5\nif it's not your turn, take an extra turn after this one."
+    },
+    {
+      "name": "Lightning Serpent",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "~ enters with X +1/+0 counters on it.\nAt the beginning of the end step, sacrifice ~.",
+      "ignored_after": "~ enters with X +1/+0 counters on it."
+    },
+    {
+      "name": "Lightning Shrieker",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, ~'s owner shuffles it into their library.",
+      "ignored_after": "~'s owner shuffles it into their library."
+    },
+    {
+      "name": "Lightning Skelemental",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "that player discards two cards.\nAt the beginning of the end step, sacrifice ~.",
+      "ignored_after": "that player discards two cards."
+    },
+    {
+      "name": "Liliana's Scrounger",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if a creature died this turn, you may put a loyalty counter on a Liliana planeswalker you control.",
+      "ignored_after": "if a creature died this turn, you may put a loyalty counter on a Liliana planeswalker you control."
+    },
+    {
+      "name": "Lone Rider // It That Rides as One",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of the end step, if you gained 3 or more life this turn, transform ~.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Lord Jyscal Guado",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if you put a counter on a creature this turn, investigate.",
+      "ignored_after": "if you put a counter on a creature this turn, investigate."
+    },
+    {
+      "name": "Lorehold, the Historian",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Each instant and sorcery card in your hand has miracle {2}.\nAt the beginning of each opponent's upkeep, you may discard a card. If you do, draw a card.",
+      "ignored_after": "Each instant and sorcery card in your hand has miracle {2}."
+    },
+    {
+      "name": "Lucky the Pizza Dog",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever you cast a Cat, Dog, or Hero spell, create a Food token.\nAt the beginning of each end step, if you gained life this turn, put a +1/+1 counter on ~.",
+      "ignored_after": "Whenever you cast a Cat, Dog, or Hero spell, create a Food token."
+    },
+    {
+      "name": "Lukka, Bound to Ruin",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Compleated\n[+1]: Spend this mana only to cast creature spells or activate abilities of creatures.\n[−4]: ~ deals X damage divided as you choose among any number of target creatures and/or planeswalkers, where X is the greatest power among creatures you control as you activate this ability.",
+      "ignored_after": "Compleated\n[+1]: Spend this mana only to cast creature spells or activate abilities of creatures.\n[−1]: Unsupported token keywords: toxic 1\n[−4]: ~ deals X damage divided as you choose among any number of target creatures and/or planeswalkers, where X is the greatest power among creatures you control as you activate this ability."
+    },
+    {
+      "name": "Lyra, Tolarian Archangel",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if you've drawn three or more cards this turn, create a 3/3 blue Angel creature token with flying.\n{3}{U}{U}: Until end of turn, whenever ~ deals combat damage to a player, draw two cards.",
+      "ignored_after": "if you've drawn three or more cards this turn, create a 3/3 blue Angel creature token with flying.\n{3}{U}{U}: Until end of turn, whenever ~ deals combat damage to a player, draw two cards."
+    },
+    {
+      "name": "Magmatic Force",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of each upkeep, ~ deals 3 damage to any target.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Magnetic Mountain",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Blue creatures don't untap during their controllers' untap steps.\nAt the beginning of each player's upkeep, that player may choose any number of tapped blue creatures they control and pay {4} for each creature chosen this way. If the player does, untap those creatures.",
+      "ignored_after": "Blue creatures don't untap during their controllers' untap steps.\nthat player may choose any number of tapped blue creatures they control and pay {4} for each creature chosen this way.\nIf the player does, untap those creatures."
+    },
+    {
+      "name": "Magus of the Abyss",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, destroy target nonartifact creature that player controls of their choice. It can't be regenerated.",
+      "ignored_after": "destroy target nonartifact creature that player controls of their choice.\nIt can't be regenerated."
+    },
+    {
+      "name": "Mana Vortex",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "When you cast ~, counter it unless you sacrifice a land.\nAt the beginning of each player's upkeep, that player sacrifices a land of their choice.\nWhen there are no lands on the battlefield, sacrifice ~.",
+      "ignored_after": "When you cast ~, counter it unless you sacrifice a land.\nthat player sacrifices a land of their choice.\nWhen there are no lands on the battlefield, sacrifice ~."
+    },
+    {
+      "name": "Manic Scribe",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, if there are four or more card types among cards in your graveyard, that player mills three cards.",
+      "ignored_after": "if there are four or more card types among cards in your graveyard, that player mills three cards."
+    },
+    {
+      "name": "Mark of Fury",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of the end step, return ~ to its owner's hand.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Mark of the Oni",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "You control enchanted creature.\nAt the beginning of the end step, if you control no Demons, sacrifice ~.",
+      "ignored_after": "You control enchanted creature.\nif you control no Demons, sacrifice ~."
+    },
+    {
+      "name": "Mask of Intolerance",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, if there are four or more basic land types among lands that player controls, ~ deals 3 damage to that player.",
+      "ignored_after": "if there are four or more basic land types among lands that player controls, ~ deals 3 damage to that player."
+    },
+    {
+      "name": "Maskwood Nexus",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Creatures you control are every creature type. The same is true for creature spells you control and creature cards you own that aren't on the battlefield.",
+      "ignored_after": "Creatures you control are every creature type. The same is true for creature spells you control and creature cards you own that aren't on the battlefield.\n{3}, {T}: Create a 2/2 blue Shapeshifter creature token with changeling."
+    },
+    {
+      "name": "Masterpiece Vault",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "draft a card from ~'s spellbook and put it onto the battlefield.\nWhen an Equipment enters this way, attach it to up to one target creature you control.\n{5}: Sacrifice ~.",
+      "ignored_after": "draft a card from ~'s spellbook and put it onto the battlefield.\nWhen an Equipment enters this way, attach it to up to one target creature you control."
+    },
+    {
+      "name": "Mayor of Avabruck // Howlpack Alpha",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nHowlpack Alpha: Each other creature you control that's a Werewolf or a Wolf gets +1/+1.\nHowlpack Alpha: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nHowlpack Alpha: Each other creature you control that's a Werewolf or a Wolf gets +1/+1.\nHowlpack Alpha: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Measure of Wickedness",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "sacrifice ~ and you lose 8 life.\nWhenever another card is put into your graveyard from anywhere, target opponent gains control of ~.",
+      "ignored_after": "Whenever another card is put into your graveyard from anywhere, target opponent gains control of ~."
+    },
+    {
+      "name": "Midnight Clock",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, put an hour counter on ~.\nWhen the twelfth hour counter is put on ~, shuffle your hand and graveyard into your library, then draw seven cards. Exile ~.",
+      "ignored_after": "When the twelfth hour counter is put on ~, shuffle your hand and graveyard into your library, then draw seven cards. Exile ~."
+    },
+    {
+      "name": "Misers' Cage",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, if that player has five or more cards in hand, ~ deals 2 damage to that player.",
+      "ignored_after": "if that player has five or more cards in hand, ~ deals 2 damage to that player."
+    },
+    {
+      "name": "Mist of Stagnation",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Permanents don't untap during their controllers' untap steps.\nAt the beginning of each player's upkeep, that player chooses a permanent for each card in their graveyard, then untaps those permanents.",
+      "ignored_after": "Permanents don't untap during their controllers' untap steps.\nthat player chooses a permanent for each card in their graveyard, then untaps those permanents."
+    },
+    {
+      "name": "Mogis, God of Slaughter",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "As long as your devotion to black and red is less than seven, ~ isn't a creature.\nAt the beginning of each opponent's upkeep, ~ deals 2 damage to that player unless they sacrifice a creature of their choice.",
+      "ignored_after": "As long as your devotion to black and red is less than seven, ~ isn't a creature.\n~ deals 2 damage to that player unless they sacrifice a creature of their choice."
+    },
+    {
+      "name": "Molder Slug",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player sacrifices an artifact of their choice.",
+      "ignored_after": "that player sacrifices an artifact of their choice."
+    },
+    {
+      "name": "Mondronen Shaman // Tovolar's Magehunter",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nTovolar's Magehunter: Whenever an opponent casts a spell, ~ deals 2 damage to that player.\nTovolar's Magehunter: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nTovolar's Magehunter: Whenever an opponent casts a spell, ~ deals 2 damage to that player.\nTovolar's Magehunter: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Monet, Sensei of the Sewers",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Fixed commander ninjutsu {3}{B}{G}\nIf ~ was ninjutsu'd, those tokens enter tapped and attacking.",
+      "ignored_after": "Fixed commander ninjutsu {3}{B}{G}\nUnsupported token keywords: training\nIf ~ was ninjutsu'd, those tokens enter tapped and attacking."
+    },
+    {
+      "name": "Mudslide",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Creatures without flying don't untap during their controllers' untap steps.\nAt the beginning of each player's upkeep, that player may choose any number of tapped creatures without flying they control and pay {2} for each creature chosen this way. If the player does, untap those creatures.",
+      "ignored_after": "Creatures without flying don't untap during their controllers' untap steps.\nthat player may choose any number of tapped creatures without flying they control and pay {2} for each creature chosen this way.\nIf the player does, untap those creatures."
+    },
+    {
+      "name": "Narcolepsy",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if enchanted creature is untapped, tap it.",
+      "ignored_after": "if enchanted creature is untapped, tap it."
+    },
+    {
+      "name": "Necrogen Mists",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player discards a card.",
+      "ignored_after": "that player discards a card."
+    },
+    {
+      "name": "Necrogoyf",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "~'s power is equal to the number of creature cards in all graveyards.\nAt the beginning of each player's upkeep, that player discards a card.\nMadness {1}{B}{B}",
+      "ignored_after": "~'s power is equal to the number of creature cards in all graveyards.\nthat player discards a card.\nMadness {1}{B}{B}"
+    },
+    {
+      "name": "Nezumi Shortfang // Stabwhisker the Odious",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "{1}{B}, {T}: Target opponent discards a card. Then if that player has no cards in hand, flip ~.\nStabwhisker the Odious: At the beginning of each opponent's upkeep, that player loses 1 life for each card fewer than three in their hand.",
+      "ignored_after": "{1}{B}, {T}: Target opponent discards a card. Then if that player has no cards in hand, flip ~.\nStabwhisker the Odious: that player loses 1 life for each card fewer than three in their hand."
+    },
+    {
+      "name": "Night Out in Vegas",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "• Play Games — Search your library for a card, put that card into your hand, discard a card at random, then shuffle.\n• Go to Sleep — You lose 15 life. Sacrifice ~.",
+      "ignored_after": "• Play Games — Search your library for a card, put that card into your hand, discard a card at random, then shuffle."
+    },
+    {
+      "name": "Noetic Scales",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, return to its owner's hand each creature that player controls with power greater than the number of cards in their hand.",
+      "ignored_after": "return to its owner's hand each creature that player controls with power greater than the number of cards in their hand."
+    },
+    {
+      "name": "Oath of Chandra",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if a planeswalker entered the battlefield under your control this turn, ~ deals 2 damage to each opponent.",
+      "ignored_after": "if a planeswalker entered the battlefield under your control this turn, ~ deals 2 damage to each opponent."
+    },
+    {
+      "name": "Oath of Druids",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player chooses target player who controls more creatures than they do and is their opponent. The first player may reveal cards from the top of their library until they reveal a creature card. If the first player does, that player puts that card onto the battlefield and all other cards revealed this way into their graveyard.",
+      "ignored_after": "that player chooses target player who controls more creatures than they do and is their opponent.\nThe first player may reveal cards from the top of their library until they reveal a creature card.\nIf the first player does, that player puts that card onto the battlefield and all other cards revealed this way into their graveyard."
+    },
+    {
+      "name": "Oath of Ghouls",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player chooses target player whose graveyard has fewer creature cards in it than their graveyard does and is their opponent. The first player may return a creature card from their graveyard to their hand.",
+      "ignored_after": "that player chooses target player whose graveyard has fewer creature cards in it than their graveyard does and is their opponent.\nThe first player may return a creature card from their graveyard to their hand."
+    },
+    {
+      "name": "Oath of Lieges",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player chooses target player who controls more lands than they do and is their opponent. The first player may search their library for a basic land card, put that card onto the battlefield, then shuffle.",
+      "ignored_after": "that player chooses target player who controls more lands than they do and is their opponent.\nThe first player may search their library for a basic land card, put that card onto the battlefield, then shuffle."
+    },
+    {
+      "name": "Oath of Liliana",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if a planeswalker entered the battlefield under your control this turn, create a 2/2 black Zombie creature token.",
+      "ignored_after": "if a planeswalker entered the battlefield under your control this turn, create a 2/2 black Zombie creature token."
+    },
+    {
+      "name": "Oath of Mages",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player chooses target player who has more life than they do and is their opponent. The first player may have ~ deal 1 damage to the second player.",
+      "ignored_after": "that player chooses target player who has more life than they do and is their opponent.\nThe first player may have ~ deal 1 damage to the second player."
+    },
+    {
+      "name": "Oath of Scholars",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player chooses target player who has more cards in hand than they do and is their opponent. The first player may discard their hand and draw three cards.",
+      "ignored_after": "that player chooses target player who has more cards in hand than they do and is their opponent.\nThe first player may discard their hand and draw three cards."
+    },
+    {
+      "name": "Ob Nixilis, the Ascended",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "destroy all tapped creatures your opponents control.\nYou gain 1 life for each creature destroyed this way.\nAt the beginning of each end step, if you gained life this turn, create a 4/4 white Angel creature token with flying.",
+      "ignored_after": "destroy all tapped creatures your opponents control.\nYou gain 1 life for each creature destroyed this way."
+    },
+    {
+      "name": "Obsessive Skinner",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, if there are four or more card types among cards in your graveyard, put a +1/+1 counter on target creature.",
+      "ignored_after": "if there are four or more card types among cards in your graveyard, put a +1/+1 counter on target creature."
+    },
+    {
+      "name": "Occult Epiphany",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Draw X cards, then discard X cards.",
+      "ignored_after": "Draw X cards, then discard X cards.\nUnsupported token keywords: flying for each card type among cards discarded this way"
+    },
+    {
+      "name": "Octomancer",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, create a token that's a copy of target creature token that entered the battlefield this turn.",
+      "ignored_after": "create a token that's a copy of target creature token that entered the battlefield this turn."
+    },
+    {
+      "name": "Old Flitterfang",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of each end step, if a creature died this turn, create a Food token.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Ophiomancer",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if you control no Snakes, create a 1/1 black Snake creature token with deathtouch.",
+      "ignored_after": "if you control no Snakes, create a 1/1 black Snake creature token with deathtouch."
+    },
+    {
+      "name": "Optimus Prime, Hero // Optimus Prime, Autobot Leader",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "More Than Meets the Eye {2}{U}{R}{W}\nAt the beginning of each end step, bolster 1.\nreturn it to the battlefield converted under its owner's control.\nOptimus Prime, Autobot Leader: Living metal\nOptimus Prime, Autobot Leader: bolster 2.\nOptimus Prime, Autobot Leader: The chosen creature gains trample until end of turn.\nOptimus Prime, Autobot Leader: When that creature deals combat damage to a player this turn, convert ~.",
+      "ignored_after": "More Than Meets the Eye {2}{U}{R}{W}\nbolster 1.\nreturn it to the battlefield converted under its owner's control.\nOptimus Prime, Autobot Leader: Living metal\nOptimus Prime, Autobot Leader: bolster 2.\nOptimus Prime, Autobot Leader: The chosen creature gains trample until end of turn.\nOptimus Prime, Autobot Leader: When that creature deals combat damage to a player this turn, convert ~."
+    },
+    {
+      "name": "Osai Vultures",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if a creature died this turn, put a carrion counter on ~.\nRemove two carrion counters from ~: ~ gets +1/+1 until end of turn.",
+      "ignored_after": "Remove two carrion counters from ~: ~ gets +1/+1 until end of turn."
+    },
+    {
+      "name": "Paladin of Atonement",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if you lost life last turn, put a +1/+1 counter on ~.\nyou gain life equal to its toughness.",
+      "ignored_after": "if you lost life last turn, put a +1/+1 counter on ~.\nyou gain life equal to its toughness."
+    },
+    {
+      "name": "Panicked Bystander // Cackling Culprit",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever ~ or another creature you control dies, you gain 1 life.\nif you gained 3 or more life this turn, transform ~.\nCackling Culprit: Whenever ~ or another creature you control dies, you gain 1 life.",
+      "ignored_after": "Whenever ~ or another creature you control dies, you gain 1 life.\nCackling Culprit: Whenever ~ or another creature you control dies, you gain 1 life."
+    },
+    {
+      "name": "Parhelion II",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: vigilance that are attacking"
+    },
+    {
+      "name": "Paupers' Cage",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, if that player has two or fewer cards in hand, ~ deals 2 damage to that player.",
+      "ignored_after": "if that player has two or fewer cards in hand, ~ deals 2 damage to that player."
+    },
+    {
+      "name": "Pearl Collector",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "if you gained 4 or more life this turn, conjure a card named Mox Pearl into your hand.\n{2}{W}: Another target creature perpetually gains lifelink.",
+      "ignored_after": "Conjure a card named Mox Pearl into your hand.\n{2}{W}: Another target creature perpetually gains lifelink."
+    },
+    {
+      "name": "Persistent Constrictor",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, they lose 1 life and you put a -1/-1 counter on up to one target creature they control.",
+      "ignored_after": "they lose 1 life and you put a -1/-1 counter on up to one target creature they control."
+    },
+    {
+      "name": "Personify",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Exile target creature you control, then return that card to the battlefield under its owner's control.",
+      "ignored_after": "Exile target creature you control, then return that card to the battlefield under its owner's control.\nUnsupported token keywords: changeling"
+    },
+    {
+      "name": "Pest Rescuer",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if you don't control a Pest creature token, create a 1/1 black and green Pest creature token with \"When ~ dies, you gain 1 life.\"\nIf you would gain life, you gain that much life plus 1 instead.",
+      "ignored_after": "if you don't control a Pest creature token, create a 1/1 black and green Pest creature token with \"When ~ dies, you gain 1 life.\"\nIf you would gain life, you gain that much life plus 1 instead."
+    },
+    {
+      "name": "Pestilence",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, if no creatures are on the battlefield, sacrifice ~.\n{B}: ~ deals 1 damage to each creature and each player.",
+      "ignored_after": "if no creatures are on the battlefield, sacrifice ~.\n{B}: ~ deals 1 damage to each creature and each player."
+    },
+    {
+      "name": "Phyrexian Swarmlord",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: infect for each poison counter your opponents have"
+    },
+    {
+      "name": "Pillar Tombs of Aku",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player may sacrifice a creature of their choice. If that player doesn't, they lose 5 life and you sacrifice ~.",
+      "ignored_after": "that player may sacrifice a creature of their choice.\nIf that player doesn't, they lose 5 life and you sacrifice ~."
+    },
+    {
+      "name": "Poppet Stitcher // Poppet Factory",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "if you control three or more creature tokens, you may transform ~.\nPoppet Factory: Creature tokens you control lose all abilities and have base power and toughness 3/3.\nPoppet Factory: you may transform ~.",
+      "ignored_after": "Unsupported token keywords: decayed\nif you control three or more creature tokens, you may transform ~.\nPoppet Factory: Creature tokens you control lose all abilities and have base power and toughness 3/3.\nPoppet Factory: you may transform ~."
+    },
+    {
+      "name": "Possessed Portal",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "If a player would draw a card, that player skips that draw instead.\nAt the beginning of each end step, each player sacrifices a permanent of their choice unless they discard a card.",
+      "ignored_after": "If a player would draw a card, that player skips that draw instead.\neach player sacrifices a permanent of their choice unless they discard a card."
+    },
+    {
+      "name": "Power Surge",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, ~ deals X damage to that player, where X is the number of untapped lands they controlled at the beginning of this turn.",
+      "ignored_after": "~ deals X damage to that player, where X is the number of untapped lands they controlled at the beginning of this turn."
+    },
+    {
+      "name": "Price of Knowledge",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Players have no maximum hand size.\nAt the beginning of each opponent's upkeep, ~ deals damage to that player equal to the number of cards in that player's hand.",
+      "ignored_after": "Players have no maximum hand size.\n~ deals damage to that player equal to the number of cards in that player's hand."
+    },
+    {
+      "name": "Priest of the Crossing",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, put X +1/+1 counters on each creature you control, where X is the number of creatures that died under your control this turn.",
+      "ignored_after": "put X +1/+1 counters on each creature you control, where X is the number of creatures that died under your control this turn."
+    },
+    {
+      "name": "Primal Order",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, ~ deals damage to that player equal to the number of nonbasic lands they control.",
+      "ignored_after": "~ deals damage to that player equal to the number of nonbasic lands they control."
+    },
+    {
+      "name": "Promise of Tomorrow",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "exile it.\nAt the beginning of each end step, if you control no creatures, sacrifice ~ and return all cards exiled with it to the battlefield under your control.",
+      "ignored_after": "exile it.\nif you control no creatures, sacrifice ~ and return all cards exiled with it to the battlefield under your control."
+    },
+    {
+      "name": "Psychic Allergy",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, ~ deals X damage to that player, where X is the number of nontoken permanents of the chosen color they control.\ndestroy ~ unless you sacrifice two Islands.",
+      "ignored_after": "~ deals X damage to that player, where X is the number of nontoken permanents of the chosen color they control.\ndestroy ~ unless you sacrifice two Islands."
+    },
+    {
+      "name": "Putrefax",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of the end step, sacrifice ~.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Pyrohemia",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, if no creatures are on the battlefield, sacrifice ~.\n{R}: ~ deals 1 damage to each creature and each player.",
+      "ignored_after": "if no creatures are on the battlefield, sacrifice ~.\n{R}: ~ deals 1 damage to each creature and each player."
+    },
+    {
+      "name": "Pyromancer's Swath",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "If an instant or sorcery source you control would deal damage to a permanent or player, it deals that much damage plus 2 to that permanent or player instead.\nAt the beginning of each end step, discard your hand.",
+      "ignored_after": "If an instant or sorcery source you control would deal damage to a permanent or player, it deals that much damage plus 2 to that permanent or player instead.\ndiscard your hand."
+    },
+    {
+      "name": "Quest for Ula's Temple",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "you may look at the top card of your library.\nIf it's a creature card, you may reveal it and put a quest counter on ~.\nAt the beginning of each end step, if there are three or more quest counters on ~, you may put a Kraken, Leviathan, Octopus, or Serpent creature card from your hand onto the battlefield.",
+      "ignored_after": "you may look at the top card of your library.\nIf it's a creature card, you may reveal it and put a quest counter on ~.\nif there are three or more quest counters on ~, you may put a Kraken, Leviathan, Octopus, or Serpent creature card from your hand onto the battlefield."
+    },
+    {
+      "name": "Quest for the Nihil Stone",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever an opponent discards a card, you may put a quest counter on ~.\nAt the beginning of each opponent's upkeep, if that player has no cards in hand and ~ has two or more quest counters on it, you may have that player lose 5 life.",
+      "ignored_after": "Whenever an opponent discards a card, you may put a quest counter on ~.\nif that player has no cards in hand and ~ has two or more quest counters on it, you may have that player lose 5 life."
+    },
+    {
+      "name": "Quicksilver Fountain",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player puts a flood counter on target non-Island land they control of their choice. That land is an Island for as long as it has a flood counter on it.\nAt the beginning of each end step, if all lands on the battlefield are Islands, remove all flood counters from them.",
+      "ignored_after": "that player puts a flood counter on target non-Island land they control of their choice.\nThat land is an Island for as long as it has a flood counter on it.\nif all lands on the battlefield are Islands, remove all flood counters from them."
+    },
+    {
+      "name": "Rackling",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, ~ deals X damage to that player, where X is 3 minus the number of cards in their hand.",
+      "ignored_after": "~ deals X damage to that player, where X is 3 minus the number of cards in their hand."
+    },
+    {
+      "name": "Ragost, Deft Gastronaut",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Artifacts you control are Foods in addition to their other types and have \"{2}, {T}, Sacrifice ~: You gain 3 life.\"\nAt the beginning of each end step, if you gained life this turn, untap ~.",
+      "ignored_after": "Artifacts you control are Foods in addition to their other types and have \"{2}, {T}, Sacrifice ~: You gain 3 life.\""
+    },
+    {
+      "name": "Raphael, Fiendish Savior",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Other Demons, Devils, Imps, and Tieflings you control get +1/+1 and have lifelink.\nAt the beginning of each end step, if a creature card was put into your graveyard from anywhere this turn, create a 1/1 red Devil creature token with \"When ~ dies, it deals 1 damage to any target.\"",
+      "ignored_after": "Other Demons, Devils, Imps, and Tieflings you control get +1/+1 and have lifelink.\nif a creature card was put into your graveyard from anywhere this turn, create a 1/1 red Devil creature token with \"When ~ dies, it deals 1 damage to any target.\""
+    },
+    {
+      "name": "Rasputin, the Oneiromancer",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "put a dream counter on it for each opponent you have.\nEach opponent creates a 1/1 red Goblin creature token.\n{T}, Remove one or more dream counters from ~: Add that much {C}.",
+      "ignored_after": "put a dream counter on it for each opponent you have.\nEach opponent creates a 1/1 red Goblin creature token.\n{T}, Remove one or more dream counters from ~: Add that much {C}.\n{T}, Remove a dream counter from ~: Create a 2/2 white Knight creature token with protection from red."
+    },
+    {
+      "name": "Reaper from the Abyss",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of each end step, if a creature died this turn, destroy target non-Demon creature.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Reckless Waif // Merciless Predator",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nMerciless Predator: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nMerciless Predator: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Regal Bloodlord",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of each end step, if you gained life this turn, create a 1/1 black Bat creature token with flying.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Regna, the Redeemer",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Partner with Krav, the Unredeemed\nAt the beginning of each end step, if your team gained life this turn, create two 1/1 white Warrior creature tokens.",
+      "ignored_after": "Partner with Krav, the Unredeemed\nif your team gained life this turn, create two 1/1 white Warrior creature tokens."
+    },
+    {
+      "name": "Relic Retriever",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if a card left your graveyard this turn, create a Treasure token.",
+      "ignored_after": "if a card left your graveyard this turn, create a Treasure token."
+    },
+    {
+      "name": "Resplendent Angel",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if you gained 5 or more life this turn, create a 4/4 white Angel creature token with flying and vigilance.\n{3}{W}{W}{W}: Until end of turn, ~ gets +2/+2 and gains lifelink.",
+      "ignored_after": "{3}{W}{W}{W}: Until end of turn, ~ gets +2/+2 and gains lifelink."
+    },
+    {
+      "name": "Rising Waters",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Lands don't untap during their controllers' untap steps.\nAt the beginning of each player's upkeep, that player untaps a land they control.",
+      "ignored_after": "Lands don't untap during their controllers' untap steps.\nthat player untaps a land they control."
+    },
+    {
+      "name": "Risky Move",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player gains control of ~.\nWhen you gain control of ~ from another player, choose a creature you control and an opponent. Flip a coin. If you lose the flip, that opponent gains control of that creature.",
+      "ignored_after": "that player gains control of ~.\nWhen you gain control of ~ from another player, choose a creature you control and an opponent. Flip a coin. If you lose the flip, that opponent gains control of that creature."
+    },
+    {
+      "name": "Rite of the Raging Storm",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Creatures named Lightning Rager can't attack you or planeswalkers you control.\nAt the beginning of each player's upkeep, that player creates a 5/1 red Elemental creature token named Lightning Rager. It has trample, haste, and \"At the beginning of the end step, sacrifice ~.\"",
+      "ignored_after": "Creatures named Lightning Rager can't attack you or planeswalkers you control.\nthat player creates a 5/1 red Elemental creature token named Lightning Rager.\nIt has trample, haste, and \"At the beginning of the end step, sacrifice ~.\""
+    },
+    {
+      "name": "Rivalry",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, if that player controls more lands than each other player, ~ deals 2 damage to them.",
+      "ignored_after": "if that player controls more lands than each other player, ~ deals 2 damage to them."
+    },
+    {
+      "name": "Robo-",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if an artifact entered the battlefield under your control this turn,\nAugment {2}",
+      "ignored_after": "if an artifact entered the battlefield under your control this turn,\nAugment {2}"
+    },
+    {
+      "name": "Roiling Vortex",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, ~ deals 1 damage to them.\nWhenever a player casts a spell, if no mana was spent to cast that spell, ~ deals 5 damage to that player.\n{R}: Your opponents can't gain life this turn.",
+      "ignored_after": "~ deals 1 damage to them.\nWhenever a player casts a spell, if no mana was spent to cast that spell, ~ deals 5 damage to that player.\n{R}: Your opponents can't gain life this turn."
+    },
+    {
+      "name": "Rotten Reunion",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: decayed"
+    },
+    {
+      "name": "Rukh Egg",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: flying at the beginning of the next end step"
+    },
+    {
+      "name": "Ruthless Winnower",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player sacrifices a non-Elf creature of their choice.",
+      "ignored_after": "that player sacrifices a non-Elf creature of their choice."
+    },
+    {
+      "name": "Sage of Ancient Lore // Werewolf of Ancient Hunger",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "~'s power and toughness are each equal to the number of cards in your hand.\nAt the beginning of each upkeep, if no spells were cast last turn, transform ~.\nWerewolf of Ancient Hunger: ~'s power and toughness are each equal to the total number of cards in all players' hands.\nWerewolf of Ancient Hunger: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "~'s power and toughness are each equal to the number of cards in your hand.\nif no spells were cast last turn, transform ~.\nWerewolf of Ancient Hunger: ~'s power and toughness are each equal to the total number of cards in all players' hands.\nWerewolf of Ancient Hunger: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Sands of Time",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Each player skips their untap step.\nAt the beginning of each player's upkeep, that player simultaneously untaps each tapped artifact, creature, and land they control and taps each untapped artifact, creature, and land they control.",
+      "ignored_after": "Each player skips their untap step.\nthat player simultaneously untaps each tapped artifact, creature, and land they control and taps each untapped artifact, creature, and land they control."
+    },
+    {
+      "name": "Scavenging Ghoul",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, put a corpse counter on ~ for each creature that died this turn.",
+      "ignored_after": "put a corpse counter on ~ for each creature that died this turn."
+    },
+    {
+      "name": "Schema Thief",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "create a token that's a copy of target artifact that player controls."
+    },
+    {
+      "name": "Scheming Silvertongue // Sign in Blood",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "if you gained 2 or more life this turn, ~ becomes prepared.",
+      "ignored_after": "~ becomes prepared."
+    },
+    {
+      "name": "Scorned Villager // Moonscarred Werewolf",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nMoonscarred Werewolf: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nMoonscarred Werewolf: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Season of the Witch",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "sacrifice ~ unless you pay 2 life.\nAt the beginning of the end step, destroy all untapped creatures that didn't attack this turn, except for creatures that couldn't attack.",
+      "ignored_after": "sacrifice ~ unless you pay 2 life.\ndestroy all untapped creatures that didn't attack this turn, except for creatures that couldn't attack."
+    },
+    {
+      "name": "Seizan, Perverter of Truth",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player loses 2 life and draws two cards.",
+      "ignored_after": "that player loses 2 life and draws two cards."
+    },
+    {
+      "name": "Shapeshifter's Marrow",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, that player reveals the top card of their library. If it's a creature card, the player puts the card into their graveyard and ~ becomes a copy of that card.",
+      "ignored_after": "that player reveals the top card of their library.\nIf it's a creature card, the player puts the card into their graveyard and ~ becomes a copy of that card."
+    },
+    {
+      "name": "Sheoldred, Whispering One",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, that player sacrifices a creature of their choice.",
+      "ignored_after": "that player sacrifices a creature of their choice."
+    },
+    {
+      "name": "Shizuko, Caller of Autumn",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player adds {G}{G}{G}. Until end of turn, they don't lose this mana as steps and phases end.",
+      "ignored_after": "that player adds {G}{G}{G}.\nUntil end of turn, they don't lose this mana as steps and phases end."
+    },
+    {
+      "name": "Shrieking Affliction",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, if that player has one or fewer cards in hand, they lose 3 life.",
+      "ignored_after": "if that player has one or fewer cards in hand, they lose 3 life."
+    },
+    {
+      "name": "Silversmote Ghoul",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "if you gained 3 or more life this turn, return this card from your graveyard to the battlefield tapped.",
+      "ignored_after": "Return this card from your graveyard to the battlefield tapped."
+    },
+    {
+      "name": "Sire of Insanity",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, each player discards their hand.",
+      "ignored_after": "each player discards their hand."
+    },
+    {
+      "name": "Skizzik",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, if ~ wasn't kicked, sacrifice it.",
+      "ignored_after": "if ~ wasn't kicked, sacrifice it."
+    },
+    {
+      "name": "Skullcage",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, ~ deals 2 damage to that player unless they have exactly three or exactly four cards in hand.",
+      "ignored_after": "~ deals 2 damage to that player unless they have exactly three or exactly four cards in hand."
+    },
+    {
+      "name": "Slicer, Hired Muscle // Slicer, High-Speed Antagonist",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "More Than Meets the Eye {2}{R}\nAt the beginning of each opponent's upkeep, you may have that player gain control of ~ until end of turn. If you do, untap ~, goad it, and it can't be sacrificed this turn. If you don't, convert it.\nSlicer, High-Speed Antagonist: Living metal\nSlicer, High-Speed Antagonist: convert it at end of combat.",
+      "ignored_after": "More Than Meets the Eye {2}{R}\nyou may have that player gain control of ~ until end of turn.\nIf you do, untap ~, goad it, and it can't be sacrificed this turn.\nIf you don't, convert it.\nSlicer, High-Speed Antagonist: Living metal\nSlicer, High-Speed Antagonist: convert it at end of combat."
+    },
+    {
+      "name": "Slumbering Cerberus",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "~ doesn't untap during your untap step.\nAt the beginning of each end step, if a creature died this turn, untap ~.",
+      "ignored_after": "~ doesn't untap during your untap step."
+    },
+    {
+      "name": "Smoke Bomb",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "All creatures have shroud.\nsacrifice ~.\nWhen you do, target creature you control can't be blocked this turn.",
+      "ignored_after": "All creatures have shroud.\nWhen you do, target creature you control can't be blocked this turn."
+    },
+    {
+      "name": "Smokestack",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "you may put a soot counter on ~.\nAt the beginning of each player's upkeep, that player sacrifices a permanent of their choice for each soot counter on ~.",
+      "ignored_after": "you may put a soot counter on ~.\nthat player sacrifices a permanent of their choice for each soot counter on ~."
+    },
+    {
+      "name": "Smuggler's Share",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, draw a card for each opponent who drew two or more cards this turn, then create a Treasure token for each opponent who had two or more lands enter the battlefield under their control this turn.",
+      "ignored_after": "draw a card for each opponent who drew two or more cards this turn, then create a Treasure token for each opponent who had two or more lands enter the battlefield under their control this turn."
+    },
+    {
+      "name": "Solitary Hunter // One of the Pack",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nOne of the Pack: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nOne of the Pack: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Spark Elemental",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of the end step, sacrifice ~.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Spark Trooper",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of the end step, sacrifice ~.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Spellpyre Phoenix",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "you may return target instant or sorcery card with a cycling ability from your graveyard to your hand.\nAt the beginning of each end step, if you cycled two or more cards this turn, return this card from your graveyard to your hand.",
+      "ignored_after": "you may return target instant or sorcery card with a cycling ability from your graveyard to your hand.\nif you cycled two or more cards this turn, return this card from your graveyard to your hand."
+    },
+    {
+      "name": "Spider Spawning",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: reach for each creature card in your graveyard"
+    },
+    {
+      "name": "Spiny Starfish",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if ~ regenerated this turn, create a 0/1 blue Starfish creature token for each time it regenerated this turn.",
+      "ignored_after": "if ~ regenerated this turn, create a 0/1 blue Starfish creature token for each time it regenerated this turn."
+    },
+    {
+      "name": "Spiritual Sanctuary",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, if that player controls a Plains, they gain 1 life.",
+      "ignored_after": "if that player controls a Plains, they gain 1 life."
+    },
+    {
+      "name": "Stalactite Dagger",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Equipped creature gets +1/+1 and is all creature types.",
+      "ignored_after": "Unsupported token keywords: changeling\nEquipped creature gets +1/+1 and is all creature types."
+    },
+    {
+      "name": "Startle",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: decayed"
+    },
+    {
+      "name": "Stenchskipper",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, if you control no Goblins, sacrifice ~.",
+      "ignored_after": "if you control no Goblins, sacrifice ~."
+    },
+    {
+      "name": "Stone-Giant of High Pass",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "Unsupported token keywords: defender named stone boulder"
+    },
+    {
+      "name": "Storm World",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, ~ deals X damage to that player, where X is 4 minus the number of cards in their hand.",
+      "ignored_after": "~ deals X damage to that player, where X is 4 minus the number of cards in their hand."
+    },
+    {
+      "name": "Sulfuric Vortex",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, ~ deals 2 damage to that player.\nIf a player would gain life, that player gains no life instead.",
+      "ignored_after": "If a player would gain life, that player gains no life instead."
+    },
+    {
+      "name": "Sun Droplet",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever you're dealt damage, put that many charge counters on ~.\nAt the beginning of each upkeep, you may remove a charge counter from ~. If you do, you gain 1 life.",
+      "ignored_after": "Whenever you're dealt damage, put that many charge counters on ~.\nyou may remove a charge counter from ~.\nIf you do, you gain 1 life."
+    },
+    {
+      "name": "Sunken Hope",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player returns a creature they control to its owner's hand.",
+      "ignored_after": "that player returns a creature they control to its owner's hand."
+    },
+    {
+      "name": "Sygg, River Cutthroat",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if an opponent lost 3 or more life this turn, you may draw a card.",
+      "ignored_after": "if an opponent lost 3 or more life this turn, you may draw a card."
+    },
+    {
+      "name": "Syndicate Heavy",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Extort\nAt the beginning of each end step, if you gained 4 or more life this turn, investigate.",
+      "ignored_after": "Extort"
+    },
+    {
+      "name": "Syrix, Carrier of the Flame",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if a creature card left your graveyard this turn, target Phoenix you control deals damage equal to its power to any target.\nyou may cast this card from your graveyard.",
+      "ignored_after": "if a creature card left your graveyard this turn, target Phoenix you control deals damage equal to its power to any target.\nyou may cast this card from your graveyard."
+    },
+    {
+      "name": "Séance",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, you may exile target creature card from your graveyard. If you do, create a token that's a copy of that card, except it's a Spirit in addition to its other types. Exile it at the beginning of the next end step.",
+      "ignored_after": "you may exile target creature card from your graveyard.\nIf you do, create a token that's a copy of that card, except it's a Spirit in addition to its other types.\nExile it at the beginning of the next end step."
+    },
+    {
+      "name": "Séance Board",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if a creature died this turn, put a soul counter on ~.\n{T}: Add X mana of any one color, where X is the number of soul counters on ~. Spend this mana only to cast instant, sorcery, Demon, and Spirit spells.",
+      "ignored_after": "{T}: Add X mana of any one color, where X is the number of soul counters on ~. Spend this mana only to cast instant, sorcery, Demon, and Spirit spells."
+    },
+    {
+      "name": "Tangle Wire",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Fading 4\nAt the beginning of each player's upkeep, that player taps an untapped artifact, creature, or land they control for each fade counter on ~.",
+      "ignored_after": "Fading 4\nthat player taps an untapped artifact, creature, or land they control for each fade counter on ~."
+    },
+    {
+      "name": "Teferi's Realm",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player chooses artifact, creature, land, or non-Aura enchantment. All nontoken permanents of that type phase out.",
+      "ignored_after": "that player chooses artifact, creature, land, or non-Aura enchantment.\nAll nontoken permanents of that type phase out."
+    },
+    {
+      "name": "Temporal Distortion",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever a creature or land becomes tapped, put an hourglass counter on it.\nEach permanent with an hourglass counter on it doesn't untap during its controller's untap step.\nAt the beginning of each player's upkeep, remove all hourglass counters from permanents that player controls.",
+      "ignored_after": "Whenever a creature or land becomes tapped, put an hourglass counter on it.\nEach permanent with an hourglass counter on it doesn't untap during its controller's untap step.\nremove all hourglass counters from permanents that player controls."
+    },
+    {
+      "name": "Tendershoot Dryad",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Ascend\nAt the beginning of each upkeep, create a 1/1 green Saproling creature token.\nSaprolings you control get +2/+2 as long as you have the city's blessing.",
+      "ignored_after": "Ascend\nSaprolings you control get +2/+2 as long as you have the city's blessing."
+    },
+    {
+      "name": "Thalisse, Reverent Medium",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, create X 1/1 white Spirit creature tokens with flying, where X is the number of tokens you created this turn.",
+      "ignored_after": "create X 1/1 white Spirit creature tokens with flying, where X is the number of tokens you created this turn."
+    },
+    {
+      "name": "The Abyss",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, destroy target nonartifact creature that player controls of their choice. It can't be regenerated.",
+      "ignored_after": "destroy target nonartifact creature that player controls of their choice.\nIt can't be regenerated."
+    },
+    {
+      "name": "The Bears of Littjara",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "II — Any number of target Shapeshifter creatures you control have base power and toughness 4/4.\nIII — Choose up to one target creature or planeswalker.\nIII — Each creature with power 4 or greater you control deals damage equal to its power to that permanent.",
+      "ignored_after": "I — Unsupported token keywords: changeling\nII — Any number of target Shapeshifter creatures you control have base power and toughness 4/4.\nIII — Choose up to one target creature or planeswalker.\nIII — Each creature with power 4 or greater you control deals damage equal to its power to that permanent."
+    },
+    {
+      "name": "The Bird Champion",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "As long as you control twelve or more Birds, you can't lose the game and opponents can't win the game.",
+      "ignored_after": "Unsupported token keywords: flying for each bird you control\nAs long as you control twelve or more Birds, you can't lose the game and opponents can't win the game."
+    },
+    {
+      "name": "The Book of Exalted Deeds",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "if you gained 3 or more life this turn, create a 3/3 white Angel creature token with flying.\n{W}{W}{W}, {T}, Exile ~: Put an enlightened counter on target Angel. It gains \"You can't lose the game and your opponents can't win the game.\" Activate only as a sorcery.",
+      "ignored_after": "{W}{W}{W}, {T}, Exile ~: Put an enlightened counter on target Angel. It gains \"You can't lose the game and your opponents can't win the game.\" Activate only as a sorcery."
+    },
+    {
+      "name": "The Celestial Toymaker",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "look at the top three cards of your library.\nExile any number of them in a face-down pile and the rest in a face-up pile.\nDefending player chooses one of those piles.\nPut that pile into your hand.\nAt the beginning of each end step, each opponent loses 2 life for each spell or ability that caused one or more players to guess or to group cards or permanents into a pile this turn.",
+      "ignored_after": "look at the top three cards of your library.\nExile any number of them in a face-down pile and the rest in a face-up pile.\nDefending player chooses one of those piles.\nPut that pile into your hand.\neach opponent loses 2 life for each spell or ability that caused one or more players to guess or to group cards or permanents into a pile this turn."
+    },
+    {
+      "name": "The Cobra King",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, create a 1/1 blue Serpent creature token named Cobra Coil. When you do, if you control five or more Snakes and/or Serpents, choose one —\n• Strike first — Target Snake or Serpent you control fights target creature an opponent controls.\n• Strike hard — Put a +1/+1 counter on each Snake and Serpent you control.",
+      "ignored_after": "When you do, if you control five or more Snakes and/or Serpents, choose one —\n• Strike first — Target Snake or Serpent you control fights target creature an opponent controls.\n• Strike hard — Put a +1/+1 counter on each Snake and Serpent you control."
+    },
+    {
+      "name": "The Fact Checker",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "If you would guess a card, instead just choose the outcome you want.\nAt the beginning of each opponent's upkeep, look at the top card of their library. Tell them the name of that card. They tell you its mana cost, type line, power, and toughness. Then reveal that card. If they got anything wrong, draw a card.",
+      "ignored_after": "If you would guess a card, instead just choose the outcome you want.\nlook at the top card of their library.\nTell them the name of that card.\nThey tell you its mana cost, type line, power, and toughness.\nThen reveal that card.\nIf they got anything wrong, draw a card."
+    },
+    {
+      "name": "The Gaffer",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of each end step, if you gained 3 or more life this turn, draw a card.",
+      "ignored_after": ""
+    },
+    {
+      "name": "The Hive",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "{5}, {T}: Create a 1/1 colorless Insect artifact creature token with flying named Wasp."
+    },
+    {
+      "name": "The Lady of Otaria",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "You may tap three untapped Dwarves you control rather than pay ~'s mana cost.\nAt the beginning of each end step, if a land you controlled was put into a graveyard from the battlefield this turn, reveal the top four cards of your library. You may put any number of Dwarf cards from among them into your hand. Put the rest on the bottom of your library in a random order.",
+      "ignored_after": "You may tap three untapped Dwarves you control rather than pay ~'s mana cost.\nif a land you controlled was put into a graveyard from the battlefield this turn, reveal the top four cards of your library.\nYou may put any number of Dwarf cards from among them into your hand.\nPut the rest on the bottom of your library in a random order."
+    },
+    {
+      "name": "The Legend of Roku // Avatar Roku",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "II — Add one mana of any color.",
+      "ignored_after": "II — Add one mana of any color.\nAvatar Roku: {8}: Create a 4/4 red Dragon creature token with flying and firebending 4."
+    },
+    {
+      "name": "The Raven Man",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if a player discarded a card this turn, create a 1/1 black Bird creature token with flying and \"~ can't block.\"",
+      "ignored_after": "if a player discarded a card this turn, create a 1/1 black Bird creature token with flying and \"~ can't block.\""
+    },
+    {
+      "name": "Thelon's Curse",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Blue creatures don't untap during their controllers' untap steps.\nAt the beginning of each player's upkeep, that player may choose any number of tapped blue creatures they control and pay {U} for each creature chosen this way. If the player does, untap those creatures.",
+      "ignored_after": "Blue creatures don't untap during their controllers' untap steps.\nthat player may choose any number of tapped blue creatures they control and pay {U} for each creature chosen this way.\nIf the player does, untap those creatures."
+    },
+    {
+      "name": "Thieving Amalgam",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, you manifest the top card of that player's library.\nWhenever a creature you control but don't own dies, its owner loses 2 life and you gain 2 life.",
+      "ignored_after": "you manifest the top card of that player's library.\nWhenever a creature you control but don't own dies, its owner loses 2 life and you gain 2 life."
+    },
+    {
+      "name": "Thran Quarry",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, if you control no creatures, sacrifice ~.",
+      "ignored_after": "if you control no creatures, sacrifice ~."
+    },
+    {
+      "name": "Three Bowls of Porridge",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "• Sacrifice ~. You gain 3 life.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Tidal Force",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, you may tap or untap target permanent.",
+      "ignored_after": "you may tap or untap target permanent."
+    },
+    {
+      "name": "Timesifter",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, each player exiles the top card of their library. The player who exiled the card with the greatest mana value takes an extra turn after this one. If two or more players' cards are tied for greatest, the tied players repeat this process until the tie is broken.",
+      "ignored_after": "each player exiles the top card of their library.\nThe player who exiled the card with the greatest mana value takes an extra turn after this one.\nIf two or more players' cards are tied for greatest, the tied players repeat this process until the tie is broken."
+    },
+    {
+      "name": "Tinybones, Trinket Thief",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if an opponent discarded a card this turn, you draw a card and you lose 1 life.\n{4}{B}{B}: Each opponent with no cards in hand loses 10 life.",
+      "ignored_after": "if an opponent discarded a card this turn, you draw a card and you lose 1 life.\n{4}{B}{B}: Each opponent with no cards in hand loses 10 life."
+    },
+    {
+      "name": "Tombstone Stairwell",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Cumulative upkeep {1}{B}\nAt the beginning of each upkeep, if ~ is on the battlefield, each player creates a 2/2 black Zombie creature token with haste named Tombspawn for each creature card in their graveyard.\nAt the beginning of each end step and when ~ leaves the battlefield, destroy all tokens created with ~. They can't be regenerated.",
+      "ignored_after": "Cumulative upkeep {1}{B}\nif ~ is on the battlefield, each player creates a 2/2 black Zombie creature token with haste named Tombspawn for each creature card in their graveyard.\nAt the beginning of each end step and when ~ leaves the battlefield, destroy all tokens created with ~. They can't be regenerated."
+    },
+    {
+      "name": "Tooth Collector",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, if there are four or more card types among cards in your graveyard, target creature that player controls gets -1/-1 until end of turn.",
+      "ignored_after": "if there are four or more card types among cards in your graveyard, target creature that player controls gets -1/-1 until end of turn."
+    },
+    {
+      "name": "Topplegeist",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, if there are four or more card types among cards in your graveyard, tap target creature that player controls.",
+      "ignored_after": "if there are four or more card types among cards in your graveyard, tap target creature that player controls."
+    },
+    {
+      "name": "Torens, Fist of the Angels",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Training",
+      "ignored_after": "Training\nUnsupported token keywords: training"
+    },
+    {
+      "name": "Tormented Pariah // Rampaging Werewolf",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nRampaging Werewolf: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nRampaging Werewolf: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Toxrill, the Corrosive",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, put a slime counter on each creature you don't control.\nCreatures you don't control get -1/-1 for each slime counter on them.\nWhenever a creature you don't control with a slime counter on it dies, create a 1/1 black Slug creature token.\n{U}{B}, Sacrifice a Slug: Draw a card.",
+      "ignored_after": "put a slime counter on each creature you don't control.\nCreatures you don't control get -1/-1 for each slime counter on them.\nWhenever a creature you don't control with a slime counter on it dies, create a 1/1 black Slug creature token.\n{U}{B}, Sacrifice a Slug: Draw a card."
+    },
+    {
+      "name": "Transluminant",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "{W}, Sacrifice ~: Create a 1/1 white Spirit creature token with flying at the beginning of the next end step."
+    },
+    {
+      "name": "Traveling Plague",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, put a plague counter on ~.\nEnchanted creature gets -1/-1 for each plague counter on ~.\nWhen enchanted creature leaves the battlefield, that creature's controller returns ~ from its owner's graveyard to the battlefield.",
+      "ignored_after": "Enchanted creature gets -1/-1 for each plague counter on ~.\nWhen enchanted creature leaves the battlefield, that creature's controller returns ~ from its owner's graveyard to the battlefield."
+    },
+    {
+      "name": "Ulrich of the Krallenhorde // Ulrich, Uncontested Alpha",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever ~ enters or transforms into ~, target creature gets +4/+4 until end of turn.\nAt the beginning of each upkeep, if no spells were cast last turn, transform ~.\nUlrich, Uncontested Alpha: Whenever ~ transforms into ~, you may have it fight target non-Werewolf creature you don't control.\nUlrich, Uncontested Alpha: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "Whenever ~ enters or transforms into ~, target creature gets +4/+4 until end of turn.\nif no spells were cast last turn, transform ~.\nUlrich, Uncontested Alpha: Whenever ~ transforms into ~, you may have it fight target non-Werewolf creature you don't control.\nUlrich, Uncontested Alpha: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Ulvenwald Mystics // Ulvenwald Primordials",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nUlvenwald Primordials: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nUlvenwald Primordials: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Umbilicus",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player may pay 2 life. If they don't, they return a permanent they control to its owner's hand.",
+      "ignored_after": "that player may pay 2 life.\nIf they don't, they return a permanent they control to its owner's hand."
+    },
+    {
+      "name": "Underworld Breach",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Each nonland card in your graveyard has escape. The escape cost is equal to the card's mana cost plus exile three other cards from your graveyard.\nAt the beginning of the end step, sacrifice ~.",
+      "ignored_after": "Each nonland card in your graveyard has escape. The escape cost is equal to the card's mana cost plus exile three other cards from your graveyard."
+    },
+    {
+      "name": "Urabrask, Heretic Praetor",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, the next time they would draw a card this turn, instead they exile the top card of their library. They may play it this turn.",
+      "ignored_after": "the next time they would draw a card this turn, instead they exile the top card of their library.\nThey may play it this turn."
+    },
+    {
+      "name": "Urborg Stalker",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, if that player controls a nonblack, nonland permanent, ~ deals 1 damage to that player.",
+      "ignored_after": "if that player controls a nonblack, nonland permanent, ~ deals 1 damage to that player."
+    },
+    {
+      "name": "Valkyrie Harbinger",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of each end step, if you gained 4 or more life this turn, create a 4/4 white Angel creature token with flying and vigilance.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Vashta Nerada",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of each end step, if a creature died this turn, put a +1/+1 counter on ~.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Verdant Force",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of each upkeep, create a 1/1 green Saproling creature token.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Verdant Kraken",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, you create a 3/3 green Forest Tentacle land creature token.",
+      "ignored_after": "you create a 3/3 green Forest Tentacle land creature token."
+    },
+    {
+      "name": "Viashino Cutthroat",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of the end step, return ~ to its owner's hand.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Viashino Sandscout",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of the end step, return ~ to its owner's hand.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Viashino Sandsprinter",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of the end step, return ~ to its owner's hand.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Viashino Sandstalker",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of the end step, return ~ to its owner's hand.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Village Ironsmith // Ironfang",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nIronfang: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nIronfang: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Village Messenger // Moonrise Intruder",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nMoonrise Intruder: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nMoonrise Intruder: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Villagers of Estwald // Howlpack of Estwald",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nHowlpack of Estwald: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nHowlpack of Estwald: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Viral Spawning",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Corrupted — As long as an opponent has three or more poison counters and this card is in your graveyard, it has flashback {2}{G}.",
+      "ignored_after": "Unsupported token keywords: toxic 1\nCorrupted — As long as an opponent has three or more poison counters and this card is in your graveyard, it has flashback {2}{G}."
+    },
+    {
+      "name": "Viseling",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, ~ deals X damage to that player, where X is the number of cards in their hand minus 4.",
+      "ignored_after": "~ deals X damage to that player, where X is the number of cards in their hand minus 4."
+    },
+    {
+      "name": "Vren, the Relentless",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "If a creature an opponent controls would die, exile it instead.\nAt the beginning of each end step, create X 1/1 black Rat creature tokens with \"~ gets +1/+1 for each other Rat you control,\" where X is the number of creatures that were exiled under your opponents' control this turn.",
+      "ignored_after": "If a creature an opponent controls would die, exile it instead.\ncreate X 1/1 black Rat creature tokens with \"~ gets +1/+1 for each other Rat you control,\" where X is the number of creatures that were exiled under your opponents' control this turn."
+    },
+    {
+      "name": "Walking Archive",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player draws a card for each +1/+1 counter on ~.",
+      "ignored_after": "that player draws a card for each +1/+1 counter on ~."
+    },
+    {
+      "name": "Wall Crawl",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Spiders you control get +1/+1 and can't be blocked by creatures with defender.",
+      "ignored_after": "Unsupported token keywords: then you gain 1 life for each spider you control\nSpiders you control get +1/+1 and can't be blocked by creatures with defender."
+    },
+    {
+      "name": "Wall of Kelp",
+      "before": "full",
+      "after": "partial",
+      "ignored_before": "",
+      "ignored_after": "{U}{U}, {T}: Create a 0/1 blue Plant Wall creature token with defender named Kelp."
+    },
+    {
+      "name": "Wall of Resistance",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if ~ was dealt damage this turn, put a +0/+1 counter on it.",
+      "ignored_after": "if ~ was dealt damage this turn, put a +0/+1 counter on it."
+    },
+    {
+      "name": "Wheel of Torture",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each opponent's upkeep, ~ deals X damage to that player, where X is 3 minus the number of cards in their hand.",
+      "ignored_after": "~ deals X damage to that player, where X is 3 minus the number of cards in their hand."
+    },
+    {
+      "name": "Whirling Dervish",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Protection from black\nAt the beginning of each end step, if ~ dealt damage to an opponent this turn, put a +1/+1 counter on it.",
+      "ignored_after": "Protection from black\nif ~ dealt damage to an opponent this turn, put a +1/+1 counter on it."
+    },
+    {
+      "name": "White Plume Adventurer",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "you take the initiative.\nAt the beginning of each opponent's upkeep, untap a creature you control. If you've completed a dungeon, untap all creatures you control instead.",
+      "ignored_after": "you take the initiative.\nuntap a creature you control.\nIf you've completed a dungeon, untap all creatures you control instead."
+    },
+    {
+      "name": "Wild Evocation",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player reveals a card at random from their hand. If it's a land card, the player puts it onto the battlefield. Otherwise, the player casts it without paying its mana cost if able.",
+      "ignored_after": "that player reveals a card at random from their hand.\nIf it's a land card, the player puts it onto the battlefield.\nOtherwise, the player casts it without paying its mana cost if able."
+    },
+    {
+      "name": "Wingmantle Chaplain",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever another creature you control with defender enters, create a 1/1 white Bird creature token with flying.",
+      "ignored_after": "Unsupported token keywords: flying for each creature with defender you control\nWhenever another creature you control with defender enters, create a 1/1 white Bird creature token with flying."
+    },
+    {
+      "name": "Withering Wisps",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of the end step, if no creatures are on the battlefield, sacrifice ~.\n{B}: ~ deals 1 damage to each creature and each player. Activate no more times each turn than the number of snow Swamps you control.",
+      "ignored_after": "if no creatures are on the battlefield, sacrifice ~.\n{B}: ~ deals 1 damage to each creature and each player. Activate no more times each turn than the number of snow Swamps you control."
+    },
+    {
+      "name": "Woebringer Demon",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each player's upkeep, that player sacrifices a creature of their choice. If the player can't, sacrifice ~.",
+      "ignored_after": "that player sacrifices a creature of their choice.\nIf the player can't, sacrifice ~."
+    },
+    {
+      "name": "Wolfbitten Captive // Krallenhorde Killer",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, if no spells were cast last turn, transform ~.\nKrallenhorde Killer: At the beginning of each upkeep, if a player cast two or more spells last turn, transform ~.",
+      "ignored_after": "if no spells were cast last turn, transform ~.\nKrallenhorde Killer: if a player cast two or more spells last turn, transform ~."
+    },
+    {
+      "name": "Wolverine Riders",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each upkeep, create a 1/1 green Elf Warrior creature token.\nyou gain life equal to its toughness.",
+      "ignored_after": "you gain life equal to its toughness."
+    },
+    {
+      "name": "Wolverine, Best There Is",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Unrivaled Lethality — Double all damage ~ would deal.\nAt the beginning of each end step, if ~ dealt damage to another creature this turn, put a +1/+1 counter on him.",
+      "ignored_after": "Unrivaled Lethality — Double all damage ~ would deal.\nif ~ dealt damage to another creature this turn, put a +1/+1 counter on him."
+    },
+    {
+      "name": "Worms of the Earth",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Players can't play lands.\nLands can't enter the battlefield.\nAt the beginning of each upkeep, any player may sacrifice two lands of their choice or have ~ deal 5 damage to that player. If a player does either, destroy ~.",
+      "ignored_after": "Players can't play lands.\nLands can't enter the battlefield.\nany player may sacrifice two lands of their choice or have ~ deal 5 damage to that player.\nIf a player does either, destroy ~."
+    },
+    {
+      "name": "Worry Beads",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "At the beginning of each player's upkeep, that player mills a card.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Wound Reflection",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, each opponent loses life equal to the life they lost this turn.",
+      "ignored_after": "each opponent loses life equal to the life they lost this turn."
+    },
+    {
+      "name": "Y'shtola, Night's Blessed",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "At the beginning of each end step, if a player lost 4 or more life this turn, you draw a card.\nWhenever you cast a noncreature spell with mana value 3 or greater, ~ deals 2 damage to each opponent and you gain 2 life.",
+      "ignored_after": "if a player lost 4 or more life this turn, you draw a card.\nWhenever you cast a noncreature spell with mana value 3 or greater, ~ deals 2 damage to each opponent and you gain 2 life."
+    },
+    {
+      "name": "Yet Another Night in Vegas",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "• Get lost — Each player exiles a creature they control until ~ leaves the battlefield.\n• I'm fine! Let's go again! — All modes reset and can be chosen again. You lose 5 life.\n• Go to bed — Sacrifice ~.",
+      "ignored_after": "• Get lost — Each player exiles a creature they control until ~ leaves the battlefield.\n• I'm fine! Let's go again! — All modes reset and can be chosen again. You lose 5 life."
+    },
+    {
+      "name": "Yotia Declares War",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Read ahead\nII — Tap any number of untapped artifacts you control.\nII — When you do, ~ deals that much damage to target creature or planeswalker.\nIII — Up to one target artifact you control becomes an artifact creature with base power and toughness 4/4 until end of turn.",
+      "ignored_after": "Read ahead\nI — Unsupported token keywords: flying named ornithopter\nII — Tap any number of untapped artifacts you control.\nII — When you do, ~ deals that much damage to target creature or planeswalker.\nIII — Up to one target artifact you control becomes an artifact creature with base power and toughness 4/4 until end of turn."
+    }
+  ]
+}

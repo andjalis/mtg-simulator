@@ -19,6 +19,30 @@ TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "
 
 
 class Permanent:
+    def __setattr__(self, name, value):
+        if name == "card":
+            object.__setattr__(self, "_card", value)
+            object.__setattr__(self, "_characteristic_cache", None)
+            if hasattr(self, "controller"):
+                value = continuous.characteristics(self, value)
+        object.__setattr__(self, name, value)
+
+    @property
+    def copiable_card(self):
+        return self._card
+
+    @property
+    def crewed(self):
+        return self._crewed
+
+    @crewed.setter
+    def crewed(self, value):
+        self._crewed = value
+        game = getattr(self.controller, "_game", None)
+        if value and game is not None:
+            self.crew_timestamp = game.next_effect_timestamp()
+        continuous.refresh(self)
+
     @property
     def tapped(self):
         return self._tapped
@@ -39,6 +63,7 @@ class Permanent:
         game = getattr(self.controller, "_game", None)
         if value is not None and game is not None:
             self.animation_timestamp = game.next_effect_timestamp()
+        continuous.refresh(self)
 
     @property
     def front(self):
@@ -243,7 +268,7 @@ class Permanent:
     def is_creature(self):
         if self.impending and self.counters.get("time"):
             return False
-        return "Creature" in self.card.types or self.animated is not None or self.crewed
+        return "Creature" in self.card.types
 
     @property
     def is_planeswalker(self): return self.card.is_planeswalker
