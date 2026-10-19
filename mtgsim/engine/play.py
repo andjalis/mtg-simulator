@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from .. import cast_triggers, copies
 from ..cards import CardDef
-from .. import modal, rules_events
+from .. import modal, rules_events, costs
 from ..actions import atomic_action
 from .mana import payable
 from .policy import perm_value
@@ -92,7 +92,6 @@ class PlayMixin:
                 targets[i] = t
         if not self.valid_action_targets(p, effects, targets):
             return False
-        sacrifice_required = bool(card.extra_sacrifice and self.extra_sac_candidates(p, card))
         cost = self.cost_of(p, card, assist=False)
         convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
         assisted = card.improvise or card.delve
@@ -101,12 +100,16 @@ class PlayMixin:
             for n in range(1, 21):
                 trial = dict(cost, generic=cost.get("generic", 0) + n)
                 remaining, tapped, _ = self.assist_payment(p, card, trial)
-                if not payable([s for s in self.mana_sources(p, spell=card) if s not in tapped], remaining):
+                if costs.spell_plan(self, p, card, remaining, exclude=convoked + tapped) is None:
                     break
                 x = n
             cost["generic"] = cost.get("generic", 0) + x
         cost, improvised, delved = self.assist_payment(p, card, cost) if assisted else (cost, [], [])
-        payment = self.pay(p, cost, spell=card, exclude_many=improvised)
+        plan = costs.spell_plan(self, p, card, cost, exclude=convoked + improvised)
+        if plan is None:
+            return False
+        cost = plan.cost
+        payment = self.pay(p, cost, spell=card, exclude_many=plan.exclude)
         if payment is None:
             return False
         for c in convoked:
@@ -118,22 +121,22 @@ class PlayMixin:
             p.graveyard.remove(c)
             p.exile.append(c)
         if "X" in card.mana_cost and not assisted:     # X: as much as the remaining mana allows
-            while x < 20 and payable(self.mana_sources(p, spell=card), {"generic": x + 1}):
+            while x < 20 and payable([s for s in self.mana_sources(p, spell=card) if s not in plan.exclude], {"generic": x + 1}):
                 x += 1
             if x:
-                payment += self.pay(p, {"generic": x}, spell=card)
+                payment += self.pay(p, {"generic": x}, spell=card, exclude_many=plan.exclude)
         if alt is not None and alt.life:
             self.change_life(p, -alt.life, f"{card.name}: alternative cost")
         if card.extra_life_cost:
             self.change_life(p, -card.extra_life_cost, f"{card.name}: additional cost")
-        if sacrifice_required and not self.extra_sac_candidates(p, card):
-            return False
-        if sacrifice_required:
-            victim = self.extra_sac_candidates(p, card)[0]
+        if plan.sacrifice is not None:
+            victim = plan.sacrifice
+            if victim not in p.battlefield:
+                return False
             self.log(f"sacrifices {victim.card.name} for {card.name}", p)
             self.sacrifice(victim)
         if kind == "prepared":
-            next(x for x in p.battlefield if x.card is base and x.prepared).prepared = False
+            next(x for x in p.battlefield if x.front is base and x.prepared).prepared = False
         elif kind in ("rebound", "cascade", "cascade_adventure", "rebound_adventure"):
             del p.exile[next(i for i, c in enumerate(p.exile) if c is base)]
         else:

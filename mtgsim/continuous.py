@@ -1,12 +1,16 @@
 """Scoped continuous effects: keywords (6), base P/T (7b), modifiers and
 counters (7c), and switching (7d). This is not the complete CR 613 system:
-copy, control, text, type, color and characteristic-defining effects remain outside.
+copy, control, text and characteristic-defining effects remain outside.
 Dependencies are explicit inputs; Oracle dependency inference is not implemented.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
+from .cards import CardDef
 
 LAYERS = {'grant': (6, 0), 'remove': (6, 0), 'set_base': (7, 1),
           'modify': (7, 2), 'switch': (7, 3)}
+LAYERS.update({op: (4, 0) for op in ('set_types', 'add_types', 'remove_types',
+              'set_subtypes', 'add_subtypes', 'remove_subtypes')})
+LAYERS.update({op: (5, 0) for op in ('set_colors', 'add_colors', 'remove_colors')})
 
 
 @dataclass(frozen=True)
@@ -21,6 +25,9 @@ class ContinuousEffect:
     depends_on: tuple = ()
     source: object = None
     until_eot: bool = False
+    types: frozenset = frozenset()
+    subtypes: frozenset | None = None
+    colors: frozenset = frozenset()
 
     @property
     def layer(self):
@@ -63,6 +70,59 @@ def active(permanent):
             e.source in e.source.controller.battlefield)]
 
 
+class CharacteristicView(CardDef):
+    """A definition view, never a new physical card or a copiable value."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.effective_colors = super().colors
+
+    @property
+    def colors(self):
+        return self.effective_colors
+
+
+def refresh(permanent):
+    if not hasattr(permanent, '_card') or not hasattr(permanent, 'controller'):
+        return
+    if hasattr(permanent, 'last_card') and permanent not in permanent.controller.battlefield:
+        return  # departure preserves last-known characteristics
+    object.__setattr__(permanent, 'card', characteristics(permanent, permanent._card))
+
+
+def characteristics(permanent, base):
+    effects = [e for e in active(permanent) if e.layer < (6, 0)]
+    animation = getattr(permanent, '_animated', None)
+    if animation is not None or getattr(permanent, '_crewed', False):
+        stamp = max(getattr(permanent, 'animation_timestamp', 0) if animation else 0,
+                    getattr(permanent, 'crew_timestamp', 0) if permanent._crewed else 0)
+        effects.append(ContinuousEffect(-100, permanent, 'add_types', stamp, types=frozenset({'Creature'})))
+    if not effects:
+        return base
+    key = (id(base), tuple((e.id, e.timestamp) for e in effects))
+    cached = getattr(permanent, '_characteristic_cache', None)
+    if cached is not None and cached[0] == key:
+        return cached[1]
+    types, subtypes, colors = base.types, base.subtypes, base.colors
+    for effect in ordered(effects):
+        operation = effect.operation
+        if operation.endswith('types') and not operation.endswith('subtypes'):
+            types = (effect.types if operation == 'set_types' else types | effect.types
+                     if operation == 'add_types' else types - effect.types)
+            if effect.subtypes is not None:
+                subtypes = effect.subtypes
+        elif operation.endswith('subtypes'):
+            values = effect.subtypes or frozenset()
+            subtypes = (values if operation == 'set_subtypes' else subtypes | values
+                        if operation == 'add_subtypes' else subtypes - values)
+        else:
+            colors = (effect.colors if operation == 'set_colors' else colors | effect.colors
+                      if operation == 'add_colors' else colors - effect.colors)
+    view = CharacteristicView(**{f.name: getattr(base, f.name) for f in fields(CardDef)})
+    view.types, view.subtypes, view.effective_colors = types, subtypes, colors
+    permanent._characteristic_cache = key, view
+    return view
+
+
 def base_effects(permanent):
     effects = []
     animation = permanent.animated
@@ -102,7 +162,8 @@ def keyword(permanent, kw, initial):
     return value
 
 
-def add(game, target, operation, *, power=0, toughness=0, keyword='', depends_on=(), source=None, until_eot=False):
+def add(game, target, operation, *, power=0, toughness=0, keyword='', depends_on=(), source=None, until_eot=False,
+        types=(), subtypes=None, colors=()):
     if operation not in LAYERS:
         raise ValueError('unsupported continuous-effect operation')
     existing = {e.id: e for e in game.continuous_effects}
@@ -110,6 +171,8 @@ def add(game, target, operation, *, power=0, toughness=0, keyword='', depends_on
         raise ValueError('dependencies must name existing effects in the same layer')
     stamp = game.next_effect_timestamp()
     effect = ContinuousEffect(stamp, target, operation, stamp, power, toughness,
-                              keyword, tuple(depends_on), source, until_eot)
+                              keyword, tuple(depends_on), source, until_eot,
+                              frozenset(types), None if subtypes is None else frozenset(subtypes), frozenset(colors))
     game.continuous_effects.append(effect)
+    refresh(target)
     return effect

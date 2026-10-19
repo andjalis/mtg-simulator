@@ -123,6 +123,9 @@ def _parse_effects(text: str, opts: bool = False):
         if paid:
             for eff in effects[first:]:
                 eff.cond = eff.cond or "paid"
+        for eff in effects[first:]:
+            if eff.data.get("unparsed_token_keywords"):
+                unmatched.append("Unsupported token keywords: " + ", ".join(eff.data["unparsed_token_keywords"]))
     return effects, unmatched
 
 
@@ -1307,6 +1310,7 @@ def _parse_trigger_line(line: str):
             continue
         flt = ""
         rest = m[m.lastindex]
+        intervening = rest.startswith("if ")
         if events == ("any_cast",):
             flt = f"cmc<={m[1]}"
         if "while saddled" in pat or events[-1] == "becomes_tapped":
@@ -1348,14 +1352,16 @@ def _parse_trigger_line(line: str):
             rest = spent[2]
         if rest.startswith("if you cast it, "):
             cond, rest = "cast", rest[16:]
-        c = re.fullmatch(r"if (you gained life|you gained and lost life|you descended|you've gained (\d+) or more life|an opponent "
+        c = re.fullmatch(r"if (you gained life|you gained and lost life|you descended|(?:you've gained|you gained) (\d+) or more life|an opponent "
                          r"lost life) this turn, (.+)", rest, flags=re.S) or \
-            re.fullmatch(r"(.+?) if (you gained life|you've gained (\d+) or more life) this turn\.", rest, flags=re.S)
+            re.fullmatch(r"(.+?) if (you gained life|(?:you've gained|you gained) (\d+) or more life) this turn\.", rest, flags=re.S)
         if c:
             phrase, n, rest = (c[1], c[2], c[3]) if not c[1][0].isupper() and c.re.pattern.startswith("if") \
                 else (c[2], c[3], c[1] + ".")
             cond = {"you gained life": "gained_life", "you gained and lost life": "gained_and_lost",
                     "an opponent lost life": "opp_lost_life", "you descended": "descended"}.get(phrase, f"gained_life>={n}")
+        if events[0] in ("each_upkeep", "opp_upkeep", "each_end_step") and rest.startswith("if that player has no cards in hand, "):
+            cond, rest = "phase_player_empty_hand", rest[len("if that player has no cards in hand, "):]
         if cond:
             rest = rest[0].upper() + rest[1:]
         # "... When you do, if it has four or more quest counters on it, EFFECTS" (Earthbender Ascension)
@@ -1393,5 +1399,7 @@ def _parse_trigger_line(line: str):
                     e.target = "trigger_subject"
         if not effs:
             return [], bad or [line], None
-        return [Trigger(e, effs, flt, once=events == ("targeted_mine",)) for e in events], bad, None
+        gate = (cond or effs[0].cond) if intervening else ""
+        return [Trigger(e, effs, flt, once=events == ("targeted_mine",),
+                        intervening_if=gate) for e in events], bad, None
     return None

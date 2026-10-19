@@ -21,8 +21,9 @@ def _parse_mana_ability(rest: str) -> tuple[set, int]:
 def _token(m_count, power, toughness, desc, with_kw="", attacking=False, ability=""):
     from .parse import _parse_trigger  # deferred: parse imports this module
     words = desc.split()
-    subtypes = [w for w in words if not re.fullmatch(COLOR_WORDS, w, re.I)]
-    kws = frozenset(k.strip().lower() for k in re.split(r",| and ", with_kw or "") if k.strip().lower() in KEYWORDS)
+    subtypes = [w for w in words if not re.fullmatch(COLOR_WORDS, w, re.I) and w.lower() != "and"]
+    requested = [k.strip().lower() for k in re.split(r",| and ", with_kw or "") if k.strip()]
+    kws = frozenset(k for k in requested if k in KEYWORDS)
     triggers, pt_per = [], ""
     if ability:
         per = re.fullmatch(r"(?:This (?:token|creature)|~) gets \+1/\+1 for each (\w+?)s? you control\.?", ability)
@@ -35,6 +36,8 @@ def _token(m_count, power, toughness, desc, with_kw="", attacking=False, ability
                                                 "toughness": int(toughness), "keywords": kws,
                                                 "attacking": attacking, "triggers": triggers,
                                                 "artifact": artifact, "pt_per": pt_per,
+                                                **({"unparsed_token_keywords": tuple(k for k in requested if k not in KEYWORDS)}
+                                                   if any(k not in KEYWORDS for k in requested) else {}),
                                                 "colors": frozenset(c for word, c in zip(
                                                     ("white", "blue", "black", "red", "green"), "WUBRG")
                                                     if word in desc.lower().split())})
@@ -324,6 +327,7 @@ _EFFECT_PATTERNS = [
     (r"you draw a card and lose (\d+) life", lambda m: [Effect("draw", 1), Effect("lose_life", int(m[1]))]),
     (r"(?:target|each) opponent discards (a|two|three) cards?", lambda m: Effect("discard", _num(m[1]), target="player")),
     (r"(?:target|each) opponent sacrifices a creature(?: of their choice)?", lambda m: Effect("edict", 1)),
+    (r"sacrifice ~", lambda m: Effect("sacrifice_self", target="self")),
     (r"another target creature you control gains (deathtouch|first strike|lifelink|trample|haste|indestructible|"
      r"hexproof|vigilance|menace|reach|flying) until end of turn",
      lambda m: Effect("grant", target="creature_mine", data={"keyword": m[1].lower()})),
@@ -598,8 +602,11 @@ _TRIGGERS = [
     (r"When(?:ever)? ~ leaves the battlefield, (.+)", ("leaves",)),
     (r"Whenever a player casts a spell with mana value (\d+) or less, (.+)", ("any_cast",)),
     (r"At the beginning of your upkeep, (.+)", ("upkeep",)),
+    (r"At the beginning of each(?: player's)? upkeep, (.+)", ("each_upkeep",)),
+    (r"At the beginning of each opponent's upkeep, (.+)", ("opp_upkeep",)),
     (r"At the beginning of each opponent's draw step, (.+)", ("opp_draw_step",)),
     (r"At the beginning of your end step, (.+)", ("end_step",)),
+    (r"At the beginning of (?:each|the) end step, (.+)", ("each_end_step",)),
     (r"At the beginning of your first main phase, (.+)", ("main1_begin",)),
     (r"Survival — At the beginning of your second main phase, if ~ is tapped, (.+)", ("survival",)),
     (r"At the beginning of your second main phase, (.+)", ("main2_begin",)),

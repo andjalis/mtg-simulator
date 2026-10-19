@@ -4,9 +4,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from ..cards import Effect
-from .. import modal
+from .. import modal, costs
 from ..actions import atomic_action
-from .mana import payable
 from .policy import default_choose_target, perm_value, saddle_creatures
 from .state import Permanent, StackItem, TARGETED, can_block
 
@@ -225,7 +224,7 @@ class AbilitiesMixin:
             return False
         if act.min_charge and perm.counters.get("charge", 0) < act.min_charge:
             return False
-        return payable(self.mana_sources(p, perm if c.get("tap") else None, "ability"), self.ability_cost(p, perm, act))
+        return costs.ability_plan(self, p, perm, act, self.ability_cost(p, perm, act)) is not None
 
     def valid_action_targets(self, p, effects, targets):
         return all(e.target not in TARGETED or (i < len(targets) and
@@ -240,7 +239,8 @@ class AbilitiesMixin:
         targets = self.auto_targets(p, act.effects, perm) if targets is None else list(targets)
         if not self.valid_action_targets(p, act.effects, targets):
             return False
-        if self.pay(p, self.ability_cost(p, perm, act), exclude=perm if c.get("tap") else None) is None:
+        plan = costs.ability_plan(self, p, perm, act, self.ability_cost(p, perm, act))
+        if plan is None or self.pay(p, plan.cost, exclude_many=plan.exclude) is None:
             return False
         perm.ability_turns[idx] = self.turn
         if perm.card.activated[idx].once_game:
@@ -257,19 +257,16 @@ class AbilitiesMixin:
             self.log(f"discards {card.name}", p)
         if c.get("remove_counter"):
             perm.counters[c["remove_counter"]] -= 1
-        for _ in range(c.get("sac_n", 1) if c.get("sacrifice") else 0):
-            candidates = self.sacrifice_candidates(p, perm, c["sacrifice"])
-            if not candidates:
+        for victim in plan.victims:
+            if victim not in p.battlefield:
                 return False
-            victim = candidates[0]
             self.log(f"sacrifices {victim.card.name}", p)
             perm.last_sacrificed_cmc = victim.card.cmc
             self.sacrifice(victim)
         if c.get("craft"):
-            materials = self.craft_materials(p, perm)
-            if not materials:
+            material = plan.craft
+            if material is None or material not in p.graveyard and material not in p.battlefield:
                 return False
-            material = materials[0]
             if material in p.graveyard:
                 p.graveyard.remove(material)
                 p.exile.append(material)

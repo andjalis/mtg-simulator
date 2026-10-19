@@ -1,10 +1,10 @@
 # Bounded behavior evidence
 
-`capabilities.json` declares ten supported subsets. `scenarios.json` maps 74
+`capabilities.json` declares thirteen supported subsets. `scenarios.json` maps 97
 unittest methods to those subsets, records expected-value references and identifies
 direct card fixtures. Setup, action sequences and assertions are the linked test
 methods in `tests/test_rules_contracts.py`, `test_identity_events.py`, `test_regeneration.py`,
-`test_return_counters.py`, `test_persist_wither_rebound.py` and `test_zone_actions_layers.py`; their source and all test helpers enter
+`test_return_counters.py`, `test_persist_wither_rebound.py` and `test_zone_actions_layers.py` and `test_costs_types_triggers.py`; their source and all test helpers enter
 the evidence identity. Synthetic or modified card fixtures are capability evidence,
 and are not assigned as direct evidence for the real card.
 
@@ -134,9 +134,38 @@ resolved effect to survive its source. `until_eot=True` expires at cleanup. Save
 last-known P/T survives departure and effects do not follow the new battlefield
 object after reentry. No new Oracle templates are claimed by this API.
 
-Copy, control, text, type, color and characteristic-defining layers, inferred
+Copy, control, text and characteristic-defining layers, inferred
 Oracle dependencies and comprehensive keyword-grant timestamps remain outside
-this slice. Registered keyword operations follow the existing keyword baseline.
+this slice. Type/color operations are described below. Registered keyword operations follow the existing keyword baseline.
 The mapped cases exercise these bounded contracts, not every card interaction.
 
 Alternate land faces, crafted backs, enchantment returns and manifested views supply their physical card before battlefield entry is published. Discover emits library-to-exile moves, casts the found card directly from exile or moves it into hand, then returns the other cards to the library. These traces do not establish full face-down or Discover conformance.
+
+## Joint costs, type/color views and phase triggers
+
+`mtgsim/costs.py` enumerates supported sacrifice sets (including `sac_n`) and a craft
+material before mana payment. A source consumed for one cost is reserved from the
+others; an ordinary source can still tap for mana and then be sacrificed. Additional
+mana alternatives and reserved X mana use the same plan during validation and
+execution. This preserves the existing convoke/improvise/delve policies rather than
+introducing a general solver for all mana abilities and optional-cost combinations.
+
+The continuous API now includes set/add/remove operations for types, subtypes and
+colors. Pass `types`/`subtypes` as iterables of names and `colors` as WUBRG symbols.
+Type/subtype operations run in layer 4 and colors in layer 5. Callers explicitly
+supply subtype changes and basic land mana abilities; the API does not infer them.
+No general type/color Oracle parser is introduced. `Permanent.card` stores the
+current characteristic view, refreshed at effect and relevant state changes;
+`copiable_card` holds the underlying copiable values and `front` the physical card.
+Source departure, cleanup, animation and crew timestamps refresh these views.
+Last-known characteristics remain on the departing object. Copy/control/text layers,
+complete legacy timestamp integration and comprehensive copy rules remain outside.
+
+Upkeep/end-step events fan out `each_upkeep`, `opp_upkeep` and `each_end_step` with
+the phase player as context. New templates accept each upkeep, each player's upkeep,
+each opponent's upkeep, each end step and the end step. Recognized intervening-if
+conditions are checked at triggering and resolution. A general source-sacrifice
+effect checks membership of the original permanent. Unknown conditions, unknown
+token keywords and unsupported relative-clause copy selectors remain visible in
+ignored text; Madness is not added. Direct Oracle fixtures and synthetic scenarios
+have separate manifest mappings. These contracts do not establish full card support.
