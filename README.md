@@ -380,7 +380,7 @@ adventures, flashback, foretold cards, blitz, channel; cast them with
 
 | File | Role |
 | --- | --- |
-| `mtgsim/cards/` | Card model (`model.py`), oracle-text templates (`patterns.py`), Scryfall JSON to `CardDef` (`parse.py`), tokens (`tokens.py`) |
+| `mtgsim/cards/` | Card model (`model.py`), oracle-text templates (`patterns.py`), Scryfall JSON to `CardDef` (`parse.py`, with the per-line parsers in `face_lines.py`), tokens (`tokens.py`) |
 | `mtgsim/removal.py`, `copies.py`, `auras.py`, ... | Template modules: one mechanic family each, joined to the tables in `cards/` |
 | `mtgsim/carddb.py` | Card lookup and Scryfall fetch/cache |
 | `mtgsim/build_carddb.py` | Builds `data/cards.sqlite3` from Scryfall bulk data or Forge |
