@@ -141,7 +141,7 @@ _TRIGGERS = [
     (r"When(?:ever)? ~ enters or attacks, (.+)", ("etb", "attacks")),
     (r"When ~ enters and at the beginning of your upkeep, (.+)", ("etb", "upkeep")),
     (r"When(?:ever)? ~ enters?(?: the battlefield)?, (.+)", ("etb",)),
-    (r"Whenever ~ attacks while (.+)", ("attacks",)),
+    (r"Whenever ~ attacks while (?!saddled)(.+)", ("attacks",)),
     (r"Whenever ~ attacks, (.+)", ("attacks",)),
     (r"When(?:ever)? ~ dies, (?:if it was a creature, )?(.+)", ("dies",)),
     (r"Whenever ~ deals combat damage to a player, (.+)", ("combat_damage_player",)),

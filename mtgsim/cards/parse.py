@@ -469,7 +469,7 @@ def _parse_trigger_line(line: str):
         cond = f"spent:{spent[1]}" if spent else ""
         if spent:
             rest = spent[2]
-        if events == ("attacks",) and pat.startswith("Whenever ~ attacks while"):
+        if events == ("attacks",) and pat == "Whenever ~ attacks while (?!saddled)(.+)":
             rest = "if " + rest
             intervening = True
         gate_if = re.fullmatch(r"if (.+?), (.+)", rest, flags=re.S)
