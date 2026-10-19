@@ -9,9 +9,12 @@ from . import NO_SBA, kind
 
 
 @kind("draw")
-def draw(game, p, eff, opp, **_):
+def draw(game, p, eff, opp, item=None, **_):
     who = opp if eff.target == "each_opponent" else p
     n = eff.amount
+    if eff.data.get("x_half"):
+        src = item.source if item is not None else None
+        n = (getattr(src, "entered_x", 0) or getattr(item, "x", 0)) // 2
     if eff.data.get("x_count"):
         n = sum(card_matches(x.card, "a " + eff.data["x_count"]) for x in p.battlefield)
     game.draw(who, n)
@@ -122,6 +125,7 @@ def tutor(game, p, eff, **_):
         p.hand.append(card)
         game.log(f"searches for {card.name}", p)
     p.library.shuffle(game.rng)
+    game.library_searched(p)
 
 
 @kind("mill")
@@ -182,6 +186,7 @@ def discard_tutor(game, p, eff, **_):
         p.library.remove(found)
         p.hand.append(found)
         p.library.shuffle(game.rng)
+        game.library_searched(p)
         game.log(f"discards {card.name} and searches for {found.name}", p)
 
 
@@ -248,6 +253,7 @@ def bay_search(game, p, item, **_):
             game.enter_battlefield(p, card)
             game.log(f"fetches {card.name}", p)
         p.library.shuffle(game.rng)
+        game.library_searched(p)
 
 
 @kind("draw_each")
@@ -320,6 +326,7 @@ def fetch_basic(game, p, eff, target, item, **_):
         lands = sum(x.card.is_land for x in who.battlefield)
         perm.tapped = not (eff.data.get("untap4") and lands >= 4)
     who.library.shuffle(game.rng)
+    game.library_searched(who)
 
 
 @kind("explore")

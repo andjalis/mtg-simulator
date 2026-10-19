@@ -137,6 +137,7 @@ def cover_up(game, p, opp, **_):
                 if zone is opp.hand:
                     from_hand += 1
         opp.library.shuffle(game.rng)
+        game.library_searched(opp)
         game.draw(opp, from_hand)
         game.log(f"exiles every {pick.name} of {opp}", p)
 
@@ -254,6 +255,7 @@ def land_swap(game, p, eff, opp, **_):
                     perm.tapped = True
                     perm.counters["stun"] = 1
             who.library.shuffle(game.rng)
+            game.library_searched(who)
 
 
 @kind("amass")

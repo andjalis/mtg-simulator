@@ -249,6 +249,11 @@ def respond(game: Game, me: Player):
             for c in options.values():
                 if any(e.kind == "grant" and e.data.get("keyword") == "hexproof" for e in c.spell_effects):
                     return c, [aimed[0]] + [None] * (len(c.spell_effects) - 1)
+        if not top.is_spell and top.kind in ("ability", "trigger", "loyalty") and isinstance(top.source, Permanent) \
+                and not top.source.silenced and (top.kind == "loyalty" or perm_value(top.source) >= 3):
+            for c in options.values():   # Tishana's Tidebinder: a flash creature that counters an ability
+                if any(e.kind == "counter_ability" for t in c.triggers if t.event == "etb" for e in t.effects):
+                    return c, None
         if not top.is_spell or not game.counterable(top) or _threat(game, me, top) < 3:
             return None
         counters = [c for c in options.values()
