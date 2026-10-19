@@ -6,7 +6,7 @@ import re
 
 from .. import auras, copies, milling
 from ..cards import CardDef, Effect
-from .. import modal, rules_events, phase_conditions
+from .. import modal, rules_events, phase_conditions, turn_conditions
 from ..identity import CardInstance, CardZone
 from ..actions import perform, can_perform
 from .state import Permanent, Player, StackItem, TARGETED, TrackedZone, _gy_desc, card_matches
@@ -320,6 +320,9 @@ class StackMixin:
         phase_condition = phase_conditions.check(p, c, item)
         if phase_condition is not None:
             return phase_condition
+        turn_condition = turn_conditions.check(self, p, c, item)
+        if turn_condition is not None:
+            return turn_condition
         if c == "phase_player_empty_hand":
             return isinstance(getattr(item, "context", None), Player) and not item.context.hand
         if c[0] == "!":

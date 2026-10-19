@@ -207,6 +207,8 @@ class PlayMixin:
                         continue
                     if trig.event == "cast_cmc" and card.cmc < int(trig.filter[5:]):
                         continue
+                    if flt == "opp_turn" and p is self.active:
+                        continue
                     if flt == "targets_creature" and not any(isinstance(t, Permanent) and t.is_creature
                                                             for t in targets):
                         continue

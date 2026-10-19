@@ -233,3 +233,37 @@ class AnotherPump(Dimir):
         self.game.resolve(self.a, fox.triggers[0].effects[0], bear)
         self.assertEqual(bear.power, 3)
         self.assertTrue(bear.has("haste"))
+
+
+class TurnConditions(Dimir):
+    def test_attacks_while_you_control_a_token(self):
+        warren = card("Season Warren", "{2}{G}", "Creature — Rabbit",
+                      "Whenever ~ attacks while you control a token, ~ gets +2/+0 until end of turn.", 2, 2)
+        self.assertEqual(warren.unsupported, [])
+        trig = warren.triggers[0]
+        self.assertEqual(trig.intervening_if, "ctl:token>=1")
+        perm = Permanent(warren, self.a)
+        self.a.battlefield.append(perm)
+        item = type("Item", (), {"source": perm, "context": None})()
+        self.assertFalse(self.game.check_cond(self.a, trig.effects[0], item, None))
+        self.game.create_token(self.a, RAIDER.spell_effects[0])
+        self.assertTrue(self.game.check_cond(self.a, trig.effects[0], item, None))
+
+    def test_celebration_counts_nonland_entries(self):
+        mouse = card("Raging Mouse", "{1}{R}", "Creature — Mouse", "Celebration — Whenever ~ attacks, if two or more nonland "
+                     "permanents entered the battlefield under your control this turn, put a +1/+1 counter on ~.", 2, 2)
+        self.assertEqual(mouse.unsupported, [])
+        self.assertEqual(self.a.entered_nonland_turn, 0)
+        self.game.enter_battlefield(self.a, BEAR2)
+        self.game.enter_battlefield(self.a, ISLAND)
+        self.assertEqual(self.a.entered_nonland_turn, 1)
+        self.game.enter_battlefield(self.a, BEAR2)
+        self.assertEqual(self.a.entered_nonland_turn, 2)
+
+    def test_cast_during_opponents_turn_and_flurry_templates(self):
+        cut = card("Brine Cutthroat", "{2}{U}", "Creature — Pirate",
+                   "Whenever you cast a spell during an opponent's turn, put a +1/+1 counter on ~.", 2, 2)
+        duel = card("Devoted Duelist", "{1}{R}", "Creature — Human",
+                    "Flurry — Whenever you cast your second spell each turn, ~ deals 1 damage to each opponent.", 2, 2)
+        self.assertEqual((cut.unsupported, duel.unsupported), ([], []))
+        self.assertEqual(cut.triggers[0].filter, "opp_turn")

@@ -891,3 +891,14 @@ The complete card inventory and ranked gaps are in
 - Additional costs "sacrifice a creature or planeswalker or pay {N}" (any mix of artifact, creature, enchantment,
   planeswalker, with or without the pay option).
 - "Another target creature you control gets +N/+M [and gains <keyword>] until end of turn" (the +X forms are not parsed).
+
+## Board and turn conditions: "attacks while", Disappear, Celebration, Flurry
+
+- `turn_conditions.py`: "you control a token / two or more artifacts", delirium, "a permanent left the battlefield
+  under your control this turn" (Disappear), "two or more nonland permanents entered under your control this turn"
+  (Celebration, counted in `Player.entered_nonland_turn`) and "you don't control another <Subtype>". They work as
+  intervening "if" clauses on any trigger, and "Whenever ~ attacks while <condition>, ..." is read as
+  "Whenever ~ attacks, if <condition>, ...".
+- "Whenever you cast a spell during an opponent's turn" (cast trigger filter `opp_turn`).
+- The ability-word prefixes Flurry, Disappear and Celebration are dropped before trigger parsing, so the existing
+  second-spell trigger now applies. Celebration's "as long as" static lines are not parsed.
