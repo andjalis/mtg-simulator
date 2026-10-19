@@ -118,3 +118,20 @@ class Kaito(Dimir):
         self.assertTrue(kaito.tapped)
         self.assertIn(kaito, self.game.attackers)
         self.assertIn(BEAR2, self.a.hand)
+
+
+WASP = card("Test Wasp", "{2}{U}", "Creature — Insect", "Flash\nFlying\nWasp's Sting — When ~ enters, tap up to one target creature. "
+            "It loses all abilities for as long as ~ remains on the battlefield.", 2, 2)
+
+
+class Wasp(Dimir):
+    def test_taps_and_silences(self):
+        self.assertEqual(WASP.unsupported, [])
+        victim = Permanent(PINGER, self.b)
+        self.b.battlefield.append(victim)
+        wasp = self.game.enter_battlefield(self.a, WASP)
+        self.game.settle()
+        self.assertTrue(victim.tapped)
+        self.assertFalse(victim.has("flying"))
+        self.game.leave_battlefield(wasp, "graveyard")
+        self.assertTrue(victim.has("flying"))

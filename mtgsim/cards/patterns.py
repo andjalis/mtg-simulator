@@ -238,6 +238,7 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("bounce", target="nonland_perm", filter="opp")),
     (r"add ((?:\{[WUBRG]\})+)", lambda m: Effect("add_mana", data={"colors": re.findall(r"[WUBRG]", m[1])})),
     (r"transform ~", lambda m: Effect("transform", target="self")),
+    (r"TAPSILENCE", lambda m: Effect("tap", 1, target="creature", data={"silence": True})),
     (r"NETTAP", lambda m: Effect("tap", 1, target="nonland_perm", data={"net": True})),
     (r"OPTCOST (\S+) (\d+)", lambda m: Effect("opt_cost_draw", int(m[2]), data={"cost": m[1]})),
     (r"THREATEN", lambda m: Effect("threaten", target="creature", filter="opp")),
@@ -480,6 +481,8 @@ _EFFECT_PATTERNS = [
 ]
 
 _SUBS = [
+    (re.compile(r"tap up to one target creature\. it loses all abilities for as long as ~ remains on the battlefield\.",
+                re.I), lambda m: "TAPSILENCE."),
     (re.compile(r"counter up to one target activated or triggered ability\. if an ability of an artifact, creature, or "
                 r"planeswalker is countered this way, that permanent loses all abilities for as long as ~ remains on the "
                 r"battlefield\.", re.I), lambda m: "COUNTERABILITY."),

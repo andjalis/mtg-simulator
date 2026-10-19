@@ -864,3 +864,9 @@ The complete card inventory and ranked gaps are in
 - Emblems: `Player.emblems` holds (creature type, +power, +toughness); "you get an emblem with 'Ninjas you control get
   +1/+1'" is the `emblem` kind. Other emblem texts are not parsed.
 - Not done: Kaito's -9 emblem, combat damage dealt to Kaito as a creature does not remove loyalty counters.
+
+## The Wondrous Wasp and named triggers
+
+- "Tap up to one target creature. It loses all abilities for as long as ~ remains on the battlefield" is the `tap`
+  effect with `silence`, which sets `silenced_by` like Tishana's Tidebinder.
+- A named trigger line ("Wasp's Sting — When ~ enters, ...") drops its name before parsing.
