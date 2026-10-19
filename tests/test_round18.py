@@ -30,7 +30,7 @@ class Round18(unittest.TestCase):
             self.assertEqual(c.unsupported, [], c.name)
 
     def test_only_tapped_and_subtype(self):
-        t, h1, h2, bear = self.perm(TAPPER), self.perm(HERO), self.perm(HERO), self.perm(BEAR)
+        t, h1, _, bear = self.perm(TAPPER), self.perm(HERO), self.perm(HERO), self.perm(BEAR)
         t.tapped = True
         self.game.resolve(self.a, TAPPER.triggers[0].effects[0], None)
         self.assertEqual((t.p1, h1.p1, h2.p1, bear.p1), (1, 0, 0, 0))
