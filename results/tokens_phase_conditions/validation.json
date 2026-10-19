@@ -1,0 +1,124 @@
+{
+  "base_commit": "d846ddf8599c7c302eb07d8e39b6b723686c18d3",
+  "code_identity": "6f8d3582f25adce6e221843709593c821f6af5e0fb7b042b0ac644901c6d3849",
+  "database_sha256": "eddc1ae21a3f0dd3b4f2e21d67c24f398fc9252e3bf99d0fd7feb56574b0108c",
+  "inventory_total": 34922,
+  "before": {
+    "full": 8592,
+    "simplified": 103,
+    "partial": 26227,
+    "parse_error": 0
+  },
+  "after": {
+    "full": 8608,
+    "simplified": 103,
+    "partial": 26211,
+    "parse_error": 0
+  },
+  "new_full_matches": 16,
+  "corrected_false_full_matches": 0,
+  "parse_errors": [],
+  "ordinary_lookup_parity_samples": 100,
+  "tests": {
+    "command": "python3 -m unittest discover -s tests -t . -q",
+    "run": 928,
+    "passed": 927,
+    "skipped": 1,
+    "failures": 0,
+    "seconds": 167.577
+  },
+  "lint": {
+    "findings": 0
+  },
+  "behavior": {
+    "run_identity": "103f5aae885de2311df5ec67ac0fc44354548bc4d273bd16ce3482e0fd0181f6",
+    "scenario_denominator": 116,
+    "outcomes": {
+      "error": 0,
+      "fail": 0,
+      "not_run": 0,
+      "pass": 116,
+      "stale": 0
+    },
+    "card_denominator": 34922,
+    "cards_with_current_direct_evidence": 14,
+    "cards_with_only_current_capability_evidence": 34908,
+    "complete_rules_support": "not measured"
+  },
+  "capabilities": [
+    {
+      "id": "targets.creature",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "sba.legend",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "stack.equip",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "zones.object_identity",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "events.dispatch",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "replacement.supported",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "removal.core",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "graveyard.return",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "actions.atomic",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "continuous.pt_keywords",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "costs.joint",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "continuous.types_colors",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "triggers.phase",
+      "evidence_status": "scoped_suite_passes"
+    },
+    {
+      "id": "keywords.decayed",
+      "evidence_status": "scoped_suite_passes"
+    }
+  ],
+  "smoke": {
+    "command": "python3 -m mtgsim.benchmark --engine builtin -n 20 --out /tmp/mtg-tokens-phase-final-smoke",
+    "games": 80,
+    "pairings": 4,
+    "identity": "44a18d985de9a41429254a394354db67cb6dd41208d2eeb06456dff65be3f411",
+    "results_sha256": "c8a098db1c5276b671d8849a816cd1082c13d7515d970f5d9b8363bb62ad4971",
+    "result_log_and_source_hashes_verified": true
+  },
+  "parse_diff": {
+    "entries": 34922,
+    "new_exceptions": 0,
+    "reported_changed_parses": 0,
+    "limitation": "The existing tool compares name-only repr(CardDef). See coverage-delta.json for real inventory changes.",
+    "local_command": "python3 scripts/parse_diff.py local --show 5",
+    "local_exit_code": 0
+  },
+  "integrated_tooling_main": "14e6b92b126a726c5d9ab4219c3591128f306bc7",
+  "post_tooling_merge_scenario_identity_current": true
+}

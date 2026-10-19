@@ -1,10 +1,11 @@
 # Bounded behavior evidence
 
-`capabilities.json` declares thirteen supported subsets. `scenarios.json` maps 97
+`capabilities.json` declares fourteen supported subsets. `scenarios.json` maps 116
 unittest methods to those subsets, records expected-value references and identifies
 direct card fixtures. Setup, action sequences and assertions are the linked test
 methods in `tests/test_rules_contracts.py`, `test_identity_events.py`, `test_regeneration.py`,
-`test_return_counters.py`, `test_persist_wither_rebound.py` and `test_zone_actions_layers.py` and `test_costs_types_triggers.py`; their source and all test helpers enter
+`test_return_counters.py`, `test_persist_wither_rebound.py`, `test_zone_actions_layers.py`,
+`test_costs_types_triggers.py` and `test_tokens_phase_conditions.py`; their source and all test helpers enter
 the evidence identity. Synthetic or modified card fixtures are capability evidence,
 and are not assigned as direct evidence for the real card.
 
@@ -169,3 +170,23 @@ effect checks membership of the original permanent. Unknown conditions, unknown
 token keywords and unsupported relative-clause copy selectors remain visible in
 ignored text; Madness is not added. Direct Oracle fixtures and synthetic scenarios
 have separate manifest mappings. These contracts do not establish full card support.
+
+## Decayed and bounded conditions
+
+Decayed creatures cannot block. Declaring one as an attacker queues its keyword
+ability on the normal stack. Resolving it creates a one-shot end-of-combat trigger
+that sacrifices the original permanent if its trigger controller still controls it.
+Removing decayed afterward does not remove the delayed trigger; leaving and
+returning creates a different permanent. Entering the battlefield attacking does
+not trigger it. End-of-combat priority also runs when no attackers survive.
+Unknown token keywords such as devour and changeling remain reported as gaps;
+supported keyword lists accept commas and a final conjunction.
+
+The shared condition helper recognizes exact/lower/upper hand-size and life-total
+thresholds, a tapped/untapped source, and the absence of creatures with a supported
+keyword (including Jadar's decayed check). Intervening-if gates are checked before
+queuing and once when the complete ability starts resolving, rather than between
+its effects. An ordinary conditional sentence inside an ability remains conditional
+on that effect. Arbitrary Boolean predicates, library-size checks and alternate-win
+effects remain outside this batch. Tests use Convalescent Care, Hollowborn Barghest,
+Falcon Abomination, Jadar and Imaginary Pet as direct Oracle fixtures, alongside synthetic cases.

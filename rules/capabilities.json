@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "costs-types-triggers-v4",
+  "scope": "tokens-phase-conditions-v5",
   "capabilities": [
     {
       "id": "targets.creature",
@@ -180,8 +180,8 @@
       "id": "triggers.phase",
       "description": "Each-player and opponent upkeep/end-step triggers",
       "state": "implemented_subset",
-      "subset": "Each upkeep, each player upkeep, each opponent upkeep, each end step and the end step queue APNAP triggers. Phase-player context routes supported effects; recognized intervening conditions are checked when triggered and on resolution. Source sacrifice and return work across opposing turns.",
-      "restrictions": "Two-player supported phases only; unsupported conditions, Madness and other unparsed clauses remain visible. No arbitrary phase scheduling, complete APNAP ordering choices or broad reflexive-trigger implementation.",
+      "subset": "Each upkeep, each player upkeep, each opponent upkeep, each end step and the end step queue APNAP triggers. Phase-player context routes supported effects; recognized intervening conditions are checked when triggered and on resolution. Source sacrifice and return work across opposing turns. Supported hand-size/life comparisons, tapped/untapped source state and absence of creatures with a supported keyword gate the complete trigger once at the start of resolution.",
+      "restrictions": "Two-player supported phases only; unsupported conditions, Madness and other unparsed clauses remain visible. No arbitrary phase scheduling, complete APNAP ordering choices or broad reflexive-trigger implementation. No arbitrary Boolean condition language, library-size gates, alternate-win effects or unrecognized creature predicates.",
       "requires": [
         "events.dispatch"
       ],
@@ -190,6 +190,25 @@
         "mtgsim/cards/parse.py",
         "mtgsim/cards/patterns.py",
         "mtgsim/engine/stack.py",
+        "mtgsim/engine/kinds/permanents.py",
+        "mtgsim/phase_conditions.py"
+      ]
+    },
+    {
+      "id": "keywords.decayed",
+      "description": "Decayed blocking and delayed sacrifice, and supported token keyword lists",
+      "state": "implemented_subset",
+      "subset": "A creature with decayed cannot block. Declaring it as an attacker queues an attack trigger that creates a one-shot end-of-combat sacrifice trigger for the original permanent. Keyword removal, control changes and leaving/reentry respect that captured object and controller. Token keyword lists accept comma and conjunction forms while preserving unknown keyword gaps.",
+      "restrictions": "No devour, changeling or arbitrary keyword implementation is added. This does not implement general delayed-trigger scripting, Stifle card templates or every combat/ability-layer interaction.",
+      "requires": [
+        "events.dispatch",
+        "zones.object_identity"
+      ],
+      "implementation": [
+        "mtgsim/cards/model.py",
+        "mtgsim/cards/patterns.py",
+        "mtgsim/engine/state.py",
+        "mtgsim/engine/combat.py",
         "mtgsim/engine/kinds/permanents.py"
       ]
     }

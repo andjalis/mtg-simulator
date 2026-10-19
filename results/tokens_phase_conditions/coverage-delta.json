@@ -1,0 +1,199 @@
+{
+  "base_commit": "d846ddf8599c7c302eb07d8e39b6b723686c18d3",
+  "total": 34922,
+  "before": {
+    "full": 8592,
+    "simplified": 103,
+    "partial": 26227,
+    "parse_error": 0
+  },
+  "after": {
+    "full": 8608,
+    "simplified": 103,
+    "partial": 26211,
+    "parse_error": 0
+  },
+  "promoted_to_full": [
+    "Convalescence",
+    "Convalescent Care",
+    "Falcon Abomination",
+    "Flip the Switch",
+    "Hobbling Zombie",
+    "Hollowborn Barghest",
+    "Imaginary Pet",
+    "Ivory Crane Netsuke",
+    "Jadar, Ghoulcaller of Nephalia",
+    "Nim Abomination",
+    "Rotten Reunion",
+    "Scalding Tongs",
+    "Slaughterhouse Bouncer",
+    "Startle",
+    "Thran Quarry",
+    "Thumbscrews"
+  ],
+  "previous_full_now_partial": [],
+  "net_full_gain": 16,
+  "changes": [
+    {
+      "name": "Amber-Plate Ainok",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Double team\nif ~ is tapped, it endures 1.",
+      "ignored_after": "Double team"
+    },
+    {
+      "name": "Behold the Unspeakable // Vision of the Unspeakable",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "I — Creatures you don't control get -2/-0 until your next turn.\nII — If you have one or fewer cards in hand, draw four cards.\nII — Otherwise, scry 2, then draw two cards.\nVision of the Unspeakable: ~ gets +1/+1 for each card in your hand.",
+      "ignored_after": "I — Creatures you don't control get -2/-0 until your next turn.\nII — Otherwise, scry 2, then draw two cards.\nVision of the Unspeakable: ~ gets +1/+1 for each card in your hand."
+    },
+    {
+      "name": "Bloodhall Priest",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "if you have no cards in hand, ~ deals 2 damage to any target.\nMadness {1}{B}{R}",
+      "ignored_after": "Madness {1}{B}{R}"
+    },
+    {
+      "name": "Convalescence",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "if you have 10 or less life, you gain 1 life.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Convalescent Care",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "if you have 5 or less life, you gain 3 life and draw a card.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Diregraf Horde",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Unsupported token keywords: decayed\nWhen you do, exile up to two target cards from graveyards.",
+      "ignored_after": "When you do, exile up to two target cards from graveyards."
+    },
+    {
+      "name": "Falcon Abomination",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "Unsupported token keywords: decayed",
+      "ignored_after": ""
+    },
+    {
+      "name": "Flip the Switch",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "Unsupported token keywords: decayed",
+      "ignored_after": ""
+    },
+    {
+      "name": "Hobbling Zombie",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "Unsupported token keywords: decayed",
+      "ignored_after": ""
+    },
+    {
+      "name": "Hollowborn Barghest",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "if you have no cards in hand, each opponent loses 2 life.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Imaginary Pet",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "if you have a card in hand, return ~ to its owner's hand.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Ivory Crane Netsuke",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "if you have seven or more cards in hand, you gain 4 life.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Jadar, Ghoulcaller of Nephalia",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "if you control no creatures with decayed, create a 2/2 black Zombie creature token with decayed.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Jerren, Corrupted Bishop // Ormendahl, the Corrupter",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Whenever ~ enters or another nontoken Human you control dies, you lose 1 life and create a 1/1 white Human creature token.\n{2}: Target Human you control gains lifelink until end of turn.\nif you have exactly 13 life, you may pay {4}{B}{B}.\nIf you do, transform ~.",
+      "ignored_after": "Whenever ~ enters or another nontoken Human you control dies, you lose 1 life and create a 1/1 white Human creature token.\n{2}: Target Human you control gains lifelink until end of turn.\nIf you do, transform ~."
+    },
+    {
+      "name": "Nim Abomination",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "if ~ is untapped, you lose 3 life.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Poppet Stitcher // Poppet Factory",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Unsupported token keywords: decayed\nif you control three or more creature tokens, you may transform ~.\nPoppet Factory: Creature tokens you control lose all abilities and have base power and toughness 3/3.\nPoppet Factory: you may transform ~.",
+      "ignored_after": "if you control three or more creature tokens, you may transform ~.\nPoppet Factory: Creature tokens you control lose all abilities and have base power and toughness 3/3.\nPoppet Factory: you may transform ~."
+    },
+    {
+      "name": "Rot-Curse Rakshasa",
+      "before": "partial",
+      "after": "partial",
+      "ignored_before": "Decayed\nRenew — {X}{B}{B}, Exile this card from your graveyard: Put a decayed counter on each of X target creatures. Activate only as a sorcery.",
+      "ignored_after": "Renew — {X}{B}{B}, Exile this card from your graveyard: Put a decayed counter on each of X target creatures. Activate only as a sorcery."
+    },
+    {
+      "name": "Rotten Reunion",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "Unsupported token keywords: decayed",
+      "ignored_after": ""
+    },
+    {
+      "name": "Scalding Tongs",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "if you have three or fewer cards in hand, ~ deals 1 damage to target opponent or planeswalker.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Slaughterhouse Bouncer",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "if you have no cards in hand, target creature gets -3/-3 until end of turn.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Startle",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "Unsupported token keywords: decayed",
+      "ignored_after": ""
+    },
+    {
+      "name": "Thran Quarry",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "if you control no creatures, sacrifice ~.",
+      "ignored_after": ""
+    },
+    {
+      "name": "Thumbscrews",
+      "before": "partial",
+      "after": "full",
+      "ignored_before": "if you have five or more cards in hand, ~ deals 1 damage to target opponent or planeswalker.",
+      "ignored_after": ""
+    }
+  ]
+}

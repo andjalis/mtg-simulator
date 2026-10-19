@@ -299,7 +299,8 @@ class Permanent:
         if self.card.is_class:
             level = self.counters.get("level", 1)
             mine = [t for t in mine if t.min_level <= level]
-        return list(mine) + (list(self.animated.triggers) if self.animated else []) + exalted
+        decayed = [Trigger("attacks", [Effect("decayed_delay", target="self")])] if self.has("decayed") else []
+        return list(mine) + (list(self.animated.triggers) if self.animated else []) + exalted + decayed
 
     @property
     def ward(self) -> int:
@@ -459,6 +460,7 @@ class StackItem:
         self.source = source
         self.name = name or (card.name if card else "ability")
         self.context = context      # e.g. the player whose creature died, for "that player loses 2 life"
+        self.intervening_if = ""    # gate the entire trigger once when resolution starts
         self.context_ref = (context.zone.reference(context) if isinstance(context, CardInstance)
                             and isinstance(context.zone, CardZone) and context in context.zone else None)
         self.kind = kind or ("spell" if card else "trigger")   # spell, copy, trigger, chapter, loyalty
@@ -475,7 +477,7 @@ class StackItem:
 def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if not blocker.is_creature or blocker.tapped:
         return False
-    if blocker.card.cant_block or blocker.has("cant_block_now") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
+    if blocker.card.cant_block or blocker.has("cant_block_now") or blocker.has("decayed") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
         return False
     if any(attacker.has(keyword) and any(x.card.is_land and subtype in x.card.subtypes
                                         for x in blocker.controller.battlefield)

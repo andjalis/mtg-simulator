@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "costs-types-triggers-v4",
+  "scope": "tokens-phase-conditions-v5",
   "scenarios": [
     {
       "id": "target_type_membership",
@@ -1420,6 +1420,283 @@
         "kind": "rules-and-card-text",
         "reference": "CR 601.2, 603.4; linked unmodified Oracle fixtures",
         "review": "Scoped interaction or explicit-gap assertions; not complete card conformance."
+      }
+    },
+    {
+      "id": "token_phase_falcon_abomination_token_cannot_block",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_falcon_abomination_token_cannot_block",
+      "capabilities": [
+        "keywords.decayed"
+      ],
+      "direct_cards": [
+        "Falcon Abomination"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_decayed_attacker_deals_damage_then_is_sacrificed",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_decayed_attacker_deals_damage_then_is_sacrificed",
+      "capabilities": [
+        "keywords.decayed"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_removing_keyword_after_attack_keeps_delayed_sacrifice",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_removing_keyword_after_attack_keeps_delayed_sacrifice",
+      "capabilities": [
+        "keywords.decayed"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_countered_attack_trigger_creates_no_delayed_trigger",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_countered_attack_trigger_creates_no_delayed_trigger",
+      "capabilities": [
+        "keywords.decayed"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_delayed_sacrifice_can_be_countered",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_delayed_sacrifice_can_be_countered",
+      "capabilities": [
+        "keywords.decayed"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_delayed_sacrifice_does_not_follow_blink_or_control_change",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_delayed_sacrifice_does_not_follow_blink_or_control_change",
+      "capabilities": [
+        "keywords.decayed"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_entering_attacking_does_not_trigger_decayed",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_entering_attacking_does_not_trigger_decayed",
+      "capabilities": [
+        "keywords.decayed"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_summoning_sick_decayed_creature_survives_combat",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_summoning_sick_decayed_creature_survives_combat",
+      "capabilities": [
+        "keywords.decayed"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_oxford_comma_keywords_and_unknown_keywords",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_oxford_comma_keywords_and_unknown_keywords",
+      "capabilities": [
+        "keywords.decayed"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_empty_hand_gates_all_effects_at_resolution",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_empty_hand_gates_all_effects_at_resolution",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_intervening_condition_is_not_rechecked_between_effects",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_intervening_condition_is_not_rechecked_between_effects",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_convalescent_care_life_threshold_is_checked_once",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_convalescent_care_life_threshold_is_checked_once",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [
+        "Convalescent Care"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_hollowborn_barghest_checks_the_correct_players_hand",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_hollowborn_barghest_checks_the_correct_players_hand",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [
+        "Hollowborn Barghest"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_life_and_hand_comparison_boundaries",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_life_and_hand_comparison_boundaries",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_source_tapped_and_untapped_recheck",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_source_tapped_and_untapped_recheck",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_jadar_requires_no_decayed_creatures_at_both_checks",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_jadar_requires_no_decayed_creatures_at_both_checks",
+      "capabilities": [
+        "keywords.decayed",
+        "triggers.phase"
+      ],
+      "direct_cards": [
+        "Jadar, Ghoulcaller of Nephalia"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_nonintervening_effect_condition_does_not_suppress_other_effects",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_nonintervening_effect_condition_does_not_suppress_other_effects",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_unknown_keyword_and_compound_condition_remain_gaps",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_unknown_keyword_and_compound_condition_remain_gaps",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 702.147, 509.1b, 603.4, 603.7, 608.2; Oracle fixtures in linked test",
+        "review": "Bounded expectations asserted in the linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "token_phase_imaginary_pet_a_card_means_at_least_one",
+      "version": 1,
+      "test": "tests.test_tokens_phase_conditions.TokensPhaseConditions.test_imaginary_pet_a_card_means_at_least_one",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [
+        "Imaginary Pet"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "Imaginary Pet Oracle text; CR 603.4, 608.2",
+        "review": "A card means at least one; zero/one/two hand boundaries asserted in linked test."
       }
     }
   ]

@@ -6,7 +6,7 @@ import re
 
 from .. import auras, copies, milling
 from ..cards import CardDef, Effect
-from .. import modal, rules_events
+from .. import modal, rules_events, phase_conditions
 from ..identity import CardInstance, CardZone
 from ..actions import perform, can_perform
 from .state import Permanent, Player, StackItem, TARGETED, TrackedZone, _gy_desc, card_matches
@@ -67,10 +67,10 @@ class StackMixin:
 
     def queue_trigger(self, controller: Player, effects: list, source: Permanent | None = None,
                       name: str = "", context=None, targets: list | None = None, kind: str = "trigger",
-                      modes=None):
+                      modes=None, intervening_if=""):
         ref = (context.zone.reference(context) if isinstance(context, CardInstance)
                and isinstance(context.zone, CardZone) and context in context.zone else None)
-        self.pending.append((controller, effects, source, name, context, targets, kind, modes, ref))
+        self.pending.append((controller, effects, source, name, context, targets, kind, modes, ref, intervening_if))
 
     def fire(self, p: Player, event: str, source: Permanent | None = None, context=None, subject=None):
         """Deliver a typed event, then queue the existing supported trigger listeners."""
@@ -141,7 +141,8 @@ class StackMixin:
                 if subject is not None and any(e.data.get("subject_power") for e in effects):
                     effects = [dataclasses.replace(e, amount=max(0, subject.power)) if e.data.get("subject_power")
                                else e for e in effects]
-                self.queue_trigger(perm.controller, effects, perm, perm.card.name, context, modes=trig.modes)
+                self.queue_trigger(perm.controller, effects, perm, perm.card.name, context, modes=trig.modes,
+                                   intervening_if=trig.intervening_if)
         if source is not None:      # Role tokens give the enchanted creature triggers
             for aura in list(source.auras):
                 for trig in aura.card.host_triggers:
@@ -160,7 +161,7 @@ class StackMixin:
         pending, self.pending = self.pending, []
         order = [self.active, self.opponent(self.active)]
         pending.sort(key=lambda t: order.index(t[0]))
-        for controller, effects, source, name, context, targets, kind, modes, ref in pending:
+        for controller, effects, source, name, context, targets, kind, modes, ref, intervening_if in pending:
             if modes:
                 effects = list(effects) + modal.pick(self, controller, modes, source, least=0)
                 if not effects:
@@ -168,6 +169,7 @@ class StackMixin:
             if targets is None:
                 targets = self.auto_targets(controller, effects, source)
             item = StackItem(controller, effects, targets, source=source, name=name, context=context, kind=kind)
+            item.intervening_if = intervening_if
             item.context_ref = ref
             self.stack.append(item)
             self.log(f"{item} goes on the stack" + (f" -> {targets}" if any(targets) else ""), controller)
@@ -197,6 +199,10 @@ class StackMixin:
     def resolve_top(self):
         item = self.stack.pop()
         p = item.controller
+        if item.intervening_if and not self.check_cond(p, Effect("condition", cond=item.intervening_if), item, None):
+            self.log(f"{item} does not resolve (intervening condition is false)", p)
+            self.state_based_actions()
+            return
         if item.is_spell and item.card.is_permanent:
             self.log(f"{item.card.name} resolves", p)
             base, kind, _ = self._origin(item.card)
@@ -265,7 +271,9 @@ class StackMixin:
                                                     and e2 in done):
                     continue
                 done.append(eff)
-                if not self.check_cond(p, eff, item, prev):
+                condition = (dataclasses.replace(eff, cond="")
+                             if item.intervening_if and eff.cond == item.intervening_if else eff)
+                if not self.check_cond(p, condition, item, prev):
                     continue
                 self.resolve(p, eff, tgt, item, prev)
                 if self.over:
@@ -301,6 +309,9 @@ class StackMixin:
         c = eff.cond
         if not c:
             return True
+        phase_condition = phase_conditions.check(p, c, item)
+        if phase_condition is not None:
+            return phase_condition
         if c == "phase_player_empty_hand":
             return isinstance(getattr(item, "context", None), Player) and not item.context.hand
         if c[0] == "!":

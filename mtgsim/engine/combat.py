@@ -1,11 +1,26 @@
 """Game methods for combat: attacks, blocks and combat damage."""
 from __future__ import annotations
 
+from ..cards import Effect
 from .state import Permanent, Player, can_block
 
 
 class CombatMixin:
     def combat(self, p: Player, opp: Player):
+        self._combat(p, opp)
+        if not self.over:
+            self.end_combat(p)
+
+    def end_combat(self, p: Player):
+        self.step = "end_combat"
+        waiting, self.delayed_end_combat = self.delayed_end_combat, []
+        for controller, source in waiting:
+            self.queue_trigger(controller, [Effect("sacrifice_self", target="self")], source,
+                               f"{source.card.name}: decayed")
+        self.fire(p, "end_combat")
+        self.run_priority(until_empty_stack=False)
+
+    def _combat(self, p: Player, opp: Player):
         self.step = "declare_attackers"
         self.attackers, self.blocks, self.attack_targets = [], {}, {}
         self.fire(p, "begin_combat")
