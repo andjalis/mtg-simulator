@@ -334,8 +334,9 @@ class Permanent:
         return out
 
     def can_tap_for_mana(self):
-        return bool(self.card.produces or self.card.restricted_produces or self.granted_mana()) and not self.tapped and \
-            not (self.is_creature and self.sick and self.card.mana_filter != "once")
+        return bool(self.card.produces or self.card.restricted_produces or self.granted_mana()) and \
+            (self.card.mana_sac_no_tap or (not self.tapped and
+             not (self.is_creature and self.sick and self.card.mana_filter != "once")))
 
     def __repr__(self):
         if self.is_creature:

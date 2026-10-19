@@ -1,11 +1,11 @@
 # Bounded behavior evidence
 
-`capabilities.json` declares fourteen supported subsets. `scenarios.json` maps 116
+`capabilities.json` declares fifteen supported subsets. `scenarios.json` maps 136
 unittest methods to those subsets, records expected-value references and identifies
 direct card fixtures. Setup, action sequences and assertions are the linked test
 methods in `tests/test_rules_contracts.py`, `test_identity_events.py`, `test_regeneration.py`,
 `test_return_counters.py`, `test_persist_wither_rebound.py`, `test_zone_actions_layers.py`,
-`test_costs_types_triggers.py` and `test_tokens_phase_conditions.py`; their source and all test helpers enter
+`test_costs_types_triggers.py`, `test_tokens_phase_conditions.py` and `test_named_tokens_counts.py`; their source and all test helpers enter
 the evidence identity. Synthetic or modified card fixtures are capability evidence,
 and are not assigned as direct evidence for the real card.
 
@@ -187,6 +187,29 @@ thresholds, a tapped/untapped source, and the absence of creatures with a suppor
 keyword (including Jadar's decayed check). Intervening-if gates are checked before
 queuing and once when the complete ability starts resolving, rather than between
 its effects. An ordinary conditional sentence inside an ability remains conditional
-on that effect. Arbitrary Boolean predicates, library-size checks and alternate-win
+on that effect. Arbitrary Boolean predicates and alternate-win
 effects remain outside this batch. Tests use Convalescent Care, Hollowborn Barghest,
 Falcon Abomination, Jadar and Imaginary Pet as direct Oracle fixtures, alongside synthetic cases.
+
+## Named/quoted tokens and count conditions
+
+The token template module preserves supported exact names independently of creature
+subtypes, sets legendary status before battlefield entry, and retains artifact and
+enchantment card types. Supported single quoted triggers, static cannot-block and
+P/T-per-permanent abilities become token characteristics. Unknown quoted abilities
+remain gaps. Temporary haste is applied to the created permanent until cleanup and
+does not enter its copiable values.
+
+Quoted sacrifice-for-one-mana abilities feed the existing payment planner without
+tap or summoning-sickness restrictions. One source cannot pay both this mana cost
+and a second sacrifice cost. This is the existing automatic-payment model, not a
+general manual mana-ability interpreter. Multiple/unknown quoted abilities and
+general delayed token creation are outside this subset.
+
+Count conditions support own-library size and controlled permanents, creatures,
+lands, artifacts, enchantments, planeswalkers, tokens, nonland permanents and
+artifact creatures. Articles mean at least one; equality and lower/upper bounds
+are supported; other excludes the trigger's source. Current effective types are
+used. Same-name, different-name, different-power, arbitrary subtype and Boolean
+predicates remain unsupported. Recognizing a library gate does not implement an
+alternate-win effect such as Battle of Wits.

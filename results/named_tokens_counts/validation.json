@@ -1,0 +1,162 @@
+{
+  "after": {
+    "full": 8671,
+    "parse_error": 0,
+    "partial": 26147,
+    "simplified": 104
+  },
+  "base_commit": "c073b3cd562d3c1781c7658673a9aef6ac020fdf",
+  "before": {
+    "full": 8614,
+    "parse_error": 0,
+    "partial": 26204,
+    "simplified": 104
+  },
+  "behavior": {
+    "card_denominator": 34922,
+    "cards_with_current_direct_evidence": 21,
+    "cards_with_only_current_capability_evidence": 34901,
+    "complete_rules_support": "not measured",
+    "outcomes": {
+      "error": 0,
+      "fail": 0,
+      "not_run": 0,
+      "pass": 136,
+      "stale": 0
+    },
+    "run_identity": "8e80a0ba82e88ca964eff037f88f2585282a1ddf15ac5153bd73ac7841cc9106",
+    "scenario_denominator": 136
+  },
+  "behavior_card_join": "Explicit direct fixture names joined to the inventory; other entries share passing base identity capability evidence. This compact summary does not regenerate the full per-card requirements CSV.",
+  "capabilities": [
+    {
+      "evidence_status": "scoped_suite_passes",
+      "id": "targets.creature"
+    },
+    {
+      "evidence_status": "scoped_suite_passes",
+      "id": "sba.legend"
+    },
+    {
+      "evidence_status": "scoped_suite_passes",
+      "id": "stack.equip"
+    },
+    {
+      "evidence_status": "scoped_suite_passes",
+      "id": "zones.object_identity"
+    },
+    {
+      "evidence_status": "scoped_suite_passes",
+      "id": "events.dispatch"
+    },
+    {
+      "evidence_status": "scoped_suite_passes",
+      "id": "replacement.supported"
+    },
+    {
+      "evidence_status": "scoped_suite_passes",
+      "id": "removal.core"
+    },
+    {
+      "evidence_status": "scoped_suite_passes",
+      "id": "graveyard.return"
+    },
+    {
+      "evidence_status": "scoped_suite_passes",
+      "id": "actions.atomic"
+    },
+    {
+      "evidence_status": "scoped_suite_passes",
+      "id": "continuous.pt_keywords"
+    },
+    {
+      "evidence_status": "scoped_suite_passes",
+      "id": "costs.joint"
+    },
+    {
+      "evidence_status": "scoped_suite_passes",
+      "id": "continuous.types_colors"
+    },
+    {
+      "evidence_status": "scoped_suite_passes",
+      "id": "triggers.phase"
+    },
+    {
+      "evidence_status": "scoped_suite_passes",
+      "id": "keywords.decayed"
+    },
+    {
+      "evidence_status": "scoped_suite_passes",
+      "id": "tokens.named_abilities"
+    }
+  ],
+  "code_identity": "badca0add8c024a5f8fddb3307ec2c7c6171f7a30e3b295aed0db49076269061",
+  "corrected_false_full_matches": 10,
+  "database_sha256": "eddc1ae21a3f0dd3b4f2e21d67c24f398fc9252e3bf99d0fd7feb56574b0108c",
+  "direct_fixture_names": [
+    "Angelic Accord",
+    "Arc Runner",
+    "Archwing Dragon",
+    "Asylum Visitor",
+    "Baleful Force",
+    "Convalescent Care",
+    "Copper Tablet",
+    "Dragonmaster Outcast",
+    "Edgewall Pack",
+    "Falcon Abomination",
+    "Hollowborn Barghest",
+    "Imaginary Pet",
+    "Isamaru, Hound of Konda",
+    "Jadar, Ghoulcaller of Nephalia",
+    "Nest Invader",
+    "Pest Summoning",
+    "Scute Mob",
+    "Shuko",
+    "Sliversmith",
+    "The Hive",
+    "Verdant Force"
+  ],
+  "inventory_code_identity": "d35925a8c6d47768b5f1bdc3dd8b7fb807621bfbac1de5c7375380122ac2976d",
+  "inventory_note": "Inventory started before the engine-only tapped-entry correction. Parser, classifier and catalog inputs were unchanged. Its embedded scenario run used the pre-fix imported engine and failed the tapped-entry assertion; that embedded run is superseded by the independent fresh-process replay on final code.",
+  "inventory_only_code_difference": [
+    "engine/battlefield.py"
+  ],
+  "inventory_total": 34922,
+  "latest_main_compatibility": {
+    "conflicts": 0,
+    "focused_tests_passed": 71,
+    "full_suite_on_merge_tree": false,
+    "main_commit": "a1919d5",
+    "merge_tree": "fb6987f146e62d658a2b9b4aa6f081c0919672df"
+  },
+  "lint": {
+    "findings": 0
+  },
+  "new_full_matches": 67,
+  "ordinary_lookup_parity_samples": 100,
+  "parse_diff": {
+    "entries": 34922,
+    "limitation": "The existing tool compares name-only repr(CardDef). See coverage-delta.json for real inventory changes.",
+    "local_command": "python3 scripts/parse_diff.py local --show 5",
+    "local_exit_code": 0,
+    "new_exceptions": 0,
+    "reported_changed_parses": 0
+  },
+  "parse_errors": [],
+  "smoke": {
+    "command": "python3 -m mtgsim.benchmark --engine builtin -n 20 --out /tmp/mtg-named-count-smoke",
+    "games": 80,
+    "identity": "4da625304b3daa865997fe30d770fac007a7154b88232eaa963e636fd386625e",
+    "pairings": 4,
+    "result_log_and_source_hashes_verified": true,
+    "results_sha256": "2642ae7b5d15d2293d78b4b7c23ae2da3661993e9f4e29ce79e33f53b8ae144c"
+  },
+  "tests": {
+    "command": "python3 -m unittest discover -s tests -t . -q",
+    "failures": 0,
+    "passed": 952,
+    "run": 953,
+    "seconds": 287.71,
+    "skipped": 1
+  }
+}

@@ -157,15 +157,20 @@ class BattlefieldMixin:
         for _ in range(count):
             card = make_token(d.get("name", ""), d.get("power", 0), d.get("toughness", 0), d.get("keywords", ()),
                               d.get("triggers"), d.get("kind", ""), d.get("artifact", False), d.get("pt_per", ""),
-                              colors=d.get("colors", ()))
+                              colors=d.get("colors", ()), enchantment=d.get("enchantment", False))
+            if d.get("token_name") or d.get("legendary") or d.get("cant_block"):
+                card = dataclasses.replace(card, name=d.get("token_name", card.name),
+                                           legendary=d.get("legendary", False), cant_block=d.get("cant_block", False))
+            if d.get("sacrifice_mana"):
+                card = dataclasses.replace(card, produces=frozenset(d["sacrifice_mana"]),
+                                           mana_sac=True, mana_sac_no_tap=True)
             if d.get("mercenary"):
                 card = dataclasses.replace(card, activated=[Activated("ability", {"generic": 0}, effects=[
                     Effect("pump", 1, 0, target="creature_mine")], extra_costs={"tap": True}, sorcery=True,
                     text="{T}: Target creature you control gets +1/+0 until end of turn.")])
             perm = self.enter_battlefield(p, card, tapped_attacking=d.get("attacking", False) and self.step in
-                                          ("declare_attackers", "declare_blockers"))
-            if d.get("tapped"):
-                perm.tapped = True
+                                          ("declare_attackers", "declare_blockers"), tapped=d.get("tapped", False))
+            perm.temp_kw.update(d.get("temp_keywords", ()))
         self.log(f"creates {n if n is not None else eff.amount} {d.get('kind') or d.get('name')} token(s)", p)
 
     def transform(self, perm: Permanent):

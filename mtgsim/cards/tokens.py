@@ -18,7 +18,7 @@ TOKEN_ABILITIES = {
 
 
 def make_token(name: str, power: int, toughness: int, keywords=frozenset(), triggers=None, kind: str = "",
-               artifact: bool = False, pt_per: str = "", colors=frozenset()) -> CardDef:
+               artifact: bool = False, pt_per: str = "", colors=frozenset(), enchantment: bool = False) -> CardDef:
     """A token's CardDef. kind is treasure/clue/blood for artifact tokens."""
     if kind:
         produces = frozenset(COLORS) if kind == "treasure" else frozenset()
@@ -27,7 +27,8 @@ def make_token(name: str, power: int, toughness: int, keywords=frozenset(), trig
                        subtypes=frozenset({kind.capitalize()}), produces=produces, token_kind=kind, is_token=True,
                        activated=activated)
     return CardDef(name=f"{name} token", mana_cost={"generic": 0}, cmc=0,
-                   types=frozenset({"Creature", "Artifact"} if artifact else {"Creature"}),
+                   types=frozenset({"Creature"} | ({"Artifact"} if artifact else set()) |
+                                   ({"Enchantment"} if enchantment else set())),
                    subtypes=frozenset(name.split()) - {"Token"}, power=power, toughness=toughness,
                    keywords=frozenset(keywords), triggers=list(triggers or []), is_token=True, pt_per=pt_per, color_override=frozenset(colors))
 

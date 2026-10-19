@@ -1,0 +1,1306 @@
+{
+  "after": {
+    "full": 8671,
+    "parse_error": 0,
+    "partial": 26147,
+    "simplified": 104
+  },
+  "base_commit": "c073b3cd562d3c1781c7658673a9aef6ac020fdf",
+  "before": {
+    "full": 8614,
+    "parse_error": 0,
+    "partial": 26204,
+    "simplified": 104
+  },
+  "changes": [
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "You TOKENABILITY create a 1/1 colorless Eldrazi Scion creature token || Sacrifice ~: Add {C}.",
+      "ignored_before": "You create a 1/1 colorless Eldrazi Scion creature token.\nIt has \"Sacrifice ~: Add {C}.\"",
+      "name": "Abstruse Interference",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Those creatures don't untap during their controller's next untap step.",
+      "ignored_before": "Those creatures don't untap during their controller's next untap step.\nIt has \"Sacrifice ~: Add {C}.\"",
+      "name": "Adverse Conditions",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "If you control no artifacts, discard a card.",
+      "name": "Artificer's Epiphany",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "[+1]: Create a 2/3 blue and black Nightmare creature token with \"Whenever ~ attacks or blocks, each opponent exiles the top two cards of their library.\"\n[\u22123]: Return target nonland permanent to its owner's hand, then that player exiles a card from their hand.\n[\u22127]: You may cast up to three spells from among face-up cards your opponents own from exile without paying their mana costs.",
+      "ignored_before": "[\u22123]: Return target nonland permanent to its owner's hand, then that player exiles a card from their hand.\n[\u22127]: You may cast up to three spells from among face-up cards your opponents own from exile without paying their mana costs.",
+      "name": "Ashiok, Nightmare Muse",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "you may TOKENABILITY create a 0/1 colorless Eldrazi Spawn creature token || Sacrifice ~: Add {C}.",
+      "ignored_before": "you may create a 0/1 colorless Eldrazi Spawn creature token.\nIt has \"Sacrifice ~: Add {C}.\"",
+      "name": "Awakening Zone",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "full",
+      "ignored_after": "create a 1/1 colorless Spirit creature token with \"~ can't block or be blocked by non-Spirit creatures.\"",
+      "ignored_before": "",
+      "name": "Baboon Spirit",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "full",
+      "ignored_after": "Create a 1/1 colorless Pilot creature token with \"~ saddles Mounts and crews Vehicles as though its power were 2 greater.\"",
+      "ignored_before": "",
+      "name": "Back on Track",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Unsupported token keywords: toxic 1",
+      "ignored_before": "create two 1/1 colorless Phyrexian Mite artifact creature tokens with toxic 1 and \"~ can't block.\"",
+      "name": "Basilica Shepherd",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "I, II \u2014 For each player, exile up to one target non-Saga, nonland permanent that player controls until ~ leaves the battlefield.",
+      "ignored_before": "I, II \u2014 For each player, exile up to one target non-Saga, nonland permanent that player controls until ~ leaves the battlefield.\nIII \u2014 Create Avacyn, a legendary 8/8 white Angel creature token with flying, vigilance, and indestructible.",
+      "name": "Battle at the Helvault",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "They have \"Sacrifice ~: Add {C}.\"",
+      "name": "Birthing Hulk",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control three or more artifacts, ~ gets +3/+3 and gains haste until end of turn.",
+      "name": "Blade-Tribe Berserkers",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "It has \"Sacrifice ~: Add {C}.\"",
+      "name": "Blisterpod",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "If you control an Eldrazi Spawn, TOKENABILITY create three 0/1 colorless Eldrazi Spawn creature tokens || Sacrifice ~: Add {C}.\nOtherwise, create one of those tokens.",
+      "ignored_before": "If you control an Eldrazi Spawn, create three 0/1 colorless Eldrazi Spawn creature tokens.\nThey have \"Sacrifice ~: Add {C}.\" Otherwise, create one of those tokens.",
+      "name": "Brood Birthing",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "It has \"Sacrifice ~: Add {C}.\"",
+      "name": "Brood Butcher",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "They have \"Sacrifice ~: Add {C}.\"",
+      "name": "Brood Monitor",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "if kicked: instead create a token that's a copy of Emrakul, the Promised End.",
+      "ignored_before": "It has \"Sacrifice ~: Add {C}.\"\nif kicked: instead create a token that's a copy of Emrakul, the Promised End.",
+      "name": "Call Up Emrakul to Help",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "They have \"Sacrifice ~: Add {C}.\"",
+      "name": "Call the Scions",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "It has \"Sacrifice ~: Add {C}.\"",
+      "name": "Carrier Thrall",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "It has \"Sacrifice ~: Add {C}.\"",
+      "name": "Catacomb Sifter",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control seven or more permanents, return ~ to its owner's hand.",
+      "name": "Complex Automaton",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "They have \"Sacrifice ~: Add {C}.\"",
+      "name": "Corpsehatch",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Toxic 1\nUnsupported token keywords: toxic 1",
+      "ignored_before": "Toxic 1\ncreate a 1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and \"~ can't block.\"",
+      "name": "Crawling Chorus",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "Unsupported token keywords: flying named storm crow",
+      "name": "Crow Storm",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "They have \"When ~ dies, it deals 1 damage to any target.\"",
+      "name": "Dance with Devils",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "\u2022 Target permanent you control gains hexproof and indestructible until end of turn.\n\u2022 Create a 1/1 colorless Pilot creature token with \"~ saddles Mounts and crews Vehicles as though its power were 2 greater.\"",
+      "ignored_before": "\u2022 Target permanent you control gains hexproof and indestructible until end of turn.",
+      "name": "Defend the Rider",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control exactly one creature, create a 5/5 black Demon creature token with flying.",
+      "name": "Demonic Rising",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "They have \"When ~ dies, it deals 1 damage to any target.\"",
+      "name": "Devils' Playground",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control an artifact, draw a card.",
+      "name": "Donatello, Turtle Techie",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control six or more lands, create a 5/5 red Dragon creature token with flying.",
+      "name": "Dragonmaster Outcast",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "They have \"Sacrifice ~: Add {C}.\"",
+      "name": "Dread Drone",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Whenever a creature dies, if it had power greater than ~'s power, put a number of +1/+1 counters on ~ equal to the difference.",
+      "ignored_before": "create Guenhwyvar, a legendary 4/1 green Cat creature token with trample.\nWhenever a creature dies, if it had power greater than ~'s power, put a number of +1/+1 counters on ~ equal to the difference.",
+      "name": "Drizzt Do'Urden",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Sacrifice an Eldrazi Scion: Tap target creature.",
+      "ignored_before": "They have \"Sacrifice ~: Add {C}.\"\nSacrifice an Eldrazi Scion: Tap target creature.",
+      "name": "Drowner of Hope",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control three or more creatures, return target permanent card from your graveyard to your hand.",
+      "name": "Dundoolin Weaver",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Cycling\u2014Sacrifice a land.",
+      "ignored_before": "If you control four or fewer lands, FETCHBASIC.\nCycling\u2014Sacrifice a land.",
+      "name": "Edge of Autumn",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "It has \"Sacrifice ~: Add {C}.\"",
+      "name": "Eldrazi Skyspawner",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "They have \"Sacrifice ~: Add {C}.\"",
+      "name": "Emrakul's Hatcher",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Target player loses 3 life.",
+      "ignored_before": "Target player loses 3 life.\nThey have \"Sacrifice ~: Add {C}.\"",
+      "name": "Essence Feed",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "full",
+      "ignored_after": "{1}{U}, Exile this card from your graveyard: Create a 1/1 blue Fish creature token with \"~ can't be blocked.\" Activate only as a sorcery.",
+      "ignored_before": "",
+      "name": "Expendable Lackey",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Magecraft \u2014 Whenever you cast or copy an instant or sorcery spell, return target nonlegendary creature card from your graveyard to your hand.\nAwaken the Blood Avatar: As an additional cost to cast ~, you may sacrifice any number of creatures.\nAwaken the Blood Avatar: ~ costs {2} less to cast for each creature sacrificed this way.",
+      "ignored_before": "Magecraft \u2014 Whenever you cast or copy an instant or sorcery spell, return target nonlegendary creature card from your graveyard to your hand.\nAwaken the Blood Avatar: As an additional cost to cast ~, you may sacrifice any number of creatures.\nAwaken the Blood Avatar: ~ costs {2} less to cast for each creature sacrificed this way.\nAwaken the Blood Avatar: Create a 3/6 black and red Avatar creature token with haste and \"Whenever ~ attacks, it deals 3 damage to each opponent.\"",
+      "name": "Extus, Oriq Overlord // Awaken the Blood Avatar",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "They have \"Sacrifice ~: Add {C}.\"",
+      "name": "Eyeless Watcher",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "full",
+      "ignored_after": "create a 1/1 colorless Spirit creature token with \"~ can't block or be blocked by non-Spirit creatures.\"",
+      "ignored_before": "",
+      "name": "Foggy Swamp Spirit Keeper",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "[+2]: Create a 1/1 green Elf Druid creature token with \"{T}: Add {G}.\"\n~ can be your commander.",
+      "ignored_before": "~ can be your commander.",
+      "name": "Freyalise, Llanowar's Fury",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "It has \"Sacrifice ~: Add {C}.\"",
+      "name": "From Beyond",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control no artifacts, sacrifice ~.",
+      "name": "Glimmervoid",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Then if you control eight or more artifacts, each opponent loses life equal to that card's power.",
+      "ignored_before": "if you control four or more artifacts, return target creature card from your graveyard to your hand.\nThen if you control eight or more artifacts, each opponent loses life equal to that card's power.",
+      "name": "Golbez, Crystal Collector",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Target opponent exiles a card from their graveyard.\nYou TOKENABILITY create a 1/1 colorless Eldrazi Scion creature token || Sacrifice ~: Add {C}.",
+      "ignored_before": "Target opponent exiles a card from their graveyard.\nYou create a 1/1 colorless Eldrazi Scion creature token.\nIt has \"Sacrifice ~: Add {C}.\"",
+      "name": "Grave Birthing",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control four or more creatures, transform ~.",
+      "name": "Growing Rites of Itlimoc // Itlimoc, Cradle of the Sun",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "It has \"Sacrifice ~: Add {C}.\"",
+      "name": "Growth Spasm",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control four or more creatures, transform ~.",
+      "name": "Hanweir Militia Captain // Westvale Cult Leader",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Power-up abilities of other creatures you control cost {3} less to activate.",
+      "ignored_before": "Power-up abilities of other creatures you control cost {3} less to activate.\nPower-up \u2014 {6}{R}{G}: Put five +1/+1 counters on ~.",
+      "name": "Hulk, Gamma Goliath",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "It has \"Sacrifice ~: Add {C}.\"",
+      "name": "Incubator Drone",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "{4}, {T}, Sacrifice ~: Search your library for an artifact card, reveal it, put it into your hand, then shuffle. Activate only if you control three or more artifacts.",
+      "ignored_before": "if you control three or more artifacts, you gain 1 life.\n{4}, {T}, Sacrifice ~: Search your library for an artifact card, reveal it, put it into your hand, then shuffle. Activate only if you control three or more artifacts.",
+      "name": "Inventors' Fair",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "[+1]: Whenever one or more creatures you control deal combat damage to a player this turn, draw a card, then discard a card.\n[\u22122]: Create a 2/2 blue Illusion creature token with \"When ~ becomes the target of a spell, sacrifice it.\"",
+      "ignored_before": "[+1]: Whenever one or more creatures you control deal combat damage to a player this turn, draw a card, then discard a card.",
+      "name": "Jace, Cunning Castaway",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "untap all tokens you control.",
+      "ignored_before": "create Mowu, a legendary 3/3 green Dog creature token.\nuntap all tokens you control.",
+      "name": "Jiang Yanggu, Never Alone",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Whenever a player attacks one or more of your opponents, that attacking player creates a Treasure token.\nIf you would create one or more Treasure tokens, instead create those tokens plus an additional Treasure token.",
+      "ignored_before": "Whenever a player attacks one or more of your opponents, that attacking player creates a Treasure token.\nIf you would create one or more Treasure tokens, instead create those tokens plus an additional Treasure token.\nSacrifice five Treasures: Put five +1/+1 counters on ~.",
+      "name": "Jolene, the Plunder Queen",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "I \u2014 Create a 1/1 green Human Monk creature token with \"{T}: Add {G}.\"\nRemnant of the Rising Star: you may pay {X}.\nRemnant of the Rising Star: When you do, put X +1/+1 counters on that creature.\nRemnant of the Rising Star: As long as you control five or more modified creatures, ~ gets +5/+5 and has trample.",
+      "ignored_before": "Remnant of the Rising Star: you may pay {X}.\nRemnant of the Rising Star: When you do, put X +1/+1 counters on that creature.\nRemnant of the Rising Star: As long as you control five or more modified creatures, ~ gets +5/+5 and has trample.",
+      "name": "Jugan Defends the Temple // Remnant of the Rising Star",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Sacrifice a token named Wood: Add {R}.",
+      "ignored_before": "{1}{G}, {T}: Create a 0/1 green Wall creature token with defender named Wood.\nSacrifice a token named Wood: Add {R}.",
+      "name": "Jungle Patrol",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "if ~ entered this turn, he phases out.\n[\u22122]: Create a 1/1 blue Ninja creature token with \"~ can't be blocked.\"\n[\u22127]: You get an emblem with \"Whenever a creature you control deals combat damage to a player, search your library for a blue or black creature card, put it onto the battlefield, then shuffle.\"",
+      "ignored_before": "if ~ entered this turn, he phases out.\n[\u22127]: You get an emblem with \"Whenever a creature you control deals combat damage to a player, search your library for a blue or black creature card, put it onto the battlefield, then shuffle.\"",
+      "name": "Kaito Shizuki",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Whenever one or more creatures you control deal combat damage to a player, you may return one of them to its owner's hand. If you do, you may activate loyalty abilities of ~ twice this turn rather than only once.\n[+1]: Up to one target creature can't attack or block until your next turn.",
+      "ignored_before": "Whenever one or more creatures you control deal combat damage to a player, you may return one of them to its owner's hand. If you do, you may activate loyalty abilities of ~ twice this turn rather than only once.\n[+1]: Up to one target creature can't attack or block until your next turn.\n[\u22122]: Create a 2/2 colorless Drone artifact creature token with deathtouch and \"When ~ leaves the battlefield, each opponent loses 2 life and you gain 2 life.\"",
+      "name": "Kaito, Dancing Shadow",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Ragavan enters tapped and attacking.\nExile that token at end of combat.",
+      "ignored_before": "create Ragavan, a legendary 2/1 red Monkey creature token.\nRagavan enters tapped and attacking.\nExile that token at end of combat.",
+      "name": "Kari Zev, Skyship Raider",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Sacrifice another Serpent or Squirrel: Choose one \u2014\n\u2022 Target creature attacks this turn if able. Its activated abilities can't be activated this turn.\n\u2022 ~ gains indestructible until end of turn.",
+      "ignored_before": "create a 1/1 Phyrexian Serpent Squirrel artifact creature token named Toski's Coil with \"Whenever ~ deals combat damage to a player, draw a card.\"\nSacrifice another Serpent or Squirrel: Choose one \u2014\n\u2022 Target creature attacks this turn if able. Its activated abilities can't be activated this turn.\n\u2022 ~ gains indestructible until end of turn.",
+      "name": "Koma and Toski, Compleated",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "They have \"Sacrifice ~: Add {C}.\"",
+      "name": "Kozilek's Predator",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control eight or more lands, creatures you control get +2/+2 until end of turn.",
+      "name": "Kyoshi Warrior Exemplars",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control an enchantment, you gain 3 life.",
+      "name": "Lagonna-Band Elder",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control three or more creatures, ~ gets +1/+1 until end of turn and you gain 1 life.",
+      "name": "Leonin Vanguard",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control no other creatures, DIG 4 1.",
+      "name": "Lone Revenant",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "full",
+      "ignored_after": "Create a 1/1 colorless Spirit creature token with \"~ can't block or be blocked by non-Spirit creatures.\"",
+      "ignored_before": "",
+      "name": "Lost in the Spirit World",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control three or more artifacts, return target creature to its owner's hand.",
+      "name": "Lumengrid Drake",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "full",
+      "ignored_after": "create a 1/1 blue Wizard creature token with \"{1}, Sacrifice ~: Counter target noncreature spell unless its controller pays {1}.\"",
+      "ignored_before": "",
+      "name": "Mage's Attendant",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "It has \"When ~ dies, it deals 1 damage to any target.\"",
+      "name": "Make Mischief",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "create a 1/1 blue Illusion creature token with \"~ gets +1/+0 for each other Illusion you control.\"\nWhenever an Illusion you control dies, you may put a permanent card with mana value less than or equal to that creature's power from your hand onto the battlefield.",
+      "ignored_before": "Whenever an Illusion you control dies, you may put a permanent card with mana value less than or equal to that creature's power from your hand onto the battlefield.",
+      "name": "Minn, Wily Illusionist",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "{X}: Until end of turn, target creature you control has base power and toughness X/X and becomes a Giant in addition to its other types. Activate only as a sorcery.",
+      "ignored_before": "create Boo, a legendary 1/1 red Hamster creature token with trample and haste.\n{X}: Until end of turn, target creature you control has base power and toughness X/X and becomes a Giant in addition to its other types. Activate only as a sorcery.",
+      "name": "Minsc, Beloved Ranger",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "They have \"When ~ dies, create two 1/1 green Ooze creature tokens.\"",
+      "name": "Mitotic Slime",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "create a 1/1 green Minion creature token named Moloid with \"Whenever ~ attacks, you may mill a card.\"",
+      "name": "Mole Man, Moloid Master",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "It has \"Sacrifice ~: Add {C}.\"",
+      "name": "Nest Invader",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "if you control seven or more lands, exile ~, then return her to the battlefield transformed under her owner's control.\nNissa, Sage Animist: [+1]: Reveal the top card of your library.\nNissa, Sage Animist: [+1]: If it's a land card, put it onto the battlefield.\nNissa, Sage Animist: [+1]: Otherwise, put it into your hand.\nNissa, Sage Animist: [\u22127]: Untap up to six target lands.\nNissa, Sage Animist: [\u22127]: They become 6/6 Elemental creatures.\nNissa, Sage Animist: [\u22127]: They're still lands.",
+      "ignored_before": "if you control seven or more lands, exile ~, then return her to the battlefield transformed under her owner's control.\nNissa, Sage Animist: [+1]: Reveal the top card of your library.\nNissa, Sage Animist: [+1]: If it's a land card, put it onto the battlefield.\nNissa, Sage Animist: [+1]: Otherwise, put it into your hand.\nNissa, Sage Animist: [\u22122]: Create Ashaya, the Awoken World, a legendary 4/4 green Elemental creature token.\nNissa, Sage Animist: [\u22127]: Untap up to six target lands.\nNissa, Sage Animist: [\u22127]: They become 6/6 Elemental creatures.\nNissa, Sage Animist: [\u22127]: They're still lands.",
+      "name": "Nissa, Vastwood Seer // Nissa, Sage Animist",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "it deals damage to any target equal to the number of Elementals you control.\nput a +1/+1 counter on target Elemental you control.",
+      "ignored_before": "it deals damage to any target equal to the number of Elementals you control.\nput a +1/+1 counter on target Elemental you control.\nIf you control eight or more lands, draw a card.",
+      "name": "Omnath, Locus of the Roil",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Eldrazi you control have \"{T}: Add one mana of any color.\"\nWhenever you cast a creature spell with mana value 7 or greater, you gain 4 life.",
+      "ignored_before": "create two 0/1 colorless Eldrazi Spawn creature tokens with \"Sacrifice ~: Add {C}.\"\nEldrazi you control have \"{T}: Add one mana of any color.\"\nWhenever you cast a creature spell with mana value 7 or greater, you gain 4 life.",
+      "name": "Path of Annihilation",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "Create two 1/1 black and green Pest creature tokens with \"When ~ dies, you gain 1 life.\"",
+      "name": "Pest Summoning",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "create two 1/1 black and green Pest creature tokens with \"Whenever ~ attacks, you gain 1 life.\"",
+      "name": "Pestbrood Sloth",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Unearth {2}{W}{W}",
+      "ignored_before": "if you control two or more other creatures, draw a card.\nUnearth {2}{W}{W}",
+      "name": "Platoon Dispenser",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "Pest Problem: Create two 1/1 black Rat creature tokens with \"~ can't block.\"",
+      "name": "Ratcatcher Trainee // Pest Problem",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "full",
+      "ignored_after": "{3}{B}, {T}: Create a 1/1 colorless Spirit creature token with \"~ can't block or be blocked by non-Spirit creatures.\"",
+      "ignored_before": "",
+      "name": "Realm of Koh",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "create two 1/1 black Rat creature tokens with \"~ can't block.\"",
+      "name": "Redcap Gutter-Dweller",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "full",
+      "ignored_after": "create a 3/3 blue Fish creature token with \"When ~ dies, create a 6/6 blue Whale creature token with 'When ~ dies, create a 9/9 blue Kraken creature token.'\"",
+      "ignored_before": "",
+      "name": "Reef Worm",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "If you control an artifact, draw a card.",
+      "name": "Resourceful Return",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Angelo Cannon \u2014 Whenever ~ attacks, another target creature you control gets +1/+1 until end of turn for each creature you control.",
+      "ignored_before": "create Angelo, a legendary 1/1 green and white Dog creature token.\nAngelo Cannon \u2014 Whenever ~ attacks, another target creature you control gets +1/+1 until end of turn for each creature you control.",
+      "name": "Rinoa Heartilly",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "create a 1/1 colorless Pilot creature token with \"~ saddles Mounts and crews Vehicles as though its power were 2 greater.\"\nEnchanted permanent gets +1/+1 and has lifelink.",
+      "ignored_before": "Enchanted permanent gets +1/+1 and has lifelink.",
+      "name": "Roadside Assistance",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control three or more tokens, ~ gets +2/+0 and gains first strike until end of turn.",
+      "name": "Sanctuary Raptor",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control an artifact, draw a card.",
+      "name": "Scholar of Stars",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "It has \"Sacrifice ~: Add {C}.\"",
+      "name": "Scion Summoner",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control three or more artifacts, that player mills four cards.",
+      "name": "Screeching Silcaw",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control five or more lands, put four +1/+1 counters on ~.",
+      "name": "Scute Mob",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "If ~ would enter, instead sacrifice each other permanent named ~ you control, then put ~ onto the battlefield.",
+      "ignored_before": "If ~ would enter, instead sacrifice each other permanent named ~ you control, then put ~ onto the battlefield.\nif you control three or fewer lands, you gain 1 life.",
+      "name": "Sheltered Valley",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "full",
+      "ignored_after": "{1}, {T}: Draw two cards, then discard a card. Create a 1/1 colorless Pilot creature token with \"~ crews Vehicles as though its power were 2 greater.\"",
+      "ignored_before": "",
+      "name": "Shorikai, Genesis Engine",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "It has \"Sacrifice ~: Add {C}.\"",
+      "name": "Sifter of Skulls",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "{B}, {T}, Discard a card: Create a 1/1 black Zombie Goblin creature token named Festering Goblin. It has \"When ~ dies, target creature gets -1/-1 until end of turn.\"",
+      "name": "Skirk Ridge Exhumer",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "They have \"Sacrifice ~: Add {C}.\"",
+      "name": "Skittering Invasion",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Eldrazi you control are Slivers in addition to their other types.\nSlivers you control have devoid and annihilator 1.",
+      "ignored_before": "Eldrazi you control are Slivers in addition to their other types.\nSlivers you control have devoid and annihilator 1.\n{3}: Create a 1/1 colorless Eldrazi Sliver creature token. It has \"Sacrifice ~: Add {C}.\"",
+      "name": "Slivdrazi Monstrosity",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control a token, tap enchanted creature, then scry 2.",
+      "name": "So Shiny",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "{1}, Sacrifice an artifact token: Put a +1/+1 counter on each Dog you control.\nWhenever a Dog you control deals combat damage to a player, create a Food token, then investigate.",
+      "ignored_before": "create Tiny, a legendary 2/2 green Dog Detective creature token with trample.\n{1}, Sacrifice an artifact token: Put a +1/+1 counter on each Dog you control.\nWhenever a Dog you control deals combat damage to a player, create a Food token, then investigate.",
+      "name": "Sophia, Dogged Detective",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "Create two 1/1 colorless Eldrazi Scion creature tokens with \"Sacrifice ~: Add {C}.\"",
+      "name": "Spawnbed Protector",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "{6}, {T}, Sacrifice ~: Create three 1/1 colorless Eldrazi Scion creature tokens. They have \"Sacrifice ~: Add {C}.\"",
+      "name": "Spawning Bed",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "It has \"Sacrifice ~: Add {C}.\"",
+      "name": "Spawning Breath",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Annihilator 1\n{20}: Cast any number of Eldrazi spells from among cards you own outside the game without paying their mana costs.",
+      "ignored_before": "Annihilator 1\n{4}: Create two 0/1 colorless Eldrazi Spawn creature tokens. They have \"Sacrifice ~: Add {C}.\"\n{20}: Cast any number of Eldrazi spells from among cards you own outside the game without paying their mana costs.",
+      "name": "Spawnsire of Ulamog",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Toxic 1\nUnsupported token keywords: toxic 1",
+      "ignored_before": "Toxic 1\ncreate a 1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and \"~ can't block.\"",
+      "name": "Stinging Hivemaster",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "Unsupported token keywords: defender named stone boulder",
+      "name": "Stone-Giant of High Pass",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Whenever one or more creatures you control deal combat damage to a player, create a Treasure token.",
+      "ignored_before": "Whenever one or more creatures you control deal combat damage to a player, create a Treasure token.\nif you control five or more artifacts, transform ~.",
+      "name": "Storm the Vault // Vault of Catlacan",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "create two 1/1 black Fungus creature tokens with \"~ can't block.\"",
+      "name": "Synapse Necromage",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "If you control an enchantment, scry 2.",
+      "name": "Taken by Nightmares",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "[\u221212]: Target opponent chooses a permanent they control and returns it to its owner's hand.\n[\u221212]: Then they shuffle each nonland permanent they control into its owner's library.",
+      "ignored_before": "[\u22122]: Create a 2/2 blue Spirit creature token with vigilance and \"Whenever you draw a card, put a +1/+1 counter on ~.\"\n[\u221212]: Target opponent chooses a permanent they control and returns it to its owner's hand.\n[\u221212]: Then they shuffle each nonland permanent they control into its owner's library.",
+      "name": "Teferi, Temporal Pilgrim",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "If you control an artifact, draw a card.",
+      "name": "Temporal Machinations",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "If you control no artifacts, discard a card.",
+      "name": "Tezzeret's Ambition",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control seven or more lands, transform ~.",
+      "name": "Thaumatic Compass // Spires of Orazca",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "I \u2014 All artifacts and creatures phase out.\nI \u2014 Create a 0/1 white Human creature token with \"Permanents can't phase in.\"\nII \u2014 You draw two cards and each player loses 2 life.\nIII \u2014 Sacrifice a creature token.\nIII \u2014 If you do, you gain 5 life.",
+      "ignored_before": "I \u2014 All artifacts and creatures phase out.\nII \u2014 You draw two cards and each player loses 2 life.\nIII \u2014 Sacrifice a creature token.\nIII \u2014 If you do, you gain 5 life.",
+      "name": "The City on the Edge of Forever",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "I \u2014 Create a 1/1 white Human Noble creature token with vanishing 3 and \"Prevent all damage that would be dealt to ~.\"\nII \u2014 Create a 2/2 white Horse creature token with \"Doctors you control have horsemanship.\"\nIII \u2014 Whenever a creature you control deals combat damage to a player this turn, time travel.",
+      "ignored_before": "I \u2014 Create a 1/1 white Human Noble creature token with vanishing 3 and \"Prevent all damage that would be dealt to ~.\"\nIII \u2014 Whenever a creature you control deals combat damage to a player this turn, time travel.",
+      "name": "The Girl in the Fireplace",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "{5}, {T}: Create a 1/1 colorless Insect artifact creature token with flying named Wasp.",
+      "name": "The Hive",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Avatar Kuruk: create a 1/1 colorless Spirit creature token with \"~ can't block or be blocked by non-Spirit creatures.\"\nAvatar Kuruk: Exhaust \u2014 {20}: Take an extra turn after this one.",
+      "ignored_before": "Avatar Kuruk: Exhaust \u2014 {20}: Take an extra turn after this one.",
+      "name": "The Legend of Kuruk // Avatar Kuruk",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "full",
+      "ignored_after": "create a 2/2 white Human Knight creature token with \"~ gets +2/+2 as long as an artifact entered the battlefield under your control this turn.\"",
+      "ignored_before": "",
+      "name": "The Prydwen, Steel Flagship",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Whenever one or more artifact creatures you control deal combat damage to a player, draw a card.",
+      "ignored_before": "if you control an artifact, create a 1/1 colorless Thopter artifact creature token with flying.\nWhenever one or more artifact creatures you control deal combat damage to a player, draw a card.",
+      "name": "Thopter Spy Network",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "create a 4/4 white Beast creature token with \"~ can't attack or block alone.\"\nAs long as you control four or more creature tokens, creature tokens you control have flying.",
+      "ignored_before": "As long as you control four or more creature tokens, creature tokens you control have flying.",
+      "name": "Toby, Beastie Befriender",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Other green creatures you control get +1/+1.\nOther white creatures you control get +1/+1.",
+      "ignored_before": "Other green creatures you control get +1/+1.\nOther white creatures you control get +1/+1.\n{T}: Create Voja, a legendary 2/2 green and white Wolf creature token.",
+      "name": "Tolsimir Wolfblood",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "create Voja, Friend to Elves, a legendary 3/3 green and white Wolf creature token.",
+      "name": "Tolsimir, Friend to Wolves",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Whenever a Wolf you control attacks, if ~ attacked this combat, target creature an opponent controls blocks that Wolf this combat if able.",
+      "ignored_before": "create Voja Fenstalker, a legendary 5/5 green and white Wolf creature token with trample.\nWhenever a Wolf you control attacks, if ~ attacked this combat, target creature an opponent controls blocks that Wolf this combat if able.",
+      "name": "Tolsimir, Midnight's Light",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "if you control an artifact, ~ gets +2/+1 until end of turn.\nIf you control three or more artifacts, it also gains first strike until end of turn.",
+      "name": "Toolcraft Exemplar",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "\u2022 Creatures you don't control get -2/-0 until end of turn.\n\u2022 Create a tapped Powerstone token.",
+      "ignored_before": "\u2022 Creatures you don't control get -2/-0 until end of turn.\n\u2022 Create a tapped Powerstone token.\n\u2022 Create a tapped 0/0 colorless Construct artifact creature token with \"~ gets +1/+1 for each artifact you control.\"",
+      "name": "Urza's Command",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Menace, toxic 1\nUnsupported token keywords: toxic 1\n~ gets +1/+1 for each poison counter your opponents have.",
+      "ignored_before": "Menace, toxic 1\ncreate three 1/1 colorless Phyrexian Mite artifact creature tokens with toxic 1 and \"~ can't block.\"\n~ gets +1/+1 for each poison counter your opponents have.",
+      "name": "Vishgraz, the Doomhive",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "If you do, put six +1/+1 counters on ~.",
+      "name": "Vorosh, the Hunter",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Artifact creatures you control have vigilance.\ncreate a 1/1 colorless Sculpture Treasure artifact creature token with \"{T}, Sacrifice ~: Add one mana of any color.\"",
+      "ignored_before": "Artifact creatures you control have vigilance.",
+      "name": "Vraska, Soul of Stone",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "{U}{U}, {T}: Create a 0/1 blue Plant Wall creature token with defender named Kelp.",
+      "name": "Wall of Kelp",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "\u2022 Exile target creature with power or toughness 1 or less.\n\u2022 Counter target sorcery spell.",
+      "ignored_before": "\u2022 Exile target creature with power or toughness 1 or less.\n\u2022 Counter target sorcery spell.\n\u2022 Create a 1/1 colorless Eldrazi Scion creature token. It has \"Sacrifice ~: Add {C}.\"",
+      "name": "Warping Wail",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "full",
+      "before": "partial",
+      "ignored_after": "",
+      "ignored_before": "Create three 1/1 green Boar creature tokens with \"When ~ dies, create a Food token.\"",
+      "name": "Wolf's Quarry",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "[0]: Create a 1/1 white Cat creature token with \"{T}: Put a loyalty counter on each planeswalker you control.\"\n[\u22128]: Create ten Scryb Sprites tokens.\n~ can be your commander.",
+      "ignored_before": "[\u22128]: Create ten Scryb Sprites tokens.\n~ can be your commander.",
+      "name": "Worzel, the Protector",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    },
+    {
+      "after": "partial",
+      "before": "partial",
+      "ignored_after": "Read ahead\nII \u2014 Tap any number of untapped artifacts you control.\nII \u2014 When you do, ~ deals that much damage to target creature or planeswalker.\nIII \u2014 Up to one target artifact you control becomes an artifact creature with base power and toughness 4/4 until end of turn.",
+      "ignored_before": "Read ahead\nI \u2014 Unsupported token keywords: flying named ornithopter\nII \u2014 Tap any number of untapped artifacts you control.\nII \u2014 When you do, ~ deals that much damage to target creature or planeswalker.\nIII \u2014 Up to one target artifact you control becomes an artifact creature with base power and toughness 4/4 until end of turn.",
+      "name": "Yotia Declares War",
+      "simplifications_after": "",
+      "simplifications_before": ""
+    }
+  ],
+  "net_full_gain": 57,
+  "previous_full_now_partial": [
+    "Baboon Spirit",
+    "Back on Track",
+    "Expendable Lackey",
+    "Foggy Swamp Spirit Keeper",
+    "Lost in the Spirit World",
+    "Mage's Attendant",
+    "Realm of Koh",
+    "Reef Worm",
+    "Shorikai, Genesis Engine",
+    "The Prydwen, Steel Flagship"
+  ],
+  "promoted_to_full": [
+    "Artificer's Epiphany",
+    "Birthing Hulk",
+    "Blade-Tribe Berserkers",
+    "Blisterpod",
+    "Brood Butcher",
+    "Brood Monitor",
+    "Call the Scions",
+    "Carrier Thrall",
+    "Catacomb Sifter",
+    "Complex Automaton",
+    "Corpsehatch",
+    "Crow Storm",
+    "Dance with Devils",
+    "Demonic Rising",
+    "Devils' Playground",
+    "Donatello, Turtle Techie",
+    "Dragonmaster Outcast",
+    "Dread Drone",
+    "Dundoolin Weaver",
+    "Eldrazi Skyspawner",
+    "Emrakul's Hatcher",
+    "Eyeless Watcher",
+    "From Beyond",
+    "Glimmervoid",
+    "Growing Rites of Itlimoc // Itlimoc, Cradle of the Sun",
+    "Growth Spasm",
+    "Hanweir Militia Captain // Westvale Cult Leader",
+    "Incubator Drone",
+    "Kozilek's Predator",
+    "Kyoshi Warrior Exemplars",
+    "Lagonna-Band Elder",
+    "Leonin Vanguard",
+    "Lone Revenant",
+    "Lumengrid Drake",
+    "Make Mischief",
+    "Mitotic Slime",
+    "Mole Man, Moloid Master",
+    "Nest Invader",
+    "Pest Summoning",
+    "Pestbrood Sloth",
+    "Ratcatcher Trainee // Pest Problem",
+    "Redcap Gutter-Dweller",
+    "Resourceful Return",
+    "Sanctuary Raptor",
+    "Scholar of Stars",
+    "Scion Summoner",
+    "Screeching Silcaw",
+    "Scute Mob",
+    "Sifter of Skulls",
+    "Skirk Ridge Exhumer",
+    "Skittering Invasion",
+    "So Shiny",
+    "Spawnbed Protector",
+    "Spawning Bed",
+    "Spawning Breath",
+    "Stone-Giant of High Pass",
+    "Synapse Necromage",
+    "Taken by Nightmares",
+    "Temporal Machinations",
+    "Tezzeret's Ambition",
+    "Thaumatic Compass // Spires of Orazca",
+    "The Hive",
+    "Tolsimir, Friend to Wolves",
+    "Toolcraft Exemplar",
+    "Vorosh, the Hunter",
+    "Wall of Kelp",
+    "Wolf's Quarry"
+  ],
+  "total": 34922
+}

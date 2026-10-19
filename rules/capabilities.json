@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "tokens-phase-conditions-v5",
+  "scope": "named-tokens-counts-v6",
   "capabilities": [
     {
       "id": "targets.creature",
@@ -180,8 +180,8 @@
       "id": "triggers.phase",
       "description": "Each-player and opponent upkeep/end-step triggers",
       "state": "implemented_subset",
-      "subset": "Each upkeep, each player upkeep, each opponent upkeep, each end step and the end step queue APNAP triggers. Phase-player context routes supported effects; recognized intervening conditions are checked when triggered and on resolution. Source sacrifice and return work across opposing turns. Supported hand-size/life comparisons, tapped/untapped source state and absence of creatures with a supported keyword gate the complete trigger once at the start of resolution.",
-      "restrictions": "Two-player supported phases only; unsupported conditions, Madness and other unparsed clauses remain visible. No arbitrary phase scheduling, complete APNAP ordering choices or broad reflexive-trigger implementation. No arbitrary Boolean condition language, library-size gates, alternate-win effects or unrecognized creature predicates.",
+      "subset": "Each upkeep, each player upkeep, each opponent upkeep, each end step and the end step queue APNAP triggers. Phase-player context routes supported effects; recognized intervening conditions are checked when triggered and on resolution. Source sacrifice and return work across opposing turns. Supported hand-size/life comparisons, tapped/untapped source state and absence of creatures with a supported keyword gate the complete trigger once at the start of resolution. Own-library size and supported controlled-permanent counts accept equality and lower/upper bounds, articles mean at least one, and other excludes the source.",
+      "restrictions": "Two-player supported phases only; unsupported conditions, Madness and other unparsed clauses remain visible. No arbitrary phase scheduling, complete APNAP ordering choices or broad reflexive-trigger implementation. No arbitrary Boolean condition language, alternate-win effects or unrecognized creature predicates. Permanent predicates are restricted to declared card types/tokens, not same-name, different-name, different-power or arbitrary subtype conditions.",
       "requires": [
         "events.dispatch"
       ],
@@ -210,6 +210,27 @@
         "mtgsim/engine/state.py",
         "mtgsim/engine/combat.py",
         "mtgsim/engine/kinds/permanents.py"
+      ]
+    },
+    {
+      "id": "tokens.named_abilities",
+      "description": "Named creature tokens and bounded quoted abilities",
+      "state": "implemented_subset",
+      "subset": "Preserve exact token names independently of creature subtypes, legendary and artifact/enchantment types, quoted supported triggers/cannot-block/static count abilities, and temporary haste. Quoted sacrifice-for-one-mana abilities pay without tap/summoning-sickness restrictions using the existing joint planner. Unsupported quoted abilities are retained as gaps.",
+      "restrictions": "Bounded capitalized token names and single quoted abilities only; no general token text interpreter, multiple-ability grammar, arbitrary activated abilities or delayed token creation. Sacrifice mana is modeled by automatic payment, not a complete manual mana-ability API. Other existing copy, ability-removal and layer limitations remain.",
+      "requires": [
+        "events.dispatch",
+        "zones.object_identity",
+        "costs.joint",
+        "continuous.pt_keywords"
+      ],
+      "implementation": [
+        "mtgsim/token_templates.py",
+        "mtgsim/cards/patterns.py",
+        "mtgsim/cards/tokens.py",
+        "mtgsim/engine/battlefield.py",
+        "mtgsim/engine/state.py",
+        "mtgsim/engine/costs.py"
       ]
     }
   ]

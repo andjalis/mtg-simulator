@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "scope": "tokens-phase-conditions-v5",
+  "scope": "named-tokens-counts-v6",
   "scenarios": [
     {
       "id": "target_type_membership",
@@ -1697,6 +1697,301 @@
         "kind": "rules-and-card-text",
         "reference": "Imaginary Pet Oracle text; CR 603.4, 608.2",
         "review": "A card means at least one; zero/one/two hand boundaries asserted in linked test."
+      }
+    },
+    {
+      "id": "named_count_the_hive_preserves_name_type_and_keywords",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_the_hive_preserves_name_type_and_keywords",
+      "capabilities": [
+        "tokens.named_abilities"
+      ],
+      "direct_cards": [
+        "The Hive"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_sliversmith_activation_creates_metallic_sliver",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_sliversmith_activation_creates_metallic_sliver",
+      "capabilities": [
+        "tokens.named_abilities"
+      ],
+      "direct_cards": [
+        "Sliversmith"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_prefix_named_legendary_tokens_use_the_real_name",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_prefix_named_legendary_tokens_use_the_real_name",
+      "capabilities": [
+        "tokens.named_abilities"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_named_tokens_do_not_replace_subtypes_with_names",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_named_tokens_do_not_replace_subtypes_with_names",
+      "capabilities": [
+        "tokens.named_abilities"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_pest_summoning_tokens_have_their_death_trigger",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_pest_summoning_tokens_have_their_death_trigger",
+      "capabilities": [
+        "tokens.named_abilities"
+      ],
+      "direct_cards": [
+        "Pest Summoning"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_edgewall_pack_rat_cannot_block",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_edgewall_pack_rat_cannot_block",
+      "capabilities": [
+        "tokens.named_abilities"
+      ],
+      "direct_cards": [
+        "Edgewall Pack"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_mixed_keywords_and_quoted_ability",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_mixed_keywords_and_quoted_ability",
+      "capabilities": [
+        "tokens.named_abilities"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_temporary_haste_expires_and_is_not_copiable",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_temporary_haste_expires_and_is_not_copiable",
+      "capabilities": [
+        "tokens.named_abilities"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_nest_invader_spawn_pays_while_tapped_or_sick_without_tapping",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_nest_invader_spawn_pays_while_tapped_or_sick_without_tapping",
+      "capabilities": [
+        "tokens.named_abilities"
+      ],
+      "direct_cards": [
+        "Nest Invader"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_spawn_cannot_pay_mana_and_an_additional_sacrifice",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_spawn_cannot_pay_mana_and_an_additional_sacrifice",
+      "capabilities": [
+        "tokens.named_abilities"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_enchantment_tokens_have_card_types_not_fake_subtypes",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_enchantment_tokens_have_card_types_not_fake_subtypes",
+      "capabilities": [
+        "tokens.named_abilities",
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_unknown_quoted_abilities_and_delayed_suffixes_stay_gaps",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_unknown_quoted_abilities_and_delayed_suffixes_stay_gaps",
+      "capabilities": [
+        "tokens.named_abilities"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_library_gate_uses_own_library_and_is_checked_once",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_library_gate_uses_own_library_and_is_checked_once",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_library_gate_rechecked_after_library_changes",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_library_gate_rechecked_after_library_changes",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_dragonmaster_outcast_checks_lands_at_both_times",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_dragonmaster_outcast_checks_lands_at_both_times",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [
+        "Dragonmaster Outcast"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_scute_mob_counts_lands_and_puts_four_counters",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_scute_mob_counts_lands_and_puts_four_counters",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [
+        "Scute Mob"
+      ],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_other_artifacts_excludes_the_source",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_other_artifacts_excludes_the_source",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_permanent_types_follow_current_characteristics",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_permanent_types_follow_current_characteristics",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_count_lower_bound_and_opponents_permanents",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_count_lower_bound_and_opponents_permanents",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
+      }
+    },
+    {
+      "id": "named_count_unsupported_count_predicates_and_winning_remain_gaps",
+      "version": 1,
+      "test": "tests.test_named_tokens_counts.NamedTokensCounts.test_unsupported_count_predicates_and_winning_remain_gaps",
+      "capabilities": [
+        "triggers.phase"
+      ],
+      "direct_cards": [],
+      "expected_source": {
+        "kind": "rules-and-card-text",
+        "reference": "CR 111.3, 111.4, 302.6, 603.4, 605, 608.2 and Oracle fixtures in linked test",
+        "review": "Bounded gameplay assertions in linked test; no external rules certification."
       }
     }
   ]

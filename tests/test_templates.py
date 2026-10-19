@@ -548,7 +548,8 @@ class TriggerTests(Base):
         self.game.settle()
         self.assertEqual(len(self.a.hand), 1)
         token = CHARM.modes[1][0]
-        self.assertIn("haste", token.data["keywords"])
+        self.assertIn("haste", token.data["temp_keywords"])
+        self.assertNotIn("haste", token.data["keywords"])
         self.a.library = [ISLAND, RELIC, BEAR, CANDY, ISLAND, ISLAND, ISLAND]
         self.game.resolve(self.a, FRONT.spell_effects[0], None)
         self.assertEqual(sorted(x.card.name for x in self.a.battlefield), ["Candy Trail", "Cryogen Relic"])
