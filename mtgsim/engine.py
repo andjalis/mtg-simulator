@@ -3306,14 +3306,15 @@ class Game:
                 p.graveyard.remove(card)
                 p.hand.append(card)
         elif k == "exile_gy":
+            victim = target if isinstance(target, Player) else opp   # "target player's graveyard" keeps its player
             if eff.amount:
-                if opp.graveyard:
-                    card = max(opp.graveyard, key=lambda c: c.cmc)
-                    opp.graveyard.remove(card)
-                    opp.exile.append(card)
+                if victim.graveyard:
+                    card = max(victim.graveyard, key=lambda c: c.cmc)
+                    victim.graveyard.remove(card)
+                    victim.exile.append(card)
             else:
-                opp.exile.extend(opp.graveyard)
-                del opp.graveyard[:]
+                victim.exile.extend(victim.graveyard)
+                del victim.graveyard[:]
         elif k == "damage_each_player":
             for pl in self.players:
                 self.change_life(pl, -eff.amount, cause)
@@ -4040,6 +4041,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     legal = game.legal_targets(me, eff)
     if eff.target == "graveyard_card":
         return graveyards.choose(game, me, eff)
+    if eff.kind == "exile_gy" and eff.target == "player":
+        return opp
     if eff.target == "graveyard_spell":
         return max(legal, key=lambda target: target.card.cmc, default=None)
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
