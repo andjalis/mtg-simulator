@@ -96,6 +96,7 @@ class EquipCost:
     """One independent Equip ability, including all its supported payment components."""
     mana: dict
     sacrifice: bool = False           # sacrifice one creature
+    target_filter: str = ""           # legendary, token, or subtype:TYPE|TYPE
 
 
 @dataclass
@@ -1244,7 +1245,7 @@ def _parse_face(data: dict) -> CardDef:
     text = re.sub(r"(?m)^([A-Za-z ,]*[Ff]irebending \d+[A-Za-z ,]*)$", lambda m: "\n".join(x[0].upper() + x[1:] for x in m[1].split(", ")), text)
     keywords, produces, etb, spell, unsupported, approximations = set(), set(), [], [], [], []
     triggers: list[Trigger] = []
-    extra: dict = {"snow": "Snow" in type_line, "legendary": "Legendary" in type_line}
+    extra: dict = {"snow": "Snow" in type_line, "legendary": "Legendary" in type_line.split("—")[0].split()}
     modes: list = []
     chapters: list = []
     loyalty_abilities: list = []
@@ -1440,7 +1441,11 @@ def _parse_face(data: dict) -> CardDef:
         # Match whole abilities so target/payment restrictions never disappear. In particular,
         # parse_mana_cost alone would silently drop energy/snow or mishandle X/hybrid costs.
         mana = r"(?:\{(?:\d+|[WUBRGC])\})+"
-        m = re.fullmatch(rf"Equip (?P<mana>{mana})(?P<reduction>\. This ability costs [^.]+ less to activate[^.]*\.)?\.?", line)
+        # Explicit supported target grammar: commander, worthy and other restrictions stay visible.
+        equip_type = r"(?:Citizen|Detective|Elf|Halfling|Hero|Human|Knight|Pirate|Shaman|Soldier|Warlock|Wizard)"
+        equip_target = rf"legendary creature|creature token|{equip_type}(?:(?:, |, or | or ){equip_type})*"
+        m = re.fullmatch(rf"Equip (?:(?P<target>{equip_target}) )?(?P<mana>{mana})"
+                         rf"(?P<reduction>\. This ability costs [^.]+ less to activate[^.]*\.)?\.?", line)
         mixed = re.fullmatch(rf"Equip\s*—\s*(?:(?P<before>{mana}), )?Sacrifice a creature"
                              rf"(?:, (?P<after>{mana}))?\.?", line)
         if m or mixed:
@@ -1448,7 +1453,11 @@ def _parse_face(data: dict) -> CardDef:
                 unsupported.append(line)
                 continue
             cost_text = m["mana"] if m else mixed["before"] or mixed["after"]
-            ability = EquipCost(parse_mana_cost(cost_text) if cost_text else {}, bool(mixed))
+            target = m["target"] if m else None
+            target_filter = {"legendary creature": "legendary", "creature token": "token"}.get(target, "")
+            if target and not target_filter:
+                target_filter = "subtype:" + "|".join(re.split(r", or |, | or ", target))
+            ability = EquipCost(parse_mana_cost(cost_text) if cost_text else {}, bool(mixed), target_filter)
             if "equip_cost" not in extra:
                 extra.update(equip_cost=ability.mana, equip_sacrifice=ability.sacrifice)
             extra["equip_costs"] = extra.get("equip_costs", ()) + (ability,)
