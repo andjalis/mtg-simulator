@@ -10,7 +10,7 @@ import dataclasses
 import re
 from dataclasses import dataclass, field
 
-from . import modal
+from . import modal, facedown as _facedown
 
 COLORS = ("W", "U", "B", "R", "G")
 KEYWORDS = {
@@ -253,6 +253,8 @@ class CardDef:
     extra_sacrifice: str = ""                           # "As an additional cost to cast ~, sacrifice an artifact or creature"
     extra_sac_or_pay: int = 0                           # "... pay {4} or sacrifice ...": the generic alternative
     aura: str = ""                                      # "Enchant creature" (what it enchants; mtgsim.auras)
+    mana_cost_missing: bool = False                    # no printed cost, distinct from {0}
+    colors: frozenset | None = None                    # printed colors/indicator, including devoid
     aura_flags: frozenset = frozenset()                 # no_untap, cant_attack_block
     aura_hostile: bool = False                          # goes on an opponent's permanent
     clone: dict | None = None                           # "You may have ~ enter as a copy of ..." (mtgsim.copies)
@@ -650,8 +652,9 @@ _EFFECT_PATTERNS = [
     (r"~ deals 1 damage to each of one or two targets", lambda m: Effect("damage", 1, target="any")),
     (r"investigate", lambda m: Effect("token", 1, data={"kind": "clue"})),
     (r"(?:~|it|this creature) endures (\d+)", lambda m: Effect("endure", int(m[1]))),
-    (r"manifest dread(?:, then attach (?:~|this equipment) to that creature)?",
-     lambda m: Effect("manifest_dread", data={"attach": "attach" in m[0].lower()})),
+    (r"(?:manifest|cloak|you may manifest|you may cloak|its controller manifests|look at the top|turn target face-down).+",
+     lambda m: _facedown.parse_effect(m[0]) or NO_MATCH),
+    (r"FACELOOT", lambda m: Effect("face_down_loot")),
     (r"untap ~", lambda m: Effect("untap_self")),
     (r"untap it", lambda m: Effect("untap_prev", target="prev")),
     (r"it explores", lambda m: Effect("explore", target="prev")),
@@ -886,10 +889,9 @@ _SUBS = [
      lambda m: "LASTGIFT."),
     (re.compile(r"you may discard a card\. if you do, search your library for a creature card, reveal it, put it "
                 r"into your hand, then shuffle\.", re.I), lambda m: "DISCARDTUTOR."),
-    # Face-down permanents aren't modelled, so the "unless" clause never applies.
     (re.compile(r"you may draw a card\. if you do, discard a card unless a permanent entered the battlefield face "
                 r"down under your control this turn or you turned a permanent face up this turn\.", re.I),
-     lambda m: "Draw a card. Then discard a card."),
+     lambda m: "FACELOOT."),
     (re.compile(r"return it to the battlefield under its owner's control\. it's an enchantment\.(?: \(It's not a "
                 r"creature\.\))?", re.I), lambda m: "RETURNENCHANT."),
     (re.compile(r"you may pay \{2\}\{R\} any number of times\. when you pay this cost one or more times, .*",
@@ -897,6 +899,9 @@ _SUBS = [
 ]
 
 _TRIGGERS = [
+    (r"When(?:ever)? ~ is turned face up, (.+)", ("turned_face_up",)),
+    (r"Whenever (?:~ or another |a )(permanent|creature) you control is turned face up, (.+)",
+     ("ally_turned_face_up",)),
     (r"When(?:ever)? ~ enters or attacks, (.+)", ("etb", "attacks")),
     (r"When ~ enters and at the beginning of your upkeep, (.+)", ("etb", "upkeep")),
     (r"When(?:ever)? ~ enters?(?: the battlefield)?, (.+)", ("etb",)),
@@ -1087,6 +1092,12 @@ def _parse_effects(text: str, opts: bool = False):
         s = sentence.strip().rstrip(".").strip()
         if not s:
             continue
+        # This reveal-and-turn instruction is indivisible; its condition refers
+        # to the revealed card, rather than to a later independently chosen target.
+        if s.lower() == "reveal target face-down permanent":
+            whole = _facedown.parse_effect(text.strip())
+            if whole is not None:
+                return whole, []
         if not unmatched and _delayed.continuation(effects, s):
             continue
         mp = re.fullmatch(r"you may pay ((?:\{[WUBRGC0-9]+\})+)", s, re.I)
@@ -1280,6 +1291,8 @@ def _parse_face(data: dict) -> CardDef:
         if sub in BASIC_MANA and "Land" in types:
             produces.add(BASIC_MANA[sub])
     raw_cost = data.get("mana_cost", "").split(" // ")[0]
+    extra["mana_cost_missing"] = not raw_cost
+    extra["colors"] = frozenset(data.get("colors", [k for k in cost if k in COLORS]))
     extra["hybrid"] = tuple(a + b for a, b in re.findall(r"\{([WUBRG])/([WUBRG])\}", raw_cost))
     if data.get("loyalty"):
         extra["loyalty"] = stat(data["loyalty"]) or 0
@@ -1873,9 +1886,9 @@ def _parse_face(data: dict) -> CardDef:
                 eff.data["per"] = {"what": "creature", "zone": "graveyard"}
             triggers.append(Trigger("attacks", [eff]))
             continue
-        m = re.fullmatch(r"Disguise (\{[^ ]+\})", line)
-        if m:
-            alt_costs.append(AltCost("disguise", parse_mana_cost(m[1])))
+        face_down_cost = _facedown.parse_cost(line)
+        if face_down_cost is not None:
+            alt_costs.append(face_down_cost)
             continue
         if line == "Convoke":
             extra["convoke"] = True
@@ -2222,6 +2235,8 @@ def _parse_trigger_line(line: str):
             flt = f"spell:{m[1]}"
         if events == ("sacrifice",):
             flt = m[1]
+        if events == ("ally_turned_face_up",):
+            flt = m[1]
         if events == ("you_attack",) and m.lastindex == 2:
             flt = f"with:{m[1].rstrip('s')}"
         if events[0] == "other_creature_enters":
@@ -2278,6 +2293,10 @@ def _parse_trigger_line(line: str):
             if cond:
                 effs = [dataclasses.replace(e, cond=cond) for e in effs]
         effs += later
+        if events == ("turned_face_up",) and "another target creature" in rest:
+            for effect in effs:
+                if effect.target in ("creature", "creature_mine"):
+                    effect.data["other"] = True
         if events == ("attacks_alone",):
             for e in effs:
                 if e.target == "prev":

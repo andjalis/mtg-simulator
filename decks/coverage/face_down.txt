@@ -1,0 +1,13 @@
+# Face-down smoke fixture: morph, megamorph, disguise, manifest, manifest dread and cloak.
+12 Forest
+8 Island
+4 Plains
+4 Woolly Loxodon
+4 Sagu Mauler
+4 Sandstorm Charger
+4 Dog Walker
+4 Nervous Gardener
+4 Manifest Dread
+4 Hide in Plain Sight
+4 Soul Summons
+4 Stratus Dancer
