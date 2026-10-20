@@ -99,7 +99,7 @@ class FollowupTests(unittest.TestCase):
         eq = self.game.enter_battlefield(self.a, MACHETE)
         self.game.destroy(eq)
         self.game.settle()
-        manifests = [x for x in self.a.creatures if x.card.name == "Manifest"]
+        manifests = [x for x in self.a.creatures if x.face_down_kind == "manifest_dread"]
         self.assertEqual(len(manifests), 1)
         self.assertIsNone(eq.attached_to)
 
@@ -337,10 +337,11 @@ class FollowupTests(unittest.TestCase):
 
     def test_blink_other_and_invalid_player_target_do_nothing(self):
         src = self.game.enter_battlefield(self.a, BLINKER)
-        self.assertTrue(self.game.activate_ability(self.a, src, 0, [src]))
+        # "another target creature": with no other creature, activation is illegal (target legality is checked up front)
+        self.assertFalse(self.game.activate_ability(self.a, src, 0, [src]))
         self.assertIn(src, self.a.battlefield)
         self.assertEqual(self.game.delayed, [])
-        self.cast(BLINK, [self.a])
+        self.assertFalse(self.game.cast(self.a, BLINK, [self.a]))   # a player is not a legal creature target
         self.assertEqual(self.game.delayed, [])
 
 

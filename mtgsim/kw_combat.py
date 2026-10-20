@@ -194,7 +194,8 @@ def finish_backup(text, data, triggers, approximations):
              if re.fullmatch(r'Backup \d+\.?', line.strip(), re.I)]
     allowed = {'name', 'oracle', 'mana_cost', 'cmc', 'types', 'subtypes', 'power', 'toughness',
                'keywords', 'triggers', 'activated', 'ward', 'combat_mechanics', 'unsupported',
-               'approximations', 'legendary', 'snow', 'etb_effects', 'spent_colors', 'hybrid'}
+               'approximations', 'legendary', 'snow', 'etb_effects', 'spent_colors', 'hybrid',
+               'colors', 'basic', 'mana_cost_missing'}  # card characteristics, not granted abilities
     if len(tails) != len(abilities):
         approximations.append('backup: printed ability ordering could not be bound')
     empty = CardDef(name='', mana_cost={}, cmc=0, types=frozenset())
