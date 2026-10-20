@@ -4427,7 +4427,7 @@ def choose_equip_target(game: Game, me: Player, equipment: Permanent, *, ability
 
 def _equip_body_value(creature: Permanent) -> float:
     """Loss of a body, including counters/attachments and large tokens' actual stats."""
-    return (creature.card.cmc + (max(0, creature.power) + max(0, creature.toughness)) / 2
+    return 0.75 * (creature.card.cmc + (max(0, creature.power) + max(0, creature.toughness)) / 2
             + 0.5 * sum(creature.has(k) for k in ("flying", "deathtouch", "lifelink", "first strike",
                                                  "double strike", "indestructible", "menace"))
             + bool(creature.card.produces))
@@ -4436,7 +4436,7 @@ def _equip_body_value(creature: Permanent) -> float:
 def _equip_benefit(equipment: Permanent, target: Permanent) -> float:
     """Persistent stats and newly gained keywords; a heuristic, without changing the board."""
     power, toughness = equipment.card.equip_bonus
-    value = (power + toughness) / 2
+    value = power + toughness / 2  # the bonus is permanent and power wins games
     attack = max(0, target.power + power)
     keywords = {k for k in equipment.card.equip_keywords if not target.has(k)}
     weights = {"flying": 1 + attack / 4, "menace": attack / 4, "trample": attack / 5,
@@ -4469,6 +4469,8 @@ def choose_equip_cost(game: Game, me: Player, equipment: Permanent, target: Perm
                 continue
             cost = sum(game.equip_cost(equipment, target, idx).values())
             score = benefit - mana_value * cost - (_equip_body_value(victim) if victim is not None else 0)
+            if victim is not None and benefit - _equip_body_value(victim) < 0.8:
+                continue  # a body is only worth trading for a clear gain
             if score > best_score + 1e-9:
                 best, best_score = (idx, victim), score
     return best

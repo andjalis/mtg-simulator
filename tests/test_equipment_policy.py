@@ -130,6 +130,19 @@ class EquipmentPolicyTests(unittest.TestCase):
         eq.card = blade(bonus="Equipped creature gets +1/+1.")
         self.assertIsNone(self.choose(eq, host))
 
+    def test_hauberk_style_bonus_sacrifices_token_or_cheap_creature(self):
+        hauberk = blade(bonus="Equipped creature gets +4/+2 and has trample.")
+        for victim in (make_token("Soldier", 1, 1), BEAR):
+            with self.subTest(victim=victim.name):
+                self.a.battlefield.clear()
+                eq, host, v = self.board(hauberk, victim)
+                self.assertEqual(self.choose(eq, host), (0, v))
+
+    def test_hauberk_style_bonus_keeps_valuable_creature(self):
+        hauberk = blade(bonus="Equipped creature gets +4/+2 and has trample.")
+        eq, host, v = self.board(hauberk, card("Titan", "{6}", "Creature — Giant", "", power=6, toughness=6))
+        self.assertIsNone(self.choose(eq, host))
+
     def test_deterministic_equal_cost_choice(self):
         eq, host, victim = self.board(blade("Equip {1}\nEquip {1}"))
         self.perm(MOUNTAIN)
