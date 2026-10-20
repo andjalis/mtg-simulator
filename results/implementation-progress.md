@@ -6,62 +6,83 @@ Newest log entry first; fold old entries into **History** when the log passes ~1
 
 ## Status
 
-- Branch: `docs/standard-coverage-remeasure` · Synced commit: `63aa2df` + uncommitted
-  round-16 work, manifest/attach, delayed end-step scheduling, Aura targets and Equipment costs;
-  pre-existing AGENTS.md / skill edits, AI measurements and coverage artifacts preserved
-- Tests: full suite 614 OK in 193.122 s (2026-10-20, Python 3.14.8, card DB present).
-  Final focused mechanics/coverage: 126 OK in 8.374 s, including three regressions
-  added after full-suite discovery; 617 tests now discoverable, 25 new Equipment cases.
-  Earlier mechanics/Aura pass: 138 OK; 52 regressions.
-  Previous AI/combo measurement pass: 32 OK in 1.354 s.
-- Coverage (2026-10-20, `python3 -m scripts.coverage_summary`): Standard 1,834/4,902 fully supported
-  (37.4%, 60% of rules sentences); all cards 7,602/34,084 (22.3%, 41%); 1 card crashes the
-  parser (Dovin, Grand Arbiter: `int('ten')` in `cards._num`).
+- Branch: `chore/round-17-docs-sync` (docs only, off `docs/standard-coverage-remeasure`) ·
+  Synced commit: `70ab159` (round 17, PRs #21-#24, merged: number-word parser fix, delayed
+  exile/destroy token actions, independent/mixed Equip costs, flashback-grant graveyard targets)
+- Tests: full suite 709 OK, 1 skipped (205.099 s, Python 3.14.8, card DB present, integration
+  QA at `05a6abb`, 2026-10-20). The skip is `test_stored_review_log_if_present` (its gitignored
+  Forge benchmark log is absent). Focused round-17 suites: 172 OK.
+- Coverage (2026-10-20, `python3 -m scripts.coverage_summary`): Standard 1,835/4,902 fully supported
+  (37.4%, 60% of rules sentences); all cards 7,608/34,084 (22.3%, 41%); no parser crashes
+  (Dovin, Grand Arbiter fixed by #21).
 - Engine: built-in engine plus templates for auras/equipment, X spells, copy effects, library
-  search, counting, modal choices and ~40 newer keyword mechanics (rounds 1-15). Standard
-  saved-snapshot coverage is 1,834 / 4,902 fully template-matched (37.4%),
-  7,702 / 12,933 rules sentences handled (~60%); round-16, three-followup and
-  Equipment before/after reports saved separately.
+  search, counting, modal choices and ~40 newer keyword mechanics (rounds 1-17). Standard
+  saved-snapshot coverage is 1,835 / 4,902 fully template-matched (37.4%),
+  7,704 / 12,933 rules sentences handled (~60%) as of the delayed-token-actions measurement;
+  per-round before/after reports are saved under `results/standard_coverage/`.
 - AI: `HeuristicAI` default; precombat kill setup and per-game reset were already in
   `363d3ce`. Now verified with end-to-end lifecycle regressions and 33,000 measured
   games: combo setup improves tested matchups, aggro/control difference inconclusive
   (`AI_RESULTS.md`). Earlier lethal-attack tie-break has no measurable win-rate effect.
+  Round 17 made no AI change; a 10-game-per-pairing benchmark of `7b6b71e` vs merged round 17
+  gave identical winners in all 40 games (diagnostic only, no equivalence claim).
 - Web: sequential fullscreen deck trials, league track, saved-run replay, in-browser engine,
   opponent-pool arena; QA passes on validation, recovery and mobile (`QA_RESULTS.md`).
-- In flight: nothing; top Equipment follow-up completed and verified locally.
-  Earlier three engine follow-ups were independently reviewed.
+- In flight (round 18, running in sibling worktrees; do not duplicate): AI option dedup,
+  graveyard return targets, restricted Equip targets, Old Hob token grants, Equip sacrifice policy;
+  round-17 follow-ups: combined-mechanics scenario tests, 200-game benchmark vs `7b6b71e`.
 
 ## Next up
 
-Ranked; each is ready to launch from the repo root.
+Ranked; each is ready to launch from the repo root. Round-18 areas listed under Status are
+already running and are not repeated here.
 
-1. **Additional delayed token actions** (medium) - reuse the scheduler for explicit
-   next-end-step exile/destroy continuations, while keeping conditions and unbound pronouns visible.
-   `ask "mtg-dev: extend the shared delayed end-step scheduler to general exile/destroy-that-token continuations such as Stormsplitter and Old Hob; test object identity, indestructible, stolen tokens, both turns and one-time execution, run full suite and distinct coverage reports"`
-2. **Graveyard spell-target fidelity** (large) - granted flashback still chooses a
-   graveyard spell on resolution; bring its targeting closer to the Aura spell path.
-   `ask --pair "mtg-dev: choose and store legal graveyard targets for matched flashback-grant spells and abilities at cast/activation time, recheck after responses without retargeting, preserve cost and cleanup semantics, test same-name cards changing zones, run full suite and offline coverage"`
-3. **Multiple and mixed Equipment costs** (medium) - one stored equip cost still
-   loses alternatives; mixed mana/sacrifice and restricted sacrifice costs stay unsupported.
-   `ask "mtg-dev: represent multiple Equip abilities independently and add general mixed mana/sacrifice costs; preserve unsupported restrictions, test cost choice, failed payments, discounts and priority responses, run full suite and distinct offline coverage reports"`
+1. **Equipment self-discount math** (medium) - Plate Armor, Warrior's Blades and Dragonfire
+   Blade still use the full-cost approximation.
+   `ask "mtg-dev: implement general Equipment self-discounts for Plate Armor, Warrior's Blades and Dragonfire Blade as per-ability cost modifiers; preserve unrelated restrictions and minimum colored costs, test board and target changes, run full suite and distinct offline coverage reports"`
+2. **Pay-gated token creation continuations** (medium) - bind next-end-step continuations to
+   creation that depends on a payment (Akoum Stonewaker) without hiding conditions or pronouns.
+   `ask "mtg-dev: bind next-end-step token continuations safely to supported pay-gated creation such as Akoum Stonewaker; schedule only for tokens actually created after successful payment, preserve unknown conditional/unbound wording, test failed payment, multiple created objects, stolen tokens and both turns, run full suite and distinct coverage"`
+3. **Sorcery-only and free flashback grants** (medium) - extend the grant template to Recoup and
+   explicit/free grant costs such as Archmage's Newt, reusing exact `GraveyardTarget` entries.
+   `ask "mtg-dev: extend flashback-grant templates to sorcery-only grants such as Recoup and explicit/free grant costs such as Archmage's Newt; reuse exact target entries, keep conditional unsupported text visible, test independent printed/granted costs and cleanup, run full suite and offline coverage"`
+4. **Non-mana Equip payments** (medium) - typed artifact sacrifice, fixed life and discard
+   payments, keeping once-per-turn restrictions visible.
+   `ask "mtg-dev: extend EquipCost to general artifact sacrifice and fixed life/discard payments where safely matched; preserve unsupported restrictions, validate all components before spending, test failure and response behavior including self-sacrifice, run full suite and offline coverage reports"`
+5. **Delayed token AI valuation** (medium) - the copy heuristic discounts only folded sacrifice
+   copies, not delayed exile/destroy.
+   `ask --pair "mtg-dev: evaluate token-copy AI valuation for shared delayed sacrifice/exile/destroy continuations; preserve controller timing and indestructible differences, add decision regressions, measure against BaselineAI with confidence intervals before claiming improvement, run full suite and report AI_RESULTS proposals"`
+6. **Parser-exception regressions** (small) - guard `scripts.coverage_summary` against crashes
+   beyond number conversion.
+   `ask "mtg-dev: add focused regression tests for parser exceptions found by scripts.coverage_summary, preserving unsupported text without crashing; run focused tests and full suite"`
 
 ## Known gaps
 
 - Combo fixture remains weak in tested built-in matchups (16–22% vs platinum
   aggro/midrange); list, pilot and engine limits are not separated by these measurements.
-- Granted flashback chooses the highest-mana-value eligible graveyard spell on
-  resolution. Aura entry directly onto the battlefield outside the matched Role
-  effects has no non-target host-selection policy; unattached Auras go to the graveyard.
-- Manifest dread uses a simplified 2/2 that cannot turn face up. Dissection Tools
-  now manifests/attaches, grants its bonus and pays its sacrifice equip cost.
-  Conditional/pronoun prepared variants remain.
-- Equipment stores one recognized equip cost (the last recognized line); multiple
-  alternatives are not preserved. Mixed mana/sacrifice and restricted sacrifice
-  costs remain unsupported. The sacrifice equip policy picks the least valuable
-  other creature without evaluating whether its loss is worth the Equipment bonus.
-- Delayed scheduling is bounded to matched single-target exile/return pairs and
-  token/copy-creation sacrifice continuations. Conditional, plural, return-to-hand,
-  exile/destroy-token and unbound pronoun variants remain visible in coverage.
+- Aura entry directly onto the battlefield outside the matched Role effects has no
+  non-target host-selection policy; unattached Auras go to the graveyard.
+- Matched targeted graveyard return/reanimation effects still choose their card on
+  resolution (only flashback grants bind an exact `GraveyardTarget` at cast time).
+- Flashback-grant matching is bounded to the instant-or-sorcery mana-cost template;
+  sorcery-only grants (Recoup) and explicit/free grant costs (Archmage's Newt) stay visible.
+- AI spell-option helpers deduplicate by name, so a native flashback alternative can hide a
+  cheaper granted cost from the AI. Both options are correct and usable in the engine.
+- Graveyard variants are cached per entry, so the per-game cache grows with graveyard stays
+  (no observed issue). Graveyard clear/slice deletion now reports departures to `gy_leave`.
+- Manifest dread uses a simplified 2/2 that cannot turn face up. Conditional/pronoun
+  prepared variants remain.
+- Equipment keeps each supported Equip ability and mixed mana/sacrifice-a-creature costs.
+  Target/type/payment/frequency restrictions (24 real multi-Equip cards) and non-mana
+  payments other than creature sacrifice are unsupported. Plate Armor, Warrior's Blades
+  and Dragonfire Blade self-discounts use a full-cost approximation. The sacrifice
+  policy does not weigh the lost creature against the attachment bonus.
+- Delayed scheduling covers matched single-target exile/return pairs and unconditional
+  sacrifice/exile/destroy continuations directly after supported token/copy creation.
+  Conditional/gated continuations (Akoum Stonewaker), unbound pronouns, multi-target
+  returns and return-to-hand forms remain visible in coverage. Old Hob's independent
+  attacking-token indestructible ability is unsupported. Copy AI valuation discounts only
+  legacy folded sacrifice copies; delayed exile/destroy has no valuation.
 - Custom AI instances are shallow-copied; mutable per-game containers should be
   rebound in their optional `reset()` hook (documented; built-in state resets correctly).
 - Forge observed play/draw sampling balances starters when possible; the worker
@@ -70,6 +91,85 @@ Ranked; each is ready to launch from the repo root.
 - No real Forge games or Python 3.10/3.13 runs in the latest QA passes (CI covers 3.10/3.13).
 
 ## Log
+
+### 2026-10-20 - Round 17 documentation sync (Claude Sonnet 5.5)
+
+- Synced Status, Next up, Known gaps and the README with merged PRs #21-#24 at `70ab159`
+  (previously `63aa2df` plus uncommitted work). Docs only; no engine or test changes.
+  README: delayed-effects, Equipment and flashback paragraphs and the remaining-gaps list;
+  AGENTS.md test count 528 → 709. Folded the five oldest log entries into History.
+
+### 2026-10-20 - Round 17 integration QA (Codex)
+
+- `integration/round-17` at `05a6abb` (PRs #21-#24 merged), base `7b6b71e`. No failing PR; no
+  repo files changed. Python 3.14.8, card DB present.
+- Full suite `python3 -W ignore::ResourceWarning -m unittest discover -s tests -t .`: 709 OK,
+  1 skipped, 205.099 s. Focused delayed/equip-costs/equip-sacrifice/flashback/templates: 172 OK.
+- `python3 -m scripts.coverage_summary`: Standard 1,835/4,902, all cards 7,608/34,084, no parser
+  crashes (starting counts 1,834 / 7,602).
+- Crash smoke: `python3 -m mtgsim --offline --round-robin decks/green_stompy.txt
+  decks/mono_red_aggro.txt decks/orzhov_midrange.txt decks/ub_snow_control.txt -n 200`
+  at seeds 101 and 202: all six pairs, 2,400 games, no crash.
+- `mtgsim.benchmark --manifest benchmarks/small.json --engine builtin -n 10 --seed 101` on base
+  (`git archive 7b6b71e`) vs merged: identical results in all four pairings, 0/40 winners
+  changed. Ten-game diagnostics establish nothing about equivalence or strength.
+- Evidence under `/tmp/round17-*` (not in the repo). No Forge or Python 3.10/3.13 run.
+
+### 2026-10-20 - Flashback-grant graveyard targets (Codex lead / Claude Opus reviewer, PR #24)
+
+- Matched `grant_flashback` effects declare a `graveyard_spell` target, chosen and stored
+  before paying (spells, activated and loyalty abilities) or when the trigger is put on the
+  stack. `GraveyardTarget` records controller, exact CardDef and a per-entry token that
+  survives or is invalidated by graveyard mutations (bulk removal, slice replacement,
+  reordering, shared CardDefs). Resolution rechecks the entry and never retargets; losing
+  the only target fizzles the item. Permissions bind to exact entries; leaving the zone or
+  cleanup invalidates them. A grant spell cannot target its own casting entry.
+- Modal grants bind before payment; Teamwork reserves a viable crew. Native and granted
+  flashback are priced independently (grants use the original mana cost). Flashback casts exile
+  on resolution, counter or bounce. Fixed: `can_cast_now` rejected `bounce_spell` answers.
+- Files: `cards.py`, `engine.py`, `modal.py`, `tests/test_round16.py`, new
+  `tests/test_flashback_targets.py` (34 tests, fail against base: 31 failures + 3 errors).
+- Full suite 651 OK (skipped=1), 194.366 s; coverage unchanged (Standard 1,834, all 7,602);
+  `decks/coverage/round16.txt` 8/8 full; 200-game `green_stompy` smoke without crashes.
+
+### 2026-10-20 - Independent and mixed Equip costs (Codex lead / Claude Opus partner, PR #23)
+
+- `cards.py`: `EquipCost(mana, sacrifice)` and ordered `CardDef.equip_costs`; legacy
+  `equip_cost`/`equip_sacrifice` expose the first choice. Independent mana Equip abilities and
+  mana plus sacrifice-a-creature costs in either order are matched; unknown mana symbols no
+  longer become free equip; self-discount approximations keep the full base cost.
+- `engine.py`: picks a payable ability (mana-only first, then lower mana), or an explicit
+  `Game.equip(..., ability=N)` / `activate(..., "equip:N")` with no fallback. All costs
+  validate before payment; a creature sacrificed for mana cannot pay a second sacrifice;
+  target discounts reduce generic mana only; `equip_all` respects reserves.
+- `tests/test_equipment_costs.py` (35) plus `decks/coverage/equip_costs.txt` (13 cards).
+  Parser comparison over 654 Equipment entries: four period-terminated Equip lines newly
+  recognized, Lashwrithe Phyrexian's equip now visibly unsupported.
+- Full suite 650 OK (skipped=1), 226.016 s; focused 161 OK; coverage unchanged
+  (Standard 1,834, all 7,602). No AI measurements.
+
+### 2026-10-20 - General delayed exile/destroy token actions (Codex lead / Claude Opus reviewer, PR #22)
+
+- Extended the shared one-time end-step scheduler (`delayed.py`, `engine.py`, `copies.py`) to
+  unconditional sacrifice/exile/destroy continuations bound to exact created tokens/copies,
+  including plural forms, multiple continuations and controller-specific next end steps.
+  Exile/destroy follow stolen tokens; sacrifice requires control. Destroy respects
+  indestructible and fires death triggers; exile does neither. Each action runs once, even
+  if destruction fails; source departure cannot redirect it.
+- `tests/test_delayed_token_actions.py` (22) and `decks/coverage/delayed_token_actions.txt`.
+  Stormsplitter now fully matches; Old Hob's destroy line matches but its attacking-token
+  ability stays visible; Akoum Stonewaker and Echo Chamber remain partial.
+- Full suite 636 OK (skipped=1), 223.558 s (partner 219.058 s); focused 138 OK.
+- Coverage (identical input hashes): Standard 1,834 → 1,835; all cards 7,602 → 7,608;
+  handled sentences 7,702 → 7,704 / 12,933; fixture 0/4 → 1/4 full.
+
+### 2026-10-20 - Number-word parser fix (Codex, PR #21)
+
+- `cards._num` now parses number words zero through twenty, keeping `a`/`an` aliases and
+  numeric strings; fixes the Dovin, Grand Arbiter `int('ten')` crash. Regression in
+  `tests/test_templates.py`.
+- Full suite 618 OK (skipped=1), 195.620 s; `scripts.coverage_summary` reports no crashes;
+  coverage unchanged at that point (Standard 1,834, all 7,602).
 
 ### 2026-10-20 - Equipment sacrifice costs and attachment fidelity (Codex)
 
@@ -147,81 +247,16 @@ Ranked; each is ready to launch from the repo root.
 - No new commits since `63aa2df`; all work remains uncommitted on the existing branch.
   No commit/push, real Forge games or Python 3.10/3.13 runs.
 
-### 2026-10-20 - Complete four Next up tasks (Codex lead / Claude Opus partner)
-
-- Added general prepared rearming (`prepare` effect on a live source), explicit
-  mana-cost flashback continuation bound to its grant, and Raid entry-counter wording
-  in `mtgsim/cards.py` / `engine.py`; 10 new mechanics regressions in `tests/test_round16.py`.
-- Saved after reports separately (`results/standard_coverage/round16.*`, deck fixture
-  and before/after CLI output). Same input hashes: full 1,810 → 1,818; partial 3,050 →
-  3,042; simplified 42 unchanged; one-line misses 1,933 → 1,927; handled sentences
-  7,661 → 7,671 / 12,933. Eight-card coverage fixture 0/8 → 8/8 full. Baseline untouched;
-  `remeasure.py` now accepts an output stem so the after wrapper shares its method.
-- Updated README supported mechanics and approximations against code/tests: Auras,
-  copies (including Reflection), X spells, prepared, flashback, disguise/manifest,
-  earthbend and remaining gaps. Documented the existing AI lifecycle protocol.
-- Reconciled stale tasks 3/4 with `363d3ce`; no duplicate AI/runner implementation.
-  Added 2 end-to-end reused-instance/custom-AI tests in `tests/test_ai.py`; partner's
-  identity-copy mutation check made the reused-instance regression fail as intended.
-- Measured precombat setup on/off, default and Baseline opponents: seeds 21–23,
-  1,000 games per seed/arm, 33,000 total. Combo vs default aggro 14.3 → 21.9%
-  (+7.6 points, 95% CI ±1.9); vs Baseline aggro 12.4 → 17.3% (+5.0 ±1.8).
-  Aggro/control +2.1 ±2.4 is inconclusive. Raw rows and reproducible scripts in
-  `results/precombat-setup/`; tables and limitations in `AI_RESULTS.md`.
-- Verification (all exit 0): `python3 -W ignore::ResourceWarning -m unittest discover
-  -s tests -t .` — 540 OK, 190.152 s; focused `tests.test_round16 tests.test_prepared_convoke
-  tests.test_round12` — 28 OK; focused `tests.test_standard_coverage tests.test_coverage
-  tests.test_round16 tests.test_auras tests.test_copies tests.test_search_x tests.test_x_tokens`
-  — 61 OK, 8.096 s; `tests.test_ai tests.test_combo` — 32 OK, 1.354 s.
-  `python3 -m results.standard_coverage.round16` and `python3 -m mtgsim
-  decks/coverage/round16.txt --offline --coverage` exited 0; `git diff --check` clean.
-- Independent partner review: card diff and README approved; 73 focused template tests
-  OK. Lead reviewed lifecycle tests and all 33 measurement rows/summaries. Existing
-  guide/skill edits preserved; no commit or push; no real Forge or Python 3.10/3.13 runs.
-
-### 2026-10-20 - Reconcile AI tasks before implementation (Codex / Claude team)
-
-- Verified current HEAD already contains commit `363d3ce` (2026-10-16): general
-  `HeuristicAI.lethal_setup`, the exact Kiln Fiend / Battle Rage / Bolt regression,
-  and `runner.fresh_ai` with a per-game copy and optional `reset()` hook. The previous
-  catch-up entry missed these; Next up / Known gaps 3–4 above are stale pending verification.
-- Completing the missing AI measurements and lifecycle compatibility checks alongside
-  a bounded card-template round and README corrections. No newer commits since synced HEAD.
-
-### 2026-10-20 - Standard coverage re-measure (Codex)
-
-- Measured unchanged engine at `63aa2df` on saved 4,902-card WOE–FRA snapshot, offline:
-  1,810 full (36.9%), 42 simplified, 3,050 partial, zero unknown; 1,933 one-line misses;
-  7,661 / 12,933 rules sentences handled (~59%). Matches round-15 full count.
-- Added re-measure section to `results/standard_coverage/README.md`, top 20 ignored lines
-  overall and on one-line-miss cards, examples, limitations and reproduction commands.
-  Added `remeasure.py`, `remeasure.txt`, `remeasure.json` (rankings + input hashes).
-- Checks: `python3 -m mtgsim.standard_coverage --top 20` and
-  `python3 -m results.standard_coverage.remeasure` exited 0 with identical summaries;
-  `python3 -W ignore::ResourceWarning -m unittest tests.test_standard_coverage tests.test_coverage`
-  passed all 22 tests in 7.524 s. Full suite not rerun (no engine/card/parser changes).
-- No newer commits since synced HEAD. Preserved existing guide/skill/progress edits;
-  corrected stale Status coverage figures and advanced Next up. No commit or push.
-
-### 2026-10-20 - Dev loop skill and catch-up (Claude Opus 5.5)
-
-- Added `.claude/skills/mtg-dev/SKILL.md` (Codex sees it via `.agents/skills/mtg-dev` symlink);
-  pointer added to `AGENTS.md`. Restructured this file into Status / Next up / Known gaps / Log.
-- Checks: 528 tests OK in ~170 s (Python 3.14, card DB present, 2026-10-20)
-
-### 2026-10-16 to 2026-10-18 - Catch-up of unrecorded work (158 commits since `e067d48`)
-
-- Engine rounds 1-15 (PRs #44-#79): auras and self-attaching equipment (`auras.py`), library
-  search and X spells (`search.py`, `xspells.py`), counting templates (`counting.py`), copy
-  templates (`copies.py`), modal/choose-both (`modal.py`), many triggers and keyword mechanics
-  (convoke, mobilize, disguise, discover, empower, bargain, gift, exhaust, renew, flashback grants,
-  graveyard statics, firebending, ...). Standard coverage re-measured four times (latest 64e8f6f).
-- Web: deck trial page with league track, saved ladder replay, sequential fullscreen trials,
-  results stage, opponent-pool arena, browser trial recovery after reload, early-stop deadlock fix.
-- QA (2026-10-18): request validation, history store path, decklist comments, parallel
-  nine-agent and six-agent interface reviews; suite reached 523 tests. Details in `QA_RESULTS.md`.
-
 ## History
+
+### Log entries folded from 2026-10-16 to 2026-10-20 (rounds 1-16)
+
+- 2026-10-16 to 2026-10-18 catch-up: engine rounds 1-15 (PRs #44-#79; auras, search/X spells, counting, copies, modal, ~40 keyword mechanics), web deck-trial/league/replay work, QA pass (523 tests, `QA_RESULTS.md`).
+- 2026-10-20 dev loop skill added (`.claude/skills/mtg-dev/SKILL.md`); progress log restructured; 528 tests OK.
+- 2026-10-20 Standard coverage re-measure at `63aa2df`: 1,810 full (36.9%), 7,661 / 12,933 sentences; `remeasure.py` added.
+- 2026-10-20 AI task reconciliation: precombat `lethal_setup` and `runner.fresh_ai` were already in `363d3ce`.
+- 2026-10-20 four Next up tasks (round 16): prepared rearming, flashback continuation, Raid counters, README sync, 33,000-game precombat-setup measurement (combo vs default aggro 14.3 → 21.9%, details in `AI_RESULTS.md`); 540 tests OK; coverage 1,810 → 1,818.
+
 
 ### Milestone 1: observability, parser, AI tie-break, combo fixture (done)
 
