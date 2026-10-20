@@ -169,6 +169,12 @@ class EffectsMixin:
             return False
         if perm.has("indestructible"):
             return False
+        umbra = next((a for a in perm.auras if a.card.umbra_armor), None)
+        if umbra is not None:            # umbra armor: remove the damage and destroy the Aura instead
+            perm.damage, perm.deathtouched = 0, False
+            self.log(f"{umbra.card.name} is destroyed instead of {perm.card.name}", perm.controller)
+            self.destroy(umbra)
+            return True
         intent = rules_events.destruction(self, perm, no_regen)
         if intent.prevented:
             before = rules_events.snapshot(perm)

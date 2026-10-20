@@ -709,6 +709,16 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["pt_if"] = extra.get("pt_if", ()) + (("delirium", int(m[1]), int(m[2])),)
             return None
+        if line in ("Partner", "Choose a Background", "Friends forever", "Assist", "Doctor's companion"):
+            return None          # deck-building or teammate rules: nothing to do in a two-player game
+        if line == "Umbra armor" or line == "Totem armor":
+            extra["umbra_armor"] = True
+            return None
+        m = re.fullmatch(r"~'s power and toughness are each equal to the number of (cards in your hand|cards in your "
+                         r"graveyard|creatures you control|lands you control|artifacts you control)\.", line)
+        if m:
+            extra["pt_cda"] = m[1]
+            return None
         if line == "All creatures able to block ~ do so.":
             extra["lure"] = True
             return None

@@ -15,7 +15,7 @@ KEYWORDS = {
     "storm", "cascade", "islandwalk", "plainswalk", "shadow", "intimidate",
     "nonbasic landwalk", "legendary landwalk", "decayed", "flanking", "split second", "skulk",
     "protection from white", "protection from blue", "protection from black", "protection from red",
-    "protection from green", "protection from multicolored",
+    "protection from green", "protection from multicolored", "protection from artifacts",
 }
 BASIC_MANA = {"Plains": "W", "Island": "U", "Swamp": "B", "Mountain": "R", "Forest": "G"}
 NUMBERS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
@@ -234,6 +234,8 @@ class CardDef:
     riot: bool = False
     cast_self_triggers: list = field(default_factory=list)    # "When you cast ~, ..."
     cycle_self_triggers: list = field(default_factory=list)   # "When you cycle ~, ..."
+    umbra_armor: bool = False                           # "Umbra armor": the Aura is destroyed instead of its creature
+    pt_cda: str = ""                                    # "~'s power and toughness are each equal to the number of ..."
     escape_counters: int = 0                            # "~ escapes with N +1/+1 counters on it."
     anthem_all: tuple = ()                              # ("Sliver", 1, 1): "All Sliver creatures get +1/+1."
     lure: bool = False                                  # "All creatures able to block ~ do so."

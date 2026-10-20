@@ -28,7 +28,8 @@ def protected_from(perm, source) -> bool:
     if not isinstance(card, CardDef) or not isinstance(perm, Permanent):
         return False
     return any(perm.has(PROTECTION[c]) for c in card.colors) or \
-        len(card.colors) >= 2 and perm.has("protection from multicolored")
+        len(card.colors) >= 2 and perm.has("protection from multicolored") or \
+        card.is_artifact and perm.has("protection from artifacts")
 
 
 class Permanent:
@@ -157,6 +158,15 @@ class Permanent:
             return 0
         return counting.count(None, self.controller, {"what": what, "zone": "battlefield"}, self)
 
+    def _cda_count(self, what: str) -> int:
+        c = self.controller
+        if what == "cards in your hand":
+            return len(c.hand)
+        if what == "cards in your graveyard":
+            return len(c.graveyard)
+        kind = what.split()[0][:-1].capitalize()           # "creatures you control" -> Creature
+        return sum(kind in x.card.types for x in c.battlefield)
+
     def _pt_bonus(self):
         """(power, toughness) from anthems, attached equipment and "for each" counts, in one pass
         over the battlefield; the same sums as anthem, equipment and per_bonus."""
@@ -174,6 +184,10 @@ class Permanent:
                 if c.anthem_enchanted and self.auras:
                     bp += c.anthem_enchanted[0]
                     bt += c.anthem_enchanted[1]
+        if creature and self.card.pt_cda:
+            n = self._cda_count(self.card.pt_cda)
+            bp += n
+            bt += n
         if creature:
             for pl in (self.controller, self.controller.foe):
                 for x in (pl.battlefield if pl is not None else ()):

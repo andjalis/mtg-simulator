@@ -29,6 +29,14 @@ SLAG = card("Test Slagwurm", "{5}{G}", "Creature — Wurm", "Whenever ~ blocks o
                                                            "toughness.", 7, 7)
 DJINN = card("Test Djinn", "{2}{U}", "Creature — Djinn", "When you control no lands, sacrifice ~.", 5, 6)
 WALL = card("Test Wall", "{2}", "Creature — Wall", "", 0, 4)
+UMBRA = card("Test Umbra", "{G}", "Enchantment — Aura", "Enchant creature\nEnchanted creature gets +1/+1.\nUmbra armor")
+MARO = card("Test Maro", "{2}{G}{G}", "Creature — Elemental",
+            "~'s power and toughness are each equal to the number of cards in your hand.", 0, 0)
+SQUEE = card("Test Squee", "{2}{R}", "Legendary Creature — Goblin",
+             "At the beginning of your upkeep, you may return ~ from your graveyard to your hand.", 1, 1)
+OUTRIDER = card("Test Outrider", "{1}{G}", "Creature — Elf Warrior", "Protection from artifacts", 2, 1)
+GOLEM = card("Test Golem", "{3}", "Artifact Creature — Golem", "", 3, 3)
+BINOX = card("Test Binox", "{6}{G}", "Creature — Beast", "Assist\nTrample", 7, 5)
 
 
 class OneLiners(unittest.TestCase):
@@ -125,6 +133,31 @@ class OneLiners(unittest.TestCase):
         self.fight([slag], {slag: [wall]})
         self.assertNotIn(wall, self.b.battlefield)
         self.assertEqual(self.a.life, life + 4)
+
+    def test_umbra_armor(self):
+        bear = self.put(self.a, BEAR)
+        self.game._aura_host = bear
+        umbra = self.put(self.a, UMBRA)
+        bear.damage = 3
+        self.game.state_based_actions()
+        self.assertIn(bear, self.a.battlefield)
+        self.assertNotIn(umbra, self.a.battlefield)
+        self.assertEqual(bear.damage, 0)
+
+    def test_hand_size_pt_and_graveyard_return(self):
+        self.a.hand[:] = [ISLAND, ISLAND, ISLAND]
+        maro = self.put(self.a, MARO)
+        self.assertEqual((maro.power, maro.toughness), (3, 3))
+        self.a.graveyard.append(SQUEE)
+        self.game.begin_upkeep(self.a)
+        self.game.settle()
+        self.assertIn(SQUEE, self.a.hand)
+
+    def test_protection_from_artifacts_and_assist(self):
+        from mtgsim.engine import can_block
+        outrider = self.put(self.a, OUTRIDER)
+        self.assertFalse(can_block(self.put(self.b, GOLEM), outrider))
+        self.assertEqual(BINOX.unsupported, [])
 
     def test_sacrificed_without_lands(self):
         island = self.put(self.a, ISLAND)

@@ -329,6 +329,9 @@ to select another local database.
   Raid and Delirium statics, "when you control no lands, sacrifice ~", and riders such as "its controller
   mills N", "deals N damage to that creature's controller", "you gain life equal to that creature's
   toughness" and "deals N damage to any target and M damage to you"
+- Umbra (totem) armor, protection from artifacts, "~'s power and toughness are each equal to the number of
+  cards in your hand / creatures you control / ...", "return ~ from your graveyard to your hand" graveyard
+  triggers, and lines that do nothing with two players (partner, choose a Background, friends forever, assist)
 - Regeneration shields replace destruction, tap the permanent, clear its damage
   and remove it from combat. They expire at cleanup and cannot prevent sacrifice
   or zero toughness. Regeneration-prevention riders on destruction and damage apply

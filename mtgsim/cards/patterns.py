@@ -205,6 +205,7 @@ _EFFECT_PATTERNS = [
     (r"~ deals (\d+) damage to any target and (\d+) damage to you",
      lambda m: [Effect("damage", int(m[1]), target="any"), Effect("lose_life", int(m[2]))]),
     (r"take an extra turn after this one", lambda m: Effect("extra_turn")),
+    (r"return ~ from your graveyard to your hand", lambda m: Effect("return_self_gy", data={"to": "hand"})),
     (r"(?:you may )?put a land card from your hand onto the battlefield(?: tapped)?", lambda m: Effect("land_from_hand")),
     (r"tap target creature defending player controls", lambda m: Effect("tap", 1, target="creature", filter="opp")),
     (r"each player draws a card", lambda m: Effect("draw_each", 1)),
