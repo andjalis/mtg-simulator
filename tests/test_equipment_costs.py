@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch
 
 from mtgsim.ai import HeuristicAI
-from mtgsim.cards import EquipCost
+from mtgsim.cards import EquipCost, make_token
 from mtgsim.engine import Game, Permanent, Player, equip_all
 from tests.test_templates import BEAR, DRAGON3, ISLAND, MOUNTAIN, card
 
@@ -314,7 +314,9 @@ class EquipCostGameTests(unittest.TestCase):
         self.assertIn(victim, self.a.battlefield)
 
     def test_equip_all_respects_reserve_across_alternatives(self):
-        eq, host, victim = self.perm(CHOICE), self.perm(DRAGON3), self.perm(BEAR)
+        worthwhile = equipment("Test Reserve Blade", "Equip {3}\nEquip—Sacrifice a creature.",
+                                "Equipped creature gets +2/+2.")
+        eq, host, victim = self.perm(worthwhile), self.perm(DRAGON3), self.perm(make_token("Soldier", 1, 1))
         lands = self.lands(3)
         self.a.hand = [SHOCK]     # keeps {1} open, so {3} is not spare
         equip_all(self.game, self.a)
@@ -323,7 +325,9 @@ class EquipCostGameTests(unittest.TestCase):
         self.assertNotIn(victim, self.a.battlefield)
 
     def test_equip_all_mixed_cost_respects_reserve(self):
-        eq, host, victim = self.perm(MIXED), self.perm(DRAGON3), self.perm(BEAR)
+        worthwhile = equipment("Test Mixed Reserve Blade", "Equip—{1}{R}, Sacrifice a creature.",
+                                "Equipped creature gets +2/+2.")
+        eq, host, victim = self.perm(worthwhile), self.perm(DRAGON3), self.perm(make_token("Soldier", 1, 1))
         lands = self.lands(2)
         self.a.hand = [SHOCK]
         equip_all(self.game, self.a)
