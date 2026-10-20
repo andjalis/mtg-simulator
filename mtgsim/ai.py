@@ -89,7 +89,8 @@ def _spell_options(game: Game, me: Player) -> list:
 
 # Rough value of effects the main evaluation has no special case for.
 MINOR_EFFECTS = {"treasure": 1.0, "rummage": 0.3, "surveil": 0.3, "scry": 0.3, "dig_put": 2.0,
-                 "draw_up_to": 1.5, "grant": 0.5, "add_counter": 0.5, "transform": 1.0}
+                 "draw_up_to": 1.5, "grant": 0.5, "add_counter": 0.5, "transform": 1.0,
+                 "manifest": 3.0, "manifest_dread": 3.0, "cloak": 3.0}
 
 
 # Graveyard returns valued per legal entry (any graveyard the effect allows), not just our own.
