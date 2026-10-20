@@ -1,0 +1,3 @@
+attacking_token_grants: 0% matched by templates (including simplifications) (0 fully template-matched, 1 partly supported; 1 cards)
+   1 Old Hob, Alleycat Blues [partial]
+       ignored: {1}{W}: Target attacking creature token gains indestructible until end of turn.

@@ -1226,6 +1226,11 @@ class Game:
                     and (not d.get("nontoken") or not perm.front.is_token)
                     and (not d.get("no_flying") or not perm.has("flying")))
         f = eff.filter
+        if f == "attacking_token":
+            return (perm.is_creature and perm.front.is_token and perm in self.attackers
+                    and perm.controller is self.active
+                    and self.step in ("declare_attackers", "declare_blockers", "combat_damage", "end_combat")
+                    and (eff.target != "creature_mine" or perm.controller is by))
         if f.startswith("x:"):
             return removal.x_passes(f, perm, by)
         r = removal.passes(f, perm)
@@ -1295,6 +1300,9 @@ class Game:
         return []
 
     def legal_target(self, p: Player, eff: Effect, tgt, source=None) -> bool:
+        if eff.filter == "attacking_token":
+            return (isinstance(tgt, Permanent) and self.targetable(tgt, p)
+                    and self.passes_filter(eff, tgt, p))
         if eff.target == "graveyard_spell":
             return (isinstance(tgt, GraveyardTarget) and tgt.controller is p and tgt.index() is not None
                     and (tgt.card.is_instant or tgt.card.is_sorcery))
@@ -1335,8 +1343,25 @@ class Game:
             targets[i] = target
         return targets
 
+    def bind_combat_targets(self, p: Player, effects, targets, source=None):
+        """Bind restricted attacking-token choices before costs can change the battlefield."""
+        if targets is None:
+            return None
+        targets = list(targets)
+        targets += [None] * (len(effects) - len(targets))
+        for i, effect in enumerate(effects):
+            if effect.filter != "attacking_token":
+                continue
+            target = targets[i]
+            if target is None:
+                target = self.auto_targets(p, [effect], source)[0]
+            if not isinstance(target, Permanent) or not self.legal_target(p, effect, target, source):
+                return None
+            targets[i] = target
+        return targets
+
     def fill_targets(self, p: Player, effects, targets, source=None):
-        """Fill only missing choices; already bound graveyard targets must never be chosen again."""
+        """Fill only missing choices; already bound targets must never be chosen again."""
         targets = list(targets)
         missing = [i for i, effect in enumerate(effects) if effect.target in TARGETED and targets[i] is None]
         for i, target in zip(missing, self.auto_targets(p, [effects[i] for i in missing], source)):
@@ -2041,6 +2066,7 @@ class Game:
         effects = [] if card.is_permanent else list(card.spell_effects)
         casting_entry = getattr(card, "graveyard_target", None)
         targets = self.bind_graveyard_targets(p, effects, targets, exclude=casting_entry)
+        targets = self.bind_combat_targets(p, effects, targets)
         if targets is None:
             return False
         cost = self.cost_of(p, card)
@@ -2048,8 +2074,9 @@ class Game:
         mode_indices, mode_targets = None, []
         early_teamwork = []
         flags = set()
-        if any(e.target == "graveyard_spell" for mode in card.modes for e in mode):
-            # Decide these modes before payment too: discard/sacrifice costs can change the graveyard.
+        if any(e.target == "graveyard_spell" or e.filter == "attacking_token"
+               for mode in card.modes for e in mode):
+            # Decide these modes before payment: costs can change either target zone.
             if card.teamwork:
                 chosen = self.teamwork_creatures(p, card, exclude=convoked)
                 for creature in chosen:
@@ -2065,6 +2092,7 @@ class Game:
             mode_indices = modal.select(self, p, card.modes, n=card.modes_choose, flags=flags)
             mode_effects = [e for i in sorted(mode_indices) for e in card.modes[i]]
             mode_targets = self.bind_graveyard_targets(p, mode_effects, exclude=casting_entry)
+            mode_targets = self.bind_combat_targets(p, mode_effects, mode_targets)
             if mode_targets is None:
                 return False
         if early_teamwork:
@@ -2178,6 +2206,7 @@ class Game:
         if not instant_ok and not (p is self.active and self.step in ("main1", "main2") and not self.stack):
             return False
         targets = self.bind_graveyard_targets(p, effects, targets, pw)
+        targets = self.bind_combat_targets(p, effects, targets, pw)
         if targets is None:
             return False
         pw.counters["loyalty"] = pw.loyalty + cost
@@ -2436,6 +2465,8 @@ class Game:
             return False
         if any(e.target == "graveyard_spell" and not self.legal_targets(p, e) for e in act.effects):
             return False
+        if any(e.filter == "attacking_token" and not self.legal_targets(p, e) for e in act.effects):
+            return False
         return payable(self.mana_sources(p, perm if c.get("tap") else None, "ability"), self.ability_cost(p, perm, act))
 
     def activate_ability(self, p: Player, perm: Permanent, idx: int, targets=None) -> bool:
@@ -2444,13 +2475,16 @@ class Game:
             return False
         act, c = perm.card.activated[idx], perm.card.activated[idx].extra_costs
         targets = self.bind_graveyard_targets(p, act.effects, targets, perm)
+        targets = self.bind_combat_targets(p, act.effects, targets, perm)
         if targets is None:
             return False
         mode_indices, mode_targets = None, []
-        if any(e.target == "graveyard_spell" for mode in act.modes for e in mode):
+        if any(e.target == "graveyard_spell" or e.filter == "attacking_token"
+               for mode in act.modes for e in mode):
             mode_indices = modal.select(self, p, act.modes, perm)
             mode_effects = [e for i in sorted(mode_indices) for e in act.modes[i]]
             mode_targets = self.bind_graveyard_targets(p, mode_effects, source=perm)
+            mode_targets = self.bind_combat_targets(p, mode_effects, mode_targets, perm)
             if mode_targets is None:
                 return False
         if self.pay(p, self.ability_cost(p, perm, act), exclude=perm if c.get("tap") else None) is None:
@@ -3739,6 +3773,10 @@ class Game:
                 self.fire(opp, "opp_creature_dies", other, context=perm.controller)
 
     def state_based_actions(self):
+        # A creature that changes controller or stops being a creature leaves combat.
+        # Restoring its former characteristics does not make it an attacker again.
+        self.attackers[:] = [a for a in self.attackers if a.is_creature and a.controller is self.active
+                             and a in a.controller.battlefield]
         for pl in self.players:
             left = getattr(pl.graveyard, "left", None)
             if left:
