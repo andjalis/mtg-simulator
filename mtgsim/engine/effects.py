@@ -8,7 +8,7 @@ from ..cards import AltCost, CardDef, Effect
 from .. import rules_events
 from .mana import find_payment
 from .policy import perm_value
-from .state import Permanent, Player, StackItem, card_matches
+from .state import Permanent, Player, StackItem, card_matches, protected_from
 
 
 class EffectsMixin:
@@ -20,6 +20,9 @@ class EffectsMixin:
         def has(keyword):
             return (source.has(keyword) if isinstance(source, Permanent)
                     else isinstance(source, CardDef) and keyword in source.keywords)
+        if protected_from(target, source):
+            self.log(f"{target.card.name}'s protection prevents {amount} damage", target.controller)
+            return
         infect = has("infect")
         if isinstance(target, Player):
             if infect:
@@ -315,6 +318,15 @@ class EffectsMixin:
                         legend_losers.extend(perm for perm in group if perm is not keep)
             for p in self.players:
                 for perm in list(p.battlefield):
+                    # Protection: an Aura of that color is put into the graveyard, Equipment becomes unattached.
+                    if perm.card.aura and perm.aura_host is not None and protected_from(perm.aura_host, perm):
+                        auras.detach(perm)
+                        self.leave_battlefield(perm, "graveyard")
+                        changed = True
+                        continue
+                    if perm.attached_to is not None and protected_from(perm.attached_to, perm):
+                        perm.attached_to = None
+                        changed = True
                     if perm.is_planeswalker and perm.loyalty <= 0:
                         self.dies(perm)
                         changed = True

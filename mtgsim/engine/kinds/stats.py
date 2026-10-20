@@ -1,6 +1,7 @@
 """Creature stats and state: pump, counters, keywords, tapping, combat restrictions."""
 from __future__ import annotations
 
+from ... import protection
 from ..policy import default_choose_target, perm_value
 from ..state import Permanent, StackItem
 from . import kind
@@ -86,15 +87,18 @@ def pump_all(game, p, eff, item, **_):
 
 
 @kind("grant")
-def grant(game, eff, target, item, **_):
+def grant(game, p, eff, target, item, **_):
     if eff.data.get("host") and item is not None and isinstance(item.source, Permanent):
         target = item.source.attached_to
     if isinstance(target, Permanent):
+        keyword = eff.data["keyword"]
+        if keyword == protection.CHOICE:
+            keyword = protection.choose_color(game, p, target)
+            game.log(f"{target.card.name} gains {keyword}", p)
         if eff.data.get("perm"):
-            name = eff.data["keyword"]
-            target.counters[name] = target.counters.get(name, 0) + 1
+            target.counters[keyword] = target.counters.get(keyword, 0) + 1
         else:
-            target.temp_kw.add(eff.data["keyword"])
+            target.temp_kw.add(keyword)
 
 
 @kind("add_counter")

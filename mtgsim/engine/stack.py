@@ -250,7 +250,8 @@ class StackMixin:
                 p.next_creature_counters = 0
             return
         targeted = [(e, t) for e, t in zip(item.effects, item.targets) if e.target in TARGETED]
-        item.resolved = not (targeted and all(not self.legal_target(p, e, t) for e, t in targeted))
+        with self.targeting(item):
+            item.resolved = not (targeted and all(not self.legal_target(p, e, t) for e, t in targeted))
         if not item.resolved:
             self.log(f"{item} fizzles (no legal target)", p)
         else:
@@ -264,7 +265,9 @@ class StackMixin:
                     item.targets[i - 1].exile_turn = self.turn
             for eff, tgt in zip(item.effects, item.targets):
                 if eff.target in TARGETED:
-                    if not self.legal_target(p, eff, tgt):
+                    with self.targeting(item):
+                        legal = self.legal_target(p, eff, tgt)
+                    if not legal:
                         prev = None
                         continue
                     prev = tgt

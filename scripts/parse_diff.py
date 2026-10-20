@@ -11,7 +11,8 @@ CI's parse-diff job runs the same steps by hand:
     python3 scripts/parse_diff.py dump head.tsv                      # this checkout's parser
     python3 scripts/parse_diff.py compare base.tsv head.tsv --report report.md
 
-`dump` writes one line per card: its database key and repr(CardDef), or ERR and the exception.
+`dump` writes one line per card: its database key and every CardDef field (`describe`), or ERR and the
+exception.
 `compare` lists the cards whose parse changed (also into $GITHUB_STEP_SUMMARY when set, and into
 --report as Markdown for the PR comment) and exits 1 only when a card that parsed before now raises.
 Changed parses are expected in card rounds; the list is there so a reviewer can see which cards a
@@ -20,9 +21,11 @@ change touched.
 from __future__ import annotations
 
 import argparse
+import dataclasses
 import difflib
 import json
 import os
+import re
 import sqlite3
 import subprocess
 import sys
@@ -36,6 +39,27 @@ SHOWN = 100
 MARKER = "<!-- parse-diff -->"
 
 
+def describe(v, seen=frozenset()) -> str:
+    """Every field of a CardDef, recursively, in a form that is the same in every process: CardDef's own
+    repr is just its name, sets are sorted (string hashes vary by process) and memory addresses are dropped."""
+    if dataclasses.is_dataclass(v) and not isinstance(v, type):
+        if id(v) in seen:
+            return f"<{type(v).__name__} cycle>"
+        seen = seen | {id(v)}
+        return f"{type(v).__name__}(" + ", ".join(f"{f.name}={describe(getattr(v, f.name), seen)}"
+                                                  for f in dataclasses.fields(v)) + ")"
+    if isinstance(v, (set, frozenset)):
+        return "{" + ", ".join(sorted(describe(x, seen) for x in v)) + "}"
+    if isinstance(v, dict):
+        return "{" + ", ".join(f"{describe(k, seen)}: {describe(x, seen)}" for k, x in v.items()) + "}"
+    if isinstance(v, (list, tuple)):
+        inner = ", ".join(describe(x, seen) for x in v)
+        return f"[{inner}]" if isinstance(v, list) else f"({inner})"
+    if callable(v):
+        return f"<{getattr(v, '__qualname__', type(v).__name__)}>"
+    return re.sub(r" at 0x[0-9a-f]+", "", repr(v))
+
+
 def dump(out: str) -> None:
     from mtgsim import cards
     print(f"parsing with {Path(cards.__file__).parent.parent}", file=sys.stderr)
@@ -43,7 +67,7 @@ def dump(out: str) -> None:
     with open(out, "w") as f:
         for key, data in db.execute("select key, data from cards order by key"):
             try:
-                r = repr(cards.card_from_scryfall(json.loads(data)))
+                r = describe(cards.card_from_scryfall(json.loads(data)))
             except Exception as e:
                 r = "ERR " + repr(e)
             f.write(f"{key}\t{r}\n")

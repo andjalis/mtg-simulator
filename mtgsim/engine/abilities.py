@@ -27,7 +27,7 @@ class AbilitiesMixin:
         if not instant_ok and not (p is self.active and self.step in ("main1", "main2") and not self.stack):
             return False
         targets = self.auto_targets(p, effects, pw) if targets is None else list(targets)
-        if not self.valid_action_targets(p, effects, targets):
+        if not self.valid_action_targets(p, effects, targets, pw):
             return False
         pw.counters["loyalty"] = pw.loyalty + cost
         pw.loyalty_used = True
@@ -130,7 +130,7 @@ class AbilitiesMixin:
         if creature is None:
             creature = self.hook(p, "choose_equip_target")(self, p, equipment)
         if creature is None or creature not in p.battlefield or not creature.is_creature or \
-                creature is equipment.attached_to or not self.targetable(creature, p):
+                creature is equipment.attached_to or not self.targetable(creature, p, equipment):
             return False
         if self.pay(p, self.equip_cost(equipment, creature)) is None:
             return False
@@ -228,9 +228,10 @@ class AbilitiesMixin:
             return False
         return costs.ability_plan(self, p, perm, act, self.ability_cost(p, perm, act)) is not None
 
-    def valid_action_targets(self, p, effects, targets):
-        return all(e.target not in TARGETED or (i < len(targets) and
-                   self.legal_target(p, e, targets[i])) for i, e in enumerate(effects))
+    def valid_action_targets(self, p, effects, targets, source=None):
+        with self.targeting(source if source is not None else self.target_source):
+            return all(e.target not in TARGETED or (i < len(targets) and
+                       self.legal_target(p, e, targets[i])) for i, e in enumerate(effects))
 
     @atomic_action
     def activate_ability(self, p: Player, perm: Permanent, idx: int, targets=None) -> bool:
@@ -239,7 +240,7 @@ class AbilitiesMixin:
             return False
         act, c = perm.card.activated[idx], perm.card.activated[idx].extra_costs
         targets = self.auto_targets(p, act.effects, perm) if targets is None else list(targets)
-        if not self.valid_action_targets(p, act.effects, targets):
+        if not self.valid_action_targets(p, act.effects, targets, perm):
             return False
         plan = costs.ability_plan(self, p, perm, act, self.ability_cost(p, perm, act))
         if plan is None or self.pay(p, plan.cost, exclude_many=plan.exclude) is None:
@@ -288,7 +289,7 @@ class AbilitiesMixin:
             mode_effects = modal.pick(self, p, act.modes, perm)
             effects += mode_effects
             targets = list(targets) + self.auto_targets(p, mode_effects, perm)
-            if not self.valid_action_targets(p, mode_effects, targets[-len(mode_effects):]):
+            if not self.valid_action_targets(p, mode_effects, targets[-len(mode_effects):], perm):
                 return False
         item = StackItem(p, effects, list(targets), source=perm, name=f"{perm.card.name} ability",
                          kind="ability")

@@ -266,6 +266,14 @@ to select another local database.
 - Shadow restricts both attacking and blocking creatures to those with shadow;
   intimidate restricts blockers to artifact creatures or creatures sharing a color
 - Nonbasic and legendary landwalk use the defending player's land supertypes
+- Protection from a color (printed, from Equipment like "protection from red and from blue", from Auras,
+  or granted until end of turn): the creature can't be blocked by creatures of that color, targeted by
+  spells or abilities of that color (a spell whose target gains protection fizzles), dealt damage by
+  sources of that color, or enchanted or equipped by Auras and Equipment of that color (they fall off).
+  "The color of your choice" picks the color of the opposing spell on the stack, else the opponent's
+  most common creature color, and the AI uses such spells to save creatures from colored removal.
+  Protection from artifacts, everything, multicolored, a creature type or a player is not parsed, and
+  "target creature gains protection from the color of your choice" always targets your own creature
 - Regeneration shields replace destruction, tap the permanent, clear its damage
   and remove it from combat. They expire at cleanup and cannot prevent sacrifice
   or zero toughness. Regeneration-prevention riders on destruction and damage apply

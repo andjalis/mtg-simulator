@@ -14,8 +14,19 @@ TrackedZone = CardZone  # public compatibility alias
 
 TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
 COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
+PROTECTION = {c: f"protection from {w}" for w, c in COLOR_WORDS.items()}
 TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "land", "artifact", "artifact_enchantment",
             "player", "spell")
+
+
+def protected_from(perm, source) -> bool:
+    """Whether perm has protection from a color of source (a CardDef, Permanent or StackItem)."""
+    if isinstance(source, StackItem):
+        source = source.card or source.source
+    card = source.card if isinstance(source, Permanent) else source
+    if not isinstance(card, CardDef) or not isinstance(perm, Permanent):
+        return False
+    return any(perm.has(PROTECTION[c]) for c in card.colors)
 
 
 class Permanent:
@@ -509,6 +520,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
         return False
     if attacker.has("legendary landwalk") and any(x.card.is_land and x.card.legendary
                                                  for x in blocker.controller.battlefield):
+        return False
+    if protected_from(attacker, blocker):
         return False
     if attacker.has("flying") and not (blocker.has("flying") or blocker.has("reach")):
         return False

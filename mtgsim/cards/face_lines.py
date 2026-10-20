@@ -123,7 +123,7 @@ def _face_special_lines(st, line):
             return None
         line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration) — (?=When|At|If)", "", line)
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
-        parts = [p.strip().lower() for p in line.split(",")]
+        parts = [p.strip().lower() for p in re.split(r",(?: and)? | and |,", line)]
         if all(p in KEYWORDS or re.fullmatch(r"ward \{\d+\}", p) for p in parts):
             for p in parts:
                 if p.startswith("ward"):

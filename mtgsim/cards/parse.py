@@ -215,6 +215,8 @@ def _parse_face(data: dict) -> CardDef:
         text = re.sub(rf"\b{re.escape(name.split(' the ')[0])}\b", "~", text)  # "Smaug the Magnificent"
     text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment|class)\b", "~",
                   text, flags=re.I)
+    text = re.sub(r"\b(protection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
+                  r"\1 and protection from \2", text)
     text = re.sub(r", where X is the amount of mana spent to cast ~\.", ".", text).replace(
         "the top X cards", f"the top {int(data.get('cmc', 0) or 0)} cards")
 
