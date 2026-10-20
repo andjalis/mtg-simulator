@@ -1,0 +1,7 @@
+delayed_token_actions: 25% matched by templates (including simplifications) (1 fully template-matched, 3 partly supported; 4 cards)
+   1 Akoum Stonewaker [partial]
+       ignored: Exile that token at the beginning of the next end step.
+   1 Echo Chamber [partial]
+       ignored: {4}, {T}: An opponent chooses target creature they control. Create a token that's a copy of that creature. That token gains haste until end of turn. Exile the token at the beginning of the next end step. Activate only as a sorcery.
+   1 Old Hob, Alleycat Blues [partial]
+       ignored: {1}{W}: Target attacking creature token gains indestructible until end of turn.

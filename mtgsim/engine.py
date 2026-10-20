@@ -2419,10 +2419,7 @@ class Game:
                                           ("declare_attackers", "declare_blockers"))
             if d.get("tapped"):
                 perm.tapped = True
-            if d.get("created_haste"):
-                perm.temp_kw.add("haste")
-            if d.get("delayed_sac"):
-                delayed.sacrifice_later(self, p, perm, source, scope=d["delayed_sac"])
+            delayed.created(self, p, perm, d, source)
         self.log(f"creates {n if n is not None else eff.amount} {d.get('kind') or d.get('name')} token(s)", p)
 
     def transform(self, perm: Permanent):
@@ -3261,7 +3258,7 @@ class Game:
             xspells.resolve(self, p, eff, target, item)
         elif k in search.KINDS:
             search.resolve(self, p, eff, target, item)
-        elif k in ("blink_delayed", "delayed_return", "delayed_sacrifice"):
+        elif k in ("blink_delayed", "delayed_return", "delayed_sacrifice", "delayed_exile", "delayed_destroy"):
             delayed.resolve(self, p, eff, target, item)
         elif k == "equip":
             src = item.source if item is not None else None

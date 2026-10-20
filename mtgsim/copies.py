@@ -16,7 +16,7 @@ engine hands the effect kinds in KINDS to resolve() here.
 
 Simplifications: the permanent or spell to copy is picked when the effect resolves (so "target"
 only checks hexproof on the opponent's permanents), the legend rule isn't modelled (so "except it
-isn't legendary" changes nothing). Delayed sacrifices use the shared next-end-step
+isn't legendary" changes nothing). Delayed token actions use the shared next-end-step
 scheduler; a quoted ability granted to the token remains a normal triggered ability.
 
 This module imports mtgsim.cards and mtgsim.engine lazily, inside functions, because both import it.
@@ -352,11 +352,8 @@ def resolve(game, p, eff, target, item=None):
         for perm in chosen:
             for _ in range(n):
                 token = game.enter_battlefield(p, make_copy(perm.card, d.get("mods", {})))
-                if d.get("created_haste"):
-                    token.temp_kw.add("haste")
-                if d.get("mods", {}).get("sac_end") or d.get("delayed_sac"):
-                    from . import delayed
-                    delayed.sacrifice_later(game, p, token, source, d.get("delayed_sac", "any"))
+                from . import delayed
+                delayed.created(game, p, token, d, source)
             game.log(f"creates {n} token cop{'y' if n == 1 else 'ies'} of {perm.card.name}", p)
     elif k == "become_copy":
         target = source
