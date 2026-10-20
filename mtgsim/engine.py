@@ -25,7 +25,7 @@ import json
 import random
 import re
 
-from . import auras, copies, counting, delayed, graveyards, removal, search, xspells
+from . import auras, copies, counting, delayed, graveyards, removal, search, xspells, kw_altcast
 from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, EquipCost, add_mana, jace_token, make_token, role_token
 from . import modal
 
@@ -356,7 +356,7 @@ class Permanent:
                     return True
         if self.card.keyword_at_counters and self.p1 >= self.card.keyword_at_counters[0]:
             return kw == self.card.keyword_at_counters[1]
-        return kw == "haste" and self.blitz
+        return kw == "haste" and (self.blitz or getattr(self, "altcast_haste", False))
 
     def condition(self, cond: str) -> bool:
         if cond.startswith("another:"):
@@ -1001,6 +1001,9 @@ class Game:
     def cost_of(self, p: Player, card: CardDef) -> dict:
         """The mana cost after cost reductions (Tolarian Terror, Ghalta)."""
         cost = dict(card.mana_cost)
+        if self._origin(card)[1] in ("unearth", "suspend"):
+            self._altcast_taps, self._altcast_exiles = [], []
+            return cost
         n = 0
         if card.cost_reduction == "instant_sorcery_gy":
             n = sum(c.is_instant or c.is_sorcery for c in p.graveyard)
@@ -1043,6 +1046,8 @@ class Game:
             cost["generic"] -= self._convoke_k
         if card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
             cost["generic"] += card.extra_sac_or_pay
+        cost, self._altcast_taps, self._altcast_exiles = kw_altcast.plan_payment(
+            self, p, card, cost, self.convoke_pool(p)[:self._convoke_k] if card.convoke else ())
         return cost
 
     # ------------------------------------------------------- casting options
@@ -1150,7 +1155,7 @@ class Game:
                         (a.kind == "mayhem" and c in p.discarded_cards):
                     out.append(self._graveyard_variant(GraveyardTarget(p, c, entry),
                                                        "blitz_gy" if a.kind == "blitz" else a.kind, a))
-        return out
+        return out + kw_altcast.options(self, p)
 
     def _graveyard_variant(self, target, kind, alt, granted=False):
         # Ordinary variants are cached by name. Graveyard casts must bind to one exact entry,
@@ -1183,16 +1188,19 @@ class Game:
         """The zone a spell_options() variant of this kind is cast from."""
         return {"from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile,
-                "mayhem": p.graveyard, "impulse": p.exile}.get(kind, p.hand)
+                "mayhem": p.graveyard, "retrace": p.graveyard, "unearth": p.graveyard,
+                "madness_cast": p.exile, "rebound_cast": p.exile, "suspend_cast": p.exile, "impulse": p.exile}.get(kind, p.hand)
 
     def _available(self, p: Player, card: CardDef) -> bool:
         base, kind, _ = self._origin(card)
+        if hasattr(card, "exile_entry") and not kw_altcast.exile_live(p, card.exile_entry):
+            return False
         if kind == "prepared":
             return any(x.card is base and x.prepared for x in p.battlefield)
         target = getattr(card, "graveyard_target", None)
         if target is not None:
             return (target.controller is p and target.index() is not None
-                    and (not card.granted_flashback or target in p.granted_fb))
+                    and (not getattr(card, "granted_flashback", False) or target in p.granted_fb))
         return base in self._zone(p, kind)
 
     def can_cast_now(self, p: Player, card: CardDef) -> bool:
@@ -1200,6 +1208,10 @@ class Game:
         if card.is_land or not self._available(p, card):
             return False
         base, kind, alt = self._origin(card)
+        if kind == "" and base.altcast.get("no_mana_cost"):
+            return False
+        if kind == "retrace" and not any(x.is_land for x in p.hand):
+            return False
         if kind == "spectacle" and not self.opponent(p).lost_life_turn:
             return False
         if alt is not None and alt.life and p.life <= alt.life:
@@ -1223,14 +1235,15 @@ class Game:
                     t != getattr(card, "graveyard_target", None) for t in self.legal_targets(p, e)))
                for e in target_effects):
             return False
-        if not card.instant_speed and not (p is self.active and self.step in ("main1", "main2")
-                                           and not self.stack):
+        if not getattr(card, "resolving_permission", False) and not card.instant_speed and not (
+                p is self.active and self.step in ("main1", "main2") and not self.stack):
             return False
         if any(e.target == "spell" for e in card.spell_effects):
             if not any(self.can_counter(e, item, p) for e in card.spell_effects if e.kind in ("counter", "bounce_spell")
                        for item in self.stack):
                 return False
-        return self.can_pay(p, self.cost_of(p, card), spell=card)
+        cost = self.cost_of(p, card)
+        return kw_altcast.can_pay(self, p, card, cost)
 
     # ---------------------------------------------------------------- targets
     def targetable(self, obj, by: Player) -> bool:
@@ -1529,6 +1542,7 @@ class Game:
         return self.winner
 
     def main_phase(self, p: Player):
+        kw_altcast.use_abilities(self, p)
         p.ai.main_phase(self, p)
         if not self.over:
             self.hook(p, "use_abilities")(self, p)
@@ -1676,6 +1690,7 @@ class Game:
             if victim in victim.controller.battlefield:
                 victim.controller.battlefield.remove(victim)
                 victim.controller = owner
+                kw_altcast.control_changed(victim)
                 owner.battlefield.append(victim)
         self.stolen = []
         while len(p.hand) > 7 and not any(x.card.no_max_hand for x in p.battlefield):
@@ -1760,6 +1775,8 @@ class Game:
 
     def fire(self, p: Player, event: str, source: Permanent | None = None, context=None, subject=None):
         """Queue the triggers for event: of ``source`` if given, else of p's permanents."""
+        if event == "upkeep" and source is None:
+            kw_altcast.upkeep(self, p)
         if event == "end_step" and source is None:
             delayed.end_step(self, p)
         perms = [source] if source is not None else list(p.battlefield)
@@ -1894,6 +1911,7 @@ class Game:
             perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
             self._aura_host = None
             self._spent = ""
+            kw_altcast.entered(self, perm, kind)
             if kind == "disguise":
                 perm.hidden = base
                 perm.card = CardDef(name="Face-down creature", mana_cost={"generic": 0}, cmc=0,
@@ -1924,7 +1942,9 @@ class Game:
         targeted = [(e, t) for e, t in zip(item.effects, item.targets) if e.target in TARGETED
                     and not (t is None and e.data.get("upto"))
                     and not (e.target == "graveyard_card" and t == ())]
+        resolved_successfully = True
         if targeted and all(not self.legal_target(p, e, t, item.source) for e, t in targeted):
+            resolved_successfully = False
             self.log(f"{item} fizzles (no legal target)", p)
         else:
             self.log(f"{item} resolves", p)
@@ -1958,11 +1978,13 @@ class Game:
         if item.kind == "chapter":
             self.finish_chapter(item.source)
         if item.is_spell:
-            self.to_graveyard_after_resolving(item)
+            self.to_graveyard_after_resolving(item, resolved_successfully)
         self.state_based_actions()
 
-    def to_graveyard_after_resolving(self, item: StackItem):
+    def to_graveyard_after_resolving(self, item: StackItem, success=False):
         if item.kind == "copy":
+            return
+        if kw_altcast.resolved(self, item, success):
             return
         base, kind, _ = self._origin(item.card)
         owner = item.controller
@@ -2102,6 +2124,12 @@ class Game:
         base, kind, alt = self._origin(card)
         if not self._available(p, card):
             return False
+        if kind == "suspend":
+            return kw_altcast.suspend(self, p, card, alt)
+        if kind == "" and base.altcast.get("no_mana_cost"):
+            return False
+        if kind == "retrace" and not any(x.is_land for x in p.hand):
+            return False
         aura_host = None
         if card.aura:
             aura_host = targets[0] if targets and targets[0] is not None else auras.choose_host(self, p, card)
@@ -2112,6 +2140,7 @@ class Game:
         casting_entry = getattr(card, "graveyard_target", None)
         cost = self.cost_of(p, card)
         convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
+        alt_taps, alt_exiles = list(self._altcast_taps), list(self._altcast_exiles)
         mode_indices, mode_targets = None, []
         early_teamwork = []
         flags = set()
@@ -2157,24 +2186,34 @@ class Game:
             for creature in convoked:
                 creature.tapped = True
             payment_cost = {**cost, "generic": cost.get("generic", 0) + planned_x}
-        payment = self.pay(p, payment_cost, spell=card)
+        for artifact in alt_taps:
+            artifact.tapped = True
+        payment = self.pay(p, payment_cost, spell="ability" if card.is_ability else card)
         if payment is None:
+            for artifact in alt_taps:
+                artifact.tapped = False
             if planned_x is not None:
                 for creature in convoked:
                     creature.tapped = False
             return False
+        for entry in alt_exiles:
+            index = p.graveyard.entries.index(entry)
+            p.exile.append(p.graveyard.pop(index))
         for c in convoked:
             c.tapped = True
         x = 0
         if "X" in card.mana_cost:     # X: as much as the remaining mana allows
             if planned_x is not None:
                 x = planned_x
+            elif card.altcast.get("delve") or card.altcast.get("improvise"):
+                x, extra_payment = kw_altcast.pay_x(self, p, card, targets)
+                payment += extra_payment
             else:
                 while x < 20 and payable(self.mana_sources(p, spell=card), {"generic": x + 1}):
                     x += 1
                 if x and hasattr(p.ai, "choose_x"):   # an AI may keep mana for other plays
                     x = max(0, min(x, p.ai.choose_x(self, p, card, targets, x)))
-            if x and planned_x is None:
+            if x and planned_x is None and not (card.altcast.get("delve") or card.altcast.get("improvise")):
                 payment += self.pay(p, {"generic": x}, spell=card)
         if alt is not None and alt.life:
             self.change_life(p, -alt.life, f"{card.name}: alternative cost")
@@ -2184,12 +2223,16 @@ class Game:
             victim = self.extra_sac_candidates(p, card)[0]
             self.log(f"sacrifices {victim.card.name} for {card.name}", p)
             self.sacrifice(victim)
-        if kind == "prepared":
+        if kind == "unearth":
+            pass  # the graveyard ability moves its card only on resolution
+        elif kind == "prepared":
             next(x for x in p.battlefield if x.card is base and x.prepared).prepared = False
         elif getattr(card, "graveyard_target", None) is not None:
             p.graveyard.pop(card.graveyard_target.index())
         else:
             self._zone(p, kind).remove(base)
+        if kind == "retrace":
+            self.discard_card(p, next(x for x in p.hand if x.is_land))
         if card.extra_discard and p.hand:
             pitched = p.ai.choose_discard(self, p)
             self.discard_card(p, pitched)
@@ -2218,6 +2261,7 @@ class Game:
             targets = (self.fill_targets(p, mode_effects, mode_targets) if mode_indices is not None else
                        self.auto_targets(p, mode_effects)) + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")
+        item.cast_from_hand = self._zone(p, kind) is p.hand and kind != "free"
         item.snow_spent = sum(1 for s in payment if s.card.snow)
         item.x = x
         item.evidence = self.collect_evidence(p, card)
@@ -2799,6 +2843,8 @@ class Game:
 
     def resolve(self, p: Player, eff: Effect, target, item: StackItem | None = None, prev=None):
         opp = self.opponent(p)
+        if eff.kind.startswith("alt_"):
+            return kw_altcast.resolve(self, p, eff, item)
         if eff.target == "graveyard_card":
             return graveyards.resolve(self, p, eff, target)
         if eff.target == "self" and item is not None:
@@ -3386,6 +3432,7 @@ class Game:
                 victim, owner = target, target.controller
                 owner.battlefield.remove(victim)
                 victim.controller = p
+                kw_altcast.control_changed(victim)
                 p.battlefield.append(victim)
                 victim.tapped = False
                 victim.sick = False
@@ -3758,6 +3805,8 @@ class Game:
         """Move a permanent off the battlefield (to graveyard / hand / exile). Tokens vanish."""
         if perm not in perm.controller.battlefield:
             return False
+        if getattr(perm, "unearthed", False) and to != "exile":
+            to = "exile"
         owner = perm.controller
         owner.battlefield.remove(perm)
         owner.perm_left_turn = True
@@ -3804,7 +3853,8 @@ class Game:
 
     def discard_card(self, p: Player, card: CardDef):
         p.hand.remove(card)
-        p.graveyard.append(card)
+        if not kw_altcast.discard(self, p, card):
+            p.graveyard.append(card)
         p.discarded_cards.append(card)
         self.fire(p, "you_discard")
 
@@ -3839,6 +3889,9 @@ class Game:
         return p.attacked_with > 0
 
     def dies(self, perm: Permanent):
+        if getattr(perm, "unearthed", False):
+            self.leave_battlefield(perm, "exile")
+            return
         was_creature = perm.is_creature
         if was_creature:
             self.creature_died_turn = True
