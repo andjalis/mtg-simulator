@@ -55,7 +55,7 @@ class EquipmentSacrificeTests(unittest.TestCase):
     def test_unknown_costs_and_bonus_restrictions_stay_visible(self):
         for text in ("Equip—Sacrifice an artifact.", "Equip—Sacrifice two creatures.",
                      "Equip—Sacrifice a creature with power 3 or greater.",
-                     "Equip—{2}, Sacrifice a creature.", "Equip—Sacrifice a creature. Activate only once each turn.",
+                     "Equip—{2}, Sacrifice a creature with flying.", "Equip—Sacrifice a creature. Activate only once each turn.",
                      "Equipped creature has +2/+2 as long as you control a token.",
                      "Equipped creature has +2/+2 and has protection from blue."):
             with self.subTest(text=text):

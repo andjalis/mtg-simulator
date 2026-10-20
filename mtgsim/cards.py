@@ -92,6 +92,13 @@ class AltCost:
 
 
 @dataclass
+class EquipCost:
+    """One independent Equip ability, including all its supported payment components."""
+    mana: dict
+    sacrifice: bool = False           # sacrifice one creature
+
+
+@dataclass
 class Activated:
     kind: str                        # animate, barrens, sac_debuff, ability
     cost: dict
@@ -177,9 +184,11 @@ class CardDef:
     choose_type: str = ""                               # "creature" (Cavern of Souls), "basic_land"
     cant_block: bool = False
     stops_activations: bool = False                     # Clarion Conqueror
-    # Equipment: equip cost, and what the equipped creature gets.
+    # Equipment: independent abilities, and what the equipped creature gets.
+    equip_costs: tuple = ()
+    # Compatibility fields for definitions constructed without equip_costs.
     equip_cost: dict | None = None
-    equip_sacrifice: bool = False                       # Equip—Sacrifice a creature (instead of mana)
+    equip_sacrifice: bool = False
     equip_bonus: tuple = (0, 0)
     equip_keywords: frozenset = frozenset()
     equip_ward: int = 0
@@ -265,6 +274,13 @@ class CardDef:
 
     @property
     def is_saga(self): return bool(self.chapters)
+
+    @property
+    def equip_abilities(self):
+        """Supported choices, including legacy hand-built card definitions."""
+        if self.equip_costs:
+            return self.equip_costs
+        return () if self.equip_cost is None else (EquipCost(self.equip_cost, self.equip_sacrifice),)
 
     @property
     def instant_speed(self): return self.is_instant or "flash" in self.keywords
@@ -1410,15 +1426,23 @@ def _parse_face(data: dict) -> CardDef:
                 extra.update(equip_bonus=(int(m[1] or 0), int(m[2] or 0)), equip_keywords=frozenset(kws),
                              equip_ward=ward)
                 continue
-        m = re.fullmatch(r"Equip (\{[^ .]+\})(\. This ability costs [^.]+ less to activate[^.]*\.)?", line)
-        if m:
-            extra["equip_cost"] = parse_mana_cost(m[1])
-            extra["equip_sacrifice"] = False
-            if m[2]:
-                approximations.append(f"cost reduction ignored:{m[2]}")
-            continue
-        if re.fullmatch(r"Equip\s*—\s*Sacrifice a creature\.", line):
-            extra.update(equip_cost={}, equip_sacrifice=True)
+        # Match whole abilities so target/payment restrictions never disappear. In particular,
+        # parse_mana_cost alone would silently drop energy/snow or mishandle X/hybrid costs.
+        mana = r"(?:\{(?:\d+|[WUBRGC])\})+"
+        m = re.fullmatch(rf"Equip (?P<mana>{mana})(?P<reduction>\. This ability costs [^.]+ less to activate[^.]*\.)?\.?", line)
+        mixed = re.fullmatch(rf"Equip\s*—\s*(?:(?P<before>{mana}), )?Sacrifice a creature"
+                             rf"(?:, (?P<after>{mana}))?\.?", line)
+        if m or mixed:
+            if mixed and mixed["before"] and mixed["after"]:
+                unsupported.append(line)
+                continue
+            cost_text = m["mana"] if m else mixed["before"] or mixed["after"]
+            ability = EquipCost(parse_mana_cost(cost_text) if cost_text else {}, bool(mixed))
+            if "equip_cost" not in extra:
+                extra.update(equip_cost=ability.mana, equip_sacrifice=ability.sacrifice)
+            extra["equip_costs"] = extra.get("equip_costs", ()) + (ability,)
+            if m and m["reduction"]:
+                approximations.append(f"cost reduction ignored:{m['reduction']}")
             continue
         m = re.fullmatch(r"Equip abilities you activate that target ~ cost \{(\d+)\} less to activate\.", line)
         if m:

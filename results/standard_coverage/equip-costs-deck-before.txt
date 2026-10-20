@@ -1,0 +1,27 @@
+equip_costs: 31% matched by templates (including simplifications) (3 fully template-matched, 1 simplified, 9 partly supported; 13 cards)
+   1 Ace's Baseball Bat [partial]
+       ignored: As long as equipped creature is attacking, it has first strike and must be blocked by a Dalek if able.
+       ignored: Equip legendary creature {1}
+   1 Inventor's Axe [partial]
+       ignored: you get {E}{E} .
+       ignored: Equip—Pay {E}{E}.
+   1 Lashwrithe [partial]
+       ignored: Living weapon
+       ignored: Equipped creature gets +1/+1 for each Swamp you control.
+   1 My Precious [partial]
+       ignored: Equipped creature has hexproof and can't be blocked.
+       ignored: Equip—{2}, Pay 2 life.
+   1 Piston Sledge [partial]
+       ignored: Equip—Sacrifice an artifact.
+   1 Robe of the Archmagi [partial]
+       ignored: Whenever equipped creature deals combat damage to a player, draw that many cards.
+       ignored: Equip Shaman, Warlock, or Wizard {1}
+   1 Shredder's Armor [partial]
+       ignored: Equip—Sacrifice another nonland permanent. Activate only once each turn.
+   1 Transmogrant's Crown [partial]
+       ignored: Whenever equipped creature dies, draw a card.
+       ignored: Equip {2} or {B}
+   1 Veteran's Powerblade [partial]
+       ignored: Equip Soldier {W}
+   1 Plate Armor [simplified]
+       simplified: cost reduction ignored:. This ability costs {1} less to activate for each other Equipment you control.
