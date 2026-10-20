@@ -1265,6 +1265,8 @@ class Game:
         return True
 
     def legal_targets(self, p: Player, eff: Effect) -> list:
+        if eff.kind == "equip":
+            return [c for c in p.creatures if self.legal_target(p, eff, c)]
         if eff.target == "graveyard_spell":
             return [GraveyardTarget(p, c, entry) for c, entry in zip(p.graveyard, p.graveyard.entries)
                     if c.is_instant or c.is_sorcery]
@@ -1300,7 +1302,8 @@ class Game:
                     and (tgt.card.is_instant or tgt.card.is_sorcery))
         if eff.kind == "equip":
             return (isinstance(tgt, Permanent) and tgt.is_creature and tgt.controller is p
-                    and self.targetable(tgt, p))
+                    and tgt is not source and self.targetable(tgt, p)
+                    and self.equip_target_fits(eff.filter, tgt))
         if eff.kind == "blink_delayed" and not isinstance(tgt, Permanent):
             return False
         if tgt is None or not self.targetable(tgt, p):
@@ -2263,13 +2266,26 @@ class Game:
         self.settle()
         return True
 
+    @staticmethod
+    def equip_target_fits(restriction: str, creature: Permanent) -> bool:
+        if not restriction:
+            return True
+        if restriction == "legendary":
+            return creature.card.legendary
+        if restriction == "token":
+            return creature.front.is_token
+        if restriction.startswith("subtype:"):
+            return creature.card.changeling or bool(set(restriction[8:].split("|")) & creature.card.subtypes)
+        return False
+
     def equip_cost(self, equipment: Permanent, creature: Permanent, ability: int = 0) -> dict:
         cost = dict(equipment.card.equip_abilities[ability].mana)
         cost["generic"] = max(0, cost.get("generic", 0) - creature.card.equip_discount)
         return cost
 
     def equip_choices(self, p: Player, equipment: Permanent, creature: Permanent,
-                      sacrifice=None, reserve: int = 0, keep_target: bool = False) -> list:
+                      sacrifice=None, reserve: int = 0, keep_target: bool = False,
+                      ability: int | None = None) -> list:
         """Payable (ability index, sacrifice) choices, without spending any resources.
 
         Prefer keeping creatures, then spending less mana, with printed order breaking ties.
@@ -2277,6 +2293,10 @@ class Game:
         """
         choices = []
         for idx, act in enumerate(equipment.card.equip_abilities):
+            if ability is not None and idx != ability:
+                continue
+            if not self.legal_target(p, Effect("equip", filter=act.target_filter), creature, equipment):
+                continue
             victim = None
             if act.sacrifice:
                 victims = self.sacrifice_candidates(p, equipment, "creature")
@@ -2317,16 +2337,14 @@ class Game:
         if self.activations_stopped():
             return False
         if creature is None:
-            creature = self.hook(p, "choose_equip_target")(self, p, equipment)
-        effect = Effect("equip", target="creature_mine")
-        if not self.legal_target(p, effect, creature):
-            return False
-        choices = self.equip_choices(p, equipment, creature, sacrifice=sacrifice)
-        if ability is not None:
-            choices = [(idx, victim) for idx, victim in choices if idx == ability]
+            choose = getattr(p.ai, "choose_equip_target", None) or DEFAULTS["choose_equip_target"]
+            creature = (choose(self, p, equipment, ability=ability, sacrifice=sacrifice)
+                        if choose is choose_equip_target else choose(self, p, equipment))
+        choices = self.equip_choices(p, equipment, creature, sacrifice=sacrifice, ability=ability)
         if not choices:
             return False
         idx, sacrifice = choices[0]
+        effect = Effect("equip", target="creature_mine", filter=equipment.card.equip_abilities[idx].target_filter)
         exclude = sacrifice if sacrifice is not None and (sacrifice.card.mana_sac or
                                                          sacrifice.card.token_kind == "treasure") else None
         if self.pay(p, self.equip_cost(equipment, creature, idx), exclude=exclude) is None:
@@ -4273,9 +4291,12 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
     return True
 
 
-def choose_equip_target(game: Game, me: Player, equipment: Permanent):
+def choose_equip_target(game: Game, me: Player, equipment: Permanent, *, ability=None, sacrifice=None,
+                       reserve: int = 0, keep_target: bool = False):
     """The creature to equip: the best one that can attack this turn, else the best one."""
-    cands = [c for c in me.creatures if c is not equipment and (not c.card.is_token or c.power > 0)]
+    cands = [c for c in me.creatures if c is not equipment and (not c.card.is_token or c.power > 0)
+             and game.equip_choices(me, equipment, c, sacrifice=sacrifice, reserve=reserve,
+                                    keep_target=keep_target, ability=ability)]
     if not cands:
         return None
     ready = [c for c in cands if not c.sick or c.has("haste") or "haste" in equipment.card.equip_keywords]
@@ -4286,7 +4307,9 @@ def choose_equip_target(game: Game, me: Player, equipment: Permanent):
 def equip_all(game: Game, me: Player):
     """Attach unattached Equipment with spare mana (main phase 1, so it helps this combat)."""
     for eq in [x for x in me.battlefield if x.card.equip_abilities and x.attached_to is None]:
-        tgt = game.hook(me, "choose_equip_target")(game, me, eq)
+        choose = getattr(me.ai, "choose_equip_target", None) or DEFAULTS["choose_equip_target"]
+        tgt = (choose(game, me, eq, reserve=_reserve(game, me), keep_target=True)
+               if choose is choose_equip_target else choose(game, me, eq))
         if tgt is None:
             continue
         choices = game.equip_choices(me, eq, tgt, reserve=_reserve(game, me), keep_target=True)
