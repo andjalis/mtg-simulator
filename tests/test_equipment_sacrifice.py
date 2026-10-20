@@ -57,7 +57,7 @@ class EquipmentSacrificeTests(unittest.TestCase):
                      "Equip—Sacrifice a creature with power 3 or greater.",
                      "Equip—{2}, Sacrifice a creature with flying.", "Equip—Sacrifice a creature. Activate only once each turn.",
                      "Equipped creature has +2/+2 as long as you control a token.",
-                     "Equipped creature has +2/+2 and has protection from blue."):
+                     "Equipped creature has +2/+2 and has protection from blue as long as you control a token."):
             with self.subTest(text=text):
                 c = card("Restricted Equipment", "", "Artifact — Equipment", text)
                 self.assertTrue(c.unsupported)

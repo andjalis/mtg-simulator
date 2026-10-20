@@ -1,0 +1,13 @@
+# Coverage smoke fixture: protection, shroud, shadow, landwalk and horsemanship.
+4 White Knight
+4 Deft Duelist
+4 Welkin Tern
+4 Dauthi Slayer
+4 Zodiac Horse
+4 Wei Scout
+4 True-Name Nemesis
+4 Shelter
+7 Plains
+7 Island
+7 Swamp
+7 Forest
