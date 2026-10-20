@@ -257,7 +257,6 @@ class CardDef:
     extra_sac_or_pay: int = 0                           # "... pay {4} or sacrifice ...": the generic alternative
     aura: str = ""                                      # "Enchant creature" (what it enchants; mtgsim.auras)
     mana_cost_missing: bool = False                    # no printed cost, distinct from {0}
-    colors: frozenset | None = None                    # printed colors/indicator, including devoid
     aura_flags: frozenset = frozenset()                 # no_untap, cant_attack_block
     aura_hostile: bool = False                          # goes on an opponent's permanent
     clone: dict | None = None                           # "You may have ~ enter as a copy of ..." (mtgsim.copies)
@@ -1375,7 +1374,6 @@ def _parse_face(data: dict) -> CardDef:
             produces.add(BASIC_MANA[sub])
     raw_cost = data.get("mana_cost", "").split(" // ")[0]
     extra["mana_cost_missing"] = not raw_cost
-    extra["colors"] = frozenset(data.get("colors", [k for k in cost if k in COLORS]))
     extra["hybrid"] = tuple(a + b for a, b in re.findall(r"\{([WUBRG])/([WUBRG])\}", raw_cost))
     if data.get("loyalty"):
         extra["loyalty"] = stat(data["loyalty"]) or 0
