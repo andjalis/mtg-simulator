@@ -25,14 +25,15 @@ import json
 import random
 import re
 
-from . import auras, copies, counting, delayed, removal, search, xspells
+from . import auras, copies, counting, delayed, graveyards, removal, search, xspells
 from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, EquipCost, add_mana, jace_token, make_token, role_token
 from . import modal
 
 TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
 COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "artifact", "artifact_enchantment",
-            "player", "spell", "graveyard_spell")
+            "player", "spell", "graveyard_spell", "graveyard_card")
+GRAVEYARD_TARGETS = ("graveyard_spell", "graveyard_card")
 
 
 class Graveyard(list):
@@ -883,6 +884,12 @@ class Game:
         a card in their graveyard."""
         opp = self.opponent(p)
         for t in targets or ():
+            if isinstance(t, tuple):
+                if self.commits_crime(p, t):
+                    return True
+                continue
+            if isinstance(t, GraveyardTarget) and t.controller is opp:
+                return True
             if t is opp or (isinstance(t, Permanent) and t.controller is opp) or \
                     (isinstance(t, CardDef) and t in opp.graveyard):
                 return True
@@ -1196,9 +1203,14 @@ class Game:
             return False
         if card.aura and not auras.wanted_hosts(self, p, card):
             return False
-        if any(e.target == "graveyard_spell" and not any(
-                t != getattr(card, "graveyard_target", None) for t in self.legal_targets(p, e))
-               for e in card.spell_effects):
+        target_effects = card.spell_effects
+        if any(graveyards.uses_x(e) for e in target_effects):
+            target_effects = graveyards.with_x(target_effects, graveyards.planned_x(self, p, card, self.cost_of(p, card)))
+        if any((e.target == "graveyard_card" and not graveyards.can_choose(
+                    self, p, e, getattr(card, "graveyard_target", None))) or
+               (e.target == "graveyard_spell" and not any(
+                    t != getattr(card, "graveyard_target", None) for t in self.legal_targets(p, e)))
+               for e in target_effects):
             return False
         if not card.instant_speed and not (p is self.active and self.step in ("main1", "main2")
                                            and not self.stack):
@@ -1265,6 +1277,8 @@ class Game:
         return True
 
     def legal_targets(self, p: Player, eff: Effect) -> list:
+        if eff.target == "graveyard_card":
+            return graveyards.candidates(self, p, eff)
         if eff.target == "graveyard_spell":
             return [GraveyardTarget(p, c, entry) for c, entry in zip(p.graveyard, p.graveyard.entries)
                     if c.is_instant or c.is_sorcery]
@@ -1295,6 +1309,8 @@ class Game:
         return []
 
     def legal_target(self, p: Player, eff: Effect, tgt, source=None) -> bool:
+        if eff.target == "graveyard_card":
+            return graveyards.legal(p, eff, tgt)
         if eff.target == "graveyard_spell":
             return (isinstance(tgt, GraveyardTarget) and tgt.controller is p and tgt.index() is not None
                     and (tgt.card.is_instant or tgt.card.is_sorcery))
@@ -1320,6 +1336,11 @@ class Game:
         targets = list(targets or [])
         targets += [None] * (len(effects) - len(targets))
         for i, effect in enumerate(effects):
+            if effect.target == "graveyard_card":
+                targets[i] = graveyards.bind(self, p, effect, targets[i], exclude)
+                if targets[i] is None:
+                    return None
+                continue
             if effect.target != "graveyard_spell":
                 continue
             target = targets[i]
@@ -1381,6 +1402,10 @@ class Game:
                 out.append(None)
                 continue
             tgt = self.hook(p, "choose_target")(self, p, e)
+            if e.target == "graveyard_card":
+                tgt = graveyards.bind(self, p, e, tgt) if tgt is not None else graveyards.choose(self, p, e)
+                out.append(tgt if tgt is not None else graveyards.choose(self, p, e))
+                continue
             if e.target == "graveyard_spell" and isinstance(tgt, CardDef):
                 tgt = next((t for t in self.legal_targets(p, e) if t.card is tgt), None)
             if e.kind == "blink_delayed":
@@ -1781,6 +1806,8 @@ class Game:
                 targets = self.auto_targets(controller, effects, source)
             targets = self.bind_graveyard_targets(controller, effects, targets, source)
             if targets is None:
+                if kind == "chapter":
+                    self.finish_chapter(source)
                 continue
             item = StackItem(controller, effects, targets, source=source, name=name, context=context, kind=kind)
             self.stack.append(item)
@@ -1856,7 +1883,8 @@ class Game:
                 p.next_creature_counters = 0
             return
         targeted = [(e, t) for e, t in zip(item.effects, item.targets) if e.target in TARGETED
-                    and not (t is None and e.data.get("upto"))]
+                    and not (t is None and e.data.get("upto"))
+                    and not (e.target == "graveyard_card" and t == ())]
         if targeted and all(not self.legal_target(p, e, t, item.source) for e, t in targeted):
             self.log(f"{item} fizzles (no legal target)", p)
         else:
@@ -1883,7 +1911,9 @@ class Game:
                 done.append(eff)
                 if not self.check_cond(p, eff, item, prev):
                     continue
-                self.resolve(p, eff, tgt, item, prev)
+                result = self.resolve(p, eff, tgt, item, prev)
+                if eff.target == "graveyard_card":
+                    prev = result
                 if self.over:
                     break
         if item.kind == "chapter":
@@ -2039,46 +2069,67 @@ class Game:
             if not auras.is_legal_host(self, p, card, aura_host):
                 return False
         effects = [] if card.is_permanent else list(card.spell_effects)
+        spell_modes = card.modes
         casting_entry = getattr(card, "graveyard_target", None)
-        targets = self.bind_graveyard_targets(p, effects, targets, exclude=casting_entry)
-        if targets is None:
-            return False
         cost = self.cost_of(p, card)
         convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
         mode_indices, mode_targets = None, []
         early_teamwork = []
         flags = set()
-        if any(e.target == "graveyard_spell" for mode in card.modes for e in mode):
-            # Decide these modes before payment too: discard/sacrifice costs can change the graveyard.
-            if card.teamwork:
-                chosen = self.teamwork_creatures(p, card, exclude=convoked)
+        early_modes = any(e.target in GRAVEYARD_TARGETS for mode in spell_modes for e in mode)
+        if early_modes and card.teamwork:
+            chosen = self.teamwork_creatures(p, card, exclude=convoked)
+            for creature in chosen:
+                creature.tapped = True
+            try:
+                mana_ready = self.can_pay(p, cost, spell=card)
+            finally:
                 for creature in chosen:
-                    creature.tapped = True
-                try:
-                    mana_ready = self.can_pay(p, cost, spell=card)
-                finally:
-                    for creature in chosen:
-                        creature.tapped = False
-                if chosen and mana_ready:
-                    early_teamwork = chosen
-                    flags.add("teamwork")
-            mode_indices = modal.select(self, p, card.modes, n=card.modes_choose, flags=flags)
-            mode_effects = [e for i in sorted(mode_indices) for e in card.modes[i]]
+                    creature.tapped = False
+            if chosen and mana_ready:
+                early_teamwork = chosen
+                flags.add("teamwork")
+        planned_x = None
+        if any(graveyards.uses_x(e) for e in effects + [e for mode in spell_modes for e in mode]):
+            planned_x = graveyards.planned_x(self, p, card, cost, convoked + early_teamwork)
+            effects = graveyards.with_x(effects, planned_x)
+            spell_modes = modal.Modes([graveyards.with_x(mode, planned_x) for mode in spell_modes],
+                                      modal.spec_of(spell_modes, card.modes_choose))
+        targets = self.bind_graveyard_targets(p, effects, targets, exclude=casting_entry)
+        if targets is None:
+            return False
+        if early_modes:
+            # Decide these modes before payment too: discard/sacrifice costs can change the graveyard.
+            mode_indices = modal.select(self, p, spell_modes, n=card.modes_choose, flags=flags)
+            mode_effects = [e for i in sorted(mode_indices) for e in spell_modes[i]]
             mode_targets = self.bind_graveyard_targets(p, mode_effects, exclude=casting_entry)
             if mode_targets is None:
                 return False
         if early_teamwork:
             self.pay_teamwork(p, card, chosen=early_teamwork)
-        payment = self.pay(p, cost, spell=card)
+        payment_cost = cost
+        if planned_x is not None:
+            # Reserve convoke's creatures, then pay the chosen X and base together.
+            # A mana source with an extra tap cost cannot invalidate a second payment.
+            for creature in convoked:
+                creature.tapped = True
+            payment_cost = {**cost, "generic": cost.get("generic", 0) + planned_x}
+        payment = self.pay(p, payment_cost, spell=card)
         if payment is None:
+            if planned_x is not None:
+                for creature in convoked:
+                    creature.tapped = False
             return False
         for c in convoked:
             c.tapped = True
         x = 0
         if "X" in card.mana_cost:     # X: as much as the remaining mana allows
-            while x < 20 and payable(self.mana_sources(p, spell=card), {"generic": x + 1}):
-                x += 1
-            if x:
+            if planned_x is not None:
+                x = planned_x
+            else:
+                while x < 20 and payable(self.mana_sources(p, spell=card), {"generic": x + 1}):
+                    x += 1
+            if x and planned_x is None:
                 payment += self.pay(p, {"generic": x}, spell=card)
         if alt is not None and alt.life:
             self.change_life(p, -alt.life, f"{card.name}: alternative cost")
@@ -2117,7 +2168,7 @@ class Game:
         if card.teamwork and card.modes and mode_indices is None and self.pay_teamwork(p, card):
             flags.add("teamwork")
         if card.modes:
-            mode_effects = modal.pick(self, p, card.modes, n=card.modes_choose, flags=flags, chosen=mode_indices)
+            mode_effects = modal.pick(self, p, spell_modes, n=card.modes_choose, flags=flags, chosen=mode_indices)
             effects = mode_effects + effects
             targets = (self.fill_targets(p, mode_effects, mode_targets) if mode_indices is not None else
                        self.auto_targets(p, mode_effects)) + targets
@@ -2434,7 +2485,8 @@ class Game:
             return False
         if act.min_charge and perm.counters.get("charge", 0) < act.min_charge:
             return False
-        if any(e.target == "graveyard_spell" and not self.legal_targets(p, e) for e in act.effects):
+        if any((e.target == "graveyard_card" and not graveyards.can_choose(self, p, e)) or
+               (e.target == "graveyard_spell" and not self.legal_targets(p, e)) for e in act.effects):
             return False
         return payable(self.mana_sources(p, perm if c.get("tap") else None, "ability"), self.ability_cost(p, perm, act))
 
@@ -2447,7 +2499,7 @@ class Game:
         if targets is None:
             return False
         mode_indices, mode_targets = None, []
-        if any(e.target == "graveyard_spell" for mode in act.modes for e in mode):
+        if any(e.target in GRAVEYARD_TARGETS for mode in act.modes for e in mode):
             mode_indices = modal.select(self, p, act.modes, perm)
             mode_effects = [e for i in sorted(mode_indices) for e in act.modes[i]]
             mode_targets = self.bind_graveyard_targets(p, mode_effects, source=perm)
@@ -2677,6 +2729,8 @@ class Game:
 
     def resolve(self, p: Player, eff: Effect, target, item: StackItem | None = None, prev=None):
         opp = self.opponent(p)
+        if eff.target == "graveyard_card":
+            return graveyards.resolve(self, p, eff, target)
         if eff.target == "self" and item is not None:
             target = item.source
         if eff.target == "that_player" and item is not None:
@@ -3216,6 +3270,9 @@ class Game:
         elif k == "shrink_all":
             for v in p.creatures + opp.creatures:
                 v.counters["-1/-1"] = v.m1 + eff.amount
+        elif k == "reflexive":
+            if item is not None:
+                self.queue_trigger(p, eff.data["effects"], item.source, f"{source} reflexive", item.context)
         elif k == "pay_gate":
             if item is not None:
                 item.gate_paid = False
@@ -3924,6 +3981,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     """A reasonable target for eff, respecting hexproof and targeting restrictions."""
     opp = game.opponent(me)
     legal = game.legal_targets(me, eff)
+    if eff.target == "graveyard_card":
+        return graveyards.choose(game, me, eff)
     if eff.target == "graveyard_spell":
         return max(legal, key=lambda target: target.card.cmc, default=None)
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
