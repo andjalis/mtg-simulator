@@ -32,25 +32,97 @@ from . import modal
 TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
 COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "artifact", "artifact_enchantment",
-            "player", "spell")
+            "player", "spell", "graveyard_spell")
 
 
 class Graveyard(list):
-    """A graveyard that counts the permanent cards put into it this turn ("if you descended this turn")."""
-    descents = 0
+    """Card definitions plus identity for each stay in this zone, even for identical copies."""
+
+    def __init__(self, cards=()):
+        super().__init__()
+        self.entries = []
+        self.descents = 0
+        self.left = []
+        self.extend(cards)
 
     def append(self, card):
         if card.is_permanent and not card.is_token:
             self.descents += 1
         super().append(card)
+        self.entries.append(object())
 
-    left: list | None = None
+    def extend(self, cards):
+        for card in list(cards):
+            self.append(card)
+
+    def insert(self, index, card):
+        if card.is_permanent and not card.is_token:
+            self.descents += 1
+        super().insert(index, card)
+        self.entries.insert(index, object())
 
     def remove(self, card):
-        super().remove(card)
-        if self.left is None:
-            self.left = []
+        index = next((i for i, c in enumerate(self) if c is card), None)
+        self.pop(self.index(card) if index is None else index)
+
+    def pop(self, index=-1):
+        card = super().pop(index)
+        self.entries.pop(index)
         self.left.append(card)
+        return card
+
+    def clear(self):
+        del self[:]
+
+    def __delitem__(self, index):
+        cards = self[index] if isinstance(index, slice) else [self[index]]
+        super().__delitem__(index)
+        del self.entries[index]
+        self.left.extend(cards)
+
+    def __setitem__(self, index, value):
+        old = self[index] if isinstance(index, slice) else [self[index]]
+        new = list(value) if isinstance(index, slice) else [value]
+        super().__setitem__(index, new if isinstance(index, slice) else value)
+        self.entries[index] = [object() for _ in new] if isinstance(index, slice) else object()
+        self.left.extend(old)
+        self.descents += sum(c.is_permanent and not c.is_token for c in new)
+
+    def __iadd__(self, cards):
+        self.extend(cards)
+        return self
+
+    def __imul__(self, count):
+        if count <= 0:
+            self.clear()
+        else:
+            self.extend(list(self) * (count - 1))
+        return self
+
+    def reverse(self):
+        super().reverse()
+        self.entries.reverse()
+
+    def sort(self, *, key=None, reverse=False):
+        pairs = list(zip(self, self.entries))
+        pairs.sort(key=lambda pair: key(pair[0]) if key else pair[0], reverse=reverse)
+        super().__setitem__(slice(None), [c for c, _ in pairs])
+        self.entries[:] = [entry for _, entry in pairs]
+
+
+@dataclasses.dataclass(frozen=True)
+class GraveyardTarget:
+    controller: "Player"
+    card: CardDef
+    entry: object
+
+    def index(self):
+        gy = self.controller.graveyard
+        return next((i for i, entry in enumerate(gy.entries) if entry is self.entry
+                     and gy[i] is self.card), None)
+
+    def __repr__(self):
+        return f"{self.card.name} (graveyard)"
 
 
 class ExileZone(list):
@@ -403,7 +475,7 @@ class Player:
         self.picked_last: CardDef | None = None   # the card mill_pick returned to hand
         self.discarded_last: list[CardDef] = []
         self.discarded_cards: list[CardDef] = []      # discarded this turn (Mayhem)
-        self.granted_fb: list[CardDef] = []           # graveyard cards that gained flashback this turn
+        self.granted_fb: list[GraveyardTarget] = []   # exact graveyard entries with flashback this turn
         self.mulligans = 0
         self.lost_life_turn = False
         self.perm_left_turn = False
@@ -413,6 +485,13 @@ class Player:
 
     @property
     def life(self): return self._life
+
+    @property
+    def graveyard(self): return self._graveyard
+
+    @graveyard.setter
+    def graveyard(self, cards):
+        self._graveyard = cards if isinstance(cards, Graveyard) else Graveyard(cards)
 
     @property
     def land_played(self) -> bool:
@@ -1042,15 +1121,37 @@ class Game:
         for c in self.impulse_cards(p):
             if not c.is_land:
                 out.append(self._variant(c, "impulse"))
-        for c in p.granted_fb:
-            if c in p.graveyard:
-                out.append(self._variant(c, "flashback", AltCost("flashback", dict(c.mana_cost))))
-        for c in p.graveyard:
+        for target in p.granted_fb:
+            if target.index() is not None:
+                c = target.card
+                out.append(self._graveyard_variant(target, "flashback", AltCost("flashback", dict(c.mana_cost)),
+                                                   granted=True))
+        for c, entry in zip(p.graveyard, p.graveyard.entries):
             for a in c.alt_costs:
                 if a.kind in ("flashback", "gy_ability") or (a.kind == "blitz" and "graveyard" in a.zone) or \
                         (a.kind == "mayhem" and c in p.discarded_cards):
-                    out.append(self._variant(c, "blitz_gy" if a.kind == "blitz" else a.kind, a))
+                    out.append(self._graveyard_variant(GraveyardTarget(p, c, entry),
+                                                       "blitz_gy" if a.kind == "blitz" else a.kind, a))
         return out
+
+    def _graveyard_variant(self, target, kind, alt, granted=False):
+        # Ordinary variants are cached by name. Graveyard casts must bind to one exact entry,
+        # and a granted mana-cost flashback must not reuse a different printed flashback cost.
+        key = (target.entry, kind, id(alt) if not granted else "granted")
+        if key not in self._variants:
+            card = target.card
+            variant = dataclasses.replace(card, name=f"{card.name} ({kind})", mana_cost=alt.cost,
+                                          spell_effects=list(alt.effects if alt.effects is not None else
+                                                             card.spell_effects) + list(alt.extra),
+                                          cost_reduction="")
+            if kind == "gy_ability":
+                variant = CardDef(name=variant.name, mana_cost=alt.cost, cmc=card.cmc,
+                                  types=frozenset({"Instant"}), spell_effects=list(alt.effects), is_ability=True)
+            variant.origin = (card, kind, alt)
+            variant.graveyard_target = target
+            variant.granted_flashback = granted
+            self._variants[key] = variant
+        return self._variants[key]
 
     def impulse_cards(self, p: Player) -> list:
         """Exiled cards p may still play (drops the expired ones)."""
@@ -1070,6 +1171,10 @@ class Game:
         base, kind, _ = self._origin(card)
         if kind == "prepared":
             return any(x.card is base and x.prepared for x in p.battlefield)
+        target = getattr(card, "graveyard_target", None)
+        if target is not None:
+            return (target.controller is p and target.index() is not None
+                    and (not card.granted_flashback or target in p.granted_fb))
         return base in self._zone(p, kind)
 
     def can_cast_now(self, p: Player, card: CardDef) -> bool:
@@ -1091,11 +1196,15 @@ class Game:
             return False
         if card.aura and not auras.wanted_hosts(self, p, card):
             return False
+        if any(e.target == "graveyard_spell" and not any(
+                t != getattr(card, "graveyard_target", None) for t in self.legal_targets(p, e))
+               for e in card.spell_effects):
+            return False
         if not card.instant_speed and not (p is self.active and self.step in ("main1", "main2")
                                            and not self.stack):
             return False
         if any(e.target == "spell" for e in card.spell_effects):
-            if not any(self.can_counter(e, item, p) for e in card.spell_effects if e.kind == "counter"
+            if not any(self.can_counter(e, item, p) for e in card.spell_effects if e.kind in ("counter", "bounce_spell")
                        for item in self.stack):
                 return False
         return self.can_pay(p, self.cost_of(p, card), spell=card)
@@ -1156,6 +1265,9 @@ class Game:
         return True
 
     def legal_targets(self, p: Player, eff: Effect) -> list:
+        if eff.target == "graveyard_spell":
+            return [GraveyardTarget(p, c, entry) for c, entry in zip(p.graveyard, p.graveyard.entries)
+                    if c.is_instant or c.is_sorcery]
         everything = [x for pl in self.players for x in pl.battlefield if self.targetable(x, p)]
         if eff.kind == "blink_delayed":
             return [x for x in everything if self.passes_filter(eff, x, p)]
@@ -1183,6 +1295,9 @@ class Game:
         return []
 
     def legal_target(self, p: Player, eff: Effect, tgt, source=None) -> bool:
+        if eff.target == "graveyard_spell":
+            return (isinstance(tgt, GraveyardTarget) and tgt.controller is p and tgt.index() is not None
+                    and (tgt.card.is_instant or tgt.card.is_sorcery))
         if eff.kind == "equip":
             return (isinstance(tgt, Permanent) and tgt.is_creature and tgt.controller is p
                     and self.targetable(tgt, p))
@@ -1195,6 +1310,38 @@ class Game:
                 return False
             return self.passes_filter(eff, tgt, p)
         return True
+
+    def bind_graveyard_targets(self, p: Player, effects, targets=None, source=None, exclude=None):
+        """Choose missing graveyard targets and freeze explicit CardDefs to their current entry.
+
+        Return None for an illegal required choice, before any costs are paid. Other target
+        kinds retain their existing selection path.
+        """
+        targets = list(targets or [])
+        targets += [None] * (len(effects) - len(targets))
+        for i, effect in enumerate(effects):
+            if effect.target != "graveyard_spell":
+                continue
+            target = targets[i]
+            candidates = [t for t in self.legal_targets(p, effect) if t != exclude]
+            if target is None:
+                target = self.auto_targets(p, [effect], source)[0]
+                if target == exclude:
+                    target = max(candidates, key=lambda t: t.card.cmc, default=None)
+            if isinstance(target, CardDef):
+                target = next((t for t in candidates if t.card is target), None)
+            if target == exclude or not self.legal_target(p, effect, target, source):
+                return None
+            targets[i] = target
+        return targets
+
+    def fill_targets(self, p: Player, effects, targets, source=None):
+        """Fill only missing choices; already bound graveyard targets must never be chosen again."""
+        targets = list(targets)
+        missing = [i for i, effect in enumerate(effects) if effect.target in TARGETED and targets[i] is None]
+        for i, target in zip(missing, self.auto_targets(p, [effects[i] for i in missing], source)):
+            targets[i] = target
+        return targets
 
     def can_counter(self, eff: Effect, item: StackItem, by: Player | None = None) -> bool:
         if eff.kind not in ("counter", "bounce_spell") or not item.is_spell or item not in self.stack:
@@ -1234,6 +1381,8 @@ class Game:
                 out.append(None)
                 continue
             tgt = self.hook(p, "choose_target")(self, p, e)
+            if e.target == "graveyard_spell" and isinstance(tgt, CardDef):
+                tgt = next((t for t in self.legal_targets(p, e) if t.card is tgt), None)
             if e.kind == "blink_delayed":
                 cands = [x for x in self.legal_targets(p, e) if not (e.data.get("other") and x is source)]
                 if tgt in cands:
@@ -1630,6 +1779,9 @@ class Game:
                     continue
             if targets is None:
                 targets = self.auto_targets(controller, effects, source)
+            targets = self.bind_graveyard_targets(controller, effects, targets, source)
+            if targets is None:
+                continue
             item = StackItem(controller, effects, targets, source=source, name=name, context=context, kind=kind)
             self.stack.append(item)
             self.log(f"{item} goes on the stack" + (f" -> {targets}" if any(targets) else ""), controller)
@@ -1851,10 +2003,9 @@ class Game:
         late = self.step in ("main2", "end_step")
         return [c for c in p.creatures if not c.tapped and (c.sick or late)]
 
-    def pay_teamwork(self, p: Player, card: CardDef) -> bool:
-        """Tap creatures with total power of card.teamwork or more (smallest first; summoning-sick ones are free
-        to tap). Only done when the creatures can't usefully attack: they are sick, or it's after combat."""
-        pool = [c for c in p.creatures if not c.tapped and (c.sick or self.step in ("main2", "end_step"))]
+    def teamwork_creatures(self, p: Player, card: CardDef, exclude=()) -> list:
+        """Plan the optional tap cost without paying it or using creatures reserved for convoke."""
+        pool = [c for c in self.convoke_pool(p) if c not in exclude]
         pool.sort(key=lambda c: c.power)
         chosen, total = [], 0
         for c in pool:
@@ -1862,7 +2013,12 @@ class Game:
                 break
             chosen.append(c)
             total += c.power
-        if total < card.teamwork:
+        return chosen if total >= card.teamwork else []
+
+    def pay_teamwork(self, p: Player, card: CardDef, chosen=None) -> bool:
+        """Tap creatures with enough total power, smallest first, when they can't usefully attack."""
+        chosen = self.teamwork_creatures(p, card) if chosen is None else chosen
+        if not chosen:
             return False
         for c in chosen:
             c.tapped = True
@@ -1882,8 +2038,37 @@ class Game:
             aura_host = targets[0] if targets and targets[0] is not None else auras.choose_host(self, p, card)
             if not auras.is_legal_host(self, p, card, aura_host):
                 return False
+        effects = [] if card.is_permanent else list(card.spell_effects)
+        casting_entry = getattr(card, "graveyard_target", None)
+        targets = self.bind_graveyard_targets(p, effects, targets, exclude=casting_entry)
+        if targets is None:
+            return False
         cost = self.cost_of(p, card)
         convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
+        mode_indices, mode_targets = None, []
+        early_teamwork = []
+        flags = set()
+        if any(e.target == "graveyard_spell" for mode in card.modes for e in mode):
+            # Decide these modes before payment too: discard/sacrifice costs can change the graveyard.
+            if card.teamwork:
+                chosen = self.teamwork_creatures(p, card, exclude=convoked)
+                for creature in chosen:
+                    creature.tapped = True
+                try:
+                    mana_ready = self.can_pay(p, cost, spell=card)
+                finally:
+                    for creature in chosen:
+                        creature.tapped = False
+                if chosen and mana_ready:
+                    early_teamwork = chosen
+                    flags.add("teamwork")
+            mode_indices = modal.select(self, p, card.modes, n=card.modes_choose, flags=flags)
+            mode_effects = [e for i in sorted(mode_indices) for e in card.modes[i]]
+            mode_targets = self.bind_graveyard_targets(p, mode_effects, exclude=casting_entry)
+            if mode_targets is None:
+                return False
+        if early_teamwork:
+            self.pay_teamwork(p, card, chosen=early_teamwork)
         payment = self.pay(p, cost, spell=card)
         if payment is None:
             return False
@@ -1905,6 +2090,8 @@ class Game:
             self.sacrifice(victim)
         if kind == "prepared":
             next(x for x in p.battlefield if x.card is base and x.prepared).prepared = False
+        elif getattr(card, "graveyard_target", None) is not None:
+            p.graveyard.pop(card.graveyard_target.index())
         else:
             self._zone(p, kind).remove(base)
         if card.extra_discard and p.hand:
@@ -1915,8 +2102,7 @@ class Game:
             p.graveyard.append(base)
         elif kind == "gy_ability":
             p.exile.append(base)
-        effects = [] if card.is_permanent else list(card.spell_effects)
-        targets = [aura_host] if card.aura else list(targets or [])
+        targets = [aura_host] if card.aura else targets
         targets += [None] * (len(effects) - len(targets))
         if card.tapped_discount and not card.is_permanent:
             tapped = self.tapped_targets(p, card)
@@ -1928,13 +2114,13 @@ class Game:
             filled = self.auto_targets(p, [effects[i] for i in missing])
             for i, t in zip(missing, filled):
                 targets[i] = t
-        flags = set()
-        if card.teamwork and card.modes and self.pay_teamwork(p, card):
+        if card.teamwork and card.modes and mode_indices is None and self.pay_teamwork(p, card):
             flags.add("teamwork")
         if card.modes:
-            mode_effects = modal.pick(self, p, card.modes, n=card.modes_choose, flags=flags)
+            mode_effects = modal.pick(self, p, card.modes, n=card.modes_choose, flags=flags, chosen=mode_indices)
             effects = mode_effects + effects
-            targets = self.auto_targets(p, mode_effects) + targets
+            targets = (self.fill_targets(p, mode_effects, mode_targets) if mode_indices is not None else
+                       self.auto_targets(p, mode_effects)) + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")
         item.snow_spent = sum(1 for s in payment if s.card.snow)
         item.x = x
@@ -1991,10 +2177,12 @@ class Game:
         instant_ok = pw.card.pw_instant_on_entry and pw.entered_turn == self.turn
         if not instant_ok and not (p is self.active and self.step in ("main1", "main2") and not self.stack):
             return False
+        targets = self.bind_graveyard_targets(p, effects, targets, pw)
+        if targets is None:
+            return False
         pw.counters["loyalty"] = pw.loyalty + cost
         pw.loyalty_used = True
-        if targets is None:
-            targets = self.auto_targets(p, effects, pw)
+        targets = self.fill_targets(p, effects, targets, pw)
         item = StackItem(p, list(effects), list(targets), source=pw, name=f"{pw.card.name} [{cost:+d}]",
                          kind="loyalty")
         self.stack.append(item)
@@ -2206,6 +2394,8 @@ class Game:
             return False
         if act.min_charge and perm.counters.get("charge", 0) < act.min_charge:
             return False
+        if any(e.target == "graveyard_spell" and not self.legal_targets(p, e) for e in act.effects):
+            return False
         return payable(self.mana_sources(p, perm if c.get("tap") else None, "ability"), self.ability_cost(p, perm, act))
 
     def activate_ability(self, p: Player, perm: Permanent, idx: int, targets=None) -> bool:
@@ -2213,6 +2403,16 @@ class Game:
         if not self.can_activate(p, perm, idx):
             return False
         act, c = perm.card.activated[idx], perm.card.activated[idx].extra_costs
+        targets = self.bind_graveyard_targets(p, act.effects, targets, perm)
+        if targets is None:
+            return False
+        mode_indices, mode_targets = None, []
+        if any(e.target == "graveyard_spell" for mode in act.modes for e in mode):
+            mode_indices = modal.select(self, p, act.modes, perm)
+            mode_effects = [e for i in sorted(mode_indices) for e in act.modes[i]]
+            mode_targets = self.bind_graveyard_targets(p, mode_effects, source=perm)
+            if mode_targets is None:
+                return False
         if self.pay(p, self.ability_cost(p, perm, act), exclude=perm if c.get("tap") else None) is None:
             return False
         perm.ability_turns[idx] = self.turn
@@ -2248,12 +2448,12 @@ class Game:
         elif c.get("exile_self"):
             self.leave_battlefield(perm, "exile")
         effects = list(act.effects)
-        if targets is None:
-            targets = self.auto_targets(p, act.effects, perm)
+        targets = self.fill_targets(p, act.effects, targets, perm)
         if act.modes:
-            mode_effects = modal.pick(self, p, act.modes, perm)
+            mode_effects = modal.pick(self, p, act.modes, perm, chosen=mode_indices)
             effects += mode_effects
-            targets = list(targets) + self.auto_targets(p, mode_effects, perm)
+            targets += (self.fill_targets(p, mode_effects, mode_targets, perm) if mode_indices is not None else
+                        self.auto_targets(p, mode_effects, perm))
         item = StackItem(p, effects, list(targets), source=perm, name=f"{perm.card.name} ability",
                          kind="ability")
         self.stack.append(item)
@@ -2952,11 +3152,9 @@ class Game:
                 target.prepared = True
                 self.log(f"{target.card.name} becomes prepared", target.controller)
         elif k == "grant_flashback":
-            cands = [c for c in p.graveyard if (c.is_instant or c.is_sorcery) and c.alt_costs is not None]
-            if cands:
-                best = max(cands, key=lambda c: c.cmc)
-                p.granted_fb.append(best)
-                self.log(f"{best.name} gains flashback", p)
+            if self.legal_target(p, eff, target) and target not in p.granted_fb:
+                p.granted_fb.append(target)
+                self.log(f"{target.card.name} gains flashback", p)
         elif k == "regrow_any":
             if p.graveyard:
                 card = max(p.graveyard, key=lambda c: c.cmc)
@@ -3315,9 +3513,9 @@ class Game:
         if eff.kind == "bounce_spell":
             self.stack.remove(target)
             if target.kind == "spell":
-                base, _, _ = self._origin(target.card)
-                target.controller.hand.append(base)
-            self.log(f"{target} is returned to its owner's hand", p)
+                base, kind, _ = self._origin(target.card)
+                (target.controller.exile if kind == "flashback" else target.controller.hand).append(base)
+            self.log(f"{target} leaves the stack", p)
             return
         if target.is_spell and not self.counterable(target):
             self.log(f"{target} can't be countered", p)
@@ -3688,6 +3886,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     """A reasonable target for eff, respecting hexproof and targeting restrictions."""
     opp = game.opponent(me)
     legal = game.legal_targets(me, eff)
+    if eff.target == "graveyard_spell":
+        return max(legal, key=lambda target: target.card.cmc, default=None)
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     if eff.kind == "blink_delayed":

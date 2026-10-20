@@ -224,9 +224,9 @@ def select(game, me, modes, source=None, n: int = 1, least: int | None = None, f
     return [avail[i] for i in picks]
 
 
-def pick(game, me, modes, source=None, n: int = 1, least: int | None = None, flags=()) -> list:
+def pick(game, me, modes, source=None, n: int = 1, least: int | None = None, flags=(), chosen=None) -> list:
     """The effects of the chosen modes, in printed order; records "hasn't been chosen" modes."""
-    chosen = sorted(select(game, me, modes, source, n, least, flags))
+    chosen = sorted(select(game, me, modes, source, n, least, flags) if chosen is None else chosen)
     spec = spec_of(modes, n, least)
     if spec.unique and source is not None:
         for i in chosen:
