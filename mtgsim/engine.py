@@ -4141,13 +4141,35 @@ def _removal(card: CardDef) -> bool:
                for e in card.spell_effects)
 
 
+def unique_spell_options(cards):
+    """Collapse equivalent copies, retaining different costs and casting permissions.
+
+    Keep each name's cheapest options first for policies that break ties by iteration order.
+    Rebuild from live spell_options on each decision: graveyard variants bind to exact entries.
+    """
+    groups = {}
+    for c in cards:
+        if c.is_land:
+            continue
+        _, kind, alt = getattr(c, "origin", None) or (c, "", None)
+        mana = tuple(sorted((k, v) for k, v in c.mana_cost.items() if v))
+        life = alt.life if alt is not None else 0
+        key = (mana, life, kind, getattr(c, "granted_flashback", False))
+        groups.setdefault(c.name, {}).setdefault(key, c)
+    return [c for group in groups.values()
+            for c in sorted(group.values(), key=lambda c: (
+                sum(c.mana_cost.values()),
+                c.origin[2].life if getattr(c, "origin", None) and c.origin[2] is not None else 0))]
+
+
 def respond(game: Game, me: Player):
     """A simple instant-speed policy: counter opponents' meaningful spells, protect creatures
     from removal, kill attackers, flash in The Wandering Emperor to exile an attacker, and
     use leftover mana at the opponent's end step on removal, flash creatures, card draw and
     Clues. Returns an action (see Game.do_action) or None to pass."""
     opp = game.opponent(me)
-    options = {c.name: c for c in game.spell_options(me) if c.instant_speed and game.can_cast_now(me, c)}
+    options = unique_spell_options(c for c in game.spell_options(me)
+                                   if c.instant_speed and game.can_cast_now(me, c))
     top = game.stack[-1] if game.stack else None
     if top is not None:
         if top.controller is me:
@@ -4155,12 +4177,12 @@ def respond(game: Game, me: Player):
         # Protect a creature targeted by removal (Snakeskin Veil).
         aimed = [t for t in top.targets if isinstance(t, Permanent) and t.controller is me]
         if aimed and any(e.kind in ("destroy", "damage", "bounce", "debuff_one") for e in top.effects):
-            for c in options.values():
+            for c in options:
                 if any(e.kind == "grant" and e.data.get("keyword") == "hexproof" for e in c.spell_effects):
                     return c, [aimed[0]] + [None] * (len(c.spell_effects) - 1)
         if not top.is_spell or not game.counterable(top) or _threat(game, me, top) < 3:
             return None
-        counters = [c for c in options.values()
+        counters = [c for c in options
                     if any(game.can_counter(e, top, me) for e in c.spell_effects if e.kind == "counter")]
         if not counters:
             return None
@@ -4170,7 +4192,7 @@ def respond(game: Game, me: Player):
     extra = respond_extras(game, me)
     if extra or me is game.active:
         return extra
-    removal = [c for c in options.values() if _removal(c)]
+    removal = [c for c in options if _removal(c)]
     if game.step == "declare_attackers" and game.attackers:
         for card in sorted(removal, key=lambda c: c.cmc):
             targets = _targets_for(game, me, card)
@@ -4181,10 +4203,10 @@ def respond(game: Game, me: Player):
             targets = _targets_for(game, me, card)
             if targets and any(isinstance(t, Permanent) and perm_value(t) >= 3 for t in targets):
                 return card, targets
-        flash = [c for c in options.values() if c.is_creature or c.is_planeswalker]
+        flash = [c for c in options if c.is_creature or c.is_planeswalker]
         if flash:
             return max(flash, key=lambda c: c.cmc), None
-        draw = [c for c in options.values()
+        draw = [c for c in options
                 if c.spell_effects and all(e.kind in ("draw", "dig", "scry", "surveil", "discard", "gain_life")
                                            for e in c.spell_effects)]
         if draw:
@@ -4216,7 +4238,8 @@ def respond_extras(game: Game, me: Player):
         if game.step == "declare_blockers":
             return combat_pump(game, me)
         return None
-    options = [c for c in game.spell_options(me) if c.instant_speed and game.can_cast_now(me, c)]
+    options = unique_spell_options(c for c in game.spell_options(me)
+                                   if c.instant_speed and game.can_cast_now(me, c))
     if game.step == "declare_attackers" and game.attackers:
         flash_pw = [c for c in options if c.is_planeswalker]
         if flash_pw:

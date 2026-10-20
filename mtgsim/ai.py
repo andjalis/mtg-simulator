@@ -83,7 +83,7 @@ CREATURE_TARGETS = ("creature", "creature_pw", "any")
 def _spell_options(game: Game, me: Player) -> list:
     """Hand cards plus adventures, flashback, foretold cards and other alternative casts."""
     cards = game.spell_options(me) if hasattr(game, "spell_options") else me.hand
-    return list({c.name: c for c in cards if not c.is_land}.values())
+    return engine.unique_spell_options(cards)
 
 
 # Rough value of effects the main evaluation has no special case for.
@@ -438,13 +438,17 @@ class HeuristicAI:
                   and "X" not in c.mana_cost]
         if not spells:
             return False
-        spells = sorted(spells, key=lambda c: c.cmc)[:MAX_SETUP_SPELLS]
+        spells = sorted(spells, key=lambda c: c.cmc)
+        names = set(list(dict.fromkeys(c.name for c in spells))[:MAX_SETUP_SPELLS])
+        spells = [c for c in spells if c.name in names]  # alternatives share one candidate slot
         if self._best_attack_score(game, me, opp) >= LETHAL:
             return False   # already lethal: keep the spells
         sources = game.mana_sources(me)
         best = None
         for r in range(1, min(len(spells), 4) + 1):
             for combo in combinations(spells, r):
+                if len({c.name for c in combo}) < r:
+                    continue   # different costs for one spell are alternatives, not extra spells
                 cost = {}
                 for c in combo:
                     for k, v in self._cost(game, me, c).items():
@@ -587,6 +591,8 @@ class HeuristicAI:
         best_set, best_key = None, None
         for r in range(1, min(len(plans), 4) + 1):
             for combo in combinations(plans, r):
+                if len({c.name for c in combo}) < r:
+                    continue   # retain the planner's one-copy-per-name approximation
                 cost = dict(reserve or {})
                 for c in combo:
                     for k, v in self._cost(game, me, c).items():
