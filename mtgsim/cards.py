@@ -16,7 +16,7 @@ COLORS = ("W", "U", "B", "R", "G")
 KEYWORDS = {
     "flying", "reach", "haste", "trample", "first strike", "double strike",
     "deathtouch", "lifelink", "vigilance", "defender", "menace",
-    "flash", "hexproof", "indestructible", "prowess",
+    "flash", "hexproof", "indestructible", "prowess", "infect", "wither",
 }
 BASIC_MANA = {"Plains": "W", "Island": "U", "Swamp": "B", "Mountain": "R", "Forest": "G"}
 NUMBERS = {
@@ -177,6 +177,7 @@ class CardDef:
     etb_counters: int = 0                               # "enters with N +1/+1 counters on it"
     teamwork: int = 0                                   # "Teamwork N": may tap creatures with total power N or more as an additional cost
     extra_life_cost: int = 0                            # "As an additional cost to cast ~, pay N life"
+    combat_mechanics: tuple = ()                        # numeric combat keywords, preserving instances
     wither_noncombat: bool = False                      # Soul-Scar Mage: noncombat damage becomes -1/-1 counters
     exile_damaged: bool = False                         # Etching of Kumano: damaged creatures are exiled instead
     # Mana that may only be spent on some spells: creature, artifact, instant_sorcery, chosen_type
@@ -1363,6 +1364,8 @@ def _parse_face(data: dict) -> CardDef:
         kicked += re.findall(r"If ~ was kicked, (.+?\.)", line)
         line = re.sub(r"\s*If ~ was kicked, .+?\.", "", line).strip()
         line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant) — (?=When|At|If)", "", line)
+        if _kw_combat.parse(line, keywords, extra, triggers):
+            continue
         parts = [p.strip().lower() for p in line.split(",")]
         if all(p in KEYWORDS or re.fullmatch(r"ward \{\d+\}", p) for p in parts):
             for p in parts:
@@ -2082,6 +2085,7 @@ def _parse_face(data: dict) -> CardDef:
     # Triggers with "choose up to one" get their bullet modes; drop ones that ended up empty.
     triggers = [t for t in triggers if t.effects or t.modes]
 
+    _kw_combat.finish_backup(text, data, triggers, approximations)
     return CardDef(
         name=name, mana_cost=cost, cmc=int(data.get("cmc", 0) or 0), types=types,
         subtypes=frozenset(type_line.split("—")[1].split()) if "—" in type_line else frozenset(),
@@ -2316,9 +2320,9 @@ def make_token(name: str, power: int, toughness: int, keywords=frozenset(), trig
 # Copy effects live in their own module; its templates join the ones above.
 from . import auras as _auras, copies as _copies, removal as _removal, search as _search, xspells as _xspells, counting as _counting  # noqa: E402
 
-from . import delayed as _delayed
+from . import delayed as _delayed, kw_combat as _kw_combat
 
-_EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS + _delayed.EFFECT_PATTERNS
+_EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS + _delayed.EFFECT_PATTERNS + _kw_combat.EFFECT_PATTERNS
 _SUBS += _copies.SUBS + _counting.SUBS + _delayed.SUBS
 
 

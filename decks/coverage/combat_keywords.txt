@@ -1,0 +1,18 @@
+// Round 20 mechanic smoke fixture, not a tournament deck.
+4 Akrasan Squire
+4 Devoted Retainer
+4 Benalish Cavalry
+4 Glistener Elf
+4 Arcbound Worker
+4 Thrummingbird
+2 Weaponcraft Enthusiast
+2 Boon-Bringer Valkyrie
+2 Kami of Empty Graves
+2 Bilious Skulldweller
+4 Plains
+4 Forest
+4 Island
+4 Swamp
+4 City of Brass
+4 Forest
+4 Plains

@@ -25,7 +25,7 @@ import json
 import random
 import re
 
-from . import auras, copies, counting, delayed, graveyards, removal, search, xspells
+from . import auras, copies, counting, delayed, graveyards, kw_combat, removal, search, xspells
 from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, EquipCost, add_mana, jace_token, make_token, role_token
 from . import modal
 
@@ -179,6 +179,7 @@ class Permanent:
         self.pump_p = 0
         self.pump_t = 0
         self.counters: dict[str, int] = {}
+        self.backup_grants = []
         self.temp_kw: set[str] = set()     # until end of turn
         self.perm_kw: set[str] = set()     # from keyword counters
         self.animated = None               # Activated: a manland that is a creature until end of turn
@@ -330,7 +331,8 @@ class Permanent:
     def loyalty(self): return self.counters.get("loyalty", 0)
 
     def has(self, kw):
-        if kw in self.card.keywords or kw in self.temp_kw or kw in self.perm_kw:
+        if kw in self.card.keywords or kw in self.temp_kw or kw in self.perm_kw or (
+                self.backup_grants and any(kw in grant.keywords for grant in self.backup_grants)):
             return True
         if self.animated and kw in self.animated.keywords:
             return True
@@ -386,7 +388,14 @@ class Permanent:
 
     @property
     def triggers(self):
-        return list(self.card.triggers) + (list(self.animated.triggers) if self.animated else [])
+        return (list(self.card.triggers) + (list(self.animated.triggers) if self.animated else [])
+                + [t for grant in self.backup_grants for t in grant.triggers])
+
+    @property
+    def abilities(self):
+        if not self.backup_grants:
+            return self.card.activated
+        return list(self.card.activated) + [a for grant in self.backup_grants for a in grant.activated]
 
     @property
     def ward(self) -> int:
@@ -395,7 +404,7 @@ class Permanent:
         if self.card.ward_untapped_only and self.tapped:
             return 0
         return max([self.card.ward] + [e.card.equip_ward for e in self.equipment] +
-                   [a.card.equip_ward for a in self.auras])
+                   [a.card.equip_ward for a in self.auras] + [g.ward for g in self.backup_grants])
 
     def can_attack(self):
         return (self.is_creature and not self.tapped and not self.has("defender")
@@ -479,6 +488,8 @@ class Player:
         self.creature_died_turn = False    # one of our creatures died this turn
         self.impulse: list = []            # (card, last turn it may be played): "exile the top card, you may play it"
         self.impulse_new: list = []        # cards the latest exile_top effect exiled
+        self.counters = {}
+        self.damaged_turn = False
         self._life = 20
         self.lost = False
         self.lands_played = 0
@@ -1195,7 +1206,7 @@ class Game:
                     and (not card.granted_flashback or target in p.granted_fb))
         return base in self._zone(p, kind)
 
-    def can_cast_now(self, p: Player, card: CardDef) -> bool:
+    def can_cast_now(self, p: Player, card: CardDef, *, ignore_timing=False) -> bool:
         """Timing, mana, zone and (for counterspells) a spell to target."""
         if card.is_land or not self._available(p, card):
             return False
@@ -1223,7 +1234,7 @@ class Game:
                     t != getattr(card, "graveyard_target", None) for t in self.legal_targets(p, e)))
                for e in target_effects):
             return False
-        if not card.instant_speed and not (p is self.active and self.step in ("main1", "main2")
+        if not ignore_timing and not card.instant_speed and not (p is self.active and self.step in ("main1", "main2")
                                            and not self.stack):
             return False
         if any(e.target == "spell" for e in card.spell_effects):
@@ -1270,6 +1281,8 @@ class Game:
             return perm.tapped
         if f == "attacking_blocking":
             return perm in self.attackers or any(perm in bl for bl in self.blocks.values())
+        if f == "artifact":
+            return perm.card.is_artifact
         if f == "nonartifact":
             return not perm.card.is_artifact
         if f == "nonflying":
@@ -1595,6 +1608,7 @@ class Game:
     def take_turn(self, p: Player):
         opp = self.opponent(p)
         for pl in self.players:
+            pl.damaged_turn = False
             pl.lost_life_turn = pl.perm_left_turn = False
             pl.my_turn = pl is p
             pl.discarded_cards = []
@@ -1686,6 +1700,7 @@ class Game:
             perm.deathtouched = False
             perm.pump_p = perm.pump_t = 0
             perm.temp_kw.clear()
+            perm.backup_grants.clear()
             copies.revert(perm)
             if not (perm.animated and perm.animated.text in ("earthbend", "permanent")):
                 perm.animated = None
@@ -2094,7 +2109,7 @@ class Game:
         self.log(f"taps {[c.card.name for c in chosen]} (teamwork {card.teamwork})", p)
         return True
 
-    def cast(self, p: Player, card: CardDef, targets: list | None = None) -> bool:
+    def cast(self, p: Player, card: CardDef, targets: list | None = None, *, settle=True) -> bool:
         """Pay for card and put it on the stack. ``card`` may be a hand card or one of
         spell_options() (adventure, flashback, ...). Outside a priority loop (an AI's main
         phase) the stack is then resolved, with the opponent able to respond, before
@@ -2254,12 +2269,14 @@ class Game:
                         self.queue_trigger(p, trig.effects, perm, perm.card.name, modes=trig.modes,
                                            context=item if copies.wants_spell(trig.effects) else None)
             copies.on_cast(self, p, item)
+            kw_combat.cast(self, p, item)
             if self.spells_cast.get(p.name) == 2:
                 self.fire(p, "cast_second")
             for pl in self.players:
                 self.fire(pl, "any_cast", context=p, subject=card)
         self.check_ward(item)
-        self.settle()
+        if settle:
+            self.settle()
         return True
 
     def activate_loyalty(self, p: Player, pw: Permanent, idx: int, targets=None) -> bool:
@@ -2331,7 +2348,7 @@ class Game:
             self.stack.append(item)
             self.check_ward(item)
         elif what in ("animate", "barrens"):
-            act = next((a for a in perm.card.activated if a.kind == what), None)
+            act = next((a for a in perm.abilities if a.kind == what), None)
             if act is None or self.pay(p, act.cost, exclude=perm) is None:
                 return False
             if what == "barrens":
@@ -2515,7 +2532,7 @@ class Game:
 
     def can_activate(self, p: Player, perm: Permanent, idx: int) -> bool:
         """Whether perm's activated ability idx (kind "ability") can be activated now."""
-        acts = perm.card.activated
+        acts = perm.abilities
         if perm not in p.battlefield or idx >= len(acts) or acts[idx].kind != "ability":
             return False
         act, c = acts[idx], acts[idx].extra_costs
@@ -2561,7 +2578,7 @@ class Game:
         """Pay for and put on the stack a general activated ability ("{2}, {T}: Draw a card.")."""
         if not self.can_activate(p, perm, idx):
             return False
-        act, c = perm.card.activated[idx], perm.card.activated[idx].extra_costs
+        act, c = perm.abilities[idx], perm.abilities[idx].extra_costs
         targets = self.bind_graveyard_targets(p, act.effects, targets, perm)
         targets = self.bind_combat_targets(p, act.effects, targets, perm)
         if targets is None:
@@ -2578,7 +2595,7 @@ class Game:
         if self.pay(p, self.ability_cost(p, perm, act), exclude=perm if c.get("tap") else None) is None:
             return False
         perm.ability_turns[idx] = self.turn
-        if perm.card.activated[idx].once_game:
+        if perm.abilities[idx].once_game:
             perm.ability_turns[("game", idx)] = self.turn
         if c.get("tap"):
             perm.tapped = True
@@ -2729,6 +2746,7 @@ class Game:
             perm.counters["+1/+1"] = perm.p1 + card.etb_counters_if[1]
         if card.etb_named_counters:
             perm.counters[card.etb_named_counters[0]] = card.etb_named_counters[1]
+        kw_combat.entering(self, perm)
         p.battlefield.append(perm)
         host = getattr(self, "_aura_host", None)
         if host is not None and card.aura:
@@ -2833,16 +2851,19 @@ class Game:
                     if what == "artifacts" else x.is_creature if what == "creatures" else x.card.is_land
                     for x in p.battlefield)
             eff = dataclasses.replace(eff, amount=n)
+        if k in ("proliferate", "kw_fabricate", "kw_modular", "kw_rampage", "kw_storm", "kw_cascade",
+                 "kw_backup"):
+            return kw_combat.resolve(self, p, eff, target, item)
         if k == "damage":
             if eff.target == "each_creature":
                 for perm in p.creatures + opp.creatures:
-                    self.deal_damage(perm, eff.amount, by=p, cause=cause)
+                    self.deal_damage(perm, eff.amount, by=p, cause=cause, source=(item.source or item.card) if item else None)
             elif eff.target == "each_opp_and_pw":
-                self.change_life(opp, -eff.amount, cause)
-                for pw in opp.planeswalkers:
-                    pw.counters["loyalty"] = pw.loyalty - eff.amount
+                for victim in [opp] + opp.planeswalkers:
+                    self.deal_damage(victim, eff.amount, by=p, cause=cause,
+                                     source=(item.source or item.card) if item else None)
             else:
-                self.deal_damage(target, eff.amount, by=p, cause=cause)
+                self.deal_damage(target, eff.amount, by=p, cause=cause, source=(item.source or item.card) if item else None)
         elif k == "destroy":
             if isinstance(target, Permanent) and target in target.controller.battlefield:
                 src = item.source if item is not None else None
@@ -3639,14 +3660,26 @@ class Game:
             removal.resolve(self, p, eff, target, item)
         self.state_based_actions()
 
-    def deal_damage(self, target, amount: int, by: Player | None = None, cause="noncombat damage"):
-        """Noncombat damage; ``by`` is the controller of the source."""
+    def deal_damage(self, target, amount: int, by: Player | None = None, cause="noncombat damage", source=None):
+        """Deal damage with source keywords and damage-result replacements."""
+        if amount <= 0 or not isinstance(target, (Player, Permanent)):
+            return
+        if isinstance(target, Permanent) and target not in target.controller.battlefield:
+            return
+        if source is not None:
+            if isinstance(target, Permanent) and target.is_creature and kw_combat.has(source, "deathtouch"):
+                target.deathtouched = True
+            if by is not None and kw_combat.has(source, "lifelink"):
+                self.change_life(by, amount, f"{source.card.name if isinstance(source, Permanent) else source.name}: lifelink")
+        if kw_combat.damage(self, target, amount, source):
+            return
         if isinstance(target, Player):
             self.change_life(target, -amount, cause)
         elif isinstance(target, Permanent) and target in target.controller.battlefield:
             if target.is_planeswalker:
                 target.counters["loyalty"] = target.loyalty - amount
-            if target.is_creature and by is not None and target.controller is not by and \
+            if cause != "combat damage" and not cause.endswith(": combat damage") and \
+                    target.is_creature and by is not None and target.controller is not by and \
                     any(x.card.wither_noncombat for x in by.battlefield):
                 target.counters["-1/-1"] = target.m1 + amount   # Soul-Scar Mage
             elif target.is_creature or not target.is_planeswalker:
@@ -3854,6 +3887,7 @@ class Game:
             return
         if not self.leave_battlefield(perm, "graveyard"):
             return
+        kw_combat.died(self, perm)
         self.log(f"{perm.card.name} dies", perm.controller)
         if was_creature:
             self.fire(perm.controller, "dies", perm)
@@ -3920,9 +3954,16 @@ class Game:
                         elif (perm.damage >= perm.toughness or perm.deathtouched) and not perm.has("indestructible"):
                             self.dies(perm)
                             changed = True
+                    if perm in p.battlefield:
+                        cancel = min(perm.p1, perm.m1)
+                        if cancel:
+                            perm.counters["+1/+1"] -= cancel
+                            perm.counters["-1/-1"] -= cancel
                 if self.legend_rule(p):
                     changed = True
         for p in self.players:
+            if p.counters.get("poison", 0) >= 10:
+                p.lost = True
             if p.life <= 0:
                 if not p.lost:
                     self.audit("loss", seat=self.players.index(p), cause="life total 0 or less")
@@ -3984,6 +4025,7 @@ class Game:
         self.blocks = blocks
         if blocks:
             self.log(f"blocks {blocks}", opp)
+        kw_combat.blockers(self, attackers, blocks)
         p.ai.after_blocks(self, p, attackers, blocks)
         if self.over:
             return
@@ -4031,19 +4073,14 @@ class Game:
             elif deals_now(a) and a.power > 0 and target is not None:
                 hits.append((a, target, a.power))
         for src, tgt, amt in hits:
+            self.deal_damage(tgt, amt, by=src.controller, source=src,
+                             cause=f"{src.card.name}: combat damage")
             if isinstance(tgt, Player):
-                self.change_life(tgt, -amt, f"{src.card.name}: combat damage")
+                toxic = sum(kw_combat.values(src, "toxic"))
+                if toxic:
+                    tgt.counters["poison"] = tgt.counters.get("poison", 0) + toxic
                 self.fire(src.controller, "combat_damage_player", src)
                 self.fire(src.controller, "ally_combat_damage")
-            else:
-                if tgt.is_planeswalker:
-                    tgt.counters["loyalty"] = tgt.loyalty - amt
-                if tgt.is_creature:
-                    tgt.damage += amt
-                    if src.has("deathtouch"):
-                        tgt.deathtouched = True
-            if src.has("lifelink"):
-                self.change_life(src.controller, amt, f"{src.card.name}: lifelink")
         self.state_based_actions()
         self.settle()
 
@@ -4116,7 +4153,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
             theirs = [x for x in theirs if x.toughness <= eff.amount2]
         theirs = [x for x in theirs if not (k == "destroy" and x.has("indestructible"))]
         return max(theirs, key=perm_value, default=None)
-    if k in ("pump", "p1_counters", "double_power", "grant", "explore", "attach_self", "force_blocked"):
+    if k in ("pump", "p1_counters", "double_power", "grant", "explore", "attach_self", "force_blocked",
+             "kw_modular", "kw_backup"):
         return max(mine, key=perm_value, default=None)
     if k == "oring":
         return max(theirs, key=perm_value, default=None)
@@ -4427,7 +4465,7 @@ def _self_pump(act) -> bool:
 
 def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: int = 0) -> bool:
     """Whether to activate perm's general ability idx now, outside combat."""
-    act = perm.card.activated[idx]
+    act = perm.abilities[idx]
     c = act.extra_costs
     if _self_pump(act) and not any(e.kind == "p1_counters" for e in act.effects):
         return False    # used in combat (combat_pump)
@@ -4539,7 +4577,7 @@ def choose_ability(game: Game, me: Player, instant: bool):
     """An ("activate", permanent, "ability:N") action worth taking now, or None. With instant=True
     only abilities without "Activate only as a sorcery"."""
     for perm in list(me.battlefield):
-        for i, act in enumerate(perm.card.activated):
+        for i, act in enumerate(perm.abilities):
             if act.kind != "ability" or (instant and act.sorcery):
                 continue
             if ability_worth(game, me, perm, i, 0 if instant else _reserve(game, me)):
@@ -4552,7 +4590,7 @@ def combat_pump(game: Game, me: Player):
     for a in game.attackers:
         if a.controller is not me or a in game.blocks or a not in me.battlefield:
             continue
-        for i, act in enumerate(a.card.activated):
+        for i, act in enumerate(a.abilities):
             if act.kind != "ability" or not _self_pump(act) or not game.can_activate(me, a, i):
                 continue
             if act.extra_costs.get("life") and me.life <= 10:
@@ -4648,8 +4686,8 @@ def before_attacks(game: Game, me: Player):
         game.activate(me, v, "crew")
     for m in [x for x in me.battlefield if x.card.saddle and not x.saddled and not x.sick and not x.tapped]:
         game.activate(me, m, "saddle")
-    for land in [x for x in me.battlefield if x.card.activated and not x.sick and not x.tapped]:
-        for act in land.card.activated:
+    for land in [x for x in me.battlefield if x.abilities and not x.sick and not x.tapped]:
+        for act in land.abilities:
             if act.kind not in ("animate", "barrens"):
                 continue
             need = add_costs(act.cost, {"generic": _reserve(game, me)})
@@ -4704,7 +4742,7 @@ def use_abilities(game: Game, me: Player):
             if idx is not None:
                 game.activate_loyalty(me, pw, idx)
     blood = sum(1 for x in me.battlefield if x.card.token_kind == "blood")
-    for h in [x for x in me.battlefield if any(a.kind == "sac_debuff" for a in x.card.activated)]:
+    for h in [x for x in me.battlefield if any(a.kind == "sac_debuff" for a in x.abilities)]:
         opp = game.opponent(me)
         kills = [c for c in opp.creatures if c.toughness <= 2 * blood and game.targetable(c, me)
                  and perm_value(c) > perm_value(h)]
@@ -4714,7 +4752,7 @@ def use_abilities(game: Game, me: Player):
     equip_all(game, me)
     if game.step == "main1":    # "can't be blocked this turn" before combat
         for perm in list(me.battlefield):
-            for i, act in enumerate(perm.card.activated):
+            for i, act in enumerate(perm.abilities):
                 if act.kind == "ability" and act.effects and act.effects[0].kind == "unblockable" and \
                         perm in me.battlefield and ability_worth(game, me, perm, i):
                     game.activate(me, perm, f"ability:{i}")
