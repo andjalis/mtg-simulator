@@ -89,9 +89,22 @@ def candidates(game, player, effect):
             if fits(player, effect, target := GraveyardTarget(owner, card, entry))]
 
 
+def capacity(effect, choices):
+    """How many of these candidates one legal selection can hold ("single graveyard", "different names")."""
+    if effect.data.get("single"):
+        groups = {}
+        for t in choices:
+            groups.setdefault(id(t.controller), []).append(t)
+        pools = list(groups.values())
+    else:
+        pools = [list(choices)]
+    return max((len({t.card.name for t in pool}) if effect.data.get("distinct") else len(pool)
+                for pool in pools), default=0)
+
+
 def can_choose(game, player, effect, exclude=None):
     minimum = 0 if effect.data.get("upto") else count(effect)
-    return sum(t != exclude for t in candidates(game, player, effect)) >= minimum
+    return capacity(effect, [t for t in candidates(game, player, effect) if t != exclude]) >= minimum
 
 
 def entries(target):
@@ -104,10 +117,40 @@ def legal(player, effect, target):
     return any(fits(player, effect, entry) for entry in entries(target))
 
 
+def valid_selection(effect, picked):
+    """Whether these entries respect "from a single graveyard" and "with different names"."""
+    if effect.data.get("single") and len({id(t.controller) for t in picked}) > 1:
+        return False
+    return not effect.data.get("distinct") or len({t.card.name for t in picked}) == len(picked)
+
+
+KINDS = frozenset({"gy_exile", "gy_hate"})     # exile effects resolved here rather than in Game.resolve
+
+
+def hates(effect):
+    return effect.kind in KINDS
+
+
 def choose(game, player, effect, exclude=None):
-    choices = sorted((t for t in candidates(game, player, effect) if t != exclude),
-                     key=lambda t: t.card.cmc, reverse=True)
-    picked = choices[:count(effect)]
+    choices = [t for t in candidates(game, player, effect) if t != exclude]
+    if hates(effect):
+        # Hate removes the opponent's best card; never spend an optional exile on your own graveyard.
+        theirs = [t for t in choices if t.controller is not player]
+        choices = theirs or ([] if effect.data.get("upto") else choices)
+        choices.sort(key=lambda t: (t.card.is_creature, t.card.cmc), reverse=True)
+    else:
+        choices.sort(key=lambda t: t.card.cmc, reverse=True)
+    picked = []
+    for t in choices:
+        if len(picked) < count(effect) and valid_selection(effect, picked + [t]):
+            picked.append(t)
+    if effect.data.get("single") and len(picked) < count(effect):
+        # the greedy pick may straddle graveyards; fall back to the largest single one
+        pools = {}
+        for t in choices:
+            pools.setdefault(id(t.controller), []).append(t)
+        picked = max(([t for t in pool if valid_selection(effect, [t])][:count(effect)] for pool in pools.values()),
+                     key=len, default=[])
     if count(effect) == 1 and picked:
         return picked[0]
     return tuple(picked)
@@ -131,13 +174,34 @@ def bind(game, player, effect, target, exclude=None):
         selected.append(entry)
     maximum = count(effect)
     minimum = 0 if effect.data.get("upto") else maximum
-    if not minimum <= len(selected) <= maximum:
+    if not minimum <= len(selected) <= maximum or not valid_selection(effect, selected):
         return None
     return selected[0] if maximum == 1 and selected else tuple(selected)
 
 
+def resolve_hate(game, player, effect, selected):
+    """Exile the still-legal chosen entries; Diregraf Scavenger-style gy_hate also drains for a creature card."""
+    for entry in selected:
+        entry.controller.graveyard.pop(entry.index())
+    for entry in selected:
+        entry.controller.exile.append(entry.card)
+        game.log(f"exiles {entry.card.name} from {entry.controller}'s graveyard", player)
+    if effect.kind == "gy_hate" and any(e.card.is_creature for e in selected):
+        for opponent in game.players:
+            if opponent is not player:
+                game.change_life(opponent, -effect.amount, "gy_hate")
+        game.change_life(player, effect.amount, "gy_hate")
+
+
 def resolve(game, player, effect, target):
-    selected = [t for t in entries(target) if fits(player, effect, t)]
+    selected = []
+    for t in entries(target):
+        # a chosen entry that left or changed is skipped, never replaced by another card
+        if fits(player, effect, t) and not (effect.data.get("distinct")
+                                            and any(t.card.name == s.card.name for s in selected)):
+            selected.append(t)
+    if hates(effect):
+        return resolve_hate(game, player, effect, selected)
     # Remove the entire batch before ETB triggers, including repeated CardDefs.
     for entry in selected:
         entry.controller.graveyard.pop(entry.index())

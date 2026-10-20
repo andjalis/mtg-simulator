@@ -2161,6 +2161,8 @@ class Game:
             else:
                 while x < 20 and payable(self.mana_sources(p, spell=card), {"generic": x + 1}):
                     x += 1
+                if x and hasattr(p.ai, "choose_x"):   # an AI may keep mana for other plays
+                    x = max(0, min(x, p.ai.choose_x(self, p, card, targets, x)))
             if x and planned_x is None:
                 payment += self.pay(p, {"generic": x}, spell=card)
         if alt is not None and alt.life:
@@ -3306,14 +3308,15 @@ class Game:
                 p.graveyard.remove(card)
                 p.hand.append(card)
         elif k == "exile_gy":
+            victim = target if isinstance(target, Player) else opp   # "target player's graveyard" keeps its player
             if eff.amount:
-                if opp.graveyard:
-                    card = max(opp.graveyard, key=lambda c: c.cmc)
-                    opp.graveyard.remove(card)
-                    opp.exile.append(card)
+                if victim.graveyard:
+                    card = max(victim.graveyard, key=lambda c: c.cmc)
+                    victim.graveyard.remove(card)
+                    victim.exile.append(card)
             else:
-                opp.exile.extend(opp.graveyard)
-                del opp.graveyard[:]
+                victim.exile.extend(victim.graveyard)
+                del victim.graveyard[:]
         elif k == "damage_each_player":
             for pl in self.players:
                 self.change_life(pl, -eff.amount, cause)
@@ -4040,6 +4043,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     legal = game.legal_targets(me, eff)
     if eff.target == "graveyard_card":
         return graveyards.choose(game, me, eff)
+    if eff.kind == "exile_gy" and eff.target == "player":
+        return opp
     if eff.target == "graveyard_spell":
         return max(legal, key=lambda target: target.card.cmc, default=None)
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
@@ -4196,7 +4201,8 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
         elif k == "regrow":
             total += max((c.cmc for c in me.graveyard if c.is_creature), default=-1)
         elif k == "gy_move":
-            ok = [c.cmc for c in me.graveyard if copies.fits(c, _gy_desc(e.data["what"]))]
+            ok = ([t.card.cmc for t in graveyards.entries(tgt)] if e.target == "graveyard_card" else
+                  [c.cmc for c in me.graveyard if copies.fits(c, _gy_desc(e.data["what"]))])
             total += (max(ok) + 1) if ok else -1
         elif k in ("destroy", "bounce", "shuffle_away"):
             total += perm_value(tgt)
