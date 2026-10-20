@@ -87,10 +87,10 @@ class PlayMixin:
                 targets[idx] = max(tapped, key=perm_value)
         missing = [i for i, e in enumerate(effects) if e.target in TARGETED and targets[i] is None]
         if missing:   # targets the AI didn't pick (effects it doesn't know about)
-            filled = self.auto_targets(p, [effects[i] for i in missing])
+            filled = self.auto_targets(p, [effects[i] for i in missing], card)
             for i, t in zip(missing, filled):
                 targets[i] = t
-        if not self.valid_action_targets(p, effects, targets):
+        if not self.valid_action_targets(p, effects, targets, card):
             return False
         cost = self.cost_of(p, card, assist=False)
         convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
@@ -159,10 +159,13 @@ class PlayMixin:
             flags.add("teamwork")
             teamwork_paid = True
         if card.modes:
-            mode_effects = modal.pick(self, p, card.modes, n=card.modes_choose, flags=flags)
+            if kind == "entwine":       # all of the modes: a plain list, without the printed "choose one" spec
+                mode_effects = modal.pick(self, p, list(card.modes), n=len(card.modes), flags=flags)
+            else:
+                mode_effects = modal.pick(self, p, card.modes, n=card.modes_choose, flags=flags)
             effects = mode_effects + effects
-            mode_targets = self.auto_targets(p, mode_effects)
-            if not self.valid_action_targets(p, mode_effects, mode_targets):
+            mode_targets = self.auto_targets(p, mode_effects, card)
+            if not self.valid_action_targets(p, mode_effects, mode_targets, card):
                 return False
             targets = mode_targets + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")

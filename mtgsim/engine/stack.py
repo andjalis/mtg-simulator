@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import auras, copies, milling
+from .. import alt_casts, auras, copies, milling
 from ..cards import CardDef, Effect
 from .. import modal, rules_events, phase_conditions, turn_conditions
 from ..identity import CardInstance, CardZone
@@ -50,6 +50,8 @@ class StackMixin:
         """Ask p's AI what to do with priority. Returns True if it did something. When an AI
         with its own ``respond`` passes, ``respond_extras`` covers what it may not know about
         (instant-speed loyalty abilities, Clues, flashback / adventure / modal instants)."""
+        if any(item.is_spell and "split second" in item.card.keywords for item in self.stack):
+            return False            # split second: no spells or (non-mana) abilities while it's on the stack
         action = self.hook(p, "respond")(self, p)
         if not action and getattr(p.ai, "respond", None):
             action = self.hook(p, "respond_extras")(self, p)
@@ -122,6 +124,17 @@ class StackMixin:
                         continue
                 if trig.filter == "saddled" and not perm.saddled:
                     continue
+                if trig.filter == "blocks_flying" and not (isinstance(context, Permanent) and context.has("flying")):
+                    continue
+                if event == "creature_dies" and trig.filter == "other" and subject is perm:
+                    continue
+                if event in ("any_cast", "damages_player") and trig.filter == "opp" and context is perm.controller:
+                    continue
+                if trig.filter == "evolve":
+                    if subject is perm or subject is None or subject.controller is not perm.controller or not (
+                            subject.power > perm.power or subject.toughness > perm.toughness):
+                        continue
+                    context = subject
                 if trig.filter.startswith("with:") and \
                         not any(trig.filter[5:] in a.card.subtypes for a in self.attackers):
                     continue
@@ -147,7 +160,11 @@ class StackMixin:
                                else e for e in effects]
                 self.queue_trigger(perm.controller, effects, perm, perm.card.name, context, modes=trig.modes,
                                    intervening_if=trig.intervening_if)
-        if source is not None:      # Role tokens give the enchanted creature triggers
+        if source is not None:      # Role tokens, Auras and Equipment give their creature triggers
+            for equipment in source.equipment:
+                for trig in equipment.card.host_triggers:
+                    if trig.event == event:
+                        self.queue_trigger(equipment.controller, trig.effects, source, equipment.card.name, context)
             for aura in list(source.auras):
                 for trig in aura.card.host_triggers:
                     if trig.event == event:
@@ -181,6 +198,11 @@ class StackMixin:
         return True
 
     def check_ward(self, item: StackItem):
+        for tgt in item.targets:
+            if isinstance(tgt, Permanent) and tgt in tgt.controller.battlefield:
+                self.fire(tgt.controller, "targeted", source=tgt)          # Illusions: "sacrifice it"
+                if item.kind == "spell" and tgt.controller is item.controller:
+                    self.fire(tgt.controller, "heroic", source=tgt)
         for tgt in item.targets:
             if isinstance(tgt, Permanent) and tgt.controller is item.controller and tgt in tgt.controller.battlefield:
                 self.fire(tgt.controller, "targeted_mine", source=tgt)      # Valiant
@@ -219,15 +241,22 @@ class StackMixin:
                     self.log(f"{base.name} has nothing to enchant", p)
                     p.graveyard.append(base)
                     return
-            perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
+            if kind == "disturb":                   # cast transformed: its back face enters
+                perm = self.enter_battlefield(p, base.back, x=getattr(item, "x", 0), physical_card=base)
+            else:
+                perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
             self._aura_host = None
             self._spent = ""
-            if kind == "disguise":
+            if kind in ("disguise", "morph", "megamorph"):
                 perm.hidden = base
                 perm.card = CardDef(name="Face-down creature", mana_cost={"generic": 0}, cmc=0,
-                                    types=frozenset({"Creature"}), power=2, toughness=2, ward=2)
+                                    types=frozenset({"Creature"}), power=2, toughness=2,
+                                    ward=2 if kind == "disguise" else 0)
             if kind in ("blitz", "blitz_gy"):
                 perm.blitz = True
+            alt_casts.entered(perm, kind, item.card.origin[2] if getattr(item.card, "origin", None) else None)
+            if kind in ("dash", "unearth"):
+                setattr(perm, kind + "ed", True)     # haste; back to hand / exiled at the next end step
             if kind == "warp":
                 perm.warped = True
             perm.was_cast = True
@@ -250,21 +279,25 @@ class StackMixin:
                 p.next_creature_counters = 0
             return
         targeted = [(e, t) for e, t in zip(item.effects, item.targets) if e.target in TARGETED]
-        item.resolved = not (targeted and all(not self.legal_target(p, e, t) for e, t in targeted))
+        with self.targeting(item):
+            item.resolved = not (targeted and all(not self.legal_target(p, e, t) for e, t in targeted))
         if not item.resolved:
             self.log(f"{item} fizzles (no legal target)", p)
         else:
             self.log(f"{item} resolves", p)
             if getattr(item, "gifted", False) and item.card is not None:
                 self.give_gift(p, item.card.gift)
-            prev = None
+            # "that creature" in a trigger: the creature it triggered on (the blocker, the attacker, ...)
+            prev = item.context if item.kind == "trigger" and isinstance(item.context, Permanent) else None
             done: list = []
             for i, (eff, tgt) in enumerate(zip(item.effects, item.targets)):   # "would die this turn" must precede the damage
                 if eff.kind == "exile_instead" and i and isinstance(item.targets[i - 1], Permanent):
                     item.targets[i - 1].exile_turn = self.turn
             for eff, tgt in zip(item.effects, item.targets):
                 if eff.target in TARGETED:
-                    if not self.legal_target(p, eff, tgt):
+                    with self.targeting(item):
+                        legal = self.legal_target(p, eff, tgt)
+                    if not legal:
                         prev = None
                         continue
                     prev = tgt
@@ -308,6 +341,10 @@ class StackMixin:
                 owner.exile = TrackedZone(owner.exile)
             owner.exile.append(exiled)
             self.rebound_upkeep.append((owner, exiled, owner.exile.version(exiled)))
+        elif kind == "buyback":
+            owner.hand.append(base)                  # buyback paid: back to its owner's hand
+        elif getattr(item, "exile_self", False):
+            owner.exile.append(base)                 # "Exile ~." as the last line of an instant or sorcery
         elif kind not in ("channel", "prepared"):
             owner.graveyard.append(base)
 

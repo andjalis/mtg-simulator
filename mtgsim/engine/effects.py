@@ -8,7 +8,7 @@ from ..cards import AltCost, CardDef, Effect
 from .. import rules_events
 from .mana import find_payment
 from .policy import perm_value
-from .state import Permanent, Player, StackItem, card_matches
+from .state import Permanent, Player, StackItem, card_matches, protected_from
 
 
 class EffectsMixin:
@@ -20,8 +20,30 @@ class EffectsMixin:
         def has(keyword):
             return (source.has(keyword) if isinstance(source, Permanent)
                     else isinstance(source, CardDef) and keyword in source.keywords)
+        fog = getattr(self, "fog", None)
+        if combat and fog and fog[0] == self.turn and (fog[1] is None or getattr(source, "controller", None) is fog[1]):
+            return
+        if protected_from(target, source):
+            self.log(f"{target.card.name}'s protection prevents {amount} damage", target.controller)
+            return
+        shield = getattr(target, "prevent_next", 0)
+        if shield:
+            prevented = min(shield, amount)
+            target.prevent_next -= prevented
+            amount -= prevented
+            if amount <= 0:
+                return
         infect = has("infect")
+        if isinstance(source, Permanent) and source in source.controller.battlefield:
+            if isinstance(target, Player):
+                self.fire(source.controller, "damages_player", source, context=target)
+            elif combat and isinstance(target, Permanent) and target.is_creature:
+                self.fire(source.controller, "combat_damage_creature", source, context=target)
+        if isinstance(target, Permanent) and target in target.controller.battlefield:
+            self.fire(target.controller, "dealt_damage", target, context=source)
         if isinstance(target, Player):
+            if combat and isinstance(source, Permanent) and source.card.toxic:
+                target.counters["poison"] = target.counters.get("poison", 0) + source.card.toxic
             if infect:
                 target.counters["poison"] = target.counters.get("poison", 0) + amount
             else:
@@ -38,6 +60,8 @@ class EffectsMixin:
                 target.damage += amount
             if target.is_creature and has("deathtouch"):
                 target.deathtouched = True
+            if target.is_creature and isinstance(source, Permanent):
+                target.damaged_by.append(source)       # "a creature dealt damage by ~ this turn dies"
         else:
             return
         if has("lifelink"):
@@ -161,6 +185,8 @@ class EffectsMixin:
             return False
         intent = rules_events.zone_destination(self, perm, to)
         to = intent.destination
+        if perm.unearthed or (perm.disturbed and to == "graveyard"):
+            to = "exile"                     # unearth: exiled if it would leave the battlefield; disturb: not to a graveyard
         before = rules_events.snapshot(perm)
         perm.last_card = perm.card
         controller, owner = perm.controller, perm.owner
@@ -286,9 +312,14 @@ class EffectsMixin:
             if perm.blitz:
                 self.queue_trigger(perm.controller, [Effect("draw", 1)], perm, f"{perm.card.name} blitz")
             self.fire(perm.controller, "other_creature_dies", subject=perm)
+            for src in {id(s): s for s in perm.damaged_by}.values():
+                if src in src.controller.battlefield:
+                    self.fire(src.controller, "damaged_dies", src, context=perm)
             opp = self.opponent(perm.controller)
             for other in opp.battlefield:
                 self.fire(opp, "opp_creature_dies", other, context=perm.controller)
+            for pl in self.players:
+                self.fire(pl, "creature_dies", subject=perm, context=perm)
 
     def state_based_actions(self):
         for pl in self.players:
@@ -315,6 +346,20 @@ class EffectsMixin:
                         legend_losers.extend(perm for perm in group if perm is not keep)
             for p in self.players:
                 for perm in list(p.battlefield):
+                    # Protection: an Aura of that color is put into the graveyard, Equipment becomes unattached.
+                    if perm.card.aura and perm.aura_host is not None and protected_from(perm.aura_host, perm):
+                        auras.detach(perm)
+                        self.leave_battlefield(perm, "graveyard")
+                        changed = True
+                        continue
+                    if perm.attached_to is not None and protected_from(perm.attached_to, perm):
+                        perm.attached_to = None
+                        changed = True
+                    if perm.card.needs_land and not any(perm.card.needs_land in x.card.subtypes
+                                                              for x in p.battlefield):
+                        self.sacrifice(perm)
+                        changed = True
+                        continue
                     if perm.is_planeswalker and perm.loyalty <= 0:
                         self.dies(perm)
                         changed = True

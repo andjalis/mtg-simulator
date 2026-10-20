@@ -14,8 +14,20 @@ TrackedZone = CardZone  # public compatibility alias
 
 TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
 COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
+PROTECTION = {c: f"protection from {w}" for w, c in COLOR_WORDS.items()}
 TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "land", "artifact", "artifact_enchantment",
+            "artifact_land",
             "player", "spell")
+
+
+def protected_from(perm, source) -> bool:
+    """Whether perm has protection from a color of source (a CardDef, Permanent or StackItem)."""
+    if isinstance(source, StackItem):
+        source = source.card or source.source
+    card = source.card if isinstance(source, Permanent) else source
+    if not isinstance(card, CardDef) or not isinstance(perm, Permanent):
+        return False
+    return any(perm.has(PROTECTION[c]) for c in card.colors)
 
 
 class Permanent:
@@ -92,6 +104,9 @@ class Permanent:
         self.animated = None               # Activated: a manland that is a creature until end of turn
         self.crewed = False
         self.blitz = False
+        self.dashed = False
+        self.unearthed = False
+        self.disturbed = False             # cast with disturb: exiled instead of going to a graveyard
         self.loyalty_used = False
         self.entered_turn = 0
         self.entered_x = 0
@@ -108,6 +123,9 @@ class Permanent:
         self.auras: list["Permanent"] = []   # Auras on this permanent (they sit on their caster's battlefield)
         self.aura_host: "Permanent | None" = None      # the permanent this Aura enchants
         self.attached_to: "Permanent | None" = None    # Equipment: the creature it is attached to
+        self.damaged_by: list = []                      # permanents that dealt it damage this turn
+        self.prevent_next = 0                           # "prevent the next N damage ... this turn"
+        self.skip_untap = 0                             # untap steps it skips ("doesn't untap during ... next untap step")
         self.spent_color = ""              # "if {U}{U} was spent to cast it"
         self.exiled_cards: list = []       # (card, owner) exiled until this leaves the battlefield
         self.warped = False
@@ -155,10 +173,22 @@ class Permanent:
                 if c.anthem_enchanted and self.auras:
                     bp += c.anthem_enchanted[0]
                     bt += c.anthem_enchanted[1]
+        if creature:
+            for pl in (self.controller, self.controller.foe):
+                for x in (pl.battlefield if pl is not None else ()):
+                    a = x.card.anthem_all
+                    if a and a[0] in self.card.subtypes:
+                        bp += a[1]
+                        bt += a[2]
         for equipment in self.equipment:
             bp += equipment.card.equip_bonus[0]
             bt += equipment.card.equip_bonus[1]
         for cond, pp, tt in self.card.pt_if:
+            if not cond.startswith(("gy", "lands", "speed")):
+                if self.condition(cond):              # metalcraft, "as long as it's your turn / attacking"
+                    bp += pp
+                    bt += tt
+                continue
             gy = self.controller.graveyard
             n = sum(c.is_permanent for c in gy) if cond.startswith("gy_perm") else len(gy)
             if cond.startswith("lands"):
@@ -257,7 +287,7 @@ class Permanent:
                     return True
         if self.card.keyword_at_counters and self.p1 >= self.card.keyword_at_counters[0]:
             return kw == self.card.keyword_at_counters[1]
-        return kw == "haste" and self.blitz
+        return kw == "haste" and (self.blitz or self.dashed or self.unearthed)
 
     def condition(self, cond: str) -> bool:
         if cond.startswith("another:"):
@@ -267,6 +297,11 @@ class Permanent:
             return self.controller.speed >= 4
         if cond == "your_turn":
             return self.controller.my_turn
+        if cond.startswith("artifacts>="):
+            return sum(x.card.is_artifact for x in self.controller.battlefield) >= int(cond[11:])
+        if cond == "attacking":
+            game = getattr(self.controller, "_game", None)
+            return game is not None and self in game.attackers
         if cond.startswith("gy"):
             gy = self.controller.graveyard
             n = sum(c.is_permanent for c in gy) if cond.startswith("gy_perm") else len(gy)
@@ -348,6 +383,8 @@ class Permanent:
         return out
 
     def can_tap_for_mana(self):
+        if self.card.mana_sac_only:
+            return True
         return bool(self.card.produces or self.card.restricted_produces or self.granted_mana()) and not self.tapped and \
             not (self.is_creature and self.sick and self.card.mana_filter != "once")
 
@@ -395,6 +432,7 @@ class Player:
         object.__setattr__(self, name, value)
 
     my_turn = False
+    prevent_next = 0          # "prevent the next N damage that would be dealt to target player this turn"
     foe = None
     speed = 0
     speed_turn = -1
@@ -413,6 +451,7 @@ class Player:
         self.sideboard: list[CardDef] = list(sideboard or ())
         self.on_adventure: list[CardDef] = []
         self.foretold: list[CardDef] = []
+        self.suspended: list = []          # [card, time counters] for suspended cards in exile
         self.plotted: list[CardDef] = []
         self.airbent: list[CardDef] = []   # exiled by airbend: its owner may cast it for {2}
         self.warp_exile: list[CardDef] = []
@@ -494,6 +533,8 @@ class StackItem:
 def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if not blocker.is_creature or blocker.tapped:
         return False
+    if blocker.card.unleash and blocker.p1 > 0:
+        return False
     if blocker.card.cant_block or blocker.has("cant_block_now") or blocker.has("decayed") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
         return False
     if any(attacker.has(keyword) and any(x.card.is_land and subtype in x.card.subtypes
@@ -509,6 +550,10 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
         return False
     if attacker.has("legendary landwalk") and any(x.card.is_land and x.card.legendary
                                                  for x in blocker.controller.battlefield):
+        return False
+    if protected_from(attacker, blocker):
+        return False
+    if attacker.has("skulk") and blocker.power > attacker.power:
         return False
     if attacker.has("flying") and not (blocker.has("flying") or blocker.has("reach")):
         return False

@@ -266,6 +266,56 @@ to select another local database.
 - Shadow restricts both attacking and blocking creatures to those with shadow;
   intimidate restricts blockers to artifact creatures or creatures sharing a color
 - Nonbasic and legendary landwalk use the defending player's land supertypes
+- Protection from a color (printed, from Equipment like "protection from red and from blue", from Auras,
+  or granted until end of turn): the creature can't be blocked by creatures of that color, targeted by
+  spells or abilities of that color (a spell whose target gains protection fizzles), dealt damage by
+  sources of that color, or enchanted or equipped by Auras and Equipment of that color (they fall off).
+  "The color of your choice" picks the color of the opposing spell on the stack, else the opponent's
+  most common creature color, and the AI uses such spells to save creatures from colored removal.
+  Protection from artifacts, everything, multicolored, a creature type or a player is not parsed, and
+  "target creature gains protection from the color of your choice" always targets your own creature
+- Block triggers ("whenever ~ blocks", "becomes blocked", "blocks or becomes blocked", "attacks or blocks"),
+  where "that creature" is the other creature in the block, and "... at end of combat" delayed effects.
+  Bushido, flanking and toxic; "doesn't untap during your untap step" and "doesn't untap during its
+  controller's next untap step"; Fog ("prevent all combat damage that would be dealt this turn")
+- Werewolves transform at the beginning of each upkeep after a turn with no spells, and back after a turn in
+  which a player cast two or more; transformed permanents can turn face up again
+- Echo, unleash, evolve, renown, mentor, battle cry, riot, bloodthirst, fabricate, living weapon and heroic.
+  Unleash always takes the counter, riot takes haste when the creature can still attack this turn, and
+  fabricate always takes the counters
+- Illusions ("when ~ becomes the target of a spell or ability, sacrifice it"), Eldrazi Spawn and Scion
+  tokens ("Sacrifice this creature: Add {C}", usable while summoning sick and spent last), bounce lands
+  and "return a creature you control to its owner's hand", "can't attack unless defending player controls
+  an Island", and lands that enter tapped unless you control two or more basic lands
+- "You may <effect>" is always taken when the effect costs the player nothing (draw, counters, life,
+  scry, tokens, ...), so "If you do, ..." after it applies; "Exile ~." makes a spell exile itself
+- Upkeep costs: "sacrifice ~ unless you pay {cost}", cumulative upkeep (mana costs only), vanishing and
+  fading. Modular, soulshift, annihilator, rampage, afterlife, backup (only keywords are granted to
+  another creature), bolster and support; myriad does nothing with two players
+- Morph and megamorph use the face-down path of disguise (a 2/2 for {3}, without ward), including
+  "when ~ is turned face up" triggers. Dash, blitz without life, buyback, surge, prototype and suspend
+  (the AI suspends cards it can't cast for two more turns, or at all). Unearth is cast from the graveyard
+  like a spell and madness is cast from the graveyard during the turn of the discard (both recorded as
+  simplifications)
+- Damage prevention shields ("prevent the next N damage that would be dealt to any target this turn"),
+  "~ deals N damage to each creature [without flying] and each player", "each player loses N life /
+  discards a card", "look at the top N cards, then put them back in any order", self shroud and
+  unblockability abilities. Phyrexian mana in ability costs is paid with colored mana, as in spell costs
+- Metalcraft and "~ gets +N/+N as long as it's your turn / attacking", "when you control no Islands,
+  sacrifice ~", Aura abilities that pump or regenerate the enchanted creature, "destroy all artifacts /
+  enchantments / lands", "destroy target artifact or land", "that player discards", ingest, devour (only
+  tokens are devoured), extort (its {W/B} is paid with a color of its source), "you may pay N life",
+  "whenever ~ blocks a creature with flying", entwine, disturb and "untap all creatures you control"
+- Split second (no spells or non-mana abilities while it is on the stack), skulk, Lure ("all creatures
+  able to block ~ do so"), "can't be blocked by more than one creature", afflict, "whenever ~ attacks and
+  isn't blocked", "creatures without flying can't block this turn", "attacking creatures get +N/+N",
+  "during your turn, ~ gets +N/+N", sacrificing a land as an additional cost, and horizon lands
+  ("{T}, Pay 1 life: Add {G} or {U}"; the life is not paid, as with painlands)
+- Trigger heads: "whenever ~ is dealt damage", "deals damage to a player / an opponent", "deals combat
+  damage to a creature", "a creature dealt damage by ~ this turn dies", "(a|another) creature dies",
+  "a player / an opponent casts a spell", "at the beginning of each combat / your draw step / each
+  player's end step", and "whenever equipped / enchanted creature attacks / deals combat damage to a
+  player". "All Sliver creatures get +N/+N" counts every player's Slivers
 - Regeneration shields replace destruction, tap the permanent, clear its damage
   and remove it from combat. They expire at cleanup and cannot prevent sacrifice
   or zero toughness. Regeneration-prevention riders on destruction and damage apply

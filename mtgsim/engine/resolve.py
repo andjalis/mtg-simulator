@@ -19,6 +19,8 @@ class ResolveMixin:
         if eff.target == "trigger_subject" and item is not None:
             target = item.context if isinstance(item.context, Permanent) and item.context in item.context.controller.battlefield \
                 else None
+        if eff.target == "host" and item is not None and isinstance(item.source, Permanent):
+            target = item.source.aura_host or item.source.attached_to     # "enchanted creature" / "equipped creature"
         if eff.target == "that_controller":
             target = prev.controller if isinstance(prev, Permanent) else prev
         k = eff.kind

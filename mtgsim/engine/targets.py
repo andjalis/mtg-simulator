@@ -1,18 +1,25 @@
 """Game methods for targeting: legal targets, filters, counterability and automatic targets."""
 from __future__ import annotations
 
+import contextlib
+
 from .. import removal
 from ..cards import Effect
 from .policy import default_choose_target, perm_value
-from .state import Permanent, Player, StackItem, TARGETED, is_basic_land
+from .state import Permanent, Player, StackItem, TARGETED, is_basic_land, protected_from
 
 
 class TargetsMixin:
-    def targetable(self, obj, by: Player) -> bool:
-        """Whether ``by`` may target obj (shroud, hexproof, battlefield / stack presence)."""
+    target_source = None    # the spell or ability whose targets are being chosen or checked
+
+    def targetable(self, obj, by: Player, source=None) -> bool:
+        """Whether ``by`` may target obj (shroud, hexproof, protection, battlefield / stack presence).
+        Protection is checked against ``source``, or else the spell or ability whose targets are
+        being chosen or checked (``target_source``)."""
         if isinstance(obj, Permanent):
             return (obj in obj.controller.battlefield and not obj.has("shroud")
-                    and not (obj.has("hexproof") and obj.controller is not by))
+                    and not (obj.has("hexproof") and obj.controller is not by)
+                    and not protected_from(obj, source if source is not None else self.target_source))
         if isinstance(obj, StackItem):
             return obj in self.stack
         return isinstance(obj, Player)
@@ -41,6 +48,8 @@ class TargetsMixin:
             return not perm.card.is_artifact
         if f == "nonflying":
             return not perm.has("flying")
+        if f == "flying":
+            return perm.has("flying")
         if f == "untapped":
             return not perm.tapped
         if f == "opp":
@@ -59,6 +68,15 @@ class TargetsMixin:
             return perm.power <= int(f[10:])
         return True
 
+    @contextlib.contextmanager
+    def targeting(self, source):
+        """Choose or check targets for source (a CardDef, Permanent or StackItem): protection applies."""
+        outer, self.target_source = self.target_source, source
+        try:
+            yield
+        finally:
+            self.target_source = outer
+
     def legal_targets(self, p: Player, eff: Effect) -> list:
         everything = [x for pl in self.players for x in pl.battlefield if self.targetable(x, p)]
         creatures = [c for c in everything if c.is_creature and self.passes_filter(eff, c, p)]
@@ -75,6 +93,8 @@ class TargetsMixin:
             return [x for x in everything if x.card.is_land and self.passes_filter(eff, x, p)]
         if t == "artifact":
             return [x for x in everything if x.card.is_artifact and self.passes_filter(eff, x, p)]
+        if t == "artifact_land":
+            return [x for x in everything if (x.card.is_artifact or x.card.is_land) and self.passes_filter(eff, x, p)]
         if t == "artifact_enchantment":
             return [x for x in everything if (x.card.is_artifact or "Enchantment" in x.card.types)
                     and self.passes_filter(eff, x, p)]
@@ -122,6 +142,9 @@ class TargetsMixin:
 
     def auto_targets(self, p: Player, effects: list, source=None) -> list:
         """Targets for effects nobody chose targets for (triggers, modes, copies)."""
+        if source is not None and source is not self.target_source:
+            with self.targeting(source):
+                return self.auto_targets(p, effects)
         out = []
         for e in effects:
             if e.target not in TARGETED:

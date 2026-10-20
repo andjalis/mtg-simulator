@@ -10,6 +10,8 @@ def damage(game, p, eff, target, item, opp, cause, **_):
     src = (item.source if item.source is not None else item.card) if item is not None else None
     if eff.target == "each_creature":
         for perm in p.creatures + opp.creatures:
+            if eff.filter == "nonflying" and perm.has("flying"):
+                continue
             if eff.data.get("no_regen") and eff.amount > 0:
                 perm.regeneration_blocked = True
             game.deal_damage(perm, eff.amount, by=p, cause=cause, source=src)
@@ -38,6 +40,12 @@ def drain(game, eff, opp, cause, **_):
 def lose_life(game, p, eff, target, cause, **_):
     who = target if eff.target in ("that_player", "that_controller") and isinstance(target, Player) else p
     game.change_life(who, -eff.amount, cause)
+
+
+@kind("lose_each")
+def lose_each(game, eff, cause, **_):
+    for pl in game.players:
+        game.change_life(pl, -eff.amount, cause)
 
 
 @kind("drain_devotion")

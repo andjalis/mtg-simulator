@@ -14,7 +14,7 @@ import math
 from itertools import combinations
 
 from .cards import CardDef, Effect
-from . import copies, counting, engine, learning, modal, proliferate
+from . import copies, counting, engine, learning, modal, proliferate, protection
 from .engine import Game, Permanent, Player, can_block, payable
 
 LETHAL = 1000.0
@@ -55,7 +55,11 @@ def _targetable(game: Game, perm: Permanent, by: Player) -> bool:
 def _legal(game: Game, by: Player, eff: Effect, perm: Permanent, card: CardDef | None = None) -> bool:
     """Targetable, passing the effect's restrictions ("nonblack", "mana value 2 or less"), and
     with any ward on it payable on top of card's cost (without card: from the mana left now)."""
-    ok = game.legal_target(by, eff, perm) if hasattr(game, "legal_target") else _targetable(game, perm, by)
+    if card is not None and hasattr(game, "targeting"):
+        with game.targeting(card):
+            ok = game.legal_target(by, eff, perm)
+    else:
+        ok = game.legal_target(by, eff, perm) if hasattr(game, "legal_target") else _targetable(game, perm, by)
     return ok and _ward_payable(game, by, perm, card)
 
 
@@ -105,9 +109,15 @@ def _gives_hexproof(card: CardDef) -> bool:
     return any(e.kind == "grant" and (e.data or {}).get("keyword") == "hexproof" for e in card.spell_effects)
 
 
+def _gives_protection(card: CardDef) -> bool:
+    """Protection from the color of your choice: an answer to colored removal."""
+    return any(e.kind == "grant" and (e.data or {}).get("keyword") == protection.CHOICE for e in card.spell_effects)
+
+
 def _is_trick(card: CardDef) -> bool:
     """Instant pumps and protection spells: kept for combat and for answering removal."""
-    return card.instant_speed and not card.is_permanent and (_boost(card) is not None or _gives_hexproof(card))
+    return card.instant_speed and not card.is_permanent and (
+        _boost(card) is not None or _gives_hexproof(card) or _gives_protection(card))
 
 
 def _aim(card: CardDef, eff, target) -> list:
@@ -1142,9 +1152,10 @@ class HeuristicAI:
             lethal_damage = eff.kind == "damage" and tgt.toughness - tgt.damage <= eff.amount
             if not (lethal_damage or eff.kind in ("destroy", "bounce", "debuff_one")):
                 continue
+            source = item.card or (item.source.card if item.source is not None else None)
             for card in options:
                 boost = _boost(card)
-                if _gives_hexproof(card):
+                if _gives_hexproof(card) or _gives_protection(card) and source is not None and source.colors:
                     first = next((e for e in card.spell_effects if e.target in ("creature_mine", "creature")), None)
                     if first is not None:
                         return card, _aim(card, first, tgt)

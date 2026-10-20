@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import re
 
-from .model import COLORS, COLOR_WORDS, Effect, KEYWORDS, NO_MATCH, _distinct_bounce, _distinct_pump, _num
+from .model import COLORS, COLOR_WORDS, Effect, KEYWORDS, NO_MATCH, _distinct_bounce, _distinct_pump, _num, parse_mana_cost
 
 
 def _parse_mana_ability(rest: str) -> tuple[set, int]:
@@ -90,6 +90,11 @@ _EFFECT_PATTERNS = [
     (r"~ also deals (\d+) damage to that permanent's controller if you control a modified creature",
      lambda m: Effect("damage", int(m[1]), target="that_controller", cond="modified")),
     (r"~ deals (\d+) damage to each creature", lambda m: Effect("damage", int(m[1]), target="each_creature")),
+    (r"~ deals (\d+) damage to each creature( without flying)? and each player",
+     lambda m: [Effect("damage", int(m[1]), target="each_creature", filter="nonflying" if m[2] else ""),
+                Effect("damage_each_player", int(m[1]))]),
+    (r"~ deals (\d+) damage to each creature without flying",
+     lambda m: Effect("damage", int(m[1]), target="each_creature", filter="nonflying")),
     (r"destroy target creature with mana value (\d+) or less",
      lambda m: Effect("destroy", target="creature", filter=f"max_cmc:{m[1]}")),
     (r"destroy target creature if it has mana value (\d+) or less",
@@ -181,6 +186,7 @@ _EFFECT_PATTERNS = [
     (r"airbend (?:up to one )?(?:another |other )?target (?:(nonland permanent)|creature( you control)?)(?: or spell)?",
      lambda m: Effect("airbend", target="nonland_perm" if m[1] else "creature_mine" if m[2] else "creature")),
     (r"tap target permanent", lambda m: Effect("tap", 1, target="nonland_perm")),
+    (r"return target permanent to its owner's hand", lambda m: Effect("bounce", target="nonland_perm")),
     (r"each player draws a card", lambda m: Effect("draw_each", 1)),
     (r"target creature(?: an opponent controls)? can't block this turn", lambda m: Effect("cant_block_turn", target="creature")),
     (r"(up to (?:one|two|three)|one or two|up to two) target creatures can't block this turn",
@@ -231,6 +237,12 @@ _EFFECT_PATTERNS = [
     (r"damage can't be prevented this turn", lambda m: None),
     (r"destroy all creatures", lambda m: Effect("wrath", target="each_creature")),
     (r"destroy all planeswalkers", lambda m: Effect("wrath_pw")),
+    (r"destroy all (artifacts|enchantments|lands)", lambda m: Effect("destroy_all", data={"type": m[1][:-1].capitalize()})),
+    (r"destroy target artifact or land", lambda m: Effect("destroy", target="artifact_land")),
+    (r"that player discards (a|two) cards?", lambda m: Effect("discard", _num(m[1]), target="that_player")),
+    (r"that player exiles the top card of their library", lambda m: Effect("exile_top_of", target="that_player")),
+    (r"enchanted creature gets \+(\d+)/\+(\d+) until end of turn", lambda m: Effect("pump", int(m[1]), int(m[2]), target="host")),
+    (r"regenerate enchanted creature", lambda m: Effect("regenerate", 1, target="host")),
     (r"return (?:up to one )?(?:other )?target (?:nonland permanent|creature|artifact, creature, enchantment, or "
      r"planeswalker)"
      r"(?: an opponent controls| you don't control)? to its owner's hand",
@@ -335,12 +347,46 @@ _EFFECT_PATTERNS = [
      r"until end of turn",
      lambda m: Effect("grant_types", data={"types": (m[1], m[2]), "keyword": m[3].lower()})),
     (r"amass (\w+) (\d+)", lambda m: Effect("amass", int(m[2]), data={"type": m[1].rstrip("s").capitalize()})),
-    (r"(?:defending player|target opponent) loses (\d+) life and you gain (\d+) life",
+    (r"(?:defending player|target opponent|target player) loses (\d+) life and you gain (\d+) life",
      lambda m: [Effect("drain", int(m[1]), target="each_opponent"), Effect("gain_life", int(m[2]))]),
     (r"you draw a card and lose (\d+) life", lambda m: [Effect("draw", 1), Effect("lose_life", int(m[1]))]),
     (r"(?:target|each) opponent discards (a|two|three) cards?", lambda m: Effect("discard", _num(m[1]), target="player")),
+    (r"target player discards (two|three) cards", lambda m: Effect("discard", _num(m[1]), target="player")),
+    (r"each player discards (a|two|three) cards?", lambda m: Effect("discard_each", _num(m[1]))),
+    (r"each player loses (\d+) life", lambda m: Effect("lose_each", int(m[1]))),
+    (r"look at the top (two|three|four|five|\d+) cards of your library(?:,)? then put them back in any order",
+     lambda m: Effect("reorder_top", _num(m[1]))),
+    (r"~ deals (\d+) damage to target creature with flying",
+     lambda m: Effect("damage", int(m[1]), target="creature", filter="flying")),
+    (r"~ gains shroud until end of turn", lambda m: Effect("grant", target="self", data={"keyword": "shroud"})),
+    (r"bolster (\d+|one|two|three|four|five|six)", lambda m: Effect("bolster", _num(m[1]))),
+    (r"support (\d+|one|two|three|four|five|six)", lambda m: Effect("support", _num(m[1]))),
     (r"(?:target|each) opponent sacrifices a creature(?: of their choice)?", lambda m: Effect("edict", 1)),
+    (r"each other player sacrifices a creature", lambda m: Effect("edict", 1)),
+    (r"creatures without flying can't block this turn", lambda m: Effect("cant_block_all", filter="nonflying")),
+    (r"attacking creatures (?:you control )?get \+(\d+)/\+(\d+) until end of turn",
+     lambda m: Effect("pump_attackers", int(m[1]), int(m[2]))),
+    (r"up to (two|three) target creatures each get \+(\d+)/\+(\d+) until end of turn",
+     lambda m: [Effect("pump", int(m[2]), int(m[3]), target="creature_mine", data={"distinct": True})
+                for _ in range(_num(m[1]))]),
+    (r"untap all (creatures|lands) you control", lambda m: Effect("untap_all", data={"what": m[1]})),
     (r"sacrifice ~", lambda m: Effect("sacrifice_self", target="self")),
+    (r"sacrifice a creature", lambda m: Effect("sac_own", data={"kind": "creature"})),
+    (r"sacrifice (?:~|it) unless you pay ((?:\{[^}]+\})+)", lambda m: Effect("pay_or_sac", data={"cost": parse_mana_cost(m[1])})),
+    (r"~ can't be blocked this turn", lambda m: Effect("unblockable", target="self")),
+    (r"prevent the next (\d+) damage that would be dealt to (any target|target creature|target player|~|you) this turn",
+     lambda m: Effect("prevent_next", int(m[1]), target={"any target": "any", "target creature": "creature",
+                                                         "target player": "player", "~": "self"}.get(m[2].lower(), "none"))),
+    (r"target creature can't be blocked this turn", lambda m: Effect("unblockable", target="creature_mine")),
+    (r"put target creature on top of its owner's library", lambda m: Effect("tuck_top", target="creature")),
+    (r"search your library for a card, put (?:that card|it) into your hand, then shuffle",
+     lambda m: Effect("tutor", data={"what": "a card"})),
+    (r"exile target card from a graveyard", lambda m: Effect("exile_gy", 1)),
+    (r"its controller loses (\d+) life", lambda m: Effect("lose_life", int(m[1]), target="that_controller")),
+    (r"prevent all combat damage that would be dealt this turn", lambda m: Effect("fog")),
+    (r"prevent all combat damage that would be dealt this turn by creatures your opponents control",
+     lambda m: Effect("fog", data={"theirs": True})),
+    (r"return an? (land|creature) you control to its owner's hand", lambda m: Effect("return_own", data={"kind": m[1].lower()})),
     (r"another target creature you control gains (deathtouch|first strike|lifelink|trample|haste|indestructible|"
      r"hexproof|vigilance|menace|reach|flying) until end of turn",
      lambda m: Effect("grant", target="creature_mine", data={"keyword": m[1].lower()})),
@@ -429,7 +475,8 @@ _EFFECT_PATTERNS = [
     (r"put (a|one|two) \+1/\+1 counters? on each creature target player controls",
      lambda m: Effect("p1_counters", _num(m[1]), target="my_creatures")),
     (r"that creature deals (\d+) damage to each opponent", lambda m: Effect("damage", int(m[1]), target="player")),
-    (r"target creature gains (double strike|first strike|trample|haste|hexproof|indestructible) until end of turn",
+    (r"target creature gains (double strike|first strike|trample|haste|hexproof|indestructible|flying|lifelink|deathtouch|"
+     r"vigilance|menace|reach) until end of turn",
      lambda m: Effect("grant", target="creature", data={"keyword": m[1].lower()})),
     (r"(?:you may )?(?:return|put) (all |(?:up to )?(?:one|two|three|four|five|six|x) (?:other )?target |(?:up to one )?target |an? )?"
      r"([\w ,/'-]+?) cards?(?: each)?(?: with mana value (\d+|x) or (less|greater))? from (your|a|an opponent's) "

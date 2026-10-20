@@ -31,6 +31,14 @@ def wrath(game, p, eff, opp, **_):
         game.destroy(perm, no_regen=eff.data.get("no_regen", False))
 
 
+@kind("destroy_all")
+def destroy_all(game, p, eff, opp, **_):
+    """Destroy all artifacts / enchantments / lands."""
+    kind = eff.data["type"]
+    for perm in [x for x in p.battlefield + opp.battlefield if kind in x.card.types]:
+        game.destroy(perm)
+
+
 @kind("wrath_pw")
 def wrath_pw(game, p, eff, opp, **_):
     for perm in p.planeswalkers + opp.planeswalkers:
@@ -42,6 +50,39 @@ def bounce(game, p, target, **_):
     if isinstance(target, Permanent) and target in target.controller.battlefield:
         game.log(f"{target.card.name} returns to hand", p)
         game.leave_battlefield(target, "hand")
+
+
+@kind("return_own")
+def return_own(game, p, eff, item, **_):
+    """Bounce lands, Storm Sculptor: return a land / creature you control. Tapped lands go first (a basic
+    before a nonbasic), then the cheapest creature; the source itself only when nothing else is left."""
+    src = item.source if item is not None else None
+    land = eff.data["kind"] == "land"
+    pool = [x for x in p.battlefield if (x.card.is_land if land else x.is_creature)]
+    if not pool:
+        return
+    pick = min(pool, key=lambda x: (x is src, not x.tapped, not is_basic_land(x.card)) if land else
+               (x is src, perm_value(x)))
+    game.log(f"returns {pick.card.name} to hand", p)
+    game.leave_battlefield(pick, "hand")
+
+
+@kind("sac_own")
+def sac_own(game, p, **_):
+    """"Sacrifice a creature": p's least valuable one."""
+    if p.creatures:
+        game.sacrifice(min(p.creatures, key=perm_value))
+
+
+@kind("tuck_top")
+def tuck_top(game, p, target, **_):
+    """Put target creature on top of its owner's library (a token just leaves)."""
+    if isinstance(target, Permanent) and game.leave_battlefield(target, "graveyard") and not target.front.is_token:
+        owner = target.owner
+        if target.front in owner.graveyard:
+            owner.graveyard.remove(target.front)
+            owner.library.append(target.front)
+            game.log(f"{target.card.name} goes on top of its owner's library", p)
 
 
 @kind("regenerate")

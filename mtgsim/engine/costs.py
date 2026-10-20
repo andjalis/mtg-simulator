@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING
 
-from .. import auras, copies, counting, discounts, returns, costs
+from .. import alt_casts, auras, copies, counting, discounts, returns, costs
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
@@ -12,6 +12,9 @@ from .state import COLOR_WORDS, Permanent, TARGETED, _gy_desc, card_matches
 
 if TYPE_CHECKING:
     from .state import Player
+
+
+FACE_DOWN = ("disguise", "morph", "megamorph")   # cast face down for {3} as a 2/2, turned face up for this cost
 
 
 class CostsMixin:
@@ -89,7 +92,7 @@ class CostsMixin:
                 s.ability_turns["filter"] = self.turn
             else:
                 s.tapped = True
-            if s.card.token_kind == "treasure" or s.card.mana_sac:
+            if s.card.token_kind == "treasure" or s.card.mana_sac or s.card.mana_sac_only:
                 self.sacrifice(s)
             if s.card.mana_tap_other:
                 spare = [x for x in p.battlefield if x is not s and not x.tapped and x not in payment
@@ -185,6 +188,13 @@ class CostsMixin:
     def pay_gate_cost(self, p: Player, gate: tuple, item) -> bool:
         """Pay a "you may sacrifice / discard / forage / blight N. If you do, ..." cost when it is cheap for the AI."""
         kind, what = gate
+        if kind == "may":
+            return True
+        if kind == "life":                         # "you may pay N life": while it stays comfortable
+            if p.life - int(what) < 8:
+                return False
+            self.change_life(p, -int(what), "paid life")
+            return True
         src = item.source if item is not None and isinstance(item.source, Permanent) else None
         if kind == "sac":
             other = what.startswith("other ")
@@ -377,6 +387,8 @@ class CostsMixin:
                 v = dataclasses.replace(card.adventure)
             elif kind == "prepared":
                 v = dataclasses.replace(card.back, name=f"{card.name} (prepared)")
+            elif kind == "disturb":
+                v = dataclasses.replace(card.back, name=f"{card.back.name} (disturb)", mana_cost=alt.cost)
             elif kind in ("channel", "gy_ability"):
                 v = CardDef(name=f"{card.name} ({kind})", mana_cost=alt.cost, cmc=card.cmc,
                             types=frozenset({"Instant"}), spell_effects=list(alt.effects), is_ability=True)
@@ -416,8 +428,8 @@ class CostsMixin:
         for a in c.alt_costs:
             if a.kind == "offspring":
                 out.append(self._variant(c, "offspring", AltCost("offspring", add_mana(c.mana_cost, a.cost))))
-            elif a.kind == "disguise" and not full:
-                out.append(self._variant(c, "disguise", AltCost("disguise", {"generic": 3})))
+            elif a.kind in FACE_DOWN and not full:
+                out.append(self._variant(c, a.kind, AltCost(a.kind, {"generic": 3})))
             elif a.kind == "impending" and not full:
                 out.append(self._variant(c, "impending", AltCost("impending", a.cost, counters=a.counters)))
             elif a.kind in ("warp", "evoke") and not full:
@@ -435,6 +447,10 @@ class CostsMixin:
             out.remove(c)     # a spree spell needs at least one mode
         return out
 
+    def spells_cast_turn(self, p: Player) -> int:
+        counts = getattr(self, "spells_cast", {})
+        return counts.get(p.name, 0) if counts.get("turn") == self.turn else 0
+
     def spell_options(self, p: Player) -> list[CardDef]:
         """Every nonland spell p could cast from any zone: hand cards plus adventures, cards on an
         adventure, foretold cards, flashback, blitz, spectacle, alternative costs and channel."""
@@ -447,11 +463,12 @@ class CostsMixin:
                         out.append(self._variant(c, "channel", a))
                 continue
             out += self._hand_options(p, c)
+            out += alt_casts.variants(self, p, c)
             if c.adventure:
                 out.append(self._variant(c, "adventure"))
             for a in c.alt_costs:
                 if a.kind in ("alt", "kicker") or (a.kind == "spectacle" and opp.lost_life_turn) or \
-                        (a.kind == "blitz" and "hand" in a.zone):
+                        (a.kind in ("blitz", "dash") and "hand" in a.zone):
                     out.append(self._variant(c, a.kind, a))
         out += [self._variant(x.front, "prepared") for x in p.battlefield if x.prepared and x.card.back is not None]
         out += [self._variant(c, "from_adventure") for c in p.on_adventure]
@@ -470,7 +487,8 @@ class CostsMixin:
                 out.append(self._variant(c, "flashback", AltCost("flashback", dict(c.mana_cost))))
         for c in p.graveyard:
             for a in c.alt_costs:
-                if a.kind in ("flashback", "gy_ability") or (a.kind == "blitz" and "graveyard" in a.zone) or \
+                if a.kind in ("flashback", "gy_ability", "unearth") or (a.kind == "disturb" and c.back is not None) or \
+                        (a.kind == "blitz" and "graveyard" in a.zone) or \
                         (a.kind == "mayhem" and c in p.discarded_cards):
                     out.append(self._variant(c, "blitz_gy" if a.kind == "blitz" else a.kind, a))
         return out
@@ -487,7 +505,7 @@ class CostsMixin:
         """The zone a spell_options() variant of this kind is cast from."""
         return {"from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile, "airbent": p.airbent,
-                "mayhem": p.graveyard, "impulse": p.exile, "rebound": p.exile,
+                "mayhem": p.graveyard, "unearth": p.graveyard, "disturb": p.graveyard, "impulse": p.exile, "suspended": p.exile, "rebound": p.exile,
                 "cascade": p.exile, "cascade_adventure": p.exile,
                 "rebound_adventure": p.exile, "discover": p.exile}.get(kind, p.hand)
 

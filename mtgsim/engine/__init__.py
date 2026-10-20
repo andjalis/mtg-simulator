@@ -36,7 +36,7 @@ from ..actions import atomic_action, perform, can_perform
 
 from .state import (
     TrackedZone, TEAM_KEYWORDS, COLOR_WORDS, TARGETED, Permanent, FIREBEND_MANA, _POOL_MANA, _gy_desc, pool_mana,
-    OUTLAWS, Player, StackItem, can_block, is_basic_land, _TYPE_WORDS, card_matches,
+    OUTLAWS, PROTECTION, Player, StackItem, can_block, protected_from, is_basic_land, _TYPE_WORDS, card_matches,
 )
 from .mana import _mana_of, find_payment, _find_payment, payable, add_costs
 from .policy import (

@@ -5,7 +5,7 @@ override each one by defining the hook of the same name (see README and DEFAULTS
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from .. import copies, learning, proliferate, regeneration, removal
+from .. import alt_casts, copies, learning, proliferate, regeneration, removal
 from ..cards import COLORS, CardDef, Effect
 from .. import modal
 from .mana import add_costs, payable
@@ -606,6 +606,9 @@ def use_abilities(game: Game, me: Player):
         for card in [c for c in me.hand if any(a.kind == "foretell" for a in c.alt_costs)]:
             if game.can_pay(me, {"generic": 2 + _reserve(game, me)}):
                 game.foretell(me, card)
+        for card in [c for c in me.hand if any(a.kind == "suspend" for a in c.alt_costs)]:
+            if alt_casts.worth_suspending(game, me, card):
+                alt_casts.suspend(game, me, card)
 
 
 def default_sneak(game: Game, me: Player, attackers, blocks):

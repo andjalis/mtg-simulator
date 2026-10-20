@@ -1,6 +1,7 @@
 """Board and turn-history conditions for "if ..." clauses and "attacks while ..." triggers: counts of what
 you control, delirium, "a permanent left the battlefield under your control this turn" (Disappear), "two or
-more nonland permanents entered under your control this turn" (Celebration)."""
+more nonland permanents entered under your control this turn" (Celebration), and the spells cast last turn
+(werewolves: "if no spells were cast last turn", "if a player cast two or more spells last turn")."""
 from __future__ import annotations
 
 import re
@@ -21,6 +22,10 @@ def parse(phrase: str) -> str:
     m = re.fullmatch(r"(two|three|four) or more nonland permanents entered the battlefield under your control this turn", phrase)
     if m:
         return f"entered_nonland>={_N[m[1]]}"
+    if phrase == "no spells were cast last turn":
+        return "no_spells_last_turn"
+    if phrase == "a player cast two or more spells last turn":
+        return "player_spells_last_turn>=2"
     m = re.fullmatch(r"you don't control another ([a-z]+)", phrase)
     if m:
         return f"!ctl_other:{m[1].capitalize()}"
@@ -41,6 +46,10 @@ def check(game, p, cond: str, item):
         return len(kinds) >= 4
     if cond == "perm_left":
         return p.perm_left_turn
+    if cond == "no_spells_last_turn":
+        return not any(getattr(game, "last_turn_spells", {}).values())
+    if cond == "player_spells_last_turn>=2":
+        return max(getattr(game, "last_turn_spells", {}).values(), default=0) >= 2
     m = re.fullmatch(r"entered_nonland>=(\d+)", cond)
     if m:
         return p.entered_nonland_turn >= int(m[1])

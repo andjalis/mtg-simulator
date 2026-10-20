@@ -18,7 +18,7 @@ import re
 
 KINDS = {"tap_host", "attach_self"}
 _KW = ("flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|"
-       "menace|reach")
+       "menace|reach|protection from (?:white|blue|black|red|green)")
 _ENCHANT = re.compile(r"Enchant (creature|creature you control|creature or Vehicle|artifact or creature|"
                       r"artifact creature|land|permanent|nonland permanent|artifact|creature an opponent controls)")
 _SIGN = {"+": 1, "-": -1, "−": -1}
@@ -107,7 +107,7 @@ def hosts(game, p, card) -> list:
             ok = False
         if kinds == "creature an opponent controls" and x.controller is not opp:
             ok = False
-        if ok and game.targetable(x, p):
+        if ok and game.targetable(x, p, card):
             out.append(x)
     hostile = card.aura_hostile
     return [x for x in out if (x.controller is not p) == hostile]

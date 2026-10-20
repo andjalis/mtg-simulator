@@ -1,8 +1,9 @@
 """Creature stats and state: pump, counters, keywords, tapping, combat restrictions."""
 from __future__ import annotations
 
+from ... import protection
 from ..policy import default_choose_target, perm_value
-from ..state import Permanent, StackItem
+from ..state import Permanent, Player, StackItem
 from . import kind
 
 
@@ -29,6 +30,52 @@ def pump(game, eff, target, **_):
         target.pump_t += eff.amount2
         if eff.data.get("keyword"):
             target.temp_kw.add(eff.data["keyword"])
+
+
+@kind("prevent_next")
+def prevent_next(game, p, eff, target, **_):
+    """A damage shield until end of turn; "you" (target none) shields the controller."""
+    who = p if eff.target == "none" else target
+    if isinstance(who, (Permanent, Player)):
+        who.prevent_next += eff.amount
+
+
+@kind("bolster")
+def bolster(game, p, eff, **_):
+    """Put N +1/+1 counters on the creature you control with the least toughness."""
+    if p.creatures:
+        pick = min(p.creatures, key=lambda c: (c.toughness, -perm_value(c)))
+        pick.counters["+1/+1"] = pick.p1 + eff.amount
+
+
+@kind("support")
+def support(game, p, eff, item, **_):
+    """A +1/+1 counter on each of up to N other creatures (your best ones)."""
+    src = item.source if item is not None else None
+    for c in sorted((c for c in p.creatures if c is not src), key=perm_value, reverse=True)[:eff.amount]:
+        c.counters["+1/+1"] = c.p1 + 1
+
+
+@kind("fog")
+def fog(game, p, eff, **_):
+    """Prevent all combat damage this turn (or only that of creatures p's opponents control)."""
+    game.fog = (game.turn, game.opponent(p) if eff.data.get("theirs") else None)
+
+
+@kind("skip_untap")
+def skip_untap(game, target, **_):
+    if isinstance(target, Permanent):
+        target.skip_untap = max(target.skip_untap, 1)
+
+
+@kind("flanking")
+def flanking(game, item, **_):
+    """Each creature without flanking blocking the source gets -1/-1 until end of turn."""
+    src = item.source if item is not None else None
+    for blocker in game.blocks.get(src, ()):
+        if not blocker.has("flanking"):
+            blocker.pump_p -= 1
+            blocker.pump_t -= 1
 
 
 @kind("debuff")
@@ -86,15 +133,18 @@ def pump_all(game, p, eff, item, **_):
 
 
 @kind("grant")
-def grant(game, eff, target, item, **_):
+def grant(game, p, eff, target, item, **_):
     if eff.data.get("host") and item is not None and isinstance(item.source, Permanent):
         target = item.source.attached_to
     if isinstance(target, Permanent):
+        keyword = eff.data["keyword"]
+        if keyword == protection.CHOICE:
+            keyword = protection.choose_color(game, p, target)
+            game.log(f"{target.card.name} gains {keyword}", p)
         if eff.data.get("perm"):
-            name = eff.data["keyword"]
-            target.counters[name] = target.counters.get(name, 0) + 1
+            target.counters[keyword] = target.counters.get(keyword, 0) + 1
         else:
-            target.temp_kw.add(eff.data["keyword"])
+            target.temp_kw.add(keyword)
 
 
 @kind("add_counter")
@@ -148,6 +198,28 @@ def grant_types(game, p, eff, **_):
     for x in p.battlefield:
         if any(t in x.card.subtypes for t in eff.data["types"]):
             x.temp_kw.add(eff.data["keyword"])
+
+
+@kind("cant_block_all")
+def cant_block_all(game, p, eff, opp, **_):
+    for c in p.creatures + opp.creatures:
+        if not (eff.filter == "nonflying" and c.has("flying")):
+            c.temp_kw.add("cant_block_now")
+
+
+@kind("pump_attackers")
+def pump_attackers(game, p, eff, **_):
+    for a in game.attackers:
+        if a.controller is p:
+            a.pump_p += eff.amount
+            a.pump_t += eff.amount2
+
+
+@kind("untap_all")
+def untap_all(game, p, eff, **_):
+    for x in p.battlefield:
+        if (x.is_creature if eff.data["what"] == "creatures" else x.card.is_land):
+            x.tapped = False
 
 
 @kind("untap_prev")

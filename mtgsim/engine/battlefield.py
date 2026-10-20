@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING
 
-from .. import auras, copies, proliferate
+from .. import auras, copies, creature_keywords, proliferate
 from ..cards import Activated, CardDef, Effect, make_token
 from .. import rules_events
 from ..identity import CardInstance, instance
@@ -68,6 +68,12 @@ class BattlefieldMixin:
         elif cond.startswith("behold:"):
             kind = cond.split(":", 1)[1]
             perm.tapped = not any(kind in c.subtypes for c in [x.card for x in p.battlefield] + p.hand)
+        elif cond == "always":
+            perm.tapped = True
+        elif cond.startswith("unless_basics>="):
+            perm.tapped = sum(is_basic_land(x.card) for x in p.battlefield) < int(cond[15:])
+        elif cond.startswith("unless_opp_lands>="):
+            perm.tapped = sum(x.card.is_land for x in self.opponent(p).battlefield) < int(cond[18:])
         elif cond == "unless_pw":
             perm.tapped = not p.planeswalkers
         elif cond.startswith("unless_player_life<="):
@@ -116,6 +122,11 @@ class BattlefieldMixin:
         if host is not None and card.aura:
             auras.attach(self, perm, host)
             self._aura_host = None
+        equipment = getattr(self, "_equip_on_enter", None)
+        if equipment is not None and perm.is_creature:
+            equipment.attached_to = perm         # living weapon
+            self._equip_on_enter = None
+        creature_keywords.enters(self, p, perm)
         if tapped_attacking:
             perm.tapped = True
             self.attackers.append(perm)
@@ -162,6 +173,8 @@ class BattlefieldMixin:
             card = make_token(d.get("name", ""), d.get("power", 0), d.get("toughness", 0), d.get("keywords", ()),
                               d.get("triggers"), d.get("kind", ""), d.get("artifact", False), d.get("pt_per", ""),
                               colors=d.get("colors", ()))
+            if d.get("spawn_mana"):     # Eldrazi Spawn / Scion: "Sacrifice this creature: Add {C}."
+                card = dataclasses.replace(card, produces=frozenset({"C"}), mana_sac_only=True)
             if d.get("mercenary"):
                 card = dataclasses.replace(card, activated=[Activated("ability", {"generic": 0}, effects=[
                     Effect("pump", 1, 0, target="creature_mine")], extra_costs={"tap": True}, sorcery=True,
@@ -175,9 +188,13 @@ class BattlefieldMixin:
         self.log(f"creates {n if n is not None else eff.amount} {d.get('kind') or d.get('name')} token(s)", p)
 
     def transform(self, perm: Permanent):
-        back = perm.card.back
+        front = getattr(perm, "front_face", None)
+        flip_back = front is not None and front.back is perm.card   # a transformed permanent turns face up again
+        back = front if flip_back else perm.card.back
         if back is None or perm not in perm.controller.battlefield:
             return
+        if not flip_back:
+            perm.front_face = perm.card
         self.log(f"{perm.card.name} transforms into {back.name}", perm.controller)
         was_saga = perm.card.is_saga
         perm.card = back

@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .. import discounts, graveyard, modal
-from .. import auras as _auras, copies as _copies, counting as _counting
+from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords
 from .model import Activated, AltCost, COLORS, Effect, KEYWORDS, NUMBERS, Trigger, _num, parse_mana_cost
 from .patterns import _parse_mana_ability
 from .parse import _apply_speed_gate, _mana_restriction, _parse_ability, _parse_effects, _parse_trigger
@@ -121,19 +121,29 @@ def _face_special_lines(st, line):
                                        extra_costs={"level_from": n - 1}, sorcery=True, text=line))
             level_marks.append((n, len(triggers)))
             return None
-        line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration) — (?=When|At|If)", "", line)
+        line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration|Heroic) — (?=When|At|If)", "", line)
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
-        parts = [p.strip().lower() for p in line.split(",")]
-        if all(p in KEYWORDS or re.fullmatch(r"ward \{\d+\}", p) for p in parts):
+        if _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st):
+            return None
+        parts = [p.strip().lower() for p in re.split(r",(?: and)? | and |,", line)]
+        if all(p in KEYWORDS or re.fullmatch(r"(?:ward \{\d+\}|toxic \d+|bushido \d+)", p) for p in parts):
             for p in parts:
                 if p.startswith("ward"):
                     extra["ward"] = int(re.search(r"\d+", p)[0])
+                elif p.startswith("toxic"):
+                    extra["toxic"] = extra.get("toxic", 0) + int(p.split()[1])
+                elif p.startswith("bushido"):
+                    n = int(p.split()[1])     # whenever it blocks or becomes blocked, +N/+N until end of turn
+                    triggers += [Trigger(event, [Effect("pump", n, n, target="self")])
+                                 for event in ("blocks", "becomes_blocked")]
                 else:
                     keywords.add(p)
                     if p == "exalted":
                         extra["exalted"] = extra.get("exalted", 0) + 1
                     elif p in ("cascade", "storm"):
                         extra[p] = extra.get(p, 0) + 1
+                    elif p == "flanking":
+                        triggers.append(Trigger("becomes_blocked", [Effect("flanking")]))
             return None
         return line
     finally:
@@ -234,6 +244,24 @@ def _face_land_and_mana_lines(st, line):
             return None
         if line == "Creatures with power less than ~'s power can't block it.":
             extra["blocker_power_rel"] = True
+            return None
+        m = re.fullmatch(r"~ can't attack unless defending player controls an? (Island|Swamp|Mountain|Forest|Plains)\.", line)
+        if m:
+            extra["attack_needs"] = m[1]
+            return None
+        if line == "~ enters tapped unless you have two or more opponents.":
+            extra["tapped_condition"] = "always"         # two players: there is one opponent
+            return None
+        m = re.fullmatch(r"~ enters tapped unless you control (two|three) or more basic lands\.", line)
+        if m:
+            extra["tapped_condition"] = f"unless_basics>={_num(m[1])}"
+            return None
+        m = re.fullmatch(r"~ enters tapped unless your opponents control (\w+) or more lands\.", line)
+        if m:
+            extra["tapped_condition"] = f"unless_opp_lands>={_num(m[1])}"
+            return None
+        if line == "~ doesn't untap during your untap step.":
+            extra["no_untap"] = True
             return None
         if re.fullmatch(r"~ can't block\.", line):
             extra["cant_block"] = True
@@ -510,7 +538,7 @@ def _face_cost_and_static_lines(st, line):
         if _counting.parse_line(line, extra):
             return None
         m = re.fullmatch(r"As an additional cost to cast ~, (?:pay \{(\d+)\} or )?sacrifice (an? (?:artifact|creature|enchantment|"
-                         r"planeswalker)(?: or (?:artifact|creature|enchantment|planeswalker))*)(?: or pay \{(\d+)\})?\.", line)
+                         r"planeswalker|land)(?: or (?:artifact|creature|enchantment|planeswalker))*)(?: or pay \{(\d+)\})?\.", line)
         if m:
             extra["extra_sacrifice"] = m[2]
             extra["extra_sac_or_pay"] = int(m[1] or m[3] or 0)
@@ -658,6 +686,39 @@ def _face_cost_and_static_lines(st, line):
             cond = ("gy_perm>=" if m[4] else "gy>=") + str(_num(m[3]))
             extra["pt_if"] = extra.get("pt_if", ()) + ((cond, int(m[1]), int(m[2])),)
             return None
+        m = re.fullmatch(r"(?:Metalcraft — )?~ gets \+(\d+)/\+(\d+)(?: and has (flying|first strike|trample|haste|lifelink|"
+                         r"vigilance|menace|deathtouch))? as long as (you control three or more artifacts|it's your turn|"
+                         r"it's attacking)\.", line)
+        if m:
+            cond = {"you control three or more artifacts": "artifacts>=3", "it's your turn": "your_turn",
+                    "it's attacking": "attacking"}[m[4]]
+            extra["pt_if"] = extra.get("pt_if", ()) + ((cond, int(m[1]), int(m[2])),)
+            if m[3]:
+                extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((m[3], cond),)
+            return None
+        m = re.fullmatch(r"All ([A-Z]\w+) creatures get \+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["anthem_all"] = (m[1], int(m[2]), int(m[3]))      # every player's creatures of that type
+            return None
+        if line == "All creatures able to block ~ do so.":
+            extra["lure"] = True
+            return None
+        m = re.fullmatch(r"~ can't be blocked by more than (one|two) creatures?\.", line)
+        if m:
+            extra["max_blockers"] = _num(m[1])
+            return None
+        m = re.fullmatch(r"During your turn, ~ gets \+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["pt_if"] = extra.get("pt_if", ()) + (("your_turn", int(m[1]), int(m[2])),)
+            return None
+        m = re.fullmatch(r"\{T\}, Pay 1 life: Add (\{[WUBRG]\}) or (\{[WUBRG]\})\.", line)
+        if m:
+            produces |= {m[1][1], m[2][1]}
+            approximations.append("the 1 life for its mana is not paid")
+            return None
+        if line == "When you control no Islands, sacrifice ~.":
+            extra["needs_land"] = "Island"       # a state trigger: sacrificed while you control no Island
+            return None
         m = re.fullmatch(r"~ enters with a \+1/\+1 counter on it if (an opponent lost life|a creature died|you attacked) "
                          r"this turn\.", line)
         if m:
@@ -686,9 +747,9 @@ def _face_cost_and_static_lines(st, line):
                 eff.data["per"] = {"what": "creature", "zone": "graveyard"}
             triggers.append(Trigger("attacks", [eff]))
             return None
-        m = re.fullmatch(r"Disguise (\{[^ ]+\})", line)
+        m = re.fullmatch(r"(Disguise|Morph|Megamorph) (\{[^ ]+\})", line)
         if m:
-            alt_costs.append(AltCost("disguise", parse_mana_cost(m[1])))
+            alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2])))
             return None
         return line
     finally:
@@ -752,6 +813,10 @@ def _face_keyword_ability_lines(st, line):
         m = re.fullmatch(r"(Mayhem|Sneak) (\{[^ ]+\})", line)
         if m:
             alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2]), zone="graveyard" if m[1] == "Mayhem" else "hand"))
+            return None
+        m = re.fullmatch(r"Blitz (\{[^ ]+\})", line)
+        if m:
+            alt_costs.append(AltCost("blitz", parse_mana_cost(m[1]), zone="hand"))
             return None
         m = re.fullmatch(r"Blitz—(\{[^,]+\}), Pay (\d+) life\.", line)
         if m:

@@ -71,6 +71,37 @@ def dig_put(game, p, eff, **_):
     game.dig_put(p, eff.amount, eff.amount2, eff.data.get("count", 1), eff.data.get("noncreature", False))
 
 
+@kind("exile_top_of")
+def exile_top_of(game, p, target, opp, **_):
+    """Ingest: that player exiles the top card of their library."""
+    who = target if isinstance(target, Player) else opp
+    if who.library:
+        card = who.library.pop()
+        who.exile.append(card)
+        game.log(f"exiles {card.name} from the top of their library", who)
+
+
+@kind("discard_each")
+def discard_each(game, p, eff, opp, **_):
+    for who in (p, opp):
+        for _ in range(min(eff.amount, len(who.hand))):
+            card = who.ai.choose_discard(game, who)
+            game.discard_card(who, card)
+            game.log(f"discards {card.name}", who)
+
+
+@kind("reorder_top")
+def reorder_top(game, p, eff, **_):
+    """Look at the top N and put them back in any order: lands first while short of them, else spells first."""
+    n = min(eff.amount, len(p.library))
+    if n < 2:
+        return
+    top = p.library[-n:]
+    want_land = sum(x.card.is_land for x in p.battlefield) + sum(c.is_land for c in p.hand) < 5
+    top.sort(key=lambda c: c.is_land == want_land)       # the last one is the top card
+    p.library[-n:] = top
+
+
 @kind("discard")
 def discard(game, p, eff, target, **_):
     who = target if isinstance(target, Player) else p
