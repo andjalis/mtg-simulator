@@ -2161,6 +2161,8 @@ class Game:
             else:
                 while x < 20 and payable(self.mana_sources(p, spell=card), {"generic": x + 1}):
                     x += 1
+                if x and hasattr(p.ai, "choose_x"):   # an AI may keep mana for other plays
+                    x = max(0, min(x, p.ai.choose_x(self, p, card, targets, x)))
             if x and planned_x is None:
                 payment += self.pay(p, {"generic": x}, spell=card)
         if alt is not None and alt.life:
@@ -4196,7 +4198,8 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
         elif k == "regrow":
             total += max((c.cmc for c in me.graveyard if c.is_creature), default=-1)
         elif k == "gy_move":
-            ok = [c.cmc for c in me.graveyard if copies.fits(c, _gy_desc(e.data["what"]))]
+            ok = ([t.card.cmc for t in graveyards.entries(tgt)] if e.target == "graveyard_card" else
+                  [c.cmc for c in me.graveyard if copies.fits(c, _gy_desc(e.data["what"]))])
             total += (max(ok) + 1) if ok else -1
         elif k in ("destroy", "bounce", "shuffle_away"):
             total += perm_value(tgt)
