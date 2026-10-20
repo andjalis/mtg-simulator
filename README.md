@@ -270,8 +270,11 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   Each supported Equip ability is kept independently; the policy chooses a payable
   mana-only ability first, then a sacrifice ability, and callers can select a specific
   one. Mana and sacrifice are validated and paid before priority responses; target
-  discounts reduce only generic mana. Restricted equip targets, other payment kinds and
-  activation-frequency restrictions remain unsupported, some printed self-discounts
+  discounts reduce only generic mana. Each recognized Equip ability also keeps its own
+  target restriction (legendary creatures, creature tokens and the supported creature
+  types); the engine chooses a legal payable pair and rechecks the chosen target after
+  responses. Commander, worthy and other unrecognized restrictions, other payment kinds
+  and activation-frequency restrictions remain unsupported, some printed self-discounts
   (Plate Armor, Warrior's Blades, Dragonfire Blade) still use a full-cost approximation,
   and the sacrifice policy does not weigh the lost creature against the attachment bonus.
   Conditional keywords ("as long as you control another Dwarf", "as long as an
@@ -334,8 +337,18 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   invalidates the target or grant, including same-name copies. Granted flashback lasts
   until cleanup, pays the original mana cost independently of any printed flashback,
   and exiles the spell when it leaves the stack. Sorcery-only grants and explicit or
-  free grant costs remain unsupported, and AI spell options that deduplicate by name
-  can hide a cheaper granted cost behind a native flashback cost.
+  free grant costs remain unsupported. AI spell options keep distinct costs and origins,
+  so a cheaper granted or native flashback stays available.
+  Targeted graveyard returns and reanimation ("return target ... card from your graveyard",
+  reanimate a target) choose their exact card when cast, activated or triggered, and an
+  "up to" target may choose none. If that card leaves the graveyard (even if a same-name
+  copy arrives) or stops matching the restriction, that part does nothing and nothing is
+  retargeted. Untargeted "return a creature card" effects still choose on resolution.
+  Attacking-token keyword grants ("target attacking creature token you control gains
+  <keyword> until end of turn", Old Hob and Alleycat Blues) choose before payment and
+  recheck on resolution. A token that leaves combat, changes control or stops being a
+  creature stays out of combat even if it is restored. Other attacking-creature grants
+  remain unsupported.
   Raid entry counters check whether the controller attacked this turn.
 - Map (explore), Lander and Food tokens, "its controller creates Map tokens /
   may search for a basic land" (Get Lost, Erode), exile until this leaves the
@@ -370,9 +383,9 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   "put ~ into its owner's library third from the top"
 - London mulligan, drawing from an empty library, hand size, 60-turn cap
 
-Remaining gaps include unrecognized Aura/Equipment attachment (restricted Equip targets,
-non-mana equip payments) and token wording (Old Hob's attacking-token grant),
-X and copy effects outside the matched patterns, casualty (never paid), day/night
+Remaining gaps include unrecognized Aura/Equipment attachment (commander, worthy and
+other Equip restrictions, non-mana equip payments), the legend rule, X and copy effects
+outside the matched patterns, casualty (never paid), day/night
 (the day face stays in play), Room unlocking, and Old-Growth Troll's return.
 Earthbend does not return a destroyed land. The coverage labels above count
 matched text, including templates with these execution approximations; they do
