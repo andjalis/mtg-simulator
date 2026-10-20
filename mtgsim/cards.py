@@ -257,6 +257,7 @@ class CardDef:
     aura_hostile: bool = False                          # goes on an opponent's permanent
     clone: dict | None = None                           # "You may have ~ enter as a copy of ..." (mtgsim.copies)
     cast_copy: dict | None = None                       # "When you cast ~, copy it." (mtgsim.copies)
+    legend_exempt: str = ""                             # "The legend rule doesn't apply [to X you control]" (mtgsim.copies)
 
     @property
     def is_land(self): return "Land" in self.types

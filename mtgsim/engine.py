@@ -3866,6 +3866,28 @@ class Game:
             for other in opp.battlefield:
                 self.fire(opp, "opp_creature_dies", other, context=perm.controller)
 
+    def legend_rule(self, p: Player) -> bool:
+        """704.5j: of p's legendary permanents with the same name, p keeps one and puts the rest into the
+        graveyard. It isn't destruction (indestructible doesn't help); tokens cease to exist."""
+        groups: dict[str, list[Permanent]] = {}
+        for perm in p.battlefield:
+            if perm.card.legendary and not copies.legend_exempt(self, p, perm):
+                groups.setdefault(perm.card.name, []).append(perm)
+        moved = False
+        for name, perms in groups.items():
+            if len(perms) < 2:
+                continue
+            choose = getattr(p.ai, "choose_legend", None) or copies.choose_legend
+            keep = choose(self, p, perms)
+            if keep not in perms:
+                keep = copies.choose_legend(self, p, perms)
+            self.log(f"legend rule: keeps {name}, puts {len(perms) - 1} into the graveyard", p)
+            for perm in perms:
+                if perm is not keep:
+                    self.dies(perm)
+            moved = True
+        return moved
+
     def state_based_actions(self):
         # A creature that changes controller or stops being a creature leaves combat.
         # Restoring its former characteristics does not make it an attacker again.
@@ -3898,6 +3920,8 @@ class Game:
                         elif (perm.damage >= perm.toughness or perm.deathtouched) and not perm.has("indestructible"):
                             self.dies(perm)
                             changed = True
+                if self.legend_rule(p):
+                    changed = True
         for p in self.players:
             if p.life <= 0:
                 if not p.lost:
