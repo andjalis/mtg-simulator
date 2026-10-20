@@ -15,9 +15,11 @@ engine hands the effect kinds in KINDS to resolve() here.
     Copy target activated or triggered ability you control [from a creature source] [X times].
 
 Simplifications: the permanent or spell to copy is picked when the effect resolves (so "target"
-only checks hexproof on the opponent's permanents), and the legend rule isn't modelled. Copy exceptions
-still preserve or remove the legendary supertype for targeting. Delayed token actions use the shared next-end-step
-scheduler; a quoted ability granted to the token remains a normal triggered ability.
+only checks hexproof on the opponent's permanents). Copy exceptions add or remove the legendary
+supertype, which the legend rule (Game.legend_rule, a state-based action) and copy targets read.
+"The legend rule doesn't apply [to X you control]" is a static (CardDef.legend_exempt), or a
+one-turn effect (Hall of Echoes); choose_legend is the default for which legendary permanent to keep.
+Delayed token actions use the shared next-end-step scheduler; a quoted ability granted to the token remains a normal triggered ability.
 
 This module imports mtgsim.cards and mtgsim.engine lazily, inside functions, because both import it.
 """
@@ -26,7 +28,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-KINDS = {"copy_perm", "copy_spell", "copy_next_spell", "copy_sac", "become_copy", "copy_ability"}
+KINDS = {"copy_perm", "copy_spell", "copy_next_spell", "copy_sac", "become_copy", "copy_ability", "legend_rule_off"}
 
 _KW = (r"flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|"
        r"indestructible|menace|reach|defender|flash|prowess")
@@ -140,7 +142,7 @@ EFFECT_PATTERNS = [
      r"another creature you control|target creature|another target creature|up to one other target creature|"
      r"another creature)(?P<until> until end of turn)?(?:, except (?P<exc>.+?))?(?P<until2> until end of turn)?",
      lambda m: _become(m)),
-    (r"the \"legend rule\" doesn't apply to permanents you control this turn", lambda m: None),
+    (r"the \"legend rule\" doesn't apply to permanents you control this turn", lambda m: _effect("legend_rule_off")),
     (r"copy target (?:activated or triggered|triggered|activated) ability you control(?P<creature> from a creature "
      r"source)?(?: (?P<x>X) times)?",
      lambda m: _effect("copy_ability", creature=bool(m["creature"]), n="x" if m["x"] else 1)),
@@ -190,9 +192,17 @@ _CAST_COPY = re.compile(
     r"(?: You may choose new targets for the cop(?:y|ies)\.)?")
 
 
+_LEGEND_EXEMPT = re.compile(
+    r"The \"legend rule\" doesn't apply(?: to (?P<what>permanents|creatures|tokens|creature tokens|[A-Z]\w+s) you control)?\.")
+
+
 def parse_line(line: str) -> dict | None:
     """CardDef fields for a whole rules line about copies ("You may have ~ enter as a copy of ...",
     "When you cast ~, copy it."), or None."""
+    m = _LEGEND_EXEMPT.fullmatch(line)
+    if m:
+        what = " ".join(w[:-1] if w.endswith("s") else w for w in (m["what"] or "permanents").split())
+        return {"legend_exempt": what if m["what"] else "all"}
     m = _CAST_COPY.fullmatch(line)
     if m:
         cond = "creature" if m["creature"] else "another" if m["another"] else "gained_life" if m["life"] else ""
@@ -221,9 +231,13 @@ def fits(card, what: str, perm=None) -> bool:
         ok = True
         for w in alt.split():
             lw = w.lower()
-            if lw in ("permanent", "nonlegendary"):
-                continue
-            if lw == "token":
+            if lw == "permanent":
+                ok &= card.is_permanent
+            elif lw == "legendary":
+                ok &= card.legendary
+            elif lw == "nonlegendary":
+                ok &= not card.legendary
+            elif lw == "token":
                 ok &= card.is_token
             elif lw == "nontoken":
                 ok &= not card.is_token
@@ -324,6 +338,32 @@ def _abilities(game, p, eff, item=None) -> list:
             and (not eff.data.get("creature") or (i.source is not None and i.source.is_creature))]
 
 
+def legend_exempt(game, p, perm) -> bool:
+    """Whether the legend rule doesn't apply to p's permanent perm (Mirror Gallery, Mirror Box, Hall of Echoes)."""
+    if any(who is p and turn == game.turn for who, turn in getattr(game, "legend_rule_off", [])):
+        return True
+    for pl in game.players:
+        for x in pl.battlefield:
+            what = x.card.legend_exempt
+            if what and (what == "all" or (pl is p and fits(perm.card, what, perm))):
+                return True
+    return False
+
+
+def keep_value(perm) -> float:
+    """How much p loses by putting perm into the graveyard: counters, attachments, untapped, not summoning sick."""
+    c = perm.counters
+    v = sum(n for k, n in c.items() if k != "-1/-1") - c.get("-1/-1", 0)
+    v += 2 * (len(perm.auras) + len(perm.equipment))
+    v += (not perm.tapped) + (not perm.sick) + 0.5 * (not perm.card.is_token) - 0.1 * perm.damage
+    return v
+
+
+def choose_legend(game, p, perms):
+    """Default legend-rule choice: keep the most valuable of the same-named legendary permanents."""
+    return max(perms, key=keep_value)
+
+
 def revert(perm):
     """End of turn: a permanent that became a copy is itself again."""
     if getattr(perm, "copy_revert", None) is not None:
@@ -369,6 +409,8 @@ def resolve(game, p, eff, target, item=None):
         best = max(cands, key=lambda x: score(x.card), default=None)
         if best is None:
             return
+        if item is not None and any(e.kind == "legend_rule_off" for e in item.effects):
+            _legend_rule_off(game, p)    # the engine checks state-based actions after each effect
         if getattr(target, "copy_revert", None) is None:
             target.copy_revert = target.card
         mods = d.get("mods", {})
@@ -401,10 +443,21 @@ def resolve(game, p, eff, target, item=None):
         if spell is not None and spell in game.stack and spell.card is not None:
             for _ in range(d.get("n", 1)):
                 copy_spell(game, p, spell)
+    elif k == "legend_rule_off":
+        _legend_rule_off(game, p)
     elif k == "copy_next_spell":
         game.copy_next = [c for c in getattr(game, "copy_next", []) if c[2] == game.turn]
         game.copy_next.append((p, d, game.turn))
         game.log("will copy the next matching spell this turn", p)
+
+
+def _legend_rule_off(game, p):
+    """Hall of Echoes: the legend rule doesn't apply to permanents p controls this turn."""
+    off = [(who, turn) for who, turn in getattr(game, "legend_rule_off", []) if turn == game.turn]
+    if (p, game.turn) not in off:
+        off.append((p, game.turn))
+        game.log("the legend rule doesn't apply to its permanents this turn", p)
+    game.legend_rule_off = off
 
 
 def copy_spell(game, p, spell):

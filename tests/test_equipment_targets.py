@@ -250,7 +250,7 @@ class EquipTargetGameTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.setUp()
                 eq, host = self.perm(name), self.perm(definition)
-                other = self.perm(definition)
+                other = self.perm(dataclasses.replace(definition, name=definition.name + " II"))   # legend rule
                 lands = self.lands(3)
                 item = self.pending(eq, host)
                 host.card = BEAR
