@@ -46,7 +46,7 @@ class CoverageReportTests(unittest.TestCase):
                 self.assertIn(row.status, (FULL, SIMPLIFIED), f"{path.stem}: {row.name} {row.ignored}")
 
     def test_every_parsed_effect_is_resolved(self):
-        source = inspect.getsource(Game.resolve)
+        source = inspect.getsource(Game.resolve) + inspect.getsource(Game.resolve_top)
         kinds = set()
         for path in glob.glob(str(ROOT / "decks" / "**" / "*.txt"), recursive=True):
             for name in load_deck(path)[1]:
