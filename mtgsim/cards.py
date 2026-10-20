@@ -721,7 +721,7 @@ _EFFECT_PATTERNS = [
      lambda m: _gy_move(m)),
     (r"target instant or sorcery card in your graveyard gains flashback until end of turn"
      r"(?:, with a flashback cost equal to its mana cost)?",
-     lambda m: Effect("grant_flashback")),
+     lambda m: Effect("grant_flashback", target="graveyard_spell")),
     (r"~ becomes prepared", lambda m: Effect("prepare", target="self")),
     (r"put (?:a|an) ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) counter on (target creature|~|it)",
      lambda m: Effect("grant", target=_kw_target(m[2]), data={"keyword": m[1].lower(), "perm": True})),
