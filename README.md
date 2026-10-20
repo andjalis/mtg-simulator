@@ -259,7 +259,7 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   behold a Jace, Clarion Conqueror, "can't block", library searches to hand,
   team pumps and counters on each creature you control
 - Equipment: mana equip costs (and Dwarven Mauler's discount), "Equip—Sacrifice
-  a creature", stat bonuses using "gets" or "has", keyword and ward bonuses.
+  a creature", mixed mana plus sacrifice-a-creature costs, stat bonuses using "gets" or "has", keyword and ward bonuses.
   Equip selects its creature before paying and uses the ability stack, allowing
   responses; it rechecks that same target on resolution. Sacrifice costs trigger
   sacrifice/death abilities even if attachment later fails. Attachments retain
@@ -267,7 +267,13 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   stops being a creature. The default policy equips the best creature before
   combat, sacrificing the least valuable other creature for a sacrifice cost;
   it leaves its only creature alive. Leyline Axe starts on the battlefield.
-  Mixed mana/sacrifice costs and restricted sacrifice wording are unsupported.
+  Each supported Equip ability is kept independently; the policy chooses a payable
+  mana-only ability first, then a sacrifice ability, and callers can select a specific
+  one. Mana and sacrifice are validated and paid before priority responses; target
+  discounts reduce only generic mana. Restricted equip targets, other payment kinds and
+  activation-frequency restrictions remain unsupported, some printed self-discounts
+  (Plate Armor, Warrior's Blades, Dragonfire Blade) still use a full-cost approximation,
+  and the sacrifice policy does not weigh the lost creature against the attachment bonus.
   Conditional keywords ("as long as you control another Dwarf", "as long as an
   opponent has 10 or less life"), "whenever another Dwarf or Equipment you
   control enters" triggers (also once each turn), filtered "look at the top N"
@@ -293,16 +299,18 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   an end step waits for the following one. Matched forms are exile-and-return pairs
   of a single target ("Exile (up to one) (other) target creature/artifact/nonland
   permanent (you control). Return it to the battlefield under its owner's control
-  (with a flying counter) at the beginning of the next end step") and "Sacrifice
-  it/them/that token" (or "gains haste") directly after creating tokens or token
-  copies. The card returns as a new object under its owner's control only if it is
-  still the same exiled card; a delayed sacrifice affects only the objects it was
-  created for, and only while the ability's controller still controls them (a stolen
-  token survives), following [the Comprehensive Rules](https://media.wizards.com/2026/downloads/MagicCompRules%2020260619.pdf)
+  (with a flying counter) at the beginning of the next end step") and "Sacrifice /
+  Exile / Destroy it/them/that token" (or "gains haste") directly after creating tokens
+  or token copies. The card returns as a new object under its owner's control only if it
+  is still the same exiled card; a delayed action affects only the exact objects it was
+  created for. Sacrifice requires the ability's controller to still control them (a
+  stolen token survives); exile and destroy still affect a stolen token. Destroy respects
+  indestructible and fires death triggers; exile does neither. These actions run once,
+  even if destruction fails, following [the Comprehensive Rules](https://media.wizards.com/2026/downloads/MagicCompRules%2020260619.pdf)
   603.7. A quoted "At the beginning of the end step, sacrifice this" granted to a
   copy is not delayed: it triggers at every end step for the token's current
-  controller. Conditional returns, multi-target returns, returns to hand, other
-  delayed actions ("exile/destroy that token") and pronouns not bound to a
+  controller. Conditional or gated continuations (such as creation that depends on a
+  payment), multi-target returns, returns to hand and pronouns not bound to a
   preceding token creation remain unsupported.
 - Warp (exiled at the end step, cast again from exile later), evoke, "if {U}{U}
   was spent" modes (hybrid costs paid in the colour that turns the mode on),
@@ -319,8 +327,15 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   face up; "manifest dread, then attach ~ to that creature" attaches the Equipment
   to that 2/2 (nothing is attached if the library was empty). Optional payments
   and choices follow the engine's policy.
-  Granted flashback lasts until cleanup and pays the original mana cost; the
-  engine chooses the highest-mana-value eligible graveyard spell on resolution.
+  Matched flashback-grant spells and abilities choose an eligible instant or sorcery
+  in their controller's graveyard before costs (triggers choose when put on the
+  stack); the default policy picks the highest mana value. They recheck that exact
+  graveyard entry after responses and never retarget. Leaving and re-entering
+  invalidates the target or grant, including same-name copies. Granted flashback lasts
+  until cleanup, pays the original mana cost independently of any printed flashback,
+  and exiles the spell when it leaves the stack. Sorcery-only grants and explicit or
+  free grant costs remain unsupported, and AI spell options that deduplicate by name
+  can hide a cheaper granted cost behind a native flashback cost.
   Raid entry counters check whether the controller attacked this turn.
 - Map (explore), Lander and Food tokens, "its controller creates Map tokens /
   may search for a basic land" (Get Lost, Erode), exile until this leaves the
@@ -355,7 +370,8 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   "put ~ into its owner's library third from the top"
 - London mulligan, drawing from an empty library, hand size, 60-turn cap
 
-Remaining gaps include unrecognized Aura/Equipment attachment and token wording,
+Remaining gaps include unrecognized Aura/Equipment attachment (restricted Equip targets,
+non-mana equip payments) and token wording (Old Hob's attacking-token grant),
 X and copy effects outside the matched patterns, casualty (never paid), day/night
 (the day face stays in play), Room unlocking, and Old-Growth Troll's return.
 Earthbend does not return a destroyed land. The coverage labels above count
