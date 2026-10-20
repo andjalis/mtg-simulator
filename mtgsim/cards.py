@@ -192,6 +192,8 @@ class CardDef:
     equip_cost: dict | None = None
     equip_sacrifice: bool = False
     equip_bonus: tuple = (0, 0)
+    equip_per: str = ""                                 # "Equipped creature gets +1/+1 for each land you control": "land"
+    equip_scale: tuple = (1, 1)
     equip_keywords: frozenset = frozenset()
     equip_ward: int = 0
     equip_discount: int = 0                             # Dwarven Mauler: equip abilities targeting it cost less
@@ -298,6 +300,14 @@ class CardDef:
     def __eq__(self, other): return isinstance(other, CardDef) and other.name == self.name
 
     def __repr__(self): return f"<{self.name}>"
+
+
+def _per_what_ok(what: str) -> bool:
+    """A "for each <what> you control" description that copies.fits can evaluate: card types, "creature",
+    "other", and capitalised subtypes only (no "and/or", counters, colours)."""
+    words = what.split()
+    return bool(words) and all(w in ("other", "creature", "artifact", "enchantment", "land", "planeswalker", "token",
+                                     "nontoken", "nonland", "noncreature") or w[0].isupper() for w in words)
 
 
 def parse_mana_cost(cost: str) -> dict:
@@ -1430,6 +1440,10 @@ def _parse_face(data: dict) -> CardDef:
         if re.fullmatch(r"~ can't block\.", line):
             extra["cant_block"] = True
             continue
+        m = re.fullmatch(r"Equipped creature gets \+(\d+)/\+(\d+) for each ((?:other )?[\w -]+?) you control\.", line)
+        if m and _per_what_ok(m[3]):
+            extra.update(equip_per=m[3], equip_scale=(int(m[1]), int(m[2])))
+            continue
         m = re.fullmatch(r"Equipped creature (?:(?:gets|has) \+(\d+)/\+(\d+))?(?: and )?(?:has (.+?))?\.", line)
         if m and (m[1] or m[3]):
             kws, ward, ok = set(), 0, True
@@ -1455,7 +1469,7 @@ def _parse_face(data: dict) -> CardDef:
         mana = r"(?:\{(?:\d+|[WUBRGC])\})+"
         # Explicit supported target grammar: commander, worthy and other restrictions stay visible.
         equip_type = r"(?:Citizen|Detective|Elf|Halfling|Hero|Human|Knight|Pirate|Shaman|Soldier|Warlock|Wizard)"
-        equip_target = rf"legendary creature|creature token|{equip_type}(?:(?:, |, or | or ){equip_type})*"
+        equip_target = rf"worthy|legendary creature|creature token|{equip_type}(?:(?:, |, or | or ){equip_type})*"
         m = re.fullmatch(rf"Equip (?:(?P<target>{equip_target}) )?(?P<mana>{mana})"
                          rf"(?P<reduction>\. This ability costs [^.]+ less to activate[^.]*\.)?\.?", line)
         mixed = re.fullmatch(rf"Equip\s*—\s*(?:(?P<before>{mana}), )?Sacrifice a creature"
@@ -1466,7 +1480,7 @@ def _parse_face(data: dict) -> CardDef:
                 continue
             cost_text = m["mana"] if m else mixed["before"] or mixed["after"]
             target = m["target"] if m else None
-            target_filter = {"legendary creature": "legendary", "creature token": "token"}.get(target, "")
+            target_filter = {"legendary creature": "legendary", "creature token": "token", "worthy": "worthy"}.get(target, "")
             if target and not target_filter:
                 target_filter = "subtype:" + "|".join(re.split(r", or |, | or ", target))
             ability = EquipCost(parse_mana_cost(cost_text) if cost_text else {}, bool(mixed), target_filter)

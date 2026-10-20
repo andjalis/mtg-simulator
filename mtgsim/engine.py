@@ -228,6 +228,13 @@ class Permanent:
             return 0
         return counting.count(None, self.controller, {"what": what, "zone": "battlefield"}, self)
 
+    def _equip_per(self, equipment, bp, bt):
+        """Add the "for each <thing> you control" part of an Equipment bonus; "you" is the Equipment's
+        current controller, which differs from this creature's when the creature changed control."""
+        n = counting.count(None, equipment.controller, {"what": equipment.card.equip_per, "zone": "battlefield"}, equipment)
+        sp, st = equipment.card.equip_scale
+        return bp + n * sp, bt + n * st
+
     def _pt_bonus(self):
         """(power, toughness) from anthems, attached equipment and "for each" counts, in one pass
         over the battlefield; the same sums as anthem, equipment and per_bonus."""
@@ -249,6 +256,8 @@ class Permanent:
                     e = c.equip_bonus
                     bp += e[0]
                     bt += e[1]
+                    if c.equip_per:
+                        bp, bt = self._equip_per(x, bp, bt)
         for cond, pp, tt in self.card.pt_if:
             gy = self.controller.graveyard
             n = sum(c.is_permanent for c in gy) if cond.startswith("gy_perm") else len(gy)
@@ -282,6 +291,8 @@ class Permanent:
                 if x.attached_to is self:
                     bp += x.card.equip_bonus[0]
                     bt += x.card.equip_bonus[1]
+                    if x.card.equip_per:
+                        bp, bt = self._equip_per(x, bp, bt)
             for a in self.auras:
                 e = a.card.equip_bonus
                 bp += e[0]
@@ -2357,6 +2368,10 @@ class Game:
             return creature.card.legendary
         if restriction == "token":
             return creature.front.is_token
+        if restriction == "worthy":      # legendary non-Villain that is red and/or white
+            c = creature.card
+            return (c.legendary and "Villain" not in c.subtypes
+                    and bool(({"R", "W"} & set(c.mana_cost)) or any(set(h) & {"R", "W"} for h in c.hybrid)))
         if restriction.startswith("subtype:"):
             return creature.card.changeling or bool(set(restriction[8:].split("|")) & creature.card.subtypes)
         return False
