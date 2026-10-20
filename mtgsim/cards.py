@@ -713,6 +713,10 @@ _EFFECT_PATTERNS = [
     (r"put (a|one|two) \+1/\+1 counters? on each creature target player controls",
      lambda m: Effect("p1_counters", _num(m[1]), target="my_creatures")),
     (r"that creature deals (\d+) damage to each opponent", lambda m: Effect("damage", int(m[1]), target="player")),
+    (r"target attacking creature token( you control)? gains "
+     r"(flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach) until end of turn",
+     lambda m: Effect("grant", target="creature_mine" if m[1] else "creature", filter="attacking_token",
+                      data={"keyword": m[2].lower()})),
     (r"target creature gains (double strike|first strike|trample|haste|hexproof|indestructible) until end of turn",
      lambda m: Effect("grant", target="creature", data={"keyword": m[1].lower()})),
     (r"return (all |(?:up to )?(?:one|two|three|four|five|six|x) (?:other )?target |(?:up to one )?target |an? )?"

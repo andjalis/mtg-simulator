@@ -316,9 +316,7 @@ class RealCardTests(unittest.TestCase):
         try:
             self.assertEqual(db.get("Stormsplitter").unsupported, [])
             hob = db.get("Old Hob, Alleycat Blues")
-            # The indestructible activation is a separate, still-unsupported ability.
-            self.assertEqual(len(hob.unsupported), 1)
-            self.assertIn("indestructible", hob.unsupported[0])
+            self.assertEqual(hob.unsupported, [])
             self.assertTrue(any("next end step" in u for u in db.get("Nettling Imp").unsupported))
         finally:
             db._all.close()
