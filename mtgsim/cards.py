@@ -192,6 +192,8 @@ class CardDef:
     equip_cost: dict | None = None
     equip_sacrifice: bool = False
     equip_bonus: tuple = (0, 0)
+    equip_per: str = ""                                 # "Equipped creature gets +1/+1 for each land you control": "land"
+    equip_scale: tuple = (1, 1)
     equip_keywords: frozenset = frozenset()
     equip_ward: int = 0
     equip_discount: int = 0                             # Dwarven Mauler: equip abilities targeting it cost less
@@ -255,6 +257,7 @@ class CardDef:
     aura_hostile: bool = False                          # goes on an opponent's permanent
     clone: dict | None = None                           # "You may have ~ enter as a copy of ..." (mtgsim.copies)
     cast_copy: dict | None = None                       # "When you cast ~, copy it." (mtgsim.copies)
+    legend_exempt: str = ""                             # "The legend rule doesn't apply [to X you control]" (mtgsim.copies)
 
     @property
     def is_land(self): return "Land" in self.types
@@ -298,6 +301,14 @@ class CardDef:
     def __eq__(self, other): return isinstance(other, CardDef) and other.name == self.name
 
     def __repr__(self): return f"<{self.name}>"
+
+
+def _per_what_ok(what: str) -> bool:
+    """A "for each <what> you control" description that copies.fits can evaluate: card types, "creature",
+    "other", and capitalised subtypes only (no "and/or", counters, colours)."""
+    words = what.split()
+    return bool(words) and all(w in ("other", "creature", "artifact", "enchantment", "land", "planeswalker", "token",
+                                     "nontoken", "nonland", "noncreature") or w[0].isupper() for w in words)
 
 
 def parse_mana_cost(cost: str) -> dict:
@@ -464,8 +475,11 @@ _EFFECT_PATTERNS = [
     (r"one or two target creatures each get \+(\d+)/\+(\d+) until end of turn",
      lambda m: [_distinct_pump(m), _distinct_pump(m)]),
     (r"untap target artifact or creature", lambda m: Effect("untap_target", target="creature_mine")),
-    (r"exile (?:each opponent's|target player's) graveyard", lambda m: Effect("exile_gy")),
-    (r"exile target card from an opponent's graveyard", lambda m: Effect("exile_gy", 1)),
+    (r"exile each opponent's graveyard", lambda m: Effect("exile_gy")),
+    (r"exile target player's graveyard", lambda m: Effect("exile_gy", target="player")),
+    (r"exile (up to (?:one|two|three) target |target )([\w ,/'-]*?)cards? from "
+     r"(a graveyard|an opponent's graveyard|your graveyard|a single graveyard|graveyards)",
+     lambda m: _gy_exile(m)),
     (r"target player draws (a|two|three) cards?", lambda m: Effect("draw", _num(m[1]))),
     (r"target player draws (a|two|three) cards? and loses (\d+) life",
      lambda m: [Effect("draw", _num(m[1])), Effect("lose_life", int(m[2]))]),
@@ -641,8 +655,6 @@ _EFFECT_PATTERNS = [
     (r"untap ~", lambda m: Effect("untap_self")),
     (r"untap it", lambda m: Effect("untap_prev", target="prev")),
     (r"it explores", lambda m: Effect("explore", target="prev")),
-    (r"exile up to (one|two) target cards? from (?:a|a single) graveyard",
-     lambda m: Effect("exile_gy_cards", _num(m[1]))),
     (r"put target card from (a|your) graveyard on the bottom of (?:its owner's|your) library",
      lambda m: Effect("gy_bottom", data={"mine": m[1] == "your"})),
     (r"you may mill (a|one|two|three|four|five|\d+) cards?", lambda m: Effect("mill", _num(m[1]))),
@@ -722,7 +734,7 @@ _EFFECT_PATTERNS = [
     (r"target creature gains (double strike|first strike|trample|haste|hexproof|indestructible) until end of turn",
      lambda m: Effect("grant", target="creature", data={"keyword": m[1].lower()})),
     (r"return (all |(?:up to )?(?:one|two|three|four|five|six|x) (?:other )?target |(?:up to one )?target |an? )?"
-     r"([\w ,/'-]+?) cards?(?: each)?(?: with mana value (\d+|x) or (less|greater))? from (your|a|an opponent's) "
+     r"([\w ,/'-]+?) cards?(?: with different names)?(?: each)?(?: with mana value (\d+|x) or (less|greater))? from (your|a|an opponent's) "
      r"graveyard (to your hand|(?:onto|to) the battlefield)( tapped)?(?: under your control)?",
      lambda m: _gy_move(m)),
     (r"target instant or sorcery card in your graveyard gains flashback until end of turn"
@@ -750,7 +762,8 @@ _EFFECT_PATTERNS = [
     (r"return target creature card from your graveyard to your hand",
      lambda m: Effect("regrow", target="graveyard_card")),
     (r"REANIMATESNOW", lambda m: Effect("reanimate_snow")),
-    (r"GYHATE (\d+)", lambda m: Effect("gy_hate", int(m[1]))),
+    (r"GYHATE (\d+)", lambda m: Effect("gy_hate", int(m[1]), target="graveyard_card",
+                                         data={"upto": True, "what": "card", "zone": "any", "dest": "exile"})),
     (r"when you cast your next creature spell this turn, that creature enters with an additional \+1/\+1 counter "
      r"on it", lambda m: Effect("next_creature_counter")),
     (r"ADVERSARY", lambda m: Effect("adversary", data={"cost": {"generic": 2, "R": 1}})),
@@ -986,8 +999,18 @@ def _gy_move(m):
     return Effect("gy_move", n, target="graveyard_card" if "target" in head else "none",
                   data={"upto": "up to" in head, "what": what, "dest": "hand" if m[6].endswith("hand") else "bf",
                                       "tapped": bool(m[7]), "zone": {"your": "mine", "a": "any"}.get(m[5], "opp"),
-                                      "x_n": bool(w and w[1] == "x"),
+                                      "x_n": bool(w and w[1] == "x"), "distinct": "different names" in m[0],
                                       "cmc": ((m[3].lower() if m[3].lower() == "x" else int(m[3])), m[4]) if m[3] else None})
+
+
+def _gy_exile(m):
+    """"Exile [up to N] target card(s) from a/your/an opponent's/a single graveyard"; "graveyards" may be several."""
+    head, what, zone = m[1].lower(), m[2].strip(), m[3].lower()
+    n = _N_WORDS[head.split()[2]] if head.startswith("up to") else 1
+    return Effect("gy_exile", n, target="graveyard_card",
+                  data={"upto": head.startswith("up to"), "what": what or "card", "dest": "exile",
+                        "zone": {"your graveyard": "mine", "an opponent's graveyard": "opp"}.get(zone, "any"),
+                        "single": zone == "a single graveyard"})
 
 
 def _kw_target(what: str) -> str:
@@ -1418,6 +1441,10 @@ def _parse_face(data: dict) -> CardDef:
         if re.fullmatch(r"~ can't block\.", line):
             extra["cant_block"] = True
             continue
+        m = re.fullmatch(r"Equipped creature gets \+(\d+)/\+(\d+) for each ((?:other )?[\w -]+?) you control\.", line)
+        if m and _per_what_ok(m[3]):
+            extra.update(equip_per=m[3], equip_scale=(int(m[1]), int(m[2])))
+            continue
         m = re.fullmatch(r"Equipped creature (?:(?:gets|has) \+(\d+)/\+(\d+))?(?: and )?(?:has (.+?))?\.", line)
         if m and (m[1] or m[3]):
             kws, ward, ok = set(), 0, True
@@ -1443,7 +1470,7 @@ def _parse_face(data: dict) -> CardDef:
         mana = r"(?:\{(?:\d+|[WUBRGC])\})+"
         # Explicit supported target grammar: commander, worthy and other restrictions stay visible.
         equip_type = r"(?:Citizen|Detective|Elf|Halfling|Hero|Human|Knight|Pirate|Shaman|Soldier|Warlock|Wizard)"
-        equip_target = rf"legendary creature|creature token|{equip_type}(?:(?:, |, or | or ){equip_type})*"
+        equip_target = rf"worthy|legendary creature|creature token|{equip_type}(?:(?:, |, or | or ){equip_type})*"
         m = re.fullmatch(rf"Equip (?:(?P<target>{equip_target}) )?(?P<mana>{mana})"
                          rf"(?P<reduction>\. This ability costs [^.]+ less to activate[^.]*\.)?\.?", line)
         mixed = re.fullmatch(rf"Equip\s*—\s*(?:(?P<before>{mana}), )?Sacrifice a creature"
@@ -1454,7 +1481,7 @@ def _parse_face(data: dict) -> CardDef:
                 continue
             cost_text = m["mana"] if m else mixed["before"] or mixed["after"]
             target = m["target"] if m else None
-            target_filter = {"legendary creature": "legendary", "creature token": "token"}.get(target, "")
+            target_filter = {"legendary creature": "legendary", "creature token": "token", "worthy": "worthy"}.get(target, "")
             if target and not target_filter:
                 target_filter = "subtype:" + "|".join(re.split(r", or |, | or ", target))
             ability = EquipCost(parse_mana_cost(cost_text) if cost_text else {}, bool(mixed), target_filter)

@@ -228,6 +228,13 @@ class Permanent:
             return 0
         return counting.count(None, self.controller, {"what": what, "zone": "battlefield"}, self)
 
+    def _equip_per(self, equipment, bp, bt):
+        """Add the "for each <thing> you control" part of an Equipment bonus; "you" is the Equipment's
+        current controller, which differs from this creature's when the creature changed control."""
+        n = counting.count(None, equipment.controller, {"what": equipment.card.equip_per, "zone": "battlefield"}, equipment)
+        sp, st = equipment.card.equip_scale
+        return bp + n * sp, bt + n * st
+
     def _pt_bonus(self):
         """(power, toughness) from anthems, attached equipment and "for each" counts, in one pass
         over the battlefield; the same sums as anthem, equipment and per_bonus."""
@@ -249,6 +256,8 @@ class Permanent:
                     e = c.equip_bonus
                     bp += e[0]
                     bt += e[1]
+                    if c.equip_per:
+                        bp, bt = self._equip_per(x, bp, bt)
         for cond, pp, tt in self.card.pt_if:
             gy = self.controller.graveyard
             n = sum(c.is_permanent for c in gy) if cond.startswith("gy_perm") else len(gy)
@@ -282,6 +291,8 @@ class Permanent:
                 if x.attached_to is self:
                     bp += x.card.equip_bonus[0]
                     bt += x.card.equip_bonus[1]
+                    if x.card.equip_per:
+                        bp, bt = self._equip_per(x, bp, bt)
             for a in self.auras:
                 e = a.card.equip_bonus
                 bp += e[0]
@@ -2161,6 +2172,8 @@ class Game:
             else:
                 while x < 20 and payable(self.mana_sources(p, spell=card), {"generic": x + 1}):
                     x += 1
+                if x and hasattr(p.ai, "choose_x"):   # an AI may keep mana for other plays
+                    x = max(0, min(x, p.ai.choose_x(self, p, card, targets, x)))
             if x and planned_x is None:
                 payment += self.pay(p, {"generic": x}, spell=card)
         if alt is not None and alt.life:
@@ -2355,6 +2368,10 @@ class Game:
             return creature.card.legendary
         if restriction == "token":
             return creature.front.is_token
+        if restriction == "worthy":      # legendary non-Villain that is red and/or white
+            c = creature.card
+            return (c.legendary and "Villain" not in c.subtypes
+                    and bool(({"R", "W"} & set(c.mana_cost)) or any(set(h) & {"R", "W"} for h in c.hybrid)))
         if restriction.startswith("subtype:"):
             return creature.card.changeling or bool(set(restriction[8:].split("|")) & creature.card.subtypes)
         return False
@@ -3306,14 +3323,15 @@ class Game:
                 p.graveyard.remove(card)
                 p.hand.append(card)
         elif k == "exile_gy":
+            victim = target if isinstance(target, Player) else opp   # "target player's graveyard" keeps its player
             if eff.amount:
-                if opp.graveyard:
-                    card = max(opp.graveyard, key=lambda c: c.cmc)
-                    opp.graveyard.remove(card)
-                    opp.exile.append(card)
+                if victim.graveyard:
+                    card = max(victim.graveyard, key=lambda c: c.cmc)
+                    victim.graveyard.remove(card)
+                    victim.exile.append(card)
             else:
-                opp.exile.extend(opp.graveyard)
-                del opp.graveyard[:]
+                victim.exile.extend(victim.graveyard)
+                del victim.graveyard[:]
         elif k == "damage_each_player":
             for pl in self.players:
                 self.change_life(pl, -eff.amount, cause)
@@ -3848,6 +3866,28 @@ class Game:
             for other in opp.battlefield:
                 self.fire(opp, "opp_creature_dies", other, context=perm.controller)
 
+    def legend_rule(self, p: Player) -> bool:
+        """704.5j: of p's legendary permanents with the same name, p keeps one and puts the rest into the
+        graveyard. It isn't destruction (indestructible doesn't help); tokens cease to exist."""
+        groups: dict[str, list[Permanent]] = {}
+        for perm in p.battlefield:
+            if perm.card.legendary and not copies.legend_exempt(self, p, perm):
+                groups.setdefault(perm.card.name, []).append(perm)
+        moved = False
+        for name, perms in groups.items():
+            if len(perms) < 2:
+                continue
+            choose = getattr(p.ai, "choose_legend", None) or copies.choose_legend
+            keep = choose(self, p, perms)
+            if keep not in perms:
+                keep = copies.choose_legend(self, p, perms)
+            self.log(f"legend rule: keeps {name}, puts {len(perms) - 1} into the graveyard", p)
+            for perm in perms:
+                if perm is not keep:
+                    self.dies(perm)
+            moved = True
+        return moved
+
     def state_based_actions(self):
         # A creature that changes controller or stops being a creature leaves combat.
         # Restoring its former characteristics does not make it an attacker again.
@@ -3880,6 +3920,8 @@ class Game:
                         elif (perm.damage >= perm.toughness or perm.deathtouched) and not perm.has("indestructible"):
                             self.dies(perm)
                             changed = True
+                if self.legend_rule(p):
+                    changed = True
         for p in self.players:
             if p.life <= 0:
                 if not p.lost:
@@ -4040,6 +4082,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     legal = game.legal_targets(me, eff)
     if eff.target == "graveyard_card":
         return graveyards.choose(game, me, eff)
+    if eff.kind == "exile_gy" and eff.target == "player":
+        return opp
     if eff.target == "graveyard_spell":
         return max(legal, key=lambda target: target.card.cmc, default=None)
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
@@ -4196,7 +4240,8 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
         elif k == "regrow":
             total += max((c.cmc for c in me.graveyard if c.is_creature), default=-1)
         elif k == "gy_move":
-            ok = [c.cmc for c in me.graveyard if copies.fits(c, _gy_desc(e.data["what"]))]
+            ok = ([t.card.cmc for t in graveyards.entries(tgt)] if e.target == "graveyard_card" else
+                  [c.cmc for c in me.graveyard if copies.fits(c, _gy_desc(e.data["what"]))])
             total += (max(ok) + 1) if ok else -1
         elif k in ("destroy", "bounce", "shuffle_away"):
             total += perm_value(tgt)
@@ -4425,6 +4470,57 @@ def choose_equip_target(game: Game, me: Player, equipment: Permanent, *, ability
     return max(pool, key=lambda c: (c.card.equip_discount, perm_value(c) - len(c.equipment)))
 
 
+def _equip_body_value(creature: Permanent) -> float:
+    """Loss of a body, including counters/attachments and large tokens' actual stats."""
+    return 0.75 * (creature.card.cmc + (max(0, creature.power) + max(0, creature.toughness)) / 2
+            + 0.5 * sum(creature.has(k) for k in ("flying", "deathtouch", "lifelink", "first strike",
+                                                 "double strike", "indestructible", "menace"))
+            + bool(creature.card.produces))
+
+
+def _equip_benefit(equipment: Permanent, target: Permanent) -> float:
+    """Persistent stats and newly gained keywords; a heuristic, without changing the board."""
+    power, toughness = equipment.card.equip_bonus
+    value = power + toughness / 2  # the bonus is permanent and power wins games
+    attack = max(0, target.power + power)
+    keywords = {k for k in equipment.card.equip_keywords if not target.has(k)}
+    weights = {"flying": 1 + attack / 4, "menace": attack / 4, "trample": attack / 5,
+               "deathtouch": 1.5 if attack else 0, "lifelink": attack / 2,
+               "first strike": attack / 3, "double strike": attack,
+               "vigilance": 0.5, "reach": 0.5, "hexproof": 1, "indestructible": 2,
+               "haste": attack / 2 if target.sick and not target.tapped and not target.has("defender") else 0}
+    return value + sum(weights.get(k, 0) for k in keywords) + min(1, equipment.card.equip_ward / 2)
+
+
+def choose_equip_cost(game: Game, me: Player, equipment: Permanent, target: Permanent,
+                      reserve: int):
+    """Choose a worthwhile (ability index, victim), or decline. Explicit equip stays legal.
+
+    Compare attachment benefit with the lost body and mana's opportunity cost. Spare
+    mana is cheap; mana with spells still in hand is more valuable. Keep the target,
+    the instant reserve, and printed ability/creature order as deterministic ties.
+    Death triggers, future draws and multi-turn combat are not predicted here.
+    """
+    benefit = _equip_benefit(equipment, target)
+    mana_value = 0.5 if any(not c.is_land for c in me.hand) else 0.25
+    best, best_score = None, 0.0
+    victims = [None] + [c for c in game.sacrifice_candidates(me, equipment, "creature") if c is not target]
+    for victim in victims:
+        for idx, chosen in game.equip_choices(me, equipment, target, sacrifice=victim,
+                                              reserve=reserve, keep_target=True):
+            # Without an explicit victim equip_choices also offers sacrifice abilities;
+            # evaluate those in their explicit-victim iteration below.
+            if chosen is not victim:
+                continue
+            cost = sum(game.equip_cost(equipment, target, idx).values())
+            score = benefit - mana_value * cost - (_equip_body_value(victim) if victim is not None else 0)
+            if victim is not None and benefit - _equip_body_value(victim) < 0.8:
+                continue  # a body is only worth trading for a clear gain
+            if score > best_score + 1e-9:
+                best, best_score = (idx, victim), score
+    return best
+
+
 def equip_all(game: Game, me: Player):
     """Attach unattached Equipment with spare mana (main phase 1, so it helps this combat)."""
     for eq in [x for x in me.battlefield if x.card.equip_abilities and x.attached_to is None]:
@@ -4433,9 +4529,9 @@ def equip_all(game: Game, me: Player):
                if choose is choose_equip_target else choose(game, me, eq))
         if tgt is None:
             continue
-        choices = game.equip_choices(me, eq, tgt, reserve=_reserve(game, me), keep_target=True)
-        if choices:
-            idx, victim = choices[0]
+        choice = game.hook(me, "choose_equip_cost")(game, me, eq, tgt, _reserve(game, me))
+        if choice is not None:
+            idx, victim = choice
             game.equip(me, eq, tgt, sacrifice=victim, ability=idx)
 
 
@@ -4679,6 +4775,7 @@ DEFAULTS = {
     "pay_shock": pay_shock, "choose_discard_from": choose_discard_from, "choose_rummage": choose_rummage,
     "choose_crew": choose_crew, "before_attacks": before_attacks, "choose_attack_targets": choose_attack_targets,
     "use_abilities": use_abilities, "respond_extras": respond_extras, "choose_equip_target": choose_equip_target,
+    "choose_equip_cost": choose_equip_cost,
 }
 # Older names, kept for compatibility.
 default_respond = respond
