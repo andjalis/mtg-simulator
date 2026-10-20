@@ -6,6 +6,7 @@ from unittest.mock import patch
 from mtgsim.ai import BaselineAI, HeuristicAI, _spell_options
 from mtgsim.cards import AltCost
 from mtgsim.engine import Game, GraveyardTarget, Permanent, Player, respond, respond_extras
+from tests.invariants import assert_clean
 from tests.test_templates import ISLAND, MOUNTAIN, card
 
 
@@ -216,6 +217,15 @@ class AISpellOptionsTests(unittest.TestCase):
         self.assertEqual(self.b.life, 2)
         self.assertEqual(self.a.hand, [])
         self.assertEqual(list(self.a.graveyard), [burst])
+
+    def test_bounded_flashback_games_end_in_a_clean_state(self):
+        recall = card("Test Recall", "{R}", "Instant", "Test Recall deals 2 damage to any target.\nFlashback {3}{R}")
+        deck = [MOUNTAIN] * 16 + [recall] * 12
+        for seed in (1, 2):
+            a, b = Player("a", list(deck), HeuristicAI()), Player("b", list(deck), BaselineAI())
+            g = Game(a, b, random.Random(seed), max_turns=10)
+            g.play()
+            assert_clean(self, g, f"seed {seed}")
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ import unittest
 
 from mtgsim.ai import HeuristicAI
 from mtgsim.engine import Game, Permanent, Player
+from tests.invariants import assert_clean
 from tests.test_templates import BEAR, DRAGON3, ISLAND, MOUNTAIN, card
 
 GRANT = "Target instant or sorcery card in your graveyard gains flashback until end of turn. " \
@@ -107,7 +108,7 @@ class CombinedScenarios(unittest.TestCase):
             self.assertEqual(c.unsupported, [], c.name)
 
     # ------------------------------------------- delayed token x mixed Equip cost
-    def test_doomed_token_paid_as_mixed_equip_cost_leaves_a_no_op_delayed_trigger(self):
+    def test_doomed_token_paid_as_mixed_equip_cost_prunes_its_delayed_trigger(self):
         self.game.enter_battlefield(self.a, MOURNER)
         token = self.token_from(DOOM)
         eq, host, bear = self.perm(MIXED), self.perm(DRAGON3), self.perm(BEAR)
@@ -120,6 +121,7 @@ class CombinedScenarios(unittest.TestCase):
         self.assertFalse(self.everywhere(token))
         self.assertEqual(self.a.life, life + 1)             # the sacrifice is a death
         self.assertIs(eq.attached_to, host)
+        self.assertEqual(self.game.delayed, [])             # pruned as soon as the token left
         self.end(self.b)
         # The bound object is gone: the trigger must not pick another creature.
         for x in (eq, host, bear):
@@ -158,7 +160,7 @@ class CombinedScenarios(unittest.TestCase):
         self.assertFalse(self.everywhere(token))
         self.assertEqual([c for c in self.a.hand if c.is_token], [])   # a bounced token ceases to exist
         self.assertIsNone(eq.attached_to)
-        self.assertEqual(len(self.game.delayed), 1)
+        self.assertEqual(self.game.delayed, [])             # nothing left to resolve
         self.end(self.a)
         self.assertEqual((self.game.delayed, self.game.stack), ([], []))
         self.assertIn(eq, self.a.battlefield)
@@ -284,6 +286,7 @@ class CombinedScenarios(unittest.TestCase):
             a, b = Player("a", list(deck), HeuristicAI()), Player("b", list(deck), HeuristicAI())
             g = Game(a, b, random.Random(seed), max_turns=12, log=True)
             winner = g.play()
+            assert_clean(self, g, f"seed {seed}")
             return (winner.name if winner else None, a.life, b.life, g.turn, list(g.events))
 
         events = []

@@ -88,6 +88,19 @@ def end_step(game, active):
             game.delayed.append(entry)
 
 
+_BOUND = ("delayed_sacrifice", "delayed_exile", "delayed_destroy")
+
+
+def prune(game, perm):
+    """Drop pending sacrifice/exile/destroy entries bound to ``perm``, which has left the battlefield.
+
+A new object never inherits them, so they could only resolve as no-ops. Order of the other
+entries and the one-time semantics of the rest are untouched.
+"""
+    if game.delayed:
+        game.delayed[:] = [e for e in game.delayed if not (e.effect.kind in _BOUND and e.context is perm)]
+
+
 def sacrifice_later(game, controller, perm, source=None, scope="any"):
     action_later(game, controller, perm, "sacrifice", source, scope)
 

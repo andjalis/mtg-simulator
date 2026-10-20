@@ -3811,6 +3811,7 @@ class Game:
         if perm.card.aura:
             auras.detach(perm)
         perm.attached_to = None
+        delayed.prune(self, perm)
         for x in [x for pl in self.players for x in pl.battlefield]:
             if x.attached_to is perm:
                 x.attached_to = None
