@@ -1361,10 +1361,11 @@ class BaselineAI:
 
     def main_phase(self, game: Game, me: Player):
         HeuristicAI.play_land(self, game, me)
+        refused = set()   # cards the engine wouldn't cast this phase; retrying them loops forever
         while not game.over:
             best = None
             for card in {c.name: c for c in me.hand if not c.is_land}.values():
-                if not game.can_pay(me, HeuristicAI._cost(game, me, card)):
+                if id(card) in refused or not game.can_pay(me, HeuristicAI._cost(game, me, card)):
                     continue
                 plan = self.plan_spell(game, me, card)
                 if plan is None:
@@ -1373,7 +1374,8 @@ class BaselineAI:
                     best = (plan[0], card, plan[1])
             if best is None:
                 return
-            game.cast(me, best[1], best[2])
+            if not game.cast(me, best[1], best[2]):
+                refused.add(id(best[1]))
 
     def plan_spell(self, game: Game, me: Player, card: CardDef):
         if card.is_permanent:

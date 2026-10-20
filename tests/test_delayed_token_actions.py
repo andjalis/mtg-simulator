@@ -300,6 +300,53 @@ class DelayedTokenActionTests(unittest.TestCase):
         self.assertFalse(self.on_battlefield(token))
         self.assertEqual(self.game.delayed, [])
 
+    def test_entries_are_pruned_when_the_bound_token_leaves(self):
+        for how in ("graveyard", "hand", "exile"):
+            for maker in ("hob", "split"):
+                with self.subTest(how=how, maker=maker):
+                    self.setUp()
+                    _, token = self.split() if maker == "split" else (None, self.hob()[1][0])
+                    self.assertEqual(len(self.game.delayed), 1)
+                    self.game.leave_battlefield(token, how)
+                    self.assertEqual(self.game.delayed, [])
+                    self.end(self.a)
+                    self.assertEqual(self.game.stack, [])
+
+    def test_prune_keeps_other_entries_in_order_and_one_time_semantics(self):
+        _, (first,) = self.hob()
+        _, (second,) = self.hob()
+        _, (third,) = self.hob()
+        self.assertEqual([e.context for e in self.game.delayed], [first, second, third])
+        self.game.leave_battlefield(second, "graveyard")
+        self.assertEqual([e.context for e in self.game.delayed], [first, third])
+        self.end(self.a)
+        self.assertFalse(self.on_battlefield(first) or self.on_battlefield(third))
+        self.assertEqual((self.game.delayed, self.game.stack), ([], []))
+
+    def test_prune_keeps_both_continuations_of_a_surviving_token(self):
+        both = card("Test Both", "{R}", "Sorcery",
+                    "Create a 1/1 red Goblin creature token. Destroy it at the beginning of the next end step. "
+                    "Exile it at the beginning of your next end step.")
+        self.a.hand.append(both)
+        self.assertTrue(self.game.cast(self.a, both))
+        self.game.settle()
+        _, (other,) = self.hob()
+        (token,) = [x for x in self.a.creatures if x.card.is_token and x is not other]
+        self.game.leave_battlefield(other, "graveyard")
+        self.assertEqual([e.context for e in self.game.delayed], [token, token])
+
+    def test_blink_return_entries_are_not_pruned(self):
+        flicker = card("Test Flicker", "{R}", "Instant",
+                       "Exile target creature you control. Return it to the battlefield under its owner's "
+                       "control at the beginning of the next end step.")
+        bear = self.game.enter_battlefield(self.a, BEAR)
+        self.a.hand.append(flicker)
+        self.assertTrue(self.game.cast(self.a, flicker, [bear]))
+        self.game.settle()
+        self.assertEqual(len(self.game.delayed), 1)
+        self.end(self.a)
+        self.assertEqual([x.card for x in self.a.creatures], [BEAR])
+
     def test_actual_turn_creates_and_destroys_hob_token(self):
         self.game.enter_battlefield(self.a, HOB)
         with patch.object(self.a.ai, "main_phase"), patch.object(self.a.ai, "choose_attackers", return_value=[]):
