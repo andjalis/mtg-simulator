@@ -4,7 +4,7 @@ import random
 import unittest
 
 from mtgsim.ai import HeuristicAI
-from mtgsim.cards import card_from_scryfall
+from mtgsim.cards import _num, card_from_scryfall
 from mtgsim.engine import Game, Permanent, Player, StackItem, can_block, card_matches
 
 
@@ -68,6 +68,13 @@ class Base(unittest.TestCase):
 
 
 class TemplateTests(Base):
+    def test_number_words_zero_through_twenty_and_digits(self):
+        words = ("zero", "one", "two", "three", "four", "five", "six", "seven",
+                 "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
+                 "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty")
+        self.assertEqual([_num(word) for word in words], list(range(21)))
+        self.assertEqual(_num("12"), 12)
+
     # ------------------------------------------------------- parsing
     def test_templates_match_every_line(self):
         for c in (CAVERN, ROCKFACE, TEMPLE, CANDY, PROWLER, MINER, CONQUEROR, TREASURE_MAKER, MAELSTROM, SANCTUM):
