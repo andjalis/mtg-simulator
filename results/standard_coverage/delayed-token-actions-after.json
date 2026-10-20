@@ -1,0 +1,427 @@
+{
+  "python": "3.14.8",
+  "inputs_sha256": {
+    "carddb": "9c59bc813cbcab9902616b3a5bfb0d73fb9a206308bdecabae8e64dbfee910de",
+    "builtin": "4e4b35335b1e2bb9964370adf9e66bab4b9a720b99d26aeb91da6eee66e1e5a9",
+    "cache": null,
+    "snapshot": {
+      "editions/BIG.txt": "8e951c399d19032a0de07b2763035b68142e690f3b48f06f3e78fd9de9ac1824",
+      "editions/BLB.txt": "89c90f78cf0200bda2017f832e38639a10003b6981eba56fca5359421c34237e",
+      "editions/DFT.txt": "6e8e3715cbae1b929b31471ddf2ed924336b760954c460f6585933f68c610e71",
+      "editions/DSK.txt": "85b60ac6228143c4eacade7d807a8196b93d0d6b6e76825292a3625e9b7b39b2",
+      "editions/ECL.txt": "82163910985c97006948df0a55e08da8ca0f8cfe967789316e6f24da55e7282f",
+      "editions/EOE.txt": "3890c6278560ae95802632049a1ecad15804c87a6957d2e99bc8b375bfe9c2fe",
+      "editions/FDN.txt": "f12b3dbf9c8d01cb3ee4ce3f12d0c29dfc05decf2037f470f50bc8a06a83dfa0",
+      "editions/FIN.txt": "639172fd010fae018ce1572c36f9ebfaf40a76590b2d8940dc17747787a198f1",
+      "editions/FRA.txt": "d174f31e3be7377e54e91a761dc7536562443b396f991a64b1ebdcba3f9f898a",
+      "editions/HOB.txt": "45c116eed16991d60217d97ee4881cbf76cb49a6cf8e72505c17fc0aef70062c",
+      "editions/LCI.txt": "c2821945c9903477e0970a8d0787a7ca937eceea193542d0a7b2528a94e8c4e5",
+      "editions/MKM.txt": "142d7a748b91ed029c640e898ad65986d6365e3fc824a7fae1d1a96f1fa86a42",
+      "editions/MSH.txt": "f3b44a110f8eb22a6c90e063300d18d5ad5b39fb6c3066cae158254290a72dbe",
+      "editions/OTJ.txt": "81e89b245073b5b1207cece12ffb0e0b2846911ddce932fb9cddba222e921e2c",
+      "editions/SOS.txt": "1a20f40c6ca5566fd8126024168818a4207791279fa9e7572bbe77d79ceb2f40",
+      "editions/SPM.txt": "90382aa38bc545d724fce8e371ea0dabac110df7c8f1d7035f12b8de5da6a862",
+      "editions/TDM.txt": "bcfee2dcf7a36e5f8972627d60ea24f1a57c7720aec3c53c2626629e46edd75b",
+      "editions/TLA.txt": "b030e91ff5be292195cc5669db88083cd3f2b438b05009fa29aea23aa68c8087",
+      "editions/TMT.txt": "6b3287e74290983f0668b99123b08a12fdd07c589ec51c349dbdff4d29abe8de",
+      "editions/WOE.txt": "9cf0736b924bea16469f8c1b24fc456f5739a0c5f94485be2ac8915c293df13e",
+      "formats/Standard.txt": "8cf9347c7dc11a03bc9d3839b514d630836aa76ccf6f0396ff861a383d444aaa"
+    }
+  },
+  "format": {
+    "name": "Standard",
+    "sets": [
+      "WOE",
+      "LCI",
+      "MKM",
+      "OTJ",
+      "BIG",
+      "BLB",
+      "DSK",
+      "FDN",
+      "DFT",
+      "TDM",
+      "FIN",
+      "EOE",
+      "SPM",
+      "TLA",
+      "ECL",
+      "TMT",
+      "SOS",
+      "MSH",
+      "HOB",
+      "FRA"
+    ],
+    "banned": [
+      "Abuelo's Awakening",
+      "Badgermole Cub",
+      "Cori-Steel Cutter",
+      "Gran-Gran",
+      "Heartfire Hero",
+      "Hopeless Nightmare",
+      "Monstrous Rage",
+      "Proft's Eidetic Memory",
+      "Screaming Nemesis",
+      "Stormchaser's Talent",
+      "This Town Ain't Big Enough",
+      "Up the Beanstalk",
+      "Vivi Ornitier"
+    ]
+  },
+  "total": 4902,
+  "status": {
+    "partial": 3025,
+    "full": 1835,
+    "simplified": 42
+  },
+  "one_line": 1920,
+  "sentences": 12933,
+  "handled_sentences": 7704,
+  "all_unmatched": [
+    {
+      "line": "Put the rest on the bottom of your library in a random order.",
+      "cards": 18,
+      "examples": [
+        "Aang, at the Crossroads",
+        "Break Out",
+        "Cosmic Cube"
+      ]
+    },
+    {
+      "line": "Exile ~.",
+      "cards": 10,
+      "examples": [
+        "Avatar's Wrath",
+        "Divergent Equation",
+        "Morningtide's Light"
+      ]
+    },
+    {
+      "line": "You may look at the top card of your library any time.",
+      "cards": 10,
+      "examples": [
+        "Assemble the Players",
+        "Fblthp, Lost on the Range",
+        "Glarb, Calamity's Augur"
+      ]
+    },
+    {
+      "line": "Storied",
+      "cards": 9,
+      "examples": [
+        "Balin, Loremaster",
+        "Bifur, Melodic Rider",
+        "Bombur, Gentle Dreamer"
+      ]
+    },
+    {
+      "line": "Target opponent reveals their hand.",
+      "cards": 7,
+      "examples": [
+        "Aggressive Negotiations",
+        "Binding Negotiation",
+        "Cruelclaw's Heist"
+      ]
+    },
+    {
+      "line": "look at the top five cards of your library.",
+      "cards": 7,
+      "examples": [
+        "Aang, at the Crossroads",
+        "Freestrider Lookout",
+        "Living Phone"
+      ]
+    },
+    {
+      "line": "Put the rest into your graveyard.",
+      "cards": 6,
+      "examples": [
+        "Earth's Mightiest Heroes",
+        "Gurmag Nightwatch",
+        "Gutless Plunderer"
+      ]
+    },
+    {
+      "line": "Tiered",
+      "cards": 6,
+      "examples": [
+        "Fire Magic",
+        "Ice Magic",
+        "Restoration Magic"
+      ]
+    },
+    {
+      "line": "A deck can have any number of cards named ~.",
+      "cards": 5,
+      "examples": [
+        "Cid, Timeless Artificer",
+        "Hare Apparent",
+        "Slime Against Humanity"
+      ]
+    },
+    {
+      "line": "If you do, draw two cards.",
+      "cards": 5,
+      "examples": [
+        "Byway Barterer",
+        "Highway Robbery",
+        "Stormshriek Feral"
+      ]
+    },
+    {
+      "line": "Paradigm",
+      "cards": 5,
+      "examples": [
+        "Decorum Dissertation",
+        "Echocasting Symposium",
+        "Germination Practicum"
+      ]
+    },
+    {
+      "line": "Untap that creature.",
+      "cards": 5,
+      "examples": [
+        "Evil's Thrall",
+        "Fleeting Reflection",
+        "Restless Ridgeline"
+      ]
+    },
+    {
+      "line": "look at the top card of your library.",
+      "cards": 5,
+      "examples": [
+        "Gathering Stone",
+        "Mobile Homestead",
+        "Planetarium of Wan Shi Tong"
+      ]
+    },
+    {
+      "line": "return the exiled card to its owner's hand.",
+      "cards": 5,
+      "examples": [
+        "Champion of the Clachan",
+        "Champion of the Path",
+        "Champion of the Weird"
+      ]
+    },
+    {
+      "line": "~ enters tapped unless you control a Mount or Vehicle.",
+      "cards": 5,
+      "examples": [
+        "Country Roads",
+        "Foul Roads",
+        "Reef Roads"
+      ]
+    },
+    {
+      "line": "Exile that card.",
+      "cards": 4,
+      "examples": [
+        "Cruelclaw's Heist",
+        "Intimidation Tactics",
+        "Null Summoner"
+      ]
+    },
+    {
+      "line": "Put one of them into your hand and the other into your graveyard.",
+      "cards": 4,
+      "examples": [
+        "Codecracker Hound",
+        "Marchesa, Dealer of Death",
+        "Sibsig Appraiser"
+      ]
+    },
+    {
+      "line": "Target creature's owner puts it on their choice of the top or bottom of their library.",
+      "cards": 4,
+      "examples": [
+        "Return to the Sewers",
+        "Run Behind",
+        "Uncharted Voyage"
+      ]
+    },
+    {
+      "line": "That player discards that card.",
+      "cards": 4,
+      "examples": [
+        "Cracked Skull",
+        "Gastal Raider",
+        "Solve for Disappointment"
+      ]
+    },
+    {
+      "line": "You choose a nonland card from it.",
+      "cards": 4,
+      "examples": [
+        "Cruelclaw's Heist",
+        "Null Summoner",
+        "Soul Search"
+      ]
+    }
+  ],
+  "single_line_misses": [
+    {
+      "line": "Paradigm",
+      "cards": 3,
+      "examples": [
+        "Decorum Dissertation",
+        "Germination Practicum",
+        "Restoration Seminar"
+      ]
+    },
+    {
+      "line": "Void \u2014 At the beginning of your end step, if a nonland permanent left the battlefield this turn or a spell was warped this turn, put a +1/+1 counter on ~.",
+      "cards": 3,
+      "examples": [
+        "Insatiable Skittermaw",
+        "Interceptor Mechan",
+        "Kavaron Skywarden"
+      ]
+    },
+    {
+      "line": "put its counters on target creature you control.",
+      "cards": 3,
+      "examples": [
+        "Broodguard Elite",
+        "Dockworker Drone",
+        "Hei Bai, Spirit of Balance"
+      ]
+    },
+    {
+      "line": "Alliance \u2014 Whenever another creature you control enters, ~ gets +1/+0 until end of turn.",
+      "cards": 2,
+      "examples": [
+        "East Wind Avatar",
+        "Mutant Town Musicians"
+      ]
+    },
+    {
+      "line": "As long as an artifact entered the battlefield under your control this turn, ~ can attack as though it didn't have defender.",
+      "cards": 2,
+      "examples": [
+        "Mechan Shieldmate",
+        "Shipwreck Sentry"
+      ]
+    },
+    {
+      "line": "Choose one of them.",
+      "cards": 2,
+      "examples": [
+        "Riverwheel Sweep",
+        "Strongbox Raider"
+      ]
+    },
+    {
+      "line": "Each player may discard their hand and draw seven cards.",
+      "cards": 2,
+      "examples": [
+        "Raphael's Technique",
+        "Variable Chaser"
+      ]
+    },
+    {
+      "line": "Enchanted permanent loses all abilities and doesn't untap during its controller's untap step.",
+      "cards": 2,
+      "examples": [
+        "Flood the Engine",
+        "Stop Cold"
+      ]
+    },
+    {
+      "line": "Exile ~.",
+      "cards": 2,
+      "examples": [
+        "Divergent Equation",
+        "Spirit Water Revival"
+      ]
+    },
+    {
+      "line": "If that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
+      "cards": 2,
+      "examples": [
+        "No More Lies",
+        "Syncopate"
+      ]
+    },
+    {
+      "line": "Its controller manifests dread.",
+      "cards": 2,
+      "examples": [
+        "Fear of Impostors",
+        "Unwanted Remake"
+      ]
+    },
+    {
+      "line": "Suspect it.",
+      "cards": 2,
+      "examples": [
+        "Caught Red-Handed",
+        "It Doesn't Add Up"
+      ]
+    },
+    {
+      "line": "Whenever another creature you control enters while ~ has a -1/-1 counter on it, remove a -1/-1 counter from ~.",
+      "cards": 2,
+      "examples": [
+        "Bristlebane Battler",
+        "Reluctant Dounguard"
+      ]
+    },
+    {
+      "line": "Whenever equipped creature attacks, tap target creature defending player controls.",
+      "cards": 2,
+      "examples": [
+        "Captain America's Shield",
+        "Thunder Lasso"
+      ]
+    },
+    {
+      "line": "Whenever ~ becomes the target of a spell or ability an opponent controls, draw a card.",
+      "cards": 2,
+      "examples": [
+        "Old Fat Spider",
+        "Ruric Thar, Biomagus"
+      ]
+    },
+    {
+      "line": "Whenever ~ or another creature or artifact you control dies, target opponent loses 1 life and you gain 1 life.",
+      "cards": 2,
+      "examples": [
+        "Al Bhed Salvagers",
+        "Susurian Voidborn"
+      ]
+    },
+    {
+      "line": "You draw a card and gain 1 life.",
+      "cards": 2,
+      "examples": [
+        "Oracle's Restoration",
+        "Tam, Observant Sequencer"
+      ]
+    },
+    {
+      "line": "You may play an additional land this turn.",
+      "cards": 2,
+      "examples": [
+        "Beanstalk Wurm",
+        "Beorn, Reluctant Host"
+      ]
+    },
+    {
+      "line": "You may put a land card from your hand onto the battlefield tapped.",
+      "cards": 2,
+      "examples": [
+        "Embrace the Paradox",
+        "Lessons from Life"
+      ]
+    },
+    {
+      "line": "You may put a permanent card from among them into your hand.",
+      "cards": 2,
+      "examples": [
+        "Bristlebud Farmer",
+        "Something Worth Saving"
+      ]
+    }
+  ]
+}

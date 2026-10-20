@@ -1,7 +1,8 @@
 """Narrow, object-bound next-end-step templates and a shared delayed-trigger queue.
 
-Only complete exile/return pairs and continuations bound directly to token creation
-are accepted. Unrecognized conditions and unbound pronouns remain unsupported.
+Only complete exile/return pairs and haste/sacrifice/exile/destroy continuations
+bound directly to token creation are accepted. Unrecognized conditions and unbound
+pronouns remain unsupported.
 """
 from __future__ import annotations
 
@@ -49,10 +50,12 @@ referent across an unsupported sentence or an unrelated intervening effect.
     if m:
         creator.data = dict(creator.data, created_haste=True)
         return True
-    m = re.fullmatch(r"sacrifice (?:it|them|that token|the token|those tokens) at the beginning of "
+    m = re.fullmatch(r"(sacrifice|exile|destroy) (?:it|them|that token|the token|those tokens|the tokens) "
+                     r"at the beginning of "
                      r"(the|your) next end step", sentence, re.I)
     if m:
-        creator.data = dict(creator.data, delayed_sac="mine" if m[1].lower() == "your" else "any")
+        action = (m[1].lower(), "mine" if m[2].lower() == "your" else "any")
+        creator.data = dict(creator.data, delayed_actions=[*creator.data.get("delayed_actions", ()), action])
         return True
     return False
 
@@ -86,9 +89,24 @@ def end_step(game, active):
 
 
 def sacrifice_later(game, controller, perm, source=None, scope="any"):
+    action_later(game, controller, perm, "sacrifice", source, scope)
+
+
+def action_later(game, controller, perm, action, source=None, scope="any"):
     from .cards import Effect
-    schedule(game, controller, Effect("delayed_sacrifice"), perm, source,
-             f"{perm.card.name} delayed sacrifice", scope)
+    schedule(game, controller, Effect(f"delayed_{action}"), perm, source,
+             f"{perm.card.name} delayed {action}", scope)
+
+
+def created(game, controller, perm, data, source=None):
+    """Apply continuations to each exact object made by a token/copy effect."""
+    if data.get("created_haste"):
+        perm.temp_kw.add("haste")
+    for action, scope in data.get("delayed_actions", ()):
+        action_later(game, controller, perm, action, source, scope)
+    # Copy templates fold the legacy sacrifice wording into the creation clause.
+    if data.get("mods", {}).get("sac_end"):
+        sacrifice_later(game, controller, perm, source)
 
 
 def resolve(game, p, eff, target, item):
@@ -119,9 +137,16 @@ def resolve(game, p, eff, target, item):
         if eff.data.get("flying_counter"):
             perm.counters["flying"] = 1
             perm.perm_kw.add("flying")
-    elif eff.kind == "delayed_sacrifice":
+    elif eff.kind in ("delayed_sacrifice", "delayed_exile", "delayed_destroy"):
         perm = item.context
-        # The controller of the delayed ability must still control the object
-        # to sacrifice it. A stolen token survives this one-time instruction.
-        if perm.controller is p and perm in p.battlefield:
+        if perm not in perm.controller.battlefield:
+            return
+        # Sacrifice requires control by the delayed ability's controller; exile
+        # and destroy still act on a stolen object. None of these effects target.
+        if eff.kind == "delayed_sacrifice" and perm.controller is p:
             game.sacrifice(perm)
+        elif eff.kind == "delayed_destroy":
+            game.destroy(perm)
+        elif eff.kind == "delayed_exile":
+            if game.leave_battlefield(perm, "exile"):
+                game.log(f"{perm.card.name} is exiled", p)
