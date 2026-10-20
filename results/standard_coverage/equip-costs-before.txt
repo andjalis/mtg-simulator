@@ -1,0 +1,3 @@
+Standard: 1,834/4,902 cards fully supported (37.4%), 60% of rules sentences handled
+All cards: 7,602/34,084 cards fully supported (22.3%), 41% of rules sentences handled; 1 cards crash the parser
+  crash: Dovin, Grand Arbiter: ValueError: invalid literal for int() with base 10: 'ten'

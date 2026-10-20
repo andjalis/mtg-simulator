@@ -26,7 +26,7 @@ import random
 import re
 
 from . import auras, copies, counting, delayed, removal, search, xspells
-from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, add_mana, jace_token, make_token, role_token
+from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, EquipCost, add_mana, jace_token, make_token, role_token
 from . import modal
 
 TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
@@ -2013,8 +2013,11 @@ class Game:
             return False
         if what.startswith("ability:"):
             return self.activate_ability(p, perm, int(what[8:]))
-        if what.startswith("equip"):
+        if what == "equip":
             return self.equip(p, perm, target)
+        if what.startswith("equip:"):
+            idx = what[6:]
+            return self.equip(p, perm, target, ability=int(idx)) if idx.isdigit() else False
         if self.activations_stopped() and (perm.card.is_artifact or perm.is_creature):
             return False
         if what == "clue":
@@ -2072,19 +2075,54 @@ class Game:
         self.settle()
         return True
 
-    def equip_cost(self, equipment: Permanent, creature: Permanent) -> dict:
-        cost = dict(equipment.card.equip_cost or {})
+    def equip_cost(self, equipment: Permanent, creature: Permanent, ability: int = 0) -> dict:
+        cost = dict(equipment.card.equip_abilities[ability].mana)
         cost["generic"] = max(0, cost.get("generic", 0) - creature.card.equip_discount)
         return cost
 
+    def equip_choices(self, p: Player, equipment: Permanent, creature: Permanent,
+                      sacrifice=None, reserve: int = 0, keep_target: bool = False) -> list:
+        """Payable (ability index, sacrifice) choices, without spending any resources.
+
+        Prefer keeping creatures, then spending less mana, with printed order breaking ties.
+        A mana creature may tap before being sacrificed, but may not sacrifice itself twice.
+        """
+        choices = []
+        for idx, act in enumerate(equipment.card.equip_abilities):
+            victim = None
+            if act.sacrifice:
+                victims = self.sacrifice_candidates(p, equipment, "creature")
+                if sacrifice is not None:
+                    victims = [x for x in victims if x is sacrifice]
+                else:
+                    victims = [x for x in victims if x is not creature] + ([creature] if creature in victims else [])
+                if keep_target:
+                    victims = [x for x in victims if x is not creature]
+                if not victims:
+                    continue
+            else:
+                if sacrifice is not None:
+                    continue
+                victims = [None]
+            cost = self.equip_cost(equipment, creature, idx)
+            need = add_costs(cost, {"generic": reserve})
+            for victim in victims:
+                exclude = victim if victim is not None and (victim.card.mana_sac or
+                                                           victim.card.token_kind == "treasure") else None
+                if payable(self.mana_sources(p, exclude=exclude, spell="ability"), need):
+                    choices.append((act.sacrifice, sum(cost.values()), idx, victim))
+                    break
+        choices.sort(key=lambda x: x[:3])
+        return [(idx, victim) for _, _, idx, victim in choices]
+
     def equip(self, p: Player, equipment: Permanent, creature: Permanent | None = None,
-              sacrifice: Permanent | None = None) -> bool:
+              sacrifice: Permanent | None = None, ability: int | None = None) -> bool:
         """Pay an equip cost, then attach to the chosen target when the ability resolves.
 
         With no explicit sacrifice choice, prefer the least valuable creature other than the target.
         The target itself is a legal payment, but then the ability will have no legal target.
         """
-        if equipment not in p.battlefield or equipment.card.equip_cost is None:
+        if equipment not in p.battlefield or not equipment.card.equip_abilities:
             return False
         if not (p is self.active and self.step in ("main1", "main2") and not self.stack):
             return False
@@ -2095,15 +2133,17 @@ class Game:
         effect = Effect("equip", target="creature_mine")
         if not self.legal_target(p, effect, creature):
             return False
-        if equipment.card.equip_sacrifice:
-            victims = self.sacrifice_candidates(p, equipment, "creature")
-            if sacrifice is None:
-                sacrifice = next((x for x in victims if x is not creature), creature)
-            if sacrifice not in victims:
-                return False
-        if self.pay(p, self.equip_cost(equipment, creature)) is None:
+        choices = self.equip_choices(p, equipment, creature, sacrifice=sacrifice)
+        if ability is not None:
+            choices = [(idx, victim) for idx, victim in choices if idx == ability]
+        if not choices:
             return False
-        if equipment.card.equip_sacrifice:
+        idx, sacrifice = choices[0]
+        exclude = sacrifice if sacrifice is not None and (sacrifice.card.mana_sac or
+                                                         sacrifice.card.token_kind == "treasure") else None
+        if self.pay(p, self.equip_cost(equipment, creature, idx), exclude=exclude) is None:
+            return False
+        if sacrifice is not None:
             self.log(f"sacrifices {sacrifice.card.name} to equip {equipment.card.name}", p)
             self.sacrifice(sacrifice)
         item = StackItem(p, [effect], [creature], source=equipment,
@@ -2912,6 +2952,7 @@ class Game:
                 src.card = dataclasses.replace(src.card, name="Everflame, Heroes' Legacy", produces=frozenset(),
                                                types=frozenset({"Artifact"}),
                                                subtypes=frozenset({"Equipment"}), equip_cost={"generic": 3},
+                                               equip_costs=(EquipCost({"generic": 3}),), equip_sacrifice=False,
                                                equip_bonus=(3, 3), triggers=[], activated=[])
                 self.log("The Irencrag becomes Everflame", p)
         elif k == "draw_each":
@@ -3014,7 +3055,7 @@ class Game:
         elif k == "job_select":
             src = item.source if item is not None else None
             hero = self.enter_battlefield(p, dataclasses.replace(make_token("Hero", 1, 1), subtypes=frozenset({"Hero"})))
-            if src is not None and src in p.battlefield and src.card.equip_cost is not None:
+            if src is not None and src in p.battlefield and src.card.equip_abilities:
                 src.attached_to = hero
                 self.log(f"{src.card.name} attaches to the Hero", p)
         elif k == "threaten":
@@ -4047,15 +4088,14 @@ def choose_equip_target(game: Game, me: Player, equipment: Permanent):
 
 def equip_all(game: Game, me: Player):
     """Attach unattached Equipment with spare mana (main phase 1, so it helps this combat)."""
-    for eq in [x for x in me.battlefield if x.card.equip_cost is not None and x.attached_to is None]:
+    for eq in [x for x in me.battlefield if x.card.equip_abilities and x.attached_to is None]:
         tgt = game.hook(me, "choose_equip_target")(game, me, eq)
         if tgt is None:
             continue
-        if eq.card.equip_sacrifice and not any(c is not tgt and c is not eq for c in me.creatures):
-            continue
-        need = add_costs(game.equip_cost(eq, tgt), {"generic": _reserve(game, me)})
-        if payable(game.mana_sources(me, spell="ability"), need):
-            game.equip(me, eq, tgt)
+        choices = game.equip_choices(me, eq, tgt, reserve=_reserve(game, me), keep_target=True)
+        if choices:
+            idx, victim = choices[0]
+            game.equip(me, eq, tgt, sacrifice=victim, ability=idx)
 
 
 def choose_ability(game: Game, me: Player, instant: bool):
