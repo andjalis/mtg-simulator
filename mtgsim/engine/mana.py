@@ -48,7 +48,7 @@ def _find_payment(sources: list[Permanent], cost: dict):
     if len(pips) + generic > len(slots):
         return None
     # Mana that can only be spent on some spells goes first when it is allowed at all.
-    slots = sorted(slots, key=lambda s: (not s.card.mana_restriction, s.card.token_kind == "treasure",
+    slots = sorted(slots, key=lambda s: (not s.card.mana_restriction, s.card.token_kind == "treasure" or s.card.mana_sac_only,
                                          len(_mana_of(s)), s.is_creature, -getattr(s.card, "mana_amount", 1)))
     pips.sort(key=lambda c: sum(c in _mana_of(s) for s in slots))
     used = [False] * len(slots)
@@ -69,7 +69,7 @@ def _find_payment(sources: list[Permanent], cost: dict):
     chosen = [s for j, s in enumerate(slots) if used[j]]
     # Generic mana: first use leftover slots of sources already being tapped, then multi-mana ones.
     rest = [s for j, s in enumerate(slots) if not used[j]]
-    rest.sort(key=lambda s: (s not in chosen, not s.card.mana_restriction, s.card.token_kind == "treasure",
+    rest.sort(key=lambda s: (s not in chosen, not s.card.mana_restriction, s.card.token_kind == "treasure" or s.card.mana_sac_only,
                              -getattr(s.card, "mana_amount", 1), len(_mana_of(s)), s.is_creature))
     if len(rest) < generic:
         return None

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from .. import auras, copies, graveyard
+from .. import auras, copies, creature_keywords, graveyard
 from ..cards import Activated, CardDef, Effect
 from .. import rules_events, continuous
 from ..identity import CardInstance, Graveyard
@@ -102,6 +102,9 @@ class TurnsMixin:
     def play(self) -> Player | None:
         self.setup()
         while not self.over and self.turn < self.max_turns:
+            counts = getattr(self, "spells_cast", {})
+            self.last_turn_spells = {k: v for k, v in counts.items() if k != "turn"} \
+                if counts.get("turn") == self.turn else {}       # werewolves: spells cast in the turn that ends
             self.turn += 1
             self.take_turn(self.players[self.active_idx])
             self.active_idx = 1 - self.active_idx
@@ -216,10 +219,14 @@ class TurnsMixin:
             if perm.card.untap_each_untap:
                 perm.tapped = False
         for perm in p.battlefield:
-            if perm.tapped and perm.counters.get("stun"):
+            if perm.skip_untap:
+                perm.skip_untap -= 1        # "doesn't untap during its controller's next untap step"
+            elif perm.tapped and perm.counters.get("stun"):
                 perm.counters["stun"] -= 1   # a stun counter is removed instead of untapping
             elif perm.tapped and perm.auras and auras.blocks_untap(perm):
                 pass
+            elif perm.tapped and perm.card.no_untap:
+                pass                        # "~ doesn't untap during your untap step."
             else:
                 perm.tapped = False
             perm.sick = False
@@ -334,4 +341,5 @@ class TurnsMixin:
             else:
                 self.queue_trigger(controller, [Effect("rebound_cast")], name=f"{card.name}: rebound",
                                    context=(card, version))
+        creature_keywords.upkeep(self, p)
         self.fire(p, "upkeep")

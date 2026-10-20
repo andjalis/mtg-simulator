@@ -20,11 +20,16 @@ class EffectsMixin:
         def has(keyword):
             return (source.has(keyword) if isinstance(source, Permanent)
                     else isinstance(source, CardDef) and keyword in source.keywords)
+        fog = getattr(self, "fog", None)
+        if combat and fog and fog[0] == self.turn and (fog[1] is None or getattr(source, "controller", None) is fog[1]):
+            return
         if protected_from(target, source):
             self.log(f"{target.card.name}'s protection prevents {amount} damage", target.controller)
             return
         infect = has("infect")
         if isinstance(target, Player):
+            if combat and isinstance(source, Permanent) and source.card.toxic:
+                target.counters["poison"] = target.counters.get("poison", 0) + source.card.toxic
             if infect:
                 target.counters["poison"] = target.counters.get("poison", 0) + amount
             else:

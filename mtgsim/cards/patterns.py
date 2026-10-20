@@ -341,6 +341,17 @@ _EFFECT_PATTERNS = [
     (r"(?:target|each) opponent discards (a|two|three) cards?", lambda m: Effect("discard", _num(m[1]), target="player")),
     (r"(?:target|each) opponent sacrifices a creature(?: of their choice)?", lambda m: Effect("edict", 1)),
     (r"sacrifice ~", lambda m: Effect("sacrifice_self", target="self")),
+    (r"sacrifice a creature", lambda m: Effect("sac_own", data={"kind": "creature"})),
+    (r"target creature can't be blocked this turn", lambda m: Effect("unblockable", target="creature_mine")),
+    (r"put target creature on top of its owner's library", lambda m: Effect("tuck_top", target="creature")),
+    (r"search your library for a card, put (?:that card|it) into your hand, then shuffle",
+     lambda m: Effect("tutor", data={"what": "a card"})),
+    (r"exile target card from a graveyard", lambda m: Effect("exile_gy", 1)),
+    (r"its controller loses (\d+) life", lambda m: Effect("lose_life", int(m[1]), target="that_controller")),
+    (r"prevent all combat damage that would be dealt this turn", lambda m: Effect("fog")),
+    (r"prevent all combat damage that would be dealt this turn by creatures your opponents control",
+     lambda m: Effect("fog", data={"theirs": True})),
+    (r"return an? (land|creature) you control to its owner's hand", lambda m: Effect("return_own", data={"kind": m[1].lower()})),
     (r"another target creature you control gains (deathtouch|first strike|lifelink|trample|haste|indestructible|"
      r"hexproof|vigilance|menace|reach|flying) until end of turn",
      lambda m: Effect("grant", target="creature_mine", data={"keyword": m[1].lower()})),
@@ -429,7 +440,8 @@ _EFFECT_PATTERNS = [
     (r"put (a|one|two) \+1/\+1 counters? on each creature target player controls",
      lambda m: Effect("p1_counters", _num(m[1]), target="my_creatures")),
     (r"that creature deals (\d+) damage to each opponent", lambda m: Effect("damage", int(m[1]), target="player")),
-    (r"target creature gains (double strike|first strike|trample|haste|hexproof|indestructible) until end of turn",
+    (r"target creature gains (double strike|first strike|trample|haste|hexproof|indestructible|flying|lifelink|deathtouch|"
+     r"vigilance|menace|reach) until end of turn",
      lambda m: Effect("grant", target="creature", data={"keyword": m[1].lower()})),
     (r"(?:you may )?(?:return|put) (all |(?:up to )?(?:one|two|three|four|five|six|x) (?:other )?target |(?:up to one )?target |an? )?"
      r"([\w ,/'-]+?) cards?(?: each)?(?: with mana value (\d+|x) or (less|greater))? from (your|a|an opponent's) "

@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .. import discounts, graveyard, modal
-from .. import auras as _auras, copies as _copies, counting as _counting
+from .. import auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords
 from .model import Activated, AltCost, COLORS, Effect, KEYWORDS, NUMBERS, Trigger, _num, parse_mana_cost
 from .patterns import _parse_mana_ability
 from .parse import _apply_speed_gate, _mana_restriction, _parse_ability, _parse_effects, _parse_trigger
@@ -121,19 +121,29 @@ def _face_special_lines(st, line):
                                        extra_costs={"level_from": n - 1}, sorcery=True, text=line))
             level_marks.append((n, len(triggers)))
             return None
-        line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration) — (?=When|At|If)", "", line)
+        line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration|Heroic) — (?=When|At|If)", "", line)
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
+        if _creature_keywords.parse_line(line, extra, triggers, keywords):
+            return None
         parts = [p.strip().lower() for p in re.split(r",(?: and)? | and |,", line)]
-        if all(p in KEYWORDS or re.fullmatch(r"ward \{\d+\}", p) for p in parts):
+        if all(p in KEYWORDS or re.fullmatch(r"(?:ward \{\d+\}|toxic \d+|bushido \d+)", p) for p in parts):
             for p in parts:
                 if p.startswith("ward"):
                     extra["ward"] = int(re.search(r"\d+", p)[0])
+                elif p.startswith("toxic"):
+                    extra["toxic"] = extra.get("toxic", 0) + int(p.split()[1])
+                elif p.startswith("bushido"):
+                    n = int(p.split()[1])     # whenever it blocks or becomes blocked, +N/+N until end of turn
+                    triggers += [Trigger(event, [Effect("pump", n, n, target="self")])
+                                 for event in ("blocks", "becomes_blocked")]
                 else:
                     keywords.add(p)
                     if p == "exalted":
                         extra["exalted"] = extra.get("exalted", 0) + 1
                     elif p in ("cascade", "storm"):
                         extra[p] = extra.get(p, 0) + 1
+                    elif p == "flanking":
+                        triggers.append(Trigger("becomes_blocked", [Effect("flanking")]))
             return None
         return line
     finally:
@@ -234,6 +244,24 @@ def _face_land_and_mana_lines(st, line):
             return None
         if line == "Creatures with power less than ~'s power can't block it.":
             extra["blocker_power_rel"] = True
+            return None
+        m = re.fullmatch(r"~ can't attack unless defending player controls an? (Island|Swamp|Mountain|Forest|Plains)\.", line)
+        if m:
+            extra["attack_needs"] = m[1]
+            return None
+        if line == "~ enters tapped unless you have two or more opponents.":
+            extra["tapped_condition"] = "always"         # two players: there is one opponent
+            return None
+        m = re.fullmatch(r"~ enters tapped unless you control (two|three) or more basic lands\.", line)
+        if m:
+            extra["tapped_condition"] = f"unless_basics>={_num(m[1])}"
+            return None
+        m = re.fullmatch(r"~ enters tapped unless your opponents control (\w+) or more lands\.", line)
+        if m:
+            extra["tapped_condition"] = f"unless_opp_lands>={_num(m[1])}"
+            return None
+        if line == "~ doesn't untap during your untap step.":
+            extra["no_untap"] = True
             return None
         if re.fullmatch(r"~ can't block\.", line):
             extra["cant_block"] = True

@@ -13,6 +13,11 @@ from .clauses import _SUBS, _TRIGGERS, _if_cond, _opt_rider, _xq
 from .patterns import _EFFECT_PATTERNS
 
 
+# "You may <effect>" is always taken, so only for effects that cost the player nothing.
+_MAY_DECLINED = {"sacrifice", "sacrifice_self", "discard", "discard_choice", "lose_life", "mill", "pay_gate",
+                 "damage", "drain", "destroy", "exile", "wrath", "bounce"}
+
+
 def _parse_effects(text: str, opts: bool = False):
     """Parse a run of sentences into effects. Returns (effects, unmatched_sentences)."""
     effects, unmatched = [], []
@@ -35,6 +40,10 @@ def _parse_effects(text: str, opts: bool = False):
                                  r"beginning of (?:the|your) next end step", s, re.I)
         if end_rider and effects and effects[-1].kind == "token":
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, end=end_rider[1].lower()))
+            continue
+        if re.fullmatch(r'(?:it|they) ha(?:s|ve) "sacrifice (?:~|this creature): add \{c\}\.?"', s, re.I) and effects \
+                and effects[-1].kind == "token":
+            effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, spawn_mana=True))
             continue
         conditional = milling.parse_conditional(s, effects)
         if conditional is not None:
@@ -66,6 +75,13 @@ def _parse_effects(text: str, opts: bool = False):
             effects.append(Effect("pay_gate", data={"gate": gate}))
             gated = True
             continue
+        mm = re.fullmatch(r"you may (.+)", s, re.I)
+        if mm:
+            new, bad = _parse_effects(mm[1][0].upper() + mm[1][1:] + ".")
+            if new and not bad and not any(e.kind in _MAY_DECLINED for e in new):
+                effects += [Effect("pay_gate", data={"gate": ("may", "")})] + new   # always taken
+                gated = True
+                continue
         mx = re.fullmatch(r"(.+?),? where X is (.+)", s, re.I)
         if mx and re.search(r"\bX\b", mx[1]) and _xq(mx[2]):
             spec = _xq(mx[2])
@@ -217,6 +233,7 @@ def _parse_face(data: dict) -> CardDef:
                   text, flags=re.I)
     text = re.sub(r"\b(protection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
                   r"\1 and protection from \2", text)
+    text = re.sub(r"(becomes the target of a spell or ability), sacrifice it\.", r"\1, sacrifice ~.", text)
     text = re.sub(r", where X is the amount of mana spent to cast ~\.", ".", text).replace(
         "the top X cards", f"the top {int(data.get('cmc', 0) or 0)} cards")
 

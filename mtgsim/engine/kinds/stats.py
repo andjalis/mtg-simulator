@@ -32,6 +32,28 @@ def pump(game, eff, target, **_):
             target.temp_kw.add(eff.data["keyword"])
 
 
+@kind("fog")
+def fog(game, p, eff, **_):
+    """Prevent all combat damage this turn (or only that of creatures p's opponents control)."""
+    game.fog = (game.turn, game.opponent(p) if eff.data.get("theirs") else None)
+
+
+@kind("skip_untap")
+def skip_untap(game, target, **_):
+    if isinstance(target, Permanent):
+        target.skip_untap = max(target.skip_untap, 1)
+
+
+@kind("flanking")
+def flanking(game, item, **_):
+    """Each creature without flanking blocking the source gets -1/-1 until end of turn."""
+    src = item.source if item is not None else None
+    for blocker in game.blocks.get(src, ()):
+        if not blocker.has("flanking"):
+            blocker.pump_p -= 1
+            blocker.pump_t -= 1
+
+
 @kind("debuff")
 def debuff(game, p, eff, opp, **_):
     victims = opp.creatures if eff.target == "opp_creatures" else p.creatures + opp.creatures

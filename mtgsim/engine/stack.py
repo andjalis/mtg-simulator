@@ -122,6 +122,11 @@ class StackMixin:
                         continue
                 if trig.filter == "saddled" and not perm.saddled:
                     continue
+                if trig.filter == "evolve":
+                    if subject is perm or subject is None or subject.controller is not perm.controller or not (
+                            subject.power > perm.power or subject.toughness > perm.toughness):
+                        continue
+                    context = subject
                 if trig.filter.startswith("with:") and \
                         not any(trig.filter[5:] in a.card.subtypes for a in self.attackers):
                     continue
@@ -181,6 +186,11 @@ class StackMixin:
         return True
 
     def check_ward(self, item: StackItem):
+        for tgt in item.targets:
+            if isinstance(tgt, Permanent) and tgt in tgt.controller.battlefield:
+                self.fire(tgt.controller, "targeted", source=tgt)          # Illusions: "sacrifice it"
+                if item.kind == "spell" and tgt.controller is item.controller:
+                    self.fire(tgt.controller, "heroic", source=tgt)
         for tgt in item.targets:
             if isinstance(tgt, Permanent) and tgt.controller is item.controller and tgt in tgt.controller.battlefield:
                 self.fire(tgt.controller, "targeted_mine", source=tgt)      # Valiant
@@ -258,7 +268,8 @@ class StackMixin:
             self.log(f"{item} resolves", p)
             if getattr(item, "gifted", False) and item.card is not None:
                 self.give_gift(p, item.card.gift)
-            prev = None
+            # "that creature" in a trigger: the creature it triggered on (the blocker, the attacker, ...)
+            prev = item.context if item.kind == "trigger" and isinstance(item.context, Permanent) else None
             done: list = []
             for i, (eff, tgt) in enumerate(zip(item.effects, item.targets)):   # "would die this turn" must precede the damage
                 if eff.kind == "exile_instead" and i and isinstance(item.targets[i - 1], Permanent):
@@ -311,6 +322,8 @@ class StackMixin:
                 owner.exile = TrackedZone(owner.exile)
             owner.exile.append(exiled)
             self.rebound_upkeep.append((owner, exiled, owner.exile.version(exiled)))
+        elif getattr(item, "exile_self", False):
+            owner.exile.append(base)                 # "Exile ~." as the last line of an instant or sorcery
         elif kind not in ("channel", "prepared"):
             owner.graveyard.append(base)
 

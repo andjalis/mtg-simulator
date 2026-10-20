@@ -119,6 +119,7 @@ class Permanent:
         self.auras: list["Permanent"] = []   # Auras on this permanent (they sit on their caster's battlefield)
         self.aura_host: "Permanent | None" = None      # the permanent this Aura enchants
         self.attached_to: "Permanent | None" = None    # Equipment: the creature it is attached to
+        self.skip_untap = 0                             # untap steps it skips ("doesn't untap during ... next untap step")
         self.spent_color = ""              # "if {U}{U} was spent to cast it"
         self.exiled_cards: list = []       # (card, owner) exiled until this leaves the battlefield
         self.warped = False
@@ -278,6 +279,9 @@ class Permanent:
             return self.controller.speed >= 4
         if cond == "your_turn":
             return self.controller.my_turn
+        if cond == "attacking":
+            game = getattr(self.controller, "_game", None)
+            return game is not None and self in game.attackers
         if cond.startswith("gy"):
             gy = self.controller.graveyard
             n = sum(c.is_permanent for c in gy) if cond.startswith("gy_perm") else len(gy)
@@ -359,6 +363,8 @@ class Permanent:
         return out
 
     def can_tap_for_mana(self):
+        if self.card.mana_sac_only:
+            return True
         return bool(self.card.produces or self.card.restricted_produces or self.granted_mana()) and not self.tapped and \
             not (self.is_creature and self.sick and self.card.mana_filter != "once")
 
@@ -504,6 +510,8 @@ class StackItem:
 
 def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if not blocker.is_creature or blocker.tapped:
+        return False
+    if blocker.card.unleash and blocker.p1 > 0:
         return False
     if blocker.card.cant_block or blocker.has("cant_block_now") or blocker.has("decayed") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
         return False

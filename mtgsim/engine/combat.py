@@ -17,6 +17,10 @@ class CombatMixin:
         for controller, source in waiting:
             self.queue_trigger(controller, [Effect("sacrifice_self", target="self")], source,
                                f"{source.card.name}: decayed")
+        waiting, self.end_combat_effects = self.end_combat_effects, []
+        for controller, effects, source, subject in waiting:
+            name = source.card.name if isinstance(source, Permanent) else "delayed"
+            self.queue_trigger(controller, effects, source, f"{name}: at end of combat", context=subject)
         self.fire(p, "end_combat")
         self.run_priority(until_empty_stack=False)
 
@@ -30,7 +34,8 @@ class CombatMixin:
         self.hook(p, "before_attacks")(self, p)
         if self.over:
             return
-        attackers = [a for a in p.ai.choose_attackers(self, p, opp) if a.can_attack()]
+        attackers = [a for a in p.ai.choose_attackers(self, p, opp) if a.can_attack()
+                     and (not a.card.attack_needs or any(a.card.attack_needs in x.card.subtypes for x in opp.battlefield))]
         attackers += [a for a in p.creatures if (a.card.must_attack or a.has("must_attack_now")) and a.can_attack()
                       and a not in attackers]
         self.attackers = list(attackers)
@@ -75,6 +80,10 @@ class CombatMixin:
         self.blocks = blocks
         if blocks:
             self.log(f"blocks {blocks}", opp)
+        for a, bl in blocks.items():
+            for b in bl:
+                self.fire(opp, "blocks", b, context=a)
+            self.fire(p, "becomes_blocked", a, context=bl[0])
         p.ai.after_blocks(self, p, attackers, blocks)
         if self.over:
             return

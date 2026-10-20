@@ -44,6 +44,39 @@ def bounce(game, p, target, **_):
         game.leave_battlefield(target, "hand")
 
 
+@kind("return_own")
+def return_own(game, p, eff, item, **_):
+    """Bounce lands, Storm Sculptor: return a land / creature you control. Tapped lands go first (a basic
+    before a nonbasic), then the cheapest creature; the source itself only when nothing else is left."""
+    src = item.source if item is not None else None
+    land = eff.data["kind"] == "land"
+    pool = [x for x in p.battlefield if (x.card.is_land if land else x.is_creature)]
+    if not pool:
+        return
+    pick = min(pool, key=lambda x: (x is src, not x.tapped, not is_basic_land(x.card)) if land else
+               (x is src, perm_value(x)))
+    game.log(f"returns {pick.card.name} to hand", p)
+    game.leave_battlefield(pick, "hand")
+
+
+@kind("sac_own")
+def sac_own(game, p, **_):
+    """"Sacrifice a creature": p's least valuable one."""
+    if p.creatures:
+        game.sacrifice(min(p.creatures, key=perm_value))
+
+
+@kind("tuck_top")
+def tuck_top(game, p, target, **_):
+    """Put target creature on top of its owner's library (a token just leaves)."""
+    if isinstance(target, Permanent) and game.leave_battlefield(target, "graveyard") and not target.front.is_token:
+        owner = target.owner
+        if target.front in owner.graveyard:
+            owner.graveyard.remove(target.front)
+            owner.library.append(target.front)
+            game.log(f"{target.card.name} goes on top of its owner's library", p)
+
+
 @kind("regenerate")
 def regenerate(game, p, eff, target, opp, **_):
     victims = (p.creatures if eff.target == "creatures_mine" else p.creatures + opp.creatures

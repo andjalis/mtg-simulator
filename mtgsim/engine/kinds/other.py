@@ -177,3 +177,9 @@ def earthbend(game, p, eff, **_):
         land.animated = Activated("animate", {}, 0, 0, frozenset({"haste"}), text="earthbend")
         land.counters["+1/+1"] = land.p1 + eff.amount
         game.log(f"earthbends {land.card.name} ({eff.amount})", p)
+
+
+@kind("end_of_combat")
+def end_of_combat(game, p, item, prev, eff, **_):
+    """A delayed "... at end of combat": the effects resolve then, with "that creature" kept."""
+    game.end_combat_effects.append((p, eff.data["effects"], item.source if item is not None else None, prev))

@@ -22,7 +22,7 @@ class PaymentPlan:
 
 
 def consumed_for_mana(permanent):
-    return permanent.card.token_kind == 'treasure' or permanent.card.mana_sac
+    return permanent.card.token_kind == 'treasure' or permanent.card.mana_sac or permanent.card.mana_sac_only
 
 
 def plan(game, player, cost, *, spell='ability', sacrifices=((None, 0),),

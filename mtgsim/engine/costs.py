@@ -89,7 +89,7 @@ class CostsMixin:
                 s.ability_turns["filter"] = self.turn
             else:
                 s.tapped = True
-            if s.card.token_kind == "treasure" or s.card.mana_sac:
+            if s.card.token_kind == "treasure" or s.card.mana_sac or s.card.mana_sac_only:
                 self.sacrifice(s)
             if s.card.mana_tap_other:
                 spare = [x for x in p.battlefield if x is not s and not x.tapped and x not in payment
@@ -185,6 +185,8 @@ class CostsMixin:
     def pay_gate_cost(self, p: Player, gate: tuple, item) -> bool:
         """Pay a "you may sacrifice / discard / forage / blight N. If you do, ..." cost when it is cheap for the AI."""
         kind, what = gate
+        if kind == "may":
+            return True
         src = item.source if item is not None and isinstance(item.source, Permanent) else None
         if kind == "sac":
             other = what.startswith("other ")

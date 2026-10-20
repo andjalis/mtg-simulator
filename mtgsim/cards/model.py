@@ -13,7 +13,7 @@ KEYWORDS = {
     "flash", "hexproof", "shroud", "indestructible", "prowess", "swampwalk", "forestwalk", "mountainwalk",
     "infect", "devoid", "exalted", "fear", "horsemanship", "undying", "persist", "wither", "rebound",
     "storm", "cascade", "islandwalk", "plainswalk", "shadow", "intimidate",
-    "nonbasic landwalk", "legendary landwalk", "decayed",
+    "nonbasic landwalk", "legendary landwalk", "decayed", "flanking",
     "protection from white", "protection from blue", "protection from black", "protection from red",
     "protection from green",
 }
@@ -223,6 +223,13 @@ class CardDef:
     extra_discard: int = 0                              # "As an additional cost to cast ~, discard a card" (1 = or pay {2}: see discard_or_pay)
     behold_or_pay: tuple = ()                           # ("Elf", 2): "behold an Elf or pay {2}" as an additional cost
     discard_or_pay: int = 0                             # "... discard a card or pay {2}"
+    echo: dict | None = None                            # Echo {cost}
+    bloodthirst: int = 0                                # Bloodthirst N
+    unleash: bool = False
+    riot: bool = False
+    attack_needs: str = ""                              # "can't attack unless defending player controls an Island"
+    no_untap: bool = False                              # "~ doesn't untap during your untap step."
+    toxic: int = 0                                      # Toxic N: poison counters with combat damage to a player
     untap_each_untap: bool = False                      # "Untap ~ during each other player's untap step"
     anthem_enchanted: tuple = ()                        # "Enchanted creatures you control get +N/+N"
     token_ability_discount: int = 0                     # "Activated abilities of artifact tokens you control cost {1} less"
@@ -233,6 +240,7 @@ class CardDef:
     host_triggers: list = field(default_factory=list)   # Role tokens: triggers of the enchanted creature
     mana_filter: str = ""                               # "tap": {1},{T}: add any colour; "once": {1}: add .... once each turn
     mana_tap_other: str = ""                            # "creature"/"permanent": also tap an untapped one as a cost
+    mana_sac_only: bool = False                         # "Sacrifice ~: Add {C}.": no tap, so sick or tapped is fine
     mana_sac: bool = False                              # "{T}, Sacrifice ~: Add one mana of any color."
     mana_cond: str = ""                                 # "Dragon": only while you control one
     pt_scale: tuple = (1, 1)                            # (power, toughness) gained per counted permanent

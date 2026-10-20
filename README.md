@@ -274,6 +274,21 @@ to select another local database.
   most common creature color, and the AI uses such spells to save creatures from colored removal.
   Protection from artifacts, everything, multicolored, a creature type or a player is not parsed, and
   "target creature gains protection from the color of your choice" always targets your own creature
+- Block triggers ("whenever ~ blocks", "becomes blocked", "blocks or becomes blocked", "attacks or blocks"),
+  where "that creature" is the other creature in the block, and "... at end of combat" delayed effects.
+  Bushido, flanking and toxic; "doesn't untap during your untap step" and "doesn't untap during its
+  controller's next untap step"; Fog ("prevent all combat damage that would be dealt this turn")
+- Werewolves transform at the beginning of each upkeep after a turn with no spells, and back after a turn in
+  which a player cast two or more; transformed permanents can turn face up again
+- Echo, unleash, evolve, renown, mentor, battle cry, riot, bloodthirst, fabricate, living weapon and heroic.
+  Unleash always takes the counter, riot takes haste when the creature can still attack this turn, and
+  fabricate always takes the counters
+- Illusions ("when ~ becomes the target of a spell or ability, sacrifice it"), Eldrazi Spawn and Scion
+  tokens ("Sacrifice this creature: Add {C}", usable while summoning sick and spent last), bounce lands
+  and "return a creature you control to its owner's hand", "can't attack unless defending player controls
+  an Island", and lands that enter tapped unless you control two or more basic lands
+- "You may <effect>" is always taken when the effect costs the player nothing (draw, counters, life,
+  scry, tokens, ...), so "If you do, ..." after it applies; "Exile ~." makes a spell exile itself
 - Regeneration shields replace destruction, tap the permanent, clear its damage
   and remove it from combat. They expire at cleanup and cannot prevent sacrifice
   or zero toughness. Regeneration-prevention riders on destruction and damage apply
