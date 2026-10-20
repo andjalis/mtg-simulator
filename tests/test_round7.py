@@ -73,7 +73,9 @@ class Round7(Base):
 
     def test_reanimate_and_each_draws(self):
         self.a.graveyard.append(BEAR)
-        self.game.resolve(self.a, LINES["reanimate"].spell_effects[0], None)
+        effect = LINES["reanimate"].spell_effects[0]
+        target = self.game.bind_graveyard_targets(self.a, [effect])[0]     # targets are chosen before resolution
+        self.game.resolve(self.a, effect, target)
         self.assertEqual(len(self.a.creatures), 1)
         self.game.resolve(self.a, LINES["each"].spell_effects[0], None)
         self.assertEqual((len(self.a.hand), len(self.b.hand)), (1, 1))
