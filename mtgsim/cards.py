@@ -10,7 +10,7 @@ import dataclasses
 import re
 from dataclasses import dataclass, field
 
-from . import modal, facedown as _facedown
+from . import modal, kw_regen, facedown as _facedown
 
 COLORS = ("W", "U", "B", "R", "G")
 KEYWORDS = {
@@ -537,7 +537,7 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("debuff", int(m[1]), int(m[2]), target="each_creature")),
     (r"choose a creature type", lambda m: None),
     (r"each player who controls a multicolored creature draws a card", lambda m: None),  # rarely matters
-    (r"damage can't be prevented this turn", lambda m: None),
+    (r"damage can't be prevented this turn", lambda m: Effect("no_prevention")),
     (r"destroy all creatures", lambda m: Effect("wrath", target="each_creature")),
     (r"destroy all planeswalkers", lambda m: Effect("wrath_pw")),
     (r"return (?:up to one )?(?:other )?target (?:nonland permanent|creature|artifact, creature, enchantment, or "
@@ -1087,6 +1087,9 @@ def _parse_effects(text: str, opts: bool = False):
     effects, unmatched = [], []
     for rx, rep in _SUBS:
         text = rx.sub(rep, text)
+    # A regeneration prohibition is part of the destruction, before any state checks.
+    text = re.sub(r"((?:destroy)[^.]+)\.\s+(?:it|they|those creatures|that creature) can't be regenerated\.?",
+                  r"\1 NOREGEN.", text, flags=re.I)
     gated = False
     for sentence in re.split(r"(?<=\.)\s+", text.strip()):
         s = sentence.strip().rstrip(".").strip()
@@ -1156,6 +1159,9 @@ def _parse_effects(text: str, opts: bool = False):
                 else:
                     unmatched.append(sentence.strip())
                 continue
+        no_regen = s.endswith(" NOREGEN")
+        if no_regen:
+            s = s[:-8]
         first = len(effects)
         paid = False
         reflexive = False
@@ -1183,6 +1189,10 @@ def _parse_effects(text: str, opts: bool = False):
                 effects += parts
             else:
                 unmatched.append(sentence.strip())
+        if no_regen:
+            for e in effects[first:]:
+                if e.kind in ("destroy", "wrath", "wrath_pw"):
+                    e.data["no_regen"] = True
         if paid and reflexive and any(e.target == "graveyard_card" for e in effects[first:]):
             effects[first:] = [Effect("reflexive", cond="paid", data={"effects": effects[first:]})]
         elif paid:
@@ -1260,7 +1270,7 @@ def _parse_face(data: dict) -> CardDef:
 
     oracle = data.get("oracle_text", "") or ""
     text = re.sub(r"\([^)]*\)", "", oracle)
-    text = text.replace(name, "~")
+    text = re.sub(re.escape(name) + r"(?! target )", "~", text)
     if "," in name and "Legendary" in type_line:
         text = re.sub(rf"\b{re.escape(name.split(',')[0])}\b", "~", text)  # "Iymrith" for "Iymrith, Desert Doom"
     elif "Legendary" in type_line and " " in name and " the " not in name and len(name.split()[0]) >= 4 and \
@@ -2011,6 +2021,8 @@ def _parse_face(data: dict) -> CardDef:
         extra["_subtypes"] = type_line
         if _auras.parse_line(line, extra, types):
             continue
+        if kw_regen.parse_line(line, extra):
+            continue
         clone = _copies.parse_line(line)
         if clone is not None:
             extra.update(clone)
@@ -2095,6 +2107,7 @@ def _parse_face(data: dict) -> CardDef:
     # Triggers with "choose up to one" get their bullet modes; drop ones that ended up empty.
     triggers = [t for t in triggers if t.effects or t.modes]
 
+    approximations += kw_regen.approximations(text)
     return CardDef(
         name=name, mana_cost=cost, cmc=int(data.get("cmc", 0) or 0), types=types,
         subtypes=frozenset(type_line.split("—")[1].split()) if "—" in type_line else frozenset(),
@@ -2337,7 +2350,7 @@ from . import auras as _auras, copies as _copies, removal as _removal, search as
 
 from . import delayed as _delayed
 
-_EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS + _delayed.EFFECT_PATTERNS
+_EFFECT_PATTERNS += kw_regen.EFFECT_PATTERNS + _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS + _delayed.EFFECT_PATTERNS
 _SUBS += _copies.SUBS + _counting.SUBS + _delayed.SUBS
 
 

@@ -25,14 +25,14 @@ import json
 import random
 import re
 
-from . import auras, copies, counting, delayed, facedown, graveyards, removal, search, xspells
+from . import auras, copies, counting, delayed, facedown, graveyards, removal, search, xspells, kw_regen
 from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, EquipCost, add_mana, jace_token, make_token, role_token
 from . import modal
 
 TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
 COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "artifact", "artifact_enchantment",
-            "player", "spell", "graveyard_spell", "graveyard_card")
+            "player", "spell", "graveyard_spell", "graveyard_card", "land")
 GRAVEYARD_TARGETS = ("graveyard_spell", "graveyard_card")
 
 
@@ -419,7 +419,7 @@ class Permanent:
                         scope == "other" and src is not self or \
                         scope == "land_or_ally" and (c.is_land or "Ally" in c.subtypes):
                     out |= cols
-        return out
+        return out | kw_regen.granted_mana(self)
 
     def can_tap_for_mana(self):
         return bool(self.card.produces or self.card.restricted_produces or self.granted_mana()) and not self.tapped and \
@@ -1315,6 +1315,8 @@ class Game:
             return [x for x in everything if self.passes_filter(eff, x, p)]
         creatures = [c for c in everything if c.is_creature and self.passes_filter(eff, c, p)]
         t = eff.target
+        if t == "land":
+            return [x for x in everything if kw_regen.land_fits(eff, x, p)]
         if t == "creature":
             return creatures
         if t == "creature_pw":
@@ -1340,6 +1342,9 @@ class Game:
         if eff.filter == "attacking_token":
             return (isinstance(tgt, Permanent) and self.targetable(tgt, p)
                     and self.passes_filter(eff, tgt, p))
+        if eff.target == "land":
+            return (isinstance(tgt, Permanent) and self.targetable(tgt, p)
+                    and kw_regen.land_fits(eff, tgt, p))
         if eff.target == "graveyard_card":
             return graveyards.legal(p, eff, tgt)
         if eff.target == "graveyard_spell":
@@ -1451,6 +1456,8 @@ class Game:
                 out.append(None)
                 continue
             tgt = self.hook(p, "choose_target")(self, p, e)
+            if tgt is None and e.target == "land":
+                tgt = default_choose_target(self, p, e)
             if e.target == "graveyard_card":
                 tgt = graveyards.bind(self, p, e, tgt) if tgt is not None else graveyards.choose(self, p, e)
                 out.append(tgt if tgt is not None else graveyards.choose(self, p, e))
@@ -1684,6 +1691,8 @@ class Game:
         if self.over:
             return
         self.step = "cleanup"
+        self.damage_shields = []
+        self.no_prevention_turn = -1
         for victim, owner in self.stolen:
             if victim in victim.controller.battlefield:
                 victim.controller.battlefield.remove(victim)
@@ -1695,6 +1704,9 @@ class Game:
             self.discard_card(p, card)
         for perm in p.battlefield + opp.battlefield:
             perm.damage = 0
+            perm.regen_shields = 0
+            perm.no_regen_turn = -1
+            perm.mana_grants = [(t, cols) for t, cols in getattr(perm, "mana_grants", ()) if t is None]
             perm.deathtouched = False
             perm.pump_p = perm.pump_t = 0
             perm.temp_kw.clear()
@@ -1751,6 +1763,8 @@ class Game:
         action = self.hook(p, "respond")(self, p)
         if not action and getattr(p.ai, "respond", None):
             action = self.hook(p, "respond_extras")(self, p)
+        if not action:
+            action = kw_regen.respond(self, p)
         return self.do_action(p, action)
 
     def do_action(self, p: Player, action) -> bool:
@@ -1954,8 +1968,11 @@ class Game:
             prev = None
             done: list = []
             for i, (eff, tgt) in enumerate(zip(item.effects, item.targets)):   # "would die this turn" must precede the damage
-                if eff.kind == "exile_instead" and i and isinstance(item.targets[i - 1], Permanent):
-                    item.targets[i - 1].exile_turn = self.turn
+                if eff.kind in ("exile_instead", "no_regen_turn") and i and isinstance(item.targets[i - 1], Permanent):
+                    if eff.kind == "exile_instead":
+                        item.targets[i - 1].exile_turn = self.turn
+                    else:
+                        item.targets[i - 1].no_regen_turn = self.turn
             for eff, tgt in zip(item.effects, item.targets):
                 if eff.target in TARGETED:
                     if not self.legal_target(p, eff, tgt, item.source):
@@ -2863,9 +2880,9 @@ class Game:
                 for perm in p.creatures + opp.creatures:
                     self.deal_damage(perm, eff.amount, by=p, cause=cause)
             elif eff.target == "each_opp_and_pw":
-                self.change_life(opp, -eff.amount, cause)
+                self.deal_damage(opp, eff.amount, by=p, cause=cause)
                 for pw in opp.planeswalkers:
-                    pw.counters["loyalty"] = pw.loyalty - eff.amount
+                    self.deal_damage(pw, eff.amount, by=p, cause=cause)
             else:
                 self.deal_damage(target, eff.amount, by=p, cause=cause)
         elif k == "destroy":
@@ -2874,7 +2891,7 @@ class Game:
                 if eff.data.get("azog") and target is src:
                     return
                 ctl, power = target.controller, max(0, target.power)
-                self.destroy(target)
+                self.destroy(target, regenerate=not eff.data.get("no_regen"))
                 if eff.data.get("azog"):
                     if power:
                         self.resolve(ctl, Effect("amass", power, data={"type": eff.data["azog"]}), None, item)
@@ -2928,10 +2945,10 @@ class Game:
                 target.pump_t -= eff.amount2
         elif k == "wrath":
             for perm in p.creatures + opp.creatures:
-                self.destroy(perm)
+                self.destroy(perm, regenerate=not eff.data.get("no_regen"))
         elif k == "wrath_pw":
             for perm in p.planeswalkers + opp.planeswalkers:
-                self.destroy(perm)
+                self.destroy(perm, regenerate=not eff.data.get("no_regen"))
         elif k == "bounce":
             if isinstance(target, Permanent) and target in target.controller.battlefield:
                 self.log(f"{target.card.name} returns to hand", p)
@@ -3359,7 +3376,7 @@ class Game:
                 del victim.graveyard[:]
         elif k == "damage_each_player":
             for pl in self.players:
-                self.change_life(pl, -eff.amount, cause)
+                self.deal_damage(pl, eff.amount, by=p, cause=cause)
         elif k == "shrink":
             if isinstance(target, Permanent) and target in target.controller.battlefield:
                 target.counters["-1/-1"] = target.m1 + eff.amount
@@ -3638,6 +3655,9 @@ class Game:
         elif k == "token_copy":
             self.enter_battlefield(p, eff.data["card"])
             self.log(f"creates {eff.data['card'].name}", p)
+        elif k in ("regenerate", "prevent_damage", "fog", "no_prevention", "sac_unless",
+                   "grant_mana_turn", "no_regen_turn"):
+            kw_regen.resolve(self, p, eff, target, item)
         elif k in copies.KINDS:
             copies.resolve(self, p, eff, target, item)
         elif k in xspells.KINDS:
@@ -3660,6 +3680,7 @@ class Game:
 
     def deal_damage(self, target, amount: int, by: Player | None = None, cause="noncombat damage"):
         """Noncombat damage; ``by`` is the controller of the source."""
+        amount = kw_regen.prevent(self, target, amount)
         if isinstance(target, Player):
             self.change_life(target, -amount, cause)
         elif isinstance(target, Permanent) and target in target.controller.battlefield:
@@ -3770,8 +3791,10 @@ class Game:
         for c in rest:
             p.library.insert(0, c)
 
-    def destroy(self, perm: Permanent):
+    def destroy(self, perm: Permanent, regenerate=True):
         if perm.has("indestructible"):
+            return
+        if regenerate and kw_regen.regenerate(self, perm):
             return
         self.dies(perm)
 
@@ -3942,7 +3965,7 @@ class Game:
                             self.dies(perm)
                             changed = True
                         elif (perm.damage >= perm.toughness or perm.deathtouched) and not perm.has("indestructible"):
-                            self.dies(perm)
+                            self.destroy(perm)
                             changed = True
                 if self.legend_rule(p):
                     changed = True
@@ -4055,6 +4078,9 @@ class Game:
             elif deals_now(a) and a.power > 0 and target is not None:
                 hits.append((a, target, a.power))
         for src, tgt, amt in hits:
+            amt = kw_regen.prevent(self, tgt, amt, combat=True)
+            if amt <= 0:
+                continue
             if isinstance(tgt, Player):
                 self.change_life(tgt, -amt, f"{src.card.name}: combat damage")
                 self.fire(src.controller, "combat_damage_player", src)
@@ -4115,6 +4141,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     if eff.kind == "blink_delayed":
         return max(mine or ([] if eff.data.get("upto") else theirs), key=perm_value, default=None)
     k = eff.kind
+    if k in ("regenerate", "prevent_damage", "grant_mana_turn"):
+        return kw_regen.choose(game, me, eff)
     if k == "damage":
         if eff.target == "player":
             return opp
@@ -4453,6 +4481,8 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
     """Whether to activate perm's general ability idx now, outside combat."""
     act = perm.card.activated[idx]
     c = act.extra_costs
+    if not kw_regen.worth(game, me, perm, act.effects):
+        return False
     if _self_pump(act) and not any(e.kind == "p1_counters" for e in act.effects):
         return False    # used in combat (combat_pump)
     if not game.can_activate(me, perm, idx):
