@@ -6,15 +6,14 @@ Newest log entry first; fold old entries into **History** when the log passes ~1
 
 ## Status
 
-- Branch: `chore/round-17-docs-sync` (docs only, off `docs/standard-coverage-remeasure`) ·
-  Synced commit: `70ab159` (round 17, PRs #21-#24, merged: number-word parser fix, delayed
-  exile/destroy token actions, independent/mixed Equip costs, flashback-grant graveyard targets)
-- Tests: full suite 709 OK, 1 skipped (205.099 s, Python 3.14.8, card DB present, integration
-  QA at `05a6abb`, 2026-10-20). The skip is `test_stored_review_log_if_present` (its gitignored
-  Forge benchmark log is absent). Focused round-17 suites: 172 OK.
-- Coverage (2026-10-20, `python3 -m scripts.coverage_summary`): Standard 1,835/4,902 fully supported
-  (37.4%, 60% of rules sentences); all cards 7,608/34,084 (22.3%, 41%); no parser crashes
-  (Dovin, Grand Arbiter fixed by #21).
+- Branch: `docs/round-18-sync` (docs only, off `docs/standard-coverage-remeasure` at `ca5568e`) ·
+  Synced commit: `ca5568e` (round 18, merged: PRs #26 attacking-token grants, restricted Equip
+  targets (#27), graveyard return/reanimation targets, AI spell-option dedup (#28), combined
+  scenario tests (#29); round 17 merged earlier as #21-#24)
+- Tests: full suite 833 OK, 1 skipped (373.7 s, `ca5568e` plus this docs sync, 2026-10-20).
+- Coverage (2026-10-20, `python3 -m scripts.coverage_summary`): Standard 1,837/4,902 fully supported
+  (37.5%, 60% of rules sentences); all cards 7,615/34,084 (22.3%, 41%); no parser crashes.
+  Before round 18's merges the Status line read 1,835 / 7,608.
 - Engine: built-in engine plus templates for auras/equipment, X spells, copy effects, library
   search, counting, modal choices and ~40 newer keyword mechanics (rounds 1-17). Standard
   saved-snapshot coverage is 1,835 / 4,902 fully template-matched (37.4%),
@@ -28,14 +27,32 @@ Newest log entry first; fold old entries into **History** when the log passes ~1
   gave identical winners in all 40 games (diagnostic only, no equivalence claim).
 - Web: sequential fullscreen deck trials, league track, saved-run replay, in-browser engine,
   opponent-pool arena; QA passes on validation, recovery and mobile (`QA_RESULTS.md`).
-- In flight (round 18, running in sibling worktrees; do not duplicate): AI option dedup,
-  graveyard return targets, restricted Equip targets, Old Hob token grants, Equip sacrifice policy;
-  round-17 follow-ups: combined-mechanics scenario tests, 200-game benchmark vs `7b6b71e`.
+- Round 18 results: attacking-token keyword grants (Old Hob, Alleycat Blues) and exact graveyard
+  return/reanimation targets are merged, as are restricted Equip targets and the AI spell-option
+  dedup (four AI-vs-Baseline cells unchanged within noise; a correctness fix). The Equip sacrifice
+  policy is **not merged**: it regresses `hauberk_bodies` by 10.6 points and is being retuned.
+- In flight (round 19, seven threads on `ca5568e`; do not duplicate): graveyard hate targets,
+  the legend rule, scaling Equipment bonuses, Equip sacrifice retune, cost-aware AI planning and
+  delayed-scheduler invariants (see Next up).
 
 ## Next up
 
-Ranked; each is ready to launch from the repo root. Round-18 areas listed under Status are
-already running and are not repeated here.
+Round 19 (in flight, do not launch again; the orchestrator merges them):
+
+1. **gy-hate-targets** - bind targeted graveyard hate ("exile target card from an opponent's
+   graveyard") to exact `GraveyardTarget` entries, as the return targets do (`mtgsim/graveyards.py`).
+2. **legend-rule** - legend rule state-based action using `CardDef.legendary` (`mtgsim/copies.py`,
+   `engine.py`), with an owner choice policy and token-copy identity.
+3. **equip-bonuses** - scaling equipped-creature bonuses such as Blackblade Reforged's
+   lands-controlled +1/+1, so newly legal Equip activations produce the right stats.
+4. **equip-sac-retune** - retune `choose_equip_cost`; merge only if `hauberk_bodies` matches or
+   beats the previous policy at 400 games (`scripts/equipment_policy_bench.py`).
+5. **ai-planning** - cost-aware combo planner that picks the cheaper of same-name alternatives
+   (`mtgsim/ai.py`).
+6. **delayed-invariants** - prune delayed entries whose bound object has left the battlefield, and
+   add a reusable post-game invariant helper for the bounded seeded games.
+
+Backlog, ranked; each is ready to launch from the repo root:
 
 1. **Equipment self-discount math** (medium) - Plate Armor, Warrior's Blades and Dragonfire
    Blade still use the full-cost approximation.
@@ -55,6 +72,9 @@ already running and are not repeated here.
 6. **Parser-exception regressions** (small) - guard `scripts.coverage_summary` against crashes
    beyond number conversion.
    `ask "mtg-dev: add focused regression tests for parser exceptions found by scripts.coverage_summary, preserving unsupported text without crashing; run focused tests and full suite"`
+7. **Worthy Equip eligibility** (medium) - model Mjolnir's worthy restriction (legendary,
+   non-Villain, red or white creature) as an explicit filter, keeping the reminder semantics.
+   `ask "mtg-dev: model Mjolnir's worthy Equip target restriction with explicit legendary, non-Villain and red-or-white eligibility; preserve reminder semantics instead of discarding them, test changes during responses and copied creatures, run full suite and distinct offline coverage reports"`
 
 ## Known gaps
 
@@ -62,26 +82,31 @@ already running and are not repeated here.
   aggro/midrange); list, pilot and engine limits are not separated by these measurements.
 - Aura entry directly onto the battlefield outside the matched Role effects has no
   non-target host-selection policy; unattached Auras go to the graveyard.
-- Matched targeted graveyard return/reanimation effects still choose their card on
-  resolution (only flashback grants bind an exact `GraveyardTarget` at cast time).
+- Targeted graveyard hate ("exile target card from an opponent's graveyard") and "up to two
+  target creature cards with different names" still choose on resolution or stay unmatched.
+  AI valuation of graveyard effects looks only at the player's own graveyard. Untargeted
+  "return a creature card" effects still choose on resolution by design.
+- Planners still approximate one spell option per name, so a combo plan cannot pick the cheaper
+  of two same-name alternatives (flashback native vs granted). Options themselves are correct.
+- The legend rule is not implemented; `CardDef.legendary` is recorded for targeting and copy
+  exceptions only.
 - Flashback-grant matching is bounded to the instant-or-sorcery mana-cost template;
   sorcery-only grants (Recoup) and explicit/free grant costs (Archmage's Newt) stay visible.
-- AI spell-option helpers deduplicate by name, so a native flashback alternative can hide a
-  cheaper granted cost from the AI. Both options are correct and usable in the engine.
 - Graveyard variants are cached per entry, so the per-game cache grows with graveyard stays
   (no observed issue). Graveyard clear/slice deletion now reports departures to `gy_leave`.
 - Manifest dread uses a simplified 2/2 that cannot turn face up. Conditional/pronoun
   prepared variants remain.
 - Equipment keeps each supported Equip ability and mixed mana/sacrifice-a-creature costs.
-  Target/type/payment/frequency restrictions (24 real multi-Equip cards) and non-mana
-  payments other than creature sacrifice are unsupported. Plate Armor, Warrior's Blades
-  and Dragonfire Blade self-discounts use a full-cost approximation. The sacrifice
-  policy does not weigh the lost creature against the attachment bonus.
+  Restrictions other than legendary, token and the listed creature types (commander, worthy,
+  unrecognized conditions), frequency restrictions and non-mana payments other than creature
+  sacrifice are unsupported. Plate Armor, Warrior's Blades and Dragonfire Blade self-discounts
+  use a full-cost approximation. The merged sacrifice policy does not weigh the lost creature
+  against the attachment bonus; the retune is in flight.
 - Delayed scheduling covers matched single-target exile/return pairs and unconditional
   sacrifice/exile/destroy continuations directly after supported token/copy creation.
   Conditional/gated continuations (Akoum Stonewaker), unbound pronouns, multi-target
-  returns and return-to-hand forms remain visible in coverage. Old Hob's independent
-  attacking-token indestructible ability is unsupported. Copy AI valuation discounts only
+  returns and return-to-hand forms remain visible in coverage. Stale delayed entries for
+  objects that already left wait for the next end step. Copy AI valuation discounts only
   legacy folded sacrifice copies; delayed exile/destroy has no valuation.
 - Custom AI instances are shallow-copied; mutable per-game containers should be
   rebound in their optional `reset()` hook (documented; built-in state resets correctly).
@@ -91,6 +116,31 @@ already running and are not repeated here.
 - No real Forge games or Python 3.10/3.13 runs in the latest QA passes (CI covers 3.10/3.13).
 
 ## Log
+
+### 2026-10-20 - Round 18 documentation sync (docs-r18, Claude Haiku 5.5)
+
+- Synced Status, Next up, Known gaps, README and AI_RESULTS with round 18 at `ca5568e`
+  (docs only; no code changes). Round-18 threads, from their reports:
+  - Attacking-token grants (Old Hob, Alleycat Blues; PR #26): general template `target attacking
+    creature token [you control] gains <keyword> until end of turn`. Targets are chosen before
+    payment, rechecked without retargeting; SBA drops attackers that change control or stop
+    being creatures. Standard 1,835 → 1,836.
+  - Graveyard return/reanimation targets (commit `8b356fe`, message says #27 by mistake): targeted
+    returns bind an exact `GraveyardTarget` at cast/activation/trigger time (`mtgsim/graveyards.py`),
+    multi-target tuples, X planned before targets, reflexive "when you do" returns, saga fix,
+    CardDef.legendary. Coverage unchanged.
+  - Restricted Equip targets (PR #27): legendary, token and listed creature-type filters per Equip
+    ability, chosen before payment and rechecked after responses. Standard 1,835 → 1,836; fixture
+    `decks/coverage/equip_targets.txt` 0/19 → 6/19.
+  - AI spell-option dedup (PR #28): `engine.unique_spell_options` keeps options with distinct costs,
+    origins or granted flashback. Four AI-vs-Baseline cells unchanged within noise (AI_RESULTS).
+  - Combined delayed-token / mixed-Equip / flashback-grant scenarios (PR #29): 12 tests, no engine
+    bugs found, plus a determinism check on bounded seeded games.
+  - Equip sacrifice policy (`equip-sac-policy`): **not merged**. Tests pass, but `hauberk_bodies`
+    regresses 10.6 points vs the previous policy (AI_RESULTS). Retuned in round 19.
+- Known gaps: removed the fixed graveyard-target, AI-dedup and Old Hob items; added the legend
+  rule and the planner-alternatives gap.
+- Next up: round-19 threads listed as in flight; backlog renumbered, Mjolnir worthy Equip added.
 
 ### 2026-10-20 - Round 17 documentation sync (Claude Sonnet 5.5)
 

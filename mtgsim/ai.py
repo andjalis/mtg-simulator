@@ -14,7 +14,7 @@ import math
 from itertools import combinations
 
 from .cards import CardDef, Effect
-from . import copies, counting, engine, modal
+from . import copies, counting, engine, graveyards, modal
 from .engine import Game, Permanent, Player, can_block, payable
 
 LETHAL = 1000.0
@@ -22,6 +22,7 @@ LIFE_SCALE = 5.0        # value of life = LIFE_SCALE * sqrt(life)
 HOLD_BURN = 2.5         # value of keeping an any-target burn spell for a creature later
 CRACK_WEIGHT = 0.5      # weight on (non-lethal) damage we expect to take back next turn
 MAX_SETUP_SPELLS = 6    # spells considered when looking for a precombat kill (pump, burn, keywords)
+MAX_SETUP_SLOTS = 8     # copies of those spells considered (a combo may cast two copies of one spell)
 MAX_ENUMERATE = 6       # try every attack set up to this many ready creatures
 REMOVAL_BAR = 4.5       # least a creature must be worth to spend instant removal on it
 PW_KEEP = 2.0           # value of a planeswalker still being on the battlefield next turn
@@ -88,7 +89,37 @@ def _spell_options(game: Game, me: Player) -> list:
 
 # Rough value of effects the main evaluation has no special case for.
 MINOR_EFFECTS = {"treasure": 1.0, "rummage": 0.3, "surveil": 0.3, "scry": 0.3, "dig_put": 2.0,
-                 "draw_up_to": 1.5, "grant": 0.5, "add_counter": 0.5, "transform": 1.0}
+                 "draw_up_to": 1.5, "grant": 0.5, "add_counter": 0.5, "transform": 1.0,
+                 "manifest": 3.0, "manifest_dread": 3.0, "cloak": 3.0}
+
+
+# Graveyard returns valued per legal entry (any graveyard the effect allows), not just our own.
+GY_RETURN_KINDS = ("regrow", "regrow_any", "regrow_perm", "reanimate_one", "gy_move")
+
+
+def _gy_entry_value(eff: Effect, card: CardDef) -> float:
+    """A returned card is worth casting it; onto the battlefield it also saves the mana."""
+    to_battlefield = eff.kind == "reanimate_one" or (eff.data or {}).get("dest") == "bf"
+    return card_value(card) + (0.5 * card.cmc if to_battlefield else 0.0)
+
+
+def _spell_sources(game: Game, me: Player, options) -> list:
+    """Group cast options by the physical card they spend: [(options, copies)]. Options of one
+    card (hand cast, adventure, kicker, native or granted flashback of one graveyard entry) are
+    alternatives; equal copies in one zone are separate spells sharing those options."""
+    groups = {}
+    for c in options:
+        target = getattr(c, "graveyard_target", None)
+        if target is not None:
+            key, n = ("gy", id(target.entry)), 1
+        else:
+            base, kind, _ = getattr(c, "origin", None) or (c, "", None)
+            zone = game._zone(me, kind) if hasattr(game, "_zone") else me.hand
+            key = ("zone", id(zone), base.name)
+            n = sum(x.name == base.name for x in zone) or 1
+        group = groups.setdefault(key, [[], n])
+        group[0].append(c)
+    return [(engine.unique_spell_options(opts), n) for opts, n in groups.values()]
 
 
 def _boost(card: CardDef):
@@ -434,31 +465,39 @@ class HeuristicAI:
         opp = game.opponent(me)
         if not me.creatures or not opp.life > 0:
             return False
-        spells = [c for c in _spell_options(game, me) if _setup_spell(c) and self._can_cast(game, me, c)
-                  and "X" not in c.mana_cost]
-        if not spells:
+        options = [c for c in _spell_options(game, me) if _setup_spell(c) and self._can_cast(game, me, c)
+                   and "X" not in c.mana_cost]
+        if not options:
             return False
-        spells = sorted(spells, key=lambda c: c.cmc)
-        names = set(list(dict.fromkeys(c.name for c in spells))[:MAX_SETUP_SPELLS])
-        spells = [c for c in spells if c.name in names]  # alternatives share one candidate slot
+        # One slot per physical spell (copies count separately, cheapest spells first); each slot
+        # casts one of its options (hand, flashback, ...), so a plan can mix costs per spell.
+        groups = sorted(_spell_sources(game, me, options), key=lambda g: min(c.cmc for c in g[0]))
+        slots = [opts for opts, n in groups[:MAX_SETUP_SPELLS] for _ in range(min(n, 3))][:MAX_SETUP_SLOTS]
         if self._best_attack_score(game, me, opp) >= LETHAL:
             return False   # already lethal: keep the spells
         sources = game.mana_sources(me)
-        best = None
-        for r in range(1, min(len(spells), 4) + 1):
-            for combo in combinations(spells, r):
-                if len({c.name for c in combo}) < r:
-                    continue   # different costs for one spell are alternatives, not extra spells
-                cost = {}
-                for c in combo:
-                    for k, v in self._cost(game, me, c).items():
-                        cost[k] = cost.get(k, 0) + v
-                if not payable(sources, cost):
-                    continue
-                plan = self._setup_plan(game, me, opp, combo)
-                if plan is not None:
-                    key = (r, sum(c.cmc for c in combo))
-                    if best is None or key < best[0]:
+        best, seen = None, set()
+        for r in range(1, min(len(slots), 4) + 1):
+            for picked in combinations(range(len(slots)), r):
+                for combo in _product([slots[i] for i in picked]):
+                    sig = tuple(sorted(map(id, combo)))
+                    if sig in seen:
+                        continue   # the same spells through another copy's slot
+                    seen.add(sig)
+                    cost = {}
+                    for c in combo:
+                        for k, v in self._cost(game, me, c).items():
+                            cost[k] = cost.get(k, 0) + v
+                    if not payable(sources, cost):
+                        continue
+                    # Fewest spells, then the least mana and life actually paid.
+                    key = (r, sum(v for k, v in cost.items() if k != "X"),
+                           sum(c.origin[2].life for c in combo
+                               if getattr(c, "origin", None) and c.origin[2] is not None))
+                    if best is not None and key >= best[0]:
+                        continue
+                    plan = self._setup_plan(game, me, opp, combo)
+                    if plan is not None:
                         best = (key, plan)
             if best is not None:
                 break   # fewest spells first
@@ -483,12 +522,13 @@ class HeuristicAI:
         caps = [int(e.filter[10:]) for c in combo for e in c.spell_effects
                 if e.kind == "unblockable" and e.filter.startswith("max_power:")]
         carriers = [c for c in carriers if all(c.power <= cap for cap in caps)]
-        burn = [c for c in combo if any(e.kind == "damage" for e in c.spell_effects)]
+        burn = [i for i, c in enumerate(combo) if any(e.kind == "damage" for e in c.spell_effects)]
         blockers = [b for b in opp.creatures if not b.tapped]
         for carrier in (carriers if needs_carrier else [None]):
             # Burn goes face, or at one blocker it kills (each burn spell picks independently).
             choices = []
-            for card in burn:
+            for i in burn:
+                card = combo[i]
                 eff = next(e for e in card.spell_effects if e.kind == "damage")
                 opts = [opp] if eff.target in ("any", "player") else []
                 if eff.target in CREATURE_TARGETS:
@@ -502,8 +542,8 @@ class HeuristicAI:
                     burn_aim = dict(zip(burn, aims))
                     if self._lethal_after(game, me, opp, combo, carrier, burn_aim):
                         out = []
-                        for card in combo:
-                            out.append((card, [burn_aim.get(card) if e.kind == "damage" else
+                        for i, card in enumerate(combo):
+                            out.append((card, [burn_aim.get(i) if e.kind == "damage" else
                                                carrier if e.kind in CARRIER_KINDS else None
                                                for e in card.spell_effects]))
                         # Keyword grants and pumps first, then burn (it may clear a blocker).
@@ -515,7 +555,7 @@ class HeuristicAI:
         """Apply combo's effects on scratch state, test for a lethal attack, then undo them."""
         undo_pump, undo_kw, removed, life = [], [], [], opp._life
         try:
-            for card in combo:
+            for i, card in enumerate(combo):
                 for c in me.creatures:
                     for t in c.triggers:
                         test = CAST_EVENTS.get(t.event)
@@ -538,7 +578,7 @@ class HeuristicAI:
                             carrier.temp_kw.add(kw)
                             undo_kw.append((carrier, kw))
                     elif e.kind == "damage":
-                        tgt = burn_aim.get(card)
+                        tgt = burn_aim.get(i)
                         if tgt is opp:
                             opp._life -= e.amount
                         elif isinstance(tgt, Permanent) and tgt in opp.battlefield:
@@ -754,6 +794,12 @@ class HeuristicAI:
             elif eff.kind == "discard_choice":
                 targets.append(opp if eff.target == "player" else None)
                 value += 2.0 if opp.hand else -0.5
+            elif eff.target == "graveyard_card" and eff.kind in GY_RETURN_KINDS:
+                got = self.graveyard_choice(game, me, eff, card)
+                if got is None:
+                    return None
+                targets.append(got[0])
+                value += got[1]
             elif eff.kind == "regrow":
                 targets.append(None)
                 value += max((card_value(c) for c in me.graveyard if c.is_creature), default=-1)
@@ -771,6 +817,53 @@ class HeuristicAI:
                 targets.append(None)
                 value += MINOR_EFFECTS.get(eff.kind, 0.0) * max(1, eff.amount)
         return (value - self._sac_cost(game, me, card), targets)
+
+    def graveyard_choice(self, game: Game, me: Player, eff: Effect, card: CardDef | None = None):
+        """(target, value) for a targeted graveyard return or reanimation, over every legal entry
+        (an opponent's graveyard too when the effect allows it), or None when it can't be cast.
+        An X-bound effect is valued at the X the engine will choose; the engine then binds it."""
+        exclude = getattr(card, "graveyard_target", None) if card is not None else None
+        bound = eff
+        if graveyards.uses_x(eff) and card is not None:
+            x = graveyards.planned_x(game, me, card, self._cost(game, me, card))
+            bound = graveyards.with_x([eff], x)[0]
+        ranked = sorted((t for t in game.legal_targets(me, bound) if t != exclude),
+                        key=lambda t: _gy_entry_value(bound, t.card), reverse=True)
+        n = graveyards.count(bound)
+        picked = ranked[:n]
+        if len(picked) < n and not bound.data.get("upto"):
+            return None
+        value = sum(_gy_entry_value(bound, t.card) for t in picked) if picked else -1.0
+        if bound is not eff:
+            return None, value
+        return (picked[0] if n == 1 and picked else tuple(picked)), value
+
+    def choose_x(self, game: Game, me: Player, card: CardDef, targets, x: int) -> int:
+        """X for a spell whose largest affordable X is x: the least X that still kills its target
+        with damage or -X/-X (or is lethal to the face), keeping the rest of the mana. Anything
+        else (card draw, life, counters, an out-of-reach target) gets x."""
+        if card.is_permanent:
+            return x
+        opp = game.opponent(me)
+        aimed = list(targets or []) + [None] * len(card.spell_effects)
+        need = 0
+        for eff, tgt in zip(card.spell_effects, aimed):
+            if (eff.data or {}).get("x") is not True:
+                continue
+            if eff.kind == "debuff_one" and eff.data.get("x2") and isinstance(tgt, Permanent) and tgt.is_creature:
+                need = max(need, tgt.toughness - tgt.damage)    # -X/-X: indestructible doesn't help
+                continue
+            if eff.kind != "damage" or eff.data.get("x2"):
+                return x
+            if isinstance(tgt, Permanent) and tgt.is_planeswalker and not tgt.is_creature:
+                need = max(need, tgt.loyalty)
+            elif isinstance(tgt, Permanent) and tgt.is_creature and not tgt.has("indestructible"):
+                need = max(need, tgt.toughness - tgt.damage)
+            elif tgt is opp and opp.life <= x:
+                need = max(need, opp.life)
+            else:
+                return x
+        return x if not need or need > x else max(1, need)
 
     def _sac_cost(self, game: Game, me: Player, card: CardDef) -> float:
         """What the additional cost "sacrifice an artifact or creature" gives up (cheapest candidate)."""
@@ -942,6 +1035,9 @@ class HeuristicAI:
         if eff.kind in ("pump", "p1_counters", "explore"):
             mine = [c for c in me.creatures if _legal(game, me, eff, c)]
             return max(mine, key=perm_value, default=None)
+        if eff.target == "graveyard_card" and eff.kind in GY_RETURN_KINDS and not graveyards.uses_x(eff):
+            got = self.graveyard_choice(game, me, eff, card)
+            return got[0] if got is not None else None
         if hasattr(engine, "default_choose_target"):
             return engine.default_choose_target(game, me, eff)
         return None

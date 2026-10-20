@@ -296,8 +296,9 @@ class CombinedScenarios(unittest.TestCase):
                 self.assertLessEqual(first[3], 12)
                 self.assertEqual(first, run(seed))
                 events += first[4]
-        # The seeds actually reach all three mechanics.
-        for word in ("equip", "flashback", "delayed", "sacrifices"):
+        # The seeds actually reach all three mechanics (the Equip policy no longer
+        # sacrifices a body for these decks' modest equipment, so "sacrifices" is not required).
+        for word in ("equip", "flashback", "delayed"):
             self.assertTrue(any(word in e for e in events), word)
 
 
