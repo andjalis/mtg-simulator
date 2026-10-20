@@ -33,6 +33,9 @@ through `ask`) can continue without re-discovering the state. `AGENTS.md` holds 
   (`feature/<topic>` or `fix/<topic>`). Commit or push only when the user asks.
 - Prefer general oracle-text templates over card-specific hacks; leave unsupported text visible
   in `--coverage`.
+- For coverage work, choose the next mechanic from `python3 -m scripts.coverage_gaps` (or
+  `--standard`), using its normalized blockers, keyword groups and greedy unlock plan; re-run it
+  after the change to measure what moved.
 - Large or separable work: delegate bounded pieces with `ask -p -t <tier> "..."` (include the
   file paths, acceptance criteria and test command in the prompt) and review the result yourself.
 

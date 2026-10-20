@@ -89,7 +89,8 @@ def _spell_options(game: Game, me: Player) -> list:
 
 # Rough value of effects the main evaluation has no special case for.
 MINOR_EFFECTS = {"treasure": 1.0, "rummage": 0.3, "surveil": 0.3, "scry": 0.3, "dig_put": 2.0,
-                 "draw_up_to": 1.5, "grant": 0.5, "add_counter": 0.5, "transform": 1.0}
+                 "draw_up_to": 1.5, "grant": 0.5, "add_counter": 0.5, "transform": 1.0,
+                 "manifest": 3.0, "manifest_dread": 3.0, "cloak": 3.0}
 
 
 # Graveyard returns valued per legal entry (any graveyard the effect allows), not just our own.
@@ -1456,10 +1457,11 @@ class BaselineAI:
 
     def main_phase(self, game: Game, me: Player):
         HeuristicAI.play_land(self, game, me)
+        refused = set()   # cards the engine wouldn't cast this phase; retrying them loops forever
         while not game.over:
             best = None
             for card in {c.name: c for c in me.hand if not c.is_land}.values():
-                if not game.can_pay(me, HeuristicAI._cost(game, me, card)):
+                if id(card) in refused or not game.can_pay(me, HeuristicAI._cost(game, me, card)):
                     continue
                 plan = self.plan_spell(game, me, card)
                 if plan is None:
@@ -1468,7 +1470,8 @@ class BaselineAI:
                     best = (plan[0], card, plan[1])
             if best is None:
                 return
-            game.cast(me, best[1], best[2])
+            if not game.cast(me, best[1], best[2]):
+                refused.add(id(best[1]))
 
     def plan_spell(self, game: Game, me: Player, card: CardDef):
         if card.is_permanent:

@@ -4,6 +4,7 @@ import unittest
 from mtgsim.ai import HeuristicAI
 from mtgsim.carddb import CardDB
 from mtgsim.engine import Game, Permanent, Player
+from tests.invariants import assert_clean
 
 DB = CardDB(offline=True)
 
@@ -153,6 +154,16 @@ class AITests(unittest.TestCase):
         perm("Centaur Courser", self.a)
         self.assertIsNotNone(self.b.ai.plan_spell(self.game, self.b, sweep))
 
+    def test_bounded_real_deck_games_end_in_a_clean_state(self):
+        from mtgsim.decklist import load_deck
+        from mtgsim.runner import build_deck
+        deck = build_deck(DB, load_deck("decks/mono_red_aggro.txt")[1])
+        for seed in (1, 2):
+            a, b = Player("a", list(deck), HeuristicAI()), Player("b", list(deck), HeuristicAI())
+            g = Game(a, b, random.Random(seed), max_turns=10)
+            g.play()
+            assert_clean(self, g, f"seed {seed}")
+
     def test_run_match_gives_each_game_fresh_ai_state(self):
         from mtgsim.runner import fresh_ai
         shared = HeuristicAI()
@@ -300,3 +311,18 @@ class AITests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BaselineRefusedCast(unittest.TestCase):
+    def test_main_phase_stops_when_cast_is_refused(self):
+        # A flashback grant with no instant or sorcery in the graveyard is payable but the engine
+        # refuses it; BaselineAI used to retry it forever.
+        from mtgsim.ai import BaselineAI
+        from tests.test_combined_scenarios import ISLAND, MOUNTAIN, REPLAY
+        a, b = Player("a", [ISLAND] * 30, BaselineAI()), Player("b", [ISLAND] * 30, BaselineAI())
+        g = Game(a, b, random.Random(0))
+        g.turn, g.step = 1, "main1"
+        g.enter_battlefield(a, MOUNTAIN).tapped = False
+        a.hand.append(REPLAY)
+        a.ai.main_phase(g, a)
+        self.assertIn(REPLAY, a.hand)
