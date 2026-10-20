@@ -137,6 +137,8 @@ class CombatMixin:
                         hits.append((b, a, b.power))
             elif deals_now(a) and a.power > 0 and target is not None:
                 hits.append((a, target, a.power))
+        if any(isinstance(tgt, Player) for _, tgt, _ in hits):
+            self.fire(p, "allies_hit_player")
         for src, tgt, amt in hits:
             self.deal_damage(tgt, amt, by=src.controller, cause=f"{src.card.name}: combat damage", source=src, combat=True)
             if isinstance(tgt, Player):

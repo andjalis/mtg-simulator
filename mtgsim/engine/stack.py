@@ -328,7 +328,7 @@ class StackMixin:
         owner = item.controller
         if kind in ("adventure", "cascade_adventure", "rebound_adventure"):
             owner.on_adventure.append(base)
-        elif kind == "flashback":
+        elif kind in ("flashback", "jump_start"):
             if getattr(item, "flip_gy", False) and item.card.back is not None:
                 self.enter_battlefield(owner, item.card.back, counters={"finality": 1}, physical_card=base)
                 self.log(f"{item.card.name} returns transformed", owner)

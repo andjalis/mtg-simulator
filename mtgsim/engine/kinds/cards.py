@@ -44,6 +44,7 @@ def draw_up_to(game, p, eff, **_):
 def scry(game, p, eff, **_):
     game.scry(p, eff.amount)
     game.fire(p, "scry_surveil")
+    game.fire(p, "you_scry")
 
 
 @kind("surveil")

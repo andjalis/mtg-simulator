@@ -15,6 +15,12 @@ THOPTER = card("Test Thopter", "{8}", "Artifact Creature — Thopter", "Prototyp
 RIFT = card("Test Rift Bolt", "{2}{R}", "Sorcery", "~ deals 3 damage to any target.\nSuspend 1—{R}")
 VISION = card("Test Vision", "", "Sorcery", "Suspend 2—{U}\nDraw three cards.")
 WAVE = card("Test Wave", "{2}{U}", "Instant", "Return target permanent to its owner's hand.")
+JUMP = card("Test Jump", "{1}{R}", "Sorcery", "~ deals 2 damage to any target.\nJump-start")
+CHIMERA = card("Test Chimera", "{2}{G}", "Creature — Chimera", "Escape—{4}{G}, Exile three other cards from your "
+                                                               "graveyard.\n~ escapes with a +1/+1 counter on it.", 3, 3)
+ATTENDANT = card("Test Attendant", "{3}{W}", "Creature — Bird Soldier", "Flying\nEmbalm {1}{W}", 3, 1)
+WITNESS = card("Test Witness", "{2}{G}", "Creature — Human Shaman", "Eternalize {1}{G}", 2, 1)
+SCORPION = card("Test Scorpion", "{2}{B}", "Creature — Scorpion", "Deathtouch\nScavenge {1}", 2, 2)
 
 
 class AltCasts(unittest.TestCase):
@@ -39,7 +45,7 @@ class AltCasts(unittest.TestCase):
         return next((o for o in self.game.spell_options(p) if self.game._origin(o)[1] == kind), None)
 
     def test_templates(self):
-        for c in (BURIAL, FREERUNNER, THOPTER, RIFT, VISION, WAVE):
+        for c in (BURIAL, FREERUNNER, THOPTER, RIFT, VISION, WAVE, JUMP, CHIMERA, ATTENDANT, WITNESS, SCORPION):
             self.assertEqual(c.unsupported, [], c.name)
 
     def test_buyback_returns_to_hand(self):
@@ -100,6 +106,43 @@ class AltCasts(unittest.TestCase):
     def test_phyrexian_ability_cost(self):
         act = _parse_ability("{5}{B/P}: Transform ~. Activate only as a sorcery.", [])
         self.assertEqual(act.cost, {"generic": 5, "B": 1})
+
+    def test_jump_start_discards_then_exiles(self):
+        self.put(self.a, MOUNTAIN, 2)
+        self.a.graveyard.append(JUMP)
+        self.a.hand.append(ISLAND)
+        option = self.option(self.a, "jump_start")
+        self.assertTrue(self.game.cast(self.a, option, [self.b]))
+        self.game.settle()
+        self.assertEqual(self.b.life, 18)
+        self.assertIn(JUMP, self.a.exile)
+        self.assertEqual(self.a.hand, [])
+
+    def test_escape_exiles_other_cards_and_adds_counters(self):
+        from tests.test_templates import FOREST
+        self.put(self.a, FOREST, 5)
+        self.a.graveyard.extend([CHIMERA, ISLAND, ISLAND])
+        self.assertIsNone(self.option(self.a, "escape"))
+        self.a.graveyard.append(ISLAND)
+        self.assertTrue(self.game.cast(self.a, self.option(self.a, "escape")))
+        self.game.settle()
+        perm = next(x for x in self.a.battlefield if x.card.name == CHIMERA.name)
+        self.assertEqual(perm.p1, 1)
+        self.assertEqual(len(self.a.graveyard), 0)
+
+    def test_embalm_eternalize_scavenge(self):
+        from tests.test_templates import FOREST, PLAINS
+        self.put(self.a, PLAINS, 2)
+        self.put(self.a, FOREST, 2)
+        self.put(self.a, SWAMP, 1)
+        self.a.graveyard.extend([ATTENDANT, WITNESS, SCORPION])
+        alt_casts.graveyard_actions(self.game, self.a)
+        tokens = {x.card.name: x for x in self.a.battlefield if x.card.is_token}
+        bird, witness = tokens[ATTENDANT.name + " token"], tokens[WITNESS.name + " token"]
+        self.assertEqual((bird.card.colors, bird.has("flying"), "Zombie" in bird.card.subtypes), ({"W"}, True, True))
+        self.assertEqual((witness.card.power, witness.card.toughness, witness.card.colors), (4, 4, {"B"}))
+        self.assertEqual(sum(x.p1 for x in self.a.creatures), 2)        # scavenged: the scorpion's power
+        self.assertEqual(self.a.graveyard, [])
 
     def test_return_target_permanent(self):
         bear = self.put(self.b, BEAR)

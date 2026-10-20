@@ -316,6 +316,13 @@ to select another local database.
   "a player / an opponent casts a spell", "at the beginning of each combat / your draw step / each
   player's end step", and "whenever equipped / enchanted creature attacks / deals combat damage to a
   player". "All Sliver creatures get +N/+N" counts every player's Slivers
+- "When you cast ~" and "when you cycle ~" (triggers of the card itself), "when enchanted / equipped creature
+  dies", "whenever you cast a multicolored / historic / <color> spell", "whenever a creature enters", "one or
+  more creatures you control deal combat damage to a player" (once per damage step), each player's draw
+  step, "whenever you scry", "at end of combat", monstrosity N and "when ~ becomes monstrous", protection
+  from multicolored, "destroy target permanent" (nonland, like "tap / return target permanent")
+- Jump-start and escape (with "escapes with N +1/+1 counters") cast from the graveyard; embalm, eternalize
+  and scavenge are graveyard actions the AI takes whenever it can pay for them after its other plays
 - Regeneration shields replace destruction, tap the permanent, clear its damage
   and remove it from combat. They expire at cleanup and cannot prevent sacrifice
   or zero toughness. Regeneration-prevention riders on destruction and damage apply

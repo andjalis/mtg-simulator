@@ -292,6 +292,7 @@ class EffectsMixin:
         was_creature = perm.is_creature
         death_returns = [keyword for keyword, count in (("undying", perm.p1), ("persist", perm.m1))
                          if was_creature and perm.has(keyword) and count == 0 and not perm.front.is_token]
+        attached = list(perm.auras) + perm.equipment if was_creature else []   # "when enchanted creature dies"
         if not self.leave_battlefield(perm, "graveyard"):
             return
         if perm.last_destination != "graveyard":
@@ -307,6 +308,10 @@ class EffectsMixin:
                                    f"{perm.card.name}: {keyword}", context=(perm.owner, perm.front,
                                    perm.owner.graveyard.version(perm.front)))
             self.fire(perm.controller, "dies", perm)
+            for x in attached:
+                for trig in x.card.host_triggers:
+                    if trig.event == "dies":
+                        self.queue_trigger(x.controller, trig.effects, x, x.card.name, context=perm)
             self.fire(perm.controller, "ally_dies", subject=perm)
             self.fire(perm.controller, "ally_dies", perm, subject=perm)
             if perm.blitz:

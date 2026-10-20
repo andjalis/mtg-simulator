@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .. import cast_triggers, copies
+from .. import alt_casts, cast_triggers, copies
 from ..cards import CardDef
 from .. import modal, rules_events, costs
 from ..actions import atomic_action
@@ -13,6 +13,15 @@ from .state import OUTLAWS, Permanent, StackItem, TARGETED
 
 if TYPE_CHECKING:
     from .state import Player
+
+
+SPELL_KINDS = {   # "Whenever you cast a multicolored / historic / blue ... spell"
+    "multicolored": lambda c: len(c.colors) >= 2,
+    "colorless": lambda c: not c.colors,
+    "historic": lambda c: c.is_artifact or c.legendary or c.is_saga,
+    **{word: (lambda col: lambda c: col in c.colors)(col)
+       for word, col in (("white", "W"), ("blue", "U"), ("black", "B"), ("red", "R"), ("green", "G"))},
+}
 
 
 class PlayMixin:
@@ -143,6 +152,8 @@ class PlayMixin:
             self._zone(p, kind).remove(base)
         if card.extra_discard and not card.discard_or_pay and not p.hand:
             return False
+        if kind == "escape":
+            alt_casts.pay_escape(self, p, base, alt)
         if card.extra_discard and p.hand:
             pitched = p.ai.choose_discard(self, p)
             if pitched not in p.hand:
@@ -203,7 +214,10 @@ class PlayMixin:
             for perm in list(p.battlefield):
                 for trig in perm.triggers:
                     flt = trig.filter
-                    if flt.startswith("spell:") and not (flt[6:] in card.subtypes or
+                    if flt.startswith("spell:") and flt[6:] in SPELL_KINDS:
+                        if not SPELL_KINDS[flt[6:]](card):
+                            continue
+                    elif flt.startswith("spell:") and not (flt[6:] in card.subtypes or
                                                          flt[6:].capitalize() in card.types or
                                                          (flt[6:].lower() == "outlaw" and any(
                                                              o in card.subtypes for o in OUTLAWS))):
@@ -222,6 +236,8 @@ class PlayMixin:
                                            context=item if copies.wants_spell(trig.effects) else None)
             copies.on_cast(self, p, item)
             cast_triggers.on_cast(self, p, item)
+            for trig in card.cast_self_triggers:
+                self.queue_trigger(p, trig.effects, None, f"{card.name}: cast trigger", context=item)
             if self.spells_cast.get(p.name) == 2:
                 self.fire(p, "cast_second")
             for pl in self.players:

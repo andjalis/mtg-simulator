@@ -192,6 +192,8 @@ class TurnsMixin:
                 continue
             self.discard_card(p, card)
             self.log(f"cycles {card.name}", p)
+            for trig in card.cycle_self_triggers:
+                self.queue_trigger(p, trig.effects, None, f"{card.name}: cycled")
             if spec["land"]:
                 want = spec["land"]
                 found = next((c for c in p.library if c.is_land and (
@@ -246,6 +248,8 @@ class TurnsMixin:
         self.step = "draw"
         self.fire(opp, "opp_draw_step")
         self.fire(p, "draw_step")
+        for pl in self.players:
+            self.fire(pl, "each_draw_step", context=p)
         if self.turn > 1:
             self.draw(p)
             self.settle()

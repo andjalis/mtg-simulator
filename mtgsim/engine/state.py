@@ -27,7 +27,8 @@ def protected_from(perm, source) -> bool:
     card = source.card if isinstance(source, Permanent) else source
     if not isinstance(card, CardDef) or not isinstance(perm, Permanent):
         return False
-    return any(perm.has(PROTECTION[c]) for c in card.colors)
+    return any(perm.has(PROTECTION[c]) for c in card.colors) or \
+        len(card.colors) >= 2 and perm.has("protection from multicolored")
 
 
 class Permanent:
