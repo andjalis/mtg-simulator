@@ -167,6 +167,7 @@ class CardDef:
     activated: list = field(default_factory=list)
     anthem: tuple = ()                                  # (power, toughness) for creatures you control
     crew: int = 0
+    altcast: dict = field(default_factory=dict)          # alternative casting keyword metadata
     convoke: bool = False                               # creatures can be tapped to help pay the generic cost
     prepared: bool = False                              # enters prepared: may cast a copy of its spell (card.back) once
     changeling: bool = False                            # is every creature type
@@ -1382,6 +1383,7 @@ def _parse_face(data: dict) -> CardDef:
     kicked: list = []
     station_min = 0
     gate = None            # set while parsing a "Max speed — ..." line: what the line added is gated on speed 4
+    from . import kw_altcast
     for line in (l.strip() for l in text.split("\n")):
         if gate is not None:
             _apply_speed_gate(gate, triggers, activated)
@@ -1981,6 +1983,10 @@ def _parse_face(data: dict) -> CardDef:
         face_down_cost = _facedown.parse_cost(line)
         if face_down_cost is not None:
             alt_costs.append(face_down_cost)
+            continue
+        if kw_altcast.parse(line, extra, alt_costs):
+            if line.startswith("Suspend ") and not raw_cost:
+                extra["altcast"]["no_mana_cost"] = True
             continue
         if line == "Convoke":
             extra["convoke"] = True
