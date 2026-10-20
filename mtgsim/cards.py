@@ -149,6 +149,7 @@ class CardDef:
     protects_spells: bool = False                       # "instant and sorcery spells you control can't be countered"
     cost_reduction: str = ""                            # "instant_sorcery_gy" (Tolarian Terror), "power" (Ghalta)
     snow: bool = False
+    legendary: bool = False
     modes: list = field(default_factory=list)           # modal spells: one effect list per mode
     modes_choose: int = 1
     loyalty: int = 0
@@ -456,7 +457,7 @@ _EFFECT_PATTERNS = [
                       else "opp_artifact_creature")),
     (r"counter target artifact or enchantment spell", lambda m: Effect("counter", target="spell", filter="artifact_ench")),
     (r"destroy target noncreature, nonland permanent", lambda m: Effect("destroy", target="nonland_perm", filter="noncreature")),
-    (r"return target card from your graveyard to your hand", lambda m: Effect("regrow_any")),
+    (r"return target card from your graveyard to your hand", lambda m: Effect("regrow_any", target="graveyard_card")),
     (r"return up to two target creatures to their owners' hands",
      lambda m: [_distinct_bounce(), _distinct_bounce()]),
     (r"one or two target creatures each get \+(\d+)/\+(\d+) until end of turn",
@@ -486,8 +487,8 @@ _EFFECT_PATTERNS = [
     (r"(?:it|~) must be blocked (?:this turn|each combat this turn) if able",
      lambda m: Effect("force_blocked", target="prev" if m[0].lower().startswith("it") else "self")),
     (r"target opponent exiles a card from their hand", lambda m: Effect("opp_exile_hand")),
-    (r"return target creature card from your graveyard to the battlefield", lambda m: Effect("reanimate_one")),
-    (r"return up to one target permanent card from your graveyard to your hand", lambda m: Effect("regrow_perm")),
+    (r"return target creature card from your graveyard to the battlefield", lambda m: Effect("reanimate_one", target="graveyard_card")),
+    (r"return up to one target permanent card from your graveyard to your hand", lambda m: Effect("regrow_perm", target="graveyard_card", data={"upto": True})),
     (r"counter target spell with mana value (\d+)",
      lambda m: Effect("counter", target="spell", filter=f"cmc:{m[1]}")),
     (r"counter target artifact or creature spell",
@@ -602,7 +603,7 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("bounce_own", target="nonland_perm", filter="mine")),
     (r"(?:you )?recruit", lambda m: Effect("recruit")),
     (r"return up to (one|two) target creature cards? from your graveyard to your hand",
-     lambda m: Effect("regrow", _num(m[1]))),
+     lambda m: Effect("regrow", _num(m[1]), target="graveyard_card", data={"upto": True})),
     (r"return ~ to its owner's hand", lambda m: Effect("bounce_self")),
     (r"empower jace (\d+)", lambda m: Effect("empower", int(m[1]))),
     (r"empower jace x, where x is the number of (creatures|islands) you control",
@@ -745,7 +746,8 @@ _EFFECT_PATTERNS = [
     (r"exile this saga, then return it to the battlefield transformed under your control|exile ~, then return it "
      r"to the battlefield transformed under your control", lambda m: Effect("transform", target="self")),
     (r"if a player is dealt damage this way, scry (\d+)", lambda m: Effect("scry", int(m[1]), cond="target_player")),
-    (r"return target creature card from your graveyard to your hand", lambda m: Effect("regrow")),
+    (r"return target creature card from your graveyard to your hand",
+     lambda m: Effect("regrow", target="graveyard_card")),
     (r"REANIMATESNOW", lambda m: Effect("reanimate_snow")),
     (r"GYHATE (\d+)", lambda m: Effect("gy_hate", int(m[1]))),
     (r"when you cast your next creature spell this turn, that creature enters with an additional \+1/\+1 counter "
@@ -980,7 +982,8 @@ def _gy_move(m):
         return NO_MATCH
     w = re.search(r"(one|two|three|four|five|six|x)", head)
     n = 99 if head.startswith("all") else (_N_WORDS[w[1]] if w else 1)
-    return Effect("gy_move", n, data={"what": what, "dest": "hand" if m[6].endswith("hand") else "bf",
+    return Effect("gy_move", n, target="graveyard_card" if "target" in head else "none",
+                  data={"upto": "up to" in head, "what": what, "dest": "hand" if m[6].endswith("hand") else "bf",
                                       "tapped": bool(m[7]), "zone": {"your": "mine", "a": "any"}.get(m[5], "opp"),
                                       "x_n": bool(w and w[1] == "x"),
                                       "cmc": ((m[3].lower() if m[3].lower() == "x" else int(m[3])), m[4]) if m[3] else None})
@@ -1120,9 +1123,11 @@ def _parse_effects(text: str, opts: bool = False):
                 continue
         first = len(effects)
         paid = False
+        reflexive = False
         if gated:
             g = re.fullmatch(r"(?:if you do|when you do), (.+)", s, re.I)
             if g:
+                reflexive = s.lower().startswith("when you do")
                 s, paid = g[1], True
         for pat, build in _EFFECT_PATTERNS:
             m = re.fullmatch(pat, s, flags=re.IGNORECASE)
@@ -1143,7 +1148,9 @@ def _parse_effects(text: str, opts: bool = False):
                 effects += parts
             else:
                 unmatched.append(sentence.strip())
-        if paid:
+        if paid and reflexive and any(e.target == "graveyard_card" for e in effects[first:]):
+            effects[first:] = [Effect("reflexive", cond="paid", data={"effects": effects[first:]})]
+        elif paid:
             for eff in effects[first:]:
                 eff.cond = eff.cond or "paid"
     return effects, unmatched
@@ -1237,7 +1244,7 @@ def _parse_face(data: dict) -> CardDef:
     text = re.sub(r"(?m)^([A-Za-z ,]*[Ff]irebending \d+[A-Za-z ,]*)$", lambda m: "\n".join(x[0].upper() + x[1:] for x in m[1].split(", ")), text)
     keywords, produces, etb, spell, unsupported, approximations = set(), set(), [], [], [], []
     triggers: list[Trigger] = []
-    extra: dict = {"snow": "Snow" in type_line}
+    extra: dict = {"snow": "Snow" in type_line, "legendary": "Legendary" in type_line}
     modes: list = []
     chapters: list = []
     loyalty_abilities: list = []

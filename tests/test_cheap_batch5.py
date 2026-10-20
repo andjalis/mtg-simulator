@@ -92,7 +92,10 @@ class CheapBatch(Base):
 
     def test_regrow_two(self):
         self.a.graveyard.extend([BEAR, BEAR, BEAR])
-        self.game.resolve(self.a, FIGHT_ON.spell_effects[0], None)
+        effect = FIGHT_ON.spell_effects[0]
+        target = self.game.bind_graveyard_targets(self.a, [effect])[0]     # targets are chosen before resolution
+        self.assertEqual(len(target), 2)
+        self.game.resolve(self.a, effect, target)
         self.assertEqual(self.a.hand.count(BEAR), 2)
 
     def test_choose_color_land(self):
