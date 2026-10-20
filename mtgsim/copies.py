@@ -15,8 +15,8 @@ engine hands the effect kinds in KINDS to resolve() here.
     Copy target activated or triggered ability you control [from a creature source] [X times].
 
 Simplifications: the permanent or spell to copy is picked when the effect resolves (so "target"
-only checks hexproof on the opponent's permanents), the legend rule isn't modelled (so "except it
-isn't legendary" changes nothing). Delayed token actions use the shared next-end-step
+only checks hexproof on the opponent's permanents), and the legend rule isn't modelled. Copy exceptions
+still preserve or remove the legendary supertype for targeting. Delayed token actions use the shared next-end-step
 scheduler; a quoted ability granted to the token remains a normal triggered ability.
 
 This module imports mtgsim.cards and mtgsim.engine lazily, inside functions, because both import it.
@@ -60,7 +60,8 @@ def parse_except(text: str, mods: dict | None = None) -> dict | None:
             continue
         if re.fullmatch(r"(?:it|he|she|they|the tokens?|the copy)(?:'s| is| isn't| is not| aren't| are not|'re)"
                         r" (?:not )?legendary", c, flags=re.I):
-            continue          # the legend rule isn't modelled
+            mods["legendary"] = not bool(re.search(r"isn't|aren't|\bnot\b", c, re.I))
+            continue
         if re.fullmatch(r"(?:his|her|its) name is ~", c, flags=re.I):
             mods["keep_name"] = True
             continue
@@ -77,7 +78,10 @@ def parse_except(text: str, mods: dict | None = None) -> dict | None:
             if m[1]:
                 mods["pt"] = (int(m[1]), int(m[2]))
             for w in (m[3] or "").split():
-                if w.lower() in _COLORS or w.lower() == "legendary":
+                if w.lower() == "legendary":
+                    mods["legendary"] = True
+                    continue
+                if w.lower() in _COLORS:
                     continue
                 if w.lower() in _TYPES:
                     mods["types"] = mods.get("types", frozenset()) | {_TYPES[w.lower()]}
@@ -252,6 +256,8 @@ def make_copy(card, mods: dict, token: bool = True, name: str | None = None):
     """A CardDef copying card, with the "except" changes."""
     from .cards import Effect, Trigger
     changes = {"is_token": token, "clone": None, "alt_costs": []}
+    if "legendary" in mods:
+        changes["legendary"] = mods["legendary"]
     if name:
         changes["name"] = name
     if mods.get("pt"):

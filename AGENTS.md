@@ -15,7 +15,7 @@ Grandmaster, MMR), deck assessment, and a web page (`web/`). The built-in engine
 
 ```
 python3 -m mtgsim.build_carddb                 # once per clone; builds mtgsim/data/cards.sqlite3 (~13 s)
-python3 -m unittest discover -s tests -t .     # tests (~3 min, 528 tests, all should pass)
+python3 -m unittest discover -s tests -t .     # tests (~3 min, 709 tests, 1 skipped, all should pass)
 python3 -m mtgsim A.txt B.txt -n 1000          # matchup
 python3 -m mtgsim A.txt --gauntlet B.txt C.txt # one deck vs several
 python3 -m mtgsim A.txt B.txt -n 1 --log       # play-by-play of one game

@@ -1,0 +1,54 @@
+equip_targets: 0% matched by templates (including simplifications) (0 fully template-matched, 19 partly supported; 19 cards)
+   1 Ace's Baseball Bat [partial]
+       ignored: As long as equipped creature is attacking, it has first strike and must be blocked by a Dalek if able.
+       ignored: Equip legendary creature {1}
+   1 Bilbo's Ring [partial]
+       ignored: During your turn, equipped creature has hexproof and can't be blocked.
+       ignored: Whenever equipped creature attacks alone, you draw a card and you lose 1 life.
+       ignored: Equip Halfling {1}
+   1 Blackblade Reforged [partial]
+       ignored: Equipped creature gets +1/+1 for each land you control.
+       ignored: Equip legendary creature {3}
+   1 Brotherhood Regalia [partial]
+       ignored: Equipped creature has ward {2}, is an Assassin in addition to its other types, and can't be blocked.
+       ignored: Equip legendary creature {1}
+   1 Ceremonial Groundbreaker [partial]
+       ignored: Equip Citizen {1}
+   1 Commander's Plate [partial]
+       ignored: Equipped creature gets +3/+3 and has protection from each color that's not in your commander's color identity.
+       ignored: Equip commander {3}
+   1 Dúnedain Blade [partial]
+       ignored: Equip Human {1}
+   1 Excalibur, Sword of Eden [partial]
+       ignored: ~ costs {X} less to cast, where X is the total mana value of historic permanents you control.
+       ignored: Equip legendary creature {2}
+   1 Hulkbuster Armor [partial]
+       ignored: Equipped creature has base power and toughness 9/9 and has flying.
+       ignored: Equip Hero {3}
+   1 Lothlórien Blade [partial]
+       ignored: Whenever equipped creature attacks, it deals damage equal to its power to target creature defending player controls.
+       ignored: Equip Elf {2}
+   1 Mjölnir, Hammer of Thor [partial]
+       ignored: Double all damage equipped creature would deal.
+       ignored: Equip worthy {1}
+       ignored: {2}{R}, Discard this card: It deals 2 damage to each creature.
+   1 Pirate Hat [partial]
+       ignored: Equipped creature gets +1/+1 and has "Whenever ~ attacks, draw a card, then discard a card."
+       ignored: Equip Pirate {1}
+   1 Robe of the Archmagi [partial]
+       ignored: Whenever equipped creature deals combat damage to a player, draw that many cards.
+       ignored: Equip Shaman, Warlock, or Wizard {1}
+   1 Steelclaw Lance [partial]
+       ignored: Equip Knight {1}
+   1 Team Pennant [partial]
+       ignored: Equip creature token {1}
+   1 Thinking Cap [partial]
+       ignored: Equip Detective {1}
+   1 Veteran's Powerblade [partial]
+       ignored: Equip Soldier {W}
+   1 Wizard's Staff [partial]
+       ignored: If an ability of equipped creature triggers, that ability triggers an additional time.
+       ignored: Equip Wizard {1}
+   1 Wrecking Ball Arm [partial]
+       ignored: Equipped creature has base power and toughness 7/7 and can't be blocked by creatures with power 2 or less.
+       ignored: Equip legendary creature {3}
