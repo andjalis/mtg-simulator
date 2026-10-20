@@ -25,7 +25,7 @@ import json
 import random
 import re
 
-from . import auras, copies, counting, delayed, graveyards, removal, search, xspells
+from . import auras, conditions, copies, counting, delayed, graveyards, removal, search, xspells
 from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, EquipCost, add_mana, jace_token, make_token, role_token
 from . import modal
 
@@ -544,6 +544,7 @@ class StackItem:
         self.kind = kind or ("spell" if card else "trigger")   # spell, copy, trigger, chapter, loyalty
         self.snow_spent = 0
         self.mana_spent = 0
+        self.condition = ""
 
     @property
     def is_spell(self): return self.kind in ("spell", "copy")
@@ -910,6 +911,17 @@ class Game:
         """Pay a "you may sacrifice / discard / forage / blight N. If you do, ..." cost when it is cheap for the AI."""
         kind, what = gate
         src = item.source if item is not None and isinstance(item.source, Permanent) else None
+        if kind == "life":
+            n = int(what)
+            if p.life <= n:      # never pay down to 0 life
+                return False
+            self.change_life(p, -n, "optional life payment")
+            return True
+        if kind == "sac_self":
+            if src is None or src not in p.battlefield:
+                return False
+            self.sacrifice(src)
+            return True
         if kind == "sac":
             other = what.startswith("other ")
             kinds = tuple(what[6:].split(" or ")) if other else tuple(what.split(" or "))
@@ -1755,8 +1767,12 @@ class Game:
 
     def queue_trigger(self, controller: Player, effects: list, source: Permanent | None = None,
                       name: str = "", context=None, targets: list | None = None, kind: str = "trigger",
-                      modes=None):
-        self.pending.append((controller, effects, source, name, context, targets, kind, modes))
+                      modes=None, condition: str = ""):
+        if condition:
+            probe = StackItem(controller, effects, [], source=source, context=context, kind=kind)
+            if not conditions.evaluate(self, controller, condition, probe):
+                return
+        self.pending.append((controller, effects, source, name, context, targets, kind, modes, condition))
 
     def fire(self, p: Player, event: str, source: Permanent | None = None, context=None, subject=None):
         """Queue the triggers for event: of ``source`` if given, else of p's permanents."""
@@ -1794,6 +1810,9 @@ class Game:
                     continue
                 if event == "survival" and not perm.tapped:
                     continue
+                if trig.condition and not conditions.evaluate(self, perm.controller, trig.condition,
+                        StackItem(perm.controller, [], [], source=perm, context=context)):
+                    continue
                 if trig.once_game:
                     if ("tg", i) in perm.ability_turns:
                         continue
@@ -1812,22 +1831,25 @@ class Game:
                 if subject is not None and any(e.data.get("subject_power") for e in effects):
                     effects = [dataclasses.replace(e, amount=max(0, subject.power)) if e.data.get("subject_power")
                                else e for e in effects]
-                self.queue_trigger(perm.controller, effects, perm, perm.card.name, context, modes=trig.modes)
+                self.queue_trigger(perm.controller, effects, perm, perm.card.name, context, modes=trig.modes,
+                                   condition=trig.condition)
         if event == "end_step" and source is None:
             for perm in list(self.opponent(p).battlefield):
                 for trig in perm.triggers:
                     if trig.event == "each_end_step":
-                        self.queue_trigger(perm.controller, trig.effects, perm, perm.card.name, context)
+                        self.queue_trigger(perm.controller, trig.effects, perm, perm.card.name, context,
+                                           condition=trig.condition)
         if source is not None:      # Role tokens give the enchanted creature triggers
             for aura in list(source.auras):
                 for trig in aura.card.host_triggers:
                     if trig.event == event:
-                        self.queue_trigger(aura.controller, trig.effects, source, aura.card.name, context)
+                        self.queue_trigger(aura.controller, trig.effects, source, aura.card.name, context,
+                                           condition=trig.condition)
         if source is None:      # abilities that trigger from the graveyard (Bloodghast)
             for card in list(p.graveyard):
                 for trig in card.gy_triggers:
                     if trig.event == event:
-                        self.queue_trigger(p, trig.effects, None, card.name, context=card)
+                        self.queue_trigger(p, trig.effects, None, card.name, context=card, condition=trig.condition)
 
     def flush_triggers(self) -> bool:
         """Put pending triggers on the stack, active player's first (so they resolve last)."""
@@ -1836,11 +1858,14 @@ class Game:
         pending, self.pending = self.pending, []
         order = [self.active, self.opponent(self.active)]
         pending.sort(key=lambda t: order.index(t[0]))
-        for controller, effects, source, name, context, targets, kind, modes in pending:
+        for controller, effects, source, name, context, targets, kind, modes, condition in pending:
             if modes:
                 effects = list(effects) + modal.pick(self, controller, modes, source, least=0)
                 if not effects:
                     continue
+            if any("cmc_xq" in e.data for e in effects):
+                effects = conditions.bind_counts(self, controller, effects,
+                        StackItem(controller, effects, [], source=source, context=context, kind=kind))
             if targets is None:
                 targets = self.auto_targets(controller, effects, source)
             targets = self.bind_graveyard_targets(controller, effects, targets, source)
@@ -1849,6 +1874,7 @@ class Game:
                     self.finish_chapter(source)
                 continue
             item = StackItem(controller, effects, targets, source=source, name=name, context=context, kind=kind)
+            item.condition = condition
             self.stack.append(item)
             self.log(f"{item} goes on the stack" + (f" -> {targets}" if any(targets) else ""), controller)
             self.check_ward(item)
@@ -1877,6 +1903,10 @@ class Game:
     def resolve_top(self):
         item = self.stack.pop()
         p = item.controller
+        if item.condition and not conditions.evaluate(self, p, item.condition, item):
+            self.log(f"{item} does nothing (intervening-if condition is false)", p)
+            self.state_based_actions()
+            return
         if item.is_spell and item.card.is_permanent:
             self.log(f"{item.card.name} resolves", p)
             base, kind, _ = self._origin(item.card)
@@ -1891,7 +1921,7 @@ class Game:
                     self._spent = ""
                     return
                 self._aura_host = host
-            perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
+            perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0), cast_item=item)
             self._aura_host = None
             self._spent = ""
             if kind == "disguise":
@@ -1902,7 +1932,7 @@ class Game:
                 perm.blitz = True
             if kind == "warp":
                 perm.warped = True
-            perm.was_cast = True
+            perm.was_cast = item.kind == "spell"
             perm.bargained = getattr(item, "bargained", False)
             perm.gifted = getattr(item, "gifted", False)
             if perm.gifted:
@@ -1921,6 +1951,8 @@ class Game:
                 perm.counters["+1/+1"] = perm.p1 + p.next_creature_counters
                 p.next_creature_counters = 0
             return
+        if any("cmc_xq" in e.data for e in item.effects):
+            item.effects = conditions.bind_counts(self, p, item.effects, item)
         targeted = [(e, t) for e, t in zip(item.effects, item.targets) if e.target in TARGETED
                     and not (t is None and e.data.get("upto"))
                     and not (e.target == "graveyard_card" and t == ())]
@@ -1935,7 +1967,27 @@ class Game:
             for i, (eff, tgt) in enumerate(zip(item.effects, item.targets)):   # "would die this turn" must precede the damage
                 if eff.kind == "exile_instead" and i and isinstance(item.targets[i - 1], Permanent):
                     item.targets[i - 1].exile_turn = self.turn
+            skip = 0
+            saved_conditions = {}
             for eff, tgt in zip(item.effects, item.targets):
+                if skip:
+                    skip -= 1
+                    if eff.target in TARGETED and self.legal_target(p, eff, tgt, item.source):
+                        prev = tgt
+                    continue
+                if eff.kind == "check_if":
+                    if not self.check_cond(p, eff, item, prev):
+                        skip = eff.data["skip"]
+                        continue
+                    cond = eff.data["condition"]
+                    value = saved_conditions[cond] if eff.data.get("saved") else conditions.evaluate(self, p, cond, item, prev)
+                    if eff.data.get("save"):
+                        saved_conditions[cond] = value
+                    if value == bool(eff.data.get("unless")):
+                        skip = eff.data["skip"]
+                    continue
+                if eff.kind != "reflexive":
+                    item.action_done = False
                 if eff.target in TARGETED:
                     if not self.legal_target(p, eff, tgt, item.source):
                         prev = None
@@ -1977,6 +2029,8 @@ class Game:
         c = eff.cond
         if not c:
             return True
+        if c.startswith("cc:"):
+            return conditions.evaluate(self, p, c, item, prev)
         if c[0] == "!":
             sub = Effect(eff.kind, cond=c[1:])
             return not self.check_cond(p, sub, item, prev)
@@ -1989,6 +2043,8 @@ class Game:
             return p.speed >= 4
         if c == "paid":
             return bool(getattr(item, "gate_paid", False))
+        if c == "action_done":
+            return bool(getattr(item, "action_done", False))
         if c == "harnessed":
             return bool(getattr(item.source, "harnessed", False))
         if c == "evidence":
@@ -2218,6 +2274,10 @@ class Game:
             targets = (self.fill_targets(p, mode_effects, mode_targets) if mode_indices is not None else
                        self.auto_targets(p, mode_effects)) + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")
+        item.cast_zone = "graveyard" if self._zone(p, kind) is p.graveyard else "hand" if self._zone(p, kind) is p.hand else "exile"
+        if kind == "prepared":
+            item.cast_zone = "battlefield"
+        item.kicked = kind == "kicker"
         item.snow_spent = sum(1 for s in payment if s.card.snow)
         item.x = x
         item.evidence = self.collect_evidence(p, card)
@@ -2235,6 +2295,9 @@ class Game:
         if self.commits_crime(p, targets):
             self.fire(p, "crime")
         if not card.is_ability:
+            conditions.observe(self, p, "cast_hand" if item.cast_zone == "hand" else "cast_other")
+            if kind == "warp":
+                conditions.observe(self, p, "warped")
             for perm in list(p.battlefield):
                 for trig in perm.triggers:
                     flt = trig.filter
@@ -2252,7 +2315,8 @@ class Game:
                             (trig.event == "cast_noncreature" and not card.is_creature) or
                             (trig.event == "cast_instant_sorcery" and (card.is_instant or card.is_sorcery))):
                         self.queue_trigger(p, trig.effects, perm, perm.card.name, modes=trig.modes,
-                                           context=item if copies.wants_spell(trig.effects) else None)
+                                           context=item if copies.wants_spell(trig.effects) else None,
+                                           condition=trig.condition)
             copies.on_cast(self, p, item)
             if self.spells_cast.get(p.name) == 2:
                 self.fire(p, "cast_second")
@@ -2666,7 +2730,8 @@ class Game:
         self.log("foretells a card", p)
         return True
 
-    def enter_battlefield(self, p: Player, card: CardDef, tapped_attacking: bool = False, x: int = 0) -> Permanent:
+    def enter_battlefield(self, p: Player, card: CardDef, tapped_attacking: bool = False, x: int = 0,
+                          cast_item: StackItem | None = None) -> Permanent:
         card, front = copies.clone_on_enter(self, p, card)
         perm = Permanent(card, p)
         perm.front = front
@@ -2674,6 +2739,12 @@ class Game:
         if card.start_engines and p.speed == 0:
             p.speed = 1
         perm.entered_x = x
+        if cast_item is not None:
+            perm.was_cast = cast_item.kind == "spell"
+            perm.bargained = getattr(cast_item, "bargained", False)
+            perm.gifted = getattr(cast_item, "gifted", False)
+            perm.kicked = getattr(cast_item, "kicked", False)
+            perm.cast_zone = getattr(cast_item, "cast_zone", "")
         perm.prepared = bool(card.prepared and card.back is not None)
         perm.spent_color = getattr(self, "_spent", "")
         others = sum(x.card.is_land for x in p.battlefield)
@@ -2730,6 +2801,12 @@ class Game:
         if card.etb_named_counters:
             perm.counters[card.etb_named_counters[0]] = card.etb_named_counters[1]
         p.battlefield.append(perm)
+        if not card.is_land:
+            conditions.observe(self, p, "nonland_entered")
+        if card.is_artifact:
+            conditions.observe(self, p, "artifact_entered")
+        if card.is_land:
+            conditions.observe(self, p, "land_entered")
         host = getattr(self, "_aura_host", None)
         if host is not None and card.aura:
             auras.attach(self, perm, host)
@@ -2783,6 +2860,7 @@ class Game:
                 perm.tapped = True
             delayed.created(self, p, perm, d, source)
         self.log(f"creates {n if n is not None else eff.amount} {d.get('kind') or d.get('name')} token(s)", p)
+        return count
 
     def transform(self, perm: Permanent):
         back = perm.card.back
@@ -2967,7 +3045,9 @@ class Game:
             if eff.data.get("x"):
                 n = (getattr(item.source, "entered_x", 0) if item.source is not None else getattr(item, "x", 0)) \
                     if item is not None else 0
-            self.create_token(who, eff, n, item.source if item else None)
+            created = self.create_token(who, eff, n, item.source if item else None)
+            if item is not None:
+                item.action_done = bool(created)
         elif k == "copy_token":
             tokens = [x for x in p.creatures if x.card.is_token]
             if tokens:
@@ -3008,7 +3088,7 @@ class Game:
             if isinstance(target, Permanent):
                 (target.perm_kw if eff.data.get("perm") else target.temp_kw).add(eff.data["keyword"])
         elif k == "add_counter":
-            if isinstance(target, Permanent):
+            if isinstance(target, Permanent) and target in target.controller.battlefield:
                 name = eff.data.get("counter", "+1/+1")
                 n = eff.amount
                 if eff.data.get("x") == "sacrificed":
@@ -3016,6 +3096,8 @@ class Game:
                     if n >= 3:
                         target.temp_kw.add("lifelink")
                 target.counters[name] = target.counters.get(name, 0) + n
+                if item is not None:
+                    item.action_done = n > 0
         elif k == "transform":
             if isinstance(target, Permanent):
                 self.transform(target)
@@ -3079,6 +3161,8 @@ class Game:
             for _ in range(min(eff.amount, len(who.library))):
                 who.milled_last.append(who.library.pop())
                 who.graveyard.append(who.milled_last[-1])
+            if item is not None:
+                item.action_done = bool(who.milled_last)
         elif k == "exile_top":
             p.impulse_new = []
             for _ in range(min(eff.amount, len(p.library))):
@@ -3343,7 +3427,8 @@ class Game:
                 v.counters["-1/-1"] = v.m1 + eff.amount
         elif k == "reflexive":
             if item is not None:
-                self.queue_trigger(p, eff.data["effects"], item.source, f"{source} reflexive", item.context)
+                self.queue_trigger(p, eff.data["effects"], item.source, f"{source} reflexive", item.context,
+                                   condition=eff.data.get("condition", ""))
         elif k == "pay_gate":
             if item is not None:
                 item.gate_paid = False
@@ -3761,6 +3846,8 @@ class Game:
         owner = perm.controller
         owner.battlefield.remove(perm)
         owner.perm_left_turn = True
+        if not perm.card.is_land:
+            conditions.observe(self, owner, "nonland_left")
         if perm.card.aura:
             auras.detach(perm)
         perm.attached_to = None
@@ -3799,7 +3886,7 @@ class Game:
         for other in list(p.battlefield):
             for trig in other.triggers:
                 if trig.event == "sacrifice" and card_matches(perm.card, trig.filter):
-                    self.queue_trigger(p, trig.effects, other, other.card.name)
+                    self.queue_trigger(p, trig.effects, other, other.card.name, condition=trig.condition)
         self.dies(perm) if perm.is_creature else self.leave_battlefield(perm, "graveyard")
 
     def discard_card(self, p: Player, card: CardDef):
