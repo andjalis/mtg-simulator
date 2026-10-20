@@ -656,7 +656,8 @@ class Round2Tests(Base):
         self.assertTrue(land.is_creature)
         self.assertEqual((land.power, land.toughness), (2, 2))
         trig = next(t for t in ASCENSION.triggers if t.event == "land_enters")
-        self.assertEqual(trig.effects[-2].cond, "counters:quest>=4")
+        self.assertEqual(trig.effects[-1].kind, "reflexive")
+        self.assertEqual(trig.effects[-1].data["condition"], "counters:quest>=4")
 
     def test_synthesizer_makes_scaling_artifact_tokens(self):
         self.perm(SYNTH, self.a)
