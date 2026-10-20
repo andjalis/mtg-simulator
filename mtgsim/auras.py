@@ -6,11 +6,12 @@
     When this Aura enters, tap enchanted creature.
     When this Equipment enters, attach it to target creature you control.
 
-An Aura is a permanent on its caster's battlefield that is also listed in ``host.auras``. The host is picked
-when the Aura resolves (it isn't targeted, so it can't be fizzled by hexproof), and an Aura with no legal host
-isn't cast. Friendly Auras (a bonus, a keyword) go on the caster's best creature, hostile ones (a penalty, "doesn't
-untap", "can't attack or block") on the opponent's best. Not modelled: "you control enchanted creature", "loses all
-abilities", Auras that can be moved.
+An Aura is a permanent on its caster's battlefield that is also listed in ``host.auras``. An Aura spell targets
+its host: ``is_legal_host`` is the rules check (the enchant restriction, on the battlefield, and when targeting,
+hexproof), ``hosts`` lists every legal target and ``choose_host`` is the casting policy. Friendly Auras (a bonus,
+a keyword) go on the caster's best creature, hostile ones (a penalty, "doesn't untap", "can't attack or block") on
+the opponent's best; an Aura with no host on the wanted side isn't cast. Not modelled: "you control enchanted
+creature", "loses all abilities", Auras that can be moved.
 """
 from __future__ import annotations
 
@@ -76,33 +77,57 @@ def _effect(kind, target, data=None):
 
 # ------------------------------------------------------------------ the engine side
 
+def fits(card, host, p) -> bool:
+    """Whether host meets card's enchant restriction for an Aura controlled by p (no targeting rules)."""
+    kinds, c = card.aura, host.card
+    if kinds in ("creature", "creature you control", "creature an opponent controls"):
+        ok = host.is_creature
+    elif kinds == "creature or Vehicle":
+        ok = host.is_creature or "Vehicle" in c.subtypes
+    elif kinds == "artifact or creature":
+        ok = host.is_creature or c.is_artifact
+    elif kinds == "artifact creature":
+        ok = host.is_creature and c.is_artifact
+    elif kinds == "land":
+        ok = c.is_land
+    elif kinds == "artifact":
+        ok = c.is_artifact
+    elif kinds == "nonland permanent":
+        ok = not c.is_land
+    else:
+        ok = True
+    if kinds == "creature you control":
+        ok = ok and host.controller is p
+    if kinds == "creature an opponent controls":
+        ok = ok and host.controller is not p
+    return ok
+
+
+def is_legal_host(game, p, card, host, targeted=True) -> bool:
+    """Whether an Aura card controlled by p may enchant host: a permanent on the battlefield that meets the enchant
+    restriction; targeted=True (casting, resolving) also applies hexproof."""
+    from .engine import Permanent
+    if not isinstance(host, Permanent) or host not in host.controller.battlefield:
+        return False
+    if not fits(card, host, p):
+        return False
+    return game.targetable(host, p) if targeted else True
+
+
 def hosts(game, p, card) -> list:
-    """The permanents the Aura card could enchant when p casts it."""
-    kinds = card.aura
-    opp = game.opponent(p)
-    pool = [x for pl in game.players for x in pl.battlefield]
-    out = []
-    for x in pool:
-        c = x.card
-        ok = (x.is_creature if "creature" in kinds and "artifact" not in kinds and "Vehicle" not in kinds
-              else x.is_creature or c.is_artifact if kinds == "artifact or creature"
-              else x.is_creature or "Vehicle" in c.subtypes if kinds == "creature or Vehicle"
-              else c.is_land if kinds == "land"
-              else c.is_artifact if kinds == "artifact"
-              else not c.is_land if kinds == "nonland permanent" else True)
-        if kinds in ("creature you control",) and x.controller is not p:
-            ok = False
-        if kinds == "creature an opponent controls" and x.controller is not opp:
-            ok = False
-        if ok and game.targetable(x, p):
-            out.append(x)
+    """Every permanent p could target with the Aura card, whichever side it is on."""
+    return [x for pl in game.players for x in pl.battlefield if is_legal_host(game, p, card, x)]
+
+
+def wanted_hosts(game, p, card) -> list:
+    """The legal hosts on the side the policy wants: p's own for friendly Auras, the opponent's for hostile ones."""
     hostile = card.aura_hostile
-    return [x for x in out if (x.controller is not p) == hostile]
+    return [x for x in hosts(game, p, card) if (x.controller is not p) == hostile]
 
 
 def choose_host(game, p, card):
     from .engine import perm_value
-    cands = hosts(game, p, card)
+    cands = wanted_hosts(game, p, card)
     if not cands:
         return None
     return max(cands, key=lambda x: perm_value(x) - (0.5 * len(x.auras) if not card.aura_hostile else 0))

@@ -16,8 +16,8 @@ engine hands the effect kinds in KINDS to resolve() here.
 
 Simplifications: the permanent or spell to copy is picked when the effect resolves (so "target"
 only checks hexproof on the opponent's permanents), the legend rule isn't modelled (so "except it
-isn't legendary" changes nothing), and a token sacrificed "at the beginning of the next end step"
-goes at its controller's end step.
+isn't legendary" changes nothing). Delayed sacrifices use the shared next-end-step
+scheduler; a quoted ability granted to the token remains a normal triggered ability.
 
 This module imports mtgsim.cards and mtgsim.engine lazily, inside functions, because both import it.
 """
@@ -50,7 +50,7 @@ def parse_except(text: str, mods: dict | None = None) -> dict | None:
     mods = dict(mods or {})
     text = text.strip().rstrip(".")
     if _SAC_QUOTE.search(text + "."):
-        mods["sac_end"] = True
+        mods["sac_each_end"] = True
         text = _SAC_QUOTE.sub("", text + ".").strip().rstrip(".").strip()
         text = re.sub(r"(?:,? and|,)$", "", text).strip()
     pron = r"(?:it|he|she|they|the tokens?|the copy|his|its)"
@@ -263,8 +263,8 @@ def make_copy(card, mods: dict, token: bool = True, name: str | None = None):
         changes["subtypes"] = card.subtypes | mods["subtypes"]
     if mods.get("keywords"):
         changes["keywords"] = card.keywords | mods["keywords"]
-    if mods.get("sac_end"):
-        changes["triggers"] = list(card.triggers) + [Trigger("end_step", [Effect("copy_sac", target="self")])]
+    if mods.get("sac_each_end"):
+        changes["triggers"] = list(card.triggers) + [Trigger("each_end_step", [Effect("copy_sac", target="self")])]
     return dataclasses.replace(card, **changes)
 
 
@@ -351,7 +351,12 @@ def resolve(game, p, eff, target, item=None):
         chosen = cands if d.get("each") else [max(cands, key=lambda x: score(x.card))]
         for perm in chosen:
             for _ in range(n):
-                game.enter_battlefield(p, make_copy(perm.card, d.get("mods", {})))
+                token = game.enter_battlefield(p, make_copy(perm.card, d.get("mods", {})))
+                if d.get("created_haste"):
+                    token.temp_kw.add("haste")
+                if d.get("mods", {}).get("sac_end") or d.get("delayed_sac"):
+                    from . import delayed
+                    delayed.sacrifice_later(game, p, token, source, d.get("delayed_sac", "any"))
             game.log(f"creates {n} token cop{'y' if n == 1 else 'ies'} of {perm.card.name}", p)
     elif k == "become_copy":
         target = source
@@ -407,6 +412,10 @@ def copy_spell(game, p, spell):
         card = dataclasses.replace(card, is_token=True)
     targets = game.auto_targets(p, spell.effects)
     targets = [t if t is not None else old for t, old in zip(targets, spell.targets)]
+    if card.aura:
+        from . import auras
+        host = auras.choose_host(game, p, card)
+        targets = [host if host is not None else (spell.targets[0] if spell.targets else None)]
     copy = StackItem(p, list(spell.effects), targets, card=card, name=f"copy of {spell.card.name}", kind="copy")
     copy.x = getattr(spell, "x", 0)
     game.stack.append(copy)

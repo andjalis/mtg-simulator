@@ -1,0 +1,76 @@
+Standard: 4,902 distinct non-basic cards from 20 sets (WOE to FRA)
+
+Status                                                Cards   Share
+Fully supported (every line matched by a template)    1,833   37.4%
+Simplified (all lines matched, some played loosely)      42    0.9%
+Partly supported (at least one line ignored)          3,027   61.8%
+Unknown to the card database                              0    0.0%
+
+Partly supported cards that miss only one line: 1,920
+Rules sentences handled (rough): 60% (7,700 of 12,933)
+
+Most ignored families (cards with at least one ignored line in the family, top 20):
+  counters                             591
+  triggered (whenever/when)            521
+  graveyard                            433
+  tokens                               360
+  activated abilities                  316
+  exile                                315
+  sacrifice                            275
+  X costs                              176
+  can't restrictions                   146
+  equipment                            116
+  copy effects                          86
+  auras/enchant                         82
+  library search                        64
+  cost reduction                        64
+  mana restrictions                     43
+  transform                             36
+  +1/+1 static (anthems)                34
+  modal (choose)                        34
+  set: exhaust                          23
+  set: food                             19
+
+All unmatched lines (top 20; count distinct cards, ties alphabetical):
+  18  Put the rest on the bottom of your library in a random order.
+  10  Exile ~.
+  10  You may look at the top card of your library any time.
+   9  Storied
+   7  Target opponent reveals their hand.
+   7  look at the top five cards of your library.
+   6  Put the rest into your graveyard.
+   6  Tiered
+   5  A deck can have any number of cards named ~.
+   5  If you do, draw two cards.
+   5  Paradigm
+   5  Untap that creature.
+   5  look at the top card of your library.
+   5  return the exiled card to its owner's hand.
+   5  ~ enters tapped unless you control a Mount or Vehicle.
+   4  Exile that card.
+   4  Put one of them into your hand and the other into your graveyard.
+   4  Target creature's owner puts it on their choice of the top or bottom of their library.
+   4  That player discards that card.
+   4  You choose a nonland card from it.
+
+Cards missing exactly one line (top 20; count distinct cards, ties alphabetical):
+   3  Paradigm
+   3  Void — At the beginning of your end step, if a nonland permanent left the battlefield this turn or a spell was warped this turn, put a +1/+1 counter on ~.
+   3  put its counters on target creature you control.
+   2  Alliance — Whenever another creature you control enters, ~ gets +1/+0 until end of turn.
+   2  As long as an artifact entered the battlefield under your control this turn, ~ can attack as though it didn't have defender.
+   2  Choose one of them.
+   2  Each player may discard their hand and draw seven cards.
+   2  Enchanted permanent loses all abilities and doesn't untap during its controller's untap step.
+   2  Exile ~.
+   2  If that spell is countered this way, exile it instead of putting it into its owner's graveyard.
+   2  Its controller manifests dread.
+   2  Suspect it.
+   2  Whenever another creature you control enters while ~ has a -1/-1 counter on it, remove a -1/-1 counter from ~.
+   2  Whenever equipped creature attacks, tap target creature defending player controls.
+   2  Whenever ~ becomes the target of a spell or ability an opponent controls, draw a card.
+   2  Whenever ~ or another creature or artifact you control dies, target opponent loses 1 life and you gain 1 life.
+   2  You draw a card and gain 1 life.
+   2  You may play an additional land this turn.
+   2  You may put a land card from your hand onto the battlefield tapped.
+   2  You may put a permanent card from among them into your hand.

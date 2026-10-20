@@ -151,6 +151,42 @@ win rates at these sample sizes. It costs about 1.5% more CPU time per game
 (240 s → 244 s for the cross-matchup runs). The suspected Tenacious Underdog
 misplay from the review log was not reproduced: that log had no life totals.
 
+## Precombat kill setup (measured October 2026)
+
+`HeuristicAI.lethal_setup` (commit `363d3ce`) casts the fewest pump, keyword,
+burn and cast-trigger spells before combat that make an attack lethal through
+the opponent's best blocks; with no such kill it keeps its spells. It fixes the
+Kiln Fiend fixture (Temur Battle Rage plus Lightning Bolt against 14 life: the
+pilot now casts Bolt precombat for the extra +3/+0 trigger, `tests/test_combo.py`).
+It shipped without a win-rate measurement; this is that measurement.
+
+Setup: the same `HeuristicAI` with `lethal_setup` on, or overridden to do
+nothing ("off"), for deck A; deck B on the default `HeuristicAI` or on
+`BaselineAI`. Seeds 21–23, 1,000 games each (3,000 per arm), draws count half,
+95% CIs from the binomial normal approximation. On and off arms share seeds but
+desync after the first different decision, so they are not paired games; the
+CIs treat the arms as unpaired samples. "Fired" is the share of games in which deck A's setup cast a spell.
+Script and raw rows: `results/precombat-setup/`.
+
+| Deck A vs deck B (B's pilot) | Off | On | On − off | Fired |
+| --- | --- | --- | --- | --- |
+| Kiln Fiend combo vs mono-red aggro (Heuristic) | 14.3% ±1.3 | 21.9% ±1.5 | +7.6 ±1.9 | 21% |
+| Kiln Fiend combo vs Rakdos midrange (Heuristic) | 11.1% ±1.1 | 16.0% ±1.3 | +4.9 ±1.7 | 17% |
+| Kiln Fiend combo vs mono-red aggro (Baseline) | 12.4% ±1.2 | 17.3% ±1.4 | +5.0 ±1.8 | 14% |
+| Kiln Fiend combo mirror (Baseline) | 69.5% ±1.6 | 73.9% ±1.6 | +4.5 ±2.3 | 65% |
+| Mono-red aggro vs Azorius control (Heuristic) | 67.2% ±1.7 | 69.3% ±1.7 | +2.1 ±2.4 | 27% |
+
+Combo mirror, setup on against setup off: 56.5% ±1.8 for the "on" side
+(per seed 54.8, 58.1, 56.5%).
+
+Result: a real gain for the deck it was built for. All four combo comparisons
+improve by 4.5–7.6 points with CIs that exclude zero, and the per-seed numbers
+agree in direction. For mono-red aggro the +2.1 points are inside the noise
+(CI −0.3 to +4.5) even though setup fires in about a quarter of its games;
+why those firings rarely change the result was not investigated. The Kiln Fiend
+deck remains a weak tested built-in fixture (16–22% against the platinum decks); these
+runs do not separate list, pilot and engine limits.
+
 ## What changed and why
 
 - **Control was the deck the old AI couldn't play.** It cast counters and

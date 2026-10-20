@@ -1,0 +1,4 @@
+three_followups: 92% matched by templates (including simplifications) (11 fully template-matched, 1 partly supported; 12 cards)
+   1 Dissection Tools [partial]
+       ignored: Equipped creature has +2/+2 and has deathtouch and lifelink.
+       ignored: Equip—Sacrifice a creature.

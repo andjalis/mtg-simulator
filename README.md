@@ -258,17 +258,70 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   unless you control a basic land / an Equipment / a Plains or an Island, or
   behold a Jace, Clarion Conqueror, "can't block", library searches to hand,
   team pumps and counters on each creature you control
-- Equipment: equip costs (and Dwarven Mauler's discount), stat, keyword and ward
-  bonuses, falling off when the creature leaves; the default policy equips the
-  best creature before combat. Leyline Axe starts on the battlefield.
+- Equipment: mana equip costs (and Dwarven Mauler's discount), "Equip—Sacrifice
+  a creature", stat bonuses using "gets" or "has", keyword and ward bonuses.
+  Equip selects its creature before paying and uses the ability stack, allowing
+  responses; it rechecks that same target on resolution. Sacrifice costs trigger
+  sacrifice/death abilities even if attachment later fails. Attachments retain
+  their bonuses across control changes and fall off when the host leaves or
+  stops being a creature. The default policy equips the best creature before
+  combat, sacrificing the least valuable other creature for a sacrifice cost;
+  it leaves its only creature alive. Leyline Axe starts on the battlefield.
+  Mixed mana/sacrifice costs and restricted sacrifice wording are unsupported.
   Conditional keywords ("as long as you control another Dwarf", "as long as an
   opponent has 10 or less life"), "whenever another Dwarf or Equipment you
   control enters" triggers (also once each turn), filtered "look at the top N"
+- Auras: selected enchant restrictions, stat and keyword bonuses, tapping,
+  preventing untaps, and preventing attacks or blocks; self-attaching Equipment
+  entry effects; Role tokens and Job select. An Aura spell targets its host when
+  it is cast (a friendly Aura picks the caster's best creature, a hostile one the
+  opponent's), so ward and responses apply; if the host is no longer a legal target
+  on resolution (it left, gained hexproof against the caster, or no longer meets a
+  "you control" restriction) the Aura goes to the graveyard without choosing
+  another host. An attached Aura whose host stops meeting
+  its enchant restriction is put into the graveyard; hexproof alone doesn't remove
+  it. Only the listed enchant restrictions are recognized. Role tokens,
+  manifest-and-attach and self-attaching Equipment attach without an Aura spell.
+  Control-changing, ability-removing and movable Auras remain unsupported.
+- Copy templates: token copies of permanents (including Reflection of Kiki-Jiki's
+  haste and sacrifice effect), clones, temporary creature copies, copies of spells
+  and selected activated/triggered abilities. Copy choices are made on resolution
+  and the legend rule is absent. These are selected text patterns, not every copy effect.
+- Delayed "next end step" effects: a one-time delayed trigger fires at the
+  beginning of the next end step after the effect resolves, on either player's turn
+  ("your next end step": the next one on its controller's turn); one created during
+  an end step waits for the following one. Matched forms are exile-and-return pairs
+  of a single target ("Exile (up to one) (other) target creature/artifact/nonland
+  permanent (you control). Return it to the battlefield under its owner's control
+  (with a flying counter) at the beginning of the next end step") and "Sacrifice
+  it/them/that token" (or "gains haste") directly after creating tokens or token
+  copies. The card returns as a new object under its owner's control only if it is
+  still the same exiled card; a delayed sacrifice affects only the objects it was
+  created for, and only while the ability's controller still controls them (a stolen
+  token survives), following [the Comprehensive Rules](https://media.wizards.com/2026/downloads/MagicCompRules%2020260619.pdf)
+  603.7. A quoted "At the beginning of the end step, sacrifice this" granted to a
+  copy is not delayed: it triggers at every end step for the token's current
+  controller. Conditional returns, multi-target returns, returns to hand, other
+  delayed actions ("exile/destroy that token") and pronouns not bound to a
+  preceding token creation remain unsupported.
 - Warp (exiled at the end step, cast again from exile later), evoke, "if {U}{U}
   was spent" modes (hybrid costs paid in the colour that turns the mode on),
-  offspring, plot, spree, harmonize (as flashback), X costs (X is all the spare
-  mana) for X damage and "enters with X +1/+1 counters". Warp and evoke are only
-  offered when the full cost can't be paid.
+  offspring, plot, spree, harmonize (as flashback, without its creature-tapping
+  discount). Selected X-cost templates cover damage, -X/-X, draw, life gain/loss
+  and drain, "unless its controller pays {X}", entry counters, tokens and copies.
+  X uses all remaining payable mana; arbitrary X wording is unsupported. Warp and
+  evoke are only offered when the full cost can't be paid.
+- Convoke, prepared spell copies (entry preparation and matched rearming triggers),
+  mobilize, disguise, manifest dread, endure, discover, connive, saddle, exploit,
+  bargain, gift, exhaust, renew and firebending. These use selected templates:
+  disguise starts as a 2/2 with ward {2} and turns face up when its cost can be paid;
+  manifest dread makes a 2/2 from the lower-valued of two cards and cannot turn it
+  face up; "manifest dread, then attach ~ to that creature" attaches the Equipment
+  to that 2/2 (nothing is attached if the library was empty). Optional payments
+  and choices follow the engine's policy.
+  Granted flashback lasts until cleanup and pays the original mana cost; the
+  engine chooses the highest-mana-value eligible graveyard spell on resolution.
+  Raid entry counters check whether the controller attacked this turn.
 - Map (explore), Lander and Food tokens, "its controller creates Map tokens /
   may search for a basic land" (Get Lost, Erode), exile until this leaves the
   battlefield (Seam Rip, Pinnacle Starcage), graveyard triggers that return the
@@ -293,7 +346,7 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   power", shuffling a stunned creature away, Enduring creatures returning as
   enchantments, edicts that exile, Bringer of the Last Gift's mass swap, lands
   that become creatures for good. Terror of the Peaks' life tax is played as
-  ward (pay 3 life); face-down permanents aren't modelled.
+  ward (pay 3 life); effects that inspect face-down history are approximated.
 - Craft with artifact (exiles an artifact card from the graveyard, else an
   artifact token, else the cheapest other artifact, then returns the card
   transformed); Station (charge counters from tapping another creature; the
@@ -302,9 +355,13 @@ ignored text is listed) or unknown. It works on decklists and on whole tiers
   "put ~ into its owner's library third from the top"
 - London mulligan, drawing from an empty library, hand size, 60-turn cap
 
-Not yet: auras, equipment tokens and attaching equipment by effects (Thorin), X in
-anything but damage and +1/+1 counters, copy effects (Reflection of Kiki-Jiki),
-casualty (never paid), day/night, Old-Growth Troll's return. Modal double-faced cards keep their land face in
+Remaining gaps include unrecognized Aura/Equipment attachment and token wording,
+X and copy effects outside the matched patterns, casualty (never paid), day/night
+(the day face stays in play), Room unlocking, and Old-Growth Troll's return.
+Earthbend does not return a destroyed land. The coverage labels above count
+matched text, including templates with these execution approximations; they do
+not establish complete rules support for a mechanic or card.
+Modal double-faced cards keep their land face in
 `CardDef.land_face`, played with `Game.play_land(p, card, back=True)`.
 Builtin runs report known coverage gaps; this is not an exhaustive rules audit.
 
@@ -341,6 +398,12 @@ adventures, flashback, foretold cards, blitz, channel; cast them with
 `game.legal_targets(p, effect)`, `game.targetable(obj, p)`,
 `engine.default_choose_target(game, p, effect)`.
 
+`run_match(ai_a=..., ai_b=...)` makes a shallow copy of each supplied AI for
+each game and seat, preserving constructor configuration, and calls `reset()`
+if present. `HeuristicAI.reset()` clears its idle-turn counter. Custom AIs can
+omit the hook; if they hold mutable per-game state, their hook should replace
+those containers so copies do not share them with the supplied instance.
+
 ## Layout
 
 | File | Role |
@@ -374,7 +437,8 @@ straightforward decks (big creatures) over decks that need careful play.
 the value of creatures in play. It picks attacks by simulating each attack set
 against the blocks the defender would make and checking the crack-back, finds
 blocks (including double blocks and chumps) by local search over the same
-combat model, spends mana on the combination of spells that uses it best, holds
+combat model, sets up lethal attacks with precombat pump and cast-trigger spells,
+spends mana on the combination of spells that uses it best, holds
 instants for the opponent's turn (removal on attackers, counters on real
 threats, burn and card draw at their end step, pump spells to save a creature
 or win a block) and keeps counter mana up. `AI_RESULTS.md` has before/after

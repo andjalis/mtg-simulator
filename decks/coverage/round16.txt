@@ -1,0 +1,9 @@
+# Template-coverage fixture, not a playable deck.
+1 Abigale, Poet Laureate
+1 Kirol, History Buff
+1 Scathing Shadelock
+1 Flashback
+1 Slickshot Lockpicker
+1 Stingcaster Mage
+1 Cruel Administrator
+1 Goblin Boarders

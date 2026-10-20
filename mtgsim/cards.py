@@ -172,6 +172,7 @@ class CardDef:
     stops_activations: bool = False                     # Clarion Conqueror
     # Equipment: equip cost, and what the equipped creature gets.
     equip_cost: dict | None = None
+    equip_sacrifice: bool = False                       # Equip—Sacrifice a creature (instead of mana)
     equip_bonus: tuple = (0, 0)
     equip_keywords: frozenset = frozenset()
     equip_ward: int = 0
@@ -610,7 +611,8 @@ _EFFECT_PATTERNS = [
     (r"~ deals 1 damage to each of one or two targets", lambda m: Effect("damage", 1, target="any")),
     (r"investigate", lambda m: Effect("token", 1, data={"kind": "clue"})),
     (r"(?:~|it|this creature) endures (\d+)", lambda m: Effect("endure", int(m[1]))),
-    (r"manifest dread", lambda m: Effect("manifest_dread")),
+    (r"manifest dread(?:, then attach (?:~|this equipment) to that creature)?",
+     lambda m: Effect("manifest_dread", data={"attach": "attach" in m[0].lower()})),
     (r"untap ~", lambda m: Effect("untap_self")),
     (r"untap it", lambda m: Effect("untap_prev", target="prev")),
     (r"it explores", lambda m: Effect("explore", target="prev")),
@@ -694,8 +696,10 @@ _EFFECT_PATTERNS = [
      r"([\w ,/'-]+?) cards?(?: each)?(?: with mana value (\d+|x) or (less|greater))? from (your|a|an opponent's) "
      r"graveyard (to your hand|(?:onto|to) the battlefield)( tapped)?(?: under your control)?",
      lambda m: _gy_move(m)),
-    (r"target instant or sorcery card in your graveyard gains flashback until end of turn",
+    (r"target instant or sorcery card in your graveyard gains flashback until end of turn"
+     r"(?:, with a flashback cost equal to its mana cost)?",
      lambda m: Effect("grant_flashback")),
+    (r"~ becomes prepared", lambda m: Effect("prepare", target="self")),
     (r"put (?:a|an) ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) counter on (target creature|~|it)",
      lambda m: Effect("grant", target=_kw_target(m[2]), data={"keyword": m[1].lower(), "perm": True})),
     (r"put (a|two) \+1/\+1 counters? and (?:a|an) ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) counter on (target creature|~|it)",
@@ -739,6 +743,11 @@ _EFFECT_PATTERNS = [
 ]
 
 _SUBS = [
+    # Bind this cost sentence to the grant it qualifies. The engine's granted
+    # flashback variant pays the card's mana cost; unrelated cost text stays visible.
+    (re.compile(r"(target instant or sorcery card in your graveyard gains flashback until end of turn)\.\s+"
+                r"the flashback cost is equal to its mana cost\.", re.I),
+     lambda m: f"{m[1]}, with a flashback cost equal to its mana cost."),
     (re.compile(r"tap another target nonland permanent\. its activated abilities can't be activated for as long as it "
                 r"remains tapped\.", re.I), lambda m: "NETTAP."),
     (re.compile(r"you may discard a card\. if you do, draw (a card|two cards)\.", re.I),
@@ -1023,6 +1032,8 @@ def _parse_effects(text: str, opts: bool = False):
     for sentence in re.split(r"(?<=\.)\s+", text.strip()):
         s = sentence.strip().rstrip(".").strip()
         if not s:
+            continue
+        if not unmatched and _delayed.continuation(effects, s):
             continue
         mp = re.fullmatch(r"you may pay ((?:\{[WUBRGC0-9]+\})+)", s, re.I)
         if mp:
@@ -1372,7 +1383,7 @@ def _parse_face(data: dict) -> CardDef:
         if re.fullmatch(r"~ can't block\.", line):
             extra["cant_block"] = True
             continue
-        m = re.fullmatch(r"Equipped creature (?:gets \+(\d+)/\+(\d+))?(?: and )?(?:has (.+?))?\.", line)
+        m = re.fullmatch(r"Equipped creature (?:(?:gets|has) \+(\d+)/\+(\d+))?(?: and )?(?:has (.+?))?\.", line)
         if m and (m[1] or m[3]):
             kws, ward, ok = set(), 0, True
             for k in re.split(r", (?:and )?| and ", m[3] or ""):
@@ -1395,8 +1406,12 @@ def _parse_face(data: dict) -> CardDef:
         m = re.fullmatch(r"Equip (\{[^ .]+\})(\. This ability costs [^.]+ less to activate[^.]*\.)?", line)
         if m:
             extra["equip_cost"] = parse_mana_cost(m[1])
+            extra["equip_sacrifice"] = False
             if m[2]:
                 approximations.append(f"cost reduction ignored:{m[2]}")
+            continue
+        if re.fullmatch(r"Equip\s*—\s*Sacrifice a creature\.", line):
+            extra.update(equip_cost={}, equip_sacrifice=True)
             continue
         m = re.fullmatch(r"Equip abilities you activate that target ~ cost \{(\d+)\} less to activate\.", line)
         if m:
@@ -1752,7 +1767,7 @@ def _parse_face(data: dict) -> CardDef:
             cond = ("gy_perm>=" if m[4] else "gy>=") + str(_num(m[3]))
             extra["pt_if"] = extra.get("pt_if", ()) + ((cond, int(m[1]), int(m[2])),)
             continue
-        m = re.fullmatch(r"~ enters with a \+1/\+1 counter on it if (an opponent lost life|a creature died|you attacked) "
+        m = re.fullmatch(r"(?:Raid — )?~ enters with a \+1/\+1 counter on it if (an opponent lost life|a creature died|you attacked) "
                          r"this turn\.", line)
         if m:
             extra["etb_counters_if"] = ({"an opponent lost life": "opp_lost_life", "a creature died": "creature_died",
@@ -2223,8 +2238,10 @@ def make_token(name: str, power: int, toughness: int, keywords=frozenset(), trig
 # Copy effects live in their own module; its templates join the ones above.
 from . import auras as _auras, copies as _copies, removal as _removal, search as _search, xspells as _xspells, counting as _counting  # noqa: E402
 
-_EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS
-_SUBS += _copies.SUBS + _counting.SUBS
+from . import delayed as _delayed
+
+_EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS + _delayed.EFFECT_PATTERNS
+_SUBS += _copies.SUBS + _counting.SUBS + _delayed.SUBS
 
 
 _JACE = None

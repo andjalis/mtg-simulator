@@ -15,7 +15,7 @@ Grandmaster, MMR), deck assessment, and a web page (`web/`). The built-in engine
 
 ```
 python3 -m mtgsim.build_carddb                 # once per clone; builds mtgsim/data/cards.sqlite3 (~13 s)
-python3 -m unittest discover -s tests -t .     # tests (~15 s, 98 tests, all should pass)
+python3 -m unittest discover -s tests -t .     # tests (~3 min, 528 tests, all should pass)
 python3 -m mtgsim A.txt B.txt -n 1000          # matchup
 python3 -m mtgsim A.txt --gauntlet B.txt C.txt # one deck vs several
 python3 -m mtgsim A.txt B.txt -n 1 --log       # play-by-play of one game
@@ -69,6 +69,14 @@ a fake Forge directory and don't need a real install; a real Forge run needs Jav
   `AI_RESULTS.md` rather than in code comments.
 - **Pure stdlib.** The web page and server use only the standard library too.
 - **Git.** Commit or push only when asked. Work on a branch, not `main`, unless told otherwise.
+
+## Development loop and progress log
+
+`results/implementation-progress.md` is the project's working memory: current status, the
+ranked **Next up** list, known gaps and a dated log. For any development task, follow
+`.claude/skills/mtg-dev/SKILL.md` (also at `.agents/skills/mtg-dev/`): read the log first,
+reconcile it with `git log`, do and verify the work, update the log, and finish by suggesting
+next steps as ready-to-run `ask` commands.
 
 ## Delegated work (`ask`)
 

@@ -1,0 +1,30 @@
+three_followups: 0% matched by templates (including simplifications) (0 fully template-matched, 12 partly supported; 12 cards)
+   1 Abuelo, Ancestral Echo [partial]
+       ignored: {1}{W}{U}: Exile another target creature or artifact you control. Return it to the battlefield under its owner's control at the beginning of the next end step.
+   1 Conductive Machete [partial]
+       ignored: manifest dread, then attach ~ to that creature.
+   1 Cursed Windbreaker [partial]
+       ignored: manifest dread, then attach ~ to that creature.
+   1 Dissection Tools [partial]
+       ignored: manifest dread, then attach ~ to that creature.
+       ignored: Equipped creature has +2/+2 and has deathtouch and lifelink.
+       ignored: Equip—Sacrifice a creature.
+   1 Explosive Getaway [partial]
+       ignored: Return it to the battlefield under its owner's control at the beginning of the next end step.
+   1 Harried Dronesmith [partial]
+       ignored: Sacrifice it at the beginning of your next end step.
+   1 Killer's Mask [partial]
+       ignored: manifest dread, then attach ~ to that creature.
+   1 Molten Duplication [partial]
+       ignored: Sacrifice it at the beginning of the next end step.
+   1 Salt Road Skirmish [partial]
+       ignored: They gain haste until end of turn.
+       ignored: Sacrifice them at the beginning of the next end step.
+   1 Salvation Swan [partial]
+       ignored: exile up to one target creature you control without flying.
+       ignored: Return it to the battlefield under its owner's control with a flying counter on it at the beginning of the next end step.
+   1 Skyskipper Duo [partial]
+       ignored: exile up to one other target creature you control.
+       ignored: Return it to the battlefield under its owner's control at the beginning of the next end step.
+   1 War Effort [partial]
+       ignored: Sacrifice it at the beginning of the next end step.

@@ -1,0 +1,17 @@
+round16: 0% matched by templates (including simplifications) (0 fully template-matched, 8 partly supported; 8 cards)
+   1 Abigale, Poet Laureate [partial]
+       ignored: ~ becomes prepared.
+   1 Cruel Administrator [partial]
+       ignored: Raid — ~ enters with a +1/+1 counter on it if you attacked this turn.
+   1 Flashback [partial]
+       ignored: The flashback cost is equal to its mana cost.
+   1 Goblin Boarders [partial]
+       ignored: Raid — ~ enters with a +1/+1 counter on it if you attacked this turn.
+   1 Kirol, History Buff [partial]
+       ignored: ~ becomes prepared.
+   1 Scathing Shadelock [partial]
+       ignored: ~ becomes prepared.
+   1 Slickshot Lockpicker [partial]
+       ignored: The flashback cost is equal to its mana cost.
+   1 Stingcaster Mage [partial]
+       ignored: The flashback cost is equal to its mana cost.

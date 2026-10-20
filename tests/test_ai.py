@@ -162,6 +162,55 @@ class AITests(unittest.TestCase):
         self.assertEqual(copy._idle_turns, 0)
         self.assertEqual(shared._idle_turns, 3)
 
+    def test_run_match_reused_instance_starts_every_game_clean(self):
+        from mtgsim.runner import run_match
+
+        class Recording(HeuristicAI):
+            def __init__(self, log):
+                self.log = log           # constructor configuration, shared by every copy
+                super().__init__()
+
+            def reset(self):
+                super().reset()
+                self.turns = 0
+
+            def main_phase(self, game, me):
+                if self.turns == 0:
+                    self.log.append((id(self), self._idle_turns))
+                self.turns += 1
+                self._idle_turns = 5     # would leak into the next game without reset()
+                super().main_phase(game, me)
+
+        log = []
+        shared = Recording(log)
+        shared._idle_turns = 7
+        deck = [DB.get("Mountain")] * 20 + [DB.get("Grizzly Bears")] * 20
+        res, _ = run_match("x", deck, "y", deck, games=4, seed=1, ai_a=shared, ai_b=shared)
+        self.assertEqual(res.games, 4)
+        self.assertEqual(len(log), 8)                       # both seats, every game
+        self.assertTrue(all(idle == 0 for _, idle in log))
+        self.assertNotIn(id(shared), {i for i, _ in log})   # the passed instance is never played
+        self.assertEqual((shared._idle_turns, shared.log), (7, log))
+
+    def test_run_match_accepts_custom_ai_without_reset(self):
+        from mtgsim.ai import BaselineAI
+        from mtgsim.runner import run_match
+
+        class Configured(BaselineAI):
+            def __init__(self, tag):
+                self.tag = tag
+                self.seen = set()
+
+            def main_phase(self, game, me):
+                self.seen.add(self.tag)
+                super().main_phase(game, me)
+
+        ai = Configured("cfg")
+        deck = [DB.get("Mountain")] * 20 + [DB.get("Grizzly Bears")] * 20
+        res, _ = run_match("x", deck, "y", deck, games=2, seed=2, ai_a=ai, ai_b=ai)
+        self.assertEqual(res.games, 2)
+        self.assertEqual(ai.seen, {"cfg"})   # shallow copy keeps configuration; no reset() needed
+
     def test_planeswalker_makes_blocker_instead_of_plus_that_gets_it_killed(self):
         emperor = perm("The Wandering Emperor", self.a)
         emperor.counters["loyalty"] = 2
