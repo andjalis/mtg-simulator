@@ -187,6 +187,57 @@ why those firings rarely change the result was not investigated. The Kiln Fiend
 deck remains a weak tested built-in fixture (16–22% against the platinum decks); these
 runs do not separate list, pilot and engine limits.
 
+## AI spell-option dedup (measured October 2026)
+
+`engine.unique_spell_options` (round 18, `fix/ai-option-cost-dedup`) no longer
+collapses spell options by name. Options that differ in mana cost, life cost,
+origin (hand, flashback, adventure) or granted flashback are kept, cheapest first,
+so a cheaper granted or native flashback is never hidden and the `respond`
+fallbacks do not overspend. Planners treat same-name options as alternatives,
+not as extra spells. The change is a correctness fix, verified mainly by
+`tests/test_ai_spell_options.py` (12 tests; 9 fail on the original functions).
+
+Setup: `HeuristicAI` against `BaselineAI`, 2 seeds × 500 games per cell (1,000
+per cell), seats alternating, before = the original functions restored from
+`05a6abb`. Scripts and raw rows: `results/ai-option-dedup/`.
+
+| Deck (Heuristic's pilot) | Before | After | Note |
+| --- | --- | --- | --- |
+| Mono-red aggro (sample) | 55.6% | 55.6% | no change (CI 52.5–58.7) |
+| UB snow control (sample) | 78.7% | 78.7% | no change (CI 76.1–81.1) |
+| Synthetic granted-cheaper flashback | 64.3% | 64.4% | +0.1 pts; unpaired CI −4.1 to +4.3 |
+| Synthetic native-cheaper flashback | 61.9% | 61.9% | identical |
+
+Result: no measurable win-rate change on these decks. The two synthetic decks
+are diagnostics, and 1,000 games per cell cannot resolve small effects. The
+granted-flashback casts rose from 450 to 456 in the diagnostic deck. The planners
+still approximate one option per name; a cost-aware combo planner that picks the
+cheaper alternative per spell is the next step, not measured here.
+
+## Equipment sacrifice policy: not merged (measured October 2026)
+
+`choose_equip_cost` (round 18, `equip-sac-policy`, uncommitted in its worktree)
+scores an Equip cost as the attachment's benefit minus the mana opportunity cost
+minus the sacrificed creature's value, and declines when nothing scores above zero.
+Its focused tests and the full suite pass, but the benchmark regresses on one fixture,
+so it is **not merged** and is being retuned in round 19. Script:
+`scripts/equipment_policy_bench.py`, 400 games per cell, fixed per-game seeds,
+alternating starts, Wilson 95% CIs. Score is wins plus half the draws.
+
+| Fixture | New vs previous policy (paired Δ) | New vs BaselineAI | Previous vs BaselineAI |
+| --- | --- | --- | --- |
+| `hauberk_bodies` (sacrifice-only Demonmail Hauberk) | 32.8% (−0.106, CI −0.144 to −0.069) | 36.5% | 47.1% |
+| `tools_fodder` (mana plus sacrifice, token fodder) | 52.6% (+0.037, CI +0.015 to +0.060) | 51.2% | 47.5% |
+| `synthetic_cost_choice` (synthetic Equip {6} or sacrifice) | 45.2% (+0.010, CI −0.004 to +0.024) | 51.5% | 50.5% |
+
+On `hauberk_bodies` the new policy declined all 4,425 Equip decisions and never
+sacrificed, so `_equip_benefit` undervalues the Hauberk's stat bonus and keywords
+against the body's value. The `tools_fodder` gain is real but small, and the synthetic
+fixture is within noise. The fixtures are synthetic 60-card lists, so these numbers say
+nothing about ladder decks. Retune targets: sacrifice-only Equipment that clearly adds
+power must not always be declined, and `hauberk_bodies` must match or beat the previous
+policy at 400 games.
+
 ## What changed and why
 
 - **Control was the deck the old AI couldn't play.** It cast counters and
