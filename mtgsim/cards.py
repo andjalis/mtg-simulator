@@ -10,14 +10,14 @@ import dataclasses
 import re
 from dataclasses import dataclass, field
 
-from . import modal
+from . import modal, kw_evasion
 
 COLORS = ("W", "U", "B", "R", "G")
 KEYWORDS = {
     "flying", "reach", "haste", "trample", "first strike", "double strike",
     "deathtouch", "lifelink", "vigilance", "defender", "menace",
     "flash", "hexproof", "indestructible", "prowess",
-}
+} | kw_evasion.KEYWORDS
 BASIC_MANA = {"Plains": "W", "Island": "U", "Swamp": "B", "Mountain": "R", "Forest": "G"}
 NUMBERS = {
     "zero": 0, "a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4,
@@ -149,6 +149,8 @@ class CardDef:
     uncounterable: bool = False
     protects_spells: bool = False                       # "instant and sorcery spells you control can't be countered"
     cost_reduction: str = ""                            # "instant_sorcery_gy" (Tolarian Terror), "power" (Ghalta)
+    colors: frozenset | None = None                     # actual colors, not color identity
+    basic: bool = False
     snow: bool = False
     legendary: bool = False
     modes: list = field(default_factory=list)           # modal spells: one effect list per mode
@@ -350,6 +352,9 @@ def _token(m_count, power, toughness, desc, with_kw="", attacking=False, ability
     subtypes = [w for w in words if not re.fullmatch(COLOR_WORDS, w, re.I)]
     kws = frozenset(k.strip().lower() for k in re.split(r",| and ", with_kw or "") if k.strip().lower() in KEYWORDS)
     triggers, pt_per = [], ""
+    if ability and kw_evasion.parse_line(ability.lower().replace("this token", "~").replace("this creature", "~"), token_kw := set(), {}):
+        kws = kws | token_kw
+        ability = ""
     if ability:
         per = re.fullmatch(r"(?:This (?:token|creature)|~) gets \+1/\+1 for each (\w+?)s? you control\.?", ability)
         parsed = None if per else _parse_trigger(ability.rstrip("."). replace("this creature", "~") + ".")
@@ -360,7 +365,8 @@ def _token(m_count, power, toughness, desc, with_kw="", attacking=False, ability
     return Effect("token", _num(m_count), data={"name": " ".join(subtypes) or "Token", "power": int(power),
                                                 "toughness": int(toughness), "keywords": kws,
                                                 "attacking": attacking, "triggers": triggers,
-                                                "artifact": artifact, "pt_per": pt_per})
+                                                "artifact": artifact, "pt_per": pt_per,
+                                                "colors": frozenset(kw_evasion.COLORS[w] for w in words if w in kw_evasion.COLORS)})
 
 
 def _distinct_cant_block():
@@ -668,6 +674,9 @@ _EFFECT_PATTERNS = [
     (r"create (a|one|two|three|four|five) (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: named [\w' ,-]+?)?(?: that's "
      r"(tapped and attacking))?(?: with ([\w ,]+))?",
      lambda m: _token(m[1], m[2], m[3], m[4], m[6], bool(m[5]))),
+    (r'create (a|one|two|three) (\d+)/(\d+) ((?:\w+ )+?)creature tokens? with flying and "'
+     r'(?:this token|this creature|~) can block only creatures with flying\."',
+     lambda m: _token(m[1], m[2], m[3], m[4], "flying", False, "~ can block only creatures with flying.")),
     (r'create (a) (\d+)/(\d+) ((?:\w+ )+?)creature token with "(.+)"',
      lambda m: _token(m[1], m[2], m[3], m[4], "", False, m[5])),
     (r"create (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
@@ -1269,6 +1278,12 @@ def _parse_face(data: dict) -> CardDef:
     keywords, produces, etb, spell, unsupported, approximations = set(), set(), [], [], [], []
     triggers: list[Trigger] = []
     extra: dict = {"snow": "Snow" in type_line, "legendary": "Legendary" in type_line.split("—")[0].split()}
+    extra["basic"] = "Basic" in type_line.split("—")[0].split()
+    extra["colors"] = frozenset(data.get("colors", data.get("color_indicator", ()))) if ("colors" in data or "color_indicator" in data) else None
+    if re.search(r"(?:~ is colorless\.|\bDevoid\b)", text):
+        extra["colors"] = frozenset()
+    elif "~ is all colors." in text:
+        extra["colors"] = frozenset(COLORS)
     modes: list = []
     chapters: list = []
     loyalty_abilities: list = []
@@ -1363,6 +1378,12 @@ def _parse_face(data: dict) -> CardDef:
         kicked += re.findall(r"If ~ was kicked, (.+?\.)", line)
         line = re.sub(r"\s*If ~ was kicked, .+?\.", "", line).strip()
         line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant) — (?=When|At|If)", "", line)
+        evasion_keywords = kw_evasion.keyword_list(line, KEYWORDS)
+        if evasion_keywords is not None:
+            keywords.update(evasion_keywords)
+            continue
+        if kw_evasion.parse_line(line, keywords, extra):
+            continue
         parts = [p.strip().lower() for p in line.split(",")]
         if all(p in KEYWORDS or re.fullmatch(r"ward \{\d+\}", p) for p in parts):
             for p in parts:
@@ -1448,7 +1469,7 @@ def _parse_face(data: dict) -> CardDef:
         m = re.fullmatch(r"Equipped creature (?:(?:gets|has) \+(\d+)/\+(\d+))?(?: and )?(?:has (.+?))?\.", line)
         if m and (m[1] or m[3]):
             kws, ward, ok = set(), 0, True
-            for k in re.split(r", (?:and )?| and ", m[3] or ""):
+            for k in kw_evasion.keyword_parts(m[3] or "", KEYWORDS | {"hexproof from monocolored"}):
                 k = k.strip().lower()
                 if not k:
                     continue
@@ -1456,6 +1477,8 @@ def _parse_face(data: dict) -> CardDef:
                     ward = int(re.search(r"\d+", k)[0])
                 elif k in KEYWORDS:
                     kws.add(k)
+                elif kw_evasion.protection(k):
+                    kws.update(kw_evasion.protection(k))
                 elif k == "hexproof from monocolored":
                     kws.add("hexproof")
                     approximations.append("hexproof from monocolored is played as hexproof")
@@ -2318,7 +2341,7 @@ from . import auras as _auras, copies as _copies, removal as _removal, search as
 
 from . import delayed as _delayed
 
-_EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS + _delayed.EFFECT_PATTERNS
+_EFFECT_PATTERNS += kw_evasion.EFFECT_PATTERNS + _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS + _delayed.EFFECT_PATTERNS
 _SUBS += _copies.SUBS + _counting.SUBS + _delayed.SUBS
 
 

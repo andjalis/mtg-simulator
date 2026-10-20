@@ -27,7 +27,7 @@ import re
 
 from . import auras, copies, counting, delayed, graveyards, removal, search, xspells
 from .cards import BASIC_MANA, COLORS, Activated, AltCost, CardDef, Effect, EquipCost, add_mana, jace_token, make_token, role_token
-from . import modal
+from . import modal, kw_evasion
 
 TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
 COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
@@ -188,6 +188,7 @@ class Permanent:
         self.entered_turn = 0
         self.entered_x = 0
         self.exile_turn = -1
+        self.protection_player = getattr(controller, "opponent", None) if card.keywords & {"choose protection player"} else None
         self.chosen_land = ""
         self.chosen_type = ""              # Cavern of Souls
         self.net_locked = False            # Braided Net: no activated abilities while it stays tapped
@@ -556,6 +557,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if not blocker.is_creature or blocker.tapped:
         return False
     if blocker.card.cant_block or blocker.has("cant_block_now") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
+        return False
+    if not kw_evasion.can_block(blocker, attacker):
         return False
     if attacker.has("flying") and not (blocker.has("flying") or blocker.has("reach")):
         return False
@@ -1212,11 +1215,14 @@ class Game:
             return False
         if card.extra_sacrifice and not card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
             return False
-        if card.aura and not auras.wanted_hosts(self, p, card):
+        if card.aura and not any(self.aura_host_legal(p, card, h) for h in auras.wanted_hosts(self, p, card)):
             return False
         target_effects = card.spell_effects
         if any(graveyards.uses_x(e) for e in target_effects):
             target_effects = graveyards.with_x(target_effects, graveyards.planned_x(self, p, card, self.cost_of(p, card)))
+        if any(e.target in ("creature", "creature_pw", "creature_mine", "nonland_perm", "artifact", "artifact_enchantment")
+               and not e.data.get("upto") and not self.legal_targets(p, e, card) for e in target_effects):
+            return False
         if any((e.target == "graveyard_card" and not graveyards.can_choose(
                     self, p, e, getattr(card, "graveyard_target", None))) or
                (e.target == "graveyard_spell" and not any(
@@ -1233,10 +1239,16 @@ class Game:
         return self.can_pay(p, self.cost_of(p, card), spell=card)
 
     # ---------------------------------------------------------------- targets
-    def targetable(self, obj, by: Player) -> bool:
+    def aura_host_legal(self, p, card, host):
+        return (auras.is_legal_host(self, p, card, host)
+                and not kw_evasion.protected(host, card, p))
+
+    def targetable(self, obj, by: Player, source=None) -> bool:
         """Whether ``by`` may target obj (hexproof, still on the battlefield / stack)."""
         if isinstance(obj, Permanent):
-            return obj in obj.controller.battlefield and not (obj.has("hexproof") and obj.controller is not by)
+            return (obj in obj.controller.battlefield and not obj.has("shroud")
+                    and not (obj.has("hexproof") and obj.controller is not by)
+                    and not kw_evasion.protected(obj, source, by))
         if isinstance(obj, StackItem):
             return obj in self.stack
         return isinstance(obj, Player)
@@ -1292,15 +1304,15 @@ class Game:
             return perm.power <= int(f[10:])
         return True
 
-    def legal_targets(self, p: Player, eff: Effect) -> list:
+    def legal_targets(self, p: Player, eff: Effect, source=None) -> list:
         if eff.kind == "equip":
-            return [c for c in p.creatures if self.legal_target(p, eff, c)]
+            return [c for c in p.creatures if self.legal_target(p, eff, c, source)]
         if eff.target == "graveyard_card":
             return graveyards.candidates(self, p, eff)
         if eff.target == "graveyard_spell":
             return [GraveyardTarget(p, c, entry) for c, entry in zip(p.graveyard, p.graveyard.entries)
                     if c.is_instant or c.is_sorcery]
-        everything = [x for pl in self.players for x in pl.battlefield if self.targetable(x, p)]
+        everything = [x for pl in self.players for x in pl.battlefield if self.targetable(x, p, source)]
         if eff.kind == "blink_delayed":
             return [x for x in everything if self.passes_filter(eff, x, p)]
         creatures = [c for c in everything if c.is_creature and self.passes_filter(eff, c, p)]
@@ -1328,7 +1340,7 @@ class Game:
 
     def legal_target(self, p: Player, eff: Effect, tgt, source=None) -> bool:
         if eff.filter == "attacking_token":
-            return (isinstance(tgt, Permanent) and self.targetable(tgt, p)
+            return (isinstance(tgt, Permanent) and self.targetable(tgt, p, source)
                     and self.passes_filter(eff, tgt, p))
         if eff.target == "graveyard_card":
             return graveyards.legal(p, eff, tgt)
@@ -1337,11 +1349,11 @@ class Game:
                     and (tgt.card.is_instant or tgt.card.is_sorcery))
         if eff.kind == "equip":
             return (isinstance(tgt, Permanent) and tgt.is_creature and tgt.controller is p
-                    and tgt is not source and self.targetable(tgt, p)
+                    and tgt is not source and self.targetable(tgt, p, source)
                     and self.equip_target_fits(eff.filter, tgt))
         if eff.kind == "blink_delayed" and not isinstance(tgt, Permanent):
             return False
-        if tgt is None or not self.targetable(tgt, p):
+        if tgt is None or not self.targetable(tgt, p, source):
             return False
         if isinstance(tgt, Permanent):
             if eff.kind == "blink_delayed" and eff.data.get("other") and tgt is source:
@@ -1446,9 +1458,9 @@ class Game:
                 out.append(tgt if tgt is not None else graveyards.choose(self, p, e))
                 continue
             if e.target == "graveyard_spell" and isinstance(tgt, CardDef):
-                tgt = next((t for t in self.legal_targets(p, e) if t.card is tgt), None)
+                tgt = next((t for t in self.legal_targets(p, e, source) if t.card is tgt), None)
             if e.kind == "blink_delayed":
-                cands = [x for x in self.legal_targets(p, e) if not (e.data.get("other") and x is source)]
+                cands = [x for x in self.legal_targets(p, e, source) if not (e.data.get("other") and x is source)]
                 if tgt in cands:
                     out.append(tgt)
                     continue
@@ -1457,12 +1469,17 @@ class Game:
                     tgt = max(cands, key=perm_value, default=None)
                 out.append(tgt)
                 continue
-            if tgt is None or not self.legal_target(p, e, tgt):
+            if tgt is None or not self.legal_target(p, e, tgt, source):
                 tgt = default_choose_target(self, p, e)
+            if tgt is not None and not self.legal_target(p, e, tgt, source):
+                candidates = self.legal_targets(p, e, source)
+                tgt = max((x for x in candidates if isinstance(x, Permanent)), key=perm_value, default=None)
+                if tgt is None:
+                    tgt = next((x for x in candidates if isinstance(x, Player) and x is not p), None)
             if tgt is not None and e.data.get("distinct") and any(
                     t is tgt for e2, t in zip(effects, out) if e2.kind == e.kind and e2.data.get("distinct")):
                 taken = [t for e2, t in zip(effects, out) if e2.kind == e.kind and e2.data.get("distinct")]
-                tgt = max((x for x in self.legal_targets(p, e) if all(x is not t for t in taken)
+                tgt = max((x for x in self.legal_targets(p, e, source) if all(x is not t for t in taken)
                            and (x.controller is not p) == (tgt.controller is not p)), key=perm_value, default=None) \
                     if isinstance(tgt, Permanent) else None
             out.append(tgt)
@@ -1885,7 +1902,7 @@ class Game:
             self._aura_host = None
             if base.aura:
                 host = item.targets[0] if item.targets else None
-                if not auras.is_legal_host(self, p, base, host):
+                if not self.aura_host_legal(p, base, host):
                     self.log(f"{base.name} fizzles (illegal Aura target)", p)
                     self.to_graveyard_after_resolving(item)
                     self._spent = ""
@@ -1924,7 +1941,7 @@ class Game:
         targeted = [(e, t) for e, t in zip(item.effects, item.targets) if e.target in TARGETED
                     and not (t is None and e.data.get("upto"))
                     and not (e.target == "graveyard_card" and t == ())]
-        if targeted and all(not self.legal_target(p, e, t, item.source) for e, t in targeted):
+        if targeted and all(not self.legal_target(p, e, t, item.source or item.card) for e, t in targeted):
             self.log(f"{item} fizzles (no legal target)", p)
         else:
             self.log(f"{item} resolves", p)
@@ -1937,7 +1954,7 @@ class Game:
                     item.targets[i - 1].exile_turn = self.turn
             for eff, tgt in zip(item.effects, item.targets):
                 if eff.target in TARGETED:
-                    if not self.legal_target(p, eff, tgt, item.source):
+                    if not self.legal_target(p, eff, tgt, item.source or item.card):
                         prev = None
                         continue
                     prev = tgt
@@ -2104,8 +2121,10 @@ class Game:
             return False
         aura_host = None
         if card.aura:
-            aura_host = targets[0] if targets and targets[0] is not None else auras.choose_host(self, p, card)
-            if not auras.is_legal_host(self, p, card, aura_host):
+            aura_host = targets[0] if targets and targets[0] is not None else max(
+                (h for h in auras.wanted_hosts(self, p, card) if self.aura_host_legal(p, card, h)),
+                key=perm_value, default=None)
+            if not self.aura_host_legal(p, card, aura_host):
                 return False
         effects = [] if card.is_permanent else list(card.spell_effects)
         spell_modes = card.modes
@@ -2115,9 +2134,8 @@ class Game:
         mode_indices, mode_targets = None, []
         early_teamwork = []
         flags = set()
-        # Decide graveyard and attacking-token modes before payment: costs can change either zone.
-        early_modes = any(e.target in GRAVEYARD_TARGETS or e.filter == "attacking_token"
-                          for mode in spell_modes for e in mode)
+        # Choose targeted modes before payment, including source-aware protection checks.
+        early_modes = any(e.target in TARGETED for mode in spell_modes for e in mode)
         if early_modes and card.teamwork:
             chosen = self.teamwork_creatures(p, card, exclude=convoked)
             for creature in chosen:
@@ -2148,6 +2166,15 @@ class Game:
             mode_targets = self.bind_combat_targets(p, mode_effects, mode_targets)
             if mode_targets is None:
                 return False
+            mode_targets = self.fill_targets(p, mode_effects, mode_targets, card)
+            if any(e.target in TARGETED and not e.data.get("upto")
+                   and not self.legal_target(p, e, t, card) for e, t in zip(mode_effects, mode_targets)):
+                return False
+        targets = self.fill_targets(p, effects, targets, card)
+        for effect, target in zip(effects, targets):
+            if effect.target in TARGETED and effect.target not in GRAVEYARD_TARGETS and not effect.data.get("upto"):
+                if not self.legal_target(p, effect, target, card):
+                    return False
         if early_teamwork:
             self.pay_teamwork(p, card, chosen=early_teamwork)
         payment_cost = cost
@@ -2207,7 +2234,7 @@ class Game:
                 targets[idx] = max(tapped, key=perm_value)
         missing = [i for i, e in enumerate(effects) if e.target in TARGETED and targets[i] is None]
         if missing:   # targets the AI didn't pick (effects it doesn't know about)
-            filled = self.auto_targets(p, [effects[i] for i in missing])
+            filled = self.auto_targets(p, [effects[i] for i in missing], card)
             for i, t in zip(missing, filled):
                 targets[i] = t
         if card.teamwork and card.modes and mode_indices is None and self.pay_teamwork(p, card):
@@ -2215,8 +2242,8 @@ class Game:
         if card.modes:
             mode_effects = modal.pick(self, p, spell_modes, n=card.modes_choose, flags=flags, chosen=mode_indices)
             effects = mode_effects + effects
-            targets = (self.fill_targets(p, mode_effects, mode_targets) if mode_indices is not None else
-                       self.auto_targets(p, mode_effects)) + targets
+            targets = (self.fill_targets(p, mode_effects, mode_targets, card) if mode_indices is not None else
+                       self.auto_targets(p, mode_effects, card)) + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")
         item.snow_spent = sum(1 for s in payment if s.card.snow)
         item.x = x
@@ -2553,7 +2580,8 @@ class Game:
         if any((e.target == "graveyard_card" and not graveyards.can_choose(self, p, e)) or
                (e.target == "graveyard_spell" and not self.legal_targets(p, e)) for e in act.effects):
             return False
-        if any(e.filter == "attacking_token" and not self.legal_targets(p, e) for e in act.effects):
+        if any(e.target in ("creature", "creature_pw", "creature_mine", "nonland_perm", "artifact", "artifact_enchantment")
+               and not e.data.get("upto") and not self.legal_targets(p, e, perm) for e in act.effects):
             return False
         return payable(self.mana_sources(p, perm if c.get("tap") else None, "ability"), self.ability_cost(p, perm, act))
 
@@ -2565,6 +2593,10 @@ class Game:
         targets = self.bind_graveyard_targets(p, act.effects, targets, perm)
         targets = self.bind_combat_targets(p, act.effects, targets, perm)
         if targets is None:
+            return False
+        targets = self.fill_targets(p, act.effects, targets, perm)
+        if any(e.target in TARGETED and e.target not in GRAVEYARD_TARGETS and not e.data.get("upto")
+               and not self.legal_target(p, e, t, perm) for e, t in zip(act.effects, targets)):
             return False
         mode_indices, mode_targets = None, []
         if any(e.target in GRAVEYARD_TARGETS or e.filter == "attacking_token"
@@ -2773,6 +2805,7 @@ class Game:
         for _ in range(count):
             card = make_token(d.get("name", ""), d.get("power", 0), d.get("toughness", 0), d.get("keywords", ()),
                               d.get("triggers"), d.get("kind", ""), d.get("artifact", False), d.get("pt_per", ""))
+            card = dataclasses.replace(card, colors=d.get("colors", frozenset()))
             if d.get("mercenary"):
                 card = dataclasses.replace(card, activated=[Activated("ability", {"generic": 0}, effects=[
                     Effect("pump", 1, 0, target="creature_mine")], extra_costs={"tap": True}, sorcery=True,
@@ -2836,13 +2869,13 @@ class Game:
         if k == "damage":
             if eff.target == "each_creature":
                 for perm in p.creatures + opp.creatures:
-                    self.deal_damage(perm, eff.amount, by=p, cause=cause)
+                    self.deal_damage(perm, eff.amount, by=p, cause=cause, source=item.source or item.card if item else None)
             elif eff.target == "each_opp_and_pw":
-                self.change_life(opp, -eff.amount, cause)
-                for pw in opp.planeswalkers:
-                    pw.counters["loyalty"] = pw.loyalty - eff.amount
+                for victim in [opp] + opp.planeswalkers:
+                    self.deal_damage(victim, eff.amount, by=p, cause=cause,
+                                     source=item.source or item.card if item else None)
             else:
-                self.deal_damage(target, eff.amount, by=p, cause=cause)
+                self.deal_damage(target, eff.amount, by=p, cause=cause, source=item.source or item.card if item else None)
         elif k == "destroy":
             if isinstance(target, Permanent) and target in target.controller.battlefield:
                 src = item.source if item is not None else None
@@ -3006,7 +3039,11 @@ class Game:
             if eff.data.get("host") and item is not None and isinstance(item.source, Permanent):
                 target = item.source.attached_to
             if isinstance(target, Permanent):
-                (target.perm_kw if eff.data.get("perm") else target.temp_kw).add(eff.data["keyword"])
+                keyword = eff.data["keyword"]
+                if keyword == "protection from chosen color":
+                    keyword = "protection from " + max(kw_evasion.COLORS, key=lambda q: sum(
+                        kw_evasion.COLORS[q] in kw_evasion.colors(x) for x in self.opponent(p).battlefield))
+                (target.perm_kw if eff.data.get("perm") else target.temp_kw).add(keyword)
         elif k == "add_counter":
             if isinstance(target, Permanent):
                 name = eff.data.get("counter", "+1/+1")
@@ -3635,12 +3672,16 @@ class Game:
                 self.log(f"equips {src.card.name} to {target.card.name}", p)
         elif k in auras.KINDS:
             auras.resolve(self, p, eff, target, item)
+        elif k in ("fight", "bite"):
+            kw_evasion.fight(self, p, eff, target, item)
         elif k in removal.KINDS:
             removal.resolve(self, p, eff, target, item)
         self.state_based_actions()
 
-    def deal_damage(self, target, amount: int, by: Player | None = None, cause="noncombat damage"):
+    def deal_damage(self, target, amount: int, by: Player | None = None, cause="noncombat damage", source=None):
         """Noncombat damage; ``by`` is the controller of the source."""
+        if isinstance(target, Permanent) and kw_evasion.protected(target, source, by):
+            return
         if isinstance(target, Player):
             self.change_life(target, -amount, cause)
         elif isinstance(target, Permanent) and target in target.controller.battlefield:
@@ -3905,9 +3946,11 @@ class Game:
                 for perm in list(p.battlefield):
                     host = perm.attached_to
                     if host is not None and (host not in host.controller.battlefield or not host.is_creature
-                                             or perm.is_creature or "Equipment" not in perm.card.subtypes):
+                                             or perm.is_creature or "Equipment" not in perm.card.subtypes
+                                             or kw_evasion.protected(host, perm)):
                         perm.attached_to = None
-                    if perm.card.aura and not auras.is_legal_host(self, p, perm.card, perm.aura_host, targeted=False):
+                    if perm.card.aura and (not auras.is_legal_host(self, p, perm.card, perm.aura_host, targeted=False)
+                                           or kw_evasion.protected(perm.aura_host, perm)):
                         self.leave_battlefield(perm, "graveyard")
                         changed = True
                     elif perm.is_planeswalker and perm.loyalty <= 0:
@@ -3975,7 +4018,7 @@ class Game:
         legal = {}
         for a in attackers:
             bl = [b for b in blocks.get(a, []) if b not in used and b in opp.battlefield and can_block(b, a)]
-            if a.has("menace") and len(bl) == 1:
+            if len(bl) < kw_evasion.minimum_blockers(a):
                 bl = []
             if bl:
                 legal[a] = bl
@@ -4031,6 +4074,8 @@ class Game:
             elif deals_now(a) and a.power > 0 and target is not None:
                 hits.append((a, target, a.power))
         for src, tgt, amt in hits:
+            if isinstance(tgt, Permanent) and kw_evasion.protected(tgt, src):
+                continue
             if isinstance(tgt, Player):
                 self.change_life(tgt, -amt, f"{src.card.name}: combat damage")
                 self.fire(src.controller, "combat_damage_player", src)
