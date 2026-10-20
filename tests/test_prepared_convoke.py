@@ -96,7 +96,7 @@ class PreparedAndConvoke(unittest.TestCase):
         self.a.library = [BEAR, ISLAND, ISLAND]
         self.game.enter_battlefield(self.a, d)
         self.game.settle()
-        manifests = [c for c in self.a.creatures if c.card.name == "Manifest"]
+        manifests = [c for c in self.a.creatures if c.face_down_kind == "manifest_dread"]
         self.assertEqual(len(manifests), 1)
         self.assertEqual((manifests[0].power, manifests[0].toughness), (2, 2))
         self.assertEqual(len(self.a.graveyard), 1)
@@ -108,7 +108,7 @@ class PreparedAndConvoke(unittest.TestCase):
         for _ in range(3):
             self.perm(plains)
         self.a.hand = [ph]
-        opts = [c for c in self.game.spell_options(self.a) if c.name.endswith("(disguise)")]
+        opts = [c for c in self.game.spell_options(self.a) if self.game._origin(c)[1] == "disguise"]
         self.assertEqual(len(opts), 1)
         self.assertTrue(self.game.cast(self.a, opts[0]))
         face_down = [x for x in self.a.battlefield if x.hidden is not None][0]

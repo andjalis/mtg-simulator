@@ -99,7 +99,7 @@ class FollowupTests(unittest.TestCase):
         eq = self.game.enter_battlefield(self.a, MACHETE)
         self.game.destroy(eq)
         self.game.settle()
-        manifests = [x for x in self.a.creatures if x.card.name == "Manifest"]
+        manifests = [x for x in self.a.creatures if x.face_down_kind == "manifest_dread"]
         self.assertEqual(len(manifests), 1)
         self.assertIsNone(eq.attached_to)
 
