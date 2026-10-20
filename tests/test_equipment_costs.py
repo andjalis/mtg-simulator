@@ -45,7 +45,7 @@ class EquipCostParsingTests(unittest.TestCase):
     def test_restricted_and_unknown_lines_stay_visible_beside_supported_ones(self):
         cases = {
             "Equip commander {1}": "Equip commander {1}",
-            "Equip worthy {W}": "Equip worthy {W}",
+            "Equip worthy creature {W}": "Equip worthy creature {W}",
             "Equip—{2}, Pay 2 life.": "Equip—{2}, Pay 2 life.",
             "Equip—{1}, Sacrifice an artifact.": "Equip—{1}, Sacrifice an artifact.",
             "Equip—{1}, Sacrifice two creatures.": "Equip—{1}, Sacrifice two creatures.",
