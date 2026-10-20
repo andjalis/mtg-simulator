@@ -474,8 +474,11 @@ _EFFECT_PATTERNS = [
     (r"one or two target creatures each get \+(\d+)/\+(\d+) until end of turn",
      lambda m: [_distinct_pump(m), _distinct_pump(m)]),
     (r"untap target artifact or creature", lambda m: Effect("untap_target", target="creature_mine")),
-    (r"exile (?:each opponent's|target player's) graveyard", lambda m: Effect("exile_gy")),
-    (r"exile target card from an opponent's graveyard", lambda m: Effect("exile_gy", 1)),
+    (r"exile each opponent's graveyard", lambda m: Effect("exile_gy")),
+    (r"exile target player's graveyard", lambda m: Effect("exile_gy", target="player")),
+    (r"exile (up to (?:one|two|three) target |target )([\w ,/'-]*?)cards? from "
+     r"(a graveyard|an opponent's graveyard|your graveyard|a single graveyard|graveyards)",
+     lambda m: _gy_exile(m)),
     (r"target player draws (a|two|three) cards?", lambda m: Effect("draw", _num(m[1]))),
     (r"target player draws (a|two|three) cards? and loses (\d+) life",
      lambda m: [Effect("draw", _num(m[1])), Effect("lose_life", int(m[2]))]),
@@ -651,8 +654,6 @@ _EFFECT_PATTERNS = [
     (r"untap ~", lambda m: Effect("untap_self")),
     (r"untap it", lambda m: Effect("untap_prev", target="prev")),
     (r"it explores", lambda m: Effect("explore", target="prev")),
-    (r"exile up to (one|two) target cards? from (?:a|a single) graveyard",
-     lambda m: Effect("exile_gy_cards", _num(m[1]))),
     (r"put target card from (a|your) graveyard on the bottom of (?:its owner's|your) library",
      lambda m: Effect("gy_bottom", data={"mine": m[1] == "your"})),
     (r"you may mill (a|one|two|three|four|five|\d+) cards?", lambda m: Effect("mill", _num(m[1]))),
@@ -732,7 +733,7 @@ _EFFECT_PATTERNS = [
     (r"target creature gains (double strike|first strike|trample|haste|hexproof|indestructible) until end of turn",
      lambda m: Effect("grant", target="creature", data={"keyword": m[1].lower()})),
     (r"return (all |(?:up to )?(?:one|two|three|four|five|six|x) (?:other )?target |(?:up to one )?target |an? )?"
-     r"([\w ,/'-]+?) cards?(?: each)?(?: with mana value (\d+|x) or (less|greater))? from (your|a|an opponent's) "
+     r"([\w ,/'-]+?) cards?(?: with different names)?(?: each)?(?: with mana value (\d+|x) or (less|greater))? from (your|a|an opponent's) "
      r"graveyard (to your hand|(?:onto|to) the battlefield)( tapped)?(?: under your control)?",
      lambda m: _gy_move(m)),
     (r"target instant or sorcery card in your graveyard gains flashback until end of turn"
@@ -760,7 +761,8 @@ _EFFECT_PATTERNS = [
     (r"return target creature card from your graveyard to your hand",
      lambda m: Effect("regrow", target="graveyard_card")),
     (r"REANIMATESNOW", lambda m: Effect("reanimate_snow")),
-    (r"GYHATE (\d+)", lambda m: Effect("gy_hate", int(m[1]))),
+    (r"GYHATE (\d+)", lambda m: Effect("gy_hate", int(m[1]), target="graveyard_card",
+                                         data={"upto": True, "what": "card", "zone": "any", "dest": "exile"})),
     (r"when you cast your next creature spell this turn, that creature enters with an additional \+1/\+1 counter "
      r"on it", lambda m: Effect("next_creature_counter")),
     (r"ADVERSARY", lambda m: Effect("adversary", data={"cost": {"generic": 2, "R": 1}})),
@@ -996,8 +998,18 @@ def _gy_move(m):
     return Effect("gy_move", n, target="graveyard_card" if "target" in head else "none",
                   data={"upto": "up to" in head, "what": what, "dest": "hand" if m[6].endswith("hand") else "bf",
                                       "tapped": bool(m[7]), "zone": {"your": "mine", "a": "any"}.get(m[5], "opp"),
-                                      "x_n": bool(w and w[1] == "x"),
+                                      "x_n": bool(w and w[1] == "x"), "distinct": "different names" in m[0],
                                       "cmc": ((m[3].lower() if m[3].lower() == "x" else int(m[3])), m[4]) if m[3] else None})
+
+
+def _gy_exile(m):
+    """"Exile [up to N] target card(s) from a/your/an opponent's/a single graveyard"; "graveyards" may be several."""
+    head, what, zone = m[1].lower(), m[2].strip(), m[3].lower()
+    n = _N_WORDS[head.split()[2]] if head.startswith("up to") else 1
+    return Effect("gy_exile", n, target="graveyard_card",
+                  data={"upto": head.startswith("up to"), "what": what or "card", "dest": "exile",
+                        "zone": {"your graveyard": "mine", "an opponent's graveyard": "opp"}.get(zone, "any"),
+                        "single": zone == "a single graveyard"})
 
 
 def _kw_target(what: str) -> str:
