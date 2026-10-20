@@ -538,7 +538,7 @@ def _face_cost_and_static_lines(st, line):
         if _counting.parse_line(line, extra):
             return None
         m = re.fullmatch(r"As an additional cost to cast ~, (?:pay \{(\d+)\} or )?sacrifice (an? (?:artifact|creature|enchantment|"
-                         r"planeswalker)(?: or (?:artifact|creature|enchantment|planeswalker))*)(?: or pay \{(\d+)\})?\.", line)
+                         r"planeswalker|land)(?: or (?:artifact|creature|enchantment|planeswalker))*)(?: or pay \{(\d+)\})?\.", line)
         if m:
             extra["extra_sacrifice"] = m[2]
             extra["extra_sac_or_pay"] = int(m[1] or m[3] or 0)
@@ -695,6 +695,22 @@ def _face_cost_and_static_lines(st, line):
             extra["pt_if"] = extra.get("pt_if", ()) + ((cond, int(m[1]), int(m[2])),)
             if m[3]:
                 extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((m[3], cond),)
+            return None
+        if line == "All creatures able to block ~ do so.":
+            extra["lure"] = True
+            return None
+        m = re.fullmatch(r"~ can't be blocked by more than (one|two) creatures?\.", line)
+        if m:
+            extra["max_blockers"] = _num(m[1])
+            return None
+        m = re.fullmatch(r"During your turn, ~ gets \+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["pt_if"] = extra.get("pt_if", ()) + (("your_turn", int(m[1]), int(m[2])),)
+            return None
+        m = re.fullmatch(r"\{T\}, Pay 1 life: Add (\{[WUBRG]\}) or (\{[WUBRG]\})\.", line)
+        if m:
+            produces |= {m[1][1], m[2][1]}
+            approximations.append("the 1 life for its mana is not paid")
             return None
         if line == "When you control no Islands, sacrifice ~.":
             extra["needs_land"] = "Island"       # a state trigger: sacrificed while you control no Island

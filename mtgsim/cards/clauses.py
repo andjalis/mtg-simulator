@@ -151,6 +151,7 @@ _TRIGGERS = [
     (r"Whenever ~ blocks, (.+)", ("blocks",)),
     (r"Whenever ~ blocks a creature with flying, (.+)", ("blocks",)),
     (r"Whenever ~ becomes blocked(?: by a creature)?, (.+)", ("becomes_blocked",)),
+    (r"Whenever ~ attacks and isn't blocked, (.+)", ("unblocked",)),
     (r"When(?:ever)? ~ dies, (?:if it was a creature, )?(.+)", ("dies",)),
     (r"Whenever ~ deals combat damage to a player, (.+)", ("combat_damage_player",)),
     (r"Whenever a creature you control deals combat damage to a player, (.+)", ("ally_combat_damage",)),

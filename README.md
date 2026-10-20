@@ -306,6 +306,11 @@ to select another local database.
   enchantments / lands", "destroy target artifact or land", "that player discards", ingest, devour (only
   tokens are devoured), extort (its {W/B} is paid with a color of its source), "you may pay N life",
   "whenever ~ blocks a creature with flying", entwine, disturb and "untap all creatures you control"
+- Split second (no spells or non-mana abilities while it is on the stack), skulk, Lure ("all creatures
+  able to block ~ do so"), "can't be blocked by more than one creature", afflict, "whenever ~ attacks and
+  isn't blocked", "creatures without flying can't block this turn", "attacking creatures get +N/+N",
+  "during your turn, ~ gets +N/+N", sacrificing a land as an additional cost, and horizon lands
+  ("{T}, Pay 1 life: Add {G} or {U}"; the life is not paid, as with painlands)
 - Regeneration shields replace destruction, tap the permanent, clear its damage
   and remove it from combat. They expire at cleanup and cannot prevent sacrifice
   or zero toughness. Regeneration-prevention riders on destruction and damage apply

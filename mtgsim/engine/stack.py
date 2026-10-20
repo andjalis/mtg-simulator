@@ -50,6 +50,8 @@ class StackMixin:
         """Ask p's AI what to do with priority. Returns True if it did something. When an AI
         with its own ``respond`` passes, ``respond_extras`` covers what it may not know about
         (instant-speed loyalty abilities, Clues, flashback / adventure / modal instants)."""
+        if any(item.is_spell and "split second" in item.card.keywords for item in self.stack):
+            return False            # split second: no spells or (non-mana) abilities while it's on the stack
         action = self.hook(p, "respond")(self, p)
         if not action and getattr(p.ai, "respond", None):
             action = self.hook(p, "respond_extras")(self, p)

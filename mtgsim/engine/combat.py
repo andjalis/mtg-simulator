@@ -73,6 +73,8 @@ class CombatMixin:
             bl = [b for b in blocks.get(a, []) if b not in used and b in opp.battlefield and can_block(b, a)]
             if a.has("menace") and len(bl) == 1:
                 bl = []
+            if a.card.max_blockers and len(bl) > a.card.max_blockers:
+                bl = bl[:a.card.max_blockers]
             if bl:
                 legal[a] = bl
                 used.update(bl)
@@ -84,6 +86,9 @@ class CombatMixin:
             for b in bl:
                 self.fire(opp, "blocks", b, context=a)
             self.fire(p, "becomes_blocked", a, context=bl[0])
+        for a in attackers:
+            if a not in blocks:
+                self.fire(p, "unblocked", a)
         p.ai.after_blocks(self, p, attackers, blocks)
         if self.over:
             return

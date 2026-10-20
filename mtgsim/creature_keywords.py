@@ -58,6 +58,10 @@ def parse_line(line: str, st) -> bool:
             st.approximations.append(
                 "unearth is cast like a spell" if kind == "unearth" else "madness: cast from the graveyard this turn")
         return True
+    m = re.fullmatch(r"Afflict (\d+)", line)
+    if m:
+        triggers.append(_trigger("becomes_blocked", [_effect("drain", int(m[1]), target="each_opponent")]))
+        return True
     m = re.fullmatch(r"(Renown|Bloodthirst|Fabricate|Vanishing|Fading|Modular|Soulshift|Annihilator|Rampage|Backup) (\d+)",
                      line)
     if m:

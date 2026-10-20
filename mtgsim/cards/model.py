@@ -13,7 +13,7 @@ KEYWORDS = {
     "flash", "hexproof", "shroud", "indestructible", "prowess", "swampwalk", "forestwalk", "mountainwalk",
     "infect", "devoid", "exalted", "fear", "horsemanship", "undying", "persist", "wither", "rebound",
     "storm", "cascade", "islandwalk", "plainswalk", "shadow", "intimidate",
-    "nonbasic landwalk", "legendary landwalk", "decayed", "flanking",
+    "nonbasic landwalk", "legendary landwalk", "decayed", "flanking", "split second", "skulk",
     "protection from white", "protection from blue", "protection from black", "protection from red",
     "protection from green",
 }
@@ -232,6 +232,8 @@ class CardDef:
     bloodthirst: int = 0                                # Bloodthirst N
     unleash: bool = False
     riot: bool = False
+    lure: bool = False                                  # "All creatures able to block ~ do so."
+    max_blockers: int = 0                               # "~ can't be blocked by more than one creature."
     needs_land: str = ""                          # "When you control no Islands, sacrifice ~."
     attack_needs: str = ""                              # "can't attack unless defending player controls an Island"
     no_untap: bool = False                              # "~ doesn't untap during your untap step."

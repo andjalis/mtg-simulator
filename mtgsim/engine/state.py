@@ -545,6 +545,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
         return False
     if protected_from(attacker, blocker):
         return False
+    if attacker.has("skulk") and blocker.power > attacker.power:
+        return False
     if attacker.has("flying") and not (blocker.has("flying") or blocker.has("reach")):
         return False
     if attacker.has("fear") and not (blocker.card.is_artifact or "B" in blocker.card.colors):

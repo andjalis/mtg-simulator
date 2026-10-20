@@ -154,6 +154,12 @@ class AbilitiesMixin:
                 pick = max(free, key=lambda b: (b.toughness > a.power, b.toughness))
                 blocks.setdefault(a, []).append(pick)
                 taken.add(pick)
+        for a in attackers:             # Lure: all creatures able to block it do so
+            if a.card.lure:
+                for b in me.creatures:
+                    if b not in taken and can_block(b, a):
+                        blocks.setdefault(a, []).append(b)
+                        taken.add(b)
         for b in me.creatures:
             if b.has("must_block_now") and b not in taken:
                 able = [a for a in attackers if can_block(b, a)]

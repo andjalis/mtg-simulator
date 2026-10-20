@@ -363,6 +363,12 @@ _EFFECT_PATTERNS = [
     (r"support (\d+|one|two|three|four|five|six)", lambda m: Effect("support", _num(m[1]))),
     (r"(?:target|each) opponent sacrifices a creature(?: of their choice)?", lambda m: Effect("edict", 1)),
     (r"each other player sacrifices a creature", lambda m: Effect("edict", 1)),
+    (r"creatures without flying can't block this turn", lambda m: Effect("cant_block_all", filter="nonflying")),
+    (r"attacking creatures (?:you control )?get \+(\d+)/\+(\d+) until end of turn",
+     lambda m: Effect("pump_attackers", int(m[1]), int(m[2]))),
+    (r"up to (two|three) target creatures each get \+(\d+)/\+(\d+) until end of turn",
+     lambda m: [Effect("pump", int(m[2]), int(m[3]), target="creature_mine", data={"distinct": True})
+                for _ in range(_num(m[1]))]),
     (r"untap all (creatures|lands) you control", lambda m: Effect("untap_all", data={"what": m[1]})),
     (r"sacrifice ~", lambda m: Effect("sacrifice_self", target="self")),
     (r"sacrifice a creature", lambda m: Effect("sac_own", data={"kind": "creature"})),

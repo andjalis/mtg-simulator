@@ -200,6 +200,21 @@ def grant_types(game, p, eff, **_):
             x.temp_kw.add(eff.data["keyword"])
 
 
+@kind("cant_block_all")
+def cant_block_all(game, p, eff, opp, **_):
+    for c in p.creatures + opp.creatures:
+        if not (eff.filter == "nonflying" and c.has("flying")):
+            c.temp_kw.add("cant_block_now")
+
+
+@kind("pump_attackers")
+def pump_attackers(game, p, eff, **_):
+    for a in game.attackers:
+        if a.controller is p:
+            a.pump_p += eff.amount
+            a.pump_t += eff.amount2
+
+
 @kind("untap_all")
 def untap_all(game, p, eff, **_):
     for x in p.battlefield:
