@@ -1,0 +1,17 @@
+// Round 20 mechanic smoke fixture, not a tournament deck.
+4 Scab-Clan Mauler
+4 Bloodbraid Elf
+4 Plague Myr
+4 Puncture Blast
+4 Contentious Plan
+4 Empty the Warrens
+2 Craw Giant
+2 Weaponcraft Enthusiast
+4 Lightning Bolt
+4 Mountain
+4 Forest
+4 Island
+4 Swamp
+4 City of Brass
+4 Forest
+4 Mountain
