@@ -111,7 +111,7 @@ class MillingRewards(unittest.TestCase):
         self.assertTrue(self.game.check_cond(self.a, spell.spell_effects[1], item, None))
 
     def test_unknown_reward_or_condition_remains_visible(self):
-        for text in ("If a Lesson card was milled this way, take an extra turn after this one.",
+        for text in ("If a Lesson card was milled this way, you may cast a copy of it.",
                      "You gain 2 life if cards with different names were milled this way.",
                      "If a noncreature card was milled this way, you gain 2 life."):
             with self.subTest(text=text):

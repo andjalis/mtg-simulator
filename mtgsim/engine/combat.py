@@ -75,6 +75,8 @@ class CombatMixin:
             bl = [b for b in blocks.get(a, []) if b not in used and b in opp.battlefield and can_block(b, a)]
             if a.has("menace") and len(bl) == 1:
                 bl = []
+            if a.card.min_blockers and len(bl) < a.card.min_blockers:
+                bl = []
             if a.card.max_blockers and len(bl) > a.card.max_blockers:
                 bl = bl[:a.card.max_blockers]
             if bl:

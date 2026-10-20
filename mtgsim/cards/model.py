@@ -237,6 +237,7 @@ class CardDef:
     escape_counters: int = 0                            # "~ escapes with N +1/+1 counters on it."
     anthem_all: tuple = ()                              # ("Sliver", 1, 1): "All Sliver creatures get +1/+1."
     lure: bool = False                                  # "All creatures able to block ~ do so."
+    min_blockers: int = 0                               # "can't be blocked except by two or more creatures"
     max_blockers: int = 0                               # "~ can't be blocked by more than one creature."
     needs_land: str = ""                          # "When you control no Islands, sacrifice ~."
     attack_needs: str = ""                              # "can't attack unless defending player controls an Island"

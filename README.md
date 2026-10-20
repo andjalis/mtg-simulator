@@ -323,6 +323,12 @@ to select another local database.
   from multicolored, "destroy target permanent" (nonland, like "tap / return target permanent")
 - Jump-start and escape (with "escapes with N +1/+1 counters") cast from the graveyard; embalm, eternalize
   and scavenge are graveyard actions the AI takes whenever it can pay for them after its other plays
+- Extra turns ("take an extra turn after this one"), "you may play an additional land this turn", "put a
+  land card from your hand onto the battlefield", "gain control of target creature until end of turn",
+  "+N/-N" and "another target creature gets -N/-N", "can't be blocked except by two or more creatures",
+  Raid and Delirium statics, "when you control no lands, sacrifice ~", and riders such as "its controller
+  mills N", "deals N damage to that creature's controller", "you gain life equal to that creature's
+  toughness" and "deals N damage to any target and M damage to you"
 - Regeneration shields replace destruction, tap the permanent, clear its damage
   and remove it from combat. They expire at cleanup and cannot prevent sacrifice
   or zero toughness. Regeneration-prevention riders on destruction and damage apply

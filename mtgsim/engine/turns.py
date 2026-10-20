@@ -107,7 +107,10 @@ class TurnsMixin:
                 if counts.get("turn") == self.turn else {}       # werewolves: spells cast in the turn that ends
             self.turn += 1
             self.take_turn(self.players[self.active_idx])
-            self.active_idx = 1 - self.active_idx
+            if self.players[self.active_idx] in self.extra_turns:   # "take an extra turn after this one"
+                self.extra_turns.remove(self.players[self.active_idx])
+            else:
+                self.active_idx = 1 - self.active_idx
         losers = [p for p in self.players if p.lost]
         if len(losers) == 1:
             self.winner = self.opponent(losers[0])
@@ -238,6 +241,7 @@ class TurnsMixin:
             perm.sick = False
             perm.loyalty_used = False
         p.land_played = False
+        p.extra_lands_turn = 0
         p.sacrificed_turn = 0
         self.animate_turn_creatures(p)
         self.step = "upkeep"

@@ -42,6 +42,13 @@ def lose_life(game, p, eff, target, cause, **_):
     game.change_life(who, -eff.amount, cause)
 
 
+@kind("gain_prev_toughness")
+def gain_prev_toughness(game, p, prev, cause, **_):
+    """"You gain life equal to that creature's toughness": the previous effect's target, as it last existed."""
+    if isinstance(prev, Permanent):
+        game.change_life(p, max(0, prev.last_pt[1] if prev not in prev.controller.battlefield else prev.toughness), cause)
+
+
 @kind("lose_each")
 def lose_each(game, eff, cause, **_):
     for pl in game.players:

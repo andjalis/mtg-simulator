@@ -68,10 +68,21 @@ def return_own(game, p, eff, item, **_):
 
 
 @kind("sac_own")
-def sac_own(game, p, **_):
-    """"Sacrifice a creature": p's least valuable one."""
-    if p.creatures:
-        game.sacrifice(min(p.creatures, key=perm_value))
+def sac_own(game, p, eff, **_):
+    """"Sacrifice a creature / land": p's least valuable one."""
+    pool = p.creatures if eff.data.get("kind", "creature") == "creature" else [x for x in p.battlefield if x.card.is_land]
+    if pool:
+        game.sacrifice(min(pool, key=lambda x: (x.tapped is False, perm_value(x))))
+
+
+@kind("land_from_hand")
+def land_from_hand(game, p, eff, **_):
+    lands = [c for c in p.hand if c.is_land]
+    if lands:
+        card = max(lands, key=lambda c: len(c.produces))
+        p.hand.remove(card)
+        game.enter_battlefield(p, card)
+        game.log(f"puts {card.name} onto the battlefield", p)
 
 
 @kind("tuck_top")

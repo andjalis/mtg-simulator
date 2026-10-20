@@ -50,6 +50,12 @@ def monstrosity(game, p, eff, item, **_):
         game.fire(p, "monstrous", src)
 
 
+@kind("self_damage")
+def self_damage(game, target, **_):
+    if isinstance(target, Permanent) and target.power > 0:
+        game.deal_damage(target, target.power, by=target.controller, source=target)
+
+
 @kind("bolster")
 def bolster(game, p, eff, **_):
     """Put N +1/+1 counters on the creature you control with the least toughness."""

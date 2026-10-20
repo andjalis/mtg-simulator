@@ -298,6 +298,8 @@ class Permanent:
             return self.controller.speed >= 4
         if cond == "your_turn":
             return self.controller.my_turn
+        if cond == "delirium":
+            return len({t for c in self.controller.graveyard for t in c.types}) >= 4
         if cond.startswith("artifacts>="):
             return sum(x.card.is_artifact for x in self.controller.battlefield) >= int(cond[11:])
         if cond == "attacking":
@@ -434,6 +436,7 @@ class Player:
 
     my_turn = False
     prevent_next = 0          # "prevent the next N damage that would be dealt to target player this turn"
+    extra_lands_turn = 0      # "you may play an additional land this turn"
     foe = None
     speed = 0
     speed_turn = -1
@@ -484,7 +487,7 @@ class Player:
     @property
     def land_played(self) -> bool:
         """Whether this turn's land drops are used up (Icetill Explorer gives another)."""
-        return self.lands_played > sum(x.card.extra_lands for x in self.battlefield)
+        return self.lands_played > sum(x.card.extra_lands for x in self.battlefield) + self.extra_lands_turn
 
     @land_played.setter
     def land_played(self, value):

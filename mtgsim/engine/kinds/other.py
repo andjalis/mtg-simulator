@@ -183,3 +183,14 @@ def earthbend(game, p, eff, **_):
 def end_of_combat(game, p, item, prev, eff, **_):
     """A delayed "... at end of combat": the effects resolve then, with "that creature" kept."""
     game.end_combat_effects.append((p, eff.data["effects"], item.source if item is not None else None, prev))
+
+
+@kind("extra_land")
+def extra_land(game, p, **_):
+    p.extra_lands_turn += 1
+
+
+@kind("extra_turn")
+def extra_turn(game, p, **_):
+    game.extra_turns.append(p)
+    game.log("will take an extra turn", p)

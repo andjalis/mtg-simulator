@@ -360,8 +360,8 @@ class EffectsMixin:
                     if perm.attached_to is not None and protected_from(perm.attached_to, perm):
                         perm.attached_to = None
                         changed = True
-                    if perm.card.needs_land and not any(perm.card.needs_land in x.card.subtypes
-                                                              for x in p.battlefield):
+                    if perm.card.needs_land and not any(perm.card.needs_land in x.card.subtypes or
+                                                        perm.card.needs_land in x.card.types for x in p.battlefield):
                         self.sacrifice(perm)
                         changed = True
                         continue

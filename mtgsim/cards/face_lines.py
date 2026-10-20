@@ -700,6 +700,15 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["anthem_all"] = (m[1], int(m[2]), int(m[3]))      # every player's creatures of that type
             return None
+        m = re.fullmatch(r"~ can't be blocked except by (two|three) or more creatures\.", line)
+        if m:
+            extra["min_blockers"] = _num(m[1])
+            return None
+        m = re.fullmatch(r"Delirium — ~ gets \+(\d+)/\+(\d+) as long as there are four or more card types among cards "
+                         r"in your graveyard\.", line)
+        if m:
+            extra["pt_if"] = extra.get("pt_if", ()) + (("delirium", int(m[1]), int(m[2])),)
+            return None
         if line == "All creatures able to block ~ do so.":
             extra["lure"] = True
             return None
@@ -716,9 +725,11 @@ def _face_cost_and_static_lines(st, line):
             produces |= {m[1][1], m[2][1]}
             approximations.append("the 1 life for its mana is not paid")
             return None
-        if line == "When you control no Islands, sacrifice ~.":
-            extra["needs_land"] = "Island"       # a state trigger: sacrificed while you control no Island
+        m = re.fullmatch(r"When you control no (Islands|Swamps|Forests|Mountains|Plains|lands), sacrifice ~\.", line)
+        if m:                                    # a state trigger: sacrificed while you control none
+            extra["needs_land"] = {"lands": "Land", "Plains": "Plains"}.get(m[1], m[1][:-1])
             return None
+        line = re.sub(r"^Raid — (?=~ enters with)", "", line)
         m = re.fullmatch(r"~ enters with a \+1/\+1 counter on it if (an opponent lost life|a creature died|you attacked) "
                          r"this turn\.", line)
         if m:
