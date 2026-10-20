@@ -4431,6 +4431,57 @@ def choose_equip_target(game: Game, me: Player, equipment: Permanent, *, ability
     return max(pool, key=lambda c: (c.card.equip_discount, perm_value(c) - len(c.equipment)))
 
 
+def _equip_body_value(creature: Permanent) -> float:
+    """Loss of a body, including counters/attachments and large tokens' actual stats."""
+    return 0.75 * (creature.card.cmc + (max(0, creature.power) + max(0, creature.toughness)) / 2
+            + 0.5 * sum(creature.has(k) for k in ("flying", "deathtouch", "lifelink", "first strike",
+                                                 "double strike", "indestructible", "menace"))
+            + bool(creature.card.produces))
+
+
+def _equip_benefit(equipment: Permanent, target: Permanent) -> float:
+    """Persistent stats and newly gained keywords; a heuristic, without changing the board."""
+    power, toughness = equipment.card.equip_bonus
+    value = power + toughness / 2  # the bonus is permanent and power wins games
+    attack = max(0, target.power + power)
+    keywords = {k for k in equipment.card.equip_keywords if not target.has(k)}
+    weights = {"flying": 1 + attack / 4, "menace": attack / 4, "trample": attack / 5,
+               "deathtouch": 1.5 if attack else 0, "lifelink": attack / 2,
+               "first strike": attack / 3, "double strike": attack,
+               "vigilance": 0.5, "reach": 0.5, "hexproof": 1, "indestructible": 2,
+               "haste": attack / 2 if target.sick and not target.tapped and not target.has("defender") else 0}
+    return value + sum(weights.get(k, 0) for k in keywords) + min(1, equipment.card.equip_ward / 2)
+
+
+def choose_equip_cost(game: Game, me: Player, equipment: Permanent, target: Permanent,
+                      reserve: int):
+    """Choose a worthwhile (ability index, victim), or decline. Explicit equip stays legal.
+
+    Compare attachment benefit with the lost body and mana's opportunity cost. Spare
+    mana is cheap; mana with spells still in hand is more valuable. Keep the target,
+    the instant reserve, and printed ability/creature order as deterministic ties.
+    Death triggers, future draws and multi-turn combat are not predicted here.
+    """
+    benefit = _equip_benefit(equipment, target)
+    mana_value = 0.5 if any(not c.is_land for c in me.hand) else 0.25
+    best, best_score = None, 0.0
+    victims = [None] + [c for c in game.sacrifice_candidates(me, equipment, "creature") if c is not target]
+    for victim in victims:
+        for idx, chosen in game.equip_choices(me, equipment, target, sacrifice=victim,
+                                              reserve=reserve, keep_target=True):
+            # Without an explicit victim equip_choices also offers sacrifice abilities;
+            # evaluate those in their explicit-victim iteration below.
+            if chosen is not victim:
+                continue
+            cost = sum(game.equip_cost(equipment, target, idx).values())
+            score = benefit - mana_value * cost - (_equip_body_value(victim) if victim is not None else 0)
+            if victim is not None and benefit - _equip_body_value(victim) < 0.8:
+                continue  # a body is only worth trading for a clear gain
+            if score > best_score + 1e-9:
+                best, best_score = (idx, victim), score
+    return best
+
+
 def equip_all(game: Game, me: Player):
     """Attach unattached Equipment with spare mana (main phase 1, so it helps this combat)."""
     for eq in [x for x in me.battlefield if x.card.equip_abilities and x.attached_to is None]:
@@ -4439,9 +4490,9 @@ def equip_all(game: Game, me: Player):
                if choose is choose_equip_target else choose(game, me, eq))
         if tgt is None:
             continue
-        choices = game.equip_choices(me, eq, tgt, reserve=_reserve(game, me), keep_target=True)
-        if choices:
-            idx, victim = choices[0]
+        choice = game.hook(me, "choose_equip_cost")(game, me, eq, tgt, _reserve(game, me))
+        if choice is not None:
+            idx, victim = choice
             game.equip(me, eq, tgt, sacrifice=victim, ability=idx)
 
 
@@ -4685,6 +4736,7 @@ DEFAULTS = {
     "pay_shock": pay_shock, "choose_discard_from": choose_discard_from, "choose_rummage": choose_rummage,
     "choose_crew": choose_crew, "before_attacks": before_attacks, "choose_attack_targets": choose_attack_targets,
     "use_abilities": use_abilities, "respond_extras": respond_extras, "choose_equip_target": choose_equip_target,
+    "choose_equip_cost": choose_equip_cost,
 }
 # Older names, kept for compatibility.
 default_respond = respond
