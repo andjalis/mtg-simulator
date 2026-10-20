@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import auras, copies, milling
+from .. import alt_casts, auras, copies, milling
 from ..cards import CardDef, Effect
 from .. import modal, rules_events, phase_conditions, turn_conditions
 from ..identity import CardInstance, CardZone
@@ -232,12 +232,16 @@ class StackMixin:
             perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
             self._aura_host = None
             self._spent = ""
-            if kind == "disguise":
+            if kind in ("disguise", "morph", "megamorph"):
                 perm.hidden = base
                 perm.card = CardDef(name="Face-down creature", mana_cost={"generic": 0}, cmc=0,
-                                    types=frozenset({"Creature"}), power=2, toughness=2, ward=2)
+                                    types=frozenset({"Creature"}), power=2, toughness=2,
+                                    ward=2 if kind == "disguise" else 0)
             if kind in ("blitz", "blitz_gy"):
                 perm.blitz = True
+            alt_casts.entered(perm, kind, item.card.origin[2] if getattr(item.card, "origin", None) else None)
+            if kind in ("dash", "unearth"):
+                setattr(perm, kind + "ed", True)     # haste; back to hand / exiled at the next end step
             if kind == "warp":
                 perm.warped = True
             perm.was_cast = True
@@ -322,6 +326,8 @@ class StackMixin:
                 owner.exile = TrackedZone(owner.exile)
             owner.exile.append(exiled)
             self.rebound_upkeep.append((owner, exiled, owner.exile.version(exiled)))
+        elif kind == "buyback":
+            owner.hand.append(base)                  # buyback paid: back to its owner's hand
         elif getattr(item, "exile_self", False):
             owner.exile.append(base)                 # "Exile ~." as the last line of an instant or sorcery
         elif kind not in ("channel", "prepared"):

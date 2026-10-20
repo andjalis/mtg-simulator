@@ -258,9 +258,9 @@ class CostsTypesTriggers(unittest.TestCase):
         self.assertEqual((angel.power, angel.toughness, angel.card.colors), (4, 4, {'W'}))
         self.assertTrue(angel.has('flying'))
 
-    def test_asylum_visitor_context_condition_keeps_madness_gap(self):
+    def test_asylum_visitor_context_condition_and_madness_approximation(self):
         definition = self.real('Asylum Visitor')
-        self.assertTrue(any('Madness' in text for text in definition.unsupported))
+        self.assertTrue(any('madness' in text for text in definition.approximations))
         self.g.enter_battlefield(self.a, definition)
         self.a.library = [ISLAND, ISLAND]
         self.b.hand = [BEAR]

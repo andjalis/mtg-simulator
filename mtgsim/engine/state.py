@@ -103,6 +103,8 @@ class Permanent:
         self.animated = None               # Activated: a manland that is a creature until end of turn
         self.crewed = False
         self.blitz = False
+        self.dashed = False
+        self.unearthed = False
         self.loyalty_used = False
         self.entered_turn = 0
         self.entered_x = 0
@@ -119,6 +121,7 @@ class Permanent:
         self.auras: list["Permanent"] = []   # Auras on this permanent (they sit on their caster's battlefield)
         self.aura_host: "Permanent | None" = None      # the permanent this Aura enchants
         self.attached_to: "Permanent | None" = None    # Equipment: the creature it is attached to
+        self.prevent_next = 0                           # "prevent the next N damage ... this turn"
         self.skip_untap = 0                             # untap steps it skips ("doesn't untap during ... next untap step")
         self.spent_color = ""              # "if {U}{U} was spent to cast it"
         self.exiled_cards: list = []       # (card, owner) exiled until this leaves the battlefield
@@ -269,7 +272,7 @@ class Permanent:
                     return True
         if self.card.keyword_at_counters and self.p1 >= self.card.keyword_at_counters[0]:
             return kw == self.card.keyword_at_counters[1]
-        return kw == "haste" and self.blitz
+        return kw == "haste" and (self.blitz or self.dashed or self.unearthed)
 
     def condition(self, cond: str) -> bool:
         if cond.startswith("another:"):
@@ -412,6 +415,7 @@ class Player:
         object.__setattr__(self, name, value)
 
     my_turn = False
+    prevent_next = 0          # "prevent the next N damage that would be dealt to target player this turn"
     foe = None
     speed = 0
     speed_turn = -1
@@ -430,6 +434,7 @@ class Player:
         self.sideboard: list[CardDef] = list(sideboard or ())
         self.on_adventure: list[CardDef] = []
         self.foretold: list[CardDef] = []
+        self.suspended: list = []          # [card, time counters] for suspended cards in exile
         self.plotted: list[CardDef] = []
         self.airbent: list[CardDef] = []   # exiled by airbend: its owner may cast it for {2}
         self.warp_exile: list[CardDef] = []

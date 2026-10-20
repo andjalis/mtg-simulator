@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from .. import auras, copies, creature_keywords, graveyard
+from .. import alt_casts, auras, copies, creature_keywords, graveyard
 from ..cards import Activated, CardDef, Effect
 from .. import rules_events, continuous
 from ..identity import CardInstance, Graveyard
@@ -161,14 +161,18 @@ class TurnsMixin:
         return graveyard.activate(self, p, card, idx)
 
     def turn_face_up(self, p: Player):
-        """Turn disguised creatures face up when their disguise cost can be paid with the mana that's left."""
+        """Turn face-down creatures (disguise, morph, megamorph) face up when their cost can be paid with the
+        mana that's left."""
         for perm in list(p.battlefield):
             if perm.hidden is None:
                 continue
-            alt = next((a for a in perm.hidden.alt_costs if a.kind == "disguise"), None)
+            alt = next((a for a in perm.hidden.alt_costs if a.kind in ("disguise", "morph", "megamorph")), None)
             if alt is not None and self.pay(p, alt.cost) is not None:
                 self.log(f"turns {perm.hidden.name} face up", p)
                 perm.card, perm.hidden = perm.hidden, None
+                if alt.kind == "megamorph":
+                    perm.counters["+1/+1"] = perm.p1 + 1
+                self.fire(p, "turned_face_up", perm)
 
     def cycle_spare(self, p: Player):
         """Cycle (and landcycle) cards that aren't going to be cast, with the mana left after the main phase:
@@ -290,6 +294,11 @@ class TurnsMixin:
             if perm.blitz:
                 self.log(f"sacrifices blitzed {perm.card.name}", p)
                 self.sacrifice(perm)
+            if perm.dashed:
+                self.log(f"returns dashed {perm.card.name} to hand", p)
+                self.leave_battlefield(perm, "hand")
+            if perm.unearthed:
+                self.leave_battlefield(perm, "exile")
             if perm.warped and self.leave_battlefield(perm, "exile"):
                 p.exile.remove(perm.front)
                 p.warp_exile.append(perm.front)
@@ -314,6 +323,7 @@ class TurnsMixin:
             perm.pump_p = perm.pump_t = 0
             perm.temp_kw.clear()
             perm.regeneration_shields = 0
+            perm.prevent_next = 0
             perm.regeneration_blocked = False
             copies.revert(perm)
             if not (perm.animated and perm.animated.text in ("earthbend", "permanent")):
@@ -321,6 +331,7 @@ class TurnsMixin:
             perm.crewed = False
             perm.saddled = False
         p.next_creature_counters = 0
+        p.prevent_next = opp.prevent_next = 0
         self.expire_continuous_effects()
         for pl in self.players:
             pl.granted_fb = []
@@ -342,4 +353,5 @@ class TurnsMixin:
                 self.queue_trigger(controller, [Effect("rebound_cast")], name=f"{card.name}: rebound",
                                    context=(card, version))
         creature_keywords.upkeep(self, p)
+        alt_casts.upkeep(self, p)
         self.fire(p, "upkeep")

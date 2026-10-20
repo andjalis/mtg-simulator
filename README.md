@@ -289,6 +289,18 @@ to select another local database.
   an Island", and lands that enter tapped unless you control two or more basic lands
 - "You may <effect>" is always taken when the effect costs the player nothing (draw, counters, life,
   scry, tokens, ...), so "If you do, ..." after it applies; "Exile ~." makes a spell exile itself
+- Upkeep costs: "sacrifice ~ unless you pay {cost}", cumulative upkeep (mana costs only), vanishing and
+  fading. Modular, soulshift, annihilator, rampage, afterlife, backup (only keywords are granted to
+  another creature), bolster and support; myriad does nothing with two players
+- Morph and megamorph use the face-down path of disguise (a 2/2 for {3}, without ward), including
+  "when ~ is turned face up" triggers. Dash, blitz without life, buyback, surge, prototype and suspend
+  (the AI suspends cards it can't cast for two more turns, or at all). Unearth is cast from the graveyard
+  like a spell and madness is cast from the graveyard during the turn of the discard (both recorded as
+  simplifications)
+- Damage prevention shields ("prevent the next N damage that would be dealt to any target this turn"),
+  "~ deals N damage to each creature [without flying] and each player", "each player loses N life /
+  discards a card", "look at the top N cards, then put them back in any order", self shroud and
+  unblockability abilities. Phyrexian mana in ability costs is paid with colored mana, as in spell costs
 - Regeneration shields replace destruction, tap the permanent, clear its damage
   and remove it from combat. They expire at cleanup and cannot prevent sacrifice
   or zero toughness. Regeneration-prevention riders on destruction and damage apply

@@ -9,6 +9,9 @@ from .patterns import _N_WORDS
 
 
 _SUBS = [
+    # Two players: "for each opponent, tap ... that player controls" is the one opponent.
+    (re.compile(r"for each opponent, (tap up to one target creature) that player controls", re.I),
+     r"\1 an opponent controls"),
     (re.compile(r"tap up to one target creature\. it loses all abilities for as long as ~ remains on the battlefield\.",
                 re.I), lambda m: "TAPSILENCE."),
     (re.compile(r"counter up to one target activated or triggered ability\. if an ability of an artifact, creature, or "
@@ -156,6 +159,7 @@ _TRIGGERS = [
     (r"Whenever ~ becomes the target of a spell or ability you control for the first time each turn, (.+)",
      ("targeted_mine",)),
     (r"When(?:ever)? ~ becomes the target of a spell or ability, (.+)", ("targeted",)),
+    (r"When ~ is turned face up, (.+)", ("turned_face_up",)),
     (r"Whenever you cast a spell that targets ~, (.+)", ("heroic",)),
     (r"Whenever you cast a spell during an opponent's turn, (.+)", ("cast_spell",)),
     (r"Whenever you cast a spell, (.+)", ("cast_spell",)),

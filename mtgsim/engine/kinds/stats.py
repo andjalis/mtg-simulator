@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from ... import protection
 from ..policy import default_choose_target, perm_value
-from ..state import Permanent, StackItem
+from ..state import Permanent, Player, StackItem
 from . import kind
 
 
@@ -30,6 +30,30 @@ def pump(game, eff, target, **_):
         target.pump_t += eff.amount2
         if eff.data.get("keyword"):
             target.temp_kw.add(eff.data["keyword"])
+
+
+@kind("prevent_next")
+def prevent_next(game, p, eff, target, **_):
+    """A damage shield until end of turn; "you" (target none) shields the controller."""
+    who = p if eff.target == "none" else target
+    if isinstance(who, (Permanent, Player)):
+        who.prevent_next += eff.amount
+
+
+@kind("bolster")
+def bolster(game, p, eff, **_):
+    """Put N +1/+1 counters on the creature you control with the least toughness."""
+    if p.creatures:
+        pick = min(p.creatures, key=lambda c: (c.toughness, -perm_value(c)))
+        pick.counters["+1/+1"] = pick.p1 + eff.amount
+
+
+@kind("support")
+def support(game, p, eff, item, **_):
+    """A +1/+1 counter on each of up to N other creatures (your best ones)."""
+    src = item.source if item is not None else None
+    for c in sorted((c for c in p.creatures if c is not src), key=perm_value, reverse=True)[:eff.amount]:
+        c.counters["+1/+1"] = c.p1 + 1
 
 
 @kind("fog")

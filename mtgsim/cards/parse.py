@@ -365,7 +365,7 @@ def _parse_ability_cost(text: str):
         m = None
         if part == "{T}":
             extra["tap"] = True
-        elif re.fullmatch(r"(\{[0-9WUBRGC/]+\})+", part):
+        elif re.fullmatch(r"(\{[0-9WUBRGC/P]+\})+", part):        # Phyrexian {B/P} is paid as {B}, as in spell costs
             mana = add_mana(mana, parse_mana_cost(part))
         elif part == "Sacrifice ~":
             extra["sac_self"] = True

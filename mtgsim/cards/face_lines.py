@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .. import discounts, graveyard, modal
-from .. import auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords
+from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords
 from .model import Activated, AltCost, COLORS, Effect, KEYWORDS, NUMBERS, Trigger, _num, parse_mana_cost
 from .patterns import _parse_mana_ability
 from .parse import _apply_speed_gate, _mana_restriction, _parse_ability, _parse_effects, _parse_trigger
@@ -123,7 +123,7 @@ def _face_special_lines(st, line):
             return None
         line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration|Heroic) — (?=When|At|If)", "", line)
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
-        if _creature_keywords.parse_line(line, extra, triggers, keywords):
+        if _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st):
             return None
         parts = [p.strip().lower() for p in re.split(r",(?: and)? | and |,", line)]
         if all(p in KEYWORDS or re.fullmatch(r"(?:ward \{\d+\}|toxic \d+|bushido \d+)", p) for p in parts):
@@ -714,9 +714,9 @@ def _face_cost_and_static_lines(st, line):
                 eff.data["per"] = {"what": "creature", "zone": "graveyard"}
             triggers.append(Trigger("attacks", [eff]))
             return None
-        m = re.fullmatch(r"Disguise (\{[^ ]+\})", line)
+        m = re.fullmatch(r"(Disguise|Morph|Megamorph) (\{[^ ]+\})", line)
         if m:
-            alt_costs.append(AltCost("disguise", parse_mana_cost(m[1])))
+            alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2])))
             return None
         return line
     finally:
@@ -780,6 +780,10 @@ def _face_keyword_ability_lines(st, line):
         m = re.fullmatch(r"(Mayhem|Sneak) (\{[^ ]+\})", line)
         if m:
             alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2]), zone="graveyard" if m[1] == "Mayhem" else "hand"))
+            return None
+        m = re.fullmatch(r"Blitz (\{[^ ]+\})", line)
+        if m:
+            alt_costs.append(AltCost("blitz", parse_mana_cost(m[1]), zone="hand"))
             return None
         m = re.fullmatch(r"Blitz—(\{[^,]+\}), Pay (\d+) life\.", line)
         if m:

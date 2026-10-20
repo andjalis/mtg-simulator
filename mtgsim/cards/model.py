@@ -83,7 +83,8 @@ class AltCost:
     extra: list = field(default_factory=list)    # extra effects (Baleful: an opponent draws)
     life: int = 0
     hybrid: tuple = ()               # hybrid pips in cost, e.g. ("UB", "UB") for {U/B}{U/B}
-    counters: int = 0                # impending: time counters it enters with
+    counters: int = 0                # impending: time counters it enters with; suspend: time counters
+    pt: tuple = ()                   # prototype: (power, toughness)
 
 
 @dataclass
@@ -224,6 +225,9 @@ class CardDef:
     behold_or_pay: tuple = ()                           # ("Elf", 2): "behold an Elf or pay {2}" as an additional cost
     discard_or_pay: int = 0                             # "... discard a card or pay {2}"
     echo: dict | None = None                            # Echo {cost}
+    vanishing: int = 0
+    fading: int = 0
+    modular: int = 0
     bloodthirst: int = 0                                # Bloodthirst N
     unleash: bool = False
     riot: bool = False

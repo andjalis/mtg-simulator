@@ -48,6 +48,8 @@ class TargetsMixin:
             return not perm.card.is_artifact
         if f == "nonflying":
             return not perm.has("flying")
+        if f == "flying":
+            return perm.has("flying")
         if f == "untapped":
             return not perm.tapped
         if f == "opp":

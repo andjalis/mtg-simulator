@@ -26,6 +26,13 @@ class EffectsMixin:
         if protected_from(target, source):
             self.log(f"{target.card.name}'s protection prevents {amount} damage", target.controller)
             return
+        shield = getattr(target, "prevent_next", 0)
+        if shield:
+            prevented = min(shield, amount)
+            target.prevent_next -= prevented
+            amount -= prevented
+            if amount <= 0:
+                return
         infect = has("infect")
         if isinstance(target, Player):
             if combat and isinstance(source, Permanent) and source.card.toxic:
@@ -169,6 +176,8 @@ class EffectsMixin:
             return False
         intent = rules_events.zone_destination(self, perm, to)
         to = intent.destination
+        if perm.unearthed:
+            to = "exile"                     # unearth: exiled if it would leave the battlefield
         before = rules_events.snapshot(perm)
         perm.last_card = perm.card
         controller, owner = perm.controller, perm.owner
