@@ -1,0 +1,1 @@
+attacking_token_grants: 100% matched by templates (including simplifications) (1 fully template-matched; 1 cards)

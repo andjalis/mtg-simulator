@@ -1,0 +1,2 @@
+Standard: 1,836/4,902 cards fully supported (37.5%), 60% of rules sentences handled
+All cards: 7,609/34,084 cards fully supported (22.3%), 41% of rules sentences handled

@@ -1,0 +1,31 @@
+equip_targets: 32% matched by templates (including simplifications) (6 fully template-matched, 13 partly supported; 19 cards)
+   1 Ace's Baseball Bat [partial]
+       ignored: As long as equipped creature is attacking, it has first strike and must be blocked by a Dalek if able.
+   1 Bilbo's Ring [partial]
+       ignored: During your turn, equipped creature has hexproof and can't be blocked.
+       ignored: Whenever equipped creature attacks alone, you draw a card and you lose 1 life.
+   1 Blackblade Reforged [partial]
+       ignored: Equipped creature gets +1/+1 for each land you control.
+   1 Brotherhood Regalia [partial]
+       ignored: Equipped creature has ward {2}, is an Assassin in addition to its other types, and can't be blocked.
+   1 Commander's Plate [partial]
+       ignored: Equipped creature gets +3/+3 and has protection from each color that's not in your commander's color identity.
+       ignored: Equip commander {3}
+   1 Excalibur, Sword of Eden [partial]
+       ignored: ~ costs {X} less to cast, where X is the total mana value of historic permanents you control.
+   1 Hulkbuster Armor [partial]
+       ignored: Equipped creature has base power and toughness 9/9 and has flying.
+   1 Lothlórien Blade [partial]
+       ignored: Whenever equipped creature attacks, it deals damage equal to its power to target creature defending player controls.
+   1 Mjölnir, Hammer of Thor [partial]
+       ignored: Double all damage equipped creature would deal.
+       ignored: Equip worthy {1}
+       ignored: {2}{R}, Discard this card: It deals 2 damage to each creature.
+   1 Pirate Hat [partial]
+       ignored: Equipped creature gets +1/+1 and has "Whenever ~ attacks, draw a card, then discard a card."
+   1 Robe of the Archmagi [partial]
+       ignored: Whenever equipped creature deals combat damage to a player, draw that many cards.
+   1 Wizard's Staff [partial]
+       ignored: If an ability of equipped creature triggers, that ability triggers an additional time.
+   1 Wrecking Ball Arm [partial]
+       ignored: Equipped creature has base power and toughness 7/7 and can't be blocked by creatures with power 2 or less.

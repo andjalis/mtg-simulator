@@ -44,8 +44,8 @@ class EquipCostParsingTests(unittest.TestCase):
 
     def test_restricted_and_unknown_lines_stay_visible_beside_supported_ones(self):
         cases = {
-            "Equip legendary creature {1}": "Equip legendary creature {1}",
-            "Equip Soldier {W}": "Equip Soldier {W}",
+            "Equip commander {1}": "Equip commander {1}",
+            "Equip worthy {W}": "Equip worthy {W}",
             "Equip—{2}, Pay 2 life.": "Equip—{2}, Pay 2 life.",
             "Equip—{1}, Sacrifice an artifact.": "Equip—{1}, Sacrifice an artifact.",
             "Equip—{1}, Sacrifice two creatures.": "Equip—{1}, Sacrifice two creatures.",
@@ -364,13 +364,15 @@ class RealEquipmentCardTests(unittest.TestCase):
             raise unittest.SkipTest("card database not built")
         cls.db = carddb.CardDB(offline=True)
 
-    def test_restricted_alternative_stays_unsupported(self):
+    def test_restricted_alternatives_keep_their_own_target_filters(self):
         bat = self.db.get("Ace's Baseball Bat")
-        self.assertEqual(bat.equip_costs, (EquipCost({"generic": 3}, False),))
-        self.assertIn("Equip legendary creature {1}", bat.unsupported)
+        self.assertEqual(bat.equip_costs, (EquipCost({"generic": 1}, False, "legendary"),
+                                          EquipCost({"generic": 3})))
+        self.assertNotIn("Equip legendary creature {1}", bat.unsupported)
         blade = self.db.get("Veteran's Powerblade")
-        self.assertEqual(blade.equip_costs, (EquipCost({"generic": 2}, False),))
-        self.assertIn("Equip Soldier {W}", blade.unsupported)
+        self.assertEqual(blade.equip_costs, (EquipCost({"generic": 0, "W": 1}, False, "subtype:Soldier"),
+                                            EquipCost({"generic": 2})))
+        self.assertNotIn("Equip Soldier {W}", blade.unsupported)
 
     def test_transform_faces_keep_their_own_equip_cost(self):
         heirloom = self.db.get("Neglected Heirloom")
