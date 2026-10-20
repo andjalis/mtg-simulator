@@ -245,6 +245,7 @@ class TurnsMixin:
             return
         self.step = "draw"
         self.fire(opp, "opp_draw_step")
+        self.fire(p, "draw_step")
         if self.turn > 1:
             self.draw(p)
             self.settle()
@@ -324,6 +325,7 @@ class TurnsMixin:
             perm.temp_kw.clear()
             perm.regeneration_shields = 0
             perm.prevent_next = 0
+            perm.damaged_by = []
             perm.regeneration_blocked = False
             copies.revert(perm)
             if not (perm.animated and perm.animated.text in ("earthbend", "permanent")):

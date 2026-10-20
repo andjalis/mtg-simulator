@@ -126,6 +126,10 @@ class StackMixin:
                     continue
                 if trig.filter == "blocks_flying" and not (isinstance(context, Permanent) and context.has("flying")):
                     continue
+                if event == "creature_dies" and trig.filter == "other" and subject is perm:
+                    continue
+                if event in ("any_cast", "damages_player") and trig.filter == "opp" and context is perm.controller:
+                    continue
                 if trig.filter == "evolve":
                     if subject is perm or subject is None or subject.controller is not perm.controller or not (
                             subject.power > perm.power or subject.toughness > perm.toughness):
@@ -156,7 +160,11 @@ class StackMixin:
                                else e for e in effects]
                 self.queue_trigger(perm.controller, effects, perm, perm.card.name, context, modes=trig.modes,
                                    intervening_if=trig.intervening_if)
-        if source is not None:      # Role tokens give the enchanted creature triggers
+        if source is not None:      # Role tokens, Auras and Equipment give their creature triggers
+            for equipment in source.equipment:
+                for trig in equipment.card.host_triggers:
+                    if trig.event == event:
+                        self.queue_trigger(equipment.controller, trig.effects, source, equipment.card.name, context)
             for aura in list(source.auras):
                 for trig in aura.card.host_triggers:
                     if trig.event == event:

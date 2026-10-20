@@ -324,6 +324,10 @@ def _parse_face(data: dict) -> CardDef:
     extra.pop("is_spree", None)
     extra.pop("_subtypes", None)
     _auras.finish(extra)
+    hosted = [t for t in triggers if t.event.startswith("host:")]
+    if hosted:
+        extra["host_triggers"] = [dataclasses.replace(t, event=t.event[5:]) for t in hosted]
+        triggers = [t for t in triggers if t not in hosted]
     extra["gy_triggers"] = [t for t in triggers if any(e.kind == "return_self_gy" for e in t.effects)]
     triggers = [t for t in triggers if t not in extra["gy_triggers"]]
     extra["spent_colors"] = frozenset(t.effects[0].cond[6:] for t in triggers
@@ -468,11 +472,19 @@ def _parse_trigger_line(line: str):
             flt = f"{'other' if m[1] == 'another' else 'any'}||{m[2]}"
         if events == ("attacks",) and "while saddled" in pat:
             flt = "saddled"
+        if events == ("creature_dies",) and "another creature" in pat:
+            flt = "other"
+        if events == ("any_cast",) and "an opponent casts" in line:
+            flt = "opp"
+        if events == ("damages_player",) and "an opponent" in line:
+            flt = "opp"
+        if events[0].startswith("host:"):        # the equipped / enchanted creature is "~" (the trigger's source)
+            rest = re.sub(r"^it\b", "~", re.sub(r"\b(?:equipped|enchanted) creature\b", "~", rest))
         if events == ("blocks",) and "a creature with flying" in pat:
             flt = "blocks_flying"
         if events == ("cast_instant_sorcery",) and "that targets a creature" in pat:
             flt = "targets_creature"
-        if events == ("targeted_mine",):
+        if events in (("targeted_mine",), ("dealt_damage",)):
             rest = re.sub(r"^it (gets|gains|deals)\b", r"~ \1", re.sub(r"\b(on|untap|to) it\b", r"\1 ~", rest))
         if events == ("cast_cmc",):
             flt = f"cmc>={m[1]}"

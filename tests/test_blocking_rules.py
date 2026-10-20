@@ -22,6 +22,9 @@ GROVE = card("Test Grove", "", "Land", "{T}, Pay 1 life: Add {G} or {U}.")
 HARROW = card("Test Harrow", "{2}{G}", "Instant", "As an additional cost to cast this spell, sacrifice a land.\n"
                                                   "Draw a card.")
 BIRD = card("Test Bird", "{U}", "Creature — Bird", "Flying", 1, 1)
+SENGIR = card("Test Sengir", "{3}{B}{B}", "Creature — Vampire",
+              "Whenever a creature dealt damage by ~ this turn dies, put a +1/+1 counter on ~.", 4, 4)
+MUSCLE = card("Test Muscle Sliver", "{1}{G}", "Creature — Sliver", "All Sliver creatures get +1/+1.", 1, 1)
 
 
 class BlockingRules(unittest.TestCase):
@@ -49,7 +52,7 @@ class BlockingRules(unittest.TestCase):
         self.game.settle()
 
     def test_templates(self):
-        for c in (SUDDEN, RIDER, BARD, TIGER, ETERNAL, STOMP, INSPIRATION, REAVER, HARROW):
+        for c in (SUDDEN, RIDER, BARD, TIGER, ETERNAL, STOMP, INSPIRATION, REAVER, HARROW, SENGIR, MUSCLE):
             self.assertEqual(c.unsupported, [], c.name)
         self.assertEqual(GROVE.produces, {"G", "U"})
 
@@ -106,6 +109,17 @@ class BlockingRules(unittest.TestCase):
         self.assertEqual(reaver.power, 4)
         self.a.my_turn = False
         self.assertEqual(reaver.power, 2)
+
+    def test_creature_it_damaged_dies(self):
+        sengir, bear = self.put(self.a, SENGIR), self.put(self.b, BEAR)
+        self.fight([sengir], {sengir: [bear]})
+        self.assertNotIn(bear, self.b.battlefield)
+        self.assertEqual(sengir.p1, 1)
+
+    def test_sliver_anthem_for_every_player(self):
+        mine, theirs = self.put(self.a, MUSCLE), self.put(self.b, MUSCLE)
+        self.assertEqual((mine.power, theirs.power), (3, 3))
+        self.assertEqual(self.put(self.a, BEAR).power, 2)
 
     def test_land_sacrifice_cost(self):
         self.put(self.a, FOREST, 3)

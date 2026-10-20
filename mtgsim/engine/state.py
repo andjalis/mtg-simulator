@@ -123,6 +123,7 @@ class Permanent:
         self.auras: list["Permanent"] = []   # Auras on this permanent (they sit on their caster's battlefield)
         self.aura_host: "Permanent | None" = None      # the permanent this Aura enchants
         self.attached_to: "Permanent | None" = None    # Equipment: the creature it is attached to
+        self.damaged_by: list = []                      # permanents that dealt it damage this turn
         self.prevent_next = 0                           # "prevent the next N damage ... this turn"
         self.skip_untap = 0                             # untap steps it skips ("doesn't untap during ... next untap step")
         self.spent_color = ""              # "if {U}{U} was spent to cast it"
@@ -172,6 +173,13 @@ class Permanent:
                 if c.anthem_enchanted and self.auras:
                     bp += c.anthem_enchanted[0]
                     bt += c.anthem_enchanted[1]
+        if creature:
+            for pl in (self.controller, self.controller.foe):
+                for x in (pl.battlefield if pl is not None else ()):
+                    a = x.card.anthem_all
+                    if a and a[0] in self.card.subtypes:
+                        bp += a[1]
+                        bt += a[2]
         for equipment in self.equipment:
             bp += equipment.card.equip_bonus[0]
             bt += equipment.card.equip_bonus[1]

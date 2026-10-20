@@ -696,6 +696,10 @@ def _face_cost_and_static_lines(st, line):
             if m[3]:
                 extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((m[3], cond),)
             return None
+        m = re.fullmatch(r"All ([A-Z]\w+) creatures get \+(\d+)/\+(\d+)\.", line)
+        if m:
+            extra["anthem_all"] = (m[1], int(m[2]), int(m[3]))      # every player's creatures of that type
+            return None
         if line == "All creatures able to block ~ do so.":
             extra["lure"] = True
             return None

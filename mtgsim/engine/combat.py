@@ -28,6 +28,8 @@ class CombatMixin:
         self.step = "declare_attackers"
         self.attackers, self.blocks, self.attack_targets = [], {}, {}
         self.fire(p, "begin_combat")
+        for pl in self.players:
+            self.fire(pl, "each_begin_combat")
         self.settle()
         if self.over:
             return

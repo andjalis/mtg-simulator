@@ -232,6 +232,7 @@ class CardDef:
     bloodthirst: int = 0                                # Bloodthirst N
     unleash: bool = False
     riot: bool = False
+    anthem_all: tuple = ()                              # ("Sliver", 1, 1): "All Sliver creatures get +1/+1."
     lure: bool = False                                  # "All creatures able to block ~ do so."
     max_blockers: int = 0                               # "~ can't be blocked by more than one creature."
     needs_land: str = ""                          # "When you control no Islands, sacrifice ~."

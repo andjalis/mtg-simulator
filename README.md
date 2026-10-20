@@ -311,6 +311,11 @@ to select another local database.
   isn't blocked", "creatures without flying can't block this turn", "attacking creatures get +N/+N",
   "during your turn, ~ gets +N/+N", sacrificing a land as an additional cost, and horizon lands
   ("{T}, Pay 1 life: Add {G} or {U}"; the life is not paid, as with painlands)
+- Trigger heads: "whenever ~ is dealt damage", "deals damage to a player / an opponent", "deals combat
+  damage to a creature", "a creature dealt damage by ~ this turn dies", "(a|another) creature dies",
+  "a player / an opponent casts a spell", "at the beginning of each combat / your draw step / each
+  player's end step", and "whenever equipped / enchanted creature attacks / deals combat damage to a
+  player". "All Sliver creatures get +N/+N" counts every player's Slivers
 - Regeneration shields replace destruction, tap the permanent, clear its damage
   and remove it from combat. They expire at cleanup and cannot prevent sacrifice
   or zero toughness. Regeneration-prevention riders on destruction and damage apply

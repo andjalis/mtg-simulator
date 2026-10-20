@@ -39,15 +39,30 @@ SHOWN = 100
 MARKER = "<!-- parse-diff -->"
 
 
+def _is_default(f, value) -> bool:
+    if f.default is not dataclasses.MISSING:
+        default = f.default
+    elif f.default_factory is not dataclasses.MISSING:
+        default = f.default_factory()
+    else:
+        return False
+    try:
+        return bool(value == default)
+    except Exception:
+        return False
+
+
 def describe(v, seen=frozenset()) -> str:
     """Every field of a CardDef, recursively, in a form that is the same in every process: CardDef's own
-    repr is just its name, sets are sorted (string hashes vary by process) and memory addresses are dropped."""
+    repr is just its name, sets are sorted (string hashes vary by process) and memory addresses are dropped.
+    Fields at their default are left out, so adding a field changes only the cards that use it."""
     if dataclasses.is_dataclass(v) and not isinstance(v, type):
         if id(v) in seen:
             return f"<{type(v).__name__} cycle>"
         seen = seen | {id(v)}
         return f"{type(v).__name__}(" + ", ".join(f"{f.name}={describe(getattr(v, f.name), seen)}"
-                                                  for f in dataclasses.fields(v)) + ")"
+                                                  for f in dataclasses.fields(v)
+                                                  if not _is_default(f, getattr(v, f.name))) + ")"
     if isinstance(v, (set, frozenset)):
         return "{" + ", ".join(sorted(describe(x, seen) for x in v)) + "}"
     if isinstance(v, dict):

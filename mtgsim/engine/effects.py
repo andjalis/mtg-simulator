@@ -34,6 +34,13 @@ class EffectsMixin:
             if amount <= 0:
                 return
         infect = has("infect")
+        if isinstance(source, Permanent) and source in source.controller.battlefield:
+            if isinstance(target, Player):
+                self.fire(source.controller, "damages_player", source, context=target)
+            elif combat and isinstance(target, Permanent) and target.is_creature:
+                self.fire(source.controller, "combat_damage_creature", source, context=target)
+        if isinstance(target, Permanent) and target in target.controller.battlefield:
+            self.fire(target.controller, "dealt_damage", target, context=source)
         if isinstance(target, Player):
             if combat and isinstance(source, Permanent) and source.card.toxic:
                 target.counters["poison"] = target.counters.get("poison", 0) + source.card.toxic
@@ -53,6 +60,8 @@ class EffectsMixin:
                 target.damage += amount
             if target.is_creature and has("deathtouch"):
                 target.deathtouched = True
+            if target.is_creature and isinstance(source, Permanent):
+                target.damaged_by.append(source)       # "a creature dealt damage by ~ this turn dies"
         else:
             return
         if has("lifelink"):
@@ -303,9 +312,14 @@ class EffectsMixin:
             if perm.blitz:
                 self.queue_trigger(perm.controller, [Effect("draw", 1)], perm, f"{perm.card.name} blitz")
             self.fire(perm.controller, "other_creature_dies", subject=perm)
+            for src in {id(s): s for s in perm.damaged_by}.values():
+                if src in src.controller.battlefield:
+                    self.fire(src.controller, "damaged_dies", src, context=perm)
             opp = self.opponent(perm.controller)
             for other in opp.battlefield:
                 self.fire(opp, "opp_creature_dies", other, context=perm.controller)
+            for pl in self.players:
+                self.fire(pl, "creature_dies", subject=perm, context=perm)
 
     def state_based_actions(self):
         for pl in self.players:
