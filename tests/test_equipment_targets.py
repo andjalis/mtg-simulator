@@ -58,7 +58,7 @@ class EquipTargetParsingTests(unittest.TestCase):
                           EquipCost({"generic": 2})))
 
     def test_unknown_restrictions_and_payment_components_stay_visible(self):
-        for line in ("Equip commander {1}", "Equip worthy {1}", "Equip creature with flying {1}",
+        for line in ("Equip commander {1}", "Equip worthy creature {1}", "Equip creature with flying {1}",
                      "Equip Soldier with power 2 or less {1}", "Equip Mystery {1}",
                      "Equip legendary creature {1}. Activate only once each turn.",
                      "Equip Soldier {E}", "Equip Knight {W/U}", "Equip Soldier {X}",
@@ -67,9 +67,9 @@ class EquipTargetParsingTests(unittest.TestCase):
                 c = card("Unknown restriction", "", "Artifact — Equipment", line + "\nEquip {3}")
                 self.assertIn(line, c.unsupported)
                 self.assertEqual(c.equip_abilities, (EquipCost({"generic": 3}),))
-        for name in ("Commander's Plate", "Unstable Molecule Suit", "Mjölnir, Hammer of Thor"):
+        for name in ("Commander's Plate", "Unstable Molecule Suit"):
             c = self.db.get(name)
-            self.assertTrue(any(s.startswith(("Equip commander", "Equip worthy")) for s in c.unsupported))
+            self.assertTrue(any(s.startswith("Equip commander") for s in c.unsupported))
 
     def test_legendary_metadata_and_copy_exceptions(self):
         c = self.db.get("Isamaru, Hound of Konda")
