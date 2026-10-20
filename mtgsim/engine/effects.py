@@ -176,8 +176,8 @@ class EffectsMixin:
             return False
         intent = rules_events.zone_destination(self, perm, to)
         to = intent.destination
-        if perm.unearthed:
-            to = "exile"                     # unearth: exiled if it would leave the battlefield
+        if perm.unearthed or (perm.disturbed and to == "graveyard"):
+            to = "exile"                     # unearth: exiled if it would leave the battlefield; disturb: not to a graveyard
         before = rules_events.snapshot(perm)
         perm.last_card = perm.card
         controller, owner = perm.controller, perm.owner
@@ -341,6 +341,11 @@ class EffectsMixin:
                     if perm.attached_to is not None and protected_from(perm.attached_to, perm):
                         perm.attached_to = None
                         changed = True
+                    if perm.card.needs_land and not any(perm.card.needs_land in x.card.subtypes
+                                                              for x in p.battlefield):
+                        self.sacrifice(perm)
+                        changed = True
+                        continue
                     if perm.is_planeswalker and perm.loyalty <= 0:
                         self.dies(perm)
                         changed = True

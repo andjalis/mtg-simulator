@@ -75,9 +75,16 @@ def _parse_effects(text: str, opts: bool = False):
             effects.append(Effect("pay_gate", data={"gate": gate}))
             gated = True
             continue
+        ml = re.fullmatch(r"you may pay (\d+) life", s, re.I)
+        if ml:
+            effects.append(Effect("pay_gate", data={"gate": ("life", ml[1])}))
+            gated = True
+            continue
         mm = re.fullmatch(r"you may (.+)", s, re.I)
         if mm:
             new, bad = _parse_effects(mm[1][0].upper() + mm[1][1:] + ".")
+            if bad or not new:
+                new, bad = _parse_effects("You " + mm[1] + ".")              # "you may gain 2 life"
             if new and not bad and not any(e.kind in _MAY_DECLINED for e in new):
                 effects += [Effect("pay_gate", data={"gate": ("may", "")})] + new   # always taken
                 gated = True
@@ -461,6 +468,8 @@ def _parse_trigger_line(line: str):
             flt = f"{'other' if m[1] == 'another' else 'any'}||{m[2]}"
         if events == ("attacks",) and "while saddled" in pat:
             flt = "saddled"
+        if events == ("blocks",) and "a creature with flying" in pat:
+            flt = "blocks_flying"
         if events == ("cast_instant_sorcery",) and "that targets a creature" in pat:
             flt = "targets_creature"
         if events == ("targeted_mine",):

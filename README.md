@@ -301,6 +301,11 @@ to select another local database.
   "~ deals N damage to each creature [without flying] and each player", "each player loses N life /
   discards a card", "look at the top N cards, then put them back in any order", self shroud and
   unblockability abilities. Phyrexian mana in ability costs is paid with colored mana, as in spell costs
+- Metalcraft and "~ gets +N/+N as long as it's your turn / attacking", "when you control no Islands,
+  sacrifice ~", Aura abilities that pump or regenerate the enchanted creature, "destroy all artifacts /
+  enchantments / lands", "destroy target artifact or land", "that player discards", ingest, devour (only
+  tokens are devoured), extort (its {W/B} is paid with a color of its source), "you may pay N life",
+  "whenever ~ blocks a creature with flying", entwine, disturb and "untap all creatures you control"
 - Regeneration shields replace destruction, tap the permanent, clear its damage
   and remove it from combat. They expire at cleanup and cannot prevent sacrifice
   or zero toughness. Regeneration-prevention riders on destruction and damage apply

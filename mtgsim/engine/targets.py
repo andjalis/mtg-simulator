@@ -93,6 +93,8 @@ class TargetsMixin:
             return [x for x in everything if x.card.is_land and self.passes_filter(eff, x, p)]
         if t == "artifact":
             return [x for x in everything if x.card.is_artifact and self.passes_filter(eff, x, p)]
+        if t == "artifact_land":
+            return [x for x in everything if (x.card.is_artifact or x.card.is_land) and self.passes_filter(eff, x, p)]
         if t == "artifact_enchantment":
             return [x for x in everything if (x.card.is_artifact or "Enchantment" in x.card.types)
                     and self.passes_filter(eff, x, p)]

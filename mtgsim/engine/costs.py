@@ -190,6 +190,11 @@ class CostsMixin:
         kind, what = gate
         if kind == "may":
             return True
+        if kind == "life":                         # "you may pay N life": while it stays comfortable
+            if p.life - int(what) < 8:
+                return False
+            self.change_life(p, -int(what), "paid life")
+            return True
         src = item.source if item is not None and isinstance(item.source, Permanent) else None
         if kind == "sac":
             other = what.startswith("other ")
@@ -382,6 +387,8 @@ class CostsMixin:
                 v = dataclasses.replace(card.adventure)
             elif kind == "prepared":
                 v = dataclasses.replace(card.back, name=f"{card.name} (prepared)")
+            elif kind == "disturb":
+                v = dataclasses.replace(card.back, name=f"{card.back.name} (disturb)", mana_cost=alt.cost)
             elif kind in ("channel", "gy_ability"):
                 v = CardDef(name=f"{card.name} ({kind})", mana_cost=alt.cost, cmc=card.cmc,
                             types=frozenset({"Instant"}), spell_effects=list(alt.effects), is_ability=True)
@@ -480,7 +487,8 @@ class CostsMixin:
                 out.append(self._variant(c, "flashback", AltCost("flashback", dict(c.mana_cost))))
         for c in p.graveyard:
             for a in c.alt_costs:
-                if a.kind in ("flashback", "gy_ability", "unearth") or (a.kind == "blitz" and "graveyard" in a.zone) or \
+                if a.kind in ("flashback", "gy_ability", "unearth") or (a.kind == "disturb" and c.back is not None) or \
+                        (a.kind == "blitz" and "graveyard" in a.zone) or \
                         (a.kind == "mayhem" and c in p.discarded_cards):
                     out.append(self._variant(c, "blitz_gy" if a.kind == "blitz" else a.kind, a))
         return out
@@ -497,7 +505,7 @@ class CostsMixin:
         """The zone a spell_options() variant of this kind is cast from."""
         return {"from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile, "airbent": p.airbent,
-                "mayhem": p.graveyard, "unearth": p.graveyard, "impulse": p.exile, "suspended": p.exile, "rebound": p.exile,
+                "mayhem": p.graveyard, "unearth": p.graveyard, "disturb": p.graveyard, "impulse": p.exile, "suspended": p.exile, "rebound": p.exile,
                 "cascade": p.exile, "cascade_adventure": p.exile,
                 "rebound_adventure": p.exile, "discover": p.exile}.get(kind, p.hand)
 

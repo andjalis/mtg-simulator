@@ -31,6 +31,14 @@ def wrath(game, p, eff, opp, **_):
         game.destroy(perm, no_regen=eff.data.get("no_regen", False))
 
 
+@kind("destroy_all")
+def destroy_all(game, p, eff, opp, **_):
+    """Destroy all artifacts / enchantments / lands."""
+    kind = eff.data["type"]
+    for perm in [x for x in p.battlefield + opp.battlefield if kind in x.card.types]:
+        game.destroy(perm)
+
+
 @kind("wrath_pw")
 def wrath_pw(game, p, eff, opp, **_):
     for perm in p.planeswalkers + opp.planeswalkers:

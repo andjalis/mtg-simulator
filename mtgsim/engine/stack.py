@@ -122,6 +122,8 @@ class StackMixin:
                         continue
                 if trig.filter == "saddled" and not perm.saddled:
                     continue
+                if trig.filter == "blocks_flying" and not (isinstance(context, Permanent) and context.has("flying")):
+                    continue
                 if trig.filter == "evolve":
                     if subject is perm or subject is None or subject.controller is not perm.controller or not (
                             subject.power > perm.power or subject.toughness > perm.toughness):
@@ -229,7 +231,10 @@ class StackMixin:
                     self.log(f"{base.name} has nothing to enchant", p)
                     p.graveyard.append(base)
                     return
-            perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
+            if kind == "disturb":                   # cast transformed: its back face enters
+                perm = self.enter_battlefield(p, base.back, x=getattr(item, "x", 0), physical_card=base)
+            else:
+                perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
             self._aura_host = None
             self._spent = ""
             if kind in ("disguise", "morph", "megamorph"):

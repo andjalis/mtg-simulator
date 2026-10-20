@@ -14,13 +14,14 @@ turn, fabricate always takes the counters, backup goes on the best other creatur
 granted). Modular, annihilator and soulshift choose for the AI without targeting. Dash and unearth are
 alternative costs (unearth from the graveyard: a spell, not an ability), madness lets the card be cast from the
 graveyard for its madness cost during the turn it was discarded. Not modelled: echo for permanents that
-changed control, cumulative upkeep costs other than mana.
+changed control, cumulative upkeep costs other than mana. Extort's hybrid {W/B} is paid as a color of its source,
+and devour eats only tokens.
 """
 from __future__ import annotations
 
 import re
 
-KINDS = {"evolve", "renown", "mentor", "battle_cry", "fabricate", "living_weapon", "echo", "pay_or_sac",
+KINDS = {"extort", "evolve", "renown", "mentor", "battle_cry", "fabricate", "living_weapon", "echo", "pay_or_sac",
          "cumulative_upkeep", "vanishing", "fading", "modular", "soulshift", "annihilator", "rampage", "backup"}
 
 
@@ -91,6 +92,16 @@ def parse_line(line: str, st) -> bool:
         from .cards.patterns import _token
         triggers.append(_trigger("dies", [_token(m[1], 1, 1, "white and black Spirit", "flying")]))
         return True
+    if line == "Ingest":
+        triggers.append(_trigger("combat_damage_player", [_effect("exile_top_of", target="that_player")]))
+        return True
+    m = re.fullmatch(r"Devour (\d+)", line)
+    if m:
+        extra["devour"] = int(m[1])
+        return True
+    if line == "Extort":
+        triggers.append(_trigger("cast_spell", [_effect("extort")]))
+        return True
     if line == "Myriad":
         return True             # only copies for opponents other than the defending player: none with two players
     if line == "Evolve":
@@ -119,6 +130,12 @@ def parse_line(line: str, st) -> bool:
 def enters(game, p, perm):
     """The "enters with" choices and rules, as perm enters the battlefield."""
     c = perm.card
+    if c.devour:                           # devour the tokens (the AI keeps its real creatures)
+        eaten = [x for x in p.creatures if x is not perm and x.card.is_token]
+        for x in eaten:
+            game.sacrifice(x)
+        if eaten:
+            perm.counters["+1/+1"] = perm.p1 + c.devour * len(eaten)
     if c.vanishing:
         perm.counters["time"] = perm.counters.get("time", 0) + c.vanishing
     if c.fading:
@@ -184,6 +201,14 @@ def resolve(game, p, eff, target, item):
             game.sacrifice(victim)
         return
     if not isinstance(src, Permanent) or src not in src.controller.battlefield:
+        return
+    if k == "extort":                      # pay {W/B} (as one of the source's colors): drain 1
+        color = next((c for c in ("W", "B") if c in src.card.colors), "B")
+        cost = {"generic": 0, color: 1}
+        if game.can_pay(p, cost) and game.hook(p, "pay_optional")(game, p, cost, "extort"):
+            game.pay(p, cost)
+            game.change_life(game.opponent(p), -1, f"{src.card.name}: extort")
+            game.change_life(p, 1, f"{src.card.name}: extort")
         return
     if k == "vanishing":
         if src.counters.get("time"):

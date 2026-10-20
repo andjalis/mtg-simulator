@@ -159,7 +159,10 @@ class PlayMixin:
             flags.add("teamwork")
             teamwork_paid = True
         if card.modes:
-            mode_effects = modal.pick(self, p, card.modes, n=card.modes_choose, flags=flags)
+            if kind == "entwine":       # all of the modes: a plain list, without the printed "choose one" spec
+                mode_effects = modal.pick(self, p, list(card.modes), n=len(card.modes), flags=flags)
+            else:
+                mode_effects = modal.pick(self, p, card.modes, n=card.modes_choose, flags=flags)
             effects = mode_effects + effects
             mode_targets = self.auto_targets(p, mode_effects, card)
             if not self.valid_action_targets(p, mode_effects, mode_targets, card):

@@ -686,6 +686,19 @@ def _face_cost_and_static_lines(st, line):
             cond = ("gy_perm>=" if m[4] else "gy>=") + str(_num(m[3]))
             extra["pt_if"] = extra.get("pt_if", ()) + ((cond, int(m[1]), int(m[2])),)
             return None
+        m = re.fullmatch(r"(?:Metalcraft — )?~ gets \+(\d+)/\+(\d+)(?: and has (flying|first strike|trample|haste|lifelink|"
+                         r"vigilance|menace|deathtouch))? as long as (you control three or more artifacts|it's your turn|"
+                         r"it's attacking)\.", line)
+        if m:
+            cond = {"you control three or more artifacts": "artifacts>=3", "it's your turn": "your_turn",
+                    "it's attacking": "attacking"}[m[4]]
+            extra["pt_if"] = extra.get("pt_if", ()) + ((cond, int(m[1]), int(m[2])),)
+            if m[3]:
+                extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((m[3], cond),)
+            return None
+        if line == "When you control no Islands, sacrifice ~.":
+            extra["needs_land"] = "Island"       # a state trigger: sacrificed while you control no Island
+            return None
         m = re.fullmatch(r"~ enters with a \+1/\+1 counter on it if (an opponent lost life|a creature died|you attacked) "
                          r"this turn\.", line)
         if m:

@@ -200,6 +200,13 @@ def grant_types(game, p, eff, **_):
             x.temp_kw.add(eff.data["keyword"])
 
 
+@kind("untap_all")
+def untap_all(game, p, eff, **_):
+    for x in p.battlefield:
+        if (x.is_creature if eff.data["what"] == "creatures" else x.card.is_land):
+            x.tapped = False
+
+
 @kind("untap_prev")
 def untap_prev(game, target, **_):
     if isinstance(target, Permanent):

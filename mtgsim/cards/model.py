@@ -225,12 +225,14 @@ class CardDef:
     behold_or_pay: tuple = ()                           # ("Elf", 2): "behold an Elf or pay {2}" as an additional cost
     discard_or_pay: int = 0                             # "... discard a card or pay {2}"
     echo: dict | None = None                            # Echo {cost}
+    devour: int = 0
     vanishing: int = 0
     fading: int = 0
     modular: int = 0
     bloodthirst: int = 0                                # Bloodthirst N
     unleash: bool = False
     riot: bool = False
+    needs_land: str = ""                          # "When you control no Islands, sacrifice ~."
     attack_needs: str = ""                              # "can't attack unless defending player controls an Island"
     no_untap: bool = False                              # "~ doesn't untap during your untap step."
     toxic: int = 0                                      # Toxic N: poison counters with combat damage to a player

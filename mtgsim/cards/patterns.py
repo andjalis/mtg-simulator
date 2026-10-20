@@ -237,6 +237,12 @@ _EFFECT_PATTERNS = [
     (r"damage can't be prevented this turn", lambda m: None),
     (r"destroy all creatures", lambda m: Effect("wrath", target="each_creature")),
     (r"destroy all planeswalkers", lambda m: Effect("wrath_pw")),
+    (r"destroy all (artifacts|enchantments|lands)", lambda m: Effect("destroy_all", data={"type": m[1][:-1].capitalize()})),
+    (r"destroy target artifact or land", lambda m: Effect("destroy", target="artifact_land")),
+    (r"that player discards (a|two) cards?", lambda m: Effect("discard", _num(m[1]), target="that_player")),
+    (r"that player exiles the top card of their library", lambda m: Effect("exile_top_of", target="that_player")),
+    (r"enchanted creature gets \+(\d+)/\+(\d+) until end of turn", lambda m: Effect("pump", int(m[1]), int(m[2]), target="host")),
+    (r"regenerate enchanted creature", lambda m: Effect("regenerate", 1, target="host")),
     (r"return (?:up to one )?(?:other )?target (?:nonland permanent|creature|artifact, creature, enchantment, or "
      r"planeswalker)"
      r"(?: an opponent controls| you don't control)? to its owner's hand",
@@ -356,6 +362,8 @@ _EFFECT_PATTERNS = [
     (r"bolster (\d+|one|two|three|four|five|six)", lambda m: Effect("bolster", _num(m[1]))),
     (r"support (\d+|one|two|three|four|five|six)", lambda m: Effect("support", _num(m[1]))),
     (r"(?:target|each) opponent sacrifices a creature(?: of their choice)?", lambda m: Effect("edict", 1)),
+    (r"each other player sacrifices a creature", lambda m: Effect("edict", 1)),
+    (r"untap all (creatures|lands) you control", lambda m: Effect("untap_all", data={"what": m[1]})),
     (r"sacrifice ~", lambda m: Effect("sacrifice_self", target="self")),
     (r"sacrifice a creature", lambda m: Effect("sac_own", data={"kind": "creature"})),
     (r"sacrifice (?:~|it) unless you pay ((?:\{[^}]+\})+)", lambda m: Effect("pay_or_sac", data={"cost": parse_mana_cost(m[1])})),

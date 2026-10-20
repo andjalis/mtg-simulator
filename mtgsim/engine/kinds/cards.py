@@ -71,6 +71,16 @@ def dig_put(game, p, eff, **_):
     game.dig_put(p, eff.amount, eff.amount2, eff.data.get("count", 1), eff.data.get("noncreature", False))
 
 
+@kind("exile_top_of")
+def exile_top_of(game, p, target, opp, **_):
+    """Ingest: that player exiles the top card of their library."""
+    who = target if isinstance(target, Player) else opp
+    if who.library:
+        card = who.library.pop()
+        who.exile.append(card)
+        game.log(f"exiles {card.name} from the top of their library", who)
+
+
 @kind("discard_each")
 def discard_each(game, p, eff, opp, **_):
     for who in (p, opp):

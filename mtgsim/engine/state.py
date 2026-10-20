@@ -16,6 +16,7 @@ TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace"
 COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 PROTECTION = {c: f"protection from {w}" for w, c in COLOR_WORDS.items()}
 TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "land", "artifact", "artifact_enchantment",
+            "artifact_land",
             "player", "spell")
 
 
@@ -105,6 +106,7 @@ class Permanent:
         self.blitz = False
         self.dashed = False
         self.unearthed = False
+        self.disturbed = False             # cast with disturb: exiled instead of going to a graveyard
         self.loyalty_used = False
         self.entered_turn = 0
         self.entered_x = 0
@@ -174,6 +176,11 @@ class Permanent:
             bp += equipment.card.equip_bonus[0]
             bt += equipment.card.equip_bonus[1]
         for cond, pp, tt in self.card.pt_if:
+            if not cond.startswith(("gy", "lands", "speed")):
+                if self.condition(cond):              # metalcraft, "as long as it's your turn / attacking"
+                    bp += pp
+                    bt += tt
+                continue
             gy = self.controller.graveyard
             n = sum(c.is_permanent for c in gy) if cond.startswith("gy_perm") else len(gy)
             if cond.startswith("lands"):
@@ -282,6 +289,8 @@ class Permanent:
             return self.controller.speed >= 4
         if cond == "your_turn":
             return self.controller.my_turn
+        if cond.startswith("artifacts>="):
+            return sum(x.card.is_artifact for x in self.controller.battlefield) >= int(cond[11:])
         if cond == "attacking":
             game = getattr(self.controller, "_game", None)
             return game is not None and self in game.attackers

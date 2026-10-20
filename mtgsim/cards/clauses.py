@@ -149,6 +149,7 @@ _TRIGGERS = [
     (r"Whenever ~ (?:blocks or becomes blocked|becomes blocked or blocks)(?: by a creature)?, (.+)", ("blocks", "becomes_blocked")),
     (r"Whenever ~ attacks or blocks, (.+)", ("attacks", "blocks")),
     (r"Whenever ~ blocks, (.+)", ("blocks",)),
+    (r"Whenever ~ blocks a creature with flying, (.+)", ("blocks",)),
     (r"Whenever ~ becomes blocked(?: by a creature)?, (.+)", ("becomes_blocked",)),
     (r"When(?:ever)? ~ dies, (?:if it was a creature, )?(.+)", ("dies",)),
     (r"Whenever ~ deals combat damage to a player, (.+)", ("combat_damage_player",)),

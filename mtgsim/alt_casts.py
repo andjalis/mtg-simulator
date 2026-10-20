@@ -5,6 +5,8 @@
     Prototype {2}{R} — 3/2  (cast for that cost as a smaller creature)
     Suspend 4—{1}{G}        (exile it with four time counters; remove one each upkeep; cast it free when the last
                              is removed, and a creature cast this way has haste)
+    Entwine {2}             (pay it on top of the mana cost to choose all the modes)
+    Disturb {1}{W}          (cast it transformed from the graveyard; exiled if it would go to a graveyard)
 
 ``parse_line`` reads the keyword lines into AltCosts. Game.spell_options offers buyback, surge and prototype
 as variants of the hand card; suspending is a main-phase action (``suspend``, chosen in policy.default_actions),
@@ -17,7 +19,11 @@ import re
 
 def parse_line(line: str, st) -> bool:
     from .cards.model import AltCost, parse_mana_cost
-    m = re.fullmatch(r"(Buyback|Surge) ((?:\{[^}]+\})+)", line)
+    m = re.fullmatch(r"(Disturb) ((?:\{[^}]+\})+)", line)
+    if m:
+        st.alt_costs.append(AltCost("disturb", parse_mana_cost(m[2]), zone="graveyard"))
+        return True
+    m = re.fullmatch(r"(Buyback|Surge|Entwine) ((?:\{[^}]+\})+)", line)
     if m:
         st.alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2])))
         return True
@@ -43,6 +49,8 @@ def variants(game, p, card) -> list:
             out.append(game._variant(card, "surge", a))
         elif a.kind == "prototype":
             out.append(game._variant(card, "prototype", a))
+        elif a.kind == "entwine" and card.modes:      # Game.cast chooses all the modes of this variant
+            out.append(game._variant(card, "entwine", AltCost("entwine", add_mana(card.mana_cost, a.cost))))
     return out
 
 
@@ -54,6 +62,8 @@ def entered(perm, kind, alt):
                                         cmc=sum(alt.cost.values()))
     elif kind == "suspended" and perm.is_creature:
         perm.perm_kw.add("haste")
+    elif kind == "disturb":
+        perm.disturbed = True
 
 
 def suspend(game, p, card) -> bool:
