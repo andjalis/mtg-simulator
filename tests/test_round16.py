@@ -141,7 +141,7 @@ class Round16(unittest.TestCase):
         self.land()
         self.a.hand = [REPLAY]
         self.assertTrue(self.game.cast(self.a, REPLAY))
-        self.assertIn(SPARK, self.a.granted_fb)
+        self.assertTrue(any(target.card is SPARK for target in self.a.granted_fb))
         with patch.object(self.a.ai, "main_phase"), patch.object(self.b.ai, "main_phase"):
             self.game.take_turn(self.b)
         self.assertEqual(self.a.granted_fb, [])
