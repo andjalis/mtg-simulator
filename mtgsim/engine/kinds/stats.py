@@ -40,6 +40,22 @@ def prevent_next(game, p, eff, target, **_):
         who.prevent_next += eff.amount
 
 
+@kind("monstrosity")
+def monstrosity(game, p, eff, item, **_):
+    """If the source isn't monstrous, put N +1/+1 counters on it; it becomes monstrous."""
+    src = item.source if item is not None else None
+    if isinstance(src, Permanent) and src in p.battlefield and not getattr(src, "monstrous", False):
+        src.counters["+1/+1"] = src.p1 + eff.amount
+        src.monstrous = True
+        game.fire(p, "monstrous", src)
+
+
+@kind("self_damage")
+def self_damage(game, target, **_):
+    if isinstance(target, Permanent) and target.power > 0:
+        game.deal_damage(target, target.power, by=target.controller, source=target)
+
+
 @kind("bolster")
 def bolster(game, p, eff, **_):
     """Put N +1/+1 counters on the creature you control with the least toughness."""

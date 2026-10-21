@@ -75,6 +75,8 @@ class CombatMixin:
             bl = [b for b in blocks.get(a, []) if b not in used and b in opp.battlefield and can_block(b, a)]
             if a.has("menace") and len(bl) == 1:
                 bl = []
+            if a.card.min_blockers and len(bl) < a.card.min_blockers:
+                bl = []
             if a.card.max_blockers and len(bl) > a.card.max_blockers:
                 bl = bl[:a.card.max_blockers]
             if bl:
@@ -137,6 +139,8 @@ class CombatMixin:
                         hits.append((b, a, b.power))
             elif deals_now(a) and a.power > 0 and target is not None:
                 hits.append((a, target, a.power))
+        if any(isinstance(tgt, Player) for _, tgt, _ in hits):
+            self.fire(p, "allies_hit_player")
         for src, tgt, amt in hits:
             self.deal_damage(tgt, amt, by=src.controller, cause=f"{src.card.name}: combat damage", source=src, combat=True)
             if isinstance(tgt, Player):

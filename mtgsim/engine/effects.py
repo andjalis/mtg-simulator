@@ -169,6 +169,12 @@ class EffectsMixin:
             return False
         if perm.has("indestructible"):
             return False
+        umbra = next((a for a in perm.auras if a.card.umbra_armor), None)
+        if umbra is not None:            # umbra armor: remove the damage and destroy the Aura instead
+            perm.damage, perm.deathtouched = 0, False
+            self.log(f"{umbra.card.name} is destroyed instead of {perm.card.name}", perm.controller)
+            self.destroy(umbra)
+            return True
         intent = rules_events.destruction(self, perm, no_regen)
         if intent.prevented:
             before = rules_events.snapshot(perm)
@@ -292,6 +298,7 @@ class EffectsMixin:
         was_creature = perm.is_creature
         death_returns = [keyword for keyword, count in (("undying", perm.p1), ("persist", perm.m1))
                          if was_creature and perm.has(keyword) and count == 0 and not perm.front.is_token]
+        attached = list(perm.auras) + perm.equipment if was_creature else []   # "when enchanted creature dies"
         if not self.leave_battlefield(perm, "graveyard"):
             return
         if perm.last_destination != "graveyard":
@@ -307,6 +314,10 @@ class EffectsMixin:
                                    f"{perm.card.name}: {keyword}", context=(perm.owner, perm.front,
                                    perm.owner.graveyard.version(perm.front)))
             self.fire(perm.controller, "dies", perm)
+            for x in attached:
+                for trig in x.card.host_triggers:
+                    if trig.event == "dies":
+                        self.queue_trigger(x.controller, trig.effects, x, x.card.name, context=perm)
             self.fire(perm.controller, "ally_dies", subject=perm)
             self.fire(perm.controller, "ally_dies", perm, subject=perm)
             if perm.blitz:
@@ -355,8 +366,8 @@ class EffectsMixin:
                     if perm.attached_to is not None and protected_from(perm.attached_to, perm):
                         perm.attached_to = None
                         changed = True
-                    if perm.card.needs_land and not any(perm.card.needs_land in x.card.subtypes
-                                                              for x in p.battlefield):
+                    if perm.card.needs_land and not any(perm.card.needs_land in x.card.subtypes or
+                                                        perm.card.needs_land in x.card.types for x in p.battlefield):
                         self.sacrifice(perm)
                         changed = True
                         continue

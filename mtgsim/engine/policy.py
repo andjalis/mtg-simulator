@@ -609,6 +609,7 @@ def use_abilities(game: Game, me: Player):
         for card in [c for c in me.hand if any(a.kind == "suspend" for a in c.alt_costs)]:
             if alt_casts.worth_suspending(game, me, card):
                 alt_casts.suspend(game, me, card)
+        alt_casts.graveyard_actions(game, me)
 
 
 def default_sneak(game: Game, me: Player, attackers, blocks):

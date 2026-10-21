@@ -486,6 +486,7 @@ class CostsMixin:
             if c in p.graveyard:
                 out.append(self._variant(c, "flashback", AltCost("flashback", dict(c.mana_cost))))
         for c in p.graveyard:
+            out += alt_casts.graveyard_variants(self, p, c)
             for a in c.alt_costs:
                 if a.kind in ("flashback", "gy_ability", "unearth") or (a.kind == "disturb" and c.back is not None) or \
                         (a.kind == "blitz" and "graveyard" in a.zone) or \
@@ -505,7 +506,8 @@ class CostsMixin:
         """The zone a spell_options() variant of this kind is cast from."""
         return {"from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile, "airbent": p.airbent,
-                "mayhem": p.graveyard, "unearth": p.graveyard, "disturb": p.graveyard, "impulse": p.exile, "suspended": p.exile, "rebound": p.exile,
+                "mayhem": p.graveyard, "unearth": p.graveyard, "disturb": p.graveyard, "jump_start": p.graveyard,
+                "escape": p.graveyard, "impulse": p.exile, "suspended": p.exile, "rebound": p.exile,
                 "cascade": p.exile, "cascade_adventure": p.exile,
                 "rebound_adventure": p.exile, "discover": p.exile}.get(kind, p.hand)
 

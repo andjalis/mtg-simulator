@@ -190,6 +190,9 @@ def return_self_gy(game, p, eff, item, **_):
     if isinstance(card, CardDef) and card in p.graveyard:
         p.graveyard.remove(card)
         game.log(f"returns {card.name} from the graveyard", p)
+        if eff.data.get("to") == "hand":
+            p.hand.append(card)
+            return
         game.enter_battlefield(p, card, tapped=eff.data.get("tapped", False),
                                counters=returns.entry_counters(eff, item))
 

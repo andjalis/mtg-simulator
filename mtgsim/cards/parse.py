@@ -241,6 +241,7 @@ def _parse_face(data: dict) -> CardDef:
     text = re.sub(r"\b(protection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
                   r"\1 and protection from \2", text)
     text = re.sub(r"(becomes the target of a spell or ability), sacrifice it\.", r"\1, sacrifice ~.", text)
+    text = text.replace("Whenever ~ or another creature you control dies", "Whenever a creature you control dies")
     text = re.sub(r", where X is the amount of mana spent to cast ~\.", ".", text).replace(
         "the top X cards", f"the top {int(data.get('cmc', 0) or 0)} cards")
 
@@ -324,6 +325,11 @@ def _parse_face(data: dict) -> CardDef:
     extra.pop("is_spree", None)
     extra.pop("_subtypes", None)
     _auras.finish(extra)
+    for event in ("cast_self", "cycle_self"):     # triggers of the card itself, not of a permanent
+        own = [t for t in triggers if t.event == event]
+        if own:
+            extra[event + "_triggers"] = own
+            triggers = [t for t in triggers if t not in own]
     hosted = [t for t in triggers if t.event.startswith("host:")]
     if hosted:
         extra["host_triggers"] = [dataclasses.replace(t, event=t.event[5:]) for t in hosted]
@@ -478,7 +484,7 @@ def _parse_trigger_line(line: str):
             flt = "opp"
         if events == ("damages_player",) and "an opponent" in line:
             flt = "opp"
-        if events[0].startswith("host:"):        # the equipped / enchanted creature is "~" (the trigger's source)
+        if events[0].startswith("host:") and events[0] != "host:dies":   # the creature is "~" (the trigger's source)
             rest = re.sub(r"^it\b", "~", re.sub(r"\b(?:equipped|enchanted) creature\b", "~", rest))
         if events == ("blocks",) and "a creature with flying" in pat:
             flt = "blocks_flying"

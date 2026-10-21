@@ -48,6 +48,7 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
         self.pending: list[tuple] = []   # triggered abilities waiting to be put on the stack
         self.delayed_upkeep: list[tuple] = []  # (controller, amount, source, name, scope)
         self.rebound_upkeep: list[tuple] = []  # (controller, exiled card, zone version)
+        self.extra_turns: list = []                # players who take an extra turn after this one
         self.end_combat_effects: list[tuple] = []  # (controller, effects, source, that creature): "at end of combat"
         self.delayed_end_combat: list[tuple] = []  # (trigger controller, exact permanent to sacrifice)
         self.attackers: list[Permanent] = []

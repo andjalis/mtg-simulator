@@ -10,8 +10,8 @@ The keyword itself is one of the five "protection from <color>" KEYWORDS; the ru
 targeted, dealt damage, enchanted or equipped by anything of that color) live in the engine around
 ``engine.state.protected_from``. "The color of your choice" is chosen when the effect resolves: the color of
 the opposing spell or ability on the stack, else the most common color among the opponent's creatures, else
-among the cards they have shown. Not parsed: protection from artifacts, creatures, everything, multicolored,
-a creature type or a player, and "the chosen color" of an Aura.
+among the cards they have shown. Protection from multicolored and from artifacts are keywords too. Not parsed:
+protection from creatures, everything, a creature type or a player, and "the chosen color" of an Aura.
 """
 from __future__ import annotations
 

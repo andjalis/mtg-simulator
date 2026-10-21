@@ -139,6 +139,8 @@ class BattlefieldMixin:
             self.add_lore(perm)
         if perm.is_creature:
             self.fire(p, "other_creature_enters", subject=perm)
+            for pl in self.players:
+                self.fire(pl, "any_creature_enters", context=perm)
         self.fire(p, "permanent_enters", subject=perm)
         if card.is_land:
             self.fire(p, "land_enters")

@@ -27,7 +27,9 @@ def protected_from(perm, source) -> bool:
     card = source.card if isinstance(source, Permanent) else source
     if not isinstance(card, CardDef) or not isinstance(perm, Permanent):
         return False
-    return any(perm.has(PROTECTION[c]) for c in card.colors)
+    return any(perm.has(PROTECTION[c]) for c in card.colors) or \
+        len(card.colors) >= 2 and perm.has("protection from multicolored") or \
+        card.is_artifact and perm.has("protection from artifacts")
 
 
 class Permanent:
@@ -156,6 +158,15 @@ class Permanent:
             return 0
         return counting.count(None, self.controller, {"what": what, "zone": "battlefield"}, self)
 
+    def _cda_count(self, what: str) -> int:
+        c = self.controller
+        if what == "cards in your hand":
+            return len(c.hand)
+        if what == "cards in your graveyard":
+            return len(c.graveyard)
+        kind = what.split()[0][:-1].capitalize()           # "creatures you control" -> Creature
+        return sum(kind in x.card.types for x in c.battlefield)
+
     def _pt_bonus(self):
         """(power, toughness) from anthems, attached equipment and "for each" counts, in one pass
         over the battlefield; the same sums as anthem, equipment and per_bonus."""
@@ -173,6 +184,10 @@ class Permanent:
                 if c.anthem_enchanted and self.auras:
                     bp += c.anthem_enchanted[0]
                     bt += c.anthem_enchanted[1]
+        if creature and self.card.pt_cda:
+            n = self._cda_count(self.card.pt_cda)
+            bp += n
+            bt += n
         if creature:
             for pl in (self.controller, self.controller.foe):
                 for x in (pl.battlefield if pl is not None else ()):
@@ -297,6 +312,8 @@ class Permanent:
             return self.controller.speed >= 4
         if cond == "your_turn":
             return self.controller.my_turn
+        if cond == "delirium":
+            return len({t for c in self.controller.graveyard for t in c.types}) >= 4
         if cond.startswith("artifacts>="):
             return sum(x.card.is_artifact for x in self.controller.battlefield) >= int(cond[11:])
         if cond == "attacking":
@@ -433,6 +450,7 @@ class Player:
 
     my_turn = False
     prevent_next = 0          # "prevent the next N damage that would be dealt to target player this turn"
+    extra_lands_turn = 0      # "you may play an additional land this turn"
     foe = None
     speed = 0
     speed_turn = -1
@@ -483,7 +501,7 @@ class Player:
     @property
     def land_played(self) -> bool:
         """Whether this turn's land drops are used up (Icetill Explorer gives another)."""
-        return self.lands_played > sum(x.card.extra_lands for x in self.battlefield)
+        return self.lands_played > sum(x.card.extra_lands for x in self.battlefield) + self.extra_lands_turn
 
     @land_played.setter
     def land_played(self, value):
