@@ -5,6 +5,25 @@ from ..cards import Effect
 from .state import Permanent, Player, can_block
 
 
+def extra_blocks(me, attackers, blocks):
+    """Give a creature that can block more than one attacker the unblocked attackers it survives, biggest first."""
+    blocks = {a: list(bl) for a, bl in blocks.items()}
+    for b in me.creatures:
+        if not b.card.extra_blocks:
+            continue
+        mine = [a for a, bl in blocks.items() if b in bl]
+        if not mine:
+            continue
+        taken = sum(a.power for a in mine)
+        for a in sorted((a for a in attackers if not blocks.get(a) and can_block(b, a)), key=lambda a: -a.power):
+            if len(mine) > b.card.extra_blocks or taken + a.power >= b.toughness - b.damage:
+                break
+            blocks[a] = [b]
+            mine.append(a)
+            taken += a.power
+    return blocks
+
+
 class CombatMixin:
     def combat(self, p: Player, opp: Player):
         self._combat(p, opp)
@@ -69,10 +88,12 @@ class CombatMixin:
 
         self.step = "declare_blockers"
         blocks = self.force_blocks(opp, attackers, opp.ai.choose_blocks(self, opp, p, attackers))
-        used = set()
+        blocks = extra_blocks(opp, attackers, blocks)
+        used = {}                       # blocker -> attackers it blocks ("can block an additional creature")
         legal = {}
         for a in attackers:
-            bl = [b for b in blocks.get(a, []) if b not in used and b in opp.battlefield and can_block(b, a)]
+            bl = [b for b in blocks.get(a, []) if used.get(b, 0) <= b.card.extra_blocks and b in opp.battlefield
+                  and can_block(b, a)]
             if a.has("menace") and len(bl) == 1:
                 bl = []
             if a.card.min_blockers and len(bl) < a.card.min_blockers:
@@ -81,7 +102,8 @@ class CombatMixin:
                 bl = bl[:a.card.max_blockers]
             if bl:
                 legal[a] = bl
-                used.update(bl)
+                for b in bl:
+                    used[b] = used.get(b, 0) + 1
         blocks = legal
         self.blocks = blocks
         if blocks:
@@ -115,6 +137,11 @@ class CombatMixin:
 
     def combat_damage(self, p, opp, attackers, blocks, deals_now):
         hits = []  # (source, target, amount)
+        budget = {}   # a blocker blocking several attackers divides its damage: lethal to each in turn
+        for a in attackers:
+            for b in blocks.get(a, ()):
+                budget[b] = budget.get(b, 0) + 1
+        budget = {b: b.power for b, n in budget.items() if n > 1}
         for a in attackers:
             if a not in p.battlefield:
                 continue
@@ -136,7 +163,13 @@ class CombatMixin:
                         hits.append((a, target, remaining))
                 for b in alive:
                     if deals_now(b) and b.power > 0:
-                        hits.append((b, a, b.power))
+                        if b in budget:
+                            amt = min(budget[b], 1 if b.has("deathtouch") else max(0, a.toughness - a.damage))
+                            budget[b] -= amt
+                        else:
+                            amt = b.power
+                        if amt:
+                            hits.append((b, a, amt))
             elif deals_now(a) and a.power > 0 and target is not None:
                 hits.append((a, target, a.power))
         if any(isinstance(tgt, Player) for _, tgt, _ in hits):

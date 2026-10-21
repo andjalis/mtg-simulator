@@ -30,6 +30,8 @@ class CostsMixin:
                 continue
             produces = perm.card.produces | perm.granted_mana()
             c = perm.card
+            if c.mana_fixer and any(x is not perm and x.card.produces & c.mana_fixer for x in p.battlefield):
+                produces = produces | c.mana_fixer
             if c.mana_filter == "once" and perm.ability_turns.get("filter") == self.turn:
                 continue
             if c.mana_cond and not any(c.mana_cond in x.card.subtypes for x in p.battlefield):
@@ -82,12 +84,24 @@ class CostsMixin:
         cost, improvised, _ = self.assist_payment(p, card, cost) if card.improvise or card.delve else (cost, [], [])
         return costs.spell_plan(self, p, card, cost, exclude=convoked + improvised) is not None
 
+    @staticmethod
+    def _needed_color(p, source, payment, cost) -> bool:
+        """Whether the payment needs source's colored mana (it couldn't be paid with {C} from it)."""
+        saved = getattr(source, "produces_now", None)
+        source.produces_now = frozenset({"C"})
+        try:
+            return find_payment(list(payment), cost) is None
+        finally:
+            source.produces_now = saved
+
     def pay(self, p: Player, cost: dict, exclude=None, spell="ability", *, exclude_many=()) -> list | None:
         """Tap sources for cost (sacrificing Treasure). Returns the sources, or None if unpayable."""
         payment = find_payment([s for s in self.mana_sources(p, exclude, spell) if s not in exclude_many], cost)
         if payment is None:
             return None
         for s in payment:
+            if s.card.color_skips_untap and self._needed_color(p, s, payment, cost):
+                s.skip_untap = max(s.skip_untap, 1)   # its colored mana was spent: it skips its next untap
             if s.card.mana_filter == "once":
                 s.ability_turns["filter"] = self.turn
             else:

@@ -64,6 +64,8 @@ class TurnsMixin:
                 p.lost = True
                 self.log("loses by drawing from an empty library", p)
                 return
+            if alt_casts.dredge(self, p):
+                continue
             self.move_card(p.library[-1], p.library, p.hand, reason="draw")
             self.fire(p, "you_draw")
             drawn = getattr(p, "drawn_turn", (0, 0))

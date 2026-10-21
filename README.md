@@ -332,6 +332,12 @@ to select another local database.
 - Umbra (totem) armor, protection from artifacts, "~'s power and toughness are each equal to the number of
   cards in your hand / creatures you control / ...", "return ~ from your graveyard to your hand" graveyard
   triggers, and lines that do nothing with two players (partner, choose a Background, friends forever, assist)
+- Replicate (offered paid one to three times, a copy for each), dredge (the AI dredges its most expensive
+  dredge card while its library has ten cards more than the dredge amount), filter lands like Mystic Gate
+  (one mana of either color while you control another source of them; a recorded simplification), slow
+  duals like Lantern-Lit Graveyard (they skip their next untap only when their colored mana was needed),
+  "whenever one or more +1/+1 counters are put on ~", and "~ can block an additional creature / any number
+  of creatures" (the blocker takes the unblocked attackers it survives and divides its damage among them)
 - Regeneration shields replace destruction, tap the permanent, clear its damage
   and remove it from combat. They expire at cleanup and cannot prevent sacrifice
   or zero toughness. Regeneration-prevention riders on destruction and damage apply
