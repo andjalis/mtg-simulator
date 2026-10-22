@@ -138,11 +138,13 @@ class PlayMixin:
             self.change_life(p, -alt.life, f"{card.name}: alternative cost")
         if card.extra_life_cost:
             self.change_life(p, -card.extra_life_cost, f"{card.name}: additional cost")
+        sacrificed_power = 0
         if plan.sacrifice is not None:
             victim = plan.sacrifice
             if victim not in p.battlefield:
                 return False
             self.log(f"sacrifices {victim.card.name} for {card.name}", p)
+            sacrificed_power = max(0, victim.power)        # Fling: "the sacrificed creature's power"
             self.sacrifice(victim)
         if kind == "prepared":
             next(x for x in p.battlefield if x.front is base and x.prepared).prepared = False
@@ -185,6 +187,7 @@ class PlayMixin:
                 return False
             targets = mode_targets + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")
+        item.sacrificed_power = sacrificed_power
         # Prepared spells are copies; channel/graveyard abilities leave their
         # physical source in its actual zone rather than moving it onto the stack.
         item.physical_card = base if kind not in ("prepared", "channel", "gy_ability") else None

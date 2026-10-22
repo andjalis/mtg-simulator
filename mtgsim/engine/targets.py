@@ -42,6 +42,8 @@ class TargetsMixin:
             return perm.card.cmc <= sum(1 for x in by.battlefield if x.card.name.endswith("Plains"))
         if f == "tapped":
             return perm.tapped
+        if f.startswith("colors:"):
+            return bool(perm.card.colors & set(f[7:]))
         if f == "attacking":
             return perm in self.attackers
         if f == "attacking_blocking":

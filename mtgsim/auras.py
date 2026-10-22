@@ -18,7 +18,7 @@ import re
 
 KINDS = {"tap_host", "attach_self"}
 _KW = ("flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|"
-       "menace|reach|protection from (?:white|blue|black|red|green)")
+       "menace|reach|shroud|defender|fear|intimidate|protection from (?:white|blue|black|red|green)")
 _ENCHANT = re.compile(r"Enchant (creature|creature you control|creature or Vehicle|artifact or creature|"
                       r"artifact creature|land|permanent|nonland permanent|artifact|creature an opponent controls)")
 _SIGN = {"+": 1, "-": -1, "−": -1}
@@ -49,6 +49,14 @@ def parse_line(line: str, extra: dict, types) -> bool:
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | flags
         extra.setdefault("_approx", []).append("loses all abilities: only keywords are removed")
         return True
+    line = line.replace(" This effect doesn't remove ~.", "")          # the Wards: protection that keeps the Aura
+    m = re.fullmatch(rf"Enchanted creature has ({_KW}) as long as (.+)\.", line)
+    if m:                                       # Runemarks: "... as long as you control a red or white permanent"
+        from . import statics
+        cond = statics._condition(m[2])
+        if cond:
+            extra["aura_cond_kw"] = extra.get("aura_cond_kw", ()) + ((m[1], cond),)
+            return True
     m = re.fullmatch(r"Enchanted creature gets ([+−-])(\d+)/([+−-])(\d+) for each ([\w -]+?) you control\.", line)
     if m:                                       # "Enchanted creature gets +1/+1 for each Forest you control."
         from .counting import _singular
@@ -79,6 +87,7 @@ def finish(extra: dict):
         b = extra.get("equip_bonus", (0, 0))
         per = extra.get("aura_per", ("", 0, 0))
         extra["aura_hostile"] = bool(extra.get("aura_flags")) or b[0] < 0 or b[1] < 0 or per[1] < 0 or per[2] < 0 or \
+            "defender" in extra.get("equip_keywords", ()) or \
             extra["aura"] == "creature an opponent controls"
 
 

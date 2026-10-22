@@ -212,6 +212,8 @@ class AbilitiesMixin:
             return False
         if act.once and perm.ability_turns.get(idx) == self.turn:
             return False
+        if act.per_turn and perm.ability_turns.get(("uses", idx), (0, 0)) >= (self.turn, act.per_turn):
+            return False
         if act.once_game and ("game", idx) in perm.ability_turns:
             return False
         if perm.net_locked and perm.tapped:
@@ -254,6 +256,8 @@ class AbilitiesMixin:
         if plan is None or self.pay(p, plan.cost, exclude_many=plan.exclude) is None:
             return False
         perm.ability_turns[idx] = self.turn
+        turn, uses = perm.ability_turns.get(("uses", idx), (self.turn, 0))
+        perm.ability_turns[("uses", idx)] = (self.turn, uses + 1 if turn == self.turn else 1)
         if perm.card.activated[idx].once_game:
             perm.ability_turns[("game", idx)] = self.turn
         if c.get("tap"):

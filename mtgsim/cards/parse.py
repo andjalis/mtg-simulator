@@ -474,13 +474,16 @@ def _parse_ability(line: str, approximations: list):
     cost = _parse_ability_cost(m[1])
     if cost is None:
         return None
-    body, sorcery, once, approx = m[2], False, False, []
+    body, sorcery, once, approx, per_turn = m[2], False, False, [], 0
     while True:
         r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|This ability costs [^.]+ "
-                         r"less to activate[^.]*)\.", body)
+                         r"less to activate[^.]*|Activate no more than (?:twice|three times) each turn)\.", body)
         if not r:
             break
         body = r[1]
+        if r[2].startswith("Activate no more than"):
+            per_turn = 2 if "twice" in r[2] else 3
+            continue
         sorcery |= r[2] == "Activate only as a sorcery"
         once |= r[2] == "Activate only once each turn"
         if r[2].startswith("This ability costs"):
@@ -488,13 +491,14 @@ def _parse_ability(line: str, approximations: list):
     head = modal.parse_header(body)
     if head is not None and not head[1]:
         approximations += approx
-        return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=line,
+        return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, per_turn=per_turn, text=line,
                          modes=modal.Modes(spec=head[0]))
     effects, bad = _parse_effects(body)
     if bad or not effects:
         return None
     approximations += approx
-    return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=line)
+    return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once,
+                     per_turn=per_turn, text=line)
 
 
 def _parse_trigger(line: str):

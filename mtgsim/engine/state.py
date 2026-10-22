@@ -317,6 +317,8 @@ class Permanent:
             for a in self.auras:
                 if kw in a.card.equip_keywords:
                     return True
+                if any(k == kw and statics.condition(a, cond) for k, cond in a.card.aura_cond_kw):
+                    return True
         for k, cond in self.card.cond_keywords:
             if k == kw and self.condition(cond):
                 return True

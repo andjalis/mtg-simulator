@@ -105,6 +105,7 @@ class Activated:
     extra_costs: dict = field(default_factory=dict)
     sorcery: bool = False            # "Activate only as a sorcery."
     once: bool = False               # "Activate only once each turn."
+    per_turn: int = 0                # "Activate no more than twice each turn."
     min_charge: int = 0              # under "STATION N+": needs N charge counters
     needs_max_speed: bool = False    # "Max speed — COST: EFFECT"
     once_game: bool = False          # Exhaust / Power-up: each such ability is activated only once
@@ -245,6 +246,7 @@ class CardDef:
     color_skips_untap: bool = False                     # "{T}: Add {B} or {R}. ~ doesn't untap during your next untap step."
     dredge: int = 0                                     # Dredge N
     escape_counters: int = 0                            # "~ escapes with N +1/+1 counters on it."
+    aura_cond_kw: tuple = ()                            # Runemarks: (keyword, condition) for the enchanted creature
     aura_per: tuple = ()                                # ("Forest", 1, 1): "Enchanted creature gets +1/+1 for each Forest ..."
     spell_tax: tuple = ()                               # "Noncreature spells cost {1} more to cast." (statics.py)
     sunburst: bool = False                              # Sunburst: counters for the colors of mana spent

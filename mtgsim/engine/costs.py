@@ -341,19 +341,24 @@ class CostsMixin:
             n = sum(copies.fits(c, _gy_desc(card.cost_reduction[3:])) for c in p.graveyard)
         elif card.cost_reduction.startswith("affinity:"):
             n = sum(card_matches(x.card, "a " + card.cost_reduction[9:]) for x in p.battlefield)
+        def fits(flt):
+            return (flt in ("instant and sorcery",) and (card.is_instant or card.is_sorcery)) or \
+                (flt in COLOR_WORDS and COLOR_WORDS[flt] in card.colors) or \
+                (flt in ("creature", "artifact") and flt.capitalize() in card.types) or \
+                (flt == "noncreature" and not card.is_creature and not card.is_land) or \
+                (flt not in COLOR_WORDS and flt.capitalize() in card.subtypes)
         for x in p.battlefield:
             for flt, k in x.card.cost_discount:
+                if flt.startswith("or:"):
+                    n += k if any(fits(f) for f in flt[3:].split("|")) else 0
+                    continue
                 if flt.startswith("has_adventure:"):
                     scope = flt.split(":", 1)[1]
                     if card.adventure is not None and (scope == "all" or scope == "permanent" and card.is_permanent or
                                                       scope.capitalize() in card.types):
                         n += k
                     continue
-                if (flt in ("instant and sorcery",) and (card.is_instant or card.is_sorcery)) or \
-                        (flt in COLOR_WORDS and COLOR_WORDS[flt] in card.colors) or \
-                        (flt in ("creature", "artifact") and flt.capitalize() in card.types) or \
-                        (flt == "noncreature" and not card.is_creature and not card.is_land) or \
-                        (flt not in COLOR_WORDS and flt.capitalize() in card.subtypes):
+                if fits(flt):
                     n += k
         counts = getattr(self, "spells_cast", {})
         if counts.get("turn") == self.turn and counts.get(p.name, 0) == 1:

@@ -27,6 +27,8 @@ class ResolveMixin:
         source = (item.card.name if item and item.card else
                   item.source.card.name if item and isinstance(item.source, Permanent) else "effect")
         cause = f"{source}: {k}"
+        if eff.data.get("sacrificed_power"):
+            eff = dataclasses.replace(eff, amount=getattr(item, "sacrificed_power", 0))
         if eff.data.get("per"):    # "for each X you control"
             src = item.source if item is not None else None
             n = counting.count(self, p, eff.data["per"], src)

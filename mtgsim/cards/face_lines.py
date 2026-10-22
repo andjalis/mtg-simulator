@@ -403,9 +403,11 @@ def _face_land_and_mana_lines(st, line):
         if m:
             extra["etb_counters"] = _num(m[1])
             return None
-        m = re.fullmatch(r"~ enters with (a|one|two|three|four|five) (\w+) counters? on it\.", line)
+        m = re.fullmatch(r"~ enters( tapped)? with (a|one|two|three|four|five) (\w+) counters? on it\.", line)
         if m:
-            extra["etb_named_counters"] = (m[2].lower(), _num(m[1]))
+            extra["etb_named_counters"] = (m[3].lower(), _num(m[2]))
+            if m[1]:
+                enters_tapped = True              # Vivid lands
             return None
         m = re.fullmatch(r"Craft with artifact (\{[^ (]+\})(?: \(.*\))?", line)
         if m:
@@ -587,6 +589,10 @@ def _face_cost_and_static_lines(st, line):
         m = re.fullmatch(r"Creatures you control have (haste|trample|vigilance|lifelink|menace|flying|reach)\.", line)
         if m:
             extra["team_keywords"] = extra.get("team_keywords", frozenset()) | {m[1]}
+            return None
+        m = re.fullmatch(r"([A-Z][a-z]+) spells and ([a-zA-Z]+) spells you cast cost \{(\d+)\} less to cast\.", line)
+        if m:                                      # Familiars, Bannerets: once for a spell that is both
+            extra["cost_discount"] = extra.get("cost_discount", ()) + ((f"or:{m[1].lower()}|{m[2].lower()}", int(m[3])),)
             return None
         m = re.fullmatch(r"(Red|White|Blue|Black|Green|Instant and sorcery|Creature|Artifact|Noncreature|[A-Z][a-z]+) "
                          r"spells you cast cost \{(\d+)\} less to cast\.", line)

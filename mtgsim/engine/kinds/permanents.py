@@ -46,6 +46,18 @@ def energy(game, p, eff, **_):
     game.log(f"gets {eff.amount} energy ({p.energy})", p)
 
 
+@kind("tuck")
+def tuck(game, p, eff, target, **_):
+    """"Put target creature into its owner's library second from the top" (depth 1; the top is the end)."""
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        owner, card = target.owner, target.front
+        if game.leave_battlefield(target, "exile") and card in owner.exile:
+            owner.exile.remove(card)
+            lib = owner.library
+            lib.insert(max(0, len(lib) - eff.data.get("depth", 0)), card)
+            game.log(f"puts {card.name} into its owner's library", p)
+
+
 @kind("haste_new")
 def haste_new(game, p, eff, target, **_):
     """"It gains haste." after a return or a put-onto-the-battlefield: that permanent, for as long as it stays."""
