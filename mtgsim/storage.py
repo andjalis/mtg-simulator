@@ -19,6 +19,8 @@ import dataclasses
 import re
 
 _COUNTER = "storage"
+_HOLD = "You may choose not to untap ~ during your untap step."
+_UPKEEP = "At the beginning of your upkeep, if ~ is tapped, put a storage counter on it."
 _STORED: dict = {}
 
 
@@ -38,6 +40,7 @@ def _parse(line, storage, parse_mana_cost) -> bool:
     m = re.fullmatch(r"((?:\{\d+\}, )?)\{T\}: Put a storage counter on ~\.", line)
     if m:
         storage["bank"] = parse_mana_cost(m[1].rstrip(", ")) if m[1] else {}
+        storage["bank_text"] = line
         return True
     m = re.fullmatch(r"\{T\}, Remove any number of storage counters from ~: Add \{([WUBRGC])\} for each storage counter "
                      r"removed this way\.", line)
@@ -49,13 +52,23 @@ def _parse(line, storage, parse_mana_cost) -> bool:
     if m:
         storage["colors"] = frozenset({m[1], m[2]})
         return True
-    if line == "You may choose not to untap ~ during your untap step.":
+    if line == _HOLD:
         storage["hold"] = True
         return True
-    if line == "At the beginning of your upkeep, if ~ is tapped, put a storage counter on it.":
+    if line == _UPKEEP:
         storage["upkeep"] = True
         return True
     return False
+
+
+def finish(extra: dict, unsupported: list) -> None:
+    """Holding a land tapped or banking counters means nothing without a way to spend them (Ice Floe)."""
+    storage = extra.get("storage")
+    if storage and not storage.get("colors"):
+        unsupported += [_HOLD] if storage.get("hold") else []
+        unsupported += [_UPKEEP] if storage.get("upkeep") else []
+        unsupported += [storage["bank_text"]] if "bank_text" in storage else []
+        del extra["storage"]
 
 
 def _stored_mana(colors: frozenset):

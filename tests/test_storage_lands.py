@@ -40,6 +40,8 @@ class StorageLands(unittest.TestCase):
             self.assertEqual(c.unsupported, [], c.name)
         self.assertEqual(POOLS.storage["bank"], {"generic": 1})
         self.assertTrue(VAULT.storage["hold"] and VAULT.storage["upkeep"])
+        floe = card("Test Floe", "", "Land", "You may choose not to untap ~ during your untap step.\n{T}: Add {C}.")
+        self.assertEqual((floe.storage, floe.unsupported), ({}, ["You may choose not to untap ~ during your untap step."]))
 
     def test_untapped_land_banks_then_untaps(self):
         fountain = self.put(self.a, FOUNTAIN)
