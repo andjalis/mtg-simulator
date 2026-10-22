@@ -85,6 +85,18 @@ def land_from_hand(game, p, eff, **_):
         game.log(f"puts {card.name} onto the battlefield", p)
 
 
+@kind("flicker")
+def flicker(game, p, eff, target, **_):
+    """Exile a creature you control and return it under its owner's control (with a +1/+1 counter); tokens stay gone."""
+    if not isinstance(target, Permanent) or target not in target.controller.battlefield:
+        return
+    owner, card = target.owner, target.front
+    if game.leave_battlefield(target, "exile") and not card.is_token and card in owner.exile:
+        owner.exile.remove(card)
+        game.enter_battlefield(owner, card, counters={"+1/+1": 1} if eff.data.get("counter") else None)
+        game.log(f"{card.name} returns to the battlefield", p)
+
+
 @kind("tuck_top")
 def tuck_top(game, p, target, **_):
     """Put target creature on top of its owner's library (a token just leaves)."""

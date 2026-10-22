@@ -8,6 +8,8 @@
     Entwine {2}             (pay it on top of the mana cost to choose all the modes)
     Disturb {1}{W}          (cast it transformed from the graveyard; exiled if it would go to a graveyard)
     Jump-start              (cast it from the graveyard, discarding a card as well; then exile it)
+    Replicate {1}{R}        (pay it any number of times on top of the mana cost: a copy for each)
+    Dredge 2                (instead of a draw, mill two cards and return this card from the graveyard to your hand)
     Escape—{R}{R}, Exile N other cards from your graveyard.     ~ escapes with a +1/+1 counter on it.
     Embalm {3}{W}{W} / Eternalize {5}{G}{G} / Scavenge {1}{B}{G}   (sorcery-speed graveyard actions: a token
                              copy that's a white Zombie / a 4/4 black Zombie; +1/+1 counters equal to its power)
@@ -15,7 +17,9 @@
 ``parse_line`` reads the keyword lines into AltCosts. Game.spell_options offers buyback, surge and prototype
 as variants of the hand card; suspending is a main-phase action (``suspend``, chosen in policy.default_actions),
 and ``upkeep`` ticks the suspended cards. A prototype keeps its colors. The AI escapes, embalms, eternalizes and
-scavenges whenever it can pay for it after its other plays (``graveyard_actions``).
+scavenges whenever it can pay for it after its other plays (``graveyard_actions``). Replicate is offered paid one
+to three times. The AI dredges its most expensive dredge card instead of a draw while its library has at least
+ten cards more than the dredge amount.
 """
 from __future__ import annotations
 
@@ -46,7 +50,11 @@ def parse_line(line: str, st) -> bool:
     if m:
         st.alt_costs.append(AltCost("disturb", parse_mana_cost(m[2]), zone="graveyard"))
         return True
-    m = re.fullmatch(r"(Buyback|Surge|Entwine) ((?:\{[^}]+\})+)", line)
+    m = re.fullmatch(r"Dredge (\d+)", line)
+    if m:
+        st.extra["dredge"] = int(m[1])
+        return True
+    m = re.fullmatch(r"(Buyback|Surge|Entwine|Replicate) ((?:\{[^}]+\})+)", line)
     if m:
         st.alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2])))
         return True
@@ -72,6 +80,10 @@ def variants(game, p, card) -> list:
             out.append(game._variant(card, "surge", a))
         elif a.kind == "prototype":
             out.append(game._variant(card, "prototype", a))
+        elif a.kind == "replicate":
+            for k in (1, 2, 3):
+                extra = {c: n * k for c, n in a.cost.items()}
+                out.append(game._variant(card, f"replicate_{k}", AltCost(f"replicate_{k}", add_mana(card.mana_cost, extra))))
         elif a.kind == "entwine" and card.modes:      # Game.cast chooses all the modes of this variant
             out.append(game._variant(card, "entwine", AltCost("entwine", add_mana(card.mana_cost, a.cost))))
     return out
@@ -139,6 +151,26 @@ def entered(perm, kind, alt):
         perm.escaped = True
         if perm.card.escape_counters:
             perm.counters["+1/+1"] = perm.p1 + perm.card.escape_counters
+
+
+def replicated(game, p, item, kind):
+    """A replicated spell: copy it once for each time the replicate cost was paid."""
+    from .cards import Effect
+    if kind.startswith("replicate_"):
+        game.queue_trigger(p, [Effect("storm_copy", int(kind[10:]))], name=f"{item.card.name}: replicate", context=item)
+
+
+def dredge(game, p) -> bool:
+    """Replace a draw with dredge when it's worth it; True if the draw was replaced."""
+    cards = [c for c in p.graveyard if c.dredge and len(p.library) >= c.dredge + 10]
+    if not cards:
+        return False
+    card = max(cards, key=lambda c: c.cmc)
+    game.log(f"dredges {card.name}", p)
+    for _ in range(card.dredge):
+        game.move_card(p.library[-1], p.library, p.graveyard, reason="dredge")
+    game.move_card(card, p.graveyard, p.hand, reason="dredge")
+    return True
 
 
 def suspend(game, p, card) -> bool:

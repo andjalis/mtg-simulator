@@ -170,6 +170,7 @@ _TRIGGERS = [
     (r"Whenever you scry, (.+)", ("you_scry",)),
     (r"At end of combat, (.+)", ("end_combat",)),
     (r"When ~ becomes monstrous, (.+)", ("monstrous",)),
+    (r"Whenever one or more \+1/\+1 counters are put on ~, (.+)", ("p1_added",)),
     (r"Whenever (?:equipped|enchanted) creature deals combat damage to a player, (.+)", ("host:combat_damage_player",)),
     (r"Whenever a creature dealt damage by ~ this turn dies, (.+)", ("damaged_dies",)),
     (r"When(?:ever)? ~ dies, (?:if it was a creature, )?(.+)", ("dies",)),

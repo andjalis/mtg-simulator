@@ -1,5 +1,19 @@
 # AI before/after
 
+## Protective activations, combat unmorph, unleash / riot / fabricate choices, 2026-10-22
+
+Built-in engine, card-only commit `4d5bac3` against the same code with these AI changes (400 games per matchup,
+seed 5). The three test decks are in `results/ai_new_abilities/`; each one uses the new mechanics.
+
+| Matchup | Before | After |
+|---|---|---|
+| pro_white (Mother of Runes, Benevolent Bodyguard, Gods Willing) vs mono_red_aggro | 64.8% | 66.0% |
+| riot_red (riot, unleash, fabricate) vs green_stompy | 19.2% | 19.8% |
+| morph_green (morph, megamorph) vs orzhov_midrange | 14.8% | 14.8% |
+
+- **Within noise, no regression**: each 95% interval overlaps the other by most of its width. The situations
+  are rare (a protector untapped as colored removal arrives, a face-down creature in combat with mana left).
+
 ## Artifact Control vs Dimir Midrange with every card matched, 2026-10-19
 
 Built-in engine on `main` at `c39b034` (300 games, seed 1, `results/cross_check/rerun_flagged_11.json`) after

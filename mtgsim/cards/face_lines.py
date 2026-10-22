@@ -592,6 +592,12 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["anthem_sub"] = extra.get("anthem_sub", ()) + (("Token", int(m[1]), int(m[2]), False),)
             return None
+        m = re.fullmatch(r"(Other )?([A-Z][a-z]+?)s? you control get \+(\d+)/\+(\d+) and have (menace|trample|flying|"
+                         r"vigilance|haste|lifelink|first strike|deathtouch|reach)\.", line)
+        if m and m[2] != "Creature":
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
+            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((m[2], m[5], bool(m[1])),)
+            return None
         m = re.fullmatch(r"(Other )?(Merfolk|[A-Z][a-z]+?)s? you control get \+(\d+)/\+(\d+)\.", line)
         if m and m[2] != "Creature":
             extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
@@ -719,6 +725,11 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["pt_cda"] = m[1]
             return None
+        m = re.fullmatch(r"~ can block (an additional creature|any number of creatures) each combat\.|~ can block any "
+                         r"number of creatures\.", line)
+        if m:
+            extra["extra_blocks"] = 1 if m[1] == "an additional creature" else 99
+            return None
         if line == "All creatures able to block ~ do so.":
             extra["lure"] = True
             return None
@@ -729,6 +740,16 @@ def _face_cost_and_static_lines(st, line):
         m = re.fullmatch(r"During your turn, ~ gets \+(\d+)/\+(\d+)\.", line)
         if m:
             extra["pt_if"] = extra.get("pt_if", ()) + (("your_turn", int(m[1]), int(m[2])),)
+            return None
+        m = re.fullmatch(r"\{([WUBRG])/([WUBRG])\}, \{T\}: Add \{([WUBRG])\}\{\3\}, \{\3\}\{([WUBRG])\}, or \{\4\}\{\4\}\.", line)
+        if m and {m[1], m[2]} == {m[3], m[4]}:     # filter lands (Mystic Gate): {W/U}, {T}: Add {W}{W}, {W}{U}, or {U}{U}
+            extra["mana_fixer"] = frozenset({m[3], m[4]})
+            approximations.append("filter land: one mana of either color while you control another source of them")
+            return None
+        m = re.fullmatch(r"\{T\}: Add (\{[WUBRG]\}) or (\{[WUBRG]\})\. ~ doesn't untap during your next untap step\.", line)
+        if m:                                       # Lantern-Lit Graveyard and the other "slow" duals
+            produces |= {m[1][1], m[2][1]}
+            extra["color_skips_untap"] = True
             return None
         m = re.fullmatch(r"\{T\}, Pay 1 life: Add (\{[WUBRG]\}) or (\{[WUBRG]\})\.", line)
         if m:

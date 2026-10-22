@@ -64,6 +64,8 @@ class TurnsMixin:
                 p.lost = True
                 self.log("loses by drawing from an empty library", p)
                 return
+            if alt_casts.dredge(self, p):
+                continue
             self.move_card(p.library[-1], p.library, p.hand, reason="draw")
             self.fire(p, "you_draw")
             drawn = getattr(p, "drawn_turn", (0, 0))
@@ -163,11 +165,11 @@ class TurnsMixin:
     def activate_graveyard(self, p: Player, card: CardDef, idx: int = 0) -> bool:
         return graveyard.activate(self, p, card, idx)
 
-    def turn_face_up(self, p: Player):
+    def turn_face_up(self, p: Player, only=None):
         """Turn face-down creatures (disguise, morph, megamorph) face up when their cost can be paid with the
-        mana that's left."""
+        mana that's left (only those in ``only``, when given: the ones in combat)."""
         for perm in list(p.battlefield):
-            if perm.hidden is None:
+            if perm.hidden is None or (only is not None and perm not in only):
                 continue
             alt = next((a for a in perm.hidden.alt_costs if a.kind in ("disguise", "morph", "megamorph")), None)
             if alt is not None and self.pay(p, alt.cost) is not None:

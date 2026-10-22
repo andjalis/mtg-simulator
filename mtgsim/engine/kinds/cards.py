@@ -82,6 +82,14 @@ def exile_top_of(game, p, target, opp, **_):
         game.log(f"exiles {card.name} from the top of their library", who)
 
 
+@kind("discard_random")
+def discard_random(game, p, eff, **_):
+    for _ in range(min(eff.amount, len(p.hand))):
+        card = game.rng.choice(list(p.hand))
+        game.discard_card(p, card)
+        game.log(f"discards {card.name} at random", p)
+
+
 @kind("discard_each")
 def discard_each(game, p, eff, opp, **_):
     for who in (p, opp):

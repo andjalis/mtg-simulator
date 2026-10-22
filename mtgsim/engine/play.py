@@ -236,6 +236,7 @@ class PlayMixin:
                                            context=item if copies.wants_spell(trig.effects) else None)
             copies.on_cast(self, p, item)
             cast_triggers.on_cast(self, p, item)
+            alt_casts.replicated(self, p, item, kind)
             for trig in card.cast_self_triggers:
                 self.queue_trigger(p, trig.effects, None, f"{card.name}: cast trigger", context=item)
             if self.spells_cast.get(p.name) == 2:

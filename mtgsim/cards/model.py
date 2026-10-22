@@ -236,8 +236,12 @@ class CardDef:
     cycle_self_triggers: list = field(default_factory=list)   # "When you cycle ~, ..."
     umbra_armor: bool = False                           # "Umbra armor": the Aura is destroyed instead of its creature
     pt_cda: str = ""                                    # "~'s power and toughness are each equal to the number of ..."
+    mana_fixer: frozenset = frozenset()                 # filter lands: colors made with another source of them
+    color_skips_untap: bool = False                     # "{T}: Add {B} or {R}. ~ doesn't untap during your next untap step."
+    dredge: int = 0                                     # Dredge N
     escape_counters: int = 0                            # "~ escapes with N +1/+1 counters on it."
     anthem_all: tuple = ()                              # ("Sliver", 1, 1): "All Sliver creatures get +1/+1."
+    extra_blocks: int = 0                               # "can block an additional creature" (99: any number)
     lure: bool = False                                  # "All creatures able to block ~ do so."
     min_blockers: int = 0                               # "can't be blocked except by two or more creatures"
     max_blockers: int = 0                               # "~ can't be blocked by more than one creature."

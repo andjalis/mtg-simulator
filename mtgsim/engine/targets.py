@@ -50,6 +50,8 @@ class TargetsMixin:
             return not perm.has("flying")
         if f == "flying":
             return perm.has("flying")
+        if f.startswith("total_pt<="):
+            return perm.power + perm.toughness <= int(f[10:])
         if f == "untapped":
             return not perm.tapped
         if f == "opp":

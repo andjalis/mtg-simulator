@@ -20,6 +20,25 @@ TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "
             "player", "spell")
 
 
+class Counters(dict):
+    """A permanent's counters; putting +1/+1 counters on it fires "p1_added" ("whenever one or more +1/+1
+    counters are put on ~"). Restoring a transaction (dict.update) doesn't fire."""
+    __slots__ = ("owner",)
+
+    def __init__(self, owner):
+        super().__init__()
+        self.owner = owner
+
+    def __setitem__(self, key, value):
+        old = self.get(key, 0)
+        super().__setitem__(key, value)
+        perm = self.owner
+        if key == "+1/+1" and value > old and perm in perm.controller.battlefield:
+            game = getattr(perm.controller, "_game", None)
+            if game is not None:
+                game.fire(perm.controller, "p1_added", perm)
+
+
 def protected_from(perm, source) -> bool:
     """Whether perm has protection from a color of source (a CardDef, Permanent or StackItem)."""
     if isinstance(source, StackItem):
@@ -100,7 +119,7 @@ class Permanent:
         self.deathtouched = False
         self.pump_p = 0
         self.pump_t = 0
-        self.counters: dict[str, int] = {}
+        self.counters: dict[str, int] = Counters(self)
         self.temp_kw: set[str] = set()     # until end of turn
         self.perm_kw: set[str] = set()     # from keyword counters
         self.animated = None               # Activated: a manland that is a creature until end of turn

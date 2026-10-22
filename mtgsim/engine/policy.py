@@ -9,7 +9,7 @@ from .. import alt_casts, copies, learning, proliferate, regeneration, removal
 from ..cards import COLORS, CardDef, Effect
 from .. import modal
 from .mana import add_costs, payable
-from .state import Permanent, StackItem, TARGETED, _gy_desc, is_basic_land
+from .state import Permanent, StackItem, TARGETED, _gy_desc, is_basic_land, protected_from
 
 if TYPE_CHECKING:
     from .game import Game
@@ -249,6 +249,9 @@ def respond(game: Game, me: Player):
             for c in options.values():
                 if any(e.kind == "grant" and e.data.get("keyword") == "hexproof" for e in c.spell_effects):
                     return c, [aimed[0]] + [None] * (len(c.spell_effects) - 1)
+            saver = protective_ability(game, me, top, aimed[0])
+            if saver is not None:
+                return saver
         if not top.is_spell and top.kind in ("ability", "trigger", "loyalty") and isinstance(top.source, Permanent) \
                 and not top.source.silenced and (top.kind == "loyalty" or perm_value(top.source) >= 3):
             for c in options.values():   # Tishana's Tidebinder: a flash creature that counters an ability
@@ -296,6 +299,29 @@ def _option_value(game: Game, me: Player, c: CardDef) -> float:
     return modal.value(game, me, c.modes, n=c.modes_choose) + max(rest, 0) if c.modes else rest
 
 
+def protective_ability(game: Game, me: Player, item, victim):
+    """An activated ability of ours that saves victim from item (Mother of Runes, Samite Healer, a hexproof or
+    indestructible granter): ("activate", permanent, "ability:N", targets), or None."""
+    colored = bool((item.card or getattr(item.source, "card", None)) and
+                   (item.card or item.source.card).colors)
+    damage = sum(e.amount for e in item.effects if e.kind == "damage")
+    if victim.has("hexproof") or victim.prevent_next or protected_from(victim, item):
+        return None                 # already saved by an earlier activation
+    for perm in me.battlefield:
+        for i, act in enumerate(perm.card.activated):
+            if not act.effects or not game.can_activate(me, perm, i):
+                continue
+            e = act.effects[0]
+            keyword = e.data.get("keyword") if e.kind == "grant" else None
+            saves = (keyword == "protection_choice" and colored or keyword == "hexproof"
+                     or keyword == "indestructible" and any(x.kind == "destroy" for x in item.effects)
+                     or e.kind == "prevent_next" and damage and victim.toughness - victim.damage > damage - e.amount)
+            if not saves or e.target not in ("creature", "creature_mine", "any"):
+                continue
+            return ("activate", perm, f"ability:{i}", [victim] + [None] * (len(act.effects) - 1))
+    return None
+
+
 def respond_extras(game: Game, me: Player):
     """Empty-stack actions for mechanics an AI may not handle: The Wandering Emperor (flash her
     in when attacked, use her abilities the turn she enters), and at the opponent's end step
@@ -305,6 +331,11 @@ def respond_extras(game: Game, me: Player):
     if protect is not None:
         return protect
     if game.stack:
+        top = game.stack[-1]
+        aimed = [t for t in top.targets if isinstance(t, Permanent) and t.controller is me]
+        if top.controller is not me and aimed and \
+                any(e.kind in ("destroy", "damage", "bounce", "debuff_one") for e in top.effects):
+            return protective_ability(game, me, top, aimed[0])
         return None
     for pw in me.planeswalkers:
         if pw.card.pw_instant_on_entry and pw.entered_turn == game.turn and not pw.loyalty_used:

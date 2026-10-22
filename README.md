@@ -281,8 +281,9 @@ to select another local database.
 - Werewolves transform at the beginning of each upkeep after a turn with no spells, and back after a turn in
   which a player cast two or more; transformed permanents can turn face up again
 - Echo, unleash, evolve, renown, mentor, battle cry, riot, bloodthirst, fabricate, living weapon and heroic.
-  Unleash always takes the counter, riot takes haste when the creature can still attack this turn, and
-  fabricate always takes the counters
+  Unleash takes the counter unless its controller is low on life against a real attack, riot takes haste when
+  the creature can attack and nothing untapped would block and kill it, and fabricate puts counters on an
+  evasive creature and makes Servos otherwise
 - Illusions ("when ~ becomes the target of a spell or ability, sacrifice it"), Eldrazi Spawn and Scion
   tokens ("Sacrifice this creature: Add {C}", usable while summoning sick and spent last), bounce lands
   and "return a creature you control to its owner's hand", "can't attack unless defending player controls
@@ -293,7 +294,9 @@ to select another local database.
   fading. Modular, soulshift, annihilator, rampage, afterlife, backup (only keywords are granted to
   another creature), bolster and support; myriad does nothing with two players
 - Morph and megamorph use the face-down path of disguise (a 2/2 for {3}, without ward), including
-  "when ~ is turned face up" triggers. Dash, blitz without life, buyback, surge, prototype and suspend
+  "when ~ is turned face up" triggers; a face-down creature in combat is turned up when it can be paid for.
+  The AI answers removal aimed at its creature with activated protection (Mother of Runes, prevention
+  shields, hexproof or indestructible granters) when it has one ready. Dash, blitz without life, buyback, surge, prototype and suspend
   (the AI suspends cards it can't cast for two more turns, or at all). Unearth is cast from the graveyard
   like a spell and madness is cast from the graveyard during the turn of the discard (both recorded as
   simplifications)
@@ -332,6 +335,18 @@ to select another local database.
 - Umbra (totem) armor, protection from artifacts, "~'s power and toughness are each equal to the number of
   cards in your hand / creatures you control / ...", "return ~ from your graveyard to your hand" graveyard
   triggers, and lines that do nothing with two players (partner, choose a Background, friends forever, assist)
+- Replicate (offered paid one to three times, a copy for each), dredge (the AI dredges its most expensive
+  dredge card while its library has ten cards more than the dredge amount), filter lands like Mystic Gate
+  (one mana of either color while you control another source of them; a recorded simplification), slow
+  duals like Lantern-Lit Graveyard (they skip their next untap only when their colored mana was needed),
+  "whenever one or more +1/+1 counters are put on ~", and "~ can block an additional creature / any number
+  of creatures" (the blocker takes the unblocked attackers it survives and divides its damage among them)
+- Counterspell riders such as "exile it instead of putting it into its owner's graveyard" and "artifact or
+  creature spell" filters, "destroy target creature with total power and toughness N or less", flicker that
+  returns the card with a +1/+1 counter, creature-type anthems that also grant a keyword, "up to one target
+  creature gets +N/+N", "you and target opponent each draw a card", tutors that end with "discard a card at
+  random", and costed mana abilities such as "{2}, {T}: Add {U} or {R}" or "one mana of any color" (the
+  color is chosen by what the hand needs). Storage lands are not supported yet
 - Regeneration shields replace destruction, tap the permanent, clear its damage
   and remove it from combat. They expire at cleanup and cannot prevent sacrifice
   or zero toughness. Regeneration-prevention riders on destruction and damage apply
