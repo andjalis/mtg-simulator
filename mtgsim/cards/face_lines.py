@@ -190,6 +190,9 @@ def _face_mode_and_ward_lines(st, line):
                          r"(.+)\.", line)
         if m:
             restriction = _mana_restriction(m[3])
+            if restriction is None and len(re.findall(r"\{", m[2])) > 1:
+                unsupported.append(line)              # several restricted mana for spells we can't tell apart
+                return None
             if restriction is None:
                 produces |= set(COLORS) if "any color" in m[2] else set(re.findall(r"[WUBRGC]", m[2]))
                 unsupported.append(f"mana restriction ignored: Spend this mana only {m[3]}.")

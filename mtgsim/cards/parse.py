@@ -9,7 +9,7 @@ from .. import auras as _auras, storage as _storage
 from .model import (
     Activated, AltCost, BASIC_MANA, CardDef, Effect, NO_MATCH, Trigger, _num, add_mana, parse_mana_cost,
 )
-from .clauses import _SUBS, _TRIGGERS, _if_cond, _opt_rider, _xq
+from .clauses import _SUBS, _SUB_NOTES, _TRIGGERS, _if_cond, _opt_rider, _xq
 from .patterns import _EFFECT_PATTERNS
 
 
@@ -373,6 +373,7 @@ def _parse_face(data: dict) -> CardDef:
         triggers.append(Trigger("cast_noncreature", [Effect("pump", 1, 1, target="self")]))
     # Triggers with "choose up to one" get their bullet modes; drop ones that ended up empty.
     triggers = [t for t in triggers if t.effects or t.modes]
+    approximations += [note for rx, note in _SUB_NOTES if rx.search(oracle)]
 
     return CardDef(
         name=name, mana_cost=cost, cmc=int(data.get("cmc", 0) or 0), types=types,
@@ -398,7 +399,8 @@ def _mana_restriction(text: str):
         return "instant_sorcery"
     m = re.fullmatch(r"to cast (?:colorless )?(\w+) spells or activate abilities of (?:colorless )?(\w+)", text)
     if m and m[2].rstrip("s") == m[1].rstrip("s"):         # Eldrazi Temple: spells only, its abilities are not paid
-        return "subtype:" + m[1].rstrip("s").capitalize()
+        word = m[1].rstrip("s").lower()
+        return word if word in ("artifact", "creature") else "subtype:" + word.capitalize()
     m = re.fullmatch(r"to cast an? (\w+) spell(?: or an? (\w+) spell)?", text)
     if m:
         return "subtype:" + "|".join(t.capitalize() for t in m.groups() if t)

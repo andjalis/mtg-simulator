@@ -8,6 +8,13 @@ from .model import _num
 from .patterns import _N_WORDS
 
 
+# Substitutions below that simplify the card, and the note each one records on it.
+_SUB_NOTES = [
+    (re.compile(r"counter target spell, activated ability, or triggered ability", re.I),
+     "only spells are countered, not abilities"),
+    (re.compile(r"target creature or planeswalker you control gains", re.I), "the target is a creature, not a planeswalker"),
+]
+
 _SUBS = [
     (re.compile(r"(?:target opponent reveals their hand\. you choose|look at target opponent's hand\. you may exile) an? "
                 r"(nonland|noncreature, nonland|nonartifact, nonland|instant or sorcery) card from it(?:\. exile that card)? "
