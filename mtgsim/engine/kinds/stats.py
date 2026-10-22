@@ -32,6 +32,20 @@ def attach_new_equipment(game, p, target, **_):
         game.log(f"attaches {new[-1].card.name} to {target.card.name}", p)
 
 
+@kind("gear_up")
+def gear_up(game, p, eff, target, **_):
+    """"Attach (any number of) target Equipment you control to target creature you control": all of them, or the
+    best one not already on it."""
+    if not isinstance(target, Permanent) or target not in p.battlefield or not target.is_creature:
+        return
+    gear = [x for x in p.battlefield if "Equipment" in x.card.subtypes and not x.is_creature and x.attached_to is not target]
+    if not eff.data.get("all"):
+        gear = sorted(gear, key=lambda x: sum(x.card.equip_bonus), reverse=True)[:1]
+    for x in gear:
+        x.attached_to = target
+        game.log(f"attaches {x.card.name} to {target.card.name}", p)
+
+
 @kind("hone")
 def hone(game, p, **_):
     """Dwalin: a hone counter on each Equipment you control (+1/+0 each to the equipped creature)."""

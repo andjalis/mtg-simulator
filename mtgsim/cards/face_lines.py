@@ -468,9 +468,13 @@ def _face_cost_and_static_lines(st, line):
             alt_costs.append(AltCost("flashback", parse_mana_cost(m[1]), zone="graveyard"))
             approximations.append("harmonize: tapping a creature to reduce the cost isn't used")
             return None
-        if line == "Spree":
+        if line in ("Spree", "Tiered"):
             extra["is_spree"] = True
+            extra["tiered"] = line == "Tiered"     # Tiered: exactly one mode and its extra cost
             return None
+        m = re.fullmatch(r"• [\w' ]+ — (\{[^ ]+\}) — (.+)", line)
+        if m and extra.get("tiered"):
+            line = f"+ {m[1]} — {m[2]}"
         m = re.fullmatch(r"\+ (\{[^ ]+\}) — (.+)", line)
         if m and extra.get("is_spree"):
             effs, bad = _parse_effects(m[2])

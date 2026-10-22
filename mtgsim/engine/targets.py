@@ -115,9 +115,16 @@ class TargetsMixin:
         return any(tgt is candidate for candidate in self.legal_targets(p, eff))
 
     def can_counter(self, eff: Effect, item: StackItem, by: Player | None = None) -> bool:
-        if eff.kind not in ("counter", "bounce_spell") or not item.is_spell or item not in self.stack:
+        if eff.kind not in ("counter", "bounce_spell") or item not in self.stack:
             return False
         if by is not None and item.controller is by:
+            return False
+        if not item.is_spell:                 # "counter target activated or triggered ability" (Stifle, Disallow)
+            kinds = {"ability": ("ability", "loyalty", "trigger", "chapter"),
+                     "or_ability": ("ability", "loyalty", "trigger", "chapter"),
+                     "activated": ("ability", "loyalty")}.get(eff.filter, ())
+            return eff.kind == "counter" and item.kind in kinds
+        if eff.filter in ("ability", "activated"):
             return False
         card = item.card
         if eff.filter == "creature" and not card.is_creature:
@@ -132,6 +139,8 @@ class TargetsMixin:
             return False
         if eff.filter == "instant_sorcery" and not (card.is_instant or card.is_sorcery):
             return False
+        if eff.filter == "or_ability":
+            return True
         if eff.filter.startswith("cmc:") and card.cmc != int(eff.filter[4:]):
             return False
         if eff.filter.startswith("colors:") and not card.colors & set(eff.filter[7:]):

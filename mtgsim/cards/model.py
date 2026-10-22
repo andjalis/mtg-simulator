@@ -190,6 +190,7 @@ class CardDef:
     hybrid: tuple = ()                                  # hybrid pips of the mana cost: ("UB", "UB")
     spent_colors: frozenset = frozenset()               # colours in "if {U}{U} was spent to cast it" triggers
     spree: list = field(default_factory=list)           # spree modes: (extra cost, effects)
+    tiered: bool = False                                # Tiered: the spree modes, exactly one of them
     gy_triggers: list = field(default_factory=list)     # triggers that work from the graveyard (Bloodghast)
     ward_life: int = 0                                  # "Ward—Pay N life."
     etb_named_counters: tuple = ()                      # ("net", 3): "enters with three net counters on it"

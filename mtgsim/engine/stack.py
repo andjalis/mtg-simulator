@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import alt_casts, auras, copies, milling
+from .. import alt_casts, auras, copies, milling, ring
 from ..cards import CardDef, Effect
 from .. import modal, rules_events, phase_conditions, turn_conditions
 from ..identity import CardInstance, CardZone
@@ -398,6 +398,9 @@ class StackMixin:
             return sum(x.card.is_land for x in self.opponent(p).battlefield) > sum(x.card.is_land for x in p.battlefield)
         if c == "sacrificed_turn":
             return p.sacrificed_turn > 0
+        if c in ("ring_other", "no_ring_bearer"):
+            bearer = ring.bearer(p)
+            return bearer is None if c == "no_ring_bearer" else bearer is not None and bearer is not item.source
         if c.startswith("ctl_other:"):
             sub = c[10:]
             group = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock") if sub == "outlaw" else (sub,)

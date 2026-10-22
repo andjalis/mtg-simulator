@@ -51,6 +51,8 @@ EFFECT_PATTERNS = [
      lambda m: _pair("bite")),
     (r"(?:it|that creature|he|she) deals damage equal to its power to (?:up to one )?target creature " + _THEIRS,
      lambda m: _effect("bite", "creature", filter="opp")),
+    (r"(?:it|that creature|he|she) deals damage equal to its power to up to one (?:other )?target creature",
+     lambda m: _effect("bite", "creature", filter="opp")),     # any creature; the AI only aims at theirs
     (r"(?:it|that creature|he|she) fights (?:up to one )?target creature " + _THEIRS,
      lambda m: _effect("fight", "creature", filter="opp")),
     (r"target creature you control deals damage equal to its power to target creature or planeswalker( " + _THEIRS + ")?",

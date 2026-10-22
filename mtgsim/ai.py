@@ -15,7 +15,7 @@ from itertools import combinations
 
 from .cards import CardDef, Effect
 from . import copies, counting, engine, learning, modal, proliferate, protection
-from .engine import Game, Permanent, Player, can_block, payable
+from .engine import Game, Permanent, Player, can_block, payable, policy
 
 LETHAL = 1000.0
 LIFE_SCALE = 5.0        # value of life = LIFE_SCALE * sqrt(life)
@@ -1164,7 +1164,14 @@ class HeuristicAI:
         return None
 
     def counter(self, game: Game, me: Player, item, options):
-        if not item.is_spell or not game.counterable(item):
+        if not item.is_spell:          # Stifle, Disallow on a loyalty ability or one that hurts us
+            if not policy.ability_worth_countering(game, me, item):
+                return None
+            stiflers = [c for c in options if _counter_effects(c)
+                        and all(game.can_counter(e, item, me) for e in _counter_effects(c))]
+            card = min(stiflers, key=lambda c: (c.cmc, card_value(c)), default=None)
+            return (card, [item if e.target == "spell" else None for e in card.spell_effects]) if card else None
+        if not game.counterable(item):
             return None
         opp = game.opponent(me)
         counters = []

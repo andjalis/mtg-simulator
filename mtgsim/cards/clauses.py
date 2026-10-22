@@ -10,9 +10,8 @@ from .patterns import _N_WORDS
 
 # Substitutions below that simplify the card, and the note each one records on it.
 _SUB_NOTES = [
-    (re.compile(r"counter target spell, activated ability, or triggered ability", re.I),
-     "only spells are countered, not abilities"),
     (re.compile(r"target creature or planeswalker you control gains", re.I), "the target is a creature, not a planeswalker"),
+    (re.compile(r"return target spell or permanent to its owner's hand", re.I), "returns a nonland permanent, not a spell"),
 ]
 
 _SUBS = [
@@ -20,10 +19,13 @@ _SUBS = [
                 r"(nonland|noncreature, nonland|nonartifact, nonland|instant or sorcery) card from it(?:\. exile that card)? "
                 r"until ~ leaves the battlefield\.", re.I), lambda m: f"HANDEXILE {m[1].lower()}."),
     (re.compile(r"^(~ gains [a-z]+ until end of turn)\. tap it\.", re.I), r"\1. Tap ~."),
+    # Thorin: the Equipment are attached by the same ability, so its rider always follows
+    (re.compile(r"when one or more equipment become attached to that creature this way, (that creature deals damage)", re.I),
+     r"\1"),
     # The AI never aims its removal at its own creature, so "another" target is any target.
     (re.compile(r"destroy another target (creature or planeswalker|creature|nonland permanent)", re.I), r"destroy target \1"),
-    # Activated and triggered abilities can't be countered in the engine: these counter spells only.
-    (re.compile(r"counter target spell, activated ability, or triggered ability", re.I), "counter target spell"),
+    (re.compile(r"return target spell or permanent to its owner's hand", re.I),
+     "return target nonland permanent to its owner's hand"),
     # Planeswalkers rarely matter as the target: "creature or planeswalker you control gains ..." is the creature.
     (re.compile(r"target creature or planeswalker you control gains", re.I), "target creature you control gains"),
     # Two players: "for each opponent, tap ... that player controls" is the one opponent.
@@ -328,6 +330,8 @@ _IF_CONDS = [
     (r"you control (two|three|four) or more tapped creatures", None),
     (r"you control a creature with power (\d+) or greater", None),
     (r"you sacrificed a permanent this turn", "sacrificed_turn"),
+    (r"you chose a creature other than ~ as your Ring-bearer", "ring_other"),
+    (r"you don't control a Ring-bearer", "no_ring_bearer"),
 ]
 
 

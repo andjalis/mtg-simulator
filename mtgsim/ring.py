@@ -11,8 +11,10 @@ best creature (``policy.perm_value``), kept if it is still the best. The Ring's 
        of combat.
     4. Whenever your Ring-bearer deals combat damage to a player, each opponent loses 3 life.
 
-The engine calls ``attacks``, ``blocked`` and ``combat_damage`` from combat. Not modelled: "is your Ring-bearer"
-conditions and choosing a Ring-bearer other than the best creature; being legendary has no effect.
+The engine calls ``attacks``, ``blocked`` and ``combat_damage`` from combat. A creature with "if you chose a creature
+other than ~ as your Ring-bearer" (Aragorn, Gandalf) is passed over while another creature can carry the Ring, and
+"if you don't control a Ring-bearer" is a condition too. Not modelled: "as long as ~ is your Ring-bearer" statics;
+being legendary has no effect.
 """
 from __future__ import annotations
 
@@ -36,6 +38,10 @@ def bearer(p):
     return b if b is not None and b in p.battlefield and b.is_creature else None
 
 
+def wants_other_bearer(perm) -> bool:
+    return any("ring_other" in (t.intervening_if, *(e.cond for e in t.effects)) for t in perm.triggers)
+
+
 def level(p) -> int:
     return getattr(p, "ring_level", 0)
 
@@ -44,8 +50,11 @@ def resolve(game, p, eff, target, item):
     from .engine.policy import perm_value
     p.ring_level = min(4, level(p) + 1)
     old = bearer(p)
-    best = max(p.creatures, key=perm_value, default=None)
-    if best is not None and (old is None or perm_value(best) > perm_value(old)):
+    # Aragorn, Gandalf: "if you chose a creature other than ~ as your Ring-bearer" wants someone else to carry it
+    pool = [c for c in p.creatures if not wants_other_bearer(c)] or p.creatures
+    best = max(pool, key=perm_value, default=None)
+    if best is not None and (old is None or perm_value(best) > perm_value(old)
+                             or wants_other_bearer(old) and not wants_other_bearer(best)):
         if old is not None:
             old.counters["skulk"] = max(0, old.counters.get("skulk", 0) - 1)
         best.counters["skulk"] = best.counters.get("skulk", 0) + 1
