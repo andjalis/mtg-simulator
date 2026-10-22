@@ -11,6 +11,8 @@ from tests.test_templates import BEAR, ISLAND, card
 FLASHFREEZE = card("Test Flashfreeze", "{1}{U}", "Instant", "Counter target red or green spell.")
 ZORALINE = card("Test Zoraline", "{2}{W}{B}", "Legendary Creature — Bat Cleric",
                 "Flying\nWhenever a Bat you control attacks, you gain 1 life.", 3, 3)
+ATARKA = card("Test Atarka", "{5}{R}{R}", "Legendary Creature — Dragon",
+              "Flying\nWhenever a Dragon you control attacks, it gains double strike until end of turn.", 6, 4)
 BAT = card("Test Bat", "{1}{B}", "Creature — Bat", "Flying", 1, 1)
 MAKO = card("Test Mako", "{U}{R}", "Creature — Shark",
             "Whenever you discard one or more cards, put that many +1/+1 counters on ~.", 1, 1)
@@ -52,7 +54,7 @@ class PoolGaps(unittest.TestCase):
         return perm
 
     def test_templates(self):
-        for c in (FLASHFREEZE, ZORALINE, MAKO, ELF, SHELTER, SERAPH, LESSON, PLUNDER, ULTIMA, FREEBOOTER):
+        for c in (FLASHFREEZE, ATARKA, ZORALINE, MAKO, ELF, SHELTER, SERAPH, LESSON, PLUNDER, ULTIMA, FREEBOOTER):
             self.assertEqual(c.unsupported, [], c.name)
 
     def test_colored_counterspell(self):
@@ -70,6 +72,13 @@ class PoolGaps(unittest.TestCase):
         self.game.combat(self.a, self.b)
         self.game.settle()
         self.assertEqual(self.a.life, 21)                   # the Bat attacked; the Bear didn't count
+
+    def test_typed_attack_trigger_targets_the_attacker(self):
+        atarka = self.put(self.a, ATARKA)
+        self.a.ai.attack = [atarka]
+        self.game.combat(self.a, self.b)
+        self.game.settle()
+        self.assertEqual(self.b.life, 8)                    # double strike: 6 twice
 
     def test_discard_puts_counters(self):
         mako = self.put(self.a, MAKO)

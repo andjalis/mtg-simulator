@@ -24,6 +24,8 @@ _STORED: dict = {}
 
 def parse_line(line: str, st) -> bool:
     from .cards.model import parse_mana_cost
+    if "Land" not in st.types:                # "You may choose not to untap ~" on Amber Prison is not storage
+        return False
     storage = st.extra.setdefault("storage", {})
     try:
         return _parse(line, storage, parse_mana_cost)
