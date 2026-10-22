@@ -315,6 +315,8 @@ class TurnsMixin:
                 else:
                     self.leave_battlefield(perm, "exile")
         self.fire(p, "end_step")
+        if getattr(self, "monarch", None) is p:      # the monarch draws a card at the beginning of their end step
+            self.queue_trigger(p, [Effect("draw", 1)], None, "the monarch")
         waiting, self.blinked = self.blinked, []
         for card, owner in waiting:
             self.enter_battlefield(owner, card)

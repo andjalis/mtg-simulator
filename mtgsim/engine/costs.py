@@ -217,6 +217,11 @@ class CostsMixin:
         kind, what = gate
         if kind == "may":
             return True
+        if kind == "energy":                       # "you may pay {E}{E}. If you do, ..."
+            if getattr(p, "energy", 0) < what:
+                return False
+            p.energy -= what
+            return True
         if kind == "life":                         # "you may pay N life": while it stays comfortable
             if p.life - int(what) < 8:
                 return False

@@ -220,6 +220,8 @@ class AbilitiesMixin:
             return False
         if c.get("life") and p.life <= c["life"]:
             return False
+        if c.get("energy") and getattr(p, "energy", 0) < c["energy"]:
+            return False
         if c.get("discard") and len(p.hand) < c["discard"]:
             return False
         if c.get("remove_counter") and not perm.counters.get(c["remove_counter"]):
@@ -258,6 +260,8 @@ class AbilitiesMixin:
             perm.tapped = True
         if c.get("life"):
             self.change_life(p, -c["life"], f"{perm.card.name}: ability cost")
+        if c.get("energy"):
+            p.energy -= c["energy"]
         for _ in range(c.get("discard", 0)):
             card = p.ai.choose_discard(self, p)
             if card not in p.hand:

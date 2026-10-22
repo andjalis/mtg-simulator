@@ -125,7 +125,7 @@ def _aim(card: CardDef, eff, target) -> list:
 
 
 # Effects plan_spell values through _extra_value.
-EXTRA_KINDS = {"reanimate_total", "reanimate_one", "tutor_gy", "regrow_perm", "regrow_any", "tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "pump_matching", "double_counters", "learn",
+EXTRA_KINDS = {"reanimate_total", "reanimate_one", "tutor_gy", "regrow_perm", "regrow_any", "tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "pump_matching", "double_counters", "learn", "hand_to_battlefield", "energy", "monarch",
                "tap", "stun", "mill", "proliferate"} | copies.KINDS
 
 CARRIER_KINDS = ("pump", "grant", "p1_counters", "unblockable")   # aimed at the creature that attacks
@@ -898,6 +898,13 @@ class HeuristicAI:
         ready = [c for c in me.creatures if c.can_attack() and c.power > 0]
         if k == "proliferate":
             return None, eff.amount * proliferate.value(game, me)
+        if k == "hand_to_battlefield":     # Sneak Attack: worth what the best creature in hand costs
+            best = max((c.cmc for c in me.hand if c.is_creature), default=0)
+            return (None, best) if best else None
+        if k == "energy":
+            return None, 0.5 * eff.amount
+        if k == "monarch":
+            return (None, 3.0) if getattr(game, "monarch", None) is not me else None
         if k == "learn":
             return None, learning.value(game, me)
         if k in copies.KINDS:

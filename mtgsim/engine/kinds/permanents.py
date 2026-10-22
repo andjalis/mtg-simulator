@@ -39,6 +39,48 @@ def destroy_all(game, p, eff, opp, **_):
         game.destroy(perm)
 
 
+@kind("energy")
+def energy(game, p, eff, **_):
+    """"You get {E}{E}": energy counters on the player."""
+    p.energy = getattr(p, "energy", 0) + eff.amount
+    game.log(f"gets {eff.amount} energy ({p.energy})", p)
+
+
+@kind("haste_new")
+def haste_new(game, p, eff, target, **_):
+    """"It gains haste." after a return or a put-onto-the-battlefield: that permanent, for as long as it stays."""
+    target = target if isinstance(target, Permanent) else getattr(game, "last_entered", None)
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        target.perm_kw.add("haste")
+
+
+@kind("hand_to_battlefield")
+def hand_to_battlefield(game, p, **_):
+    """Sneak Attack: the best creature card from hand onto the battlefield."""
+    pool = [c for c in p.hand if c.is_creature]
+    if pool:
+        card = max(pool, key=lambda c: (c.cmc, (c.power or 0)))
+        p.hand.remove(card)
+        game.enter_battlefield(p, card)
+        game.log(f"puts {card.name} onto the battlefield", p)
+
+
+@kind("at_end_step")
+def at_end_step(game, p, eff, target, item, **_):
+    """"Exile it at the beginning of the next end step": the permanent the previous effect made or returned."""
+    if not isinstance(target, Permanent):
+        made = getattr(game, "last_entered", None)   # tokens just created, a card just returned
+        target = made if isinstance(made, Permanent) else None
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        game.end_cleanup.append((target, eff.data["how"]))
+
+
+@kind("monarch")
+def monarch(game, p, **_):
+    game.monarch = p
+    game.log("becomes the monarch", p)
+
+
 @kind("adapt")
 def adapt(game, p, eff, item, **_):
     """Adapt N: N +1/+1 counters, if it has none."""

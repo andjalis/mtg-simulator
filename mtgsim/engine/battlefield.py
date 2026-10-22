@@ -33,6 +33,7 @@ class BattlefieldMixin:
             card = CardInstance(card)
         card, front = copies.clone_on_enter(self, p, card)
         perm = Permanent(card, p)
+        self.last_entered = perm            # "exile it at the beginning of the next end step" after a return
         perm.front = instance(physical_card if physical_card is not None else front, p)
         perm.owner = perm.front.owner
         pending = perm.front.pending_move

@@ -84,6 +84,11 @@ def _parse_effects(text: str, opts: bool = False):
             effects.append(Effect("pay_gate", data={"gate": gate}))
             gated = True
             continue
+        me_ = re.fullmatch(r"you may pay ((?:\{E\})+)", s, re.I)
+        if me_:
+            effects.append(Effect("pay_gate", data={"gate": ("energy", me_[1].count("{E}"))}))
+            gated = True
+            continue
         ml = re.fullmatch(r"you may pay (\d+) life", s, re.I)
         if ml:
             effects.append(Effect("pay_gate", data={"gate": ("life", ml[1])}))
@@ -433,6 +438,8 @@ def _parse_ability_cost(text: str):
             extra["discard"] = 1
         elif (m := re.fullmatch(r"Pay (\d+) life", part)):
             extra["life"] = int(m[1])
+        elif (m := re.fullmatch(r"Pay ((?:\{E\})+)", part)):
+            extra["energy"] = m[1].count("{E}")
         elif (m := re.fullmatch(r"Remove an? ([\w/+-]+) counter from ~", part)):
             extra["remove_counter"] = m[1]
         elif (m := re.fullmatch(r"Sacrifice (?:a|an|another) (.+)", part)) and \
