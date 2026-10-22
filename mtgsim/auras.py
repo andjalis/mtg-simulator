@@ -50,6 +50,16 @@ def parse_line(line: str, extra: dict, types) -> bool:
         extra.setdefault("_approx", []).append("loses all abilities: only keywords are removed")
         return True
     line = line.replace(" This effect doesn't remove ~.", "")          # the Wards: protection that keeps the Aura
+    m = re.fullmatch(rf"Enchanted creature gets ([+−-])(\d+)/([+−-])(\d+)(?:, has ({_KW}),)? and (attacks each combat if able|"
+                     rf"can't block|can't attack|can't attack you or planeswalkers you control)\.", line)
+    if m:                                       # Uncontrollable Anger, Copper Carapace, the Vows
+        extra["equip_bonus"] = (_n(m[1], m[2]), _n(m[3], m[4]))
+        if m[5]:
+            extra["equip_keywords"] = frozenset({m[5]})
+        flag = {"attacks each combat if able": "must_attack", "can't block": "cant_block", "can't attack": "cant_attack"}.get(
+            m[6], "cant_attack_you")
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {flag}
+        return True
     m = re.fullmatch(rf"Enchanted creature has ({_KW}) as long as (.+)\.", line)
     if m:                                       # Runemarks: "... as long as you control a red or white permanent"
         from . import statics
@@ -86,7 +96,8 @@ def finish(extra: dict):
     if extra.get("aura"):
         b = extra.get("equip_bonus", (0, 0))
         per = extra.get("aura_per", ("", 0, 0))
-        extra["aura_hostile"] = bool(extra.get("aura_flags")) or b[0] < 0 or b[1] < 0 or per[1] < 0 or per[2] < 0 or \
+        own_use = {"must_attack", "cant_block", "cant_attack_you"}      # Uncontrollable Anger, the Vows: for your creatures
+        extra["aura_hostile"] = bool(extra.get("aura_flags", frozenset()) - own_use) or b[0] < 0 or b[1] < 0 or per[1] < 0 or per[2] < 0 or \
             "defender" in extra.get("equip_keywords", ()) or \
             extra["aura"] == "creature an opponent controls"
 
@@ -158,6 +169,20 @@ def blocks_untap(perm) -> bool:
 
 def stops_combat(perm) -> bool:
     return any("cant_attack_block" in a.card.aura_flags for a in perm.auras)
+
+
+def stops_attack(perm) -> bool:
+    """"Can't attack you" on an opponent's Aura, or an Aura that says it can't attack at all."""
+    return any("cant_attack" in a.card.aura_flags or "cant_attack_you" in a.card.aura_flags and a.controller is not perm.controller
+               for a in perm.auras)
+
+
+def stops_block(perm) -> bool:
+    return any("cant_block" in a.card.aura_flags for a in perm.auras)
+
+
+def must_attack(perm) -> bool:
+    return any("must_attack" in a.card.aura_flags for a in perm.auras)
 
 
 def resolve(game, p, eff, target, item):

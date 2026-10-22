@@ -1,7 +1,7 @@
 """Game methods for combat: attacks, blocks and combat damage."""
 from __future__ import annotations
 
-from .. import ring
+from .. import auras, ring
 from ..cards import Effect
 from .state import Permanent, Player, can_block
 
@@ -58,7 +58,8 @@ class CombatMixin:
             return
         attackers = [a for a in p.ai.choose_attackers(self, p, opp) if a.can_attack()
                      and (not a.card.attack_needs or any(a.card.attack_needs in x.card.subtypes for x in opp.battlefield))]
-        attackers += [a for a in p.creatures if (a.card.must_attack or a.has("must_attack_now")) and a.can_attack()
+        attackers += [a for a in p.creatures if (a.card.must_attack or a.has("must_attack_now") or auras.must_attack(a))
+                      and a.can_attack()
                       and a not in attackers]
         if len(attackers) == 1 and "attack" in attackers[0].card.not_alone:
             attackers = []                 # "~ can't attack alone"

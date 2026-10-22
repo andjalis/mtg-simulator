@@ -413,7 +413,7 @@ class Permanent:
 
     def can_attack(self):
         return (self.is_creature and not self.tapped and not self.has("defender")
-                and not (self.auras and auras.stops_combat(self))
+                and not (self.auras and (auras.stops_combat(self) or auras.stops_attack(self)))
                 and (not self.sick or self.has("haste")))
 
     def granted_mana(self) -> frozenset:
@@ -587,7 +587,7 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
         return False
     if blocker.card.unleash and blocker.p1 > 0:
         return False
-    if blocker.card.cant_block or blocker.has("cant_block_now") or blocker.has("decayed") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
+    if blocker.card.cant_block or blocker.has("cant_block_now") or blocker.has("decayed") or attacker.has("unblockable") or (blocker.auras and (auras.stops_combat(blocker) or auras.stops_block(blocker))):
         return False
     if any(attacker.has(keyword) and any(x.card.is_land and subtype in x.card.subtypes
                                         for x in blocker.controller.battlefield)

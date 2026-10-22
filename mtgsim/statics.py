@@ -103,6 +103,12 @@ def parse_line(line: str, st) -> bool:
         if desc:
             st.extra["unblockable_by"] = st.extra.get("unblockable_by", ()) + (desc,)
             return True
+        m = re.fullmatch(r"(?:(?:Threshold|Delirium|Metalcraft|Hellbent) — )?As long as (.+?), (?:~|it) (gets|has) (.+)\.",
+                         line)
+        if m:                                      # "As long as ~ is equipped, it gets +1/+1": the other word order
+            cond = m[1].replace("~ is ", "it's ").replace("~ has ", "it has ")
+            line = f"~ {m[2]} {m[3]} as long as {cond}."
+        line = re.sub(r"^(?:Threshold|Delirium|Metalcraft|Hellbent) — (?=~ )", "", line)
         m = _SELF.fullmatch(line)
         cond = _condition(m[5]) if m else None
         if cond:
@@ -190,6 +196,13 @@ def _condition(text: str):
     m = re.fullmatch(r"you have (\w+) or more cards in hand", text)
     if m and m[1] in ("two", "three", "four", "five", "seven"):
         return f"hand>={ {'two': 2, 'three': 3, 'four': 4, 'five': 5, 'seven': 7}[m[1]] }"
+    m = re.fullmatch(r"(?:there are )?(seven|four|five|six|ten) or more cards (?:are )?in your graveyard", text)
+    if m:
+        return f"gy>={ {'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'ten': 10}[m[1]] }"
+    if text == "there are four or more card types among cards in your graveyard":
+        return "delirium"
+    if text == "you have no cards in hand" or text == "you have one or fewer cards in hand":
+        return "hand<=0" if "no" in text else "hand<=1"
     m = re.fullmatch(r"you have (\d+) or (?:less|fewer) life", text)
     if m:
         return f"life<={m[1]}"
@@ -292,6 +305,10 @@ def condition(perm, cond: str):
         return len(p.hand) >= int(cond[6:]) if ">=" in cond else len(p.hand) <= int(cond[6:])
     if cond.startswith("life"):
         return p.life >= int(cond[6:]) if ">=" in cond else p.life <= int(cond[6:])
+    if cond.startswith("gy>="):
+        return len(p.graveyard) >= int(cond[4:])
+    if cond == "delirium":
+        return len({t for c in p.graveyard for t in c.types}) >= 4
     return None
 
 

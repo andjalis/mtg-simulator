@@ -24,6 +24,16 @@ FAMILIAR = card("Test Familiar", "{3}{U}", "Creature — Bird", "Black spells an
 RUNEMARK = card("Test Runemark", "{2}{W}", "Enchantment — Aura", "Enchant creature\nEnchanted creature has first strike as "
                 "long as you control a red or white permanent.")
 OGRE = card("Test Ogre", "{2}{R}", "Creature — Ogre", "", 3, 3)
+KNIGHT = card("Test Knight", "{1}{W}", "Creature — Knight", "As long as ~ is equipped, it gets +1/+1.", 2, 2)
+NOMAD = card("Test Nomad", "{1}{G}", "Creature — Human", "Threshold — As long as seven or more cards are in your graveyard, "
+             "~ gets +2/+2.", 1, 1)
+STALKER = card("Test Stalker", "{1}{B}", "Creature — Horror", "Delirium — ~ has flying as long as there are four or more "
+               "card types among cards in your graveyard.", 2, 2)
+ANGER = card("Test Anger", "{2}{R}", "Enchantment — Aura", "Enchant creature\nEnchanted creature gets +2/+2 and attacks "
+             "each combat if able.")
+VOW = card("Test Vow", "{1}{W}", "Enchantment — Aura", "Enchant creature\nEnchanted creature gets +1/+1, has flying, and "
+           "can't attack you or planeswalkers you control.")
+SHACKLE = card("Test Shackle", "{R}", "Enchantment — Aura", "Enchant creature\nEnchanted creature gets +2/+0 and can't block.")
 
 
 class CoverageBatch4(unittest.TestCase):
@@ -100,6 +110,33 @@ class CoverageBatch4(unittest.TestCase):
         self.assertTrue(bear.has("first strike"))               # the Runemark is itself white
         self.put(self.a, OGRE)
         self.assertTrue(bear.has("first strike"))
+
+    def test_self_conditions(self):
+        for c in (KNIGHT, NOMAD, STALKER, ANGER, VOW, SHACKLE):
+            self.assertEqual(c.unsupported, [], c.name)
+        nomad, stalker = self.put(self.a, NOMAD), self.put(self.a, STALKER)
+        self.assertEqual(nomad.power, 1)
+        self.assertFalse(stalker.has("flying"))
+        self.a.graveyard[:] = [ISLAND] * 4 + [BEAR, FLING, RUNEMARK, BATS]
+        self.assertEqual(nomad.power, 3)
+        self.assertTrue(stalker.has("flying"))          # land, creature, instant, enchantment
+
+    def test_aura_drawbacks(self):
+        from mtgsim import auras
+        from mtgsim.engine.state import can_block
+        self.assertFalse(ANGER.aura_hostile or VOW.aura_hostile or SHACKLE.aura_hostile)
+        bear, ogre = self.put(self.a, BEAR), self.put(self.b, OGRE)
+        auras.attach(self.game, self.put(self.a, ANGER), bear)
+        self.assertTrue(auras.must_attack(bear))
+        self.assertEqual(bear.power, 4)
+        auras.attach(self.game, self.put(self.a, SHACKLE), bear)
+        self.assertFalse(can_block(bear, ogre))
+        auras.attach(self.game, self.put(self.a, VOW), ogre)       # a's Vow on b's creature: it can't attack a
+        self.assertFalse(ogre.can_attack())
+        self.assertTrue(ogre.has("flying"))
+        mine = self.put(self.b, OGRE)
+        auras.attach(self.game, self.put(self.b, VOW), mine)       # its own controller's Vow doesn't stop it
+        self.assertTrue(mine.can_attack())
 
 
 if __name__ == "__main__":
