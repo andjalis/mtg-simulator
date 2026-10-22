@@ -289,6 +289,7 @@ class CardDef:
     color_override: frozenset | None = None             # explicit face colours / colour indicator
     exalted: int = 0                                    # native instances (they stack)
     block_only_flying: bool = False
+    block_max_power: int = 0                            # "~ can't block creatures with power 2 or greater": 2
     improvise: bool = False
     delve: bool = False
     cascade: int = 0

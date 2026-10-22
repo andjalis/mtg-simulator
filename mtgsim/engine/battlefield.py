@@ -110,7 +110,14 @@ class BattlefieldMixin:
             n = x if card.etb_counters == -1 else card.etb_counters
             if n:
                 perm.counters["+1/+1"] = n
-        if card.etb_counters_if and self._etb_cond(p, card.etb_counters_if[0]):
+        if card.etb_counters_if and card.etb_counters_if[0].startswith(("per:", "gyper:")):     # "for each Elf you control"
+            from .. import counting
+            what = card.etb_counters_if[0].split(":", 1)[1]
+            zone = "graveyard" if card.etb_counters_if[0].startswith("gy") else "battlefield"
+            n = counting.count(self, p, {"what": what, "zone": zone}, perm)
+            if n:
+                perm.counters["+1/+1"] = perm.p1 + card.etb_counters_if[1] * n
+        elif card.etb_counters_if and self._etb_cond(p, card.etb_counters_if[0]):
             perm.counters["+1/+1"] = perm.p1 + card.etb_counters_if[1]
         if card.etb_named_counters:
             perm.counters[card.etb_named_counters[0]] = card.etb_named_counters[1]

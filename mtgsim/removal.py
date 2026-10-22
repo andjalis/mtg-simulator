@@ -59,6 +59,9 @@ EFFECT_PATTERNS = [
      lambda m: _pair("bite", "creature_pw", "opp" if m[1] else "")),
     (r"untap target creature", lambda m: _effect("untap_target", "creature")),
     (r"untap target (?:basic )?land", lambda m: _effect("untap_target", "land")),
+    (r"untap target (Forest|Plains|Island|Swamp|Mountain|Gate)", lambda m: _effect("untap_target", "land",
+                                                                                  filter=f"subtype:{m[1].capitalize()}")),
+    (r"regenerate target ([A-Z][a-z]+)", lambda m: _regen_sub(m[1])),
     (rf"target creature you control gains ({_KW}) until end of turn",
      lambda m: _effect("grant", "creature_mine", data={"keyword": m[1].lower()})),
 ]
@@ -67,6 +70,14 @@ EFFECT_PATTERNS = [
 def _effect(kind, target, data=None, filter=""):
     from .cards import Effect
     return Effect(kind, target=target, data=data or {}, filter=filter)
+
+
+def _regen_sub(sub):
+    """"Regenerate target Elephant": one of your creatures of that type."""
+    from .cards import Effect, NO_MATCH
+    if sub.lower() in ("creature", "artifact", "permanent"):
+        return NO_MATCH
+    return Effect("regenerate", 1, target="creature_mine", filter=f"subtype:{sub.capitalize()}")
 
 
 def _distinct(eff):

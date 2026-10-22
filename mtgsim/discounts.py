@@ -27,6 +27,7 @@ _PER = [
     (r"creature that attacked this turn", "attacked"),
     (r"creature you control with power (\d+) or greater", lambda m: f"power>={m[1]}"),
     (r"color among permanents you control", "colors"),
+    (r"creature in your party", "party"),
 ]
 
 
@@ -86,4 +87,25 @@ def count(game, p, key: str) -> int:
         for x in p.battlefield:
             seen |= set(x.card.colors)
         return len(seen)
+    if key == "party":
+        return party_size(p)
     return 0
+
+
+def party_size(p) -> int:
+    """Up to one each of Cleric, Rogue, Warrior and Wizard among p's creatures (a changeling fills any one slot)."""
+    roles = ("Cleric", "Rogue", "Warrior", "Wizard")
+    fits = [set(roles) if c.card.changeling else {r for r in roles if r in c.card.subtypes} for c in p.creatures]
+    fits = [f for f in fits if f]
+
+    def best(i, used):
+        if i == len(roles):
+            return 0
+        out = best(i + 1, used)
+        for j, f in enumerate(fits):
+            if roles[i] in f and j not in used:
+                out = max(out, 1 + best(i + 1, used | {j}))
+                if out == len(roles) - i:
+                    break
+        return out
+    return best(0, frozenset())

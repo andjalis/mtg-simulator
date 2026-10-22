@@ -29,6 +29,10 @@ def _face_special_lines(st, line):
     level_marks = st.level_marks
     triggers = st.triggers
     unsupported = st.unsupported
+    m = re.fullmatch(r"You may exert ~ as it attacks\. When you do, (.+)", line)
+    if m:                                   # exert: an attack trigger that also keeps it tapped through the next untap
+        approximations.append("exert: always exerted when it attacks")
+        line = f"Whenever ~ attacks, exert ~. {m[1][0].upper()}{m[1][1:]}"
     try:
         if gate is not None:
             _apply_speed_gate(gate, triggers, activated)
@@ -295,6 +299,10 @@ def _face_land_and_mana_lines(st, line):
         if re.fullmatch(r"~ can't block\.", line):
             extra["cant_block"] = True
             return None
+        m = re.fullmatch(r"~ can't block creatures with power (\d+) or greater\.", line)
+        if m:
+            extra["block_max_power"] = int(m[1])
+            return None
         if line == "~ can block only creatures with flying.":
             extra["block_only_flying"] = True
             return None
@@ -321,6 +329,13 @@ def _face_land_and_mana_lines(st, line):
                 extra.update(equip_bonus=(int(m[1] or 0), int(m[2] or 0)), equip_keywords=frozenset(kws),
                              equip_ward=ward)
                 return None
+        m = re.fullmatch(r"Equipped creature gets ([+-]\d+)/([+-]\d+) for each ([\w -]+?) (?:you control|in your party|counter on ~)"
+                         r"(?: and has ([a-z ]+))?\.", line)
+        if m and (not m[4] or m[4] in KEYWORDS):        # "Equipped creature gets +1/+1 for each artifact you control."
+            from ..counting import _singular
+            what = "party creature" if "party" in line else f"counter:{m[3]}" if "counter on" in line else _singular(m[3])
+            extra.update(aura_per=(what, int(m[1]), int(m[2])), equip_keywords=frozenset({m[4]} if m[4] else ()))
+            return None
         m = re.fullmatch(r"Equip (\{[^ .]+\})(\. This ability costs [^.]+ less to activate[^.]*\.)?", line)
         if m:
             extra["equip_cost"] = parse_mana_cost(m[1])
@@ -809,6 +824,18 @@ def _face_cost_and_static_lines(st, line):
             extra["needs_land"] = {"lands": "Land", "Plains": "Plains"}.get(m[1], m[1][:-1])
             return None
         line = re.sub(r"^Raid — (?=~ enters with)", "", line)
+        line = re.sub(r"^Undergrowth — (?=~ enters with)", "", line)
+        m = re.fullmatch(r"~ enters with (a|two) \+1/\+1 counters? on it for each ([\w -]+?) cards? in your graveyard\.", line)
+        if m and " with " not in m[2]:
+            from ..counting import _singular
+            extra["etb_counters_if"] = (f"gyper:{_singular(m[2])}", _num(m[1]))
+            return None
+        m = re.fullmatch(r"~ enters with (a|two) \+1/\+1 counters? on it for each (other )?([\w -]+?) (?:you control|in your party)\.", line)
+        if m and "with" not in m[3] and "that" not in m[3]:
+            from ..counting import _singular
+            what = "party creature" if "party" in line else (m[2] or "") + _singular(m[3])
+            extra["etb_counters_if"] = (f"per:{what}", _num(m[1]))
+            return None
         m = re.fullmatch(r"~ enters with a \+1/\+1 counter on it if (an opponent lost life|a creature died|you attacked) "
                          r"this turn\.", line)
         if m:

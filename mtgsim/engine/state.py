@@ -219,6 +219,11 @@ class Permanent:
         for equipment in self.equipment:
             bp += equipment.card.equip_bonus[0] + equipment.counters.get("hone", 0)
             bt += equipment.card.equip_bonus[1]
+            if equipment.card.aura_per:              # "Equipped creature gets +1/+1 for each artifact you control."
+                each, ap, at = equipment.card.aura_per
+                n = counting.count(None, equipment.controller, {"what": each, "zone": "battlefield"}, equipment)
+                bp += n * ap
+                bt += n * at
         for cond, pp, tt in self.card.pt_if:
             if not cond.startswith(("gy", "lands", "speed")):
                 if self.condition(cond):              # metalcraft, "as long as it's your turn / attacking"
@@ -594,6 +599,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
            for keyword, subtype in (("swampwalk", "Swamp"), ("forestwalk", "Forest"),
                                     ("mountainwalk", "Mountain"), ("islandwalk", "Island"),
                                     ("plainswalk", "Plains"))):
+        return False
+    if blocker.card.block_max_power and attacker.power >= blocker.card.block_max_power:
         return False
     if blocker.card.block_only_flying and not attacker.has("flying"):
         return False

@@ -32,7 +32,7 @@ class ResolveMixin:
         if eff.data.get("per"):    # "for each X you control"
             src = item.source if item is not None else None
             n = counting.count(self, p, eff.data["per"], src)
-            eff = dataclasses.replace(eff, amount=eff.amount * n, amount2=eff.amount2 * n if k == "pump" else eff.amount2)
+            eff = dataclasses.replace(eff, amount=eff.amount * n, amount2=eff.amount2 * n if k in ("pump", "debuff_one") else eff.amount2)
         if eff.data.get("xq"):     # ", where X is the number of ..."
             n = self.x_quantity(p, eff.data["xq"], item, prev)
             if eff.data.get("xq_size"):

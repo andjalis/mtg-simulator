@@ -10,7 +10,7 @@ def damage(game, p, eff, target, item, opp, cause, **_):
     src = (item.source if item.source is not None else item.card) if item is not None else None
     if eff.target == "each_creature":
         for perm in p.creatures + opp.creatures:
-            if eff.filter == "nonflying" and perm.has("flying"):
+            if eff.filter == "nonflying" and perm.has("flying") or eff.filter == "other" and src is perm:
                 continue
             if eff.data.get("no_regen") and eff.amount > 0:
                 perm.regeneration_blocked = True

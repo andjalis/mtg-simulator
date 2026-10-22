@@ -68,6 +68,7 @@ def _tapped(eff):
 _SRC = r"(?:~|it|he|she)"
 _EFFECT_PATTERNS = [
     (r"learn", lambda m: Effect("learn")),
+    (r"exert ~", lambda m: Effect("skip_untap", target="self")),
     (r"regenerate (~|it|target creature(?: you control)?|target artifact)",
      lambda m: Effect("regenerate", 1, target={"~": "self", "it": "prev", "target creature": "creature",
                      "target creature you control": "creature_mine", "target artifact": "artifact"}[m[1].lower()])),
@@ -421,6 +422,14 @@ _EFFECT_PATTERNS = [
     (r"(?:then )?draw a card for each opponent who lost life this turn",
      lambda m: Effect("draw", 1, cond="opp_lost_life")),
     (r"target player discards a card", lambda m: Effect("discard", 1, target="player")),
+    (r"(?:target player|target opponent|defending player|that player|each opponent) discards (a|two) cards? at random",
+     lambda m: Effect("discard", _num(m[1]), target="player", data={"random": True})),
+    (r"defending player discards (a card|two cards)", lambda m: Effect("discard", _num(m[1].split()[0]), target="player")),
+    (r"target player loses (\d+) life", lambda m: Effect("drain", int(m[1]), target="each_opponent")),  # aimed at a foe
+    (r"(?:~|it) deals (\d+) damage to each other creature", lambda m: Effect("damage", int(m[1]), target="each_creature",
+                                                                           filter="other")),
+    (r"(?:you may )?tap or untap target (?:permanent|creature|artifact, creature, or land)",
+     lambda m: Effect("tap", 1, target="nonland_perm", filter="opp")),          # played as tapping a foe's
     (r"each opponent discards a card", lambda m: Effect("discard", 1, target="player")),
     (r"if (?:that|the) (?:creature|permanent|creature or planeswalker) would die this turn, exile it instead",
      lambda m: Effect("exile_instead", target="prev")),
@@ -497,7 +506,7 @@ _EFFECT_PATTERNS = [
     (r"prevent all combat damage that would be dealt this turn", lambda m: Effect("fog")),
     (r"prevent all combat damage that would be dealt this turn by creatures your opponents control",
      lambda m: Effect("fog", data={"theirs": True})),
-    (r"return an? (land|creature) you control to its owner's hand", lambda m: Effect("return_own", data={"kind": m[1].lower()})),
+    (r"return an? (land|creature|permanent) you control to its owner's hand", lambda m: Effect("return_own", data={"kind": m[1].lower()})),
     (r"return an? ((?:white|blue|black|red|green|artifact|[A-Z][a-z]+)(?: or (?:white|blue|black|red|green))? creature) you "
      r"control to its owner's hand", lambda m: Effect("return_own", data={"kind": "creature", "desc": m[1]})),
     (r"(?:another )?target creature you control gains your choice of ([a-z ]+?), ([a-z ]+?),? or ([a-z ]+?) until end of "

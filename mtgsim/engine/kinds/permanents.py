@@ -116,11 +116,12 @@ def bounce(game, p, target, **_):
 
 @kind("return_own")
 def return_own(game, p, eff, item, **_):
-    """Bounce lands, Storm Sculptor: return a land / creature you control. Tapped lands go first (a basic
+    """Bounce lands, Storm Sculptor, Kor Skyfisher: return a land / creature / permanent you control. Tapped lands go first (a basic
     before a nonbasic), then the cheapest creature; the source itself only when nothing else is left."""
     src = item.source if item is not None else None
-    land = eff.data["kind"] == "land"
-    pool = [x for x in p.battlefield if (x.card.is_land if land else x.is_creature)
+    kind = eff.data["kind"]
+    land = kind == "land"
+    pool = [x for x in p.battlefield if (x.card.is_land if land else x.is_creature or kind == "permanent")
             and (not eff.data.get("desc") or statics.desc_matches(x, eff.data["desc"]))]
     if not pool:
         return

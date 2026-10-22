@@ -14,6 +14,7 @@ from .patterns import _EFFECT_PATTERNS
 
 
 # "You may <effect>" is always taken, so only for effects that cost the player nothing.
+_MAY_AIMED = {"damage", "destroy", "exile", "bounce"}     # optional, so taken only with an opponent's target
 _MAY_DECLINED = {"sacrifice", "sacrifice_self", "discard", "discard_choice", "lose_life", "mill", "pay_gate",
                  "damage", "drain", "destroy", "exile", "wrath", "bounce"}
 
@@ -100,11 +101,16 @@ def _parse_effects(text: str, opts: bool = False):
             gated = True
             continue
         mm = re.fullmatch(r"you may (.+)", s, re.I)
+        if mm and re.match(r"have (?:~|it) deal ", mm[1], re.I):          # "you may have ~ deal 1 damage to ..."
+            mm = re.fullmatch(r"you may (.+)", "you may " + re.sub(r"^have (~|it) deal ", r"\1 deals ", mm[1], flags=re.I), re.I)
         if mm:
             new, bad = _parse_effects(mm[1][0].upper() + mm[1][1:] + ".")
             if bad or not new:
                 new, bad = _parse_effects("You " + mm[1] + ".")              # "you may gain 2 life"
-            if new and not bad and not any(e.kind in _MAY_DECLINED for e in new):
+            if new and not bad and len(new) == 1 and new[0].kind in _MAY_AIMED and new[0].filter in ("", "opp") and \
+                    new[0].target not in ("none", "self", "prev", "host", "my_creatures", "creature_mine"):
+                new = [dataclasses.replace(new[0], filter="opp")]     # "you may destroy target ...": only at a foe's
+            if new and not bad and not any(e.kind in _MAY_DECLINED for e in new if e.filter != "opp"):
                 effects += [Effect("pay_gate", data={"gate": ("may", "")})] + new   # always taken
                 gated = True
                 continue

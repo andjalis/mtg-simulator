@@ -38,6 +38,7 @@ def parse_line(line: str, extra: dict) -> bool:
 SUBS = [
     (re.compile(r"discard (up to )?(\w+) cards?, then draw that many cards?\.", re.I),
      lambda m: f"RUMMAGE {_n(m[2])}."),
+    (re.compile(r"for each creature in your party", re.I), lambda m: "for each party creature you control"),
 ]
 
 
@@ -70,6 +71,17 @@ EFFECT_PATTERNS = [
      lambda m: _scaled(_per("lose_life")(m), int(m[1]))),
     (r"(?:it|~) gets \+(\d+)/\+(\d+) until end of turn for each other attacking (?P<what>[\w -]+?)",
      lambda m: _pump_per(m, "attacking")),
+    (r"(?P<who>it|~|target creature(?: you control)?) gets (?P<p>[+-]\d+)/(?P<t>[+-]\d+) until end of turn for each "
+     r"(?P<what>[\w -]+?) you control", lambda m: _pump_each(m)),
+    (r"until end of turn, (?P<who>target creature(?: you control)?) gets (?P<p>[+-]\d+)/(?P<t>[+-]\d+) for each "
+     r"(?P<what>[\w -]+?) you control(?: and gains (?P<kw>trample|flying|haste|first strike|vigilance|menace))?",
+     lambda m: _pump_each(m) if not m["kw"] else [_pump_each(m), _grant_prev(m["kw"])]),
+    (r"~ deals damage to (?P<who>target creature|any target|target creature or planeswalker) equal to the number of "
+     r"(?P<what>[\w -]+?) you control", lambda m: _damage_each(m)),
+    (r"(?:it|~) gets \+(\d+)/\+(\d+) until end of turn for each creature blocking it",
+     lambda m: _pump_blockers(m)),
+    (r"put a \+1/\+1 counter on (?:it|that creature) for each (?P<what>[\w -]+?) you control",
+     lambda m: _scaled(_per("p1_counters", target="prev")(m), 1)),
     (r"put a \+1/\+1 counter on ~ for each (?P<what>[\w -]+?) you control",
      lambda m: _scaled(_per("p1_counters", target="self")(m), 1)),
 ]
@@ -79,6 +91,32 @@ def _pump_per(m, zone):
     from .cards import Effect
     return Effect("pump", int(m[1]), int(m[2]), target="self",
                   data={"per": {"what": "other " + _singular(m["what"]), "zone": zone}})
+
+
+def _pump_each(m):
+    from .cards import Effect
+    who = m["who"].lower()
+    target = "self" if who in ("it", "~") else "creature_mine" if "you control" in who else "creature"
+    per = {"per": {"what": _singular(m["what"]), "zone": "battlefield"}}
+    if int(m["p"]) <= 0 and int(m["t"]) < 0 and target == "creature":      # "gets -1/-1 ... for each Swamp you control"
+        return Effect("debuff_one", -int(m["p"]), -int(m["t"]), target="creature", data=per)
+    return Effect("pump", int(m["p"]), int(m["t"]), target=target, data=per)
+
+
+def _damage_each(m):
+    from .cards import Effect
+    target = {"target creature": "creature", "any target": "any", "target creature or planeswalker": "creature"}[m["who"].lower()]
+    return Effect("damage", 1, target=target, data={"per": {"what": _singular(m["what"]), "zone": "battlefield"}})
+
+
+def _pump_blockers(m):
+    from .cards import Effect
+    return Effect("pump", int(m[1]), int(m[2]), target="self", data={"per": {"what": "creature", "zone": "blocking"}})
+
+
+def _grant_prev(kw):
+    from .cards import Effect
+    return Effect("grant", target="prev", data={"keyword": kw})
 
 
 def _scaled(eff, n):
@@ -93,10 +131,17 @@ def count(game, p, per: dict, source=None) -> int:
         kinds = what[9:].split("|")
         return sum(1 for x in (source.auras + source.equipment if source is not None else [])
                    if any(k in x.card.subtypes for k in kinds))
+    if what.startswith("counter:"):         # "for each charge counter on ~"
+        return source.counters.get(what[8:], 0) if source is not None else 0
+    if what == "party creature":            # up to one each of Cleric, Rogue, Warrior and Wizard
+        from .discounts import party_size
+        return party_size(p)
     other = what.startswith("other ")
     what = what[6:] if other else what
     if per["zone"] == "graveyard":
         return sum(fits(c, what) for c in p.graveyard)
+    if per["zone"] == "blocking":           # "for each creature blocking it"
+        return len(game.blocks.get(source, ())) if game is not None and source is not None else 0
     if per["zone"] == "attacking":          # "for each other attacking Aurochs"
         return sum(1 for x in game.attackers if x.controller is p and not (other and x is source)
                    and (what == "creature" or fits(x.card, what, x)))

@@ -11,7 +11,12 @@ _KINDS = "artifact|creature|enchantment|token|land"
 
 
 def parse(phrase: str) -> str:
+    m = re.fullmatch(r"you control an? ([A-Z][a-z]+)", phrase.strip())
+    if m and m[1].lower() not in _KINDS.split("|") and m[1] not in ("Legendary", "Snow", "Basic"):
+        return f"ctl_sub:{m[1]}"                    # "If you control a Wizard, draw a card."
     phrase = phrase.strip().lower()
+    if phrase == "you have a full party":
+        return "full_party"
     m = re.fullmatch(rf"you control (a|an|two|three|four|five)(?: or more)? ({_KINDS})s?", phrase)
     if m:
         return f"ctl:{m[2]}>={_N[m[1]]}"
@@ -50,6 +55,11 @@ def check(game, p, cond: str, item):
         return not any(getattr(game, "last_turn_spells", {}).values())
     if cond == "player_spells_last_turn>=2":
         return max(getattr(game, "last_turn_spells", {}).values(), default=0) >= 2
+    if cond.startswith("ctl_sub:"):
+        return any(cond[8:] in x.card.subtypes or x.card.changeling and x.is_creature for x in p.battlefield)
+    if cond == "full_party":
+        from .discounts import party_size
+        return party_size(p) >= 4
     m = re.fullmatch(r"entered_nonland>=(\d+)", cond)
     if m:
         return p.entered_nonland_turn >= int(m[1])

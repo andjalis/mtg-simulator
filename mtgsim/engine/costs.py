@@ -144,6 +144,9 @@ class CostsMixin:
             return getattr(item, "colors_spent", 0) if item is not None else 0
         if kind == "speed":
             return p.speed
+        if kind == "party":
+            from ..discounts import party_size
+            return party_size(p)
         if kind == "gained":
             return p.life_gained_turn
         if kind == "hand":

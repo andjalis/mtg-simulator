@@ -325,6 +325,8 @@ def _xq(text: str):
         return ("gy", _singular(m[1]))
     if tl == "the number of cards in your graveyard":
         return ("gy", "")
+    if tl == "the number of creatures in your party":
+        return ("party",)
     if tl in ("the number of colors of mana spent to cast this spell", "the number of colors of mana spent to cast ~"):
         return ("colors_spent",)                   # converge
     m = re.fullmatch(r"the number of ([\w -]+?) you control", t, re.I)

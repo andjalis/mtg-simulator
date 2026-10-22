@@ -303,8 +303,10 @@ def untap_other(game, p, item, **_):
 
 @kind("tap")
 def tap(game, p, eff, target, item=None, **_):
+    game.tapped_now = []                  # for "Those creatures don't untap during ..."
     if isinstance(target, Permanent):
         target.tapped = True
+        game.tapped_now.append(target)
         src = item.source if item is not None else None
         if eff.data.get("silence") and isinstance(src, Permanent):
             target.silenced_by = src      # loses all abilities while the source stays out
@@ -314,6 +316,7 @@ def tap(game, p, eff, target, item=None, **_):
         extra = default_choose_target(game, p, eff)
         if extra is not None:
             extra.tapped = True
+            game.tapped_now.append(extra)
 
 
 @kind("unblockable")

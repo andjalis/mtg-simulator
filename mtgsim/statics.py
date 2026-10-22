@@ -31,13 +31,25 @@ _LINE = re.compile(
 
 
 KINDS = {"pump_matching"}
-_SPELL = rf"(All |Other )?((?:[\w-]+ )*?)[Cc]reatures( you control| your opponents control)? get ([+-]\d+)/([+-]\d+)" \
-         rf"(?: and gain ((?:{_KW})(?:(?:, |,? and )(?:{_KW}))*))? until end of turn"
+_SPELL = rf"(All |Other )?((?:[\w-]+ )*?)(?:[Cc]reatures|(?P<sub>[A-Z][a-z]+(?:s|ves)))( you control| your opponents control)?" \
+         rf"(?: get ([+-]\d+)/([+-]\d+))?(?:,? and)?(?: gain ((?:{_KW})(?:(?:, |,? and )(?:{_KW}))*))? until end of turn"
+
+
+_NOT_SUBTYPES = {"Its", "Tokens", "Permanents", "Lands", "Artifacts", "Enchantments", "Planeswalkers", "Players", "Opponents"}
+
+
+def _singular_sub(word: str) -> str:
+    """"Elves" -> "Elf", "Zombies" -> "Zombie", "Allies" -> "Ally"."""
+    return "Ally" if word == "Allies" else word[:-3] + "f" if word.endswith("ves") else word[:-1]
 
 
 def _spell(m):
     from .cards import Effect, NO_MATCH
-    entry = _parse(f"{m[1] or ''}{m[2]}creatures{m[3] or ''} get {m[4]}/{m[5]}" + (f" and have {m[6]}." if m[6] else "."))
+    if not (m[5] or m[7]) or m["sub"] and (m[2] or not m["sub"][0].isupper() or m["sub"] in _NOT_SUBTYPES):
+        return NO_MATCH
+    noun = f"{_singular_sub(m['sub'])} creatures" if m["sub"] else "creatures"
+    pt = f" get {m[5]}/{m[6]}" if m[5] else ""
+    entry = _parse(f"{m[1] or ''}{m[2]}{noun}{m[4] or ''}{pt}" + (f" and have {m[7]}." if m[7] else "."))
     return NO_MATCH if entry is None else Effect("pump_matching", data={"static": entry})
 
 
