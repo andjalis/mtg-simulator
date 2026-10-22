@@ -86,6 +86,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return next((i for i in reversed(game.stack) if i in legal), None)
     if k in ("discard", "discard_choice", "hand_exile"):
         return opp if opp.hand else None
+    if k in ("connive", "attach_new_equipment"):    # the best creature of ours that can be chosen
+        return max((x for x in mine if x.is_creature), key=perm_value, default=None)
     return None
 
 

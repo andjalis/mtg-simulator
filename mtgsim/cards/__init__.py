@@ -31,7 +31,7 @@ from .parse import (
 from .tokens import TOKEN_ABILITIES, make_token, _JACE, jace_token, _ROLES, role_token
 
 # Copy effects live in their own module; its templates join the ones above.
-from .. import auras as _auras, copies as _copies, removal as _removal, search as _search, xspells as _xspells, counting as _counting, milling as _milling, protection as _protection, combat_triggers as _combat_triggers  # noqa: E402
+from .. import auras as _auras, copies as _copies, removal as _removal, search as _search, xspells as _xspells, counting as _counting, milling as _milling, protection as _protection, combat_triggers as _combat_triggers, ring as _ring  # noqa: E402
 _EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS
-_EFFECT_PATTERNS += _milling.EFFECT_PATTERNS + _protection.EFFECT_PATTERNS + _combat_triggers.EFFECT_PATTERNS
+_EFFECT_PATTERNS += _milling.EFFECT_PATTERNS + _protection.EFFECT_PATTERNS + _combat_triggers.EFFECT_PATTERNS + _ring.EFFECT_PATTERNS
 _SUBS += _copies.SUBS + _counting.SUBS

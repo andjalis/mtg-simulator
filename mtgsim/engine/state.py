@@ -138,6 +138,7 @@ class Permanent:
         self.net_locked = False            # Braided Net: no activated abilities while it stays tapped
         self.bargained = self.gifted = False   # cast with Bargain / the gift promised
         self.produces_now = None           # set by Game.mana_sources: the colours usable right now
+        self.amount_now = None             # and how much mana it makes, when that differs from its card's
         self.regeneration_shields = 0
         self.regeneration_blocked = False
         self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
@@ -216,7 +217,7 @@ class Permanent:
                         bp += a[1]
                         bt += a[2]
         for equipment in self.equipment:
-            bp += equipment.card.equip_bonus[0]
+            bp += equipment.card.equip_bonus[0] + equipment.counters.get("hone", 0)
             bt += equipment.card.equip_bonus[1]
         for cond, pp, tt in self.card.pt_if:
             if not cond.startswith(("gy", "lands", "speed")):

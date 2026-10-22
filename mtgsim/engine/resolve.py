@@ -22,7 +22,7 @@ class ResolveMixin:
         if eff.target == "host" and item is not None and isinstance(item.source, Permanent):
             target = item.source.aura_host or item.source.attached_to     # "enchanted creature" / "equipped creature"
         if eff.target == "that_controller":
-            target = prev.controller if isinstance(prev, Permanent) else prev
+            target = prev.controller if isinstance(prev, (Permanent, StackItem)) else prev
         k = eff.kind
         source = (item.card.name if item and item.card else
                   item.source.card.name if item and isinstance(item.source, Permanent) else "effect")

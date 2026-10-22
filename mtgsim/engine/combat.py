@@ -1,6 +1,7 @@
 """Game methods for combat: attacks, blocks and combat damage."""
 from __future__ import annotations
 
+from .. import ring
 from ..cards import Effect
 from .state import Permanent, Player, can_block
 
@@ -77,6 +78,7 @@ class CombatMixin:
         for a in attackers:
             self.fire(p, "attacks", a)
             self.fire(p, "creature_attacks", context=a)
+            ring.attacks(self, p, a)
         if len(attackers) == 1:
             self.fire(p, "attacks_alone", context=attackers[0])
         self.fire(p, "you_attack")
@@ -112,6 +114,7 @@ class CombatMixin:
             for b in bl:
                 self.fire(opp, "blocks", b, context=a)
             self.fire(p, "becomes_blocked", a, context=bl[0])
+            ring.blocked(self, p, a, bl)
         for a in attackers:
             if a not in blocks:
                 self.fire(p, "unblocked", a)
@@ -181,6 +184,7 @@ class CombatMixin:
             self.deal_damage(tgt, amt, by=src.controller, cause=f"{src.card.name}: combat damage", source=src, combat=True)
             if isinstance(tgt, Player):
                 self.fire(src.controller, "combat_damage_player", src, context=tgt)
+                ring.combat_damage(self, src.controller, src, tgt)
                 self.fire(src.controller, "ally_combat_damage")
         self.state_based_actions()
         self.settle()

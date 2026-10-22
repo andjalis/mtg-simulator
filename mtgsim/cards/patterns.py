@@ -18,6 +18,15 @@ def _parse_mana_ability(rest: str) -> tuple[set, int]:
     return set(syms), amount
 
 
+def _equipment_token(m):
+    from .tokens import equipment_token
+    kws = {k.strip() for k in re.split(r", and |, | and ", m[6])} if m[6] else set()
+    if not kws <= KEYWORDS:
+        return NO_MATCH
+    return Effect("token_copy", data={"card": equipment_token(m[1] or m[2], (int(m[4]), int(m[5])), kws, int(m[7]),
+                                                              legendary=bool(m[3]))})
+
+
 def _token(m_count, power, toughness, desc, with_kw="", attacking=False, ability=""):
     from .parse import _parse_trigger  # deferred: parse imports this module
     words = desc.split()
@@ -262,6 +271,13 @@ _EFFECT_PATTERNS = [
                       .replace("artifact or creature", "artifact_creature"))),
     (r"return target spell you don't control to its owner's hand", lambda m: Effect("bounce_spell", target="spell")),
     (r"you lose (\d+) life", lambda m: Effect("lose_life", int(m[1]))),
+    (r'create (?:a colorless Equipment artifact token named ([A-Z][\w\' ]+)|([A-Z][\w\' ]+), a (legendary )?colorless '
+     r'Equipment artifact token) with "Equipped creature gets \+(\d+)/\+(\d+)(?: and has ([a-z, ]+))?" and equip \{(\d+)\}',
+     lambda m: _equipment_token(m)),
+    (r"(?:you may )?attach (?:~|this Equipment) to (?:it|that creature)", lambda m: Effect("attach_self", target="prev")),
+    (r"when you do, attach it to target creature you control", lambda m: Effect("attach_new_equipment", target="creature_mine")),
+    (r"put a hone counter on each Equipment you control", lambda m: Effect("hone")),
+    (r"its controller draws a card", lambda m: Effect("draw", 1, target="that_controller")),
     (r"(?:that player|they) loses? (\d+) life", lambda m: Effect("lose_life", int(m[1]), target="that_player")),
     (r"creatures your opponents control get -(\d+)/-(\d+) until end of turn",
      lambda m: Effect("debuff", int(m[1]), int(m[2]), target="opp_creatures")),
@@ -378,6 +394,8 @@ _EFFECT_PATTERNS = [
     (r"discover (\d+)", lambda m: Effect("discover", int(m[1]))),
     (r"(?:~|it|he|she) connives", lambda m: Effect("connive", target="prev")),
     (r"(?:up to one )?target creature you control connives", lambda m: Effect("connive", target="creature_mine")),
+    (r"target attacking creature connives x, where x is the number of attacking creatures",
+     lambda m: Effect("connive", target="creature_mine", filter="attacking", data={"per_attacker": True})),
     (r"create an? (royal|monster|wicked|cursed|sorcerer|young hero|virtuous) role token attached to "
      r"(it|that creature|(?:up to one )?(?:another |other )?target creature you control|target creature an opponent controls)",
      lambda m: Effect("role", target="prev" if m[2] in ("it", "that creature") else
@@ -574,6 +592,9 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("pump_all", int(m[3]), int(m[4]), data={"other": bool(m[1]), "keyword": m[2].lower()})),
     (r"(other )?creatures you control gain ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) until end of turn",
      lambda m: Effect("pump_all", 0, 0, data={"other": bool(m[1]), "keyword": m[2].lower()})),
+    (r"each equipped attacking creature gains ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|"
+     r"haste|indestructible|menace)) until end of turn",
+     lambda m: Effect("pump_all", 0, 0, data={"keyword": m[1].lower(), "only": "equipped_attacking"})),
     (r"double the number of \+1/\+1 counters on each creature you control",
      lambda m: Effect("double_counters", target="my_creatures")),
     (r"search your library for (an? .+?), reveal it, put it into your hand, then shuffle",

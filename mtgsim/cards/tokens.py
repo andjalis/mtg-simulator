@@ -32,6 +32,12 @@ def make_token(name: str, power: int, toughness: int, keywords=frozenset(), trig
                    keywords=frozenset(keywords), triggers=list(triggers or []), is_token=True, pt_per=pt_per, color_override=frozenset(colors))
 
 
+def equipment_token(name: str, bonus: tuple, keywords=frozenset(), equip: int = 0, legendary: bool = False) -> CardDef:
+    """A colorless Equipment artifact token: Dáin's Axe, Mabel's Cragflame."""
+    return CardDef(name=f"{name} token", mana_cost={"generic": 0}, cmc=0, types=frozenset({"Artifact"}),
+                   subtypes=frozenset({"Equipment"}), is_token=True, equip_bonus=bonus, equip_keywords=frozenset(keywords),
+                   equip_cost={"generic": equip}, legendary=legendary)
+
 
 _JACE = None
 

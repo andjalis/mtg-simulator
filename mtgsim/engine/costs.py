@@ -39,8 +39,12 @@ class CostsMixin:
             if c.mana_tap_other and not any(x is not perm and not x.tapped and (x.is_creature or c.mana_tap_other == "permanent")
                                             for x in p.battlefield):
                 continue
+            perm.amount_now = None
             if perm.card.restricted_produces and self.mana_allowed(perm, spell):
-                produces = produces | perm.card.restricted_produces
+                if perm.card.restricted_amount > max(1, perm.card.mana_amount):
+                    produces, perm.amount_now = perm.card.restricted_produces, perm.card.restricted_amount
+                else:
+                    produces = produces | perm.card.restricted_produces
             if not produces:
                 continue
             perm.produces_now = produces
@@ -49,19 +53,19 @@ class CostsMixin:
             if not mana.tapped and mana is not exclude:
                 mana.produces_now = mana.card.produces
                 out.append(mana)
-        stored = storage.stored_sources(p, exclude)
+        stored = storage.stored_sources(p, exclude, lambda r: self.mana_allowed(None, spell, r))
         if stored:                                  # a storage land spends its counters instead of its own mana
             lands = {id(m.stored_in) for m in stored}
             out = [s for s in out if id(s) not in lands] + stored
         return out
 
-    def mana_allowed(self, perm: Permanent, spell) -> bool:
-        """Whether perm's restricted mana may pay for spell (see mana_sources)."""
+    def mana_allowed(self, perm: Permanent, spell, restriction: str = "") -> bool:
+        """Whether perm's restricted mana (or this restriction) may pay for spell (see mana_sources)."""
         if spell is None:
             return True
         if not isinstance(spell, CardDef):
             return False
-        r = perm.card.mana_restriction
+        r = restriction or perm.card.mana_restriction
         if r == "creature":
             return spell.is_creature
         if r == "artifact":
@@ -388,7 +392,7 @@ class CostsMixin:
                     reserved.append(min(helpers, key=perm_value))
         artifacts = sorted((x for x in p.battlefield if card.improvise and x.card.is_artifact
                             and not x.tapped and x not in colored and x not in reserved
-                            and not (x in sources and x.card.mana_amount > 1)),
+                            and not (x in sources and (x.amount_now or x.card.mana_amount) > 1)),
                            key=lambda x: (x in sources, x.is_creature, x.card.cmc))
         improvised = artifacts[:cost.get("generic", 0)]
         cost["generic"] = cost.get("generic", 0) - len(improvised)
@@ -408,6 +412,8 @@ class CostsMixin:
                 v = dataclasses.replace(card.adventure)
             elif kind == "prepared":
                 v = dataclasses.replace(card.back, name=f"{card.name} (prepared)")
+            elif kind == "split":
+                v = dataclasses.replace(card.split_right, name=f"{card.name} ({card.split_right.name})")
             elif kind == "disturb":
                 v = dataclasses.replace(card.back, name=f"{card.back.name} (disturb)", mana_cost=alt.cost)
             elif kind in ("channel", "gy_ability"):
@@ -449,6 +455,8 @@ class CostsMixin:
         for a in c.alt_costs:
             if a.kind == "offspring":
                 out.append(self._variant(c, "offspring", AltCost("offspring", add_mana(c.mana_cost, a.cost))))
+            elif a.kind in ("split", "fuse"):
+                out.append(self._variant(c, a.kind, a))
             elif a.kind in FACE_DOWN and not full:
                 out.append(self._variant(c, a.kind, AltCost(a.kind, {"generic": 3})))
             elif a.kind == "impending" and not full:
@@ -528,6 +536,7 @@ class CostsMixin:
         return {"from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile, "airbent": p.airbent,
                 "mayhem": p.graveyard, "unearth": p.graveyard, "disturb": p.graveyard, "jump_start": p.graveyard,
+                "retrace": p.graveyard,
                 "escape": p.graveyard, "impulse": p.exile, "suspended": p.exile, "rebound": p.exile,
                 "cascade": p.exile, "cascade_adventure": p.exile,
                 "rebound_adventure": p.exile, "discover": p.exile}.get(kind, p.hand)

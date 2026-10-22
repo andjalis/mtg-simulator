@@ -186,7 +186,7 @@ def _face_mode_and_ward_lines(st, line):
         if m:
             extra.update(ward=int(m[1]), ward_untapped_only=True)
             return None
-        m = re.fullmatch(r"\{T\}(, Pay 1 life)?: Add (one mana of any color|\{[WUBRGC]\}+)\. Spend this mana only "
+        m = re.fullmatch(r"\{T\}(, Pay 1 life)?: Add (one mana of any color|(?:\{[WUBRGC]\})+)\. Spend this mana only "
                          r"(.+)\.", line)
         if m:
             restriction = _mana_restriction(m[3])
@@ -198,7 +198,7 @@ def _face_mode_and_ward_lines(st, line):
             extra["mana_restriction"] = restriction
             extra["restricted_produces"] = frozenset(cols)
             if amount > 1:
-                extra["mana_amount"] = amount
+                extra["restricted_amount"] = amount
             if m[1]:
                 approximations.append("the 1 life for restricted mana isn't paid")
             return None
@@ -736,6 +736,10 @@ def _face_cost_and_static_lines(st, line):
                          r"number of creatures\.", line)
         if m:
             extra["extra_blocks"] = 1 if m[1] == "an additional creature" else 99
+            return None
+        if line == "If ~ would be put into a graveyard from anywhere, exile it instead.":
+            extra["gy_to_exile"] = True
+            approximations.append("exiled instead of going to a graveyard from the battlefield only")
             return None
         if line == "All creatures able to block ~ do so.":
             extra["lure"] = True

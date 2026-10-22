@@ -108,6 +108,7 @@ class StackMixin:
                         continue
                     elif not card_matches(subject.card, "a " + re.sub(r",? or (?!greater)|, ", " or a ", desc)):
                         continue
+                    context = subject if context is None else context    # "attach ~ to it": the one that entered
                 if event == "class_level" and trig.filter != str(subject):
                     continue
                 if event == "expend" and trig.filter != str(subject):
@@ -127,6 +128,8 @@ class StackMixin:
                 if trig.filter == "blocks_flying" and not (isinstance(context, Permanent) and context.has("flying")):
                     continue
                 if event == "creature_dies" and trig.filter == "other" and subject is perm:
+                    continue
+                if trig.filter == "nontoken" and isinstance(subject, Permanent) and subject.card.is_token:
                     continue
                 if event in ("any_cast", "damages_player") and trig.filter == "opp" and context is perm.controller:
                     continue

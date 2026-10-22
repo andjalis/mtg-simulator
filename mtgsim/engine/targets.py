@@ -42,6 +42,8 @@ class TargetsMixin:
             return perm.card.cmc <= sum(1 for x in by.battlefield if x.card.name.endswith("Plains"))
         if f == "tapped":
             return perm.tapped
+        if f == "attacking":
+            return perm in self.attackers
         if f == "attacking_blocking":
             return perm in self.attackers or any(perm in bl for bl in self.blocks.values())
         if f == "nonartifact":

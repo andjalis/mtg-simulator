@@ -8,6 +8,7 @@
     Entwine {2}             (pay it on top of the mana cost to choose all the modes)
     Disturb {1}{W}          (cast it transformed from the graveyard; exiled if it would go to a graveyard)
     Jump-start              (cast it from the graveyard, discarding a card as well; then exile it)
+    Retrace                 (cast it from the graveyard, discarding a land card as well; it goes back there)
     Replicate {1}{R}        (pay it any number of times on top of the mana cost: a copy for each)
     Dredge 2                (instead of a draw, mill two cards and return this card from the graveyard to your hand)
     Escape—{R}{R}, Exile N other cards from your graveyard.     ~ escapes with a +1/+1 counter on it.
@@ -31,8 +32,8 @@ _N = {"a": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "s
 
 def parse_line(line: str, st) -> bool:
     from .cards.model import AltCost, parse_mana_cost
-    if line == "Jump-start":
-        st.alt_costs.append(AltCost("jump_start", {}, zone="graveyard"))
+    if line in ("Jump-start", "Retrace"):
+        st.alt_costs.append(AltCost(line.lower().replace("-", "_"), {}, zone="graveyard"))
         return True
     m = re.fullmatch(r"Escape—((?:\{[^}]+\})+), Exile (\w+) other cards from your graveyard\.", line)
     if m and m[2] in _N:
@@ -98,6 +99,12 @@ def graveyard_variants(game, p, card) -> list:
             v = game._variant(card, "jump_start", AltCost("jump_start", dict(card.mana_cost)))
             v.extra_discard = 1
             out.append(v)
+        elif a.kind == "retrace":
+            lands = sum(c.is_land for c in p.hand)        # keep a land for the turn's land drop
+            if lands >= (1 if p.land_played else 2):
+                v = game._variant(card, "retrace", AltCost("retrace", dict(card.mana_cost)))
+                v.extra_discard = 1
+                out.append(v)
         elif a.kind == "escape" and sum(c is not card for c in p.graveyard) >= a.counters:
             out.append(game._variant(card, "escape", a))
     return out

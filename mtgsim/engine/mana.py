@@ -15,6 +15,12 @@ def _mana_of(s) -> frozenset:
     return s.card.produces if now is None else now
 
 
+def _amount(s) -> int:
+    """How much mana s makes right now (Tablet of Discovery's restricted {R}{R} is 2, its {R} is 1)."""
+    now = getattr(s, "amount_now", None)
+    return getattr(s.card, "mana_amount", 1) if now is None else now
+
+
 def find_payment(sources: list[Permanent], cost: dict):
     """Pick which mana sources to tap for a cost, or None if it can't be paid. Filter lands ("{1}, {T}: Add one mana
     of any color") add no mana of their own: each one that is used recolours one other source's mana."""
@@ -25,7 +31,7 @@ def find_payment(sources: list[Permanent], cost: dict):
     got = _find_payment(base, cost)
     if got is not None:
         return got
-    cands = [s for s in base if getattr(s.card, "mana_amount", 1) == 1]
+    cands = [s for s in base if _amount(s) == 1]
     for u in range(1, min(len(filt), len(cands)) + 1):
         for combo in itertools.combinations(cands, u):
             saved = [getattr(s, "produces_now", None) for s in combo]
@@ -44,12 +50,12 @@ def _find_payment(sources: list[Permanent], cost: dict):
     pips = [c for c in COLORS + ("C",) for _ in range(cost.get(c, 0))]
     generic = cost.get("generic", 0)
     # A source that makes several mana (Sol Ring) fills several slots.
-    slots = [s for s in sources for _ in range(max(1, getattr(s.card, "mana_amount", 1)))]
+    slots = [s for s in sources for _ in range(max(1, _amount(s)))]
     if len(pips) + generic > len(slots):
         return None
     # Mana that can only be spent on some spells goes first when it is allowed at all.
     slots = sorted(slots, key=lambda s: (not s.card.mana_restriction, s.card.token_kind == "treasure" or s.card.mana_sac_only,
-                                         len(_mana_of(s)), s.is_creature, -getattr(s.card, "mana_amount", 1)))
+                                         len(_mana_of(s)), s.is_creature, -_amount(s)))
     pips.sort(key=lambda c: sum(c in _mana_of(s) for s in slots))
     used = [False] * len(slots)
 
@@ -70,7 +76,7 @@ def _find_payment(sources: list[Permanent], cost: dict):
     # Generic mana: first use leftover slots of sources already being tapped, then multi-mana ones.
     rest = [s for j, s in enumerate(slots) if not used[j]]
     rest.sort(key=lambda s: (s not in chosen, not s.card.mana_restriction, s.card.token_kind == "treasure" or s.card.mana_sac_only,
-                             -getattr(s.card, "mana_amount", 1), len(_mana_of(s)), s.is_creature))
+                             -_amount(s), len(_mana_of(s)), s.is_creature))
     if len(rest) < generic:
         return None
     out = []
@@ -87,7 +93,7 @@ def payable(sources: list[Permanent], cost: dict) -> bool:
         return find_payment(sources, cost) is not None
     pips = [c for c in COLORS + ("C",) for _ in range(cost.get(c, 0))]
     generic = cost.get("generic", 0)
-    slots = [_mana_of(s) for s in sources for _ in range(max(1, getattr(s.card, "mana_amount", 1)))]
+    slots = [_mana_of(s) for s in sources for _ in range(max(1, _amount(s)))]
     if len(pips) + generic > len(slots):
         return False
     if not pips:

@@ -207,10 +207,28 @@ def card_from_scryfall(data: dict) -> CardDef:
                 card.land_face = _parse_face(back)   # modal double-faced: may be played as this land
             elif re.search(r"Daybound|Nightbound", card.oracle):
                 pass  # day/night isn't tracked; the day side stays
+            elif data.get("layout") == "split" and _split_halves(card, _parse_face(back)):
+                pass
             else:
                 card.back = _parse_face(back)
         return card
     return _parse_face(data)
+
+
+def _split_halves(left: CardDef, right: CardDef) -> bool:
+    """A split instant or sorcery: the right half is another way to cast the card, and Fuse casts both halves
+    for both costs. Rooms and aftermath halves are left alone (False)."""
+    if not (left.is_instant or left.is_sorcery) or not (right.is_instant or right.is_sorcery) or \
+            "Aftermath" in right.oracle:
+        return False
+    left.split_right = right
+    left.alt_costs.append(AltCost("split", right.mana_cost))
+    left.unsupported += [f"{right.name}: {u}" for u in right.unsupported if u != "Fuse"]
+    if "Fuse" in left.unsupported:
+        left.unsupported.remove("Fuse")
+        left.alt_costs.append(AltCost("fuse", add_mana(left.mana_cost, right.mana_cost),
+                                      effects=list(left.spell_effects) + list(right.spell_effects)))
+    return True
 
 
 def _cost_line(m):
@@ -378,6 +396,9 @@ def _mana_restriction(text: str):
         return "artifact"
     if re.fullmatch(r"to cast (?:an instant or sorcery spell|instant and sorcery spells)", text):
         return "instant_sorcery"
+    m = re.fullmatch(r"to cast (?:colorless )?(\w+) spells or activate abilities of (?:colorless )?(\w+)", text)
+    if m and m[2].rstrip("s") == m[1].rstrip("s"):         # Eldrazi Temple: spells only, its abilities are not paid
+        return "subtype:" + m[1].rstrip("s").capitalize()
     m = re.fullmatch(r"to cast an? (\w+) spell(?: or an? (\w+) spell)?", text)
     if m:
         return "subtype:" + "|".join(t.capitalize() for t in m.groups() if t)
@@ -515,6 +536,8 @@ def _parse_trigger_line(line: str):
             flt = m[1]
         if events == ("you_attack",) and m.lastindex == 2:
             flt = f"with:{m[1].rstrip('s')}"
+        if "creature cards are put into graveyards" in pat:
+            flt = "nontoken"
         if events == ("creature_attacks",) and m.lastindex == 2:
             flt = f"attacker:{m[1]}"
         if events[0] == "other_creature_enters":
