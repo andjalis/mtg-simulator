@@ -341,6 +341,12 @@ to select another local database.
   duals like Lantern-Lit Graveyard (they skip their next untap only when their colored mana was needed),
   "whenever one or more +1/+1 counters are put on ~", and "~ can block an additional creature / any number
   of creatures" (the blocker takes the unblocked attackers it survives and divides its damage among them)
+- Counterspell riders such as "exile it instead of putting it into its owner's graveyard" and "artifact or
+  creature spell" filters, "destroy target creature with total power and toughness N or less", flicker that
+  returns the card with a +1/+1 counter, creature-type anthems that also grant a keyword, "up to one target
+  creature gets +N/+N", "you and target opponent each draw a card", tutors that end with "discard a card at
+  random", and costed mana abilities such as "{2}, {T}: Add {U} or {R}" or "one mana of any color" (the
+  color is chosen by what the hand needs). Storage lands are not supported yet
 - Regeneration shields replace destruction, tap the permanent, clear its damage
   and remove it from combat. They expire at cleanup and cannot prevent sacrifice
   or zero toughness. Regeneration-prevention riders on destruction and damage apply
