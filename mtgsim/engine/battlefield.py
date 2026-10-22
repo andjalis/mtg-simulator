@@ -65,6 +65,9 @@ class BattlefieldMixin:
             kinds = cond.split(":", 1)[1].split("|")
             perm.tapped = not any(is_basic_land(x.card) if k == "basic" else k in x.card.subtypes
                                   for x in p.battlefield for k in kinds)
+        elif cond.startswith("reveal:"):
+            kinds = cond.split(":", 1)[1].split("|")
+            perm.tapped = not any(k in c.subtypes for c in p.hand for k in kinds)
         elif cond.startswith("behold:"):
             kind = cond.split(":", 1)[1]
             perm.tapped = not any(kind in c.subtypes for c in [x.card for x in p.battlefield] + p.hand)
@@ -98,6 +101,8 @@ class BattlefieldMixin:
             perm.chosen_type = max(types, key=types.get, default="")
         elif card.choose_type == "basic_land":
             perm.card = dataclasses.replace(card, produces=frozenset({choose_color(self, p)}))
+        elif card.choose_type.startswith("color_other:"):
+            perm.card = dataclasses.replace(card, produces=card.produces | {choose_color(self, p, exclude=card.choose_type[-1])})
         if card.loyalty:
             perm.counters["loyalty"] = card.loyalty
         if card.etb_counters:

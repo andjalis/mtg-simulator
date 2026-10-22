@@ -23,7 +23,8 @@ from __future__ import annotations
 import re
 
 KINDS = {"extort", "evolve", "renown", "mentor", "battle_cry", "fabricate", "living_weapon", "echo", "pay_or_sac",
-         "cumulative_upkeep", "vanishing", "fading", "modular", "soulshift", "annihilator", "rampage", "backup"}
+         "cumulative_upkeep", "vanishing", "fading", "modular", "soulshift", "annihilator", "rampage", "backup",
+         "dethrone", "training", "amplify"}
 
 
 def _effect(kind, amount=0, **kw):
@@ -103,6 +104,22 @@ def parse_line(line: str, st) -> bool:
     m = re.fullmatch(r"Devour (\d+)", line)
     if m:
         extra["devour"] = int(m[1])
+        return True
+    if line in ("Dethrone", "Training", "Melee"):
+        eff = _effect("pump", 1, amount2=1, target="self") if line == "Melee" else _effect(line.lower())
+        triggers.append(_trigger("attacks", [eff]))
+        return True
+    m = re.fullmatch(r"Outlast ((?:\{[^}]+\})+)", line)
+    if m:
+        from .cards.parse import _parse_ability
+        act = _parse_ability(f"{m[1]}, {{T}}: Put a +1/+1 counter on ~. Activate only as a sorcery.", st.approximations)
+        if act is not None:
+            st.activated.append(act)
+            return True
+    m = re.fullmatch(r"Amplify (\d+)", line)
+    if m:
+        triggers.append(_trigger("etb", [_effect("amplify", int(m[1]))]))
+        st.approximations.append("amplify: the counters are put on as it enters, by a trigger")
         return True
     if line == "Extort":
         triggers.append(_trigger("cast_spell", [_effect("extort")]))
@@ -244,6 +261,16 @@ def resolve(game, p, eff, target, item):
         new = item.context
         if isinstance(new, Permanent) and (new.power > src.power or new.toughness > src.toughness):
             src.counters["+1/+1"] = src.p1 + 1
+    elif k == "dethrone":              # attacking the player with the most life (or tied for it)
+        opp = game.opponent(p)
+        if opp.life >= p.life:
+            src.counters["+1/+1"] = src.p1 + 1
+    elif k == "training":              # attacking with a creature with greater power
+        if any(a is not src and a.power > src.power for a in game.attackers):
+            src.counters["+1/+1"] = src.p1 + 1
+    elif k == "amplify":               # every card in hand sharing a creature type with it
+        shown = sum(1 for c in p.hand if c.is_creature and c.subtypes & src.card.subtypes)
+        src.counters["+1/+1"] = src.p1 + eff.amount * shown
     elif k == "renown":
         if not getattr(src, "renowned", False):
             src.counters["+1/+1"] = src.p1 + eff.amount

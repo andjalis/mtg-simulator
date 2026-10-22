@@ -132,11 +132,11 @@ def choose_tutor(game: Game, me: Player, cards: list[CardDef]) -> CardDef:
     return max(castable, key=lambda c: (c.cmc, (c.power or 0) + (c.toughness or 0)))
 
 
-def choose_color(game: Game, me: Player) -> str:
-    """The colour a land that enters as a chosen basic land type should make."""
+def choose_color(game: Game, me: Player, exclude: str = "") -> str:
+    """The colour a land that enters as a chosen basic land type (or a Thriving land) should make."""
     have = {col: sum(col in x.card.produces for x in me.battlefield if x.card.is_land) for col in COLORS}
     need = {col: sum(c.mana_cost.get(col, 0) for c in me.hand + me.library) for col in COLORS}
-    return max(COLORS, key=lambda col: need[col] / (1 + have[col]))
+    return max((c for c in COLORS if c != exclude), key=lambda col: need[col] / (1 + have[col]))
 
 
 def choose_target(game: Game, me: Player, eff: Effect):

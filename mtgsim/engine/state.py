@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import auras, counting
+from .. import auras, counting, statics
 from ..cards import BASIC_MANA, KEYWORDS, CardDef, Effect, Trigger
 from .. import continuous
 from ..identity import CardInstance, CardZone, Graveyard, instance
@@ -247,6 +247,10 @@ class Permanent:
                         and not (other and x is self):
                     bp += pp
                     bt += tt
+        if creature:
+            sp_, st_ = statics.pt_bonus(self)
+            bp += sp_
+            bt += st_
         for sub, pp, tt in self.controller.emblems:
             if creature and sub in self.card.subtypes:
                 bp += pp
@@ -314,6 +318,8 @@ class Permanent:
         if any(sub in self.card.subtypes and k == kw and not (other and x is self)
                for x in self.controller.battlefield for sub, k, other in x.card.keyword_sub):
             return True
+        if self.is_creature and statics.keyword(self, kw):
+            return True
         if self.is_creature and self.p1 > 0 and any(kw in x.card.counter_team_keywords
                                                     for x in self.controller.battlefield):
             return True
@@ -347,7 +353,7 @@ class Permanent:
         if cond.startswith("opp_life<="):
             opp = getattr(self.controller, "opponent", None)
             return opp is not None and opp.life <= int(cond[10:])
-        return False
+        return bool(statics.condition(self, cond))
 
     @property
     def is_creature(self):
@@ -593,6 +599,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if protected_from(attacker, blocker):
         return False
     if attacker.has("skulk") and blocker.power > attacker.power:
+        return False
+    if any(statics.desc_matches(blocker, d) for d in attacker.card.unblockable_by):
         return False
     if attacker.has("flying") and not (blocker.has("flying") or blocker.has("reach")):
         return False

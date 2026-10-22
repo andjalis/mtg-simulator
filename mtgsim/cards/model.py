@@ -244,6 +244,8 @@ class CardDef:
     color_skips_untap: bool = False                     # "{T}: Add {B} or {R}. ~ doesn't untap during your next untap step."
     dredge: int = 0                                     # Dredge N
     escape_counters: int = 0                            # "~ escapes with N +1/+1 counters on it."
+    unblockable_by: tuple = ()                          # "~ can't be blocked by white creatures" (statics.py)
+    team_statics: tuple = ()                            # general anthems / keyword grants (see statics.py)
     anthem_all: tuple = ()                              # ("Sliver", 1, 1): "All Sliver creatures get +1/+1."
     extra_blocks: int = 0                               # "can block an additional creature" (99: any number)
     storage: dict = field(default_factory=dict)         # storage lands: bank cost, colors, hold, upkeep (see storage.py)

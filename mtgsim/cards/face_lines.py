@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .. import discounts, graveyard, modal
-from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, storage as _storage
+from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, statics as _statics, storage as _storage
 from .model import Activated, AltCost, COLORS, Effect, KEYWORDS, NUMBERS, Trigger, _num, parse_mana_cost
 from .patterns import _parse_mana_ability
 from .parse import _apply_speed_gate, _mana_restriction, _parse_ability, _parse_effects, _parse_trigger
@@ -226,6 +226,19 @@ def _face_land_and_mana_lines(st, line):
     try:
         if re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a creature type\.", line):
             extra["choose_type"] = "creature"
+            return None
+        m = re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a color other than (white|blue|black|red|green)\.", line)
+        if m:                                      # Thriving lands: the chosen color is the one the deck needs most
+            extra["choose_type"] = "color_other:" + {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}[m[1]]
+            return None
+        m = re.fullmatch(r"\{T\}: Add \{([WUBRG])\} or one mana of the chosen color\.", line)
+        if m and extra.get("choose_type", "").startswith("color_other:"):
+            produces.add(m[1])
+            return None
+        m = re.fullmatch(r"As ~ enters(?: the battlefield)?, you may reveal an? ([A-Z]\w+)(?: or ([A-Z]\w+))? card from your "
+                         r"hand\. If you don't, ~ enters tapped\.", line)
+        if m:                                      # Snarls, Murmuring Bosk
+            extra["tapped_condition"] = "reveal:" + "|".join(k for k in m.groups() if k)
             return None
         if re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a basic land type\. Then you may pay 2 life\. If you "
                         r"don't, it enters tapped\.", line):
@@ -847,6 +860,14 @@ def _face_keyword_ability_lines(st, line):
                                 "basic" if kind == "basic landcycling" else "any" if kind == "landcycling" else
                                 m[1][:-7]}
             return None
+        m = re.fullmatch(r"Transmute (\{[^ ]+\})", line)
+        if m:                                      # discard: a card with the same mana value from the library
+            extra["cycling"] = {"cost": parse_mana_cost(m[1]), "land": "", "transmute": True}
+            return None
+        m = re.fullmatch(r"Reinforce (\d+)—(\{[^ ]+\})", line)
+        if m:                                      # discard: N +1/+1 counters on target creature
+            extra["cycling"] = {"cost": parse_mana_cost(m[2]), "land": "", "reinforce": int(m[1])}
+            return None
         m = re.fullmatch(r"Saddle (\d+)", line)
         if m:
             extra["saddle"] = int(m[1])
@@ -1030,6 +1051,8 @@ def _face_ability_lines(st, line):
             effs, bad = _parse_effects(line, opts=bool(extra.get("bargain") or extra.get("gift")))
             spell += effs
             unsupported += bad
+            return None
+        if _statics.parse_line(line, st):
             return None
         unsupported.append(line)
         return line
