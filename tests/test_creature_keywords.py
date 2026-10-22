@@ -118,7 +118,12 @@ class CreatureKeywords(unittest.TestCase):
         self.assertEqual(self.put(self.a, LANCER).p1, 2)
 
     def test_fabricate(self):
-        self.assertEqual(self.put(self.a, STEED).p1, 1)
+        steed = self.put(self.a, STEED)                      # not evasive: a 1/1 Servo
+        self.assertEqual(steed.p1, 0)
+        self.assertTrue(any(x.card.is_token and "Servo" in x.card.subtypes for x in self.a.battlefield))
+        flier = self.put(self.a, card("Test Flying Fabricator", "{3}", "Artifact Creature — Thopter",
+                                      "Flying\nFabricate 2", 1, 1))
+        self.assertEqual(flier.p1, 2)
 
     def test_living_weapon(self):
         sword = self.put(self.a, GERM_SWORD)

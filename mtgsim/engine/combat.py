@@ -115,6 +115,9 @@ class CombatMixin:
         for a in attackers:
             if a not in blocks:
                 self.fire(p, "unblocked", a)
+        fighting = set(attackers) | {b for bl in blocks.values() for b in bl}
+        for pl in (p, opp):            # a face-down creature in combat is turned up when that can be paid for
+            self.turn_face_up(pl, only=fighting)
         p.ai.after_blocks(self, p, attackers, blocks)
         if self.over:
             return

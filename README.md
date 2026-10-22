@@ -281,8 +281,9 @@ to select another local database.
 - Werewolves transform at the beginning of each upkeep after a turn with no spells, and back after a turn in
   which a player cast two or more; transformed permanents can turn face up again
 - Echo, unleash, evolve, renown, mentor, battle cry, riot, bloodthirst, fabricate, living weapon and heroic.
-  Unleash always takes the counter, riot takes haste when the creature can still attack this turn, and
-  fabricate always takes the counters
+  Unleash takes the counter unless its controller is low on life against a real attack, riot takes haste when
+  the creature can attack and nothing untapped would block and kill it, and fabricate puts counters on an
+  evasive creature and makes Servos otherwise
 - Illusions ("when ~ becomes the target of a spell or ability, sacrifice it"), Eldrazi Spawn and Scion
   tokens ("Sacrifice this creature: Add {C}", usable while summoning sick and spent last), bounce lands
   and "return a creature you control to its owner's hand", "can't attack unless defending player controls
@@ -293,7 +294,9 @@ to select another local database.
   fading. Modular, soulshift, annihilator, rampage, afterlife, backup (only keywords are granted to
   another creature), bolster and support; myriad does nothing with two players
 - Morph and megamorph use the face-down path of disguise (a 2/2 for {3}, without ward), including
-  "when ~ is turned face up" triggers. Dash, blitz without life, buyback, surge, prototype and suspend
+  "when ~ is turned face up" triggers; a face-down creature in combat is turned up when it can be paid for.
+  The AI answers removal aimed at its creature with activated protection (Mother of Runes, prevention
+  shields, hexproof or indestructible granters) when it has one ready. Dash, blitz without life, buyback, surge, prototype and suspend
   (the AI suspends cards it can't cast for two more turns, or at all). Unearth is cast from the graveyard
   like a spell and madness is cast from the graveyard during the turn of the discard (both recorded as
   simplifications)

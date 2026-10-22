@@ -9,8 +9,9 @@
 
 ``parse_line`` turns a keyword line into CardDef fields and triggers. The "enters with" ones (unleash, riot,
 bloodthirst) are applied in Game.enter_battlefield; echo is checked at the beginning of its controller's
-upkeep. Choices: unleash always takes the counter, riot takes haste when the creature could still attack this
-turn, fabricate always takes the counters, backup goes on the best other creature (only its keywords are
+upkeep. Choices: unleash takes the counter unless its controller is low on life against a real attack, riot takes
+haste when the creature can attack this turn and nothing untapped would block and kill it, fabricate puts the
+counters on an evasive creature and makes Servos otherwise, backup goes on the best other creature (only its keywords are
 granted). Modular, annihilator and soulshift choose for the AI without targeting. Dash and unearth are
 alternative costs (unearth from the graveyard: a spell, not an ability), madness lets the card be cast from the
 graveyard for its madness cost during the turn it was discarded. Not modelled: echo for permanents that
@@ -148,10 +149,14 @@ def enters(game, p, perm):
         perm.counters["+1/+1"] = perm.p1 + c.modular
     if c.bloodthirst and game.opponent(p).lost_life_turn:
         perm.counters["+1/+1"] = perm.p1 + c.bloodthirst
-    if c.unleash:
-        perm.counters["+1/+1"] = perm.p1 + 1
-    if c.riot:
-        if p is game.active and game.step in ("main1", "untap", "upkeep", "draw"):
+    opp = game.opponent(p)
+    if c.unleash:      # the counter, unless it's needed as a blocker: low on life against a real attack
+        if not (p.life <= 8 and sum(x.power for x in opp.creatures) * 2 >= p.life):
+            perm.counters["+1/+1"] = perm.p1 + 1
+    if c.riot:         # haste when it can attack this turn and nothing untapped would block and kill it
+        can_attack = p is game.active and game.step in ("main1", "untap", "upkeep", "draw")
+        walls = [x for x in opp.creatures if not x.tapped and x.power >= perm.toughness]
+        if can_attack and not walls:
             perm.perm_kw.add("haste")
         else:
             perm.counters["+1/+1"] = perm.p1 + 1
@@ -243,8 +248,13 @@ def resolve(game, p, eff, target, item):
         if not getattr(src, "renowned", False):
             src.counters["+1/+1"] = src.p1 + eff.amount
             src.renowned = True
-    elif k == "fabricate":
-        src.counters["+1/+1"] = src.p1 + eff.amount
+    elif k == "fabricate":             # counters on an evasive creature, else 1/1 Servos
+        if any(src.has(kw) for kw in ("flying", "trample", "menace", "unblockable", "shadow")):
+            src.counters["+1/+1"] = src.p1 + eff.amount
+        else:
+            from .cards import make_token
+            for _ in range(eff.amount):
+                game.enter_battlefield(p, make_token("Servo", 1, 1, artifact=True))
     elif k == "mentor":
         from .engine import perm_value
         weaker = [a for a in game.attackers if a is not src and a.controller is p and a.power < src.power]
