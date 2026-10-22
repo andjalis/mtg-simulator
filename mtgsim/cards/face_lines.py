@@ -592,6 +592,12 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["anthem_sub"] = extra.get("anthem_sub", ()) + (("Token", int(m[1]), int(m[2]), False),)
             return None
+        m = re.fullmatch(r"(Other )?([A-Z][a-z]+?)s? you control get \+(\d+)/\+(\d+) and have (menace|trample|flying|"
+                         r"vigilance|haste|lifelink|first strike|deathtouch|reach)\.", line)
+        if m and m[2] != "Creature":
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
+            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((m[2], m[5], bool(m[1])),)
+            return None
         m = re.fullmatch(r"(Other )?(Merfolk|[A-Z][a-z]+?)s? you control get \+(\d+)/\+(\d+)\.", line)
         if m and m[2] != "Creature":
             extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)

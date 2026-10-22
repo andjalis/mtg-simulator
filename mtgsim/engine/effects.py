@@ -126,7 +126,8 @@ class EffectsMixin:
         self.stack.remove(target)
         if target.kind == "spell":
             base, kind, _ = self._origin(target.card)
-            (target.controller.exile if kind == "flashback" else target.controller.graveyard).append(base)
+            exiled = kind == "flashback" or eff.data.get("exile")    # "exile it instead of putting it into ... graveyard"
+            (target.controller.exile if exiled else target.controller.graveyard).append(base)
         self.log(f"{target} is countered", p)
 
     def scry(self, p: Player, n: int, to_graveyard: bool = False):
