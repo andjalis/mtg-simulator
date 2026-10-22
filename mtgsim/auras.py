@@ -49,6 +49,11 @@ def parse_line(line: str, extra: dict, types) -> bool:
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | flags
         extra.setdefault("_approx", []).append("loses all abilities: only keywords are removed")
         return True
+    m = re.fullmatch(r"Enchanted creature gets ([+−-])(\d+)/([+−-])(\d+) for each ([\w -]+?) you control\.", line)
+    if m:                                       # "Enchanted creature gets +1/+1 for each Forest you control."
+        from .counting import _singular
+        extra["aura_per"] = (_singular(m[5]), _n(m[1], m[2]), _n(m[3], m[4]))
+        return True
     m = re.fullmatch(r"Enchanted creature gets ([+−-])(\d+)/([+−-])(\d+) and loses all abilities\.", line)
     if m:
         extra["equip_bonus"] = (_n(m[1], m[2]), _n(m[3], m[4]))
@@ -72,7 +77,8 @@ def finish(extra: dict):
     """After all lines are parsed: is the Aura hostile (put on the opponent's creature)?"""
     if extra.get("aura"):
         b = extra.get("equip_bonus", (0, 0))
-        extra["aura_hostile"] = bool(extra.get("aura_flags")) or b[0] < 0 or b[1] < 0 or \
+        per = extra.get("aura_per", ("", 0, 0))
+        extra["aura_hostile"] = bool(extra.get("aura_flags")) or b[0] < 0 or b[1] < 0 or per[1] < 0 or per[2] < 0 or \
             extra["aura"] == "creature an opponent controls"
 
 

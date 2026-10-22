@@ -32,6 +32,11 @@ def _parse_effects(text: str, opts: bool = False):
                 effects[-1].kind in ("destroy", "wrath", "wrath_pw"):
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
             continue
+        if re.fullmatch(r"you gain life equal to the (?:life lost|damage dealt) this way", s, re.I) and effects and \
+                effects[-1].kind in ("drain", "lose_life", "opp_lose_life", "damage") and effects[-1].target != "creature":
+            last = effects[-1]
+            effects.append(Effect("gain_life", last.amount, data={k: v for k, v in last.data.items() if k in ("x", "xq")}))
+            continue
         if re.fullmatch(r"if that spell is countered this way, exile it instead of putting it into its owner's graveyard", s,
                         re.I) and effects and effects[-1].kind == "counter":
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, exile=True))

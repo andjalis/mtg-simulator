@@ -30,6 +30,46 @@ _LINE = re.compile(
     rf"(?: get ([+-]\d+)/([+-]\d+))?(?:(?:,? and)? (?:have|gain) ((?:{_KW})(?:(?:, |,? and )(?:{_KW}))*))?\.")
 
 
+KINDS = {"pump_matching"}
+_SPELL = rf"(All |Other )?((?:[\w-]+ )*?)[Cc]reatures( you control| your opponents control)? get ([+-]\d+)/([+-]\d+)" \
+         rf"(?: and gain ((?:{_KW})(?:(?:, |,? and )(?:{_KW}))*))? until end of turn"
+
+
+def _spell(m):
+    from .cards import Effect, NO_MATCH
+    entry = _parse(f"{m[1] or ''}{m[2]}creatures{m[3] or ''} get {m[4]}/{m[5]}" + (f" and have {m[6]}." if m[6] else "."))
+    return NO_MATCH if entry is None else Effect("pump_matching", data={"static": entry})
+
+
+def _two_keywords(m):
+    from .cards import Effect
+    return [Effect("pump", int(m[1]), int(m[2]), target="creature"),
+            Effect("grant", target="prev", data={"keyword": m[3]}), Effect("grant", target="prev", data={"keyword": m[4]})]
+
+
+EFFECT_PATTERNS = [
+    (_SPELL, _spell),     # "Blocking creatures get +7/+7 until end of turn", "White creatures you control get +2/+2 ..."
+    (rf"target creature gets \+(\d+)/\+(\d+) and gains ({_KW}),? and ({_KW}) until end of turn", _two_keywords),
+]
+
+
+def resolve(game, p, eff, target, item):
+    scope, words, pp, tt, kws = eff.data["static"]
+    src = item.source if item is not None and item.source is not None else _Caster(p)
+    for pl in game.players:
+        for c in pl.creatures:
+            if _matches(c, src, scope, words):
+                c.pump_p += pp
+                c.pump_t += tt
+                c.temp_kw |= set(kws)
+
+
+class _Caster:
+    """Stands in for a spell's source: "you control" means its caster's creatures."""
+    def __init__(self, controller):
+        self.controller = controller
+
+
 _SELF = re.compile(rf"~ (?:gets ([+-]\d+)/([+-]\d+)(?: and has ((?:{_KW})(?:(?:, |,? and )(?:{_KW}))*))?|"
                    rf"has ((?:{_KW})(?:(?:, |,? and )(?:{_KW}))*)) as long as (.+)\.")
 _NOUNS = {"permanent", "creature", "artifact", "enchantment", "land", "planeswalker"}
@@ -37,7 +77,7 @@ _NOUNS = {"permanent", "creature", "artifact", "enchantment", "land", "planeswal
 
 def parse_line(line: str, st) -> bool:
     if not ({"Instant", "Sorcery"} & set(st.types)) and line:
-        line = line.replace("−", "-")
+        line = line.replace("−", "-").replace("Creature tokens you control", "Token creatures you control")
         entry = _parse(line)
         if entry is not None:
             st.extra["team_statics"] = st.extra.get("team_statics", ()) + (entry,)

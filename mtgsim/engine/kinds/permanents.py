@@ -68,6 +68,29 @@ def return_own(game, p, eff, item, **_):
     game.leave_battlefield(pick, "hand")
 
 
+@kind("move_counters")
+def move_counters(game, p, eff, target, item, **_):
+    """"When ~ dies, put its counters on target creature you control": the counters it had as it left."""
+    src = item.source if item is not None else None
+    if isinstance(target, Permanent) and isinstance(src, Permanent) and target is not src and target in p.battlefield:
+        for name, n in list(src.counters.items()):
+            if n > 0 and name not in ("loyalty", "storage"):
+                target.counters[name] = target.counters.get(name, 0) + n
+        game.log(f"moves {src.card.name}'s counters to {target.card.name}", p)
+
+
+@kind("sac_unless_sac")
+def sac_unless_sac(game, p, eff, item, **_):
+    """"Sacrifice ~ unless you sacrifice three Forests": the cheapest matching ones when there are enough."""
+    src = item.source if item is not None else None
+    pool = [x for x in p.battlefield if x is not src and statics.desc_matches(x, eff.data["desc"])]
+    if len(pool) >= eff.amount:
+        for x in sorted(pool, key=lambda x: (not x.tapped, perm_value(x)))[:eff.amount]:
+            game.sacrifice(x)
+    elif isinstance(src, Permanent) and src in p.battlefield:
+        game.sacrifice(src)
+
+
 @kind("sac_own")
 def sac_own(game, p, eff, **_):
     """"Sacrifice a creature / land": p's least valuable one."""

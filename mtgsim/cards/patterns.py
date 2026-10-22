@@ -4,6 +4,7 @@ New general templates go in a mechanic module (removal.py, copies.py, ...) that 
 or SUBS; the package __init__ joins them to the tables here."""
 from __future__ import annotations
 
+import dataclasses
 import re
 
 from .model import COLORS, COLOR_WORDS, Effect, KEYWORDS, NO_MATCH, _distinct_bounce, _distinct_pump, _num, parse_mana_cost
@@ -286,6 +287,9 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("gear_up", target="creature_mine", data={"all": bool(m[1])})),
     (r"when you do, attach it to target creature you control", lambda m: Effect("attach_new_equipment", target="creature_mine")),
     (r"put a hone counter on each Equipment you control", lambda m: Effect("hone")),
+    (r"put its counters on target creature you control", lambda m: Effect("move_counters", target="creature_mine")),
+    (r"sacrifice (?:it|~) unless you sacrifice (a|an|two|three|four) ([\w ]+?)s?",
+     lambda m: Effect("sac_unless_sac", _num(m[1]), data={"desc": m[2]})),
     (r"its controller draws a card", lambda m: Effect("draw", 1, target="that_controller")),
     (r"(?:that player|they) loses? (\d+) life", lambda m: Effect("lose_life", int(m[1]), target="that_player")),
     (r"creatures your opponents control get -(\d+)/-(\d+) until end of turn",
@@ -503,6 +507,8 @@ _EFFECT_PATTERNS = [
      lambda m: _tapped(_token(m[1], m[2], m[3], m[4], m[5]))),
     (r"target player creates (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen|powerstone) tokens?",
      lambda m: Effect("token", _num(m[1]), data={"kind": m[2].lower()})),
+    (r"its controller creates (a|one|two) (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: with ([\w ,]+))?",
+     lambda m: dataclasses.replace(_token(m[1], m[2], m[3], m[4], m[5]), target="that_controller")),
     (r"its controller creates (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen|powerstone) tokens?",
      lambda m: Effect("token", _num(m[1]), target="that_controller", data={"kind": m[2].lower()})),
     (r"target creature you control explores", lambda m: Effect("explore", target="creature_mine")),
@@ -594,7 +600,7 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("emblem", _num(m[2]), _num(m[3]), data={"subtype": m[1]})),
     (r"COUNTERABILITY", lambda m: Effect("counter_ability")),
     (r"BLINKEND", lambda m: Effect("blink_end", target="creature_mine")),
-    (r"put (a|one|two|three) \+1/\+1 counters? on each (other )?(tapped |legendary )?(creature|[A-Z][a-z]+) you control",
+    (r"put (a|one|two|three) \+1/\+1 counters? on each (other )?(tapped |legendary )?(creature|[A-Z][a-z]+)(?: creature)? you control",
      lambda m: Effect("p1_counters", _num(m[1]), target="my_creatures",
                       data={"other": bool(m[2]), "only": (m[3] or "").strip() or
                             (m[4] if m[4] != "creature" else "")})),

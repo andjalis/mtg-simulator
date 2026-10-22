@@ -125,7 +125,7 @@ def _face_special_lines(st, line):
                                        extra_costs={"level_from": n - 1}, sorcery=True, text=line))
             level_marks.append((n, len(triggers)))
             return None
-        line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration|Heroic) — (?=When|At|If)", "", line)
+        line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration|Heroic|Rally|Constellation|Magecraft|Landfall|Coven|Domain|Formidable|Inspired|Lieutenant|Parley|Radiance|Strive|Will of the council|Council's dilemma|Kinship|Grandeur|Hellbent|Imprint|Join forces|Undergrowth|Adamant|Addendum|Battalion|Bloodrush|Channel|Chroma|Converge|Corrupted|Fateful hour|Ferocious|Spell mastery|Tempting offer|Threshold|Alliance|Pack tactics|Enrage|Secret council|Descend \d+) — (?=When|At|If)", "", line)
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
         # Discard triggers fire once per card, so "that many" counters is one counter each time.
         line = re.sub(r"^(Whenever you discard one or more cards), put that many \+1/\+1 counters on ~\.$",

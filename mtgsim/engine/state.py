@@ -264,6 +264,11 @@ class Permanent:
                 e = a.card.equip_bonus
                 bp += e[0]
                 bt += e[1]
+                if a.card.aura_per:
+                    what, ap, at = a.card.aura_per
+                    n = counting.count(None, a.controller, {"what": what, "zone": "battlefield"}, a)
+                    bp += n * ap
+                    bt += n * at
                 if "per_enchantment" in a.card.aura_flags:     # Virtuous Role
                     n = sum("Enchantment" in y.card.types for y in self.controller.battlefield)
                     bp += n

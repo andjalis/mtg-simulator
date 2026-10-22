@@ -125,7 +125,7 @@ def _aim(card: CardDef, eff, target) -> list:
 
 
 # Effects plan_spell values through _extra_value.
-EXTRA_KINDS = {"reanimate_total", "reanimate_one", "tutor_gy", "regrow_perm", "regrow_any", "tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "double_counters", "learn",
+EXTRA_KINDS = {"reanimate_total", "reanimate_one", "tutor_gy", "regrow_perm", "regrow_any", "tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "pump_matching", "double_counters", "learn",
                "tap", "stun", "mill", "proliferate"} | copies.KINDS
 
 CARRIER_KINDS = ("pump", "grant", "p1_counters", "unblockable")   # aimed at the creature that attacks
@@ -923,6 +923,17 @@ class HeuristicAI:
                 return None
             kw = 0.5 if (eff.data or {}).get("keyword") else 0.0
             return None, len(ready) * (0.5 * (eff.amount + eff.amount2) + kw)
+        if k == "pump_matching":       # "Blocking creatures get +7/+7", "All creatures get -1/-1 until end of turn"
+            from . import statics
+            v, (scope, words, pp, tt, kws) = 0.0, eff.data["static"]
+            src = statics._Caster(me)
+            for side, sign in ((me, 1), (opp, -1)):
+                hit = [c for c in side.creatures if statics._matches(c, src, scope, words)]
+                if tt < 0:
+                    v -= sign * sum(perm_value(c) for c in hit if c.toughness - c.damage <= -tt)
+                elif precombat and side is me:
+                    v += 0.5 * (pp + tt + len(kws)) * sum(1 for c in hit if c in ready)
+            return (None, v) if v > 0 else None
         if k in ("p1_counters", "double_counters") and eff.target == "my_creatures":
             if not me.creatures:
                 return None

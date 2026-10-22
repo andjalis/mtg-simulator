@@ -20,6 +20,12 @@ def parse_line(line: str, extra: dict) -> bool:
         extra["pt_per"] = ("other " if m[3] else "") + m[4]
         extra["pt_scale"] = (int(m[1]), int(m[2]))
         return True
+    m = re.fullmatch(r"~ gets \+(\d+)/\+(\d+) for each (Aura|Equipment|Aura and Equipment|Aura and/or Equipment|Aura or "
+                     r"Equipment) attached to it\.", line)
+    if m:
+        extra["pt_per"] = "attached " + "|".join(k for k in ("Aura", "Equipment") if k in m[3])
+        extra["pt_scale"] = (int(m[1]), int(m[2]))
+        return True
     m = re.fullmatch(r"~'s (power and toughness are each|power is|toughness is) equal to the number of "
                      r"([\w -]+?) you control\.", line)
     if m:
@@ -83,6 +89,10 @@ def _scaled(eff, n):
 def count(game, p, per: dict, source=None) -> int:
     from .copies import fits
     what = per["what"]
+    if what.startswith("attached "):        # "for each Aura and Equipment attached to it"
+        kinds = what[9:].split("|")
+        return sum(1 for x in (source.auras + source.equipment if source is not None else [])
+                   if any(k in x.card.subtypes for k in kinds))
     other = what.startswith("other ")
     what = what[6:] if other else what
     if per["zone"] == "graveyard":

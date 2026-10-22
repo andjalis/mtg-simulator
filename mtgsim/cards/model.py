@@ -245,6 +245,7 @@ class CardDef:
     color_skips_untap: bool = False                     # "{T}: Add {B} or {R}. ~ doesn't untap during your next untap step."
     dredge: int = 0                                     # Dredge N
     escape_counters: int = 0                            # "~ escapes with N +1/+1 counters on it."
+    aura_per: tuple = ()                                # ("Forest", 1, 1): "Enchanted creature gets +1/+1 for each Forest ..."
     spell_tax: tuple = ()                               # "Noncreature spells cost {1} more to cast." (statics.py)
     not_alone: tuple = ()                               # "~ can't attack or block alone": ("attack", "block")
     unblockable_by: tuple = ()                          # "~ can't be blocked by white creatures" (statics.py)
