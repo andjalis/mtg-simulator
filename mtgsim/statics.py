@@ -92,6 +92,9 @@ def parse_line(line: str, st) -> bool:
         if tax:
             st.extra["spell_tax"] = st.extra.get("spell_tax", ()) + (tax,)
             return True
+        if line == "You may have ~ assign its combat damage as though it weren't blocked.":
+            st.extra["assign_unblocked"] = True
+            return True
         m = re.fullmatch(r"~ can't (attack or block|attack|block) alone\.", line)
         if m:
             st.extra["not_alone"] = tuple(w for w in ("attack", "block") if w in m[1])
@@ -218,7 +221,8 @@ def _words(part: str):
         return None
     for w in words[:-1]:
         if not (w in _COLORS or w in ("untapped", "tapped", "nonland", "noncreature", "legendary", "basic",
-                                       "nontoken", "token", "artifact", "enchantment", "creature", "snow")):
+                                       "nontoken", "token", "artifact", "enchantment", "creature", "snow")
+                or re.fullmatch(r"[A-Z][a-z]+", w)):
             return None
     last = words[-1]
     if not (last.rstrip("s") in _NOUNS or re.fullmatch(r"[A-Z][a-z]+", last)):
@@ -261,7 +265,8 @@ def _part_matches(perm, words) -> bool:
                 w == "noncreature" and perm.is_creature or w == "legendary" and not card.legendary or \
                 w == "basic" and not card.basic or w == "token" and not card.is_token or \
                 w == "nontoken" and card.is_token or w == "snow" and "Snow" not in card.types or \
-                w in ("artifact", "enchantment", "creature") and w.capitalize() not in card.types:
+                w in ("artifact", "enchantment", "creature") and w.capitalize() not in card.types or \
+                w[:1].isupper() and w not in card.subtypes:
             return False
     return True
 

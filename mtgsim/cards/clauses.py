@@ -218,6 +218,8 @@ _TRIGGERS = [
     (r"When(?:ever)? ~ enters or leaves the battlefield, (.+)", ("etb", "leaves")),
     (r"When(?:ever)? ~ leaves the battlefield, (.+)", ("leaves",)),
     (r"Whenever a player casts a spell with mana value (\d+) or less, (.+)", ("any_cast",)),
+    (r"Whenever a player casts an? (white|blue|black|red|green|artifact|creature|enchantment|instant|sorcery) spell, (.+)",
+     ("any_cast",)),
     (r"At the beginning of your upkeep, (.+)", ("upkeep",)),
     (r"At the beginning of each(?: player's)? upkeep, (.+)", ("each_upkeep",)),
     (r"At the beginning of each opponent's upkeep, (.+)", ("opp_upkeep",)),

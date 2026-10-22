@@ -161,7 +161,14 @@ class CombatMixin:
                 target = None   # its planeswalker is gone: no damage
             if a in blocks:
                 alive = [b for b in blocks[a] if b in opp.battlefield]
-                if deals_now(a) and a.power > 0:
+                # Thorn Elemental: "you may have ~ assign its combat damage as though it weren't blocked" -- when
+                # that kills the player or it can't kill a blocker anyway
+                around = a.card.assign_unblocked and target is not None and deals_now(a) and a.power > 0 and (
+                    isinstance(target, Player) and a.power >= target.life or not any(
+                        (1 if a.has("deathtouch") else b.toughness - b.damage) <= a.power for b in alive))
+                if around:
+                    hits.append((a, target, a.power))
+                elif deals_now(a) and a.power > 0:
                     remaining = a.power
                     for i, b in enumerate(alive):
                         lethal = 1 if a.has("deathtouch") else max(0, b.toughness - b.damage)

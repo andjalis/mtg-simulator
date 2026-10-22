@@ -247,6 +247,7 @@ class CardDef:
     escape_counters: int = 0                            # "~ escapes with N +1/+1 counters on it."
     aura_per: tuple = ()                                # ("Forest", 1, 1): "Enchanted creature gets +1/+1 for each Forest ..."
     spell_tax: tuple = ()                               # "Noncreature spells cost {1} more to cast." (statics.py)
+    assign_unblocked: bool = False                      # "you may have ~ assign its combat damage as though it weren't blocked"
     not_alone: tuple = ()                               # "~ can't attack or block alone": ("attack", "block")
     unblockable_by: tuple = ()                          # "~ can't be blocked by white creatures" (statics.py)
     team_statics: tuple = ()                            # general anthems / keyword grants (see statics.py)

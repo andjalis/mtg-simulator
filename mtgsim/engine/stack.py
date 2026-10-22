@@ -154,6 +154,11 @@ class StackMixin:
                     if perm.ability_turns.get(("trigger", i)) == self.turn:
                         continue
                     perm.ability_turns[("trigger", i)] = self.turn
+                if event == "any_cast" and trig.filter.startswith("spell:") and subject is not None:
+                    from .play import SPELL_KINDS
+                    word = trig.filter[6:]
+                    if not (SPELL_KINDS[word](subject) if word in SPELL_KINDS else word.capitalize() in subject.types):
+                        continue
                 if trig.filter.startswith("cmc<=") and subject is not None and \
                         subject.cmc > int(trig.filter[5:]):
                     continue

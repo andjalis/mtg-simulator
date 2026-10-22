@@ -34,9 +34,17 @@ def wrath(game, p, eff, opp, **_):
 @kind("destroy_all")
 def destroy_all(game, p, eff, opp, **_):
     """Destroy all artifacts / enchantments / lands."""
-    kind = eff.data["type"]
-    for perm in [x for x in p.battlefield + opp.battlefield if kind in x.card.types]:
+    kind, sub = eff.data["type"], eff.data.get("subtype")
+    for perm in [x for x in p.battlefield + opp.battlefield if (sub in x.card.subtypes if sub else kind in x.card.types)]:
         game.destroy(perm)
+
+
+@kind("adapt")
+def adapt(game, p, eff, item, **_):
+    """Adapt N: N +1/+1 counters, if it has none."""
+    src = item.source if item is not None else None
+    if isinstance(src, Permanent) and src in p.battlefield and not src.p1:
+        src.counters["+1/+1"] = eff.amount
 
 
 @kind("wrath_pw")

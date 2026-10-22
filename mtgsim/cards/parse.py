@@ -543,6 +543,8 @@ def _parse_trigger_line(line: str):
             flt = m[1]
         if events == ("you_attack",) and m.lastindex == 2:
             flt = f"with:{m[1].rstrip('s')}"
+        if events == ("any_cast",) and m.lastindex == 2 and not m[1].isdigit():
+            flt = f"spell:{m[1]}"
         if "creature cards are put into graveyards" in pat:
             flt = "nontoken"
         if events == ("creature_attacks",) and m.lastindex == 2:

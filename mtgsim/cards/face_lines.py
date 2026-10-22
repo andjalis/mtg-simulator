@@ -669,9 +669,12 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["tapped_discount"] = int(m[1])
             return None
-        m = re.fullmatch(r"As an additional cost to cast ~, behold an? (\w+) or pay \{(\d+)\}\.", line)
+        m = re.fullmatch(r"As an additional cost to cast ~, (?:behold an? (\w+)|reveal an? (\w+) card from your hand) or pay "
+                         r"\{(\d+)\}\.", line)
         if m:
-            extra["behold_or_pay"] = (m[1], int(m[2]))
+            extra["behold_or_pay"] = (m[1] or m[2], int(m[3]))
+            if m[2]:
+                approximations.append("a permanent of that type on the battlefield also waives the cost")
             return None
         m = re.fullmatch(r"As an additional cost to cast ~, discard a card(?: or pay \{(\d+)\})?\.", line)
         if m:
@@ -912,6 +915,10 @@ def _face_keyword_ability_lines(st, line):
         if m:
             alt_costs.append(AltCost("alt", parse_mana_cost(m[1])))
             return None
+        m = re.fullmatch(r"You may sacrifice (an?|two|three|four) ([\w ]+?)s? rather than pay ~'s mana cost\.", line)
+        if m and _statics._desc_ok(m[2]):          # Thunderclap: sacrifice a Mountain instead
+            alt_costs.append(AltCost("alt_sac", {"generic": 0}, cond=m[2], counters=1 if m[1][0] == "a" else _num(m[1])))
+            return None
         m = re.fullmatch(r"If (.+?), you may cast ~ without paying its mana cost\.", line)
         cond = _statics.free_cast_condition(m[1]) if m else None
         if cond:                                   # the Legates: "If an opponent controls a Plains and you control a Mountain"
@@ -966,6 +973,13 @@ def _face_keyword_ability_lines(st, line):
                 act.keywords = frozenset(k.strip().lower() for k in ability.split(",") if k.strip().lower() in KEYWORDS)
             activated.append(act)
             return None
+        m = re.fullmatch(r"(\{[^:]+\}): ~ becomes an? (\d+)/(\d+) [\w ]*?artifact creature(?: with ([\w ,]+))? until end of turn\.",
+                         line)
+        if m and "Land" not in types:              # Keyrunes and Monuments
+            kws = frozenset(k.strip().lower() for k in re.split(r", and |, | and ", m[4] or "") if k.strip())
+            if kws <= KEYWORDS:
+                activated.append(Activated("animate", parse_mana_cost(m[1]), int(m[2]), int(m[3]), keywords=kws))
+                return None
         return line
     finally:
         st.unsupported = unsupported

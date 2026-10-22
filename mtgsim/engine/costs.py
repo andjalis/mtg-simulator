@@ -502,6 +502,8 @@ class CostsMixin:
             for a in c.alt_costs:
                 if a.kind == "free_if" and statics.free_cast_allowed(p, opp, a.cond):
                     out.append(self._variant(c, a.kind, a))
+                if a.kind == "alt_sac" and sum(statics.desc_matches(x, a.cond) for x in p.battlefield) >= a.counters:
+                    out.append(self._variant(c, a.kind, a))
                 if a.kind in ("alt", "kicker") or (a.kind == "spectacle" and opp.lost_life_turn) or \
                         (a.kind in ("blitz", "dash") and "hand" in a.zone):
                     out.append(self._variant(c, a.kind, a))

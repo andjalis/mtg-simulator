@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .. import alt_casts, cast_triggers, copies
+from .. import alt_casts, cast_triggers, copies, statics
 from ..cards import CardDef
 from .. import modal, rules_events, costs
 from ..actions import atomic_action
@@ -154,6 +154,10 @@ class PlayMixin:
             return False
         if kind == "escape":
             alt_casts.pay_escape(self, p, base, alt)
+        if kind == "alt_sac":               # "You may sacrifice a Mountain rather than pay ~'s mana cost"
+            pool = sorted((x for x in p.battlefield if statics.desc_matches(x, alt.cond)), key=lambda x: (not x.tapped, perm_value(x)))
+            for x in pool[:alt.counters]:
+                self.sacrifice(x)
         if card.extra_discard and p.hand:
             lands = [c for c in p.hand if c.is_land]
             pitched = (lands[-1] if lands else None) if kind == "retrace" else p.ai.choose_discard(self, p)
