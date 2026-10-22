@@ -14,6 +14,8 @@ def damage(game, p, eff, target, item, opp, cause, **_):
                 continue
             if eff.data.get("no_regen") and eff.amount > 0:
                 perm.regeneration_blocked = True
+            if eff.data.get("exile_dies") and eff.amount > 0:
+                perm.exile_turn = game.turn      # "If a creature dealt damage this way would die this turn, exile it"
             game.deal_damage(perm, eff.amount, by=p, cause=cause, source=src)
     elif eff.target == "each_opp_and_pw":
         game.deal_damage(opp, eff.amount, by=p, cause=cause, source=src)
@@ -22,6 +24,8 @@ def damage(game, p, eff, target, item, opp, cause, **_):
     else:
         if eff.data.get("no_regen") and eff.amount > 0 and isinstance(target, Permanent) and target.is_creature:
             target.regeneration_blocked = True
+        if eff.data.get("exile_dies") and eff.amount > 0 and isinstance(target, Permanent):
+            target.exile_turn = game.turn
         game.deal_damage(target, eff.amount, by=p, cause=cause, source=src)
 
 

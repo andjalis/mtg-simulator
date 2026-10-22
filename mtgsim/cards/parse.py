@@ -28,9 +28,14 @@ def _parse_effects(text: str, opts: bool = False):
         s = sentence.strip().rstrip(".").strip()
         if not s:
             continue
-        if re.fullmatch(r"(?:it|they|those creatures) can't be regenerated", s, re.I) and effects and \
-                effects[-1].kind in ("destroy", "wrath", "wrath_pw"):
+        if re.fullmatch(r"(?:it|they|those creatures|that creature|an? (?:creature|permanent)s? destroyed this way|"
+                        r"(?:creatures|permanents) destroyed this way) can't be regenerated(?: this turn)?", s, re.I) and \
+                effects and effects[-1].kind in ("destroy", "wrath", "wrath_pw", "destroy_all", "damage"):
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
+            continue
+        if re.fullmatch(r"if a (?:creature|permanent) dealt damage (?:this way|by ~ this turn) would die this turn, exile it instead",
+                        s, re.I) and effects and effects[-1].kind == "damage":
+            effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, exile_dies=True))
             continue
         if re.fullmatch(r"you gain life equal to the (?:life lost|damage dealt) this way", s, re.I) and effects and \
                 effects[-1].kind in ("drain", "lose_life", "opp_lose_life", "damage") and effects[-1].target != "creature":
@@ -331,11 +336,16 @@ def _parse_face(data: dict) -> CardDef:
                 e.data["x_mana"] = True
     if "kicker" in extra:
         kicked_effects = [dataclasses.replace(e) for e in spell]
+        kick_counters = 0
         for k in kicked:
             m = re.fullmatch(r"it deals (\d+) damage(?: to that (?:creature|player|permanent))? instead\.", k)
             dmg = [e for e in kicked_effects if e.kind == "damage"]
             if m and dmg:
                 dmg[0].amount = int(m[1])
+                continue
+            m = re.fullmatch(r"(?:it|~) enters with (a|an|one|two|three|four|five|six) (?:additional )?\+1/\+1 counters? on it\.", k)
+            if m:
+                kick_counters = _num(m[1])
                 continue
             m = re.fullmatch(r"put (\w+) of those cards into your hand instead\.", k)
             dig = [e for e in kicked_effects if e.kind == "dig"]
@@ -345,7 +355,8 @@ def _parse_face(data: dict) -> CardDef:
             effs, bad = _parse_effects(k)
             kicked_effects += effs
             unsupported += [f"if kicked: {b}" for b in bad]
-        alt_costs.append(AltCost("kicker", add_mana(cost, extra.pop("kicker")), effects=kicked_effects))
+        alt_costs.append(AltCost("kicker", add_mana(cost, extra.pop("kicker")), effects=kicked_effects,
+                                 counters=kick_counters))
     elif kicked:
         unsupported += [f"if kicked: {k}" for k in kicked]
     gy_draw = extra.pop("_gy_draw", 0)

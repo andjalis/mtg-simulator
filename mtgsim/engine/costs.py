@@ -140,6 +140,8 @@ class CostsMixin:
         src = item.source if item is not None and isinstance(item.source, Permanent) else None
         if kind == "life":
             return max(0, p.life)
+        if kind == "colors_spent":
+            return getattr(item, "colors_spent", 0) if item is not None else 0
         if kind == "speed":
             return p.speed
         if kind == "gained":

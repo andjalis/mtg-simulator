@@ -105,6 +105,10 @@ def parse_line(line: str, st) -> bool:
     if m:
         extra["devour"] = int(m[1])
         return True
+    if line == "Sunburst":
+        extra["sunburst"] = True
+        st.approximations.append("sunburst counts the colored pips and the single-color sources that paid")
+        return True
     if line in ("Dethrone", "Training", "Melee"):
         eff = _effect("pump", 1, amount2=1, target="self") if line == "Melee" else _effect(line.lower())
         triggers.append(_trigger("attacks", [eff]))

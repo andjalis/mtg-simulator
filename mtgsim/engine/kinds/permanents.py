@@ -36,7 +36,7 @@ def destroy_all(game, p, eff, opp, **_):
     """Destroy all artifacts / enchantments / lands."""
     kind, sub = eff.data["type"], eff.data.get("subtype")
     for perm in [x for x in p.battlefield + opp.battlefield if (sub in x.card.subtypes if sub else kind in x.card.types)]:
-        game.destroy(perm)
+        game.destroy(perm, no_regen=eff.data.get("no_regen", False))
 
 
 @kind("energy")

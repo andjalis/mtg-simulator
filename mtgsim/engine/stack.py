@@ -255,7 +255,13 @@ class StackMixin:
             if kind == "disturb":                   # cast transformed: its back face enters
                 perm = self.enter_battlefield(p, base.back, x=getattr(item, "x", 0), physical_card=base)
             else:
-                perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
+                enter_with = {}            # sunburst and kicker counters are there as it enters (a 0/0 survives)
+                if base.sunburst and getattr(item, "colors_spent", 0):
+                    enter_with["+1/+1" if base.is_creature else "charge"] = item.colors_spent
+                k = next((a.counters for a in base.alt_costs if a.kind == "kicker"), 0) if kind == "kicker" else 0
+                if k:
+                    enter_with["+1/+1"] = enter_with.get("+1/+1", 0) + k
+                perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0), counters=enter_with or None)
             self._aura_host = None
             self._spent = ""
             if kind in ("disguise", "morph", "megamorph"):

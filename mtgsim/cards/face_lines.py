@@ -118,6 +118,8 @@ def _face_special_lines(st, line):
             extra["_gy_draw"] = _num(m[1])
             line = line.replace(m[0], "").strip()
         line = re.sub(r"\s*If ~ was kicked, .+?\.", "", line).strip()
+        if not line:
+            return None
         lv = re.fullmatch(r"((?:\{[WUBRGC0-9/]+\})+): Level (\d+)", line)
         if lv:
             n = int(lv[2])
@@ -127,6 +129,10 @@ def _face_special_lines(st, line):
             return None
         line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration|Heroic|Rally|Constellation|Magecraft|Landfall|Coven|Domain|Formidable|Inspired|Lieutenant|Parley|Radiance|Strive|Will of the council|Council's dilemma|Kinship|Grandeur|Hellbent|Imprint|Join forces|Undergrowth|Adamant|Addendum|Battalion|Bloodrush|Channel|Chroma|Converge|Corrupted|Fateful hour|Ferocious|Spell mastery|Tempting offer|Threshold|Alliance|Pack tactics|Enrage|Secret council|Descend \d+) — (?=When|At|If)", "", line)
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
+        line = re.sub(r"^(?:Converge|Domain|Coven) — ", "", line)            # ability words: no rules meaning
+        if line == "~ enters with a +1/+1 counter on it for each color of mana spent to cast it.":
+            extra["sunburst"] = True                                        # converge creatures: sunburst's counters
+            return None
         # Discard triggers fire once per card, so "that many" counters is one counter each time.
         line = re.sub(r"^(Whenever you discard one or more cards), put that many \+1/\+1 counters on ~\.$",
                       r"\1, put a +1/+1 counter on ~.", line)

@@ -203,6 +203,10 @@ class PlayMixin:
         item.uncounterable = any(s.card.mana_restriction == "chosen_type" and self.mana_allowed(s, card)
                                  for s in payment)
         item.mana_spent = sum(v for k, v in cost.items() if k != "X")
+        # sunburst / converge: the colored pips, plus single-color sources tapped for the rest
+        item.colors_spent = len({c for c in "WUBRG" if cost.get(c)} |
+                                {next(iter(s.produces_now)) for s in payment
+                                 if s.produces_now and len(s.produces_now) == 1 and next(iter(s.produces_now)) in "WUBRG"})
         if card.is_ability:
             item.kind = "channel"
             item.card = None
