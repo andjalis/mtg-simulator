@@ -417,7 +417,6 @@ def unblocked_damage(attackers, blockers, chump=True) -> int:
 
 class HeuristicAI:
     """Evaluation-driven player: simulates combat, holds instants for the opponent's turn."""
-    race_aware = True          # weigh the crack-back by who wins the damage race (see race_factor)
 
     def __init__(self):
         self.reset()
@@ -1392,19 +1391,7 @@ class HeuristicAI:
             return LETHAL / 2
         likely = unblocked_damage(theirs, [m for m in mine if m[3] is not None], chump=False)
         likely = min(likely, my_life - 1)
-        return CRACK_WEIGHT * self.race_factor(me, opp, their_creatures) * (life_value(my_life) - life_value(my_life - likely))
-
-    def race_factor(self, me: Player, opp: Player, their_creatures) -> float:
-        """2 when the opponent's creatures kill us in fewer turns than ours kill them (keep blockers), 0.5 when
-        ours are faster (keep attacking), else 1."""
-        if not self.race_aware:
-            return 1.0
-        mine = sum(max(0, c.power) for c in me.creatures if not c.has("defender"))
-        theirs = sum(max(0, c.power) for c in their_creatures if not c.has("defender"))
-        if not mine or not theirs:
-            return 1.0
-        my_clock, their_clock = math.ceil(opp.life / mine), math.ceil(me.life / theirs)
-        return 2.0 if their_clock < my_clock else 0.5 if my_clock < their_clock else 1.0
+        return CRACK_WEIGHT * (life_value(my_life) - life_value(my_life - likely))
 
     def score_attack(self, game, me, opp, attack, my_reach, cache):
         blockers = [c for c in opp.creatures if not c.tapped]
