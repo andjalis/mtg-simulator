@@ -362,6 +362,8 @@ _EFFECT_PATTERNS = [
     (r"DIGPUTNONCREATURE (\d+) (\d+) (\d+)",
      lambda m: Effect("dig_put", int(m[1]), int(m[2]), data={"count": int(m[3]), "noncreature": True})),
     (r"DIGFILTER (\d+) (.+)", lambda m: Effect("dig", int(m[1]), 1, data={"filter": m[2]})),
+    (r"DIGGY (\d+) (\d+)", lambda m: Effect("dig", int(m[1]), int(m[2]), data={"rest_gy": True})),
+    (r"DIGFILTERGY (\d+) (.+)", lambda m: Effect("dig", int(m[1]), 1, data={"filter": m[2], "rest_gy": True})),
     (r"DIGLANDS (\d+)", lambda m: Effect("dig", 0, int(m[1]), data={"x_lands": True})),
     (r"DIGCOUNT (\w+) (\d+)", lambda m: Effect("dig", 0, int(m[2]), data={"x_count": m[1]})),
     (r"IMPULSE (\d+)", lambda m: Effect("draw", int(m[1]))),   # "exile the top N, you may play them"

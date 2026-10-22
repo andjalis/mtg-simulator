@@ -753,6 +753,8 @@ def _face_cost_and_static_lines(st, line):
             return None
         if line in ("Partner", "Choose a Background", "Friends forever", "Assist", "Doctor's companion"):
             return None          # deck-building or teammate rules: nothing to do in a two-player game
+        if line in ("You may look at the top card of your library any time.", "Play with the top card of your library revealed."):
+            return None          # information only: the AIs don't use what is on top of a library
         if line == "Umbra armor" or line == "Totem armor":
             extra["umbra_armor"] = True
             return None

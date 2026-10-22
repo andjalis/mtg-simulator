@@ -118,6 +118,13 @@ _SUBS = [
     (re.compile(r"look at the top (\w+) cards of your library\. you may reveal (an? .+? card) from among them and "
                 r"put it into your hand\. put the rest on the bottom of your library in (?:a random|any) order\.",
                 re.I), lambda m: f"DIGFILTER {_num(m[1])} {m[2]}."),
+    (re.compile(r"(?:look at|reveal) the top (\w+) cards of your library\. put (\w+) of them into your hand and the "
+                r"(?:rest|other|others) into your graveyard\.", re.I),
+     lambda m: f"DIGGY {_num(m[1])} {_num(m[2])}."),
+    (re.compile(r"(?:look at|reveal) the top (\w+) cards of your library\. you may (?:put|reveal) (an? [\w ]+? card|an? [\w ]+ "
+                r"card and/or an? [\w ]+ card) from among them (?:and put it )?into your hand\. put the rest into your "
+                r"graveyard\.", re.I),
+     lambda m: f"DIGFILTERGY {_num(m[1])} {m[2].replace(' card and/or a ', ' or ').replace(' card and/or an ', ' or ')}."),
     (re.compile(r"look at the top \w+ cards of your library, where X is the number of lands you control\. put "
                 r"(\w+) of those cards into your hand\. put the rest on the bottom of your library in (?:a random|"
                 r"any) order\.", re.I), lambda m: f"DIGLANDS {_num(m[1])}."),

@@ -21,6 +21,8 @@ ANGER = card("Test Anger", "{1}{R}{R}", "Sorcery", "~ deals 3 damage to each cre
 MANTA = card("Test Manta", "{5}", "Artifact Creature — Fish", "Sunburst\nFlying", 0, 0)
 FLAMES = card("Test Flames", "{2}{R}", "Sorcery", "Converge — ~ deals X damage to each creature, where X is the number of "
               "colors of mana spent to cast ~.")
+GRASP = card("Test Grasp", "{1}{B}", "Sorcery", "Look at the top three cards of your library. Put one of them into your "
+             "hand and the rest into your graveyard.")
 GIANT = card("Test Giant", "{6}", "Creature — Giant", "", 6, 6)
 
 
@@ -43,7 +45,7 @@ class CoverageBatch3(unittest.TestCase):
         return perm
 
     def test_templates(self):
-        for c in (CHARGER, CROWN, WHIP, SNEAK, ACOLYTE, ANGER, MANTA, FLAMES):
+        for c in (CHARGER, CROWN, WHIP, SNEAK, ACOLYTE, ANGER, MANTA, FLAMES, GRASP):
             self.assertEqual(c.unsupported, [], c.name)
 
     def test_energy(self):
@@ -95,6 +97,12 @@ class CoverageBatch3(unittest.TestCase):
         self.game.resolve(self.a, ANGER.spell_effects[0], None)
         self.game.settle()
         self.assertIn("Grizzly Bears", [c.name for c in self.b.exile])
+
+    def test_dig_rest_to_graveyard(self):
+        self.a.library = [BEAR, ISLAND, GIANT, ISLAND]
+        self.a.hand[:] = []
+        self.game.resolve(self.a, GRASP.spell_effects[0], None)
+        self.assertEqual((len(self.a.hand), len(self.a.graveyard), len(self.a.library)), (1, 2, 1))
 
     def test_sunburst_and_converge(self):
         for c in ("W", "U", "B"):

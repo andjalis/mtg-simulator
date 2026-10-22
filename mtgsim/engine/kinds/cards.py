@@ -65,7 +65,7 @@ def dig(game, p, eff, item, **_):
     if eff.data.get("instead_two") and any(c.is_instant for c in p.graveyard) and \
             any(c.is_sorcery for c in p.graveyard):
         keep = 2
-    game.dig(p, n, keep, eff.data.get("filter"))
+    game.dig(p, n, keep, eff.data.get("filter"), rest_gy=eff.data.get("rest_gy", False))
 
 
 @kind("dig_put")
