@@ -76,7 +76,7 @@ class CombatMixin:
             if any(t is not opp for t in self.attack_targets.values()) else ""), p)
         for a in attackers:
             self.fire(p, "attacks", a)
-            self.fire(p, "creature_attacks")
+            self.fire(p, "creature_attacks", context=a)
         if len(attackers) == 1:
             self.fire(p, "attacks_alone", context=attackers[0])
         self.fire(p, "you_attack")

@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .. import discounts, graveyard, modal
-from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords
+from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, storage as _storage
 from .model import Activated, AltCost, COLORS, Effect, KEYWORDS, NUMBERS, Trigger, _num, parse_mana_cost
 from .patterns import _parse_mana_ability
 from .parse import _apply_speed_gate, _mana_restriction, _parse_ability, _parse_effects, _parse_trigger
@@ -113,6 +113,10 @@ def _face_special_lines(st, line):
             if not line:
                 return None
         kicked += re.findall(r"If ~ was kicked, (.+?\.)", line)
+        m = re.search(r"\s*If ~ was cast from a graveyard, draw (\w+) cards instead\.", line)
+        if m and _num(m[1]):                      # Plunder the Trollshaws: the graveyard casts draw more
+            extra["_gy_draw"] = _num(m[1])
+            line = line.replace(m[0], "").strip()
         line = re.sub(r"\s*If ~ was kicked, .+?\.", "", line).strip()
         lv = re.fullmatch(r"((?:\{[WUBRGC0-9/]+\})+): Level (\d+)", line)
         if lv:
@@ -123,7 +127,10 @@ def _face_special_lines(st, line):
             return None
         line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration|Heroic) — (?=When|At|If)", "", line)
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
-        if _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st):
+        # Discard triggers fire once per card, so "that many" counters is one counter each time.
+        line = re.sub(r"^(Whenever you discard one or more cards), put that many \+1/\+1 counters on ~\.$",
+                      r"\1, put a +1/+1 counter on ~.", line)
+        if _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st):
             return None
         parts = [p.strip().lower() for p in re.split(r",(?: and)? | and |,", line)]
         if all(p in KEYWORDS or re.fullmatch(r"(?:ward \{\d+\}|toxic \d+|bushido \d+)", p) for p in parts):

@@ -132,6 +132,8 @@ class TargetsMixin:
             return False
         if eff.filter.startswith("cmc:") and card.cmc != int(eff.filter[4:]):
             return False
+        if eff.filter.startswith("colors:") and not card.colors & set(eff.filter[7:]):
+            return False
         return True
 
     def counterable(self, item: StackItem) -> bool:

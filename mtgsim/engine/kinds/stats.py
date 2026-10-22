@@ -148,6 +148,10 @@ def pump_all(game, p, eff, item, **_):
             c.temp_kw.add(eff.data["keyword"])
 
 
+_KEYWORD_RANK = {k: i for i, k in enumerate(("flying", "double strike", "indestructible", "first strike", "trample",
+                                              "menace", "deathtouch", "lifelink", "hexproof", "vigilance", "haste"))}
+
+
 @kind("grant")
 def grant(game, p, eff, target, item, **_):
     if eff.data.get("host") and item is not None and isinstance(item.source, Permanent):
@@ -156,6 +160,10 @@ def grant(game, p, eff, target, item, **_):
         keyword = eff.data["keyword"]
         if keyword == protection.CHOICE:
             keyword = protection.choose_color(game, p, target)
+            game.log(f"{target.card.name} gains {keyword}", p)
+        elif keyword.startswith("choice:"):        # "your choice of flying, vigilance, or lifelink": the best one it lacks
+            options = keyword[7:].split("|")
+            keyword = min(options, key=lambda k: (target.has(k), _KEYWORD_RANK.get(k, 20)))
             game.log(f"{target.card.name} gains {keyword}", p)
         if eff.data.get("perm"):
             target.counters[keyword] = target.counters.get(keyword, 0) + 1

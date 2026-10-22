@@ -149,6 +149,7 @@ class Permanent:
         self.skip_untap = 0                             # untap steps it skips ("doesn't untap during ... next untap step")
         self.spent_color = ""              # "if {U}{U} was spent to cast it"
         self.exiled_cards: list = []       # (card, owner) exiled until this leaves the battlefield
+        self.exiled_to_hand: list = []     # (card, owner) exiled from a hand until this leaves (Kitesail Freebooter)
         self.warped = False
         self.was_cast = False              # "if you cast it"
         self.hidden = None                 # the real card of a face-down (disguised) creature
@@ -564,7 +565,7 @@ class StackItem:
     def is_spell(self): return self.kind in ("spell", "copy")
 
     def __repr__(self):
-        return self.name if self.is_spell else f"{self.name} {self.kind}"
+        return self.name if self.is_spell or self.name.endswith(self.kind) else f"{self.name} {self.kind}"
 
 
 def can_block(blocker: Permanent, attacker: Permanent) -> bool:

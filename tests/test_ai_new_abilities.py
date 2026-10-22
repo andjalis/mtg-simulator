@@ -17,6 +17,9 @@ MORPH = card("Test Morph", "{4}{G}{G}", "Creature — Beast", "Morph {G}", 6, 6)
 THUG = card("Test Thug", "{1}{R}", "Creature — Human Warrior", "Unleash", 2, 2)
 RIOTER = card("Test Rioter", "{1}{R}", "Creature — Goblin", "Riot", 2, 2)
 GIANT = card("Test Giant", "{4}", "Creature — Giant", "", 4, 4)
+ELF = card("Test Iron-Shield Elf", "{1}{B}", "Creature — Elf Warrior",
+           "Discard a card: ~ gains indestructible until end of turn. Tap it.", 3, 1)
+DOOM = card("Test Doom", "{1}{B}", "Instant", "Destroy target creature.")
 
 
 class AINewAbilities(unittest.TestCase):
@@ -53,6 +56,13 @@ class AINewAbilities(unittest.TestCase):
         self.removal(BOLT, bear)
         self.assertIn(bear, self.a.battlefield)
         self.assertEqual(bear.damage, 2)
+
+    def test_self_indestructible_against_destroy(self):
+        elf = self.put(self.a, ELF)
+        self.a.hand[:] = [ISLAND]
+        self.removal(DOOM, elf)
+        self.assertIn(elf, self.a.battlefield)
+        self.assertEqual(self.a.hand, [])
 
     def test_face_down_creature_turned_up_in_combat(self):
         self.a.ai = Scripted()

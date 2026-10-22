@@ -186,6 +186,7 @@ _EFFECT_PATTERNS = [
     (r"airbend (?:up to one )?(?:another |other )?target (?:(nonland permanent)|creature( you control)?)(?: or spell)?",
      lambda m: Effect("airbend", target="nonland_perm" if m[1] else "creature_mine" if m[2] else "creature")),
     (r"tap target permanent", lambda m: Effect("tap", 1, target="nonland_perm")),
+    (r"tap ~", lambda m: Effect("tap", 1, target="self")),
     (r"return target permanent to its owner's hand", lambda m: Effect("bounce", target="nonland_perm")),
     (r"destroy target permanent", lambda m: Effect("destroy", target="nonland_perm")),
     (r"destroy target creature with total power and toughness (\d+) or less",
@@ -240,6 +241,9 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("counter", target="spell", filter=f"cmc:{m[1]}")),
     (r"counter target artifact or creature spell",
      lambda m: Effect("counter", target="spell", filter="artifact_creature")),
+    (r"counter target (white|blue|black|red|green)(?: or (white|blue|black|red|green))? spell",
+     lambda m: Effect("counter", target="spell", filter="colors:" + "".join(
+         {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}[c] for c in (m[1], m[2]) if c))),
     (r"discover x, where x is that spell's mana value",
      lambda m: Effect("discover", 0, target="prev", data={"x_of": "spell"})),
     (r"if the discovered card's mana value is less than 10, create a number of tapped treasure tokens equal to "
@@ -271,6 +275,8 @@ _EFFECT_PATTERNS = [
     (r"choose a creature type", lambda m: None),
     (r"each player who controls a multicolored creature draws a card", lambda m: None),  # rarely matters
     (r"damage can't be prevented this turn", lambda m: None),
+    (r"destroy all artifacts and creatures", lambda m: [Effect("destroy_all", data={"type": "Artifact"}),
+                                                        Effect("wrath", target="each_creature")]),
     (r"destroy all creatures", lambda m: Effect("wrath", target="each_creature")),
     (r"destroy all planeswalkers", lambda m: Effect("wrath_pw")),
     (r"destroy all (artifacts|enchantments|lands)", lambda m: Effect("destroy_all", data={"type": m[1][:-1].capitalize()})),
@@ -322,6 +328,7 @@ _EFFECT_PATTERNS = [
     (r"DIGCOUNT (\w+) (\d+)", lambda m: Effect("dig", 0, int(m[2]), data={"x_count": m[1]})),
     (r"IMPULSE (\d+)", lambda m: Effect("draw", int(m[1]))),   # "exile the top N, you may play them"
     (r"TARGETDISCARD", lambda m: Effect("discard_choice", 1, target="player")),
+    (r"HANDEXILE (.+)", lambda m: Effect("hand_exile", target="player", filter=m[1])),
     (r"TARGETDISCARDNONCREATURE", lambda m: Effect("discard_choice", 1, target="player", filter="noncreature")),
     (r"(?:you may )?exile the top (card|one card|two cards|three cards|four cards|\d+ cards) of your library",
      lambda m: Effect("exile_top", _N_WORDS.get(m[1].split()[0], 1) if m[1] != "card" else 1)
@@ -427,6 +434,9 @@ _EFFECT_PATTERNS = [
     (r"prevent all combat damage that would be dealt this turn by creatures your opponents control",
      lambda m: Effect("fog", data={"theirs": True})),
     (r"return an? (land|creature) you control to its owner's hand", lambda m: Effect("return_own", data={"kind": m[1].lower()})),
+    (r"(?:another )?target creature you control gains your choice of ([a-z ]+?), ([a-z ]+?),? or ([a-z ]+?) until end of "
+     r"turn", lambda m: Effect("grant", target="creature_mine", data={"keyword": f"choice:{m[1]}|{m[2]}|{m[3]}"})
+     if {m[1], m[2], m[3]} <= KEYWORDS else NO_MATCH),
     (r"another target creature you control gains (deathtouch|first strike|lifelink|trample|haste|indestructible|"
      r"hexproof|vigilance|menace|reach|flying) until end of turn",
      lambda m: Effect("grant", target="creature_mine", data={"keyword": m[1].lower()})),

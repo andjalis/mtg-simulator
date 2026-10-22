@@ -9,6 +9,12 @@ from .patterns import _N_WORDS
 
 
 _SUBS = [
+    (re.compile(r"(?:target opponent reveals their hand\. you choose|look at target opponent's hand\. you may exile) an? "
+                r"(nonland|noncreature, nonland|nonartifact, nonland|instant or sorcery) card from it(?:\. exile that card)? "
+                r"until ~ leaves the battlefield\.", re.I), lambda m: f"HANDEXILE {m[1].lower()}."),
+    (re.compile(r"^(~ gains [a-z]+ until end of turn)\. tap it\.", re.I), r"\1. Tap ~."),
+    # Planeswalkers rarely matter as the target: "creature or planeswalker you control gains ..." is the creature.
+    (re.compile(r"target creature or planeswalker you control gains", re.I), "target creature you control gains"),
     # Two players: "for each opponent, tap ... that player controls" is the one opponent.
     (re.compile(r"for each opponent, (tap up to one target creature) that player controls", re.I),
      r"\1 an opponent controls"),
@@ -192,6 +198,7 @@ _TRIGGERS = [
     (r"Whenever you attack, (.+)", ("you_attack",)),
     (r"Whenever you attack with one or more ([A-Z]\w+), (.+)", ("you_attack",)),
     (r"Whenever a creature you control attacks, (.+)", ("creature_attacks",)),
+    (r"Whenever an? ([A-Z]\w+) you control attacks, (.+)", ("creature_attacks",)),
     (r"When(?:ever)? ~ enters or leaves the battlefield, (.+)", ("etb", "leaves")),
     (r"When(?:ever)? ~ leaves the battlefield, (.+)", ("leaves",)),
     (r"Whenever a player casts a spell with mana value (\d+) or less, (.+)", ("any_cast",)),

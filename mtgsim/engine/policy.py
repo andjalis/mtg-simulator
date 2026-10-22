@@ -84,7 +84,7 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return max(ready, key=lambda x: x.power, default=None)
     if k in ("counter", "bounce_spell"):
         return next((i for i in reversed(game.stack) if i in legal), None)
-    if k in ("discard", "discard_choice"):
+    if k in ("discard", "discard_choice", "hand_exile"):
         return opp if opp.hand else None
     return None
 
@@ -164,7 +164,7 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
             total += sum(map(perm_value, opp.planeswalkers)) - sum(map(perm_value, me.planeswalkers))
         elif k == "damage":
             total += perm_value(tgt) if isinstance(tgt, Permanent) else (100 if e.amount >= opp.life else 1)
-        elif k in ("discard", "discard_choice"):
+        elif k in ("discard", "discard_choice", "hand_exile"):
             total += 2 if opp.hand else 0
         elif k == "regrow":
             total += max((c.cmc for c in me.graveyard if c.is_creature), default=-1)
@@ -314,11 +314,14 @@ def protective_ability(game: Game, me: Player, item, victim):
             e = act.effects[0]
             keyword = e.data.get("keyword") if e.kind == "grant" else None
             saves = (keyword == "protection_choice" and colored or keyword == "hexproof"
-                     or keyword == "indestructible" and any(x.kind == "destroy" for x in item.effects)
+                     or keyword == "indestructible" and (any(x.kind == "destroy" for x in item.effects)
+                                                         or damage >= victim.toughness - victim.damage)
                      or e.kind == "prevent_next" and damage and victim.toughness - victim.damage > damage - e.amount)
-            if not saves or e.target not in ("creature", "creature_mine", "any"):
+            if not saves or e.target not in ("creature", "creature_mine", "any", "self") or \
+                    e.target == "self" and perm is not victim:
                 continue
-            return ("activate", perm, f"ability:{i}", [victim] + [None] * (len(act.effects) - 1))
+            first = [] if e.target == "self" else [victim]
+            return ("activate", perm, f"ability:{i}", first + [None] * (len(act.effects) - len(first)))
     return None
 
 
