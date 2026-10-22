@@ -135,6 +135,9 @@ class StackMixin:
                             subject.power > perm.power or subject.toughness > perm.toughness):
                         continue
                     context = subject
+                if trig.filter.startswith("attacker:") and not (isinstance(context, Permanent)
+                                                                and trig.filter[9:] in context.card.subtypes):
+                    continue
                 if trig.filter.startswith("with:") and \
                         not any(trig.filter[5:] in a.card.subtypes for a in self.attackers):
                     continue

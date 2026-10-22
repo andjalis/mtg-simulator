@@ -296,7 +296,8 @@ to select another local database.
 - Morph and megamorph use the face-down path of disguise (a 2/2 for {3}, without ward), including
   "when ~ is turned face up" triggers; a face-down creature in combat is turned up when it can be paid for.
   The AI answers removal aimed at its creature with activated protection (Mother of Runes, prevention
-  shields, hexproof or indestructible granters) when it has one ready. Dash, blitz without life, buyback, surge, prototype and suspend
+  shields, hexproof or indestructible granters, including a creature's own "discard a card: ~ gains
+  indestructible") when it has one ready. Dash, blitz without life, buyback, surge, prototype and suspend
   (the AI suspends cards it can't cast for two more turns, or at all). Unearth is cast from the graveyard
   like a spell and madness is cast from the graveyard during the turn of the discard (both recorded as
   simplifications)
@@ -346,7 +347,17 @@ to select another local database.
   returns the card with a +1/+1 counter, creature-type anthems that also grant a keyword, "up to one target
   creature gets +N/+N", "you and target opponent each draw a card", tutors that end with "discard a card at
   random", and costed mana abilities such as "{2}, {T}: Add {U} or {R}" or "one mana of any color" (the
-  color is chosen by what the hand needs). Storage lands are not supported yet
+  color is chosen by what the hand needs)
+- Storage lands (Fountain of Cho, Calciform Pools, Bottomless Vault): a land left untapped through the
+  opponent's turn banks a storage counter as that turn ends, and counters are spent as mana of the land's
+  colors (tapping it). Lands that "may choose not to untap" stay tapped until their stored mana makes a spell
+  castable. City of Shadows and Crucible of the Spirit Dragon are not parsed
+- Counterspells for a color ("counter target red or green spell"), "whenever a Bat you control attacks",
+  "whenever you discard one or more cards, put that many +1/+1 counters on ~", "~ gains indestructible until end
+  of turn. Tap it.", Auras that grant ward, "gains your choice of flying, vigilance, or lifelink" (the best keyword
+  it lacks), kicked "it deals N damage to that creature instead", "if this spell was cast from a graveyard, draw
+  two cards instead", "destroy all artifacts and creatures", and Kitesail Freebooter / Deep-Cavern Bat (exile a
+  card from the opponent's hand until ~ leaves, the highest mana value one)
 - Regeneration shields replace destruction, tap the permanent, clear its damage
   and remove it from combat. They expire at cleanup and cannot prevent sacrifice
   or zero toughness. Regeneration-prevention riders on destruction and damage apply

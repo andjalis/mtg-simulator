@@ -142,6 +142,26 @@ def discard_choice(game, p, eff, target, **_):
             game.log(f"makes {target} discard {card.name}", p)
 
 
+_HAND_FILTERS = {"nonland": lambda c: not c.is_land,
+                 "noncreature, nonland": lambda c: not c.is_land and not c.is_creature,
+                 "nonartifact, nonland": lambda c: not c.is_land and not c.is_artifact,
+                 "instant or sorcery": lambda c: c.is_instant or c.is_sorcery}
+
+
+@kind("hand_exile")
+def hand_exile(game, p, eff, target, item, **_):
+    """Kitesail Freebooter, Deep-Cavern Bat: exile the best matching card from target's hand until ~ leaves."""
+    src = item.source if item is not None else None
+    if not isinstance(target, Player) or not isinstance(src, Permanent) or src not in src.controller.battlefield:
+        return
+    legal = [c for c in target.hand if _HAND_FILTERS[eff.filter](c)]
+    if legal:
+        card = max(legal, key=lambda c: c.cmc)
+        card = game.move_card(card, target.hand, target.exile, reason="exile")
+        src.exiled_to_hand.append((card, target))
+        game.log(f"exiles {card.name} from {target}'s hand until {src.card.name} leaves", p)
+
+
 @kind("learn")
 def learn(game, p, **_):
     learning.resolve(game, p)

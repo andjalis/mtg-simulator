@@ -224,6 +224,11 @@ class EffectsMixin:
                 card_owner.exile.remove(card)
                 self.log(f"{card.name} returns from exile", card_owner)
                 self.enter_battlefield(card_owner, card)
+        returning, perm.exiled_to_hand = perm.exiled_to_hand, []
+        for card, card_owner in returning:
+            if card in card_owner.exile:
+                self.move_card(card, card_owner.exile, card_owner.hand, reason="return")
+                self.log(f"{card.name} returns to {card_owner}'s hand", card_owner)
         if perm in self.attackers:
             self.attackers.remove(perm)
         if not perm.front.is_token:

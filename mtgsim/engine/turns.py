@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from .. import alt_casts, auras, copies, creature_keywords, graveyard
+from .. import alt_casts, auras, copies, creature_keywords, graveyard, storage
 from ..cards import Activated, CardDef, Effect
 from .. import rules_events, continuous
 from ..identity import CardInstance, Graveyard
@@ -229,6 +229,7 @@ class TurnsMixin:
         for perm in self.opponent(p).battlefield:
             if perm.card.untap_each_untap:
                 perm.tapped = False
+        storage.before_untap(self, p)
         for perm in p.battlefield:
             if perm.skip_untap:
                 perm.skip_untap -= 1        # "doesn't untap during its controller's next untap step"
@@ -238,6 +239,8 @@ class TurnsMixin:
                 pass
             elif perm.tapped and perm.card.no_untap:
                 pass                        # "~ doesn't untap during your untap step."
+            elif perm.tapped and storage.keeps_tapped(self, p, perm):
+                pass                        # a storage land kept tapped to bank a counter
             else:
                 perm.tapped = False
             perm.sick = False
@@ -365,5 +368,6 @@ class TurnsMixin:
                 self.queue_trigger(controller, [Effect("rebound_cast")], name=f"{card.name}: rebound",
                                    context=(card, version))
         creature_keywords.upkeep(self, p)
+        storage.upkeep(self, p)
         alt_casts.upkeep(self, p)
         self.fire(p, "upkeep")

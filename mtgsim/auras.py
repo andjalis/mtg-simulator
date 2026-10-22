@@ -56,12 +56,14 @@ def parse_line(line: str, extra: dict, types) -> bool:
         extra.setdefault("_approx", []).append("loses all abilities: only keywords are removed")
         return True
     m = re.fullmatch(rf"Enchanted creature (?:gets ([+−-])(\d+)/([+−-])(\d+))?(?:,? and |, | )?"
-                     rf"(?:has ((?:{_KW})(?:(?:, | and |, and )(?:{_KW}))*))?\.", line)
-    if m and (m[1] or m[5]):
+                     rf"(?:has ((?:{_KW})(?:(?:, | and |, and )(?:{_KW}))*))?(?:(?:,? and | )?(?:has )?ward \{{(\d+)\}})?\.", line)
+    if m and (m[1] or m[5] or m[6]):
         bonus = (_n(m[1], m[2]), _n(m[3], m[4])) if m[1] else (0, 0)
         kws = frozenset(k.strip() for k in re.split(r", and |, | and ", m[5])) if m[5] else frozenset()
         extra["equip_bonus"] = bonus
         extra["equip_keywords"] = kws
+        if m[6]:
+            extra["equip_ward"] = int(m[6])
         return True
     return False
 

@@ -304,7 +304,7 @@ def _parse_face(data: dict) -> CardDef:
     if "kicker" in extra:
         kicked_effects = [dataclasses.replace(e) for e in spell]
         for k in kicked:
-            m = re.fullmatch(r"it deals (\d+) damage instead\.", k)
+            m = re.fullmatch(r"it deals (\d+) damage(?: to that (?:creature|player|permanent))? instead\.", k)
             dmg = [e for e in kicked_effects if e.kind == "damage"]
             if m and dmg:
                 dmg[0].amount = int(m[1])
@@ -320,6 +320,14 @@ def _parse_face(data: dict) -> CardDef:
         alt_costs.append(AltCost("kicker", add_mana(cost, extra.pop("kicker")), effects=kicked_effects))
     elif kicked:
         unsupported += [f"if kicked: {k}" for k in kicked]
+    gy_draw = extra.pop("_gy_draw", 0)
+    gy_casts = [a for a in alt_costs if a.zone == "graveyard" and a.effects is None]
+    draws = [e for e in spell if e.kind == "draw"]
+    if gy_draw and gy_casts and draws:
+        for a in gy_casts:
+            a.effects = [dataclasses.replace(e, amount=gy_draw) if e is draws[0] else e for e in spell]
+    elif gy_draw:
+        unsupported.append(f"If ~ was cast from a graveyard, draw {gy_draw} cards instead.")
     if gate is not None:
         _apply_speed_gate(gate, triggers, activated)
     for i, (n, start) in enumerate(level_marks):
@@ -506,6 +514,8 @@ def _parse_trigger_line(line: str):
             flt = m[1]
         if events == ("you_attack",) and m.lastindex == 2:
             flt = f"with:{m[1].rstrip('s')}"
+        if events == ("creature_attacks",) and m.lastindex == 2:
+            flt = f"attacker:{m[1]}"
         if events[0] == "other_creature_enters":
             flt = "greater_power"
         if events == ("permanent_enters",):

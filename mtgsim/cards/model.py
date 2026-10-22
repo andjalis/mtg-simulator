@@ -242,6 +242,7 @@ class CardDef:
     escape_counters: int = 0                            # "~ escapes with N +1/+1 counters on it."
     anthem_all: tuple = ()                              # ("Sliver", 1, 1): "All Sliver creatures get +1/+1."
     extra_blocks: int = 0                               # "can block an additional creature" (99: any number)
+    storage: dict = field(default_factory=dict)         # storage lands: bank cost, colors, hold, upkeep (see storage.py)
     lure: bool = False                                  # "All creatures able to block ~ do so."
     min_blockers: int = 0                               # "can't be blocked except by two or more creatures"
     max_blockers: int = 0                               # "~ can't be blocked by more than one creature."

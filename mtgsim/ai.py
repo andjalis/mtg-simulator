@@ -817,7 +817,7 @@ class HeuristicAI:
                     return None
                 targets.append(tgt)
                 value += eff.amount
-            elif eff.kind == "discard_choice":
+            elif eff.kind in ("discard_choice", "hand_exile"):
                 targets.append(opp if eff.target == "player" else None)
                 value += 2.0 if opp.hand else -0.5
             elif eff.kind == "regrow":

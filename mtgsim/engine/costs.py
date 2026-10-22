@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING
 
-from .. import alt_casts, auras, copies, counting, discounts, returns, costs
+from .. import alt_casts, auras, copies, counting, discounts, returns, costs, storage
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
@@ -49,6 +49,10 @@ class CostsMixin:
             if not mana.tapped and mana is not exclude:
                 mana.produces_now = mana.card.produces
                 out.append(mana)
+        stored = storage.stored_sources(p, exclude)
+        if stored:                                  # a storage land spends its counters instead of its own mana
+            lands = {id(m.stored_in) for m in stored}
+            out = [s for s in out if id(s) not in lands] + stored
         return out
 
     def mana_allowed(self, perm: Permanent, spell) -> bool:
@@ -100,6 +104,9 @@ class CostsMixin:
         if payment is None:
             return None
         for s in payment:
+            if getattr(s, "stored_in", None) is not None:
+                storage.spend(s)
+                continue
             if s.card.color_skips_untap and self._needed_color(p, s, payment, cost):
                 s.skip_untap = max(s.skip_untap, 1)   # its colored mana was spent: it skips its next untap
             if s.card.mana_filter == "once":
