@@ -912,6 +912,11 @@ def _face_keyword_ability_lines(st, line):
         if m:
             alt_costs.append(AltCost("alt", parse_mana_cost(m[1])))
             return None
+        m = re.fullmatch(r"If (.+?), you may cast ~ without paying its mana cost\.", line)
+        cond = _statics.free_cast_condition(m[1]) if m else None
+        if cond:                                   # the Legates: "If an opponent controls a Plains and you control a Mountain"
+            alt_costs.append(AltCost("free_if", {"generic": 0}, cond=cond))
+            return None
         m = re.fullmatch(r"If the \{[^ ]+\} cost was paid, an opponent draws a card\.", line)
         if m and alt_costs and alt_costs[-1].kind == "alt":
             alt_costs[-1].extra.append(Effect("draw", 1, target="each_opponent"))

@@ -62,9 +62,17 @@ EFFECT_PATTERNS = [
      lambda m: _scaled(_per("gain_life")(m), int(m[1]))),
     (r"you lose (\d+) life for each (?P<what>[\w -]+?) you control",
      lambda m: _scaled(_per("lose_life")(m), int(m[1]))),
+    (r"(?:it|~) gets \+(\d+)/\+(\d+) until end of turn for each other attacking (?P<what>[\w -]+?)",
+     lambda m: _pump_per(m, "attacking")),
     (r"put a \+1/\+1 counter on ~ for each (?P<what>[\w -]+?) you control",
      lambda m: _scaled(_per("p1_counters", target="self")(m), 1)),
 ]
+
+
+def _pump_per(m, zone):
+    from .cards import Effect
+    return Effect("pump", int(m[1]), int(m[2]), target="self",
+                  data={"per": {"what": "other " + _singular(m["what"]), "zone": zone}})
 
 
 def _scaled(eff, n):
@@ -79,4 +87,7 @@ def count(game, p, per: dict, source=None) -> int:
     what = what[6:] if other else what
     if per["zone"] == "graveyard":
         return sum(fits(c, what) for c in p.graveyard)
+    if per["zone"] == "attacking":          # "for each other attacking Aurochs"
+        return sum(1 for x in game.attackers if x.controller is p and not (other and x is source)
+                   and (what == "creature" or fits(x.card, what, x)))
     return sum(1 for x in p.battlefield if not (other and x is source) and fits(x.card, what, x))

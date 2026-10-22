@@ -58,6 +58,7 @@ EFFECT_PATTERNS = [
     (r"target creature you control deals damage equal to its power to target creature or planeswalker( " + _THEIRS + ")?",
      lambda m: _pair("bite", "creature_pw", "opp" if m[1] else "")),
     (r"untap target creature", lambda m: _effect("untap_target", "creature")),
+    (r"untap target (?:basic )?land", lambda m: _effect("untap_target", "land")),
     (rf"target creature you control gains ({_KW}) until end of turn",
      lambda m: _effect("grant", "creature_mine", data={"keyword": m[1].lower()})),
 ]

@@ -42,6 +42,20 @@ def parse_line(line: str, st) -> bool:
         if entry is not None:
             st.extra["team_statics"] = st.extra.get("team_statics", ()) + (entry,)
             return True
+        m = re.fullmatch(rf"Each creature you control with a \+1/\+1 counter on it has ((?:{_KW})(?:(?:, |,? and )(?:{_KW}))*)\.",
+                         line)
+        if m:                                      # the wording of "Creatures you control with +1/+1 counters on them"
+            kws = {k.strip() for k in re.split(r", and |, | and ", m[1])}
+            st.extra["counter_team_keywords"] = st.extra.get("counter_team_keywords", frozenset()) | kws
+            return True
+        tax = _tax(line)
+        if tax:
+            st.extra["spell_tax"] = st.extra.get("spell_tax", ()) + (tax,)
+            return True
+        m = re.fullmatch(r"~ can't (attack or block|attack|block) alone\.", line)
+        if m:
+            st.extra["not_alone"] = tuple(w for w in ("attack", "block") if w in m[1])
+            return True
         desc = unblockable_by(line)
         if desc:
             st.extra["unblockable_by"] = st.extra.get("unblockable_by", ()) + (desc,)
@@ -56,6 +70,65 @@ def parse_line(line: str, st) -> bool:
                 st.extra["cond_keywords"] = st.extra.get("cond_keywords", ()) + ((k.strip(), cond),)
             return True
     return False
+
+
+_SPELL_WORDS = {"creature", "noncreature", "artifact", "nonartifact", "enchantment", "instant", "sorcery", "land",
+                "multicolored", "colorless", "legendary", "planeswalker", *_COLORS}
+
+
+def _tax(line: str):
+    """("all" | "theirs" | "mine", alternatives, N) for "Noncreature spells cost {1} more to cast." and the like."""
+    m = re.fullmatch(r"(?:([\w ]+?) )?[Ss]pells( your opponents cast| you cast)? cost \{(\d+)\} more to cast\.", line)
+    if not m:
+        return None
+    alts = tuple(a.strip().lower() for a in re.split(r" and | or |, ", m[1])) if m[1] else ("",)
+    if not all(all(w in _SPELL_WORDS for w in a.split()) for a in alts if a):
+        return None
+    scope = {" your opponents cast": "theirs", " you cast": "mine"}.get(m[2] or "", "all")
+    return scope, alts, int(m[3])
+
+
+def spell_tax(game, p, card) -> int:
+    """Generic mana added to card's cost when p casts it, from every permanent's spell taxes."""
+    n = 0
+    for pl in game.players:
+        for x in pl.battlefield:
+            for scope, alts, k in x.card.spell_tax:
+                if scope == "theirs" and pl is p or scope == "mine" and pl is not p:
+                    continue
+                if any(_spell_is(card, a) for a in alts):
+                    n += k
+    return n
+
+
+def _spell_is(card, words: str) -> bool:
+    for w in words.split():
+        if w in _COLORS and _COLORS[w] not in card.colors or w == "multicolored" and len(card.colors) < 2 or \
+                w == "colorless" and card.colors or w == "noncreature" and card.is_creature or \
+                w == "nonartifact" and card.is_artifact or w == "legendary" and not card.legendary or \
+                w in ("creature", "artifact", "enchantment", "instant", "sorcery", "land", "planeswalker") \
+                and w.capitalize() not in card.types:
+            return False
+    return True
+
+
+def free_cast_condition(text: str):
+    """"an opponent controls a Plains and you control a Mountain" -> "opp:Plains&you:Mountain", or None."""
+    parts = []
+    for clause in text.split(" and "):
+        m = re.fullmatch(r"(an opponent|you) controls? an? (.+)", clause)
+        if not m or not _desc_ok(m[2]):
+            return None
+        parts.append(f"{'opp' if m[1] == 'an opponent' else 'you'}:{m[2]}")
+    return "&".join(parts)
+
+
+def free_cast_allowed(p, opp, cond: str) -> bool:
+    for part in cond.split("&"):
+        who, desc = part.split(":", 1)
+        if not any(desc_matches(x, desc) for x in (opp if who == "opp" else p).battlefield):
+            return False
+    return True
 
 
 def _condition(text: str):

@@ -60,6 +60,8 @@ class CombatMixin:
                      and (not a.card.attack_needs or any(a.card.attack_needs in x.card.subtypes for x in opp.battlefield))]
         attackers += [a for a in p.creatures if (a.card.must_attack or a.has("must_attack_now")) and a.can_attack()
                       and a not in attackers]
+        if len(attackers) == 1 and "attack" in attackers[0].card.not_alone:
+            attackers = []                 # "~ can't attack alone"
         self.attackers = list(attackers)
         if not attackers:
             return
@@ -107,6 +109,9 @@ class CombatMixin:
                 for b in bl:
                     used[b] = used.get(b, 0) + 1
         blocks = legal
+        lone = [b for bl in blocks.values() for b in bl]
+        if len(lone) == 1 and "block" in lone[0].card.not_alone:
+            blocks = {}                    # "~ can't block alone"
         self.blocks = blocks
         if blocks:
             self.log(f"blocks {blocks}", opp)

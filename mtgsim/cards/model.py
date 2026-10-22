@@ -85,6 +85,7 @@ class AltCost:
     hybrid: tuple = ()               # hybrid pips in cost, e.g. ("UB", "UB") for {U/B}{U/B}
     counters: int = 0                # impending: time counters it enters with; suspend: time counters
     pt: tuple = ()                   # prototype: (power, toughness)
+    cond: str = ""                   # free_if: when the free cast is allowed (statics.free_cast_allowed)
 
 
 @dataclass
@@ -244,6 +245,8 @@ class CardDef:
     color_skips_untap: bool = False                     # "{T}: Add {B} or {R}. ~ doesn't untap during your next untap step."
     dredge: int = 0                                     # Dredge N
     escape_counters: int = 0                            # "~ escapes with N +1/+1 counters on it."
+    spell_tax: tuple = ()                               # "Noncreature spells cost {1} more to cast." (statics.py)
+    not_alone: tuple = ()                               # "~ can't attack or block alone": ("attack", "block")
     unblockable_by: tuple = ()                          # "~ can't be blocked by white creatures" (statics.py)
     team_statics: tuple = ()                            # general anthems / keyword grants (see statics.py)
     anthem_all: tuple = ()                              # ("Sliver", 1, 1): "All Sliver creatures get +1/+1."

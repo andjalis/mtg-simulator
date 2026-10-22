@@ -156,6 +156,9 @@ _EFFECT_PATTERNS = [
     (r"each opponent loses (\d+) life and you gain (\d+) life",
      lambda m: [Effect("drain", int(m[1]), target="each_opponent"), Effect("gain_life", int(m[2]))]),
     (r"DEVOTIONDRAIN ([WUBRG])", lambda m: Effect("drain_devotion", data={"color": m[1]})),
+    # "Whenever ~ blocks or becomes blocked, it gets +2/-2": a toughness loss is the creature's own
+    (r"(?:~|it) gets ((?:[+-]\d+)/-\d+|-\d+/\+\d+) until end of turn",
+     lambda m: Effect("pump", *map(int, m[1].split("/")), target="self")),
     (r"another target creature you control gets \+(\d+)/\+(\d+)(?: and gains (flying|first strike|double strike|deathtouch|"
      r"lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach))? until end of turn",
      lambda m: Effect("pump", int(m[1]), int(m[2]), target="creature_mine", data={"keyword": m[3].lower()} if m[3] else {})),
@@ -432,6 +435,7 @@ _EFFECT_PATTERNS = [
     (r"support (\d+|one|two|three|four|five|six)", lambda m: Effect("support", _num(m[1]))),
     (r"(?:target|each) opponent sacrifices a creature(?: of their choice)?", lambda m: Effect("edict", 1)),
     (r"each other player sacrifices a creature", lambda m: Effect("edict", 1)),
+    (r"target player sacrifices a creature(?: of their choice)?", lambda m: Effect("edict", 1)),   # the AI aims at the opponent
     (r"creatures without flying can't block this turn", lambda m: Effect("cant_block_all", filter="nonflying")),
     (r"attacking creatures (?:you control )?get \+(\d+)/\+(\d+) until end of turn",
      lambda m: Effect("pump_attackers", int(m[1]), int(m[2]))),
@@ -458,6 +462,8 @@ _EFFECT_PATTERNS = [
     (r"prevent all combat damage that would be dealt this turn by creatures your opponents control",
      lambda m: Effect("fog", data={"theirs": True})),
     (r"return an? (land|creature) you control to its owner's hand", lambda m: Effect("return_own", data={"kind": m[1].lower()})),
+    (r"return an? ((?:white|blue|black|red|green|artifact|[A-Z][a-z]+)(?: or (?:white|blue|black|red|green))? creature) you "
+     r"control to its owner's hand", lambda m: Effect("return_own", data={"kind": "creature", "desc": m[1]})),
     (r"(?:another )?target creature you control gains your choice of ([a-z ]+?), ([a-z ]+?),? or ([a-z ]+?) until end of "
      r"turn", lambda m: Effect("grant", target="creature_mine", data={"keyword": f"choice:{m[1]}|{m[2]}|{m[3]}"})
      if {m[1], m[2], m[3]} <= KEYWORDS else NO_MATCH),
@@ -489,15 +495,15 @@ _EFFECT_PATTERNS = [
      lambda m: _token(m[1], m[2], m[3], m[4], m[6], bool(m[5]))),
     (r'create (a) (\d+)/(\d+) ((?:\w+ )+?)creature token with "(.+)"',
      lambda m: _token(m[1], m[2], m[3], m[4], "", False, m[5])),
-    (r"create (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
+    (r"create (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen|powerstone) tokens?",
      lambda m: Effect("token", _num(m[1]), data={"kind": m[2].lower()})),
-    (r"create (a|one|two|three|four|five|six|seven|eight|nine|ten) tapped (treasure|clue|blood|map|lander|food|mutagen) "
+    (r"create (a|one|two|three|four|five|six|seven|eight|nine|ten) tapped (treasure|clue|blood|map|lander|food|mutagen|powerstone) "
      r"tokens?", lambda m: Effect("token", _TENS.get(m[1].lower(), 1), data={"kind": m[2].lower(), "tapped": True})),
     (r"create (a|one|two|three|four|five) tapped (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: with ([\w ,]+))?",
      lambda m: _tapped(_token(m[1], m[2], m[3], m[4], m[5]))),
-    (r"target player creates (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
+    (r"target player creates (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen|powerstone) tokens?",
      lambda m: Effect("token", _num(m[1]), data={"kind": m[2].lower()})),
-    (r"its controller creates (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
+    (r"its controller creates (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen|powerstone) tokens?",
      lambda m: Effect("token", _num(m[1]), target="that_controller", data={"kind": m[2].lower()})),
     (r"target creature you control explores", lambda m: Effect("explore", target="creature_mine")),
     (r"(?:you may )?return ~ from your graveyard to the battlefield( tapped)?",

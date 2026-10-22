@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING
 
-from .. import alt_casts, auras, copies, counting, discounts, returns, costs, storage
+from .. import alt_casts, auras, copies, counting, discounts, returns, costs, statics, storage
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
@@ -63,9 +63,11 @@ class CostsMixin:
         """Whether perm's restricted mana (or this restriction) may pay for spell (see mana_sources)."""
         if spell is None:
             return True
+        r = restriction or perm.card.mana_restriction
+        if r == "powerstone":            # "This mana can't be spent to cast a nonartifact spell."
+            return not isinstance(spell, CardDef) or spell.is_artifact
         if not isinstance(spell, CardDef):
             return False
-        r = restriction or perm.card.mana_restriction
         if r == "creature":
             return spell.is_creature
         if r == "artifact":
@@ -359,7 +361,7 @@ class CostsMixin:
                 n += k
         for key, k in card.per_discount:
             n += k * discounts.count(self, p, key)
-        cost["generic"] = max(0, cost.get("generic", 0) - n)
+        cost["generic"] = max(0, cost.get("generic", 0) - n) + statics.spell_tax(self, p, card)
         if card.extra_discard and card.discard_or_pay and self.spare_cards(p, card) < 1:
             cost["generic"] += card.discard_or_pay
         if card.behold_or_pay:
@@ -498,6 +500,8 @@ class CostsMixin:
             if c.adventure:
                 out.append(self._variant(c, "adventure"))
             for a in c.alt_costs:
+                if a.kind == "free_if" and statics.free_cast_allowed(p, opp, a.cond):
+                    out.append(self._variant(c, a.kind, a))
                 if a.kind in ("alt", "kicker") or (a.kind == "spectacle" and opp.lost_life_turn) or \
                         (a.kind in ("blitz", "dash") and "hand" in a.zone):
                     out.append(self._variant(c, a.kind, a))

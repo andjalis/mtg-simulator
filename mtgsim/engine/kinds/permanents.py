@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from ... import copies
+from ... import copies, statics
 from ...cards import CardDef, Effect, jace_token, make_token, role_token
 from ..policy import choose_basic, perm_value
 from ..state import Permanent, Player, is_basic_land
@@ -58,7 +58,8 @@ def return_own(game, p, eff, item, **_):
     before a nonbasic), then the cheapest creature; the source itself only when nothing else is left."""
     src = item.source if item is not None else None
     land = eff.data["kind"] == "land"
-    pool = [x for x in p.battlefield if (x.card.is_land if land else x.is_creature)]
+    pool = [x for x in p.battlefield if (x.card.is_land if land else x.is_creature)
+            and (not eff.data.get("desc") or statics.desc_matches(x, eff.data["desc"]))]
     if not pool:
         return
     pick = min(pool, key=lambda x: (x is src, not x.tapped, not is_basic_land(x.card)) if land else
