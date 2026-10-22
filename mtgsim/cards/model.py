@@ -132,6 +132,8 @@ class CardDef:
     oracle: str = ""
     triggers: list = field(default_factory=list)       # Trigger, including the ETB one
     mana_amount: int = 1                                # Sol Ring makes 2
+    gy_to_exile: bool = False                           # "If ~ would be put into a graveyard from anywhere, exile it instead."
+    restricted_amount: int = 1                          # Tablet of Discovery: its restricted ability makes {R}{R}
     tapped_condition: str = ""                          # "unless_2_lands" / "if_2_lands" / "shock"
     ward: int = 0
     ward_untapped_only: bool = False
@@ -149,6 +151,7 @@ class CardDef:
     chapters: list = field(default_factory=list)        # saga chapters: one effect list each
     back: "CardDef | None" = None                       # transformed face
     adventure: "CardDef | None" = None
+    split_right: "CardDef | None" = None                # split cards (Fire // Ice): the right half, cast instead
     land_face: "CardDef | None" = None                  # a modal double-faced card's land back face
     alt_costs: list = field(default_factory=list)
     activated: list = field(default_factory=list)

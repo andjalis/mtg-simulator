@@ -153,6 +153,8 @@ def resolve(game, p, eff, target, item):
             host.tapped = True
             game.log(f"taps {host.card.name}", p)
     elif eff.kind == "attach_self":
+        if target is None and eff.target == "prev":     # "create a 1/1 Soldier token, then attach ~ to it"
+            target = next((x for x in reversed(p.battlefield) if x.card.is_token and x.is_creature), None)
         if source is not None and source in p.battlefield and target is not None and target in p.battlefield:
             source.attached_to = target
             game.log(f"{source.card.name} attaches to {target.card.name}", p)

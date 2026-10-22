@@ -23,6 +23,23 @@ def equip(game, p, eff, target, item, **_):
         game.log(f"equips {equipment.card.name} to {target.card.name}", p)
 
 
+@kind("attach_new_equipment")
+def attach_new_equipment(game, p, target, **_):
+    """"When you do, attach it to target creature you control": the Equipment token just created."""
+    new = [x for x in p.battlefield if x.card.is_token and "Equipment" in x.card.subtypes and x.attached_to is None]
+    if new and isinstance(target, Permanent) and target in p.battlefield and target.is_creature:
+        new[-1].attached_to = target
+        game.log(f"attaches {new[-1].card.name} to {target.card.name}", p)
+
+
+@kind("hone")
+def hone(game, p, **_):
+    """Dwalin: a hone counter on each Equipment you control (+1/+0 each to the equipped creature)."""
+    for x in p.battlefield:
+        if "Equipment" in x.card.subtypes:
+            x.counters["hone"] = x.counters.get("hone", 0) + 1
+
+
 @kind("pump")
 def pump(game, eff, target, **_):
     if isinstance(target, Permanent) and target in target.controller.battlefield:
@@ -141,6 +158,8 @@ def pump_all(game, p, eff, item, **_):
     src = item.source if item is not None else None
     for c in p.creatures:
         if eff.data.get("other") and c is src:
+            continue
+        if eff.data.get("only") == "equipped_attacking" and not (c.equipment and c in game.attackers):
             continue
         c.pump_p += eff.amount
         c.pump_t += eff.amount2

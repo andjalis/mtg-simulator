@@ -9,8 +9,9 @@ from . import NO_SBA, kind
 
 
 @kind("draw")
-def draw(game, p, eff, opp, item=None, **_):
-    who = opp if eff.target == "each_opponent" else p
+def draw(game, p, eff, opp, item=None, target=None, **_):
+    who = opp if eff.target == "each_opponent" else target if eff.target == "that_controller" and \
+        isinstance(target, Player) else p
     n = eff.amount
     if eff.data.get("x_half"):
         src = item.source if item is not None else None
@@ -276,12 +277,15 @@ def shuffle_away(game, p, target, item, **_):
 
 
 @kind("connive")
-def connive(game, target, item, **_):
+def connive(game, eff, target, item, **_):
     who = target if isinstance(target, Permanent) else (item.source if item is not None else None)
     if isinstance(who, Permanent) and who in who.controller.battlefield:
         ctl = who.controller
-        game.draw(ctl)
-        if ctl.hand:
+        n = max(1, len(game.attackers)) if eff.data.get("per_attacker") else 1     # Raffine: connives X
+        game.draw(ctl, n)
+        for _ in range(n):
+            if not ctl.hand:
+                break
             card = ctl.ai.choose_discard(game, ctl)
             game.discard_card(ctl, card)
             game.log(f"{who.card.name} connives, discarding {card.name}", ctl)

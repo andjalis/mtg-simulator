@@ -11,7 +11,7 @@ colors per counter (see ``stored_sources``) in place of its own mana: spending a
 pays the {T} or, for the {1} kind, the {1} through its own {C}. Choices: a land that stayed untapped through the
 opponent's turn banks a counter as their turn ends (it untaps right after, so this is free), and a land that may
 stay tapped is untapped only when its stored mana lets its controller cast something they couldn't otherwise.
-Not parsed: City of Shadows (exiling a creature) and the restricted mana of Crucible of the Spirit Dragon.
+Crucible of the Spirit Dragon's mana pays only for Dragon spells (not abilities). Not parsed: City of Shadows.
 """
 from __future__ import annotations
 
@@ -52,6 +52,11 @@ def _parse(line, storage, parse_mana_cost) -> bool:
     if m:
         storage["colors"] = frozenset({m[1], m[2]})
         return True
+    m = re.fullmatch(r"\{T\}, Remove X storage counters from ~: Add X mana in any combination of colors\. Spend this "
+                     r"mana only to cast ([A-Z]\w+) spells or activate abilities of \1s\.", line)
+    if m:                                     # Crucible of the Spirit Dragon: only for Dragon spells
+        storage.update(colors=frozenset("WUBRG"), restriction=f"subtype:{m[1]}")
+        return True
     if line == _HOLD:
         storage["hold"] = True
         return True
@@ -78,12 +83,16 @@ def _stored_mana(colors: frozenset):
     return _STORED[colors]
 
 
-def stored_sources(p, exclude=None) -> list:
-    """One mana per storage counter on p's untapped storage lands (each carries ``stored_in``)."""
+def stored_sources(p, exclude=None, allowed=lambda restriction: True) -> list:
+    """One mana per storage counter on p's untapped storage lands (each carries ``stored_in``). ``allowed`` says
+    whether mana with a spending restriction ("subtype:Dragon") may pay for what is being paid for."""
     from .engine.state import Permanent
     out = []
     for perm in p.battlefield:
         colors = perm.card.storage.get("colors") if perm.card.storage else None
+        restriction = perm.card.storage.get("restriction") if colors else None
+        if restriction and not allowed(restriction):
+            continue
         if colors and not perm.tapped and perm is not exclude and perm.counters.get(_COUNTER, 0) > 0:
             for _ in range(perm.counters[_COUNTER]):
                 mana = Permanent(_stored_mana(colors), p)

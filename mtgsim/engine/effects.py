@@ -192,7 +192,7 @@ class EffectsMixin:
             return False
         intent = rules_events.zone_destination(self, perm, to)
         to = intent.destination
-        if perm.unearthed or (perm.disturbed and to == "graveyard"):
+        if perm.unearthed or ((perm.disturbed or perm.card.gy_to_exile) and to == "graveyard"):
             to = "exile"                     # unearth: exiled if it would leave the battlefield; disturb: not to a graveyard
         before = rules_events.snapshot(perm)
         perm.last_card = perm.card

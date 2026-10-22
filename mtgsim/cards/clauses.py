@@ -8,11 +8,22 @@ from .model import _num
 from .patterns import _N_WORDS
 
 
+# Substitutions below that simplify the card, and the note each one records on it.
+_SUB_NOTES = [
+    (re.compile(r"counter target spell, activated ability, or triggered ability", re.I),
+     "only spells are countered, not abilities"),
+    (re.compile(r"target creature or planeswalker you control gains", re.I), "the target is a creature, not a planeswalker"),
+]
+
 _SUBS = [
     (re.compile(r"(?:target opponent reveals their hand\. you choose|look at target opponent's hand\. you may exile) an? "
                 r"(nonland|noncreature, nonland|nonartifact, nonland|instant or sorcery) card from it(?:\. exile that card)? "
                 r"until ~ leaves the battlefield\.", re.I), lambda m: f"HANDEXILE {m[1].lower()}."),
     (re.compile(r"^(~ gains [a-z]+ until end of turn)\. tap it\.", re.I), r"\1. Tap ~."),
+    # The AI never aims its removal at its own creature, so "another" target is any target.
+    (re.compile(r"destroy another target (creature or planeswalker|creature|nonland permanent)", re.I), r"destroy target \1"),
+    # Activated and triggered abilities can't be countered in the engine: these counter spells only.
+    (re.compile(r"counter target spell, activated ability, or triggered ability", re.I), "counter target spell"),
     # Planeswalkers rarely matter as the target: "creature or planeswalker you control gains ..." is the creature.
     (re.compile(r"target creature or planeswalker you control gains", re.I), "target creature you control gains"),
     # Two players: "for each opponent, tap ... that player controls" is the one opponent.
@@ -163,6 +174,8 @@ _TRIGGERS = [
     (r"Whenever ~ deals damage to (?:a player|an opponent), (.+)", ("damages_player",)),
     (r"Whenever ~ deals combat damage to a creature, (.+)", ("combat_damage_creature",)),
     (r"Whenever (?:a|another) creature dies, (.+)", ("creature_dies",)),
+    # Dennick, Pious Apparition: the creature cards that die (discarded or milled ones are not seen)
+    (r"Whenever one or more creature cards are put into graveyards from anywhere, (.+)", ("creature_dies",)),
     (r"Whenever (?:a player|an opponent) casts a spell, (.+)", ("any_cast",)),
     (r"At the beginning of each combat, (.+)", ("each_begin_combat",)),
     (r"At the beginning of your draw step, (.+)", ("draw_step",)),
@@ -195,6 +208,7 @@ _TRIGGERS = [
     (r"Whenever you cast an? ([A-Z]\w+|creature|artifact|enchantment|outlaw|multicolored|historic|white|blue|black|red|"
      r"green|colorless) spell, (.+)", ("cast_spell",)),
     (r"Whenever you gain life, (.+)", ("gain_life",)),
+    (r"Whenever (?:the Ring tempts you|you choose a creature as your Ring-bearer), (.+)", ("ring_tempts",)),
     (r"Whenever you attack, (.+)", ("you_attack",)),
     (r"Whenever you attack with one or more ([A-Z]\w+), (.+)", ("you_attack",)),
     (r"Whenever a creature you control attacks, (.+)", ("creature_attacks",)),

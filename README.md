@@ -351,7 +351,24 @@ to select another local database.
 - Storage lands (Fountain of Cho, Calciform Pools, Bottomless Vault): a land left untapped through the
   opponent's turn banks a storage counter as that turn ends, and counters are spent as mana of the land's
   colors (tapping it). Lands that "may choose not to untap" stay tapped until their stored mana makes a spell
-  castable. City of Shadows and Crucible of the Spirit Dragon are not parsed
+  castable. Crucible of the Spirit Dragon's stored mana pays only for Dragon spells; City of Shadows is not
+  parsed
+- Restricted mana that makes two or more (Tablet of Discovery's {R}{R} for instants and sorceries, Eldrazi
+  Temple's {C}{C} for Eldrazi spells, Mishra's Workshop) next to an unrestricted ability of the same source
+- Split instants and sorceries: either half can be cast, and Fuse casts both halves for both costs (rooms and
+  aftermath are not split this way). Retrace casts the card from the graveyard by discarding a land card; the
+  AI keeps a land for its land drop
+- The Ring tempts you (`mtgsim/ring.py`): the Ring level goes up to four, the best creature becomes the
+  Ring-bearer, and the four Ring abilities apply in combat ("can't be blocked by creatures with greater
+  power", loot on attack, the blocker is sacrificed at end of combat, 3 life on combat damage), plus "whenever
+  the Ring tempts you" triggers. "Is your Ring-bearer" conditions are not parsed
+- "Its controller draws a card" after counters and removal (Ertai Resurrected's modes), "target attacking
+  creature connives X, where X is the number of attacking creatures", Equipment tokens ("create a colorless
+  Equipment artifact token named Axe with ..." and Cragflame; "when you do, attach it to target creature you
+  control"), hone counters, "each equipped attacking creature gains double strike", "you may attach this
+  Equipment to it" on an entering creature, "if ~ would be put into a graveyard from anywhere, exile it
+  instead" (from the battlefield), and "whenever one or more creature cards are put into graveyards from
+  anywhere" (creatures that die)
 - Counterspells for a color ("counter target red or green spell"), "whenever a Bat you control attacks",
   "whenever you discard one or more cards, put that many +1/+1 counters on ~", "~ gains indestructible until end
   of turn. Tap it.", Auras that grant ward, "gains your choice of flying, vigilance, or lifelink" (the best keyword

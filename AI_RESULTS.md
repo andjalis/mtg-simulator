@@ -1,5 +1,24 @@
 # AI before/after
 
+## Race-aware attack scoring (not kept), 2026-10-22
+
+Built-in engine on `0cf3410`. The tried change weighted the crack-back penalty in `score_attack` by the damage race:
+doubled when the opponent's creatures kill us in fewer turns than ours kill them, halved when ours are faster. Deck A
+played with the change on and off; its opponent always had it off. 400 games per matchup, seed 5, plus 1,000 more on
+the targeted matchup (seeds 11-14). The script is `results/race_aware/race.py`.
+
+| Matchup | Off | On |
+|---|---|---|
+| orzhov_midrange vs Diamond mono_black_aggro (1,400 games) | 29.6% | 30.8% |
+| orzhov_midrange vs mono_red_aggro | 81.2% | 81.8% |
+| green_stompy vs ub_snow_control | 37.8% | 37.5% |
+| ub_snow_control vs mono_red_aggro | 43.5% | 43.2% |
+| mono_red_aggro vs green_stompy | 22.0% | 22.5% |
+
+- **No measurable effect**: every difference is inside its 95% interval, including the losing-race matchup it
+  targeted (+1.2 points over 1,400 games), so it was reverted. The orzhov losses to mono-black aggro come from
+  Corpses of the Lost (see #47), not from attacking.
+
 ## Protective activations, combat unmorph, unleash / riot / fabricate choices, 2026-10-22
 
 Built-in engine, card-only commit `4d5bac3` against the same code with these AI changes (400 games per matchup,
