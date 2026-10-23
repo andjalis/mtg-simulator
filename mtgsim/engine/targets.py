@@ -30,6 +30,8 @@ class TargetsMixin:
             return ("nonbasic" not in f or not is_basic_land(perm.card)) and ("opp" not in f or perm.controller is not by)
         if f.startswith("x:"):
             return removal.x_passes(f, perm, by)
+        if f.startswith("opp_notsub:"):         # "target non-Dragon creature an opponent controls"
+            return perm.controller is not by and f[11:] not in perm.card.subtypes
         r = removal.passes(f, perm)
         if r is not None:
             return r

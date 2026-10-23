@@ -39,6 +39,15 @@ def parse_line(line: str, extra: dict, types) -> bool:
     if re.fullmatch(r"Enchanted (?:creature|permanent) doesn't untap during its controller's untap step\.", line):
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"no_untap"}
         return True
+    m = re.fullmatch(r"Enchanted land is an? (Plains|Island|Swamp|Mountain|Forest)\.", line)
+    if m:                                       # Spreading Seas, Evil Presence: it taps only for that colour
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {f"land_type:{m[1]}"}
+        return True
+    m = re.fullmatch(r'Enchanted land has "\{T\}: Add (one mana of any color|\{[WUBRGC]\})\."', line)
+    if m:                                       # Abundant Growth, Utopia Sprawl's kin
+        cols = "WUBRG" if "any" in m[1] else m[1][1]
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {f"grant_mana:{cols}"}
+        return True
     if re.fullmatch(r"Enchanted creature can't attack or block\.", line):
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"cant_attack_block"}
         return True
@@ -97,7 +106,8 @@ def finish(extra: dict):
         b = extra.get("equip_bonus", (0, 0))
         per = extra.get("aura_per", ("", 0, 0))
         own_use = {"must_attack", "cant_block", "cant_attack_you"}      # Uncontrollable Anger, the Vows: for your creatures
-        extra["aura_hostile"] = bool(extra.get("aura_flags", frozenset()) - own_use) or b[0] < 0 or b[1] < 0 or per[1] < 0 or per[2] < 0 or \
+        flags = {f for f in extra.get("aura_flags", frozenset()) if not f.startswith("grant_mana:")}
+        extra["aura_hostile"] = bool(flags - own_use) or b[0] < 0 or b[1] < 0 or per[1] < 0 or per[2] < 0 or \
             "defender" in extra.get("equip_keywords", ()) or \
             extra["aura"] == "creature an opponent controls"
 
@@ -149,18 +159,49 @@ def choose_host(game, p, card):
     return max(cands, key=lambda x: perm_value(x) - (0.5 * len(x.auras) if not card.aura_hostile else 0))
 
 
+_BASIC_COLOR = {"Plains": "W", "Island": "U", "Swamp": "B", "Mountain": "R", "Forest": "G"}
+
+
 def attach(game, aura, host):
     aura.attachment_timestamp = game.next_effect_timestamp()
     aura.aura_host = host
     host.auras.append(aura)
     game.log(f"{aura.card.name} enchants {host.card.name}", aura.controller)
+    _set_land_type(host)
 
 
 def detach(aura):
     host = aura.aura_host
     if host is not None and aura in host.auras:
         host.auras.remove(aura)
+        _set_land_type(host)
     aura.aura_host = None
+
+
+def _set_land_type(host):
+    """"Enchanted land is an Island": the land becomes that basic type and loses its other abilities while the
+    Aura stays (the newest such Aura wins)."""
+    import dataclasses
+    kinds = [f[10:] for a in host.auras for f in a.card.aura_flags if f.startswith("land_type:")]
+    base = getattr(host, "pre_aura_card", None)
+    if kinds:
+        if base is None:
+            host.pre_aura_card = base = host.card
+        host.card = dataclasses.replace(base, produces=frozenset({_BASIC_COLOR[kinds[-1]]}), subtypes=frozenset({kinds[-1]}),
+                                        activated=[], triggers=[], restricted_produces=frozenset())
+    elif base is not None:
+        host.card = base
+        host.pre_aura_card = None
+
+
+def granted_mana(perm) -> frozenset:
+    """Colours an Aura lets its land tap for ("Enchanted land has "{T}: Add one mana of any color."")."""
+    out = frozenset()
+    for a in perm.auras:
+        for f in a.card.aura_flags:
+            if f.startswith("grant_mana:"):
+                out |= frozenset(f[11:])
+    return out
 
 
 def blocks_untap(perm) -> bool:

@@ -68,7 +68,11 @@ def _tapped(eff):
 _SRC = r"(?:~|it|he|she)"
 _EFFECT_PATTERNS = [
     (r"learn", lambda m: Effect("learn")),
-    (r"exert ~", lambda m: Effect("skip_untap", target="self")),
+    (r"exert ~", lambda m: Effect("exert", target="self")),
+    (r"untap all other creatures you control", lambda m: Effect("untap_all", data={"what": "creatures", "other": True})),
+    (r"prevent all combat damage that would be dealt to ~ this turn", lambda m: Effect("combat_shield", target="self")),
+    (r"~ deals (\d+) damage to target non-([A-Z][a-z]+) creature an opponent controls",
+     lambda m: Effect("damage", int(m[1]), target="creature", filter=f"opp_notsub:{m[2]}")),
     (r"regenerate (~|it|target creature(?: you control)?|target artifact)",
      lambda m: Effect("regenerate", 1, target={"~": "self", "it": "prev", "target creature": "creature",
                      "target creature you control": "creature_mine", "target artifact": "artifact"}[m[1].lower()])),

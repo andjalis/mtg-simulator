@@ -423,7 +423,7 @@ class Permanent:
 
     def granted_mana(self) -> frozenset:
         """Colours other permanents let this one tap for (Enduring Vitality, Great Divide Guide)."""
-        out = frozenset()
+        out = auras.granted_mana(self) if self.auras else frozenset()
         c = self.card
         if c.is_land and any(x.card.chosen_land_lock and x.chosen_land == c.name
                              for pl in (self.controller, self.controller.foe) if pl is not None for x in pl.battlefield):

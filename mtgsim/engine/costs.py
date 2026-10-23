@@ -349,7 +349,8 @@ class CostsMixin:
                 (flt in COLOR_WORDS and COLOR_WORDS[flt] in card.colors) or \
                 (flt in ("creature", "artifact") and flt.capitalize() in card.types) or \
                 (flt == "noncreature" and not card.is_creature and not card.is_land) or \
-                (flt not in COLOR_WORDS and flt.capitalize() in card.subtypes)
+                (flt not in COLOR_WORDS and flt.capitalize() in card.subtypes) or \
+                (" " in flt and flt != "instant and sorcery" and all(fits(w) for w in flt.split()))   # "white creature"
         for x in p.battlefield:
             for flt, k in x.card.cost_discount:
                 if flt.startswith("or:"):
@@ -377,6 +378,8 @@ class CostsMixin:
         for key, k in card.per_discount:
             n += k * discounts.count(self, p, key)
         cost["generic"] = max(0, cost.get("generic", 0) - n) + statics.spell_tax(self, p, card)
+        for c in statics.colored_tax(self, p, card):
+            cost[c] = cost.get(c, 0) + 1
         if card.extra_discard and card.discard_or_pay and self.spare_cards(p, card) < 1:
             cost["generic"] += card.discard_or_pay
         if card.behold_or_pay:

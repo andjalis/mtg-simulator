@@ -139,27 +139,34 @@ _SPELL_WORDS = {"creature", "noncreature", "artifact", "nonartifact", "enchantme
 
 def _tax(line: str):
     """("all" | "theirs" | "mine", alternatives, N) for "Noncreature spells cost {1} more to cast." and the like."""
-    m = re.fullmatch(r"(?:([\w ]+?) )?[Ss]pells( your opponents cast| you cast)? cost \{(\d+)\} more to cast\.", line)
+    m = re.fullmatch(r"(?:([\w ]+?) )?[Ss]pells( your opponents cast| you cast)? cost \{(\d+|[WUBRG])\} more to cast\.", line)
     if not m:
         return None
     alts = tuple(a.strip().lower() for a in re.split(r" and | or |, ", m[1])) if m[1] else ("",)
     if not all(all(w in _SPELL_WORDS for w in a.split()) for a in alts if a):
         return None
     scope = {" your opponents cast": "theirs", " you cast": "mine"}.get(m[2] or "", "all")
-    return scope, alts, int(m[3])
+    return scope, alts, int(m[3]) if m[3].isdigit() else m[3]       # a colour letter: the Leeches' "{R} more"
 
 
-def spell_tax(game, p, card) -> int:
-    """Generic mana added to card's cost when p casts it, from every permanent's spell taxes."""
-    n = 0
+def _taxes(game, p, card):
     for pl in game.players:
         for x in pl.battlefield:
             for scope, alts, k in x.card.spell_tax:
                 if scope == "theirs" and pl is p or scope == "mine" and pl is not p:
                     continue
                 if any(_spell_is(card, a) for a in alts):
-                    n += k
-    return n
+                    yield k
+
+
+def spell_tax(game, p, card) -> int:
+    """Generic mana added to card's cost when p casts it, from every permanent's spell taxes."""
+    return sum(k for k in _taxes(game, p, card) if isinstance(k, int))
+
+
+def colored_tax(game, p, card) -> list:
+    """The coloured mana symbols added to card's cost ("Red spells you cast cost {R} more to cast.")."""
+    return [k for k in _taxes(game, p, card) if isinstance(k, str)]
 
 
 def _spell_is(card, words: str) -> bool:

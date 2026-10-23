@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .. import discounts, graveyard, modal
-from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, statics as _statics, storage as _storage
+from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, prevention as _prevention, statics as _statics, storage as _storage
 from .model import Activated, AltCost, COLORS, Effect, KEYWORDS, NUMBERS, Trigger, _num, parse_mana_cost
 from .patterns import _parse_mana_ability
 from .parse import _apply_speed_gate, _mana_restriction, _parse_ability, _parse_effects, _parse_trigger
@@ -29,10 +29,11 @@ def _face_special_lines(st, line):
     level_marks = st.level_marks
     triggers = st.triggers
     unsupported = st.unsupported
-    m = re.fullmatch(r"You may exert ~ as it attacks\. When you do, (.+)", line)
+    m = re.fullmatch(r"You may exert ~ as it attacks\.(?: When you do, (.+))?", line)
     if m:                                   # exert: an attack trigger that also keeps it tapped through the next untap
         approximations.append("exert: always exerted when it attacks")
-        line = f"Whenever ~ attacks, exert ~. {m[1][0].upper()}{m[1][1:]}"
+        rider = re.sub(r"\bit\b", "~", m[1]) if m[1] else ""        # "it gets +1/+1": the exerted creature
+        line = f"Whenever ~ attacks, exert ~." + (f" {rider[0].upper()}{rider[1:]}" if rider else "")
     try:
         if gate is not None:
             _apply_speed_gate(gate, triggers, activated)
@@ -140,7 +141,8 @@ def _face_special_lines(st, line):
         # Discard triggers fire once per card, so "that many" counters is one counter each time.
         line = re.sub(r"^(Whenever you discard one or more cards), put that many \+1/\+1 counters on ~\.$",
                       r"\1, put a +1/+1 counter on ~.", line)
-        if _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st):
+        if _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st) or \
+                _prevention.parse_line(line, st):
             return None
         parts = [p.strip().lower() for p in re.split(r",(?: and)? | and |,", line)]
         if all(p in KEYWORDS or re.fullmatch(r"(?:ward \{\d+\}|toxic \d+|bushido \d+)", p) for p in parts):
@@ -609,7 +611,8 @@ def _face_cost_and_static_lines(st, line):
         if m:                                      # Familiars, Bannerets: once for a spell that is both
             extra["cost_discount"] = extra.get("cost_discount", ()) + ((f"or:{m[1].lower()}|{m[2].lower()}", int(m[3])),)
             return None
-        m = re.fullmatch(r"(Red|White|Blue|Black|Green|Instant and sorcery|Creature|Artifact|Noncreature|[A-Z][a-z]+) "
+        m = re.fullmatch(r"(Red|White|Blue|Black|Green|Instant and sorcery|Creature|Artifact|Noncreature|[A-Z][a-z]+|"
+                         r"(?:Red|White|Blue|Black|Green) (?:creature|artifact|instant|sorcery|enchantment)) "
                          r"spells you cast cost \{(\d+)\} less to cast\.", line)
         if m:
             extra["cost_discount"] = extra.get("cost_discount", ()) + ((m[1].lower(), int(m[2])),)

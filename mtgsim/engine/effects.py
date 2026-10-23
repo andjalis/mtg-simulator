@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from .. import continuous
 
-from .. import auras
+from .. import auras, prevention
 from ..cards import AltCost, CardDef, Effect
 from .. import rules_events
 from .mana import find_payment
@@ -25,6 +25,9 @@ class EffectsMixin:
             return
         if protected_from(target, source):
             self.log(f"{target.card.name}'s protection prevents {amount} damage", target.controller)
+            return
+        amount = prevention.adjust(self, target, amount, source, combat)
+        if amount <= 0:
             return
         shield = getattr(target, "prevent_next", 0)
         if shield:

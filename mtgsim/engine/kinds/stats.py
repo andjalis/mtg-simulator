@@ -272,9 +272,26 @@ def pump_attackers(game, p, eff, **_):
             a.pump_t += eff.amount2
 
 
+@kind("exert")
+def exert(game, p, target, **_):
+    """Exert: it won't untap during its controller's next untap step; "whenever you exert a creature" triggers."""
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        target.skip_untap = max(target.skip_untap, 1)
+        game.fire(p, "exert", context=target)
+
+
+@kind("combat_shield")
+def combat_shield(game, target, **_):
+    if isinstance(target, Permanent):
+        target.combat_shield_turn = game.turn       # "prevent all combat damage that would be dealt to ~ this turn"
+
+
 @kind("untap_all")
-def untap_all(game, p, eff, **_):
+def untap_all(game, p, eff, item=None, **_):
+    src = item.source if item is not None else None
     for x in p.battlefield:
+        if eff.data.get("other") and x is src:
+            continue
         if (x.is_creature if eff.data["what"] == "creatures" else x.card.is_land):
             x.tapped = False
 

@@ -167,6 +167,7 @@ _SUBS = [
 _TRIGGERS = [
     (r"When ~ becomes level (\d+), (.+)", ("class_level",)),
     (r"Whenever you proliferate, (.+)", ("proliferate",)),
+    (r"Whenever you exert a creature, (.+)", ("exert",)),
     (r"Whenever an opponent searches their library, (.+)", ("opp_searches",)),
     (r"When(?:ever)? ~ enters or attacks, (.+)", ("etb", "attacks")),
     (r"When ~ enters and at the beginning of your upkeep, (.+)", ("etb", "upkeep")),
