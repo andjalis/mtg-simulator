@@ -33,7 +33,7 @@ def _face_special_lines(st, line):
     if m:                                   # exert: an attack trigger that also keeps it tapped through the next untap
         approximations.append("exert: always exerted when it attacks")
         rider = re.sub(r"\bit\b", "~", m[1]) if m[1] else ""        # "it gets +1/+1": the exerted creature
-        line = f"Whenever ~ attacks, exert ~." + (f" {rider[0].upper()}{rider[1:]}" if rider else "")
+        line = "Whenever ~ attacks, exert ~." + (f" {rider[0].upper()}{rider[1:]}" if rider else "")
     try:
         if gate is not None:
             _apply_speed_gate(gate, triggers, activated)
