@@ -2,6 +2,7 @@
 
     Each player sacrifices a creature.          Each player sacrifices two nontoken creatures.   Each player sacrifices a land.
     Target player shuffles their graveyard into their library.        Shuffle your graveyard into your library.
+    Target player shuffles up to four target cards from their graveyard into their library.  (the best four)
     Tap up to two target creatures. Those creatures don't untap during their controller's next untap step.
     Tap all creatures target player controls. (Aimed at an opponent.)
     Each player draws two cards.      Defending player gets a poison counter.      Untap up to three lands.
@@ -31,6 +32,8 @@ EFFECT_PATTERNS = [
     (r"untap up to (two|three|four|five|six|seven) lands", lambda m: _effect("untap_lands", _NUM[m[1].lower()])),
     (r"each player sacrifices (a|an|one|two|three) (nontoken )?(creature|land)s?(?: of their choice)?",
      lambda m: _effect("each_sac", _N[m[1].lower()], {"kind": m[3].lower(), "nontoken": bool(m[2])})),
+    (r"(?:target player|you) shuffles? up to (two|three|four|five) target cards from (?:their|your) graveyard into "
+     r"(?:their|your) library", lambda m: _effect("gy_shuffle", data={"up_to": _NUM[m[1].lower()]})),
     (r"(?:target player|each player|you) shuffles? (?:their|your) graveyards? into (?:their|your) librar(?:y|ies)|"
      r"(?:then )?shuffle your graveyard into your library",
      lambda m: _effect("gy_shuffle", data={"each": m[0].lower().startswith("each")})),
@@ -52,8 +55,10 @@ def resolve(game, p, eff, target, item):
     elif eff.kind == "gy_shuffle":
         for pl in (game.players if eff.data.get("each") else [p]):
             if pl.graveyard:
-                cards = list(pl.graveyard)
-                pl.graveyard.clear()
+                cards = sorted(pl.graveyard, key=lambda c: -c.cmc)[:eff.data["up_to"]] if eff.data.get("up_to") \
+                    else list(pl.graveyard)
+                for c in cards:
+                    pl.graveyard.remove(c)
                 pl.library.extend(cards)
                 pl.library.shuffle(game.rng)
                 game.log("shuffles their graveyard into their library", pl)

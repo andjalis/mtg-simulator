@@ -97,6 +97,16 @@ def _face_special_lines(st, line):
         if line == "~ can't be blocked.":
             keywords.add("unblockable")
             return None
+        if line == "~ can't block and can't be blocked.":
+            keywords.add("unblockable")
+            extra["cant_block"] = True
+            return None
+        m = re.fullmatch(r"~ can't be blocked except by (creatures with (\w+)(?: or (\w+))?|(white|blue|black|red|green|"
+                         r"artifact) creatures|Walls)\.", line)
+        if m:                                   # Treetop Rangers, Signal Pest, Prowling Nightstalker
+            extra["blocked_only_by"] = tuple(f"creatures with {k}" for k in (m[2], m[3]) if k) if m[2] else \
+                (f"{m[4]} creature" if m[4] else "Wall",)
+            return None
         if line == "You have no maximum hand size.":
             extra["no_max_hand"] = True
             return None
@@ -794,9 +804,14 @@ def _face_cost_and_static_lines(st, line):
             extra["umbra_armor"] = True
             return None
         m = re.fullmatch(r"~'s power and toughness are each equal to the number of (cards in your hand|cards in your "
-                         r"graveyard|creatures you control|lands you control|artifacts you control)\.", line)
+                         r"graveyard|creatures you control|lands you control|artifacts you control)\.", line) or \
+            re.fullmatch(r"~ gets \+1/\+1 for each (card in your hand|creature card in your graveyard|card in your graveyard)\.", line)
         if m:
-            extra["pt_cda"] = m[1]
+            extra["pt_cda"] = m[1].replace("card in", "cards in").replace("creature cards", "creature cards")
+            return None
+        m = re.fullmatch(r"~'s power is equal to the number of (instant and sorcery|creature) cards in your graveyard\.", line)
+        if m:
+            extra["pt_cda"] = f"power:{m[1]} cards in your graveyard"
             return None
         m = re.fullmatch(r"~ can block (an additional creature|any number of creatures) each combat\.|~ can block any "
                          r"number of creatures\.", line)

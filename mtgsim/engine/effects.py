@@ -43,7 +43,7 @@ class EffectsMixin:
             elif combat and isinstance(target, Permanent) and target.is_creature:
                 self.fire(source.controller, "combat_damage_creature", source, context=target)
         if isinstance(target, Permanent) and target in target.controller.battlefield:
-            self.fire(target.controller, "dealt_damage", target, context=source)
+            self.fire(target.controller, "dealt_damage", target, context=source, subject=amount)
         if isinstance(target, Player):
             if combat and isinstance(source, Permanent) and source.card.toxic:
                 target.counters["poison"] = target.counters.get("poison", 0) + source.card.toxic

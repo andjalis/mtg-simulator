@@ -43,10 +43,21 @@ def parse_line(line: str, extra: dict, types) -> bool:
     if m:                                       # Spreading Seas, Evil Presence: it taps only for that colour
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {f"land_type:{m[1]}"}
         return True
+    if line == 'Enchanted land has "{T}: Add two mana of any one color."':    # New Horizons, Weirding Wood
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"grant_two"}
+        extra.setdefault("_approx", []).append("two mana of any one color: the land makes two mana of any colours")
+        return True
     m = re.fullmatch(r'Enchanted (?:land|creature) has "\{T\}: Add (one mana of any color|\{[WUBRGC]\})\."', line)
     if m:                                       # Abundant Growth, Utopia Sprawl's kin
         cols = "WUBRG" if "any" in m[1] else m[1][1]
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {f"grant_mana:{cols}"}
+        return True
+    if re.fullmatch(r"Enchanted (?:creature|permanent) can't attack or block, and its activated abilities can't be activated\.",
+                    line):                      # Arrest, Pacifism-plus
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"cant_attack_block", "no_activate"}
+        return True
+    if line == "Enchanted creature can't be blocked.":
+        extra["equip_keywords"] = extra.get("equip_keywords", frozenset()) | {"unblockable"}
         return True
     if re.fullmatch(r"Enchanted creature can't attack or block\.", line):
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"cant_attack_block"}
@@ -106,7 +117,7 @@ def finish(extra: dict):
         b = extra.get("equip_bonus", (0, 0))
         per = extra.get("aura_per", ("", 0, 0))
         own_use = {"must_attack", "cant_block", "cant_attack_you"}      # Uncontrollable Anger, the Vows: for your creatures
-        flags = {f for f in extra.get("aura_flags", frozenset()) if not f.startswith("grant_mana:")}
+        flags = {f for f in extra.get("aura_flags", frozenset()) if not f.startswith("grant_mana:") and f != "grant_two"}
         extra["aura_hostile"] = bool(flags - own_use) or b[0] < 0 or b[1] < 0 or per[1] < 0 or per[2] < 0 or \
             "defender" in extra.get("equip_keywords", ()) or \
             extra["aura"] == "creature an opponent controls"
@@ -183,12 +194,18 @@ def _set_land_type(host):
     Aura stays (the newest such Aura wins)."""
     import dataclasses
     kinds = [f[10:] for a in host.auras for f in a.card.aura_flags if f.startswith("land_type:")]
+    two = any("grant_two" in a.card.aura_flags for a in host.auras)
     base = getattr(host, "pre_aura_card", None)
-    if kinds:
+    if kinds or two:
         if base is None:
             host.pre_aura_card = base = host.card
-        host.card = dataclasses.replace(base, produces=frozenset({_BASIC_COLOR[kinds[-1]]}), subtypes=frozenset({kinds[-1]}),
-                                        activated=[], triggers=[], restricted_produces=frozenset())
+        card = base
+        if kinds:
+            card = dataclasses.replace(card, produces=frozenset({_BASIC_COLOR[kinds[-1]]}), subtypes=frozenset({kinds[-1]}),
+                                       activated=[], triggers=[], restricted_produces=frozenset())
+        if two:                          # "{T}: Add two mana of any one color"
+            card = dataclasses.replace(card, produces=frozenset("WUBRG"), mana_amount=2)
+        host.card = card
     elif base is not None:
         host.card = base
         host.pre_aura_card = None

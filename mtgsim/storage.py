@@ -18,7 +18,6 @@ from __future__ import annotations
 import dataclasses
 import re
 
-_COUNTER = "storage"
 _HOLD = "You may choose not to untap ~ during your untap step."
 _UPKEEP = "At the beginning of your upkeep, if ~ is tapped, put a storage counter on it."
 _STORED: dict = {}
@@ -26,21 +25,29 @@ _STORED: dict = {}
 
 def parse_line(line: str, st) -> bool:
     from .cards.model import parse_mana_cost
-    if "Land" not in st.types:                # "You may choose not to untap ~" on Amber Prison is not storage
+    battery = "Artifact" in st.types and "charge counter" in line
+    if "Land" not in st.types and not battery:    # "You may choose not to untap ~" on Amber Prison is not storage
         return False
     storage = st.extra.setdefault("storage", {})
     try:
-        return _parse(line, storage, parse_mana_cost)
+        return _parse(line, storage, parse_mana_cost, st)
     finally:
         if not storage:
             del st.extra["storage"]
 
 
-def _parse(line, storage, parse_mana_cost) -> bool:
-    m = re.fullmatch(r"((?:\{\d+\}, )?)\{T\}: Put a storage counter on ~\.", line)
+def _parse(line, storage, parse_mana_cost, st) -> bool:
+    m = re.fullmatch(r"((?:\{\d+\}, )?)\{T\}: Put an? (storage|charge) counter on ~\.", line)
     if m:
         storage["bank"] = parse_mana_cost(m[1].rstrip(", ")) if m[1] else {}
         storage["bank_text"] = line
+        storage["counter"] = m[2]
+        return True
+    m = re.fullmatch(r"\{T\}, Remove any number of charge counters from ~: Add \{([WUBRGC])\}, then add an additional "
+                     r"\{\1\} for each charge counter removed this way\.", line)
+    if m:                                     # the Mana Batteries: their own mana, plus one per counter
+        storage.update(colors=frozenset({m[1]}), counter="charge", base=True)
+        st.produces = st.produces | {m[1]}
         return True
     m = re.fullmatch(r"\{T\}, Remove any number of storage counters from ~: Add \{([WUBRGC])\} for each storage counter "
                      r"removed this way\.", line)
@@ -76,6 +83,10 @@ def finish(extra: dict, unsupported: list) -> None:
         del extra["storage"]
 
 
+def _counter(perm) -> str:
+    return perm.card.storage.get("counter", "storage")
+
+
 def _stored_mana(colors: frozenset):
     from .engine.state import FIREBEND_MANA
     if colors not in _STORED:
@@ -93,8 +104,8 @@ def stored_sources(p, exclude=None, allowed=lambda restriction: True) -> list:
         restriction = perm.card.storage.get("restriction") if colors else None
         if restriction and not allowed(restriction):
             continue
-        if colors and not perm.tapped and perm is not exclude and perm.counters.get(_COUNTER, 0) > 0:
-            for _ in range(perm.counters[_COUNTER]):
+        if colors and not perm.tapped and perm is not exclude and perm.counters.get(_counter(perm), 0) > 0:
+            for _ in range(perm.counters[_counter(perm)]):
                 mana = Permanent(_stored_mana(colors), p)
                 mana.stored_in, mana.produces_now = perm, colors
                 out.append(mana)
@@ -104,7 +115,7 @@ def stored_sources(p, exclude=None, allowed=lambda restriction: True) -> list:
 def spend(source) -> None:
     """Pay with one stored mana: remove its counter and tap its land."""
     land = source.stored_in
-    land.counters[_COUNTER] = max(0, land.counters.get(_COUNTER, 0) - 1)
+    land.counters[_counter(land)] = max(0, land.counters.get(_counter(land), 0) - 1)
     land.tapped = True
 
 
@@ -117,15 +128,15 @@ def before_untap(game, p) -> None:
         if bank and game.pay(p, bank, exclude=perm) is None:
             continue
         perm.tapped = True
-        perm.counters[_COUNTER] = perm.counters.get(_COUNTER, 0) + 1
-        game.log(f"puts a storage counter on {perm.card.name} ({perm.counters[_COUNTER]})", p)
+        perm.counters[_counter(perm)] = perm.counters.get(_counter(perm), 0) + 1
+        game.log(f"puts a {_counter(perm)} counter on {perm.card.name} ({perm.counters[_counter(perm)]})", p)
 
 
 def keeps_tapped(game, p, perm) -> bool:
     """"You may choose not to untap ~": stay tapped (and bank) unless the stored mana makes a spell castable."""
     if not (perm.card.storage and perm.card.storage.get("hold")):
         return False
-    stored = perm.counters.get(_COUNTER, 0)
+    stored = perm.counters.get(_counter(perm), 0)
     others = sum(1 for x in p.battlefield if x is not perm and x.card.is_land and (x.card.produces or x.card.storage))
     costs = [c.cmc for c in p.hand if not c.is_land]
     return not any(others < cmc <= others + stored for cmc in costs)
@@ -134,5 +145,5 @@ def keeps_tapped(game, p, perm) -> bool:
 def upkeep(game, p) -> None:
     for perm in p.battlefield:
         if perm.card.storage and perm.card.storage.get("upkeep") and perm.tapped:
-            perm.counters[_COUNTER] = perm.counters.get(_COUNTER, 0) + 1
-            game.log(f"puts a storage counter on {perm.card.name} ({perm.counters[_COUNTER]})", p)
+            perm.counters[_counter(perm)] = perm.counters.get(_counter(perm), 0) + 1
+            game.log(f"puts a {_counter(perm)} counter on {perm.card.name} ({perm.counters[_counter(perm)]})", p)

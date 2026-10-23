@@ -201,6 +201,6 @@ class CombatMixin:
                 if getattr(self, "monarch", None) is tgt and src.controller is not tgt:
                     self.monarch = src.controller            # combat damage to the monarch takes the crown
                     self.log("becomes the monarch", src.controller)
-                self.fire(src.controller, "ally_combat_damage")
+                self.fire(src.controller, "ally_combat_damage", subject=src)
         self.state_based_actions()
         self.settle()

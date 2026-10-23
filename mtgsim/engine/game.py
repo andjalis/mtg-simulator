@@ -72,7 +72,7 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
         player.life += delta
         if delta > 0:
             player.life_gained_turn += delta
-            self.fire(player, "gain_life")
+            self.fire(player, "gain_life", subject=delta)       # the amount: "loses that much life"
         if delta < 0 and player is not self.active and self.active.speed_turn != self.turn and \
                 0 < self.active.speed < 4:
             self.active.speed += 1               # an opponent lost life on your turn

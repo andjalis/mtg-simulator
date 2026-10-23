@@ -198,7 +198,7 @@ class AbilitiesMixin:
         acts = perm.card.activated
         if perm not in p.battlefield or idx < 0 or idx >= len(acts) or acts[idx].kind != "ability":
             return False
-        if perm.silenced:
+        if perm.silenced or perm.auras and any("no_activate" in a.card.aura_flags for a in perm.auras):
             return False
         act, c = acts[idx], acts[idx].extra_costs
         if perm.card.is_land and any(x.card.chosen_land_lock and x.chosen_land == perm.card.name

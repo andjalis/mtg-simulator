@@ -291,6 +291,7 @@ class CardDef:
     block_only_flying: bool = False
     prevention: tuple = ()                              # damage shields (see prevention.py)
     block_max_power: int = 0
+    blocked_only_by: tuple = ()                         # "~ can't be blocked except by creatures with flying or reach"
     equip_grant_mana: frozenset = frozenset()           # Paradise Mantle: 'Equipped creature has "{T}: Add one mana ..."'
     one_spell_each_turn: bool = False                   # Rule of Law: "Each player can't cast more than one spell each turn."
     player_hexproof: bool = False                       # Leyline of Sanctity: "You have hexproof."

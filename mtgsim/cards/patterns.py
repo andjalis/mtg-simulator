@@ -66,9 +66,46 @@ def _tapped(eff):
 
 
 _SRC = r"(?:~|it|he|she)"
+
+
+def _wrath_filter(word: str) -> str:
+    """"black" -> colors:B, "nonblack" -> notcolor:B, "nonartifact" -> nonartifact."""
+    if word == "nonartifact":
+        return word
+    letter = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}[word.removeprefix("non")]
+    return f"notcolor:{letter}" if word.startswith("non") else f"colors:{letter}"
 _EFFECT_PATTERNS = [
     (r"learn", lambda m: Effect("learn")),
     (r"exert ~", lambda m: Effect("exert", target="self")),
+    (r"(?:~|it) deals (\d+|X) damage to each creature (with|without) (flying|horsemanship|shadow|trample|reach)",
+     lambda m: Effect("damage", 0 if m[1] == "X" else int(m[1]), target="each_creature",
+                      filter=("kw:" if m[2].lower() == "with" else "nokw:") + m[3].lower(), data={"x": True} if m[1] == "X" else {})),
+    (r"~ deals (\d+) damage to each non-([A-Z][a-z]+) creature",
+     lambda m: Effect("damage", int(m[1]), target="each_creature", filter=f"notsub:{m[2]}")),
+    (r"destroy all (white|blue|black|red|green|nonwhite|nonblue|nonblack|nonred|nongreen|nonartifact) creatures",
+     lambda m: Effect("wrath", target="each_creature", filter=_wrath_filter(m[1].lower()))),
+    (r"destroy all nonland permanents", lambda m: Effect("destroy_all", data={"type": "nonland"})),
+    (r"untap target permanent", lambda m: Effect("untap_target", target="creature")),
+    (r"that player sacrifices a creature", lambda m: Effect("edict", 1)),
+    (r"target creature an opponent controls doesn't untap during its controller's next untap step",
+     lambda m: Effect("skip_untap", target="creature", filter="opp")),
+    (r"target attacking creature without (flying|first strike|trample) gains \1 until end of turn",
+     lambda m: Effect("grant", target="creature_mine", filter=f"attacking+nokw:{m[1].lower()}", data={"keyword": m[1].lower()})),
+    (r"equipped creature gets \+(\d+)/\+(\d+) until end of turn", lambda m: Effect("pump", int(m[1]), int(m[2]), target="host")),
+    (r"put a \+1/\+1 counter on enchanted creature", lambda m: Effect("p1_counters", 1, target="host")),
+    (r"you gain life equal to its power", lambda m: Effect("gain_life", 1, data={"xq": ("stat", "self", "power")})),
+    (r"target player draws X cards", lambda m: Effect("draw", 0, data={"x": True})),
+    (r"it deals (\d+) damage to any target and (\d+) damage to you",
+     lambda m: [Effect("damage", int(m[1]), target="any"), Effect("lose_life", int(m[2]))]),
+    (r"target player draws a card, then discards a card", lambda m: [Effect("draw", 1), Effect("discard", 1)]),
+    (r"~ deals damage to target (?:player|opponent) equal to the number of cards in that player's hand",
+     lambda m: Effect("damage", 1, target="player", data={"xq": ("opp_hand",)})),
+    (r"(?:target|each) opponent loses that much life", lambda m: Effect("drain", 0, target="each_opponent",
+                                                                         data={"that_much": True})),
+    (r"you gain that much life", lambda m: Effect("gain_life", 0, data={"that_much": True})),
+    (r"(?:~|it) deals that much damage to (any target|target creature|each opponent|target opponent)",
+     lambda m: Effect("damage", 0, target={"any target": "any", "target creature": "creature"}.get(m[1].lower(), "player"),
+                      data={"that_much": True})),
     (r"sacrifice it at end of combat", lambda m: Effect("end_of_combat", data={"effects": [Effect("sacrifice_self", target="self")]})),
     (r"target ([A-Z][a-z]+) creature gets ([+-]\d+)/([+-]\d+) until end of turn",
      lambda m: Effect("pump", int(m[2]), int(m[3]), target="creature_mine", filter=f"subtype:{m[1]}")
@@ -225,6 +262,8 @@ _EFFECT_PATTERNS = [
     (r"untap target artifact or creature", lambda m: Effect("untap_target", target="creature_mine")),
     (r"exile (?:each opponent's|target player's) graveyard", lambda m: Effect("exile_gy")),
     (r"exile target card from an opponent's graveyard", lambda m: Effect("exile_gy", 1)),
+    (r"exile up to (two|three|four|five) target cards from (?:a single graveyard|graveyards|an opponent's graveyard)",
+     lambda m: Effect("exile_gy", _num(m[1]))),
     (r"target player draws (a|two|three) cards?", lambda m: Effect("draw", _num(m[1]))),
     (r"target player draws (a|two|three) cards? and loses (\d+) life",
      lambda m: [Effect("draw", _num(m[1])), Effect("lose_life", int(m[2]))]),

@@ -136,9 +136,8 @@ def regrow_any(game, p, **_):
 
 @kind("exile_gy")
 def exile_gy(game, eff, opp, **_):
-    if eff.amount:
-        if opp.graveyard:
-            card = max(opp.graveyard, key=lambda c: c.cmc)
+    if eff.amount:                  # "exile up to four target cards from a single graveyard": the opponent's best
+        for card in sorted(opp.graveyard, key=lambda c: -c.cmc)[:eff.amount]:
             opp.graveyard.remove(card)
             opp.exile.append(card)
     else:

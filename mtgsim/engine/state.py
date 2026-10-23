@@ -185,6 +185,10 @@ class Permanent:
             return len(c.hand)
         if what == "cards in your graveyard":
             return len(c.graveyard)
+        if what == "creature cards in your graveyard":
+            return sum(x.is_creature for x in c.graveyard)
+        if what == "instant and sorcery cards in your graveyard":
+            return sum(x.is_instant or x.is_sorcery for x in c.graveyard)
         kind = what.split()[0][:-1].capitalize()           # "creatures you control" -> Creature
         return sum(kind in x.card.types for x in c.battlefield)
 
@@ -206,9 +210,9 @@ class Permanent:
                     bp += c.anthem_enchanted[0]
                     bt += c.anthem_enchanted[1]
         if creature and self.card.pt_cda:
-            n = self._cda_count(self.card.pt_cda)
+            n = self._cda_count(self.card.pt_cda.removeprefix("power:"))
             bp += n
-            bt += n
+            bt += 0 if self.card.pt_cda.startswith("power:") else n
         if creature:
             for pl in (self.controller, self.controller.foe):
                 for x in (pl.battlefield if pl is not None else ()):
@@ -617,6 +621,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if attacker.has("skulk") and blocker.power > attacker.power:
         return False
     if any(statics.desc_matches(blocker, d) for d in attacker.card.unblockable_by):
+        return False
+    if attacker.card.blocked_only_by and not any(statics.desc_matches(blocker, d) for d in attacker.card.blocked_only_by):
         return False
     if attacker.has("flying") and not (blocker.has("flying") or blocker.has("reach")):
         return False

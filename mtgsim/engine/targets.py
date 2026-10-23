@@ -1,6 +1,8 @@
 """Game methods for targeting: legal targets, filters, counterability and automatic targets."""
 from __future__ import annotations
 
+import dataclasses
+
 import contextlib
 
 from .. import removal
@@ -26,6 +28,14 @@ class TargetsMixin:
 
     def passes_filter(self, eff: Effect, perm: Permanent, by: Player) -> bool:
         f = eff.filter
+        if "+" in f:                            # "attacking+nokw:flying": every part holds
+            return all(self.passes_filter(dataclasses.replace(eff, filter=part), perm, by) for part in f.split("+"))
+        if f.startswith("nokw:"):
+            return not perm.has(f[5:])
+        if f.startswith("notsub:"):
+            return f[7:] not in perm.card.subtypes
+        if f.startswith("notcolor:"):
+            return f[9:] not in perm.card.colors
         if f.startswith("land:"):
             return ("nonbasic" not in f or not is_basic_land(perm.card)) and ("opp" not in f or perm.controller is not by)
         if f.startswith("x:"):

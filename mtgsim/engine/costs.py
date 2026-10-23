@@ -55,7 +55,7 @@ class CostsMixin:
                 out.append(mana)
         stored = storage.stored_sources(p, exclude, lambda r: self.mana_allowed(None, spell, r))
         if stored:                                  # a storage land spends its counters instead of its own mana
-            lands = {id(m.stored_in) for m in stored}
+            lands = {id(m.stored_in) for m in stored if not m.stored_in.card.storage.get("base")}   # a Battery keeps its own
             out = [s for s in out if id(s) not in lands] + stored
         return out
 
@@ -151,6 +151,8 @@ class CostsMixin:
             return p.life_gained_turn
         if kind == "hand":
             return len(p.hand)
+        if kind == "opp_hand":
+            return len(self.opponent(p).hand)
         if kind == "stat":
             who = prev if spec[1] == "prev" else src
             if spec[2] == "mana value":

@@ -569,6 +569,10 @@ def _parse_trigger_line(line: str):
             flt = f"spell:{m[1]}"
         if events == ("sacrifice",):
             flt = m[1]
+        if "at least (two|three) other creatures attack" in pat:
+            flt = f"count>={_num(m[1]) + 1}"
+        if events == ("ally_combat_damage",) and m.lastindex == 2:
+            flt = f"ally_sub:{m[1]}"
         if events == ("you_attack",) and m.lastindex == 2:
             flt = f"count>={_num(m[1])}" if "or more creatures" in pat else f"with:{m[1].rstrip('s')}"
         if events == ("any_cast",) and m.lastindex == 2 and not m[1].isdigit():

@@ -12,6 +12,8 @@ def damage(game, p, eff, target, item, opp, cause, **_):
         for perm in p.creatures + opp.creatures:
             if eff.filter == "nonflying" and perm.has("flying") or eff.filter == "other" and src is perm:
                 continue
+            if eff.filter not in ("", "nonflying", "other") and not game.passes_filter(eff, perm, p):
+                continue                         # "each creature with flying", "each non-Dragon creature"
             if eff.data.get("no_regen") and eff.amount > 0:
                 perm.regeneration_blocked = True
             if eff.data.get("exile_dies") and eff.amount > 0:

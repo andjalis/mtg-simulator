@@ -143,6 +143,9 @@ class StackMixin:
                     continue
                 if trig.filter.startswith("count>=") and len(self.attackers) < int(trig.filter[7:]):
                     continue
+                if trig.filter.startswith("ally_sub:") and not (isinstance(subject, Permanent) and
+                                                                (trig.filter[9:] in subject.card.subtypes or subject.card.changeling)):
+                    continue
                 if trig.filter.startswith("with:") and \
                         not any(trig.filter[5:] in a.card.subtypes for a in self.attackers):
                     continue
@@ -168,6 +171,8 @@ class StackMixin:
                                                        or subject.power <= perm.power):
                     continue
                 effects = trig.effects
+                if isinstance(subject, int) and any(e.data.get("that_much") for e in effects):
+                    effects = [dataclasses.replace(e, amount=subject) if e.data.get("that_much") else e for e in effects]
                 if subject is not None and any(e.data.get("subject_power") for e in effects):
                     effects = [dataclasses.replace(e, amount=max(0, subject.power)) if e.data.get("subject_power")
                                else e for e in effects]

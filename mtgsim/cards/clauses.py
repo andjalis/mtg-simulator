@@ -172,6 +172,7 @@ _TRIGGERS = [
     (r"When(?:ever)? ~ enters or attacks, (.+)", ("etb", "attacks")),
     (r"When ~ enters and at the beginning of your upkeep, (.+)", ("etb", "upkeep")),
     (r"When(?:ever)? ~ enters?(?: the battlefield)?, (.+)", ("etb",)),
+    (r"Whenever ~ and at least (two|three) other creatures attack, (.+)", ("attacks",)),     # battalion
     (r"Whenever ~ attacks while (?!saddled)(.+)", ("attacks",)),
     (r"Whenever ~ attacks, (.+)", ("attacks",)),
     (r"Whenever ~ (?:blocks or becomes blocked|becomes blocked or blocks)(?: by a creature)?, (.+)", ("blocks", "becomes_blocked")),
@@ -206,6 +207,7 @@ _TRIGGERS = [
     (r"When(?:ever)? ~ dies, (?:if it was a creature, )?(.+)", ("dies",)),
     (r"Whenever ~ deals combat damage to a player, (.+)", ("combat_damage_player",)),
     (r"Whenever a creature you control deals combat damage to a player, (.+)", ("ally_combat_damage",)),
+    (r"Whenever an? ([A-Z][a-z]+) you control deals combat damage to a player, (.+)", ("ally_combat_damage",)),
     (r"Whenever you cast a noncreature spell, (.+)", ("cast_noncreature",)),
     (r"Whenever you cast an instant or sorcery spell, (.+)", ("cast_instant_sorcery",)),
     (r"Whenever you cast an instant or sorcery spell that targets a creature, (.+)", ("cast_instant_sorcery",)),
