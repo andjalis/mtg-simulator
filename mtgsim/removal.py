@@ -75,7 +75,7 @@ def _effect(kind, target, data=None, filter=""):
 def _regen_sub(sub):
     """"Regenerate target Elephant": one of your creatures of that type."""
     from .cards import Effect, NO_MATCH
-    if sub.lower() in ("creature", "artifact", "permanent"):
+    if not sub[0].isupper() or sub.lower() in ("creature", "artifact", "permanent"):
         return NO_MATCH
     return Effect("regenerate", 1, target="creature_mine", filter=f"subtype:{sub.capitalize()}")
 

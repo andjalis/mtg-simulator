@@ -290,7 +290,11 @@ class CardDef:
     exalted: int = 0                                    # native instances (they stack)
     block_only_flying: bool = False
     prevention: tuple = ()                              # damage shields (see prevention.py)
-    block_max_power: int = 0                            # "~ can't block creatures with power 2 or greater": 2
+    block_max_power: int = 0
+    equip_grant_mana: frozenset = frozenset()           # Paradise Mantle: 'Equipped creature has "{T}: Add one mana ..."'
+    one_spell_each_turn: bool = False                   # Rule of Law: "Each player can't cast more than one spell each turn."
+    player_hexproof: bool = False                       # Leyline of Sanctity: "You have hexproof."
+    opp_creatures_enter_tapped: bool = False            # Imposing Sovereign                            # "~ can't block creatures with power 2 or greater": 2
     improvise: bool = False
     delve: bool = False
     cascade: int = 0

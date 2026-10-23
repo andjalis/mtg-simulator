@@ -123,7 +123,8 @@ class BattlefieldMixin:
             perm.counters[card.etb_named_counters[0]] = card.etb_named_counters[1]
         for kind, n in (counters or {}).items():
             perm.counters[kind] = perm.counters.get(kind, 0) + n
-        perm.tapped |= tapped
+        perm.tapped |= tapped or perm.is_creature and any(x.card.opp_creatures_enter_tapped for x in p.foe.battlefield) \
+            if p.foe is not None else tapped
         p.battlefield.append(perm)
         if not card.is_land:
             p.entered_nonland_turn += 1

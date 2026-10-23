@@ -43,7 +43,7 @@ def parse_line(line: str, extra: dict, types) -> bool:
     if m:                                       # Spreading Seas, Evil Presence: it taps only for that colour
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {f"land_type:{m[1]}"}
         return True
-    m = re.fullmatch(r'Enchanted land has "\{T\}: Add (one mana of any color|\{[WUBRGC]\})\."', line)
+    m = re.fullmatch(r'Enchanted (?:land|creature) has "\{T\}: Add (one mana of any color|\{[WUBRGC]\})\."', line)
     if m:                                       # Abundant Growth, Utopia Sprawl's kin
         cols = "WUBRG" if "any" in m[1] else m[1][1]
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {f"grant_mana:{cols}"}

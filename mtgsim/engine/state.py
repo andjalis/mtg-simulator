@@ -241,7 +241,7 @@ class Permanent:
                 bt += tt
         for x in self.controller.battlefield:
             for kw, pp, tt in x.card.anthem_kw:
-                if creature and self.has(kw):
+                if creature and self.has(kw.removeprefix("other:")) and not (x is self and kw.startswith("other:")):
                     bp += pp
                     bt += tt
             if creature and x.card.anthem_chosen and x.chosen_type and x.chosen_type in self.card.subtypes:
@@ -424,6 +424,8 @@ class Permanent:
     def granted_mana(self) -> frozenset:
         """Colours other permanents let this one tap for (Enduring Vitality, Great Divide Guide)."""
         out = auras.granted_mana(self) if self.auras else frozenset()
+        for equipment in self.equipment:
+            out |= equipment.card.equip_grant_mana
         c = self.card
         if c.is_land and any(x.card.chosen_land_lock and x.chosen_land == c.name
                              for pl in (self.controller, self.controller.foe) if pl is not None for x in pl.battlefield):

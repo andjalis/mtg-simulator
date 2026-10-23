@@ -301,6 +301,16 @@ def _face_land_and_mana_lines(st, line):
         if re.fullmatch(r"~ can't block\.", line):
             extra["cant_block"] = True
             return None
+        m = re.fullmatch(r'Equipped creature has "\{T\}: Add (one mana of any color|\{[WUBRGC]\})\."', line)
+        if m:
+            extra["equip_grant_mana"] = frozenset("WUBRG" if "any" in m[1] else m[1][1])
+            return None
+        flag = {"Each player can't cast more than one spell each turn.": "one_spell_each_turn",
+                "You have hexproof.": "player_hexproof",
+                "Creatures your opponents control enter tapped.": "opp_creatures_enter_tapped"}.get(line)
+        if flag:
+            extra[flag] = True
+            return None
         m = re.fullmatch(r"~ can't block creatures with power (\d+) or greater\.", line)
         if m:
             extra["block_max_power"] = int(m[1])
@@ -640,10 +650,11 @@ def _face_cost_and_static_lines(st, line):
                    "then return that card to the battlefield under its owner's control.":
             triggers.append(Trigger("end_step", [Effect("blink_own", cond="harnessed")]))
             return None
-        m = re.fullmatch(r"Creatures you control with (flying|trample|menace|first strike|lifelink|deathtouch) get "
+        m = re.fullmatch(r"(Other c|C)reatures you control with (flying|trample|menace|first strike|lifelink|deathtouch) get "
                          r"\+(\d+)/\+(\d+)\.", line)
-        if m:
-            extra["anthem_kw"] = extra.get("anthem_kw", ()) + ((m[1], int(m[2]), int(m[3])),)
+        if m:                                       # "other:flying": not the source itself
+            kw = ("other:" if m[1] == "Other c" else "") + m[2]
+            extra["anthem_kw"] = extra.get("anthem_kw", ()) + ((kw, int(m[3]), int(m[4])),)
             return None
         m = re.fullmatch(r"Creature tokens you control get \+(\d+)/\+(\d+)\.", line)
         if m:

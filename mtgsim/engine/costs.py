@@ -591,6 +591,10 @@ class CostsMixin:
             return False
         if self.active is not p and any(x.card.opp_no_cast for x in self.opponent(p).battlefield):
             return False
+        counts = getattr(self, "spells_cast", {})
+        if counts.get("turn") == self.turn and counts.get(p.name, 0) >= 1 and \
+                any(x.card.one_spell_each_turn for pl in self.players for x in pl.battlefield):
+            return False
         if card.extra_sacrifice and not card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
             return False
         if card.aura and not auras.hosts(self, p, card):

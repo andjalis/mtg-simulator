@@ -69,6 +69,18 @@ _SRC = r"(?:~|it|he|she)"
 _EFFECT_PATTERNS = [
     (r"learn", lambda m: Effect("learn")),
     (r"exert ~", lambda m: Effect("exert", target="self")),
+    (r"sacrifice it at end of combat", lambda m: Effect("end_of_combat", data={"effects": [Effect("sacrifice_self", target="self")]})),
+    (r"target ([A-Z][a-z]+) creature gets ([+-]\d+)/([+-]\d+) until end of turn",
+     lambda m: Effect("pump", int(m[2]), int(m[3]), target="creature_mine", filter=f"subtype:{m[1]}")
+     if m[1][0].isupper() else NO_MATCH),
+    (r"target (attacking|blocking) creature gets \+(\d+)/\+(\d+) until end of turn",
+     lambda m: Effect("pump", int(m[2]), int(m[3]), target="creature_mine", filter=m[1].lower())),
+    (r"put an? ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|"
+     r"menace|reach)) counter on target creature you control",
+     lambda m: Effect("grant", target="creature_mine", data={"keyword": m[1].lower(), "perm": True})),
+    (r"put a \+1/\+1 counter on target ([A-Z][a-z]+) you control",
+     lambda m: Effect("p1_counters", 1, target="creature_mine", filter=f"subtype:{m[1]}") if m[1][0].isupper() else NO_MATCH),
+    (r"look at target (?:opponent's|player's) hand", lambda m: Effect("noop")),
     (r"untap all other creatures you control", lambda m: Effect("untap_all", data={"what": "creatures", "other": True})),
     (r"prevent all combat damage that would be dealt to ~ this turn", lambda m: Effect("combat_shield", target="self")),
     (r"~ deals (\d+) damage to target non-([A-Z][a-z]+) creature an opponent controls",

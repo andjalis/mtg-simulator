@@ -90,6 +90,7 @@ _NOUNS = {"permanent", "creature", "artifact", "enchantment", "land", "planeswal
 def parse_line(line: str, st) -> bool:
     if not ({"Instant", "Sorcery"} & set(st.types)) and line:
         line = line.replace("−", "-").replace("Creature tokens you control", "Token creatures you control")
+        line = re.sub(r"^(Other )?([A-Z][a-z]+) tokens you control", r"\1\2 token creatures you control", line)
         entry = _parse(line)
         if entry is not None:
             st.extra["team_statics"] = st.extra.get("team_statics", ()) + (entry,)

@@ -570,7 +570,7 @@ def _parse_trigger_line(line: str):
         if events == ("sacrifice",):
             flt = m[1]
         if events == ("you_attack",) and m.lastindex == 2:
-            flt = f"with:{m[1].rstrip('s')}"
+            flt = f"count>={_num(m[1])}" if "or more creatures" in pat else f"with:{m[1].rstrip('s')}"
         if events == ("any_cast",) and m.lastindex == 2 and not m[1].isdigit():
             flt = f"spell:{m[1]}"
         if "creature cards are put into graveyards" in pat:

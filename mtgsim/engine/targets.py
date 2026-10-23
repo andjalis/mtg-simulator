@@ -22,7 +22,7 @@ class TargetsMixin:
                     and not protected_from(obj, source if source is not None else self.target_source))
         if isinstance(obj, StackItem):
             return obj in self.stack
-        return isinstance(obj, Player)
+        return isinstance(obj, Player) and not (obj is not by and any(x.card.player_hexproof for x in obj.battlefield))
 
     def passes_filter(self, eff: Effect, perm: Permanent, by: Player) -> bool:
         f = eff.filter
@@ -48,6 +48,8 @@ class TargetsMixin:
             return bool(perm.card.colors & set(f[7:]))
         if f == "attacking":
             return perm in self.attackers
+        if f == "blocking":
+            return any(perm in bl for bl in self.blocks.values())
         if f == "attacking_blocking":
             return perm in self.attackers or any(perm in bl for bl in self.blocks.values())
         if f == "nonartifact":

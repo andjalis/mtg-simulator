@@ -5,13 +5,14 @@
     Tap up to two target creatures. Those creatures don't untap during their controller's next untap step.
     Tap all creatures target player controls. (Aimed at an opponent.)
     Each player draws two cards.      Defending player gets a poison counter.      Untap up to three lands.
+    Each player shuffles their hand and graveyard into their library, then draws seven cards.
 
 "Target player shuffles their graveyard into their library" is aimed at its caster (refilling a library); each player
 sacrifices their least valuable permanents of the kind.
 """
 from __future__ import annotations
 
-KINDS = {"each_sac", "gy_shuffle", "skip_untap_tapped", "tap_all_opp", "each_draw", "poison", "untap_lands"}
+KINDS = {"each_sac", "gy_shuffle", "skip_untap_tapped", "tap_all_opp", "each_draw", "poison", "untap_lands", "wheel"}
 _N = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3}
 _NUM = {"two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7}
 
@@ -22,6 +23,8 @@ def _effect(kind, amount=1, data=None):
 
 
 EFFECT_PATTERNS = [
+    (r"each player shuffles their hand and graveyard into their library, then draws (seven|three|four|five) cards",
+     lambda m: _effect("wheel", {"seven": 7, "three": 3, "four": 4, "five": 5}[m[1].lower()])),
     (r"each player draws (a card|two cards|three cards)", lambda m: _effect("each_draw", _N[m[1].split()[0].lower()])),
     (r"(?:target player|target opponent|defending player|that player|each opponent) gets? (a|two|three) poison counters?",
      lambda m: _effect("poison", _N[m[1].lower()])),
@@ -59,6 +62,15 @@ def resolve(game, p, eff, target, item):
                            and (x.is_creature if eff.data["what"] == "creatures" else not x.card.is_land)]
         for x in game.tapped_now:
             x.tapped = True
+    elif eff.kind == "wheel":                    # Timetwister
+        for pl in game.players:
+            cards = list(pl.hand) + list(pl.graveyard)
+            pl.hand.clear()
+            pl.graveyard.clear()
+            pl.library.extend(cards)
+            pl.library.shuffle(game.rng)
+        for pl in game.players:
+            game.draw(pl, eff.amount)
     elif eff.kind == "each_draw":
         for pl in game.players:
             game.draw(pl, eff.amount)

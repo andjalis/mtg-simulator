@@ -141,6 +141,8 @@ class StackMixin:
                 if trig.filter.startswith("attacker:") and not (isinstance(context, Permanent)
                                                                 and trig.filter[9:] in context.card.subtypes):
                     continue
+                if trig.filter.startswith("count>=") and len(self.attackers) < int(trig.filter[7:]):
+                    continue
                 if trig.filter.startswith("with:") and \
                         not any(trig.filter[5:] in a.card.subtypes for a in self.attackers):
                     continue
