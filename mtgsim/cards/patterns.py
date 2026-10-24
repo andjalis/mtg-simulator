@@ -87,7 +87,7 @@ _EFFECT_PATTERNS = [
                       data={"keyword": m[3].lower()})),
     (r"~ deals (\d+) damage to each attacking creature",
      lambda m: Effect("damage", int(m[1]), target="each_creature", filter="attacking")),
-    (r"(?:~|it) gets ([+-]\d+)/([+-]\d+) and gains " + _KWS + " until end of turn",
+    (r"~ gets ([+-]\d+)/([+-]\d+) and gains " + _KWS + " until end of turn",
      lambda m: [Effect("pump", int(m[1]), int(m[2]), target="self"), Effect("grant", target="self", data={"keyword": m[3].lower()})]),
     (r"tap target creature with power (\d+) or less", lambda m: Effect("tap", 1, target="creature", filter=f"max_power:{m[1]}")),
     (r"(?:that player|target opponent|each opponent) loses half their life, rounded up", lambda m: Effect("half_life")),
