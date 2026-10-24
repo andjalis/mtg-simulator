@@ -32,6 +32,20 @@ def attach_new_equipment(game, p, target, **_):
         game.log(f"attaches {new[-1].card.name} to {target.card.name}", p)
 
 
+@kind("gear_up")
+def gear_up(game, p, eff, target, **_):
+    """"Attach (any number of) target Equipment you control to target creature you control": all of them, or the
+    best one not already on it."""
+    if not isinstance(target, Permanent) or target not in p.battlefield or not target.is_creature:
+        return
+    gear = [x for x in p.battlefield if "Equipment" in x.card.subtypes and not x.is_creature and x.attached_to is not target]
+    if not eff.data.get("all"):
+        gear = sorted(gear, key=lambda x: sum(x.card.equip_bonus), reverse=True)[:1]
+    for x in gear:
+        x.attached_to = target
+        game.log(f"attaches {x.card.name} to {target.card.name}", p)
+
+
 @kind("hone")
 def hone(game, p, **_):
     """Dwalin: a hone counter on each Equipment you control (+1/+0 each to the equipped creature)."""
@@ -258,9 +272,26 @@ def pump_attackers(game, p, eff, **_):
             a.pump_t += eff.amount2
 
 
+@kind("exert")
+def exert(game, p, target, **_):
+    """Exert: it won't untap during its controller's next untap step; "whenever you exert a creature" triggers."""
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        target.skip_untap = max(target.skip_untap, 1)
+        game.fire(p, "exert", context=target)
+
+
+@kind("combat_shield")
+def combat_shield(game, target, **_):
+    if isinstance(target, Permanent):
+        target.combat_shield_turn = game.turn       # "prevent all combat damage that would be dealt to ~ this turn"
+
+
 @kind("untap_all")
-def untap_all(game, p, eff, **_):
+def untap_all(game, p, eff, item=None, **_):
+    src = item.source if item is not None else None
     for x in p.battlefield:
+        if eff.data.get("other") and x is src:
+            continue
         if (x.is_creature if eff.data["what"] == "creatures" else x.card.is_land):
             x.tapped = False
 
@@ -289,8 +320,10 @@ def untap_other(game, p, item, **_):
 
 @kind("tap")
 def tap(game, p, eff, target, item=None, **_):
+    game.tapped_now = []                  # for "Those creatures don't untap during ..."
     if isinstance(target, Permanent):
         target.tapped = True
+        game.tapped_now.append(target)
         src = item.source if item is not None else None
         if eff.data.get("silence") and isinstance(src, Permanent):
             target.silenced_by = src      # loses all abilities while the source stays out
@@ -300,6 +333,7 @@ def tap(game, p, eff, target, item=None, **_):
         extra = default_choose_target(game, p, eff)
         if extra is not None:
             extra.tapped = True
+            game.tapped_now.append(extra)
 
 
 @kind("unblockable")

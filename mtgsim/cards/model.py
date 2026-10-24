@@ -85,6 +85,7 @@ class AltCost:
     hybrid: tuple = ()               # hybrid pips in cost, e.g. ("UB", "UB") for {U/B}{U/B}
     counters: int = 0                # impending: time counters it enters with; suspend: time counters
     pt: tuple = ()                   # prototype: (power, toughness)
+    cond: str = ""                   # free_if: when the free cast is allowed (statics.free_cast_allowed)
 
 
 @dataclass
@@ -104,6 +105,7 @@ class Activated:
     extra_costs: dict = field(default_factory=dict)
     sorcery: bool = False            # "Activate only as a sorcery."
     once: bool = False               # "Activate only once each turn."
+    per_turn: int = 0                # "Activate no more than twice each turn."
     min_charge: int = 0              # under "STATION N+": needs N charge counters
     needs_max_speed: bool = False    # "Max speed — COST: EFFECT"
     once_game: bool = False          # Exhaust / Power-up: each such ability is activated only once
@@ -190,6 +192,7 @@ class CardDef:
     hybrid: tuple = ()                                  # hybrid pips of the mana cost: ("UB", "UB")
     spent_colors: frozenset = frozenset()               # colours in "if {U}{U} was spent to cast it" triggers
     spree: list = field(default_factory=list)           # spree modes: (extra cost, effects)
+    tiered: bool = False                                # Tiered: the spree modes, exactly one of them
     gy_triggers: list = field(default_factory=list)     # triggers that work from the graveyard (Bloodghast)
     ward_life: int = 0                                  # "Ward—Pay N life."
     etb_named_counters: tuple = ()                      # ("net", 3): "enters with three net counters on it"
@@ -243,6 +246,14 @@ class CardDef:
     color_skips_untap: bool = False                     # "{T}: Add {B} or {R}. ~ doesn't untap during your next untap step."
     dredge: int = 0                                     # Dredge N
     escape_counters: int = 0                            # "~ escapes with N +1/+1 counters on it."
+    aura_cond_kw: tuple = ()                            # Runemarks: (keyword, condition) for the enchanted creature
+    aura_per: tuple = ()                                # ("Forest", 1, 1): "Enchanted creature gets +1/+1 for each Forest ..."
+    spell_tax: tuple = ()                               # "Noncreature spells cost {1} more to cast." (statics.py)
+    sunburst: bool = False                              # Sunburst: counters for the colors of mana spent
+    assign_unblocked: bool = False                      # "you may have ~ assign its combat damage as though it weren't blocked"
+    not_alone: tuple = ()                               # "~ can't attack or block alone": ("attack", "block")
+    unblockable_by: tuple = ()                          # "~ can't be blocked by white creatures" (statics.py)
+    team_statics: tuple = ()                            # general anthems / keyword grants (see statics.py)
     anthem_all: tuple = ()                              # ("Sliver", 1, 1): "All Sliver creatures get +1/+1."
     extra_blocks: int = 0                               # "can block an additional creature" (99: any number)
     storage: dict = field(default_factory=dict)         # storage lands: bank cost, colors, hold, upkeep (see storage.py)
@@ -278,6 +289,15 @@ class CardDef:
     color_override: frozenset | None = None             # explicit face colours / colour indicator
     exalted: int = 0                                    # native instances (they stack)
     block_only_flying: bool = False
+    prevention: tuple = ()                              # damage shields (see prevention.py)
+    block_max_power: int = 0
+    aura_becomes: tuple = ()                            # ("U", "Frog", 1, 1): Frogify (see becomes.py)
+    counter_bonus: tuple = ()                           # (("plus_one" | "double", "creature" | "permanent" | "self"), ...)
+    blocked_only_by: tuple = ()                         # "~ can't be blocked except by creatures with flying or reach"
+    equip_grant_mana: frozenset = frozenset()           # Paradise Mantle: 'Equipped creature has "{T}: Add one mana ..."'
+    one_spell_each_turn: bool = False                   # Rule of Law: "Each player can't cast more than one spell each turn."
+    player_hexproof: bool = False                       # Leyline of Sanctity: "You have hexproof."
+    opp_creatures_enter_tapped: bool = False            # Imposing Sovereign                            # "~ can't block creatures with power 2 or greater": 2
     improvise: bool = False
     delve: bool = False
     cascade: int = 0

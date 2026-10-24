@@ -6,6 +6,7 @@ from .. import alt_casts, auras, copies, creature_keywords, graveyard, storage
 from ..cards import Activated, CardDef, Effect
 from .. import rules_events, continuous
 from ..identity import CardInstance, Graveyard
+from .policy import choose_tutor, perm_value
 from .state import is_basic_land
 
 if TYPE_CHECKING:
@@ -193,9 +194,25 @@ class TurnsMixin:
                     continue
             elif not (card.cmc > lands + 2 or len(p.hand) > 7):
                 continue
+            if spec.get("reinforce") and not p.creatures:
+                continue
             if self.pay(p, spec["cost"]) is None:
                 continue
             self.discard_card(p, card)
+            if spec.get("transmute"):      # a card with the same mana value, at sorcery speed
+                found = [c for c in p.library if c.cmc == card.cmc]
+                if found:
+                    pick = choose_tutor(self, p, found)
+                    p.library.remove(pick)
+                    p.hand.append(pick)
+                    self.log(f"transmutes {card.name} for {pick.name}", p)
+                p.library.shuffle(self.rng)
+                continue
+            if spec.get("reinforce"):
+                target = max(p.creatures, key=perm_value)
+                target.counters["+1/+1"] = target.p1 + spec["reinforce"]
+                self.log(f"reinforces {target.card.name} with {card.name}", p)
+                continue
             self.log(f"cycles {card.name}", p)
             for trig in card.cycle_self_triggers:
                 self.queue_trigger(p, trig.effects, None, f"{card.name}: cycled")
@@ -298,6 +315,8 @@ class TurnsMixin:
                 else:
                     self.leave_battlefield(perm, "exile")
         self.fire(p, "end_step")
+        if getattr(self, "monarch", None) is p:      # the monarch draws a card at the beginning of their end step
+            self.queue_trigger(p, [Effect("draw", 1)], None, "the monarch")
         waiting, self.blinked = self.blinked, []
         for card, owner in waiting:
             self.enter_battlefield(owner, card)

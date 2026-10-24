@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import auras, counting
+from .. import auras, counting, statics
 from ..cards import BASIC_MANA, KEYWORDS, CardDef, Effect, Trigger
 from .. import continuous
 from ..identity import CardInstance, CardZone, Graveyard, instance
@@ -31,12 +31,24 @@ class Counters(dict):
 
     def __setitem__(self, key, value):
         old = self.get(key, 0)
-        super().__setitem__(key, value)
         perm = self.owner
+        if key == "+1/+1" and value > old and perm in perm.controller.battlefield:
+            value = old + _more_counters(perm, value - old)      # Hardened Scales, The Earth Crystal
+        super().__setitem__(key, value)
         if key == "+1/+1" and value > old and perm in perm.controller.battlefield:
             game = getattr(perm.controller, "_game", None)
             if game is not None:
                 game.fire(perm.controller, "p1_added", perm)
+
+
+def _more_counters(perm, n: int) -> int:
+    """How many +1/+1 counters are put on perm when n would be ("that many plus one", "twice that many")."""
+    for x in perm.controller.battlefield:
+        for kind, who in x.card.counter_bonus:
+            if who == "self" and x is not perm or who == "creature" and not perm.is_creature:
+                continue
+            n = n * 2 if kind == "double" else n + 1
+    return n
 
 
 def protected_from(perm, source) -> bool:
@@ -185,6 +197,10 @@ class Permanent:
             return len(c.hand)
         if what == "cards in your graveyard":
             return len(c.graveyard)
+        if what == "creature cards in your graveyard":
+            return sum(x.is_creature for x in c.graveyard)
+        if what == "instant and sorcery cards in your graveyard":
+            return sum(x.is_instant or x.is_sorcery for x in c.graveyard)
         kind = what.split()[0][:-1].capitalize()           # "creatures you control" -> Creature
         return sum(kind in x.card.types for x in c.battlefield)
 
@@ -206,9 +222,9 @@ class Permanent:
                     bp += c.anthem_enchanted[0]
                     bt += c.anthem_enchanted[1]
         if creature and self.card.pt_cda:
-            n = self._cda_count(self.card.pt_cda)
+            n = self._cda_count(self.card.pt_cda.removeprefix("power:"))
             bp += n
-            bt += n
+            bt += 0 if self.card.pt_cda.startswith("power:") else n
         if creature:
             for pl in (self.controller, self.controller.foe):
                 for x in (pl.battlefield if pl is not None else ()):
@@ -219,6 +235,11 @@ class Permanent:
         for equipment in self.equipment:
             bp += equipment.card.equip_bonus[0] + equipment.counters.get("hone", 0)
             bt += equipment.card.equip_bonus[1]
+            if equipment.card.aura_per:              # "Equipped creature gets +1/+1 for each artifact you control."
+                each, ap, at = equipment.card.aura_per
+                n = counting.count(None, equipment.controller, {"what": each, "zone": "battlefield"}, equipment)
+                bp += n * ap
+                bt += n * at
         for cond, pp, tt in self.card.pt_if:
             if not cond.startswith(("gy", "lands", "speed")):
                 if self.condition(cond):              # metalcraft, "as long as it's your turn / attacking"
@@ -236,7 +257,7 @@ class Permanent:
                 bt += tt
         for x in self.controller.battlefield:
             for kw, pp, tt in x.card.anthem_kw:
-                if creature and self.has(kw):
+                if creature and self.has(kw.removeprefix("other:")) and not (x is self and kw.startswith("other:")):
                     bp += pp
                     bt += tt
             if creature and x.card.anthem_chosen and x.chosen_type and x.chosen_type in self.card.subtypes:
@@ -247,6 +268,10 @@ class Permanent:
                         and not (other and x is self):
                     bp += pp
                     bt += tt
+        if creature:
+            sp_, st_ = statics.pt_bonus(self)
+            bp += sp_
+            bt += st_
         for sub, pp, tt in self.controller.emblems:
             if creature and sub in self.card.subtypes:
                 bp += pp
@@ -260,6 +285,11 @@ class Permanent:
                 e = a.card.equip_bonus
                 bp += e[0]
                 bt += e[1]
+                if a.card.aura_per:
+                    what, ap, at = a.card.aura_per
+                    n = counting.count(None, a.controller, {"what": what, "zone": "battlefield"}, a)
+                    bp += n * ap
+                    bt += n * at
                 if "per_enchantment" in a.card.aura_flags:     # Virtuous Role
                     n = sum("Enchantment" in y.card.types for y in self.controller.battlefield)
                     bp += n
@@ -308,11 +338,15 @@ class Permanent:
             for a in self.auras:
                 if kw in a.card.equip_keywords:
                     return True
+                if any(k == kw and statics.condition(a, cond) for k, cond in a.card.aura_cond_kw):
+                    return True
         for k, cond in self.card.cond_keywords:
             if k == kw and self.condition(cond):
                 return True
         if any(sub in self.card.subtypes and k == kw and not (other and x is self)
                for x in self.controller.battlefield for sub, k, other in x.card.keyword_sub):
+            return True
+        if self.is_creature and statics.keyword(self, kw):
             return True
         if self.is_creature and self.p1 > 0 and any(kw in x.card.counter_team_keywords
                                                     for x in self.controller.battlefield):
@@ -347,7 +381,7 @@ class Permanent:
         if cond.startswith("opp_life<="):
             opp = getattr(self.controller, "opponent", None)
             return opp is not None and opp.life <= int(cond[10:])
-        return False
+        return bool(statics.condition(self, cond))
 
     @property
     def is_creature(self):
@@ -400,12 +434,14 @@ class Permanent:
 
     def can_attack(self):
         return (self.is_creature and not self.tapped and not self.has("defender")
-                and not (self.auras and auras.stops_combat(self))
+                and not (self.auras and (auras.stops_combat(self) or auras.stops_attack(self)))
                 and (not self.sick or self.has("haste")))
 
     def granted_mana(self) -> frozenset:
         """Colours other permanents let this one tap for (Enduring Vitality, Great Divide Guide)."""
-        out = frozenset()
+        out = auras.granted_mana(self) if self.auras else frozenset()
+        for equipment in self.equipment:
+            out |= equipment.card.equip_grant_mana
         c = self.card
         if c.is_land and any(x.card.chosen_land_lock and x.chosen_land == c.name
                              for pl in (self.controller, self.controller.foe) if pl is not None for x in pl.battlefield):
@@ -574,13 +610,15 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
         return False
     if blocker.card.unleash and blocker.p1 > 0:
         return False
-    if blocker.card.cant_block or blocker.has("cant_block_now") or blocker.has("decayed") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
+    if blocker.card.cant_block or blocker.has("cant_block_now") or blocker.has("decayed") or attacker.has("unblockable") or (blocker.auras and (auras.stops_combat(blocker) or auras.stops_block(blocker))):
         return False
     if any(attacker.has(keyword) and any(x.card.is_land and subtype in x.card.subtypes
                                         for x in blocker.controller.battlefield)
            for keyword, subtype in (("swampwalk", "Swamp"), ("forestwalk", "Forest"),
                                     ("mountainwalk", "Mountain"), ("islandwalk", "Island"),
                                     ("plainswalk", "Plains"))):
+        return False
+    if blocker.card.block_max_power and attacker.power >= blocker.card.block_max_power:
         return False
     if blocker.card.block_only_flying and not attacker.has("flying"):
         return False
@@ -593,6 +631,10 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if protected_from(attacker, blocker):
         return False
     if attacker.has("skulk") and blocker.power > attacker.power:
+        return False
+    if any(statics.desc_matches(blocker, d) for d in attacker.card.unblockable_by):
+        return False
+    if attacker.card.blocked_only_by and not any(statics.desc_matches(blocker, d) for d in attacker.card.blocked_only_by):
         return False
     if attacker.has("flying") and not (blocker.has("flying") or blocker.has("reach")):
         return False

@@ -23,9 +23,10 @@ def make_token(name: str, power: int, toughness: int, keywords=frozenset(), trig
     if kind:
         produces = frozenset(COLORS) if kind == "treasure" else frozenset()
         activated = [_parse_ability(TOKEN_ABILITIES[kind], [])] if kind in TOKEN_ABILITIES else []
+        extra = {"restricted_produces": frozenset({"C"}), "mana_restriction": "powerstone"} if kind == "powerstone" else {}
         return CardDef(name=kind.capitalize(), mana_cost={"generic": 0}, cmc=0, types=frozenset({"Artifact"}),
                        subtypes=frozenset({kind.capitalize()}), produces=produces, token_kind=kind, is_token=True,
-                       activated=activated)
+                       activated=activated, **extra)
     return CardDef(name=f"{name} token", mana_cost={"generic": 0}, cmc=0,
                    types=frozenset({"Creature", "Artifact"} if artifact else {"Creature"}),
                    subtypes=frozenset(name.split()) - {"Token"}, power=power, toughness=toughness,

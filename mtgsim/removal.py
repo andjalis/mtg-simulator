@@ -51,11 +51,17 @@ EFFECT_PATTERNS = [
      lambda m: _pair("bite")),
     (r"(?:it|that creature|he|she) deals damage equal to its power to (?:up to one )?target creature " + _THEIRS,
      lambda m: _effect("bite", "creature", filter="opp")),
+    (r"(?:it|that creature|he|she) deals damage equal to its power to up to one (?:other )?target creature",
+     lambda m: _effect("bite", "creature", filter="opp")),     # any creature; the AI only aims at theirs
     (r"(?:it|that creature|he|she) fights (?:up to one )?target creature " + _THEIRS,
      lambda m: _effect("fight", "creature", filter="opp")),
     (r"target creature you control deals damage equal to its power to target creature or planeswalker( " + _THEIRS + ")?",
      lambda m: _pair("bite", "creature_pw", "opp" if m[1] else "")),
     (r"untap target creature", lambda m: _effect("untap_target", "creature")),
+    (r"untap target (?:basic )?land", lambda m: _effect("untap_target", "land")),
+    (r"untap target (Forest|Plains|Island|Swamp|Mountain|Gate)", lambda m: _effect("untap_target", "land",
+                                                                                  filter=f"subtype:{m[1].capitalize()}")),
+    (r"regenerate target ([A-Z][a-z]+)", lambda m: _regen_sub(m[1])),
     (rf"target creature you control gains ({_KW}) until end of turn",
      lambda m: _effect("grant", "creature_mine", data={"keyword": m[1].lower()})),
 ]
@@ -64,6 +70,14 @@ EFFECT_PATTERNS = [
 def _effect(kind, target, data=None, filter=""):
     from .cards import Effect
     return Effect(kind, target=target, data=data or {}, filter=filter)
+
+
+def _regen_sub(sub):
+    """"Regenerate target Elephant": one of your creatures of that type."""
+    from .cards import Effect, NO_MATCH
+    if not sub[0].isupper() or sub.lower() in ("creature", "artifact", "permanent"):
+        return NO_MATCH
+    return Effect("regenerate", 1, target="creature_mine", filter=f"subtype:{sub.capitalize()}")
 
 
 def _distinct(eff):

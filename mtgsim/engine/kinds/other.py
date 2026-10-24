@@ -198,3 +198,8 @@ def extra_land(game, p, **_):
 def extra_turn(game, p, **_):
     game.extra_turns.append(p)
     game.log("will take an extra turn", p)
+
+
+@kind("noop")
+def noop(game, **_):
+    """Information only ("look at target opponent's hand"): the AI already sees the game."""

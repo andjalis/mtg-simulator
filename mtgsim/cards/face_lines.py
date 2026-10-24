@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .. import discounts, graveyard, modal
-from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, storage as _storage
+from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, prevention as _prevention, statics as _statics, storage as _storage
 from .model import Activated, AltCost, COLORS, Effect, KEYWORDS, NUMBERS, Trigger, _num, parse_mana_cost
 from .patterns import _parse_mana_ability
 from .parse import _apply_speed_gate, _mana_restriction, _parse_ability, _parse_effects, _parse_trigger
@@ -29,6 +29,11 @@ def _face_special_lines(st, line):
     level_marks = st.level_marks
     triggers = st.triggers
     unsupported = st.unsupported
+    m = re.fullmatch(r"You may exert ~ as it attacks\.(?: When you do, (.+))?", line)
+    if m:                                   # exert: an attack trigger that also keeps it tapped through the next untap
+        approximations.append("exert: always exerted when it attacks")
+        rider = re.sub(r"\bit\b", "~", m[1]) if m[1] else ""        # "it gets +1/+1": the exerted creature
+        line = "Whenever ~ attacks, exert ~." + (f" {rider[0].upper()}{rider[1:]}" if rider else "")
     try:
         if gate is not None:
             _apply_speed_gate(gate, triggers, activated)
@@ -92,6 +97,16 @@ def _face_special_lines(st, line):
         if line == "~ can't be blocked.":
             keywords.add("unblockable")
             return None
+        if line == "~ can't block and can't be blocked.":
+            keywords.add("unblockable")
+            extra["cant_block"] = True
+            return None
+        m = re.fullmatch(r"~ can't be blocked except by (creatures with (\w+)(?: or (\w+))?|(white|blue|black|red|green|"
+                         r"artifact) creatures|Walls)\.", line)
+        if m:                                   # Treetop Rangers, Signal Pest, Prowling Nightstalker
+            extra["blocked_only_by"] = tuple(f"creatures with {k}" for k in (m[2], m[3]) if k) if m[2] else \
+                (f"{m[4]} creature" if m[4] else "Wall",)
+            return None
         if line == "You have no maximum hand size.":
             extra["no_max_hand"] = True
             return None
@@ -118,6 +133,8 @@ def _face_special_lines(st, line):
             extra["_gy_draw"] = _num(m[1])
             line = line.replace(m[0], "").strip()
         line = re.sub(r"\s*If ~ was kicked, .+?\.", "", line).strip()
+        if not line:
+            return None
         lv = re.fullmatch(r"((?:\{[WUBRGC0-9/]+\})+): Level (\d+)", line)
         if lv:
             n = int(lv[2])
@@ -125,12 +142,17 @@ def _face_special_lines(st, line):
                                        extra_costs={"level_from": n - 1}, sorcery=True, text=line))
             level_marks.append((n, len(triggers)))
             return None
-        line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration|Heroic) — (?=When|At|If)", "", line)
+        line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration|Heroic|Rally|Constellation|Magecraft|Landfall|Coven|Domain|Formidable|Inspired|Lieutenant|Parley|Radiance|Strive|Will of the council|Council's dilemma|Kinship|Grandeur|Hellbent|Imprint|Join forces|Undergrowth|Adamant|Addendum|Battalion|Bloodrush|Channel|Chroma|Converge|Corrupted|Fateful hour|Ferocious|Spell mastery|Tempting offer|Threshold|Alliance|Pack tactics|Enrage|Secret council|Descend \d+) — (?=When|At|If)", "", line)
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
+        line = re.sub(r"^(?:Converge|Domain|Coven) — ", "", line)            # ability words: no rules meaning
+        if line == "~ enters with a +1/+1 counter on it for each color of mana spent to cast it.":
+            extra["sunburst"] = True                                        # converge creatures: sunburst's counters
+            return None
         # Discard triggers fire once per card, so "that many" counters is one counter each time.
         line = re.sub(r"^(Whenever you discard one or more cards), put that many \+1/\+1 counters on ~\.$",
                       r"\1, put a +1/+1 counter on ~.", line)
-        if _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st):
+        if _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st) or \
+                _prevention.parse_line(line, st):
             return None
         parts = [p.strip().lower() for p in re.split(r",(?: and)? | and |,", line)]
         if all(p in KEYWORDS or re.fullmatch(r"(?:ward \{\d+\}|toxic \d+|bushido \d+)", p) for p in parts):
@@ -227,6 +249,19 @@ def _face_land_and_mana_lines(st, line):
         if re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a creature type\.", line):
             extra["choose_type"] = "creature"
             return None
+        m = re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a color other than (white|blue|black|red|green)\.", line)
+        if m:                                      # Thriving lands: the chosen color is the one the deck needs most
+            extra["choose_type"] = "color_other:" + {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}[m[1]]
+            return None
+        m = re.fullmatch(r"\{T\}: Add \{([WUBRG])\} or one mana of the chosen color\.", line)
+        if m and extra.get("choose_type", "").startswith("color_other:"):
+            produces.add(m[1])
+            return None
+        m = re.fullmatch(r"As ~ enters(?: the battlefield)?, you may reveal an? ([A-Z]\w+)(?: or ([A-Z]\w+))? card from your "
+                         r"hand\. If you don't, ~ enters tapped\.", line)
+        if m:                                      # Snarls, Murmuring Bosk
+            extra["tapped_condition"] = "reveal:" + "|".join(k for k in m.groups() if k)
+            return None
         if re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a basic land type\. Then you may pay 2 life\. If you "
                         r"don't, it enters tapped\.", line):
             extra.update(choose_type="basic_land", tapped_condition="shock")
@@ -276,6 +311,28 @@ def _face_land_and_mana_lines(st, line):
         if re.fullmatch(r"~ can't block\.", line):
             extra["cant_block"] = True
             return None
+        m = re.fullmatch(r'Equipped creature has "\{T\}: Add (one mana of any color|\{[WUBRGC]\})\."', line)
+        if m:
+            extra["equip_grant_mana"] = frozenset("WUBRG" if "any" in m[1] else m[1][1])
+            return None
+        m = re.fullmatch(r"If one or more \+1/\+1 counters would be put on (a creature you control|a permanent you control|~), "
+                         r"(that many plus one|twice that many) \+1/\+1 counters are put on (?:it|that creature|that permanent) "
+                         r"instead\.", line)
+        if m:                                   # Hardened Scales, Solid Ground, The Earth Crystal
+            who = {"a creature you control": "creature", "a permanent you control": "permanent", "~": "self"}[m[1]]
+            extra["counter_bonus"] = extra.get("counter_bonus", ()) + (("double" if "twice" in m[2] else "plus_one", who),)
+            approximations.append("+1/+1 counters a permanent enters with don't get the extra counters")
+            return None
+        flag = {"Each player can't cast more than one spell each turn.": "one_spell_each_turn",
+                "You have hexproof.": "player_hexproof",
+                "Creatures your opponents control enter tapped.": "opp_creatures_enter_tapped"}.get(line)
+        if flag:
+            extra[flag] = True
+            return None
+        m = re.fullmatch(r"~ can't block creatures with power (\d+) or greater\.", line)
+        if m:
+            extra["block_max_power"] = int(m[1])
+            return None
         if line == "~ can block only creatures with flying.":
             extra["block_only_flying"] = True
             return None
@@ -302,6 +359,13 @@ def _face_land_and_mana_lines(st, line):
                 extra.update(equip_bonus=(int(m[1] or 0), int(m[2] or 0)), equip_keywords=frozenset(kws),
                              equip_ward=ward)
                 return None
+        m = re.fullmatch(r"Equipped creature gets ([+-]\d+)/([+-]\d+) for each ([\w -]+?) (?:you control|in your party|counter on ~)"
+                         r"(?: and has ([a-z ]+))?\.", line)
+        if m and (not m[4] or m[4] in KEYWORDS):        # "Equipped creature gets +1/+1 for each artifact you control."
+            from ..counting import _singular
+            what = "party creature" if "party" in line else f"counter:{m[3]}" if "counter on" in line else _singular(m[3])
+            extra.update(aura_per=(what, int(m[1]), int(m[2])), equip_keywords=frozenset({m[4]} if m[4] else ()))
+            return None
         m = re.fullmatch(r"Equip (\{[^ .]+\})(\. This ability costs [^.]+ less to activate[^.]*\.)?", line)
         if m:
             extra["equip_cost"] = parse_mana_cost(m[1])
@@ -384,9 +448,11 @@ def _face_land_and_mana_lines(st, line):
         if m:
             extra["etb_counters"] = _num(m[1])
             return None
-        m = re.fullmatch(r"~ enters with (a|one|two|three|four|five) (\w+) counters? on it\.", line)
+        m = re.fullmatch(r"~ enters( tapped)? with (a|one|two|three|four|five) (\w+) counters? on it\.", line)
         if m:
-            extra["etb_named_counters"] = (m[2].lower(), _num(m[1]))
+            extra["etb_named_counters"] = (m[3].lower(), _num(m[2]))
+            if m[1]:
+                enters_tapped = True              # Vivid lands
             return None
         m = re.fullmatch(r"Craft with artifact (\{[^ (]+\})(?: \(.*\))?", line)
         if m:
@@ -468,9 +534,13 @@ def _face_cost_and_static_lines(st, line):
             alt_costs.append(AltCost("flashback", parse_mana_cost(m[1]), zone="graveyard"))
             approximations.append("harmonize: tapping a creature to reduce the cost isn't used")
             return None
-        if line == "Spree":
+        if line in ("Spree", "Tiered"):
             extra["is_spree"] = True
+            extra["tiered"] = line == "Tiered"     # Tiered: exactly one mode and its extra cost
             return None
+        m = re.fullmatch(r"• [\w' ]+ — (\{[^ ]+\}) — (.+)", line)
+        if m and extra.get("tiered"):
+            line = f"+ {m[1]} — {m[2]}"
         m = re.fullmatch(r"\+ (\{[^ ]+\}) — (.+)", line)
         if m and extra.get("is_spree"):
             effs, bad = _parse_effects(m[2])
@@ -565,7 +635,12 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["team_keywords"] = extra.get("team_keywords", frozenset()) | {m[1]}
             return None
-        m = re.fullmatch(r"(Red|White|Blue|Black|Green|Instant and sorcery|Creature|Artifact|Noncreature|[A-Z][a-z]+) "
+        m = re.fullmatch(r"([A-Z][a-z]+) spells and ([a-zA-Z]+) spells you cast cost \{(\d+)\} less to cast\.", line)
+        if m:                                      # Familiars, Bannerets: once for a spell that is both
+            extra["cost_discount"] = extra.get("cost_discount", ()) + ((f"or:{m[1].lower()}|{m[2].lower()}", int(m[3])),)
+            return None
+        m = re.fullmatch(r"(Red|White|Blue|Black|Green|Instant and sorcery|Creature|Artifact|Noncreature|[A-Z][a-z]+|"
+                         r"(?:Red|White|Blue|Black|Green) (?:creature|artifact|instant|sorcery|enchantment)) "
                          r"spells you cast cost \{(\d+)\} less to cast\.", line)
         if m:
             extra["cost_discount"] = extra.get("cost_discount", ()) + ((m[1].lower(), int(m[2])),)
@@ -593,10 +668,11 @@ def _face_cost_and_static_lines(st, line):
                    "then return that card to the battlefield under its owner's control.":
             triggers.append(Trigger("end_step", [Effect("blink_own", cond="harnessed")]))
             return None
-        m = re.fullmatch(r"Creatures you control with (flying|trample|menace|first strike|lifelink|deathtouch) get "
+        m = re.fullmatch(r"(Other c|C)reatures you control with (flying|trample|menace|first strike|lifelink|deathtouch) get "
                          r"\+(\d+)/\+(\d+)\.", line)
-        if m:
-            extra["anthem_kw"] = extra.get("anthem_kw", ()) + ((m[1], int(m[2]), int(m[3])),)
+        if m:                                       # "other:flying": not the source itself
+            kw = ("other:" if m[1] == "Other c" else "") + m[2]
+            extra["anthem_kw"] = extra.get("anthem_kw", ()) + ((kw, int(m[3]), int(m[4])),)
             return None
         m = re.fullmatch(r"Creature tokens you control get \+(\d+)/\+(\d+)\.", line)
         if m:
@@ -652,9 +728,12 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["tapped_discount"] = int(m[1])
             return None
-        m = re.fullmatch(r"As an additional cost to cast ~, behold an? (\w+) or pay \{(\d+)\}\.", line)
+        m = re.fullmatch(r"As an additional cost to cast ~, (?:behold an? (\w+)|reveal an? (\w+) card from your hand) or pay "
+                         r"\{(\d+)\}\.", line)
         if m:
-            extra["behold_or_pay"] = (m[1], int(m[2]))
+            extra["behold_or_pay"] = (m[1] or m[2], int(m[3]))
+            if m[2]:
+                approximations.append("a permanent of that type on the battlefield also waives the cost")
             return None
         m = re.fullmatch(r"As an additional cost to cast ~, discard a card(?: or pay \{(\d+)\})?\.", line)
         if m:
@@ -727,13 +806,20 @@ def _face_cost_and_static_lines(st, line):
             return None
         if line in ("Partner", "Choose a Background", "Friends forever", "Assist", "Doctor's companion"):
             return None          # deck-building or teammate rules: nothing to do in a two-player game
+        if line in ("You may look at the top card of your library any time.", "Play with the top card of your library revealed."):
+            return None          # information only: the AIs don't use what is on top of a library
         if line == "Umbra armor" or line == "Totem armor":
             extra["umbra_armor"] = True
             return None
         m = re.fullmatch(r"~'s power and toughness are each equal to the number of (cards in your hand|cards in your "
-                         r"graveyard|creatures you control|lands you control|artifacts you control)\.", line)
+                         r"graveyard|creatures you control|lands you control|artifacts you control)\.", line) or \
+            re.fullmatch(r"~ gets \+1/\+1 for each (card in your hand|creature card in your graveyard|card in your graveyard)\.", line)
         if m:
-            extra["pt_cda"] = m[1]
+            extra["pt_cda"] = m[1].replace("card in", "cards in").replace("creature cards", "creature cards")
+            return None
+        m = re.fullmatch(r"~'s power is equal to the number of (instant and sorcery|creature) cards in your graveyard\.", line)
+        if m:
+            extra["pt_cda"] = f"power:{m[1]} cards in your graveyard"
             return None
         m = re.fullmatch(r"~ can block (an additional creature|any number of creatures) each combat\.|~ can block any "
                          r"number of creatures\.", line)
@@ -775,6 +861,18 @@ def _face_cost_and_static_lines(st, line):
             extra["needs_land"] = {"lands": "Land", "Plains": "Plains"}.get(m[1], m[1][:-1])
             return None
         line = re.sub(r"^Raid — (?=~ enters with)", "", line)
+        line = re.sub(r"^Undergrowth — (?=~ enters with)", "", line)
+        m = re.fullmatch(r"~ enters with (a|two) \+1/\+1 counters? on it for each ([\w -]+?) cards? in your graveyard\.", line)
+        if m and " with " not in m[2]:
+            from ..counting import _singular
+            extra["etb_counters_if"] = (f"gyper:{_singular(m[2])}", _num(m[1]))
+            return None
+        m = re.fullmatch(r"~ enters with (a|two) \+1/\+1 counters? on it for each (other )?([\w -]+?) (?:you control|in your party)\.", line)
+        if m and "with" not in m[3] and "that" not in m[3]:
+            from ..counting import _singular
+            what = "party creature" if "party" in line else (m[2] or "") + _singular(m[3])
+            extra["etb_counters_if"] = (f"per:{what}", _num(m[1]))
+            return None
         m = re.fullmatch(r"~ enters with a \+1/\+1 counter on it if (an opponent lost life|a creature died|you attacked) "
                          r"this turn\.", line)
         if m:
@@ -843,6 +941,14 @@ def _face_keyword_ability_lines(st, line):
                                 "basic" if kind == "basic landcycling" else "any" if kind == "landcycling" else
                                 m[1][:-7]}
             return None
+        m = re.fullmatch(r"Transmute (\{[^ ]+\})", line)
+        if m:                                      # discard: a card with the same mana value from the library
+            extra["cycling"] = {"cost": parse_mana_cost(m[1]), "land": "", "transmute": True}
+            return None
+        m = re.fullmatch(r"Reinforce (\d+)—(\{[^ ]+\})", line)
+        if m:                                      # discard: N +1/+1 counters on target creature
+            extra["cycling"] = {"cost": parse_mana_cost(m[2]), "land": "", "reinforce": int(m[1])}
+            return None
         m = re.fullmatch(r"Saddle (\d+)", line)
         if m:
             extra["saddle"] = int(m[1])
@@ -886,6 +992,15 @@ def _face_keyword_ability_lines(st, line):
         m = re.fullmatch(r"You may pay (\{[^ ]+\}) rather than pay ~'s mana cost\.", line)
         if m:
             alt_costs.append(AltCost("alt", parse_mana_cost(m[1])))
+            return None
+        m = re.fullmatch(r"You may sacrifice (an?|two|three|four) ([\w ]+?)s? rather than pay ~'s mana cost\.", line)
+        if m and _statics._desc_ok(m[2]):          # Thunderclap: sacrifice a Mountain instead
+            alt_costs.append(AltCost("alt_sac", {"generic": 0}, cond=m[2], counters=1 if m[1][0] == "a" else _num(m[1])))
+            return None
+        m = re.fullmatch(r"If (.+?), you may cast ~ without paying its mana cost\.", line)
+        cond = _statics.free_cast_condition(m[1]) if m else None
+        if cond:                                   # the Legates: "If an opponent controls a Plains and you control a Mountain"
+            alt_costs.append(AltCost("free_if", {"generic": 0}, cond=cond))
             return None
         m = re.fullmatch(r"If the \{[^ ]+\} cost was paid, an opponent draws a card\.", line)
         if m and alt_costs and alt_costs[-1].kind == "alt":
@@ -936,6 +1051,13 @@ def _face_keyword_ability_lines(st, line):
                 act.keywords = frozenset(k.strip().lower() for k in ability.split(",") if k.strip().lower() in KEYWORDS)
             activated.append(act)
             return None
+        m = re.fullmatch(r"(\{[^:]+\}): ~ becomes an? (\d+)/(\d+) [\w ]*?artifact creature(?: with ([\w ,]+))? until end of turn\.",
+                         line)
+        if m and "Land" not in types:              # Keyrunes and Monuments
+            kws = frozenset(k.strip().lower() for k in re.split(r", and |, | and ", m[4] or "") if k.strip())
+            if kws <= KEYWORDS:
+                activated.append(Activated("animate", parse_mana_cost(m[1]), int(m[2]), int(m[3]), keywords=kws))
+                return None
         return line
     finally:
         st.unsupported = unsupported
@@ -1026,6 +1148,8 @@ def _face_ability_lines(st, line):
             effs, bad = _parse_effects(line, opts=bool(extra.get("bargain") or extra.get("gift")))
             spell += effs
             unsupported += bad
+            return None
+        if _statics.parse_line(line, st):
             return None
         unsupported.append(line)
         return line

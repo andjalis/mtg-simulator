@@ -1,6 +1,8 @@
 """Game methods for targeting: legal targets, filters, counterability and automatic targets."""
 from __future__ import annotations
 
+import dataclasses
+
 import contextlib
 
 from .. import removal
@@ -22,14 +24,27 @@ class TargetsMixin:
                     and not protected_from(obj, source if source is not None else self.target_source))
         if isinstance(obj, StackItem):
             return obj in self.stack
-        return isinstance(obj, Player)
+        return isinstance(obj, Player) and not (obj is not by and any(x.card.player_hexproof for x in obj.battlefield))
 
     def passes_filter(self, eff: Effect, perm: Permanent, by: Player) -> bool:
         f = eff.filter
+        if "+" in f:                            # "attacking+nokw:flying": every part holds
+            return all(self.passes_filter(dataclasses.replace(eff, filter=part), perm, by) for part in f.split("+"))
+        if f == "notsource":                    # "another target ...": not the spell's or ability's source
+            src = self.target_source
+            return perm is not src and perm is not getattr(src, "source", None)
+        if f.startswith("nokw:"):
+            return not perm.has(f[5:])
+        if f.startswith("notsub:"):
+            return f[7:] not in perm.card.subtypes
+        if f.startswith("notcolor:"):
+            return f[9:] not in perm.card.colors
         if f.startswith("land:"):
             return ("nonbasic" not in f or not is_basic_land(perm.card)) and ("opp" not in f or perm.controller is not by)
         if f.startswith("x:"):
             return removal.x_passes(f, perm, by)
+        if f.startswith("opp_notsub:"):         # "target non-Dragon creature an opponent controls"
+            return perm.controller is not by and f[11:] not in perm.card.subtypes
         r = removal.passes(f, perm)
         if r is not None:
             return r
@@ -42,8 +57,12 @@ class TargetsMixin:
             return perm.card.cmc <= sum(1 for x in by.battlefield if x.card.name.endswith("Plains"))
         if f == "tapped":
             return perm.tapped
+        if f.startswith("colors:"):
+            return bool(perm.card.colors & set(f[7:]))
         if f == "attacking":
             return perm in self.attackers
+        if f == "blocking":
+            return any(perm in bl for bl in self.blocks.values())
         if f == "attacking_blocking":
             return perm in self.attackers or any(perm in bl for bl in self.blocks.values())
         if f == "nonartifact":
@@ -115,9 +134,16 @@ class TargetsMixin:
         return any(tgt is candidate for candidate in self.legal_targets(p, eff))
 
     def can_counter(self, eff: Effect, item: StackItem, by: Player | None = None) -> bool:
-        if eff.kind not in ("counter", "bounce_spell") or not item.is_spell or item not in self.stack:
+        if eff.kind not in ("counter", "bounce_spell") or item not in self.stack:
             return False
         if by is not None and item.controller is by:
+            return False
+        if not item.is_spell:                 # "counter target activated or triggered ability" (Stifle, Disallow)
+            kinds = {"ability": ("ability", "loyalty", "trigger", "chapter"),
+                     "or_ability": ("ability", "loyalty", "trigger", "chapter"),
+                     "activated": ("ability", "loyalty")}.get(eff.filter, ())
+            return eff.kind == "counter" and item.kind in kinds
+        if eff.filter in ("ability", "activated"):
             return False
         card = item.card
         if eff.filter == "creature" and not card.is_creature:
@@ -132,6 +158,8 @@ class TargetsMixin:
             return False
         if eff.filter == "instant_sorcery" and not (card.is_instant or card.is_sorcery):
             return False
+        if eff.filter == "or_ability":
+            return True
         if eff.filter.startswith("cmc:") and card.cmc != int(eff.filter[4:]):
             return False
         if eff.filter.startswith("colors:") and not card.colors & set(eff.filter[7:]):

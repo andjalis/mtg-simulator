@@ -10,6 +10,11 @@ from tests.test_templates import BEAR, ISLAND, card
 TEMPT = card("Test Tempt", "{B}", "Sorcery", "The Ring tempts you.")
 WATCHER = card("Test Watcher", "{1}{B}", "Creature — Human", "Whenever the Ring tempts you, you gain 1 life.", 1, 1)
 OGRE = card("Test Ogre", "{2}{R}", "Creature — Ogre", "", 3, 3)
+WIZARD = card("Test Wizard", "{3}{W}", "Legendary Creature — Avatar Wizard",
+              "Whenever the Ring tempts you, if you chose a creature other than ~ as your Ring-bearer, draw a card.", 5, 5)
+RANGERS = card("Test Rangers", "{3}{G}", "Creature — Human Ranger",
+               "Landfall — Whenever a land you control enters, if you don't control a Ring-bearer, the Ring tempts you.",
+               4, 4)
 WALL = card("Test Wall", "{1}{W}", "Creature — Wall", "", 4, 4)
 
 
@@ -36,7 +41,7 @@ class Ring(unittest.TestCase):
             self.game.settle()
 
     def test_templates(self):
-        for c in (TEMPT, WATCHER):
+        for c in (TEMPT, WATCHER, WIZARD, RANGERS):
             self.assertEqual(c.unsupported, [], c.name)
 
     def test_best_creature_becomes_ring_bearer_and_skulks(self):
@@ -52,6 +57,24 @@ class Ring(unittest.TestCase):
         self.game.combat(self.a, self.b)
         self.game.settle()
         self.assertEqual(self.b.life, 17)                   # the bigger Wall couldn't block it
+
+    def test_another_creature_carries_the_ring(self):
+        wizard = self.put(self.a, WIZARD)
+        hand = len(self.a.hand)
+        self.tempt()
+        self.assertIs(ring.bearer(self.a), wizard)          # nobody else can carry it: no draw
+        self.assertEqual(len(self.a.hand), hand)
+        bear = self.put(self.a, BEAR)
+        self.tempt()
+        self.assertIs(ring.bearer(self.a), bear)
+        self.assertEqual(len(self.a.hand), hand + 1)
+
+    def test_no_ring_bearer_condition(self):
+        self.put(self.a, RANGERS)
+        self.put(self.a, ISLAND)
+        self.assertEqual(ring.level(self.a), 1)
+        self.put(self.a, ISLAND)
+        self.assertEqual(ring.level(self.a), 1)             # it has a Ring-bearer now
 
     def test_loot_sacrifice_and_drain(self):
         ogre = self.put(self.a, OGRE)

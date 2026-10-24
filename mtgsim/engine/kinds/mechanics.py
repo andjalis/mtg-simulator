@@ -1,7 +1,7 @@
 """Kinds owned by mechanic modules: each module's resolve() handles the kinds in its KINDS set."""
 from __future__ import annotations
 
-from ... import auras, cast_triggers, combat_triggers, copies, creature_keywords, removal, ring, search, xspells
+from ... import auras, becomes, cast_triggers, combat_triggers, copies, creature_keywords, prevention, removal, ring, search, statics, symmetric, xspells
 from . import kind
 
 
@@ -16,5 +16,5 @@ def _module_kinds(module):
         module.resolve(game, p, eff, target, item)
 
 
-for _module in (copies, xspells, search, auras, removal, combat_triggers, creature_keywords, ring):
+for _module in (copies, xspells, search, auras, removal, combat_triggers, creature_keywords, ring, statics, symmetric, prevention, becomes):
     _module_kinds(_module)

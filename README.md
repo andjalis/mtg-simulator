@@ -361,7 +361,14 @@ to select another local database.
 - The Ring tempts you (`mtgsim/ring.py`): the Ring level goes up to four, the best creature becomes the
   Ring-bearer, and the four Ring abilities apply in combat ("can't be blocked by creatures with greater
   power", loot on attack, the blocker is sacrificed at end of combat, 3 life on combat damage), plus "whenever
-  the Ring tempts you" triggers. "Is your Ring-bearer" conditions are not parsed
+  the Ring tempts you" triggers. "If you chose a creature other than ~ as your Ring-bearer" (the AI then gives
+  the Ring to another creature when it can) and "if you don't control a Ring-bearer" are conditions; "as long as
+  ~ is your Ring-bearer" statics are not parsed
+- Counters for activated and triggered abilities ("counter target activated or triggered ability", Disallow's
+  "spell, activated ability, or triggered ability"); the AI uses them on loyalty abilities and on abilities
+  that would damage, destroy, exile, bounce or discard its things. Tiered spells (one mode and its extra cost),
+  "attach (any number of) target Equipment you control to target creature you control" (Thorin, Blacksmith's
+  Talent), and "return target spell or permanent" (played as a nonland permanent, recorded as a simplification)
 - "Its controller draws a card" after counters and removal (Ertai Resurrected's modes), "target attacking
   creature connives X, where X is the number of attacking creatures", Equipment tokens ("create a colorless
   Equipment artifact token named Axe with ..." and Cragflame; "when you do, attach it to target creature you
@@ -410,7 +417,7 @@ to select another local database.
   control enters" triggers (also once each turn), filtered "look at the top N"
 - Warp (exiled at the end step, cast again from exile later), evoke, "if {U}{U}
   was spent" modes (hybrid costs paid in the colour that turns the mode on),
-  offspring, plot, spree, harmonize (as flashback), X costs (X is all the spare
+  offspring, plot, spree, tiered, harmonize (as flashback), X costs (X is all the spare
   mana) for X damage and "enters with X +1/+1 counters". Warp and evoke are only
   offered when the full cost can't be paid.
 - Map (explore), Lander and Food tokens, "its controller creates Map tokens /

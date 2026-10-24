@@ -1,7 +1,7 @@
 """Game methods for combat: attacks, blocks and combat damage."""
 from __future__ import annotations
 
-from .. import ring
+from .. import auras, ring
 from ..cards import Effect
 from .state import Permanent, Player, can_block
 
@@ -58,8 +58,11 @@ class CombatMixin:
             return
         attackers = [a for a in p.ai.choose_attackers(self, p, opp) if a.can_attack()
                      and (not a.card.attack_needs or any(a.card.attack_needs in x.card.subtypes for x in opp.battlefield))]
-        attackers += [a for a in p.creatures if (a.card.must_attack or a.has("must_attack_now")) and a.can_attack()
+        attackers += [a for a in p.creatures if (a.card.must_attack or a.has("must_attack_now") or auras.must_attack(a))
+                      and a.can_attack()
                       and a not in attackers]
+        if len(attackers) == 1 and "attack" in attackers[0].card.not_alone:
+            attackers = []                 # "~ can't attack alone"
         self.attackers = list(attackers)
         if not attackers:
             return
@@ -107,6 +110,9 @@ class CombatMixin:
                 for b in bl:
                     used[b] = used.get(b, 0) + 1
         blocks = legal
+        lone = [b for bl in blocks.values() for b in bl]
+        if len(lone) == 1 and "block" in lone[0].card.not_alone:
+            blocks = {}                    # "~ can't block alone"
         self.blocks = blocks
         if blocks:
             self.log(f"blocks {blocks}", opp)
@@ -156,7 +162,14 @@ class CombatMixin:
                 target = None   # its planeswalker is gone: no damage
             if a in blocks:
                 alive = [b for b in blocks[a] if b in opp.battlefield]
-                if deals_now(a) and a.power > 0:
+                # Thorn Elemental: "you may have ~ assign its combat damage as though it weren't blocked" -- when
+                # that kills the player or it can't kill a blocker anyway
+                around = a.card.assign_unblocked and target is not None and deals_now(a) and a.power > 0 and (
+                    isinstance(target, Player) and a.power >= target.life or not any(
+                        (1 if a.has("deathtouch") else b.toughness - b.damage) <= a.power for b in alive))
+                if around:
+                    hits.append((a, target, a.power))
+                elif deals_now(a) and a.power > 0:
                     remaining = a.power
                     for i, b in enumerate(alive):
                         lethal = 1 if a.has("deathtouch") else max(0, b.toughness - b.damage)
@@ -185,6 +198,9 @@ class CombatMixin:
             if isinstance(tgt, Player):
                 self.fire(src.controller, "combat_damage_player", src, context=tgt)
                 ring.combat_damage(self, src.controller, src, tgt)
-                self.fire(src.controller, "ally_combat_damage")
+                if getattr(self, "monarch", None) is tgt and src.controller is not tgt:
+                    self.monarch = src.controller            # combat damage to the monarch takes the crown
+                    self.log("becomes the monarch", src.controller)
+                self.fire(src.controller, "ally_combat_damage", subject=src)
         self.state_based_actions()
         self.settle()

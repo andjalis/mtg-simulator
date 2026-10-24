@@ -65,7 +65,7 @@ def dig(game, p, eff, item, **_):
     if eff.data.get("instead_two") and any(c.is_instant for c in p.graveyard) and \
             any(c.is_sorcery for c in p.graveyard):
         keep = 2
-    game.dig(p, n, keep, eff.data.get("filter"))
+    game.dig(p, n, keep, eff.data.get("filter"), rest_gy=eff.data.get("rest_gy", False))
 
 
 @kind("dig_put")
@@ -124,7 +124,7 @@ def discard(game, p, eff, target, **_):
         game.log(f"discards {card.name}", who)
     who.discarded_last = []
     for _ in range(0 if basics else min(eff.amount, len(who.hand))):
-        card = who.ai.choose_discard(game, who)
+        card = game.rng.choice(who.hand) if eff.data.get("random") else who.ai.choose_discard(game, who)
         game.discard_card(who, card)
         who.discarded_last.append(card)
         game.log(f"discards {card.name}", who)

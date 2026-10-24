@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from .. import continuous
 
-from .. import auras
+from .. import auras, prevention
 from ..cards import AltCost, CardDef, Effect
 from .. import rules_events
 from .mana import find_payment
@@ -26,6 +26,9 @@ class EffectsMixin:
         if protected_from(target, source):
             self.log(f"{target.card.name}'s protection prevents {amount} damage", target.controller)
             return
+        amount = prevention.adjust(self, target, amount, source, combat)
+        if amount <= 0:
+            return
         shield = getattr(target, "prevent_next", 0)
         if shield:
             prevented = min(shield, amount)
@@ -40,7 +43,7 @@ class EffectsMixin:
             elif combat and isinstance(target, Permanent) and target.is_creature:
                 self.fire(source.controller, "combat_damage_creature", source, context=target)
         if isinstance(target, Permanent) and target in target.controller.battlefield:
-            self.fire(target.controller, "dealt_damage", target, context=source)
+            self.fire(target.controller, "dealt_damage", target, context=source, subject=amount)
         if isinstance(target, Player):
             if combat and isinstance(source, Permanent) and source.card.toxic:
                 target.counters["poison"] = target.counters.get("poison", 0) + source.card.toxic
@@ -140,7 +143,7 @@ class EffectsMixin:
         p.library.reorder(([] if to_graveyard else list(reversed(bottom))) + prefix +
                           [c for c in reversed(cards) if c not in bottom])
 
-    def dig(self, p: Player, n: int, keep: int, desc: str | None = None):
+    def dig(self, p: Player, n: int, keep: int, desc: str | None = None, rest_gy: bool = False):
         cards = list(reversed(p.library[-min(n, len(p.library)):])) if n else []
         allowed = [c for c in cards if card_matches(c, desc.replace(" or ", " or a "))] if desc else cards
         chosen = list(self.hook(p, "choose_dig")(self, p, list(allowed), keep))[:keep] if allowed else []
@@ -148,6 +151,11 @@ class EffectsMixin:
         for c in chosen:
             rest.remove(c)
             self.move_card(c, p.library, p.hand, reason="dig")
+        if rest_gy:                       # "... and the rest into your graveyard"
+            for c in rest:
+                self.move_card(c, p.library, p.graveyard, reason="mill")
+            self.log(f"digs {n}, keeps {chosen}", p)
+            return
         self.rng.shuffle(rest)
         p.library.reorder(list(reversed(rest)) + [c for c in p.library if c not in rest])
         self.log(f"digs {n}, keeps {chosen}", p)

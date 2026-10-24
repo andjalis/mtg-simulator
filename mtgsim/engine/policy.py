@@ -86,7 +86,7 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return next((i for i in reversed(game.stack) if i in legal), None)
     if k in ("discard", "discard_choice", "hand_exile"):
         return opp if opp.hand else None
-    if k in ("connive", "attach_new_equipment"):    # the best creature of ours that can be chosen
+    if k in ("connive", "attach_new_equipment", "gear_up"):    # the best creature of ours that can be chosen
         return max((x for x in mine if x.is_creature), key=perm_value, default=None)
     return None
 
@@ -132,11 +132,11 @@ def choose_tutor(game: Game, me: Player, cards: list[CardDef]) -> CardDef:
     return max(castable, key=lambda c: (c.cmc, (c.power or 0) + (c.toughness or 0)))
 
 
-def choose_color(game: Game, me: Player) -> str:
-    """The colour a land that enters as a chosen basic land type should make."""
+def choose_color(game: Game, me: Player, exclude: str = "") -> str:
+    """The colour a land that enters as a chosen basic land type (or a Thriving land) should make."""
     have = {col: sum(col in x.card.produces for x in me.battlefield if x.card.is_land) for col in COLORS}
     need = {col: sum(c.mana_cost.get(col, 0) for c in me.hand + me.library) for col in COLORS}
-    return max(COLORS, key=lambda col: need[col] / (1 + have[col]))
+    return max((c for c in COLORS if c != exclude), key=lambda col: need[col] / (1 + have[col]))
 
 
 def choose_target(game: Game, me: Player, eff: Effect):
@@ -259,6 +259,12 @@ def respond(game: Game, me: Player):
             for c in options.values():   # Tishana's Tidebinder: a flash creature that counters an ability
                 if any(e.kind == "counter_ability" for t in c.triggers if t.event == "etb" for e in t.effects):
                     return c, None
+        if ability_worth_countering(game, me, top):
+            stiflers = [c for c in options.values()      # Stifle, Disallow: counter the ability itself
+                        if any(game.can_counter(e, top, me) for e in c.spell_effects if e.kind == "counter")]
+            if stiflers:
+                card = min(stiflers, key=lambda c: c.cmc)
+                return card, _targets_for(game, me, card, top)
         if not top.is_spell or not game.counterable(top) or _threat(game, me, top) < 3:
             return None
         counters = [c for c in options.values()
@@ -299,6 +305,18 @@ def _option_value(game: Game, me: Player, c: CardDef) -> float:
         return 1
     rest = _mode_value(game, me, c.spell_effects) if c.spell_effects else 0
     return modal.value(game, me, c.modes, n=c.modes_choose) + max(rest, 0) if c.modes else rest
+
+
+_HARMFUL = {"damage", "destroy", "exile", "bounce", "discard", "discard_choice", "hand_exile", "wrath", "lose_life",
+            "drain", "debuff_one", "steal", "oring", "sacrifice", "edict"}
+
+
+def ability_worth_countering(game: Game, me: Player, item) -> bool:
+    """Whether an opponent's activated or triggered ability on the stack is worth a Stifle: a loyalty ability, or
+    one that hurts us (damage, removal, discard, life loss)."""
+    if item.is_spell or item.controller is me or item.kind not in ("ability", "trigger", "loyalty", "chapter"):
+        return False
+    return item.kind == "loyalty" or any(e.kind in _HARMFUL for e in item.effects)
 
 
 def protective_ability(game: Game, me: Player, item, victim):

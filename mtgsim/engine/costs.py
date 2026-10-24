@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING
 
-from .. import alt_casts, auras, copies, counting, discounts, returns, costs, storage
+from .. import alt_casts, auras, copies, counting, discounts, returns, costs, statics, storage
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
@@ -55,7 +55,7 @@ class CostsMixin:
                 out.append(mana)
         stored = storage.stored_sources(p, exclude, lambda r: self.mana_allowed(None, spell, r))
         if stored:                                  # a storage land spends its counters instead of its own mana
-            lands = {id(m.stored_in) for m in stored}
+            lands = {id(m.stored_in) for m in stored if not m.stored_in.card.storage.get("base")}   # a Battery keeps its own
             out = [s for s in out if id(s) not in lands] + stored
         return out
 
@@ -63,9 +63,11 @@ class CostsMixin:
         """Whether perm's restricted mana (or this restriction) may pay for spell (see mana_sources)."""
         if spell is None:
             return True
+        r = restriction or perm.card.mana_restriction
+        if r == "powerstone":            # "This mana can't be spent to cast a nonartifact spell."
+            return not isinstance(spell, CardDef) or spell.is_artifact
         if not isinstance(spell, CardDef):
             return False
-        r = restriction or perm.card.mana_restriction
         if r == "creature":
             return spell.is_creature
         if r == "artifact":
@@ -138,12 +140,19 @@ class CostsMixin:
         src = item.source if item is not None and isinstance(item.source, Permanent) else None
         if kind == "life":
             return max(0, p.life)
+        if kind == "colors_spent":
+            return getattr(item, "colors_spent", 0) if item is not None else 0
         if kind == "speed":
             return p.speed
+        if kind == "party":
+            from ..discounts import party_size
+            return party_size(p)
         if kind == "gained":
             return p.life_gained_turn
         if kind == "hand":
             return len(p.hand)
+        if kind == "opp_hand":
+            return len(self.opponent(p).hand)
         if kind == "stat":
             who = prev if spec[1] == "prev" else src
             if spec[2] == "mana value":
@@ -214,6 +223,11 @@ class CostsMixin:
         """Pay a "you may sacrifice / discard / forage / blight N. If you do, ..." cost when it is cheap for the AI."""
         kind, what = gate
         if kind == "may":
+            return True
+        if kind == "energy":                       # "you may pay {E}{E}. If you do, ..."
+            if getattr(p, "energy", 0) < what:
+                return False
+            p.energy -= what
             return True
         if kind == "life":                         # "you may pay N life": while it stays comfortable
             if p.life - int(what) < 8:
@@ -332,19 +346,25 @@ class CostsMixin:
             n = sum(copies.fits(c, _gy_desc(card.cost_reduction[3:])) for c in p.graveyard)
         elif card.cost_reduction.startswith("affinity:"):
             n = sum(card_matches(x.card, "a " + card.cost_reduction[9:]) for x in p.battlefield)
+        def fits(flt):
+            return (flt in ("instant and sorcery",) and (card.is_instant or card.is_sorcery)) or \
+                (flt in COLOR_WORDS and COLOR_WORDS[flt] in card.colors) or \
+                (flt in ("creature", "artifact") and flt.capitalize() in card.types) or \
+                (flt == "noncreature" and not card.is_creature and not card.is_land) or \
+                (flt not in COLOR_WORDS and flt.capitalize() in card.subtypes) or \
+                (" " in flt and flt != "instant and sorcery" and all(fits(w) for w in flt.split()))   # "white creature"
         for x in p.battlefield:
             for flt, k in x.card.cost_discount:
+                if flt.startswith("or:"):
+                    n += k if any(fits(f) for f in flt[3:].split("|")) else 0
+                    continue
                 if flt.startswith("has_adventure:"):
                     scope = flt.split(":", 1)[1]
                     if card.adventure is not None and (scope == "all" or scope == "permanent" and card.is_permanent or
                                                       scope.capitalize() in card.types):
                         n += k
                     continue
-                if (flt in ("instant and sorcery",) and (card.is_instant or card.is_sorcery)) or \
-                        (flt in COLOR_WORDS and COLOR_WORDS[flt] in card.colors) or \
-                        (flt in ("creature", "artifact") and flt.capitalize() in card.types) or \
-                        (flt == "noncreature" and not card.is_creature and not card.is_land) or \
-                        (flt not in COLOR_WORDS and flt.capitalize() in card.subtypes):
+                if fits(flt):
                     n += k
         counts = getattr(self, "spells_cast", {})
         if counts.get("turn") == self.turn and counts.get(p.name, 0) == 1:
@@ -359,7 +379,9 @@ class CostsMixin:
                 n += k
         for key, k in card.per_discount:
             n += k * discounts.count(self, p, key)
-        cost["generic"] = max(0, cost.get("generic", 0) - n)
+        cost["generic"] = max(0, cost.get("generic", 0) - n) + statics.spell_tax(self, p, card)
+        for c in statics.colored_tax(self, p, card):
+            cost[c] = cost.get(c, 0) + 1
         if card.extra_discard and card.discard_or_pay and self.spare_cards(p, card) < 1:
             cost["generic"] += card.discard_or_pay
         if card.behold_or_pay:
@@ -468,6 +490,8 @@ class CostsMixin:
                     out.append(self._variant(c, kind, AltCost(a.kind, self._hybrid_cost(a.cost, a.hybrid, col)
                                                               if col else a.cost)))
         for mask in range(1, 2 ** len(c.spree)):
+            if c.tiered and mask & (mask - 1):
+                continue                      # Tiered: one mode only
             modes = [m for i, m in enumerate(c.spree) if mask >> i & 1]
             cost = add_mana(c.mana_cost, *(m[0] for m in modes))
             effects = [e for m in modes for e in m[1]]
@@ -496,6 +520,10 @@ class CostsMixin:
             if c.adventure:
                 out.append(self._variant(c, "adventure"))
             for a in c.alt_costs:
+                if a.kind == "free_if" and statics.free_cast_allowed(p, opp, a.cond):
+                    out.append(self._variant(c, a.kind, a))
+                if a.kind == "alt_sac" and sum(statics.desc_matches(x, a.cond) for x in p.battlefield) >= a.counters:
+                    out.append(self._variant(c, a.kind, a))
                 if a.kind in ("alt", "kicker") or (a.kind == "spectacle" and opp.lost_life_turn) or \
                         (a.kind in ("blitz", "dash") and "hand" in a.zone):
                     out.append(self._variant(c, a.kind, a))
@@ -564,6 +592,10 @@ class CostsMixin:
         if card.extra_discard and not card.discard_or_pay and self.spare_cards(p, card) < 1:
             return False
         if self.active is not p and any(x.card.opp_no_cast for x in self.opponent(p).battlefield):
+            return False
+        counts = getattr(self, "spells_cast", {})
+        if counts.get("turn") == self.turn and counts.get(p.name, 0) >= 1 and \
+                any(x.card.one_spell_each_turn for pl in self.players for x in pl.battlefield):
             return False
         if card.extra_sacrifice and not card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
             return False

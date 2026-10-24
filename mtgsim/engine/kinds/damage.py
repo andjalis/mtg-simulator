@@ -10,10 +10,14 @@ def damage(game, p, eff, target, item, opp, cause, **_):
     src = (item.source if item.source is not None else item.card) if item is not None else None
     if eff.target == "each_creature":
         for perm in p.creatures + opp.creatures:
-            if eff.filter == "nonflying" and perm.has("flying"):
+            if eff.filter == "nonflying" and perm.has("flying") or eff.filter == "other" and src is perm:
                 continue
+            if eff.filter not in ("", "nonflying", "other") and not game.passes_filter(eff, perm, p):
+                continue                         # "each creature with flying", "each non-Dragon creature"
             if eff.data.get("no_regen") and eff.amount > 0:
                 perm.regeneration_blocked = True
+            if eff.data.get("exile_dies") and eff.amount > 0:
+                perm.exile_turn = game.turn      # "If a creature dealt damage this way would die this turn, exile it"
             game.deal_damage(perm, eff.amount, by=p, cause=cause, source=src)
     elif eff.target == "each_opp_and_pw":
         game.deal_damage(opp, eff.amount, by=p, cause=cause, source=src)
@@ -22,6 +26,8 @@ def damage(game, p, eff, target, item, opp, cause, **_):
     else:
         if eff.data.get("no_regen") and eff.amount > 0 and isinstance(target, Permanent) and target.is_creature:
             target.regeneration_blocked = True
+        if eff.data.get("exile_dies") and eff.amount > 0 and isinstance(target, Permanent):
+            target.exile_turn = game.turn
         game.deal_damage(target, eff.amount, by=p, cause=cause, source=src)
 
 

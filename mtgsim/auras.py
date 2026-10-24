@@ -18,7 +18,7 @@ import re
 
 KINDS = {"tap_host", "attach_self"}
 _KW = ("flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|"
-       "menace|reach|protection from (?:white|blue|black|red|green)")
+       "menace|reach|shroud|defender|fear|intimidate|protection from (?:white|blue|black|red|green)")
 _ENCHANT = re.compile(r"Enchant (creature|creature you control|creature or Vehicle|artifact or creature|"
                       r"artifact creature|land|permanent|nonland permanent|artifact|creature an opponent controls)")
 _SIGN = {"+": 1, "-": -1, "−": -1}
@@ -36,8 +36,34 @@ def parse_line(line: str, extra: dict, types) -> bool:
         return True
     if not extra.get("aura"):
         return False
+    from . import becomes
+    if becomes.parse_aura_line(line, extra):
+        return True
     if re.fullmatch(r"Enchanted (?:creature|permanent) doesn't untap during its controller's untap step\.", line):
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"no_untap"}
+        return True
+    m = re.fullmatch(r"Enchanted land is an? (Plains|Island|Swamp|Mountain|Forest)\.", line)
+    if m:                                       # Spreading Seas, Evil Presence: it taps only for that colour
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {f"land_type:{m[1]}"}
+        return True
+    if line == 'Enchanted land has "{T}: Add two mana of any one color."':    # New Horizons, Weirding Wood
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"grant_two"}
+        extra.setdefault("_approx", []).append("two mana of any one color: the land makes two mana of any colours")
+        return True
+    m = re.fullmatch(r'Enchanted (?:land|creature) has "\{T\}: Add (one mana of any color|\{[WUBRGC]\})\."', line)
+    if m:                                       # Abundant Growth, Utopia Sprawl's kin
+        cols = "WUBRG" if "any" in m[1] else m[1][1]
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {f"grant_mana:{cols}"}
+        return True
+    if re.fullmatch(r"Enchanted (?:creature|permanent) can't attack or block, and its activated abilities can't be activated\.",
+                    line):                      # Arrest, Pacifism-plus
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"cant_attack_block", "no_activate"}
+        return True
+    if line == "Prevent all combat damage that would be dealt to and dealt by enchanted creature.":   # Sandskin
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"no_combat_damage"}
+        return True
+    if line == "Enchanted creature can't be blocked.":
+        extra["equip_keywords"] = extra.get("equip_keywords", frozenset()) | {"unblockable"}
         return True
     if re.fullmatch(r"Enchanted creature can't attack or block\.", line):
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"cant_attack_block"}
@@ -48,6 +74,29 @@ def parse_line(line: str, extra: dict, types) -> bool:
         flags = {"loses_abilities"} | ({"no_untap"} if "untap" in line else set())
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | flags
         extra.setdefault("_approx", []).append("loses all abilities: only keywords are removed")
+        return True
+    line = line.replace(" This effect doesn't remove ~.", "")          # the Wards: protection that keeps the Aura
+    m = re.fullmatch(rf"Enchanted creature gets ([+−-])(\d+)/([+−-])(\d+)(?:, has ({_KW}),)? and (attacks each combat if able|"
+                     rf"can't block|can't attack|can't attack you or planeswalkers you control)\.", line)
+    if m:                                       # Uncontrollable Anger, Copper Carapace, the Vows
+        extra["equip_bonus"] = (_n(m[1], m[2]), _n(m[3], m[4]))
+        if m[5]:
+            extra["equip_keywords"] = frozenset({m[5]})
+        flag = {"attacks each combat if able": "must_attack", "can't block": "cant_block", "can't attack": "cant_attack"}.get(
+            m[6], "cant_attack_you")
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {flag}
+        return True
+    m = re.fullmatch(rf"Enchanted creature has ({_KW}) as long as (.+)\.", line)
+    if m:                                       # Runemarks: "... as long as you control a red or white permanent"
+        from . import statics
+        cond = statics._condition(m[2])
+        if cond:
+            extra["aura_cond_kw"] = extra.get("aura_cond_kw", ()) + ((m[1], cond),)
+            return True
+    m = re.fullmatch(r"Enchanted creature gets ([+−-])(\d+)/([+−-])(\d+) for each ([\w -]+?) you control\.", line)
+    if m:                                       # "Enchanted creature gets +1/+1 for each Forest you control."
+        from .counting import _singular
+        extra["aura_per"] = (_singular(m[5]), _n(m[1], m[2]), _n(m[3], m[4]))
         return True
     m = re.fullmatch(r"Enchanted creature gets ([+−-])(\d+)/([+−-])(\d+) and loses all abilities\.", line)
     if m:
@@ -72,7 +121,11 @@ def finish(extra: dict):
     """After all lines are parsed: is the Aura hostile (put on the opponent's creature)?"""
     if extra.get("aura"):
         b = extra.get("equip_bonus", (0, 0))
-        extra["aura_hostile"] = bool(extra.get("aura_flags")) or b[0] < 0 or b[1] < 0 or \
+        per = extra.get("aura_per", ("", 0, 0))
+        own_use = {"must_attack", "cant_block", "cant_attack_you"}      # Uncontrollable Anger, the Vows: for your creatures
+        flags = {f for f in extra.get("aura_flags", frozenset()) if not f.startswith("grant_mana:") and f != "grant_two"}
+        extra["aura_hostile"] = bool(flags - own_use) or b[0] < 0 or b[1] < 0 or per[1] < 0 or per[2] < 0 or \
+            "defender" in extra.get("equip_keywords", ()) or \
             extra["aura"] == "creature an opponent controls"
 
 
@@ -123,18 +176,57 @@ def choose_host(game, p, card):
     return max(cands, key=lambda x: perm_value(x) - (0.5 * len(x.auras) if not card.aura_hostile else 0))
 
 
+_BASIC_COLOR = {"Plains": "W", "Island": "U", "Swamp": "B", "Mountain": "R", "Forest": "G"}
+
+
 def attach(game, aura, host):
     aura.attachment_timestamp = game.next_effect_timestamp()
     aura.aura_host = host
     host.auras.append(aura)
     game.log(f"{aura.card.name} enchants {host.card.name}", aura.controller)
+    _set_land_type(host)
+    from . import becomes
+    becomes.attached(game, aura, host)
 
 
 def detach(aura):
     host = aura.aura_host
     if host is not None and aura in host.auras:
         host.auras.remove(aura)
+        _set_land_type(host)
     aura.aura_host = None
+
+
+def _set_land_type(host):
+    """"Enchanted land is an Island": the land becomes that basic type and loses its other abilities while the
+    Aura stays (the newest such Aura wins)."""
+    import dataclasses
+    kinds = [f[10:] for a in host.auras for f in a.card.aura_flags if f.startswith("land_type:")]
+    two = any("grant_two" in a.card.aura_flags for a in host.auras)
+    base = getattr(host, "pre_aura_card", None)
+    if kinds or two:
+        if base is None:
+            host.pre_aura_card = base = host.card
+        card = base
+        if kinds:
+            card = dataclasses.replace(card, produces=frozenset({_BASIC_COLOR[kinds[-1]]}), subtypes=frozenset({kinds[-1]}),
+                                       activated=[], triggers=[], restricted_produces=frozenset())
+        if two:                          # "{T}: Add two mana of any one color"
+            card = dataclasses.replace(card, produces=frozenset("WUBRG"), mana_amount=2)
+        host.card = card
+    elif base is not None:
+        host.card = base
+        host.pre_aura_card = None
+
+
+def granted_mana(perm) -> frozenset:
+    """Colours an Aura lets its land tap for ("Enchanted land has "{T}: Add one mana of any color."")."""
+    out = frozenset()
+    for a in perm.auras:
+        for f in a.card.aura_flags:
+            if f.startswith("grant_mana:"):
+                out |= frozenset(f[11:])
+    return out
 
 
 def blocks_untap(perm) -> bool:
@@ -143,6 +235,20 @@ def blocks_untap(perm) -> bool:
 
 def stops_combat(perm) -> bool:
     return any("cant_attack_block" in a.card.aura_flags for a in perm.auras)
+
+
+def stops_attack(perm) -> bool:
+    """"Can't attack you" on an opponent's Aura, or an Aura that says it can't attack at all."""
+    return any("cant_attack" in a.card.aura_flags or "cant_attack_you" in a.card.aura_flags and a.controller is not perm.controller
+               for a in perm.auras)
+
+
+def stops_block(perm) -> bool:
+    return any("cant_block" in a.card.aura_flags for a in perm.auras)
+
+
+def must_attack(perm) -> bool:
+    return any("must_attack" in a.card.aura_flags for a in perm.auras)
 
 
 def resolve(game, p, eff, target, item):

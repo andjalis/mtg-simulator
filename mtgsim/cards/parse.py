@@ -14,6 +14,7 @@ from .patterns import _EFFECT_PATTERNS
 
 
 # "You may <effect>" is always taken, so only for effects that cost the player nothing.
+_MAY_AIMED = {"damage", "destroy", "exile", "bounce"}     # optional, so taken only with an opponent's target
 _MAY_DECLINED = {"sacrifice", "sacrifice_self", "discard", "discard_choice", "lose_life", "mill", "pay_gate",
                  "damage", "drain", "destroy", "exile", "wrath", "bounce"}
 
@@ -28,9 +29,19 @@ def _parse_effects(text: str, opts: bool = False):
         s = sentence.strip().rstrip(".").strip()
         if not s:
             continue
-        if re.fullmatch(r"(?:it|they|those creatures) can't be regenerated", s, re.I) and effects and \
-                effects[-1].kind in ("destroy", "wrath", "wrath_pw"):
+        if re.fullmatch(r"(?:it|they|those creatures|that creature|an? (?:creature|permanent)s? destroyed this way|"
+                        r"(?:creatures|permanents) destroyed this way) can't be regenerated(?: this turn)?", s, re.I) and \
+                effects and effects[-1].kind in ("destroy", "wrath", "wrath_pw", "destroy_all", "damage"):
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
+            continue
+        if re.fullmatch(r"if a (?:creature|permanent) dealt damage (?:this way|by ~ this turn) would die this turn, exile it instead",
+                        s, re.I) and effects and effects[-1].kind == "damage":
+            effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, exile_dies=True))
+            continue
+        if re.fullmatch(r"you gain life equal to the (?:life lost|damage dealt) this way", s, re.I) and effects and \
+                effects[-1].kind in ("drain", "lose_life", "opp_lose_life", "damage") and effects[-1].target != "creature":
+            last = effects[-1]
+            effects.append(Effect("gain_life", last.amount, data={k: v for k, v in last.data.items() if k in ("x", "xq")}))
             continue
         if re.fullmatch(r"if that spell is countered this way, exile it instead of putting it into its owner's graveyard", s,
                         re.I) and effects and effects[-1].kind == "counter":
@@ -79,17 +90,27 @@ def _parse_effects(text: str, opts: bool = False):
             effects.append(Effect("pay_gate", data={"gate": gate}))
             gated = True
             continue
+        me_ = re.fullmatch(r"you may pay ((?:\{E\})+)", s, re.I)
+        if me_:
+            effects.append(Effect("pay_gate", data={"gate": ("energy", me_[1].count("{E}"))}))
+            gated = True
+            continue
         ml = re.fullmatch(r"you may pay (\d+) life", s, re.I)
         if ml:
             effects.append(Effect("pay_gate", data={"gate": ("life", ml[1])}))
             gated = True
             continue
         mm = re.fullmatch(r"you may (.+)", s, re.I)
+        if mm and re.match(r"have (?:~|it) deal ", mm[1], re.I):          # "you may have ~ deal 1 damage to ..."
+            mm = re.fullmatch(r"you may (.+)", "you may " + re.sub(r"^have (~|it) deal ", r"\1 deals ", mm[1], flags=re.I), re.I)
         if mm:
             new, bad = _parse_effects(mm[1][0].upper() + mm[1][1:] + ".")
             if bad or not new:
                 new, bad = _parse_effects("You " + mm[1] + ".")              # "you may gain 2 life"
-            if new and not bad and not any(e.kind in _MAY_DECLINED for e in new):
+            if new and not bad and len(new) == 1 and new[0].kind in _MAY_AIMED and new[0].filter in ("", "opp") and \
+                    new[0].target not in ("none", "self", "prev", "host", "my_creatures", "creature_mine"):
+                new = [dataclasses.replace(new[0], filter="opp")]     # "you may destroy target ...": only at a foe's
+            if new and not bad and not any(e.kind in _MAY_DECLINED for e in new if e.filter != "opp"):
                 effects += [Effect("pay_gate", data={"gate": ("may", "")})] + new   # always taken
                 gated = True
                 continue
@@ -321,11 +342,16 @@ def _parse_face(data: dict) -> CardDef:
                 e.data["x_mana"] = True
     if "kicker" in extra:
         kicked_effects = [dataclasses.replace(e) for e in spell]
+        kick_counters = 0
         for k in kicked:
             m = re.fullmatch(r"it deals (\d+) damage(?: to that (?:creature|player|permanent))? instead\.", k)
             dmg = [e for e in kicked_effects if e.kind == "damage"]
             if m and dmg:
                 dmg[0].amount = int(m[1])
+                continue
+            m = re.fullmatch(r"(?:it|~) enters with (a|an|one|two|three|four|five|six) (?:additional )?\+1/\+1 counters? on it\.", k)
+            if m:
+                kick_counters = _num(m[1])
                 continue
             m = re.fullmatch(r"put (\w+) of those cards into your hand instead\.", k)
             dig = [e for e in kicked_effects if e.kind == "dig"]
@@ -335,7 +361,8 @@ def _parse_face(data: dict) -> CardDef:
             effs, bad = _parse_effects(k)
             kicked_effects += effs
             unsupported += [f"if kicked: {b}" for b in bad]
-        alt_costs.append(AltCost("kicker", add_mana(cost, extra.pop("kicker")), effects=kicked_effects))
+        alt_costs.append(AltCost("kicker", add_mana(cost, extra.pop("kicker")), effects=kicked_effects,
+                                 counters=kick_counters))
     elif kicked:
         unsupported += [f"if kicked: {k}" for k in kicked]
     gy_draw = extra.pop("_gy_draw", 0)
@@ -428,6 +455,8 @@ def _parse_ability_cost(text: str):
             extra["discard"] = 1
         elif (m := re.fullmatch(r"Pay (\d+) life", part)):
             extra["life"] = int(m[1])
+        elif (m := re.fullmatch(r"Pay ((?:\{E\})+)", part)):
+            extra["energy"] = m[1].count("{E}")
         elif (m := re.fullmatch(r"Remove an? ([\w/+-]+) counter from ~", part)):
             extra["remove_counter"] = m[1]
         elif (m := re.fullmatch(r"Sacrifice (?:a|an|another) (.+)", part)) and \
@@ -451,27 +480,34 @@ def _parse_ability(line: str, approximations: list):
     cost = _parse_ability_cost(m[1])
     if cost is None:
         return None
-    body, sorcery, once, approx = m[2], False, False, []
+    body, sorcery, once, approx, per_turn = m[2], False, False, [], 0
     while True:
         r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|This ability costs [^.]+ "
-                         r"less to activate[^.]*)\.", body)
+                         r"less to activate[^.]*|Activate no more than (?:twice|three times) each turn|"
+                         r"Activate only during your turn, before attackers are declared)\.", body)
         if not r:
             break
         body = r[1]
-        sorcery |= r[2] == "Activate only as a sorcery"
+        if r[2].startswith("Activate no more than"):
+            per_turn = 2 if "twice" in r[2] else 3
+            continue
+        sorcery |= r[2] in ("Activate only as a sorcery", "Activate only during your turn, before attackers are declared")
+        if r[2].startswith("Activate only during your turn"):
+            approx.append("'before attackers are declared' is played as sorcery timing")
         once |= r[2] == "Activate only once each turn"
         if r[2].startswith("This ability costs"):
             approx.append(f"cost reduction ignored: {r[2]}.")
     head = modal.parse_header(body)
     if head is not None and not head[1]:
         approximations += approx
-        return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=line,
+        return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, per_turn=per_turn, text=line,
                          modes=modal.Modes(spec=head[0]))
     effects, bad = _parse_effects(body)
     if bad or not effects:
         return None
     approximations += approx
-    return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=line)
+    return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once,
+                     per_turn=per_turn, text=line)
 
 
 def _parse_trigger(line: str):
@@ -536,8 +572,14 @@ def _parse_trigger_line(line: str):
             flt = f"spell:{m[1]}"
         if events == ("sacrifice",):
             flt = m[1]
+        if "at least (two|three) other creatures attack" in pat:
+            flt = f"count>={_num(m[1]) + 1}"
+        if events == ("ally_combat_damage",) and m.lastindex == 2:
+            flt = f"ally_sub:{m[1]}"
         if events == ("you_attack",) and m.lastindex == 2:
-            flt = f"with:{m[1].rstrip('s')}"
+            flt = f"count>={_num(m[1])}" if "or more creatures" in pat else f"with:{m[1].rstrip('s')}"
+        if events == ("any_cast",) and m.lastindex == 2 and not m[1].isdigit():
+            flt = f"spell:{m[1]}"
         if "creature cards are put into graveyards" in pat:
             flt = "nontoken"
         if events == ("creature_attacks",) and m.lastindex == 2:

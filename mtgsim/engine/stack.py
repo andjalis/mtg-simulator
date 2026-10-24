@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import alt_casts, auras, copies, milling
+from .. import alt_casts, auras, copies, milling, ring
 from ..cards import CardDef, Effect
 from .. import modal, rules_events, phase_conditions, turn_conditions
 from ..identity import CardInstance, CardZone
@@ -141,6 +141,11 @@ class StackMixin:
                 if trig.filter.startswith("attacker:") and not (isinstance(context, Permanent)
                                                                 and trig.filter[9:] in context.card.subtypes):
                     continue
+                if trig.filter.startswith("count>=") and len(self.attackers) < int(trig.filter[7:]):
+                    continue
+                if trig.filter.startswith("ally_sub:") and not (isinstance(subject, Permanent) and
+                                                                (trig.filter[9:] in subject.card.subtypes or subject.card.changeling)):
+                    continue
                 if trig.filter.startswith("with:") and \
                         not any(trig.filter[5:] in a.card.subtypes for a in self.attackers):
                     continue
@@ -154,6 +159,11 @@ class StackMixin:
                     if perm.ability_turns.get(("trigger", i)) == self.turn:
                         continue
                     perm.ability_turns[("trigger", i)] = self.turn
+                if event == "any_cast" and trig.filter.startswith("spell:") and subject is not None:
+                    from .play import SPELL_KINDS
+                    word = trig.filter[6:]
+                    if not (SPELL_KINDS[word](subject) if word in SPELL_KINDS else word.capitalize() in subject.types):
+                        continue
                 if trig.filter.startswith("cmc<=") and subject is not None and \
                         subject.cmc > int(trig.filter[5:]):
                     continue
@@ -161,6 +171,8 @@ class StackMixin:
                                                        or subject.power <= perm.power):
                     continue
                 effects = trig.effects
+                if isinstance(subject, int) and any(e.data.get("that_much") for e in effects):
+                    effects = [dataclasses.replace(e, amount=subject) if e.data.get("that_much") else e for e in effects]
                 if subject is not None and any(e.data.get("subject_power") for e in effects):
                     effects = [dataclasses.replace(e, amount=max(0, subject.power)) if e.data.get("subject_power")
                                else e for e in effects]
@@ -250,7 +262,13 @@ class StackMixin:
             if kind == "disturb":                   # cast transformed: its back face enters
                 perm = self.enter_battlefield(p, base.back, x=getattr(item, "x", 0), physical_card=base)
             else:
-                perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
+                enter_with = {}            # sunburst and kicker counters are there as it enters (a 0/0 survives)
+                if base.sunburst and getattr(item, "colors_spent", 0):
+                    enter_with["+1/+1" if base.is_creature else "charge"] = item.colors_spent
+                k = next((a.counters for a in base.alt_costs if a.kind == "kicker"), 0) if kind == "kicker" else 0
+                if k:
+                    enter_with["+1/+1"] = enter_with.get("+1/+1", 0) + k
+                perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0), counters=enter_with or None)
             self._aura_host = None
             self._spent = ""
             if kind in ("disguise", "morph", "megamorph"):
@@ -398,6 +416,9 @@ class StackMixin:
             return sum(x.card.is_land for x in self.opponent(p).battlefield) > sum(x.card.is_land for x in p.battlefield)
         if c == "sacrificed_turn":
             return p.sacrificed_turn > 0
+        if c in ("ring_other", "no_ring_bearer"):
+            bearer = ring.bearer(p)
+            return bearer is None if c == "no_ring_bearer" else bearer is not None and bearer is not item.source
         if c.startswith("ctl_other:"):
             sub = c[10:]
             group = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock") if sub == "outlaw" else (sub,)

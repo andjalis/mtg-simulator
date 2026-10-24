@@ -198,7 +198,7 @@ class AbilitiesMixin:
         acts = perm.card.activated
         if perm not in p.battlefield or idx < 0 or idx >= len(acts) or acts[idx].kind != "ability":
             return False
-        if perm.silenced:
+        if perm.silenced or perm.auras and any("no_activate" in a.card.aura_flags for a in perm.auras):
             return False
         act, c = acts[idx], acts[idx].extra_costs
         if perm.card.is_land and any(x.card.chosen_land_lock and x.chosen_land == perm.card.name
@@ -212,6 +212,8 @@ class AbilitiesMixin:
             return False
         if act.once and perm.ability_turns.get(idx) == self.turn:
             return False
+        if act.per_turn and perm.ability_turns.get(("uses", idx), (0, 0)) >= (self.turn, act.per_turn):
+            return False
         if act.once_game and ("game", idx) in perm.ability_turns:
             return False
         if perm.net_locked and perm.tapped:
@@ -219,6 +221,8 @@ class AbilitiesMixin:
         if c.get("level_from") is not None and perm.counters.get("level", 1) != c["level_from"]:
             return False
         if c.get("life") and p.life <= c["life"]:
+            return False
+        if c.get("energy") and getattr(p, "energy", 0) < c["energy"]:
             return False
         if c.get("discard") and len(p.hand) < c["discard"]:
             return False
@@ -252,12 +256,16 @@ class AbilitiesMixin:
         if plan is None or self.pay(p, plan.cost, exclude_many=plan.exclude) is None:
             return False
         perm.ability_turns[idx] = self.turn
+        turn, uses = perm.ability_turns.get(("uses", idx), (self.turn, 0))
+        perm.ability_turns[("uses", idx)] = (self.turn, uses + 1 if turn == self.turn else 1)
         if perm.card.activated[idx].once_game:
             perm.ability_turns[("game", idx)] = self.turn
         if c.get("tap"):
             perm.tapped = True
         if c.get("life"):
             self.change_life(p, -c["life"], f"{perm.card.name}: ability cost")
+        if c.get("energy"):
+            p.energy -= c["energy"]
         for _ in range(c.get("discard", 0)):
             card = p.ai.choose_discard(self, p)
             if card not in p.hand:

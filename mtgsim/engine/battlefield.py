@@ -33,6 +33,7 @@ class BattlefieldMixin:
             card = CardInstance(card)
         card, front = copies.clone_on_enter(self, p, card)
         perm = Permanent(card, p)
+        self.last_entered = perm            # "exile it at the beginning of the next end step" after a return
         perm.front = instance(physical_card if physical_card is not None else front, p)
         perm.owner = perm.front.owner
         pending = perm.front.pending_move
@@ -65,6 +66,9 @@ class BattlefieldMixin:
             kinds = cond.split(":", 1)[1].split("|")
             perm.tapped = not any(is_basic_land(x.card) if k == "basic" else k in x.card.subtypes
                                   for x in p.battlefield for k in kinds)
+        elif cond.startswith("reveal:"):
+            kinds = cond.split(":", 1)[1].split("|")
+            perm.tapped = not any(k in c.subtypes for c in p.hand for k in kinds)
         elif cond.startswith("behold:"):
             kind = cond.split(":", 1)[1]
             perm.tapped = not any(kind in c.subtypes for c in [x.card for x in p.battlefield] + p.hand)
@@ -98,19 +102,29 @@ class BattlefieldMixin:
             perm.chosen_type = max(types, key=types.get, default="")
         elif card.choose_type == "basic_land":
             perm.card = dataclasses.replace(card, produces=frozenset({choose_color(self, p)}))
+        elif card.choose_type.startswith("color_other:"):
+            perm.card = dataclasses.replace(card, produces=card.produces | {choose_color(self, p, exclude=card.choose_type[-1])})
         if card.loyalty:
             perm.counters["loyalty"] = card.loyalty
         if card.etb_counters:
             n = x if card.etb_counters == -1 else card.etb_counters
             if n:
                 perm.counters["+1/+1"] = n
-        if card.etb_counters_if and self._etb_cond(p, card.etb_counters_if[0]):
+        if card.etb_counters_if and card.etb_counters_if[0].startswith(("per:", "gyper:")):     # "for each Elf you control"
+            from .. import counting
+            what = card.etb_counters_if[0].split(":", 1)[1]
+            zone = "graveyard" if card.etb_counters_if[0].startswith("gy") else "battlefield"
+            n = counting.count(self, p, {"what": what, "zone": zone}, perm)
+            if n:
+                perm.counters["+1/+1"] = perm.p1 + card.etb_counters_if[1] * n
+        elif card.etb_counters_if and self._etb_cond(p, card.etb_counters_if[0]):
             perm.counters["+1/+1"] = perm.p1 + card.etb_counters_if[1]
         if card.etb_named_counters:
             perm.counters[card.etb_named_counters[0]] = card.etb_named_counters[1]
         for kind, n in (counters or {}).items():
             perm.counters[kind] = perm.counters.get(kind, 0) + n
-        perm.tapped |= tapped
+        perm.tapped |= tapped or perm.is_creature and any(x.card.opp_creatures_enter_tapped for x in p.foe.battlefield) \
+            if p.foe is not None else tapped
         p.battlefield.append(perm)
         if not card.is_land:
             p.entered_nonland_turn += 1

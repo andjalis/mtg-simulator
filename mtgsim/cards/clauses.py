@@ -10,9 +10,11 @@ from .patterns import _N_WORDS
 
 # Substitutions below that simplify the card, and the note each one records on it.
 _SUB_NOTES = [
-    (re.compile(r"counter target spell, activated ability, or triggered ability", re.I),
-     "only spells are countered, not abilities"),
     (re.compile(r"target creature or planeswalker you control gains", re.I), "the target is a creature, not a planeswalker"),
+    (re.compile(r"return target spell or permanent to its owner's hand", re.I), "returns a nonland permanent, not a spell"),
+    (re.compile(r"damage divided as you choose among one or two", re.I), "the divided damage all goes to one target"),
+    (re.compile(r"becomes the (?:color|creature type) of your choice until end of turn", re.I),
+     "becoming a colour or creature type of your choice does nothing"),
 ]
 
 _SUBS = [
@@ -20,10 +22,13 @@ _SUBS = [
                 r"(nonland|noncreature, nonland|nonartifact, nonland|instant or sorcery) card from it(?:\. exile that card)? "
                 r"until ~ leaves the battlefield\.", re.I), lambda m: f"HANDEXILE {m[1].lower()}."),
     (re.compile(r"^(~ gains [a-z]+ until end of turn)\. tap it\.", re.I), r"\1. Tap ~."),
+    # Thorin: the Equipment are attached by the same ability, so its rider always follows
+    (re.compile(r"when one or more equipment become attached to that creature this way, (that creature deals damage)", re.I),
+     r"\1"),
     # The AI never aims its removal at its own creature, so "another" target is any target.
     (re.compile(r"destroy another target (creature or planeswalker|creature|nonland permanent)", re.I), r"destroy target \1"),
-    # Activated and triggered abilities can't be countered in the engine: these counter spells only.
-    (re.compile(r"counter target spell, activated ability, or triggered ability", re.I), "counter target spell"),
+    (re.compile(r"return target spell or permanent to its owner's hand", re.I),
+     "return target nonland permanent to its owner's hand"),
     # Planeswalkers rarely matter as the target: "creature or planeswalker you control gains ..." is the creature.
     (re.compile(r"target creature or planeswalker you control gains", re.I), "target creature you control gains"),
     # Two players: "for each opponent, tap ... that player controls" is the one opponent.
@@ -116,6 +121,13 @@ _SUBS = [
     (re.compile(r"look at the top (\w+) cards of your library\. you may reveal (an? .+? card) from among them and "
                 r"put it into your hand\. put the rest on the bottom of your library in (?:a random|any) order\.",
                 re.I), lambda m: f"DIGFILTER {_num(m[1])} {m[2]}."),
+    (re.compile(r"(?:look at|reveal) the top (\w+) cards of your library\. put (\w+) of them into your hand and the "
+                r"(?:rest|other|others) into your graveyard\.", re.I),
+     lambda m: f"DIGGY {_num(m[1])} {_num(m[2])}."),
+    (re.compile(r"(?:look at|reveal) the top (\w+) cards of your library\. you may (?:put|reveal) (an? [\w ]+? card|an? [\w ]+ "
+                r"card and/or an? [\w ]+ card) from among them (?:and put it )?into your hand\. put the rest into your "
+                r"graveyard\.", re.I),
+     lambda m: f"DIGFILTERGY {_num(m[1])} {m[2].replace(' card and/or a ', ' or ').replace(' card and/or an ', ' or ')}."),
     (re.compile(r"look at the top \w+ cards of your library, where X is the number of lands you control\. put "
                 r"(\w+) of those cards into your hand\. put the rest on the bottom of your library in (?:a random|"
                 r"any) order\.", re.I), lambda m: f"DIGLANDS {_num(m[1])}."),
@@ -157,14 +169,16 @@ _SUBS = [
 _TRIGGERS = [
     (r"When ~ becomes level (\d+), (.+)", ("class_level",)),
     (r"Whenever you proliferate, (.+)", ("proliferate",)),
+    (r"Whenever you exert a creature, (.+)", ("exert",)),
     (r"Whenever an opponent searches their library, (.+)", ("opp_searches",)),
     (r"When(?:ever)? ~ enters or attacks, (.+)", ("etb", "attacks")),
     (r"When ~ enters and at the beginning of your upkeep, (.+)", ("etb", "upkeep")),
     (r"When(?:ever)? ~ enters?(?: the battlefield)?, (.+)", ("etb",)),
+    (r"Whenever ~ and at least (two|three) other creatures attack, (.+)", ("attacks",)),     # battalion
     (r"Whenever ~ attacks while (?!saddled)(.+)", ("attacks",)),
     (r"Whenever ~ attacks, (.+)", ("attacks",)),
     (r"Whenever ~ (?:blocks or becomes blocked|becomes blocked or blocks)(?: by a creature)?, (.+)", ("blocks", "becomes_blocked")),
-    (r"Whenever ~ attacks or blocks, (.+)", ("attacks", "blocks")),
+    (r"When(?:ever)? ~ attacks or blocks, (.+)", ("attacks", "blocks")),
     (r"Whenever ~ blocks, (.+)", ("blocks",)),
     (r"Whenever ~ blocks a creature with flying, (.+)", ("blocks",)),
     (r"Whenever ~ becomes blocked(?: by a creature)?, (.+)", ("becomes_blocked",)),
@@ -195,6 +209,7 @@ _TRIGGERS = [
     (r"When(?:ever)? ~ dies, (?:if it was a creature, )?(.+)", ("dies",)),
     (r"Whenever ~ deals combat damage to a player, (.+)", ("combat_damage_player",)),
     (r"Whenever a creature you control deals combat damage to a player, (.+)", ("ally_combat_damage",)),
+    (r"Whenever an? ([A-Z][a-z]+) you control deals combat damage to a player, (.+)", ("ally_combat_damage",)),
     (r"Whenever you cast a noncreature spell, (.+)", ("cast_noncreature",)),
     (r"Whenever you cast an instant or sorcery spell, (.+)", ("cast_instant_sorcery",)),
     (r"Whenever you cast an instant or sorcery spell that targets a creature, (.+)", ("cast_instant_sorcery",)),
@@ -211,11 +226,14 @@ _TRIGGERS = [
     (r"Whenever (?:the Ring tempts you|you choose a creature as your Ring-bearer), (.+)", ("ring_tempts",)),
     (r"Whenever you attack, (.+)", ("you_attack",)),
     (r"Whenever you attack with one or more ([A-Z]\w+), (.+)", ("you_attack",)),
+    (r"Whenever you attack with (two|three|four) or more creatures, (.+)", ("you_attack",)),
     (r"Whenever a creature you control attacks, (.+)", ("creature_attacks",)),
     (r"Whenever an? ([A-Z]\w+) you control attacks, (.+)", ("creature_attacks",)),
     (r"When(?:ever)? ~ enters or leaves the battlefield, (.+)", ("etb", "leaves")),
     (r"When(?:ever)? ~ leaves the battlefield, (.+)", ("leaves",)),
     (r"Whenever a player casts a spell with mana value (\d+) or less, (.+)", ("any_cast",)),
+    (r"Whenever a player casts an? (white|blue|black|red|green|artifact|creature|enchantment|instant|sorcery) spell, (.+)",
+     ("any_cast",)),
     (r"At the beginning of your upkeep, (.+)", ("upkeep",)),
     (r"At the beginning of each(?: player's)? upkeep, (.+)", ("each_upkeep",)),
     (r"At the beginning of each opponent's upkeep, (.+)", ("opp_upkeep",)),
@@ -313,6 +331,10 @@ def _xq(text: str):
         return ("gy", _singular(m[1]))
     if tl == "the number of cards in your graveyard":
         return ("gy", "")
+    if tl == "the number of creatures in your party":
+        return ("party",)
+    if tl in ("the number of colors of mana spent to cast this spell", "the number of colors of mana spent to cast ~"):
+        return ("colors_spent",)                   # converge
     m = re.fullmatch(r"the number of ([\w -]+?) you control", t, re.I)
     if m and " with " not in m[1] and " that " not in m[1]:
         return ("count", _singular(m[1]))
@@ -328,6 +350,8 @@ _IF_CONDS = [
     (r"you control (two|three|four) or more tapped creatures", None),
     (r"you control a creature with power (\d+) or greater", None),
     (r"you sacrificed a permanent this turn", "sacrificed_turn"),
+    (r"you chose a creature other than ~ as your Ring-bearer", "ring_other"),
+    (r"you don't control a Ring-bearer", "no_ring_bearer"),
 ]
 
 

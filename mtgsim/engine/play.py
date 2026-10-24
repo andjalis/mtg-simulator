@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .. import alt_casts, cast_triggers, copies
+from .. import alt_casts, cast_triggers, copies, statics
 from ..cards import CardDef
 from .. import modal, rules_events, costs
 from ..actions import atomic_action
@@ -138,11 +138,13 @@ class PlayMixin:
             self.change_life(p, -alt.life, f"{card.name}: alternative cost")
         if card.extra_life_cost:
             self.change_life(p, -card.extra_life_cost, f"{card.name}: additional cost")
+        sacrificed_power = 0
         if plan.sacrifice is not None:
             victim = plan.sacrifice
             if victim not in p.battlefield:
                 return False
             self.log(f"sacrifices {victim.card.name} for {card.name}", p)
+            sacrificed_power = max(0, victim.power)        # Fling: "the sacrificed creature's power"
             self.sacrifice(victim)
         if kind == "prepared":
             next(x for x in p.battlefield if x.front is base and x.prepared).prepared = False
@@ -154,6 +156,10 @@ class PlayMixin:
             return False
         if kind == "escape":
             alt_casts.pay_escape(self, p, base, alt)
+        if kind == "alt_sac":               # "You may sacrifice a Mountain rather than pay ~'s mana cost"
+            pool = sorted((x for x in p.battlefield if statics.desc_matches(x, alt.cond)), key=lambda x: (not x.tapped, perm_value(x)))
+            for x in pool[:alt.counters]:
+                self.sacrifice(x)
         if card.extra_discard and p.hand:
             lands = [c for c in p.hand if c.is_land]
             pitched = (lands[-1] if lands else None) if kind == "retrace" else p.ai.choose_discard(self, p)
@@ -181,6 +187,7 @@ class PlayMixin:
                 return False
             targets = mode_targets + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")
+        item.sacrificed_power = sacrificed_power
         # Prepared spells are copies; channel/graveyard abilities leave their
         # physical source in its actual zone rather than moving it onto the stack.
         item.physical_card = base if kind not in ("prepared", "channel", "gy_ability") else None
@@ -199,6 +206,10 @@ class PlayMixin:
         item.uncounterable = any(s.card.mana_restriction == "chosen_type" and self.mana_allowed(s, card)
                                  for s in payment)
         item.mana_spent = sum(v for k, v in cost.items() if k != "X")
+        # sunburst / converge: the colored pips, plus single-color sources tapped for the rest
+        item.colors_spent = len({c for c in "WUBRG" if cost.get(c)} |
+                                {next(iter(s.produces_now)) for s in payment
+                                 if s.produces_now and len(s.produces_now) == 1 and next(iter(s.produces_now)) in "WUBRG"})
         if card.is_ability:
             item.kind = "channel"
             item.card = None

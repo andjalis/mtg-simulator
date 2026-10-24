@@ -15,7 +15,7 @@ from itertools import combinations
 
 from .cards import CardDef, Effect
 from . import copies, counting, engine, learning, modal, proliferate, protection
-from .engine import Game, Permanent, Player, can_block, payable
+from .engine import Game, Permanent, Player, can_block, payable, policy
 
 LETHAL = 1000.0
 LIFE_SCALE = 5.0        # value of life = LIFE_SCALE * sqrt(life)
@@ -125,7 +125,7 @@ def _aim(card: CardDef, eff, target) -> list:
 
 
 # Effects plan_spell values through _extra_value.
-EXTRA_KINDS = {"reanimate_total", "reanimate_one", "tutor_gy", "regrow_perm", "regrow_any", "tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "double_counters", "learn",
+EXTRA_KINDS = {"reanimate_total", "reanimate_one", "tutor_gy", "regrow_perm", "regrow_any", "tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "pump_matching", "double_counters", "learn", "hand_to_battlefield", "energy", "monarch",
                "tap", "stun", "mill", "proliferate"} | copies.KINDS
 
 CARRIER_KINDS = ("pump", "grant", "p1_counters", "unblockable")   # aimed at the creature that attacks
@@ -898,6 +898,13 @@ class HeuristicAI:
         ready = [c for c in me.creatures if c.can_attack() and c.power > 0]
         if k == "proliferate":
             return None, eff.amount * proliferate.value(game, me)
+        if k == "hand_to_battlefield":     # Sneak Attack: worth what the best creature in hand costs
+            best = max((c.cmc for c in me.hand if c.is_creature), default=0)
+            return (None, best) if best else None
+        if k == "energy":
+            return None, 0.5 * eff.amount
+        if k == "monarch":
+            return (None, 3.0) if getattr(game, "monarch", None) is not me else None
         if k == "learn":
             return None, learning.value(game, me)
         if k in copies.KINDS:
@@ -923,6 +930,17 @@ class HeuristicAI:
                 return None
             kw = 0.5 if (eff.data or {}).get("keyword") else 0.0
             return None, len(ready) * (0.5 * (eff.amount + eff.amount2) + kw)
+        if k == "pump_matching":       # "Blocking creatures get +7/+7", "All creatures get -1/-1 until end of turn"
+            from . import statics
+            v, (scope, words, pp, tt, kws) = 0.0, eff.data["static"]
+            src = statics._Caster(me)
+            for side, sign in ((me, 1), (opp, -1)):
+                hit = [c for c in side.creatures if statics._matches(c, src, scope, words)]
+                if tt < 0:
+                    v -= sign * sum(perm_value(c) for c in hit if c.toughness - c.damage <= -tt)
+                elif precombat and side is me:
+                    v += 0.5 * (pp + tt + len(kws)) * sum(1 for c in hit if c in ready)
+            return (None, v) if v > 0 else None
         if k in ("p1_counters", "double_counters") and eff.target == "my_creatures":
             if not me.creatures:
                 return None
@@ -1164,7 +1182,14 @@ class HeuristicAI:
         return None
 
     def counter(self, game: Game, me: Player, item, options):
-        if not item.is_spell or not game.counterable(item):
+        if not item.is_spell:          # Stifle, Disallow on a loyalty ability or one that hurts us
+            if not policy.ability_worth_countering(game, me, item):
+                return None
+            stiflers = [c for c in options if _counter_effects(c)
+                        and all(game.can_counter(e, item, me) for e in _counter_effects(c))]
+            card = min(stiflers, key=lambda c: (c.cmc, card_value(c)), default=None)
+            return (card, [item if e.target == "spell" else None for e in card.spell_effects]) if card else None
+        if not game.counterable(item):
             return None
         opp = game.opponent(me)
         counters = []

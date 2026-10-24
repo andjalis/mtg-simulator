@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from ... import copies
+from ... import copies, statics
 from ...cards import CardDef, Effect, jace_token, make_token, role_token
 from ..policy import choose_basic, perm_value
 from ..state import Permanent, Player, is_basic_land
@@ -28,15 +28,80 @@ def destroy(game, p, eff, target, item, **_):
 @kind("wrath")
 def wrath(game, p, eff, opp, **_):
     for perm in p.creatures + opp.creatures:
+        if eff.filter and not game.passes_filter(eff, perm, p):      # "destroy all black creatures"
+            continue
         game.destroy(perm, no_regen=eff.data.get("no_regen", False))
 
 
 @kind("destroy_all")
 def destroy_all(game, p, eff, opp, **_):
     """Destroy all artifacts / enchantments / lands."""
-    kind = eff.data["type"]
-    for perm in [x for x in p.battlefield + opp.battlefield if kind in x.card.types]:
-        game.destroy(perm)
+    kind, sub = eff.data["type"], eff.data.get("subtype")
+    for perm in [x for x in p.battlefield + opp.battlefield if (sub in x.card.subtypes if sub else not x.card.is_land
+                                                              if kind == "nonland" else kind in x.card.types)]:
+        game.destroy(perm, no_regen=eff.data.get("no_regen", False))
+
+
+@kind("energy")
+def energy(game, p, eff, **_):
+    """"You get {E}{E}": energy counters on the player."""
+    p.energy = getattr(p, "energy", 0) + eff.amount
+    game.log(f"gets {eff.amount} energy ({p.energy})", p)
+
+
+@kind("tuck")
+def tuck(game, p, eff, target, **_):
+    """"Put target creature into its owner's library second from the top" (depth 1; the top is the end)."""
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        owner, card = target.owner, target.front
+        if game.leave_battlefield(target, "exile") and card in owner.exile:
+            owner.exile.remove(card)
+            lib = owner.library
+            lib.insert(max(0, len(lib) - eff.data.get("depth", 0)), card)
+            game.log(f"puts {card.name} into its owner's library", p)
+
+
+@kind("haste_new")
+def haste_new(game, p, eff, target, **_):
+    """"It gains haste." after a return or a put-onto-the-battlefield: that permanent, for as long as it stays."""
+    target = target if isinstance(target, Permanent) else getattr(game, "last_entered", None)
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        target.perm_kw.add("haste")
+
+
+@kind("hand_to_battlefield")
+def hand_to_battlefield(game, p, **_):
+    """Sneak Attack: the best creature card from hand onto the battlefield."""
+    pool = [c for c in p.hand if c.is_creature]
+    if pool:
+        card = max(pool, key=lambda c: (c.cmc, (c.power or 0)))
+        p.hand.remove(card)
+        game.enter_battlefield(p, card)
+        game.log(f"puts {card.name} onto the battlefield", p)
+
+
+@kind("at_end_step")
+def at_end_step(game, p, eff, target, item, **_):
+    """"Exile it at the beginning of the next end step": the permanent the previous effect made or returned."""
+    if not isinstance(target, Permanent):
+        made = getattr(game, "last_entered", None)   # tokens just created, a card just returned
+        target = made if isinstance(made, Permanent) else None
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        game.end_cleanup.append((target, eff.data["how"]))
+
+
+@kind("monarch")
+def monarch(game, p, **_):
+    game.monarch = p
+    game.log("becomes the monarch", p)
+
+
+@kind("adapt")
+def adapt(game, p, eff, item, **_):
+    """Adapt N: N +1/+1 counters, if it has none."""
+    src = item.source if item is not None else None
+    if isinstance(src, Permanent) and src in p.battlefield and not src.p1:
+        src.counters["+1/+1"] = eff.amount
 
 
 @kind("wrath_pw")
@@ -54,17 +119,42 @@ def bounce(game, p, target, **_):
 
 @kind("return_own")
 def return_own(game, p, eff, item, **_):
-    """Bounce lands, Storm Sculptor: return a land / creature you control. Tapped lands go first (a basic
+    """Bounce lands, Storm Sculptor, Kor Skyfisher: return a land / creature / permanent you control. Tapped lands go first (a basic
     before a nonbasic), then the cheapest creature; the source itself only when nothing else is left."""
     src = item.source if item is not None else None
-    land = eff.data["kind"] == "land"
-    pool = [x for x in p.battlefield if (x.card.is_land if land else x.is_creature)]
+    kind = eff.data["kind"]
+    land = kind == "land"
+    pool = [x for x in p.battlefield if (x.card.is_land if land else x.is_creature or kind == "permanent")
+            and (not eff.data.get("desc") or statics.desc_matches(x, eff.data["desc"]))]
     if not pool:
         return
     pick = min(pool, key=lambda x: (x is src, not x.tapped, not is_basic_land(x.card)) if land else
                (x is src, perm_value(x)))
     game.log(f"returns {pick.card.name} to hand", p)
     game.leave_battlefield(pick, "hand")
+
+
+@kind("move_counters")
+def move_counters(game, p, eff, target, item, **_):
+    """"When ~ dies, put its counters on target creature you control": the counters it had as it left."""
+    src = item.source if item is not None else None
+    if isinstance(target, Permanent) and isinstance(src, Permanent) and target is not src and target in p.battlefield:
+        for name, n in list(src.counters.items()):
+            if n > 0 and name not in ("loyalty", "storage"):
+                target.counters[name] = target.counters.get(name, 0) + n
+        game.log(f"moves {src.card.name}'s counters to {target.card.name}", p)
+
+
+@kind("sac_unless_sac")
+def sac_unless_sac(game, p, eff, item, **_):
+    """"Sacrifice ~ unless you sacrifice three Forests": the cheapest matching ones when there are enough."""
+    src = item.source if item is not None else None
+    pool = [x for x in p.battlefield if x is not src and statics.desc_matches(x, eff.data["desc"])]
+    if len(pool) >= eff.amount:
+        for x in sorted(pool, key=lambda x: (not x.tapped, perm_value(x)))[:eff.amount]:
+            game.sacrifice(x)
+    elif isinstance(src, Permanent) and src in p.battlefield:
+        game.sacrifice(src)
 
 
 @kind("sac_own")
