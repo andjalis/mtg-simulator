@@ -10,6 +10,8 @@ def parse(phrase):
     phrase = phrase.lower().strip()
     if phrase == "you have no cards in hand":
         return "hand==0"
+    if phrase in ("it's your turn", "it's not your turn"):
+        return "my_turn" if "not" not in phrase else "!my_turn"
     if phrase == "you have a card in hand":
         return "hand>=1"
     if phrase in ("~ is tapped", "~ is untapped"):
@@ -34,6 +36,10 @@ def check(player, condition, item):
         value = player.life if resource == "life" else len(player.hand)
         number = int(number)
         return value == number if operator == "==" else value >= number if operator == ">=" else value <= number
+    if condition in ("my_turn", "!my_turn"):
+        game = getattr(player, "_game", None)
+        mine = game.active is player if game is not None else player.my_turn
+        return mine == (condition == "my_turn")
     if condition in ("source_tapped", "source_untapped"):
         source = getattr(item, "source", None)
         return source is not None and bool(source.tapped) == (condition == "source_tapped")

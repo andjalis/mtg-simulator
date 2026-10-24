@@ -483,14 +483,17 @@ def _parse_ability(line: str, approximations: list):
     body, sorcery, once, approx, per_turn = m[2], False, False, [], 0
     while True:
         r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|This ability costs [^.]+ "
-                         r"less to activate[^.]*|Activate no more than (?:twice|three times) each turn)\.", body)
+                         r"less to activate[^.]*|Activate no more than (?:twice|three times) each turn|"
+                         r"Activate only during your turn, before attackers are declared)\.", body)
         if not r:
             break
         body = r[1]
         if r[2].startswith("Activate no more than"):
             per_turn = 2 if "twice" in r[2] else 3
             continue
-        sorcery |= r[2] == "Activate only as a sorcery"
+        sorcery |= r[2] in ("Activate only as a sorcery", "Activate only during your turn, before attackers are declared")
+        if r[2].startswith("Activate only during your turn"):
+            approx.append("'before attackers are declared' is played as sorcery timing")
         once |= r[2] == "Activate only once each turn"
         if r[2].startswith("This ability costs"):
             approx.append(f"cost reduction ignored: {r[2]}.")

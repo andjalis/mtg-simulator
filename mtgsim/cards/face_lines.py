@@ -315,6 +315,14 @@ def _face_land_and_mana_lines(st, line):
         if m:
             extra["equip_grant_mana"] = frozenset("WUBRG" if "any" in m[1] else m[1][1])
             return None
+        m = re.fullmatch(r"If one or more \+1/\+1 counters would be put on (a creature you control|a permanent you control|~), "
+                         r"(that many plus one|twice that many) \+1/\+1 counters are put on (?:it|that creature|that permanent) "
+                         r"instead\.", line)
+        if m:                                   # Hardened Scales, Solid Ground, The Earth Crystal
+            who = {"a creature you control": "creature", "a permanent you control": "permanent", "~": "self"}[m[1]]
+            extra["counter_bonus"] = extra.get("counter_bonus", ()) + (("double" if "twice" in m[2] else "plus_one", who),)
+            approximations.append("+1/+1 counters a permanent enters with don't get the extra counters")
+            return None
         flag = {"Each player can't cast more than one spell each turn.": "one_spell_each_turn",
                 "You have hexproof.": "player_hexproof",
                 "Creatures your opponents control enter tapped.": "opp_creatures_enter_tapped"}.get(line)

@@ -13,6 +13,8 @@ _SUB_NOTES = [
     (re.compile(r"target creature or planeswalker you control gains", re.I), "the target is a creature, not a planeswalker"),
     (re.compile(r"return target spell or permanent to its owner's hand", re.I), "returns a nonland permanent, not a spell"),
     (re.compile(r"damage divided as you choose among one or two", re.I), "the divided damage all goes to one target"),
+    (re.compile(r"becomes the (?:color|creature type) of your choice until end of turn", re.I),
+     "becoming a colour or creature type of your choice does nothing"),
 ]
 
 _SUBS = [

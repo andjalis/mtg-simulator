@@ -291,6 +291,8 @@ class CardDef:
     block_only_flying: bool = False
     prevention: tuple = ()                              # damage shields (see prevention.py)
     block_max_power: int = 0
+    aura_becomes: tuple = ()                            # ("U", "Frog", 1, 1): Frogify (see becomes.py)
+    counter_bonus: tuple = ()                           # (("plus_one" | "double", "creature" | "permanent" | "self"), ...)
     blocked_only_by: tuple = ()                         # "~ can't be blocked except by creatures with flying or reach"
     equip_grant_mana: frozenset = frozenset()           # Paradise Mantle: 'Equipped creature has "{T}: Add one mana ..."'
     one_spell_each_turn: bool = False                   # Rule of Law: "Each player can't cast more than one spell each turn."

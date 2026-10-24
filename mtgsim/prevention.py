@@ -94,6 +94,9 @@ def _matches(source, desc: str, victim) -> bool:
 def adjust(game, target, amount: int, source, combat: bool) -> int:
     """The damage left after the prevention shields that apply to target."""
     from .engine.state import Permanent, Player
+    if combat and any("no_combat_damage" in a.card.aura_flags for x in (source, target) if isinstance(x, Permanent)
+                      for a in x.auras):
+        return 0                                # Sandskin: combat damage to and by the enchanted creature
     if isinstance(target, Player):
         shields = getattr(target, "damage_shields", [])
         if game.turn in shields:

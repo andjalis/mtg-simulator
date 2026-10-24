@@ -36,6 +36,9 @@ def parse_line(line: str, extra: dict, types) -> bool:
         return True
     if not extra.get("aura"):
         return False
+    from . import becomes
+    if becomes.parse_aura_line(line, extra):
+        return True
     if re.fullmatch(r"Enchanted (?:creature|permanent) doesn't untap during its controller's untap step\.", line):
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"no_untap"}
         return True
@@ -55,6 +58,9 @@ def parse_line(line: str, extra: dict, types) -> bool:
     if re.fullmatch(r"Enchanted (?:creature|permanent) can't attack or block, and its activated abilities can't be activated\.",
                     line):                      # Arrest, Pacifism-plus
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"cant_attack_block", "no_activate"}
+        return True
+    if line == "Prevent all combat damage that would be dealt to and dealt by enchanted creature.":   # Sandskin
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"no_combat_damage"}
         return True
     if line == "Enchanted creature can't be blocked.":
         extra["equip_keywords"] = extra.get("equip_keywords", frozenset()) | {"unblockable"}
@@ -179,6 +185,8 @@ def attach(game, aura, host):
     host.auras.append(aura)
     game.log(f"{aura.card.name} enchants {host.card.name}", aura.controller)
     _set_land_type(host)
+    from . import becomes
+    becomes.attached(game, aura, host)
 
 
 def detach(aura):

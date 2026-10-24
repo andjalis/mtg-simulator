@@ -30,6 +30,9 @@ class TargetsMixin:
         f = eff.filter
         if "+" in f:                            # "attacking+nokw:flying": every part holds
             return all(self.passes_filter(dataclasses.replace(eff, filter=part), perm, by) for part in f.split("+"))
+        if f == "notsource":                    # "another target ...": not the spell's or ability's source
+            src = self.target_source
+            return perm is not src and perm is not getattr(src, "source", None)
         if f.startswith("nokw:"):
             return not perm.has(f[5:])
         if f.startswith("notsub:"):

@@ -31,12 +31,24 @@ class Counters(dict):
 
     def __setitem__(self, key, value):
         old = self.get(key, 0)
-        super().__setitem__(key, value)
         perm = self.owner
+        if key == "+1/+1" and value > old and perm in perm.controller.battlefield:
+            value = old + _more_counters(perm, value - old)      # Hardened Scales, The Earth Crystal
+        super().__setitem__(key, value)
         if key == "+1/+1" and value > old and perm in perm.controller.battlefield:
             game = getattr(perm.controller, "_game", None)
             if game is not None:
                 game.fire(perm.controller, "p1_added", perm)
+
+
+def _more_counters(perm, n: int) -> int:
+    """How many +1/+1 counters are put on perm when n would be ("that many plus one", "twice that many")."""
+    for x in perm.controller.battlefield:
+        for kind, who in x.card.counter_bonus:
+            if who == "self" and x is not perm or who == "creature" and not perm.is_creature:
+                continue
+            n = n * 2 if kind == "double" else n + 1
+    return n
 
 
 def protected_from(perm, source) -> bool:

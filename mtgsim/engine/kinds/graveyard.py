@@ -134,6 +134,18 @@ def regrow_any(game, p, **_):
         p.hand.append(card)
 
 
+@kind("gy_to_top")
+def gy_to_top(game, p, eff, **_):
+    """"Put target card from your graveyard on top of your library": the most expensive ones (that fit) go back."""
+    what = eff.data.get("what", "")
+    fits = [c for c in p.graveyard if not what or what == "creature" and c.is_creature or what == "artifact" and c.is_artifact
+            or what == "instant or sorcery" and (c.is_instant or c.is_sorcery)]
+    for card in sorted(fits, key=lambda c: c.cmc)[-eff.amount:]:
+        p.graveyard.remove(card)
+        p.library.append(card)
+        game.log(f"puts {card.name} on top of their library", p)
+
+
 @kind("exile_gy")
 def exile_gy(game, eff, opp, **_):
     if eff.amount:                  # "exile up to four target cards from a single graveyard": the opponent's best

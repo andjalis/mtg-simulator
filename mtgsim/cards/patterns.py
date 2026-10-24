@@ -66,6 +66,8 @@ def _tapped(eff):
 
 
 _SRC = r"(?:~|it|he|she)"
+_COLOR_LETTER = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
+_KWS = r"(flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)"
 
 
 def _wrath_filter(word: str) -> str:
@@ -77,6 +79,42 @@ def _wrath_filter(word: str) -> str:
 _EFFECT_PATTERNS = [
     (r"learn", lambda m: Effect("learn")),
     (r"exert ~", lambda m: Effect("exert", target="self")),
+    (r"another target (white|blue|black|red|green) creature you control gains " + _KWS + " until end of turn",
+     lambda m: Effect("grant", target="creature_mine", filter=f"colors:{_COLOR_LETTER[m[1].lower()]}+notsource",
+                      data={"keyword": m[2].lower()})),
+    (r"target (white|blue|black|red|green) or (white|blue|black|red|green) creature gains " + _KWS + " until end of turn",
+     lambda m: Effect("grant", target="creature_mine", filter=f"colors:{_COLOR_LETTER[m[1].lower()]}{_COLOR_LETTER[m[2].lower()]}",
+                      data={"keyword": m[3].lower()})),
+    (r"~ deals (\d+) damage to each attacking creature",
+     lambda m: Effect("damage", int(m[1]), target="each_creature", filter="attacking")),
+    (r"(?:~|it) gets ([+-]\d+)/([+-]\d+) and gains " + _KWS + " until end of turn",
+     lambda m: [Effect("pump", int(m[1]), int(m[2]), target="self"), Effect("grant", target="self", data={"keyword": m[3].lower()})]),
+    (r"tap target creature with power (\d+) or less", lambda m: Effect("tap", 1, target="creature", filter=f"max_power:{m[1]}")),
+    (r"(?:that player|target opponent|each opponent) loses half their life, rounded up", lambda m: Effect("half_life")),
+    (r"you may have target creature get \+(\d+)/\+(\d+) until end of turn",
+     lambda m: Effect("pump", int(m[1]), int(m[2]), target="creature_mine")),
+    (r"put (target creature you control|~|target creature|target nonland permanent) on top of its owner's library",
+     lambda m: Effect("tuck", target={"target creature you control": "creature_mine", "~": "self", "target creature": "creature",
+                                      "target nonland permanent": "nonland_perm"}[m[1].lower()],
+                      filter="opp" if m[1].lower() in ("target creature", "target nonland permanent") else "", data={"depth": 0})),
+    (r"put (target|any number of target) (creature |instant or sorcery |artifact )?cards? from your graveyard on top of your "
+     r"library", lambda m: Effect("gy_to_top", 1 if m[1].lower() == "target" else 99,
+                                  data={"what": (m[2] or "").strip().lower()})),
+    (r"(?:~|target creature) becomes the (?:color|creature type) of your choice until end of turn", lambda m: Effect("noop")),
+    (r"~ deals (\d+) damage to any target and (\d+) damage to any other target",
+     lambda m: [Effect("damage", int(m[1]), target="any", data={"distinct": True}),
+                Effect("damage", int(m[2]), target="any", data={"distinct": True})]),
+    (r"another target attacking creature gains ({_KW}) until end of turn".replace("{_KW}", _KWS),
+     lambda m: Effect("grant", target="creature_mine", filter="attacking+notsource", data={"keyword": m[1].lower()})),
+    (r"another target ([A-Z][a-z]+) you control gains ({_KW}) until end of turn".replace("{_KW}", _KWS),
+     lambda m: Effect("grant", target="creature_mine", filter=f"subtype:{m[1]}+notsource", data={"keyword": m[2].lower()})
+     if m[1][0].isupper() else NO_MATCH),
+    (r"another target ([A-Z][a-z]+) you control gets \+(\d+)/\+(\d+) until end of turn",
+     lambda m: Effect("pump", int(m[2]), int(m[3]), target="creature_mine", filter=f"subtype:{m[1]}+notsource")
+     if m[1][0].isupper() else NO_MATCH),
+    (r"put a \+1/\+1 counter on another target ([A-Z][a-z]+) you control",
+     lambda m: Effect("p1_counters", 1, target="creature_mine", filter=f"subtype:{m[1]}+notsource")
+     if m[1][0].isupper() else NO_MATCH),
     (r"(?:~|it) deals (\d+|X) damage to each creature (with|without) (flying|horsemanship|shadow|trample|reach)",
      lambda m: Effect("damage", 0 if m[1] == "X" else int(m[1]), target="each_creature",
                       filter=("kw:" if m[2].lower() == "with" else "nokw:") + m[3].lower(), data={"x": True} if m[1] == "X" else {})),

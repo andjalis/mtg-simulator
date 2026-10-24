@@ -49,7 +49,7 @@ def _spell(m):
         return NO_MATCH
     noun = f"{_singular_sub(m['sub'])} creatures" if m["sub"] else "creatures"
     pt = f" get {m[5]}/{m[6]}" if m[5] else ""
-    entry = _parse(f"{m[1] or ''}{m[2]}{noun}{m[4] or ''}{pt}" + (f" and have {m[7]}." if m[7] else "."))
+    entry = _parse(f"{(m[1] or '').capitalize()}{m[2]}{noun}{m[4] or ''}{pt}" + (f" and have {m[7]}." if m[7] else "."))
     return NO_MATCH if entry is None else Effect("pump_matching", data={"static": entry})
 
 
@@ -90,6 +90,7 @@ _NOUNS = {"permanent", "creature", "artifact", "enchantment", "land", "planeswal
 def parse_line(line: str, st) -> bool:
     if not ({"Instant", "Sorcery"} & set(st.types)) and line:
         line = line.replace("−", "-").replace("Creature tokens you control", "Token creatures you control")
+        line = re.sub(r"^Creature tokens get ", "Token creatures get ", line)
         line = re.sub(r"^(Other )?([A-Z][a-z]+) tokens you control", r"\1\2 token creatures you control", line)
         entry = _parse(line)
         if entry is not None:
