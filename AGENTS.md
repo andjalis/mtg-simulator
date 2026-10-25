@@ -105,7 +105,7 @@ The gate writes `verdict.json`, compact `verdict.md`, and full logs under
 It checks lint, tests, parser exceptions, full-match regressions, all-card and saved
 Standard-snapshot coverage deltas, ten seeded newly-full parse samples, and 50 seeded
 AI smoke games (20 seconds per game). Suspicious sample fields fail for human review;
-`target='none'` can be intentional. `--fast` selects tests by changed/related filenames,
+`target='none'` is listed but does not fail, since untargeted effects use it. `--fast` selects tests by changed/related filenames,
 falling back to the full suite for broad or unmapped Python changes. Base coverage is
 cached by commit plus code/data fingerprints. A PASS is a review aid, not evidence
 of complete rules correctness; read the sampled Oracle/parse pairs.

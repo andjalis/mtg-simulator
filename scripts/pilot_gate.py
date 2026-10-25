@@ -105,7 +105,8 @@ def verdict(checks, comparison, samples, smoke):
                        ("regressions", "full-match regressions"), ("removed", "missing census cards")):
         if comparison.get(key):
             reasons.append(f"{len(comparison[key])} {label}")
-    flagged = [s["name"] for s in samples if s["flags"]]
+    # target='none' is normal for untargeted effects (edicts, "each player"), so it is shown, not failed.
+    flagged = [s["name"] for s in samples if any(not f.endswith("='none'") for f in s["flags"])]
     if flagged:
         reasons.append(f"Suspicious sampled parses: {', '.join(flagged)}")
     if smoke.get("completed") != 50 or smoke.get("failures"):

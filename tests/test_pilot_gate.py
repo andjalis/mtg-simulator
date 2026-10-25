@@ -65,6 +65,10 @@ class PilotGateTests(unittest.TestCase):
         self.assertTrue(any("placeholder" in f for f in flags))
         self.assertEqual(verdict({}, {}, [{"name": "A", "flags": flags}], self.smoke)[0], "FAIL")
 
+    def test_untargeted_none_is_advisory(self):
+        sample = {"name": "Innocent Blood", "flags": ["parse.spell_effects[0].target='none'"]}
+        self.assertEqual(verdict({}, {}, [sample], self.smoke)[0], "PASS")
+
     def test_removed_cards_fail(self):
         self.assertEqual(verdict({}, {"removed": ["A"]}, [], self.smoke)[0], "FAIL")
 
