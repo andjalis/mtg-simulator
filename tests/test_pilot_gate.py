@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from scripts.pilot_gate import census, compare_coverage, markdown, run, select_tests, suspicious, verdict
+from scripts.pilot_gate import census, compare_coverage, exercise_cards, markdown, run, select_tests, suspicious, verdict
 
 
 class PilotGateTests(unittest.TestCase):
@@ -72,6 +72,28 @@ class PilotGateTests(unittest.TestCase):
     def test_removed_cards_fail(self):
         self.assertEqual(verdict({}, {"removed": ["A"]}, [], self.smoke)[0], "FAIL")
 
+    def test_crash_on_resolution_fails(self):
+        crash = {"name": "A", "ok": False, "step": "cast", "error": "AttributeError: x", "at": "damage.py:1"}
+        status, reasons = verdict({}, {}, [], self.smoke, [crash, {"name": "B", "ok": True}])
+        self.assertEqual(status, "FAIL")
+        self.assertIn("1 newly-full cards crash when resolved: A", reasons)
+        self.assertEqual(verdict({}, {}, [], self.smoke, [{"name": "B", "ok": True}])[0], "PASS")
+
+    def test_exercise_resolves_effects_and_records_crashes(self):
+        import json
+        from unittest.mock import patch
+        from mtgsim.engine import Game
+
+        with tempfile.TemporaryDirectory() as tmp:
+            names, out = Path(tmp) / "names.json", Path(tmp) / "out.json"
+            names.write_text(json.dumps(["Lightning Bolt"]))
+            exercise_cards(Path("."), names, out)
+            self.assertEqual(json.loads(out.read_text()), [{"name": "Lightning Bolt", "ok": True}])
+            with patch.object(Game, "deal_damage", side_effect=AttributeError("no subtype")):
+                exercise_cards(Path("."), names, out)
+            result = json.loads(out.read_text())[0]
+            self.assertEqual((result["ok"], result["step"], result["error"]), (False, "cast", "AttributeError: no subtype"))
+
     def test_fast_tests_related_and_safe_fallback(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -124,8 +146,10 @@ class PilotGateTests(unittest.TestCase):
                   "seconds": 1, "reasons": ["bad parse"], "checks": {}, "smoke": self.smoke,
                   "comparison": {"regressions": ["A"]},
                   "samples": [{"name": "A", "oracle": "draw\nthen | scry", "parsed": "Effect()", "flags": []}]}
+        report["exercise"] = [{"name": "A", "ok": False, "step": "cast", "error": "KeyError: 'x'", "at": "damage.py:3"}]
         md = markdown(report)
-        for expected in ("FAIL", "bad parse", "regressions (1): A", "Effect()", "&#124;", "50/50"):
+        for expected in ("FAIL", "bad parse", "regressions (1): A", "Effect()", "&#124;", "50/50",
+                         "Exercise: 0/1", "**A** (cast): KeyError"):
             self.assertIn(expected, md)
 
 

@@ -1,7 +1,8 @@
 """Offline review gate: python3 scripts/pilot_gate.py --base origin/main [--fast].
 
 Artifacts (including full logs) live in results/pilot_gate. Full-match regressions,
-new parser exceptions, suspicious sampled parses, and failed checks fail the gate.
+new parser exceptions, suspicious sampled parses, newly-full cards that raise when their
+effects resolve once, and failed checks fail the gate.
 Template matching and a smoke run are review aids, not rules-correctness evidence.
 """
 from __future__ import annotations
@@ -98,7 +99,7 @@ def compare_coverage(before, after):
     }
 
 
-def verdict(checks, comparison, samples, smoke):
+def verdict(checks, comparison, samples, smoke, exercise=()):
     reasons = [f"{name} failed" + (" (timeout)" if item.get("timeout") else "")
                for name, item in checks.items() if item["returncode"] != 0]
     for key, label in (("newly_raising", "newly raising cards"),
@@ -109,6 +110,9 @@ def verdict(checks, comparison, samples, smoke):
     flagged = [s["name"] for s in samples if any(not f.endswith("='none'") for f in s["flags"])]
     if flagged:
         reasons.append(f"Suspicious sampled parses: {', '.join(flagged)}")
+    crashed = [e["name"] for e in exercise if not e["ok"]]
+    if crashed:
+        reasons.append(f"{len(crashed)} newly-full cards crash when resolved: {', '.join(crashed[:10])}")
     if smoke.get("completed") != 50 or smoke.get("failures"):
         reasons.append(f"Smoke completed {smoke.get('completed', 0)}/50 games; {len(smoke.get('failures', []))} failures")
     return ("FAIL" if reasons else "PASS"), reasons
@@ -191,6 +195,85 @@ def sample_cards(root, names_path, output):
             db._all.close()
 
 
+EXERCISE_BOARD = ("Mountain", "Forest", "Island", "Plains", "Swamp", "Grizzly Bears", "Hill Giant",
+                  "Llanowar Elves", "Sol Ring", "Glorious Anthem")
+
+
+def exercise_cards(root, names_path, output):
+    """Resolve every effect of each newly-full card once on a stock board; record crashes, not behavior."""
+    import traceback
+    from mtgsim.ai import HeuristicAI
+    from mtgsim.carddb import CardDB
+    from mtgsim.engine import Game, Permanent, Player, StackItem
+
+    def timeout(*_):
+        raise TimeoutError("resolution took over 10 s")
+
+    def targets(game, p, effects, source=None):
+        # The AI declines targets it sees no value in (a 0-damage parse); any legal one still runs the handler.
+        chosen = game.auto_targets(p, effects, source)
+        for i, (eff, tgt) in enumerate(zip(effects, chosen)):
+            if tgt is None:
+                legal = game.legal_targets(p, eff)
+                chosen[i] = next((t for t in legal if getattr(t, "controller", t) is not p), legal[0] if legal else None)
+        return chosen
+
+    db = CardDB(offline=True)
+    board = [c for c in map(db.get, EXERCISE_BOARD) if c is not None]
+    results = []
+    try:
+        for name in json.loads(Path(names_path).read_text()):
+            card = db.get(name)
+            a, b = Player("a", [], HeuristicAI()), Player("b", [], HeuristicAI())
+            game = Game(a, b, random.Random(0))
+            game.turn, game.step = 1, "main1"
+            for pl in (a, b):
+                pl.library = board * 3
+                pl.hand = list(board[5:])
+                pl.graveyard = list(board[5:8])
+                for c in board:
+                    pl.battlefield.append(Permanent(c, pl))
+                for perm in pl.battlefield:
+                    perm.sick = False
+            groups = [("cast", None, card.spell_effects)] + [("mode", None, m) for m in card.modes]
+            groups += [("activated", True, act.effects) for act in card.activated if act.effects]
+            groups += [("trigger " + t.event, True, t.effects) for t in card.triggers if t.event != "etb" and t.effects]
+            groups += [("loyalty", True, effects) for _, effects in card.loyalty_abilities]
+            step = "setup"
+            if hasattr(signal, "SIGALRM"):
+                signal.signal(signal.SIGALRM, timeout)
+                signal.alarm(10)
+            try:
+                source = None
+                for step, on_permanent, effects in groups:
+                    if on_permanent and source is None:
+                        source = Permanent(card, a)
+                        source.sick = False
+                        a.battlefield.append(source)
+                    if step == "cast":      # a permanent spell enters, firing its own ETB triggers
+                        game.stack.append(StackItem(a, effects, targets(game, a, effects), card=card))
+                    else:
+                        game.stack.append(StackItem(a, effects, targets(game, a, effects, source),
+                                                    source=source, kind="trigger"))
+                    for _ in range(30):
+                        if not game.stack:
+                            break
+                        game.resolve_top()
+                results.append({"name": name, "ok": True})
+            except Exception as exc:
+                frame = traceback.extract_tb(exc.__traceback__)[-1]
+                results.append({"name": name, "ok": False, "step": step,
+                                "error": f"{type(exc).__name__}: {exc}",
+                                "at": f"{Path(frame.filename).name}:{frame.lineno}"})
+            finally:
+                if hasattr(signal, "SIGALRM"):
+                    signal.alarm(0)
+        write_json(Path(output), results)
+    finally:
+        if db._all:
+            db._all.close()
+
+
 def choose_decks(root, newly_full):
     from mtgsim.decklist import load_deck
 
@@ -253,6 +336,10 @@ def markdown(report):
         lines.append(f"- {key} ({len(names)}): " + (", ".join(names[:20]) or "none") +
                      (" … (all names in verdict.json)" if len(names) > 20 else ""))
     smoke = report.get("smoke", {})
+    crashed = [e for e in report.get("exercise", []) if not e["ok"]]
+    lines.append(f"- Exercise: {len(report.get('exercise', [])) - len(crashed)}/{len(report.get('exercise', []))} newly-full cards "
+                 "resolved every effect once without raising.")
+    lines += [f"  - **{e['name']}** ({e['step']}): {e['error']} at {e['at']}" for e in crashed[:20]]
     lines += [f"- Smoke: {smoke.get('completed', 0)}/50; seed 1729+i; {GAME_TIMEOUT}s/game; "
               f"{smoke.get('selection', 'unavailable')}.", "",
               "False-full sample (up to 10, seed 1729; Oracle beside parsed fields):", ""]
@@ -283,7 +370,7 @@ def main(argv=None):
     start = time.monotonic()
     report = {"base": base, "head": head, "worktree": str(root), "fast": args.fast,
               "dirty": git("status", "--porcelain", "--untracked-files=no"),
-              "checks": {}, "samples": [], "smoke": {"completed": 0, "failures": []}}
+              "checks": {}, "samples": [], "exercise": [], "smoke": {"completed": 0, "failures": []}}
     checks = report["checks"]
     script = Path(__file__).resolve()
     env = dict(os.environ, PYTHONHASHSEED="0")
@@ -372,6 +459,8 @@ def main(argv=None):
             if not worker("decks", root, "decks", dest / "sample_all_names.json", dest / "decks.json"):
                 raise RuntimeError("deck selection failed")
             selection = json.loads((dest / "decks.json").read_text())
+            if worker("exercise", root, "exercise", dest / "sample_all_names.json", dest / "exercise.json"):
+                report["exercise"] = json.loads((dest / "exercise.json").read_text())
             report["smoke"].update(selection)
             for i, (a, b) in enumerate(selection["pairs"]):
                 item = run([sys.executable, str(script), "_worker", str(root), "game", a, b, str(1729 + i)],
@@ -381,11 +470,12 @@ def main(argv=None):
                 else:
                     report["smoke"]["failures"].append(dict(item, seed=1729 + i, decks=[a, b]))
                     break
-            report["verdict"], report["reasons"] = verdict(checks, report["comparison"], report["samples"], report["smoke"])
+            report["verdict"], report["reasons"] = verdict(checks, report["comparison"], report["samples"], report["smoke"],
+                                                           report["exercise"])
     except Exception as exc:
         report["verdict"] = "FAIL"
         report["reasons"] = [f"{type(exc).__name__}: {exc}"]
-        reasons = verdict(checks, report.get("comparison", {}), report["samples"], report["smoke"])[1]
+        reasons = verdict(checks, report.get("comparison", {}), report["samples"], report["smoke"], report["exercise"])[1]
         report["reasons"].extend(reasons)
     report["seconds"] = round(time.monotonic() - start, 3)
     write_json(dest / "verdict.json", report)
@@ -423,6 +513,8 @@ def worker_main():
         names = compare_coverage(before, comparison)["newly_full"]
         write_json(names_path, names)
         write_json(output, choose_decks(root, names))
+    elif operation == "exercise":
+        exercise_cards(root, *extra)
     elif operation == "game":
         smoke_game(root, extra[0], extra[1], int(extra[2]))
     else:
