@@ -337,6 +337,9 @@ def amass(game, p, eff, **_):
 
 @kind("edict")
 def edict(game, p, eff, opp, **_):
+    if eff.data.get("self"):       # "each player": the controller chooses and sacrifices first
+        for v in sorted(p.creatures, key=perm_value)[:eff.amount]:
+            game.sacrifice(v)
     victims = sorted(opp.creatures, key=perm_value)[:eff.amount]
     for v in victims:
         if eff.data.get("exile"):
