@@ -348,6 +348,9 @@ class Permanent:
             return True
         if self.is_creature and statics.keyword(self, kw):
             return True
+        if any(k == kw and not (other and x is self) for x in self.controller.battlefield
+               for other, k in x.card.permanent_keywords):          # Avacyn: "other permanents you control have ..."
+            return True
         if self.is_creature and self.p1 > 0 and any(kw in x.card.counter_team_keywords
                                                     for x in self.controller.battlefield):
             return True

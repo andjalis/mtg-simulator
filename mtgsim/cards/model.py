@@ -291,6 +291,10 @@ class CardDef:
     block_only_flying: bool = False
     prevention: tuple = ()                              # damage shields (see prevention.py)
     block_max_power: int = 0
+    double_life: bool = False                           # "If you would gain life, you gain twice that much life instead."
+    permanent_keywords: tuple = ()                      # ((other, "indestructible"),): Avacyn, Privileged Position
+    player_shroud: bool = False                         # True Believer: "You have shroud."
+    target_tax: int = 0                                 # "Spells your opponents cast that target ~ cost {2} more"
     aura_becomes: tuple = ()                            # ("U", "Frog", 1, 1): Frogify (see becomes.py)
     counter_bonus: tuple = ()                           # (("plus_one" | "double", "creature" | "permanent" | "self"), ...)
     blocked_only_by: tuple = ()                         # "~ can't be blocked except by creatures with flying or reach"

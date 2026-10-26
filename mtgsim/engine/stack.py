@@ -143,6 +143,9 @@ class StackMixin:
                     continue
                 if trig.filter.startswith("count>=") and len(self.attackers) < int(trig.filter[7:]):
                     continue
+                if trig.filter.startswith("ctx_not:") and isinstance(context, Permanent) and \
+                        (trig.filter[8:] in context.card.subtypes or trig.filter[8:] in context.card.colors):
+                    continue                    # "a non-Wall creature", "a nonblack creature"
                 if trig.filter.startswith("ally_sub:") and not (isinstance(subject, Permanent) and
                                                                 (trig.filter[9:] in subject.card.subtypes or subject.card.changeling)):
                     continue
@@ -182,11 +185,17 @@ class StackMixin:
             for equipment in source.equipment:
                 for trig in equipment.card.host_triggers:
                     if trig.event == event:
-                        self.queue_trigger(equipment.controller, trig.effects, source, equipment.card.name, context)
+                        effects = trig.effects
+                        if isinstance(subject, int) and any(e.data.get("that_much") for e in effects):
+                            effects = [dataclasses.replace(e, amount=subject) if e.data.get("that_much") else e for e in effects]
+                        self.queue_trigger(equipment.controller, effects, source, equipment.card.name, context)
             for aura in list(source.auras):
                 for trig in aura.card.host_triggers:
                     if trig.event == event:
-                        self.queue_trigger(aura.controller, trig.effects, source, aura.card.name, context)
+                        effects = trig.effects
+                        if isinstance(subject, int) and any(e.data.get("that_much") for e in effects):
+                            effects = [dataclasses.replace(e, amount=subject) if e.data.get("that_much") else e for e in effects]
+                        self.queue_trigger(aura.controller, effects, source, aura.card.name, context)
         if source is None:      # abilities that trigger from the graveyard (Bloodghast)
             for card in list(p.graveyard):
                 for trig in card.gy_triggers:

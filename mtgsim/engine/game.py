@@ -69,6 +69,8 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
 
     def change_life(self, player, delta, cause):
         before = player.life
+        if delta > 0:                                   # Rhox Faithmender: "you gain twice that much life instead"
+            delta <<= sum(x.card.double_life for x in player.battlefield)
         player.life += delta
         if delta > 0:
             player.life_gained_turn += delta

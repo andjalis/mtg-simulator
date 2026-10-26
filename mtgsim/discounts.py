@@ -20,6 +20,7 @@ _CONDS = [
     (r"there are four or more card types among cards in your graveyard", "delirium"),
     (r"it targets an? (attacking|blocking|tapped) creature", lambda m: f"targets:{m[1]}"),
     (r"it targets a creature with (flying)", lambda m: f"targets:{m[1]}"),
+    (r"it targets an? (white|blue|black|red|green) (?:creature|permanent)", lambda m: f"targets:color:{m[1]}"),
     (r"it targets an? ([A-Z][a-z]+)", lambda m: f"targets:sub:{m[1]}"),
 ]
 
@@ -73,6 +74,8 @@ def holds(game, p, card, key: str) -> bool:
 def _target_fits(game, t, what: str) -> bool:
     if what.startswith("sub:"):
         return what[4:] in t.card.subtypes
+    if what.startswith("color:"):
+        return {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}[what[6:]] in t.card.colors
     return (what == "attacking" and t in game.attackers) or \
         (what == "blocking" and any(t in bl for bl in game.blocks.values())) or \
         (what == "tapped" and t.tapped) or (what == "flying" and t.has("flying"))

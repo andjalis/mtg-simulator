@@ -24,7 +24,8 @@ class TargetsMixin:
                     and not protected_from(obj, source if source is not None else self.target_source))
         if isinstance(obj, StackItem):
             return obj in self.stack
-        return isinstance(obj, Player) and not (obj is not by and any(x.card.player_hexproof for x in obj.battlefield))
+        return isinstance(obj, Player) and not (obj is not by and any(x.card.player_hexproof for x in obj.battlefield)) and \
+            not any(x.card.player_shroud for x in obj.battlefield)
 
     def passes_filter(self, eff: Effect, perm: Permanent, by: Player) -> bool:
         f = eff.filter

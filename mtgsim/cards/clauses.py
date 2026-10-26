@@ -169,6 +169,7 @@ _SUBS = [
 _TRIGGERS = [
     (r"When ~ becomes level (\d+), (.+)", ("class_level",)),
     (r"Whenever you proliferate, (.+)", ("proliferate",)),
+    (r"At the beginning of the upkeep of enchanted creature's controller, (.+)", ("opp_upkeep",)),     # hostile Auras
     (r"Whenever you exert a creature, (.+)", ("exert",)),
     (r"Whenever an opponent searches their library, (.+)", ("opp_searches",)),
     (r"When(?:ever)? ~ enters or attacks, (.+)", ("etb", "attacks")),
@@ -205,6 +206,8 @@ _TRIGGERS = [
     (r"When ~ becomes monstrous, (.+)", ("monstrous",)),
     (r"Whenever one or more \+1/\+1 counters are put on ~, (.+)", ("p1_added",)),
     (r"Whenever (?:equipped|enchanted) creature deals combat damage to a player, (.+)", ("host:combat_damage_player",)),
+    (r"Whenever (?:equipped|enchanted) creature deals damage, (.+)", ("host:deals_damage",)),
+    (r"Whenever (?:equipped|enchanted) creature deals damage to an opponent, (.+)", ("host:deals_damage_opp",)),
     (r"Whenever a creature dealt damage by ~ this turn dies, (.+)", ("damaged_dies",)),
     (r"When(?:ever)? ~ dies, (?:if it was a creature, )?(.+)", ("dies",)),
     (r"Whenever ~ deals combat damage to a player, (.+)", ("combat_damage_player",)),

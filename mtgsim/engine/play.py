@@ -102,6 +102,9 @@ class PlayMixin:
         if not self.valid_action_targets(p, effects, targets, card):
             return False
         cost = self.cost_of(p, card, assist=False)
+        tax = sum(t.card.target_tax for t in targets if isinstance(t, Permanent) and t.controller is not p)
+        if tax:                                     # Boreal Elemental: "spells your opponents cast that target ~"
+            cost = dict(cost, generic=cost.get("generic", 0) + tax)
         convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
         assisted = card.improvise or card.delve
         x = 0

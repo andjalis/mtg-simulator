@@ -156,6 +156,8 @@ class CostsMixin:
         if kind == "stat":
             who = prev if spec[1] == "prev" else src
             if spec[2] == "mana value":
+                if spec[1] == "prev" and isinstance(prev, Permanent):
+                    return prev.card.cmc              # "you gain life equal to its mana value"
                 return item.card.cmc if spec[1] == "self" and item is not None and item.card else 0
             return max(0, getattr(who, spec[2], 0)) if isinstance(who, Permanent) else 0
         if kind == "greatest":
@@ -342,6 +344,10 @@ class CostsMixin:
             n = max((x.card.cmc for x in p.battlefield if "Elemental" in x.card.subtypes), default=0)
         elif card.cost_reduction == "power":
             n = sum(max(0, c.power) for c in p.creatures)
+        elif card.cost_reduction == "greatest_power":
+            n = max((c.power for c in p.creatures), default=0)
+        elif card.cost_reduction.startswith("devotion:"):
+            n = sum(x.card.mana_cost.get(card.cost_reduction[9:], 0) for x in p.battlefield)
         elif card.cost_reduction.startswith("gy:"):
             n = sum(copies.fits(c, _gy_desc(card.cost_reduction[3:])) for c in p.graveyard)
         elif card.cost_reduction.startswith("affinity:"):

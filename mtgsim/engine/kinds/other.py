@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from ...cards import Activated, make_token
+from ...cards import Activated, Effect, make_token
 from ..policy import choose_earthbend
 from ..state import FIREBEND_MANA, Permanent, StackItem, pool_mana
 from . import kind
@@ -187,6 +187,13 @@ def earthbend(game, p, eff, **_):
 def end_of_combat(game, p, item, prev, eff, **_):
     """A delayed "... at end of combat": the effects resolve then, with "that creature" kept."""
     game.end_combat_effects.append((p, eff.data["effects"], item.source if item is not None else None, prev))
+
+
+@kind("destroy_at_end_of_combat")
+def destroy_at_end_of_combat(game, p, item, **_):
+    """The Basilisks: "destroy that creature at end of combat" (the blocker or the creature it blocked)."""
+    if item is not None and isinstance(item.context, Permanent):
+        game.end_combat_effects.append((p, [Effect("destroy", target="trigger_subject")], item.source, item.context))
 
 
 @kind("extra_land")

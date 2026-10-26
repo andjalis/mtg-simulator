@@ -96,6 +96,10 @@ def parse_line(line: str, st) -> bool:
         if entry is not None:
             st.extra["team_statics"] = st.extra.get("team_statics", ()) + (entry,)
             return True
+        entries = _plural_types(line)
+        if entries:                                # "Attacking Vampires you control have ...", "Orcs and Goblins ..."
+            st.extra["team_statics"] = st.extra.get("team_statics", ()) + entries
+            return True
         m = re.fullmatch(rf"Each creature you control with a \+1/\+1 counter on it has ((?:{_KW})(?:(?:, |,? and )(?:{_KW}))*)\.",
                          line)
         if m:                                      # the wording of "Creatures you control with +1/+1 counters on them"
@@ -331,6 +335,22 @@ def condition(perm, cond: str):
     if cond == "delirium":
         return len({t for c in p.graveyard for t in c.types}) >= 4
     return None
+
+
+def _plural_types(line: str):
+    """Team statics that name creature types in the plural, one entry per type, or None."""
+    m = re.fullmatch(r"(Other )?((?:[A-Za-z]+ )*?)([A-Z][a-z]+(?:s|ves))(?: and ([A-Z][a-z]+(?:s|ves)))?( you control| your "
+                     r"opponents control)? (get|have) (.+)\.", line)
+    if not m or m[3] in _NOT_SUBTYPES or m[4] in _NOT_SUBTYPES:
+        return None
+    out = ()
+    for plural in filter(None, (m[3], m[4])):
+        entry = _parse(f"{m[1] or ''}{m[2] or ''}{_singular_sub(plural)} creatures"
+                       f"{m[5] or ''} {m[6]} {m[7]}.")
+        if entry is None:
+            return None
+        out += (entry,)
+    return out
 
 
 def _parse(line: str):

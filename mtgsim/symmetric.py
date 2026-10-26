@@ -13,7 +13,8 @@ sacrifices their least valuable permanents of the kind.
 """
 from __future__ import annotations
 
-KINDS = {"each_sac", "gy_shuffle", "skip_untap_tapped", "tap_all_opp", "each_draw", "poison", "untap_lands", "wheel"}
+KINDS = {"each_sac", "gy_shuffle", "skip_untap_tapped", "tap_all_opp", "each_draw", "poison", "untap_lands", "wheel",
+         "tap_all_other", "discard_hand"}
 _N = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3}
 _NUM = {"two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7}
 
@@ -76,6 +77,14 @@ def resolve(game, p, eff, target, item):
             pl.library.shuffle(game.rng)
         for pl in game.players:
             game.draw(pl, eff.amount)
+    elif eff.kind == "tap_all_other":            # Thundermare: every creature but the source
+        src = item.source if item is not None else None
+        game.tapped_now = [x for pl in game.players for x in pl.creatures if x is not src and not x.tapped]
+        for x in game.tapped_now:
+            x.tapped = True
+    elif eff.kind == "discard_hand":
+        for card in list(p.hand):
+            game.discard_card(p, card)
     elif eff.kind == "each_draw":
         for pl in game.players:
             game.draw(pl, eff.amount)

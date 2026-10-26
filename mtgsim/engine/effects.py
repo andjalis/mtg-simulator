@@ -42,6 +42,10 @@ class EffectsMixin:
                 self.fire(source.controller, "damages_player", source, context=target)
             elif combat and isinstance(target, Permanent) and target.is_creature:
                 self.fire(source.controller, "combat_damage_creature", source, context=target)
+        if isinstance(source, Permanent) and (source.auras or source.equipment):    # Spirit Link, Curiosity
+            self.fire(source.controller, "deals_damage", source, context=target, subject=amount)
+            if isinstance(target, Player) and target is not source.controller:
+                self.fire(source.controller, "deals_damage_opp", source, context=target, subject=amount)
         if isinstance(target, Permanent) and target in target.controller.battlefield:
             self.fire(target.controller, "dealt_damage", target, context=source, subject=amount)
         if isinstance(target, Player):

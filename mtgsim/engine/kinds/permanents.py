@@ -125,6 +125,7 @@ def return_own(game, p, eff, item, **_):
     kind = eff.data["kind"]
     land = kind == "land"
     pool = [x for x in p.battlefield if (x.card.is_land if land else x.is_creature or kind == "permanent")
+            and not (eff.data.get("other") and x is src)
             and (not eff.data.get("desc") or statics.desc_matches(x, eff.data["desc"]))]
     if not pool:
         return

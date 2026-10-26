@@ -323,8 +323,20 @@ def _face_land_and_mana_lines(st, line):
             extra["counter_bonus"] = extra.get("counter_bonus", ()) + (("double" if "twice" in m[2] else "plus_one", who),)
             approximations.append("+1/+1 counters a permanent enters with don't get the extra counters")
             return None
+        m = re.fullmatch(r"Whenever ~ blocks or becomes blocked by an? non-?(Wall|white|blue|black|red|green) creature, destroy "
+                         r"that creature at end of combat\.", line)
+        if m:                                   # the Basilisks, Gorgon Recluse
+            what = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}.get(m[1], m[1])
+            for event in ("blocks", "blocked_by"):
+                triggers.append(Trigger(event, [Effect("destroy_at_end_of_combat")], filter=f"ctx_not:{what}"))
+            return None
+        m = re.fullmatch(r"(Other p|P)ermanents you control have (indestructible|hexproof|shroud)\.", line)
+        if m:
+            extra["permanent_keywords"] = extra.get("permanent_keywords", ()) + ((m[1] == "Other p", m[2]),)
+            return None
         flag = {"Each player can't cast more than one spell each turn.": "one_spell_each_turn",
-                "You have hexproof.": "player_hexproof",
+                "You have hexproof.": "player_hexproof", "You have shroud.": "player_shroud",
+                "If you would gain life, you gain twice that much life instead.": "double_life",
                 "Creatures your opponents control enter tapped.": "opp_creatures_enter_tapped"}.get(line)
         if flag:
             extra[flag] = True
@@ -605,6 +617,17 @@ def _face_cost_and_static_lines(st, line):
         if re.fullmatch(r"~ costs \{X\} less to cast, where X is the total power of creatures you control\.", line):
             extra["cost_reduction"] = "power"
             return None
+        if re.fullmatch(r"~ costs \{X\} less to cast, where X is the greatest power among creatures you control\.", line):
+            extra["cost_reduction"] = "greatest_power"         # Ghalta, the Great Henge
+            return None
+        m = re.fullmatch(r"~ costs \{X\} less to cast, where X is your devotion to (white|blue|black|red|green)\.", line)
+        if m:                                       # Marshmist Titan, Daybreak Chimera
+            extra["cost_reduction"] = "devotion:" + {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}[m[1]]
+            return None
+        m = re.fullmatch(r"Spells your opponents cast that target ~ cost \{(\d+)\} more to cast\.", line)
+        if m:                                       # Boreal Elemental, Sphinx of New Prahv
+            extra["target_tax"] = int(m[1])
+            return None
         m = re.fullmatch(r"Affinity for (\w+?)s", line)
         if m:
             extra["cost_reduction"] = "affinity:" + m[1]
@@ -812,7 +835,8 @@ def _face_cost_and_static_lines(st, line):
             extra["umbra_armor"] = True
             return None
         m = re.fullmatch(r"~'s power and toughness are each equal to the number of (cards in your hand|cards in your "
-                         r"graveyard|creatures you control|lands you control|artifacts you control)\.", line) or \
+                         r"graveyard|creature cards in your graveyard|creatures you control|lands you control|artifacts you "
+                         r"control)\.", line) or \
             re.fullmatch(r"~ gets \+1/\+1 for each (card in your hand|creature card in your graveyard|card in your graveyard)\.", line)
         if m:
             extra["pt_cda"] = m[1].replace("card in", "cards in").replace("creature cards", "creature cards")

@@ -45,6 +45,12 @@ EFFECT_PATTERNS = [
 
 def parse_aura_line(line: str, extra: dict) -> bool:
     """"Enchanted creature loses all abilities and is a blue Frog creature with base power and toughness 1/1." """
+    m = re.fullmatch(r"Enchanted creature has base power and toughness (\d+)/(\d+)\.", line)
+    if m:                                       # Illusory Wrappings, Reduce in Stature
+        extra["aura_becomes"] = ("", "", int(m[1]), int(m[2]))
+        if int(m[1]) + int(m[2]) <= 4:
+            extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"shrinks"}
+        return True
     m = re.fullmatch(rf"Enchanted creature {_FROG}\.", line)
     if not m:
         return False
@@ -56,6 +62,8 @@ def parse_aura_line(line: str, extra: dict) -> bool:
 
 def _become(game, target, color, sub, pt, *, source=None, until_eot=False):
     game.add_continuous_effect(target, "set_base", power=pt[0], toughness=pt[1], source=source, until_eot=until_eot)
+    if not color:
+        return
     game.add_continuous_effect(target, "set_colors", colors=frozenset({color}), source=source, until_eot=until_eot)
     game.add_continuous_effect(target, "set_subtypes", subtypes=frozenset({sub}), source=source, until_eot=until_eot)
 
