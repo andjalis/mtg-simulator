@@ -3,8 +3,8 @@
  "totals": {
   "decks": 40,
   "copies": 2400,
-  "full_copies": 1996,
-  "partial_copies": 284
+  "full_copies": 2010,
+  "partial_copies": 270
  },
  "missing_cards": [],
  "weighting": "score = sum of main-deck copies x (rank 1-7 + metagame share % / 5)",
@@ -201,20 +201,6 @@
    "blocked_by": []
   },
   {
-   "line": "distribute x +1/+1 counters among any number of target creatures you control.",
-   "score": 24.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Elusive Otter"
-   ],
-   "families": [
-    "counters"
-   ],
-   "blocked_by": []
-  },
-  {
    "line": "return target spell or permanent to its owner's hand.",
    "score": 24.0,
    "copies": 4,
@@ -335,20 +321,6 @@
    "blocked_by": []
   },
   {
-   "line": "if you do, return this card from your graveyard to the battlefield.",
-   "score": 20.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Forsaken Miner"
-   ],
-   "families": [
-    "graveyard"
-   ],
-   "blocked_by": []
-  },
-  {
    "line": "put a +1/+1 counter on target creature an opponent controls.",
    "score": 20.0,
    "copies": 4,
@@ -432,20 +404,6 @@
    ],
    "families": [
     "triggered (whenever/when)"
-   ],
-   "blocked_by": []
-  },
-  {
-   "line": "you may return this card from your graveyard to the battlefield.",
-   "score": 20.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Bloodghast"
-   ],
-   "families": [
-    "graveyard"
    ],
    "blocked_by": []
   },
@@ -994,18 +952,6 @@
    "families": [
     "triggered (whenever/when)"
    ],
-   "blocked_by": []
-  },
-  {
-   "line": "if kicked: it deals 5 damage to that creature instead.",
-   "score": 12.0,
-   "copies": 2,
-   "unlock_copies": 2,
-   "decks": 1,
-   "cards": [
-    "Firebending Lesson"
-   ],
-   "families": [],
    "blocked_by": []
   },
   {
