@@ -4,13 +4,14 @@
     python3 scripts/parse_diff.py dump head.tsv                      # this checkout's parser
     python3 scripts/parse_diff.py compare base.tsv head.tsv
 
-`dump` writes one line per card: its database key and repr(CardDef), or ERR and the exception.
+`dump` writes one line per card: its database key and every CardDef field, or ERR and the exception.
 `compare` lists the cards whose parse changed (also into $GITHUB_STEP_SUMMARY when set) and exits 1
 only when a card that parsed before now raises. Changed parses are expected in card rounds; the
 list is there so a reviewer can see which cards a change touched.
 """
 from __future__ import annotations
 
+import dataclasses
 import json
 import os
 import sqlite3
@@ -23,6 +24,20 @@ DB = ROOT / "mtgsim" / "data" / "cards.sqlite3"
 SHOWN = 100
 
 
+def describe(value) -> str:
+    """Every field, recursively, with sets sorted: CardDef's own repr is only its name."""
+    if dataclasses.is_dataclass(value) and not isinstance(value, type):
+        inner = ", ".join(f"{f.name}={describe(getattr(value, f.name))}" for f in dataclasses.fields(value))
+        return f"{type(value).__name__}({inner})"
+    if isinstance(value, dict):
+        return "{" + ", ".join(f"{describe(k)}: {describe(v)}" for k, v in value.items()) + "}"
+    if isinstance(value, (list, tuple)):
+        return "[" + ", ".join(describe(v) for v in value) + "]"
+    if isinstance(value, (set, frozenset)):
+        return "{" + ", ".join(sorted(describe(v) for v in value)) + "}"
+    return repr(value)
+
+
 def dump(out: str) -> None:
     from mtgsim import cards
     print(f"parsing with {Path(cards.__file__).parent.parent}", file=sys.stderr)
@@ -30,7 +45,7 @@ def dump(out: str) -> None:
     with open(out, "w") as f:
         for key, data in db.execute("select key, data from cards order by key"):
             try:
-                r = repr(cards.card_from_scryfall(json.loads(data)))
+                r = describe(cards.card_from_scryfall(json.loads(data)))
             except Exception as e:
                 r = "ERR " + repr(e)
             f.write(f"{key}\t{r}\n")
