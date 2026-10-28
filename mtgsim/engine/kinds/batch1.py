@@ -79,6 +79,19 @@ def damage_group(game, p, eff, opp, cause, item, **_):
         game.deal_damage(c, eff.amount, by=p, cause=cause, source=src)
 
 
+@kind("host_lose", "host_damage", "host_shrink")
+def host_effects(game, p, eff, item, cause, **_):
+    host = item.context if item is not None else None
+    if not isinstance(host, Permanent) or host not in host.controller.battlefield:
+        return
+    if eff.kind == "host_lose":
+        game.change_life(host.controller, -eff.amount, cause)
+    elif eff.kind == "host_damage":
+        game.deal_damage(host.controller, eff.amount, by=p, cause=cause, source=item.source)
+    else:
+        host.counters["-1/-1"] = host.m1 + 1
+
+
 @kind("peek_hand")
 def peek_hand(game, p, target, opp, **_):
     game.log(f"looks at {target or opp}'s hand", p)

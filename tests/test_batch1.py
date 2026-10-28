@@ -3,6 +3,7 @@ import random
 import unittest
 
 from mtgsim.cards import _parse_effects
+from mtgsim.auras import attach
 from mtgsim.batch1_templates import skips_draw
 from mtgsim.engine import Game, Player, StackItem, can_block
 from mtgsim.residual_templates import activation_blocked
@@ -289,6 +290,37 @@ class Batch1(unittest.TestCase):
     def test_aura_grants_shroud(self):
         cloak = card("Test Cloak", "{W}", "Enchantment — Aura", "Enchant creature\nEnchanted creature has shroud.")
         self.assertFalse(cloak.unsupported)
+
+    def test_creatures_with_counters_have_trample(self):
+        self.put(card("Test Ceratok", "{2}{G}", "Creature — Rhino",
+                      "Each creature you control with a +1/+1 counter on it has trample.", 3, 3))
+        plain, grown = self.put(BEAR), self.put(BEAR)
+        grown.counters["+1/+1"] = 1
+        self.assertTrue(grown.has("trample"))
+        self.assertFalse(plain.has("trample"))
+
+    def test_attacker_sacrifices_itself_at_end_of_combat(self):
+        colossus = self.put(card("Test Colossus", "{4}", "Artifact Creature — Golem",
+                                 "When ~ attacks, sacrifice it at end of combat.", 7, 4))
+        self.a.ai.attack = (colossus,)
+        self.g.combat(self.a, self.b)
+        self.g.end_combat(self.a)
+        self.g.settle()
+        self.assertEqual(self.b.life, 13)
+        self.assertNotIn(colossus, self.a.battlefield)
+
+    def test_aura_upkeep_life_loss_for_hosts_controller(self):
+        lashes = card("Test Lashes", "{2}{B}", "Enchantment — Aura", "Enchant creature\n"
+                      "At the beginning of the upkeep of enchanted creature's controller, that player loses 1 life.")
+        host = self.put(BEAR, self.b)
+        aura = self.g.enter_battlefield(self.a, lashes)
+        attach(self.g, aura, host)
+        self.g.begin_upkeep(self.b)
+        self.g.run_priority()
+        self.assertEqual(self.b.life, 19)
+        self.g.begin_upkeep(self.a)
+        self.g.run_priority()
+        self.assertEqual(self.b.life, 19)
 
 
 if __name__ == '__main__':

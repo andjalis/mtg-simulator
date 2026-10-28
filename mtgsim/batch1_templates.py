@@ -110,6 +110,21 @@ def parse_line(line, st):
         st.extra["pt_per"] = "attached:aura"
         st.extra["pt_scale"] = (int(m[1]), int(m[2]))
         return True
+    m = re.fullmatch(r"(?:Each|All) (creature|creatures) you control with (.+) (?:has|have) ([a-z ,]+)\.", line)
+    if m:
+        from .permanent_templates import selector, keywords
+        spec = selector("creatures you control with " + m[2], plural=True)
+        kws = keywords(m[3])
+        if spec is not None and kws and 'keyword' not in spec:
+            st.extra['static_keyword_grants'] = st.extra.get('static_keyword_grants', ()) + ((spec, tuple(kws)),)
+            return True
+    m = re.fullmatch(r"At the beginning of the upkeep of enchanted creature's controller, (?:that player loses (\d+) life|~ deals (\d+) damage to that player"
+                     r"|put a -1/-1 counter on that creature)\.", line)
+    if m:
+        from .cards import Effect, Trigger
+        eff = Effect('host_lose', int(m[1])) if m[1] else Effect('host_damage', int(m[2])) if m[2] else Effect('host_shrink')
+        st.triggers.append(Trigger('host_upkeep', [eff]))
+        return True
     if line == "Activated abilities of artifacts can't be activated.":
         st.extra.setdefault('advanced_rules', {})['artifact_activation_lock'] = True
         return True
@@ -132,6 +147,17 @@ def player_targetable(game, player, by):
 
 def mark_exile_dying(game, creature):
     creature.exile_if_dies = game.turn
+
+
+def on_upkeep(game, active):
+    """Auras that act at the upkeep of the enchanted creature's controller."""
+    for player in game.players:
+        for src in list(player.battlefield):
+            host = src.aura_host
+            if host is not None and host.controller is active:
+                for trig in src.triggers:
+                    if trig.event == 'host_upkeep':
+                        game.queue_trigger(player, trig.effects, src, src.card.name, context=host)
 
 
 def powerstone():
