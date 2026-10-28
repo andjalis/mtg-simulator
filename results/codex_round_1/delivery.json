@@ -6,5 +6,15 @@
   "ci": "not_verified",
   "merged": false,
   "blocker": "Environment HTTP network policy does not allow api.github.com; gh API calls return Forbidden. Git HTTPS access is available.",
-  "required_next_step": "Allow api.github.com, rebase on latest main, create the round PR, wait for green CI, then merge. Do not push directly to main or claude/*."
+  "required_next_step": "Allow api.github.com, rebase on latest main, create the round PR, wait for green CI, then merge. Do not push directly to main or claude/*.",
+  "network_access_draft": {
+    "status": "saved",
+    "added_domain": "api.github.com",
+    "requires_publish": true
+  },
+  "pr_creation_attempt": {
+    "command": "gh pr create --repo andjalis/mtg-simulator --base main --head codex/cards-1",
+    "result": "Post https://api.github.com/graphql: Forbidden",
+    "pull_request_created": false
+  }
 }
