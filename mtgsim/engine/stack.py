@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import auras, copies, milling
+from .. import auras, copies, kicker, milling
 from ..cards import CardDef, Effect
 from .. import modal, rules_events
 from ..identity import CardInstance, CardZone
@@ -190,7 +190,7 @@ class StackMixin:
         p = item.controller
         if item.is_spell and item.card.is_permanent:
             self.log(f"{item.card.name} resolves", p)
-            base, kind, _ = self._origin(item.card)
+            base, kind, alt = self._origin(item.card)
             if kind.startswith(("spent_", "evoke_")):
                 self._spent = kind.split("_")[1]
             self._aura_host = None
@@ -200,7 +200,8 @@ class StackMixin:
                     self.log(f"{base.name} has nothing to enchant", p)
                     p.graveyard.append(base)
                     return
-            perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
+            perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0),
+                                          counters=kicker.entry_counters(kind, alt))
             self._aura_host = None
             self._spent = ""
             if kind == "disguise":

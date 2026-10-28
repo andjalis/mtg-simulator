@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import graveyard, milling, modal, returns
+from .. import graveyard, kicker, milling, modal, returns
 from .. import auras as _auras, copies as _copies, counting as _counting
 from .model import (
     Activated, AltCost, BASIC_MANA, COLORS, CardDef, Effect, KEYWORDS, NO_MATCH, NUMBERS, Trigger, _num, add_mana,
@@ -263,22 +263,10 @@ def _parse_face(data: dict) -> CardDef:
             if e.kind == "dig":
                 e.data["x_mana"] = True
     if "kicker" in extra:
-        kicked_effects = [dataclasses.replace(e) for e in spell]
-        for k in kicked:
-            m = re.fullmatch(r"it deals (\d+) damage instead\.", k)
-            dmg = [e for e in kicked_effects if e.kind == "damage"]
-            if m and dmg:
-                dmg[0].amount = int(m[1])
-                continue
-            m = re.fullmatch(r"put (\w+) of those cards into your hand instead\.", k)
-            dig = [e for e in kicked_effects if e.kind == "dig"]
-            if m and dig:
-                kicked_effects[kicked_effects.index(dig[0])] = dataclasses.replace(dig[0], amount2=_num(m[1]))
-                continue
-            effs, bad = _parse_effects(k)
-            kicked_effects += effs
-            unsupported += [f"if kicked: {b}" for b in bad]
-        alt_costs.append(AltCost("kicker", add_mana(cost, extra.pop("kicker")), effects=kicked_effects))
+        mode, bad = kicker.build_mode(cost, extra.pop("kicker"), spell, kicked,
+                                      permanent=bool(types & {"Creature", "Artifact", "Enchantment", "Planeswalker", "Battle"}))
+        alt_costs.append(mode)
+        unsupported += bad
     elif kicked:
         unsupported += [f"if kicked: {k}" for k in kicked]
     if gate is not None:
@@ -411,6 +399,8 @@ def _face_special_lines(st, line):
                 return None
         kicked += re.findall(r"If ~ was kicked, (.+?\.)", line)
         line = re.sub(r"\s*If ~ was kicked, .+?\.", "", line).strip()
+        if not line:
+            return None
         lv = re.fullmatch(r"((?:\{[WUBRGC0-9/]+\})+): Level (\d+)", line)
         if lv:
             n = int(lv[2])
