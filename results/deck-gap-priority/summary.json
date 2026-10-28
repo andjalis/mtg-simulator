@@ -1,0 +1,2028 @@
+{
+ "measured_on": "2026-10-28",
+ "totals": {
+  "decks": 40,
+  "copies": 2400,
+  "full_copies": 1996,
+  "partial_copies": 284
+ },
+ "missing_cards": [],
+ "weighting": "score = sum of main-deck copies x (rank 1-7 + metagame share % / 5)",
+ "candidates": [
+  {
+   "line": "the first non-lemur creature spell with flying you cast during each of your turns costs {1} less to cast.",
+   "score": 54.6,
+   "copies": 8,
+   "unlock_copies": 8,
+   "decks": 2,
+   "cards": [
+    "Momo, Friendly Flier"
+   ],
+   "families": [
+    "cost reduction"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "[+1]: you get an emblem with \"ninjas you control get +1/+1.\"",
+   "score": 36.2,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Kaito, Bane of Nightmares"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "during your turn, as long as ~ has one or more loyalty counters on him, he's a 3/4 ninja creature and has hexproof.",
+   "score": 36.2,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Kaito, Bane of Nightmares"
+   ],
+   "families": [
+    "counters"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "ninjutsu {1}{u}{b}",
+   "score": 36.2,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Kaito, Bane of Nightmares"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "i \u2014 if it's a permanent card, put it into your hand.",
+   "score": 35.2,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Esper Origins"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "i \u2014 reveal the top card of your library.",
+   "score": 35.2,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Esper Origins"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "if ~ was cast from a graveyard, exile it, then put it onto the battlefield transformed under its owner's control with a finality counter on it.",
+   "score": 35.2,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Esper Origins"
+   ],
+   "families": [
+    "graveyard",
+    "counters",
+    "exile"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "if x is three or more, that creature gains lifelink until end of turn.",
+   "score": 35.1,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Obsessive Pursuit"
+   ],
+   "families": [
+    "X costs"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "put x +1/+1 counters on target attacking creature, where x is the number of permanents you've sacrificed this turn.",
+   "score": 35.1,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Obsessive Pursuit"
+   ],
+   "families": [
+    "counters",
+    "X costs"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "if you do, create a treasure token.",
+   "score": 34.6,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Sarkhan, Dragon Ascendant"
+   ],
+   "families": [
+    "tokens"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "until end of turn, ~ becomes a dragon in addition to his other types and gains flying.",
+   "score": 34.6,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Sarkhan, Dragon Ascendant"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "you may behold a dragon.",
+   "score": 34.6,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Sarkhan, Dragon Ascendant"
+   ],
+   "families": [
+    "set: behold"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "{2}, {t}, remove a charge counter from ~: draw a card. then if there are no charge counters on ~, create a treasure token and a 1/1 colorless pilot creature token with \"~ crews vehicles as though its power were 2 greater.\"",
+   "score": 32.0,
+   "copies": 8,
+   "unlock_copies": 8,
+   "decks": 2,
+   "cards": [
+    "Reckoner Bankbuster"
+   ],
+   "families": [
+    "tokens",
+    "counters",
+    "activated abilities"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "you may cast this card from your graveyard using its blitz ability.",
+   "score": 24.0,
+   "copies": 6,
+   "unlock_copies": 6,
+   "decks": 2,
+   "cards": [
+    "Tenacious Underdog"
+   ],
+   "families": [
+    "graveyard"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "distribute x +1/+1 counters among any number of target creatures you control.",
+   "score": 24.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Elusive Otter"
+   ],
+   "families": [
+    "counters"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "return target spell or permanent to its owner's hand.",
+   "score": 24.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Jeskai Revelation"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "then destroy all other creatures if its power is exactly 20.",
+   "score": 24.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Amalia Benavides Aguirre"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "{t}: add {r}{r}. spend this mana only to cast instant and sorcery spells.",
+   "score": 24.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Tablet of Discovery"
+   ],
+   "families": [
+    "mana restrictions",
+    "activated abilities"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "solved \u2014 sacrifice this case: creature cards in your graveyard gain \"you may cast this card from your graveyard\" until end of turn.",
+   "score": 24.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Case of the Uneaten Feast"
+   ],
+   "families": [
+    "graveyard",
+    "sacrifice",
+    "set: case"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "to solve \u2014 you've gained 5 or more life this turn.",
+   "score": 24.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Case of the Uneaten Feast"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "{5}: if ~ isn't a creature, it becomes a 2/4 wizard creature with \"whenever you cast an instant or sorcery spell, ~ gets +1/+0 until end of turn.\" it's still a land.",
+   "score": 24.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Great Hall of the Biblioplex"
+   ],
+   "families": [
+    "activated abilities"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "until end of turn, you may activate loyalty abilities of jace planeswalkers you control on any player's turn any time you could cast an instant.",
+   "score": 21.0,
+   "copies": 3,
+   "unlock_copies": 3,
+   "decks": 1,
+   "cards": [
+    "Jace's Machinations"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "discard a card: ~ gains indestructible until end of turn. tap it.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Iron-Shield Elf"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "exile target creature you control, then return that card to the battlefield under its owner's control with a +1/+1 counter on it.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Daydream"
+   ],
+   "families": [
+    "counters",
+    "exile"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "if you do, return this card from your graveyard to the battlefield.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Forsaken Miner"
+   ],
+   "families": [
+    "graveyard"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "put a +1/+1 counter on target creature an opponent controls.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Sunset Saboteur"
+   ],
+   "families": [
+    "counters"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "put that many +1/+1 counters on ~.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Marauding Mako"
+   ],
+   "families": [
+    "counters"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "search your library for a card, put it into your hand, shuffle, then discard a card at random.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Cool but Rude"
+   ],
+   "families": [
+    "library search"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "whenever one or more opponents are dealt noncombat damage, creatures you control get +1/+0 until end of turn.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Master of Barbs"
+   ],
+   "families": [
+    "+1/+1 static (anthems)",
+    "triggered (whenever/when)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "whenever one or more permanent cards are put into your graveyard from anywhere while ~ has a -1/-1 counter on it, remove a -1/-1 counter from ~.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Moonshadow"
+   ],
+   "families": [
+    "graveyard",
+    "counters",
+    "triggered (whenever/when)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "whenever ~ attacks while you control a creature with power 4 or greater, ~ gets +2/+2 until end of turn.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Nighthowl Pursuer"
+   ],
+   "families": [
+    "triggered (whenever/when)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "you may return this card from your graveyard to the battlefield.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Bloodghast"
+   ],
+   "families": [
+    "graveyard"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "{1}{r}: put a +1/+1 counter on ~. activate only if an opponent lost life this turn and only once each turn.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Hired Claw"
+   ],
+   "families": [
+    "counters"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "as long as you have an enduring story, you may pay {0} rather than pay the equip cost of the first equip ability you activate each turn.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "K\u00edli the Resourceful"
+   ],
+   "families": [
+    "equipment"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "choose one of them.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Fireglass Mentor"
+   ],
+   "families": [
+    "modal (choose)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "if you do, return ~ to its owner's hand.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Corpses of the Lost"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "skeletons you control get +1/+0 and have haste.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Corpses of the Lost"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "storied",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "K\u00edli the Resourceful"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "until end of turn, you may play that card.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Fireglass Mentor"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "when one or more equipment become attached to that creature this way, that creature deals damage equal to its power to up to one target creature.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Thorin, Mountain-king"
+   ],
+   "families": [
+    "equipment",
+    "triggered (whenever/when)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "you may pay 1 life.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Corpses of the Lost"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "counter up to one target activated or triggered ability.",
+   "score": 18.1,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Tishana's Tidebinder"
+   ],
+   "families": [
+    "counters"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "if you put a card with mana value less than or equal to the amount of life you gained this turn into your graveyard this way, put that card into your hand.",
+   "score": 18.0,
+   "copies": 3,
+   "unlock_copies": 3,
+   "decks": 1,
+   "cards": [
+    "Enlightened Confidant"
+   ],
+   "families": [
+    "graveyard"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "infusion \u2014 at the beginning of your end step, if you gained life this turn, return up to one target creature card with mana value x or less from your graveyard to the battlefield, where x is the amount of life you gained this turn.",
+   "score": 18.0,
+   "copies": 3,
+   "unlock_copies": 3,
+   "decks": 1,
+   "cards": [
+    "Moseo, Vein's New Dean"
+   ],
+   "families": [
+    "graveyard",
+    "X costs"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "{1}, {t}, discard a card: another target creature or planeswalker you control gains hexproof until end of turn.",
+   "score": 18.0,
+   "copies": 3,
+   "unlock_copies": 3,
+   "decks": 1,
+   "cards": [
+    "Liliana the Faultless"
+   ],
+   "families": [
+    "activated abilities"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "[\u221210]: you get an emblem with \"creatures you control get +2/+2.\"",
+   "score": 18.0,
+   "copies": 3,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Ajani Resolute"
+   ],
+   "families": [
+    "+1/+1 static (anthems)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "[\u22124]: create a 2/2 white cat soldier creature token named ~'s pridemate with \"whenever you gain life, put a +1/+1 counter on ~.\"",
+   "score": 18.0,
+   "copies": 3,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Ajani Resolute"
+   ],
+   "families": [
+    "tokens",
+    "counters"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "channel \u2014 {2}{w}, discard this card: it deals 4 damage to target attacking or blocking creature. this ability costs {1} less to activate for each legendary creature you control.",
+   "score": 16.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 3,
+   "cards": [
+    "Eiganjo, Seat of the Empire"
+   ],
+   "families": [
+    "cost reduction"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "ii \u2014 when you next cast a creature spell this turn, that creature enters with an additional +1/+1 counter on it.",
+   "score": 16.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Kumano Faces Kakkazan"
+   ],
+   "families": [
+    "counters"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "revolt \u2014 destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn.",
+   "score": 16.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Fatal Push"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "target attacking creature connives x, where x is the number of attacking creatures.",
+   "score": 16.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Raffine, Scheming Seer"
+   ],
+   "families": [
+    "X costs"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "{2}, {t}, sacrifice ~: draw a card if you control an artifact. draw a card if you control an enchantment.",
+   "score": 16.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Roadside Reliquary"
+   ],
+   "families": [
+    "sacrifice",
+    "activated abilities"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "cards in graveyards can't be the targets of spells or abilities.",
+   "score": 16.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Dennick, Pious Apprentice"
+   ],
+   "families": [
+    "graveyard",
+    "can't restrictions"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "disturb {2}{w}{u}",
+   "score": 16.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Dennick, Pious Apprentice"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "exile up to one target creature card from a graveyard.",
+   "score": 16.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Corpse Appraiser"
+   ],
+   "families": [
+    "graveyard",
+    "exile"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "if a card is put into exile this way, look at the top three cards of your library, then put one of those cards into your hand and the rest into your graveyard.",
+   "score": 16.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Corpse Appraiser"
+   ],
+   "families": [
+    "graveyard",
+    "exile"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "it's an aura enchantment with enchant forest you control and \"enchanted forest has '{t}: add {g}{g}' and '{1}, {t}, sacrifice ~: create a tapped 4/4 green troll warrior creature token with trample.'\"",
+   "score": 16.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Old-Growth Troll"
+   ],
+   "families": [
+    "tokens",
+    "sacrifice",
+    "auras/enchant"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "return it to the battlefield.",
+   "score": 16.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Old-Growth Troll"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "whenever one or more creature cards are put into graveyards from anywhere, investigate. this ability triggers only once each turn.",
+   "score": 16.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Dennick, Pious Apprentice"
+   ],
+   "families": [
+    "graveyard",
+    "triggered (whenever/when)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "other creatures you control enter with an additional +1/+1 counter on them for each opponent who lost life this turn.",
+   "score": 15.0,
+   "copies": 3,
+   "unlock_copies": 3,
+   "decks": 1,
+   "cards": [
+    "Gev, Scaled Scorch"
+   ],
+   "families": [
+    "counters"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "put a hone counter on each equipment you control.",
+   "score": 15.0,
+   "copies": 3,
+   "unlock_copies": 3,
+   "decks": 1,
+   "cards": [
+    "Dwalin, Weaponmaster"
+   ],
+   "families": [
+    "counters",
+    "equipment"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "up to one target creature gets +1/+1 until end of turn.",
+   "score": 15.0,
+   "copies": 3,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Dissection Practice"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "up to one target creature gets -1/-1 until end of turn.",
+   "score": 15.0,
+   "copies": 3,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Dissection Practice"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "whenever an opponent casts a spell with mana value of the chosen quality, choose one that hasn't been chosen \u2014",
+   "score": 15.0,
+   "copies": 3,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Gollum, Riddle Master"
+   ],
+   "families": [
+    "triggered (whenever/when)",
+    "modal (choose)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "\u2022 draw a card.",
+   "score": 15.0,
+   "copies": 3,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Gollum, Riddle Master"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "\u2022 each opponent loses 2 life and you gain 2 life.",
+   "score": 15.0,
+   "copies": 3,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Gollum, Riddle Master"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "\u2022 put a +1/+1 counter on ~.",
+   "score": 15.0,
+   "copies": 3,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Gollum, Riddle Master"
+   ],
+   "families": [
+    "counters"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "if you cast him, exile up to one target nonland card of each card type from your graveyard.",
+   "score": 13.8,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Uldaros Theorix"
+   ],
+   "families": [
+    "graveyard",
+    "exile"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "target player discards two cards.",
+   "score": 12.0,
+   "copies": 8,
+   "unlock_copies": 8,
+   "decks": 2,
+   "cards": [
+    "Mind Rot"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "channel \u2014 {3}{u}, discard this card: return target artifact, creature, enchantment, or planeswalker to its owner's hand. this ability costs {1} less to activate for each legendary creature you control.",
+   "score": 12.0,
+   "copies": 3,
+   "unlock_copies": 3,
+   "decks": 3,
+   "cards": [
+    "Otawara, Soaring City"
+   ],
+   "families": [
+    "cost reduction"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "coven \u2014 {1}{w}{w}: transform ~. activate only if you control three or more creatures with different powers.",
+   "score": 12.0,
+   "copies": 3,
+   "unlock_copies": 3,
+   "decks": 1,
+   "cards": [
+    "Ambitious Farmhand"
+   ],
+   "families": [
+    "transform"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "when it connives this way, return up to one target spell to its owner's hand.",
+   "score": 12.0,
+   "copies": 3,
+   "unlock_copies": 3,
+   "decks": 1,
+   "cards": [
+    "Obscura Interceptor"
+   ],
+   "families": [
+    "triggered (whenever/when)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "if kicked: it deals 5 damage to that creature instead.",
+   "score": 12.0,
+   "copies": 2,
+   "unlock_copies": 2,
+   "decks": 1,
+   "cards": [
+    "Firebending Lesson"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "if ~ was cast from a graveyard, draw two cards instead.",
+   "score": 12.0,
+   "copies": 2,
+   "unlock_copies": 2,
+   "decks": 1,
+   "cards": [
+    "Plunder the Trollshaws"
+   ],
+   "families": [
+    "graveyard"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "return target creature or vehicle to its owner's hand.",
+   "score": 12.0,
+   "copies": 2,
+   "unlock_copies": 2,
+   "decks": 1,
+   "cards": [
+    "Bounce Off"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "the flashback cost is equal to its mana cost.",
+   "score": 12.0,
+   "copies": 2,
+   "unlock_copies": 2,
+   "decks": 1,
+   "cards": [
+    "Flashback"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "demons you control have menace, lifelink, and haste.",
+   "score": 12.0,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Ardyn, the Usurper"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "if they can't, they lose 2 life and you draw a card.",
+   "score": 12.0,
+   "copies": 3,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Invoke Despair"
+   ],
+   "families": [
+    "can't restrictions"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "look at target opponent's hand.",
+   "score": 12.0,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Deep-Cavern Bat"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "then repeat this process for an enchantment and a planeswalker.",
+   "score": 12.0,
+   "copies": 3,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Invoke Despair"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "when loran enters, destroy up to one target artifact or enchantment.",
+   "score": 12.0,
+   "copies": 3,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Loran of the Third Path"
+   ],
+   "families": [
+    "triggered (whenever/when)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "you may exile a nonland card from it until ~ leaves the battlefield.",
+   "score": 12.0,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Deep-Cavern Bat"
+   ],
+   "families": [
+    "exile"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "{t}: you and target opponent each draw a card.",
+   "score": 12.0,
+   "copies": 3,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Loran of the Third Path"
+   ],
+   "families": [
+    "activated abilities"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "\u2022 conceal \u2014 until end of turn, target creature you control becomes a citizen with base power and toughness 1/1 and gains hexproof.",
+   "score": 12.0,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Secret Identity"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "\u2022 reveal \u2014 until end of turn, target creature you control becomes a hero with base power and toughness 3/4 and gains flying and vigilance.",
+   "score": 12.0,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Secret Identity"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "if there are seven or more cards in your graveyard, exile a card at random from your graveyard.",
+   "score": 10.0,
+   "copies": 2,
+   "unlock_copies": 2,
+   "decks": 1,
+   "cards": [
+    "Tersa Lightshatter"
+   ],
+   "families": [
+    "graveyard",
+    "exile"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "{r}, {t}: target lizard, mouse, otter, or raccoon you control gets +1/+0 and gains haste until end of turn. activate only as a sorcery.",
+   "score": 10.0,
+   "copies": 2,
+   "unlock_copies": 2,
+   "decks": 1,
+   "cards": [
+    "Rockface Village"
+   ],
+   "families": [
+    "activated abilities"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "darkness \u2014 whenever ~ deals damage, you lose that much life. then if your life total is less than or equal to half your starting life total, untap ~ and transform it.",
+   "score": 10.0,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Cecil, Dark Knight"
+   ],
+   "families": [
+    "transform"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "protect \u2014 whenever ~ attacks, other attacking creatures gain indestructible until end of turn.",
+   "score": 10.0,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Cecil, Dark Knight"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "put x +1/+1 counters on him.",
+   "score": 9.1,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Wan Shi Tong, Librarian"
+   ],
+   "families": [
+    "counters"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "then draw half x cards, rounded down.",
+   "score": 9.1,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Wan Shi Tong, Librarian"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "whenever an opponent searches their library, put a +1/+1 counter on ~ and draw a card.",
+   "score": 9.1,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Wan Shi Tong, Librarian"
+   ],
+   "families": [
+    "counters",
+    "triggered (whenever/when)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "{2}, {t}, sacrifice ~: destroy target nonbasic land an opponent controls. that land's controller may search their library for a basic land card, put it onto the battlefield, then shuffle. you may search your library for a basic land card, put it onto the battlefield, then shuffle.",
+   "score": 8.8,
+   "copies": 1,
+   "unlock_copies": 1,
+   "decks": 1,
+   "cards": [
+    "Demolition Field"
+   ],
+   "families": [
+    "sacrifice",
+    "library search",
+    "activated abilities"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "whenever a creature dealt damage by ~ this turn dies, put a +1/+1 counter on ~.",
+   "score": 8.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Sengir Vampire"
+   ],
+   "families": [
+    "counters",
+    "triggered (whenever/when)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "channel \u2014 {3}{b}, discard this card: mill three cards, then return a creature or planeswalker card from your graveyard to your hand. this ability costs {1} less to activate for each legendary creature you control.",
+   "score": 8.0,
+   "copies": 2,
+   "unlock_copies": 2,
+   "decks": 2,
+   "cards": [
+    "Takenuma, Abandoned Mire"
+   ],
+   "families": [
+    "graveyard",
+    "cost reduction"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "counter target artifact or creature spell unless its controller pays {4}.",
+   "score": 8.0,
+   "copies": 2,
+   "unlock_copies": 2,
+   "decks": 1,
+   "cards": [
+    "Scatter Ray"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "destroy target creature with total power and toughness 5 or less.",
+   "score": 8.0,
+   "copies": 2,
+   "unlock_copies": 2,
+   "decks": 1,
+   "cards": [
+    "Cut Down"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "once during each of your turns, you may play a land from your graveyard or cast a permanent spell with mana value 3 or less from your graveyard. if you do, it gains \"when ~ is put into a graveyard from the battlefield, exile it and you gain 2 life.\"",
+   "score": 8.0,
+   "copies": 2,
+   "unlock_copies": 2,
+   "decks": 1,
+   "cards": [
+    "Serra Paragon"
+   ],
+   "families": [
+    "graveyard",
+    "exile"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "whenever ~ attacks or blocks, create a 1/1 colorless spirit creature token.",
+   "score": 8.0,
+   "copies": 2,
+   "unlock_copies": 2,
+   "decks": 1,
+   "cards": [
+    "The Restoration of Eiganjo"
+   ],
+   "families": [
+    "tokens",
+    "triggered (whenever/when)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "if you do, draw a card and create a 1/1 green and white citizen creature token.",
+   "score": 8.0,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Sanctuary Warden"
+   ],
+   "families": [
+    "tokens"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "prototype {1}{w}{w} \u2014 3/3",
+   "score": 8.0,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Steel Seraph"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "target creature you control gains your choice of flying, vigilance, or lifelink until end of turn.",
+   "score": 8.0,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Steel Seraph"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "you may remove a counter from a creature or planeswalker you control.",
+   "score": 8.0,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Sanctuary Warden"
+   ],
+   "families": [
+    "counters"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "\u2022 counter target spell, activated ability, or triggered ability. its controller draws a card.",
+   "score": 8.0,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Ertai Resurrected"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "\u2022 destroy another target creature or planeswalker. its controller draws a card.",
+   "score": 8.0,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Ertai Resurrected"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "\u2022 return target spell or creature to its owner's hand.",
+   "score": 7.0,
+   "copies": 1,
+   "unlock_copies": 1,
+   "decks": 1,
+   "cards": [
+    "Fatehold Charm"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "you may put a card you own from outside the game into your hand.",
+   "score": 6.0,
+   "copies": 1,
+   "unlock_copies": 1,
+   "decks": 1,
+   "cards": [
+    "North Wind Avatar"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "{2}{w}, {t}: whenever you attack this turn, create two 1/1 red warrior creature tokens that are tapped and attacking. sacrifice them at the beginning of the next end step.",
+   "score": 6.0,
+   "copies": 1,
+   "unlock_copies": 1,
+   "decks": 1,
+   "cards": [
+    "Dalkovan Encampment"
+   ],
+   "families": [
+    "tokens",
+    "sacrifice",
+    "activated abilities"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "{u}, {t}: the next spell you cast this turn can't be countered.",
+   "score": 6.0,
+   "copies": 1,
+   "unlock_copies": 1,
+   "decks": 1,
+   "cards": [
+    "Mistrise Village"
+   ],
+   "families": [
+    "can't restrictions",
+    "activated abilities"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "exile target equipment, instant, or sorcery card from your graveyard.",
+   "score": 6.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Thor, God of Thunder"
+   ],
+   "families": [
+    "graveyard",
+    "exile",
+    "equipment"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "when you do, return target nonland permanent card with mana value 3 or less from your graveyard to the battlefield with a finality counter on it.",
+   "score": 6.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Zoraline, Cosmos Caller"
+   ],
+   "families": [
+    "graveyard",
+    "counters",
+    "triggered (whenever/when)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "whenever a bat you control attacks, you gain 1 life.",
+   "score": 6.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Zoraline, Cosmos Caller"
+   ],
+   "families": [
+    "triggered (whenever/when)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "you may pay {w}{b} and 2 life.",
+   "score": 6.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Zoraline, Cosmos Caller"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "~ deals damage equal to that spell's mana value to any target.",
+   "score": 6.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Thor, God of Thunder"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "at the beginning of your next upkeep, discard three cards at random.",
+   "score": 5.0,
+   "copies": 1,
+   "unlock_copies": 1,
+   "decks": 1,
+   "cards": [
+    "Casey Jones, Vigilante"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "create cragflame, a legendary colorless equipment artifact token with \"equipped creature gets +1/+1 and has vigilance, trample, and haste\" and equip {2}.",
+   "score": 5.0,
+   "copies": 1,
+   "unlock_copies": 1,
+   "decks": 1,
+   "cards": [
+    "Mabel, Heir to Cragflame"
+   ],
+   "families": [
+    "tokens",
+    "equipment"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "when you do, put a +1/+1 counter on target attacking creature.",
+   "score": 5.0,
+   "copies": 1,
+   "unlock_copies": 1,
+   "decks": 1,
+   "cards": [
+    "Inti, Seneschal of the Sun"
+   ],
+   "families": [
+    "counters",
+    "triggered (whenever/when)"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "create a colorless equipment artifact token named axe with \"equipped creature gets +1/+0\" and equip {2}.",
+   "score": 5.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "D\u00e1in Ironfoot"
+   ],
+   "families": [
+    "tokens",
+    "equipment"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "each equipped attacking creature gains double strike until end of turn.",
+   "score": 5.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "D\u00e1in Ironfoot"
+   ],
+   "families": [
+    "equipment"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "if a permanent was returned this way, put a +1/+1 counter on ~.",
+   "score": 5.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Nurturing Pixie"
+   ],
+   "families": [
+    "counters"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "if you do, put a +1/+1 counter on each other creature you control.",
+   "score": 5.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Guiding Hydra"
+   ],
+   "families": [
+    "counters"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "return up to one target non-faerie, nonland permanent you control to its owner's hand.",
+   "score": 5.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Nurturing Pixie"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "you may remove a +1/+1 counter from ~.",
+   "score": 5.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Guiding Hydra"
+   ],
+   "families": [
+    "counters"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "[+1]: if you do, you lose life equal to its mana value.",
+   "score": 4.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Sorin the Mirthless"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "[+1]: look at the top card of your library.",
+   "score": 4.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Sorin the Mirthless"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "[+1]: you may reveal that card and put it into your hand.",
+   "score": 4.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Sorin the Mirthless"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "[\u22127]: you get an emblem with \"whenever a creature you control deals combat damage to a player, search your library for a blue or black creature card, put it onto the battlefield, then shuffle.\"",
+   "score": 4.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Kaito Shizuki"
+   ],
+   "families": [
+    "library search"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "if ~ entered this turn, he phases out.",
+   "score": 4.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Kaito Shizuki"
+   ],
+   "families": [],
+   "blocked_by": []
+  },
+  {
+   "line": "\u2022 exile all artifacts.",
+   "score": 4.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Farewell"
+   ],
+   "families": [
+    "exile"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "\u2022 exile all enchantments.",
+   "score": 4.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Farewell"
+   ],
+   "families": [
+    "exile"
+   ],
+   "blocked_by": []
+  },
+  {
+   "line": "\u2022 exile all graveyards.",
+   "score": 4.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Farewell"
+   ],
+   "families": [
+    "graveyard",
+    "exile"
+   ],
+   "blocked_by": []
+  }
+ ],
+ "blocked": [
+  {
+   "line": "if that spell is countered this way, exile it instead of putting it into its owner's graveyard.",
+   "score": 39.0,
+   "copies": 6,
+   "unlock_copies": 6,
+   "decks": 2,
+   "cards": [
+    "No More Lies"
+   ],
+   "families": [
+    "graveyard",
+    "exile"
+   ],
+   "blocked_by": [
+    "replacement effects"
+   ]
+  },
+  {
+   "line": "as long as you have one or fewer cards in hand, if you would draw one or more cards, you draw that many cards plus one instead.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 4,
+   "decks": 1,
+   "cards": [
+    "Quantum Riddler"
+   ],
+   "families": [],
+   "blocked_by": [
+    "replacement effects"
+   ]
+  },
+  {
+   "line": "attach any number of target equipment you control to target creature you control.",
+   "score": 20.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Thorin, Mountain-king"
+   ],
+   "families": [
+    "equipment"
+   ],
+   "blocked_by": [
+    "auras/equipment attach"
+   ]
+  },
+  {
+   "line": "wasp's sting \u2014 when ~ enters, tap up to one target creature. it loses all abilities for as long as ~ remains on the battlefield.",
+   "score": 18.1,
+   "copies": 2,
+   "unlock_copies": 2,
+   "decks": 1,
+   "cards": [
+    "The Wondrous Wasp"
+   ],
+   "families": [],
+   "blocked_by": [
+    "type/ability change"
+   ]
+  },
+  {
+   "line": "if an ability of an artifact, creature, or planeswalker is countered this way, that permanent loses all abilities for as long as ~ remains on the battlefield.",
+   "score": 18.1,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Tishana's Tidebinder"
+   ],
+   "families": [],
+   "blocked_by": [
+    "type/ability change"
+   ]
+  },
+  {
+   "line": "tap two other untapped artifacts you control: ~ becomes an artifact creature until end of turn.",
+   "score": 16.1,
+   "copies": 2,
+   "unlock_copies": 2,
+   "decks": 1,
+   "cards": [
+    "Spring-Loaded Sawblades"
+   ],
+   "families": [],
+   "blocked_by": [
+    "type/ability change"
+   ]
+  },
+  {
+   "line": "if ~ would be put into a graveyard from anywhere, exile it instead.",
+   "score": 16.0,
+   "copies": 4,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Dennick, Pious Apprentice"
+   ],
+   "families": [
+    "graveyard",
+    "exile"
+   ],
+   "blocked_by": [
+    "replacement effects"
+   ]
+  },
+  {
+   "line": "if a lizard, mouse, otter, or raccoon you control would deal damage to a permanent or player, it deals that much damage plus 1 instead.",
+   "score": 15.0,
+   "copies": 3,
+   "unlock_copies": 3,
+   "decks": 1,
+   "cards": [
+    "Valley Flamecaller"
+   ],
+   "families": [],
+   "blocked_by": [
+    "replacement effects"
+   ]
+  },
+  {
+   "line": "as ~ enters, choose odd or even.",
+   "score": 15.0,
+   "copies": 3,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Gollum, Riddle Master"
+   ],
+   "families": [],
+   "blocked_by": [
+    "replacement effects"
+   ]
+  },
+  {
+   "line": "copy those cards.",
+   "score": 13.8,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Uldaros Theorix"
+   ],
+   "families": [
+    "copy effects"
+   ],
+   "blocked_by": [
+    "copy effects"
+   ]
+  },
+  {
+   "line": "you may cast any number of spells with total mana value 6 or less from among the copies without paying their mana costs.",
+   "score": 13.8,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Uldaros Theorix"
+   ],
+   "families": [
+    "copy effects"
+   ],
+   "blocked_by": [
+    "copy effects"
+   ]
+  },
+  {
+   "line": "starscourge \u2014 at the beginning of combat on your turn, exile up to one target creature card from a graveyard. if you exiled a card this way, create a token that's a copy of that card, except it's a 5/5 black demon.",
+   "score": 12.0,
+   "copies": 2,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "Ardyn, the Usurper"
+   ],
+   "families": [
+    "tokens",
+    "graveyard",
+    "exile",
+    "copy effects"
+   ],
+   "blocked_by": [
+    "copy effects"
+   ]
+  },
+  {
+   "line": "12+ | {3}{w}, {t}: create a token that's a copy of target artifact or enchantment you control, except it's legendary. activate only as a sorcery.",
+   "score": 8.1,
+   "copies": 1,
+   "unlock_copies": 1,
+   "decks": 1,
+   "cards": [
+    "Adagia, Windswept Bastion"
+   ],
+   "families": [
+    "tokens",
+    "copy effects",
+    "activated abilities"
+   ],
+   "blocked_by": [
+    "copy effects"
+   ]
+  },
+  {
+   "line": "you may attach ~ to it.",
+   "score": 5.0,
+   "copies": 1,
+   "unlock_copies": 1,
+   "decks": 1,
+   "cards": [
+    "Doc Ock's Tentacles"
+   ],
+   "families": [],
+   "blocked_by": [
+    "auras/equipment attach"
+   ]
+  },
+  {
+   "line": "when you do, attach it to target creature you control.",
+   "score": 5.0,
+   "copies": 1,
+   "unlock_copies": 0,
+   "decks": 1,
+   "cards": [
+    "D\u00e1in Ironfoot"
+   ],
+   "families": [
+    "triggered (whenever/when)"
+   ],
+   "blocked_by": [
+    "auras/equipment attach"
+   ]
+  }
+ ]
+}
