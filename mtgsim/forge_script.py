@@ -143,12 +143,14 @@ class Untranslatable(Exception):
     """Why a step can't be expressed with the engine's effect objects."""
 
 
-# Parameters that only steer prompts, AI hints or text, never what the effect does.
+# Parameters that only steer prompts, AI hints or text, never what the effect does. `Cost` is checked
+# separately (spell additional costs, loyalty costs, mana abilities). Timing and permission
+# restrictions (SorcerySpeed, ActivationPhases, AnyPlayer) and TargetMin are semantic, so they are
+# not here: an ability that uses them is refused unless a handler accepts them.
 NOISE = {"SP", "AB", "DB", "SpellDescription", "StackDescription", "TgtPrompt", "AILogic", "AITgts",
          "AIPreference", "IsCurse", "PrecostDesc", "SubAbility", "Cost", "Planeswalker", "TriggerDescription",
-         "Ultimate", "AITgtOwnCards", "AIPhyrexianPayment", "TgtZone", "Description", "TargetMin",
-         "ActivationPhases", "SorcerySpeed", "CostDesc", "AITgtsOnlyBetterThanSelf", "AIManaPref",
-         "Secondary", "AnyPlayer", "ShowCurrentCard", "Prompt", "ValidDescription"}
+         "Ultimate", "AITgtOwnCards", "AIPhyrexianPayment", "TgtZone", "Description", "CostDesc",
+         "AITgtsOnlyBetterThanSelf", "AIManaPref", "Secondary", "ShowCurrentCard", "Prompt", "ValidDescription"}
 
 _NUM = re.compile(r"^\+?(-?\d+)$")
 
@@ -166,29 +168,36 @@ def _int(params: dict, key: str, default=None) -> int:
 
 
 def _only(params: dict, allowed: set, api: str):
-    extra = sorted(set(params) - NOISE - allowed)
+    extra = sorted(set(params) - NOISE - allowed - {"TargetMin"})
     if extra:
         raise Untranslatable(f"{api}: parameter {extra[0]}={params[extra[0]]}")
+    if params.get("TargetMin", "1") != "1":         # "up to N": the engine's targeted effects need a target
+        raise Untranslatable(f"{api}: TargetMin={params['TargetMin']}")
 
 
-def _tgt(params: dict, table: dict, api: str) -> str:
+def _tgt(params: dict, table: dict, api: str) -> tuple:
+    """(engine target, filter) for a Forge target, keeping its controller restriction."""
     val = params.get("ValidTgts") or params.get("Defined") or ""
     if val not in table:
         raise Untranslatable(f"{api}: target {val or 'none'}")
     return table[val]
 
 
-_CREATURE = {"Creature": "creature", "Creature.OppCtrl": "creature", "Creature.YouDontCtrl": "creature"}
-_PLAYER = {"Player": "player", "Opponent": "player", "Player,Planeswalker": "player",
-           "Opponent,Planeswalker": "player", "Player.Opponent": "player"}
-_DAMAGE_TGT = {"Any": "any", **_CREATURE, "Creature,Planeswalker": "creature",
-               "Creature.OppCtrl,Planeswalker.OppCtrl": "creature", **_PLAYER,
-               "Player.Opponent,Planeswalker": "player", "TriggeredTarget": "that_player",
-               "TargetedController": "that_controller"}
+# Forge target -> (engine target, filter). "opp" keeps "an opponent controls" / "you don't control".
+# No entry for "player or planeswalker": the engine has no such target, and "player" would drop
+# the planeswalker choice.
+_CREATURE = {"Creature": ("creature", ""), "Creature.OppCtrl": ("creature", "opp"),
+             "Creature.YouDontCtrl": ("creature", "opp")}
+_PLAYER = {"Player": ("player", ""), "Opponent": ("player", "opp"), "Player.Opponent": ("player", "opp")}
+_CREATURE_PW = {"Creature,Planeswalker": ("creature_pw", ""),
+                "Creature.OppCtrl,Planeswalker.OppCtrl": ("creature_pw", "opp")}
+_DAMAGE_TGT = {"Any": ("any", ""), **_CREATURE, **_CREATURE_PW, **_PLAYER,
+               "TriggeredTarget": ("that_player", ""), "TargetedController": ("that_controller", "")}
 _DAMAGE_FILTER = {"Creature.attacking,Creature.blocking": "attacking_blocking", "Creature.tapped": "tapped",
                   "Creature.withoutFlying": "nonflying"}
-_DESTROY_TGT = {**_CREATURE, "Creature,Planeswalker": "creature_pw",
-                "Creature.OppCtrl,Planeswalker.OppCtrl": "creature_pw", "Artifact": "artifact"}
+_DESTROY_TGT = {**_CREATURE, **_CREATURE_PW, "Artifact": ("artifact", "")}
+_BOUNCE_TGT = {**_CREATURE, "Permanent.nonLand": ("nonland_perm", ""), "Permanent.nonLand+OppCtrl": ("nonland_perm", "opp"),
+               "Permanent.nonLand+YouDontCtrl": ("nonland_perm", "opp")}
 _DESTROY_FILTER = {"Creature.nonArtifact": "nonartifact", "Creature.tapped": "tapped"}
 _YOU = {"", "You"}
 _EACH_OPP = {"Player.Opponent", "Opponent"}
@@ -200,9 +209,8 @@ def _damage(p):
     val = p.get("ValidTgts") or p.get("Defined", "")
     if val in _DAMAGE_FILTER:
         return [Effect("damage", n, target="creature", filter=_DAMAGE_FILTER[val])]
-    if val in _EACH_OPP:
-        return [Effect("damage", n, target="player")]
-    return [Effect("damage", n, target=_tgt(p, _DAMAGE_TGT, "DealDamage"))]
+    tgt, flt = _tgt(p, _DAMAGE_TGT, "DealDamage")
+    return [Effect("damage", n, target=tgt, filter=flt)]
 
 
 def _destroy(p):
@@ -213,18 +221,21 @@ def _destroy(p):
         return [Effect("destroy", target="creature", filter=f"max_cmc:{m[1]}")]
     if val in _DESTROY_FILTER:
         return [Effect("destroy", target="creature", filter=_DESTROY_FILTER[val])]
-    return [Effect("destroy", target=_tgt(p, _DESTROY_TGT, "Destroy"))]
+    tgt, flt = _tgt(p, _DESTROY_TGT, "Destroy")
+    return [Effect("destroy", target=tgt, filter=flt)]
 
 
 def _change_zone(p):
-    _only(p, {"ValidTgts", "Origin", "Destination", "Defined"}, "ChangeZone")
+    _only(p, {"ValidTgts", "Origin", "Destination"}, "ChangeZone")
     route = (p.get("Origin"), p.get("Destination"))
     val = p.get("ValidTgts", "")
-    if route == ("Battlefield", "Exile") and val in _DESTROY_TGT:     # the cards package plays exile as destroy
-        return [Effect("destroy", target=_DESTROY_TGT[val])]
-    if route == ("Battlefield", "Hand") and val in ("Permanent.nonLand", "Permanent.nonLand+OppCtrl", "Creature",
-                                                     "Creature.OppCtrl", "Permanent.nonLand+YouDontCtrl"):
-        return [Effect("bounce", target="nonland_perm")]
+    if route == ("Battlefield", "Exile"):
+        # Exile is not destroy: it ignores indestructible and regeneration and fires no dies
+        # triggers. The engine has no targeted single-permanent exile effect, so refuse.
+        raise Untranslatable("ChangeZone: Battlefield to Exile (no targeted exile effect)")
+    if route == ("Battlefield", "Hand") and val in _BOUNCE_TGT:
+        tgt, flt = _BOUNCE_TGT[val]
+        return [Effect("bounce", target=tgt, filter=flt)]
     if route == ("Graveyard", "Hand") and val in ("Creature.YouOwn", "Creature.YouCtrl"):
         return [Effect("regrow")]
     raise Untranslatable(f"ChangeZone: {route[0]} to {route[1]}" + (f" ({val})" if val else ""))
@@ -233,7 +244,7 @@ def _change_zone(p):
 def _change_zone_all(p):
     _only(p, {"ChangeType", "Origin", "Destination"}, "ChangeZoneAll")
     if (p.get("ChangeType"), p.get("Origin"), p.get("Destination")) == ("Creature", "Battlefield", "Exile"):
-        return [Effect("wrath", target="each_creature")]
+        return [Effect("exile_all_creatures")]
     raise Untranslatable(f"ChangeZoneAll: {p.get('ChangeType')} {p.get('Origin')} to {p.get('Destination')}")
 
 
@@ -268,8 +279,10 @@ def _lose_life(p):
         return [Effect("drain", n, target="each_opponent")]
     if who in _YOU:
         return [Effect("lose_life", n)]
-    if who in ("TriggeredCardController", "TriggeredPlayer", "TargetedController", "Player", "Opponent"):
-        return [Effect("lose_life", n, target="that_player" if who != "Player" and who != "Opponent" else "player")]
+    if who in ("TriggeredCardController", "TriggeredPlayer", "TargetedController"):
+        return [Effect("lose_life", n, target="that_player")]
+    if who in ("Player", "Opponent"):
+        return [Effect("lose_life", n, target="player", filter="opp" if who == "Opponent" else "")]
     raise Untranslatable(f"LoseLife: player {who or 'none'}")
 
 
@@ -277,21 +290,23 @@ def _pump(p):
     _only(p, {"NumAtt", "NumDef", "ValidTgts", "Defined", "KW"}, "Pump")
     att, dfn = _int(p, "NumAtt", 0), _int(p, "NumDef", 0)
     who = p.get("ValidTgts") or p.get("Defined") or ""
-    targets = {"Creature": "creature", "Creature.YouCtrl": "creature", "Self": "self", "Targeted": "prev",
-               "Creature.OppCtrl": "creature"}
+    targets = {"Creature": ("creature", ""), "Creature.YouCtrl": ("creature_mine", ""), "Self": ("self", ""),
+               "Targeted": ("prev", ""), "Creature.OppCtrl": ("creature", "opp")}
     if who not in targets:
         raise Untranslatable(f"Pump: target {who or 'none'}")
-    tgt, out = targets[who], []
+    (tgt, flt), out = targets[who], []
     if att < 0 or dfn < 0:
         if att > 0 or dfn > 0 or tgt != "creature":
             raise Untranslatable("Pump: mixed or self debuff")
-        out.append(Effect("debuff_one", -att, -dfn, target="creature"))
+        out.append(Effect("debuff_one", -att, -dfn, target="creature", filter=flt))
     elif att or dfn:
-        out.append(Effect("pump", att, dfn, target=tgt))
+        out.append(Effect("pump", att, dfn, target=tgt, filter=flt))
     for kw in filter(None, p.get("KW", "").split(" & ")):
         if kw.lower() not in KEYWORDS:
             raise Untranslatable(f"Pump: keyword {kw}")
-        out.append(Effect("grant", target="prev" if out or tgt == "prev" else tgt, data={"keyword": kw.lower()}))
+        first = not out and tgt != "prev"
+        out.append(Effect("grant", target=tgt if first else "prev", filter=flt if first else "",
+                          data={"keyword": kw.lower()}))
     if not out:
         raise Untranslatable("Pump: nothing to do")
     return out
@@ -333,17 +348,18 @@ def _mill(p):
     if who in _YOU:
         return [Effect("mill", n)]
     if who in ("Player", "Opponent", *_EACH_OPP):
-        return [Effect("mill", n, target="player")]
+        return [Effect("mill", n, target="player", filter="" if who == "Player" else "opp")]
     raise Untranslatable(f"Mill: player {who}")
 
 
 def _discard(p):
     _only(p, {"NumCards", "Defined", "ValidTgts", "Mode"}, "Discard")
     who, mode, n = p.get("ValidTgts") or p.get("Defined") or "", p.get("Mode"), _int(p, "NumCards", 1)
+    flt = "opp" if who == "Opponent" else ""
     if who in ("Player", "Opponent") and mode == "RevealYouChoose":
-        return [Effect("discard_choice", n, target="player")]
+        return [Effect("discard_choice", n, target="player", filter=flt)]
     if who in ("Player", "Opponent") and mode == "TgtChoose":
-        return [Effect("discard", n, target="player")]
+        return [Effect("discard", n, target="player", filter=flt)]
     if who in _YOU and mode == "TgtChoose":
         return [Effect("discard", n)]
     raise Untranslatable(f"Discard: {who or 'you'} {mode}")
@@ -380,7 +396,7 @@ def _put_counter(p):
     _only(p, {"CounterType", "CounterNum", "Defined", "ValidTgts"}, "PutCounter")
     n, ctype, who = _int(p, "CounterNum", 1), p.get("CounterType", ""), p.get("ValidTgts") or p.get("Defined") or ""
     if ctype == "P1P1":
-        tgt = {"Self": "self", "Creature.YouCtrl": "creature_mine", "Creature": "creature_mine"}.get(who)
+        tgt = {"Self": "self", "Creature.YouCtrl": "creature_mine"}.get(who)     # not "Creature": any creature
         if tgt:
             return [Effect("p1_counters", n, target=tgt)]
     elif ctype == "Stun" and who == "Targeted":
@@ -392,9 +408,12 @@ def _put_counter(p):
 
 def _tap(p):
     _only(p, {"ValidTgts", "TargetMax"}, "Tap")
-    if p.get("ValidTgts") not in ("Creature", "Creature.OppCtrl", "Permanent.nonLand", "Permanent.nonLand+OppCtrl"):
+    targets = {"Creature": ("creature", ""), "Creature.OppCtrl": ("creature", "opp"),
+               "Permanent.nonLand": ("nonland_perm", ""), "Permanent.nonLand+OppCtrl": ("nonland_perm", "opp")}
+    if p.get("ValidTgts") not in targets:
         raise Untranslatable(f"Tap: {p.get('ValidTgts')}")
-    return [Effect("tap", _int(p, "TargetMax", 1), target="creature")]
+    tgt, flt = targets[p["ValidTgts"]]
+    return [Effect("tap", _int(p, "TargetMax", 1), target=tgt, filter=flt)]
 
 
 def _dig(p):
@@ -518,11 +537,23 @@ def _loyalty_cost(cost: str) -> int:
     return int(m[2]) * (1 if m[1] == "Add" else -1)
 
 
+_MANA_SYMBOL = re.compile(r"^(\d+|[WUBRGCSX]|[WUBRGC2]/[WUBRGP](/P)?)$")
+
+
+def _spell_cost(params: dict):
+    """A spell's Cost$ repeats its mana cost; anything else in it is an additional cost
+    (sacrifice, discard, pay life ...) the effects alone would drop."""
+    extra = [c for c in params.get("Cost", "").split() if not _MANA_SYMBOL.match(c)]
+    if extra:
+        raise Untranslatable(f"spell additional cost {extra[0]}")
+
+
 def translate(ab: Ability):
     """The engine object for one ability, or raise Untranslatable with the reason."""
     if ab.kind == "keyword":
         return _keyword(ab.params["K"])
     if ab.kind == "spell":
+        _spell_cost(ab.params)
         if ab.modes:
             _only(ab.params, {"Choices", "CharmNum", "MinCharmNum"}, "Charm")
             return ("modes", [translate_steps(m) for m in ab.modes])

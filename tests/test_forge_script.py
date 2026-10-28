@@ -1,8 +1,13 @@
+import random
 import unittest
 from pathlib import Path
 
 from mtgsim import forge_script as fs
+from mtgsim.ai import HeuristicAI
 from mtgsim.cards import Effect, Trigger
+from mtgsim.engine import Game, Permanent, Player
+
+from tests.test_templates import BEAR, card
 
 CARDS = Path(__file__).parent / "fixtures" / "forge_scripts" / "cards"
 
@@ -13,6 +18,11 @@ def script(name):
 
 def abilities(name):
     return [ab for face in fs.parse_script(script(name)) for ab in face.abilities]
+
+
+def inline(*lines):
+    """The abilities of a minimal hand-written script (not a Forge copy) for one translation rule."""
+    return [ab for face in fs.parse_script("Name:Test\n" + "\n".join(lines)) for ab in face.abilities]
 
 
 class ParseTest(unittest.TestCase):
@@ -87,6 +97,90 @@ class TranslateTest(unittest.TestCase):
                          ("loyalty", (-2, [Effect("tap", 1, target="creature"), Effect("stun", 2, target="prev")])))
         with self.assertRaisesRegex(fs.Untranslatable, "variable amount"):
             fs.translate(kaito[1])      # draw a card for each opponent who lost life
+
+
+class SemanticLossTest(unittest.TestCase):
+    """The translation refuses a step rather than playing it as something else."""
+
+    def test_single_exile_is_refused_not_destroy(self):
+        for tgt in ("Creature", "Creature.OppCtrl", "Creature,Planeswalker", "Artifact"):
+            ab = inline(f"A:SP$ ChangeZone | Origin$ Battlefield | Destination$ Exile | ValidTgts$ {tgt}")[0]
+            with self.assertRaisesRegex(fs.Untranslatable, "Battlefield to Exile"):
+                fs.translate(ab)
+
+    def test_mass_exile_is_exile_not_wrath(self):
+        ab = inline("A:SP$ ChangeZoneAll | ChangeType$ Creature | Origin$ Battlefield | Destination$ Exile")[0]
+        self.assertEqual(fs.translate(ab), ("spell", [Effect("exile_all_creatures")]))
+        ab = inline("A:SP$ DestroyAll | ValidCards$ Creature")[0]
+        self.assertEqual(fs.translate(ab), ("spell", [Effect("wrath", target="each_creature")]))
+
+    def test_exile_and_destroy_differ_in_play(self):
+        # Indestructible and dies triggers: wrath leaves the god and fires the trigger, exile does neither.
+        god = card("Test God", "{2}{W}", "Creature — God", "Indestructible", 4, 4)
+        mourner = card("Test Mourner", "{1}{B}", "Creature — Human", "When this creature dies, you draw a card.", 1, 1)
+        for effect, god_stays, drew in ((Effect("wrath", target="each_creature"), True, 1),
+                                        (Effect("exile_all_creatures"), False, 0)):
+            a, b = Player("a", [BEAR] * 10, HeuristicAI()), Player("b", [BEAR] * 10, HeuristicAI())
+            game = Game(a, b, random.Random(0))
+            game.turn, game.step = 1, "main1"
+            a.library = [BEAR] * 5
+            g, m = game.enter_battlefield(a, god), game.enter_battlefield(a, mourner)
+            game.settle()
+            hand = len(a.hand)
+            game.resolve(a, effect, None)
+            game.settle()
+            self.assertEqual(g in a.battlefield, god_stays, effect.kind)
+            self.assertNotIn(m, a.battlefield)
+            self.assertEqual([c.name for c in a.graveyard].count("Test Mourner"), drew, effect.kind)
+            self.assertEqual(len(a.hand) - hand, drew, effect.kind)
+
+    def test_up_to_targets_are_refused(self):
+        with self.assertRaisesRegex(fs.Untranslatable, "TargetMin=0"):
+            fs.translate(inline("A:SP$ Destroy | ValidTgts$ Creature | TargetMin$ 0")[0])
+        self.assertEqual(fs.translate(inline("A:SP$ Destroy | ValidTgts$ Creature | TargetMin$ 1")[0]),
+                         ("spell", [Effect("destroy", target="creature")]))
+
+    def test_timing_and_permission_restrictions_are_refused(self):
+        for extra in ("SorcerySpeed$ True", "ActivationPhases$ Upkeep", "AnyPlayer$ True"):
+            with self.assertRaisesRegex(fs.Untranslatable, "mana ability"):
+                fs.translate(inline(f"A:AB$ Mana | Cost$ T | Produced$ G | {extra}")[0])
+        self.assertEqual(fs.translate(inline("A:AB$ Mana | Cost$ T | Produced$ G")[0]), ("mana", "G"))
+
+    def test_spell_additional_costs_are_refused(self):
+        with self.assertRaisesRegex(fs.Untranslatable, "additional cost Sac<1/Creature>"):
+            fs.translate(inline("A:SP$ Draw | Cost$ 1 B Sac<1/Creature> | NumCards$ 2")[0])
+        self.assertEqual(fs.translate(inline("A:SP$ Draw | Cost$ 2 U/P | NumCards$ 2")[0]),
+                         ("spell", [Effect("draw", 2)]))
+
+    def test_controller_restrictions_are_kept(self):
+        def spell(line):
+            return fs.translate(inline(line)[0])[1]
+        self.assertEqual(spell("A:SP$ Destroy | ValidTgts$ Creature.OppCtrl"),
+                         [Effect("destroy", target="creature", filter="opp")])
+        self.assertEqual(spell("A:SP$ DealDamage | ValidTgts$ Creature,Planeswalker | NumDmg$ 3"),
+                         [Effect("damage", 3, target="creature_pw")])
+        self.assertEqual(spell("A:SP$ DealDamage | ValidTgts$ Opponent | NumDmg$ 2"),
+                         [Effect("damage", 2, target="player", filter="opp")])
+        self.assertEqual(spell("A:SP$ ChangeZone | Origin$ Battlefield | Destination$ Hand | ValidTgts$ Creature"),
+                         [Effect("bounce", target="creature")])
+        self.assertEqual(spell("A:SP$ Tap | ValidTgts$ Permanent.nonLand+OppCtrl"),
+                         [Effect("tap", 1, target="nonland_perm", filter="opp")])
+        self.assertEqual(spell("A:SP$ Pump | ValidTgts$ Creature.YouCtrl | NumAtt$ +2 | KW$ Trample"),
+                         [Effect("pump", 2, 0, target="creature_mine"), Effect("grant", target="prev",
+                                                                               data={"keyword": "trample"})])
+        with self.assertRaisesRegex(fs.Untranslatable, "target Player,Planeswalker"):
+            spell("A:SP$ DealDamage | ValidTgts$ Player,Planeswalker | NumDmg$ 2")
+        with self.assertRaisesRegex(fs.Untranslatable, "PutCounter: P1P1 on Creature"):
+            spell("A:SP$ PutCounter | ValidTgts$ Creature | CounterType$ P1P1 | CounterNum$ 1")
+
+    def test_controller_filter_limits_targets_in_play(self):
+        a, b = Player("a", [BEAR] * 10, HeuristicAI()), Player("b", [BEAR] * 10, HeuristicAI())
+        game = Game(a, b, random.Random(0))
+        mine, theirs = Permanent(BEAR, a), Permanent(BEAR, b)
+        a.battlefield.append(mine)
+        b.battlefield.append(theirs)
+        eff = fs.translate(inline("A:SP$ Destroy | ValidTgts$ Creature.OppCtrl")[0])[1][0]
+        self.assertEqual(game.legal_targets(a, eff), [theirs])
 
 
 class MeasureTest(unittest.TestCase):
