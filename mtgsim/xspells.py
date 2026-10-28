@@ -32,3 +32,5 @@ EFFECT_PATTERNS = [
 def resolve(game, p, eff, target, item):
     if eff.kind == "opp_lose_life":
         game.change_life(game.opponent(p), -eff.amount, f"{item.name if item else 'effect'}: lose life")
+        if eff.data.get("gain"):
+            game.change_life(p, eff.amount, f"{item.name if item else 'effect'}: gain life")

@@ -1,13 +1,27 @@
 """Damage and life: damage, drain, life gain and loss."""
 from __future__ import annotations
 
+import dataclasses
+
 from ..state import Permanent, Player
 from . import kind
 
 
 @kind("damage")
 def damage(game, p, eff, target, item, opp, cause, **_):
+    _damage(game, p, eff, target, item, opp, cause)
+    if eff.data.get("exile_dying"):
+        from ...batch1_templates import mark_exile_dying
+        victims = [x for pl in game.players for x in pl.creatures] if eff.target == "each_creature" else [target]
+        for v in victims:
+            if isinstance(v, Permanent) and v.is_creature and v.damage > 0 and v in v.controller.battlefield:
+                mark_exile_dying(game, v)
+
+
+def _damage(game, p, eff, target, item, opp, cause):
     src = (item.source if item.source is not None else item.card) if item is not None else None
+    if eff.data.get("source_power"):
+        eff = dataclasses.replace(eff, amount=max(0, src.power) if isinstance(src, Permanent) else 0)
     if eff.target == "each_creature":
         for perm in p.creatures + opp.creatures:
             if eff.filter == "nonflying" and perm.has("flying"):
@@ -32,8 +46,10 @@ def gain_life(game, p, eff, target, cause, **_):
 
 
 @kind("drain")
-def drain(game, eff, opp, cause, **_):
+def drain(game, p, eff, opp, cause, **_):
     game.change_life(opp, -eff.amount, cause)
+    if eff.data.get("gain"):
+        game.change_life(p, eff.amount, cause)
 
 
 @kind("lose_life")

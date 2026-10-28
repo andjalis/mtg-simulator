@@ -165,6 +165,8 @@ def pump_all(game, p, eff, item, **_):
         c.pump_t += eff.amount2
         if eff.data.get("keyword"):
             c.temp_kw.add(eff.data["keyword"])
+        if eff.data.get("untap"):
+            c.tapped = False
 
 
 _KEYWORD_RANK = {k: i for i, k in enumerate(("flying", "double strike", "indestructible", "first strike", "trample",
@@ -292,6 +294,8 @@ def untap_other(game, p, item, **_):
 def tap(game, p, eff, target, item=None, **_):
     if isinstance(target, Permanent):
         target.tapped = True
+        if eff.data.get("freeze"):
+            target.skip_untap = max(target.skip_untap, 1)
         src = item.source if item is not None else None
         if eff.data.get("silence") and isinstance(src, Permanent):
             target.silenced_by = src      # loses all abilities while the source stays out
@@ -301,6 +305,8 @@ def tap(game, p, eff, target, item=None, **_):
         extra = default_choose_target(game, p, eff)
         if extra is not None:
             extra.tapped = True
+            if eff.data.get("freeze"):
+                extra.skip_untap = max(extra.skip_untap, 1)
 
 
 @kind("unblockable")

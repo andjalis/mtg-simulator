@@ -376,6 +376,8 @@ class TurnsMixin:
             self.queue_trigger(controller, effects, source, 'at the beginning of the next end step', context=context)
         from ..residual_templates import on_end_step
         on_end_step(self, p)
+        from ..batch1_templates import end_step_draw
+        end_step_draw(self, p)
         self.fire(p, 'end_step')
 
     def begin_upkeep(self, p: Player):

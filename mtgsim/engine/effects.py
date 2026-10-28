@@ -331,6 +331,10 @@ class EffectsMixin:
         death_returns = [keyword for keyword, count in (("undying", perm.p1), ("persist", perm.m1))
                          if was_creature and perm.has(keyword) and count == 0 and not perm.front.is_token]
         attached = list(perm.auras) + perm.equipment if was_creature else []   # "when enchanted creature dies"
+        if was_creature and getattr(perm, "exile_if_dies", None) == self.turn:
+            self.log(f"{perm.card.name} is exiled instead of dying", perm.controller)
+            self.leave_battlefield(perm, "exile")
+            return
         if not self.leave_battlefield(perm, "graveyard"):
             return
         if perm.last_destination != "graveyard":

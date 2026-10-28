@@ -71,6 +71,8 @@ class CombatMixin:
         limit = combat_limit(self, 'attack')
         if limit is not None:
             attackers = attackers[:limit]
+        from ..batch1_templates import drop_solo, drop_solo_blocks
+        attackers = drop_solo(attackers)
         self.attackers = list(attackers)
         if not attackers:
             return
@@ -136,7 +138,7 @@ class CombatMixin:
                 legal[a] = bl
                 for b in bl:
                     used[b] = used.get(b, 0) + 1
-        blocks = legal
+        blocks = drop_solo_blocks(legal)
         self.blocks = blocks
         if blocks:
             self.log(f"blocks {blocks}", opp)
@@ -213,6 +215,8 @@ class CombatMixin:
         for src, tgt, amt in hits:
             self.deal_damage(tgt, amt, by=src.controller, cause=f"{src.card.name}: combat damage", source=src, combat=True)
             if isinstance(tgt, Player):
+                from ..batch1_templates import combat_hit
+                combat_hit(self, src, tgt)
                 self.fire(src.controller, "combat_damage_player", src, context=tgt)
                 ring.combat_damage(self, src.controller, src, tgt)
                 from ..advanced_templates import cipher_damage

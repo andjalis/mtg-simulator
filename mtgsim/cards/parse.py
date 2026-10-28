@@ -39,6 +39,9 @@ def _parse_effects(text: str, opts: bool = False):
         if advanced is not None:
             effects.extend(advanced)
             continue
+        from ..batch1_templates import parse_rider as batch1_rider
+        if batch1_rider(s, effects):
+            continue
         if re.fullmatch(r"(?:it|they|those creatures) can't be regenerated", s, re.I) and effects and \
                 effects[-1].kind in ("destroy", "wrath", "wrath_pw", "selected_mass_move"):
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
