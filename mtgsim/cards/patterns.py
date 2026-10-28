@@ -363,8 +363,8 @@ _EFFECT_PATTERNS = [
     (r"its controller creates (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
      lambda m: Effect("token", _num(m[1]), target="that_controller", data={"kind": m[2].lower()})),
     (r"target creature you control explores", lambda m: Effect("explore", target="creature_mine")),
-    (r"(?:you may )?return (?:~|this card) from your graveyard to the battlefield( tapped)?",
-     lambda m: Effect("return_self_gy", data={"tapped": bool(m[1])})),
+    (r"(?:you may )?return (?:~|this card) from your graveyard to the battlefield( tapped)?( and attacking)?",
+     lambda m: Effect("return_self_gy", data={"tapped": bool(m[1]), **({"attacking": True} if m[2] else {})})),
     (r"~ explores", lambda m: Effect("explore", target="self")),
     (r"its controller (?:may search their library|searches their library) for a basic land card, puts? it onto the "
      r"battlefield tapped, then shuffles?", lambda m: Effect("fetch_basic", target="that_controller")),
@@ -591,6 +591,7 @@ _TRIGGERS = [
     (r"Whenever you cast a spell, (.+)", ("cast_spell",)),
     (r"Whenever you cast an? ([A-Z]\w+|creature|artifact|enchantment|outlaw) spell, (.+)", ("cast_spell",)),
     (r"Whenever you gain life, (.+)", ("gain_life",)),
+    (r"Whenever you attack with (one|two|three|four|five) or more creatures, (.+)", ("you_attack",)),
     (r"Whenever you attack, (.+)", ("you_attack",)),
     (r"Whenever you attack with one or more ([A-Z]\w+), (.+)", ("you_attack",)),
     (r"Whenever a creature you control attacks, (.+)", ("creature_attacks",)),
@@ -718,6 +719,14 @@ def _xq(text: str):
 
 
 _IF_CONDS = [
+    (r"you(?:'ve| have)? cast (?:three|3) or more instant and sorcery spells this turn", "instants_sorceries>=3"),
+    (r"(?:two|2) or more creatures died this turn", "creatures_died>=2"),
+    (r"a creature entered and a creature died this turn", "creature_entered_and_died"),
+    (r"you(?:'ve| have)? gained (?:three|3) or more life this turn", "gained_life>=3"),
+    (r"you control a legendary creature", "legendary_creature"),
+    (r"you control three or more artifacts", "artifacts3"),
+    (r"you control a Swamp", "control_swamp"),
+    (r"a non-Skeleton creature died under your control this turn", "non_skeleton_died"),
     (r"you attacked this turn", "attacked_turn"),
     (r"an opponent controls more lands than you", "opp_more_lands"),
     (r"a creature died this turn", "creature_died"),

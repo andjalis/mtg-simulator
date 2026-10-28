@@ -35,10 +35,6 @@ def _parse_effects(text: str, opts: bool = False):
         if conditional is not None:
             effects += conditional
             continue
-        rider = returns.parse_rider(s)
-        if rider is not None:
-            effects += rider
-            continue
         mp = re.fullmatch(r"you may pay ((?:\{[WUBRGC0-9]+\})+)", s, re.I)
         if mp:
             effects.append(Effect("pay_gate", data={"cost": parse_mana_cost(mp[1])}))
@@ -101,6 +97,10 @@ def _parse_effects(text: str, opts: bool = False):
             g = re.fullmatch(r"(?:if you do|when you do), (.+)", s, re.I)
             if g:
                 s, paid = g[1], True
+        rider = returns.parse_rider(s)
+        if rider is not None:
+            effects += [dataclasses.replace(e, cond=e.cond or "paid") for e in rider] if paid else rider
+            continue
         for pat, build in _EFFECT_PATTERNS:
             m = re.fullmatch(pat, s, flags=re.IGNORECASE)
             if m is None and s.lower().startswith("then "):
@@ -1328,8 +1328,21 @@ def _parse_trigger_line(line: str):
         if events == ("permanent_enters",):
             desc = m[3] + (f" or {m[5]}" if m[5] else "") + (m[4] or "")
             flt = f"{'self' if m[1] else 'noself'}|{'other' if m[2] == 'another' else 'any'}|{desc}"
+        intervening = ""
+        mi = re.fullmatch(r"if (.+?), (.+)", rest, flags=re.S)
+        if mi:
+            intervening = _if_cond(mi[1])
+            if mi[1] == "it's the second creature spell you cast this turn" and events == ("cast_spell",) and \
+                    re.search(r"return (?:this card|~) from your graveyard to the battlefield", rest, re.I):
+                intervening = "second_creature_spell"
+            if intervening:
+                rest = mi[2][0].upper() + mi[2][1:]
+        if events == ("you_attack",) and "or more creatures" in pat:
+            flt = f"attackers>={_num(m[1])}"
         head = modal.parse_header(rest)
         if head is not None and not head[1]:
+            if intervening:
+                return [], [line], None  # no trigger-level condition storage for modal choices yet
             modes = modal.Modes(spec=head[0])
             return [Trigger(e, [], flt, modes) for e in events], [], modes
         spent = re.fullmatch(r"if \{([WUBRG])\}\{\1\} was spent to cast it, (.+)", rest, flags=re.S)
@@ -1374,8 +1387,15 @@ def _parse_trigger_line(line: str):
             effs = first + [dataclasses.replace(e, cond="mana<5") for e in more]
         else:
             effs, bad = _parse_effects(rest)
+            if intervening and bad and rest.startswith("You "):
+                # Conditional effect parsing also accepts a bare verb after "you".
+                bare, bare_bad = _parse_effects(rest[4:])
+                if bare and not bare_bad:
+                    effs, bad = bare, bare_bad
             if cond:
                 effs = [dataclasses.replace(e, cond=cond) for e in effs]
+        if intervening:
+            effs = [dataclasses.replace(e, data=dict(e.data, intervening_if=intervening)) for e in effs]
         effs += later
         if events == ("attacks_alone",):
             for e in effs:

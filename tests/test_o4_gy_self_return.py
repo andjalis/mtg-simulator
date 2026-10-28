@@ -10,9 +10,9 @@ FIREBIRD = card("Akoum Firebird", "{2}{R}{R}", "Creature — Phoenix", "Flying, 
                 "battlefield.", 3, 3)
 MINER = card("Forsaken Miner", "{B}", "Creature — Skeleton Rogue", "This creature can't block.\nWhenever you commit "
              "a crime, you may pay {B}. If you do, return this card from your graveyard to the battlefield.", 2, 2)
-# Still unsupported: an intervening "if" before the return.
-ARCLIGHT = card("Test Phoenix", "{3}{R}", "Creature — Phoenix", "At the beginning of combat on your turn, if you've "
-                "cast three or more instant and sorcery spells this turn, return this card from your graveyard to "
+# Day/night conditions remain outside the supported self-return subset.
+NIGHT_RETURN = card("Test Phoenix", "{3}{R}", "Creature — Phoenix", "At the beginning of combat on your turn, if it is "
+                "night, return this card from your graveyard to "
                 "the battlefield.", 3, 2)
 
 
@@ -28,9 +28,9 @@ class GraveyardSelfReturn(Base):
                 self.assertEqual(c.triggers, [])
         self.assertEqual([e.kind for e in FIREBIRD.gy_triggers[0].effects], ["pay_gate", "return_self_gy"])
 
-    def test_intervening_if_stays_unsupported(self):
-        self.assertEqual(len(ARCLIGHT.unsupported), 1)
-        self.assertEqual(ARCLIGHT.gy_triggers, [])
+    def test_unknown_condition_stays_unsupported(self):
+        self.assertEqual(len(NIGHT_RETURN.unsupported), 1)
+        self.assertEqual(NIGHT_RETURN.gy_triggers, [])
 
     def test_landfall_returns_this_card(self):
         self.a.graveyard = [GHAST]
