@@ -1,0 +1,169 @@
+{
+  "cards_compared": 34129,
+  "changed_cards": 10,
+  "newly_full_template_matches": 9,
+  "newly_full_cards": [
+    "Biblioplex Assistant",
+    "Boseiju Reaches Skyward // Branch of Boseiju",
+    "Dukhara Scavenger",
+    "False Mourning",
+    "Meldweb Curator",
+    "Reclaim",
+    "Salvage",
+    "Treason of Isengard",
+    "Woodland Acolyte // Mend the Wilds"
+  ],
+  "status_regressions": [],
+  "changes": [
+    {
+      "name": "Biblioplex Assistant",
+      "before": {
+        "name": "Biblioplex Assistant",
+        "status": "partial",
+        "ignored_text": "put up to one target instant or sorcery card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Biblioplex Assistant",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Boseiju Reaches Skyward // Branch of Boseiju",
+      "before": {
+        "name": "Boseiju Reaches Skyward // Branch of Boseiju",
+        "status": "partial",
+        "ignored_text": "II \u2014 Put up to one target land card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Boseiju Reaches Skyward // Branch of Boseiju",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dukhara Scavenger",
+      "before": {
+        "name": "Dukhara Scavenger",
+        "status": "partial",
+        "ignored_text": "you may put target artifact or creature card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dukhara Scavenger",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "False Mourning",
+      "before": {
+        "name": "False Mourning",
+        "status": "partial",
+        "ignored_text": "Put target card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "False Mourning",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Meldweb Curator",
+      "before": {
+        "name": "Meldweb Curator",
+        "status": "partial",
+        "ignored_text": "put up to one target instant or sorcery card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Meldweb Curator",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Reclaim",
+      "before": {
+        "name": "Reclaim",
+        "status": "partial",
+        "ignored_text": "Put target card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Reclaim",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Runo Stromkirk // Krothuss, Lord of the Deep",
+      "before": {
+        "name": "Runo Stromkirk // Krothuss, Lord of the Deep",
+        "status": "partial",
+        "ignored_text": "put up to one target creature card from your graveyard on top of your library.\nlook at the top card of your library.\nYou may reveal that card.\nIf a creature card with mana value 6 or greater is revealed this way, transform ~.\nKrothuss, Lord of the Deep: create a tapped and attacking token that's a copy of another target attacking creature.\nKrothuss, Lord of the Deep: If that creature is a Kraken, Leviathan, Octopus, or Serpent, create two of those tokens instead.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Runo Stromkirk // Krothuss, Lord of the Deep",
+        "status": "partial",
+        "ignored_text": "look at the top card of your library.\nYou may reveal that card.\nIf a creature card with mana value 6 or greater is revealed this way, transform ~.\nKrothuss, Lord of the Deep: create a tapped and attacking token that's a copy of another target attacking creature.\nKrothuss, Lord of the Deep: If that creature is a Kraken, Leviathan, Octopus, or Serpent, create two of those tokens instead.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Salvage",
+      "before": {
+        "name": "Salvage",
+        "status": "partial",
+        "ignored_text": "Put target card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Salvage",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Treason of Isengard",
+      "before": {
+        "name": "Treason of Isengard",
+        "status": "partial",
+        "ignored_text": "Put up to one target instant or sorcery card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Treason of Isengard",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Woodland Acolyte // Mend the Wilds",
+      "before": {
+        "name": "Woodland Acolyte // Mend the Wilds",
+        "status": "partial",
+        "ignored_text": "Mend the Wilds: Put target permanent card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Woodland Acolyte // Mend the Wilds",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    }
+  ]
+}

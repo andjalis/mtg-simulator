@@ -1,0 +1,10 @@
+{
+  "branch": "codex/cards-1",
+  "base": "main",
+  "status": "local_validation_complete_pr_blocked",
+  "pull_request": null,
+  "ci": "not_verified",
+  "merged": false,
+  "blocker": "Environment HTTP network policy does not allow api.github.com; gh API calls return Forbidden. Git HTTPS access is available.",
+  "required_next_step": "Allow api.github.com, rebase on latest main, create the round PR, wait for green CI, then merge. Do not push directly to main or claude/*."
+}

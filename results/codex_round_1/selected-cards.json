@@ -1,0 +1,93 @@
+[
+  {
+    "card": "Biblioplex Assistant",
+    "before_ignored": [
+      "put up to one target instant or sorcery card from your graveyard on top of your library."
+    ],
+    "after_ignored": [],
+    "after_status": "full"
+  },
+  {
+    "card": "Boseiju Reaches Skyward // Branch of Boseiju",
+    "before_ignored": [
+      "II \u2014 Put up to one target land card from your graveyard on top of your library."
+    ],
+    "after_ignored": [],
+    "after_status": "full"
+  },
+  {
+    "card": "Dukhara Scavenger",
+    "before_ignored": [
+      "you may put target artifact or creature card from your graveyard on top of your library."
+    ],
+    "after_ignored": [],
+    "after_status": "full"
+  },
+  {
+    "card": "False Mourning",
+    "before_ignored": [
+      "Put target card from your graveyard on top of your library."
+    ],
+    "after_ignored": [],
+    "after_status": "full"
+  },
+  {
+    "card": "Meldweb Curator",
+    "before_ignored": [
+      "put up to one target instant or sorcery card from your graveyard on top of your library."
+    ],
+    "after_ignored": [],
+    "after_status": "full"
+  },
+  {
+    "card": "Reclaim",
+    "before_ignored": [
+      "Put target card from your graveyard on top of your library."
+    ],
+    "after_ignored": [],
+    "after_status": "full"
+  },
+  {
+    "card": "Runo Stromkirk // Krothuss, Lord of the Deep",
+    "before_ignored": [
+      "put up to one target creature card from your graveyard on top of your library.",
+      "look at the top card of your library.",
+      "You may reveal that card.",
+      "If a creature card with mana value 6 or greater is revealed this way, transform ~.",
+      "Krothuss, Lord of the Deep: create a tapped and attacking token that's a copy of another target attacking creature.",
+      "Krothuss, Lord of the Deep: If that creature is a Kraken, Leviathan, Octopus, or Serpent, create two of those tokens instead."
+    ],
+    "after_ignored": [
+      "look at the top card of your library.",
+      "You may reveal that card.",
+      "If a creature card with mana value 6 or greater is revealed this way, transform ~.",
+      "Krothuss, Lord of the Deep: create a tapped and attacking token that's a copy of another target attacking creature.",
+      "Krothuss, Lord of the Deep: If that creature is a Kraken, Leviathan, Octopus, or Serpent, create two of those tokens instead."
+    ],
+    "after_status": "partial"
+  },
+  {
+    "card": "Salvage",
+    "before_ignored": [
+      "Put target card from your graveyard on top of your library."
+    ],
+    "after_ignored": [],
+    "after_status": "full"
+  },
+  {
+    "card": "Treason of Isengard",
+    "before_ignored": [
+      "Put up to one target instant or sorcery card from your graveyard on top of your library."
+    ],
+    "after_ignored": [],
+    "after_status": "full"
+  },
+  {
+    "card": "Woodland Acolyte // Mend the Wilds",
+    "before_ignored": [
+      "Mend the Wilds: Put target permanent card from your graveyard on top of your library."
+    ],
+    "after_ignored": [],
+    "after_status": "full"
+  }
+]

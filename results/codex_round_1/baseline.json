@@ -1,0 +1,8 @@
+{
+  "baseline_commit": "57a1c523c5b0ee5fbf3fe673a1049a098fd2952c",
+  "database_sha256": "b69f4273177e76ef08ad88b323a1eebad1329b29059500fa6f42853ceddaf2f1",
+  "before_cards_sha256": "0441f78cd449f6ce58b4ccf09a8187e432601868af5e83ef3f15cf1ee684e508",
+  "fresh_reparse_command": "python3 -m mtgsim.database_coverage --save results/codex_round_1/before --progress --top 30",
+  "temporary_regex_cache": 32768,
+  "scope": "Graveyard-to-library single-card targeted returns; existing handlers and target identity protection."
+}

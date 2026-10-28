@@ -1,0 +1,14 @@
+[
+  {
+    "pilot": "HeuristicAI",
+    "planned": true,
+    "cast": true,
+    "exact_target_on_top": true
+  },
+  {
+    "pilot": "BaselineAI",
+    "planned": true,
+    "cast": true,
+    "exact_target_on_top": true
+  }
+]

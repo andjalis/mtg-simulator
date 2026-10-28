@@ -50,3 +50,6 @@ _SUBS += _advanced_templates.SUBS
 from .. import residual_templates as _residual_templates
 _EFFECT_PATTERNS += _residual_templates.EFFECT_PATTERNS
 _SUBS += _residual_templates.SUBS
+from .. import cx_graveyard as _cx_graveyard
+_EFFECT_PATTERNS += _cx_graveyard.EFFECT_PATTERNS
+_SUBS += _cx_graveyard.SUBS
