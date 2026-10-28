@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import auras, copies, kicker, milling
+from .. import auras, copies, graveyard, kicker, milling
 from ..cards import CardDef, Effect
 from .. import modal, rules_events
 from ..identity import CardInstance, CardZone
@@ -68,6 +68,10 @@ class StackMixin:
     def queue_trigger(self, controller: Player, effects: list, source: Permanent | None = None,
                       name: str = "", context=None, targets: list | None = None, kind: str = "trigger",
                       modes=None):
+        if any(e.data.get("intervening_if") for e in effects):
+            condition_item = StackItem(controller, effects, [], source=source, context=context)
+            if not graveyard.intervening_active(self, controller, effects, condition_item):
+                return
         ref = (context.zone.reference(context) if isinstance(context, CardInstance)
                and isinstance(context.zone, CardZone) and context in context.zone else None)
         self.pending.append((controller, effects, source, name, context, targets, kind, modes, ref))
@@ -80,10 +84,13 @@ class StackMixin:
         self._dispatch_trigger_event(p, event, source, context, subject)
 
     def _dispatch_trigger_event(self, p, event, source=None, context=None, subject=None):
+        graveyard.observe_event(self, p, event, source, context, subject)
         perms = [source] if source is not None else list(p.battlefield)
         for perm in perms:
             for i, trig in enumerate(perm.triggers):
                 if trig.event != event:
+                    continue
+                if trig.filter.startswith("attackers>=") and p.attacked_with < int(trig.filter.split(">=")[1]):
                     continue
                 if event == "permanent_enters":
                     me_ok, other, desc = trig.filter.split("|", 2)
@@ -141,8 +148,9 @@ class StackMixin:
         if source is None:      # abilities that trigger from the graveyard (Bloodghast)
             for card in list(p.graveyard):
                 for trig in card.gy_triggers:
-                    if trig.event == event:
-                        self.queue_trigger(p, trig.effects, None, card.name, context=card)
+                    effects = graveyard.trigger_effects(self, p, trig, card, event, context, subject)
+                    if effects is not None:
+                        self.queue_trigger(p, effects, None, card.name, context=card)
 
     def flush_triggers(self) -> bool:
         """Put pending triggers on the stack, active player's first (so they resolve last)."""
@@ -231,6 +239,11 @@ class StackMixin:
                 perm.counters["+1/+1"] = perm.p1 + p.next_creature_counters
                 p.next_creature_counters = 0
             return
+        if not graveyard.intervening_active(self, p, item.effects, item):
+            item.resolved = False
+            self.log(f"{item} does not resolve (intervening condition false)", p)
+            self.state_based_actions()
+            return
         targeted = [(e, t) for e, t in zip(item.effects, item.targets) if e.target in TARGETED]
         item.resolved = not (targeted and all(not self.legal_target(p, e, t) for e, t in targeted))
         if not item.resolved:
@@ -313,6 +326,9 @@ class StackMixin:
             spell = item.context
             big = isinstance(spell, StackItem) and spell.mana_spent >= 5
             return big if c == "mana>=5" else not big
+        active = graveyard.condition_active(self, p, c)
+        if active is not None:
+            return active
         if c == "attacked_turn":
             return p.attacked_with > 0
         if c == "creature_died":

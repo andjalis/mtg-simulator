@@ -140,6 +140,10 @@ def _used_key(modes, i):
 
 def upgrade_active(game, me, cond: str, flags=()) -> bool:
     """Whether the condition of an "If X, choose both instead." sentence holds (checked as the spell is cast)."""
+    from . import graveyard
+    active = graveyard.condition_active(game, me, cond)
+    if active is not None:
+        return active
     if cond == "teamwork":
         return "teamwork" in flags
     if cond == "no_hand":
@@ -157,6 +161,10 @@ def upgrade_active(game, me, cond: str, flags=()) -> bool:
         return any(cond[8:] in x.card.subtypes for x in me.battlefield)
     if cond == "lands6":
         return sum(1 for x in me.battlefield if x.card.is_land) >= 6
+    if cond in ("creature_died", "opp_creature_died", "opp_more_lands", "sacrificed_turn") or \
+            cond.startswith(("power_ge:", "ctl_other:", "tapped_creatures>=", "gained_life>=")):
+        from .cards import Effect
+        return game.check_cond(me, Effect("return_self_gy", cond=cond), None, None)
     return False
 
 

@@ -5,7 +5,7 @@ import dataclasses
 import re
 
 _RIDER = re.compile(r"(.+?) with (?:a (finality) counter|"
-                    r"(an?|one|two|three|four|five|six|seven|\d+|X) additional \+1/\+1 counters?) "
+                    r"(an?|one|two|three|four|five|six|seven|\d+|X)(?: additional)? \+1/\+1 counters?) "
                     r"on (?:it|him|her|them)", re.I)
 
 
