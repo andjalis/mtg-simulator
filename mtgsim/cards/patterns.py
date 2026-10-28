@@ -363,7 +363,7 @@ _EFFECT_PATTERNS = [
     (r"its controller creates (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
      lambda m: Effect("token", _num(m[1]), target="that_controller", data={"kind": m[2].lower()})),
     (r"target creature you control explores", lambda m: Effect("explore", target="creature_mine")),
-    (r"(?:you may )?return ~ from your graveyard to the battlefield( tapped)?",
+    (r"(?:you may )?return (?:~|this card) from your graveyard to the battlefield( tapped)?",
      lambda m: Effect("return_self_gy", data={"tapped": bool(m[1])})),
     (r"~ explores", lambda m: Effect("explore", target="self")),
     (r"its controller (?:may search their library|searches their library) for a basic land card, puts? it onto the "
