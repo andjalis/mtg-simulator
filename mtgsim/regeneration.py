@@ -43,7 +43,7 @@ def respond(game, p):
                and (not x.is_creature or x.toughness > 0)]
     for victim in sorted(victims, key=perm_value, reverse=True):
         for source in p.battlefield:
-            for i, act in enumerate(source.card.activated):
+            for i, act in enumerate(source.activated):
                 if not act.effects or any(e.kind != 'regenerate' for e in act.effects):
                     continue
                 targets = []

@@ -388,7 +388,8 @@ def fetch_basic(game, p, eff, target, item, **_):
         game.log(f"fetches {land.name}", who)
         perm = game.enter_battlefield(who, land)
         lands = sum(x.card.is_land for x in who.battlefield)
-        perm.tapped = not (eff.data.get("untap4") and lands >= 4)
+        if perm is not None:
+            perm.tapped = not (eff.data.get("untap4") and lands >= 4)
     who.library.shuffle(game.rng)
     game.library_searched(who)
 

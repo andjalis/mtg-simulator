@@ -28,6 +28,9 @@ class BattlefieldMixin:
     def enter_battlefield(self, p: Player, card: CardDef, tapped_attacking: bool = False, x: int = 0,
                           *, tapped: bool = False, counters: dict | None = None,
                           physical_card: CardDef | None = None) -> Permanent:
+        from ..residual_templates import blocked_entry
+        if blocked_entry(self, card, physical_card):
+            return None
         if card.is_token:
             # Reusable token blueprints create a new physical token each time.
             card = CardInstance(card)
@@ -44,6 +47,14 @@ class BattlefieldMixin:
         perm.front.generation += 1
         perm.front.zone = perm
         perm.entered_turn = self.turn
+        perm.rules_timestamp = self.next_effect_timestamp()
+        from ..advanced_templates import rules
+        if card.is_land and not card.basic and any(rules(x).get("land_conversion") for pl in self.players for x in pl.battlefield):
+            from ..continuous import refresh
+            perm._mountain_conversion = True
+            refresh(perm)
+            card = perm.card
+            perm.tapped = False
         if card.start_engines and p.speed == 0:
             p.speed = 1
         perm.entered_x = x
@@ -51,7 +62,10 @@ class BattlefieldMixin:
         perm.spent_color = getattr(self, "_spent", "")
         others = sum(x.card.is_land for x in p.battlefield)
         cond = card.tapped_condition
-        if cond == "unless_2_lands":
+        if cond.startswith("other_subtype:"):
+            _, subtype, count = cond.split(":")
+            perm.tapped = sum(subtype in x.card.subtypes for x in p.battlefield) < int(count)
+        elif cond == "unless_2_lands":
             perm.tapped = others < 2
         elif cond == "if_2_lands":
             perm.tapped = others >= 2
@@ -100,18 +114,27 @@ class BattlefieldMixin:
             perm.card = dataclasses.replace(card, produces=frozenset({choose_color(self, p)}))
         if card.loyalty:
             perm.counters["loyalty"] = card.loyalty
+        if card.advanced_rules.get("sunburst"):
+            kind = "+1/+1" if card.is_creature else "charge"
+            perm.counters[kind] = len(getattr(self, "_entry_mana_colors", ()))
         if card.etb_counters:
             n = x if card.etb_counters == -1 else card.etb_counters
             if n:
                 perm.counters["+1/+1"] = n
         if card.etb_counters_if and self._etb_cond(p, card.etb_counters_if[0]):
             perm.counters["+1/+1"] = perm.p1 + card.etb_counters_if[1]
+        if card.entry_counter_quantity:
+            from ..backlog_templates import amount
+            kind, spec = card.entry_counter_quantity
+            perm.counters[kind] = perm.counters.get(kind, 0) + amount(self, p, spec)
         if card.etb_named_counters:
             perm.counters[card.etb_named_counters[0]] = card.etb_named_counters[1]
         for kind, n in (counters or {}).items():
             perm.counters[kind] = perm.counters.get(kind, 0) + n
-        perm.tapped |= tapped
+        from ..residual_templates import tapped_by_opponent
+        perm.tapped |= tapped or tapped_by_opponent(self, perm)
         p.battlefield.append(perm)
+        self._residual_source_index = None
         if not card.is_land:
             p.entered_nonland_turn += 1
         if card.turn_creature and p is self.active:
@@ -127,12 +150,19 @@ class BattlefieldMixin:
             equipment.attached_to = perm         # living weapon
             self._equip_on_enter = None
         creature_keywords.enters(self, p, perm)
+        if perm.is_creature:
+            for source in list(p.battlefield):
+                grant = source.card.entry_counter_grant
+                if grant and not source.silenced and not (grant[2] and source is perm):
+                    perm.counters[grant[0]] = perm.counters.get(grant[0], 0) + grant[1]
         if tapped_attacking:
             perm.tapped = True
             self.attackers.append(perm)
             self.attack_targets[perm] = self.opponent(p)
+        from ..residual_templates import suppressed
         if card.etb_effects and not any(t.event == "etb" for t in card.triggers):
-            self.queue_trigger(p, card.etb_effects, perm, card.name)  # a hand-built CardDef
+            if not (perm.is_creature and suppressed(self, "entry")):
+                self.queue_trigger(p, card.etb_effects, perm, card.name)  # a hand-built CardDef
         else:
             self.fire(p, "etb", perm)
         if card.is_saga:
@@ -141,11 +171,26 @@ class BattlefieldMixin:
             self.fire(p, "other_creature_enters", subject=perm)
             for pl in self.players:
                 self.fire(pl, "any_creature_enters", context=perm)
+        from ..backlog_templates import filtered_entry
+        filtered_entry(self, perm)
         self.fire(p, "permanent_enters", subject=perm)
         if card.is_land:
-            self.fire(p, "land_enters")
-        self.state_based_actions()
+            self.fire(p, "land_enters", subject=perm)
+        if getattr(self, '_entry_batch', None) is None:
+            self.state_based_actions()
         return perm
+
+    def enter_battlefield_many(self, player, cards, **kwargs):
+        from ..backlog_templates import entry_batch
+        from ..residual_templates import blocked_entry
+        cards = list(cards)
+        previous = getattr(self, "_batch_entry_suppressed", False)
+        self._batch_entry_suppressed = previous or any((c.advanced_rules.get("suppress_entry") or c.advanced_rules.get("suppress_entry_death")) and not blocked_entry(self, c) for c in cards)
+        try:
+            with entry_batch(self):
+                return [self.enter_battlefield(player, card, **kwargs) for card in cards]
+        finally:
+            self._batch_entry_suppressed = previous
 
     def add_lore(self, saga: Permanent):
         old = saga.counters.get("lore", 0)
@@ -168,25 +213,39 @@ class BattlefieldMixin:
 
     def create_token(self, p: Player, eff: Effect, n: int | None = None):
         d = eff.data
+        from ..advanced_templates import rules
+        manufacturers = sum(bool(rules(x).get("manufactor")) for x in p.battlefield)
+        if d.get("kind") in ("clue", "food", "treasure") and manufacturers and not d.get("manufactured"):
+            count = (n if n is not None else eff.amount) * 3 ** (manufacturers - 1)
+            from ..backlog_templates import entry_batch
+            with entry_batch(self):
+                for token_kind in ("clue", "food", "treasure"):
+                    self.create_token(p, Effect("token", count, data={"kind": token_kind, "manufactured": True}))
+            return
         count = n if n is not None else eff.amount
-        if any(x.card.token_double for x in p.battlefield):
-            count *= 2
-        for _ in range(count):
-            card = make_token(d.get("name", ""), d.get("power", 0), d.get("toughness", 0), d.get("keywords", ()),
-                              d.get("triggers"), d.get("kind", ""), d.get("artifact", False), d.get("pt_per", ""),
-                              colors=d.get("colors", ()))
-            if d.get("spawn_mana"):     # Eldrazi Spawn / Scion: "Sacrifice this creature: Add {C}."
-                card = dataclasses.replace(card, produces=frozenset({"C"}), mana_sac_only=True)
-            if d.get("mercenary"):
-                card = dataclasses.replace(card, activated=[Activated("ability", {"generic": 0}, effects=[
-                    Effect("pump", 1, 0, target="creature_mine")], extra_costs={"tap": True}, sorcery=True,
-                    text="{T}: Target creature you control gets +1/+0 until end of turn.")])
-            perm = self.enter_battlefield(p, card, tapped_attacking=d.get("attacking", False) and self.step in
-                                          ("declare_attackers", "declare_blockers"))
-            if d.get("tapped"):
-                perm.tapped = True
-            if d.get("end"):
-                self.end_cleanup.append((perm, d["end"]))
+        count *= 2 ** sum(bool(x.card.token_double) for x in p.battlefield if not x.abilities_suppressed)
+        from ..backlog_templates import entry_batch
+        with entry_batch(self):
+            for _ in range(count):
+                card = make_token(d.get("name", ""), d.get("power", 0), d.get("toughness", 0), d.get("keywords", ()),
+                                  d.get("triggers"), d.get("kind", ""), d.get("artifact", False), d.get("pt_per", ""),
+                                  colors=d.get("colors", ()))
+                if d.get('token_name'):
+                    card = dataclasses.replace(card, name=d['token_name'])
+                if d.get("activated"):
+                    card = dataclasses.replace(card, activated=d["activated"])
+                if d.get("spawn_mana"):     # Eldrazi Spawn / Scion: "Sacrifice this creature: Add {C}."
+                    card = dataclasses.replace(card, produces=frozenset({"C"}), mana_sac_only=True)
+                if d.get("mercenary"):
+                    card = dataclasses.replace(card, activated=[Activated("ability", {"generic": 0}, effects=[
+                        Effect("pump", 1, 0, target="creature_mine")], extra_costs={"tap": True}, sorcery=True,
+                        text="{T}: Target creature you control gets +1/+0 until end of turn.")])
+                perm = self.enter_battlefield(p, card, tapped_attacking=d.get("attacking", False) and self.step in
+                                              ("declare_attackers", "declare_blockers"))
+                if d.get("tapped"):
+                    perm.tapped = True
+                if d.get("end"):
+                    self.end_cleanup.append((perm, d["end"]))
         self.log(f"creates {n if n is not None else eff.amount} {d.get('kind') or d.get('name')} token(s)", p)
 
     def transform(self, perm: Permanent):

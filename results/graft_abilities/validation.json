@@ -1,0 +1,651 @@
+{
+  "python": "3.12.14",
+  "full_suite": {
+    "equivalent_discovery_command": ".venv/bin/python -m unittest discover -s tests -t . -v",
+    "runner": "Module-isolated unittest runner, four processes; every discovered occurrence preserved and executed.",
+    "regex_cache_capacity": 16384,
+    "regex_cache_note": "Only the temporary runner increases Python regex compilation cache capacity; test cases and assertions are unchanged.",
+    "runner_sha256": "0358d6f6193ff058dc42832c6d896816525d62adb81ff3a0f348949f62c3a80f",
+    "tests_discovered": 1300,
+    "tests_run": 1300,
+    "passed": 1299,
+    "skipped": [
+      [
+        "tests.test_forge.ForgeWrapperTests.test_stored_review_log_if_present",
+        "local review log not present (results/benchmark*/ is gitignored)"
+      ]
+    ],
+    "failures": [],
+    "errors": [],
+    "inventory_matched": true,
+    "module_count": 114,
+    "seconds": 178.43538790600724,
+    "expected_failures": [],
+    "unexpected_successes": [],
+    "module_totals": [
+      {
+        "module": "tests.test_qa_assessment",
+        "ran": 6,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_coverage",
+        "ran": 14,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_standard_coverage",
+        "ran": 8,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_sideboard",
+        "ran": 10,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_ability_words",
+        "ran": 5,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_adventure_discounts",
+        "ran": 10,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_adventure_milling",
+        "ran": 6,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_ai",
+        "ran": 29,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_ai_new_abilities",
+        "ran": 6,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_alt_casts",
+        "ran": 11,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_auras",
+        "ran": 7,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_basics",
+        "ran": 9,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_audit",
+        "ran": 2,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_batch_effects",
+        "ran": 12,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_benchmark",
+        "ran": 13,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_behavior_coverage",
+        "ran": 12,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_blocking_landwalk_shroud",
+        "ran": 21,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_blocking_rules",
+        "ran": 10,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_build_carddb",
+        "ran": 10,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_carddb",
+        "ran": 6,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_cheap_batch5",
+        "ran": 11,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_cheap_lines",
+        "ran": 8,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_cli",
+        "ran": 1,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_combat_triggers",
+        "ran": 17,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_combo",
+        "ran": 8,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_copies",
+        "ran": 12,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_costs_types_triggers",
+        "ran": 23,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_counter_card_batch",
+        "ran": 56,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_counting",
+        "ran": 4,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_creature_keywords",
+        "ran": 13,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_crosscheck",
+        "ran": 3,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_browser",
+        "ran": 4,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_database_coverage",
+        "ran": 13,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_dimir_cards",
+        "ran": 48,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_empower_discover",
+        "ran": 5,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_esper_boros",
+        "ran": 8,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_fear_horsemanship_delayed",
+        "ran": 21,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_flagged_cards",
+        "ran": 3,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_forge_cards",
+        "ran": 4,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_forge_flagged",
+        "ran": 12,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_forge",
+        "ran": 14,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_forge_script",
+        "ran": 14,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_grant_mana",
+        "ran": 6,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_graft_abilities",
+        "ran": 44,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_graveyard_activated",
+        "ran": 13,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_identity_events",
+        "ran": 18,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_history",
+        "ran": 4,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_improvise_delve_undying",
+        "ran": 29,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_infect_devoid_exalted",
+        "ran": 23,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_land_destruction",
+        "ran": 7,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_learn_landwalk",
+        "ran": 18,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_mana_and_blocks",
+        "ran": 7,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_mana_filters",
+        "ran": 6,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_imports",
+        "ran": 1,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_milling_rewards",
+        "ran": 14,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_modal",
+        "ran": 11,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_morph_and_effects",
+        "ran": 9,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_number_words",
+        "ran": 2,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_one_liners",
+        "ran": 11,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_persist_wither_rebound",
+        "ran": 21,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_pool_gaps",
+        "ran": 12,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_prepared_convoke",
+        "ran": 8,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_assess",
+        "ran": 14,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_proliferate",
+        "ran": 15,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_qa_combat",
+        "ran": 3,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_protection",
+        "ran": 12,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_mechanics",
+        "ran": 16,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_qa_parser",
+        "ran": 6,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_qa_forge",
+        "ran": 3,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_qa_stats",
+        "ran": 4,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_qa_provenance",
+        "ran": 4,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_rating",
+        "ran": 10,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_removal",
+        "ran": 5,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_regeneration",
+        "ran": 19,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_restricted_mana",
+        "ran": 4,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_retrace_fuse",
+        "ran": 4,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_return_counters",
+        "ran": 11,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_roles_connive_bite",
+        "ran": 9,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_ring",
+        "ran": 3,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_round10",
+        "ran": 6,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_round11",
+        "ran": 12,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_round12",
+        "ran": 10,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_round13",
+        "ran": 7,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_round14",
+        "ran": 7,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_round15",
+        "ran": 7,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_round17",
+        "ran": 4,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_round16",
+        "ran": 3,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_round18",
+        "ran": 4,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_round6",
+        "ran": 6,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_round7",
+        "ran": 11,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_round8",
+        "ran": 8,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_rules_compare",
+        "ran": 2,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_round9",
+        "ran": 4,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_rules_contracts",
+        "ran": 17,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_search_x",
+        "ran": 5,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_shadow_intimidate_landwalk",
+        "ran": 13,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_shared_counter_costs",
+        "ran": 20,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_shared_milling",
+        "ran": 12,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_storage_lands",
+        "ran": 5,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_storm_cascade",
+        "ran": 20,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_swampwalk",
+        "ran": 7,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_stack",
+        "ran": 15,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_tokens_phase_conditions",
+        "ran": 19,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_training_dethrone",
+        "ran": 19,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_templates",
+        "ran": 55,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_trigger_heads",
+        "ran": 5,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_trigger_heads2",
+        "ran": 10,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_triggers",
+        "ran": 17,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_upkeep_keywords",
+        "ran": 14,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_upper_rank_cards",
+        "ran": 7,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_x_tokens",
+        "ran": 5,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_zone_actions_layers",
+        "ran": 21,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_ranks",
+        "ran": 5,
+        "exit_code": 0
+      },
+      {
+        "module": "tests.test_early_stop",
+        "ran": 3,
+        "exit_code": 0
+      }
+    ]
+  },
+  "focused": {
+    "command": ".venv/bin/python -m unittest tests.test_graft_abilities tests.test_counter_card_batch tests.test_training_dethrone tests.test_regeneration tests.test_combat_triggers tests.test_identity_events tests.test_zone_actions_layers -q",
+    "ran": 194,
+    "result": "OK",
+    "new_regressions": 44
+  },
+  "lint": {
+    "command": ".venv/bin/python scripts/lint.py",
+    "exit_code": 0,
+    "output": "pyflakes: 0 finding(s)"
+  },
+  "whitespace": {
+    "command": "git diff --check",
+    "exit_code": 0
+  },
+  "coverage": {
+    "cards_compared": 10,
+    "newly_full_template_matches": 10,
+    "parser_errors": 0
+  },
+  "database_sha256": "b69f4273177e76ef08ad88b323a1eebad1329b29059500fa6f42853ceddaf2f1",
+  "modified_and_new_source_hashes": {
+    "mtgsim/cards/__init__.py": "68fcc3f27f102b8a9ed0d0f14426d86d7b06438f4e9e29bb22eab47ef2407f99",
+    "mtgsim/cards/clauses.py": "494482bcb309a81adda99032d82ef03e476dc33dd3b80632a5119eb09e815cf9",
+    "mtgsim/cards/face_lines.py": "d55d481bb3a033b6f43d6f3cbf28bafcb23e3d4a49a0de66e146dba1a75247ec",
+    "mtgsim/cards/model.py": "ea08d1164f01af3121fbc619236e5c8d6ada82c3b4923b621dc1b1bf87b89d08",
+    "mtgsim/cards/parse.py": "4059b5f70aa94a29042b3e2dc9e7e215f7ce9534295d817a36cb2ea517a538ec",
+    "mtgsim/costs.py": "a446f45d135eaf1a75adee6c67243547a74320ad577eafa6680a8a7191585123",
+    "mtgsim/counter_mechanics.py": "2966c45376760319c3c41f695f1031f4d85dce7b1ba19941c85a97f9ac70e3d1",
+    "mtgsim/creature_keywords.py": "109f33a81737d53c684c0b390adc411759365d03e82028c4bba91a0f81b21806",
+    "mtgsim/engine/abilities.py": "b0ffaced3259426cb0fd1effd3dc5581e96fbdfc1f3b82e9754a1d30093d530e",
+    "mtgsim/engine/battlefield.py": "7fb30f0557aba5892c84a2d2a32eaa89b4cf754e3d482d544a9f09c3b9e4f682",
+    "mtgsim/engine/combat.py": "7eb5b2678cadfeadab3007553570c549750de43963157f33965d73673eba7148",
+    "mtgsim/engine/costs.py": "14dbaad9f467f48f05bbf45c1fc160c6a21b50a7139ce8453d7c79138e289f18",
+    "mtgsim/engine/effects.py": "0b484415bad3f7639afa9aafaeb168b350640642a9c340d582f0915f58f699a4",
+    "mtgsim/engine/game.py": "56cee6b723284c22aae56ffaa33b1b2bfb1b513017b2e19d79603b568d1970f1",
+    "mtgsim/engine/kinds/__init__.py": "676a6e777e79e1634ed079b8487a9115379bd45bd4b25896c3a7d88740be8777",
+    "mtgsim/engine/kinds/counters.py": "9f33b57d9d7f5962cd4a709f6baa6130b3437b6314d1255e71676e695cf23630",
+    "mtgsim/engine/kinds/graveyard.py": "3d4248f69da8530ad26edae41bfe865c0303c365534a5822ea092320f5380cf4",
+    "mtgsim/engine/kinds/permanents.py": "cc3262f8c6913501eb1351886665dccbf5ca811899c17d55d9ed09903dbb948f",
+    "mtgsim/engine/policy.py": "51225928788fdae5064b0246b937e63960f0401dc42845b473c64ccdc5e9debc",
+    "mtgsim/engine/stack.py": "2ed05995c98d73eff7c410878223aaadd3c907ff6a714eccd4551edd79f67420",
+    "mtgsim/engine/state.py": "f4963c5bcc64a21eec7ec3bad2e2e30e8da653cc6c0cc32ee7a59afb9820fd71",
+    "mtgsim/engine/targets.py": "41e2b2065b24da073b1fd20e4e4f40d7805dc7c5abfe94b22749d90e44cd776e",
+    "mtgsim/engine/turns.py": "eeee89931f2090857125341f78195fb83d0798c9cd4e78c80a756afb8b08a752",
+    "mtgsim/storage.py": "282b03519b2d3161fefaef23f55367de13917e99c3e997fd61b4c9155ce2acb7",
+    "tests/test_counter_card_batch.py": "05cc15fbb36af63285d9118abe67ac4575d69a731a430105bcc6cea4883df714",
+    "tests/test_graft_abilities.py": "066c350dca50402b2c6d3cd2efeb40393bde2ebbc608da1428207e448d0b13b9",
+    "tests/test_shared_counter_costs.py": "0b112679953991c74e3b53e6294d15913bea11e6ebedc6cd98896e72c471fea5",
+    "tests/test_training_dethrone.py": "ce09d2d73818d910626f893c927f5d4c6656cfb140899a73c0ceafdba37b3c36"
+  },
+  "source_hashes_verified_after_tests": true,
+  "smoke": "smoke.json: real-database source-control and Root-Kin automatic activation with HeuristicAI and BaselineAI; functional checks only."
+}

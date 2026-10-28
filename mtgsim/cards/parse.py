@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import milling, modal, returns
+from .. import milling, modal, returns, permanent_templates
 from .. import auras as _auras, storage as _storage
 from .model import (
     Activated, AltCost, BASIC_MANA, CardDef, Effect, NO_MATCH, Trigger, _num, add_mana, parse_mana_cost,
@@ -15,7 +15,7 @@ from .patterns import _EFFECT_PATTERNS
 
 # "You may <effect>" is always taken, so only for effects that cost the player nothing.
 _MAY_DECLINED = {"sacrifice", "sacrifice_self", "discard", "discard_choice", "lose_life", "mill", "pay_gate",
-                 "damage", "drain", "destroy", "exile", "wrath", "bounce"}
+                 "damage", "drain", "destroy", "exile", "exile_permanent", "wrath", "bounce"}
 
 
 def _parse_effects(text: str, opts: bool = False):
@@ -24,12 +24,23 @@ def _parse_effects(text: str, opts: bool = False):
     for rx, rep in _SUBS:
         text = rx.sub(rep, text)
     gated = False
-    for sentence in re.split(r"(?<=\.)\s+", text.strip()):
+    from ..permanent_templates import split_sentences
+    for sentence in split_sentences(text.strip()):
         s = sentence.strip().rstrip(".").strip()
         if not s:
             continue
+        from ..residual_templates import parse_effect as residual_effect
+        residual = residual_effect(s)
+        if residual is not None:
+            effects.extend(residual)
+            continue
+        from ..advanced_templates import parse_effect
+        advanced = parse_effect(s, effects)
+        if advanced is not None:
+            effects.extend(advanced)
+            continue
         if re.fullmatch(r"(?:it|they|those creatures) can't be regenerated", s, re.I) and effects and \
-                effects[-1].kind in ("destroy", "wrath", "wrath_pw"):
+                effects[-1].kind in ("destroy", "wrath", "wrath_pw", "selected_mass_move"):
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
             continue
         if re.fullmatch(r"if that spell is countered this way, exile it instead of putting it into its owner's graveyard", s,
@@ -218,6 +229,10 @@ def card_from_scryfall(data: dict) -> CardDef:
 def _split_halves(left: CardDef, right: CardDef) -> bool:
     """A split instant or sorcery: the right half is another way to cast the card, and Fuse casts both halves
     for both costs. Rooms and aftermath halves are left alone (False)."""
+    if right.advanced_rules.get("aftermath"):
+        left.split_right = right
+        left.unsupported += [f"{right.name}: {u}" for u in right.unsupported]
+        return True
     if not (left.is_instant or left.is_sorcery) or not (right.is_instant or right.is_sorcery) or \
             "Aftermath" in right.oracle:
         return False
@@ -249,6 +264,11 @@ def _parse_face(data: dict) -> CardDef:
 
     oracle = data.get("oracle_text", "") or ""
     text = re.sub(r"\([^)]*\)", "", oracle)
+    token_names = []
+    def protect_name(match):
+        token_names.append(match[1])
+        return 'named TOKENNAME' + str(len(token_names) - 1) + ' with "'
+    text = re.sub(r'named ([^.\n]+?) with "', protect_name, text)
     text = text.replace(name, "~")
     if "," in name and "Legendary" in type_line:
         text = re.sub(rf"\b{re.escape(name.split(',')[0])}\b", "~", text)  # "Iymrith" for "Iymrith, Desert Doom"
@@ -258,6 +278,8 @@ def _parse_face(data: dict) -> CardDef:
         text = re.sub(rf"\b{re.escape(name.split()[0])}\b", "~", text)  # "Ajani" for "Ajani Resolute"
     elif " the " in name and "Legendary" in type_line:
         text = re.sub(rf"\b{re.escape(name.split(' the ')[0])}\b", "~", text)  # "Smaug the Magnificent"
+    for index, token_name in enumerate(token_names):
+        text = text.replace('TOKENNAME' + str(index), token_name)
     text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment|class)\b", "~",
                   text, flags=re.I)
     text = re.sub(r"\b(protection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
@@ -426,13 +448,37 @@ def _parse_ability_cost(text: str):
             extra["exile_self"] = True
         elif part == "Discard a card":
             extra["discard"] = 1
+        elif re.fullmatch(r"Pay (?:\{E\})+", part):
+            extra["energy"] = part.count("{E}")
         elif (m := re.fullmatch(r"Pay (\d+) life", part)):
             extra["life"] = int(m[1])
-        elif (m := re.fullmatch(r"Remove an? ([\w/+-]+) counter from ~", part)):
-            extra["remove_counter"] = m[1]
+        elif (m := re.fullmatch(r"Remove (a|an|one|two|three|four|five|six|seven|eight|nine|ten|\d+) "
+                               r"([\w/+-]+) counters? from ~", part)):
+            if 'remove_counter' in extra or _num(m[1]) < 1:
+                return None
+            extra["remove_counter"] = m[2]
+            extra["remove_counter_count"] = _num(m[1])
+        elif (m := re.fullmatch(r"Remove (a|one|two|three|four|five|\d+) \+1/\+1 counters? "
+                               r"from among creatures you control", part)):
+            n = _num(m[1])
+            if n < 1:
+                return None
+            if not isinstance(extra.get('remove_creature_counters', 0), int) or extra.get('creature_counter_kind', '+1/+1') != '+1/+1':
+                return None
+            extra["remove_creature_counters"] = extra.get("remove_creature_counters", 0) + n
+        elif (m := re.fullmatch(r"Remove (X|one or more|a|one|two|three|four|five|\d+) "
+                               r"(\+1/\+1 )?counters? from among creatures you control", part)):
+            if "remove_creature_counters" in extra:
+                return None
+            extra["remove_creature_counters"] = {"X": "x", "one or more": "positive"}.get(m[1], m[1])
+            if m[1] not in ("X", "one or more"):
+                extra["remove_creature_counters"] = _num(m[1])
+                if extra["remove_creature_counters"] < 1:
+                    return None
+            extra["creature_counter_kind"] = "+1/+1" if m[2] else "any"
         elif (m := re.fullmatch(r"Sacrifice (?:a|an|another) (.+)", part)) and \
-                m[1].lower() in _SACRIFICE_KINDS:
-            what = m[1].lower()
+                (m[1].lower() in _SACRIFICE_KINDS or permanent_templates.selector(m[1]) is not None):
+            what = m[1] if m[1].lower() not in _SACRIFICE_KINDS else m[1].lower()
             extra["sacrifice"] = ("other " + what if part.startswith("Sacrifice another") else what)
         elif (m := re.fullmatch(r"Sacrifice (two|three|four|five) ([A-Za-z]+?)s", part)) and \
                 m[2].lower() in _SACRIFICE_KINDS:

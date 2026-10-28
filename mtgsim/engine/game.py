@@ -27,7 +27,7 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
     def __init__(self, p1: Player, p2: Player, rng: random.Random, max_turns: int = 60, log: bool = False):
         self.end_cleanup: list = []   # (token, "sacrifice" | "exile"): goes away at the beginning of the next end step
         self.blinked: list = []       # (card, owner): returns at the beginning of the next end step
-        self.stolen: list = []        # (permanent, original controller): control returns at end of turn
+        self.control_effects: list = []  # timestamped (target, controller, source, until_eot)
         self.players = [p1, p2]       # p1 is on the play
         self.effect_clock = 0
         self.continuous_effects = []
@@ -47,6 +47,8 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
         self.stack: list[StackItem] = []
         self.pending: list[tuple] = []   # triggered abilities waiting to be put on the stack
         self.delayed_upkeep: list[tuple] = []  # (controller, amount, source, name, scope)
+        self.delayed_end_step: list[tuple] = []
+        self.extra_combats = 0
         self.rebound_upkeep: list[tuple] = []  # (controller, exiled card, zone version)
         self.extra_turns: list = []                # players who take an extra turn after this one
         self.end_combat_effects: list[tuple] = []  # (controller, effects, source, that creature): "at end of combat"
@@ -70,6 +72,7 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
     def change_life(self, player, delta, cause):
         before = player.life
         player.life += delta
+        delta = player.life - before
         if delta > 0:
             player.life_gained_turn += delta
             self.fire(player, "gain_life")

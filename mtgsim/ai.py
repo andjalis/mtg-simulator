@@ -81,7 +81,7 @@ def _ward_payable(game: Game, by: Player, perm, card: CardDef | None = None) -> 
     return True
 
 
-CREATURE_TARGETS = ("creature", "creature_pw", "any")
+CREATURE_TARGETS = ("permanent", "creature", "creature_pw", "any")
 
 
 def _spell_options(game: Game, me: Player) -> list:
@@ -744,6 +744,15 @@ class HeuristicAI:
             return (card_value(card) + 0.5 * card.cmc + etb
                     + self._static_value(game, me, card) - self._sac_cost(game, me, card), None)
         instant = card.instant_speed
+        if any('anchor' in e.data or e.kind in ('allocated_counter', 'return_tribal_grave', 'grave_library_top',
+                'control_permanent', 'populate', 'advanced_quantity_stats', 'selected_mass_move', 'filtered_grave_return', 'graveyard_exile_all', 'graveyard_exile_choice') for e in card.spell_effects):
+            from .engine.policy import _mode_value
+            with game.targeting(card):
+                value = _mode_value(game, me, card.spell_effects)
+                targets = game.auto_targets(me, card.spell_effects)
+                if value > 0 and game.valid_action_targets(me, card.spell_effects, targets, card):
+                    return value, targets
+            return None
         if getattr(card, "modes", None):
             # The engine picks modes and targets (choose_modes); value it the same way.
             if instant or not hasattr(engine, "_option_value"):
@@ -764,7 +773,7 @@ class HeuristicAI:
                     return None  # removal waits for their attack or end step
                 targets.append(tgt)
                 value += v
-            elif eff.kind in ("destroy", "bounce", "debuff_one", "oring"):
+            elif eff.kind in ("destroy", "exile_permanent", "bounce", "debuff_one", "oring"):
                 tgt = self.choose_target(game, me, eff, card)
                 if tgt is None:
                     return None
@@ -954,7 +963,7 @@ class HeuristicAI:
         if "flash" not in card.keywords:
             return False
         effects = [e for t in card.triggers if t.event == "etb" for e in t.effects] or list(card.etb_effects)
-        return any(e.kind in ("damage", "destroy", "bounce") and e.target in CREATURE_TARGETS for e in effects)
+        return any(e.kind in ("damage", "destroy", "exile_permanent", "bounce") and e.target in CREATURE_TARGETS for e in effects)
 
     def _etb_value(self, game: Game, me: Player, card: CardDef, precombat: bool) -> float:
         """Extra value of a permanent's enters-the-battlefield removal, tutor or explore."""
@@ -1032,6 +1041,9 @@ class HeuristicAI:
         return opp, face
 
     def choose_target(self, game: Game, me: Player, eff: Effect, card: CardDef | None = None):
+        if eff.target == 'permanent':
+            with game.targeting(card if card is not None else game.target_source):
+                return engine.default_choose_target(game, me, eff)
         opp = game.opponent(me)
         if eff.kind == "damage":
             if eff.target in ("any", "player", "creature", "creature_pw"):
@@ -1040,7 +1052,7 @@ class HeuristicAI:
                     return tgt
                 return opp
             return None
-        if eff.kind in ("destroy", "bounce", "debuff_one", "oring", "tap", "stun"):
+        if eff.kind in ("destroy", "exile_permanent", "bounce", "debuff_one", "oring", "tap", "stun"):
             pool = opp.creatures + [x for x in getattr(opp, "planeswalkers", []) if not x.is_creature]
             if eff.target == "nonland_perm":
                 pool = [x for x in opp.battlefield if not x.card.is_land or x.is_creature]
@@ -1113,9 +1125,9 @@ class HeuristicAI:
 
     def _effect_harm(self, game: Game, me: Player, eff: Effect, tgt) -> float:
         opp = game.opponent(me)
-        if eff.kind in ("destroy", "bounce") and tgt is None:
+        if eff.kind in ("destroy", "exile_permanent", "bounce") and tgt is None:
             tgt = max(me.creatures, key=perm_value, default=None)  # an ETB that will pick a target
-        if eff.kind == "destroy" and isinstance(tgt, Permanent) and tgt.controller is me:
+        if eff.kind in ("destroy", "exile_permanent") and isinstance(tgt, Permanent) and tgt.controller is me:
             return perm_value(tgt) + 1
         if eff.kind == "bounce" and isinstance(tgt, Permanent) and tgt.controller is me:
             return 0.5 * tgt.card.cmc + 1
@@ -1150,7 +1162,7 @@ class HeuristicAI:
             if not isinstance(tgt, Permanent) or tgt.controller is not me or perm_value(tgt) < 2.5:
                 continue
             lethal_damage = eff.kind == "damage" and tgt.toughness - tgt.damage <= eff.amount
-            if not (lethal_damage or eff.kind in ("destroy", "bounce", "debuff_one")):
+            if not (lethal_damage or eff.kind in ("destroy", "exile_permanent", "bounce", "debuff_one")):
                 continue
             source = item.card or (item.source.card if item.source is not None else None)
             for card in options:
@@ -1195,7 +1207,7 @@ class HeuristicAI:
         """(value, targets) for using removal card on the best creature in pool."""
         targets, value = [], 0.0
         for eff in card.spell_effects:
-            if eff.kind in ("destroy", "bounce") or (eff.kind == "damage" and eff.target in CREATURE_TARGETS):
+            if eff.kind in ("destroy", "exile_permanent", "bounce") or (eff.kind == "damage" and eff.target in CREATURE_TARGETS):
                 legal = [c for c in pool if _legal(game, me, eff, c, card)
                          and not (eff.kind != "bounce" and c.has("indestructible"))
                          and (eff.kind != "damage" or c.toughness - c.damage <= eff.amount)]
@@ -1350,7 +1362,7 @@ class HeuristicAI:
         """Damage the opponent's creatures could put on our planeswalker next turn, after effects."""
         gone, tokens = set(), []
         for e in effects:
-            if e.kind in ("destroy", "bounce", "damage", "debuff_one") and e.target in engine.TARGETED:
+            if e.kind in ("destroy", "exile_permanent", "bounce", "damage", "debuff_one") and e.target in engine.TARGETED:
                 tgt = engine.default_choose_target(game, me, e)
                 if isinstance(tgt, Permanent) and (e.kind != "damage" or tgt.toughness - tgt.damage <= e.amount):
                     gone.add(tgt)
@@ -1552,6 +1564,8 @@ class BaselineAI:
             if killable:
                 return max(killable, key=perm_value)
             return opp if eff.target == "any" else None
+        if eff.kind == 'exile_permanent' or eff.target == 'permanent':
+            return engine.default_choose_target(game, me, eff)
         if eff.kind == "destroy":
             return max(opp.creatures, key=perm_value, default=None)
         if eff.kind == "pump":

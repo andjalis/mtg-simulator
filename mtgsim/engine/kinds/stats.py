@@ -188,6 +188,7 @@ def grant(game, p, eff, target, item, **_):
             target.counters[keyword] = target.counters.get(keyword, 0) + 1
         else:
             target.temp_kw.add(keyword)
+            game.add_continuous_effect(target, "grant", keyword=keyword, until_eot=True)
 
 
 @kind("add_counter")

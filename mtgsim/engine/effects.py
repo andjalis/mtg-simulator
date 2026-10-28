@@ -1,7 +1,7 @@
 """Game methods for game events that effects and rules cause: damage, destroy, sacrifice, dying, state-based actions."""
 from __future__ import annotations
 
-from .. import continuous
+from .. import continuous, counter_mechanics
 
 from .. import auras
 from ..cards import AltCost, CardDef, Effect
@@ -97,8 +97,9 @@ class EffectsMixin:
         if eff.kind == "bounce_spell":
             self.stack.remove(target)
             if target.kind == "spell":
-                base, _, _ = self._origin(target.card)
-                target.controller.hand.append(base)
+                base, kind, _ = self._origin(target.card)
+                owner = getattr(base, "owner", None) or target.controller
+                (owner.exile if kind in ("aftermath", "flashback", "jump_start") else owner.hand).append(base)
             self.log(f"{target} is returned to its owner's hand", p)
             return
         if target.is_spell and not self.counterable(target):
@@ -108,7 +109,8 @@ class EffectsMixin:
             payer = target.controller
             if eff.data.get("life"):
                 n = eff.data["life"]
-                if payer.life > n + 2 and self.hook(payer, "pay_unless")(self, payer, 0, target):
+                from ..residual_templates import life_locked
+                if not life_locked(payer) and payer.life > n + 2 and self.hook(payer, "pay_unless")(self, payer, 0, target):
                     self.change_life(payer, -n, f"ward: pay {n} life")
                     return
             elif eff.data.get("discard"):
@@ -126,8 +128,9 @@ class EffectsMixin:
         self.stack.remove(target)
         if target.kind == "spell":
             base, kind, _ = self._origin(target.card)
-            exiled = kind == "flashback" or eff.data.get("exile")    # "exile it instead of putting it into ... graveyard"
-            (target.controller.exile if exiled else target.controller.graveyard).append(base)
+            exiled = kind in ("flashback", "jump_start", "grave_permission", "aftermath") or eff.data.get("exile")    # "exile it instead of putting it into ... graveyard"
+            owner = getattr(base, "owner", None) or target.controller
+            (owner.exile if exiled else owner.graveyard).append(base)
         self.log(f"{target} is countered", p)
 
     def scry(self, p: Player, n: int, to_graveyard: bool = False):
@@ -165,7 +168,7 @@ class EffectsMixin:
         self.rng.shuffle(rest)
         p.library.reorder(list(reversed(rest)) + [c for c in p.library if c not in rest])
 
-    def destroy(self, perm: Permanent, *, no_regen=False):
+    def destroy(self, perm: Permanent, *, no_regen=False, counter_sources=None):
         if perm not in perm.controller.battlefield:
             return False
         if perm.has("indestructible"):
@@ -183,7 +186,7 @@ class EffectsMixin:
             self.rule_events.emit(rules_events.RulesEvent("destruction_replaced", perm.controller,
                 source=perm, before=before, reason="destroy", replacements=intent.applied))
             return True
-        self.dies(perm)
+        self.dies(perm, counter_sources=counter_sources)
         return True
 
     def leave_battlefield(self, perm: Permanent, to: str):
@@ -194,12 +197,18 @@ class EffectsMixin:
         to = intent.destination
         if perm.unearthed or ((perm.disturbed or perm.card.gy_to_exile) and to == "graveyard"):
             to = "exile"                     # unearth: exiled if it would leave the battlefield; disturb: not to a graveyard
+        from ..residual_templates import grave_exiled
+        if to == "graveyard" and grave_exiled(self, perm.owner, token=perm.card.is_token):
+            to = "exile"
         before = rules_events.snapshot(perm)
+        perm.last_triggers = list(perm.triggers)
         perm.last_card = perm.card
         controller, owner = perm.controller, perm.owner
         perm.last_pt = before.power or 0, before.toughness or 0
         perm.front.pending_move = (before, "battlefield", controller, perm, intent.applied)
         controller.battlefield.remove(perm)
+        self._residual_source_index = None
+        counter_mechanics.expire_source_control(self)
         for effect in self.continuous_effects:
             if effect.source is perm:
                 continuous.refresh(effect.target)
@@ -249,15 +258,19 @@ class EffectsMixin:
                        or (x.is_creature and "creature" in card.extra_sacrifice)),
                       key=lambda x: (not x.card.is_token, perm_value(x) if x.is_creature else x.card.cmc))
 
-    def sacrifice(self, perm: Permanent):
+    def sacrifice(self, perm: Permanent, *, counter_sources=None):
         """Sacrifice perm, firing "whenever you sacrifice" triggers."""
         p = perm.controller
+        from ..advanced_templates import rules
+        item = getattr(self, "resolving_item", None)
+        if item is not None and item.controller is not p and any(rules(x).get("sac_protection") for x in p.battlefield):
+            return False
         p.sacrificed_turn += 1
         for other in list(p.battlefield):
             for trig in other.triggers:
                 if trig.event == "sacrifice" and card_matches(perm.card, trig.filter):
                     self.queue_trigger(p, trig.effects, other, other.card.name)
-        self.dies(perm) if perm.is_creature else self.leave_battlefield(perm, "graveyard")
+        self.dies(perm, counter_sources=counter_sources) if perm.is_creature else self.leave_battlefield(perm, "graveyard")
 
     def discard_card(self, p: Player, card: CardDef):
         card = self.move_card(card, p.hand, p.graveyard, reason="discard")
@@ -298,9 +311,22 @@ class EffectsMixin:
             return self.creature_died_turn
         return p.attacked_with > 0
 
-    def dies(self, perm: Permanent):
+    def dies(self, perm: Permanent, *, counter_sources=None):
+        if counter_sources is None:
+            counter_sources = counter_mechanics.death_sources(self)
+        previous = getattr(self, "_suppressed_death_object", None)
+        if perm.is_creature and getattr(counter_sources, "suppresses_death", False):
+            self._suppressed_death_object = perm
+        try:
+            return self._dies(perm, counter_sources=counter_sources)
+        finally:
+            self._suppressed_death_object = previous
+
+    def _dies(self, perm: Permanent, *, counter_sources=None):
         if perm not in perm.controller.battlefield:
             return
+        if counter_sources is None:
+            counter_sources = counter_mechanics.death_sources(self)
         was_creature = perm.is_creature
         death_returns = [keyword for keyword, count in (("undying", perm.p1), ("persist", perm.m1))
                          if was_creature and perm.has(keyword) and count == 0 and not perm.front.is_token]
@@ -310,7 +336,14 @@ class EffectsMixin:
         if perm.last_destination != "graveyard":
             self.log(f"{perm.card.name} is exiled instead of dying", perm.controller)
             return
+        if was_creature and getattr(counter_sources, "suppresses_death", False):
+            self.creature_died_turn = True
+            perm.controller.creature_died_turn = True
+            return
+        from ..backlog_templates import filtered_death
+        filtered_death(self, perm, counter_sources)
         if was_creature:
+            counter_mechanics.queue_death_return(self, perm, counter_sources)
             self.creature_died_turn = True
             perm.controller.creature_died_turn = True
         self.log(f"{perm.card.name} dies", perm.controller)
@@ -339,6 +372,8 @@ class EffectsMixin:
                 self.fire(pl, "creature_dies", subject=perm, context=perm)
 
     def state_based_actions(self):
+        from ..advanced_templates import update_static
+        update_static(self)
         for pl in self.players:
             left = getattr(pl.graveyard, "left", None)
             if left:
@@ -347,6 +382,13 @@ class EffectsMixin:
         changed = True
         while changed:
             changed = False
+            counter_sources = counter_mechanics.death_sources(self)
+            # With a counter-death watcher, distinguish this wave's deaths from
+            # creatures that only become lethal after a static source leaves.
+            simultaneous_deaths = {x for p in self.players for x in p.battlefield
+                                   if x.is_creature and (x.toughness <= 0 or
+                                   (x.damage >= x.toughness or x.deathtouched) and not x.has('indestructible'))
+                                   or x.is_planeswalker and x.loyalty <= 0} if counter_sources else set()
             # Choose from the pre-action state, before removing lethal creatures.
             # The legend rule is a graveyard move, neither destruction nor sacrifice.
             legend_losers = []
@@ -364,7 +406,8 @@ class EffectsMixin:
             for p in self.players:
                 for perm in list(p.battlefield):
                     # Protection: an Aura of that color is put into the graveyard, Equipment becomes unattached.
-                    if perm.card.aura and perm.aura_host is not None and protected_from(perm.aura_host, perm):
+                    if perm.card.aura and perm.aura_host is not None and (protected_from(perm.aura_host, perm) or
+                            perm.card.advanced_rules.get("aura_selector") and not auras.can_attach(self, perm.controller, perm.card, perm.aura_host, source=perm, targeting=False)):
                         auras.detach(perm)
                         self.leave_battlefield(perm, "graveyard")
                         changed = True
@@ -378,14 +421,14 @@ class EffectsMixin:
                         changed = True
                         continue
                     if perm.is_planeswalker and perm.loyalty <= 0:
-                        self.dies(perm)
+                        self.dies(perm, counter_sources=counter_sources if perm in simultaneous_deaths else None)
                         changed = True
                     elif perm.is_creature:
                         if perm.toughness <= 0:
-                            self.dies(perm)
+                            self.dies(perm, counter_sources=counter_sources if perm in simultaneous_deaths else None)
                             changed = True
                         elif (perm.damage >= perm.toughness or perm.deathtouched) and not perm.has("indestructible"):
-                            self.destroy(perm)
+                            self.destroy(perm, counter_sources=counter_sources if perm in simultaneous_deaths else None)
                             changed = True
                     # Dying objects retain their counters as last-known information.
                     if perm in p.battlefield:
@@ -396,7 +439,7 @@ class EffectsMixin:
                             changed = True
             for perm in legend_losers:
                 if perm in perm.controller.battlefield:
-                    self.dies(perm)
+                    self.dies(perm, counter_sources=counter_sources)
                     changed = True
         for p in self.players:
             if p.counters.get("poison", 0) >= 10:

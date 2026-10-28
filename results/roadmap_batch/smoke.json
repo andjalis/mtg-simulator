@@ -1,0 +1,23 @@
+{
+  "scope": "Real-database deterministic functional checks with both pilots; no win-rate claim.",
+  "checks": [
+    {
+      "pilot": "HeuristicAI",
+      "all_ten_capability_scenarios": true,
+      "automatic_bioshift": true,
+      "automatic_grace_mode": true,
+      "automatic_subtype_sacrifice": true,
+      "automatic_aura_targeting": true,
+      "mana_exception_during_lock": true
+    },
+    {
+      "pilot": "BaselineAI",
+      "all_ten_capability_scenarios": true,
+      "automatic_bioshift": true,
+      "automatic_grace_mode": true,
+      "automatic_subtype_sacrifice": true,
+      "automatic_aura_targeting": true,
+      "mana_exception_during_lock": true
+    }
+  ]
+}

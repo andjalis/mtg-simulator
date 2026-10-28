@@ -320,6 +320,7 @@ def _xq(text: str):
 
 
 _IF_CONDS = [
+    (r"you control a creature with a \+1/\+1 counter on it that attacked this turn", "p1_attacked_turn"),
     (r"you attacked this turn", "attacked_turn"),
     (r"an opponent controls more lands than you", "opp_more_lands"),
     (r"a creature died this turn", "creature_died"),

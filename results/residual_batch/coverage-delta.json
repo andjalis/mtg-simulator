@@ -1,0 +1,2152 @@
+{
+  "baseline": "results/advanced_batch/after",
+  "cards_compared": 34129,
+  "changed_classifications_or_ignored_text": 137,
+  "improved_cards": 137,
+  "newly_full_template_matches": 85,
+  "status_regressions": [],
+  "newly_full_cards": [
+    "Abstergo Entertainment",
+    "Aeromunculus",
+    "Agent of Treachery",
+    "Aggression",
+    "Always Watching",
+    "Austere Command",
+    "Authority of the Consuls",
+    "Azorius Skyguard",
+    "Bad Moon",
+    "Basking Broodscale",
+    "Benthic Biomancer",
+    "Biomancer's Familiar",
+    "Blessings of Nature",
+    "Blind Obedience",
+    "Bojuka Bog",
+    "Boromir, Warden of the Tower",
+    "Citywide Bust",
+    "Crook of Condemnation",
+    "Crusade",
+    "Cumber Stone",
+    "Cursed Totem",
+    "Dampening Pulse",
+    "Damping Matrix",
+    "Dread of Night",
+    "Dreamdrinker Vampire",
+    "Dusk // Dawn",
+    "Dwarven Mine",
+    "Elesh Norn, Grand Cenobite",
+    "Entreat the Dead",
+    "Evacuation",
+    "Evolution Witness",
+    "Frozen Aether",
+    "Gingerbread Cabin",
+    "Grafdigger's Cage",
+    "Growth-Chamber Guardian",
+    "Haunter of Nightveil",
+    "Hushbringer",
+    "Hushwing Gryff",
+    "Illness in the Ranks",
+    "Imposing Sovereign",
+    "Intangible Virtue",
+    "Invasion of Tolvada // The Broken Sky",
+    "Jund Charm",
+    "Kinjalli's Sunwing",
+    "Kismet",
+    "Knighted Myr",
+    "Lavinia, Azorius Renegade",
+    "Leyline of the Meek",
+    "Leyline of the Void",
+    "Loxodon Gatekeeper",
+    "Melira, Sylvok Outcast",
+    "Merrow Bonegnawer",
+    "Morningtide",
+    "Mystic Sanctuary",
+    "Nihil Spellbomb",
+    "Oathsworn Giant",
+    "Pest Control",
+    "Phila, Unsealed",
+    "Platinum Emperion",
+    "Redress Fate",
+    "Relic of Progenitus",
+    "Remorseful Cleric",
+    "Rest in Peace",
+    "Retribution of the Meek",
+    "Ritual of Soot",
+    "Sauroform Hybrid",
+    "Scavenger Grounds",
+    "Scrabbling Claws",
+    "Sentinel Totem",
+    "Sharktocrab",
+    "Skitter Eel",
+    "Solemnity",
+    "Sulfur Elemental",
+    "Sunken City",
+    "Temporal Mastery",
+    "Thraben Watcher",
+    "Thunderous Wrath",
+    "Tocatli Honor Guard",
+    "Tormod's Crypt",
+    "Tormod's Cryptkeeper",
+    "Torpor Orb",
+    "Ulvenwald Oddity // Ulvenwald Behemoth",
+    "Urabrask the Hidden",
+    "Virulent Plague",
+    "Witch's Cottage"
+  ],
+  "changes": [
+    {
+      "name": "Abstergo Entertainment",
+      "before": {
+        "name": "Abstergo Entertainment",
+        "status": "partial",
+        "ignored_text": "{3}, {T}, Exile ~: Return up to one target historic card from your graveyard to your hand, then exile all graveyards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Abstergo Entertainment",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aeromunculus",
+      "before": {
+        "name": "Aeromunculus",
+        "status": "partial",
+        "ignored_text": "{2}{G}{U}: Adapt 1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aeromunculus",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Agent of Treachery",
+      "before": {
+        "name": "Agent of Treachery",
+        "status": "partial",
+        "ignored_text": "if you control three or more permanents you don't own, draw three cards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Agent of Treachery",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aggression",
+      "before": {
+        "name": "Aggression",
+        "status": "partial",
+        "ignored_text": "At the beginning of the end step of enchanted creature's controller, destroy that creature if it didn't attack this turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aggression",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Always Watching",
+      "before": {
+        "name": "Always Watching",
+        "status": "partial",
+        "ignored_text": "Nontoken creatures you control get +1/+1 and have vigilance.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Always Watching",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Amulet of Safekeeping",
+      "before": {
+        "name": "Amulet of Safekeeping",
+        "status": "partial",
+        "ignored_text": "Whenever you become the target of a spell or ability an opponent controls, counter that spell or ability unless its controller pays {1}.\nCreature tokens get -1/-0.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Amulet of Safekeeping",
+        "status": "partial",
+        "ignored_text": "Whenever you become the target of a spell or ability an opponent controls, counter that spell or ability unless its controller pays {1}.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Austere Command",
+      "before": {
+        "name": "Austere Command",
+        "status": "partial",
+        "ignored_text": "\u2022 Destroy all creatures with mana value 3 or less.\n\u2022 Destroy all creatures with mana value 4 or greater.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Austere Command",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Authority of the Consuls",
+      "before": {
+        "name": "Authority of the Consuls",
+        "status": "partial",
+        "ignored_text": "Creatures your opponents control enter tapped.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Authority of the Consuls",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Azorius Skyguard",
+      "before": {
+        "name": "Azorius Skyguard",
+        "status": "partial",
+        "ignored_text": "Creatures your opponents control get -1/-0.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Azorius Skyguard",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bad Moon",
+      "before": {
+        "name": "Bad Moon",
+        "status": "partial",
+        "ignored_text": "Black creatures get +1/+1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bad Moon",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Banishing Stroke",
+      "before": {
+        "name": "Banishing Stroke",
+        "status": "partial",
+        "ignored_text": "Put target artifact, creature, or enchantment on the bottom of its owner's library.\nMiracle {W}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Banishing Stroke",
+        "status": "partial",
+        "ignored_text": "Put target artifact, creature, or enchantment on the bottom of its owner's library.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Basking Broodscale",
+      "before": {
+        "name": "Basking Broodscale",
+        "status": "partial",
+        "ignored_text": "{1}{G}: Adapt 1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Basking Broodscale",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bazaar of Wonders",
+      "before": {
+        "name": "Bazaar of Wonders",
+        "status": "partial",
+        "ignored_text": "exile all graveyards.\ncounter it if a card with the same name is in a graveyard or a nontoken permanent with the same name is on the battlefield.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bazaar of Wonders",
+        "status": "partial",
+        "ignored_text": "counter it if a card with the same name is in a graveyard or a nontoken permanent with the same name is on the battlefield.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Benthic Biomancer",
+      "before": {
+        "name": "Benthic Biomancer",
+        "status": "partial",
+        "ignored_text": "{1}{U}: Adapt 1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Benthic Biomancer",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Biomancer's Familiar",
+      "before": {
+        "name": "Biomancer's Familiar",
+        "status": "partial",
+        "ignored_text": "{T}: The next time target creature adapts this turn, it adapts as though it had no +1/+1 counters on it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Biomancer's Familiar",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Blessings of Nature",
+      "before": {
+        "name": "Blessings of Nature",
+        "status": "partial",
+        "ignored_text": "Miracle {G}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Blessings of Nature",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Blind Obedience",
+      "before": {
+        "name": "Blind Obedience",
+        "status": "partial",
+        "ignored_text": "Artifacts and creatures your opponents control enter tapped.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Blind Obedience",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bojuka Bog",
+      "before": {
+        "name": "Bojuka Bog",
+        "status": "partial",
+        "ignored_text": "exile all cards from target player's graveyard.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bojuka Bog",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bonfire of the Damned",
+      "before": {
+        "name": "Bonfire of the Damned",
+        "status": "partial",
+        "ignored_text": "~ deals X damage to target player or planeswalker and each creature that player or that planeswalker's controller controls.\nMiracle {X}{R}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bonfire of the Damned",
+        "status": "partial",
+        "ignored_text": "~ deals X damage to target player or planeswalker and each creature that player or that planeswalker's controller controls.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Boromir, Warden of the Tower",
+      "before": {
+        "name": "Boromir, Warden of the Tower",
+        "status": "partial",
+        "ignored_text": "if no mana was spent to cast it, counter that spell.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Boromir, Warden of the Tower",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Brotherhood's End",
+      "before": {
+        "name": "Brotherhood's End",
+        "status": "partial",
+        "ignored_text": "\u2022 ~ deals 3 damage to each creature and each planeswalker.\n\u2022 Destroy all artifacts with mana value 3 or less.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Brotherhood's End",
+        "status": "partial",
+        "ignored_text": "\u2022 ~ deals 3 damage to each creature and each planeswalker.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Calamity's Wake",
+      "before": {
+        "name": "Calamity's Wake",
+        "status": "partial",
+        "ignored_text": "Exile all graveyards.\nPlayers can't cast noncreature spells this turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Calamity's Wake",
+        "status": "partial",
+        "ignored_text": "Players can't cast noncreature spells this turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Citywide Bust",
+      "before": {
+        "name": "Citywide Bust",
+        "status": "partial",
+        "ignored_text": "Destroy all creatures with toughness 4 or greater.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Citywide Bust",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Crook of Condemnation",
+      "before": {
+        "name": "Crook of Condemnation",
+        "status": "partial",
+        "ignored_text": "{1}, Exile ~: Exile all graveyards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Crook of Condemnation",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Crusade",
+      "before": {
+        "name": "Crusade",
+        "status": "partial",
+        "ignored_text": "White creatures get +1/+1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Crusade",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Cumber Stone",
+      "before": {
+        "name": "Cumber Stone",
+        "status": "partial",
+        "ignored_text": "Creatures your opponents control get -1/-0.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Cumber Stone",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Cursed Totem",
+      "before": {
+        "name": "Cursed Totem",
+        "status": "partial",
+        "ignored_text": "Activated abilities of creatures can't be activated.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Cursed Totem",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Cursed Wombat",
+      "before": {
+        "name": "Cursed Wombat",
+        "status": "partial",
+        "ignored_text": "{2}{B}{G}: Adapt 2.\nPermanents you control have \"Whenever one or more +1/+1 counters are put on ~, put an additional +1/+1 counter on it. This ability triggers only once each turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Cursed Wombat",
+        "status": "partial",
+        "ignored_text": "Permanents you control have \"Whenever one or more +1/+1 counters are put on ~, put an additional +1/+1 counter on it. This ability triggers only once each turn.\"",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dampening Pulse",
+      "before": {
+        "name": "Dampening Pulse",
+        "status": "partial",
+        "ignored_text": "Creatures your opponents control get -1/-0.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dampening Pulse",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Damping Matrix",
+      "before": {
+        "name": "Damping Matrix",
+        "status": "partial",
+        "ignored_text": "Activated abilities of artifacts and creatures can't be activated unless they're mana abilities.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Damping Matrix",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Darksteel Angel",
+      "before": {
+        "name": "Darksteel Angel",
+        "status": "partial",
+        "ignored_text": "You can't lose the game and your opponents can't win the game.\nCreatures you control can't have -1/-1 counters put on them.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Darksteel Angel",
+        "status": "partial",
+        "ignored_text": "You can't lose the game and your opponents can't win the game.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dauntless Dismantler",
+      "before": {
+        "name": "Dauntless Dismantler",
+        "status": "partial",
+        "ignored_text": "Artifacts your opponents control enter tapped.\n{X}{X}{W}, Sacrifice ~: Destroy each artifact with mana value X.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dauntless Dismantler",
+        "status": "partial",
+        "ignored_text": "{X}{X}{W}, Sacrifice ~: Destroy each artifact with mana value X.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Devastation Tide",
+      "before": {
+        "name": "Devastation Tide",
+        "status": "partial",
+        "ignored_text": "Return all nonland permanents to their owners' hands.\nMiracle {1}{U}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Devastation Tide",
+        "status": "partial",
+        "ignored_text": "Return all nonland permanents to their owners' hands.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Divine Sacrament",
+      "before": {
+        "name": "Divine Sacrament",
+        "status": "partial",
+        "ignored_text": "White creatures get +1/+1.\nThreshold \u2014 White creatures get an additional +1/+1 as long as there are seven or more cards in your graveyard.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Divine Sacrament",
+        "status": "partial",
+        "ignored_text": "Threshold \u2014 White creatures get an additional +1/+1 as long as there are seven or more cards in your graveyard.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dread of Night",
+      "before": {
+        "name": "Dread of Night",
+        "status": "partial",
+        "ignored_text": "White creatures get -1/-1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dread of Night",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dreamdrinker Vampire",
+      "before": {
+        "name": "Dreamdrinker Vampire",
+        "status": "partial",
+        "ignored_text": "{1}{B}: Adapt 1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dreamdrinker Vampire",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dusk // Dawn",
+      "before": {
+        "name": "Dusk // Dawn",
+        "status": "partial",
+        "ignored_text": "Destroy all creatures with power 3 or greater.\nDawn: Return all creature cards with power 2 or less from your graveyard to your hand.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dusk // Dawn",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dwarven Mine",
+      "before": {
+        "name": "Dwarven Mine",
+        "status": "partial",
+        "ignored_text": "~ enters tapped unless you control three or more other Mountains.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dwarven Mine",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Elesh Norn, Grand Cenobite",
+      "before": {
+        "name": "Elesh Norn, Grand Cenobite",
+        "status": "partial",
+        "ignored_text": "Creatures your opponents control get -2/-2.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Elesh Norn, Grand Cenobite",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Elspeth, Sun's Champion",
+      "before": {
+        "name": "Elspeth, Sun's Champion",
+        "status": "partial",
+        "ignored_text": "[\u22123]: Destroy all creatures with power 4 or greater.\n[\u22127]: You get an emblem with \"Creatures you control get +2/+2 and have flying.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Elspeth, Sun's Champion",
+        "status": "partial",
+        "ignored_text": "[\u22127]: You get an emblem with \"Creatures you control get +2/+2 and have flying.\"",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Emperor of Bones",
+      "before": {
+        "name": "Emperor of Bones",
+        "status": "partial",
+        "ignored_text": "{1}{B}: Adapt 2.\nput a creature card exiled with ~ onto the battlefield under your control with a finality counter on it.\nIt gains haste.\nSacrifice it at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Emperor of Bones",
+        "status": "partial",
+        "ignored_text": "put a creature card exiled with ~ onto the battlefield under your control with a finality counter on it.\nIt gains haste.\nSacrifice it at the beginning of the next end step.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Entreat the Angels",
+      "before": {
+        "name": "Entreat the Angels",
+        "status": "partial",
+        "ignored_text": "Create X 4/4 white Angel creature tokens with flying.\nMiracle {X}{W}{W}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Entreat the Angels",
+        "status": "partial",
+        "ignored_text": "Create X 4/4 white Angel creature tokens with flying.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Entreat the Dead",
+      "before": {
+        "name": "Entreat the Dead",
+        "status": "partial",
+        "ignored_text": "Miracle {X}{B}{B}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Entreat the Dead",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ethereal Absolution",
+      "before": {
+        "name": "Ethereal Absolution",
+        "status": "partial",
+        "ignored_text": "Creatures your opponents control get -1/-1.\n{2}{W}{B}: Exile target card from an opponent's graveyard. If it was a creature card, you create a 1/1 white and black Spirit creature token with flying.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ethereal Absolution",
+        "status": "partial",
+        "ignored_text": "{2}{W}{B}: Exile target card from an opponent's graveyard. If it was a creature card, you create a 1/1 white and black Spirit creature token with flying.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Etherium Pteramander",
+      "before": {
+        "name": "Etherium Pteramander",
+        "status": "partial",
+        "ignored_text": "{6}{B}: Adapt 4. This ability costs {1} less to activate for each other artifact you control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Etherium Pteramander",
+        "status": "simplified",
+        "ignored_text": "",
+        "simplifications": "cost reduction ignored: This ability costs {1} less to activate for each other artifact you control."
+      }
+    },
+    {
+      "name": "Evacuation",
+      "before": {
+        "name": "Evacuation",
+        "status": "partial",
+        "ignored_text": "Return all creatures to their owners' hands.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Evacuation",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Evolution Witness",
+      "before": {
+        "name": "Evolution Witness",
+        "status": "partial",
+        "ignored_text": "{1}{G}: Adapt 2.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Evolution Witness",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Expanding Ooze",
+      "before": {
+        "name": "Expanding Ooze",
+        "status": "partial",
+        "ignored_text": "{B}{G}: Adapt 1.\nput a +1/+1 counter on target modified creature you control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Expanding Ooze",
+        "status": "partial",
+        "ignored_text": "put a +1/+1 counter on target modified creature you control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Faerie Slumber Party",
+      "before": {
+        "name": "Faerie Slumber Party",
+        "status": "partial",
+        "ignored_text": "Return all creatures to their owners' hands.\nFor each opponent who controlled a creature returned this way, you create two 1/1 blue Faerie creature tokens with flying and \"~ can block only creatures with flying.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Faerie Slumber Party",
+        "status": "partial",
+        "ignored_text": "For each opponent who controlled a creature returned this way, you create two 1/1 blue Faerie creature tokens with flying and \"~ can block only creatures with flying.\"",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Farewell",
+      "before": {
+        "name": "Farewell",
+        "status": "partial",
+        "ignored_text": "\u2022 Exile all artifacts.\n\u2022 Exile all enchantments.\n\u2022 Exile all graveyards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Farewell",
+        "status": "partial",
+        "ignored_text": "\u2022 Exile all artifacts.\n\u2022 Exile all enchantments.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Fetid Gargantua",
+      "before": {
+        "name": "Fetid Gargantua",
+        "status": "partial",
+        "ignored_text": "{2}{B}: Adapt 2.\nIf you do, lose 2 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Fetid Gargantua",
+        "status": "partial",
+        "ignored_text": "If you do, lose 2 life.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Final Act",
+      "before": {
+        "name": "Final Act",
+        "status": "partial",
+        "ignored_text": "\u2022 Destroy all battles.\n\u2022 Exile all graveyards.\n\u2022 Each opponent loses all counters.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Final Act",
+        "status": "partial",
+        "ignored_text": "\u2022 Destroy all battles.\n\u2022 Each opponent loses all counters.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Frozen Aether",
+      "before": {
+        "name": "Frozen Aether",
+        "status": "partial",
+        "ignored_text": "Artifacts, creatures, and lands your opponents control enter tapped.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Frozen Aether",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Gauntlet of Might",
+      "before": {
+        "name": "Gauntlet of Might",
+        "status": "partial",
+        "ignored_text": "Red creatures get +1/+1.\nWhenever a Mountain is tapped for mana, its controller adds an additional {R}.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Gauntlet of Might",
+        "status": "partial",
+        "ignored_text": "Whenever a Mountain is tapped for mana, its controller adds an additional {R}.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Geth, Thane of Contracts",
+      "before": {
+        "name": "Geth, Thane of Contracts",
+        "status": "partial",
+        "ignored_text": "Other creatures you control get -1/-1.\n{1}{B}{B}, {T}: Return target creature card from your graveyard to the battlefield. It gains \"If ~ would leave the battlefield, exile it instead of putting it anywhere else.\" Activate only as a sorcery.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Geth, Thane of Contracts",
+        "status": "partial",
+        "ignored_text": "{1}{B}{B}, {T}: Return target creature card from your graveyard to the battlefield. It gains \"If ~ would leave the battlefield, exile it instead of putting it anywhere else.\" Activate only as a sorcery.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Gideon's Memorial",
+      "before": {
+        "name": "Gideon's Memorial",
+        "status": "partial",
+        "ignored_text": "Creature tokens you control get +1/+0 and have vigilance.\n{1}{W}, Discard this card: It deals 4 damage to target attacking or blocking creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Gideon's Memorial",
+        "status": "partial",
+        "ignored_text": "{1}{W}, Discard this card: It deals 4 damage to target attacking or blocking creature.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Gingerbread Cabin",
+      "before": {
+        "name": "Gingerbread Cabin",
+        "status": "partial",
+        "ignored_text": "~ enters tapped unless you control three or more other Forests.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Gingerbread Cabin",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Grafdigger's Cage",
+      "before": {
+        "name": "Grafdigger's Cage",
+        "status": "partial",
+        "ignored_text": "Creature cards in graveyards and libraries can't enter the battlefield.\nPlayers can't cast spells from graveyards or libraries.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Grafdigger's Cage",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Growth-Chamber Guardian",
+      "before": {
+        "name": "Growth-Chamber Guardian",
+        "status": "partial",
+        "ignored_text": "{2}{G}: Adapt 2.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Growth-Chamber Guardian",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Haunter of Nightveil",
+      "before": {
+        "name": "Haunter of Nightveil",
+        "status": "partial",
+        "ignored_text": "Creatures your opponents control get -1/-0.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Haunter of Nightveil",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hidetsugu Consumes All // Vessel of the All-Consuming",
+      "before": {
+        "name": "Hidetsugu Consumes All // Vessel of the All-Consuming",
+        "status": "partial",
+        "ignored_text": "I \u2014 Destroy each nonland permanent with mana value 1 or less.\nII \u2014 Exile all graveyards.\nVessel of the All-Consuming: Whenever ~ deals damage, put a +1/+1 counter on it.\nVessel of the All-Consuming: if it has dealt 10 or more damage to that player this turn, they lose the game.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hidetsugu Consumes All // Vessel of the All-Consuming",
+        "status": "partial",
+        "ignored_text": "I \u2014 Destroy each nonland permanent with mana value 1 or less.\nVessel of the All-Consuming: Whenever ~ deals damage, put a +1/+1 counter on it.\nVessel of the All-Consuming: if it has dealt 10 or more damage to that player this turn, they lose the game.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hushbringer",
+      "before": {
+        "name": "Hushbringer",
+        "status": "partial",
+        "ignored_text": "Creatures entering or dying don't cause abilities to trigger.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hushbringer",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hushwing Gryff",
+      "before": {
+        "name": "Hushwing Gryff",
+        "status": "partial",
+        "ignored_text": "Creatures entering don't cause abilities to trigger.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hushwing Gryff",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hydra Trainer",
+      "before": {
+        "name": "Hydra Trainer",
+        "status": "partial",
+        "ignored_text": "You may exert ~ as it attacks. When you do, target creature gets +X/+X until end of turn, where X is the number of counters on permanents you control.\n{2}{G}: Adapt 2.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hydra Trainer",
+        "status": "partial",
+        "ignored_text": "You may exert ~ as it attacks. When you do, target creature gets +X/+X until end of turn, where X is the number of counters on permanents you control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Illness in the Ranks",
+      "before": {
+        "name": "Illness in the Ranks",
+        "status": "partial",
+        "ignored_text": "Creature tokens get -1/-1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Illness in the Ranks",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Imposing Sovereign",
+      "before": {
+        "name": "Imposing Sovereign",
+        "status": "partial",
+        "ignored_text": "Creatures your opponents control enter tapped.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Imposing Sovereign",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Incubation Druid",
+      "before": {
+        "name": "Incubation Druid",
+        "status": "partial",
+        "ignored_text": "{T}: Add one mana of any type that a land you control could produce. If ~ has a +1/+1 counter on it, add three mana of that type instead.\n{3}{G}{G}: Adapt 3.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Incubation Druid",
+        "status": "partial",
+        "ignored_text": "{T}: Add one mana of any type that a land you control could produce. If ~ has a +1/+1 counter on it, add three mana of that type instead.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Intangible Virtue",
+      "before": {
+        "name": "Intangible Virtue",
+        "status": "partial",
+        "ignored_text": "Creature tokens you control get +1/+1 and have vigilance.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Intangible Virtue",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Invasion of Tolvada // The Broken Sky",
+      "before": {
+        "name": "Invasion of Tolvada // The Broken Sky",
+        "status": "partial",
+        "ignored_text": "The Broken Sky: Creature tokens you control get +1/+0 and have lifelink.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Invasion of Tolvada // The Broken Sky",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Jund Charm",
+      "before": {
+        "name": "Jund Charm",
+        "status": "partial",
+        "ignored_text": "\u2022 Exile all cards from target player's graveyard.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Jund Charm",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Kinjalli's Sunwing",
+      "before": {
+        "name": "Kinjalli's Sunwing",
+        "status": "partial",
+        "ignored_text": "Creatures your opponents control enter tapped.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Kinjalli's Sunwing",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Kismet",
+      "before": {
+        "name": "Kismet",
+        "status": "partial",
+        "ignored_text": "Artifacts, creatures, and lands your opponents control enter tapped.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Kismet",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Knighted Myr",
+      "before": {
+        "name": "Knighted Myr",
+        "status": "partial",
+        "ignored_text": "{2}{W}: Adapt 1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Knighted Myr",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Lavinia, Azorius Renegade",
+      "before": {
+        "name": "Lavinia, Azorius Renegade",
+        "status": "partial",
+        "ignored_text": "if no mana was spent to cast it, counter that spell.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Lavinia, Azorius Renegade",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Leyline of the Meek",
+      "before": {
+        "name": "Leyline of the Meek",
+        "status": "partial",
+        "ignored_text": "Creature tokens get +1/+1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Leyline of the Meek",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Leyline of the Void",
+      "before": {
+        "name": "Leyline of the Void",
+        "status": "partial",
+        "ignored_text": "If a card would be put into an opponent's graveyard from anywhere, exile it instead.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Leyline of the Void",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Loxodon Gatekeeper",
+      "before": {
+        "name": "Loxodon Gatekeeper",
+        "status": "partial",
+        "ignored_text": "Artifacts, creatures, and lands your opponents control enter tapped.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Loxodon Gatekeeper",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Manglehorn",
+      "before": {
+        "name": "Manglehorn",
+        "status": "partial",
+        "ignored_text": "you may destroy target artifact.\nArtifacts your opponents control enter tapped.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Manglehorn",
+        "status": "partial",
+        "ignored_text": "you may destroy target artifact.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Melira, Sylvok Outcast",
+      "before": {
+        "name": "Melira, Sylvok Outcast",
+        "status": "partial",
+        "ignored_text": "You can't get poison counters.\nCreatures you control can't have -1/-1 counters put on them.\nCreatures your opponents control lose infect.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Melira, Sylvok Outcast",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Merrow Bonegnawer",
+      "before": {
+        "name": "Merrow Bonegnawer",
+        "status": "partial",
+        "ignored_text": "{T}: Target player exiles a card from their graveyard.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Merrow Bonegnawer",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Metamorphosis Fanatic",
+      "before": {
+        "name": "Metamorphosis Fanatic",
+        "status": "partial",
+        "ignored_text": "return up to one target creature card from your graveyard to the battlefield with a lifelink counter on it.\nMiracle {1}{B}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Metamorphosis Fanatic",
+        "status": "partial",
+        "ignored_text": "return up to one target creature card from your graveyard to the battlefield with a lifelink counter on it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Morningtide",
+      "before": {
+        "name": "Morningtide",
+        "status": "partial",
+        "ignored_text": "Exile all graveyards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Morningtide",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mystic Sanctuary",
+      "before": {
+        "name": "Mystic Sanctuary",
+        "status": "partial",
+        "ignored_text": "~ enters tapped unless you control three or more other Islands.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mystic Sanctuary",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Nihil Spellbomb",
+      "before": {
+        "name": "Nihil Spellbomb",
+        "status": "partial",
+        "ignored_text": "{T}, Sacrifice ~: Exile all cards from target player's graveyard.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Nihil Spellbomb",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Oathsworn Giant",
+      "before": {
+        "name": "Oathsworn Giant",
+        "status": "partial",
+        "ignored_text": "Other creatures you control get +0/+2 and have vigilance.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Oathsworn Giant",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Pest Control",
+      "before": {
+        "name": "Pest Control",
+        "status": "partial",
+        "ignored_text": "Destroy all nonland permanents with mana value 1 or less.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Pest Control",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Phila, Unsealed",
+      "before": {
+        "name": "Phila, Unsealed",
+        "status": "partial",
+        "ignored_text": "You can't get poison counters.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Phila, Unsealed",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Platinum Emperion",
+      "before": {
+        "name": "Platinum Emperion",
+        "status": "partial",
+        "ignored_text": "Your life total can't change.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Platinum Emperion",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Pteramander",
+      "before": {
+        "name": "Pteramander",
+        "status": "partial",
+        "ignored_text": "{7}{U}: Adapt 4. This ability costs {1} less to activate for each instant and sorcery card in your graveyard.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Pteramander",
+        "status": "simplified",
+        "ignored_text": "",
+        "simplifications": "cost reduction ignored: This ability costs {1} less to activate for each instant and sorcery card in your graveyard."
+      }
+    },
+    {
+      "name": "Rakdos Charm",
+      "before": {
+        "name": "Rakdos Charm",
+        "status": "partial",
+        "ignored_text": "\u2022 Exile all cards from target player's graveyard.\n\u2022 Each creature deals 1 damage to its controller.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Rakdos Charm",
+        "status": "partial",
+        "ignored_text": "\u2022 Each creature deals 1 damage to its controller.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ravenous Trap",
+      "before": {
+        "name": "Ravenous Trap",
+        "status": "partial",
+        "ignored_text": "If an opponent had three or more cards put into their graveyard from anywhere this turn, you may pay {0} rather than pay ~'s mana cost.\nExile all cards from target player's graveyard.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ravenous Trap",
+        "status": "partial",
+        "ignored_text": "If an opponent had three or more cards put into their graveyard from anywhere this turn, you may pay {0} rather than pay ~'s mana cost.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Redress Fate",
+      "before": {
+        "name": "Redress Fate",
+        "status": "partial",
+        "ignored_text": "Miracle {3}{W}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Redress Fate",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Reforge the Soul",
+      "before": {
+        "name": "Reforge the Soul",
+        "status": "partial",
+        "ignored_text": "Each player discards their hand, then draws seven cards.\nMiracle {1}{R}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Reforge the Soul",
+        "status": "partial",
+        "ignored_text": "Each player discards their hand, then draws seven cards.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Relic of Progenitus",
+      "before": {
+        "name": "Relic of Progenitus",
+        "status": "partial",
+        "ignored_text": "{T}: Target player exiles a card from their graveyard.\n{1}, Exile ~: Exile all graveyards. Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Relic of Progenitus",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Remorseful Cleric",
+      "before": {
+        "name": "Remorseful Cleric",
+        "status": "partial",
+        "ignored_text": "Sacrifice ~: Exile all cards from target player's graveyard.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Remorseful Cleric",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Rest in Peace",
+      "before": {
+        "name": "Rest in Peace",
+        "status": "partial",
+        "ignored_text": "exile all graveyards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Rest in Peace",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Retribution of the Meek",
+      "before": {
+        "name": "Retribution of the Meek",
+        "status": "partial",
+        "ignored_text": "Destroy all creatures with power 4 or greater.\nThey can't be regenerated.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Retribution of the Meek",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Revenge of the Hunted",
+      "before": {
+        "name": "Revenge of the Hunted",
+        "status": "partial",
+        "ignored_text": "Until end of turn, target creature gets +6/+6 and gains trample, and all creatures able to block it this turn do so.\nMiracle {G}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Revenge of the Hunted",
+        "status": "partial",
+        "ignored_text": "Until end of turn, target creature gets +6/+6 and gains trample, and all creatures able to block it this turn do so.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ritual of Soot",
+      "before": {
+        "name": "Ritual of Soot",
+        "status": "partial",
+        "ignored_text": "Destroy all creatures with mana value 3 or less.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ritual of Soot",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sauroform Hybrid",
+      "before": {
+        "name": "Sauroform Hybrid",
+        "status": "partial",
+        "ignored_text": "{4}{G}{G}: Adapt 4.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sauroform Hybrid",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Scavenger Grounds",
+      "before": {
+        "name": "Scavenger Grounds",
+        "status": "partial",
+        "ignored_text": "{2}, {T}, Sacrifice a Desert: Exile all graveyards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Scavenger Grounds",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Scrabbling Claws",
+      "before": {
+        "name": "Scrabbling Claws",
+        "status": "partial",
+        "ignored_text": "{T}: Target player exiles a card from their graveyard.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Scrabbling Claws",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Scuttlegator",
+      "before": {
+        "name": "Scuttlegator",
+        "status": "partial",
+        "ignored_text": "{6}{G/U}{G/U}: Adapt 3.\nAs long as ~ has a +1/+1 counter on it, it can attack as though it didn't have defender.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Scuttlegator",
+        "status": "partial",
+        "ignored_text": "As long as ~ has a +1/+1 counter on it, it can attack as though it didn't have defender.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sentinel Totem",
+      "before": {
+        "name": "Sentinel Totem",
+        "status": "partial",
+        "ignored_text": "{T}, Exile ~: Exile all graveyards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sentinel Totem",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sharktocrab",
+      "before": {
+        "name": "Sharktocrab",
+        "status": "partial",
+        "ignored_text": "{2}{G}{U}: Adapt 1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sharktocrab",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sister Repentia",
+      "before": {
+        "name": "Sister Repentia",
+        "status": "partial",
+        "ignored_text": "Martyrdom \u2014 When ~ dies, you gain 2 life and draw two cards.\nMiracle {W}{B}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sister Repentia",
+        "status": "partial",
+        "ignored_text": "Martyrdom \u2014 When ~ dies, you gain 2 life and draw two cards.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Skatewing Spy",
+      "before": {
+        "name": "Skatewing Spy",
+        "status": "partial",
+        "ignored_text": "{5}{U}: Adapt 2.\nEach creature you control with a +1/+1 counter on it has flying.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Skatewing Spy",
+        "status": "partial",
+        "ignored_text": "Each creature you control with a +1/+1 counter on it has flying.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Skitter Eel",
+      "before": {
+        "name": "Skitter Eel",
+        "status": "partial",
+        "ignored_text": "{2}{U}: Adapt 2.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Skitter Eel",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Solar Tide",
+      "before": {
+        "name": "Solar Tide",
+        "status": "partial",
+        "ignored_text": "\u2022 Destroy all creatures with power 2 or less.\n\u2022 Destroy all creatures with power 3 or greater.\nEntwine\u2014Sacrifice two lands.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Solar Tide",
+        "status": "partial",
+        "ignored_text": "Entwine\u2014Sacrifice two lands.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Solemnity",
+      "before": {
+        "name": "Solemnity",
+        "status": "partial",
+        "ignored_text": "Players can't get counters.\nCounters can't be put on artifacts, creatures, enchantments, or lands.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Solemnity",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sulfur Elemental",
+      "before": {
+        "name": "Sulfur Elemental",
+        "status": "partial",
+        "ignored_text": "White creatures get +1/-1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sulfur Elemental",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sunken City",
+      "before": {
+        "name": "Sunken City",
+        "status": "partial",
+        "ignored_text": "Blue creatures get +1/+1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sunken City",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Temperamental Oozewagg",
+      "before": {
+        "name": "Temperamental Oozewagg",
+        "status": "partial",
+        "ignored_text": "{2}{G}: Adapt 2.\nModified creatures you control have trample.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Temperamental Oozewagg",
+        "status": "partial",
+        "ignored_text": "Modified creatures you control have trample.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Temporal Mastery",
+      "before": {
+        "name": "Temporal Mastery",
+        "status": "partial",
+        "ignored_text": "Miracle {1}{U}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Temporal Mastery",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Terminus",
+      "before": {
+        "name": "Terminus",
+        "status": "partial",
+        "ignored_text": "Put all creatures on the bottom of their owners' libraries.\nMiracle {W}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Terminus",
+        "status": "partial",
+        "ignored_text": "Put all creatures on the bottom of their owners' libraries.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "The Battle of Bywater",
+      "before": {
+        "name": "The Battle of Bywater",
+        "status": "partial",
+        "ignored_text": "Destroy all creatures with power 3 or greater.\nThen create a Food token for each creature you control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "The Battle of Bywater",
+        "status": "partial",
+        "ignored_text": "Then create a Food token for each creature you control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thraben Watcher",
+      "before": {
+        "name": "Thraben Watcher",
+        "status": "partial",
+        "ignored_text": "Other nontoken creatures you control get +1/+1 and have vigilance.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thraben Watcher",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thunderous Wrath",
+      "before": {
+        "name": "Thunderous Wrath",
+        "status": "partial",
+        "ignored_text": "Miracle {R}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thunderous Wrath",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Tocatli Honor Guard",
+      "before": {
+        "name": "Tocatli Honor Guard",
+        "status": "partial",
+        "ignored_text": "Creatures entering don't cause abilities to trigger.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Tocatli Honor Guard",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Tormod's Crypt",
+      "before": {
+        "name": "Tormod's Crypt",
+        "status": "partial",
+        "ignored_text": "{T}, Sacrifice ~: Exile all cards from target player's graveyard.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Tormod's Crypt",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Tormod's Cryptkeeper",
+      "before": {
+        "name": "Tormod's Cryptkeeper",
+        "status": "partial",
+        "ignored_text": "{T}, Sacrifice ~: Exile all cards from target player's graveyard.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Tormod's Cryptkeeper",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Torpor Orb",
+      "before": {
+        "name": "Torpor Orb",
+        "status": "partial",
+        "ignored_text": "Creatures entering don't cause abilities to trigger.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Torpor Orb",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Triumph of Saint Katherine",
+      "before": {
+        "name": "Triumph of Saint Katherine",
+        "status": "partial",
+        "ignored_text": "Praesidium Protectiva \u2014 When ~ is put into your graveyard from the battlefield, exile it and the top six cards of your library in a face-down pile. If you do, shuffle that pile and put it back on top of your library.\nMiracle {1}{W}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Triumph of Saint Katherine",
+        "status": "partial",
+        "ignored_text": "Praesidium Protectiva \u2014 When ~ is put into your graveyard from the battlefield, exile it and the top six cards of your library in a face-down pile. If you do, shuffle that pile and put it back on top of your library.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Trollbred Guardian",
+      "before": {
+        "name": "Trollbred Guardian",
+        "status": "partial",
+        "ignored_text": "{2}{G}: Adapt 2.\nEach creature you control with a +1/+1 counter on it has trample.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Trollbred Guardian",
+        "status": "partial",
+        "ignored_text": "Each creature you control with a +1/+1 counter on it has trample.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Turtles in Time",
+      "before": {
+        "name": "Turtles in Time",
+        "status": "partial",
+        "ignored_text": "Return all creatures to their owners' hands.\nEach player may shuffle their hand and graveyard into their library, then each player who does draws seven cards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Turtles in Time",
+        "status": "partial",
+        "ignored_text": "Each player may shuffle their hand and graveyard into their library, then each player who does draws seven cards.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ulvenwald Oddity // Ulvenwald Behemoth",
+      "before": {
+        "name": "Ulvenwald Oddity // Ulvenwald Behemoth",
+        "status": "partial",
+        "ignored_text": "Ulvenwald Behemoth: Other creatures you control get +1/+1 and have trample and haste.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ulvenwald Oddity // Ulvenwald Behemoth",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Unruly Krasis",
+      "before": {
+        "name": "Unruly Krasis",
+        "status": "partial",
+        "ignored_text": "you may have the base power and toughness of another target creature you control become X/X until end of turn, where X is ~'s power.\n{3}{G}{U}: Adapt 3.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Unruly Krasis",
+        "status": "partial",
+        "ignored_text": "you may have the base power and toughness of another target creature you control become X/X until end of turn, where X is ~'s power.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Urabrask the Hidden",
+      "before": {
+        "name": "Urabrask the Hidden",
+        "status": "partial",
+        "ignored_text": "Creatures your opponents control enter tapped.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Urabrask the Hidden",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Valki, God of Lies // Tibalt, Cosmic Impostor",
+      "before": {
+        "name": "Valki, God of Lies // Tibalt, Cosmic Impostor",
+        "status": "partial",
+        "ignored_text": "each opponent reveals their hand.\nFor each opponent, exile a creature card they revealed this way until ~ leaves the battlefield.\n{X}: Choose a creature card exiled with ~ with mana value X. ~ becomes a copy of that card.\nTibalt, Cosmic Impostor: As ~ enters, you get an emblem with \"You may play cards exiled with ~, and you may spend mana as though it were mana of any color to cast those spells.\"\nTibalt, Cosmic Impostor: [+2]: Exile the top card of each player's library.\nTibalt, Cosmic Impostor: [\u22128]: Exile all graveyards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Valki, God of Lies // Tibalt, Cosmic Impostor",
+        "status": "partial",
+        "ignored_text": "each opponent reveals their hand.\nFor each opponent, exile a creature card they revealed this way until ~ leaves the battlefield.\n{X}: Choose a creature card exiled with ~ with mana value X. ~ becomes a copy of that card.\nTibalt, Cosmic Impostor: As ~ enters, you get an emblem with \"You may play cards exiled with ~, and you may spend mana as though it were mana of any color to cast those spells.\"\nTibalt, Cosmic Impostor: [+2]: Exile the top card of each player's library.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Vampirism",
+      "before": {
+        "name": "Vampirism",
+        "status": "partial",
+        "ignored_text": "Enchanted creature gets +1/+1 for each other creature you control.\nOther creatures you control get -1/-1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Vampirism",
+        "status": "partial",
+        "ignored_text": "Enchanted creature gets +1/+1 for each other creature you control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Vanishment",
+      "before": {
+        "name": "Vanishment",
+        "status": "partial",
+        "ignored_text": "Put target nonland permanent on top of its owner's library.\nMiracle {U}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Vanishment",
+        "status": "partial",
+        "ignored_text": "Put target nonland permanent on top of its owner's library.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Virulent Plague",
+      "before": {
+        "name": "Virulent Plague",
+        "status": "partial",
+        "ignored_text": "Creature tokens get -2/-2.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Virulent Plague",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Waker of Waves",
+      "before": {
+        "name": "Waker of Waves",
+        "status": "partial",
+        "ignored_text": "Creatures your opponents control get -1/-0.\n{1}{U}, Discard ~: Look at the top two cards of your library. Put one of them into your hand and the other into your graveyard.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Waker of Waves",
+        "status": "partial",
+        "ignored_text": "{1}{U}, Discard ~: Look at the top two cards of your library. Put one of them into your hand and the other into your graveyard.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Weathered Runestone",
+      "before": {
+        "name": "Weathered Runestone",
+        "status": "partial",
+        "ignored_text": "Nonland permanent cards in graveyards and libraries can't enter the battlefield.\nPlayers can't cast spells from graveyards or libraries.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Weathered Runestone",
+        "status": "partial",
+        "ignored_text": "Nonland permanent cards in graveyards and libraries can't enter the battlefield.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Witch's Cottage",
+      "before": {
+        "name": "Witch's Cottage",
+        "status": "partial",
+        "ignored_text": "~ enters tapped unless you control three or more other Swamps.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Witch's Cottage",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Zegana, Utopian Speaker",
+      "before": {
+        "name": "Zegana, Utopian Speaker",
+        "status": "partial",
+        "ignored_text": "if you control another creature with a +1/+1 counter on it, draw a card.\n{4}{G}{U}: Adapt 4.\nEach creature you control with a +1/+1 counter on it has trample.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Zegana, Utopian Speaker",
+        "status": "partial",
+        "ignored_text": "if you control another creature with a +1/+1 counter on it, draw a card.\nEach creature you control with a +1/+1 counter on it has trample.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Zephyrim",
+      "before": {
+        "name": "Zephyrim",
+        "status": "partial",
+        "ignored_text": "Squad {2}\nMiracle {1}{W}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Zephyrim",
+        "status": "partial",
+        "ignored_text": "Squad {2}",
+        "simplifications": ""
+      }
+    }
+  ]
+}

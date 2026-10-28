@@ -1,0 +1,324 @@
+{
+  "active": false,
+  "status": "completed_archive",
+  "reviewed_on": "2026-10-28",
+  "baseline": "results/advanced_batch/after",
+  "items": [
+    {
+      "id": "filtered_mass_moves_1",
+      "card": "Dusk // Dawn",
+      "clause": "Destroy all creatures with power 3 or greater.",
+      "priority": 1,
+      "status": "completed",
+      "before_ignored": [
+        "Destroy all creatures with power 3 or greater.",
+        "Dawn: Return all creature cards with power 2 or less from your graveyard to your hand."
+      ]
+    },
+    {
+      "id": "filtered_mass_moves_2",
+      "card": "Dusk // Dawn",
+      "clause": "Dawn: Return all creature cards with power 2 or less from your graveyard to your hand.",
+      "priority": 2,
+      "status": "completed",
+      "before_ignored": [
+        "Destroy all creatures with power 3 or greater.",
+        "Dawn: Return all creature cards with power 2 or less from your graveyard to your hand."
+      ]
+    },
+    {
+      "id": "exile_graveyards_3",
+      "card": "Rest in Peace",
+      "clause": "exile all graveyards.",
+      "priority": 3,
+      "status": "completed",
+      "before_ignored": [
+        "exile all graveyards."
+      ]
+    },
+    {
+      "id": "other_land_entry_conditions_4",
+      "card": "Mystic Sanctuary",
+      "clause": "~ enters tapped unless you control three or more other Islands.",
+      "priority": 4,
+      "status": "completed",
+      "before_ignored": [
+        "~ enters tapped unless you control three or more other Islands."
+      ]
+    },
+    {
+      "id": "ownership_thresholds_5",
+      "card": "Agent of Treachery",
+      "clause": "if you control three or more permanents you don't own, draw three cards.",
+      "priority": 5,
+      "status": "completed",
+      "before_ignored": [
+        "if you control three or more permanents you don't own, draw three cards."
+      ]
+    },
+    {
+      "id": "zero_mana_cast_triggers_6",
+      "card": "Lavinia, Azorius Renegade",
+      "clause": "if no mana was spent to cast it, counter that spell.",
+      "priority": 6,
+      "status": "completed",
+      "before_ignored": [
+        "if no mana was spent to cast it, counter that spell."
+      ]
+    },
+    {
+      "id": "host_end_step_attack_checks_7",
+      "card": "Aggression",
+      "clause": "At the beginning of the end step of enchanted creature's controller, destroy that creature if it didn't attack this turn.",
+      "priority": 7,
+      "status": "completed",
+      "before_ignored": [
+        "At the beginning of the end step of enchanted creature's controller, destroy that creature if it didn't attack this turn."
+      ]
+    },
+    {
+      "id": "adapt_replacements_8",
+      "card": "Biomancer's Familiar",
+      "clause": "{T}: The next time target creature adapts this turn, it adapts as though it had no +1/+1 counters on it.",
+      "priority": 8,
+      "status": "completed",
+      "before_ignored": [
+        "{T}: The next time target creature adapts this turn, it adapts as though it had no +1/+1 counters on it."
+      ]
+    },
+    {
+      "id": "miracle_9",
+      "card": "Blessings of Nature",
+      "clause": "Miracle {G}",
+      "priority": 9,
+      "status": "completed",
+      "before_ignored": [
+        "Miracle {G}"
+      ]
+    },
+    {
+      "id": "mass_bounce",
+      "card": "Evacuation",
+      "clause": "Return all creatures to their owners' hands.",
+      "priority": 10,
+      "status": "completed",
+      "before_ignored": [
+        "Return all creatures to their owners' hands."
+      ]
+    },
+    {
+      "id": "graveyard_exile_target",
+      "card": "Tormod's Crypt",
+      "clause": "{T}, Sacrifice ~: Exile all cards from target player's graveyard.",
+      "priority": 11,
+      "status": "completed",
+      "before_ignored": [
+        "{T}, Sacrifice ~: Exile all cards from target player's graveyard."
+      ]
+    },
+    {
+      "id": "graveyard_exile_choice",
+      "card": "Relic of Progenitus",
+      "clause": "{T}: Target player exiles a card from their graveyard.",
+      "priority": 12,
+      "status": "completed",
+      "before_ignored": [
+        "{T}: Target player exiles a card from their graveyard.",
+        "{1}, Exile ~: Exile all graveyards. Draw a card."
+      ]
+    },
+    {
+      "id": "opponent_grave_replacement",
+      "card": "Leyline of the Void",
+      "clause": "If a card would be put into an opponent's graveyard from anywhere, exile it instead.",
+      "priority": 13,
+      "status": "completed",
+      "before_ignored": [
+        "If a card would be put into an opponent's graveyard from anywhere, exile it instead."
+      ]
+    },
+    {
+      "id": "grave_library_entry_lock",
+      "card": "Grafdigger's Cage",
+      "clause": "Creature cards in graveyards and libraries can't enter the battlefield.",
+      "priority": 14,
+      "status": "completed",
+      "before_ignored": [
+        "Creature cards in graveyards and libraries can't enter the battlefield.",
+        "Players can't cast spells from graveyards or libraries."
+      ]
+    },
+    {
+      "id": "grave_library_cast_lock",
+      "card": "Grafdigger's Cage",
+      "clause": "Players can't cast spells from graveyards or libraries.",
+      "priority": 15,
+      "status": "completed",
+      "before_ignored": [
+        "Creature cards in graveyards and libraries can't enter the battlefield.",
+        "Players can't cast spells from graveyards or libraries."
+      ]
+    },
+    {
+      "id": "entry_trigger_suppression",
+      "card": "Torpor Orb",
+      "clause": "Creatures entering don't cause abilities to trigger.",
+      "priority": 16,
+      "status": "completed",
+      "before_ignored": [
+        "Creatures entering don't cause abilities to trigger."
+      ]
+    },
+    {
+      "id": "death_trigger_suppression",
+      "card": "Hushbringer",
+      "clause": "Creatures entering or dying don't cause abilities to trigger.",
+      "priority": 17,
+      "status": "completed",
+      "before_ignored": [
+        "Creatures entering or dying don't cause abilities to trigger."
+      ]
+    },
+    {
+      "id": "creature_activation_lock",
+      "card": "Cursed Totem",
+      "clause": "Activated abilities of creatures can't be activated.",
+      "priority": 18,
+      "status": "completed",
+      "before_ignored": [
+        "Activated abilities of creatures can't be activated."
+      ]
+    },
+    {
+      "id": "artifact_creature_nonmana_lock",
+      "card": "Damping Matrix",
+      "clause": "Activated abilities of artifacts and creatures can't be activated unless they're mana abilities.",
+      "priority": 19,
+      "status": "completed",
+      "before_ignored": [
+        "Activated abilities of artifacts and creatures can't be activated unless they're mana abilities."
+      ]
+    },
+    {
+      "id": "life_total_lock",
+      "card": "Platinum Emperion",
+      "clause": "Your life total can't change.",
+      "priority": 20,
+      "status": "completed",
+      "before_ignored": [
+        "Your life total can't change."
+      ]
+    },
+    {
+      "id": "player_counter_lock",
+      "card": "Solemnity",
+      "clause": "Players can't get counters.",
+      "priority": 21,
+      "status": "completed",
+      "before_ignored": [
+        "Players can't get counters.",
+        "Counters can't be put on artifacts, creatures, enchantments, or lands."
+      ]
+    },
+    {
+      "id": "permanent_counter_lock",
+      "card": "Solemnity",
+      "clause": "Counters can't be put on artifacts, creatures, enchantments, or lands.",
+      "priority": 22,
+      "status": "completed",
+      "before_ignored": [
+        "Players can't get counters.",
+        "Counters can't be put on artifacts, creatures, enchantments, or lands."
+      ]
+    },
+    {
+      "id": "poison_prevention",
+      "card": "Melira, Sylvok Outcast",
+      "clause": "You can't get poison counters.",
+      "priority": 23,
+      "status": "completed",
+      "before_ignored": [
+        "You can't get poison counters.",
+        "Creatures you control can't have -1/-1 counters put on them.",
+        "Creatures your opponents control lose infect."
+      ]
+    },
+    {
+      "id": "negative_counter_prevention",
+      "card": "Melira, Sylvok Outcast",
+      "clause": "Creatures you control can't have -1/-1 counters put on them.",
+      "priority": 24,
+      "status": "completed",
+      "before_ignored": [
+        "You can't get poison counters.",
+        "Creatures you control can't have -1/-1 counters put on them.",
+        "Creatures your opponents control lose infect."
+      ]
+    },
+    {
+      "id": "keyword_removal",
+      "card": "Melira, Sylvok Outcast",
+      "clause": "Creatures your opponents control lose infect.",
+      "priority": 25,
+      "status": "completed",
+      "before_ignored": [
+        "You can't get poison counters.",
+        "Creatures you control can't have -1/-1 counters put on them.",
+        "Creatures your opponents control lose infect."
+      ]
+    },
+    {
+      "id": "opponent_negative_anthem",
+      "card": "Elesh Norn, Grand Cenobite",
+      "clause": "Creatures your opponents control get -2/-2.",
+      "priority": 26,
+      "status": "completed",
+      "before_ignored": [
+        "Creatures your opponents control get -2/-2."
+      ]
+    },
+    {
+      "id": "token_anthem_keywords",
+      "card": "Intangible Virtue",
+      "clause": "Creature tokens you control get +1/+1 and have vigilance.",
+      "priority": 27,
+      "status": "completed",
+      "before_ignored": [
+        "Creature tokens you control get +1/+1 and have vigilance."
+      ]
+    },
+    {
+      "id": "nontoken_anthem_keywords",
+      "card": "Always Watching",
+      "clause": "Nontoken creatures you control get +1/+1 and have vigilance.",
+      "priority": 28,
+      "status": "completed",
+      "before_ignored": [
+        "Nontoken creatures you control get +1/+1 and have vigilance."
+      ]
+    },
+    {
+      "id": "global_color_anthem",
+      "card": "Bad Moon",
+      "clause": "Black creatures get +1/+1.",
+      "priority": 29,
+      "status": "completed",
+      "before_ignored": [
+        "Black creatures get +1/+1."
+      ]
+    },
+    {
+      "id": "opponent_tapped_entries",
+      "card": "Kismet",
+      "clause": "Artifacts, creatures, and lands your opponents control enter tapped.",
+      "priority": 30,
+      "status": "completed",
+      "before_ignored": [
+        "Artifacts, creatures, and lands your opponents control enter tapped."
+      ]
+    }
+  ],
+  "completed_effects": 30,
+  "completion_evidence": "results/residual_batch/completed-clauses.json",
+  "superseded_by": "results/residual_batch/backlog.json"
+}

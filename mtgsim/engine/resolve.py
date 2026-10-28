@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import dataclasses
+from contextlib import nullcontext
 
 from .. import counting
 from ..cards import Effect
@@ -48,7 +49,16 @@ class ResolveMixin:
             eff = dataclasses.replace(eff, amount=n)
         handler = HANDLERS.get(k)
         if handler is not None:
-            if handler(self, p=p, eff=eff, target=target, item=item, prev=prev, opp=opp, k=k, source=source,
-                       cause=cause) is NO_SBA:
-                return
+            from ..backlog_templates import entry_batch
+            batch = entry_batch(self) if k in ('copy_perm', 'gy_move', 'reanimate_total', 'last_gift') else nullcontext()
+            with batch:
+                previous_item = getattr(self, "resolving_item", None)
+                self.resolving_item = item
+                try:
+                    outcome = handler(self, p=p, eff=eff, target=target, item=item, prev=prev, opp=opp, k=k, source=source,
+                           cause=cause)
+                finally:
+                    self.resolving_item = previous_item
+                if outcome is NO_SBA:
+                    return
         self.state_based_actions()

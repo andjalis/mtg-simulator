@@ -1,0 +1,16 @@
+{
+  "base_commit": "9d6eb8ca9187ff1f5c672044c4df49698c7cb3e4",
+  "full_suite_source_hashes_verified": true,
+  "full_suite_tests": 1563,
+  "full_suite_passed": 1562,
+  "optional_skips": 1,
+  "parser_comparison": {
+    "command": "scripts/parse_diff.py local origin/main --show 5",
+    "exit_code": 0,
+    "report": "results/residual_batch/merge-parse-diff.md",
+    "temporary_regex_cache": 32768
+  },
+  "lint_exit_code": 0,
+  "whitespace_exit_code": 0,
+  "generated_database_excluded": true
+}

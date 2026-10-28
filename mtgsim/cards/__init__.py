@@ -35,3 +35,18 @@ from .. import auras as _auras, copies as _copies, removal as _removal, search a
 _EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS
 _EFFECT_PATTERNS += _milling.EFFECT_PATTERNS + _protection.EFFECT_PATTERNS + _combat_triggers.EFFECT_PATTERNS + _ring.EFFECT_PATTERNS
 _SUBS += _copies.SUBS + _counting.SUBS
+from .. import counter_mechanics as _counter_mechanics
+_EFFECT_PATTERNS += _counter_mechanics.EFFECT_PATTERNS
+_SUBS += _counter_mechanics.SUBS
+from .. import permanent_templates as _permanent_templates
+_EFFECT_PATTERNS[:0] = _permanent_templates.PRIORITY_PATTERNS
+_EFFECT_PATTERNS += _permanent_templates.EFFECT_PATTERNS
+from .. import backlog_templates as _backlog_templates
+_EFFECT_PATTERNS += _backlog_templates.EFFECT_PATTERNS
+_SUBS += _backlog_templates.SUBS
+from .. import advanced_templates as _advanced_templates
+_EFFECT_PATTERNS += _advanced_templates.EFFECT_PATTERNS
+_SUBS += _advanced_templates.SUBS
+from .. import residual_templates as _residual_templates
+_EFFECT_PATTERNS += _residual_templates.EFFECT_PATTERNS
+_SUBS += _residual_templates.SUBS

@@ -1,0 +1,636 @@
+{
+  "baseline": "Working tree after shared-counter costs, before this ten-change batch",
+  "baseline_file_sha256": {
+    "mtgsim/cards/model.py": "0dd17b96c63fd5432ad5173f91dc4d4f5010e02c99e4b2f35eefe33298d619a6",
+    "mtgsim/cards/parse.py": "16bedc0c99ba260106a5add90acd7b00681b99807e345c0b4308bec238c0f851",
+    "mtgsim/engine/state.py": "f88e567042818b3e2fe6270ef7716f3ee316ee2e3790d0fe18170bc664d4e7d4",
+    "mtgsim/engine/effects.py": "be861c342dd030356aed5e1cd5f5d8bf7b82eea97ff4da04e0d25b6e5294de93",
+    "mtgsim/costs.py": "90767652abbb78ba8263905d5a2acb6ead744f7912e695ec59dd5620deaaa925"
+  },
+  "database_metadata": {
+    "source": "forge:5c99e439",
+    "built": "2026-10-25 21:28:28",
+    "cards": "34129"
+  },
+  "scope": "Graft, trains, counter inheritance/shared costs, team training/dethrone, additional combats, Gryffwing Cavalry",
+  "examined": 84,
+  "before_errors": [],
+  "after_errors": [],
+  "improved": 29,
+  "new_full_template_matches": [
+    "Broodguard Elite",
+    "Dockworker Drone",
+    "Gryffwing Cavalry",
+    "Hei Bai, Spirit of Balance",
+    "Llanowar Reborn",
+    "Marchesa, the Black Rose",
+    "Novijen Sages",
+    "Ooze Flux",
+    "Parish-Blade Trainee",
+    "Retribution of the Ancients",
+    "Savior of Ollenbock",
+    "Scourge of the Throne",
+    "Simic Initiate",
+    "Spiteful Squad",
+    "Star Pupil",
+    "Tayam, Luminous Enigma"
+  ],
+  "changes": [
+    {
+      "name": "Aquastrand Spider",
+      "before": {
+        "name": "Aquastrand Spider",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Graft 2",
+          "{G}: Target creature with a +1/+1 counter on it gains reach until end of turn."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Aquastrand Spider",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{G}: Target creature with a +1/+1 counter on it gains reach until end of turn."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Broodguard Elite",
+      "before": {
+        "name": "Broodguard Elite",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "put its counters on target creature you control."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Broodguard Elite",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Cytoplast Manipulator",
+      "before": {
+        "name": "Cytoplast Manipulator",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Graft 2",
+          "{U}, {T}: Gain control of target creature with a +1/+1 counter on it for as long as ~ remains on the battlefield."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Cytoplast Manipulator",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{U}, {T}: Gain control of target creature with a +1/+1 counter on it for as long as ~ remains on the battlefield."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Cytoplast Root-Kin",
+      "before": {
+        "name": "Cytoplast Root-Kin",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Graft 4",
+          "put a +1/+1 counter on each other creature you control with a +1/+1 counter on it.",
+          "{2}: Move a +1/+1 counter from target creature you control onto ~."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Cytoplast Root-Kin",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "put a +1/+1 counter on each other creature you control with a +1/+1 counter on it.",
+          "{2}: Move a +1/+1 counter from target creature you control onto ~."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Cytospawn Shambler",
+      "before": {
+        "name": "Cytospawn Shambler",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Graft 6",
+          "{G}: Target creature with a +1/+1 counter on it gains trample until end of turn."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Cytospawn Shambler",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{G}: Target creature with a +1/+1 counter on it gains trample until end of turn."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Dockworker Drone",
+      "before": {
+        "name": "Dockworker Drone",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "put its counters on target creature you control."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Dockworker Drone",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Enduring Bondwarden",
+      "before": {
+        "name": "Enduring Bondwarden",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "put its counters on target creature you control."
+        ],
+        "simplified": [
+          "backup grants only keyword abilities"
+        ]
+      },
+      "after": {
+        "name": "Enduring Bondwarden",
+        "copies": 1,
+        "status": "simplified",
+        "ignored": [],
+        "simplified": [
+          "backup grants only keyword abilities"
+        ]
+      }
+    },
+    {
+      "name": "Essence Channeler",
+      "before": {
+        "name": "Essence Channeler",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "As long as you've lost life this turn, ~ has flying and vigilance.",
+          "put its counters on target creature you control."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Essence Channeler",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "As long as you've lost life this turn, ~ has flying and vigilance."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Gryffwing Cavalry",
+      "before": {
+        "name": "Gryffwing Cavalry",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "If you do, another target attacking creature without flying gains flying until end of turn."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Gryffwing Cavalry",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Hei Bai, Spirit of Balance",
+      "before": {
+        "name": "Hei Bai, Spirit of Balance",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "put its counters on target creature you control."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Hei Bai, Spirit of Balance",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Helium Squirter",
+      "before": {
+        "name": "Helium Squirter",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Graft 3",
+          "{1}: Target creature with a +1/+1 counter on it gains flying until end of turn."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Helium Squirter",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{1}: Target creature with a +1/+1 counter on it gains flying until end of turn."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Llanowar Reborn",
+      "before": {
+        "name": "Llanowar Reborn",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Graft 1"
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Llanowar Reborn",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Marchesa, the Black Rose",
+      "before": {
+        "name": "Marchesa, the Black Rose",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Other creatures you control have dethrone.",
+          "return that card to the battlefield under your control at the beginning of the next end step."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Marchesa, the Black Rose",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Novijen Sages",
+      "before": {
+        "name": "Novijen Sages",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Graft 4"
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Novijen Sages",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Ooze Flux",
+      "before": {
+        "name": "Ooze Flux",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{1}{G}, Remove one or more +1/+1 counters from among creatures you control: Create an X/X green Ooze creature token, where X is the number of +1/+1 counters removed this way."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Ooze Flux",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Parish-Blade Trainee",
+      "before": {
+        "name": "Parish-Blade Trainee",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "put its counters on target creature you control."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Parish-Blade Trainee",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Plaxcaster Frogling",
+      "before": {
+        "name": "Plaxcaster Frogling",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Graft 3",
+          "{2}: Target creature with a +1/+1 counter on it gains shroud until end of turn."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Plaxcaster Frogling",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{2}: Target creature with a +1/+1 counter on it gains shroud until end of turn."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Retribution of the Ancients",
+      "before": {
+        "name": "Retribution of the Ancients",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{B}, Remove X +1/+1 counters from among creatures you control: Target creature gets -X/-X until end of turn."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Retribution of the Ancients",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Savior of Ollenbock",
+      "before": {
+        "name": "Savior of Ollenbock",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Whenever ~ trains, exile up to one other target creature from the battlefield or creature card from a graveyard.",
+          "put the exiled cards onto the battlefield under their owners' control."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Savior of Ollenbock",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Scourge of the Throne",
+      "before": {
+        "name": "Scourge of the Throne",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Whenever ~ attacks for the first time each turn, if it's attacking the player with the most life or tied for most life, untap all attacking creatures. After this phase, there is an additional combat phase."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Scourge of the Throne",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Simic Basilisk",
+      "before": {
+        "name": "Simic Basilisk",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Graft 3",
+          "{1}{G}: Until end of turn, target creature with a +1/+1 counter on it gains \"Whenever ~ deals combat damage to a creature, destroy that creature at end of combat.\""
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Simic Basilisk",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{1}{G}: Until end of turn, target creature with a +1/+1 counter on it gains \"Whenever ~ deals combat damage to a creature, destroy that creature at end of combat.\""
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Simic Initiate",
+      "before": {
+        "name": "Simic Initiate",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Graft 1"
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Simic Initiate",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Spiteful Squad",
+      "before": {
+        "name": "Spiteful Squad",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "put its counters on target creature you control."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Spiteful Squad",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Sporeback Troll",
+      "before": {
+        "name": "Sporeback Troll",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Graft 2",
+          "{1}{G}: Regenerate target creature with a +1/+1 counter on it."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Sporeback Troll",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{1}{G}: Regenerate target creature with a +1/+1 counter on it."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Star Pupil",
+      "before": {
+        "name": "Star Pupil",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "put its counters on target creature you control."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Star Pupil",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Tayam, Luminous Enigma",
+      "before": {
+        "name": "Tayam, Luminous Enigma",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Each other creature you control enters with an additional vigilance counter on it.",
+          "{3}, Remove three counters from among creatures you control: Mill three cards, then return a permanent card with mana value 3 or less from your graveyard to the battlefield."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Tayam, Luminous Enigma",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Vigean Graftmage",
+      "before": {
+        "name": "Vigean Graftmage",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Graft 2",
+          "{1}{U}: Untap target creature with a +1/+1 counter on it."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Vigean Graftmage",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{1}{U}: Untap target creature with a +1/+1 counter on it."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Vigean Hydropon",
+      "before": {
+        "name": "Vigean Hydropon",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Graft 5",
+          "~ can't attack or block."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Vigean Hydropon",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "~ can't attack or block."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Warrior's Resolve",
+      "before": {
+        "name": "Warrior's Resolve",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Creatures you control have training.",
+          "if you control a creature with a +1/+1 counter on it that attacked this turn, draw a card."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Warrior's Resolve",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "if you control a creature with a +1/+1 counter on it that attacked this turn, draw a card."
+        ],
+        "simplified": []
+      }
+    }
+  ]
+}

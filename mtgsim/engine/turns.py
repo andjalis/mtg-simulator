@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from .. import alt_casts, auras, copies, creature_keywords, graveyard, storage
 from ..cards import Activated, CardDef, Effect
-from .. import rules_events, continuous
+from .. import rules_events, continuous, counter_mechanics
 from ..identity import CardInstance, Graveyard
 from .state import is_basic_land
 
@@ -56,8 +56,15 @@ class TurnsMixin:
             self._zone_reason = previous
         return card
 
-    def draw(self, p: Player, n: int = 1):
+    def draw(self, p: Player, n: int = 1, *, _replaced=()):
         for _ in range(n):
+            from ..advanced_templates import draw_recipient
+            recipient, replacement = draw_recipient(self, p, _replaced)
+            if recipient is None:
+                continue
+            if recipient is not p:
+                self.draw(recipient, _replaced=_replaced + (replacement,))
+                continue
             if not p.library:
                 if not p.lost:
                     self.audit("loss", seat=self.players.index(p), cause="drew from empty library")
@@ -67,6 +74,11 @@ class TurnsMixin:
             if alt_casts.dredge(self, p):
                 continue
             self.move_card(p.library[-1], p.library, p.hand, reason="draw")
+            if self.active is p and self.step == "draw":
+                p._advanced_draw_step = (self.turn, getattr(self, "draw_step_serial", 0))
+            from ..residual_templates import on_draw
+            drawn_before = getattr(p, "drawn_turn", (None, 0))
+            on_draw(self, p, p.hand[-1], drawn_before[0] != self.turn or drawn_before[1] == 0)
             self.fire(p, "you_draw")
             drawn = getattr(p, "drawn_turn", (0, 0))
             p.drawn_turn = (self.turn, drawn[1] + 1 if drawn[0] == self.turn else 1)
@@ -134,12 +146,14 @@ class TurnsMixin:
     def level_up_classes(self, p: Player):
         """Gain the next level of a Class with the mana left after the main phase."""
         for perm in list(p.battlefield):
-            for idx, act in enumerate(perm.card.activated):
+            for idx, act in enumerate(perm.activated):
                 if act.extra_costs.get("level_from") is not None and not self.over and self.can_activate(p, perm, idx):
                     self.activate_ability(p, perm, idx)
 
     def graveyard_abilities(self, p: Player):
         """Return-from-graveyard and exile-to-draw abilities, with the mana left after the main phase."""
+        if self.nonmana_locked(p):
+            return
         for card in list(p.graveyard):
             if self.over or card not in p.graveyard:
                 continue
@@ -183,6 +197,8 @@ class TurnsMixin:
         """Cycle (and landcycle) cards that aren't going to be cast, with the mana left after the main phase:
         a card with a landcycling cost while the land drops are short, a cycling card that costs more than we
         can reach soon, or any cycling card when the hand is full."""
+        if self.nonmana_locked(p):
+            return
         for card in list(p.hand):
             spec = card.cycling
             if not spec or card not in p.hand or self.over:
@@ -225,6 +241,8 @@ class TurnsMixin:
             if isinstance(pl.graveyard, Graveyard):
                 pl.graveyard.descents = 0
         self.creature_died_turn = False
+        from ..advanced_templates import begin_turn
+        begin_turn(self, p)
         self.step = "untap"
         for perm in self.opponent(p).battlefield:
             if perm.card.untap_each_untap:
@@ -255,6 +273,7 @@ class TurnsMixin:
         if self.over:
             return
         self.step = "draw"
+        self.draw_step_serial = getattr(self, "draw_step_serial", 0) + 1
         self.fire(opp, "opp_draw_step")
         self.fire(p, "draw_step")
         for pl in self.players:
@@ -288,7 +307,7 @@ class TurnsMixin:
         self.main_phase(p)
         if self.over:
             return
-        self.step = "end_step"
+        self.begin_end_step(p)
         leaving, self.end_cleanup = self.end_cleanup, []
         for perm, how in leaving:
             if perm in perm.controller.battlefield:
@@ -297,7 +316,6 @@ class TurnsMixin:
                     self.sacrifice(perm)
                 else:
                     self.leave_battlefield(perm, "exile")
-        self.fire(p, "end_step")
         waiting, self.blinked = self.blinked, []
         for card, owner in waiting:
             self.enter_battlefield(owner, card)
@@ -322,12 +340,7 @@ class TurnsMixin:
         if self.over:
             return
         self.step = "cleanup"
-        for victim, owner in self.stolen:
-            if victim in victim.controller.battlefield:
-                victim.controller.battlefield.remove(victim)
-                victim.controller = owner
-                owner.battlefield.append(victim)
-        self.stolen = []
+        counter_mechanics.expire_source_control(self, cleanup=True)
         while len(p.hand) > 7 and not any(x.card.no_max_hand for x in p.battlefield):
             card = p.ai.choose_discard(self, p)
             self.discard_card(p, card)
@@ -336,6 +349,9 @@ class TurnsMixin:
             perm.deathtouched = False
             perm.pump_p = perm.pump_t = 0
             perm.temp_kw.clear()
+            perm.temp_triggers.clear()
+            perm.temp_activated.clear()
+            perm.adapt_exceptions = 0
             perm.regeneration_shields = 0
             perm.prevent_next = 0
             perm.damaged_by = []
@@ -346,11 +362,21 @@ class TurnsMixin:
             perm.crewed = False
             perm.saddled = False
         p.next_creature_counters = 0
+        p.action_lock_turn = opp.action_lock_turn = None
         p.prevent_next = opp.prevent_next = 0
         self.expire_continuous_effects()
         for pl in self.players:
             pl.granted_fb = []
         self.state_based_actions()
+
+    def begin_end_step(self, p: Player):
+        self.step = 'end_step'
+        waiting, self.delayed_end_step = self.delayed_end_step, []
+        for controller, effects, source, context in waiting:
+            self.queue_trigger(controller, effects, source, 'at the beginning of the next end step', context=context)
+        from ..residual_templates import on_end_step
+        on_end_step(self, p)
+        self.fire(p, 'end_step')
 
     def begin_upkeep(self, p: Player):
         """Queue one-shot delayed draws before any upkeep ability can create new ones."""

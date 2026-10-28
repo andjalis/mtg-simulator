@@ -89,9 +89,17 @@ class LandDestruction(unittest.TestCase):
         self.assertTrue(self.b.battlefield[0].tapped)
         self.assertEqual(self.a.hand, [ISLAND])
 
-    def test_unsupported_land_variants_stay_visible(self):
-        c = card("Test Limited Removal", types="Sorcery", text="Destroy target land with mana value 3 or greater.")
-        self.assertTrue(c.unsupported)
+    def test_mana_value_land_restriction(self):
+        basic = self.game.enter_battlefield(self.b, ISLAND)
+        expensive = self.game.enter_battlefield(self.b, card("Expensive Land", "{3}", types="Land"))
+        spell = self.spell("Destroy target land with mana value 3 or greater.")
+        effect = spell.spell_effects[0]
+        self.assertEqual(self.game.legal_targets(self.a, effect), [expensive])
+        self.assertFalse(self.game.legal_target(self.a, effect, basic))
+        self.assertTrue(self.game.cast(self.a, spell, [expensive]))
+        self.game.settle()
+        self.assertNotIn(expensive, self.b.battlefield)
+        self.assertIn(basic, self.b.battlefield)
 
 
 if __name__ == "__main__":
