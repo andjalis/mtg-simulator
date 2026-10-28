@@ -54,6 +54,7 @@ class CombatMixin:
     def _combat(self, p: Player, opp: Player):
         self.step = "declare_attackers"
         self.attackers, self.blocks, self.attack_targets = [], {}, {}
+        self.provoked = {}
         self.fire(p, "begin_combat")
         for pl in self.players:
             self.fire(pl, "each_begin_combat")
@@ -188,7 +189,10 @@ class CombatMixin:
                 target = None   # its planeswalker is gone: no damage
             if a in blocks:
                 alive = [b for b in blocks[a] if b in opp.battlefield]
-                if deals_now(a) and a.power > 0:
+                if deals_now(a) and a.power > 0 and target is not None and a.card.advanced_rules.get('assign_unblocked') \
+                        and not a.abilities_suppressed and sum(max(0, b.toughness - b.damage) for b in alive) > a.power:
+                    hits.append((a, target, a.power))     # can't kill its blockers: hit the defender instead
+                elif deals_now(a) and a.power > 0:
                     remaining = a.power
                     for i, b in enumerate(alive):
                         lethal = 1 if a.has("deathtouch") else max(0, b.toughness - b.damage)

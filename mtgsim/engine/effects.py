@@ -26,6 +26,9 @@ class EffectsMixin:
         if protected_from(target, source):
             self.log(f"{target.card.name}'s protection prevents {amount} damage", target.controller)
             return
+        from ..batch1_templates import phantom_prevents
+        if isinstance(target, Permanent) and phantom_prevents(target):
+            return
         shield = getattr(target, "prevent_next", 0)
         if shield:
             prevented = min(shield, amount)

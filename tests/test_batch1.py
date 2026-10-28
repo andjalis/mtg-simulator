@@ -152,6 +152,51 @@ class Batch1(unittest.TestCase):
         self.g.resolve(self.a, eff[0], self.b, StackItem(self.a, eff, [self.b], source=redcap))
         self.assertEqual(self.b.life, life - 2)
 
+    def test_enters_tapped_with_charge_counters(self):
+        vivid = card("Test Vivid", "", "Land", "~ enters tapped with two charge counters on it.\n{T}: Add {U}.")
+        perm = self.g.enter_battlefield(self.a, vivid)
+        self.assertTrue(perm.tapped)
+        self.assertEqual(perm.counters["charge"], 2)
+
+    def test_powerstone_mana_only_casts_artifacts(self):
+        self.apply("Create a tapped Powerstone token.")
+        stone = next(x for x in self.a.battlefield if x.card.token_kind == "powerstone")
+        self.assertTrue(stone.tapped)
+        stone.tapped = False
+        self.assertEqual(stone.card.mana_restriction, "artifact")
+
+    def test_provoke_untaps_and_forces_block(self):
+        goblin = card("Test Provoker", "{2}{R}", "Creature — Goblin", "Provoke", 2, 2)
+        attacker = self.put(goblin)
+        wall = self.put(card("Test Wall", "{1}", "Creature — Wall", "", 0, 4), self.b)
+        wall.tapped = True
+        self.a.ai.attack = (attacker,)
+        self.g.combat(self.a, self.b)
+        self.assertEqual(self.b.life, 20)
+        self.assertEqual(wall.damage, 2)
+
+    def test_assign_combat_damage_as_though_unblocked(self):
+        wolf = self.put(card("Test Wolf", "{2}{G}", "Creature — Wolf",
+                             "You may have ~ assign its combat damage as though it weren't blocked.", 3, 3))
+        wall = self.put(card("Test Wall", "{1}", "Creature — Wall", "", 0, 6), self.b)
+        self.a.ai.attack = (wolf,)
+        self.b.ai.block = {wolf: (wall,)}
+        self.g.combat(self.a, self.b)
+        self.assertEqual(self.b.life, 17)
+
+    def test_phantom_prevents_damage_and_loses_a_counter(self):
+        phantom = self.put(card("Test Phantom", "{2}{G}", "Creature — Spirit",
+                                "~ enters with three +1/+1 counters on it.\n"
+                                "If damage would be dealt to ~, prevent that damage. Remove a +1/+1 counter from ~.", 0, 0))
+        self.assertEqual(phantom.p1, 3)
+        self.g.deal_damage(phantom, 5, by=self.b)
+        self.assertEqual((phantom.damage, phantom.p1), (0, 2))
+
+    def test_converge_counts_colors_spent(self):
+        crawler = card("Test Crawler", "{2}", "Artifact Creature — Construct",
+                       "Converge — ~ enters with a +1/+1 counter on it for each color of mana spent to cast it.", 0, 0)
+        self.assertTrue(crawler.advanced_rules.get("sunburst"))
+
 
 if __name__ == '__main__':
     unittest.main()

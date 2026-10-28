@@ -6,15 +6,21 @@ EFFECT_PATTERNS = [
     (r"each player sacrifices a creature", lambda m: _e("edict_each")),
     (r"you gain life equal to its (power|toughness)", lambda m: _e("gain_prev_stat", data={"stat": m[1].lower()})),
     (r"look at target opponent's hand", lambda m: _e("peek_hand", target="player", filter="opp")),
+    (r"create (a|one|two|three) (tapped )?powerstone tokens?", lambda m: _e("powerstone", _num(m[1]), data={"tapped": bool(m[2])})),
     (r"you become the monarch", lambda m: _e("become_monarch")),
     (r"(?:it|~) deals damage equal to its power to any target", lambda m: _e("damage", target="any", data={"source_power": True})),
 ]
 SUBS = []
 
 
-def _e(kind, **kw):
+def _e(kind, amount=1, **kw):
     from .cards import Effect
-    return Effect(kind, **kw)
+    return Effect(kind, amount, **kw)
+
+
+def _num(word):
+    from .cards import _num as number
+    return number(word)
 
 
 def parse_rider(s, effects):
@@ -43,6 +49,25 @@ def parse_line(line, st):
     if line == "~ can't attack or block alone.":
         st.extra.setdefault('advanced_rules', {})['no_solo'] = True
         return True
+    import re
+    m = re.fullmatch(r"~ enters tapped with (a|one|two|three|four|five) (\w+) counters? on it\.", line)
+    if m:
+        st.enters_tapped = True
+        st.extra['etb_named_counters'] = (m[2].lower(), _num(m[1]))
+        return True
+    if re.fullmatch(r"Converge — ~ enters with a \+1/\+1 counter on it for each color of mana spent to cast it\.", line):
+        st.extra.setdefault('advanced_rules', {})['sunburst'] = True
+        return True
+    if re.fullmatch(r"You may have ~ assign its combat damage as though it weren't blocked\.", line):
+        st.extra.setdefault('advanced_rules', {})['assign_unblocked'] = True
+        return True
+    if line == "If damage would be dealt to ~, prevent that damage. Remove a +1/+1 counter from ~.":
+        st.extra.setdefault('advanced_rules', {})['phantom'] = True
+        return True
+    if re.fullmatch(r"Provoke(?: \(.*\))?", line):
+        from .cards import Effect, Trigger
+        st.triggers.append(Trigger('attacks', [Effect('provoke')]))
+        return True
     if line == "You have hexproof.":
         st.extra.setdefault('advanced_rules', {})['player_hexproof'] = True
         return True
@@ -59,6 +84,21 @@ def player_targetable(game, player, by):
 
 def mark_exile_dying(game, creature):
     creature.exile_if_dies = game.turn
+
+
+def powerstone():
+    from .cards import CardDef
+    return CardDef(name="Powerstone", mana_cost={"generic": 0}, cmc=0, types=frozenset({"Artifact"}),
+                   subtypes=frozenset({"Powerstone"}), is_token=True, token_kind="powerstone",
+                   produces=frozenset({"C"}), mana_restriction="artifact", restricted_produces=frozenset({"C"}))
+
+
+def phantom_prevents(target):
+    """Phantom creatures: damage is prevented and a +1/+1 counter removed instead."""
+    if target.card.advanced_rules.get('phantom') and target.p1 > 0 and not target.abilities_suppressed:
+        target.counters["+1/+1"] = target.p1 - 1
+        return True
+    return False
 
 
 def drop_solo(creatures):
