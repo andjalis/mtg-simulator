@@ -1,0 +1,6 @@
+test_legend_not_destruction_or_sacrifice (tests.test_rules_contracts.RulesContracts.test_legend_not_destruction_or_sacrifice) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

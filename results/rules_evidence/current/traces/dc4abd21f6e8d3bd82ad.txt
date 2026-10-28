@@ -1,0 +1,6 @@
+test_overlapping_mana_and_sacrifice_costs_roll_back (tests.test_zone_actions_layers.ZoneActionsLayers.test_overlapping_mana_and_sacrifice_costs_roll_back) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

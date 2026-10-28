@@ -25,6 +25,10 @@ GitHub Actions runs the tests on Python 3.10, 3.13 and 3.14 for every push and p
 workflow runs pyflakes (`scripts/lint.py`) and, on pull requests, lists every card whose parse differs
 from the base branch (`scripts/parse_diff.py`, shown in the job summary).
 
+The mapped rules scenarios have a separate [current evidence report](results/rules_evidence/README.md).
+CI runs those scenarios on Python 3.14 and fails on failures, errors, skips, or incomplete evidence.
+This bounded check does not measure complete Magic rules support.
+
 ## Decklists
 
 Plain text as exported by Arena, MTGO or Moxfield: `4 Lightning Bolt`,

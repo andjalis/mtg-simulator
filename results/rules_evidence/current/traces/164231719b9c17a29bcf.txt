@@ -1,0 +1,6 @@
+test_duplicate_alternate_options_bind_exact_origins (tests.test_identity_events.IdentityEvents.test_duplicate_alternate_options_bind_exact_origins) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

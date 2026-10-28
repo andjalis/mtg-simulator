@@ -1,0 +1,6 @@
+test_destroy_cant_be_regenerated_rider (tests.test_regeneration.Regeneration.test_destroy_cant_be_regenerated_rider) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+OK

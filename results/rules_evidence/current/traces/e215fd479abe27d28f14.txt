@@ -1,0 +1,6 @@
+test_equip_source_changes_controller (tests.test_rules_contracts.RulesContracts.test_equip_source_changes_controller) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

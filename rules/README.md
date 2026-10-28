@@ -9,9 +9,16 @@ the evidence identity. Synthetic or modified card fixtures are capability eviden
 and are not assigned as direct evidence for the real card.
 
 ```sh
+python3 -m mtgsim.behavior_coverage --check --save /tmp/behavior-check
 python3 -m mtgsim.behavior_coverage --run --save /tmp/behavior-run
 python3 -m mtgsim.behavior_coverage --ledger /tmp/behavior-run/ledger.json --save /tmp/behavior-review
 ```
+
+`--check` runs only the mapped scenarios and writes a compact ledger, summary and
+Markdown report. It does not need the offline card database and exits nonzero if
+any scenario fails, errors, skips or is stale. CI uses this mode so every push does
+not rebuild the per-card inventory report. Use `--run` when refreshing the full
+inventory and per-card evidence.
 
 The runner saves a versioned JSON ledger atomically, one trace per mapped scenario,
 a JSON summary, Markdown report and per-card CSV joined to the offline inventory.

@@ -1,0 +1,205 @@
+{
+  "capabilities": [
+    {
+      "description": "Target type and controller validation",
+      "evidence_status": "scoped_suite_passes",
+      "id": "targets.creature",
+      "implementation": [
+        "mtgsim/engine/targets.py"
+      ],
+      "outcomes": {
+        "pass": 5
+      },
+      "required_scenarios": 5,
+      "requires": [],
+      "restrictions": "Protection, player hexproof and the complete targeting rules are outside this scope.",
+      "state": "implemented_subset",
+      "subset": "Enumeration and resolution use the same current-state membership checks."
+    },
+    {
+      "description": "Normal two-player legend rule",
+      "evidence_status": "scoped_suite_passes",
+      "id": "sba.legend",
+      "implementation": [
+        "mtgsim/engine/effects.py"
+      ],
+      "outcomes": {
+        "pass": 5
+      },
+      "required_scenarios": 5,
+      "requires": [],
+      "restrictions": "Effects that waive or modify the legend rule and a general simultaneous-event pipeline are outside this scope.",
+      "state": "implemented_subset",
+      "subset": "Choose one legendary permanent per name and controller; route losers to their owners without destruction/sacrifice."
+    },
+    {
+      "description": "Normal equip activation",
+      "evidence_status": "scoped_suite_passes",
+      "id": "stack.equip",
+      "implementation": [
+        "mtgsim/engine/play.py"
+      ],
+      "outcomes": {
+        "pass": 7
+      },
+      "required_scenarios": 7,
+      "requires": [
+        "targets.creature"
+      ],
+      "restrictions": "Alternative equip permissions, reconfigure and general attachment effects are outside this scope.",
+      "state": "implemented_subset",
+      "subset": "Sorcery timing; queue activation; revalidate target and source at resolution."
+    },
+    {
+      "description": "Physical cards and zone incarnations",
+      "evidence_status": "scoped_suite_passes",
+      "id": "zones.object_identity",
+      "implementation": [
+        "mtgsim/identity.py",
+        "mtgsim/engine/turns.py",
+        "mtgsim/engine/state.py"
+      ],
+      "outcomes": {
+        "pass": 18
+      },
+      "required_scenarios": 18,
+      "requires": [],
+      "restrictions": "Definition lookups remain compatible with raw CardDef values. Temporary faces retain their physical front; general card permissions are not assessed.",
+      "state": "implemented_subset",
+      "subset": "Distinct physical cards in player zones, canonical casting origins, frozen zone references, owner preservation."
+    },
+    {
+      "description": "Typed supported-rule events",
+      "evidence_status": "scoped_suite_passes",
+      "id": "events.dispatch",
+      "implementation": [
+        "mtgsim/rules_events.py",
+        "mtgsim/engine/stack.py",
+        "mtgsim/engine/effects.py"
+      ],
+      "outcomes": {
+        "pass": 17
+      },
+      "required_scenarios": 17,
+      "requires": [
+        "zones.object_identity"
+      ],
+      "restrictions": "Fixture insertion, removal without an eventual destination, card views and copies are not paired moves. No complete replay log or simultaneous-event scheduler.",
+      "state": "implemented_subset",
+      "subset": "Trigger delivery and paired identity-aware CardZone, stack and battlefield moves emit typed events with pre-move snapshots; action transactions buffer observers until commit."
+    },
+    {
+      "description": "Supported destruction and death replacements",
+      "evidence_status": "scoped_suite_passes",
+      "id": "replacement.supported",
+      "implementation": [
+        "mtgsim/rules_events.py"
+      ],
+      "outcomes": {
+        "pass": 11
+      },
+      "required_scenarios": 11,
+      "requires": [
+        "events.dispatch"
+      ],
+      "restrictions": "Only registered existing effects; no general printed-text replacement parser or arbitrary replacement interactions.",
+      "state": "implemented_subset",
+      "subset": "Regeneration, no-regeneration restrictions, finality, marked exile and damaged-creature exile share replacement handling."
+    },
+    {
+      "description": "Destruction, sacrifice and bounce interactions",
+      "evidence_status": "scoped_suite_passes",
+      "id": "removal.core",
+      "implementation": [
+        "mtgsim/engine/effects.py",
+        "mtgsim/engine/resolve.py",
+        "mtgsim/engine/kinds/permanents.py"
+      ],
+      "outcomes": {
+        "pass": 14
+      },
+      "required_scenarios": 14,
+      "requires": [
+        "targets.creature",
+        "replacement.supported"
+      ],
+      "restrictions": "Protection, complete continuous layers and arbitrary removal restrictions remain outside this suite.",
+      "state": "implemented_subset",
+      "subset": "Target resolution, regeneration versus destruction, and bounce/reentry reset in mapped scenarios."
+    },
+    {
+      "description": "Mapped graveyard and death returns",
+      "evidence_status": "scoped_suite_passes",
+      "id": "graveyard.return",
+      "implementation": [
+        "mtgsim/engine/effects.py",
+        "mtgsim/engine/resolve.py",
+        "mtgsim/engine/kinds/graveyard.py",
+        "mtgsim/graveyard.py"
+      ],
+      "outcomes": {
+        "pass": 14
+      },
+      "required_scenarios": 14,
+      "requires": [
+        "zones.object_identity",
+        "events.dispatch"
+      ],
+      "restrictions": "Not every graveyard targeting permission, replacement or return mechanic is classified.",
+      "state": "implemented_subset",
+      "subset": "Owner routing, persist/undying references, activated self-return invalidation and entry counters."
+    },
+    {
+      "description": "Shared action dispatch and transactional engine costs",
+      "evidence_status": "scoped_suite_passes",
+      "id": "actions.atomic",
+      "implementation": [
+        "mtgsim/actions.py",
+        "mtgsim/engine/play.py",
+        "mtgsim/engine/stack.py"
+      ],
+      "outcomes": {
+        "pass": 8
+      },
+      "required_scenarios": 8,
+      "requires": [
+        "events.dispatch"
+      ],
+      "restrictions": "Policy hooks must be pure choices; external policy state and process-local identity allocation are not rolled back. Low-level cast permits effect-granted timing; do_action enforces timing. Land plays, cycling and other special actions remain separate APIs. No complete cost-choice search or priority-permission model.",
+      "state": "implemented_subset",
+      "subset": "Action and legacy tuples share execution; can_perform probes that same path with rollback. Cast, general activation, legacy activation, loyalty and equip restore engine objects, zones, references, RNG and buffered events on failure. Required static targets are checked before costs."
+    },
+    {
+      "description": "Scoped continuous power/toughness and keyword ordering",
+      "evidence_status": "scoped_suite_passes",
+      "id": "continuous.pt_keywords",
+      "implementation": [
+        "mtgsim/continuous.py",
+        "mtgsim/engine/state.py",
+        "mtgsim/engine/turns.py",
+        "mtgsim/auras.py"
+      ],
+      "outcomes": {
+        "pass": 6
+      },
+      "required_scenarios": 6,
+      "requires": [
+        "zones.object_identity"
+      ],
+      "restrictions": "No copy/control/text/type/color layers, characteristic-defining effects, Oracle dependency inference or parser expansion. Registered keyword operations follow the existing keyword baseline; legacy keyword grants are not all timestamped. Dependencies must be supplied explicitly.",
+      "state": "implemented_subset",
+      "subset": "Timestamped base P/T for animations and Cursed Roles; registered keyword grant/removal, base setting, modifiers, counters and switching; explicit same-layer dependencies, cycle fallback, source lifetimes, end-of-turn expiry and last-known P/T."
+    }
+  ],
+  "outcomes": {
+    "error": 0,
+    "fail": 0,
+    "not_run": 0,
+    "pass": 74,
+    "stale": 0
+  },
+  "run_identity": "b59de760b81efaafbb3e4702eaeaf8054d4a033fd0e2dd030b159e2d621132ed",
+  "scenario_denominator": 74,
+  "schema": 1,
+  "scope": "zone-actions-layers-v3"
+}

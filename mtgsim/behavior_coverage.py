@@ -87,6 +87,32 @@ def execute(manifest, run_identity, folder):
     return records
 
 
+def run_check(catalog, manifest, folder):
+    """Run mapped scenarios and write a compact CI summary without the card inventory."""
+    folder = Path(folder)
+    current = identity(catalog, manifest)
+    records = execute(manifest, current, folder)
+    rows = evaluate(manifest, records, current, folder)
+    outcomes = {outcome: sum(row["outcome"] == outcome for row in rows) for outcome in OUTCOMES}
+    capabilities = capability_evidence(catalog, rows)
+    summary = {"schema": 1, "scope": manifest["scope"], "run_identity": current,
+               "scenario_denominator": len(rows), "outcomes": outcomes,
+               "capabilities": capabilities}
+    atomic_json(folder / "summary.json", summary)
+    lines = ["# Bounded behavior check", "",
+             f"Scope: `{summary['scope']}`. Identity: `{current}`.", "",
+             f"Required scenarios: {summary['scenario_denominator']}.", "",
+             "Complete rules support: **not measured**. This check covers only the mapped scenarios.", "",
+             "| Outcome | Scenarios |", "| --- | ---: |"]
+    lines += [f"| {outcome} | {outcomes[outcome]} |" for outcome in OUTCOMES]
+    lines += ["", "| Capability | Declared state | Evidence in this scope |", "| --- | --- | --- |"]
+    lines += [f"| {capability['id']} | {capability['state']} | {capability['evidence_status']} |"
+              for capability in capabilities]
+    lines += ["", "[Ledger](ledger.json) · [Machine-readable summary](summary.json)", ""]
+    (folder / "README.md").write_text("\n".join(lines), encoding="utf-8")
+    return summary
+
+
 def evaluate(manifest, records, run_identity, folder):
     """Missing/stale/failed evidence stays visible; duplicates are rejected."""
     indexed = {}
@@ -125,6 +151,29 @@ def evidence_status(rows, *, complete=False, capabilities_supported=True):
     if rows and complete and capabilities_supported and counts["pass"] == len(rows):
         return "scoped_suite_passes"
     return "some_scenarios_pass" if counts["pass"] else "not_measured"
+
+
+def capability_evidence(catalog, scenarios):
+    """Summarize declared capability outcomes from their mapped scenarios."""
+    capabilities = []
+    for capability in catalog["capabilities"]:
+        related = [scenario for scenario in scenarios if capability["id"] in scenario["capabilities"]]
+        capabilities.append({**capability, "required_scenarios": len(related),
+                             "outcomes": dict(Counter(row["outcome"] for row in related)),
+                             "evidence_status": evidence_status(related, complete=True,
+                                 capabilities_supported=capability["state"] == "implemented_subset")})
+    by_id = {capability["id"]: capability for capability in capabilities}
+    dependencies = {capability["id"]: capability["requires"] for capability in catalog["capabilities"]}
+
+    def dependencies_pass(key):
+        capability = by_id[key]
+        return capability["evidence_status"] == "scoped_suite_passes" and all(
+            dependencies_pass(dependency) for dependency in dependencies[key])
+
+    for capability in capabilities:
+        if capability["evidence_status"] == "scoped_suite_passes" and not dependencies_pass(capability["id"]):
+            capability["evidence_status"] = "some_scenarios_pass"
+    return capabilities
 
 
 def card_row(card, scenarios, catalog):
@@ -187,20 +236,7 @@ def build_report(db, catalog, manifest, scenarios, run_identity):
             row = {"name": name, "template_status": "parse_error", "evidence_status": "not_measured",
                    "error": f"{type(exc).__name__}: {exc}"}
         cards.append(row)
-    capabilities = []
-    for capability in catalog["capabilities"]:
-        related = [s for s in scenarios if capability["id"] in s["capabilities"]]
-        capabilities.append({**capability, "required_scenarios": len(related),
-                             "outcomes": dict(Counter(s["outcome"] for s in related)),
-                             "evidence_status": evidence_status(related, complete=True,
-                                 capabilities_supported=capability["state"] == "implemented_subset")})
-    by_id = {c["id"]: c for c in capabilities}
-    def dependency_passes(key):
-        cap = by_id[key]
-        return cap["evidence_status"] == "scoped_suite_passes" and all(dependency_passes(d) for d in cap["requires"])
-    for capability in capabilities:
-        if capability["evidence_status"] == "scoped_suite_passes" and not dependency_passes(capability["id"]):
-            capability["evidence_status"] = "some_scenarios_pass"
+    capabilities = capability_evidence(catalog, scenarios)
     return {"schema": 1, "scope": manifest["scope"], "run_identity": run_identity,
             "card_denominator": len(cards), "scenario_denominator": len(scenarios),
             "outcomes": {o: sum(s["outcome"] == o for s in scenarios) for o in OUTCOMES},
@@ -245,8 +281,11 @@ def save(report, folder):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--run", action="store_true", help="execute the mapped scenarios and write a new ledger")
-    ap.add_argument("--ledger", type=Path, help="evaluate an existing ledger, validating identities and traces")
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--run", action="store_true", help="run scenarios and build the full per-card report")
+    mode.add_argument("--check", action="store_true",
+                      help="run mapped scenarios and write only a CI ledger/summary; no card database needed")
+    mode.add_argument("--ledger", type=Path, help="evaluate an existing ledger, validating identities and traces")
     ap.add_argument("--save", type=Path, required=True)
     args = ap.parse_args(argv)
     if args.run and args.ledger:
@@ -257,6 +296,17 @@ def main(argv=None):
 
 def run(args, ap):
     catalog, manifest = load_catalogs()
+    if args.check:
+        if (args.save / "ledger.json").exists():
+            ap.error("evidence already exists; use a fresh output directory")
+        summary = run_check(catalog, manifest, args.save)
+        counts = summary["outcomes"]
+        print(f"Behavior check: {counts['pass']}/{summary['scenario_denominator']} passed; "
+              f"{counts['fail']} failed, {counts['error']} errors, {counts['not_run']} not run, "
+              f"{counts['stale']} stale")
+        return int(summary["scenario_denominator"] == 0 or
+                   any(summary["outcomes"][outcome] for outcome in OUTCOMES if outcome != "pass") or
+                   summary["outcomes"]["pass"] != summary["scenario_denominator"])
     current = identity(catalog, manifest)
     if args.run:
         if (args.save / "ledger.json").exists():

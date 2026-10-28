@@ -53,7 +53,7 @@ Fixtures construct small game states directly, independently of AI game outcomes
 | Two Isamaru, Hound of Konda under one controller | Controller chooses one to keep; the other goes to its owner's graveyard. | Both remain after state-based actions. Isamaru is `full` in template coverage. |
 | Activate Shuko equip, holding priority | Activation goes on the stack; attachment happens on resolution. | Host changes immediately; stack stays empty. Shuko is `full`. |
 | Validate a creature-target damage effect against Island | Reject the noncreature land. | Enumeration excludes it, but `legal_target` accepts it. This probes the validator, not a claim that the default AI routinely chooses lands for burn. |
-| Translate a Forge `ChangeZone` battlefield-to-exile ability | Preserve exile semantics or refuse translation. | Prototype produces `destroy`, which differs for indestructible, regeneration and death triggers. |
+| Translate a Forge `ChangeZone` battlefield-to-exile ability | Preserve exile semantics or refuse translation. | Historical audit reproduced `destroy`; O1 now refuses unsupported single-target exile and maps matching mass exile to `exile_all_creatures`. The probe treats that explicit refusal as the expected result. |
 
 These examples demonstrate why matching all printed text cannot establish complete
 support, even for a card with no printed ability text. They are a prioritized bug list,
@@ -66,7 +66,7 @@ There are two distinct integrations:
 | Integration | Already useful for | Limits |
 | --- | --- | --- |
 | `mtgsim.forge.run_forge_match` | Exports `.dck` files, runs the external Java `sim` process and returns outcomes. Benchmark/crosscheck paths preserve logs and fingerprint runtime resources with isolated worker preferences. | Forge pilots both decks. The adapter does not expose per-decision state/actions for `HeuristicAI`, controlled scenario setup or Python policy training. Those require a new bridge and feasibility work. |
-| `mtgsim.forge_script` | Offline investigation of structured ability chains and APIs that the Python representation might express. It is not in the production card-loading path. | Translation is a subset with lossy mappings. In addition to exile-to-destroy, target/controller restrictions can collapse and semantic fields including `TargetMin`/`SorcerySpeed` appear in `NOISE`. Agreement with our parser is not independent correctness evidence. |
+| `mtgsim.forge_script` | Offline investigation of structured ability chains and APIs that the Python representation might express. It is not in the production card-loading path. | Translation remains a subset. O1 rejects unsupported single-target exile, preserves matching mass exile, and refuses selected unsupported target/controller restrictions and ignored semantic fields. Agreement with our parser is not independent correctness evidence. |
 
 **Fresh checks:** 81 relevant Forge/coverage/crosscheck tests ran: 80 passed, one skipped
 ([test output](tests.txt)).

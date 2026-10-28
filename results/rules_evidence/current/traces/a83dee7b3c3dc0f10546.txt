@@ -1,0 +1,6 @@
+test_spell_stack_trace (tests.test_zone_actions_layers.ZoneActionsLayers.test_spell_stack_trace) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

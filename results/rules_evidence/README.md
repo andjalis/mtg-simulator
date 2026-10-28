@@ -1,4 +1,14 @@
-# Rules systems and evidence: first implementation batch
+# Current rules behavior evidence
+
+The current checked-in mapped-scenario report is [bounded behavior evidence](current/README.md).
+It records the current catalog scope and each required scenario outcome. Complete
+card rules support remains unmeasured.
+
+The detailed first-batch report below is historical. Its original 17-scenario
+result remains at [behavior/README.md](behavior/README.md); use the current report
+above for the latest checked-in run.
+
+## Historical: first implementation batch
 
 Implemented 2026-10-18, following the [architecture audit](../rules_architecture/README.md).
 

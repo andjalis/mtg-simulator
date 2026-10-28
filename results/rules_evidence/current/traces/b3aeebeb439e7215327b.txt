@@ -1,0 +1,6 @@
+test_persist_returns_once_with_minus_counter (tests.test_persist_wither_rebound.PersistWitherRebound.test_persist_returns_once_with_minus_counter) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

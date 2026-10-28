@@ -1,0 +1,6 @@
+test_mana_value_and_opponents_graveyard (tests.test_return_counters.ReturnCounters.test_mana_value_and_opponents_graveyard) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

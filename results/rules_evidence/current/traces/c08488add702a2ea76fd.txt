@@ -1,0 +1,6 @@
+test_graveyard_ability_cannot_follow_leave_and_return (tests.test_identity_events.IdentityEvents.test_graveyard_ability_cannot_follow_leave_and_return) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

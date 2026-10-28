@@ -23,7 +23,7 @@ from mtgsim.cards import CardDef, Effect
 from mtgsim.coverage import card_coverage
 from mtgsim.engine import Game, Player
 from mtgsim.forge import find_forge, ForgeError
-from mtgsim.forge_script import parse_script, translate
+from mtgsim.forge_script import Untranslatable, parse_script, translate
 from mtgsim.provenance import runtime_identity
 
 
@@ -87,12 +87,17 @@ def main():
 
         script = ("Name:Audit Exile\nTypes:Instant\n"
                   "A:SP$ ChangeZone | ValidTgts$ Creature | Origin$ Battlefield | Destination$ Exile\n")
-        kind, effects = translate(parse_script(script)[0].abilities[0])
+        try:
+            kind, effects = translate(parse_script(script)[0].abilities[0])
+            refusal = None
+        except Untranslatable as exc:
+            kind, effects, refusal = None, [], str(exc)
         observations.append({"id": "forge-import-exile", "fixture": script,
                              "translation_kind": kind,
                              "translated_effects": [dataclasses.asdict(e) for e in effects],
-                             "expected_effect_kind": "exile",
-                             "passed": len(effects) == 1 and effects[0].kind == "exile"})
+                             "refusal": refusal,
+                             "expected_behavior": "refuse unsupported single-target exile",
+                             "passed": refusal is not None and "exile" in refusal.lower()})
 
         try:
             folder, jar = find_forge()

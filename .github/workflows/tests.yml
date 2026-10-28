@@ -39,6 +39,10 @@ jobs:
       - name: Run tests
         run: python3 -m unittest discover -s tests -t . -v
 
+      - name: Check mapped rules scenarios
+        if: matrix.python-version == '3.14'
+        run: python3 -m mtgsim.behavior_coverage --check --save "$RUNNER_TEMP/behavior-evidence"
+
   lint:
     runs-on: ubuntu-latest
     steps:

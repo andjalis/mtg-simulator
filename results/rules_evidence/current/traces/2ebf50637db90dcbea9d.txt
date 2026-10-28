@@ -1,0 +1,6 @@
+test_equip_animated_source_cannot_attach (tests.test_rules_contracts.RulesContracts.test_equip_animated_source_cannot_attach) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.001s
+
+OK

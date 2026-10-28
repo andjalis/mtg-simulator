@@ -1,0 +1,6 @@
+test_alternate_face_uses_physical_card_in_entry_event (tests.test_zone_actions_layers.ZoneActionsLayers.test_alternate_face_uses_physical_card_in_entry_event) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+OK

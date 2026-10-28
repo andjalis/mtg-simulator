@@ -1,0 +1,6 @@
+test_regeneration_removes_attacker_and_blocker_from_combat (tests.test_regeneration.Regeneration.test_regeneration_removes_attacker_and_blocker_from_combat) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

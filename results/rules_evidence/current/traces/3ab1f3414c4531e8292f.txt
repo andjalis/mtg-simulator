@@ -1,0 +1,6 @@
+test_indestructible_does_not_consume_shield (tests.test_regeneration.Regeneration.test_indestructible_does_not_consume_shield) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+OK

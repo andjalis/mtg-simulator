@@ -1,3 +1,4 @@
+import argparse
 import copy
 import json
 from pathlib import Path
@@ -127,6 +128,38 @@ class BehaviorCoverageTests(unittest.TestCase):
             manifest["scenarios"][0]["test"] = "tests.test_behavior_coverage.EvidenceFixture." + method
             records = bc.execute(manifest, "current", self.folder)
             self.assertEqual(records[0]["outcome"], expected)
+
+    def test_ci_check_writes_compact_summary_without_card_database(self):
+        args = argparse.Namespace(check=True, run=False, ledger=None, save=self.folder)
+        with patch.object(bc, "load_catalogs", return_value=(self.catalog, self.one)), \
+                patch.object(bc, "CardDB", side_effect=AssertionError("CI check must not build inventory")):
+            status = bc.run(args, argparse.ArgumentParser())
+        summary = json.loads((self.folder / "summary.json").read_text())
+        ledger = json.loads((self.folder / "ledger.json").read_text())
+        self.assertEqual(status, 0)
+        self.assertEqual(summary["scenario_denominator"], 1)
+        self.assertEqual(summary["outcomes"]["pass"], 1)
+        self.assertEqual({row["id"] for row in summary["capabilities"]},
+                         {row["id"] for row in self.catalog["capabilities"]})
+        self.assertEqual(len(ledger["records"]), 1)
+        self.assertFalse((self.folder / "cards.csv").exists())
+
+    def test_ci_check_fails_when_a_scenario_is_skipped(self):
+        manifest = copy.deepcopy(self.one)
+        manifest["scenarios"][0]["test"] = "tests.test_behavior_coverage.EvidenceFixture.intentional_skip"
+        with patch.object(bc, "load_catalogs", return_value=(self.catalog, manifest)):
+            args = argparse.Namespace(check=True, run=False, ledger=None, save=self.folder)
+            status = bc.run(args, argparse.ArgumentParser())
+        summary = json.loads((self.folder / "summary.json").read_text())
+        self.assertEqual(status, 1)
+        self.assertEqual(summary["outcomes"]["not_run"], 1)
+
+    def test_ci_check_fails_when_the_scenario_scope_is_empty(self):
+        manifest = {**self.manifest, "scenarios": []}
+        with patch.object(bc, "load_catalogs", return_value=(self.catalog, manifest)):
+            args = argparse.Namespace(check=True, run=False, ledger=None, save=self.folder)
+            status = bc.run(args, argparse.ArgumentParser())
+        self.assertEqual(status, 1)
 
     def test_catalog_rejects_dependency_cycles(self):
         catalog = copy.deepcopy(self.catalog)
