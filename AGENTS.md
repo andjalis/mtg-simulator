@@ -81,6 +81,7 @@ a fake Forge directory and don't need a real install; a real Forge run needs Jav
   `AI_RESULTS.md` rather than in code comments.
 - **Pure stdlib.**
 - **Git.** Commit or push only when asked. Work on a branch, not `main`, unless told otherwise.
+  A peer agent committing on its own `agent/...` branch is the handoff the user authorized with the task.
 
 ## Follow-up suggestions
 
@@ -94,3 +95,14 @@ tasks in manageable batches. Do not carry this preference into other projects.
 If you are a delegated model (launched with `ask`), you may not have file or command access.
 Work from the text supplied in the prompt, state what you could not verify, and do not claim a
 test passed unless you ran it. Local llama.cpp models cannot read files at all.
+
+## Working alongside another agent
+
+Claude and Codex may work here at the same time, each in its own git worktree and branch. Follow the
+`pairing-agents` skill; the board is `.agents/STATUS.md` in the primary checkout, with `.agents/WORK_PLAN.md`
+beside it. Plans propose ownership; implement only tasks the user has authorized. Repo specifics:
+
+- Herdr names: `sim-claude` and `sim-codex` (add a suffix if taken).
+- Bootstrap a new worktree with `python3 -m mtgsim.build_carddb`; `cards.sqlite3` is gitignored.
+- The lead owns `AI_RESULTS.md`, `results/` reports and integration; peers hand those changes off.
+- Ladder, gauntlet and benchmark runs are CPU-timed: mark them on the board and don't run two at once.
