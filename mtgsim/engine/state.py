@@ -15,9 +15,22 @@ TrackedZone = CardZone  # public compatibility alias
 TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
 COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 PROTECTION = {c: f"protection from {w}" for w, c in COLOR_WORDS.items()}
-TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "land", "artifact", "artifact_enchantment",
+TARGETED = ("graveyard_card", "permanent", "any", "creature", "creature_pw", "creature_mine", "nonland_perm", "land", "artifact", "artifact_enchantment",
             "artifact_land",
-            "player", "spell")
+            "player", "spell", "creature_or_graveyard")
+
+
+class PlayerCounters(dict):
+    def __init__(self, owner):
+        super().__init__()
+        self.owner = owner
+
+    def __setitem__(self, name, value):
+        from ..residual_templates import player_counter_allowed
+        old = self.get(name, 0)
+        if value > old and not player_counter_allowed(self.owner, name):
+            value = old
+        super().__setitem__(name, value)
 
 
 class Counters(dict):
@@ -31,8 +44,14 @@ class Counters(dict):
 
     def __setitem__(self, key, value):
         old = self.get(key, 0)
-        super().__setitem__(key, value)
         perm = self.owner
+        from ..residual_templates import permanent_counter_allowed
+        if value > old and not permanent_counter_allowed(perm, key):
+            value = old
+        if value > old:
+            from ..advanced_templates import counter_amount
+            value = old + counter_amount(perm, key, value - old)
+        super().__setitem__(key, value)
         if key == "+1/+1" and value > old and perm in perm.controller.battlefield:
             game = getattr(perm.controller, "_game", None)
             if game is not None:
@@ -59,6 +78,10 @@ class Permanent:
             if hasattr(self, "controller"):
                 value = continuous.characteristics(self, value)
         object.__setattr__(self, name, value)
+        if name == "card" and hasattr(self, "controller"):
+            game = getattr(self.controller, "_game", None)
+            if game is not None:
+                game._residual_source_index = None
 
     @property
     def copiable_card(self):
@@ -139,6 +162,8 @@ class Permanent:
         self.bargained = self.gifted = False   # cast with Bargain / the gift promised
         self.produces_now = None           # set by Game.mana_sources: the colours usable right now
         self.amount_now = None             # and how much mana it makes, when that differs from its card's
+        self.temp_activated = []
+        self.temp_triggers = []
         self.regeneration_shields = 0
         self.regeneration_blocked = False
         self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
@@ -191,7 +216,8 @@ class Permanent:
     def _pt_bonus(self):
         """(power, toughness) from anthems, attached equipment and "for each" counts, in one pass
         over the battlefield; the same sums as anthem, equipment and per_bonus."""
-        bp = bt = 0
+        from ..residual_templates import anthem_bonus
+        bp, bt = anthem_bonus(self)
         creature = self.is_creature
         what = self.card.pt_per
         sp, st = self.card.pt_scale
@@ -289,6 +315,10 @@ class Permanent:
         by = self.silenced_by
         return by is not None and by in by.controller.battlefield
 
+    @property
+    def abilities_suppressed(self):
+        return self.silenced or any('loses_abilities' in a.card.aura_flags for a in self.auras)
+
     def has(self, kw):
         if self.silenced_by is not None and kw in KEYWORDS and self.silenced:
             return False
@@ -297,7 +327,20 @@ class Permanent:
         return continuous.keyword(self, kw, self._has_unlayered(kw))
 
     def _has_unlayered(self, kw):
+        game = getattr(self.controller, '_game', None)
+        if game is not None:
+            from ..permanent_templates import matches
+            for player in game.players:
+                for source in player.battlefield:
+                    if not source.abilities_suppressed and any(kw in kws and matches(game, self, spec, source.controller, source)
+                            for spec, kws in source.card.static_keyword_grants):
+                        return True
         if kw in self.card.keywords or kw in self.temp_kw or kw in self.perm_kw or (kw in KEYWORDS and self.counters.get(kw, 0) > 0):
+            return True
+        if kw in ('training', 'dethrone') and self.is_creature and any(k == kw and not (other and source is self)
+                                   for source in self.controller.battlefield
+                                   for k, other in source.card.granted_attack_keywords
+                                   if not source.silenced and not any('loses_abilities' in a.card.aura_flags for a in source.auras)):
             return True
         if self.animated and kw in self.animated.keywords:
             return True
@@ -360,25 +403,34 @@ class Permanent:
 
     @property
     def exalted_count(self):
-        count = self.card.exalted or int("exalted" in self.card.keywords)
-        count += int("exalted" in self.temp_kw) + int("exalted" in self.perm_kw)
-        count += sum(kw == "exalted" and self.condition(cond) for kw, cond in self.card.cond_keywords)
-        count += int(self.animated is not None and "exalted" in self.animated.keywords)
-        count += int(self.counters.get("exalted", 0) > 0)
+        return self.keyword_instances("exalted")
+
+    def keyword_instances(self, keyword):
+        """Count native and supported granted instances of a triggered keyword."""
+        count = getattr(self.card, keyword, 0) or int(keyword in self.card.keywords)
+        count += int(keyword in self.temp_kw) + int(keyword in self.perm_kw)
+        count += sum(kw == keyword and self.condition(cond) for kw, cond in self.card.cond_keywords)
+        count += int(self.animated is not None and keyword in self.animated.keywords)
+        count += int(self.counters.get(keyword, 0) > 0)
         if self.is_creature:
-            count += sum("exalted" in e.card.equip_keywords for e in self.equipment + self.auras)
-            count += sum(sub in self.card.subtypes and kw == "exalted" and not (other and x is self)
+            if keyword in ('training', 'dethrone'):
+                count += sum(k == keyword and not (other and source is self)
+                             for source in self.controller.battlefield
+                             for k, other in source.card.granted_attack_keywords if not source.silenced
+                             and not any('loses_abilities' in a.card.aura_flags for a in source.auras))
+            count += sum(keyword in e.card.equip_keywords for e in self.equipment + self.auras)
+            count += sum(sub in self.card.subtypes and kw == keyword and not (other and x is self)
                          for x in self.controller.battlefield for sub, kw, other in x.card.keyword_sub)
             if self.p1:
-                count += sum("exalted" in x.card.counter_team_keywords for x in self.controller.battlefield)
+                count += sum(keyword in x.card.counter_team_keywords for x in self.controller.battlefield)
         if self.card.keyword_at_counters:
             n, kw = self.card.keyword_at_counters
-            count += int(kw == "exalted" and self.p1 >= n)
+            count += int(kw == keyword and self.p1 >= n)
         return count
 
     @property
     def triggers(self):
-        if self.silenced_by is not None and self.silenced:
+        if self.silenced_by is not None and self.silenced or any('loses_abilities' in a.card.aura_flags for a in self.auras):
             return []
         exalted = [Trigger("attacks_alone", [Effect("pump", 1, 1, target="trigger_subject")])
                    for _ in range(self.exalted_count)]
@@ -387,7 +439,10 @@ class Permanent:
             level = self.counters.get("level", 1)
             mine = [t for t in mine if t.min_level <= level]
         decayed = [Trigger("attacks", [Effect("decayed_delay", target="self")])] if self.has("decayed") else []
-        return list(mine) + (list(self.animated.triggers) if self.animated else []) + exalted + decayed
+        attack_counters = [Trigger("attacks", [Effect("attack_counter", data={"training": kw == "training"})], filter=kw)
+                           for kw in ("training", "dethrone") if self.has(kw)
+                           for _ in range(max(1, self.keyword_instances(kw)))]
+        return list(mine) + (list(self.animated.triggers) if self.animated else []) + exalted + decayed + attack_counters + list(self.temp_triggers)
 
     @property
     def ward(self) -> int:
@@ -399,13 +454,19 @@ class Permanent:
                    [a.card.equip_ward for a in self.auras])
 
     def can_attack(self):
-        return (self.is_creature and not self.tapped and not self.has("defender")
+        return (self.is_creature and not self.tapped and not self.has("defender") and not (self.card.cant_attack and not self.abilities_suppressed)
                 and not (self.auras and auras.stops_combat(self))
                 and (not self.sick or self.has("haste")))
 
+    @property
+    def activated(self):
+        from ..backlog_templates import grants
+        return list(self.card.activated) + [a for a in grants(self) if a.kind == 'ability']
+
     def granted_mana(self) -> frozenset:
         """Colours other permanents let this one tap for (Enduring Vitality, Great Divide Guide)."""
-        out = frozenset()
+        from ..backlog_templates import grants
+        out = frozenset(k for a in grants(self) if a.kind == 'granted_mana' for k in a.keywords)
         c = self.card
         if c.is_land and any(x.card.chosen_land_lock and x.chosen_land == c.name
                              for pl in (self.controller, self.controller.foe) if pl is not None for x in pl.battlefield):
@@ -503,10 +564,11 @@ class Player:
         self.lands_played = 0
         self.sacrificed_turn = 0
         self.milled_last: list[CardDef] = []     # the cards the last mill put into the graveyard
-        self.counters: dict[str, int] = {}     # poison, energy, experience, and other player counters
+        self.counters: dict[str, int] = PlayerCounters(self)     # poison, energy, experience, and other player counters
         self.picked_last: CardDef | None = None   # the card mill_pick returned to hand
         self.discarded_last: list[CardDef] = []
         self.discarded_cards: list[CardDef] = []      # discarded this turn (Mayhem)
+        self.action_lock_turn = None
         self.granted_fb: list[CardDef] = []           # graveyard cards that gained flashback this turn
         self.mulligans = 0
         self.lost_life_turn = False
@@ -530,6 +592,9 @@ class Player:
 
     @life.setter
     def life(self, value):
+        from ..residual_templates import life_locked
+        if life_locked(self):
+            return
         if value < self._life:
             self.lost_life_turn = True
         self._life = value
@@ -574,7 +639,7 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
         return False
     if blocker.card.unleash and blocker.p1 > 0:
         return False
-    if blocker.card.cant_block or blocker.has("cant_block_now") or blocker.has("decayed") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
+    if (blocker.card.cant_block and not blocker.abilities_suppressed) or blocker.has("cant_block_now") or blocker.has("decayed") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
         return False
     if any(attacker.has(keyword) and any(x.card.is_land and subtype in x.card.subtypes
                                         for x in blocker.controller.battlefield)

@@ -65,7 +65,10 @@ def active(permanent):
     game = getattr(permanent.controller, '_game', None)
     if game is None:
         return []
-    return [e for e in game.continuous_effects if e.target is permanent and
+    from .residual_templates import sources
+    static = [ContinuousEffect(-id(src), permanent, "remove", getattr(src, "rules_timestamp", 0), keyword="infect", source=src)
+              for src in sources(game, "remove_infect") if (permanent.is_creature if hasattr(permanent, "impending") else permanent._card.is_creature) and src.controller is not permanent.controller]
+    return static + [e for e in game.continuous_effects if e.target is permanent and
             permanent in permanent.controller.battlefield and (e.source is None or
             e.source in e.source.controller.battlefield)]
 
@@ -98,6 +101,11 @@ def characteristics(permanent, base):
         became = animation.subtypes if animation is not None and animation.subtypes else None
         effects.append(ContinuousEffect(-100, permanent, 'add_types', stamp, types=frozenset({'Creature'}),
                                         subtypes=None if became is None else base.subtypes | became))
+    if getattr(permanent, "_mountain_conversion", False):
+        from .cards import BASIC_MANA
+        base = CardDef(base.name, base.mana_cost, base.cmc, base.types, subtypes=frozenset({"Mountain"}),
+            power=base.power, toughness=base.toughness, produces=frozenset({BASIC_MANA["Mountain"]}),
+            color_override=base.colors, basic=base.basic, legendary=base.legendary, is_token=base.is_token)
     if not effects:
         return base
     key = (id(base), tuple((e.id, e.timestamp) for e in effects))
@@ -137,6 +145,13 @@ def base_effects(permanent):
             effects.append(ContinuousEffect(-2-i, permanent, 'set_base',
                 getattr(aura, 'attachment_timestamp', 0), 1, 1))
     return effects
+
+
+def base_pt(permanent):
+    p, t = permanent.card.power or 0, permanent.card.toughness or 0
+    for effect in ordered(base_effects(permanent) + [e for e in active(permanent) if e.operation == "set_base"]):
+        p, t = effect.power, effect.toughness
+    return p, t
 
 
 def pt(permanent):

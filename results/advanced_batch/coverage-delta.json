@@ -1,0 +1,4311 @@
+{
+  "baseline": "results/roadmap_batch/after",
+  "cards_compared": 34129,
+  "changed_classifications_or_ignored_text": 278,
+  "improved_cards": 278,
+  "newly_full_template_matches": 129,
+  "status_regressions": [],
+  "newly_full_cards": [
+    "Aberrant Manawurm",
+    "Academy Manufactor",
+    "Academy Ruins",
+    "Aether Hub",
+    "Aether Meltdown",
+    "Aether Theorist",
+    "Aethersphere Harvester",
+    "All-Seeing Arbiter",
+    "Aphetto Dredging",
+    "Arcbound Reclaimer",
+    "Ate-o'-Clock",
+    "Attune with Aether",
+    "Baton of Courage",
+    "Benevolent Hydra",
+    "Bess, Soul Nourisher",
+    "Binding Grasp",
+    "Biting Tether",
+    "Blood Moon",
+    "Bloodwater Entity",
+    "Bristling Hydra",
+    "Call of the Nightwing",
+    "Claim // Fame",
+    "Consign // Oblivion",
+    "Consulate Turret",
+    "Control Magic",
+    "Coursers' Accord",
+    "Cut // Ribbons",
+    "Decoction Module",
+    "Dr. Madison Li",
+    "Dynavolt Tower",
+    "Electrostatic Pummeler",
+    "Emissary of Soulfire",
+    "Etched Oracle",
+    "Farm // Market",
+    "Ghostly Prison",
+    "Glassblower's Puzzleknot",
+    "Glimmer of Genius",
+    "Goldmeadow Lookout",
+    "Golgari Thug",
+    "Gonti, Lord of Luxury",
+    "Grafted Identity",
+    "Growing Ranks",
+    "Hall of Heliod's Generosity",
+    "Hands of Binding",
+    "Hardened Scales",
+    "Haunted Crossroads",
+    "Highspire Infusion",
+    "Illusory Gains",
+    "Inspired Inventor",
+    "Jugan, the Rising Star",
+    "Kami of Restless Shadows",
+    "Keiga, the Tide Star",
+    "Kess, Dissident Mage",
+    "Last Thoughts",
+    "Lathnu Hellion",
+    "Liberty Prime, Recharged",
+    "Life Finds a Way",
+    "Llanowar Mentor",
+    "Longtusk Cub",
+    "Magus of the Moon",
+    "Mask of Immolation",
+    "Maximus, Knight Apparent",
+    "Mental Vapors",
+    "Michelangelo, Weirdness to 11",
+    "Midnight Recovery",
+    "Mind Control",
+    "Minister of Inquiries",
+    "Mortuary Mire",
+    "Muster the Departed",
+    "Narset, Parter of Veils",
+    "Nesting Dovehawk",
+    "Never // Return",
+    "Ninja's Kunai",
+    "Notion Thief",
+    "Onward // Victory",
+    "Paradise Mantle",
+    "Paranoid Delusions",
+    "Pentad Prism",
+    "Persuasion",
+    "Phyrexian Ironworks",
+    "Prepare // Fight",
+    "Propaganda",
+    "Rhystic Study",
+    "Rogue Refiner",
+    "Rootborn Defenses",
+    "Sage of Shaila's Claim",
+    "Sawtooth Thresher",
+    "Servant of the Conduit",
+    "Shadow Slice",
+    "Shielded Aether Thief",
+    "Shipwreck Moray",
+    "Sigarda, Host of Herons",
+    "Siren Song Lyre",
+    "Skyreach Manta",
+    "Solar Transformer",
+    "Solarion",
+    "Solstice Zealot",
+    "Song of the Worldsoul",
+    "Sower of Temptation",
+    "Spirit Away",
+    "Spontaneous Artist",
+    "Spring // Mind",
+    "Start // Finish",
+    "Static Prison",
+    "Stolen Identity",
+    "Suncrusher",
+    "Sundering Growth",
+    "Suntouched Myr",
+    "Tajuru Preserver",
+    "Tempest Harvester",
+    "Training Grounds",
+    "Triskelavus",
+    "Trostani's Judgment",
+    "Trostani, Selesnya's Voice",
+    "Trusty Boomerang",
+    "Tune the Narrative",
+    "Viridian Longbow",
+    "Vitu-Ghazi Guildmage",
+    "Voidwalk",
+    "Volrath's Stronghold",
+    "Wake the Reflections",
+    "Wayfaring Temple",
+    "Whirler Virtuoso",
+    "White Rhystic Study",
+    "Windborn Muse",
+    "Witches' Eye",
+    "Writ of Return",
+    "Yavimaya's Embrace",
+    "Yoshimaru, Beloved Companion"
+  ],
+  "changes": [
+    {
+      "name": "Abduction",
+      "before": {
+        "name": "Abduction",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.\nreturn that card to the battlefield under its owner's control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Abduction",
+        "status": "partial",
+        "ignored_text": "return that card to the battlefield under its owner's control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aberrant Manawurm",
+      "before": {
+        "name": "Aberrant Manawurm",
+        "status": "partial",
+        "ignored_text": "~ gets +X/+0 until end of turn, where X is the amount of mana spent to cast that spell.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aberrant Manawurm",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Academy Manufactor",
+      "before": {
+        "name": "Academy Manufactor",
+        "status": "partial",
+        "ignored_text": "If you would create a Clue, Food, or Treasure token, instead create one of each.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Academy Manufactor",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Academy Ruins",
+      "before": {
+        "name": "Academy Ruins",
+        "status": "partial",
+        "ignored_text": "{1}{U}, {T}: Put target artifact card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Academy Ruins",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aether Chaser",
+      "before": {
+        "name": "Aether Chaser",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}{E}.\nIf you do, create a 1/1 colorless Servo artifact creature token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aether Chaser",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nIf you do, create a 1/1 colorless Servo artifact creature token.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aether Herder",
+      "before": {
+        "name": "Aether Herder",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}{E}.\nIf you do, create a 1/1 colorless Servo artifact creature token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aether Herder",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nIf you do, create a 1/1 colorless Servo artifact creature token.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aether Hub",
+      "before": {
+        "name": "Aether Hub",
+        "status": "partial",
+        "ignored_text": "you get {E} .\n{T}, Pay {E}: Add one mana of any color.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aether Hub",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aether Inspector",
+      "before": {
+        "name": "Aether Inspector",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}{E}.\nIf you do, create a 1/1 colorless Servo artifact creature token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aether Inspector",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nIf you do, create a 1/1 colorless Servo artifact creature token.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aether Meltdown",
+      "before": {
+        "name": "Aether Meltdown",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aether Meltdown",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aether Poisoner",
+      "before": {
+        "name": "Aether Poisoner",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}{E}.\nIf you do, create a 1/1 colorless Servo artifact creature token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aether Poisoner",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nIf you do, create a 1/1 colorless Servo artifact creature token.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aether Swooper",
+      "before": {
+        "name": "Aether Swooper",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}{E}.\nIf you do, create a 1/1 colorless Servo artifact creature token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aether Swooper",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nIf you do, create a 1/1 colorless Servo artifact creature token.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aether Theorist",
+      "before": {
+        "name": "Aether Theorist",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E} .\n{T}, Pay {E}: Scry 1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aether Theorist",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aethergeode Miner",
+      "before": {
+        "name": "Aethergeode Miner",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nPay {E}{E}: Exile ~, then return it to the battlefield under its owner's control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aethergeode Miner",
+        "status": "partial",
+        "ignored_text": "Pay {E}{E}: Exile ~, then return it to the battlefield under its owner's control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aethersphere Harvester",
+      "before": {
+        "name": "Aethersphere Harvester",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nPay {E}: ~ gains lifelink until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aethersphere Harvester",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aethersquall Ancient",
+      "before": {
+        "name": "Aethersquall Ancient",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E} .\nPay eight {E}: Return all other creatures to their owners' hands. Activate only as a sorcery.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aethersquall Ancient",
+        "status": "partial",
+        "ignored_text": "Pay eight {E}: Return all other creatures to their owners' hands. Activate only as a sorcery.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aetherstorm Roc",
+      "before": {
+        "name": "Aetherstorm Roc",
+        "status": "partial",
+        "ignored_text": "you get {E} .\nyou may pay {E}{E}.\nIf you do, put a +1/+1 counter on it and tap up to one target creature defending player controls.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aetherstorm Roc",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nIf you do, put a +1/+1 counter on it and tap up to one target creature defending player controls.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aetherstream Leopard",
+      "before": {
+        "name": "Aetherstream Leopard",
+        "status": "partial",
+        "ignored_text": "you get {E} .\nyou may pay {E}.\nIf you do, it gets +2/+0 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aetherstream Leopard",
+        "status": "partial",
+        "ignored_text": "you may pay {E}.\nIf you do, it gets +2/+0 until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aethertide Whale",
+      "before": {
+        "name": "Aethertide Whale",
+        "status": "partial",
+        "ignored_text": "you get six {E} .\nPay {E}{E}{E}{E}: Return ~ to its owner's hand.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aethertide Whale",
+        "status": "partial",
+        "ignored_text": "you get six {E} .",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aethertorch Renegade",
+      "before": {
+        "name": "Aethertorch Renegade",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E}{E} .\n{T}, Pay {E}{E}: ~ deals 1 damage to target creature.\n{T}, Pay eight {E}: ~ deals 6 damage to target player or planeswalker.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aethertorch Renegade",
+        "status": "partial",
+        "ignored_text": "{T}, Pay eight {E}: ~ deals 6 damage to target player or planeswalker.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aetherwind Basker",
+      "before": {
+        "name": "Aetherwind Basker",
+        "status": "partial",
+        "ignored_text": "you get {E}  for each creature you control.\nPay {E}: ~ gets +1/+1 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aetherwind Basker",
+        "status": "partial",
+        "ignored_text": "you get {E}  for each creature you control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Agent of Treachery",
+      "before": {
+        "name": "Agent of Treachery",
+        "status": "partial",
+        "ignored_text": "gain control of target permanent.\nif you control three or more permanents you don't own, draw three cards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Agent of Treachery",
+        "status": "partial",
+        "ignored_text": "if you control three or more permanents you don't own, draw three cards.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aggression",
+      "before": {
+        "name": "Aggression",
+        "status": "partial",
+        "ignored_text": "Enchant non-Wall creature\nEnchanted creature has first strike and trample.\nAt the beginning of the end step of enchanted creature's controller, destroy that creature if it didn't attack this turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aggression",
+        "status": "partial",
+        "ignored_text": "At the beginning of the end step of enchanted creature's controller, destroy that creature if it didn't attack this turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "All-Seeing Arbiter",
+      "before": {
+        "name": "All-Seeing Arbiter",
+        "status": "partial",
+        "ignored_text": "target creature an opponent controls gets -X/-0 until your next turn, where X is the number of different mana values among cards in your graveyard.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "All-Seeing Arbiter",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Amped Raptor",
+      "before": {
+        "name": "Amped Raptor",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nThen if you cast it from your hand, exile cards from the top of your library until you exile a nonland card.\nYou may cast that card by paying an amount of {E} equal to its mana value rather than paying its mana cost.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Amped Raptor",
+        "status": "partial",
+        "ignored_text": "Then if you cast it from your hand, exile cards from the top of your library until you exile a nonland card.\nYou may cast that card by paying an amount of {E} equal to its mana value rather than paying its mana cost.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aphetto Dredging",
+      "before": {
+        "name": "Aphetto Dredging",
+        "status": "partial",
+        "ignored_text": "Return up to three target creature cards of the creature type of your choice from your graveyard to your hand.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aphetto Dredging",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Appeal // Authority",
+      "before": {
+        "name": "Appeal // Authority",
+        "status": "partial",
+        "ignored_text": "Until end of turn, target creature gains trample and gets +X/+X, where X is the number of creatures you control.\nAuthority: Aftermath\nAuthority: Tap up to two target creatures your opponents control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Appeal // Authority",
+        "status": "partial",
+        "ignored_text": "Until end of turn, target creature gains trample and gets +X/+X, where X is the number of creatures you control.\nAuthority: Tap up to two target creatures your opponents control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aquatic Alchemist // Bubble Up",
+      "before": {
+        "name": "Aquatic Alchemist // Bubble Up",
+        "status": "partial",
+        "ignored_text": "Whenever you cast your first instant or sorcery spell each turn, ~ gets +2/+0 until end of turn.\nBubble Up: Put target instant or sorcery card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aquatic Alchemist // Bubble Up",
+        "status": "partial",
+        "ignored_text": "Whenever you cast your first instant or sorcery spell each turn, ~ gets +2/+0 until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Arboreal Alliance",
+      "before": {
+        "name": "Arboreal Alliance",
+        "status": "partial",
+        "ignored_text": "create an X/X green Treefolk creature token.\npopulate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Arboreal Alliance",
+        "status": "partial",
+        "ignored_text": "create an X/X green Treefolk creature token.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Arcane Heist",
+      "before": {
+        "name": "Arcane Heist",
+        "status": "partial",
+        "ignored_text": "You may cast target instant or sorcery card from an opponent's graveyard without paying its mana cost.\nIf that spell would be put into their graveyard, exile it instead.\nCipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Arcane Heist",
+        "status": "partial",
+        "ignored_text": "You may cast target instant or sorcery card from an opponent's graveyard without paying its mana cost.\nIf that spell would be put into their graveyard, exile it instead.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Arcbound Reclaimer",
+      "before": {
+        "name": "Arcbound Reclaimer",
+        "status": "partial",
+        "ignored_text": "Remove a +1/+1 counter from ~: Put target artifact card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Arcbound Reclaimer",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Architect of the Untamed",
+      "before": {
+        "name": "Architect of the Untamed",
+        "status": "partial",
+        "ignored_text": "you get {E} .\nPay eight {E}: Create a 6/6 colorless Beast artifact creature token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Architect of the Untamed",
+        "status": "partial",
+        "ignored_text": "Pay eight {E}: Create a 6/6 colorless Beast artifact creature token.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Assaultron Dominator",
+      "before": {
+        "name": "Assaultron Dominator",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nWhenever an artifact creature you control attacks, you may pay {E}. If you do, put your choice of a +1/+1, first strike, or trample counter on that creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Assaultron Dominator",
+        "status": "partial",
+        "ignored_text": "Whenever an artifact creature you control attacks, you may pay {E}. If you do, put your choice of a +1/+1, first strike, or trample counter on that creature.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ate-o'-Clock",
+      "before": {
+        "name": "Ate-o'-Clock",
+        "status": "partial",
+        "ignored_text": "Populate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ate-o'-Clock",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Attune with Aether",
+      "before": {
+        "name": "Attune with Aether",
+        "status": "partial",
+        "ignored_text": "You get {E}{E} .",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Attune with Aether",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Automated Assembly Line",
+      "before": {
+        "name": "Automated Assembly Line",
+        "status": "partial",
+        "ignored_text": "Whenever one or more artifact creatures you control deal combat damage to a player, you get {E} .\nPay {E}{E}{E}: Create a tapped 3/3 colorless Robot artifact creature token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Automated Assembly Line",
+        "status": "partial",
+        "ignored_text": "Whenever one or more artifact creatures you control deal combat damage to a player, you get {E} .",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Baton of Courage",
+      "before": {
+        "name": "Baton of Courage",
+        "status": "partial",
+        "ignored_text": "Sunburst",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Baton of Courage",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Become the Pilot",
+      "before": {
+        "name": "Become the Pilot",
+        "status": "partial",
+        "ignored_text": "Enchant noncommander creature\nYou control enchanted creature.\nEnchanted creature gets +2/+2 and can't be blocked unless it's attacking its owner or a permanent its owner controls.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Become the Pilot",
+        "status": "partial",
+        "ignored_text": "Enchant noncommander creature\nEnchanted creature gets +2/+2 and can't be blocked unless it's attacking its owner or a permanent its owner controls.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Behemoth of Vault 0",
+      "before": {
+        "name": "Behemoth of Vault 0",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E}{E} .\nyou may pay an amount of {E} equal to target nonland permanent's mana value.\nWhen you do, destroy that permanent.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Behemoth of Vault 0",
+        "status": "partial",
+        "ignored_text": "you may pay an amount of {E} equal to target nonland permanent's mana value.\nWhen you do, destroy that permanent.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Benevolent Hydra",
+      "before": {
+        "name": "Benevolent Hydra",
+        "status": "partial",
+        "ignored_text": "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Benevolent Hydra",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bespoke Battlewagon",
+      "before": {
+        "name": "Bespoke Battlewagon",
+        "status": "partial",
+        "ignored_text": "{T}: You get {E}{E} .\n{T}, Pay {E}{E}: Tap target creature.\n{T}, Pay {E}{E}{E}: Draw a card.\nPay {E}{E}{E}{E}: ~ becomes an artifact creature until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bespoke Battlewagon",
+        "status": "partial",
+        "ignored_text": "Pay {E}{E}{E}{E}: ~ becomes an artifact creature until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bess, Soul Nourisher",
+      "before": {
+        "name": "Bess, Soul Nourisher",
+        "status": "partial",
+        "ignored_text": "Whenever one or more other creatures you control with base power and toughness 1/1 enter, put a +1/+1 counter on ~.\neach other creature you control with base power and toughness 1/1 gets +X/+X until end of turn, where X is the number of +1/+1 counters on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bess, Soul Nourisher",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Binding Grasp",
+      "before": {
+        "name": "Binding Grasp",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Binding Grasp",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Biomancer's Familiar",
+      "before": {
+        "name": "Biomancer's Familiar",
+        "status": "partial",
+        "ignored_text": "Activated abilities of creatures you control cost {2} less to activate. This effect can't reduce the mana in that cost to less than one mana.\n{T}: The next time target creature adapts this turn, it adapts as though it had no +1/+1 counters on it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Biomancer's Familiar",
+        "status": "partial",
+        "ignored_text": "{T}: The next time target creature adapts this turn, it adapts as though it had no +1/+1 counters on it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Biting Tether",
+      "before": {
+        "name": "Biting Tether",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Biting Tether",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Blazing Torch",
+      "before": {
+        "name": "Blazing Torch",
+        "status": "partial",
+        "ignored_text": "Equipped creature can't be blocked by Vampires or Zombies.\nEquipped creature has \"{T}, Sacrifice ~: ~ deals 2 damage to any target.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Blazing Torch",
+        "status": "partial",
+        "ignored_text": "Equipped creature can't be blocked by Vampires or Zombies.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Blessings of Nature",
+      "before": {
+        "name": "Blessings of Nature",
+        "status": "partial",
+        "ignored_text": "Distribute four +1/+1 counters among any number of target creatures.\nMiracle {G}",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Blessings of Nature",
+        "status": "partial",
+        "ignored_text": "Miracle {G}",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Blood Moon",
+      "before": {
+        "name": "Blood Moon",
+        "status": "partial",
+        "ignored_text": "Nonbasic lands are Mountains.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Blood Moon",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bloodwater Entity",
+      "before": {
+        "name": "Bloodwater Entity",
+        "status": "partial",
+        "ignored_text": "you may put target instant or sorcery card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bloodwater Entity",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bristling Hydra",
+      "before": {
+        "name": "Bristling Hydra",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E} .\nPay {E}{E}{E}: Put a +1/+1 counter on ~. It gains hexproof until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bristling Hydra",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Call of the Nightwing",
+      "before": {
+        "name": "Call of the Nightwing",
+        "status": "partial",
+        "ignored_text": "Cipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Call of the Nightwing",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Cayth, Famed Mechanist",
+      "before": {
+        "name": "Cayth, Famed Mechanist",
+        "status": "partial",
+        "ignored_text": "Other nontoken creatures you control have fabricate 1.\n\u2022 Populate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Cayth, Famed Mechanist",
+        "status": "partial",
+        "ignored_text": "Other nontoken creatures you control have fabricate 1.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Chthonian Nightmare",
+      "before": {
+        "name": "Chthonian Nightmare",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E} .\nPay X {E}, Sacrifice a creature, Return ~ to its owner's hand: Return target creature card with mana value X from your graveyard to the battlefield. Activate only as a sorcery.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Chthonian Nightmare",
+        "status": "partial",
+        "ignored_text": "Pay X {E}, Sacrifice a creature, Return ~ to its owner's hand: Return target creature card with mana value X from your graveyard to the battlefield. Activate only as a sorcery.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Claim // Fame",
+      "before": {
+        "name": "Claim // Fame",
+        "status": "partial",
+        "ignored_text": "Fame: Aftermath",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Claim // Fame",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Clearwater Goblet",
+      "before": {
+        "name": "Clearwater Goblet",
+        "status": "partial",
+        "ignored_text": "Sunburst\nyou may gain life equal to the number of charge counters on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Clearwater Goblet",
+        "status": "partial",
+        "ignored_text": "you may gain life equal to the number of charge counters on ~.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Coerced to Kill",
+      "before": {
+        "name": "Coerced to Kill",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.\nEnchanted creature has base power and toughness 1/1, has deathtouch, and is an Assassin in addition to its other types.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Coerced to Kill",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has base power and toughness 1/1, has deathtouch, and is an Assassin in addition to its other types.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Commit // Memory",
+      "before": {
+        "name": "Commit // Memory",
+        "status": "partial",
+        "ignored_text": "Put target spell or nonland permanent into its owner's library second from the top.\nMemory: Aftermath\nMemory: Each player shuffles their hand and graveyard into their library, then draws seven cards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Commit // Memory",
+        "status": "partial",
+        "ignored_text": "Put target spell or nonland permanent into its owner's library second from the top.\nMemory: Each player shuffles their hand and graveyard into their library, then draws seven cards.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Conduit Goblin",
+      "before": {
+        "name": "Conduit Goblin",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}.\nIf you do, another target creature you control gets +1/+0 and gains haste until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Conduit Goblin",
+        "status": "partial",
+        "ignored_text": "you may pay {E}.\nIf you do, another target creature you control gets +1/+0 and gains haste until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Consign // Oblivion",
+      "before": {
+        "name": "Consign // Oblivion",
+        "status": "partial",
+        "ignored_text": "Oblivion: Aftermath",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Consign // Oblivion",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Consul's Shieldguard",
+      "before": {
+        "name": "Consul's Shieldguard",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}.\nIf you do, another target attacking creature gains indestructible until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Consul's Shieldguard",
+        "status": "partial",
+        "ignored_text": "you may pay {E}.\nIf you do, another target attacking creature gains indestructible until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Consulate Surveillance",
+      "before": {
+        "name": "Consulate Surveillance",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E}{E} .\nPay {E}{E}: Prevent all damage that would be dealt to you this turn by a source of your choice.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Consulate Surveillance",
+        "status": "partial",
+        "ignored_text": "Pay {E}{E}: Prevent all damage that would be dealt to you this turn by a source of your choice.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Consulate Turret",
+      "before": {
+        "name": "Consulate Turret",
+        "status": "partial",
+        "ignored_text": "{T}: You get {E} .\n{T}, Pay {E}{E}{E}: ~ deals 2 damage to target player or planeswalker.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Consulate Turret",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Consuming Ferocity",
+      "before": {
+        "name": "Consuming Ferocity",
+        "status": "partial",
+        "ignored_text": "Enchant non-Wall creature\nEnchanted creature gets +1/+0.\nIf that creature has three or more +1/+0 counters on it, it deals damage equal to its power to its controller, then destroy that creature and it can't be regenerated.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Consuming Ferocity",
+        "status": "partial",
+        "ignored_text": "If that creature has three or more +1/+0 counters on it, it deals damage equal to its power to its controller, then destroy that creature and it can't be regenerated.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Control Magic",
+      "before": {
+        "name": "Control Magic",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Control Magic",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Conversion Apparatus",
+      "before": {
+        "name": "Conversion Apparatus",
+        "status": "partial",
+        "ignored_text": "{3}, {T}: You get {E}{E}{E} .\n{T}, Pay {E}{E}{E}: Add three mana in any combination of colors.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Conversion Apparatus",
+        "status": "partial",
+        "ignored_text": "{T}, Pay {E}{E}{E}: Add three mana in any combination of colors.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Corrupted Conscience",
+      "before": {
+        "name": "Corrupted Conscience",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.\nEnchanted creature has infect.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Corrupted Conscience",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has infect.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Coursers' Accord",
+      "before": {
+        "name": "Coursers' Accord",
+        "status": "partial",
+        "ignored_text": "Create a 3/3 green Centaur creature token, then populate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Coursers' Accord",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Cut // Ribbons",
+      "before": {
+        "name": "Cut // Ribbons",
+        "status": "partial",
+        "ignored_text": "Ribbons: Aftermath",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Cut // Ribbons",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Cyclops Superconductor",
+      "before": {
+        "name": "Cyclops Superconductor",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E} .\nyou may pay {E}{E}{E}.\nWhen you do, ~ deals damage equal to its power to any target.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Cyclops Superconductor",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}{E}.\nWhen you do, ~ deals damage equal to its power to any target.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dead Reckoning",
+      "before": {
+        "name": "Dead Reckoning",
+        "status": "partial",
+        "ignored_text": "You may put target creature card from your graveyard on top of your library.\nIf you do, ~ deals damage equal to that card's power to target creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dead Reckoning",
+        "status": "partial",
+        "ignored_text": "If you do, ~ deals damage equal to that card's power to target creature.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Deadlock Trap",
+      "before": {
+        "name": "Deadlock Trap",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\n{T}, Pay {E}: Tap target creature or planeswalker. Its activated abilities can't be activated this turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Deadlock Trap",
+        "status": "partial",
+        "ignored_text": "{T}, Pay {E}: Tap target creature or planeswalker. Its activated abilities can't be activated this turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Decoction Module",
+      "before": {
+        "name": "Decoction Module",
+        "status": "partial",
+        "ignored_text": "you get {E} .",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Decoction Module",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Demon of Dark Schemes",
+      "before": {
+        "name": "Demon of Dark Schemes",
+        "status": "partial",
+        "ignored_text": "you get {E} .\n{2}{B}, Pay {E}{E}{E}{E}: Put target creature card from a graveyard onto the battlefield under your control tapped.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Demon of Dark Schemes",
+        "status": "partial",
+        "ignored_text": "{2}{B}, Pay {E}{E}{E}{E}: Put target creature card from a graveyard onto the battlefield under your control tapped.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Destined // Lead",
+      "before": {
+        "name": "Destined // Lead",
+        "status": "partial",
+        "ignored_text": "Lead: Aftermath\nLead: All creatures able to block target creature this turn do so.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Destined // Lead",
+        "status": "partial",
+        "ignored_text": "Lead: All creatures able to block target creature this turn do so.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Determined Iteration",
+      "before": {
+        "name": "Determined Iteration",
+        "status": "partial",
+        "ignored_text": "populate.\nThe token created this way gains haste.\nSacrifice it at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Determined Iteration",
+        "status": "partial",
+        "ignored_text": "The token created this way gains haste.\nSacrifice it at the beginning of the next end step.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Domestication",
+      "before": {
+        "name": "Domestication",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.\nif enchanted creature's power is 4 or greater, sacrifice ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Domestication",
+        "status": "partial",
+        "ignored_text": "if enchanted creature's power is 4 or greater, sacrifice ~.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dominating Licid",
+      "before": {
+        "name": "Dominating Licid",
+        "status": "partial",
+        "ignored_text": "{1}{U}{U}, {T}: ~ loses this ability and becomes an Aura enchantment with enchant creature. Attach it to target creature. You may pay {U} to end this effect.\nYou control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dominating Licid",
+        "status": "partial",
+        "ignored_text": "{1}{U}{U}, {T}: ~ loses this ability and becomes an Aura enchantment with enchant creature. Attach it to target creature. You may pay {U} to end this effect.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dr. Madison Li",
+      "before": {
+        "name": "Dr. Madison Li",
+        "status": "partial",
+        "ignored_text": "you get {E} .\n{T}, Pay {E}: Target creature gets +1/+0 and gains trample and haste until end of turn.\n{T}, Pay {E}{E}{E}: Draw a card.\n{T}, Pay {E}{E}{E}{E}{E}: Return target artifact card from your graveyard to the battlefield tapped.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dr. Madison Li",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Driven // Despair",
+      "before": {
+        "name": "Driven // Despair",
+        "status": "partial",
+        "ignored_text": "Until end of turn, creatures you control gain trample and \"Whenever ~ deals combat damage to a player, draw a card.\"\nDespair: Aftermath\nDespair: Until end of turn, creatures you control gain menace and \"Whenever ~ deals combat damage to a player, that player discards a card.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Driven // Despair",
+        "status": "partial",
+        "ignored_text": "Until end of turn, creatures you control gain trample and \"Whenever ~ deals combat damage to a player, draw a card.\"\nDespair: Until end of turn, creatures you control gain menace and \"Whenever ~ deals combat damage to a player, that player discards a card.\"",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Druid's Deliverance",
+      "before": {
+        "name": "Druid's Deliverance",
+        "status": "partial",
+        "ignored_text": "Prevent all combat damage that would be dealt to you this turn.\nPopulate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Druid's Deliverance",
+        "status": "partial",
+        "ignored_text": "Prevent all combat damage that would be dealt to you this turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dusk // Dawn",
+      "before": {
+        "name": "Dusk // Dawn",
+        "status": "partial",
+        "ignored_text": "Destroy all creatures with power 3 or greater.\nDawn: Aftermath\nDawn: Return all creature cards with power 2 or less from your graveyard to your hand.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dusk // Dawn",
+        "status": "partial",
+        "ignored_text": "Destroy all creatures with power 3 or greater.\nDawn: Return all creature cards with power 2 or less from your graveyard to your hand.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Duskmourn's Domination",
+      "before": {
+        "name": "Duskmourn's Domination",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.",
+        "simplifications": "loses all abilities: only keywords are removed"
+      },
+      "after": {
+        "name": "Duskmourn's Domination",
+        "status": "simplified",
+        "ignored_text": "",
+        "simplifications": "loses all abilities: only keywords are removed"
+      }
+    },
+    {
+      "name": "Dwarven Mine",
+      "before": {
+        "name": "Dwarven Mine",
+        "status": "partial",
+        "ignored_text": "~ enters tapped unless you control three or more other Mountains.\nWhen ~ enters untapped, create a 1/1 red Dwarf creature token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dwarven Mine",
+        "status": "partial",
+        "ignored_text": "~ enters tapped unless you control three or more other Mountains.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dynavolt Tower",
+      "before": {
+        "name": "Dynavolt Tower",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\n{T}, Pay {E}{E}{E}{E}{E}: ~ deals 3 damage to any target.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dynavolt Tower",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Eddytrail Hawk",
+      "before": {
+        "name": "Eddytrail Hawk",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}.\nIf you do, another target attacking creature gains flying until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Eddytrail Hawk",
+        "status": "partial",
+        "ignored_text": "you may pay {E}.\nIf you do, another target attacking creature gains flying until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Electrostatic Pummeler",
+      "before": {
+        "name": "Electrostatic Pummeler",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E} .\nPay {E}{E}{E}: ~ gets +X/+X until end of turn, where X is its power.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Electrostatic Pummeler",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Electrozoa",
+      "before": {
+        "name": "Electrozoa",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\ntap ~ unless you pay {E}.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Electrozoa",
+        "status": "partial",
+        "ignored_text": "tap ~ unless you pay {E}.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Emissary of Soulfire",
+      "before": {
+        "name": "Emissary of Soulfire",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E}.\nPay {E}{E}: Put an exalted counter on target creature you control. Activate only as a sorcery.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Emissary of Soulfire",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Engineered Explosives",
+      "before": {
+        "name": "Engineered Explosives",
+        "status": "partial",
+        "ignored_text": "Sunburst\n{2}, Sacrifice ~: Destroy each nonland permanent with mana value equal to the number of charge counters on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Engineered Explosives",
+        "status": "partial",
+        "ignored_text": "{2}, Sacrifice ~: Destroy each nonland permanent with mana value equal to the number of charge counters on ~.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Enslave",
+      "before": {
+        "name": "Enslave",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.\nenchanted creature deals 1 damage to its owner.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Enslave",
+        "status": "partial",
+        "ignored_text": "enchanted creature deals 1 damage to its owner.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Enthralling Hold",
+      "before": {
+        "name": "Enthralling Hold",
+        "status": "partial",
+        "ignored_text": "You can't choose an untapped creature as ~'s target as you cast it.\nYou control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Enthralling Hold",
+        "status": "partial",
+        "ignored_text": "You can't choose an untapped creature as ~'s target as you cast it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Etched Oracle",
+      "before": {
+        "name": "Etched Oracle",
+        "status": "partial",
+        "ignored_text": "Sunburst",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Etched Oracle",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Fabrication Module",
+      "before": {
+        "name": "Fabrication Module",
+        "status": "partial",
+        "ignored_text": "Whenever you get one or more {E} , put a +1/+1 counter on target creature you control.\n{4}, {T}: You get {E}.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Fabrication Module",
+        "status": "partial",
+        "ignored_text": "Whenever you get one or more {E} , put a +1/+1 counter on target creature you control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Failure // Comply",
+      "before": {
+        "name": "Failure // Comply",
+        "status": "partial",
+        "ignored_text": "Return target spell to its owner's hand.\nComply: Aftermath\nComply: Choose a card name.\nComply: Until your next turn, your opponents can't cast spells with the chosen name.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Failure // Comply",
+        "status": "partial",
+        "ignored_text": "Return target spell to its owner's hand.\nComply: Choose a card name.\nComply: Until your next turn, your opponents can't cast spells with the chosen name.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Farm // Market",
+      "before": {
+        "name": "Farm // Market",
+        "status": "partial",
+        "ignored_text": "Market: Aftermath",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Farm // Market",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Filigree Racer",
+      "before": {
+        "name": "Filigree Racer",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E}{E} .\nyou may pay {E}{E}.\nWhen you do, target instant or sorcery card in your graveyard gains jump-start until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Filigree Racer",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nWhen you do, target instant or sorcery card in your graveyard gains jump-start until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ghired, Conclave Exile",
+      "before": {
+        "name": "Ghired, Conclave Exile",
+        "status": "partial",
+        "ignored_text": "populate.\nThe token enters tapped and attacking.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ghired, Conclave Exile",
+        "status": "partial",
+        "ignored_text": "The token enters tapped and attacking.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ghostly Prison",
+      "before": {
+        "name": "Ghostly Prison",
+        "status": "partial",
+        "ignored_text": "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking you.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ghostly Prison",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Gingerbread Cabin",
+      "before": {
+        "name": "Gingerbread Cabin",
+        "status": "partial",
+        "ignored_text": "~ enters tapped unless you control three or more other Forests.\nWhen ~ enters untapped, create a Food token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Gingerbread Cabin",
+        "status": "partial",
+        "ignored_text": "~ enters tapped unless you control three or more other Forests.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Glassblower's Puzzleknot",
+      "before": {
+        "name": "Glassblower's Puzzleknot",
+        "status": "partial",
+        "ignored_text": "scry 2, then you get {E}{E}.\n{2}{U}, Sacrifice ~: Scry 2, then you get {E}{E}.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Glassblower's Puzzleknot",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Glimmer of Genius",
+      "before": {
+        "name": "Glimmer of Genius",
+        "status": "partial",
+        "ignored_text": "You get {E}{E} .",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Glimmer of Genius",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Glint-Sleeve Siphoner",
+      "before": {
+        "name": "Glint-Sleeve Siphoner",
+        "status": "partial",
+        "ignored_text": "you get {E} .\nyou may pay {E}{E}.\nIf you do, you draw a card and you lose 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Glint-Sleeve Siphoner",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nIf you do, you draw a card and you lose 1 life.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Goldmeadow Lookout",
+      "before": {
+        "name": "Goldmeadow Lookout",
+        "status": "partial",
+        "ignored_text": "{W}, {T}, Discard a card: Create a 1/1 white Kithkin Soldier creature token named Goldmeadow Harrier. It has \"{W}, {T}: Tap target creature.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Goldmeadow Lookout",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Golgari Thug",
+      "before": {
+        "name": "Golgari Thug",
+        "status": "partial",
+        "ignored_text": "put target creature card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Golgari Thug",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Gonti's Aether Heart",
+      "before": {
+        "name": "Gonti's Aether Heart",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nPay eight {E}, Exile ~: Take an extra turn after this one.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Gonti's Aether Heart",
+        "status": "partial",
+        "ignored_text": "Pay eight {E}, Exile ~: Take an extra turn after this one.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Gonti, Lord of Luxury",
+      "before": {
+        "name": "Gonti, Lord of Luxury",
+        "status": "partial",
+        "ignored_text": "look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order.\nYou may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Gonti, Lord of Luxury",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Grafted Identity",
+      "before": {
+        "name": "Grafted Identity",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Grafted Identity",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Grind // Dust",
+      "before": {
+        "name": "Grind // Dust",
+        "status": "partial",
+        "ignored_text": "Put a -1/-1 counter on each of up to two target creatures.\nDust: Aftermath\nDust: Exile any number of target creatures that have -1/-1 counters on them.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Grind // Dust",
+        "status": "partial",
+        "ignored_text": "Put a -1/-1 counter on each of up to two target creatures.\nDust: Exile any number of target creatures that have -1/-1 counters on them.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Growing Ranks",
+      "before": {
+        "name": "Growing Ranks",
+        "status": "partial",
+        "ignored_text": "populate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Growing Ranks",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hall of Heliod's Generosity",
+      "before": {
+        "name": "Hall of Heliod's Generosity",
+        "status": "partial",
+        "ignored_text": "{1}{W}, {T}: Put target enchantment card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hall of Heliod's Generosity",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hands of Binding",
+      "before": {
+        "name": "Hands of Binding",
+        "status": "partial",
+        "ignored_text": "Cipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hands of Binding",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hardened Scales",
+      "before": {
+        "name": "Hardened Scales",
+        "status": "partial",
+        "ignored_text": "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hardened Scales",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Haunted Crossroads",
+      "before": {
+        "name": "Haunted Crossroads",
+        "status": "partial",
+        "ignored_text": "{B}: Put target creature card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Haunted Crossroads",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Heaven // Earth",
+      "before": {
+        "name": "Heaven // Earth",
+        "status": "partial",
+        "ignored_text": "~ deals X damage to each creature with flying.\nEarth: Aftermath\nEarth: ~ deals X damage to each creature without flying.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Heaven // Earth",
+        "status": "partial",
+        "ignored_text": "~ deals X damage to each creature with flying.\nEarth: ~ deals X damage to each creature without flying.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Heavy Arbalest",
+      "before": {
+        "name": "Heavy Arbalest",
+        "status": "partial",
+        "ignored_text": "Equipped creature doesn't untap during its controller's untap step.\nEquipped creature has \"{T}: ~ deals 2 damage to any target.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Heavy Arbalest",
+        "status": "partial",
+        "ignored_text": "Equipped creature doesn't untap during its controller's untap step.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Heliophial",
+      "before": {
+        "name": "Heliophial",
+        "status": "partial",
+        "ignored_text": "Sunburst\n{2}, Sacrifice ~: It deals damage equal to the number of charge counters on it to any target.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Heliophial",
+        "status": "partial",
+        "ignored_text": "{2}, Sacrifice ~: It deals damage equal to the number of charge counters on it to any target.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "HELIOS One",
+      "before": {
+        "name": "HELIOS One",
+        "status": "partial",
+        "ignored_text": "{1}, {T}: You get {E} .\n{3}, {T}, Pay X {E}, Sacrifice ~: Destroy target nonland permanent with mana value X. Activate only as a sorcery.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "HELIOS One",
+        "status": "partial",
+        "ignored_text": "{3}, {T}, Pay X {E}, Sacrifice ~: Destroy target nonland permanent with mana value X. Activate only as a sorcery.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hexgold Slith",
+      "before": {
+        "name": "Hexgold Slith",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}{E}.\nIf you do, it gains first strike until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hexgold Slith",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nIf you do, it gains first strike until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hidden Strings",
+      "before": {
+        "name": "Hidden Strings",
+        "status": "partial",
+        "ignored_text": "You may tap or untap target permanent, then you may tap or untap another target permanent.\nCipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hidden Strings",
+        "status": "partial",
+        "ignored_text": "You may tap or untap target permanent, then you may tap or untap another target permanent.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "High Score",
+      "before": {
+        "name": "High Score",
+        "status": "partial",
+        "ignored_text": "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead.\ndraw a card if you control a creature with the greatest power among creatures on the battlefield.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "High Score",
+        "status": "partial",
+        "ignored_text": "draw a card if you control a creature with the greatest power among creatures on the battlefield.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Highspire Infusion",
+      "before": {
+        "name": "Highspire Infusion",
+        "status": "partial",
+        "ignored_text": "You get {E}{E} .",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Highspire Infusion",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hightide Hermit",
+      "before": {
+        "name": "Hightide Hermit",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E}{E} .\nPay {E}{E}: ~ can attack this turn as though it didn't have defender.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hightide Hermit",
+        "status": "partial",
+        "ignored_text": "Pay {E}{E}: ~ can attack this turn as though it didn't have defender.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hypnotic Siren",
+      "before": {
+        "name": "Hypnotic Siren",
+        "status": "partial",
+        "ignored_text": "Bestow {5}{U}{U}\nYou control enchanted creature.\nEnchanted creature gets +1/+1 and has flying.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hypnotic Siren",
+        "status": "partial",
+        "ignored_text": "Bestow {5}{U}{U}\nEnchanted creature gets +1/+1 and has flying.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Idyllic Grange",
+      "before": {
+        "name": "Idyllic Grange",
+        "status": "partial",
+        "ignored_text": "~ enters tapped unless you control three or more other Plains.\nWhen ~ enters untapped, put a +1/+1 counter on target creature you control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Idyllic Grange",
+        "status": "partial",
+        "ignored_text": "~ enters tapped unless you control three or more other Plains.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Illusory Gains",
+      "before": {
+        "name": "Illusory Gains",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Illusory Gains",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Indulge // Excess",
+      "before": {
+        "name": "Indulge // Excess",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control attacks this turn, create a 1/1 green and white Citizen creature token that's tapped and attacking.\nExcess: Aftermath\nExcess: Create a Treasure token for each creature you controlled that dealt combat damage to a player this turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Indulge // Excess",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control attacks this turn, create a 1/1 green and white Citizen creature token that's tapped and attacking.\nExcess: Create a Treasure token for each creature you controlled that dealt combat damage to a player this turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Infernal Denizen",
+      "before": {
+        "name": "Infernal Denizen",
+        "status": "partial",
+        "ignored_text": "sacrifice two Swamps.\nIf you can't, tap ~, and an opponent may gain control of a creature you control of their choice for as long as ~ remains on the battlefield.\n{T}: Gain control of target creature for as long as ~ remains on the battlefield.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Infernal Denizen",
+        "status": "partial",
+        "ignored_text": "sacrifice two Swamps.\nIf you can't, tap ~, and an opponent may gain control of a creature you control of their choice for as long as ~ remains on the battlefield.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Infused Arrows",
+      "before": {
+        "name": "Infused Arrows",
+        "status": "partial",
+        "ignored_text": "Sunburst\n{T}, Remove X charge counters from ~: Target creature gets -X/-X until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Infused Arrows",
+        "status": "partial",
+        "ignored_text": "{T}, Remove X charge counters from ~: Target creature gets -X/-X until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Inspired Inventor",
+      "before": {
+        "name": "Inspired Inventor",
+        "status": "partial",
+        "ignored_text": "\u2022 You get {E}{E}{E} .",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Inspired Inventor",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Insult // Injury",
+      "before": {
+        "name": "Insult // Injury",
+        "status": "partial",
+        "ignored_text": "If a source you control would deal damage this turn, it deals double that damage instead.\nInjury: Aftermath\nInjury: ~ deals 2 damage to target creature and 2 damage to target player or planeswalker.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Insult // Injury",
+        "status": "partial",
+        "ignored_text": "If a source you control would deal damage this turn, it deals double that damage instead.\nInjury: ~ deals 2 damage to target creature and 2 damage to target player or planeswalker.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Inventor's Axe",
+      "before": {
+        "name": "Inventor's Axe",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nEquip\u2014Pay {E}{E}.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Inventor's Axe",
+        "status": "partial",
+        "ignored_text": "Equip\u2014Pay {E}{E}.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Janjeet Sentry",
+      "before": {
+        "name": "Janjeet Sentry",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\n{T}, Pay {E}{E}: You may tap or untap target artifact or creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Janjeet Sentry",
+        "status": "partial",
+        "ignored_text": "{T}, Pay {E}{E}: You may tap or untap target artifact or creature.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Jolted Awake",
+      "before": {
+        "name": "Jolted Awake",
+        "status": "partial",
+        "ignored_text": "Choose up to one target artifact or creature card in your graveyard.\nYou get {E}{E} .\nThen you may pay an amount of {E} equal to that card's mana value.\nIf you do, return it from your graveyard to the battlefield.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Jolted Awake",
+        "status": "partial",
+        "ignored_text": "Choose up to one target artifact or creature card in your graveyard.\nThen you may pay an amount of {E} equal to that card's mana value.\nIf you do, return it from your graveyard to the battlefield.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Jugan, the Rising Star",
+      "before": {
+        "name": "Jugan, the Rising Star",
+        "status": "partial",
+        "ignored_text": "you may distribute five +1/+1 counters among any number of target creatures.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Jugan, the Rising Star",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Kami of Restless Shadows",
+      "before": {
+        "name": "Kami of Restless Shadows",
+        "status": "partial",
+        "ignored_text": "\u2022 Put target creature card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Kami of Restless Shadows",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Keiga, the Tide Star",
+      "before": {
+        "name": "Keiga, the Tide Star",
+        "status": "partial",
+        "ignored_text": "gain control of target creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Keiga, the Tide Star",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Kess, Dissident Mage",
+      "before": {
+        "name": "Kess, Dissident Mage",
+        "status": "partial",
+        "ignored_text": "During each of your turns, you may cast an instant or sorcery spell from your graveyard. If a spell cast this way would be put into your graveyard, exile it instead.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Kess, Dissident Mage",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Kitnap",
+      "before": {
+        "name": "Kitnap",
+        "status": "partial",
+        "ignored_text": "If the gift wasn't promised, put three stun counters on it.\nYou control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Kitnap",
+        "status": "partial",
+        "ignored_text": "If the gift wasn't promised, put three stun counters on it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Koskun Falls",
+      "before": {
+        "name": "Koskun Falls",
+        "status": "partial",
+        "ignored_text": "sacrifice ~ unless you tap an untapped creature you control.\nCreatures can't attack you unless their controller pays {2} for each creature they control that's attacking you.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Koskun Falls",
+        "status": "partial",
+        "ignored_text": "sacrifice ~ unless you tap an untapped creature you control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Krovikan Plague",
+      "before": {
+        "name": "Krovikan Plague",
+        "status": "partial",
+        "ignored_text": "Enchant non-Wall creature you control\nTap enchanted creature: ~ deals 1 damage to any target. Put a -0/-1 counter on enchanted creature. Activate only if enchanted creature is untapped.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Krovikan Plague",
+        "status": "partial",
+        "ignored_text": "Tap enchanted creature: ~ deals 1 damage to any target. Put a -0/-1 counter on enchanted creature. Activate only if enchanted creature is untapped.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Krovikan Whispers",
+      "before": {
+        "name": "Krovikan Whispers",
+        "status": "partial",
+        "ignored_text": "Cumulative upkeep {U} or {B}\nYou control enchanted creature.\nyou lose 2 life for each age counter on it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Krovikan Whispers",
+        "status": "partial",
+        "ignored_text": "Cumulative upkeep {U} or {B}\nyou lose 2 life for each age counter on it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Kusari-Gama",
+      "before": {
+        "name": "Kusari-Gama",
+        "status": "partial",
+        "ignored_text": "Equipped creature has \"{2}: ~ gets +1/+0 until end of turn.\"\nWhenever equipped creature deals damage to a blocking creature, ~ deals that much damage to each other creature defending player controls.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Kusari-Gama",
+        "status": "partial",
+        "ignored_text": "Whenever equipped creature deals damage to a blocking creature, ~ deals that much damage to each other creature defending player controls.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Lagonna-Band Storyteller",
+      "before": {
+        "name": "Lagonna-Band Storyteller",
+        "status": "partial",
+        "ignored_text": "you may put target enchantment card from your graveyard on top of your library.\nIf you do, you gain life equal to its mana value.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Lagonna-Band Storyteller",
+        "status": "partial",
+        "ignored_text": "If you do, you gain life equal to its mana value.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Last Thoughts",
+      "before": {
+        "name": "Last Thoughts",
+        "status": "partial",
+        "ignored_text": "Cipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Last Thoughts",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Lathnu Hellion",
+      "before": {
+        "name": "Lathnu Hellion",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Lathnu Hellion",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Lavinia, Azorius Renegade",
+      "before": {
+        "name": "Lavinia, Azorius Renegade",
+        "status": "partial",
+        "ignored_text": "Each opponent can't cast noncreature spells with mana value greater than the number of lands that player controls.\nif no mana was spent to cast it, counter that spell.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Lavinia, Azorius Renegade",
+        "status": "partial",
+        "ignored_text": "if no mana was spent to cast it, counter that spell.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Leave // Chance",
+      "before": {
+        "name": "Leave // Chance",
+        "status": "partial",
+        "ignored_text": "Return any number of target permanents you own to your hand.\nChance: Aftermath\nChance: Discard any number of cards, then draw that many cards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Leave // Chance",
+        "status": "partial",
+        "ignored_text": "Return any number of target permanents you own to your hand.\nChance: Discard any number of cards, then draw that many cards.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Leovold, Emissary of Trest",
+      "before": {
+        "name": "Leovold, Emissary of Trest",
+        "status": "partial",
+        "ignored_text": "Each opponent can't draw more than one card each turn.\nWhenever you or a permanent you control becomes the target of a spell or ability an opponent controls, you may draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Leovold, Emissary of Trest",
+        "status": "partial",
+        "ignored_text": "Whenever you or a permanent you control becomes the target of a spell or ability an opponent controls, you may draw a card.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Liberty Prime, Recharged",
+      "before": {
+        "name": "Liberty Prime, Recharged",
+        "status": "partial",
+        "ignored_text": "{2}, {T}, Sacrifice an artifact: You get {E}{E} and draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Liberty Prime, Recharged",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Life Finds a Way",
+      "before": {
+        "name": "Life Finds a Way",
+        "status": "partial",
+        "ignored_text": "Whenever a nontoken creature you control with power 4 or greater enters, populate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Life Finds a Way",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Llanowar Mentor",
+      "before": {
+        "name": "Llanowar Mentor",
+        "status": "partial",
+        "ignored_text": "{G}, {T}, Discard a card: Create a 1/1 green Elf Druid creature token named Llanowar Elves. It has \"{T}: Add {G}.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Llanowar Mentor",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Longtusk Cub",
+      "before": {
+        "name": "Longtusk Cub",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nPay {E}{E}: Put a +1/+1 counter on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Longtusk Cub",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Longtusk Stalker",
+      "before": {
+        "name": "Longtusk Stalker",
+        "status": "partial",
+        "ignored_text": "you get {E}.\nPay {E}{E}: ~ perpetually gets +1/+0. You may choose a creature card in your hand. If you do, that card perpetually gets +1/+0.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Longtusk Stalker",
+        "status": "partial",
+        "ignored_text": "Pay {E}{E}: ~ perpetually gets +1/+0. You may choose a creature card in your hand. If you do, that card perpetually gets +1/+0.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Lunar Avenger",
+      "before": {
+        "name": "Lunar Avenger",
+        "status": "partial",
+        "ignored_text": "Sunburst\nRemove a +1/+1 counter from ~: ~ gains your choice of flying, first strike, or haste until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Lunar Avenger",
+        "status": "partial",
+        "ignored_text": "Remove a +1/+1 counter from ~: ~ gains your choice of flying, first strike, or haste until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Magus of the Moon",
+      "before": {
+        "name": "Magus of the Moon",
+        "status": "partial",
+        "ignored_text": "Nonbasic lands are Mountains.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Magus of the Moon",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mark of the Oni",
+      "before": {
+        "name": "Mark of the Oni",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.\nif you control no Demons, sacrifice ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mark of the Oni",
+        "status": "partial",
+        "ignored_text": "if you control no Demons, sacrifice ~.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mask of Immolation",
+      "before": {
+        "name": "Mask of Immolation",
+        "status": "partial",
+        "ignored_text": "Equipped creature has \"Sacrifice ~: It deals 1 damage to any target.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mask of Immolation",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Maulfist Doorbuster",
+      "before": {
+        "name": "Maulfist Doorbuster",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}.\nIf you do, target creature can't block this turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Maulfist Doorbuster",
+        "status": "partial",
+        "ignored_text": "you may pay {E}.\nIf you do, target creature can't block this turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Maximus, Knight Apparent",
+      "before": {
+        "name": "Maximus, Knight Apparent",
+        "status": "partial",
+        "ignored_text": "{1}, Sacrifice an artifact: You get {E}{E} .",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Maximus, Knight Apparent",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mental Vapors",
+      "before": {
+        "name": "Mental Vapors",
+        "status": "partial",
+        "ignored_text": "Cipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mental Vapors",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Michelangelo, Weirdness to 11",
+      "before": {
+        "name": "Michelangelo, Weirdness to 11",
+        "status": "partial",
+        "ignored_text": "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Michelangelo, Weirdness to 11",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Midnight Recovery",
+      "before": {
+        "name": "Midnight Recovery",
+        "status": "partial",
+        "ignored_text": "Cipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Midnight Recovery",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mind Control",
+      "before": {
+        "name": "Mind Control",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mind Control",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mind Harness",
+      "before": {
+        "name": "Mind Harness",
+        "status": "partial",
+        "ignored_text": "Enchant red or green creature\nYou control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mind Harness",
+        "status": "partial",
+        "ignored_text": "Enchant red or green creature",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Minister of Inquiries",
+      "before": {
+        "name": "Minister of Inquiries",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\n{T}, Pay {E}: Target player mills three cards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Minister of Inquiries",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mortuary Mire",
+      "before": {
+        "name": "Mortuary Mire",
+        "status": "partial",
+        "ignored_text": "you may put target creature card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mortuary Mire",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mouth // Feed",
+      "before": {
+        "name": "Mouth // Feed",
+        "status": "partial",
+        "ignored_text": "Feed: Aftermath\nFeed: Draw a card for each creature you control with power 3 or greater.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mouth // Feed",
+        "status": "partial",
+        "ignored_text": "Feed: Draw a card for each creature you control with power 3 or greater.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Multiform Wonder",
+      "before": {
+        "name": "Multiform Wonder",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E} .\nPay {E}: ~ gains your choice of flying, vigilance, or lifelink until end of turn.\nPay {E}: ~ gets +2/-2 or -2/+2 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Multiform Wonder",
+        "status": "partial",
+        "ignored_text": "Pay {E}: ~ gains your choice of flying, vigilance, or lifelink until end of turn.\nPay {E}: ~ gets +2/-2 or -2/+2 until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Muster the Departed",
+      "before": {
+        "name": "Muster the Departed",
+        "status": "partial",
+        "ignored_text": "if a creature died this turn, populate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Muster the Departed",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mystic Sanctuary",
+      "before": {
+        "name": "Mystic Sanctuary",
+        "status": "partial",
+        "ignored_text": "~ enters tapped unless you control three or more other Islands.\nWhen ~ enters untapped, you may put target instant or sorcery card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mystic Sanctuary",
+        "status": "partial",
+        "ignored_text": "~ enters tapped unless you control three or more other Islands.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Narset, Parter of Veils",
+      "before": {
+        "name": "Narset, Parter of Veils",
+        "status": "partial",
+        "ignored_text": "Each opponent can't draw more than one card each turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Narset, Parter of Veils",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Nesting Dovehawk",
+      "before": {
+        "name": "Nesting Dovehawk",
+        "status": "partial",
+        "ignored_text": "populate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Nesting Dovehawk",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Never // Return",
+      "before": {
+        "name": "Never // Return",
+        "status": "partial",
+        "ignored_text": "Return: Aftermath",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Never // Return",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "New Blood",
+      "before": {
+        "name": "New Blood",
+        "status": "partial",
+        "ignored_text": "As an additional cost to cast ~, tap an untapped Vampire you control.\nGain control of target creature.\nChange the text of that creature by replacing all instances of one creature type with Vampire.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "New Blood",
+        "status": "partial",
+        "ignored_text": "As an additional cost to cast ~, tap an untapped Vampire you control.\nChange the text of that creature by replacing all instances of one creature type with Vampire.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Nicol Bolas, Planeswalker",
+      "before": {
+        "name": "Nicol Bolas, Planeswalker",
+        "status": "partial",
+        "ignored_text": "[\u22122]: Gain control of target creature.\n[\u22129]: That player or that planeswalker's controller discards seven cards, then sacrifices seven permanents.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Nicol Bolas, Planeswalker",
+        "status": "partial",
+        "ignored_text": "[\u22129]: That player or that planeswalker's controller discards seven cards, then sacrifices seven permanents.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ninja's Kunai",
+      "before": {
+        "name": "Ninja's Kunai",
+        "status": "partial",
+        "ignored_text": "Equipped creature has \"{1}, {T}, Sacrifice ~: ~ deals 3 damage to any target.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ninja's Kunai",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Nissa, Worldsoul Speaker",
+      "before": {
+        "name": "Nissa, Worldsoul Speaker",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nYou may pay eight {E} rather than pay the mana cost for permanent spells you cast.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Nissa, Worldsoul Speaker",
+        "status": "partial",
+        "ignored_text": "You may pay eight {E} rather than pay the mana cost for permanent spells you cast.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Notion Thief",
+      "before": {
+        "name": "Notion Thief",
+        "status": "partial",
+        "ignored_text": "If an opponent would draw a card except the first one they draw in each of their draw steps, instead that player skips that draw and you draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Notion Thief",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Onward // Victory",
+      "before": {
+        "name": "Onward // Victory",
+        "status": "partial",
+        "ignored_text": "Victory: Aftermath",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Onward // Victory",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Opaline Bracers",
+      "before": {
+        "name": "Opaline Bracers",
+        "status": "partial",
+        "ignored_text": "Sunburst\nEquipped creature gets +X/+X, where X is the number of charge counters on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Opaline Bracers",
+        "status": "partial",
+        "ignored_text": "Equipped creature gets +X/+X, where X is the number of charge counters on ~.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Paradise Mantle",
+      "before": {
+        "name": "Paradise Mantle",
+        "status": "partial",
+        "ignored_text": "Equipped creature has \"{T}: Add one mana of any color.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Paradise Mantle",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Paranoid Delusions",
+      "before": {
+        "name": "Paranoid Delusions",
+        "status": "partial",
+        "ignored_text": "Cipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Paranoid Delusions",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Peema Aether-Seer",
+      "before": {
+        "name": "Peema Aether-Seer",
+        "status": "partial",
+        "ignored_text": "you get an amount of {E}  equal to the greatest power among creatures you control.\nPay {E}{E}{E}: Target creature blocks this turn if able.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Peema Aether-Seer",
+        "status": "partial",
+        "ignored_text": "you get an amount of {E}  equal to the greatest power among creatures you control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Pentad Prism",
+      "before": {
+        "name": "Pentad Prism",
+        "status": "partial",
+        "ignored_text": "Sunburst",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Pentad Prism",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Persuasion",
+      "before": {
+        "name": "Persuasion",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Persuasion",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Phyrexian Ironworks",
+      "before": {
+        "name": "Phyrexian Ironworks",
+        "status": "partial",
+        "ignored_text": "you get {E} .\n{T}, Pay {E}{E}{E}: Create a 3/3 colorless Phyrexian Golem artifact creature token. Activate only as a sorcery.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Phyrexian Ironworks",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Plasma Caster",
+      "before": {
+        "name": "Plasma Caster",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nPay {E}{E}: Choose target creature that's blocking equipped creature. Flip a coin. If you win the flip, exile the chosen creature. Otherwise, ~ deals 1 damage to it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Plasma Caster",
+        "status": "partial",
+        "ignored_text": "Pay {E}{E}: Choose target creature that's blocking equipped creature. Flip a coin. If you win the flip, exile the chosen creature. Otherwise, ~ deals 1 damage to it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Prepare // Fight",
+      "before": {
+        "name": "Prepare // Fight",
+        "status": "partial",
+        "ignored_text": "Fight: Aftermath",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Prepare // Fight",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Primal Prayers",
+      "before": {
+        "name": "Primal Prayers",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nYou may cast creature spells with mana value 3 or less by paying {E} rather than paying their mana costs. If you cast a spell this way, you may cast it as though it had flash.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Primal Prayers",
+        "status": "partial",
+        "ignored_text": "You may cast creature spells with mana value 3 or less by paying {E} rather than paying their mana costs. If you cast a spell this way, you may cast it as though it had flash.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Propaganda",
+      "before": {
+        "name": "Propaganda",
+        "status": "partial",
+        "ignored_text": "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking you.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Propaganda",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Rags // Riches",
+      "before": {
+        "name": "Rags // Riches",
+        "status": "partial",
+        "ignored_text": "Riches: Aftermath\nRiches: Each opponent chooses a creature they control.\nRiches: You gain control of those creatures.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Rags // Riches",
+        "status": "partial",
+        "ignored_text": "Riches: Each opponent chooses a creature they control.\nRiches: You gain control of those creatures.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Reason // Believe",
+      "before": {
+        "name": "Reason // Believe",
+        "status": "partial",
+        "ignored_text": "Believe: Aftermath\nBelieve: Look at the top card of your library.\nBelieve: You may put it onto the battlefield if it's a creature card.\nBelieve: If you don't, put it into your hand.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Reason // Believe",
+        "status": "partial",
+        "ignored_text": "Believe: Look at the top card of your library.\nBelieve: You may put it onto the battlefield if it's a creature card.\nBelieve: If you don't, put it into your hand.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Reduce // Rubble",
+      "before": {
+        "name": "Reduce // Rubble",
+        "status": "partial",
+        "ignored_text": "Rubble: Aftermath\nRubble: Up to three target lands don't untap during their controller's next untap step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Reduce // Rubble",
+        "status": "partial",
+        "ignored_text": "Rubble: Up to three target lands don't untap during their controller's next untap step.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Refuse // Cooperate",
+      "before": {
+        "name": "Refuse // Cooperate",
+        "status": "partial",
+        "ignored_text": "~ deals damage to target spell's controller equal to that spell's mana value.\nCooperate: Aftermath\nCooperate: Copy target instant or sorcery spell.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Refuse // Cooperate",
+        "status": "partial",
+        "ignored_text": "~ deals damage to target spell's controller equal to that spell's mana value.\nCooperate: Copy target instant or sorcery spell.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Rest in Peace",
+      "before": {
+        "name": "Rest in Peace",
+        "status": "partial",
+        "ignored_text": "exile all graveyards.\nIf a card or token would be put into a graveyard from anywhere, exile it instead.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Rest in Peace",
+        "status": "partial",
+        "ignored_text": "exile all graveyards.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Rhystic Study",
+      "before": {
+        "name": "Rhystic Study",
+        "status": "partial",
+        "ignored_text": "you may draw a card unless that player pays {1}.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Rhystic Study",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Riddle Gate Gargoyle",
+      "before": {
+        "name": "Riddle Gate Gargoyle",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E} .\nyou may pay {E}{E}.\nWhen you do, target creature you control gains lifelink until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Riddle Gate Gargoyle",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nWhen you do, target creature you control gains lifelink until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Riparian Tiger",
+      "before": {
+        "name": "Riparian Tiger",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}{E}.\nIf you do, it gets +2/+2 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Riparian Tiger",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nIf you do, it gets +2/+2 until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Road // Ruin",
+      "before": {
+        "name": "Road // Ruin",
+        "status": "partial",
+        "ignored_text": "Ruin: Aftermath\nRuin: ~ deals damage to target creature equal to the number of lands you control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Road // Ruin",
+        "status": "partial",
+        "ignored_text": "Ruin: ~ deals damage to target creature equal to the number of lands you control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Rogue Refiner",
+      "before": {
+        "name": "Rogue Refiner",
+        "status": "partial",
+        "ignored_text": "draw a card and you get {E}{E} .",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Rogue Refiner",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Roil Cartographer",
+      "before": {
+        "name": "Roil Cartographer",
+        "status": "partial",
+        "ignored_text": "you get {E} .\n{T}, Pay six {E}: Draw three cards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Roil Cartographer",
+        "status": "partial",
+        "ignored_text": "{T}, Pay six {E}: Draw three cards.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Rootborn Defenses",
+      "before": {
+        "name": "Rootborn Defenses",
+        "status": "partial",
+        "ignored_text": "Populate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Rootborn Defenses",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sage of Shaila's Claim",
+      "before": {
+        "name": "Sage of Shaila's Claim",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E} .",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sage of Shaila's Claim",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Satya, Aetherflux Genius",
+      "before": {
+        "name": "Satya, Aetherflux Genius",
+        "status": "partial",
+        "ignored_text": "create a tapped and attacking token that's a copy of up to one other target nontoken creature you control.\nYou get {E}{E} .\nAt the beginning of the next end step, sacrifice that token unless you pay an amount of {E} equal to its mana value.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Satya, Aetherflux Genius",
+        "status": "partial",
+        "ignored_text": "create a tapped and attacking token that's a copy of up to one other target nontoken creature you control.\nAt the beginning of the next end step, sacrifice that token unless you pay an amount of {E} equal to its mana value.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sawtooth Thresher",
+      "before": {
+        "name": "Sawtooth Thresher",
+        "status": "partial",
+        "ignored_text": "Sunburst",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sawtooth Thresher",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Scrapper Champion",
+      "before": {
+        "name": "Scrapper Champion",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}{E}.\nIf you do, put a +1/+1 counter on it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Scrapper Champion",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nIf you do, put a +1/+1 counter on it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Scurry of Gremlins",
+      "before": {
+        "name": "Scurry of Gremlins",
+        "status": "partial",
+        "ignored_text": "Then you get an amount of {E}  equal to the number of creatures you control.\nPay {E}{E}{E}{E}: Creatures you control get +1/+0 and gain haste until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Scurry of Gremlins",
+        "status": "partial",
+        "ignored_text": "Then you get an amount of {E}  equal to the number of creatures you control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Servant of the Conduit",
+      "before": {
+        "name": "Servant of the Conduit",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\n{T}, Pay {E}: Add one mana of any color.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Servant of the Conduit",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Shadow Slice",
+      "before": {
+        "name": "Shadow Slice",
+        "status": "partial",
+        "ignored_text": "Cipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Shadow Slice",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Shantotto, Tactician Magician",
+      "before": {
+        "name": "Shantotto, Tactician Magician",
+        "status": "partial",
+        "ignored_text": "~ gets +X/+0 until end of turn, where X is the amount of mana spent to cast that spell.\nIf X is 4 or more, draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Shantotto, Tactician Magician",
+        "status": "partial",
+        "ignored_text": "If X is 4 or more, draw a card.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Shielded Aether Thief",
+      "before": {
+        "name": "Shielded Aether Thief",
+        "status": "partial",
+        "ignored_text": "you get {E} .\n{T}, Pay {E}{E}{E}: Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Shielded Aether Thief",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Shipwreck Moray",
+      "before": {
+        "name": "Shipwreck Moray",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E}{E} .\nPay {E}: ~ gets +2/-2 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Shipwreck Moray",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sigarda, Host of Herons",
+      "before": {
+        "name": "Sigarda, Host of Herons",
+        "status": "partial",
+        "ignored_text": "Spells and abilities your opponents control can't cause you to sacrifice permanents.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sigarda, Host of Herons",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Siren Song Lyre",
+      "before": {
+        "name": "Siren Song Lyre",
+        "status": "partial",
+        "ignored_text": "Equipped creature has \"{2}, {T}: Tap target creature.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Siren Song Lyre",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Skyreach Manta",
+      "before": {
+        "name": "Skyreach Manta",
+        "status": "partial",
+        "ignored_text": "Sunburst",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Skyreach Manta",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Slave of Bolas",
+      "before": {
+        "name": "Slave of Bolas",
+        "status": "partial",
+        "ignored_text": "Gain control of target creature.\nSacrifice it at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Slave of Bolas",
+        "status": "partial",
+        "ignored_text": "Sacrifice it at the beginning of the next end step.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Smelted Chargebug",
+      "before": {
+        "name": "Smelted Chargebug",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}.\nIf you do, another target attacking creature gets +1/+0 and gains menace until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Smelted Chargebug",
+        "status": "partial",
+        "ignored_text": "you may pay {E}.\nIf you do, another target attacking creature gets +1/+0 and gains menace until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Solar Transformer",
+      "before": {
+        "name": "Solar Transformer",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E} .\n{T}, Pay {E}: Add one mana of any color.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Solar Transformer",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Solarion",
+      "before": {
+        "name": "Solarion",
+        "status": "partial",
+        "ignored_text": "Sunburst",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Solarion",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Solstice Zealot",
+      "before": {
+        "name": "Solstice Zealot",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\n{T}, Pay {E}: Tap target creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Solstice Zealot",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Song of the Worldsoul",
+      "before": {
+        "name": "Song of the Worldsoul",
+        "status": "partial",
+        "ignored_text": "populate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Song of the Worldsoul",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sorin of House Markov // Sorin, Ravenous Neonate",
+      "before": {
+        "name": "Sorin of House Markov // Sorin, Ravenous Neonate",
+        "status": "partial",
+        "ignored_text": "At the beginning of each of your postcombat main phases, if you gained 3 or more life this turn, exile ~, then return him to the battlefield transformed under his owner's control.\nSorin, Ravenous Neonate: [\u22121]: ~ deals damage equal to the amount of life you gained this turn to any target.\nSorin, Ravenous Neonate: [\u22126]: Gain control of target creature.\nSorin, Ravenous Neonate: [\u22126]: It becomes a Vampire in addition to its other types.\nSorin, Ravenous Neonate: [\u22126]: Put a lifelink counter on it if you control a white permanent other than that creature or ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sorin of House Markov // Sorin, Ravenous Neonate",
+        "status": "partial",
+        "ignored_text": "At the beginning of each of your postcombat main phases, if you gained 3 or more life this turn, exile ~, then return him to the battlefield transformed under his owner's control.\nSorin, Ravenous Neonate: [\u22121]: ~ deals damage equal to the amount of life you gained this turn to any target.\nSorin, Ravenous Neonate: [\u22126]: It becomes a Vampire in addition to its other types.\nSorin, Ravenous Neonate: [\u22126]: Put a lifelink counter on it if you control a white permanent other than that creature or ~.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Soul Ransom",
+      "before": {
+        "name": "Soul Ransom",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.\nDiscard two cards: ~'s controller sacrifices it, then draws two cards. Only your opponents may activate this ability.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Soul Ransom",
+        "status": "partial",
+        "ignored_text": "Discard two cards: ~'s controller sacrifices it, then draws two cards. Only your opponents may activate this ability.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Soul Seizer // Ghastly Haunting",
+      "before": {
+        "name": "Soul Seizer // Ghastly Haunting",
+        "status": "partial",
+        "ignored_text": "When ~ deals combat damage to a player, you may transform it. If you do, attach it to target creature that player controls.\nGhastly Haunting: You control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Soul Seizer // Ghastly Haunting",
+        "status": "partial",
+        "ignored_text": "When ~ deals combat damage to a player, you may transform it. If you do, attach it to target creature that player controls.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sower of Temptation",
+      "before": {
+        "name": "Sower of Temptation",
+        "status": "partial",
+        "ignored_text": "gain control of target creature for as long as ~ remains on the battlefield.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sower of Temptation",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Spinal Parasite",
+      "before": {
+        "name": "Spinal Parasite",
+        "status": "partial",
+        "ignored_text": "Sunburst\nRemove two +1/+1 counters from ~: Remove a counter from target permanent.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Spinal Parasite",
+        "status": "partial",
+        "ignored_text": "Remove two +1/+1 counters from ~: Remove a counter from target permanent.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Spirit Away",
+      "before": {
+        "name": "Spirit Away",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Spirit Away",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Spontaneous Artist",
+      "before": {
+        "name": "Spontaneous Artist",
+        "status": "partial",
+        "ignored_text": "you get {E} .\nPay {E}: Target creature gains haste until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Spontaneous Artist",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Spring // Mind",
+      "before": {
+        "name": "Spring // Mind",
+        "status": "partial",
+        "ignored_text": "Mind: Aftermath",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Spring // Mind",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Start // Finish",
+      "before": {
+        "name": "Start // Finish",
+        "status": "partial",
+        "ignored_text": "Finish: Aftermath",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Start // Finish",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Static Prison",
+      "before": {
+        "name": "Static Prison",
+        "status": "partial",
+        "ignored_text": "You get {E}{E} .",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Static Prison",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Stolen Identity",
+      "before": {
+        "name": "Stolen Identity",
+        "status": "partial",
+        "ignored_text": "Cipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Stolen Identity",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Stone Idol Generator",
+      "before": {
+        "name": "Stone Idol Generator",
+        "status": "partial",
+        "ignored_text": "you get {E} .\n{T}, Pay six {E}: Create a 6/12 colorless Construct artifact creature token with trample. Activate only as a sorcery.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Stone Idol Generator",
+        "status": "partial",
+        "ignored_text": "{T}, Pay six {E}: Create a 6/12 colorless Construct artifact creature token with trample. Activate only as a sorcery.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Struggle // Survive",
+      "before": {
+        "name": "Struggle // Survive",
+        "status": "partial",
+        "ignored_text": "~ deals damage to target creature equal to the number of lands you control.\nSurvive: Aftermath\nSurvive: Each player shuffles their graveyard into their library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Struggle // Survive",
+        "status": "partial",
+        "ignored_text": "~ deals damage to target creature equal to the number of lands you control.\nSurvive: Each player shuffles their graveyard into their library.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Suncrusher",
+      "before": {
+        "name": "Suncrusher",
+        "status": "partial",
+        "ignored_text": "Sunburst",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Suncrusher",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sundering Growth",
+      "before": {
+        "name": "Sundering Growth",
+        "status": "partial",
+        "ignored_text": "Destroy target artifact or enchantment, then populate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sundering Growth",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Suntouched Myr",
+      "before": {
+        "name": "Suntouched Myr",
+        "status": "partial",
+        "ignored_text": "Sunburst",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Suntouched Myr",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Synth Eradicator",
+      "before": {
+        "name": "Synth Eradicator",
+        "status": "partial",
+        "ignored_text": "You may get {E}{E} .\nIf you don't, you may play that card this turn.\n{T}, Pay {E}{E}{E}: ~ deals 3 damage to any target.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Synth Eradicator",
+        "status": "partial",
+        "ignored_text": "If you don't, you may play that card this turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "T-45 Power Armor",
+      "before": {
+        "name": "T-45 Power Armor",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nEquipped creature gets +3/+3 and doesn't untap during its controller's untap step.\nyou may pay {E}.\nIf you do, untap equipped creature, then put your choice of a menace, trample, or lifelink counter on it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "T-45 Power Armor",
+        "status": "partial",
+        "ignored_text": "Equipped creature gets +3/+3 and doesn't untap during its controller's untap step.\nyou may pay {E}.\nIf you do, untap equipped creature, then put your choice of a menace, trample, or lifelink counter on it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Tajuru Preserver",
+      "before": {
+        "name": "Tajuru Preserver",
+        "status": "partial",
+        "ignored_text": "Spells and abilities your opponents control can't cause you to sacrifice permanents.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Tajuru Preserver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Tempest Harvester",
+      "before": {
+        "name": "Tempest Harvester",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\n{T}, Pay {E}: Draw a card, then discard a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Tempest Harvester",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Territorial Aetherkite",
+      "before": {
+        "name": "Territorial Aetherkite",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nThen you may pay one or more {E}.\nWhen you do, ~ deals that much damage to each other creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Territorial Aetherkite",
+        "status": "partial",
+        "ignored_text": "Then you may pay one or more {E}.\nWhen you do, ~ deals that much damage to each other creature.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "The Akroan War",
+      "before": {
+        "name": "The Akroan War",
+        "status": "partial",
+        "ignored_text": "I \u2014 Gain control of target creature for as long as ~ remains on the battlefield.\nII \u2014 Until your next turn, creatures your opponents control attack each combat if able.\nIII \u2014 Each tapped creature deals damage to itself equal to its power.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "The Akroan War",
+        "status": "partial",
+        "ignored_text": "II \u2014 Until your next turn, creatures your opponents control attack each combat if able.\nIII \u2014 Each tapped creature deals damage to itself equal to its power.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Threads of Disloyalty",
+      "before": {
+        "name": "Threads of Disloyalty",
+        "status": "partial",
+        "ignored_text": "Enchant creature with mana value 2 or less\nYou control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Threads of Disloyalty",
+        "status": "partial",
+        "ignored_text": "Enchant creature with mana value 2 or less",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thriving Grubs",
+      "before": {
+        "name": "Thriving Grubs",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}{E}.\nIf you do, put a +1/+1 counter on it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thriving Grubs",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nIf you do, put a +1/+1 counter on it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thriving Ibex",
+      "before": {
+        "name": "Thriving Ibex",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}{E}.\nIf you do, put a +1/+1 counter on it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thriving Ibex",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nIf you do, put a +1/+1 counter on it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thriving Rats",
+      "before": {
+        "name": "Thriving Rats",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}{E}.\nIf you do, put a +1/+1 counter on it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thriving Rats",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nIf you do, put a +1/+1 counter on it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thriving Rhino",
+      "before": {
+        "name": "Thriving Rhino",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}{E}.\nIf you do, put a +1/+1 counter on it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thriving Rhino",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nIf you do, put a +1/+1 counter on it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thriving Skyclaw",
+      "before": {
+        "name": "Thriving Skyclaw",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E} .\nyou may pay {E}{E}{E}.\nIf you do, put a +1/+1 counter on it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thriving Skyclaw",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}{E}.\nIf you do, put a +1/+1 counter on it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thriving Turtle",
+      "before": {
+        "name": "Thriving Turtle",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}{E}.\nIf you do, put a +1/+1 counter on it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thriving Turtle",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nIf you do, put a +1/+1 counter on it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Training Grounds",
+      "before": {
+        "name": "Training Grounds",
+        "status": "partial",
+        "ignored_text": "Activated abilities of creatures you control cost {2} less to activate. This effect can't reduce the mana in that cost to less than one mana.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Training Grounds",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Trait Doctoring",
+      "before": {
+        "name": "Trait Doctoring",
+        "status": "partial",
+        "ignored_text": "Change the text of target permanent by replacing all instances of one color word with another or one basic land type with another until end of turn.\nCipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Trait Doctoring",
+        "status": "partial",
+        "ignored_text": "Change the text of target permanent by replacing all instances of one color word with another or one basic land type with another until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Treachery",
+      "before": {
+        "name": "Treachery",
+        "status": "partial",
+        "ignored_text": "untap up to five lands.\nYou control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Treachery",
+        "status": "partial",
+        "ignored_text": "untap up to five lands.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Triskelavus",
+      "before": {
+        "name": "Triskelavus",
+        "status": "partial",
+        "ignored_text": "{1}, Remove a +1/+1 counter from ~: Create a 1/1 colorless Triskelavite artifact creature token with flying. It has \"Sacrifice ~: ~ deals 1 damage to any target.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Triskelavus",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Trostani's Judgment",
+      "before": {
+        "name": "Trostani's Judgment",
+        "status": "partial",
+        "ignored_text": "Exile target creature, then populate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Trostani's Judgment",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Trostani, Selesnya's Voice",
+      "before": {
+        "name": "Trostani, Selesnya's Voice",
+        "status": "partial",
+        "ignored_text": "{1}{G}{W}, {T}: Populate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Trostani, Selesnya's Voice",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Trusty Boomerang",
+      "before": {
+        "name": "Trusty Boomerang",
+        "status": "partial",
+        "ignored_text": "Equipped creature has \"{1}, {T}: Tap target creature. Return ~ to its owner's hand.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Trusty Boomerang",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Tune the Narrative",
+      "before": {
+        "name": "Tune the Narrative",
+        "status": "partial",
+        "ignored_text": "You get {E}{E} .",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Tune the Narrative",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Undercity Plague",
+      "before": {
+        "name": "Undercity Plague",
+        "status": "partial",
+        "ignored_text": "Target player loses 1 life, discards a card, then sacrifices a permanent.\nCipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Undercity Plague",
+        "status": "partial",
+        "ignored_text": "Target player loses 1 life, discards a card, then sacrifices a permanent.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Unstable Amulet",
+      "before": {
+        "name": "Unstable Amulet",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nWhenever you cast a spell from anywhere other than your hand, ~ deals 1 damage to each opponent.\n{T}, Pay {E}{E}: Exile the top card of your library. You may play it until you exile another card with ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Unstable Amulet",
+        "status": "partial",
+        "ignored_text": "Whenever you cast a spell from anywhere other than your hand, ~ deals 1 damage to each opponent.\n{T}, Pay {E}{E}: Exile the top card of your library. You may play it until you exile another card with ~.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Vapor Snare",
+      "before": {
+        "name": "Vapor Snare",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.\nsacrifice ~ unless you return a land you control to its owner's hand.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Vapor Snare",
+        "status": "partial",
+        "ignored_text": "sacrifice ~ unless you return a land you control to its owner's hand.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Vault 112: Sadistic Simulation",
+      "before": {
+        "name": "Vault 112: Sadistic Simulation",
+        "status": "partial",
+        "ignored_text": "I, II \u2014 You get {E}{E} .\nIII \u2014 Pay any amount of {E}.\nIII \u2014 If you paid one or more {E} this way, shuffle your library, then exile that many cards from the top.\nIII \u2014 You may play one of those cards without paying its mana cost.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Vault 112: Sadistic Simulation",
+        "status": "partial",
+        "ignored_text": "III \u2014 Pay any amount of {E}.\nIII \u2014 If you paid one or more {E} this way, shuffle your library, then exile that many cards from the top.\nIII \u2014 You may play one of those cards without paying its mana cost.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Viridian Longbow",
+      "before": {
+        "name": "Viridian Longbow",
+        "status": "partial",
+        "ignored_text": "Equipped creature has \"{T}: ~ deals 1 damage to any target.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Viridian Longbow",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Vitu-Ghazi Guildmage",
+      "before": {
+        "name": "Vitu-Ghazi Guildmage",
+        "status": "partial",
+        "ignored_text": "{2}{G}{W}: Populate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Vitu-Ghazi Guildmage",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Voidwalk",
+      "before": {
+        "name": "Voidwalk",
+        "status": "partial",
+        "ignored_text": "Cipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Voidwalk",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Volrath's Stronghold",
+      "before": {
+        "name": "Volrath's Stronghold",
+        "status": "partial",
+        "ignored_text": "{1}{B}, {T}: Put target creature card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Volrath's Stronghold",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Voltaic Brawler",
+      "before": {
+        "name": "Voltaic Brawler",
+        "status": "partial",
+        "ignored_text": "you get {E}{E} .\nyou may pay {E}.\nIf you do, it gets +1/+1 and gains trample until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Voltaic Brawler",
+        "status": "partial",
+        "ignored_text": "you may pay {E}.\nIf you do, it gets +1/+1 and gains trample until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Voltstorm Angel",
+      "before": {
+        "name": "Voltstorm Angel",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E} .\nyou may pay {E}{E}.\nWhen you do, choose one\u2014\n\u2022 ~ gains vigilance and lifelink until end of turn.\n\u2022 Other creatures you control get +1/+1 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Voltstorm Angel",
+        "status": "partial",
+        "ignored_text": "you may pay {E}{E}.\nWhen you do, choose one\u2014\n\u2022 ~ gains vigilance and lifelink until end of turn.\n\u2022 Other creatures you control get +1/+1 until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Wake the Reflections",
+      "before": {
+        "name": "Wake the Reflections",
+        "status": "partial",
+        "ignored_text": "Populate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Wake the Reflections",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Wayfaring Temple",
+      "before": {
+        "name": "Wayfaring Temple",
+        "status": "partial",
+        "ignored_text": "populate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Wayfaring Temple",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Whirler Virtuoso",
+      "before": {
+        "name": "Whirler Virtuoso",
+        "status": "partial",
+        "ignored_text": "you get {E}{E}{E} .\nPay {E}{E}{E}: Create a 1/1 colorless Thopter artifact creature token with flying.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Whirler Virtuoso",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Whispering Madness",
+      "before": {
+        "name": "Whispering Madness",
+        "status": "partial",
+        "ignored_text": "Each player discards their hand, then draws cards equal to the greatest number of cards a player discarded this way.\nCipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Whispering Madness",
+        "status": "partial",
+        "ignored_text": "Each player discards their hand, then draws cards equal to the greatest number of cards a player discarded this way.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "White Rhystic Study",
+      "before": {
+        "name": "White Rhystic Study",
+        "status": "partial",
+        "ignored_text": "you may draw a card unless that player pays {1}.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "White Rhystic Study",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Windborn Muse",
+      "before": {
+        "name": "Windborn Muse",
+        "status": "partial",
+        "ignored_text": "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking you.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Windborn Muse",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Witch's Cottage",
+      "before": {
+        "name": "Witch's Cottage",
+        "status": "partial",
+        "ignored_text": "~ enters tapped unless you control three or more other Swamps.\nWhen ~ enters untapped, you may put target creature card from your graveyard on top of your library.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Witch's Cottage",
+        "status": "partial",
+        "ignored_text": "~ enters tapped unless you control three or more other Swamps.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Witches' Eye",
+      "before": {
+        "name": "Witches' Eye",
+        "status": "partial",
+        "ignored_text": "Equipped creature has \"{1}, {T}: Scry 1.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Witches' Eye",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Writ of Return",
+      "before": {
+        "name": "Writ of Return",
+        "status": "partial",
+        "ignored_text": "Cipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Writ of Return",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Yavimaya's Embrace",
+      "before": {
+        "name": "Yavimaya's Embrace",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Yavimaya's Embrace",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Yoshimaru, Beloved Companion",
+      "before": {
+        "name": "Yoshimaru, Beloved Companion",
+        "status": "partial",
+        "ignored_text": "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Yoshimaru, Beloved Companion",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    }
+  ]
+}

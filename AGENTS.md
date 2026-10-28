@@ -80,6 +80,14 @@ a fake Forge directory and don't need a real install; a real Forge run needs Jav
 - **Results are measurements.** Changes to AI heuristics should be checked against `BaselineAI`
   or the rank ladder (`--ladder`, `--gauntlet`), not only against tests. Record notable numbers in
   `AI_RESULTS.md` rather than in code comments.
+- **Keep the backlog current.** [BACKLOG.md](BACKLOG.md) is the active capability roadmap.
+  Before choosing work, re-parse candidate cards against the current offline database.
+  Historical reports and archived backlog snapshots are not open work.
+  List only residual ignored clauses on partial cards; never add fully template-matched
+  cards or already matched effects as parser todos. Treat supported mechanics as existing
+  foundations. After a capability batch, refresh coverage in a new results directory,
+  retire resolved clauses/tasks, and update the backlog and its machine-readable records.
+  Track recorded simplifications and verified behavior bugs separately from parser gaps.
 - **Pure stdlib.**
 - **Git.** Commit or push only when asked. Work on a branch, not `main`, unless told otherwise.
 

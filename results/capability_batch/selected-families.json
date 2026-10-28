@@ -1,0 +1,103 @@
+{
+  "method": "Broad wording families; counts overlap and are upper bounds, not promised gains. All four selected for conservative reusable subsets.",
+  "ranking": [
+    {
+      "family": "targeted permanent operations",
+      "affected_cards": 2793,
+      "potential_full_matches_upper_bound": 1711,
+      "examples": [
+        "A-Blessed Hippogriff // A-Tyr's Blesing",
+        "A-Briar Hydra",
+        "A-Celestial Regulator",
+        "A-Druid Class",
+        "A-Goma Fada Vanguard"
+      ]
+    },
+    {
+      "family": "counter operations",
+      "affected_cards": 2453,
+      "potential_full_matches_upper_bound": 1343,
+      "examples": [
+        "A-Briar Hydra",
+        "A-Celebrity Fencer",
+        "A-Jade Orb of Dragonkind",
+        "A-Kenku Artificer",
+        "A-Nezumi Prowler"
+      ]
+    },
+    {
+      "family": "keyword grants",
+      "affected_cards": 2151,
+      "potential_full_matches_upper_bound": 1254,
+      "examples": [
+        "A-Blessed Hippogriff // A-Tyr's Blesing",
+        "A-Carnelian Orb of Dragonkind",
+        "A-Civil Servant",
+        "A-Dragon's Rage Channeler",
+        "A-Jade Orb of Dragonkind"
+      ]
+    },
+    {
+      "family": "granted triggered abilities",
+      "affected_cards": 88,
+      "potential_full_matches_upper_bound": 43,
+      "examples": [
+        "Abnormal Endurance",
+        "Alaundo the Seer",
+        "Ambassador of Evendo",
+        "Arm with Aether",
+        "Ashnod's Intervention"
+      ]
+    }
+  ],
+  "remaining": [
+    {
+      "family": "targeted permanent operations",
+      "affected_cards": 2280,
+      "potential_full_matches_upper_bound": 1408,
+      "examples": [
+        "A-Blessed Hippogriff // A-Tyr's Blesing",
+        "A-Briar Hydra",
+        "A-Celestial Regulator",
+        "A-Druid Class",
+        "A-Dueling Coach"
+      ]
+    },
+    {
+      "family": "counter operations",
+      "affected_cards": 2154,
+      "potential_full_matches_upper_bound": 1219,
+      "examples": [
+        "A-Briar Hydra",
+        "A-Celebrity Fencer",
+        "A-Jade Orb of Dragonkind",
+        "A-Kenku Artificer",
+        "A-Nezumi Prowler"
+      ]
+    },
+    {
+      "family": "keyword grants",
+      "affected_cards": 1803,
+      "potential_full_matches_upper_bound": 1064,
+      "examples": [
+        "A-Blessed Hippogriff // A-Tyr's Blesing",
+        "A-Carnelian Orb of Dragonkind",
+        "A-Civil Servant",
+        "A-Dragon's Rage Channeler",
+        "A-Jade Orb of Dragonkind"
+      ]
+    },
+    {
+      "family": "granted triggered abilities",
+      "affected_cards": 84,
+      "potential_full_matches_upper_bound": 44,
+      "examples": [
+        "Abnormal Endurance",
+        "Alaundo the Seer",
+        "Ambassador of Evendo",
+        "Antique Collector",
+        "Arm with Aether"
+      ]
+    }
+  ]
+}

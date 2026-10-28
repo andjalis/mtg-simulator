@@ -197,6 +197,10 @@ while preserving amounts. Parser failures are counted separately, and the comman
 and saves its results before returning exit code 1. A missing database returns 2. Use `MTGSIM_CARDDB`
 to select another local database.
 
+The active [capability backlog](BACKLOG.md) tracks the remaining ranked gaps and
+verified ignored-clause examples. It excludes fully matched cards and already
+implemented effects; completed batches and measurements stay in the linked history.
+
 ## What the engine covers
 
 - Lands and mana: dual, tapped and conditionally tapped lands, shock lands
@@ -281,6 +285,9 @@ to select another local database.
 - Werewolves transform at the beginning of each upkeep after a turn with no spells, and back after a turn in
   which a player cast two or more; transformed permanents can turn face up again
 - Echo, unleash, evolve, renown, mentor, battle cry, riot, bloodthirst, fabricate, living weapon and heroic.
+  Training adds a +1/+1 counter when attacking with a stronger creature; dethrone adds one when
+  attacking a player tied for the highest life total. Their conditions are checked at declaration,
+  and multiple printed instances trigger independently. Training tokens are supported.
   Unleash takes the counter unless its controller is low on life against a real attack, riot takes haste when
   the creature can attack and nothing untapped would block and kill it, and fabricate puts counters on an
   evasive creature and makes Servos otherwise
@@ -396,6 +403,44 @@ to select another local database.
   sacrifice, discard, life and counter costs, "only as a sorcery", "only once
   each turn"; the default policy uses them with spare mana, and self-pumps on
   unblocked attackers
+- Fixed +1/+1 counter costs from among creatures you control, including Hopeful
+  Initiate: counters may come from one creature or be split across several,
+  including the source. Payment planning preserves donors needed after mana
+  abilities, and failed activation attempts restore mana and counters
+- Graft entry counters and optional transfers; Parish-Blade Trainee's counter
+  inheritance; training-event triggers and Savior of Ollenbock's linked exile/return.
+  Marchesa grants dethrone and schedules counter-bearing creatures to return at
+  the next end step, preserving card identity and the trigger's controller
+- Filtered and grouped entry/death triggers with simultaneous-event snapshots; team and Aura-host
+  activated/mana grants; board/graveyard-based quantities; two-target counter and Aura
+  relationships; exact-value graveyard targets; next-end-step blinking; subtype
+  sacrifice costs; named-token triggers; and global combat/player-action restrictions.
+  See [the next thirty effects](results/residual_batch/README.md) for filtered mass
+  moves, Miracle and Adapt, graveyard access, trigger/activation suppression,
+  life/counter restrictions, additional anthems and tapped-entry rules.
+  See [the thirty-capability extension](results/advanced_batch/README.md) for
+  Equipment ability grants, base-stat filters, allocation targets, control durations,
+  replacement effects, energy, Sunburst, Cipher, Aftermath, casting permissions and
+  nonbasic-land conversion.
+  See [the completed ten-task roadmap batch](results/roadmap_batch/README.md)
+- Composable permanent selectors for additional targeted, group and static effects:
+  controller, subtype, color, combat/tapped status, counters, keywords and fixed stat
+  bounds. Generic named-counter addition/removal/doubling and fixed multi-counter
+  self costs; keyword lists and temporary quoted triggers. Unsupported qualifiers
+  stay visible. See [database-wide capability measurements](results/capability_batch/README.md)
+- Counter-filtered grants of reach, flying and shroud; regeneration and untapping.
+  Cytoplast Manipulator's control lasts while its source remains on the battlefield,
+  with competing control effects ordered by timestamp. Cytoplast Root-Kin distributes
+  and moves counters; Simic Basilisk grants temporary combat-damage triggers that
+  destroy damaged creatures at end of combat. Vigean Hydropon cannot attack or block;
+  Warrior's Resolve checks individual attackers for its conditional end-step draw
+- Shared costs using any counter type (Tayam), variable counter payments
+  (Retribution of the Ancients), and Ooze Flux tokens sized from counters paid.
+  `activate_ability(..., x=N)` selects a variable amount; `counter_choices` can
+  explicitly choose `(permanent, counter_type, amount)` payments
+- Scourge of the Throne's first-attack condition and additional combat phases,
+  including its resolution-time life check; Gryffwing Cavalry's optional payment
+  grants flying to another eligible attacker until end of turn
 - Mana that can only be spent on some spells (Cavern of Souls, which also makes
   its creature uncounterable; creature-, artifact-, instant/sorcery- and
   Dragon-only mana), "choose a basic land type" lands, lands that enter tapped

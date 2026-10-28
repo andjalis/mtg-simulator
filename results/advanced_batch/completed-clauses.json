@@ -1,0 +1,243 @@
+[
+  {
+    "task": "base_pt_predicates",
+    "card": "Bess, Soul Nourisher",
+    "resolved_clause": "Whenever one or more other creatures you control with base power and toughness 1/1 enter, put a +1/+1 counter on ~.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "equipment_ability_grants",
+    "card": "Viridian Longbow",
+    "resolved_clause": "Equipped creature has \"{T}: ~ deals 1 damage to any target.\"",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "event_quantities",
+    "card": "Aberrant Manawurm",
+    "resolved_clause": "~ gets +X/+0 until end of turn, where X is the amount of mana spent to cast that spell.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "target_allocations",
+    "card": "Blessings of Nature",
+    "resolved_clause": "Distribute four +1/+1 counters among any number of target creatures.",
+    "current_status": "partial",
+    "remaining_ignored_text": [
+      "Miracle {G}"
+    ]
+  },
+  {
+    "task": "next_turn_duration",
+    "card": "All-Seeing Arbiter",
+    "resolved_clause": "target creature an opponent controls gets -X/-0 until your next turn, where X is the number of different mana values among cards in your graveyard.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "multiple_grave_targets",
+    "card": "Aphetto Dredging",
+    "resolved_clause": "Return up to three target creature cards of the creature type of your choice from your graveyard to your hand.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "sacrifice_protection",
+    "card": "Sigarda, Host of Herons",
+    "resolved_clause": "Spells and abilities your opponents control can't cause you to sacrifice permanents.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "token_activated_abilities",
+    "card": "Triskelavus",
+    "resolved_clause": "{1}, Remove a +1/+1 counter from ~: Create a 1/1 colorless Triskelavite artifact creature token with flying. It has \"Sacrifice ~: ~ deals 1 damage to any target.\"",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "aura_host_predicates",
+    "card": "Aggression",
+    "resolved_clause": "Enchant non-Wall creature",
+    "current_status": "partial",
+    "remaining_ignored_text": [
+      "At the beginning of the end step of enchanted creature's controller, destroy that creature if it didn't attack this turn."
+    ]
+  },
+  {
+    "task": "activation_cost_reduction",
+    "card": "Biomancer's Familiar",
+    "resolved_clause": "Activated abilities of creatures you control cost {2} less to activate. This effect can't reduce the mana in that cost to less than one mana.",
+    "current_status": "partial",
+    "remaining_ignored_text": [
+      "{T}: The next time target creature adapts this turn, it adapts as though it had no +1/+1 counters on it."
+    ]
+  },
+  {
+    "task": "attack_taxes",
+    "card": "Ghostly Prison",
+    "resolved_clause": "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking you.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "aura_control",
+    "card": "Control Magic",
+    "resolved_clause": "You control enchanted creature.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "unrestricted_source_control",
+    "card": "Sower of Temptation",
+    "resolved_clause": "gain control of target creature for as long as ~ remains on the battlefield.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "indefinite_control",
+    "card": "Agent of Treachery",
+    "resolved_clause": "gain control of target permanent.",
+    "current_status": "partial",
+    "remaining_ignored_text": [
+      "if you control three or more permanents you don't own, draw three cards."
+    ]
+  },
+  {
+    "task": "graveyard_library_top",
+    "card": "Mystic Sanctuary",
+    "resolved_clause": "When ~ enters untapped, you may put target instant or sorcery card from your graveyard on top of your library.",
+    "current_status": "partial",
+    "remaining_ignored_text": [
+      "~ enters tapped unless you control three or more other Islands."
+    ]
+  },
+  {
+    "task": "opponent_payment_gates",
+    "card": "Rhystic Study",
+    "resolved_clause": "you may draw a card unless that player pays {1}.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "populate",
+    "card": "Rootborn Defenses",
+    "resolved_clause": "Populate.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "counter_placement_replacements",
+    "card": "Hardened Scales",
+    "resolved_clause": "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "token_creation_replacements",
+    "card": "Academy Manufactor",
+    "resolved_clause": "If you would create a Clue, Food, or Treasure token, instead create one of each.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "sunburst",
+    "card": "Pentad Prism",
+    "resolved_clause": "Sunburst",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "energy",
+    "card": "Dynavolt Tower",
+    "resolved_clause": "you get {E}{E} .",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "energy",
+    "card": "Dynavolt Tower",
+    "resolved_clause": "{T}, Pay {E}{E}{E}{E}{E}: ~ deals 3 damage to any target.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "draw_replacements",
+    "card": "Notion Thief",
+    "resolved_clause": "If an opponent would draw a card except the first one they draw in each of their draw steps, instead that player skips that draw and you draw a card.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "draw_limits",
+    "card": "Narset, Parter of Veils",
+    "resolved_clause": "Each opponent can't draw more than one card each turn.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "graveyard_replacements",
+    "card": "Rest in Peace",
+    "resolved_clause": "If a card or token would be put into a graveyard from anywhere, exile it instead.",
+    "current_status": "partial",
+    "remaining_ignored_text": [
+      "exile all graveyards."
+    ]
+  },
+  {
+    "task": "graveyard_cast_permissions",
+    "card": "Kess, Dissident Mage",
+    "resolved_clause": "During each of your turns, you may cast an instant or sorcery spell from your graveyard. If a spell cast this way would be put into your graveyard, exile it instead.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "cipher",
+    "card": "Hands of Binding",
+    "resolved_clause": "Cipher",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "aftermath",
+    "card": "Dusk // Dawn",
+    "resolved_clause": "Dawn: Aftermath",
+    "current_status": "partial",
+    "remaining_ignored_text": [
+      "Destroy all creatures with power 3 or greater.",
+      "Dawn: Return all creature cards with power 2 or less from your graveyard to your hand."
+    ]
+  },
+  {
+    "task": "opponent_exile_permissions",
+    "card": "Gonti, Lord of Luxury",
+    "resolved_clause": "look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "opponent_exile_permissions",
+    "card": "Gonti, Lord of Luxury",
+    "resolved_clause": "You may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "conditional_cast_limits",
+    "card": "Lavinia, Azorius Renegade",
+    "resolved_clause": "Each opponent can't cast noncreature spells with mana value greater than the number of lands that player controls.",
+    "current_status": "partial",
+    "remaining_ignored_text": [
+      "if no mana was spent to cast it, counter that spell."
+    ]
+  },
+  {
+    "task": "land_type_conversion",
+    "card": "Blood Moon",
+    "resolved_clause": "Nonbasic lands are Mountains.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  }
+]

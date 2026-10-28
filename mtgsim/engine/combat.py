@@ -30,6 +30,13 @@ class CombatMixin:
         self._combat(p, opp)
         if not self.over:
             self.end_combat(p)
+        while self.extra_combats and not self.over:
+            self.extra_combats -= 1
+            for player in self.players:
+                player.pool.clear()
+            self._combat(p, opp)
+            if not self.over:
+                self.end_combat(p)
 
     def end_combat(self, p: Player):
         self.step = "end_combat"
@@ -60,6 +67,10 @@ class CombatMixin:
                      and (not a.card.attack_needs or any(a.card.attack_needs in x.card.subtypes for x in opp.battlefield))]
         attackers += [a for a in p.creatures if (a.card.must_attack or a.has("must_attack_now")) and a.can_attack()
                       and a not in attackers]
+        from ..backlog_templates import combat_limit
+        limit = combat_limit(self, 'attack')
+        if limit is not None:
+            attackers = attackers[:limit]
         self.attackers = list(attackers)
         if not attackers:
             return
@@ -68,9 +79,18 @@ class CombatMixin:
             t = targets.get(a, opp)
             self.attack_targets[a] = t if (t is opp or (isinstance(t, Permanent) and t.is_planeswalker
                                                          and t in opp.battlefield)) else opp
+            from ..advanced_templates import attack_tax
+            tax = attack_tax(self, opp) if self.attack_targets[a] is opp else 0
+            if tax and self.pay(p, {"generic": tax}) is None:
+                self.attack_targets.pop(a, None)
+                continue
             if not a.has("vigilance"):
                 a.tapped = True
                 self.fire(p, "becomes_tapped", a)
+        attackers = [a for a in attackers if a in self.attack_targets]
+        self.attackers = attackers
+        if not attackers:
+            return
         p.attacked_with = len(attackers)
         self.log(f"attacks with {attackers}" + (
             f" ({ {a: t for a, t in self.attack_targets.items() if t is not opp} })"
@@ -93,9 +113,19 @@ class CombatMixin:
         blocks = extra_blocks(opp, attackers, blocks)
         used = {}                       # blocker -> attackers it blocks ("can block an additional creature")
         legal = {}
+        block_limit = combat_limit(self, 'block')
         for a in attackers:
             bl = [b for b in blocks.get(a, []) if used.get(b, 0) <= b.card.extra_blocks and b in opp.battlefield
                   and can_block(b, a)]
+            if block_limit is not None:
+                available = max(0, block_limit - len(used))
+                retained = []
+                for blocker in bl:
+                    if blocker in used or available > 0:
+                        retained.append(blocker)
+                        if blocker not in used:
+                            available -= 1
+                bl = retained
             if a.has("menace") and len(bl) == 1:
                 bl = []
             if a.card.min_blockers and len(bl) < a.card.min_blockers:
@@ -185,6 +215,8 @@ class CombatMixin:
             if isinstance(tgt, Player):
                 self.fire(src.controller, "combat_damage_player", src, context=tgt)
                 ring.combat_damage(self, src.controller, src, tgt)
+                from ..advanced_templates import cipher_damage
+                cipher_damage(self, src)
                 self.fire(src.controller, "ally_combat_damage")
         self.state_based_actions()
         self.settle()

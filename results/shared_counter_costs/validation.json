@@ -1,0 +1,41 @@
+{
+  "base_commit": "9d6eb8ca9187ff1f5c672044c4df49698c7cb3e4",
+  "prerequisite": "Uncommitted training/dethrone implementation retained from preceding batch",
+  "full_suite": {
+    "command": ".venv/bin/python -m unittest discover -s tests -t . -v",
+    "exit_code": 0,
+    "ran": 1200,
+    "passed": 1199,
+    "skipped": 1,
+    "failures": 0,
+    "errors": 0,
+    "seconds": 1970.823,
+    "skip_reason": "local Forge review log not present"
+  },
+  "focused_suite": {
+    "command": ".venv/bin/python -m unittest tests.test_shared_counter_costs tests.test_costs_types_triggers tests.test_training_dethrone tests.test_zone_actions_layers -q",
+    "exit_code": 0,
+    "ran": 83,
+    "passed": 83
+  },
+  "new_regression_tests": 20,
+  "lint": {
+    "command": ".venv/bin/python scripts/lint.py",
+    "exit_code": 0,
+    "findings": 0
+  },
+  "coverage_comparison": {
+    "examined": 10,
+    "improved": 2,
+    "new_full_template_matches": [
+      "Hopeful Initiate"
+    ],
+    "parse_errors": 0
+  },
+  "file_sha256": {
+    "mtgsim/cards/parse.py": "16bedc0c99ba260106a5add90acd7b00681b99807e345c0b4308bec238c0f851",
+    "mtgsim/costs.py": "90767652abbb78ba8263905d5a2acb6ead744f7912e695ec59dd5620deaaa925",
+    "mtgsim/engine/abilities.py": "0e98d72e97928955ae0d5d4b0853ed4d07ce66d8e409af7383f79cc928ad46e2",
+    "tests/test_shared_counter_costs.py": "c4992cb76a92efd8eb8ed65e508cffed631dda580ee472cc13f5c009817bf4d5"
+  }
+}

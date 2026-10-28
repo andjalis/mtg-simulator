@@ -1,0 +1,299 @@
+{
+  "reviewed_on": "2026-10-27",
+  "census_measured_on": "2026-10-26",
+  "source_report": "results/capability_batch/after/summary.json",
+  "source_cards": "results/capability_batch/after/cards.csv",
+  "source_cards_sha256": "7c7f36997330f07c34bac0e5f4d6bd191b5096fde2cc40d491aca2d3646f88bf",
+  "database_sha256": "b69f4273177e76ef08ad88b323a1eebad1329b29059500fa6f42853ceddaf2f1",
+  "runtime_and_test_hashes_match_validated_snapshot": true,
+  "example_validation": "Each listed clause was re-parsed against the current offline CardDB and is still ignored on a partial card.",
+  "ranking_method": "Implementation priority from the proposed capability roadmap; separate from measured coarse family rankings. No per-task gain forecast.",
+  "inclusion_rule": "Only residual ignored clauses on partial cards. Full cards, matched portions of partial cards, and simplification-only cards are excluded.",
+  "measured_remaining_families": [
+    {
+      "gap": "triggered (whenever/when)",
+      "affected_cards": 3488,
+      "potential_full_matches": 2135,
+      "examples": [
+        "A Display of My Dark Power",
+        "A Good Day to Die",
+        "A Good Day to Pie"
+      ]
+    },
+    {
+      "gap": "activated abilities",
+      "affected_cards": 2666,
+      "potential_full_matches": 1993,
+      "examples": [
+        "A-Baba Lysaga, Night Witch",
+        "A-Carnelian Orb of Dragonkind",
+        "A-Dungeon Descent"
+      ]
+    },
+    {
+      "gap": "counters",
+      "affected_cards": 2915,
+      "potential_full_matches": 1947,
+      "examples": [
+        "A-Briar Hydra",
+        "A-Celebrity Fencer",
+        "A-Celestial Regulator"
+      ]
+    },
+    {
+      "gap": "graveyard",
+      "affected_cards": 2729,
+      "potential_full_matches": 1518,
+      "examples": [
+        "A Good Day to Pie",
+        "A-Ardent Dustspeaker",
+        "A-Cobbled Lancer"
+      ]
+    },
+    {
+      "gap": "sacrifice",
+      "affected_cards": 2061,
+      "potential_full_matches": 1245,
+      "examples": [
+        "A-Baba Lysaga, Night Witch",
+        "A-Capenna Express",
+        "A-Forge Boss"
+      ]
+    },
+    {
+      "gap": "tokens",
+      "affected_cards": 2225,
+      "potential_full_matches": 1233,
+      "examples": [
+        "A-Elderleaf Mentor",
+        "A-Elven Bow",
+        "A-Esika's Chariot"
+      ]
+    },
+    {
+      "gap": "exile",
+      "affected_cards": 2109,
+      "potential_full_matches": 1056,
+      "examples": [
+        "A-Ardent Dustspeaker",
+        "A-Cobbled Lancer",
+        "A-Elderfang Ritualist"
+      ]
+    },
+    {
+      "gap": "auras/enchant",
+      "affected_cards": 1117,
+      "potential_full_matches": 923,
+      "examples": [
+        "A-Public Enemy",
+        "Aboshan's Desire",
+        "Absorbing Man"
+      ]
+    },
+    {
+      "gap": "can't restrictions",
+      "affected_cards": 1309,
+      "potential_full_matches": 727,
+      "examples": [
+        "A-Goma Fada Vanguard",
+        "A-Ready to Rumble",
+        "A-Sewer Crocodile"
+      ]
+    },
+    {
+      "gap": "X costs",
+      "affected_cards": 1219,
+      "potential_full_matches": 688,
+      "examples": [
+        "A-Briar Hydra",
+        "A-Maelstrom Muse",
+        "A-Nael, Avizoa Aeronaut"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "priority": 1,
+      "id": "filtered_entry_death",
+      "status": "open",
+      "title": "Filtered entry/death triggers",
+      "remaining_scope": "Extend trigger subjects to remaining nontoken, power-bound, and grouped-entry predicates; preserve once-per-turn and optional-payment behavior.",
+      "examples": [
+        {
+          "card": "Harvester of Souls",
+          "status": "partial",
+          "remaining_ignored_text": "Whenever another nontoken creature dies, you may draw a card."
+        },
+        {
+          "card": "Welcoming Vampire",
+          "status": "partial",
+          "remaining_ignored_text": "Whenever one or more other creatures you control with power 2 or less enter, draw a card. This ability triggers only once each turn."
+        },
+        {
+          "card": "Mentor of the Meek",
+          "status": "partial",
+          "remaining_ignored_text": "Whenever another creature you control with power 2 or less enters, you may pay {1}. If you do, draw a card."
+        }
+      ]
+    },
+    {
+      "priority": 2,
+      "id": "quoted_activated",
+      "status": "open",
+      "title": "Quoted activated abilities",
+      "remaining_scope": "Attach parsed activated or mana abilities to the correct recipient; handle team grants, activation costs, source removal, and ability loss.",
+      "examples": [
+        {
+          "card": "Abundant Growth",
+          "status": "partial",
+          "remaining_ignored_text": "Enchanted land has \"{T}: Add one mana of any color.\""
+        },
+        {
+          "card": "Acidic Sliver",
+          "status": "partial",
+          "remaining_ignored_text": "All Slivers have \"{2}, Sacrifice ~: ~ deals 2 damage to any target.\""
+        }
+      ]
+    },
+    {
+      "priority": 3,
+      "id": "variable_amounts",
+      "status": "open",
+      "title": "Variable amounts and X effects",
+      "remaining_scope": "Resolve missing X definitions from board state and graveyard counts at the specified time, including entry counters and stat changes.",
+      "examples": [
+        {
+          "card": "Accelerated Mutation",
+          "status": "partial",
+          "remaining_ignored_text": "Target creature gets +X/+X until end of turn, where X is the highest mana value among permanents you control."
+        },
+        {
+          "card": "Academy Elite",
+          "status": "partial",
+          "remaining_ignored_text": "~ enters with X +1/+1 counters on it, where X is the number of instant and sorcery cards in all graveyards."
+        }
+      ]
+    },
+    {
+      "priority": 4,
+      "id": "related_targets",
+      "status": "open",
+      "title": "Relationships between multiple targets",
+      "remaining_scope": "Validate distinct recipients and shared-controller relationships; choose a counter quantity and move it without duplication.",
+      "examples": [
+        {
+          "card": "Bioshift",
+          "status": "partial",
+          "remaining_ignored_text": "Move any number of +1/+1 counters from target creature onto another target creature with the same controller."
+        },
+        {
+          "card": "Simic Guildmage",
+          "status": "partial",
+          "remaining_ignored_text": "{1}{G}: Move a +1/+1 counter from target creature onto another target creature with the same controller."
+        }
+      ]
+    },
+    {
+      "priority": 5,
+      "id": "delayed_durations",
+      "status": "open",
+      "title": "Additional delayed-effect durations",
+      "remaining_scope": "Compose the remaining exile/return wording with exact-card identity and next-end-step scheduling, including creature-or-artifact targets.",
+      "examples": [
+        {
+          "card": "Abuelo, Ancestral Echo",
+          "status": "partial",
+          "remaining_ignored_text": "{1}{W}{U}: Exile another target creature or artifact you control. Return it to the battlefield under its owner's control at the beginning of the next end step."
+        }
+      ]
+    },
+    {
+      "priority": 6,
+      "id": "graveyard_filters",
+      "status": "open",
+      "title": "Graveyard target filters",
+      "remaining_scope": "Add the remaining exact-mana-value graveyard predicate while preserving card identity and resolution-time legality.",
+      "examples": [
+        {
+          "card": "Abiding Grace",
+          "status": "partial",
+          "remaining_ignored_text": "• Return target creature card with mana value 1 from your graveyard to the battlefield."
+        }
+      ]
+    },
+    {
+      "priority": 7,
+      "id": "subtype_sacrifice",
+      "status": "open",
+      "title": "Subtype-based sacrifice costs",
+      "remaining_scope": "Select and reserve a legal creature of the required subtype when paying a sacrifice cost; retain transactional payment behavior.",
+      "examples": [
+        {
+          "card": "Arms Dealer",
+          "status": "partial",
+          "remaining_ignored_text": "{1}{R}, Sacrifice a Goblin: ~ deals 4 damage to target creature."
+        }
+      ]
+    },
+    {
+      "priority": 8,
+      "id": "token_abilities",
+      "status": "open",
+      "title": "Token-granted abilities",
+      "remaining_scope": "Parse remaining named-token bodies with quoted triggered abilities and bind self references to each token, including later counters.",
+      "examples": [
+        {
+          "card": "Ajani Resolute",
+          "status": "partial",
+          "remaining_ignored_text": "[−4]: Create a 2/2 white Cat Soldier creature token named ~'s Pridemate with \"Whenever you gain life, put a +1/+1 counter on ~.\""
+        }
+      ]
+    },
+    {
+      "priority": 9,
+      "id": "aura_movement",
+      "status": "open",
+      "title": "Aura attachment and movement",
+      "remaining_scope": "Move existing Auras between permanents while enforcing attachment legality, controller relationships, and the printed all-Auras scope.",
+      "examples": [
+        {
+          "card": "Glamer Spinners",
+          "status": "partial",
+          "remaining_ignored_text": "attach all Auras enchanting target permanent to another permanent with the same controller."
+        },
+        {
+          "card": "Simic Guildmage",
+          "status": "partial",
+          "remaining_ignored_text": "{1}{U}: Attach target Aura attached to a permanent to another permanent with the same controller."
+        }
+      ]
+    },
+    {
+      "priority": 10,
+      "id": "restrictions",
+      "status": "open",
+      "title": "Combat and casting restrictions",
+      "remaining_scope": "Apply remaining combat-wide attacker/blocker limits and timed player casting/nonmana-activation restrictions in the action legality paths.",
+      "examples": [
+        {
+          "card": "Silent Arbiter",
+          "status": "partial",
+          "remaining_ignored_text": "No more than one creature can attack each combat."
+        },
+        {
+          "card": "Silent Arbiter",
+          "status": "partial",
+          "remaining_ignored_text": "No more than one creature can block each combat."
+        },
+        {
+          "card": "Abeyance",
+          "status": "partial",
+          "remaining_ignored_text": "Until end of turn, target player can't cast instant or sorcery spells, and that player can't activate abilities that aren't mana abilities."
+        }
+      ]
+    }
+  ],
+  "active": false,
+  "status": "historical_snapshot",
+  "superseded_by": "results/roadmap_batch/backlog.json"
+}

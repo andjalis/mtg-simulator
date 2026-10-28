@@ -6,7 +6,7 @@ import re
 
 from .. import alt_casts, auras, copies, milling
 from ..cards import CardDef, Effect
-from .. import modal, rules_events, phase_conditions, turn_conditions
+from .. import modal, rules_events, phase_conditions, turn_conditions, counter_mechanics
 from ..identity import CardInstance, CardZone
 from ..actions import perform, can_perform
 from .state import Permanent, Player, StackItem, TARGETED, TrackedZone, _gy_desc, card_matches
@@ -91,10 +91,23 @@ class StackMixin:
                     self.fire(controller, "opp_upkeep", context=p)
 
     def _dispatch_trigger_event(self, p, event, source=None, context=None, subject=None):
+        from ..residual_templates import trigger_suppressed
+        if trigger_suppressed(self, event, source, context, subject):
+            return
+        if event == "leaves" and source is getattr(self, "_suppressed_death_object", None):
+            return
+        if event == "attacks" and source is not None:
+            previous_turn, count = getattr(source, 'attack_count', (None, 0))
+            source.attack_count = (self.turn, count + 1 if previous_turn == self.turn else 1)
         perms = [source] if source is not None else list(p.battlefield)
         for perm in perms:
-            for i, trig in enumerate(perm.triggers):
+            triggers = getattr(perm, 'last_triggers', None) if source is not None else None
+            if triggers is None:
+                triggers = perm.triggers
+            for i, trig in enumerate(triggers):
                 if trig.event != event:
+                    continue
+                if trig.data.get("enters_untapped") and perm.tapped:
                     continue
                 if trig.intervening_if and not self.check_cond(perm.controller,
                         Effect("condition", cond=trig.intervening_if),
@@ -138,6 +151,20 @@ class StackMixin:
                             subject.power > perm.power or subject.toughness > perm.toughness):
                         continue
                     context = subject
+                if trig.filter == "graft" and context is perm:
+                    continue
+                if trig.filter == "first_attack" and getattr(perm, 'attack_count', (None, 0)) != (self.turn, 1):
+                    continue
+                # These attack conditions are checked only when the ability triggers.
+                # They are not intervening-if clauses and are not checked on resolution.
+                if trig.filter == "training" and not any(
+                        a is not perm and a.controller is perm.controller and a.power > perm.power
+                        for a in self.attackers):
+                    continue
+                if trig.filter == "dethrone":
+                    defender = self.attack_targets.get(perm)
+                    if not isinstance(defender, Player) or defender.life < max(pl.life for pl in self.players):
+                        continue
                 if trig.filter.startswith("attacker:") and not (isinstance(context, Permanent)
                                                                 and trig.filter[9:] in context.card.subtypes):
                     continue
@@ -161,6 +188,9 @@ class StackMixin:
                                                        or subject.power <= perm.power):
                     continue
                 effects = trig.effects
+                if event == "dies":
+                    effects = [dataclasses.replace(e, data=dict(e.data, counters=dict(perm.counters)))
+                               if e.kind == "inherit_counters" else e for e in effects]
                 if subject is not None and any(e.data.get("subject_power") for e in effects):
                     effects = [dataclasses.replace(e, amount=max(0, subject.power)) if e.data.get("subject_power")
                                else e for e in effects]
@@ -195,6 +225,7 @@ class StackMixin:
                     continue
             if targets is None:
                 targets = self.auto_targets(controller, effects, source)
+            effects = counter_mechanics.protect_graveyard_targets(self, effects, targets)
             item = StackItem(controller, effects, targets, source=source, name=name, context=context, kind=kind)
             item.intervening_if = intervening_if
             item.context_ref = ref
@@ -204,15 +235,20 @@ class StackMixin:
         return True
 
     def check_ward(self, item: StackItem):
+        item.effects = counter_mechanics.protect_graveyard_targets(self, item.effects, item.targets)
+        unique_targets = []
         for tgt in item.targets:
+            if not any(tgt is previous for previous in unique_targets):
+                unique_targets.append(tgt)
+        for tgt in unique_targets:
             if isinstance(tgt, Permanent) and tgt in tgt.controller.battlefield:
                 self.fire(tgt.controller, "targeted", source=tgt)          # Illusions: "sacrifice it"
                 if item.kind == "spell" and tgt.controller is item.controller:
                     self.fire(tgt.controller, "heroic", source=tgt)
-        for tgt in item.targets:
+        for tgt in unique_targets:
             if isinstance(tgt, Permanent) and tgt.controller is item.controller and tgt in tgt.controller.battlefield:
                 self.fire(tgt.controller, "targeted_mine", source=tgt)      # Valiant
-        for tgt in item.targets:
+        for tgt in unique_targets:
             if isinstance(tgt, Permanent) and tgt.controller is not item.controller:
                 if tgt.ward:
                     self.queue_trigger(tgt.controller, [Effect("counter", tgt.ward, target="spell")], tgt,
@@ -247,11 +283,13 @@ class StackMixin:
                     self.log(f"{base.name} has nothing to enchant", p)
                     p.graveyard.append(base)
                     return
+            self._entry_mana_colors = getattr(item, "mana_colors", set())
             if kind == "disturb":                   # cast transformed: its back face enters
                 perm = self.enter_battlefield(p, base.back, x=getattr(item, "x", 0), physical_card=base)
             else:
                 perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
             self._aura_host = None
+            self._entry_mana_colors = set()
             self._spent = ""
             if kind in ("disguise", "morph", "megamorph"):
                 perm.hidden = base
@@ -331,10 +369,13 @@ class StackMixin:
         if item.kind == "copy":
             return
         base, kind, _ = self._origin(item.card)
-        owner = item.controller
+        owner = getattr(base, "owner", None) or item.controller
+        from ..advanced_templates import encode
+        if encode(self, item, base):
+            return
         if kind in ("adventure", "cascade_adventure", "rebound_adventure"):
             owner.on_adventure.append(base)
-        elif kind in ("flashback", "jump_start"):
+        elif kind in ("flashback", "jump_start", "grave_permission", "aftermath"):
             if getattr(item, "flip_gy", False) and item.card.back is not None:
                 self.enter_battlefield(owner, item.card.back, counters={"finality": 1}, physical_card=base)
                 self.log(f"{item.card.name} returns transformed", owner)
@@ -355,11 +396,17 @@ class StackMixin:
             owner.graveyard.append(base)
 
     def check_cond(self, p: Player, eff: Effect, item: StackItem, prev) -> bool:
+        if eff.cond.startswith("not_owned>="):
+            return sum(x.owner is not p for x in p.battlefield) >= int(eff.cond.split(">=")[1])
+        if eff.cond == "source_untapped":
+            return item is not None and isinstance(item.source, Permanent) and not item.source.tapped
         if eff.data.get("milled_condition") and not milling.condition_met(p, eff, item):
             return False
         c = eff.cond
         if not c:
             return True
+        if c == 'attacking_most_life':
+            return counter_mechanics.is_attacking_most_life(self, item.source if item else None, p)
         phase_condition = phase_conditions.check(p, c, item)
         if phase_condition is not None:
             return phase_condition
@@ -388,6 +435,8 @@ class StackMixin:
             spell = item.context
             big = isinstance(spell, StackItem) and spell.mana_spent >= 5
             return big if c == "mana>=5" else not big
+        if c == "p1_attacked_turn":
+            return any(x.p1 > 0 and getattr(x, 'attack_count', (None, 0))[0] == self.turn for x in p.creatures)
         if c == "attacked_turn":
             return p.attacked_with > 0
         if c == "creature_died":

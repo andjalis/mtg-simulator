@@ -4,7 +4,7 @@
     Fabricate N     Living weapon     Heroic — Whenever you cast a spell that targets ~, ...
     ~ has first strike as long as it's attacking.     Whenever ~ deals damage, you gain that much life.
     Cumulative upkeep {1}     Vanishing N     Fading N     Modular N     Soulshift N     Annihilator N
-    Rampage N     Backup N     Dash {2}{R}     Unearth {1}{R}     Madness {1}{R}
+    Rampage N     Backup N     Training     Dethrone     Dash {2}{R}     Unearth {1}{R}     Madness {1}{R}
     At the beginning of your upkeep, sacrifice ~ unless you pay {G}{G}.
 
 ``parse_line`` turns a keyword line into CardDef fields and triggers. The "enters with" ones (unleash, riot,
@@ -23,7 +23,8 @@ from __future__ import annotations
 import re
 
 KINDS = {"extort", "evolve", "renown", "mentor", "battle_cry", "fabricate", "living_weapon", "echo", "pay_or_sac",
-         "cumulative_upkeep", "vanishing", "fading", "modular", "soulshift", "annihilator", "rampage", "backup"}
+         "cumulative_upkeep", "vanishing", "fading", "modular", "soulshift", "annihilator", "rampage", "backup",
+         "attack_counter"}
 
 
 def _effect(kind, amount=0, **kw):
@@ -135,6 +136,8 @@ def parse_line(line: str, st) -> bool:
 def enters(game, p, perm):
     """The "enters with" choices and rules, as perm enters the battlefield."""
     c = perm.card
+    if c.graft:
+        perm.counters["+1/+1"] = perm.p1 + c.graft
     if c.devour:                           # devour the tokens (the AI keeps its real creatures)
         eaten = [x for x in p.creatures if x is not perm and x.card.is_token]
         for x in eaten:
@@ -210,6 +213,11 @@ def resolve(game, p, eff, target, item):
             game.sacrifice(victim)
         return
     if not isinstance(src, Permanent) or src not in src.controller.battlefield:
+        return
+    if k == "attack_counter":
+        src.counters["+1/+1"] = src.p1 + 1
+        if eff.data.get("training"):
+            game.fire(src.controller, "trains", src)
         return
     if k == "extort":                      # pay {W/B} (as one of the source's colors): drain 1
         color = next((c for c in ("W", "B") if c in src.card.colors), "B")

@@ -1,0 +1,212 @@
+[
+  {
+    "effect": "filtered_mass_moves_1",
+    "card": "Dusk // Dawn",
+    "resolved_clause": "Destroy all creatures with power 3 or greater.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "filtered_mass_moves_2",
+    "card": "Dusk // Dawn",
+    "resolved_clause": "Dawn: Return all creature cards with power 2 or less from your graveyard to your hand.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "exile_graveyards_3",
+    "card": "Rest in Peace",
+    "resolved_clause": "exile all graveyards.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "other_land_entry_conditions_4",
+    "card": "Mystic Sanctuary",
+    "resolved_clause": "~ enters tapped unless you control three or more other Islands.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "ownership_thresholds_5",
+    "card": "Agent of Treachery",
+    "resolved_clause": "if you control three or more permanents you don't own, draw three cards.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "zero_mana_cast_triggers_6",
+    "card": "Lavinia, Azorius Renegade",
+    "resolved_clause": "if no mana was spent to cast it, counter that spell.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "host_end_step_attack_checks_7",
+    "card": "Aggression",
+    "resolved_clause": "At the beginning of the end step of enchanted creature's controller, destroy that creature if it didn't attack this turn.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "adapt_replacements_8",
+    "card": "Biomancer's Familiar",
+    "resolved_clause": "{T}: The next time target creature adapts this turn, it adapts as though it had no +1/+1 counters on it.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "miracle_9",
+    "card": "Blessings of Nature",
+    "resolved_clause": "Miracle {G}",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "mass_bounce",
+    "card": "Evacuation",
+    "resolved_clause": "Return all creatures to their owners' hands.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "graveyard_exile_target",
+    "card": "Tormod's Crypt",
+    "resolved_clause": "{T}, Sacrifice ~: Exile all cards from target player's graveyard.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "graveyard_exile_choice",
+    "card": "Relic of Progenitus",
+    "resolved_clause": "{T}: Target player exiles a card from their graveyard.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "opponent_grave_replacement",
+    "card": "Leyline of the Void",
+    "resolved_clause": "If a card would be put into an opponent's graveyard from anywhere, exile it instead.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "grave_library_entry_lock",
+    "card": "Grafdigger's Cage",
+    "resolved_clause": "Creature cards in graveyards and libraries can't enter the battlefield.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "grave_library_cast_lock",
+    "card": "Grafdigger's Cage",
+    "resolved_clause": "Players can't cast spells from graveyards or libraries.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "entry_trigger_suppression",
+    "card": "Torpor Orb",
+    "resolved_clause": "Creatures entering don't cause abilities to trigger.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "death_trigger_suppression",
+    "card": "Hushbringer",
+    "resolved_clause": "Creatures entering or dying don't cause abilities to trigger.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "creature_activation_lock",
+    "card": "Cursed Totem",
+    "resolved_clause": "Activated abilities of creatures can't be activated.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "artifact_creature_nonmana_lock",
+    "card": "Damping Matrix",
+    "resolved_clause": "Activated abilities of artifacts and creatures can't be activated unless they're mana abilities.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "life_total_lock",
+    "card": "Platinum Emperion",
+    "resolved_clause": "Your life total can't change.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "player_counter_lock",
+    "card": "Solemnity",
+    "resolved_clause": "Players can't get counters.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "permanent_counter_lock",
+    "card": "Solemnity",
+    "resolved_clause": "Counters can't be put on artifacts, creatures, enchantments, or lands.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "poison_prevention",
+    "card": "Melira, Sylvok Outcast",
+    "resolved_clause": "You can't get poison counters.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "negative_counter_prevention",
+    "card": "Melira, Sylvok Outcast",
+    "resolved_clause": "Creatures you control can't have -1/-1 counters put on them.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "keyword_removal",
+    "card": "Melira, Sylvok Outcast",
+    "resolved_clause": "Creatures your opponents control lose infect.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "opponent_negative_anthem",
+    "card": "Elesh Norn, Grand Cenobite",
+    "resolved_clause": "Creatures your opponents control get -2/-2.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "token_anthem_keywords",
+    "card": "Intangible Virtue",
+    "resolved_clause": "Creature tokens you control get +1/+1 and have vigilance.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "nontoken_anthem_keywords",
+    "card": "Always Watching",
+    "resolved_clause": "Nontoken creatures you control get +1/+1 and have vigilance.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "global_color_anthem",
+    "card": "Bad Moon",
+    "resolved_clause": "Black creatures get +1/+1.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "effect": "opponent_tapped_entries",
+    "card": "Kismet",
+    "resolved_clause": "Artifacts, creatures, and lands your opponents control enter tapped.",
+    "after_status": "full",
+    "remaining_ignored_text": []
+  }
+]

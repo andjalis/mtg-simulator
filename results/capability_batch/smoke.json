@@ -1,0 +1,19 @@
+{
+  "scope": "Deterministic functional checks using real database cards; no win-rate claim.",
+  "checks": [
+    {
+      "pilot": "HeuristicAI",
+      "automatic_automaton_counter_draw": true,
+      "automatic_slime_land_target": true,
+      "memorial_keyword_list": true,
+      "automatic_vorel_counter_doubling": true
+    },
+    {
+      "pilot": "BaselineAI",
+      "automatic_automaton_counter_draw": true,
+      "automatic_slime_land_target": true,
+      "memorial_keyword_list": true,
+      "automatic_vorel_counter_doubling": true
+    }
+  ]
+}

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from ... import copies
+from ... import copies, counter_mechanics
 from ...cards import CardDef, Effect, jace_token, make_token, role_token
 from ..policy import choose_basic, perm_value
 from ..state import Permanent, Player, is_basic_land
@@ -27,22 +27,25 @@ def destroy(game, p, eff, target, item, **_):
 
 @kind("wrath")
 def wrath(game, p, eff, opp, **_):
+    sources = counter_mechanics.death_sources(game)
     for perm in p.creatures + opp.creatures:
-        game.destroy(perm, no_regen=eff.data.get("no_regen", False))
+        game.destroy(perm, no_regen=eff.data.get("no_regen", False), counter_sources=sources)
 
 
 @kind("destroy_all")
 def destroy_all(game, p, eff, opp, **_):
     """Destroy all artifacts / enchantments / lands."""
     kind = eff.data["type"]
+    sources = counter_mechanics.death_sources(game)
     for perm in [x for x in p.battlefield + opp.battlefield if kind in x.card.types]:
-        game.destroy(perm)
+        game.destroy(perm, counter_sources=sources)
 
 
 @kind("wrath_pw")
 def wrath_pw(game, p, eff, opp, **_):
+    sources = counter_mechanics.death_sources(game)
     for perm in p.planeswalkers + opp.planeswalkers:
-        game.destroy(perm, no_regen=eff.data.get("no_regen", False))
+        game.destroy(perm, no_regen=eff.data.get("no_regen", False), counter_sources=sources)
 
 
 @kind("bounce")
@@ -265,13 +268,10 @@ def irencrag(game, p, item, **_):
 @kind("threaten")
 def threaten(game, p, target, **_):
     if isinstance(target, Permanent) and target in target.controller.battlefield:
-        victim, owner = target, target.controller
-        owner.battlefield.remove(victim)
-        victim.controller = p
-        p.battlefield.append(victim)
+        victim = target
+        counter_mechanics.add_control(game, victim, p, until_eot=True)
         victim.tapped = False
         victim.sick = False
-        game.stolen.append((victim, owner))
         game.log(f"gains control of {victim.card.name}", p)
 
 
@@ -315,7 +315,7 @@ def land_swap(game, p, eff, opp, **_):
                 who.library.remove(land)
                 game.log(f"fetches {land.name}", who)
                 perm = game.enter_battlefield(who, land)
-                if not eff.data.get("both"):
+                if perm is not None and not eff.data.get("both"):
                     perm.tapped = True
                     perm.counters["stun"] = 1
             who.library.shuffle(game.rng)
@@ -338,12 +338,13 @@ def amass(game, p, eff, **_):
 @kind("edict")
 def edict(game, p, eff, opp, **_):
     victims = sorted(opp.creatures, key=perm_value)[:eff.amount]
+    sources = counter_mechanics.death_sources(game)
     for v in victims:
         if eff.data.get("exile"):
             game.leave_battlefield(v, "exile")
             game.log(f"{opp} exiles {v.card.name}", p)
         else:
-            game.sacrifice(v)
+            game.sacrifice(v, counter_sources=sources)
 
 
 @kind("endure")

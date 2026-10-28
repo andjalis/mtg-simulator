@@ -1,0 +1,204 @@
+{
+  "Dusk // Dawn": {
+    "name": "Dusk // Dawn",
+    "layout": "split",
+    "card_faces": [
+      {
+        "name": "Dusk",
+        "mana_cost": "{2}{W}{W}",
+        "cmc": 9,
+        "type_line": "Sorcery",
+        "oracle_text": "Destroy all creatures with power 3 or greater."
+      },
+      {
+        "name": "Dawn",
+        "mana_cost": "{3}{W}{W}",
+        "cmc": 0,
+        "type_line": "Sorcery",
+        "oracle_text": "Aftermath (Cast this spell only from your graveyard. Then exile it.)\nReturn all creature cards with power 2 or less from your graveyard to your hand."
+      }
+    ]
+  },
+  "Rest in Peace": {
+    "name": "Rest in Peace",
+    "mana_cost": "{1}{W}",
+    "cmc": 2,
+    "type_line": "Enchantment",
+    "oracle_text": "When Rest in Peace enters, exile all graveyards.\nIf a card or token would be put into a graveyard from anywhere, exile it instead."
+  },
+  "Mystic Sanctuary": {
+    "name": "Mystic Sanctuary",
+    "mana_cost": "",
+    "cmc": 0,
+    "type_line": "Land \u2014 Island",
+    "oracle_text": "({T}: Add {U}.)\nMystic Sanctuary enters tapped unless you control three or more other Islands.\nWhen Mystic Sanctuary enters untapped, you may put target instant or sorcery card from your graveyard on top of your library."
+  },
+  "Agent of Treachery": {
+    "name": "Agent of Treachery",
+    "mana_cost": "{5}{U}{U}",
+    "cmc": 7,
+    "type_line": "Creature \u2014 Human Rogue",
+    "oracle_text": "When Agent of Treachery enters, gain control of target permanent.\nAt the beginning of your end step, if you control three or more permanents you don't own, draw three cards.",
+    "power": "2",
+    "toughness": "3"
+  },
+  "Lavinia, Azorius Renegade": {
+    "name": "Lavinia, Azorius Renegade",
+    "mana_cost": "{W}{U}",
+    "cmc": 2,
+    "type_line": "Legendary Creature \u2014 Human Soldier",
+    "oracle_text": "Each opponent can't cast noncreature spells with mana value greater than the number of lands that player controls.\nWhenever an opponent casts a spell, if no mana was spent to cast it, counter that spell.",
+    "power": "2",
+    "toughness": "2"
+  },
+  "Aggression": {
+    "name": "Aggression",
+    "mana_cost": "{2}{R}",
+    "cmc": 3,
+    "type_line": "Enchantment \u2014 Aura",
+    "oracle_text": "Enchant non-Wall creature\nEnchanted creature has first strike and trample.\nAt the beginning of the end step of enchanted creature's controller, destroy that creature if it didn't attack this turn."
+  },
+  "Biomancer's Familiar": {
+    "name": "Biomancer's Familiar",
+    "mana_cost": "{G}{U}",
+    "cmc": 2,
+    "type_line": "Creature \u2014 Mutant",
+    "oracle_text": "Activated abilities of creatures you control cost {2} less to activate. This effect can't reduce the mana in that cost to less than one mana.\n{T}: The next time target creature adapts this turn, it adapts as though it had no +1/+1 counters on it.",
+    "power": "2",
+    "toughness": "2"
+  },
+  "Blessings of Nature": {
+    "name": "Blessings of Nature",
+    "mana_cost": "{4}{G}",
+    "cmc": 5,
+    "type_line": "Sorcery",
+    "oracle_text": "Distribute four +1/+1 counters among any number of target creatures.\nMiracle {G} (You may cast this card for its miracle cost when you draw it if it's the first card you drew this turn.)"
+  },
+  "Evacuation": {
+    "name": "Evacuation",
+    "mana_cost": "{3}{U}{U}",
+    "cmc": 5,
+    "type_line": "Instant",
+    "oracle_text": "Return all creatures to their owners' hands."
+  },
+  "Tormod's Crypt": {
+    "name": "Tormod's Crypt",
+    "mana_cost": "",
+    "cmc": 0,
+    "type_line": "Artifact",
+    "oracle_text": "{T}, Sacrifice Tormod's Crypt: Exile all cards from target player's graveyard."
+  },
+  "Relic of Progenitus": {
+    "name": "Relic of Progenitus",
+    "mana_cost": "{1}",
+    "cmc": 1,
+    "type_line": "Artifact",
+    "oracle_text": "{T}: Target player exiles a card from their graveyard.\n{1}, Exile Relic of Progenitus: Exile all graveyards. Draw a card."
+  },
+  "Leyline of the Void": {
+    "name": "Leyline of the Void",
+    "mana_cost": "{2}{B}{B}",
+    "cmc": 4,
+    "type_line": "Enchantment",
+    "oracle_text": "If Leyline of the Void is in your opening hand, you may begin the game with it on the battlefield.\nIf a card would be put into an opponent's graveyard from anywhere, exile it instead."
+  },
+  "Grafdigger's Cage": {
+    "name": "Grafdigger's Cage",
+    "mana_cost": "{1}",
+    "cmc": 1,
+    "type_line": "Artifact",
+    "oracle_text": "Creature cards in graveyards and libraries can't enter the battlefield.\nPlayers can't cast spells from graveyards or libraries."
+  },
+  "Torpor Orb": {
+    "name": "Torpor Orb",
+    "mana_cost": "{2}",
+    "cmc": 2,
+    "type_line": "Artifact",
+    "oracle_text": "Creatures entering don't cause abilities to trigger."
+  },
+  "Hushbringer": {
+    "name": "Hushbringer",
+    "mana_cost": "{1}{W}",
+    "cmc": 2,
+    "type_line": "Creature \u2014 Faerie",
+    "oracle_text": "Flying, lifelink\nCreatures entering or dying don't cause abilities to trigger.",
+    "power": "1",
+    "toughness": "2"
+  },
+  "Cursed Totem": {
+    "name": "Cursed Totem",
+    "mana_cost": "{2}",
+    "cmc": 2,
+    "type_line": "Artifact",
+    "oracle_text": "Activated abilities of creatures can't be activated."
+  },
+  "Damping Matrix": {
+    "name": "Damping Matrix",
+    "mana_cost": "{3}",
+    "cmc": 3,
+    "type_line": "Artifact",
+    "oracle_text": "Activated abilities of artifacts and creatures can't be activated unless they're mana abilities."
+  },
+  "Platinum Emperion": {
+    "name": "Platinum Emperion",
+    "mana_cost": "{8}",
+    "cmc": 8,
+    "type_line": "Artifact Creature \u2014 Golem",
+    "oracle_text": "Your life total can't change. (You can't gain or lose life. You can't pay any amount of life except 0.)",
+    "power": "8",
+    "toughness": "8"
+  },
+  "Solemnity": {
+    "name": "Solemnity",
+    "mana_cost": "{2}{W}",
+    "cmc": 3,
+    "type_line": "Enchantment",
+    "oracle_text": "Players can't get counters.\nCounters can't be put on artifacts, creatures, enchantments, or lands."
+  },
+  "Melira, Sylvok Outcast": {
+    "name": "Melira, Sylvok Outcast",
+    "mana_cost": "{1}{G}",
+    "cmc": 2,
+    "type_line": "Legendary Creature \u2014 Human Scout",
+    "oracle_text": "You can't get poison counters.\nCreatures you control can't have -1/-1 counters put on them.\nCreatures your opponents control lose infect.",
+    "power": "2",
+    "toughness": "2"
+  },
+  "Elesh Norn, Grand Cenobite": {
+    "name": "Elesh Norn, Grand Cenobite",
+    "mana_cost": "{5}{W}{W}",
+    "cmc": 7,
+    "type_line": "Legendary Creature \u2014 Phyrexian Praetor",
+    "oracle_text": "Vigilance\nOther creatures you control get +2/+2.\nCreatures your opponents control get -2/-2.",
+    "power": "4",
+    "toughness": "7"
+  },
+  "Intangible Virtue": {
+    "name": "Intangible Virtue",
+    "mana_cost": "{1}{W}",
+    "cmc": 2,
+    "type_line": "Enchantment",
+    "oracle_text": "Creature tokens you control get +1/+1 and have vigilance."
+  },
+  "Always Watching": {
+    "name": "Always Watching",
+    "mana_cost": "{1}{W}{W}",
+    "cmc": 3,
+    "type_line": "Enchantment",
+    "oracle_text": "Nontoken creatures you control get +1/+1 and have vigilance."
+  },
+  "Bad Moon": {
+    "name": "Bad Moon",
+    "mana_cost": "{1}{B}",
+    "cmc": 2,
+    "type_line": "Enchantment",
+    "oracle_text": "Black creatures get +1/+1."
+  },
+  "Kismet": {
+    "name": "Kismet",
+    "mana_cost": "{3}{W}",
+    "cmc": 4,
+    "type_line": "Enchantment",
+    "oracle_text": "Artifacts, creatures, and lands your opponents control enter tapped."
+  }
+}

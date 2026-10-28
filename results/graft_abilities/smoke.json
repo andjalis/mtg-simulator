@@ -1,0 +1,15 @@
+{
+  "scope": "Deterministic real-database functional checks; no win-rate or pilot-strength claim.",
+  "checks": [
+    {
+      "pilot": "HeuristicAI",
+      "automatic_source_control_and_reversion": true,
+      "automatic_rootkin_transfer": true
+    },
+    {
+      "pilot": "BaselineAI",
+      "automatic_source_control_and_reversion": true,
+      "automatic_rootkin_transfer": true
+    }
+  ]
+}

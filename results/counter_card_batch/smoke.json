@@ -1,0 +1,23 @@
+{
+  "pilot_checks": [
+    {
+      "pilot": "HeuristicAI",
+      "retribution_automatic_removal": true,
+      "ooze_flux_automatic_size": [
+        3,
+        3
+      ]
+    },
+    {
+      "pilot": "BaselineAI",
+      "retribution_automatic_removal": true,
+      "ooze_flux_automatic_size": [
+        3,
+        3
+      ]
+    }
+  ],
+  "graft_land_transfer": true,
+  "leave_counter_inheritance": true,
+  "scope": "Deterministic functional checks, not win-rate or pilot-strength measurements"
+}

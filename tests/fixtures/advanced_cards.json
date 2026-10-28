@@ -1,0 +1,288 @@
+{
+  "Bess, Soul Nourisher": {
+    "name": "Bess, Soul Nourisher",
+    "mana_cost": "{1}{G}{W}",
+    "cmc": 3,
+    "type_line": "Legendary Creature \u2014 Citizen Human",
+    "oracle_text": "Whenever one or more other creatures you control with base power and toughness 1/1 enter, put a +1/+1 counter on Bess, Soul Nourisher.\nWhenever Bess attacks, each other creature you control with base power and toughness 1/1 gets +X/+X until end of turn, where X is the number of +1/+1 counters on Bess.",
+    "power": "1",
+    "toughness": "1"
+  },
+  "Viridian Longbow": {
+    "name": "Viridian Longbow",
+    "mana_cost": "{1}",
+    "cmc": 1,
+    "type_line": "Artifact \u2014 Equipment",
+    "oracle_text": "Equipped creature has \"{T}: This creature deals 1 damage to any target.\"\nEquip {3} ({3}: Attach to target creature you control. Equip only as a sorcery. This card enters unattached and stays on the battlefield if the creature leaves.)",
+    "power": null,
+    "toughness": null
+  },
+  "Aberrant Manawurm": {
+    "name": "Aberrant Manawurm",
+    "mana_cost": "{3}{G}",
+    "cmc": 4,
+    "type_line": "Creature \u2014 Wurm",
+    "oracle_text": "Trample\nWhenever you cast an instant or sorcery spell, this creature gets +X/+0 until end of turn, where X is the amount of mana spent to cast that spell.",
+    "power": "2",
+    "toughness": "5"
+  },
+  "Blessings of Nature": {
+    "name": "Blessings of Nature",
+    "mana_cost": "{4}{G}",
+    "cmc": 5,
+    "type_line": "Sorcery",
+    "oracle_text": "Distribute four +1/+1 counters among any number of target creatures.\nMiracle {G} (You may cast this card for its miracle cost when you draw it if it's the first card you drew this turn.)",
+    "power": null,
+    "toughness": null
+  },
+  "All-Seeing Arbiter": {
+    "name": "All-Seeing Arbiter",
+    "mana_cost": "{4}{U}{U}",
+    "cmc": 6,
+    "type_line": "Creature \u2014 Avatar",
+    "oracle_text": "Flying\nWhenever All-Seeing Arbiter enters or attacks, draw two cards, then discard a card.\nWhenever you discard a card, target creature an opponent controls gets -X/-0 until your next turn, where X is the number of different mana values among cards in your graveyard.",
+    "power": "5",
+    "toughness": "4"
+  },
+  "Aphetto Dredging": {
+    "name": "Aphetto Dredging",
+    "mana_cost": "{3}{B}",
+    "cmc": 4,
+    "type_line": "Sorcery",
+    "oracle_text": "Return up to three target creature cards of the creature type of your choice from your graveyard to your hand.",
+    "power": null,
+    "toughness": null
+  },
+  "Sigarda, Host of Herons": {
+    "name": "Sigarda, Host of Herons",
+    "mana_cost": "{2}{G}{W}{W}",
+    "cmc": 5,
+    "type_line": "Legendary Creature \u2014 Angel",
+    "oracle_text": "Flying, hexproof\nSpells and abilities your opponents control can't cause you to sacrifice permanents.",
+    "power": "5",
+    "toughness": "5"
+  },
+  "Triskelavus": {
+    "name": "Triskelavus",
+    "mana_cost": "{7}",
+    "cmc": 7,
+    "type_line": "Artifact Creature \u2014 Construct",
+    "oracle_text": "Flying\nTriskelavus enters with three +1/+1 counters on it.\n{1}, Remove a +1/+1 counter from Triskelavus: Create a 1/1 colorless Triskelavite artifact creature token with flying. It has \"Sacrifice this creature: This creature deals 1 damage to any target.\"",
+    "power": "1",
+    "toughness": "1"
+  },
+  "Aggression": {
+    "name": "Aggression",
+    "mana_cost": "{2}{R}",
+    "cmc": 3,
+    "type_line": "Enchantment \u2014 Aura",
+    "oracle_text": "Enchant non-Wall creature\nEnchanted creature has first strike and trample.\nAt the beginning of the end step of enchanted creature's controller, destroy that creature if it didn't attack this turn.",
+    "power": null,
+    "toughness": null
+  },
+  "Biomancer's Familiar": {
+    "name": "Biomancer's Familiar",
+    "mana_cost": "{G}{U}",
+    "cmc": 2,
+    "type_line": "Creature \u2014 Mutant",
+    "oracle_text": "Activated abilities of creatures you control cost {2} less to activate. This effect can't reduce the mana in that cost to less than one mana.\n{T}: The next time target creature adapts this turn, it adapts as though it had no +1/+1 counters on it.",
+    "power": "2",
+    "toughness": "2"
+  },
+  "Ghostly Prison": {
+    "name": "Ghostly Prison",
+    "mana_cost": "{2}{W}",
+    "cmc": 3,
+    "type_line": "Enchantment",
+    "oracle_text": "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking you.",
+    "power": null,
+    "toughness": null
+  },
+  "Control Magic": {
+    "name": "Control Magic",
+    "mana_cost": "{2}{U}{U}",
+    "cmc": 4,
+    "type_line": "Enchantment \u2014 Aura",
+    "oracle_text": "Enchant creature\nYou control enchanted creature.",
+    "power": null,
+    "toughness": null
+  },
+  "Sower of Temptation": {
+    "name": "Sower of Temptation",
+    "mana_cost": "{2}{U}{U}",
+    "cmc": 4,
+    "type_line": "Creature \u2014 Faerie Wizard",
+    "oracle_text": "Flying\nWhen Sower of Temptation enters, gain control of target creature for as long as Sower of Temptation remains on the battlefield.",
+    "power": "2",
+    "toughness": "2"
+  },
+  "Agent of Treachery": {
+    "name": "Agent of Treachery",
+    "mana_cost": "{5}{U}{U}",
+    "cmc": 7,
+    "type_line": "Creature \u2014 Human Rogue",
+    "oracle_text": "When Agent of Treachery enters, gain control of target permanent.\nAt the beginning of your end step, if you control three or more permanents you don't own, draw three cards.",
+    "power": "2",
+    "toughness": "3"
+  },
+  "Mystic Sanctuary": {
+    "name": "Mystic Sanctuary",
+    "mana_cost": "",
+    "cmc": 0,
+    "type_line": "Land \u2014 Island",
+    "oracle_text": "({T}: Add {U}.)\nMystic Sanctuary enters tapped unless you control three or more other Islands.\nWhen Mystic Sanctuary enters untapped, you may put target instant or sorcery card from your graveyard on top of your library.",
+    "power": null,
+    "toughness": null
+  },
+  "Rhystic Study": {
+    "name": "Rhystic Study",
+    "mana_cost": "{2}{U}",
+    "cmc": 3,
+    "type_line": "Enchantment",
+    "oracle_text": "Whenever an opponent casts a spell, you may draw a card unless that player pays {1}.",
+    "power": null,
+    "toughness": null
+  },
+  "Rootborn Defenses": {
+    "name": "Rootborn Defenses",
+    "mana_cost": "{2}{W}",
+    "cmc": 3,
+    "type_line": "Instant",
+    "oracle_text": "Populate. Creatures you control gain indestructible until end of turn. (To populate, create a token that's a copy of a creature token you control.)",
+    "power": null,
+    "toughness": null
+  },
+  "Hardened Scales": {
+    "name": "Hardened Scales",
+    "mana_cost": "{G}",
+    "cmc": 1,
+    "type_line": "Enchantment",
+    "oracle_text": "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead.",
+    "power": null,
+    "toughness": null
+  },
+  "Academy Manufactor": {
+    "name": "Academy Manufactor",
+    "mana_cost": "{3}",
+    "cmc": 3,
+    "type_line": "Artifact Creature \u2014 Assembly-Worker",
+    "oracle_text": "If you would create a Clue, Food, or Treasure token, instead create one of each.",
+    "power": "1",
+    "toughness": "3"
+  },
+  "Pentad Prism": {
+    "name": "Pentad Prism",
+    "mana_cost": "{2}",
+    "cmc": 2,
+    "type_line": "Artifact",
+    "oracle_text": "Sunburst (This enters with a charge counter on it for each color of mana spent to cast it.)\nRemove a charge counter from Pentad Prism: Add one mana of any color.",
+    "power": null,
+    "toughness": null
+  },
+  "Dynavolt Tower": {
+    "name": "Dynavolt Tower",
+    "mana_cost": "{3}",
+    "cmc": 3,
+    "type_line": "Artifact",
+    "oracle_text": "Whenever you cast an instant or sorcery spell, you get {E}{E} (two energy counters).\n{T}, Pay {E}{E}{E}{E}{E}: Dynavolt Tower deals 3 damage to any target.",
+    "power": null,
+    "toughness": null
+  },
+  "Notion Thief": {
+    "name": "Notion Thief",
+    "mana_cost": "{2}{U}{B}",
+    "cmc": 4,
+    "type_line": "Creature \u2014 Human Rogue",
+    "oracle_text": "Flash\nIf an opponent would draw a card except the first one they draw in each of their draw steps, instead that player skips that draw and you draw a card.",
+    "power": "3",
+    "toughness": "1"
+  },
+  "Narset, Parter of Veils": {
+    "name": "Narset, Parter of Veils",
+    "mana_cost": "{1}{U}{U}",
+    "cmc": 3,
+    "type_line": "Legendary Planeswalker \u2014 Narset",
+    "oracle_text": "Each opponent can't draw more than one card each turn.\n\u22122: Look at the top four cards of your library. You may reveal a noncreature, nonland card from among them and put it into your hand. Put the rest on the bottom of your library in a random order.",
+    "power": null,
+    "toughness": null,
+    "loyalty": "5"
+  },
+  "Rest in Peace": {
+    "name": "Rest in Peace",
+    "mana_cost": "{1}{W}",
+    "cmc": 2,
+    "type_line": "Enchantment",
+    "oracle_text": "When Rest in Peace enters, exile all graveyards.\nIf a card or token would be put into a graveyard from anywhere, exile it instead.",
+    "power": null,
+    "toughness": null
+  },
+  "Kess, Dissident Mage": {
+    "name": "Kess, Dissident Mage",
+    "mana_cost": "{1}{U}{B}{R}",
+    "cmc": 4,
+    "type_line": "Legendary Creature \u2014 Human Wizard",
+    "oracle_text": "Flying\nDuring each of your turns, you may cast an instant or sorcery spell from your graveyard. If a spell cast this way would be put into your graveyard, exile it instead.",
+    "power": "3",
+    "toughness": "4"
+  },
+  "Hands of Binding": {
+    "name": "Hands of Binding",
+    "mana_cost": "{1}{U}",
+    "cmc": 2,
+    "type_line": "Sorcery",
+    "oracle_text": "Tap target creature an opponent controls. That creature doesn't untap during its controller's next untap step.\nCipher (Then you may exile this spell card encoded on a creature you control. Whenever that creature deals combat damage to a player, its controller may cast a copy of the encoded card without paying its mana cost.)",
+    "power": null,
+    "toughness": null
+  },
+  "Dusk // Dawn": {
+    "name": "Dusk // Dawn",
+    "layout": "split",
+    "card_faces": [
+      {
+        "name": "Dusk",
+        "mana_cost": "{2}{W}{W}",
+        "cmc": 9,
+        "type_line": "Sorcery",
+        "oracle_text": "Destroy all creatures with power 3 or greater.",
+        "power": null,
+        "toughness": null
+      },
+      {
+        "name": "Dawn",
+        "mana_cost": "{3}{W}{W}",
+        "cmc": 0,
+        "type_line": "Sorcery",
+        "oracle_text": "Aftermath (Cast this spell only from your graveyard. Then exile it.)\nReturn all creature cards with power 2 or less from your graveyard to your hand.",
+        "power": null,
+        "toughness": null
+      }
+    ]
+  },
+  "Gonti, Lord of Luxury": {
+    "name": "Gonti, Lord of Luxury",
+    "mana_cost": "{2}{B}{B}",
+    "cmc": 4,
+    "type_line": "Legendary Creature \u2014 Aetherborn Rogue",
+    "oracle_text": "Deathtouch\nWhen Gonti, Lord of Luxury enters, look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order. You may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell.",
+    "power": "2",
+    "toughness": "3"
+  },
+  "Lavinia, Azorius Renegade": {
+    "name": "Lavinia, Azorius Renegade",
+    "mana_cost": "{W}{U}",
+    "cmc": 2,
+    "type_line": "Legendary Creature \u2014 Human Soldier",
+    "oracle_text": "Each opponent can't cast noncreature spells with mana value greater than the number of lands that player controls.\nWhenever an opponent casts a spell, if no mana was spent to cast it, counter that spell.",
+    "power": "2",
+    "toughness": "2"
+  },
+  "Blood Moon": {
+    "name": "Blood Moon",
+    "mana_cost": "{2}{R}",
+    "cmc": 3,
+    "type_line": "Enchantment",
+    "oracle_text": "Nonbasic lands are Mountains.",
+    "power": null,
+    "toughness": null
+  }
+}

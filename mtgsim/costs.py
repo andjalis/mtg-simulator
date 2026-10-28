@@ -1,11 +1,11 @@
-"""Joint planning for mana and the supported single sacrifice/craft costs.
+"""Joint planning for mana and supported sacrifice, craft and counter-removal costs.
 
 Tapping a permanent for mana and then sacrificing/exiling it is legal. Consuming
 it for mana and again for another cost is not. This planner reserves only those
 mana sources that would be consumed. It enumerates the supported victim choices,
 then delegates colored mana and filter assignment to the existing mana solver.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from itertools import combinations
 
 
@@ -15,6 +15,7 @@ class PaymentPlan:
     exclude: tuple
     sacrifice: object = None
     craft: object = None
+    counter_payments: tuple = ()
 
     @property
     def victims(self):
@@ -25,10 +26,19 @@ def consumed_for_mana(permanent):
     return permanent.card.token_kind == 'treasure' or permanent.card.mana_sac or permanent.card.mana_sac_only
 
 
+def counter_effects(ability, payment):
+    """Preview counter X for target selection without changing the blueprint."""
+    if ability.extra_costs.get('remove_creature_counters') not in ('x', 'positive'):
+        return ability.effects
+    amount = sum(n for _, _, n in payment.counter_payments)
+    return [replace(e, amount=amount, amount2=amount if e.data.get('x2') else e.amount2)
+            if e.data.get('x') else e for e in ability.effects]
+
+
 def plan(game, player, cost, *, spell='ability', sacrifices=((None, 0),),
-         materials=(None,), exclude=(), consumed=()):
+         materials=(None,), exclude=(), consumed=(), reserved_counters=()):
     from .engine import find_payment
-    sources = game.mana_sources(player, spell=spell)
+    sources = game.mana_sources(player, spell=spell, reserved_counters=reserved_counters)
     for victim, tax in sacrifices:
         for material in materials:
             victims = victim if isinstance(victim, tuple) else (() if victim is None else (victim,))
@@ -38,7 +48,7 @@ def plan(game, player, cost, *, spell='ability', sacrifices=((None, 0),),
             reserved = tuple(exclude) + tuple(x for x in selected if x in sources and consumed_for_mana(x))
             payable_cost = dict(cost)
             payable_cost['generic'] = payable_cost.get('generic', 0) + tax
-            if find_payment([s for s in sources if s not in reserved], payable_cost) is not None:
+            if find_payment([s for s in sources if s not in reserved and getattr(s, 'stored_in', None) not in reserved], payable_cost) is not None:
                 return PaymentPlan(payable_cost, reserved, victim, material)
     return None
 
@@ -54,11 +64,87 @@ def spell_plan(game, player, card, cost, *, exclude=()):
     return plan(game, player, cost, spell=card, sacrifices=options, exclude=exclude)
 
 
-def ability_plan(game, player, permanent, ability, cost):
+def ability_plan(game, player, permanent, ability, cost, *, x=None, counter_choices=None):
     costs = ability.extra_costs
+    if x is not None and (not isinstance(x, int) or isinstance(x, bool) or x < 0):
+        return None
+    if not game.can_pay(player, cost):
+        return None
     victims = game.sacrifice_candidates(player, permanent, costs['sacrifice']) if costs.get('sacrifice') else []
-    choices = ((tuple(v), 0) for v in combinations(victims, costs.get('sac_n', 1))) if costs.get('sacrifice') else ((None, 0),)
     materials = game.craft_materials(player, permanent) if costs.get('craft') else [None]
     consumed = [permanent] if costs.get('sac_self') or costs.get('exile_self') else []
-    return plan(game, player, cost, sacrifices=choices, materials=materials,
-                consumed=consumed, exclude=[permanent] if costs.get('tap') else [])
+    for counters in creature_counter_payments(player, permanent, costs, x=x, choices=counter_choices):
+        choices = ((tuple(v), 0) for v in combinations(victims, costs.get('sac_n', 1))) if costs.get('sacrifice') else ((None, 0),)
+        # Mana abilities are used before paying the other costs. A donor must
+        # therefore survive mana payment, but can be sacrificed as a later cost.
+        excluded = [permanent] if costs.get('tap') else []
+        excluded += [donor for donor, _, _ in counters if consumed_for_mana(donor)]
+        own = ((permanent, costs['remove_counter'], costs.get('remove_counter_count', 1)),) if costs.get('remove_counter') else ()
+        if own and consumed_for_mana(permanent):
+            excluded.append(permanent)
+        result = plan(game, player, cost, sacrifices=choices, materials=materials,
+                      consumed=consumed, exclude=excluded, reserved_counters=counters + own)
+        if result is not None:
+            return replace(result, counter_payments=counters)
+    return None
+
+
+def creature_counter_payments(player, source, costs, *, x=None, choices=None):
+    """Allocate fixed/variable creature counter costs without changing state.
+
+    Explicit choices are (permanent, counter type, amount) triples. Otherwise
+    prefer non-stat counters, and try alternate donors to preserve usable mana.
+    """
+    from .engine.policy import perm_value
+    spec = costs.get('remove_creature_counters', 0)
+    if not spec:
+        if choices or x not in (None, 0):
+            return
+        yield ()
+        return
+    counter_kind = costs.get('creature_counter_kind', '+1/+1')
+    donors = []
+    for donor in player.creatures:
+        for kind, count in donor.counters.items():
+            if counter_kind != 'any' and kind != counter_kind:
+                continue
+            count -= costs.get('remove_counter_count', 1) if donor is source and costs.get('remove_counter') == kind else 0
+            if count > 0:
+                donors.append((donor, kind, count))
+    donors.sort(key=lambda v: (v[1] == '+1/+1', consumed_for_mana(v[0]), perm_value(v[0]), v[1]))
+    minimum = 1 if spec == 'positive' else 0
+    if choices is not None:
+        selected = {}
+        for donor, kind, n in choices:
+            if not isinstance(n, int) or isinstance(n, bool) or n <= 0:
+                return
+            selected[donor, kind] = selected.get((donor, kind), 0) + n
+        available = {(donor, kind): n for donor, kind, n in donors}
+        if any(n > available.get(key, 0) for key, n in selected.items()):
+            return
+        amount = sum(selected.values())
+        if isinstance(spec, int) and amount != spec or amount < minimum or x is not None and amount != x:
+            return
+        yield tuple((donor, kind, n) for (donor, kind), n in selected.items())
+        return
+    totals = [0] * (len(donors) + 1)
+    for i in range(len(donors) - 1, -1, -1):
+        totals[i] = totals[i + 1] + donors[i][2]
+
+    if isinstance(spec, int):
+        amounts = (spec,) if x in (None, spec) else ()
+    elif x is not None:
+        amounts = (x,) if isinstance(x, int) and not isinstance(x, bool) and minimum <= x <= totals[0] else ()
+    else:
+        amounts = range(totals[0], minimum - 1, -1)
+
+    def allocate(i, remaining, chosen):
+        if remaining == 0:
+            yield chosen
+        elif i < len(donors) and totals[i] >= remaining:
+            donor, kind, available = donors[i]
+            for n in range(min(remaining, available), -1, -1):
+                yield from allocate(i + 1, remaining - n, chosen + ((donor, kind, n),) if n else chosen)
+
+    for needed in amounts:
+        yield from allocate(0, needed, ())

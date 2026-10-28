@@ -1,0 +1,6116 @@
+{
+  "baseline": "results/capability_batch/after",
+  "cards_compared": 34129,
+  "changed_classifications_or_ignored_text": 388,
+  "improved_cards": 388,
+  "newly_full_template_matches": 283,
+  "status_regressions": [],
+  "newly_full_cards": [
+    "Abeyance",
+    "Abiding Grace",
+    "Abuelo, Ancestral Echo",
+    "Abundant Growth",
+    "Academy Elite",
+    "Accelerated Mutation",
+    "Acidic Sliver",
+    "Aetherling",
+    "Ajani Resolute",
+    "Akki Scrapchomper",
+    "Altar of the Brood",
+    "Anointer Priest",
+    "Arcbound Crusher",
+    "Archery Training",
+    "Armor Sliver",
+    "Arms Dealer",
+    "Ayara, First of Locthwain",
+    "Barbed Field",
+    "Barbed Sliver",
+    "Barrin, Master Wizard",
+    "Basal Sliver",
+    "Battered Golem",
+    "Bioshift",
+    "Bishop of Wings",
+    "Blighted Shaman",
+    "Blood Aspirant",
+    "Bolg's Company",
+    "Bootleggers' Stash",
+    "Cabal Archon",
+    "Caverns of Despair",
+    "Chamber of Manipulation",
+    "Claws of Gix",
+    "Clickslither",
+    "Cloak and Dagger",
+    "Clot Sliver",
+    "Compulsory Rest",
+    "Conciliator's Duelist",
+    "Crypt Sliver",
+    "Dark Heart of the Wood",
+    "Darkheart Sliver",
+    "Dauthi Ghoul",
+    "Deadapult",
+    "Deathmark Prelate",
+    "Deathspore Thallid",
+    "Debtor's Pulpit",
+    "Deranged Outcast",
+    "Desperate Farmer // Depraved Harvester",
+    "Destructive Digger",
+    "Dispersing Orb",
+    "Diversion Specialist",
+    "Djinn of the Fountain",
+    "Dragon Mantle",
+    "Drakestown Forgotten",
+    "Dramatic Finale",
+    "Dreadmalkin",
+    "Dual Casting",
+    "Dueling Grounds",
+    "Earthblighter",
+    "Elderfang Venom",
+    "Elemental Bond",
+    "Elemental Mastery",
+    "Elven Palisade",
+    "Elvish Archivist",
+    "Elvish Farmer",
+    "Elvish Vanguard",
+    "Enduring Innocence",
+    "Ephara's Radiance",
+    "Epiphany Storm",
+    "Ertai, the Corrupted",
+    "Essence Warden",
+    "Evanescent Intellect",
+    "Explosive Getaway",
+    "Extricator of Sin // Extricator of Flesh",
+    "Facevaulter",
+    "Fire Nation Sentinels",
+    "Fire Whip",
+    "Firewake Sliver",
+    "Flamewright",
+    "Flickerwisp",
+    "Flowering Field",
+    "Footfall Crater",
+    "Foratog",
+    "Forbidden Lore",
+    "Forgotten Monument",
+    "Fortitude",
+    "Frondland Felidar",
+    "Furystoke Giant",
+    "Galepowder Mage",
+    "Garruk's Packleader",
+    "Garruk's Uprising",
+    "Gemhide Sliver",
+    "Ghost Council of Orzhova",
+    "Ghoulish Procession",
+    "Glamer Spinners",
+    "Glimmerpoint Stag",
+    "Goblin Chirurgeon",
+    "Goblin Sledder",
+    "Goblin Trashmaster",
+    "Goblin Turncoat",
+    "Godtracker of Jund",
+    "Grabby Giant // That's Mine",
+    "Great Fierce Bee",
+    "Grinding Station",
+    "Guardian of Cloverdell",
+    "Guardian of Ghirapur",
+    "Hamletback Goliath",
+    "Harvester of Souls",
+    "Hashep Oasis",
+    "Hearthcage Giant",
+    "Heartwood Giant",
+    "Hermetic Study",
+    "Hibernation Sliver",
+    "High-Society Hunter",
+    "Hollowhead Sliver",
+    "Homicide Investigator",
+    "Horror of Horrors",
+    "Hostile Realm",
+    "Hypervolt Grasp",
+    "Ifnir Deadlands",
+    "Immobilizing Ink",
+    "Infernal Tribute",
+    "Ingenious Smith",
+    "Inspiring Commander",
+    "Intruding Soulrager",
+    "Ipnu Rivulet",
+    "Jan Jansen, Chaos Crafter",
+    "Karametra's Favor",
+    "Karstoderm",
+    "Kavu Lair",
+    "Kavu Monarch",
+    "Kheru Bloodsucker",
+    "Kiora, Behemoth Beckoner",
+    "Knight of the Last Breath",
+    "Knight-Captain of Eos",
+    "Kronch Wrangler",
+    "Kykar, Wind's Fury",
+    "Leafdrake Roost",
+    "Leonin Elder",
+    "Life Insurance",
+    "Lifegift",
+    "Magmaw",
+    "Malicious Intent",
+    "Manaweft Sliver",
+    "Marketwatch Phantom",
+    "Marrow-Gnawer",
+    "Marsh Lurker",
+    "Marwyn, the Clearcutter",
+    "Mentor of the Meek",
+    "Midnight Covenant",
+    "Midnight Guard",
+    "Mighty Emergence",
+    "Mindlash Sliver",
+    "Mire Shade",
+    "Mistmeadow Witch",
+    "Mnemonic Sliver",
+    "Mogg Bombers",
+    "Mogg Raider",
+    "Mole Man, Moloid Master",
+    "Monkey Cage",
+    "Morbid Opportunist",
+    "Multani's Harmony",
+    "Mycologist",
+    "Necrotic Sliver",
+    "Neighborhood Guardian",
+    "Ninja Pizza",
+    "Noxious Field",
+    "Oblivion Crown",
+    "Obsidian Battle-Axe",
+    "Ocular Halo",
+    "Ogre Slumlord",
+    "Oracle's Insight",
+    "Outcaster Trailblazer",
+    "Paleoloth",
+    "Peacekeeper",
+    "Pious Evangel // Wayward Disciple",
+    "Poisonbelly Ogre",
+    "Popular Egotist",
+    "Portcullis Vine",
+    "Poultice Sliver",
+    "Power of Fire",
+    "Presence of Gond",
+    "Psionic Gift",
+    "Psychotrope Thallid",
+    "Quicksilver Dagger",
+    "Quilled Sliver",
+    "Racecourse Fury",
+    "Rampage of the Valkyries",
+    "Rampart Architect",
+    "Ramunap Ruins",
+    "Ravenous Baloth",
+    "Resplendent Mentor",
+    "Rhys the Exiled",
+    "Ringing Strike Mastery",
+    "Roon of the Hidden Realm",
+    "Rootwater Alligator",
+    "S.H.I.E.L.D. Flying Car",
+    "Sachi, Daughter of Seshiro",
+    "Sadistic Obsession",
+    "Savage Thallid",
+    "Scarecrone",
+    "Screeching Sliver",
+    "Scuttling Sliver",
+    "Seaside Haven",
+    "Security Blockade",
+    "Seething Pathblazer",
+    "Sengir Connoisseur",
+    "Serra Redeemer",
+    "Shadewing Laureate",
+    "Shadow-Rite Priest",
+    "Shefet Dunes",
+    "Siege-Gang Commander",
+    "Silent Arbiter",
+    "Simic Guildmage",
+    "Singing Bell Strike",
+    "Skeletal Vampire",
+    "Skirk Prospector",
+    "Skirsdag Flayer",
+    "Skygames",
+    "Skyskipper Duo",
+    "Slagdrill Scrapper",
+    "Sling-Gang Lieutenant",
+    "Snarling Gorehound",
+    "Soul Warden",
+    "Soul's Attendant",
+    "Soulcatcher",
+    "Spark Reaper",
+    "Spawning Grounds",
+    "Spectral Sliver",
+    "Spirit Bonds",
+    "Sporoloth Ancient",
+    "Squirrel Nest",
+    "Strands of Night",
+    "Sultai Flayer",
+    "Sunken Field",
+    "Sunstrike Legionnaire",
+    "Talons of Falkenrath",
+    "Tar Pitcher",
+    "Tel-Jilad Lifebreather",
+    "Telekinetic Sliver",
+    "Temur Ascendancy",
+    "Territorial Boar",
+    "Thallid Devourer",
+    "Thallid Germinator",
+    "Thopter Foundry",
+    "Thopter Shop",
+    "Thopter Squadron",
+    "Thranduil the Strategist",
+    "Timid Drake",
+    "Tin Street Market",
+    "Tocasia's Welcome",
+    "Totem Speaker",
+    "Touch the Spirit Realm",
+    "Turn to Mist",
+    "Twining Twins // Swift Spiral",
+    "Uktabi Wildcats",
+    "Ulvenwald Observer",
+    "Unbridled Growth",
+    "Underworld Connections",
+    "Urban Utopia",
+    "Utopia Mycon",
+    "Utopia Vow",
+    "Vengeful Townsfolk",
+    "Verdant Field",
+    "Vermiculos",
+    "Vicious Clown",
+    "Victual Sliver",
+    "Village Cannibals",
+    "Village Elder",
+    "Vitaspore Thallid",
+    "Vodalian Hexcatcher",
+    "Voidmage Prodigy",
+    "Vraan, Executioner Thane",
+    "Wall of Mulch",
+    "Wand of the Elements",
+    "Weirding Shaman",
+    "Welcoming Vampire",
+    "Wirewood Hivemaster",
+    "Wirewood Savage",
+    "Wispdrinker Vampire",
+    "Wretched Anurid",
+    "Yoke of the Damned",
+    "Yoshimaru, Ever Faithful",
+    "Zombie Master"
+  ],
+  "changes": [
+    {
+      "name": "A-Sorcerer Class",
+      "before": {
+        "name": "A-Sorcerer Class",
+        "status": "partial",
+        "ignored_text": "When Sorcerer Class enters, draw two cards, then discard two cards.\nCreatures you control have \"{T}: Add {U} or {R}. Spend this mana only to cast an instant or sorcery spell or to gain a Class level.\"\nthat spell deals damage to each opponent equal to the number of instant and sorcery spells you've cast this turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "A-Sorcerer Class",
+        "status": "partial",
+        "ignored_text": "Creatures you control have \"{T}: Add {U} or {R}. Spend this mana only to cast an instant or sorcery spell or to gain a Class level.\"\nthat spell deals damage to each opponent equal to the number of instant and sorcery spells you've cast this turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "A-Tyvar Kell",
+      "before": {
+        "name": "A-Tyvar Kell",
+        "status": "partial",
+        "ignored_text": "Elves you control have \"{T}: Add {B}.\"\n[\u22127]: You get an emblem with \"Whenever you cast an Elf spell, it gains haste until end of turn and you draw two cards.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "A-Tyvar Kell",
+        "status": "partial",
+        "ignored_text": "[\u22127]: You get an emblem with \"Whenever you cast an Elf spell, it gains haste until end of turn and you draw two cards.\"",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Abeyance",
+      "before": {
+        "name": "Abeyance",
+        "status": "partial",
+        "ignored_text": "Until end of turn, target player can't cast instant or sorcery spells, and that player can't activate abilities that aren't mana abilities.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Abeyance",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Abiding Grace",
+      "before": {
+        "name": "Abiding Grace",
+        "status": "partial",
+        "ignored_text": "\u2022 Return target creature card with mana value 1 from your graveyard to the battlefield.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Abiding Grace",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Abuelo, Ancestral Echo",
+      "before": {
+        "name": "Abuelo, Ancestral Echo",
+        "status": "partial",
+        "ignored_text": "{1}{W}{U}: Exile another target creature or artifact you control. Return it to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Abuelo, Ancestral Echo",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Abundant Growth",
+      "before": {
+        "name": "Abundant Growth",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: Add one mana of any color.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Abundant Growth",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Academy Elite",
+      "before": {
+        "name": "Academy Elite",
+        "status": "partial",
+        "ignored_text": "~ enters with X +1/+1 counters on it, where X is the number of instant and sorcery cards in all graveyards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Academy Elite",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Accelerated Mutation",
+      "before": {
+        "name": "Accelerated Mutation",
+        "status": "partial",
+        "ignored_text": "Target creature gets +X/+X until end of turn, where X is the highest mana value among permanents you control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Accelerated Mutation",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Acidic Sliver",
+      "before": {
+        "name": "Acidic Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"{2}, Sacrifice ~: ~ deals 2 damage to any target.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Acidic Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Aetherling",
+      "before": {
+        "name": "Aetherling",
+        "status": "partial",
+        "ignored_text": "{U}: Exile ~. Return it to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Aetherling",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ajani Resolute",
+      "before": {
+        "name": "Ajani Resolute",
+        "status": "partial",
+        "ignored_text": "[\u22124]: Create a 2/2 white Cat Soldier creature token named ~'s Pridemate with \"Whenever you gain life, put a +1/+1 counter on ~.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ajani Resolute",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ajani, Strength of the Pride",
+      "before": {
+        "name": "Ajani, Strength of the Pride",
+        "status": "partial",
+        "ignored_text": "[+1]: You gain life equal to the number of creatures you control plus the number of planeswalkers you control.\n[\u22122]: Create a 2/2 white Cat Soldier creature token named ~'s Pridemate with \"Whenever you gain life, put a +1/+1 counter on ~.\"\n[0]: If you have at least 15 life more than your starting life total, exile ~ and each artifact and creature your opponents control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ajani, Strength of the Pride",
+        "status": "partial",
+        "ignored_text": "[+1]: You gain life equal to the number of creatures you control plus the number of planeswalkers you control.\n[0]: If you have at least 15 life more than your starting life total, exile ~ and each artifact and creature your opponents control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Akki Scrapchomper",
+      "before": {
+        "name": "Akki Scrapchomper",
+        "status": "partial",
+        "ignored_text": "{1}{R}, {T}, Sacrifice an artifact or land: Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Akki Scrapchomper",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Altar of the Brood",
+      "before": {
+        "name": "Altar of the Brood",
+        "status": "partial",
+        "ignored_text": "Whenever another permanent you control enters, each opponent mills a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Altar of the Brood",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ambush Commander",
+      "before": {
+        "name": "Ambush Commander",
+        "status": "partial",
+        "ignored_text": "Forests you control are 1/1 green Elf creatures that are still lands.\n{1}{G}, Sacrifice an Elf: Target creature gets +3/+3 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ambush Commander",
+        "status": "partial",
+        "ignored_text": "Forests you control are 1/1 green Elf creatures that are still lands.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Angel of Condemnation",
+      "before": {
+        "name": "Angel of Condemnation",
+        "status": "partial",
+        "ignored_text": "{2}{W}, {T}: Exile another target creature. Return that card to the battlefield under its owner's control at the beginning of the next end step.\n{2}{W}, {T}, Exert ~: Exile another target creature until ~ leaves the battlefield.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Angel of Condemnation",
+        "status": "partial",
+        "ignored_text": "{2}{W}, {T}, Exert ~: Exile another target creature until ~ leaves the battlefield.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Anointer Priest",
+      "before": {
+        "name": "Anointer Priest",
+        "status": "partial",
+        "ignored_text": "Whenever a creature token you control enters, you gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Anointer Priest",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Arcades, the Strategist",
+      "before": {
+        "name": "Arcades, the Strategist",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control with defender enters, draw a card.\nEach creature you control with defender assigns combat damage equal to its toughness rather than its power and can attack as though it didn't have defender.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Arcades, the Strategist",
+        "status": "partial",
+        "ignored_text": "Each creature you control with defender assigns combat damage equal to its toughness rather than its power and can attack as though it didn't have defender.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Arcbound Crusher",
+      "before": {
+        "name": "Arcbound Crusher",
+        "status": "partial",
+        "ignored_text": "Whenever another artifact enters, put a +1/+1 counter on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Arcbound Crusher",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Archery Training",
+      "before": {
+        "name": "Archery Training",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: ~ deals X damage to target attacking or blocking creature, where X is the number of arrow counters on ~.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Archery Training",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Armor Sliver",
+      "before": {
+        "name": "Armor Sliver",
+        "status": "partial",
+        "ignored_text": "All Sliver creatures have \"{2}: ~ gets +0/+1 until end of turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Armor Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Arms Dealer",
+      "before": {
+        "name": "Arms Dealer",
+        "status": "partial",
+        "ignored_text": "{1}{R}, Sacrifice a Goblin: ~ deals 4 damage to target creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Arms Dealer",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Astral Arena",
+      "before": {
+        "name": "Astral Arena",
+        "status": "partial",
+        "ignored_text": "No more than one creature can attack each combat.\nNo more than one creature can block each combat.\nWhenever chaos ensues, ~ deals 2 damage to each creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Astral Arena",
+        "status": "partial",
+        "ignored_text": "Whenever chaos ensues, ~ deals 2 damage to each creature.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Auriok Champion",
+      "before": {
+        "name": "Auriok Champion",
+        "status": "partial",
+        "ignored_text": "Protection from black and from red\nWhenever another creature enters, you may gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Auriok Champion",
+        "status": "partial",
+        "ignored_text": "Protection from black and from red",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Authority of the Consuls",
+      "before": {
+        "name": "Authority of the Consuls",
+        "status": "partial",
+        "ignored_text": "Creatures your opponents control enter tapped.\nWhenever a creature an opponent controls enters, you gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Authority of the Consuls",
+        "status": "partial",
+        "ignored_text": "Creatures your opponents control enter tapped.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ayara, First of Locthwain",
+      "before": {
+        "name": "Ayara, First of Locthwain",
+        "status": "partial",
+        "ignored_text": "{T}, Sacrifice another black creature: Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ayara, First of Locthwain",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bad Wolf Bay",
+      "before": {
+        "name": "Bad Wolf Bay",
+        "status": "partial",
+        "ignored_text": "Return it to the battlefield under its owner's control at the beginning of the next end step.\nWhen chaos ensues, cards can't enter from exile this turn. Then planeswalk.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bad Wolf Bay",
+        "status": "partial",
+        "ignored_text": "When chaos ensues, cards can't enter from exile this turn. Then planeswalk.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Barbed Field",
+      "before": {
+        "name": "Barbed Field",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: ~ deals 1 damage to any target.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Barbed Field",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Barbed Sliver",
+      "before": {
+        "name": "Barbed Sliver",
+        "status": "partial",
+        "ignored_text": "All Sliver creatures have \"{2}: ~ gets +1/+0 until end of turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Barbed Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Barrin",
+      "before": {
+        "name": "Barrin",
+        "status": "partial",
+        "ignored_text": "Hand +0, life +6\nSacrifice a permanent: Return target creature to its owner's hand.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Barrin",
+        "status": "partial",
+        "ignored_text": "Hand +0, life +6",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Barrin, Master Wizard",
+      "before": {
+        "name": "Barrin, Master Wizard",
+        "status": "partial",
+        "ignored_text": "{2}, Sacrifice a permanent: Return target creature to its owner's hand.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Barrin, Master Wizard",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Basal Sliver",
+      "before": {
+        "name": "Basal Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"Sacrifice ~: Add {B}{B}.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Basal Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Battered Golem",
+      "before": {
+        "name": "Battered Golem",
+        "status": "partial",
+        "ignored_text": "Whenever an artifact enters, you may untap ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Battered Golem",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bereaved Survivor // Dauntless Avenger",
+      "before": {
+        "name": "Bereaved Survivor // Dauntless Avenger",
+        "status": "partial",
+        "ignored_text": "When another creature you control dies, transform ~.\nDauntless Avenger: return target creature card with mana value 2 or less from your graveyard to the battlefield tapped and attacking.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bereaved Survivor // Dauntless Avenger",
+        "status": "partial",
+        "ignored_text": "Dauntless Avenger: return target creature card with mana value 2 or less from your graveyard to the battlefield tapped and attacking.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Betrothed of Fire",
+      "before": {
+        "name": "Betrothed of Fire",
+        "status": "partial",
+        "ignored_text": "Sacrifice an untapped creature: Enchanted creature gets +2/+0 until end of turn.\nSacrifice enchanted creature: Creatures you control get +2/+0 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Betrothed of Fire",
+        "status": "partial",
+        "ignored_text": "Sacrifice enchanted creature: Creatures you control get +2/+0 until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bioshift",
+      "before": {
+        "name": "Bioshift",
+        "status": "partial",
+        "ignored_text": "Move any number of +1/+1 counters from target creature onto another target creature with the same controller.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bioshift",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bishop of Wings",
+      "before": {
+        "name": "Bishop of Wings",
+        "status": "partial",
+        "ignored_text": "Whenever an Angel you control dies, create a 1/1 white Spirit creature token with flying.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bishop of Wings",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bladewing's Thrall",
+      "before": {
+        "name": "Bladewing's Thrall",
+        "status": "partial",
+        "ignored_text": "~ has flying as long as you control a Dragon.\nWhen a Dragon enters, you may return ~ from your graveyard to the battlefield.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bladewing's Thrall",
+        "status": "partial",
+        "ignored_text": "~ has flying as long as you control a Dragon.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Blighted Shaman",
+      "before": {
+        "name": "Blighted Shaman",
+        "status": "partial",
+        "ignored_text": "{T}, Sacrifice a Swamp: Target creature gets +1/+1 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Blighted Shaman",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Blizzard Strix",
+      "before": {
+        "name": "Blizzard Strix",
+        "status": "partial",
+        "ignored_text": "if you control another snow permanent, exile target permanent other than ~.\nReturn that card to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Blizzard Strix",
+        "status": "partial",
+        "ignored_text": "if you control another snow permanent, DELAYEDBLINK target permanent other than ~.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bloated Processor",
+      "before": {
+        "name": "Bloated Processor",
+        "status": "partial",
+        "ignored_text": "Sacrifice another Phyrexian: Put a +1/+1 counter on ~.\nincubate X, where X is its power.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bloated Processor",
+        "status": "partial",
+        "ignored_text": "incubate X, where X is its power.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Blood Aspirant",
+      "before": {
+        "name": "Blood Aspirant",
+        "status": "partial",
+        "ignored_text": "{1}{R}, {T}, Sacrifice a creature or enchantment: ~ deals 1 damage to target creature. That creature can't block this turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Blood Aspirant",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bolg's Company",
+      "before": {
+        "name": "Bolg's Company",
+        "status": "partial",
+        "ignored_text": "{T}, Sacrifice another Goblin: Add {B}{R}.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bolg's Company",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Bootleggers' Stash",
+      "before": {
+        "name": "Bootleggers' Stash",
+        "status": "partial",
+        "ignored_text": "Lands you control have \"{T}: Create a Treasure token.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Bootleggers' Stash",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Brazen Cannonade",
+      "before": {
+        "name": "Brazen Cannonade",
+        "status": "partial",
+        "ignored_text": "Whenever an attacking creature you control dies, ~ deals 2 damage to each opponent.\nAt the beginning of each of your postcombat main phases, if you attacked this turn, exile the top card of your library. Until end of combat on your next turn, you may play that card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Brazen Cannonade",
+        "status": "partial",
+        "ignored_text": "At the beginning of each of your postcombat main phases, if you attacked this turn, exile the top card of your library. Until end of combat on your next turn, you may play that card.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Builder's Talent",
+      "before": {
+        "name": "Builder's Talent",
+        "status": "partial",
+        "ignored_text": "create a white Wall creature token with defender.\nWhenever one or more noncreature, nonland permanents you control enter, put a +1/+1 counter on target creature you control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Builder's Talent",
+        "status": "partial",
+        "ignored_text": "create a white Wall creature token with defender.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Cabal Archon",
+      "before": {
+        "name": "Cabal Archon",
+        "status": "partial",
+        "ignored_text": "{B}, Sacrifice a Cleric: Target player loses 2 life and you gain 2 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Cabal Archon",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Caribou Range",
+      "before": {
+        "name": "Caribou Range",
+        "status": "partial",
+        "ignored_text": "Enchant land you control\nEnchanted land has \"{W}{W}, {T}: Create a 0/1 white Caribou creature token.\"\nSacrifice a Caribou token: You gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Caribou Range",
+        "status": "partial",
+        "ignored_text": "Enchant land you control\nSacrifice a Caribou token: You gain 1 life.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Cautery Sliver",
+      "before": {
+        "name": "Cautery Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"{1}, Sacrifice ~: ~ deals 1 damage to any target.\"\nAll Slivers have \"{1}, Sacrifice ~: Prevent the next 1 damage that would be dealt to target player, planeswalker, or Sliver creature this turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Cautery Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"{1}, Sacrifice ~: Prevent the next 1 damage that would be dealt to target player, planeswalker, or Sliver creature this turn.\"",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Caverns of Despair",
+      "before": {
+        "name": "Caverns of Despair",
+        "status": "partial",
+        "ignored_text": "No more than two creatures can attack each combat.\nNo more than two creatures can block each combat.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Caverns of Despair",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Chainsaw",
+      "before": {
+        "name": "Chainsaw",
+        "status": "partial",
+        "ignored_text": "Whenever one or more creatures die, put a rev counter on ~.\nEquipped creature gets +X/+0, where X is the number of rev counters on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Chainsaw",
+        "status": "partial",
+        "ignored_text": "Equipped creature gets +X/+0, where X is the number of rev counters on ~.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Chamber of Manipulation",
+      "before": {
+        "name": "Chamber of Manipulation",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}, Discard a card: Gain control of target creature until end of turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Chamber of Manipulation",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Chevill, Bane of Monsters",
+      "before": {
+        "name": "Chevill, Bane of Monsters",
+        "status": "partial",
+        "ignored_text": "if your opponents control no permanents with bounty counters on them, put a bounty counter on target creature or planeswalker an opponent controls.\nWhenever a permanent an opponent controls with a bounty counter on it dies, you gain 3 life and draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Chevill, Bane of Monsters",
+        "status": "partial",
+        "ignored_text": "if your opponents control no permanents with bounty counters on them, put a bounty counter on target creature or planeswalker an opponent controls.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Claws of Gix",
+      "before": {
+        "name": "Claws of Gix",
+        "status": "partial",
+        "ignored_text": "{1}, Sacrifice a permanent: You gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Claws of Gix",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Clickslither",
+      "before": {
+        "name": "Clickslither",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Goblin: ~ gets +2/+2 and gains trample until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Clickslither",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Cloak and Dagger",
+      "before": {
+        "name": "Cloak and Dagger",
+        "status": "partial",
+        "ignored_text": "Whenever a Rogue creature enters, you may attach ~ to it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Cloak and Dagger",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Clot Sliver",
+      "before": {
+        "name": "Clot Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"{2}: Regenerate ~.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Clot Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Compulsory Rest",
+      "before": {
+        "name": "Compulsory Rest",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{2}, Sacrifice ~: You gain 2 life.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Compulsory Rest",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Conciliator's Duelist",
+      "before": {
+        "name": "Conciliator's Duelist",
+        "status": "partial",
+        "ignored_text": "Return that card to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Conciliator's Duelist",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Coral Reef",
+      "before": {
+        "name": "Coral Reef",
+        "status": "partial",
+        "ignored_text": "Sacrifice an Island: Put two polyp counters on ~.\n{U}, Tap an untapped blue creature you control, Remove a polyp counter from ~: Put a +0/+1 counter on target creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Coral Reef",
+        "status": "partial",
+        "ignored_text": "{U}, Tap an untapped blue creature you control, Remove a polyp counter from ~: Put a +0/+1 counter on target creature.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Cosmic Intervention",
+      "before": {
+        "name": "Cosmic Intervention",
+        "status": "partial",
+        "ignored_text": "If a permanent you control would be put into a graveyard from the battlefield this turn, exile it instead.\nReturn it to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Cosmic Intervention",
+        "status": "partial",
+        "ignored_text": "If a permanent you control would be put into a graveyard from the battlefield this turn, DELAYEDBLINK it instead.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Crypt Sliver",
+      "before": {
+        "name": "Crypt Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"{T}: Regenerate target Sliver.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Crypt Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dark Heart of the Wood",
+      "before": {
+        "name": "Dark Heart of the Wood",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Forest: You gain 3 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dark Heart of the Wood",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Darkheart Sliver",
+      "before": {
+        "name": "Darkheart Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"Sacrifice ~: You gain 3 life.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Darkheart Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Daryl, Hunter of Walkers",
+      "before": {
+        "name": "Daryl, Hunter of Walkers",
+        "status": "partial",
+        "ignored_text": "target opponent creates three Walker tokens.\nWhenever a Zombie an opponent controls dies, draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Daryl, Hunter of Walkers",
+        "status": "partial",
+        "ignored_text": "target opponent creates three Walker tokens.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dauthi Ghoul",
+      "before": {
+        "name": "Dauthi Ghoul",
+        "status": "partial",
+        "ignored_text": "Whenever a creature with shadow dies, put a +1/+1 counter on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dauthi Ghoul",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Deadapult",
+      "before": {
+        "name": "Deadapult",
+        "status": "partial",
+        "ignored_text": "{R}, Sacrifice a Zombie: ~ deals 2 damage to any target.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Deadapult",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Deathmark Prelate",
+      "before": {
+        "name": "Deathmark Prelate",
+        "status": "partial",
+        "ignored_text": "{2}{B}, {T}, Sacrifice a Zombie: Destroy target non-Zombie creature. It can't be regenerated. Activate only as a sorcery.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Deathmark Prelate",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Deathspore Thallid",
+      "before": {
+        "name": "Deathspore Thallid",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Saproling: Target creature gets -1/-1 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Deathspore Thallid",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Debtor's Pulpit",
+      "before": {
+        "name": "Debtor's Pulpit",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: Tap target creature.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Debtor's Pulpit",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Deranged Outcast",
+      "before": {
+        "name": "Deranged Outcast",
+        "status": "partial",
+        "ignored_text": "{1}{G}, Sacrifice a Human: Put two +1/+1 counters on target creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Deranged Outcast",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Desperate Farmer // Depraved Harvester",
+      "before": {
+        "name": "Desperate Farmer // Depraved Harvester",
+        "status": "partial",
+        "ignored_text": "When another creature you control dies, transform ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Desperate Farmer // Depraved Harvester",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Destructive Digger",
+      "before": {
+        "name": "Destructive Digger",
+        "status": "partial",
+        "ignored_text": "{3}, {T}, Sacrifice an artifact or land: Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Destructive Digger",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dispersing Orb",
+      "before": {
+        "name": "Dispersing Orb",
+        "status": "partial",
+        "ignored_text": "{3}{U}, Sacrifice a permanent: Return target permanent to its owner's hand.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dispersing Orb",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Diversion Specialist",
+      "before": {
+        "name": "Diversion Specialist",
+        "status": "partial",
+        "ignored_text": "{1}, Sacrifice another creature or enchantment: Exile the top card of your library. You may play that card this turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Diversion Specialist",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Diviner's Wand",
+      "before": {
+        "name": "Diviner's Wand",
+        "status": "partial",
+        "ignored_text": "Equipped creature has \"Whenever you draw a card, ~ gets +1/+1 and gains flying until end of turn\" and \"{4}: Draw a card.\"\nWhenever a Wizard creature enters, you may attach ~ to it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Diviner's Wand",
+        "status": "partial",
+        "ignored_text": "Equipped creature has \"Whenever you draw a card, ~ gets +1/+1 and gains flying until end of turn\" and \"{4}: Draw a card.\"",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Djinn of the Fountain",
+      "before": {
+        "name": "Djinn of the Fountain",
+        "status": "partial",
+        "ignored_text": "\u2022 Exile ~. Return it to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Djinn of the Fountain",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dragon Mantle",
+      "before": {
+        "name": "Dragon Mantle",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{R}: ~ gets +1/+0 until end of turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dragon Mantle",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Drakestown Forgotten",
+      "before": {
+        "name": "Drakestown Forgotten",
+        "status": "partial",
+        "ignored_text": "~ enters with X +1/+1 counters on it, where X is the number of creature cards in all graveyards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Drakestown Forgotten",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dramatic Finale",
+      "before": {
+        "name": "Dramatic Finale",
+        "status": "partial",
+        "ignored_text": "Whenever one or more nontoken creatures you control die, create a 2/1 white and black Inkling creature token with flying. This ability triggers only once each turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dramatic Finale",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dreadmalkin",
+      "before": {
+        "name": "Dreadmalkin",
+        "status": "partial",
+        "ignored_text": "{2}{B}, Sacrifice another creature or planeswalker: Put two +1/+1 counters on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dreadmalkin",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dual Casting",
+      "before": {
+        "name": "Dual Casting",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{R}, {T}: Copy target instant or sorcery spell you control. You may choose new targets for the copy.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dual Casting",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Dueling Grounds",
+      "before": {
+        "name": "Dueling Grounds",
+        "status": "partial",
+        "ignored_text": "No more than one creature can attack each combat.\nNo more than one creature can block each combat.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Dueling Grounds",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Earthblighter",
+      "before": {
+        "name": "Earthblighter",
+        "status": "partial",
+        "ignored_text": "{2}{B}, {T}, Sacrifice a Goblin: Destroy target land.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Earthblighter",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Elderfang Venom",
+      "before": {
+        "name": "Elderfang Venom",
+        "status": "partial",
+        "ignored_text": "Whenever an Elf you control dies, each opponent loses 1 life and you gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Elderfang Venom",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Elemental Bond",
+      "before": {
+        "name": "Elemental Bond",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control with power 3 or greater enters, draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Elemental Bond",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Elemental Mastery",
+      "before": {
+        "name": "Elemental Mastery",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: Create X 1/1 red Elemental creature tokens with haste, where X is ~'s power. Exile them at the beginning of the next end step.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Elemental Mastery",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Elven Palisade",
+      "before": {
+        "name": "Elven Palisade",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Forest: Target attacking creature gets -3/-0 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Elven Palisade",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Elvish Archivist",
+      "before": {
+        "name": "Elvish Archivist",
+        "status": "partial",
+        "ignored_text": "Whenever one or more artifacts you control enter, put two +1/+1 counters on ~. This ability triggers only once each turn.\nWhenever one or more enchantments you control enter, draw a card. This ability triggers only once each turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Elvish Archivist",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Elvish Farmer",
+      "before": {
+        "name": "Elvish Farmer",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Saproling: You gain 2 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Elvish Farmer",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Elvish Vanguard",
+      "before": {
+        "name": "Elvish Vanguard",
+        "status": "partial",
+        "ignored_text": "Whenever another Elf enters, put a +1/+1 counter on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Elvish Vanguard",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Elvish Warmaster",
+      "before": {
+        "name": "Elvish Warmaster",
+        "status": "partial",
+        "ignored_text": "Whenever one or more other Elves you control enter, create a 1/1 green Elf Warrior creature token. This ability triggers only once each turn.\n{5}{G}{G}: Elves you control get +2/+2 and gain deathtouch until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Elvish Warmaster",
+        "status": "partial",
+        "ignored_text": "{5}{G}{G}: Elves you control get +2/+2 and gain deathtouch until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Enduring Innocence",
+      "before": {
+        "name": "Enduring Innocence",
+        "status": "partial",
+        "ignored_text": "Whenever one or more other creatures you control with power 2 or less enter, draw a card. This ability triggers only once each turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Enduring Innocence",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ennis, Debate Moderator",
+      "before": {
+        "name": "Ennis, Debate Moderator",
+        "status": "partial",
+        "ignored_text": "Return that card to the battlefield under its owner's control at the beginning of the next end step.\nif one or more cards were put into exile this turn, put a +1/+1 counter on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ennis, Debate Moderator",
+        "status": "partial",
+        "ignored_text": "if one or more cards were put into exile this turn, put a +1/+1 counter on ~.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ephara's Radiance",
+      "before": {
+        "name": "Ephara's Radiance",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{1}{W}, {T}: You gain 3 life.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ephara's Radiance",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Epiphany Storm",
+      "before": {
+        "name": "Epiphany Storm",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{R}, {T}, Discard a card: Draw a card.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Epiphany Storm",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ertai, the Corrupted",
+      "before": {
+        "name": "Ertai, the Corrupted",
+        "status": "partial",
+        "ignored_text": "{U}, {T}, Sacrifice a creature or enchantment: Counter target spell.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ertai, the Corrupted",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Essence Warden",
+      "before": {
+        "name": "Essence Warden",
+        "status": "partial",
+        "ignored_text": "Whenever another creature enters, you gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Essence Warden",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Evanescent Intellect",
+      "before": {
+        "name": "Evanescent Intellect",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{1}{U}, {T}: Target player mills three cards.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Evanescent Intellect",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Explosive Getaway",
+      "before": {
+        "name": "Explosive Getaway",
+        "status": "partial",
+        "ignored_text": "Return it to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Explosive Getaway",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Extricator of Sin // Extricator of Flesh",
+      "before": {
+        "name": "Extricator of Sin // Extricator of Flesh",
+        "status": "partial",
+        "ignored_text": "Extricator of Flesh: {2}, {T}, Sacrifice a non-Eldrazi creature: Create a 3/2 colorless Eldrazi Horror creature token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Extricator of Sin // Extricator of Flesh",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Facevaulter",
+      "before": {
+        "name": "Facevaulter",
+        "status": "partial",
+        "ignored_text": "{B}, Sacrifice a Goblin: ~ gets +2/+2 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Facevaulter",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Fiend of the Shadows",
+      "before": {
+        "name": "Fiend of the Shadows",
+        "status": "partial",
+        "ignored_text": "that player exiles a card from their hand.\nYou may play that card for as long as it remains exiled.\nSacrifice a Human: Regenerate ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Fiend of the Shadows",
+        "status": "partial",
+        "ignored_text": "that player exiles a card from their hand.\nYou may play that card for as long as it remains exiled.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Find the Path",
+      "before": {
+        "name": "Find the Path",
+        "status": "partial",
+        "ignored_text": "venture into the dungeon.\nEnchanted land has \"{T}: Add {G}{G}.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Find the Path",
+        "status": "partial",
+        "ignored_text": "venture into the dungeon.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Fire Nation Sentinels",
+      "before": {
+        "name": "Fire Nation Sentinels",
+        "status": "partial",
+        "ignored_text": "Whenever a nontoken creature an opponent controls dies, put a +1/+1 counter on each creature you control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Fire Nation Sentinels",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Fire Whip",
+      "before": {
+        "name": "Fire Whip",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: ~ deals 1 damage to any target.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Fire Whip",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Firewake Sliver",
+      "before": {
+        "name": "Firewake Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"{1}, Sacrifice ~: Target Sliver creature gets +2/+2 until end of turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Firewake Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Flamewright",
+      "before": {
+        "name": "Flamewright",
+        "status": "partial",
+        "ignored_text": "{T}, Sacrifice a creature with defender: ~ deals 1 damage to any target.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Flamewright",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Fleeting Spirit",
+      "before": {
+        "name": "Fleeting Spirit",
+        "status": "partial",
+        "ignored_text": "{W}, Exile three cards from your graveyard: ~ gains first strike until end of turn.\nDiscard a card: Exile ~. Return it to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Fleeting Spirit",
+        "status": "partial",
+        "ignored_text": "{W}, Exile three cards from your graveyard: ~ gains first strike until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Flickerwisp",
+      "before": {
+        "name": "Flickerwisp",
+        "status": "partial",
+        "ignored_text": "Return that card to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Flickerwisp",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Flowering Field",
+      "before": {
+        "name": "Flowering Field",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: Prevent the next 1 damage that would be dealt to any target this turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Flowering Field",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Footfall Crater",
+      "before": {
+        "name": "Footfall Crater",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: Target creature gains trample and haste until end of turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Footfall Crater",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Foratog",
+      "before": {
+        "name": "Foratog",
+        "status": "partial",
+        "ignored_text": "{G}, Sacrifice a Forest: ~ gets +2/+2 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Foratog",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Forbidden Lore",
+      "before": {
+        "name": "Forbidden Lore",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: Target creature gets +2/+1 until end of turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Forbidden Lore",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Forgotten Monument",
+      "before": {
+        "name": "Forgotten Monument",
+        "status": "partial",
+        "ignored_text": "Other Caves you control have \"{T}, Pay 1 life: Add one mana of any color.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Forgotten Monument",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Fortitude",
+      "before": {
+        "name": "Fortitude",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Forest: Regenerate enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Fortitude",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Frondland Felidar",
+      "before": {
+        "name": "Frondland Felidar",
+        "status": "partial",
+        "ignored_text": "Creatures you control with vigilance have \"{1}, {T}: Tap target creature.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Frondland Felidar",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Furystoke Giant",
+      "before": {
+        "name": "Furystoke Giant",
+        "status": "partial",
+        "ignored_text": "other creatures you control gain \"{T}: ~ deals 2 damage to any target\" until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Furystoke Giant",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Galepowder Mage",
+      "before": {
+        "name": "Galepowder Mage",
+        "status": "partial",
+        "ignored_text": "Return that card to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Galepowder Mage",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Garruk's Packleader",
+      "before": {
+        "name": "Garruk's Packleader",
+        "status": "partial",
+        "ignored_text": "Whenever another creature you control with power 3 or greater enters, you may draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Garruk's Packleader",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Garruk's Uprising",
+      "before": {
+        "name": "Garruk's Uprising",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control with power 4 or greater enters, draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Garruk's Uprising",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Garruk, Curse Breaker",
+      "before": {
+        "name": "Garruk, Curse Breaker",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control with power 4 or greater enters, draw a card.\n[+2]: Untap up to two target lands.\n[\u22124]: Until your next turn, whenever one or more creatures attack one of your opponents, those creatures get +2/+2 and gain trample until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Garruk, Curse Breaker",
+        "status": "partial",
+        "ignored_text": "[+2]: Untap up to two target lands.\n[\u22124]: Until your next turn, whenever one or more creatures attack one of your opponents, those creatures get +2/+2 and gain trample until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Gatherer of Graces",
+      "before": {
+        "name": "Gatherer of Graces",
+        "status": "partial",
+        "ignored_text": "~ gets +1/+1 for each Aura attached to it.\nSacrifice an Aura: Regenerate ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Gatherer of Graces",
+        "status": "partial",
+        "ignored_text": "~ gets +1/+1 for each Aura attached to it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Gauntlets of Light",
+      "before": {
+        "name": "Gauntlets of Light",
+        "status": "partial",
+        "ignored_text": "Enchanted creature gets +0/+2 and assigns combat damage equal to its toughness rather than its power.\nEnchanted creature has \"{2}{W}: Untap ~.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Gauntlets of Light",
+        "status": "partial",
+        "ignored_text": "Enchanted creature gets +0/+2 and assigns combat damage equal to its toughness rather than its power.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Gemhide Sliver",
+      "before": {
+        "name": "Gemhide Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"{T}: Add one mana of any color.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Gemhide Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Getaway Glamer",
+      "before": {
+        "name": "Getaway Glamer",
+        "status": "partial",
+        "ignored_text": "+ {1} \u2014 Exile target nontoken creature. Return it to the battlefield under its owner's control at the beginning of the next end step.\n+ {2} \u2014 Destroy target creature if no other creature has greater power.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Getaway Glamer",
+        "status": "partial",
+        "ignored_text": "+ {2} \u2014 Destroy target creature if no other creature has greater power.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ghost Council of Orzhova",
+      "before": {
+        "name": "Ghost Council of Orzhova",
+        "status": "partial",
+        "ignored_text": "{1}, Sacrifice a creature: Exile ~. Return it to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ghost Council of Orzhova",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ghoulish Procession",
+      "before": {
+        "name": "Ghoulish Procession",
+        "status": "partial",
+        "ignored_text": "Whenever one or more nontoken creatures die, create a 2/2 black Zombie creature token with decayed. This ability triggers only once each turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ghoulish Procession",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Gideon the Oathless",
+      "before": {
+        "name": "Gideon the Oathless",
+        "status": "partial",
+        "ignored_text": "Whenever a creature an opponent controls enters, ~ deals 1 damage to that player.\nWhenever an opponent activates a loyalty ability, ~ deals 1 damage to that player.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Gideon the Oathless",
+        "status": "partial",
+        "ignored_text": "Whenever an opponent activates a loyalty ability, ~ deals 1 damage to that player.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Glamer Spinners",
+      "before": {
+        "name": "Glamer Spinners",
+        "status": "partial",
+        "ignored_text": "attach all Auras enchanting target permanent to another permanent with the same controller.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Glamer Spinners",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Glimmerpoint Stag",
+      "before": {
+        "name": "Glimmerpoint Stag",
+        "status": "partial",
+        "ignored_text": "Return that card to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Glimmerpoint Stag",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Glorious Sunrise",
+      "before": {
+        "name": "Glorious Sunrise",
+        "status": "partial",
+        "ignored_text": "\u2022 Target land gains \"{T}: Add {G}{G}{G}\" until end of turn.\n\u2022 Draw a card if you control a creature with power 3 or greater.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Glorious Sunrise",
+        "status": "partial",
+        "ignored_text": "\u2022 Draw a card if you control a creature with power 3 or greater.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Gluttonous Troll",
+      "before": {
+        "name": "Gluttonous Troll",
+        "status": "partial",
+        "ignored_text": "create a number of Food tokens equal to the number of opponents you have.\n{1}{G}, Sacrifice another nonland permanent: ~ gets +2/+2 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Gluttonous Troll",
+        "status": "partial",
+        "ignored_text": "create a number of Food tokens equal to the number of opponents you have.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Goblin Chirurgeon",
+      "before": {
+        "name": "Goblin Chirurgeon",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Goblin: Regenerate target creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Goblin Chirurgeon",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Goblin Sledder",
+      "before": {
+        "name": "Goblin Sledder",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Goblin: Target creature gets +1/+1 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Goblin Sledder",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Goblin Trashmaster",
+      "before": {
+        "name": "Goblin Trashmaster",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Goblin: Destroy target artifact.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Goblin Trashmaster",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Goblin Turncoat",
+      "before": {
+        "name": "Goblin Turncoat",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Goblin: Regenerate ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Goblin Turncoat",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Godtracker of Jund",
+      "before": {
+        "name": "Godtracker of Jund",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control with power 5 or greater enters, you may put a +1/+1 counter on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Godtracker of Jund",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Grabby Giant // That's Mine",
+      "before": {
+        "name": "Grabby Giant // That's Mine",
+        "status": "partial",
+        "ignored_text": "{2}{R}, Sacrifice an artifact or land: Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Grabby Giant // That's Mine",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Great Fierce Bee",
+      "before": {
+        "name": "Great Fierce Bee",
+        "status": "partial",
+        "ignored_text": "Whenever one or more other creatures die, scry 1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Great Fierce Bee",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Grinding Station",
+      "before": {
+        "name": "Grinding Station",
+        "status": "partial",
+        "ignored_text": "Whenever an artifact enters, you may untap ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Grinding Station",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Grismold, the Dreadsower",
+      "before": {
+        "name": "Grismold, the Dreadsower",
+        "status": "partial",
+        "ignored_text": "each player creates a 1/1 green Plant creature token.\nWhenever a creature token dies, put a +1/+1 counter on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Grismold, the Dreadsower",
+        "status": "partial",
+        "ignored_text": "each player creates a 1/1 green Plant creature token.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Guardian of Cloverdell",
+      "before": {
+        "name": "Guardian of Cloverdell",
+        "status": "partial",
+        "ignored_text": "{G}, Sacrifice a Kithkin: You gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Guardian of Cloverdell",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Guardian of Ghirapur",
+      "before": {
+        "name": "Guardian of Ghirapur",
+        "status": "partial",
+        "ignored_text": "Return it to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Guardian of Ghirapur",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hamletback Goliath",
+      "before": {
+        "name": "Hamletback Goliath",
+        "status": "partial",
+        "ignored_text": "Whenever another creature enters, you may put X +1/+1 counters on ~, where X is that creature's power.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hamletback Goliath",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Harvester of Souls",
+      "before": {
+        "name": "Harvester of Souls",
+        "status": "partial",
+        "ignored_text": "Whenever another nontoken creature dies, you may draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Harvester of Souls",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hashep Oasis",
+      "before": {
+        "name": "Hashep Oasis",
+        "status": "partial",
+        "ignored_text": "{1}{G}{G}, {T}, Sacrifice a Desert: Target creature gets +3/+3 until end of turn. Activate only as a sorcery.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hashep Oasis",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hearthcage Giant",
+      "before": {
+        "name": "Hearthcage Giant",
+        "status": "partial",
+        "ignored_text": "Sacrifice an Elemental: Target Giant creature gets +3/+1 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hearthcage Giant",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Heartwood Giant",
+      "before": {
+        "name": "Heartwood Giant",
+        "status": "partial",
+        "ignored_text": "{T}, Sacrifice a Forest: ~ deals 2 damage to target player or planeswalker.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Heartwood Giant",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hermetic Study",
+      "before": {
+        "name": "Hermetic Study",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: ~ deals 1 damage to any target.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hermetic Study",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hibernation Sliver",
+      "before": {
+        "name": "Hibernation Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"Pay 2 life: Return ~ to its owner's hand.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hibernation Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "High-Society Hunter",
+      "before": {
+        "name": "High-Society Hunter",
+        "status": "partial",
+        "ignored_text": "Whenever another nontoken creature dies, draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "High-Society Hunter",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hollowhead Sliver",
+      "before": {
+        "name": "Hollowhead Sliver",
+        "status": "partial",
+        "ignored_text": "Sliver creatures you control have \"{T}, Discard a card: Draw a card.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hollowhead Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Homicide Investigator",
+      "before": {
+        "name": "Homicide Investigator",
+        "status": "partial",
+        "ignored_text": "Whenever one or more nontoken creatures you control die, investigate. This ability triggers only once each turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Homicide Investigator",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Horror of Horrors",
+      "before": {
+        "name": "Horror of Horrors",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Swamp: Regenerate target black creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Horror of Horrors",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hostile Realm",
+      "before": {
+        "name": "Hostile Realm",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: Target creature can't block this turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hostile Realm",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hot Springs",
+      "before": {
+        "name": "Hot Springs",
+        "status": "partial",
+        "ignored_text": "Enchant land you control\nEnchanted land has \"{T}: Prevent the next 1 damage that would be dealt to any target this turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hot Springs",
+        "status": "partial",
+        "ignored_text": "Enchant land you control",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hungry Lynx",
+      "before": {
+        "name": "Hungry Lynx",
+        "status": "partial",
+        "ignored_text": "Cats you control have protection from Rats.\ntarget opponent creates a 1/1 black Rat creature token with deathtouch.\nWhenever a Rat dies, put a +1/+1 counter on each Cat you control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hungry Lynx",
+        "status": "partial",
+        "ignored_text": "Cats you control have protection from Rats.\ntarget opponent creates a 1/1 black Rat creature token with deathtouch.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Hypervolt Grasp",
+      "before": {
+        "name": "Hypervolt Grasp",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: ~ deals 1 damage to any target.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Hypervolt Grasp",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ifnir Deadlands",
+      "before": {
+        "name": "Ifnir Deadlands",
+        "status": "partial",
+        "ignored_text": "{2}{B}{B}, {T}, Sacrifice a Desert: Put two -1/-1 counters on target creature an opponent controls. Activate only as a sorcery.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ifnir Deadlands",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Illusory Gains",
+      "before": {
+        "name": "Illusory Gains",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.\nWhenever a creature an opponent controls enters, attach ~ to that creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Illusory Gains",
+        "status": "partial",
+        "ignored_text": "You control enchanted creature.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Immobilizing Ink",
+      "before": {
+        "name": "Immobilizing Ink",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{1}, Discard a card: Untap ~.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Immobilizing Ink",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Infernal Tribute",
+      "before": {
+        "name": "Infernal Tribute",
+        "status": "partial",
+        "ignored_text": "{2}, Sacrifice a nontoken permanent: Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Infernal Tribute",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ingenious Smith",
+      "before": {
+        "name": "Ingenious Smith",
+        "status": "partial",
+        "ignored_text": "Whenever one or more artifacts you control enter, put a +1/+1 counter on ~. This ability triggers only once each turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ingenious Smith",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Inspiring Commander",
+      "before": {
+        "name": "Inspiring Commander",
+        "status": "partial",
+        "ignored_text": "Whenever another creature you control with power 2 or less enters, you gain 1 life and draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Inspiring Commander",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Intruding Soulrager",
+      "before": {
+        "name": "Intruding Soulrager",
+        "status": "partial",
+        "ignored_text": "{T}, Sacrifice a Room: ~ deals 2 damage to each opponent. Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Intruding Soulrager",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ipnu Rivulet",
+      "before": {
+        "name": "Ipnu Rivulet",
+        "status": "partial",
+        "ignored_text": "{1}{U}, {T}, Sacrifice a Desert: Target player mills four cards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ipnu Rivulet",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Jan Jansen, Chaos Crafter",
+      "before": {
+        "name": "Jan Jansen, Chaos Crafter",
+        "status": "partial",
+        "ignored_text": "{T}, Sacrifice an artifact creature: Create two Treasure tokens.\n{T}, Sacrifice a noncreature artifact: Create two 1/1 colorless Construct artifact creature tokens.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Jan Jansen, Chaos Crafter",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Joel, Resolute Survivor",
+      "before": {
+        "name": "Joel, Resolute Survivor",
+        "status": "partial",
+        "ignored_text": "Whenever a creature token dies, put a +1/+1 counter on ~ and draw a card. This ability triggers only once each turn.\nPartner\u2014Survivors",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Joel, Resolute Survivor",
+        "status": "partial",
+        "ignored_text": "Partner\u2014Survivors",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Joraga Treespeaker",
+      "before": {
+        "name": "Joraga Treespeaker",
+        "status": "partial",
+        "ignored_text": "Level up {1}{G}\nLEVEL 1-4\n1/2\nLEVEL 5+\n1/4\nElves you control have \"{T}: Add {G}{G}.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Joraga Treespeaker",
+        "status": "partial",
+        "ignored_text": "Level up {1}{G}\nLEVEL 1-4\n1/2\nLEVEL 5+\n1/4",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Karametra's Favor",
+      "before": {
+        "name": "Karametra's Favor",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: Add one mana of any color.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Karametra's Favor",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Kardur, Doomscourge",
+      "before": {
+        "name": "Kardur, Doomscourge",
+        "status": "partial",
+        "ignored_text": "until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able.\nWhenever an attacking creature dies, each opponent loses 1 life and you gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Kardur, Doomscourge",
+        "status": "partial",
+        "ignored_text": "until your next turn, creatures your opponents control attack each combat if able and attack a player other than you if able.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Karstoderm",
+      "before": {
+        "name": "Karstoderm",
+        "status": "partial",
+        "ignored_text": "Whenever an artifact enters, remove a +1/+1 counter from ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Karstoderm",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Kavu Lair",
+      "before": {
+        "name": "Kavu Lair",
+        "status": "partial",
+        "ignored_text": "Whenever a creature with power 4 or greater enters, its controller draws a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Kavu Lair",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Kavu Monarch",
+      "before": {
+        "name": "Kavu Monarch",
+        "status": "partial",
+        "ignored_text": "Whenever another Kavu enters, put a +1/+1 counter on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Kavu Monarch",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Kheru Bloodsucker",
+      "before": {
+        "name": "Kheru Bloodsucker",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control with toughness 4 or greater dies, each opponent loses 2 life and you gain 2 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Kheru Bloodsucker",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Kiora, Behemoth Beckoner",
+      "before": {
+        "name": "Kiora, Behemoth Beckoner",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control with power 4 or greater enters, draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Kiora, Behemoth Beckoner",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Knight of the Last Breath",
+      "before": {
+        "name": "Knight of the Last Breath",
+        "status": "partial",
+        "ignored_text": "{3}, Sacrifice another nontoken creature: Create a 1/1 white and black Spirit creature token with flying.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Knight of the Last Breath",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Knight-Captain of Eos",
+      "before": {
+        "name": "Knight-Captain of Eos",
+        "status": "partial",
+        "ignored_text": "{W}, Sacrifice a Soldier: Prevent all combat damage that would be dealt this turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Knight-Captain of Eos",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Koma and Toski, Compleated",
+      "before": {
+        "name": "Koma and Toski, Compleated",
+        "status": "partial",
+        "ignored_text": "create a 1/1 Phyrexian Serpent Squirrel artifact creature token named Toski's Coil with \"Whenever ~ deals combat damage to a player, draw a card.\"\nSacrifice another Serpent or Squirrel: Choose one \u2014\n\u2022 Target creature attacks this turn if able. Its activated abilities can't be activated this turn.\n\u2022 ~ gains indestructible until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Koma and Toski, Compleated",
+        "status": "partial",
+        "ignored_text": "Sacrifice another Serpent or Squirrel: Choose one \u2014\n\u2022 Target creature attacks this turn if able. Its activated abilities can't be activated this turn.\n\u2022 ~ gains indestructible until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Koma, Cosmos Serpent",
+      "before": {
+        "name": "Koma, Cosmos Serpent",
+        "status": "partial",
+        "ignored_text": "create a 3/3 blue Serpent creature token named ~'s Coil.\nSacrifice another Serpent: Choose one \u2014\n\u2022 Tap target permanent. Its activated abilities can't be activated this turn.\n\u2022 ~ gains indestructible until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Koma, Cosmos Serpent",
+        "status": "partial",
+        "ignored_text": "create a 3/3 blue Serpent creature token named ~'s Coil.\n\u2022 Tap target permanent. Its activated abilities can't be activated this turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Kronch Wrangler",
+      "before": {
+        "name": "Kronch Wrangler",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control with power 4 or greater enters, put a +1/+1 counter on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Kronch Wrangler",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Kykar, Wind's Fury",
+      "before": {
+        "name": "Kykar, Wind's Fury",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Spirit: Add {R}.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Kykar, Wind's Fury",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Lake of the Dead",
+      "before": {
+        "name": "Lake of the Dead",
+        "status": "partial",
+        "ignored_text": "If ~ would enter, sacrifice a Swamp instead. If you do, put ~ onto the battlefield. If you don't, put it into its owner's graveyard.\n{T}, Sacrifice a Swamp: Add {B}{B}{B}{B}.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Lake of the Dead",
+        "status": "partial",
+        "ignored_text": "If ~ would enter, sacrifice a Swamp instead. If you do, put ~ onto the battlefield. If you don't, put it into its owner's graveyard.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Lavamancer's Skill",
+      "before": {
+        "name": "Lavamancer's Skill",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: ~ deals 1 damage to target creature.\"\nAs long as enchanted creature is a Wizard, it has \"{T}: ~ deals 2 damage to target creature.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Lavamancer's Skill",
+        "status": "partial",
+        "ignored_text": "As long as enchanted creature is a Wizard, it has \"{T}: ~ deals 2 damage to target creature.\"",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Leafdrake Roost",
+      "before": {
+        "name": "Leafdrake Roost",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{G}{U}, {T}: Create a 2/2 green and blue Drake creature token with flying.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Leafdrake Roost",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Leonin Elder",
+      "before": {
+        "name": "Leonin Elder",
+        "status": "partial",
+        "ignored_text": "Whenever an artifact enters, you may gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Leonin Elder",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Life Insurance",
+      "before": {
+        "name": "Life Insurance",
+        "status": "partial",
+        "ignored_text": "Whenever a nontoken creature dies, you lose 1 life and create a Treasure token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Life Insurance",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Lifegift",
+      "before": {
+        "name": "Lifegift",
+        "status": "partial",
+        "ignored_text": "Whenever a land enters, you may gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Lifegift",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Llanowar",
+      "before": {
+        "name": "Llanowar",
+        "status": "partial",
+        "ignored_text": "All creatures have \"{T}: Add {G}{G}.\"\nWhenever chaos ensues, untap all creatures you control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Llanowar",
+        "status": "partial",
+        "ignored_text": "Whenever chaos ensues, untap all creatures you control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Lochmere Serpent",
+      "before": {
+        "name": "Lochmere Serpent",
+        "status": "partial",
+        "ignored_text": "{U}, Sacrifice an Island: ~ can't be blocked this turn.\n{B}, Sacrifice a Swamp: You gain 1 life and draw a card.\n{U}{B}: Exile five target cards from an opponent's graveyard. Return ~ from your graveyard to your hand. Activate only as a sorcery.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Lochmere Serpent",
+        "status": "partial",
+        "ignored_text": "{U}{B}: Exile five target cards from an opponent's graveyard. Return ~ from your graveyard to your hand. Activate only as a sorcery.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Losheel, Clockwork Scholar",
+      "before": {
+        "name": "Losheel, Clockwork Scholar",
+        "status": "partial",
+        "ignored_text": "Prevent all combat damage that would be dealt to attacking artifact creatures you control.\nWhenever one or more artifact creatures you control enter, draw a card. This ability triggers only once each turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Losheel, Clockwork Scholar",
+        "status": "partial",
+        "ignored_text": "Prevent all combat damage that would be dealt to attacking artifact creatures you control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Loxodon Hierarch Avatar",
+      "before": {
+        "name": "Loxodon Hierarch Avatar",
+        "status": "partial",
+        "ignored_text": "Hand +0, life +12\nSacrifice a permanent: Regenerate target creature you control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Loxodon Hierarch Avatar",
+        "status": "partial",
+        "ignored_text": "Hand +0, life +12",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Magmaw",
+      "before": {
+        "name": "Magmaw",
+        "status": "partial",
+        "ignored_text": "{1}, Sacrifice a nonland permanent: ~ deals 1 damage to any target.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Magmaw",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Malicious Intent",
+      "before": {
+        "name": "Malicious Intent",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: Target creature can't block this turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Malicious Intent",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Manaweft Sliver",
+      "before": {
+        "name": "Manaweft Sliver",
+        "status": "partial",
+        "ignored_text": "Sliver creatures you control have \"{T}: Add one mana of any color.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Manaweft Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Marketwatch Phantom",
+      "before": {
+        "name": "Marketwatch Phantom",
+        "status": "partial",
+        "ignored_text": "Whenever another creature you control with power 2 or less enters, ~ gains flying until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Marketwatch Phantom",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Marrow-Gnawer",
+      "before": {
+        "name": "Marrow-Gnawer",
+        "status": "partial",
+        "ignored_text": "{T}, Sacrifice a Rat: Create X 1/1 black Rat creature tokens, where X is the number of Rats you control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Marrow-Gnawer",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Marsh Lurker",
+      "before": {
+        "name": "Marsh Lurker",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Swamp: ~ gains fear until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Marsh Lurker",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Marwyn, the Clearcutter",
+      "before": {
+        "name": "Marwyn, the Clearcutter",
+        "status": "partial",
+        "ignored_text": "{2}, {T}, Sacrifice an artifact or land: Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Marwyn, the Clearcutter",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mentor of the Meek",
+      "before": {
+        "name": "Mentor of the Meek",
+        "status": "partial",
+        "ignored_text": "Whenever another creature you control with power 2 or less enters, you may pay {1}. If you do, draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mentor of the Meek",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Merry, Warden of Isengard",
+      "before": {
+        "name": "Merry, Warden of Isengard",
+        "status": "partial",
+        "ignored_text": "Partner with Pippin, Warden of Isengard\nWhenever one or more artifacts you control enter, create a 1/1 white Soldier creature token with lifelink. This ability triggers only once each turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Merry, Warden of Isengard",
+        "status": "partial",
+        "ignored_text": "Partner with Pippin, Warden of Isengard",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Midnight Covenant",
+      "before": {
+        "name": "Midnight Covenant",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{B}: ~ gets +1/+1 until end of turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Midnight Covenant",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Midnight Guard",
+      "before": {
+        "name": "Midnight Guard",
+        "status": "partial",
+        "ignored_text": "Whenever another creature enters, untap ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Midnight Guard",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mighty Emergence",
+      "before": {
+        "name": "Mighty Emergence",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control with power 5 or greater enters, you may put two +1/+1 counters on it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mighty Emergence",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mindlash Sliver",
+      "before": {
+        "name": "Mindlash Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"{1}, Sacrifice ~: Each player discards a card.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mindlash Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mire Shade",
+      "before": {
+        "name": "Mire Shade",
+        "status": "partial",
+        "ignored_text": "{B}, Sacrifice a Swamp: Put a +1/+1 counter on ~. Activate only as a sorcery.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mire Shade",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mirri the Cursed Avatar",
+      "before": {
+        "name": "Mirri the Cursed Avatar",
+        "status": "partial",
+        "ignored_text": "Hand -2, life -3\nCreatures you control have \"{T}: Another target creature gets -1/-1 until end of turn. Put a +1/+1 counter on ~.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mirri the Cursed Avatar",
+        "status": "partial",
+        "ignored_text": "Hand -2, life -3",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mistmeadow Vanisher",
+      "before": {
+        "name": "Mistmeadow Vanisher",
+        "status": "partial",
+        "ignored_text": "exile up to one target nonland, nontoken permanent.\nReturn that card to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mistmeadow Vanisher",
+        "status": "partial",
+        "ignored_text": "DELAYEDBLINK up to one target nonland, nontoken permanent.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mistmeadow Witch",
+      "before": {
+        "name": "Mistmeadow Witch",
+        "status": "partial",
+        "ignored_text": "{2}{W}{U}: Exile target creature. Return that card to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mistmeadow Witch",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mnemonic Sliver",
+      "before": {
+        "name": "Mnemonic Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"{2}, Sacrifice ~: Draw a card.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mnemonic Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mogg Bombers",
+      "before": {
+        "name": "Mogg Bombers",
+        "status": "partial",
+        "ignored_text": "When another creature enters, sacrifice ~ and it deals 3 damage to target player or planeswalker.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mogg Bombers",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mogg Raider",
+      "before": {
+        "name": "Mogg Raider",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Goblin: Target creature gets +1/+1 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mogg Raider",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mole Man, Moloid Master",
+      "before": {
+        "name": "Mole Man, Moloid Master",
+        "status": "partial",
+        "ignored_text": "create a 1/1 green Minion creature token named Moloid with \"Whenever ~ attacks, you may mill a card.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mole Man, Moloid Master",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Monkey Cage",
+      "before": {
+        "name": "Monkey Cage",
+        "status": "partial",
+        "ignored_text": "When a creature enters, sacrifice ~ and create X 2/2 green Monkey creature tokens, where X is that creature's mana value.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Monkey Cage",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Morbid Opportunist",
+      "before": {
+        "name": "Morbid Opportunist",
+        "status": "partial",
+        "ignored_text": "Whenever one or more other creatures die, draw a card. This ability triggers only once each turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Morbid Opportunist",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Multani's Harmony",
+      "before": {
+        "name": "Multani's Harmony",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: Add one mana of any color.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Multani's Harmony",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Murasa",
+      "before": {
+        "name": "Murasa",
+        "status": "partial",
+        "ignored_text": "Whenever a nontoken creature enters, its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle.\nWhenever chaos ensues, target land becomes a 4/4 creature that's still a land.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Murasa",
+        "status": "partial",
+        "ignored_text": "Whenever chaos ensues, target land becomes a 4/4 creature that's still a land.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mycologist",
+      "before": {
+        "name": "Mycologist",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Saproling: You gain 2 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mycologist",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Mystic Might",
+      "before": {
+        "name": "Mystic Might",
+        "status": "partial",
+        "ignored_text": "Enchant land you control\nEnchanted land has \"{T}: Target creature gets +2/+2 until end of turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Mystic Might",
+        "status": "partial",
+        "ignored_text": "Enchant land you control",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Necrotic Sliver",
+      "before": {
+        "name": "Necrotic Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"{3}, Sacrifice ~: Destroy target permanent.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Necrotic Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Neighborhood Guardian",
+      "before": {
+        "name": "Neighborhood Guardian",
+        "status": "partial",
+        "ignored_text": "Whenever another creature you control with power 2 or less enters, target creature you control gets +1/+1 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Neighborhood Guardian",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Nemata, Primeval Warden",
+      "before": {
+        "name": "Nemata, Primeval Warden",
+        "status": "partial",
+        "ignored_text": "If a creature an opponent controls would die, exile it instead. When you do, create a 1/1 green Saproling creature token.\n{G}, Sacrifice a Saproling: ~ gets +2/+2 until end of turn.\n{1}{B}, Sacrifice two Saprolings: Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Nemata, Primeval Warden",
+        "status": "partial",
+        "ignored_text": "If a creature an opponent controls would die, exile it instead. When you do, create a 1/1 green Saproling creature token.\n{1}{B}, Sacrifice two Saprolings: Draw a card.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Nesting Dovehawk",
+      "before": {
+        "name": "Nesting Dovehawk",
+        "status": "partial",
+        "ignored_text": "populate.\nWhenever a creature token you control enters, put a +1/+1 counter on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Nesting Dovehawk",
+        "status": "partial",
+        "ignored_text": "populate.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ninja Pizza",
+      "before": {
+        "name": "Ninja Pizza",
+        "status": "partial",
+        "ignored_text": "Foods you control have \"{T}, Sacrifice ~: Add one mana of any color.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ninja Pizza",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Noxious Field",
+      "before": {
+        "name": "Noxious Field",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: ~ deals 1 damage to each creature and each player.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Noxious Field",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Oath of Teferi",
+      "before": {
+        "name": "Oath of Teferi",
+        "status": "partial",
+        "ignored_text": "Return it to the battlefield under its owner's control at the beginning of the next end step.\nYou may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Oath of Teferi",
+        "status": "partial",
+        "ignored_text": "You may activate the loyalty abilities of planeswalkers you control twice each turn rather than only once.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Oblivion Crown",
+      "before": {
+        "name": "Oblivion Crown",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"Discard a card: ~ gets +1/+1 until end of turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Oblivion Crown",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Obsidian Battle-Axe",
+      "before": {
+        "name": "Obsidian Battle-Axe",
+        "status": "partial",
+        "ignored_text": "Whenever a Warrior creature enters, you may attach ~ to it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Obsidian Battle-Axe",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ocular Halo",
+      "before": {
+        "name": "Ocular Halo",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: Draw a card.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ocular Halo",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ogre Slumlord",
+      "before": {
+        "name": "Ogre Slumlord",
+        "status": "partial",
+        "ignored_text": "Whenever another nontoken creature dies, you may create a 1/1 black Rat creature token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ogre Slumlord",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Oracle's Insight",
+      "before": {
+        "name": "Oracle's Insight",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: Scry 1, then draw a card.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Oracle's Insight",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Outcaster Trailblazer",
+      "before": {
+        "name": "Outcaster Trailblazer",
+        "status": "partial",
+        "ignored_text": "Whenever another creature you control with power 4 or greater enters, draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Outcaster Trailblazer",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Overseer of the Damned",
+      "before": {
+        "name": "Overseer of the Damned",
+        "status": "partial",
+        "ignored_text": "you may destroy target creature.\nWhenever a nontoken creature an opponent controls dies, create a tapped 2/2 black Zombie creature token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Overseer of the Damned",
+        "status": "partial",
+        "ignored_text": "you may destroy target creature.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Paleoloth",
+      "before": {
+        "name": "Paleoloth",
+        "status": "partial",
+        "ignored_text": "Whenever another creature you control with power 5 or greater enters, you may return target creature card from your graveyard to your hand.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Paleoloth",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Pashalik Mons",
+      "before": {
+        "name": "Pashalik Mons",
+        "status": "partial",
+        "ignored_text": "Whenever ~ or another Goblin you control dies, ~ deals 1 damage to any target.\n{3}{R}, Sacrifice a Goblin: Create two 1/1 red Goblin creature tokens.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Pashalik Mons",
+        "status": "partial",
+        "ignored_text": "Whenever ~ or another Goblin you control dies, ~ deals 1 damage to any target.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Path of Annihilation",
+      "before": {
+        "name": "Path of Annihilation",
+        "status": "partial",
+        "ignored_text": "create two 0/1 colorless Eldrazi Spawn creature tokens with \"Sacrifice ~: Add {C}.\"\nEldrazi you control have \"{T}: Add one mana of any color.\"\nWhenever you cast a creature spell with mana value 7 or greater, you gain 4 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Path of Annihilation",
+        "status": "partial",
+        "ignored_text": "create two 0/1 colorless Eldrazi Spawn creature tokens with \"Sacrifice ~: Add {C}.\"\nWhenever you cast a creature spell with mana value 7 or greater, you gain 4 life.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Peacekeeper",
+      "before": {
+        "name": "Peacekeeper",
+        "status": "partial",
+        "ignored_text": "Creatures can't attack.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Peacekeeper",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Phenax, God of Deception",
+      "before": {
+        "name": "Phenax, God of Deception",
+        "status": "partial",
+        "ignored_text": "As long as your devotion to blue and black is less than seven, ~ isn't a creature.\nCreatures you control have \"{T}: Target player mills X cards, where X is ~'s toughness.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Phenax, God of Deception",
+        "status": "partial",
+        "ignored_text": "As long as your devotion to blue and black is less than seven, ~ isn't a creature.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Pious Evangel // Wayward Disciple",
+      "before": {
+        "name": "Pious Evangel // Wayward Disciple",
+        "status": "partial",
+        "ignored_text": "{2}, {T}, Sacrifice another permanent: Transform ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Pious Evangel // Wayward Disciple",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Poisonbelly Ogre",
+      "before": {
+        "name": "Poisonbelly Ogre",
+        "status": "partial",
+        "ignored_text": "Whenever another creature enters, its controller loses 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Poisonbelly Ogre",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Popular Egotist",
+      "before": {
+        "name": "Popular Egotist",
+        "status": "partial",
+        "ignored_text": "{1}{B}, Sacrifice another creature or enchantment: ~ gains indestructible until end of turn. Tap it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Popular Egotist",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Portcullis Vine",
+      "before": {
+        "name": "Portcullis Vine",
+        "status": "partial",
+        "ignored_text": "{2}, {T}, Sacrifice a creature with defender: Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Portcullis Vine",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Poultice Sliver",
+      "before": {
+        "name": "Poultice Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"{2}, {T}: Regenerate target Sliver.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Poultice Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Power of Fire",
+      "before": {
+        "name": "Power of Fire",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: ~ deals 1 damage to any target.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Power of Fire",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Presence of Gond",
+      "before": {
+        "name": "Presence of Gond",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: Create a 1/1 green Elf Warrior creature token.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Presence of Gond",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Prison Term",
+      "before": {
+        "name": "Prison Term",
+        "status": "partial",
+        "ignored_text": "Enchanted creature can't attack or block, and its activated abilities can't be activated.\nWhenever a creature an opponent controls enters, you may attach ~ to that creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Prison Term",
+        "status": "partial",
+        "ignored_text": "Enchanted creature can't attack or block, and its activated abilities can't be activated.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Psionic Gift",
+      "before": {
+        "name": "Psionic Gift",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: ~ deals 1 damage to any target.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Psionic Gift",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Psychotrope Thallid",
+      "before": {
+        "name": "Psychotrope Thallid",
+        "status": "partial",
+        "ignored_text": "{1}, Sacrifice a Saproling: Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Psychotrope Thallid",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Quicksilver Dagger",
+      "before": {
+        "name": "Quicksilver Dagger",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: ~ deals 1 damage to target player or planeswalker. You draw a card.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Quicksilver Dagger",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Quilled Sliver",
+      "before": {
+        "name": "Quilled Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"{T}: ~ deals 1 damage to target attacking or blocking creature.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Quilled Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Quina, Qu Gourmet",
+      "before": {
+        "name": "Quina, Qu Gourmet",
+        "status": "partial",
+        "ignored_text": "If one or more tokens would be created under your control, those tokens plus a 1/1 green Frog creature token are created instead.\n{2}, Sacrifice a Frog: Put a +1/+1 counter on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Quina, Qu Gourmet",
+        "status": "partial",
+        "ignored_text": "If one or more tokens would be created under your control, those tokens plus a 1/1 green Frog creature token are created instead.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Racecourse Fury",
+      "before": {
+        "name": "Racecourse Fury",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: Target creature gains haste until end of turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Racecourse Fury",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Rampage of the Valkyries",
+      "before": {
+        "name": "Rampage of the Valkyries",
+        "status": "partial",
+        "ignored_text": "Whenever an Angel you control dies, each other player sacrifices a creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Rampage of the Valkyries",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Rampaging Ferocidon",
+      "before": {
+        "name": "Rampaging Ferocidon",
+        "status": "partial",
+        "ignored_text": "Players can't gain life.\nWhenever another creature enters, ~ deals 1 damage to that creature's controller.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Rampaging Ferocidon",
+        "status": "partial",
+        "ignored_text": "Players can't gain life.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Rampart Architect",
+      "before": {
+        "name": "Rampart Architect",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control with defender dies, you may search your library for a basic land card, put that card onto the battlefield tapped, then shuffle.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Rampart Architect",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ramunap Ruins",
+      "before": {
+        "name": "Ramunap Ruins",
+        "status": "partial",
+        "ignored_text": "{2}{R}{R}, {T}, Sacrifice a Desert: ~ deals 2 damage to each opponent.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ramunap Ruins",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ravenous Baloth",
+      "before": {
+        "name": "Ravenous Baloth",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Beast: You gain 4 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ravenous Baloth",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ravenous Demon // Archdemon of Greed",
+      "before": {
+        "name": "Ravenous Demon // Archdemon of Greed",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Human: Transform ~. Activate only as a sorcery.\nArchdemon of Greed: sacrifice a Human.\nArchdemon of Greed: If you can't, tap ~ and it deals 9 damage to you.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ravenous Demon // Archdemon of Greed",
+        "status": "partial",
+        "ignored_text": "Archdemon of Greed: sacrifice a Human.\nArchdemon of Greed: If you can't, tap ~ and it deals 9 damage to you.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Resplendent Mentor",
+      "before": {
+        "name": "Resplendent Mentor",
+        "status": "partial",
+        "ignored_text": "White creatures you control have \"{T}: You gain 1 life.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Resplendent Mentor",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Retrofitter Foundry",
+      "before": {
+        "name": "Retrofitter Foundry",
+        "status": "partial",
+        "ignored_text": "{1}, {T}, Sacrifice a Servo: Create a 1/1 colorless Thopter artifact creature token with flying.\n{T}, Sacrifice a Thopter: Create a 4/4 colorless Construct artifact creature token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Retrofitter Foundry",
+        "status": "partial",
+        "ignored_text": "{1}, {T}, Sacrifice a Servo: Create a 1/1 colorless Thopter artifact creature token with flying.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Rhys the Exiled",
+      "before": {
+        "name": "Rhys the Exiled",
+        "status": "partial",
+        "ignored_text": "{B}, Sacrifice an Elf: Regenerate ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Rhys the Exiled",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ringing Strike Mastery",
+      "before": {
+        "name": "Ringing Strike Mastery",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{5}: Untap ~.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ringing Strike Mastery",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Roon of the Hidden Realm",
+      "before": {
+        "name": "Roon of the Hidden Realm",
+        "status": "partial",
+        "ignored_text": "{2}, {T}: Exile another target creature. Return that card to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Roon of the Hidden Realm",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Rootwater Alligator",
+      "before": {
+        "name": "Rootwater Alligator",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Forest: Regenerate ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Rootwater Alligator",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "S.H.I.E.L.D. Flying Car",
+      "before": {
+        "name": "S.H.I.E.L.D. Flying Car",
+        "status": "partial",
+        "ignored_text": "Return that card to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "S.H.I.E.L.D. Flying Car",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sachi, Daughter of Seshiro",
+      "before": {
+        "name": "Sachi, Daughter of Seshiro",
+        "status": "partial",
+        "ignored_text": "Shamans you control have \"{T}: Add {G}{G}.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sachi, Daughter of Seshiro",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sadistic Obsession",
+      "before": {
+        "name": "Sadistic Obsession",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{B}, {T}: Put a -1/-1 counter on target creature.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sadistic Obsession",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Savage Thallid",
+      "before": {
+        "name": "Savage Thallid",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Saproling: Regenerate target Fungus.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Savage Thallid",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sawblade Skinripper",
+      "before": {
+        "name": "Sawblade Skinripper",
+        "status": "partial",
+        "ignored_text": "{2}, Sacrifice another creature or enchantment: Put a +1/+1 counter on ~.\nif you sacrificed one or more permanents this turn, ~ deals that much damage to any target.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sawblade Skinripper",
+        "status": "partial",
+        "ignored_text": "if you sacrificed one or more permanents this turn, ~ deals that much damage to any target.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Scarecrone",
+      "before": {
+        "name": "Scarecrone",
+        "status": "partial",
+        "ignored_text": "{1}, Sacrifice a Scarecrow: Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Scarecrone",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Scavenger's Talent",
+      "before": {
+        "name": "Scavenger's Talent",
+        "status": "partial",
+        "ignored_text": "Whenever one or more creatures you control die, create a Food token. This ability triggers only once each turn.\nyou may sacrifice three other nonland permanents.\nIf you do, return a creature card from your graveyard to the battlefield with a finality counter on it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Scavenger's Talent",
+        "status": "partial",
+        "ignored_text": "you may sacrifice three other nonland permanents.\nIf you do, return a creature card from your graveyard to the battlefield with a finality counter on it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Screeching Sliver",
+      "before": {
+        "name": "Screeching Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"{T}: Target player mills a card.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Screeching Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Scuttling Sliver",
+      "before": {
+        "name": "Scuttling Sliver",
+        "status": "partial",
+        "ignored_text": "Sliver creatures you control have \"{2}: Untap ~.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Scuttling Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Seaside Haven",
+      "before": {
+        "name": "Seaside Haven",
+        "status": "partial",
+        "ignored_text": "{W}{U}, {T}, Sacrifice a Bird: Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Seaside Haven",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Securitron Squadron",
+      "before": {
+        "name": "Securitron Squadron",
+        "status": "partial",
+        "ignored_text": "Squad {3}\nWhenever a creature token you control enters, put a +1/+1 counter on it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Securitron Squadron",
+        "status": "partial",
+        "ignored_text": "Squad {3}",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Security Blockade",
+      "before": {
+        "name": "Security Blockade",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: Prevent the next 1 damage that would be dealt to you this turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Security Blockade",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sedge Sliver",
+      "before": {
+        "name": "Sedge Sliver",
+        "status": "partial",
+        "ignored_text": "All Sliver creatures have \"~ gets +1/+1 as long as you control a Swamp.\"\nAll Slivers have \"{B}: Regenerate ~.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sedge Sliver",
+        "status": "partial",
+        "ignored_text": "All Sliver creatures have \"~ gets +1/+1 as long as you control a Swamp.\"",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Seething Pathblazer",
+      "before": {
+        "name": "Seething Pathblazer",
+        "status": "partial",
+        "ignored_text": "Sacrifice an Elemental: ~ gets +2/+0 and gains first strike until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Seething Pathblazer",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sengir Connoisseur",
+      "before": {
+        "name": "Sengir Connoisseur",
+        "status": "partial",
+        "ignored_text": "Whenever one or more other creatures die, put a +1/+1 counter on ~. This ability triggers only once each turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sengir Connoisseur",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Serra Redeemer",
+      "before": {
+        "name": "Serra Redeemer",
+        "status": "partial",
+        "ignored_text": "Whenever another creature you control with power 2 or less enters, put two +1/+1 counters on that creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Serra Redeemer",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Shade's Form",
+      "before": {
+        "name": "Shade's Form",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{B}: ~ gets +1/+1 until end of turn.\"\nreturn that card to the battlefield under your control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Shade's Form",
+        "status": "partial",
+        "ignored_text": "return that card to the battlefield under your control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Shadewing Laureate",
+      "before": {
+        "name": "Shadewing Laureate",
+        "status": "partial",
+        "ignored_text": "Whenever another creature you control with flying dies, put a +1/+1 counter on target creature you control.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Shadewing Laureate",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Shadow-Rite Priest",
+      "before": {
+        "name": "Shadow-Rite Priest",
+        "status": "partial",
+        "ignored_text": "{3}{B}{B}, {T}, Sacrifice another Cleric: Search your library for a black creature card, put it onto the battlefield, then shuffle.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Shadow-Rite Priest",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Shay Cormac",
+      "before": {
+        "name": "Shay Cormac",
+        "status": "partial",
+        "ignored_text": "{1}: Permanents your opponents control lose hexproof, indestructible, protection, shroud, and ward until end of turn.\nWhenever a creature an opponent controls becomes the target of a spell or ability you control, put a bounty counter on that creature.\nWhenever a creature with a bounty counter on it dies, put two +1/+1 counters on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Shay Cormac",
+        "status": "partial",
+        "ignored_text": "{1}: Permanents your opponents control lose hexproof, indestructible, protection, shroud, and ward until end of turn.\nWhenever a creature an opponent controls becomes the target of a spell or ability you control, put a bounty counter on that creature.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Shefet Dunes",
+      "before": {
+        "name": "Shefet Dunes",
+        "status": "partial",
+        "ignored_text": "{2}{W}{W}, {T}, Sacrifice a Desert: Creatures you control get +1/+1 until end of turn. Activate only as a sorcery.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Shefet Dunes",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Shiv",
+      "before": {
+        "name": "Shiv",
+        "status": "partial",
+        "ignored_text": "All creatures have \"{R}: ~ gets +1/+0 until end of turn.\"\nWhenever chaos ensues, create a 5/5 red Dragon creature token with flying.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Shiv",
+        "status": "partial",
+        "ignored_text": "Whenever chaos ensues, create a 5/5 red Dragon creature token with flying.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Siege-Gang Commander",
+      "before": {
+        "name": "Siege-Gang Commander",
+        "status": "partial",
+        "ignored_text": "{1}{R}, Sacrifice a Goblin: ~ deals 2 damage to any target.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Siege-Gang Commander",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Siege-Gang Lieutenant",
+      "before": {
+        "name": "Siege-Gang Lieutenant",
+        "status": "partial",
+        "ignored_text": "Lieutenant \u2014 At the beginning of combat on your turn, if you control your commander, create two 1/1 red Goblin creature tokens. Those tokens gain haste until end of turn.\n{2}, Sacrifice a Goblin: ~ deals 1 damage to any target.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Siege-Gang Lieutenant",
+        "status": "partial",
+        "ignored_text": "Lieutenant \u2014 At the beginning of combat on your turn, if you control your commander, create two 1/1 red Goblin creature tokens. Those tokens gain haste until end of turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Silent Arbiter",
+      "before": {
+        "name": "Silent Arbiter",
+        "status": "partial",
+        "ignored_text": "No more than one creature can attack each combat.\nNo more than one creature can block each combat.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Silent Arbiter",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Silvar, Devourer of the Free",
+      "before": {
+        "name": "Silvar, Devourer of the Free",
+        "status": "partial",
+        "ignored_text": "Partner with Trynn, Champion of Freedom\nSacrifice a Human: Put a +1/+1 counter on ~. It gains indestructible until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Silvar, Devourer of the Free",
+        "status": "partial",
+        "ignored_text": "Partner with Trynn, Champion of Freedom",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Simic Guildmage",
+      "before": {
+        "name": "Simic Guildmage",
+        "status": "partial",
+        "ignored_text": "{1}{G}: Move a +1/+1 counter from target creature onto another target creature with the same controller.\n{1}{U}: Attach target Aura attached to a permanent to another permanent with the same controller.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Simic Guildmage",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Simic Slaw",
+      "before": {
+        "name": "Simic Slaw",
+        "status": "partial",
+        "ignored_text": "Whenever one or more creatures die, put a charge counter on ~.\n{2}, Sacrifice ~: Draw X cards and gain X life, where X is the number of charge counters on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Simic Slaw",
+        "status": "partial",
+        "ignored_text": "{2}, Sacrifice ~: Draw X cards and gain X life, where X is the number of charge counters on ~.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Singing Bell Strike",
+      "before": {
+        "name": "Singing Bell Strike",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{6}: Untap ~.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Singing Bell Strike",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Skeletal Vampire",
+      "before": {
+        "name": "Skeletal Vampire",
+        "status": "partial",
+        "ignored_text": "{3}{B}{B}, Sacrifice a Bat: Create two 1/1 black Bat creature tokens with flying.\nSacrifice a Bat: Regenerate ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Skeletal Vampire",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Skirk Prospector",
+      "before": {
+        "name": "Skirk Prospector",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Goblin: Add {R}.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Skirk Prospector",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Skirsdag Flayer",
+      "before": {
+        "name": "Skirsdag Flayer",
+        "status": "partial",
+        "ignored_text": "{3}{B}, {T}, Sacrifice a Human: Destroy target creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Skirsdag Flayer",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Skygames",
+      "before": {
+        "name": "Skygames",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: Target creature gains flying until end of turn. Activate only as a sorcery.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Skygames",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Skyskipper Duo",
+      "before": {
+        "name": "Skyskipper Duo",
+        "status": "partial",
+        "ignored_text": "Return it to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Skyskipper Duo",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Slagdrill Scrapper",
+      "before": {
+        "name": "Slagdrill Scrapper",
+        "status": "partial",
+        "ignored_text": "{2}, {T}, Sacrifice another artifact or land: Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Slagdrill Scrapper",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sling-Gang Lieutenant",
+      "before": {
+        "name": "Sling-Gang Lieutenant",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Goblin: Target player loses 1 life and you gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sling-Gang Lieutenant",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Snarling Gorehound",
+      "before": {
+        "name": "Snarling Gorehound",
+        "status": "partial",
+        "ignored_text": "Whenever another creature you control with power 2 or less enters, surveil 1.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Snarling Gorehound",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sophia, Dogged Detective",
+      "before": {
+        "name": "Sophia, Dogged Detective",
+        "status": "partial",
+        "ignored_text": "create Tiny, a legendary 2/2 green Dog Detective creature token with trample.\n{1}, Sacrifice an artifact token: Put a +1/+1 counter on each Dog you control.\nWhenever a Dog you control deals combat damage to a player, create a Food token, then investigate.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sophia, Dogged Detective",
+        "status": "partial",
+        "ignored_text": "create Tiny, a legendary 2/2 green Dog Detective creature token with trample.\nWhenever a Dog you control deals combat damage to a player, create a Food token, then investigate.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Soul Warden",
+      "before": {
+        "name": "Soul Warden",
+        "status": "partial",
+        "ignored_text": "Whenever another creature enters, you gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Soul Warden",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Soul's Attendant",
+      "before": {
+        "name": "Soul's Attendant",
+        "status": "partial",
+        "ignored_text": "Whenever another creature enters, you may gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Soul's Attendant",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Soulcatcher",
+      "before": {
+        "name": "Soulcatcher",
+        "status": "partial",
+        "ignored_text": "Whenever a creature with flying dies, put a +1/+1 counter on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Soulcatcher",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Spark Reaper",
+      "before": {
+        "name": "Spark Reaper",
+        "status": "partial",
+        "ignored_text": "{3}, Sacrifice a creature or planeswalker: You gain 1 life and draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Spark Reaper",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Spawn-Gang Commander",
+      "before": {
+        "name": "Spawn-Gang Commander",
+        "status": "partial",
+        "ignored_text": "create three 0/1 colorless Eldrazi Spawn creature tokens with \"Sacrifice ~: Add {C}.\"\n{1}{C}, Sacrifice an Eldrazi: ~ deals 2 damage to any target.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Spawn-Gang Commander",
+        "status": "partial",
+        "ignored_text": "create three 0/1 colorless Eldrazi Spawn creature tokens with \"Sacrifice ~: Add {C}.\"",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Spawning Grounds",
+      "before": {
+        "name": "Spawning Grounds",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: Create a 5/5 green Beast creature token with trample.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Spawning Grounds",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Spectacle of Destruction",
+      "before": {
+        "name": "Spectacle of Destruction",
+        "status": "partial",
+        "ignored_text": "Whenever one or more creatures die, put a wreck counter on ~.\nif ~ has one or more wreck counters on it, remove a wreck counter from it and seek a nonland card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Spectacle of Destruction",
+        "status": "partial",
+        "ignored_text": "if ~ has one or more wreck counters on it, remove a wreck counter from it and seek a nonland card.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Spectral Sliver",
+      "before": {
+        "name": "Spectral Sliver",
+        "status": "partial",
+        "ignored_text": "All Sliver creatures have \"{2}: ~ gets +1/+1 until end of turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Spectral Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Spirit Bonds",
+      "before": {
+        "name": "Spirit Bonds",
+        "status": "partial",
+        "ignored_text": "{1}{W}, Sacrifice a Spirit: Target non-Spirit creature gains indestructible until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Spirit Bonds",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sporoloth Ancient",
+      "before": {
+        "name": "Sporoloth Ancient",
+        "status": "partial",
+        "ignored_text": "Creatures you control have \"Remove two spore counters from ~: Create a 1/1 green Saproling creature token.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sporoloth Ancient",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Squirrel Nest",
+      "before": {
+        "name": "Squirrel Nest",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: Create a 1/1 green Squirrel creature token.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Squirrel Nest",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Stenn, Paranoid Partisan",
+      "before": {
+        "name": "Stenn, Paranoid Partisan",
+        "status": "partial",
+        "ignored_text": "As ~ enters, choose a card type other than creature or land.\nSpells you cast of the chosen type cost {1} less to cast.\n{1}{W}{U}: Exile ~. Return it to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Stenn, Paranoid Partisan",
+        "status": "partial",
+        "ignored_text": "As ~ enters, choose a card type other than creature or land.\nSpells you cast of the chosen type cost {1} less to cast.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Strands of Night",
+      "before": {
+        "name": "Strands of Night",
+        "status": "partial",
+        "ignored_text": "{B}{B}, Pay 2 life, Sacrifice a Swamp: Return target creature card from your graveyard to the battlefield.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Strands of Night",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sultai Flayer",
+      "before": {
+        "name": "Sultai Flayer",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control with toughness 4 or greater dies, you gain 4 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sultai Flayer",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sunken Field",
+      "before": {
+        "name": "Sunken Field",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: Counter target spell unless its controller pays {1}.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sunken Field",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Sunstrike Legionnaire",
+      "before": {
+        "name": "Sunstrike Legionnaire",
+        "status": "partial",
+        "ignored_text": "Whenever another creature enters, untap ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Sunstrike Legionnaire",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Talons of Falkenrath",
+      "before": {
+        "name": "Talons of Falkenrath",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{1}{R}: ~ gets +2/+0 until end of turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Talons of Falkenrath",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Tar Pitcher",
+      "before": {
+        "name": "Tar Pitcher",
+        "status": "partial",
+        "ignored_text": "{T}, Sacrifice a Goblin: ~ deals 2 damage to any target.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Tar Pitcher",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Teferi's Time Twist",
+      "before": {
+        "name": "Teferi's Time Twist",
+        "status": "partial",
+        "ignored_text": "Return that card to the battlefield under its owner's control at the beginning of the next end step.\nIf it enters as a creature, it enters with an additional +1/+1 counter on it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Teferi's Time Twist",
+        "status": "partial",
+        "ignored_text": "If it enters as a creature, it enters with an additional +1/+1 counter on it.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Tel-Jilad Lifebreather",
+      "before": {
+        "name": "Tel-Jilad Lifebreather",
+        "status": "partial",
+        "ignored_text": "{G}, {T}, Sacrifice a Forest: Regenerate target creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Tel-Jilad Lifebreather",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Telekinetic Sliver",
+      "before": {
+        "name": "Telekinetic Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"{T}: Tap target permanent.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Telekinetic Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Temur Ascendancy",
+      "before": {
+        "name": "Temur Ascendancy",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control with power 4 or greater enters, you may draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Temur Ascendancy",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Territorial Boar",
+      "before": {
+        "name": "Territorial Boar",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control with power 4 or greater enters, ~ gets +1/+1 and gains vigilance until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Territorial Boar",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Teysa, Orzhov Scion Avatar",
+      "before": {
+        "name": "Teysa, Orzhov Scion Avatar",
+        "status": "partial",
+        "ignored_text": "Hand +0, life -2\nWhenever a nontoken creature dies, create a 1/1 white Spirit creature token with flying.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Teysa, Orzhov Scion Avatar",
+        "status": "partial",
+        "ignored_text": "Hand +0, life -2",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thalia's Geistcaller",
+      "before": {
+        "name": "Thalia's Geistcaller",
+        "status": "partial",
+        "ignored_text": "Whenever you cast a spell from your graveyard, create a 1/1 white Spirit creature token with flying.\nSacrifice a Spirit: ~ gains indestructible until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thalia's Geistcaller",
+        "status": "partial",
+        "ignored_text": "Whenever you cast a spell from your graveyard, create a 1/1 white Spirit creature token with flying.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thallid Devourer",
+      "before": {
+        "name": "Thallid Devourer",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Saproling: ~ gets +1/+2 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thallid Devourer",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thallid Germinator",
+      "before": {
+        "name": "Thallid Germinator",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Saproling: Target creature gets +1/+1 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thallid Germinator",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "The Odd Acorn Gang",
+      "before": {
+        "name": "The Odd Acorn Gang",
+        "status": "partial",
+        "ignored_text": "Squirrels you control have \"{T}: Target Squirrel gets +2/+2 and gains trample until end of turn. Activate only as a sorcery.\"\nWhenever one or more Squirrels you control deal combat damage to a player, draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "The Odd Acorn Gang",
+        "status": "partial",
+        "ignored_text": "Whenever one or more Squirrels you control deal combat damage to a player, draw a card.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "The Scorpion God",
+      "before": {
+        "name": "The Scorpion God",
+        "status": "partial",
+        "ignored_text": "Whenever a creature with a -1/-1 counter on it dies, draw a card.\nreturn it to its owner's hand at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "The Scorpion God",
+        "status": "partial",
+        "ignored_text": "return it to its owner's hand at the beginning of the next end step.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thopter Foundry",
+      "before": {
+        "name": "Thopter Foundry",
+        "status": "partial",
+        "ignored_text": "{1}, Sacrifice a nontoken artifact: Create a 1/1 blue Thopter artifact creature token with flying. You gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thopter Foundry",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thopter Shop",
+      "before": {
+        "name": "Thopter Shop",
+        "status": "partial",
+        "ignored_text": "Whenever one or more artifact creatures you control die, draw a card. This ability triggers only once each turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thopter Shop",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thopter Squadron",
+      "before": {
+        "name": "Thopter Squadron",
+        "status": "partial",
+        "ignored_text": "{1}, Sacrifice another Thopter: Put a +1/+1 counter on ~. Activate only as a sorcery.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thopter Squadron",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thornbite Staff",
+      "before": {
+        "name": "Thornbite Staff",
+        "status": "partial",
+        "ignored_text": "Equipped creature has \"{2}, {T}: ~ deals 1 damage to any target\" and \"Whenever a creature dies, untap ~.\"\nWhenever a Shaman creature enters, you may attach ~ to it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thornbite Staff",
+        "status": "partial",
+        "ignored_text": "Equipped creature has \"{2}, {T}: ~ deals 1 damage to any target\" and \"Whenever a creature dies, untap ~.\"",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Thranduil the Strategist",
+      "before": {
+        "name": "Thranduil the Strategist",
+        "status": "partial",
+        "ignored_text": "Other Elves you control have \"{T}: Add {G} or {U}.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Thranduil the Strategist",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Timid Drake",
+      "before": {
+        "name": "Timid Drake",
+        "status": "partial",
+        "ignored_text": "When another creature enters, return ~ to its owner's hand.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Timid Drake",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Tin Street Market",
+      "before": {
+        "name": "Tin Street Market",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}, Discard a card: Draw a card.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Tin Street Market",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Titania, Nature's Force",
+      "before": {
+        "name": "Titania, Nature's Force",
+        "status": "partial",
+        "ignored_text": "You may play Forests from your graveyard.\nWhenever an Elemental you control dies, you may mill three cards.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Titania, Nature's Force",
+        "status": "partial",
+        "ignored_text": "You may play Forests from your graveyard.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Tocasia's Welcome",
+      "before": {
+        "name": "Tocasia's Welcome",
+        "status": "partial",
+        "ignored_text": "Whenever one or more creatures you control with mana value 3 or less enter, draw a card. This ability triggers only once each turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Tocasia's Welcome",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Totem Speaker",
+      "before": {
+        "name": "Totem Speaker",
+        "status": "partial",
+        "ignored_text": "Whenever a Beast enters, you may gain 3 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Totem Speaker",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Touch the Spirit Realm",
+      "before": {
+        "name": "Touch the Spirit Realm",
+        "status": "partial",
+        "ignored_text": "Channel \u2014 {1}{W}, Discard ~: Exile target artifact or creature. Return it to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Touch the Spirit Realm",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Tourach's Gate",
+      "before": {
+        "name": "Tourach's Gate",
+        "status": "partial",
+        "ignored_text": "Enchant land you control\nSacrifice a Thrull: Put three time counters on ~.\nIf there are no time counters on ~, sacrifice it.\nTap enchanted land: Attacking creatures you control get +2/-1 until end of turn. Activate only if enchanted land is untapped.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Tourach's Gate",
+        "status": "partial",
+        "ignored_text": "Enchant land you control\nIf there are no time counters on ~, sacrifice it.\nTap enchanted land: Attacking creatures you control get +2/-1 until end of turn. Activate only if enchanted land is untapped.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Towering Titan",
+      "before": {
+        "name": "Towering Titan",
+        "status": "partial",
+        "ignored_text": "~ enters with X +1/+1 counters on it, where X is the total toughness of other creatures you control.\nSacrifice a creature with defender: All creatures gain trample until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Towering Titan",
+        "status": "partial",
+        "ignored_text": "~ enters with X +1/+1 counters on it, where X is the total toughness of other creatures you control.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Toxrill, the Corrosive",
+      "before": {
+        "name": "Toxrill, the Corrosive",
+        "status": "partial",
+        "ignored_text": "Creatures you don't control get -1/-1 for each slime counter on them.\nWhenever a creature you don't control with a slime counter on it dies, create a 1/1 black Slug creature token.\n{U}{B}, Sacrifice a Slug: Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Toxrill, the Corrosive",
+        "status": "partial",
+        "ignored_text": "Creatures you don't control get -1/-1 for each slime counter on them.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Truga Jungle",
+      "before": {
+        "name": "Truga Jungle",
+        "status": "partial",
+        "ignored_text": "All lands have \"{T}: Add one mana of any color.\"\nWhenever chaos ensues, reveal the top three cards of your library. Put all land cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Truga Jungle",
+        "status": "partial",
+        "ignored_text": "Whenever chaos ensues, reveal the top three cards of your library. Put all land cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Turn to Mist",
+      "before": {
+        "name": "Turn to Mist",
+        "status": "partial",
+        "ignored_text": "Return that card to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Turn to Mist",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Twining Twins // Swift Spiral",
+      "before": {
+        "name": "Twining Twins // Swift Spiral",
+        "status": "partial",
+        "ignored_text": "Swift Spiral: Return it to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Twining Twins // Swift Spiral",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Tyvar Kell",
+      "before": {
+        "name": "Tyvar Kell",
+        "status": "partial",
+        "ignored_text": "Elves you control have \"{T}: Add {B}.\"\n[\u22126]: You get an emblem with \"Whenever you cast an Elf spell, it gains haste until end of turn and you draw two cards.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Tyvar Kell",
+        "status": "partial",
+        "ignored_text": "[\u22126]: You get an emblem with \"Whenever you cast an Elf spell, it gains haste until end of turn and you draw two cards.\"",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Uktabi Wildcats",
+      "before": {
+        "name": "Uktabi Wildcats",
+        "status": "partial",
+        "ignored_text": "{G}, Sacrifice a Forest: Regenerate ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Uktabi Wildcats",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Ulvenwald Observer",
+      "before": {
+        "name": "Ulvenwald Observer",
+        "status": "partial",
+        "ignored_text": "Whenever a creature you control with toughness 4 or greater dies, draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Ulvenwald Observer",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Unbridled Growth",
+      "before": {
+        "name": "Unbridled Growth",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: Add one mana of any color.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Unbridled Growth",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Underworld Connections",
+      "before": {
+        "name": "Underworld Connections",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}, Pay 1 life: Draw a card.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Underworld Connections",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Unshakable Tail",
+      "before": {
+        "name": "Unshakable Tail",
+        "status": "partial",
+        "ignored_text": "Whenever one or more creature cards are put into your graveyard from your library, investigate.\n{2}, Sacrifice a Clue: Return ~ from your graveyard to your hand.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Unshakable Tail",
+        "status": "partial",
+        "ignored_text": "Whenever one or more creature cards are put into your graveyard from your library, investigate.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Urban Utopia",
+      "before": {
+        "name": "Urban Utopia",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: Add one mana of any color.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Urban Utopia",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Utopia Mycon",
+      "before": {
+        "name": "Utopia Mycon",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Saproling: Add one mana of any color.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Utopia Mycon",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Utopia Vow",
+      "before": {
+        "name": "Utopia Vow",
+        "status": "partial",
+        "ignored_text": "Enchanted creature has \"{T}: Add one mana of any color.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Utopia Vow",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Valleymaker",
+      "before": {
+        "name": "Valleymaker",
+        "status": "partial",
+        "ignored_text": "{T}, Sacrifice a Mountain: ~ deals 3 damage to target creature.\n{T}, Sacrifice a Forest: Choose a player. That player adds {G}{G}{G}.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Valleymaker",
+        "status": "partial",
+        "ignored_text": "{T}, Sacrifice a Forest: Choose a player. That player adds {G}{G}{G}.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Vengeful Townsfolk",
+      "before": {
+        "name": "Vengeful Townsfolk",
+        "status": "partial",
+        "ignored_text": "Whenever one or more other creatures you control die, put a +1/+1 counter on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Vengeful Townsfolk",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Verdant Field",
+      "before": {
+        "name": "Verdant Field",
+        "status": "partial",
+        "ignored_text": "Enchanted land has \"{T}: Target creature gets +1/+1 until end of turn.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Verdant Field",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Vermiculos",
+      "before": {
+        "name": "Vermiculos",
+        "status": "partial",
+        "ignored_text": "Whenever an artifact enters, ~ gets +4/+4 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Vermiculos",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Veteran's Armaments",
+      "before": {
+        "name": "Veteran's Armaments",
+        "status": "partial",
+        "ignored_text": "Equipped creature has \"Whenever ~ attacks or blocks, it gets +1/+1 until end of turn for each attacking creature.\"\nWhenever a Soldier creature enters, you may attach ~ to it.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Veteran's Armaments",
+        "status": "partial",
+        "ignored_text": "Equipped creature has \"Whenever ~ attacks or blocks, it gets +1/+1 until end of turn for each attacking creature.\"",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Vicious Clown",
+      "before": {
+        "name": "Vicious Clown",
+        "status": "partial",
+        "ignored_text": "Whenever another creature you control with power 2 or less enters, ~ gets +2/+0 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Vicious Clown",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Victual Sliver",
+      "before": {
+        "name": "Victual Sliver",
+        "status": "partial",
+        "ignored_text": "All Slivers have \"{2}, Sacrifice ~: You gain 4 life.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Victual Sliver",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Village Cannibals",
+      "before": {
+        "name": "Village Cannibals",
+        "status": "partial",
+        "ignored_text": "Whenever another Human creature dies, put a +1/+1 counter on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Village Cannibals",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Village Elder",
+      "before": {
+        "name": "Village Elder",
+        "status": "partial",
+        "ignored_text": "{G}, {T}, Sacrifice a Forest: Regenerate target creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Village Elder",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Vitaspore Thallid",
+      "before": {
+        "name": "Vitaspore Thallid",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Saproling: Target creature gains haste until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Vitaspore Thallid",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Vizier of Deferment",
+      "before": {
+        "name": "Vizier of Deferment",
+        "status": "partial",
+        "ignored_text": "you may exile target creature if it attacked or blocked this turn.\nReturn that card to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Vizier of Deferment",
+        "status": "partial",
+        "ignored_text": "you may DELAYEDBLINK target creature if it attacked or blocked this turn.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Vodalian Hexcatcher",
+      "before": {
+        "name": "Vodalian Hexcatcher",
+        "status": "partial",
+        "ignored_text": "Sacrifice a Merfolk: Counter target noncreature spell unless its controller pays {1}.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Vodalian Hexcatcher",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Voidmage Prodigy",
+      "before": {
+        "name": "Voidmage Prodigy",
+        "status": "partial",
+        "ignored_text": "{U}{U}, Sacrifice a Wizard: Counter target spell.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Voidmage Prodigy",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Voidwalk",
+      "before": {
+        "name": "Voidwalk",
+        "status": "partial",
+        "ignored_text": "Return it to the battlefield under its owner's control at the beginning of the next end step.\nCipher",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Voidwalk",
+        "status": "partial",
+        "ignored_text": "Cipher",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Vraan, Executioner Thane",
+      "before": {
+        "name": "Vraan, Executioner Thane",
+        "status": "partial",
+        "ignored_text": "Whenever one or more other creatures you control die, each opponent loses 2 life and you gain 2 life. This ability triggers only once each turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Vraan, Executioner Thane",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Wall of Mulch",
+      "before": {
+        "name": "Wall of Mulch",
+        "status": "partial",
+        "ignored_text": "{G}, Sacrifice a Wall: Draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Wall of Mulch",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Wand of the Elements",
+      "before": {
+        "name": "Wand of the Elements",
+        "status": "partial",
+        "ignored_text": "{T}, Sacrifice an Island: Create a 2/2 blue Elemental creature token with flying.\n{T}, Sacrifice a Mountain: Create a 3/3 red Elemental creature token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Wand of the Elements",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Watcher of the Spheres",
+      "before": {
+        "name": "Watcher of the Spheres",
+        "status": "partial",
+        "ignored_text": "Creature spells with flying you cast cost {1} less to cast.\nWhenever another creature with flying you control enters, ~ gets +1/+1 until end of turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Watcher of the Spheres",
+        "status": "partial",
+        "ignored_text": "Creature spells with flying you cast cost {1} less to cast.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Weirding Shaman",
+      "before": {
+        "name": "Weirding Shaman",
+        "status": "partial",
+        "ignored_text": "{3}{B}, Sacrifice a Goblin: Create two 1/1 black Goblin Rogue creature tokens.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Weirding Shaman",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Welcoming Vampire",
+      "before": {
+        "name": "Welcoming Vampire",
+        "status": "partial",
+        "ignored_text": "Whenever one or more other creatures you control with power 2 or less enter, draw a card. This ability triggers only once each turn.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Welcoming Vampire",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Wiccan, Rising Magician",
+      "before": {
+        "name": "Wiccan, Rising Magician",
+        "status": "partial",
+        "ignored_text": "exile another target nonland, nontoken permanent.\nReturn that card to the battlefield under its owner's control at the beginning of the next end step.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Wiccan, Rising Magician",
+        "status": "partial",
+        "ignored_text": "DELAYEDBLINK another target nonland, nontoken permanent.",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Wingmantle Chaplain",
+      "before": {
+        "name": "Wingmantle Chaplain",
+        "status": "partial",
+        "ignored_text": "Unsupported token keywords: flying for each creature with defender you control\nWhenever another creature you control with defender enters, create a 1/1 white Bird creature token with flying.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Wingmantle Chaplain",
+        "status": "partial",
+        "ignored_text": "Unsupported token keywords: flying for each creature with defender you control",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Wirewood Hivemaster",
+      "before": {
+        "name": "Wirewood Hivemaster",
+        "status": "partial",
+        "ignored_text": "Whenever another nontoken Elf enters, you may create a 1/1 green Insect creature token.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Wirewood Hivemaster",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Wirewood Savage",
+      "before": {
+        "name": "Wirewood Savage",
+        "status": "partial",
+        "ignored_text": "Whenever a Beast enters, you may draw a card.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Wirewood Savage",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Wispdrinker Vampire",
+      "before": {
+        "name": "Wispdrinker Vampire",
+        "status": "partial",
+        "ignored_text": "Whenever another creature you control with power 2 or less enters, each opponent loses 1 life and you gain 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Wispdrinker Vampire",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Wretched Anurid",
+      "before": {
+        "name": "Wretched Anurid",
+        "status": "partial",
+        "ignored_text": "Whenever another creature enters, you lose 1 life.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Wretched Anurid",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Xantcha",
+      "before": {
+        "name": "Xantcha",
+        "status": "partial",
+        "ignored_text": "Hand +1, life +3\nSacrifice a permanent: Regenerate target creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Xantcha",
+        "status": "partial",
+        "ignored_text": "Hand +1, life +3",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Yoke of the Damned",
+      "before": {
+        "name": "Yoke of the Damned",
+        "status": "partial",
+        "ignored_text": "When a creature dies, destroy enchanted creature.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Yoke of the Damned",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Yoshimaru, Ever Faithful",
+      "before": {
+        "name": "Yoshimaru, Ever Faithful",
+        "status": "partial",
+        "ignored_text": "Whenever another legendary permanent you control enters, put a +1/+1 counter on ~.",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Yoshimaru, Ever Faithful",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    },
+    {
+      "name": "Zombie Master",
+      "before": {
+        "name": "Zombie Master",
+        "status": "partial",
+        "ignored_text": "Other Zombies have \"{B}: Regenerate ~.\"",
+        "simplifications": ""
+      },
+      "after": {
+        "name": "Zombie Master",
+        "status": "full",
+        "ignored_text": "",
+        "simplifications": ""
+      }
+    }
+  ],
+  "meaning": "Parser coverage, not verification of complete Magic rules correctness."
+}

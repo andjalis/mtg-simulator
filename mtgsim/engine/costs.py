@@ -18,12 +18,15 @@ FACE_DOWN = ("disguise", "morph", "megamorph")   # cast face down for {3} as a 2
 
 
 class CostsMixin:
-    def mana_sources(self, p: Player, exclude=None, spell=None):
+    def mana_sources(self, p: Player, exclude=None, spell=None, *, reserved_counters=()):
         """p's untapped mana sources. ``spell`` decides what restricted mana (Cavern of Souls) can
         pay for: a CardDef, "ability" for activated abilities, or None to count it (AI estimates)."""
         out = []
         stopped = self.activations_stopped()
+        from ..residual_templates import activation_blocked
         for perm in p.battlefield:
+            if activation_blocked(self, perm, mana=True):
+                continue
             if not perm.can_tap_for_mana() or perm is exclude:
                 continue
             if stopped and (perm.card.is_artifact or perm.is_creature):
@@ -53,7 +56,8 @@ class CostsMixin:
             if not mana.tapped and mana is not exclude:
                 mana.produces_now = mana.card.produces
                 out.append(mana)
-        stored = storage.stored_sources(p, exclude, lambda r: self.mana_allowed(None, spell, r))
+        stored = storage.stored_sources(p, exclude, lambda r: self.mana_allowed(None, spell, r),
+                                        reserved_counters=reserved_counters)
         if stored:                                  # a storage land spends its counters instead of its own mana
             lands = {id(m.stored_in) for m in stored}
             out = [s for s in out if id(s) not in lands] + stored
@@ -77,6 +81,9 @@ class CostsMixin:
         if r.startswith("subtype:"):
             return bool(set(r[8:].split("|")) & spell.subtypes)
         return False
+
+    def nonmana_locked(self, player):
+        return player.action_lock_turn == self.turn
 
     def activations_stopped(self) -> bool:
         """Clarion Conqueror: activated abilities of artifacts, creatures and planeswalkers can't be activated."""
@@ -102,9 +109,10 @@ class CostsMixin:
         finally:
             source.produces_now = saved
 
-    def pay(self, p: Player, cost: dict, exclude=None, spell="ability", *, exclude_many=()) -> list | None:
+    def pay(self, p: Player, cost: dict, exclude=None, spell="ability", *, exclude_many=(), reserved_counters=()) -> list | None:
         """Tap sources for cost (sacrificing Treasure). Returns the sources, or None if unpayable."""
-        payment = find_payment([s for s in self.mana_sources(p, exclude, spell) if s not in exclude_many], cost)
+        payment = find_payment([s for s in self.mana_sources(p, exclude, spell, reserved_counters=reserved_counters)
+                                if s not in exclude_many and getattr(s, 'stored_in', None) not in exclude_many], cost)
         if payment is None:
             return None
         for s in payment:
@@ -215,7 +223,11 @@ class CostsMixin:
         kind, what = gate
         if kind == "may":
             return True
-        if kind == "life":                         # "you may pay N life": while it stays comfortable
+        if kind == "life":
+            from ..residual_templates import life_locked
+            if life_locked(p):
+                return False
+            # "you may pay N life": while it stays comfortable
             if p.life - int(what) < 8:
                 return False
             self.change_life(p, -int(what), "paid life")
@@ -374,6 +386,10 @@ class CostsMixin:
             cost["generic"] += card.extra_sac_or_pay
         if assist and (card.improvise or card.delve):
             cost = self.assist_payment(p, card, cost)[0]
+        if getattr(card, "spell_copy", False):
+            return {"generic": 0}
+        if self._origin(card)[1].startswith("foreign_"):
+            return {"generic": sum(v for k, v in cost.items() if k != "X")}
         return cost
 
     def assist_payment(self, p: Player, card: CardDef, cost: dict):
@@ -412,7 +428,7 @@ class CostsMixin:
                 v = dataclasses.replace(card.adventure)
             elif kind == "prepared":
                 v = dataclasses.replace(card.back, name=f"{card.name} (prepared)")
-            elif kind == "split":
+            elif kind in ("split", "aftermath"):
                 v = dataclasses.replace(card.split_right, name=f"{card.name} ({card.split_right.name})")
             elif kind == "disturb":
                 v = dataclasses.replace(card.back, name=f"{card.back.name} (disturb)", mana_cost=alt.cost)
@@ -521,7 +537,8 @@ class CostsMixin:
                         (a.kind == "blitz" and "graveyard" in a.zone) or \
                         (a.kind == "mayhem" and c in p.discarded_cards):
                     out.append(self._variant(c, "blitz_gy" if a.kind == "blitz" else a.kind, a))
-        return out
+        from ..advanced_templates import permission_options
+        return out + permission_options(self, p)
 
     def impulse_cards(self, p: Player) -> list:
         """Exiled cards p may still play (drops the expired ones)."""
@@ -533,7 +550,9 @@ class CostsMixin:
 
     def _zone(self, p: Player, kind: str) -> list:
         """The zone a spell_options() variant of this kind is cast from."""
-        return {"from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
+        if kind.startswith("foreign_"):
+            return getattr(self, "foreign_zones", {}).get((id(p), kind), p.exile)
+        return {"grave_permission": p.graveyard, "aftermath": p.graveyard, "from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile, "airbent": p.airbent,
                 "mayhem": p.graveyard, "unearth": p.graveyard, "disturb": p.graveyard, "jump_start": p.graveyard,
                 "retrace": p.graveyard,
@@ -543,6 +562,9 @@ class CostsMixin:
 
     def _available(self, p: Player, card: CardDef) -> bool:
         base, kind, _ = self._origin(card)
+        from ..advanced_templates import permission_available
+        if not permission_available(self, p, card, kind):
+            return False
         generation = getattr(card, "origin_generation", None)
         if generation is not None and generation != getattr(base, "generation", None):
             return False
@@ -552,10 +574,20 @@ class CostsMixin:
 
     def can_cast_now(self, p: Player, card: CardDef, *, during_resolution=False) -> bool:
         """Timing, mana, zone and (for counterspells) a spell to target."""
+        if self.nonmana_locked(p) and (card.is_instant or card.is_sorcery):
+            return False
+        from ..advanced_templates import cast_allowed
+        if not cast_allowed(self, p, card):
+            return False
         if card.is_land or not self._available(p, card):
             return False
         base, kind, alt = self._origin(card)
+        if self.nonmana_locked(p) and kind in ('channel', 'gy_ability', 'unearth'):
+            return False
         if kind == "spectacle" and not self.opponent(p).lost_life_turn:
+            return False
+        from ..residual_templates import life_locked
+        if life_locked(p) and (card.extra_life_cost or alt is not None and alt.life):
             return False
         if alt is not None and alt.life and p.life <= alt.life:
             return False

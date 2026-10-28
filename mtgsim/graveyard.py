@@ -38,7 +38,7 @@ def parse_ability(line, approximations):
 def can_activate(game, p, card, idx):
     from . import modal
     from .engine import payable
-    if card not in p.graveyard or not 0 <= idx < len(card.gy_activated):
+    if game.nonmana_locked(p) or card not in p.graveyard or not 0 <= idx < len(card.gy_activated):
         return False
     act = card.gy_activated[idx]
     if act.sorcery and not (p is game.active and game.step in ("main1", "main2") and not game.stack):

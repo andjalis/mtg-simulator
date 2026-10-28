@@ -83,18 +83,22 @@ def _stored_mana(colors: frozenset):
     return _STORED[colors]
 
 
-def stored_sources(p, exclude=None, allowed=lambda restriction: True) -> list:
+def stored_sources(p, exclude=None, allowed=lambda restriction: True, *, reserved_counters=()) -> list:
     """One mana per storage counter on p's untapped storage lands (each carries ``stored_in``). ``allowed`` says
     whether mana with a spending restriction ("subtype:Dragon") may pay for what is being paid for."""
     from .engine.state import Permanent
     out = []
     for perm in p.battlefield:
         colors = perm.card.storage.get("colors") if perm.card.storage else None
+        if not colors:
+            continue
         restriction = perm.card.storage.get("restriction") if colors else None
         if restriction and not allowed(restriction):
             continue
-        if colors and not perm.tapped and perm is not exclude and perm.counters.get(_COUNTER, 0) > 0:
-            for _ in range(perm.counters[_COUNTER]):
+        available = perm.counters.get(_COUNTER, 0) - sum(n for donor, kind, n in reserved_counters
+                                                         if donor is perm and kind == _COUNTER)
+        if colors and not perm.tapped and perm is not exclude and available > 0:
+            for _ in range(available):
                 mana = Permanent(_stored_mana(colors), p)
                 mana.stored_in, mana.produces_now = perm, colors
                 out.append(mana)
@@ -110,6 +114,8 @@ def spend(source) -> None:
 
 def before_untap(game, p) -> None:
     """Bank a counter on each storage land that stayed untapped through the opponent's turn."""
+    if game.nonmana_locked(p):
+        return
     for perm in list(p.battlefield):
         bank = perm.card.storage.get("bank") if perm.card.storage else None
         if bank is None or perm.tapped:

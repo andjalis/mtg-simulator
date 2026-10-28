@@ -91,6 +91,28 @@ def _effect(kind, target, data=None):
 
 # ------------------------------------------------------------------ the engine side
 
+def can_attach(game, p, card, host, *, source=None, targeting=True):
+    """Attachment legality is independent of the AI's friendly/hostile host preference."""
+    from .engine.state import protected_from
+    if host not in host.controller.battlefield:
+        return False
+    kinds = card.aura
+    if card.advanced_rules.get("aura_selector"):
+        from .permanent_templates import matches
+        return matches(game, host, card.advanced_rules["aura_selector"], p, source) and not protected_from(host, source or card) and (not targeting or game.targetable(host, p, source or card))
+    ok = (host.is_creature if "creature" in kinds and "artifact" not in kinds and "Vehicle" not in kinds
+          else host.is_creature or host.card.is_artifact if kinds == 'artifact or creature'
+          else host.is_creature or 'Vehicle' in host.card.subtypes if kinds == 'creature or Vehicle'
+          else host.card.is_land if kinds == 'land'
+          else host.card.is_artifact if kinds == 'artifact'
+          else not host.card.is_land if kinds == 'nonland permanent' else bool(kinds))
+    if kinds == 'creature you control' and host.controller is not p:
+        ok = False
+    if kinds == 'creature an opponent controls' and host.controller is p:
+        ok = False
+    return ok and not protected_from(host, source or card) and (not targeting or game.targetable(host, p, source or card))
+
+
 def hosts(game, p, card) -> list:
     """The permanents the Aura card could enchant when p casts it."""
     kinds = card.aura
@@ -99,6 +121,8 @@ def hosts(game, p, card) -> list:
     out = []
     for x in pool:
         c = x.card
+        if card.advanced_rules.get("aura_selector") and not can_attach(game, p, card, x):
+            continue
         ok = (x.is_creature if "creature" in kinds and "artifact" not in kinds and "Vehicle" not in kinds
               else x.is_creature or c.is_artifact if kinds == "artifact or creature"
               else x.is_creature or "Vehicle" in c.subtypes if kinds == "creature or Vehicle"
@@ -127,6 +151,10 @@ def attach(game, aura, host):
     aura.attachment_timestamp = game.next_effect_timestamp()
     aura.aura_host = host
     host.auras.append(aura)
+    if aura.card.advanced_rules.get("aura_control"):
+        from .counter_mechanics import add_control
+        add_control(game, host, aura.controller, source=aura)
+        aura.controlled_host = host
     game.log(f"{aura.card.name} enchants {host.card.name}", aura.controller)
 
 
@@ -135,6 +163,11 @@ def detach(aura):
     if host is not None and aura in host.auras:
         host.auras.remove(aura)
     aura.aura_host = None
+    if getattr(aura, "controlled_host", None) is not None:
+        from .counter_mechanics import expire_source_control
+        game = aura.controller._game
+        expire_source_control(game)
+        aura.controlled_host = None
 
 
 def blocks_untap(perm) -> bool:

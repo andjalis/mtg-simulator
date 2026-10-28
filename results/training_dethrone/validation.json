@@ -1,0 +1,39 @@
+{
+  "base_commit": "9d6eb8ca9187ff1f5c672044c4df49698c7cb3e4",
+  "full_suite": {
+    "command": ".venv/bin/python -m unittest discover -s tests -t . -v",
+    "exit_code": 0,
+    "ran": 1180,
+    "passed": 1179,
+    "skipped": 1,
+    "failures": 0,
+    "errors": 0,
+    "seconds": 507.862,
+    "skip_reason": "local Forge review log not present"
+  },
+  "focused_suite": {
+    "command": ".venv/bin/python -m unittest tests.test_training_dethrone tests.test_infect_devoid_exalted -q",
+    "exit_code": 0,
+    "ran": 42,
+    "passed": 42
+  },
+  "lint": {
+    "command": ".venv/bin/python scripts/lint.py",
+    "exit_code": 0,
+    "findings": 0
+  },
+  "coverage_comparison": {
+    "examined": 35,
+    "improved": 20,
+    "new_full_template_matches": 9,
+    "parse_errors": 0
+  },
+  "file_sha256": {
+    "mtgsim/cards/model.py": "0dd17b96c63fd5432ad5173f91dc4d4f5010e02c99e4b2f35eefe33298d619a6",
+    "mtgsim/cards/face_lines.py": "62e6fb102b402ce3b49c37178c9578cab11af9e5f0c79c5b2a3d291047db8c84",
+    "mtgsim/engine/state.py": "f88e567042818b3e2fe6270ef7716f3ee316ee2e3790d0fe18170bc664d4e7d4",
+    "mtgsim/engine/stack.py": "8bcdceb1ed969f23efc3810f271f11fd102523b1f398e67e602c58e05dee139c",
+    "mtgsim/creature_keywords.py": "bc6ef31189d4eb29371882fe047385167524c74b2feeee7c71c55bc509c6de50",
+    "tests/test_training_dethrone.py": "ce09d2d73818d910626f893c927f5d4c6656cfb140899a73c0ceafdba37b3c36"
+  }
+}

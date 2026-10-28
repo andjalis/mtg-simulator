@@ -12,7 +12,7 @@ KEYWORDS = {
     "deathtouch", "lifelink", "vigilance", "defender", "menace",
     "flash", "hexproof", "shroud", "indestructible", "prowess", "swampwalk", "forestwalk", "mountainwalk",
     "infect", "devoid", "exalted", "fear", "horsemanship", "undying", "persist", "wither", "rebound",
-    "storm", "cascade", "islandwalk", "plainswalk", "shadow", "intimidate",
+    "storm", "cascade", "islandwalk", "plainswalk", "shadow", "intimidate", "training", "dethrone",
     "nonbasic landwalk", "legendary landwalk", "decayed", "flanking", "split second", "skulk",
     "protection from white", "protection from blue", "protection from black", "protection from red",
     "protection from green", "protection from multicolored", "protection from artifacts",
@@ -71,6 +71,7 @@ class Trigger:
     once_game: bool = False          # "This ability triggers only once."
     intervening_if: str = ""         # checked at triggering and resolution
     min_level: int = 0               # Class: the trigger works once the Class is at least this level
+    data: dict = field(default_factory=dict)
 
 
 @dataclass
@@ -177,6 +178,14 @@ class CardDef:
     mana_restriction: str = ""
     restricted_produces: frozenset = frozenset()
     choose_type: str = ""                               # "creature" (Cavern of Souls), "basic_land"
+    filtered_entry_watch: bool = False
+    filtered_death_watch: bool = False
+    ability_grants: tuple = ()
+    entry_counter_quantity: tuple = ()
+    attack_limit: int = -1
+    block_limit: int = -1
+    static_keyword_grants: tuple = ()  # (selector, keyword tuple), all battlefield sources
+    cant_attack: bool = False
     cant_block: bool = False
     stops_activations: bool = False                     # Clarion Conqueror
     # Equipment: equip cost, and what the equipped creature gets.
@@ -277,6 +286,12 @@ class CardDef:
     cast_copy: dict | None = None                       # "When you cast ~, copy it." (mtgsim.copies)
     color_override: frozenset | None = None             # explicit face colours / colour indicator
     exalted: int = 0                                    # native instances (they stack)
+    training: int = 0
+    dethrone: int = 0
+    graft: int = 0
+    granted_attack_keywords: tuple = ()                 # (keyword, other creatures only)
+    entry_counter_grant: tuple = ()                     # counter type, amount, other creatures only
+    death_counter_return: bool = False
     block_only_flying: bool = False
     improvise: bool = False
     delve: bool = False
@@ -284,6 +299,7 @@ class CardDef:
     storm: int = 0
     basic: bool = False
     legendary: bool = False
+    advanced_rules: dict = field(default_factory=dict)
 
     @property
     def colors(self) -> frozenset:

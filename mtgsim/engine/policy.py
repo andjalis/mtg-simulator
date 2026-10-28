@@ -5,7 +5,7 @@ override each one by defining the hook of the same name (see README and DEFAULTS
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from .. import alt_casts, copies, learning, proliferate, regeneration, removal
+from .. import alt_casts, copies, learning, proliferate, regeneration, removal, costs
 from ..cards import COLORS, CardDef, Effect
 from .. import modal
 from .mana import add_costs, payable
@@ -48,6 +48,12 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     k = eff.kind
+    if k == 'linked_exile':
+        enemies = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
+        if enemies:
+            return max(enemies, key=perm_value)
+        cards = [x for x in legal if isinstance(x, CardDef)]
+        return max(cards, key=lambda c: c.cmc, default=None)
     if k == "damage":
         if eff.target == "player":
             return opp
@@ -61,6 +67,56 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return opp if eff.target == "any" else None
     if k in removal.KINDS:
         return removal.choose(game, me, eff)
+    if k in ('graveyard_exile_all', 'graveyard_exile_choice'):
+        return opp
+    if k == 'adapt_exception':
+        return max(mine, key=perm_value, default=None)
+    if k in ('control_permanent', 'opponent_exile'):
+        return max(theirs, key=perm_value, default=None) if k == 'control_permanent' else opp
+    if k in ('grave_library_top', 'return_tribal_grave'):
+        return max(legal, key=lambda c: c.cmc, default=None)
+    if k == 'allocated_counter':
+        return max(mine, key=perm_value, default=None)
+    if k == 'advanced_quantity_stats':
+        return max(theirs if eff.data['power'].startswith('-') else mine, key=perm_value, default=None)
+    if k == 'source_control':
+        return max(theirs, key=perm_value, default=None)
+    if k == 'untap_prev':
+        return max((x for x in mine if x.tapped), key=perm_value, default=None)
+    if k == 'move_counter_self':
+        source = getattr(game.target_source, 'source', game.target_source)
+        return max((x for x in mine if x is not source and x.p1), key=lambda x: (x.p1, perm_value(x)), default=None)
+    if k == 'grant_combat_destroy':
+        return max(mine, key=perm_value, default=None)
+    if k == 'exile_permanent':
+        return max(theirs, key=perm_value, default=None)
+    if k == 'grant_triggers':
+        return max(mine, key=perm_value, default=None)
+    if k == 'modify_counters':
+        pool = theirs if eff.data['operation'] == 'remove' else mine
+        if eff.data.get('counter') == '-1/-1':
+            pool = mine if eff.data['operation'] == 'remove' else theirs
+        return max(pool, key=perm_value, default=None)
+    if k == 'add_counter':
+        pool = theirs if eff.data.get('counter') == '-1/-1' else mine
+        return max(pool, key=perm_value, default=None)
+    if k == 'return_grave_target':
+        return max(legal, key=lambda c: c.cmc, default=None)
+    if k == 'quantity_stats':
+        return max(theirs if eff.data['power'].startswith('-') else mine, key=perm_value, default=None)
+    if k == 'grant_activated':
+        return max(mine, key=perm_value, default=None)
+    if k == 'blink_next_end':
+        return max(mine, key=perm_value, default=None)
+    if k == 'relationship_mark':
+        if eff.data.get('relationship') == 'counter':
+            return max((x for x in mine if x.p1 > 0), key=lambda x: x.p1, default=None)
+        pool = [x for x in legal if x.card.aura] if eff.data.get('relationship') == 'aura' else [x for x in legal if x.auras]
+        return max(pool, key=perm_value, default=None)
+    if k in ('transfer_between', 'move_aura', 'move_auras'):
+        return max(mine or legal, key=perm_value, default=None)
+    if k == 'player_action_lock':
+        return opp
     if k == "mill":
         return opp
     if k == "tap":
@@ -73,7 +129,7 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
             theirs = [x for x in theirs if x.toughness <= eff.amount2]
         theirs = [x for x in theirs if not (k == "destroy" and x.has("indestructible"))]
         return max(theirs, key=perm_value, default=None)
-    if k in ("pump", "p1_counters", "double_power", "grant", "explore", "attach_self", "force_blocked"):
+    if k in ("pump", "p1_counters", "double_power", "grant", "explore", "attach_self", "force_blocked", "inherit_counters"):
         return max(mine, key=perm_value, default=None)
     if k == "oring":
         return max(theirs, key=perm_value, default=None)
@@ -146,50 +202,68 @@ def choose_target(game: Game, me: Player, eff: Effect):
 def _mode_value(game: Game, me: Player, effects: list) -> float:
     opp = game.opponent(me)
     total = 0.0
-    for e in effects:
-        if e.target in TARGETED:
-            tgt = default_choose_target(game, me, e)
-            if tgt is None:
-                return -1
-        else:
-            tgt = None
-        k = e.kind
-        if k == "proliferate":
-            total += e.amount * proliferate.value(game, me)
-        elif k == "learn":
-            total += learning.value(game, me)
-        elif k == "regenerate":
-            pass  # shields are selected in response to threats, not in safe main phases
-        elif k == "wrath":
-            total += sum(map(perm_value, opp.creatures)) - sum(map(perm_value, me.creatures))
-        elif k == "wrath_pw":
-            total += sum(map(perm_value, opp.planeswalkers)) - sum(map(perm_value, me.planeswalkers))
-        elif k == "damage":
-            total += perm_value(tgt) if isinstance(tgt, Permanent) else (100 if e.amount >= opp.life else 1)
-        elif k in ("discard", "discard_choice", "hand_exile"):
-            total += 2 if opp.hand else 0
-        elif k == "regrow":
-            total += max((c.cmc for c in me.graveyard if c.is_creature), default=-1)
-        elif k == "gy_move":
-            ok = [c.cmc for c in me.graveyard if copies.fits(c, _gy_desc(e.data["what"]))]
-            total += (max(ok) + 1) if ok else -1
-        elif k in ("destroy", "bounce", "shuffle_away"):
-            total += perm_value(tgt)
-        elif k in ("bounce_spell", "counter"):
-            total += tgt.card.cmc if isinstance(tgt, StackItem) and tgt.card else 1
-        elif k in copies.KINDS:
-            v = copies.value(game, me, e)
-            if v < 0:
-                return -1
-            total += v
-        elif k == "unblockable":
-            # Only worth it before combat, when the opponent has a blocker.
-            if game.step != "main1" or not any(not c.tapped for c in opp.creatures):
-                return -1
-            total += tgt.power
-        else:
-            total += 1
-    return total
+    previous = getattr(game, '_choosing_targets', [])
+    chosen = []
+    game._choosing_targets = chosen
+    try:
+        for e in effects:
+            if e.target in TARGETED:
+                tgt = default_choose_target(game, me, e)
+                if tgt is None and not e.data.get("optional_target"):
+                    return -1
+            else:
+                tgt = None
+            chosen.append(tgt)
+            k = e.kind
+            from ..residual_templates import effect_value
+            residual_value = effect_value(game, me, e, tgt)
+            if residual_value is not None:
+                total += residual_value
+            elif k in ("return_tribal_grave", "grave_library_top"):
+                total += tgt.cmc + 1 if tgt is not None else 0
+            elif k == "control_permanent":
+                total += 2 * perm_value(tgt)
+            elif k == "populate":
+                total += max((perm_value(x) for x in me.creatures if x.card.is_token), default=0)
+            elif k == "proliferate":
+                total += e.amount * proliferate.value(game, me)
+            elif k == "learn":
+                total += learning.value(game, me)
+            elif k == "regenerate":
+                pass  # shields are selected in response to threats, not in safe main phases
+            elif k == "wrath":
+                total += sum(map(perm_value, opp.creatures)) - sum(map(perm_value, me.creatures))
+            elif k == "wrath_pw":
+                total += sum(map(perm_value, opp.planeswalkers)) - sum(map(perm_value, me.planeswalkers))
+            elif k == "damage":
+                total += perm_value(tgt) if isinstance(tgt, Permanent) else (100 if e.amount >= opp.life else 1)
+            elif k in ("discard", "discard_choice", "hand_exile"):
+                total += 2 if opp.hand else 0
+            elif k == "regrow":
+                total += max((c.cmc for c in me.graveyard if c.is_creature), default=-1)
+            elif k == "gy_move":
+                ok = [c.cmc for c in me.graveyard if copies.fits(c, _gy_desc(e.data["what"]))]
+                total += (max(ok) + 1) if ok else -1
+            elif k in ("destroy", "exile_permanent", "bounce", "shuffle_away"):
+                total += perm_value(tgt)
+            elif k in ("bounce_spell", "counter"):
+                total += tgt.card.cmc if isinstance(tgt, StackItem) and tgt.card else 1
+            elif k in copies.KINDS:
+                v = copies.value(game, me, e)
+                if v < 0:
+                    return -1
+                total += v
+            elif k == "unblockable":
+                # Only worth it before combat, when the opponent has a blocker.
+                if game.step != "main1" or not any(not c.tapped for c in opp.creatures):
+                    return -1
+                total += tgt.power
+            else:
+                total += 1
+        return total
+
+    finally:
+        game._choosing_targets = previous
 
 
 def default_choose_modes(game: Game, me: Player, modes: list, n: int, up_to: bool) -> list[int]:
@@ -228,7 +302,7 @@ def _targets_for(game: Game, me: Player, card: CardDef, stack_target=None):
 
 
 def _removal(card: CardDef) -> bool:
-    return any(e.kind in ("destroy", "bounce") or (e.kind == "damage" and e.target in ("creature", "any", "creature_pw"))
+    return any(e.kind in ("destroy", "exile_permanent", "bounce") or (e.kind == "damage" and e.target in ("creature", "any", "creature_pw"))
                for e in card.spell_effects)
 
 
@@ -247,7 +321,7 @@ def respond(game: Game, me: Player):
             return None
         # Protect a creature targeted by removal (Snakeskin Veil).
         aimed = [t for t in top.targets if isinstance(t, Permanent) and t.controller is me]
-        if aimed and any(e.kind in ("destroy", "damage", "bounce", "debuff_one") for e in top.effects):
+        if aimed and any(e.kind in ("destroy", "exile_permanent", "damage", "bounce", "debuff_one") for e in top.effects):
             for c in options.values():
                 if any(e.kind == "grant" and e.data.get("keyword") == "hexproof" for e in c.spell_effects):
                     return c, [aimed[0]] + [None] * (len(c.spell_effects) - 1)
@@ -310,7 +384,7 @@ def protective_ability(game: Game, me: Player, item, victim):
     if victim.has("hexproof") or victim.prevent_next or protected_from(victim, item):
         return None                 # already saved by an earlier activation
     for perm in me.battlefield:
-        for i, act in enumerate(perm.card.activated):
+        for i, act in enumerate(perm.activated):
             if not act.effects or not game.can_activate(me, perm, i):
                 continue
             e = act.effects[0]
@@ -339,7 +413,7 @@ def respond_extras(game: Game, me: Player):
         top = game.stack[-1]
         aimed = [t for t in top.targets if isinstance(t, Permanent) and t.controller is me]
         if top.controller is not me and aimed and \
-                any(e.kind in ("destroy", "damage", "bounce", "debuff_one") for e in top.effects):
+                any(e.kind in ("destroy", "exile_permanent", "damage", "bounce", "debuff_one") for e in top.effects):
             return protective_ability(game, me, top, aimed[0])
         return None
     for pw in me.planeswalkers:
@@ -378,7 +452,7 @@ def _self_pump(act) -> bool:
 
 def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: int = 0) -> bool:
     """Whether to activate perm's general ability idx now, outside combat."""
-    act = perm.card.activated[idx]
+    act = perm.activated[idx]
     c = act.extra_costs
     if _self_pump(act) and not any(e.kind == "p1_counters" for e in act.effects):
         return False    # used in combat (combat_pump)
@@ -387,7 +461,14 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
     need = add_costs(act.cost, {"generic": reserve})
     if not payable(game.mana_sources(me, perm if c.get("tap") else None, "ability"), need):
         return False
-    value = _mode_value(game, me, act.effects)
+    effects = act.effects
+    if c.get('remove_creature_counters') in ('x', 'positive'):
+        payment = costs.ability_plan(game, me, perm, act, game.ability_cost(me, perm, act))
+        if payment is None:
+            return False
+        effects = costs.counter_effects(act, payment)
+    with game.targeting(perm):
+        value = _mode_value(game, me, effects)
     if act.modes:
         value += modal.value(game, me, act.modes, perm)
     if value <= 0:
@@ -433,7 +514,7 @@ def choose_ability(game: Game, me: Player, instant: bool):
     """An ("activate", permanent, "ability:N") action worth taking now, or None. With instant=True
     only abilities without "Activate only as a sorcery"."""
     for perm in list(me.battlefield):
-        for i, act in enumerate(perm.card.activated):
+        for i, act in enumerate(perm.activated):
             if act.kind != "ability" or (instant and act.sorcery):
                 continue
             if ability_worth(game, me, perm, i, 0 if instant else _reserve(game, me)):
@@ -446,7 +527,7 @@ def combat_pump(game: Game, me: Player):
     for a in game.attackers:
         if a.controller is not me or a in game.blocks or a not in me.battlefield:
             continue
-        for i, act in enumerate(a.card.activated):
+        for i, act in enumerate(a.activated):
             if act.kind != "ability" or not _self_pump(act) or not game.can_activate(me, a, i):
                 continue
             if act.extra_costs.get("life") and me.life <= 10:
@@ -542,8 +623,8 @@ def before_attacks(game: Game, me: Player):
         game.activate(me, v, "crew")
     for m in [x for x in me.battlefield if x.card.saddle and not x.saddled and not x.sick and not x.tapped]:
         game.activate(me, m, "saddle")
-    for land in [x for x in me.battlefield if x.card.activated and not x.sick and not x.tapped]:
-        for act in land.card.activated:
+    for land in [x for x in me.battlefield if x.activated and not x.sick and not x.tapped]:
+        for act in land.activated:
             if act.kind not in ("animate", "barrens"):
                 continue
             need = add_costs(act.cost, {"generic": _reserve(game, me)})
@@ -598,7 +679,7 @@ def use_abilities(game: Game, me: Player):
             if idx is not None:
                 game.activate_loyalty(me, pw, idx)
     blood = sum(1 for x in me.battlefield if x.card.token_kind == "blood")
-    for h in [x for x in me.battlefield if any(a.kind == "sac_debuff" for a in x.card.activated)]:
+    for h in [x for x in me.battlefield if any(a.kind == "sac_debuff" for a in x.activated)]:
         opp = game.opponent(me)
         kills = [c for c in opp.creatures if c.toughness <= 2 * blood and game.targetable(c, me)
                  and perm_value(c) > perm_value(h)]
@@ -608,7 +689,7 @@ def use_abilities(game: Game, me: Player):
     equip_all(game, me)
     if game.step == "main1":    # "can't be blocked this turn" before combat
         for perm in list(me.battlefield):
-            for i, act in enumerate(perm.card.activated):
+            for i, act in enumerate(perm.activated):
                 if act.kind == "ability" and act.effects and act.effects[0].kind == "unblockable" and \
                         perm in me.battlefield and ability_worth(game, me, perm, i):
                     game.activate(me, perm, f"ability:{i}")
@@ -623,7 +704,7 @@ def use_abilities(game: Game, me: Player):
             game.cast(me, c, None)
     if game.step == "main2":
         for st in [x for x in me.battlefield if x.card.station]:
-            need = max((a.min_charge for a in st.card.activated), default=0)
+            need = max((a.min_charge for a in st.activated), default=0)
             ready = sorted((c for c in me.creatures if c is not st and not c.tapped and c.power > 0),
                            key=lambda c: c.power)
             if need and st.counters.get("charge", 0) < need and len(ready) > 1:

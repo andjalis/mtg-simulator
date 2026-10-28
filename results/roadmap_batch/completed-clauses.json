@@ -1,0 +1,128 @@
+[
+  {
+    "task": "filtered_entry_death",
+    "card": "Harvester of Souls",
+    "resolved_clause": "Whenever another nontoken creature dies, you may draw a card.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "filtered_entry_death",
+    "card": "Welcoming Vampire",
+    "resolved_clause": "Whenever one or more other creatures you control with power 2 or less enter, draw a card. This ability triggers only once each turn.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "filtered_entry_death",
+    "card": "Mentor of the Meek",
+    "resolved_clause": "Whenever another creature you control with power 2 or less enters, you may pay {1}. If you do, draw a card.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "quoted_activated",
+    "card": "Abundant Growth",
+    "resolved_clause": "Enchanted land has \"{T}: Add one mana of any color.\"",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "quoted_activated",
+    "card": "Acidic Sliver",
+    "resolved_clause": "All Slivers have \"{2}, Sacrifice ~: ~ deals 2 damage to any target.\"",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "variable_amounts",
+    "card": "Accelerated Mutation",
+    "resolved_clause": "Target creature gets +X/+X until end of turn, where X is the highest mana value among permanents you control.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "variable_amounts",
+    "card": "Academy Elite",
+    "resolved_clause": "~ enters with X +1/+1 counters on it, where X is the number of instant and sorcery cards in all graveyards.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "related_targets",
+    "card": "Bioshift",
+    "resolved_clause": "Move any number of +1/+1 counters from target creature onto another target creature with the same controller.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "related_targets",
+    "card": "Simic Guildmage",
+    "resolved_clause": "{1}{G}: Move a +1/+1 counter from target creature onto another target creature with the same controller.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "delayed_durations",
+    "card": "Abuelo, Ancestral Echo",
+    "resolved_clause": "{1}{W}{U}: Exile another target creature or artifact you control. Return it to the battlefield under its owner's control at the beginning of the next end step.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "graveyard_filters",
+    "card": "Abiding Grace",
+    "resolved_clause": "\u2022 Return target creature card with mana value 1 from your graveyard to the battlefield.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "subtype_sacrifice",
+    "card": "Arms Dealer",
+    "resolved_clause": "{1}{R}, Sacrifice a Goblin: ~ deals 4 damage to target creature.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "token_abilities",
+    "card": "Ajani Resolute",
+    "resolved_clause": "[\u22124]: Create a 2/2 white Cat Soldier creature token named ~'s Pridemate with \"Whenever you gain life, put a +1/+1 counter on ~.\"",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "aura_movement",
+    "card": "Glamer Spinners",
+    "resolved_clause": "attach all Auras enchanting target permanent to another permanent with the same controller.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "aura_movement",
+    "card": "Simic Guildmage",
+    "resolved_clause": "{1}{U}: Attach target Aura attached to a permanent to another permanent with the same controller.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "restrictions",
+    "card": "Silent Arbiter",
+    "resolved_clause": "No more than one creature can attack each combat.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "restrictions",
+    "card": "Silent Arbiter",
+    "resolved_clause": "No more than one creature can block each combat.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  },
+  {
+    "task": "restrictions",
+    "card": "Abeyance",
+    "resolved_clause": "Until end of turn, target player can't cast instant or sorcery spells, and that player can't activate abilities that aren't mana abilities.",
+    "current_status": "full",
+    "remaining_ignored_text": []
+  }
+]

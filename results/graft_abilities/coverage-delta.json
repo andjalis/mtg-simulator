@@ -1,0 +1,202 @@
+{
+  "scope": "The ten requested cards only; template matching is not full Magic rules verification.",
+  "baseline": "Working tree after the previous counter-card batch, before this graft-ability batch.",
+  "database": "Unchanged local Forge-derived cards.sqlite3",
+  "cards_compared": 10,
+  "newly_full": 10,
+  "parse_errors_before": [],
+  "parse_errors_after": [],
+  "changes": [
+    {
+      "name": "Aquastrand Spider",
+      "before": {
+        "name": "Aquastrand Spider",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{G}: Target creature with a +1/+1 counter on it gains reach until end of turn."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Aquastrand Spider",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Helium Squirter",
+      "before": {
+        "name": "Helium Squirter",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{1}: Target creature with a +1/+1 counter on it gains flying until end of turn."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Helium Squirter",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Plaxcaster Frogling",
+      "before": {
+        "name": "Plaxcaster Frogling",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{2}: Target creature with a +1/+1 counter on it gains shroud until end of turn."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Plaxcaster Frogling",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Sporeback Troll",
+      "before": {
+        "name": "Sporeback Troll",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{1}{G}: Regenerate target creature with a +1/+1 counter on it."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Sporeback Troll",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Vigean Graftmage",
+      "before": {
+        "name": "Vigean Graftmage",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{1}{U}: Untap target creature with a +1/+1 counter on it."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Vigean Graftmage",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Cytoplast Manipulator",
+      "before": {
+        "name": "Cytoplast Manipulator",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{U}, {T}: Gain control of target creature with a +1/+1 counter on it for as long as ~ remains on the battlefield."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Cytoplast Manipulator",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Cytoplast Root-Kin",
+      "before": {
+        "name": "Cytoplast Root-Kin",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "put a +1/+1 counter on each other creature you control with a +1/+1 counter on it.",
+          "{2}: Move a +1/+1 counter from target creature you control onto ~."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Cytoplast Root-Kin",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Simic Basilisk",
+      "before": {
+        "name": "Simic Basilisk",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{1}{G}: Until end of turn, target creature with a +1/+1 counter on it gains \"Whenever ~ deals combat damage to a creature, destroy that creature at end of combat.\""
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Simic Basilisk",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Vigean Hydropon",
+      "before": {
+        "name": "Vigean Hydropon",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "~ can't attack or block."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Vigean Hydropon",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Warrior's Resolve",
+      "before": {
+        "name": "Warrior's Resolve",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "if you control a creature with a +1/+1 counter on it that attacked this turn, draw a card."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Warrior's Resolve",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    }
+  ]
+}

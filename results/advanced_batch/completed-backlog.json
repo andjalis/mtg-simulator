@@ -1,0 +1,586 @@
+{
+  "reviewed_on": "2026-10-27",
+  "census_measured_on": "2026-10-27",
+  "source_report": "results/roadmap_batch/after/summary.json",
+  "source_cards": "results/roadmap_batch/after/cards.csv",
+  "source_cards_sha256": "6d4fcef8f08e36701eac5f3ced248934806e367e704b6da2e777ca6aa8cb3c3e",
+  "ranking_method": "Suggested engineering order: ten previously verified open items followed by twenty additional implementations. Not a measured ranking of disjoint coverage gains.",
+  "inclusion_rule": "Only ignored clauses on partial cards; full cards and already matched effects are excluded.",
+  "completed_request": {
+    "tasks": 10,
+    "resolved_clauses": 18,
+    "fully_matched_example_cards": 16,
+    "archive": "results/roadmap_batch/completed-backlog.json"
+  },
+  "measured_remaining_families": [
+    {
+      "gap": "triggered (whenever/when)",
+      "affected_cards": 3371,
+      "potential_full_matches": 2064,
+      "examples": [
+        "A Display of My Dark Power",
+        "A Good Day to Die",
+        "A Good Day to Pie"
+      ]
+    },
+    {
+      "gap": "activated abilities",
+      "affected_cards": 2603,
+      "potential_full_matches": 1941,
+      "examples": [
+        "A-Baba Lysaga, Night Witch",
+        "A-Carnelian Orb of Dragonkind",
+        "A-Dungeon Descent"
+      ]
+    },
+    {
+      "gap": "counters",
+      "affected_cards": 2869,
+      "potential_full_matches": 1921,
+      "examples": [
+        "A-Briar Hydra",
+        "A-Celebrity Fencer",
+        "A-Celestial Regulator"
+      ]
+    },
+    {
+      "gap": "graveyard",
+      "affected_cards": 2723,
+      "potential_full_matches": 1520,
+      "examples": [
+        "A Good Day to Pie",
+        "A-Ardent Dustspeaker",
+        "A-Cobbled Lancer"
+      ]
+    },
+    {
+      "gap": "tokens",
+      "affected_cards": 2188,
+      "potential_full_matches": 1217,
+      "examples": [
+        "A-Elderleaf Mentor",
+        "A-Elven Bow",
+        "A-Esika's Chariot"
+      ]
+    },
+    {
+      "gap": "sacrifice",
+      "affected_cards": 1935,
+      "potential_full_matches": 1141,
+      "examples": [
+        "A-Baba Lysaga, Night Witch",
+        "A-Capenna Express",
+        "A-Forge Boss"
+      ]
+    },
+    {
+      "gap": "exile",
+      "affected_cards": 2093,
+      "potential_full_matches": 1051,
+      "examples": [
+        "A-Ardent Dustspeaker",
+        "A-Cobbled Lancer",
+        "A-Elderfang Ritualist"
+      ]
+    },
+    {
+      "gap": "auras/enchant",
+      "affected_cards": 1063,
+      "potential_full_matches": 874,
+      "examples": [
+        "A-Public Enemy",
+        "Aboshan's Desire",
+        "Absorbing Man"
+      ]
+    },
+    {
+      "gap": "can't restrictions",
+      "affected_cards": 1302,
+      "potential_full_matches": 724,
+      "examples": [
+        "A-Goma Fada Vanguard",
+        "A-Ready to Rumble",
+        "A-Sewer Crocodile"
+      ]
+    },
+    {
+      "gap": "X costs",
+      "affected_cards": 1210,
+      "potential_full_matches": 684,
+      "examples": [
+        "A-Briar Hydra",
+        "A-Maelstrom Muse",
+        "A-Nael, Avizoa Aeronaut"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "priority": 1,
+      "id": "base_pt_predicates",
+      "status": "completed",
+      "title": "Base power/toughness trigger predicates",
+      "remaining_scope": "Add base-stat subject predicates to the implemented grouped-entry event path; distinguish base characteristics from current power/toughness.",
+      "examples": [
+        {
+          "card": "Bess, Soul Nourisher",
+          "status": "partial",
+          "remaining_ignored_text": "Whenever one or more other creatures you control with base power and toughness 1/1 enter, put a +1/+1 counter on ~."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 2,
+      "id": "equipment_ability_grants",
+      "status": "completed",
+      "title": "Equipment-host activated ability grants",
+      "remaining_scope": "Extend the granted-ability recipient model to an Equipment's attached creature. Reuse the implemented activation and payment paths.",
+      "examples": [
+        {
+          "card": "Viridian Longbow",
+          "status": "partial",
+          "remaining_ignored_text": "Equipped creature has \"{T}: ~ deals 1 damage to any target.\""
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 3,
+      "id": "event_quantities",
+      "status": "completed",
+      "title": "Event-derived variable amounts",
+      "remaining_scope": "Capture mana spent on the triggering spell and bind it to the resulting stat effect; board/graveyard quantity definitions already work.",
+      "examples": [
+        {
+          "card": "Aberrant Manawurm",
+          "status": "partial",
+          "remaining_ignored_text": "~ gets +X/+0 until end of turn, where X is the amount of mana spent to cast that spell."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 4,
+      "id": "target_allocations",
+      "status": "completed",
+      "title": "Counter allocations across a variable target set",
+      "remaining_scope": "Choose a legal target count and counter allocation summing to the printed total. Two-object transfers are already implemented.",
+      "examples": [
+        {
+          "card": "Blessings of Nature",
+          "status": "partial",
+          "remaining_ignored_text": "Distribute four +1/+1 counters among any number of target creatures."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 5,
+      "id": "next_turn_duration",
+      "status": "completed",
+      "title": "Effects lasting until the controller's next turn",
+      "remaining_scope": "Add the next-turn expiry boundary and the remaining distinct-mana-value quantity definition for this clause.",
+      "examples": [
+        {
+          "card": "All-Seeing Arbiter",
+          "status": "partial",
+          "remaining_ignored_text": "target creature an opponent controls gets -X/-0 until your next turn, where X is the number of different mana values among cards in your graveyard."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 6,
+      "id": "multiple_grave_targets",
+      "status": "completed",
+      "title": "Multiple graveyard targets with a chosen subtype",
+      "remaining_scope": "Choose up to the printed number of distinct physical cards of a chosen creature type, with generation checks for every card.",
+      "examples": [
+        {
+          "card": "Aphetto Dredging",
+          "status": "partial",
+          "remaining_ignored_text": "Return up to three target creature cards of the creature type of your choice from your graveyard to your hand."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 7,
+      "id": "sacrifice_protection",
+      "status": "completed",
+      "title": "Restrictions against opponent-caused sacrifices",
+      "remaining_scope": "Enforce sacrifice protection for opponent-controlled spells/abilities, without blocking voluntary subtype sacrifice costs.",
+      "examples": [
+        {
+          "card": "Sigarda, Host of Herons",
+          "status": "partial",
+          "remaining_ignored_text": "Spells and abilities your opponents control can't cause you to sacrifice permanents."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 8,
+      "id": "token_activated_abilities",
+      "status": "completed",
+      "title": "Activated abilities on newly created tokens",
+      "remaining_scope": "Bind a quoted activated ability to each new token, including its sacrifice cost, while retaining existing token stats and keywords.",
+      "examples": [
+        {
+          "card": "Triskelavus",
+          "status": "partial",
+          "remaining_ignored_text": "{1}, Remove a +1/+1 counter from ~: Create a 1/1 colorless Triskelavite artifact creature token with flying. It has \"Sacrifice ~: ~ deals 1 damage to any target.\""
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 9,
+      "id": "aura_host_predicates",
+      "status": "completed",
+      "title": "Additional Aura host predicates",
+      "remaining_scope": "Enforce the non-Wall host restriction when casting and moving an Aura. Existing legal Aura movement is already implemented.",
+      "examples": [
+        {
+          "card": "Aggression",
+          "status": "partial",
+          "remaining_ignored_text": "Enchant non-Wall creature"
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 10,
+      "id": "activation_cost_reduction",
+      "status": "completed",
+      "title": "Continuous activation-cost reductions with a minimum",
+      "remaining_scope": "Reduce generic activation costs on qualifying creatures, preserve colored costs, and enforce the printed one-mana floor.",
+      "examples": [
+        {
+          "card": "Biomancer's Familiar",
+          "status": "partial",
+          "remaining_ignored_text": "Activated abilities of creatures you control cost {2} less to activate. This effect can't reduce the mana in that cost to less than one mana."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 11,
+      "id": "attack_taxes",
+      "status": "completed",
+      "title": "Per-attacker combat taxes",
+      "remaining_scope": "Plan and pay attack costs for the chosen attacker/defender set, preserving restrictions when payment is unavailable.",
+      "examples": [
+        {
+          "card": "Ghostly Prison",
+          "status": "partial",
+          "remaining_ignored_text": "Creatures can't attack you unless their controller pays {2} for each creature they control that's attacking you."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 12,
+      "id": "aura_control",
+      "status": "completed",
+      "title": "Aura-based control changes",
+      "remaining_scope": "Make control follow the current Aura attachment and end immediately when the Aura leaves, detaches or loses its control ability.",
+      "examples": [
+        {
+          "card": "Control Magic",
+          "status": "partial",
+          "remaining_ignored_text": "You control enchanted creature."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 13,
+      "id": "unrestricted_source_control",
+      "status": "completed",
+      "title": "Unrestricted source-dependent control triggers",
+      "remaining_scope": "Extend the existing source-dependent control engine to ETB creature targets without the currently supported +1/+1-counter restriction.",
+      "examples": [
+        {
+          "card": "Sower of Temptation",
+          "status": "partial",
+          "remaining_ignored_text": "gain control of target creature for as long as ~ remains on the battlefield."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 14,
+      "id": "indefinite_control",
+      "status": "completed",
+      "title": "Control effects without an expiry condition",
+      "remaining_scope": "Keep an acquired permanent under the effect controller after the source leaves; integrate with competing control effects.",
+      "examples": [
+        {
+          "card": "Agent of Treachery",
+          "status": "partial",
+          "remaining_ignored_text": "gain control of target permanent."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 15,
+      "id": "graveyard_library_top",
+      "status": "completed",
+      "title": "Graveyard targets returning to the library top",
+      "remaining_scope": "Add instant/sorcery graveyard selectors and a library-top destination, preserving the printed enters-untapped condition and physical-card identity.",
+      "examples": [
+        {
+          "card": "Mystic Sanctuary",
+          "status": "partial",
+          "remaining_ignored_text": "When ~ enters untapped, you may put target instant or sorcery card from your graveyard on top of your library."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 16,
+      "id": "opponent_payment_gates",
+      "status": "completed",
+      "title": "Opponent-paid trigger gates",
+      "remaining_scope": "Give the triggering player a genuine payment choice and draw only when that player declines or cannot pay.",
+      "examples": [
+        {
+          "card": "Rhystic Study",
+          "status": "partial",
+          "remaining_ignored_text": "you may draw a card unless that player pays {1}."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 17,
+      "id": "populate",
+      "status": "completed",
+      "title": "Populate token-copy selection",
+      "remaining_scope": "Parse populate as choosing and copying a controlled creature token, reusing supported copiable values and simultaneous-entry handling.",
+      "examples": [
+        {
+          "card": "Rootborn Defenses",
+          "status": "partial",
+          "remaining_ignored_text": "Populate."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 18,
+      "id": "counter_placement_replacements",
+      "status": "completed",
+      "title": "Additive counter-placement replacements",
+      "remaining_scope": "Modify counters before placement and compose multiple applicable replacements; do not implement the change as a later trigger.",
+      "examples": [
+        {
+          "card": "Hardened Scales",
+          "status": "partial",
+          "remaining_ignored_text": "If one or more +1/+1 counters would be put on a creature you control, that many plus one +1/+1 counters are put on it instead."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 19,
+      "id": "token_creation_replacements",
+      "status": "completed",
+      "title": "Token type/count substitution replacements",
+      "remaining_scope": "Replace qualifying token creation with the prescribed token types/counts and compose with existing token multipliers.",
+      "examples": [
+        {
+          "card": "Academy Manufactor",
+          "status": "partial",
+          "remaining_ignored_text": "If you would create a Clue, Food, or Treasure token, instead create one of each."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 20,
+      "id": "sunburst",
+      "status": "completed",
+      "title": "Sunburst from colors actually spent",
+      "remaining_scope": "Capture distinct colors used in payment and apply the appropriate charge or +1/+1 entry counters.",
+      "examples": [
+        {
+          "card": "Pentad Prism",
+          "status": "partial",
+          "remaining_ignored_text": "Sunburst"
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 21,
+      "id": "energy",
+      "status": "completed",
+      "title": "Energy generation and payment",
+      "remaining_scope": "Add energy production and transactional energy costs, with legal payment choices and no negative player counters.",
+      "examples": [
+        {
+          "card": "Dynavolt Tower",
+          "status": "partial",
+          "remaining_ignored_text": "you get {E}{E} ."
+        },
+        {
+          "card": "Dynavolt Tower",
+          "status": "partial",
+          "remaining_ignored_text": "{T}, Pay {E}{E}{E}{E}{E}: ~ deals 3 damage to any target."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 22,
+      "id": "draw_replacements",
+      "status": "completed",
+      "title": "Draw-event replacement and redirection",
+      "remaining_scope": "Replace eligible opponent draws while respecting the first draw of each draw step and replacement ordering.",
+      "examples": [
+        {
+          "card": "Notion Thief",
+          "status": "partial",
+          "remaining_ignored_text": "If an opponent would draw a card except the first one they draw in each of their draw steps, instead that player skips that draw and you draw a card."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 23,
+      "id": "draw_limits",
+      "status": "completed",
+      "title": "Per-player draw limits",
+      "remaining_scope": "Track completed draws per turn and enforce the static limit, including multi-card draw instructions and source removal.",
+      "examples": [
+        {
+          "card": "Narset, Parter of Veils",
+          "status": "partial",
+          "remaining_ignored_text": "Each opponent can't draw more than one card each turn."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 24,
+      "id": "graveyard_replacements",
+      "status": "completed",
+      "title": "Graveyard-destination replacements",
+      "remaining_scope": "Apply exile-instead replacements across battlefield departure, discard, mill and other zone moves, including tokens.",
+      "examples": [
+        {
+          "card": "Rest in Peace",
+          "status": "partial",
+          "remaining_ignored_text": "If a card or token would be put into a graveyard from anywhere, exile it instead."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 25,
+      "id": "graveyard_cast_permissions",
+      "status": "completed",
+      "title": "Limited graveyard-casting permissions",
+      "remaining_scope": "Permit the printed spell types from the graveyard once per own turn and exile spells cast through that permission afterward.",
+      "examples": [
+        {
+          "card": "Kess, Dissident Mage",
+          "status": "partial",
+          "remaining_ignored_text": "During each of your turns, you may cast an instant or sorcery spell from your graveyard. If a spell cast this way would be put into your graveyard, exile it instead."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 26,
+      "id": "cipher",
+      "status": "completed",
+      "title": "Cipher encoding and combat-copy casting",
+      "remaining_scope": "Link the encoded spell to a creature and offer its controller the optional spell copy after combat damage to a player.",
+      "examples": [
+        {
+          "card": "Hands of Binding",
+          "status": "partial",
+          "remaining_ignored_text": "Cipher"
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 27,
+      "id": "aftermath",
+      "status": "completed",
+      "title": "Aftermath back-half casting",
+      "remaining_scope": "Allow the aftermath half only from the graveyard, with correct split-card identity, costs and post-resolution exile.",
+      "examples": [
+        {
+          "card": "Dusk // Dawn",
+          "status": "partial",
+          "remaining_ignored_text": "Dawn: Aftermath"
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 28,
+      "id": "opponent_exile_permissions",
+      "status": "completed",
+      "title": "Opponent-card exile selection and casting permissions",
+      "remaining_scope": "Choose the exiled card, retain its physical identity and hidden-zone relationship, and allow casting while it stays exiled with the printed mana flexibility.",
+      "examples": [
+        {
+          "card": "Gonti, Lord of Luxury",
+          "status": "partial",
+          "remaining_ignored_text": "look at the top four cards of target opponent's library, exile one of them face down, then put the rest on the bottom of that library in a random order."
+        },
+        {
+          "card": "Gonti, Lord of Luxury",
+          "status": "partial",
+          "remaining_ignored_text": "You may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 29,
+      "id": "conditional_cast_limits",
+      "status": "completed",
+      "title": "Controller-relative casting limits",
+      "remaining_scope": "Restrict noncreature spells by the caster's current land count, using both cast-availability and actual-cast legality checks.",
+      "examples": [
+        {
+          "card": "Lavinia, Azorius Renegade",
+          "status": "partial",
+          "remaining_ignored_text": "Each opponent can't cast noncreature spells with mana value greater than the number of lands that player controls."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    },
+    {
+      "priority": 30,
+      "id": "land_type_conversion",
+      "status": "completed",
+      "title": "Continuous nonbasic-land type conversion",
+      "remaining_scope": "Apply the Mountain subtype and corresponding mana/ability changes while the source remains active; restore affected characteristics when it leaves.",
+      "examples": [
+        {
+          "card": "Blood Moon",
+          "status": "partial",
+          "remaining_ignored_text": "Nonbasic lands are Mountains."
+        }
+      ],
+      "completion_evidence": "results/advanced_batch/completed-clauses.json"
+    }
+  ],
+  "active": false,
+  "proposal_count": 30,
+  "example_validation": "All 32 originally ignored clauses now match. Twenty-two example cards are full; eight retain unrelated clauses.",
+  "status": "completed_archive",
+  "superseded_by": "results/advanced_batch/backlog.json",
+  "completed_tasks": 30,
+  "resolved_clauses": 32
+}

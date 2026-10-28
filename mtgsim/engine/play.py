@@ -96,9 +96,9 @@ class PlayMixin:
                 targets[idx] = max(tapped, key=perm_value)
         missing = [i for i, e in enumerate(effects) if e.target in TARGETED and targets[i] is None]
         if missing:   # targets the AI didn't pick (effects it doesn't know about)
-            filled = self.auto_targets(p, [effects[i] for i in missing], card)
-            for i, t in zip(missing, filled):
-                targets[i] = t
+            filled = self.auto_targets(p, effects, card, preset=targets)
+            for i in missing:
+                targets[i] = filled[i]
         if not self.valid_action_targets(p, effects, targets, card):
             return False
         cost = self.cost_of(p, card, assist=False)
@@ -190,6 +190,12 @@ class PlayMixin:
             base.generation += 1
             base.zone = item
         item.cast_from_hand = self._zone(p, kind) is p.hand and kind not in ("free", "channel", "gy_ability", "prepared")
+        from ..advanced_templates import payment_colors
+        item.mana_colors = payment_colors(payment, dict(cost, generic=cost.get("generic", 0) + x))
+        if kind == "grave_permission":
+            source = getattr(card, "permission_source", None)
+            if source is not None:
+                source.grave_cast_turn = self.turn
         item.snow_spent = sum(1 for s in payment if s.card.snow)
         item.x = x
         item.teamwork = teamwork_paid
@@ -203,6 +209,9 @@ class PlayMixin:
             item.kind = "channel"
             item.card = None
             item.name = card.name
+        if getattr(card, "spell_copy", False):
+            item.kind = "copy"
+            item.physical_card = None
         self.stack.append(item)
         if item.physical_card is not None and item.move_origin is not None:
             before, origin, actor, _, _ = item.move_origin
@@ -234,7 +243,9 @@ class PlayMixin:
                             (trig.event == "cast_noncreature" and not card.is_creature) or
                             (trig.event == "cast_instant_sorcery" and (card.is_instant or card.is_sorcery))):
                         self.queue_trigger(p, trig.effects, perm, perm.card.name, modes=trig.modes,
-                                           context=item if copies.wants_spell(trig.effects) else None)
+                                           context=item)
+            from ..residual_templates import on_spell_cast
+            on_spell_cast(self, p, item)
             copies.on_cast(self, p, item)
             cast_triggers.on_cast(self, p, item)
             alt_casts.replicated(self, p, item, kind)
@@ -258,6 +269,8 @@ class PlayMixin:
 
     def station(self, p: Player, perm: Permanent, creature: Permanent) -> bool:
         """Station: tap another untapped creature to put charge counters equal to its power (sorcery speed)."""
+        if self.nonmana_locked(p):
+            return False
         if not perm.card.station or creature is perm or creature.tapped or not creature.is_creature or \
                 creature not in p.battlefield or not (p is self.active and self.step in ("main1", "main2")):
             return False

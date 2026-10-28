@@ -21,4 +21,4 @@ def kind(*names):
     return register
 
 
-from . import cards, damage, graveyard, mechanics, other, permanents, stats  # noqa: E402,F401  (registers the handlers)
+from . import residual, advanced, roadmap, cards, counters, damage, graveyard, mechanics, other, permanents, stats  # noqa: E402,F401  (registers the handlers)

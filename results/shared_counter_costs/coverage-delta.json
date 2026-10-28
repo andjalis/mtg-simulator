@@ -1,0 +1,56 @@
+{
+  "baseline": "Previous ability-cost parser with training/dethrone retained",
+  "baseline_parser_sha256": "d438bc2893a9180297aaa0138b6b49e13deaa83454c44c7b154fcce130b7255e",
+  "updated_parser_sha256": "16bedc0c99ba260106a5add90acd7b00681b99807e345c0b4308bec238c0f851",
+  "database_metadata": {
+    "source": "forge:5c99e439",
+    "built": "2026-10-25 21:28:28",
+    "cards": "34129"
+  },
+  "scope": "Oracle text contains counters from among creatures you control (case-insensitive)",
+  "examined": 10,
+  "parse_errors": 0,
+  "changes": [
+    {
+      "name": "Hopeful Initiate",
+      "before": {
+        "name": "Hopeful Initiate",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{2}{W}, Remove two +1/+1 counters from among creatures you control: Destroy target artifact or enchantment."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Hopeful Initiate",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Novijen Sages",
+      "before": {
+        "name": "Novijen Sages",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Graft 4",
+          "{1}, Remove two +1/+1 counters from among creatures you control: Draw a card."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Novijen Sages",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Graft 4"
+        ],
+        "simplified": []
+      }
+    }
+  ]
+}

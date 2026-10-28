@@ -1,0 +1,442 @@
+{
+  "base_commit": "9d6eb8ca9187ff1f5c672044c4df49698c7cb3e4",
+  "database_metadata": {
+    "source": "forge:5c99e439",
+    "built": "2026-10-25 21:28:28",
+    "cards": "34129"
+  },
+  "scope": "Database JSON contains training or dethrone (case-insensitive)",
+  "examined": 35,
+  "changed": 20,
+  "new_full_template_matches": [
+    "Apprentice Sharpshooter",
+    "Enraged Revolutionary",
+    "Grenzo's Cutthroat",
+    "Gryff Rider",
+    "Marchesa's Emissary",
+    "Marchesa's Infiltrator",
+    "Rural Recruit",
+    "Torens, Fist of the Angels",
+    "Treasonous Ogre"
+  ],
+  "changes": [
+    {
+      "name": "Apprentice Sharpshooter",
+      "before": {
+        "name": "Apprentice Sharpshooter",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Training"
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Apprentice Sharpshooter",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Cloaked Cadet",
+      "before": {
+        "name": "Cloaked Cadet",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Training",
+          "Whenever one or more +1/+1 counters are put on one or more Humans you control, draw a card. This ability triggers only once each turn."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Cloaked Cadet",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Whenever one or more +1/+1 counters are put on one or more Humans you control, draw a card. This ability triggers only once each turn."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Enraged Revolutionary",
+      "before": {
+        "name": "Enraged Revolutionary",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Dethrone"
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Enraged Revolutionary",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Grenzo's Cutthroat",
+      "before": {
+        "name": "Grenzo's Cutthroat",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Dethrone"
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Grenzo's Cutthroat",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Gryff Rider",
+      "before": {
+        "name": "Gryff Rider",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Training"
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Gryff Rider",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Gryffwing Cavalry",
+      "before": {
+        "name": "Gryffwing Cavalry",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Training",
+          "If you do, another target attacking creature without flying gains flying until end of turn."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Gryffwing Cavalry",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "If you do, another target attacking creature without flying gains flying until end of turn."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Hopeful Initiate",
+      "before": {
+        "name": "Hopeful Initiate",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Training",
+          "{2}{W}, Remove two +1/+1 counters from among creatures you control: Destroy target artifact or enchantment."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Hopeful Initiate",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{2}{W}, Remove two +1/+1 counters from among creatures you control: Destroy target artifact or enchantment."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Jenny Flint",
+      "before": {
+        "name": "Jenny Flint",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Partner with Madame Vastra",
+          "Training"
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Jenny Flint",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Partner with Madame Vastra"
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Marchesa's Emissary",
+      "before": {
+        "name": "Marchesa's Emissary",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Dethrone"
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Marchesa's Emissary",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Marchesa's Infiltrator",
+      "before": {
+        "name": "Marchesa's Infiltrator",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Dethrone"
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Marchesa's Infiltrator",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Marchesa's Smuggler",
+      "before": {
+        "name": "Marchesa's Smuggler",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Dethrone",
+          "{1}{U}{R}: Target creature you control gains haste until end of turn and can't be blocked this turn."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Marchesa's Smuggler",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "{1}{U}{R}: Target creature you control gains haste until end of turn and can't be blocked this turn."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Marchesa, the Black Rose",
+      "before": {
+        "name": "Marchesa, the Black Rose",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Dethrone",
+          "Other creatures you control have dethrone.",
+          "return that card to the battlefield under your control at the beginning of the next end step."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Marchesa, the Black Rose",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Other creatures you control have dethrone.",
+          "return that card to the battlefield under your control at the beginning of the next end step."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Parish-Blade Trainee",
+      "before": {
+        "name": "Parish-Blade Trainee",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Training",
+          "put its counters on target creature you control."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Parish-Blade Trainee",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "put its counters on target creature you control."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Park Heights Maverick",
+      "before": {
+        "name": "Park Heights Maverick",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Dethrone",
+          "Whenever ~ deals combat damage to a player or dies, proliferate."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Park Heights Maverick",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Whenever ~ deals combat damage to a player or dies, proliferate."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Rural Recruit",
+      "before": {
+        "name": "Rural Recruit",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Training"
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Rural Recruit",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Ryu, World Warrior",
+      "before": {
+        "name": "Ryu, World Warrior",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Training",
+          "Hadoken \u2014 {4}{R}, {Q}, Discard a card: ~ deals damage equal to his power to any target. If excess damage was dealt to a creature this way, draw a card."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Ryu, World Warrior",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Hadoken \u2014 {4}{R}, {Q}, Discard a card: ~ deals damage equal to his power to any target. If excess damage was dealt to a creature this way, draw a card."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Savior of Ollenbock",
+      "before": {
+        "name": "Savior of Ollenbock",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Training",
+          "Whenever ~ trains, exile up to one other target creature from the battlefield or creature card from a graveyard.",
+          "put the exiled cards onto the battlefield under their owners' control."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Savior of Ollenbock",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Whenever ~ trains, exile up to one other target creature from the battlefield or creature card from a graveyard.",
+          "put the exiled cards onto the battlefield under their owners' control."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Scourge of the Throne",
+      "before": {
+        "name": "Scourge of the Throne",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Dethrone",
+          "Whenever ~ attacks for the first time each turn, if it's attacking the player with the most life or tied for most life, untap all attacking creatures. After this phase, there is an additional combat phase."
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Scourge of the Throne",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Whenever ~ attacks for the first time each turn, if it's attacking the player with the most life or tied for most life, untap all attacking creatures. After this phase, there is an additional combat phase."
+        ],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Torens, Fist of the Angels",
+      "before": {
+        "name": "Torens, Fist of the Angels",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Training",
+          "Unsupported token keywords: training"
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Torens, Fist of the Angels",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    },
+    {
+      "name": "Treasonous Ogre",
+      "before": {
+        "name": "Treasonous Ogre",
+        "copies": 1,
+        "status": "partial",
+        "ignored": [
+          "Dethrone"
+        ],
+        "simplified": []
+      },
+      "after": {
+        "name": "Treasonous Ogre",
+        "copies": 1,
+        "status": "full",
+        "ignored": [],
+        "simplified": []
+      }
+    }
+  ]
+}

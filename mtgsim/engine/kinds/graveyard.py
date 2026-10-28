@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from ... import cast_triggers, returns
+from ... import cast_triggers, returns, counter_mechanics
 from ...cards import CardDef, Effect
 from ...identity import Graveyard
 from ..state import TrackedZone
@@ -150,9 +150,10 @@ def exile_gy(game, eff, opp, **_):
 def last_gift(game, p, item, **_):
     src = item.source if item else None
     before = {pl.name: [c for c in pl.graveyard if c.is_creature] for pl in game.players}
+    sources = counter_mechanics.death_sources(game)
     for pl in game.players:
         for c in [x for x in pl.creatures if x is not src]:
-            game.sacrifice(c)
+            game.sacrifice(c, counter_sources=sources)
     for pl in game.players:
         for card in before[pl.name]:
             if card in pl.graveyard:

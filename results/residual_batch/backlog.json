@@ -1,0 +1,395 @@
+{
+  "active": true,
+  "status": "active",
+  "reviewed_on": "2026-10-28",
+  "source_report": "results/residual_batch/after/summary.json",
+  "source_cards": "results/residual_batch/after/cards.csv",
+  "ranking_method": "Engineering suggestions from re-parsed residual clauses, separate from overlapping census families.",
+  "inclusion_rule": "Only exact ignored clauses on partial cards; no full cards, matched effects or simplification-only cards.",
+  "completed_request": {
+    "effects": 30,
+    "example_cards": 25,
+    "resolved_clauses": 30,
+    "archive": "results/residual_batch/completed-backlog.json"
+  },
+  "items": [
+    {
+      "priority": 1,
+      "id": "overload",
+      "title": "Overload target rewriting and alternative costs",
+      "status": "open",
+      "examples": [
+        {
+          "card": "Cyclonic Rift",
+          "status": "partial",
+          "remaining_ignored_text": "Overload {6}{U}"
+        }
+      ]
+    },
+    {
+      "priority": 2,
+      "id": "keyword_gain_prohibition",
+      "title": "Scoped keyword removal and gain prohibitions",
+      "status": "open",
+      "examples": [
+        {
+          "card": "Archetype of Imagination",
+          "status": "partial",
+          "remaining_ignored_text": "Creatures your opponents control lose flying and can't have or gain flying."
+        }
+      ]
+    },
+    {
+      "priority": 3,
+      "id": "shared_type_anthem",
+      "title": "Shared creature-type counts for dynamic anthems",
+      "status": "open",
+      "examples": [
+        {
+          "card": "Coat of Arms",
+          "status": "partial",
+          "remaining_ignored_text": "Each creature gets +1/+1 for each other creature on the battlefield that shares at least one creature type with it."
+        }
+      ]
+    },
+    {
+      "priority": 4,
+      "id": "chosen_color_protection",
+      "title": "Color choice bound to team protection",
+      "status": "open",
+      "examples": [
+        {
+          "card": "Brave the Elements",
+          "status": "partial",
+          "remaining_ignored_text": "Choose a color."
+        },
+        {
+          "card": "Brave the Elements",
+          "status": "partial",
+          "remaining_ignored_text": "White creatures you control gain protection from the chosen color until end of turn."
+        }
+      ]
+    },
+    {
+      "priority": 5,
+      "id": "linked_exile_compensation",
+      "title": "Linked temporary exile and owner compensation tokens",
+      "status": "open",
+      "examples": [
+        {
+          "card": "Skyclave Apparition",
+          "status": "partial",
+          "remaining_ignored_text": "exile up to one target nonland, nontoken permanent you don't control with mana value 4 or less."
+        },
+        {
+          "card": "Skyclave Apparition",
+          "status": "partial",
+          "remaining_ignored_text": "the exiled card's owner creates an X/X blue Illusion creature token, where X is the mana value of the exiled card."
+        }
+      ]
+    }
+  ],
+  "source_cards_sha256": "0441f78cd449f6ce58b4ccf09a8187e432601868af5e83ef3f15cf1ee684e508",
+  "measured_remaining_families": [
+    {
+      "gap": "triggered (whenever/when)",
+      "affected_cards": 3364,
+      "potential_full_matches": 2072,
+      "examples": [
+        "A Display of My Dark Power",
+        "A Good Day to Die",
+        "A Good Day to Pie"
+      ]
+    },
+    {
+      "gap": "counters",
+      "affected_cards": 2848,
+      "potential_full_matches": 1934,
+      "examples": [
+        "A-Briar Hydra",
+        "A-Celebrity Fencer",
+        "A-Celestial Regulator"
+      ]
+    },
+    {
+      "gap": "activated abilities",
+      "affected_cards": 2566,
+      "potential_full_matches": 1931,
+      "examples": [
+        "A-Baba Lysaga, Night Witch",
+        "A-Carnelian Orb of Dragonkind",
+        "A-Dungeon Descent"
+      ]
+    },
+    {
+      "gap": "graveyard",
+      "affected_cards": 2680,
+      "potential_full_matches": 1500,
+      "examples": [
+        "A Good Day to Pie",
+        "A-Ardent Dustspeaker",
+        "A-Cobbled Lancer"
+      ]
+    },
+    {
+      "gap": "tokens",
+      "affected_cards": 2170,
+      "potential_full_matches": 1217,
+      "examples": [
+        "A-Elderleaf Mentor",
+        "A-Elven Bow",
+        "A-Esika's Chariot"
+      ]
+    },
+    {
+      "gap": "sacrifice",
+      "affected_cards": 1921,
+      "potential_full_matches": 1143,
+      "examples": [
+        "A-Baba Lysaga, Night Witch",
+        "A-Capenna Express",
+        "A-Forge Boss"
+      ]
+    },
+    {
+      "gap": "exile",
+      "affected_cards": 2070,
+      "potential_full_matches": 1041,
+      "examples": [
+        "A-Ardent Dustspeaker",
+        "A-Cobbled Lancer",
+        "A-Elderfang Ritualist"
+      ]
+    },
+    {
+      "gap": "auras/enchant",
+      "affected_cards": 1042,
+      "potential_full_matches": 865,
+      "examples": [
+        "A-Public Enemy",
+        "Aboshan's Desire",
+        "Absorbing Man"
+      ]
+    },
+    {
+      "gap": "can't restrictions",
+      "affected_cards": 1283,
+      "potential_full_matches": 716,
+      "examples": [
+        "A-Goma Fada Vanguard",
+        "A-Ready to Rumble",
+        "A-Sewer Crocodile"
+      ]
+    },
+    {
+      "gap": "X costs",
+      "affected_cards": 1203,
+      "potential_full_matches": 685,
+      "examples": [
+        "A-Briar Hydra",
+        "A-Maelstrom Muse",
+        "A-Nael, Avizoa Aeronaut"
+      ]
+    },
+    {
+      "gap": "equipment",
+      "affected_cards": 560,
+      "potential_full_matches": 412,
+      "examples": [
+        "A-Bruenor Battlehammer",
+        "A-Dwarfhold Champion",
+        "A-Goma Fada Vanguard"
+      ]
+    },
+    {
+      "gap": "copy effects",
+      "affected_cards": 669,
+      "potential_full_matches": 342,
+      "examples": [
+        "A-Mentor's Guidance",
+        "A-Symmetry Sage",
+        "A-Thousand-Faced Shadow"
+      ]
+    },
+    {
+      "gap": "library search",
+      "affected_cards": 469,
+      "potential_full_matches": 244,
+      "examples": [
+        "A-Navigation Orb",
+        "A-Phantom Carriage",
+        "A-Sprouting Goblin"
+      ]
+    },
+    {
+      "gap": "cost reduction",
+      "affected_cards": 368,
+      "potential_full_matches": 188,
+      "examples": [
+        "A-Cosmos Charger",
+        "A-Knockout Blow",
+        "A-Llanowar Greenwidow"
+      ]
+    },
+    {
+      "gap": "+1/+1 static (anthems)",
+      "affected_cards": 243,
+      "potential_full_matches": 133,
+      "examples": [
+        "A-Steadfast Unicorn",
+        "Akoum Battlesinger",
+        "Alistair, the Brigadier"
+      ]
+    },
+    {
+      "gap": "mana restrictions",
+      "affected_cards": 137,
+      "potential_full_matches": 73,
+      "examples": [
+        "A-Base Camp",
+        "Abstract Paintmage",
+        "Adarkar Unicorn"
+      ]
+    },
+    {
+      "gap": "set: threshold",
+      "affected_cards": 77,
+      "potential_full_matches": 64,
+      "examples": [
+        "Aboshan's Desire",
+        "Barbarian Ring",
+        "Battlefield Scrounger"
+      ]
+    },
+    {
+      "gap": "transform",
+      "affected_cards": 123,
+      "potential_full_matches": 59,
+      "examples": [
+        "Afflicted Deserter // Werewolf Ransacker",
+        "Ambitious Farmhand // Seasoned Cathar",
+        "Archangel Avacyn // Avacyn, the Purifier"
+      ]
+    },
+    {
+      "gap": "set: food",
+      "affected_cards": 96,
+      "potential_full_matches": 59,
+      "examples": [
+        "Ant-Man's Army",
+        "Astrid Peth",
+        "Bartered Cow"
+      ]
+    },
+    {
+      "gap": "modal (choose)",
+      "affected_cards": 257,
+      "potential_full_matches": 23,
+      "examples": [
+        "Beamsplitter Mage",
+        "Cabal Interrogator",
+        "Cauldron of Souls"
+      ]
+    },
+    {
+      "gap": "set: exhaust",
+      "affected_cards": 29,
+      "potential_full_matches": 19,
+      "examples": [
+        "Afterburner Expert",
+        "Audacious Knuckleblade",
+        "Boom Scholar"
+      ]
+    },
+    {
+      "gap": "set: gift",
+      "affected_cards": 18,
+      "potential_full_matches": 12,
+      "examples": [
+        "Coiling Rebirth",
+        "Dark Apostle",
+        "Dawn's Truce"
+      ]
+    },
+    {
+      "gap": "set: suspect",
+      "affected_cards": 21,
+      "potential_full_matches": 10,
+      "examples": [
+        "Caught Red-Handed",
+        "Convenient Target",
+        "Frantic Scapegoat"
+      ]
+    },
+    {
+      "gap": "set: descend",
+      "affected_cards": 12,
+      "potential_full_matches": 9,
+      "examples": [
+        "Akawalli, the Seething Tower",
+        "Bygone Marvels",
+        "Coati Scavenger"
+      ]
+    },
+    {
+      "gap": "set: discover",
+      "affected_cards": 13,
+      "potential_full_matches": 8,
+      "examples": [
+        "A-Geological Appraiser",
+        "Aloy, Savior of Meridian",
+        "Curator of Sun's Creation"
+      ]
+    },
+    {
+      "gap": "set: role",
+      "affected_cards": 11,
+      "potential_full_matches": 8,
+      "examples": [
+        "Dunbarrow Revivalist",
+        "Embereth Veteran",
+        "Gadwick's First Duel"
+      ]
+    },
+    {
+      "gap": "set: manifest dread",
+      "affected_cards": 15,
+      "potential_full_matches": 7,
+      "examples": [
+        "Disturbing Mirth",
+        "Paranormal Analyst",
+        "Stay Hidden, Stay Silent"
+      ]
+    },
+    {
+      "gap": "set: room",
+      "affected_cards": 14,
+      "potential_full_matches": 7,
+      "examples": [
+        "Dungeon Delver",
+        "Ghostly Dancers",
+        "Ghostly Keybearer"
+      ]
+    },
+    {
+      "gap": "set: crime",
+      "affected_cards": 10,
+      "potential_full_matches": 7,
+      "examples": [
+        "Nimble Brigand",
+        "Omenport Vigilante",
+        "Overzealous Muscle"
+      ]
+    },
+    {
+      "gap": "set: collect evidence",
+      "affected_cards": 18,
+      "potential_full_matches": 6,
+      "examples": [
+        "Axebane Ferox",
+        "Conspiracy Unraveler",
+        "Evidence Examiner"
+      ]
+    }
+  ]
+}

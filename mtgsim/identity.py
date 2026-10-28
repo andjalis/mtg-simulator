@@ -104,14 +104,27 @@ class CardZone(list):
         return card
 
     def append(self, card):
+        if self._replace_destination(card):
+            return
         card = self._arrive(card)
         super().append(card)
         self._added(card)
 
     def insert(self, index, card):
+        if self._replace_destination(card):
+            return
         card = self._arrive(card)
         super().insert(index, card)
         self._added(card)
+
+    def _replace_destination(self, card):
+        game = getattr(self.owner, "_game", None)
+        if self.name == "graveyard" and game is not None:
+            from .residual_templates import grave_exiled
+            if grave_exiled(game, self.owner, token=card.is_token):
+                self.owner.exile.append(card)
+                return True
+        return False
 
     def _added(self, card):
         game = getattr(self.owner, "_game", None)
@@ -119,6 +132,9 @@ class CardZone(list):
             game.zone_arrived(card, self)
 
     def _depart(self, card):
+        card.departure_zone = self
+        if self.name == "exile" and hasattr(card, "face_down_exile"):
+            card.face_down_exile = False
         if getattr(self.owner, "_game", None) is not None:
             from .rules_events import card_snapshot
             card.pending_move = (card_snapshot(card, self.owner), self.name, self.owner, None, ())
@@ -139,6 +155,8 @@ class CardZone(list):
 
     def __delitem__(self, key):
         removed = self[key] if isinstance(key, slice) else [self[key]]
+        for card in removed:
+            card.departure_index = self.index(card)
         super().__delitem__(key)
         for card in removed:
             self._depart(card)
@@ -157,11 +175,15 @@ class CardZone(list):
         for card in before:
             if not any(card is c for c in after):
                 self._depart(card)
+        redirected = [card for card in prepared if not any(card is c for c in before) and self._replace_destination(card)]
         for card in prepared:
-            if not any(card is c for c in before):
+            if not any(card is c for c in before) and not any(card is c for c in redirected):
                 self._arrive(card)
+        after = [card for card in after if not any(card is c for c in redirected)]
         list.__setitem__(self, slice(None), after)
         for card in prepared:
+            if any(card is c for c in redirected):
+                continue
             if not any(card is c for c in before):
                 self._added(card)
 
@@ -212,6 +234,8 @@ class Graveyard(CardZone):
         super().__init__(*args, **kwargs)
 
     def append(self, card):
+        if self._replace_destination(card):
+            return
         previous = self.descents
         if card.is_permanent and not card.is_token:
             self.descents += 1

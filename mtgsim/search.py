@@ -52,6 +52,7 @@ def resolve(game, p, eff, target, item):
             who.hand.append(card)
         elif d["dest"] == "battlefield":
             perm = game.enter_battlefield(who, card)
-            perm.tapped = d["tapped"] or perm.tapped
+            if perm is not None:
+                perm.tapped = d["tapped"] or perm.tapped
         else:
             who.library.append(card)      # the top of the library is the end of the list
