@@ -29,15 +29,41 @@ class KickerRiderTests(unittest.TestCase):
         self.assertEqual(mode(c).cost, {"R": 1, "generic": 4})
 
     def test_stat_replacement_preserves_other_effects(self):
-        for base, kicked, expected in [("+2/+2", "+5/+5", 5), ("-2/-2", "-6/-6", -6)]:
+        for base, kicked, kind, expected in [("+2/+2", "+5/+5", "pump", 5),
+                                             ("-2/-2", "-6/-6", "debuff_one", 6)]:
             with self.subTest(base=base):
                 c = card(f"Target creature gets {base} until end of turn. Draw a card. "
                          f"If this spell was kicked, that creature gets {kicked} until end of turn instead.")
                 self.assertFalse(c.unsupported)
                 self.assertEqual(len(c.spell_effects), 2)
                 self.assertEqual([(e.kind, e.amount, e.amount2) for e in mode(c).effects],
-                                 [("pump", expected, expected), ("draw", 1, 0)])
+                                 [(kind, expected, expected), ("draw", 1, 0)])
                 self.assertEqual(abs(c.spell_effects[0].amount), 2)
+
+    def test_mismatched_stat_replacement_stays_unsupported(self):
+        for base, kicked in [("+2/+2", "-6/-6"), ("-2/-2", "+6/+6"),
+                             ("+2/+2", "+6/-6"), ("-2/-2", "-6/+6")]:
+            with self.subTest(base=base, kicked=kicked):
+                rider = f"that creature gets {kicked} until end of turn instead."
+                c = card(f"Target creature gets {base} until end of turn. If this spell was kicked, " + rider)
+                self.assertIn("if kicked: " + rider, c.unsupported)
+                self.assertEqual(mode(c).effects, c.spell_effects)
+
+    def test_kicked_debuff_policy_targets_opponents_creature(self):
+        game, a, b = self.game()
+        c = card("Target creature gets -2/-2 until end of turn. If this spell was kicked, "
+                 "that creature gets -6/-6 until end of turn instead.")
+        body = CardDef("Creature", {}, 0, types=frozenset({"Creature"}), power=4, toughness=4)
+        friendly = game.enter_battlefield(a, body)
+        enemy = game.enter_battlefield(b, body)
+        a.hand.append(c)
+        kicked = game._variant(a.hand[0], "kicker", mode(c))
+        self.assertEqual([(e.kind, e.amount, e.amount2) for e in kicked.spell_effects], [("debuff_one", 6, 6)])
+        self.assertEqual(game.auto_targets(a, kicked.spell_effects), [enemy])
+        self.assertTrue(game.cast(a, kicked))
+        self.assertNotIn(enemy, b.battlefield)
+        self.assertIn(friendly, a.battlefield)
+        self.assertEqual((friendly.power, friendly.toughness), (4, 4))
 
     def test_discard_replacement(self):
         c = card("Target player discards a card. If this spell was kicked, that player discards three cards instead.")

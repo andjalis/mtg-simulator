@@ -36,7 +36,11 @@ def build_mode(cost, kicker_cost, spell, riders, *, permanent=False):
         pumps = [e for e in effects if e.kind in ("pump", "debuff_one") and e.target == "creature"]
         if m and pumps:
             e = pumps[0]
-            effects[effects.index(e)] = dataclasses.replace(e, kind="pump", amount=int(m[1]), amount2=int(m[2]))
+            sign = "-" if e.kind == "debuff_one" else "+"
+            if m[1][0] == m[2][0] == sign:
+                effects[effects.index(e)] = dataclasses.replace(e, amount=abs(int(m[1])), amount2=abs(int(m[2])))
+            else:
+                unsupported.append(f"if kicked: {rider}")
             continue
         m = re.fullmatch(rf"that player discards ({_NUMBER}) cards? instead\.", rider)
         discards = [e for e in effects if e.kind == "discard" and e.target == "player"]
