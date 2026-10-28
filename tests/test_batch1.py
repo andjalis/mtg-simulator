@@ -264,6 +264,32 @@ class Batch1(unittest.TestCase):
         self.assertNotIn(mine, self.a.battlefield)
         self.assertNotIn(theirs, self.b.battlefield)
 
+    def test_power_from_graveyard_cards(self):
+        self.a.graveyard.extend([BEAR, BEAR])
+        wurm = self.put(card("Test Wurm", "{3}{B}", "Creature — Wurm",
+                             "~'s power and toughness are each equal to the number of creature cards in your graveyard.", 0, 0))
+        self.assertEqual(wurm.power, 2)
+        elite = self.put(card("Test Elite", "{1}{B}", "Creature — Zombie",
+                              "~ gets +1/+1 for each creature card in your graveyard.", 1, 1))
+        self.assertEqual(elite.power, 3)
+        drake = self.put(card("Test Drake", "{1}{U}", "Creature — Drake",
+                              "~'s power is equal to the number of instant and sorcery cards in your graveyard.", 0, 3))
+        self.assertEqual(drake.power, 0)
+        self.a.graveyard.append(card("Shock", "{R}", "Instant", "~ deals 2 damage to any target."))
+        self.assertEqual(drake.power, 1)
+
+    def test_pump_per_attached_aura(self):
+        artisan = self.put(card("Test Artisan", "{1}{W}", "Creature — Human",
+                                "~ gets +2/+2 for each Aura attached to it.", 1, 1))
+        aura = self.g.enter_battlefield(self.a, card("Test Aura", "{W}", "Enchantment — Aura", "Enchant creature"))
+        aura.attached_to = artisan
+        artisan.auras.append(aura)
+        self.assertEqual(artisan.power, 3)
+
+    def test_aura_grants_shroud(self):
+        cloak = card("Test Cloak", "{W}", "Enchantment — Aura", "Enchant creature\nEnchanted creature has shroud.")
+        self.assertFalse(cloak.unsupported)
+
 
 if __name__ == '__main__':
     unittest.main()

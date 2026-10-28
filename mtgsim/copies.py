@@ -32,7 +32,7 @@ _KW = (r"flying|first strike|double strike|deathtouch|lifelink|vigilance|trample
        r"indestructible|menace|reach|defender|flash|prowess")
 _COLORS = {"white", "blue", "black", "red", "green", "colorless"}
 _TYPES = {"artifact": "Artifact", "creature": "Creature", "enchantment": "Enchantment", "land": "Land",
-          "planeswalker": "Planeswalker"}
+          "planeswalker": "Planeswalker", "instant": "Instant", "sorcery": "Sorcery"}
 _SAC_QUOTE = re.compile(r'"At the beginning of the end step, sacrifice ~\.?"\.?')
 _N = r"(a|an|one|two|three|four|five|X)"
 

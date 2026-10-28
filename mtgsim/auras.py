@@ -17,7 +17,7 @@ from __future__ import annotations
 import re
 
 KINDS = {"tap_host", "attach_self"}
-_KW = ("flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|"
+_KW = ("flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|shroud|indestructible|"
        "menace|reach|protection from (?:white|blue|black|red|green)")
 _ENCHANT = re.compile(r"Enchant (creature|creature you control|creature or Vehicle|artifact or creature|"
                       r"artifact creature|land|permanent|nonland permanent|artifact|creature an opponent controls)")

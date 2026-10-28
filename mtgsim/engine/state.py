@@ -278,7 +278,12 @@ class Permanent:
                 bp += pp
                 bt += tt
         if what:
-            per = counting.count(None, self.controller, {"what": what, "zone": "battlefield"}, self)
+            if what == "attached:aura":
+                per = len(self.auras)
+            elif what.startswith("gy:"):
+                per = counting.count(None, self.controller, {"what": what[3:], "zone": "graveyard"}, self)
+            else:
+                per = counting.count(None, self.controller, {"what": what, "zone": "battlefield"}, self)
             bp += per * sp
             bt += per * st
         if creature:

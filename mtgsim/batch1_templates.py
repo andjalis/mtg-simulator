@@ -95,6 +95,21 @@ def parse_line(line, st):
     if line == "~ can't attack alone.":
         st.extra.setdefault('advanced_rules', {})['no_solo_attack'] = True
         return True
+    m = re.fullmatch(r"~ gets \+(\d+)/\+(\d+) for each (creature|land|artifact|instant|sorcery|instant or sorcery|instant and sorcery) cards? in your graveyard\.", line)
+    if m:
+        st.extra["pt_per"] = "gy:" + m[3].replace(" and ", " or ")
+        st.extra["pt_scale"] = (int(m[1]), int(m[2]))
+        return True
+    m = re.fullmatch(r"~'s (power and toughness are each|power is) equal to the number of (creature|land|artifact|instant and sorcery) cards in your graveyard\.", line)
+    if m:
+        st.extra["pt_per"] = "gy:" + m[2].replace(" and ", " or ")
+        st.extra["pt_scale"] = (1, 1) if "and" in m[1] else (1, 0)
+        return True
+    m = re.fullmatch(r"~ gets \+(\d+)/\+(\d+) for each Aura attached to it\.", line)
+    if m:
+        st.extra["pt_per"] = "attached:aura"
+        st.extra["pt_scale"] = (int(m[1]), int(m[2]))
+        return True
     if line == "Activated abilities of artifacts can't be activated.":
         st.extra.setdefault('advanced_rules', {})['artifact_activation_lock'] = True
         return True
