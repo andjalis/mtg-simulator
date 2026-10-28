@@ -125,10 +125,11 @@ class TargetsMixin:
         if t == "artifact_enchantment":
             return [x for x in everything if (x.card.is_artifact or "Enchantment" in x.card.types)
                     and self.passes_filter(eff, x, p)]
+        from ..batch1_templates import player_targetable
         if t == "any":
-            return creatures + [x for x in everything if x.is_planeswalker] + list(self.players)
+            return creatures + [x for x in everything if x.is_planeswalker] + [x for x in self.players if player_targetable(self, x, p)]
         if t == "player":
-            return [self.opponent(p)] if eff.filter == "opp" else list(self.players)
+            return [x for x in ([self.opponent(p)] if eff.filter == "opp" else list(self.players)) if player_targetable(self, x, p)]
         if t == "spell":
             return [i for i in self.stack if self.can_counter(eff, i, p)]
         return []

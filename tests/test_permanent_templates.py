@@ -99,7 +99,7 @@ class PermanentTemplates(unittest.TestCase):
     def test_player_and_host_phrases_are_not_permanent_subtypes(self):
         for text in ('You', 'Enchanted creature', 'Equipped creature', 'Those creatures'):
             self.assertIsNone(selector(text, plural=True))
-        definition = card('Law', '', 'Enchantment', 'You have hexproof.')
+        definition = card('Law', '', 'Enchantment', 'You have shroud and protection from everything.')
         # This feature does not implement player keyword statics.
         self.assertTrue(definition.unsupported)
 

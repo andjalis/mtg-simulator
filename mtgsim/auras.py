@@ -42,6 +42,9 @@ def parse_line(line: str, extra: dict, types) -> bool:
     if re.fullmatch(r"Enchanted creature can't attack or block\.", line):
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"cant_attack_block"}
         return True
+    if re.fullmatch(r"Enchanted creature can't attack or block, and its activated abilities can't be activated\.", line):
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"cant_attack_block", "cant_activate"}
+        return True
     m = re.fullmatch(r"Enchanted (?:creature|permanent) loses all abilities(?: and doesn't untap during its controller's "
                      r"untap step)?\.", line)
     if m:

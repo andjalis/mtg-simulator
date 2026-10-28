@@ -204,7 +204,7 @@ class AbilitiesMixin:
         acts = perm.activated
         if perm not in p.battlefield or idx < 0 or idx >= len(acts) or acts[idx].kind != "ability":
             return False
-        if self.nonmana_locked(p) or perm.abilities_suppressed:
+        if self.nonmana_locked(p) or perm.abilities_suppressed or any('cant_activate' in a.card.aura_flags for a in perm.auras):
             return False
         act, c = acts[idx], acts[idx].extra_costs
         from ..residual_templates import activation_blocked, mana_ability, life_locked
