@@ -73,7 +73,7 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
             theirs = [x for x in theirs if x.toughness <= eff.amount2]
         theirs = [x for x in theirs if not (k == "destroy" and x.has("indestructible"))]
         return max(theirs, key=perm_value, default=None)
-    if k in ("pump", "p1_counters", "double_power", "grant", "explore", "attach_self", "force_blocked"):
+    if k in ("pump", "p1_counters", "distribute_counters", "double_power", "grant", "explore", "attach_self", "force_blocked"):
         return max(mine, key=perm_value, default=None)
     if k == "oring":
         return max(theirs, key=perm_value, default=None)

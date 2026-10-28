@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from ..policy import default_choose_target, perm_value
 from ..state import Permanent, StackItem
+from ... import distribute
 from . import kind
 
 
@@ -91,6 +92,20 @@ def grant(game, eff, target, item, **_):
             target.counters[name] = target.counters.get(name, 0) + 1
         else:
             target.temp_kw.add(eff.data["keyword"])
+
+
+@kind("distribute_counters")
+def distribute_counters(game, p, eff, target, **_):
+    pool = [c for c in p.creatures if c is not target]
+    if eff.target != "none":
+        if not isinstance(target, Permanent) or target not in target.controller.battlefield:
+            return
+        pool = [c for c in game.legal_targets(p, eff) if c is not target]
+    best = sorted(pool, key=perm_value, reverse=True)
+    chosen = ([target] if eff.target != "none" else []) + best
+    for c, n in distribute.split(eff.amount, chosen[:eff.data["slots"]]):
+        c.counters["+1/+1"] = c.p1 + n
+        game.log(f"puts {n} +1/+1 counter(s) on {c.card.name}", p)
 
 
 @kind("add_counter")
