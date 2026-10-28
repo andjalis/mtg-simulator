@@ -4,7 +4,14 @@ from __future__ import annotations
 EFFECT_PATTERNS = [
     (r"target player sacrifices a creature", lambda m: _e("edict_player", target="player", filter="opp")),
     (r"each player sacrifices a creature", lambda m: _e("edict_each")),
-    (r"you gain life equal to its (power|toughness)", lambda m: _e("gain_prev_stat", data={"stat": m[1].lower()})),
+    (r"you gain life equal to its (power|toughness|mana value)", lambda m: _e("gain_prev_stat", data={"stat": m[1].lower()})),
+    (r"(?:that|defending) player sacrifices a creature", lambda m: _e("edict_player", target="that_player")),
+    (r"each player sacrifices a land", lambda m: _e("sac_land_each")),
+    (r"(?:that|defending) player discards a card at random", lambda m: _e("discard_random_that", target="that_player")),
+    (r"(?:defending|that) player discards a card", lambda m: _e("discard", target="that_player")),
+    (r"~ deals (\d+) damage to each (attacking creature|creature your opponents control)",
+     lambda m: _e("damage_group", int(m[1]), data={"group": "attacking" if m[2].startswith("attacking") else "opp"})),
+    (r"destroy target creature that was dealt damage this turn", lambda m: _e("destroy", target="creature", filter="damaged")),
     (r"look at target opponent's hand", lambda m: _e("peek_hand", target="player", filter="opp")),
     (r"create (a|one|two|three) (tapped )?powerstone tokens?", lambda m: _e("powerstone", _num(m[1]), data={"tapped": bool(m[2])})),
     (r"you become the monarch", lambda m: _e("become_monarch")),
@@ -68,6 +75,32 @@ def parse_line(line, st):
         from .cards import Effect, Trigger
         st.triggers.append(Trigger('attacks', [Effect('provoke')]))
         return True
+    m = re.fullmatch(r"~ gets \+(\d+)/\+(\d+) as long as you control an? (Plains|Island|Swamp|Mountain|Forest)\.", line)
+    if m:
+        st.extra["pt_if"] = st.extra.get("pt_if", ()) + (("land:" + m[3], int(m[1]), int(m[2])),)
+        return True
+    m = re.fullmatch(r"~ can't be blocked by (artifact creatures|[Ww]alls|creatures with flying)\.", line)
+    if m:
+        rules = st.extra.setdefault('advanced_rules', {})
+        rules['evade_vs'] = rules.get('evade_vs', ()) + ({"artifact creatures": "artifact", "walls": "Wall", "creatures with flying": "flying"}[m[1].lower()],)
+        return True
+    m = re.fullmatch(r"~ can't block creatures with power (\d+) or greater\.", line)
+    if m:
+        st.extra.setdefault('advanced_rules', {})['cant_block_power'] = int(m[1])
+        return True
+    if line == "~ can't block and can't be blocked.":
+        st.extra['cant_block'] = True
+        st.keywords.add('unblockable')
+        return True
+    if line == "~ can't attack alone.":
+        st.extra.setdefault('advanced_rules', {})['no_solo_attack'] = True
+        return True
+    if line == "Activated abilities of artifacts can't be activated.":
+        st.extra.setdefault('advanced_rules', {})['artifact_activation_lock'] = True
+        return True
+    if line == "Skip your draw step.":
+        st.extra.setdefault('advanced_rules', {})['skip_draw'] = True
+        return True
     if line == "You have hexproof.":
         st.extra.setdefault('advanced_rules', {})['player_hexproof'] = True
         return True
@@ -101,10 +134,26 @@ def phantom_prevents(target):
     return False
 
 
+def block_restricted(blocker, attacker):
+    """Blocking limits from evasion ("can't be blocked by walls") and from the blocker ("can't block power 2 or greater")."""
+    for kind in attacker.card.advanced_rules.get('evade_vs', ()):
+        if kind == 'artifact' and blocker.card.is_artifact or kind == 'flying' and blocker.has('flying') \
+                or kind in blocker.card.subtypes:
+            return True
+    limit = blocker.card.advanced_rules.get('cant_block_power')
+    return bool(limit and attacker.power >= limit)
+
+
+def skips_draw(game, player):
+    from .residual_templates import sources
+    return any(x.controller is player for x in sources(game, 'skip_draw'))
+
+
 def drop_solo(creatures):
     """Remove creatures that can't attack or block alone while nothing else joins them."""
     group = list(creatures)
-    while len(group) == 1 and group[0].card.advanced_rules.get('no_solo') and not group[0].abilities_suppressed:
+    while len(group) == 1 and (group[0].card.advanced_rules.get('no_solo') or group[0].card.advanced_rules.get('no_solo_attack')) \
+            and not group[0].abilities_suppressed:
         group = []
     return group
 

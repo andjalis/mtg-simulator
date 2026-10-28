@@ -378,6 +378,8 @@ class Permanent:
             return self.controller.my_turn
         if cond == "delirium":
             return len({t for c in self.controller.graveyard for t in c.types}) >= 4
+        if cond.startswith("land:"):
+            return any(cond[5:] in x.card.subtypes for x in self.controller.battlefield if x.card.is_land)
         if cond.startswith("artifacts>="):
             return sum(x.card.is_artifact for x in self.controller.battlefield) >= int(cond[11:])
         if cond == "attacking":
@@ -675,7 +677,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
         return False
     if attacker.card.max_blocker_power and blocker.power >= attacker.card.max_blocker_power:
         return False
-    return True
+    from ..batch1_templates import block_restricted
+    return not block_restricted(blocker, attacker)
 
 
 

@@ -3,7 +3,9 @@ import random
 import unittest
 
 from mtgsim.cards import _parse_effects
-from mtgsim.engine import Game, Player, StackItem
+from mtgsim.batch1_templates import skips_draw
+from mtgsim.engine import Game, Player, StackItem, can_block
+from mtgsim.residual_templates import activation_blocked
 from tests.test_combat_triggers import Scripted, BEAR
 from tests.test_templates import ISLAND, card
 
@@ -196,6 +198,71 @@ class Batch1(unittest.TestCase):
         crawler = card("Test Crawler", "{2}", "Artifact Creature — Construct",
                        "Converge — ~ enters with a +1/+1 counter on it for each color of mana spent to cast it.", 0, 0)
         self.assertTrue(crawler.advanced_rules.get("sunburst"))
+
+    def test_conditional_pump_for_basic_land_type(self):
+        aven = self.put(card("Test Aven", "{1}{W}", "Creature — Bird", "~ gets +1/+1 as long as you control a Plains.", 1, 1))
+        self.assertEqual(aven.power, 1)
+        self.put(card("Plains", types="Basic Land — Plains"))
+        self.assertEqual(aven.power, 2)
+
+    def test_cant_be_blocked_by_walls_and_fliers(self):
+        rat = self.put(card("Test Rat", "{1}", "Creature — Rat", "~ can't be blocked by Walls.", 1, 1))
+        wall = self.put(card("Test Wall", "{1}", "Creature — Wall", "", 0, 4), self.b)
+        bear = self.put(BEAR, self.b)
+        self.assertFalse(can_block(wall, rat))
+        self.assertTrue(can_block(bear, rat))
+
+    def test_cant_block_big_attackers(self):
+        orc = self.put(card("Test Orc", "{1}{R}", "Creature — Orc", "~ can't block creatures with power 2 or greater.", 2, 2), self.b)
+        bear = self.put(BEAR)
+        small = self.put(card("Test Mite", "{1}", "Creature — Insect", "", 1, 1))
+        self.assertFalse(can_block(orc, bear))
+        self.assertTrue(can_block(orc, small))
+
+    def test_cant_attack_alone_without_block_clause(self):
+        construct = self.put(card("Test Construct", "{2}", "Artifact Creature — Construct", "~ can't attack alone.", 3, 3))
+        self.a.ai.attack = (construct,)
+        self.g.combat(self.a, self.b)
+        self.assertEqual(self.b.life, 20)
+
+    def test_skip_draw_step(self):
+        self.put(card("Test Appeasement", "{3}{R}", "Enchantment", "Skip your draw step."), self.a)
+        self.assertTrue(skips_draw(self.g, self.a))
+        self.assertFalse(skips_draw(self.g, self.b))
+
+    def test_artifacts_cannot_be_activated(self):
+        self.put(card("Test Ouphe", "{1}{G}", "Creature — Ouphe", "Activated abilities of artifacts can't be activated.", 1, 1), self.b)
+        rock = self.put(card("Test Rock", "{1}", "Artifact", "{T}: Add {C}."), self.a)
+        self.assertTrue(activation_blocked(self.g, rock, mana=True))
+
+    def test_damage_each_attacking_and_opponent_creatures(self):
+        mine = self.put(BEAR, self.a)
+        theirs = self.put(BEAR, self.b)
+        self.g.attackers = [theirs]
+        self.apply("~ deals 1 damage to each attacking creature.")
+        self.assertEqual((mine.damage, theirs.damage), (0, 1))
+        self.apply("~ deals 1 damage to each creature your opponents control.")
+        self.assertEqual((mine.damage, theirs.damage), (0, 2))
+
+    def test_destroy_damaged_creature(self):
+        fresh, hurt = self.put(BEAR, self.b), self.put(BEAR, self.b)
+        hurt.damage = 1
+        eff, _ = _parse_effects("Destroy target creature that was dealt damage this turn.")
+        legal = self.g.legal_targets(self.a, eff[0])
+        self.assertIn(hurt, legal)
+        self.assertNotIn(fresh, legal)
+
+    def test_defending_player_discards(self):
+        self.b.hand = [ISLAND]
+        eff, _ = _parse_effects("Defending player discards a card.")
+        self.g.resolve(self.a, eff[0], None, StackItem(self.a, eff, [None], context=self.b))
+        self.assertEqual(len(self.b.hand), 0)
+
+    def test_each_player_sacrifices_a_land(self):
+        mine, theirs = self.put(ISLAND, self.a), self.put(ISLAND, self.b)
+        self.apply("Each player sacrifices a land.")
+        self.assertNotIn(mine, self.a.battlefield)
+        self.assertNotIn(theirs, self.b.battlefield)
 
 
 if __name__ == '__main__':
