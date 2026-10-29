@@ -37,6 +37,10 @@ class ResolveMixin:
             if not kicks:
                 return
             eff = dataclasses.replace(eff, amount=eff.amount * kicks)
+        if eff.data.get("emerged_toughness"):    # Adipose Offspring: X tokens if its emerge cost was paid
+            src = item.source if item is not None else None
+            if getattr(src, "emerged_toughness", None) is not None:
+                eff = dataclasses.replace(eff, amount=src.emerged_toughness)
         if eff.data.get("xq"):     # ", where X is the number of ..."
             n = self.x_quantity(p, eff.data["xq"], item, prev)
             if eff.data.get("xq_size"):

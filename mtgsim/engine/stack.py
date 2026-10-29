@@ -320,6 +320,7 @@ class StackMixin:
                 perm.warped = True
             perm.was_cast = True
             perm.kicks = getattr(item, "kicks", 0)
+            perm.emerged_toughness = getattr(item, "emerged_toughness", None)
             if perm.kicks and base.advanced_rules.get("kick_counters_each"):
                 perm.counters["+1/+1"] = perm.p1 + perm.kicks
             if perm.kicks and (base.advanced_rules.get("multipay") or ("",))[0] == "squad":
