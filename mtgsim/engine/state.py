@@ -606,6 +606,7 @@ class Player:
         self.granted_fb: list[CardDef] = []           # graveyard cards that gained flashback this turn
         self.mulligans = 0
         self.lost_life_turn = False
+        self.life_lost_amount = 0         # life lost this turn (damage and loss alike)
         self.perm_left_turn = False
         self.entered_nonland_turn = 0     # nonland permanents that entered under this player's control this turn
         self.attacked_with = 0
@@ -631,6 +632,7 @@ class Player:
             return
         if value < self._life:
             self.lost_life_turn = True
+            self.life_lost_amount += self._life - value
         self._life = value
 
     @property

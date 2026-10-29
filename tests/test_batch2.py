@@ -4,6 +4,7 @@ import unittest
 from mtgsim.cards import _parse_effects
 from mtgsim.engine import StackItem
 from tests.test_batch1 import Batch1, BIG
+from tests.test_templates import ISLAND
 from tests.test_templates import card
 
 SPELL = card("Test Spell", "{1}", "Sorcery", "", None, None)
@@ -219,6 +220,20 @@ class Batch2(Batch1):
         self.g.cast(self.a, bolt)
         self.g.settle()
         self.assertEqual(self.b.life, 16)
+
+    def test_hideaway(self):
+        land = card("Test Knoll", "", "Land", "Hideaway 4\n{G}, {T}: You may play the exiled card without paying its mana cost if "
+                    "creatures you control have total power 10 or greater.", None, None)
+        gem = card("Test Gem", "{4}", "Artifact", "", None, None)
+        self.a.library[-4:] = [ISLAND, ISLAND, gem, ISLAND]
+        perm = self.put(land)
+        self.assertEqual(perm.hidden.name, "Test Gem")
+        self.assertIn(perm.hidden, self.a.exile)
+        self.put(BIG), self.put(BIG), self.put(BIG)
+        item = StackItem(self.a, [], [], source=perm)
+        self.g.resolve(self.a, land.activated[0].effects[0], None, item)
+        self.g.settle()
+        self.assertTrue(any(x.card.name == "Test Gem" for x in self.a.battlefield))
 
 
 if __name__ == "__main__":

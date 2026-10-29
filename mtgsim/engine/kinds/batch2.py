@@ -136,3 +136,43 @@ def conspire(game, p, item, **_):
         c.tapped = True
     game.log(f"conspires {spell.card.name}", p)
     copies.copy_spell(game, p, spell)
+
+
+@kind("hideaway")
+def hideaway(game, p, eff, item, **_):
+    """Look at the top N, exile one face down (the costliest spell, else a land), the rest go to the bottom."""
+    src = item.source if item is not None else None
+    top = [p.library.pop() for _ in range(min(eff.amount, len(p.library)))]
+    if not top or not isinstance(src, Permanent):
+        for c in top:
+            p.library.insert(0, c)
+        return
+    pick = max(top, key=lambda c: (not c.is_land, c.cmc))
+    top.remove(pick)
+    p.exile.append(pick)
+    src.hidden = pick
+    for c in top:
+        p.library.insert(0, c)
+    game.log("hides a card away", p)
+
+
+@kind("hideaway_play")
+def hideaway_play(game, p, eff, item, **_):
+    from ...batch1_templates import hideaway_holds
+    src = item.source if item is not None else None
+    card = getattr(src, "hidden", None)
+    if card is None or card not in p.exile or not hideaway_holds(game, p, eff.data["cond"]):
+        return
+    src.hidden = None
+    if card.is_land:
+        game.play_land(p, card)
+    else:
+        game.cast_free(p, card)
+
+
+@kind("hideaway_return")
+def hideaway_return(game, p, item, **_):
+    src = item.source if item is not None else None
+    card = getattr(src, "hidden", None)
+    if card is not None and card in p.exile:
+        game.move_card(card, p.exile, p.hand, reason="hideaway-return")

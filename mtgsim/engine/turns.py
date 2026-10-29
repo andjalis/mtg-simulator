@@ -233,6 +233,7 @@ class TurnsMixin:
         opp = self.opponent(p)
         for pl in self.players:
             pl.lost_life_turn = pl.perm_left_turn = False
+            pl.life_lost_amount = 0
             pl.entered_nonland_turn = 0
             pl.my_turn = pl is p
             pl.discarded_cards = []

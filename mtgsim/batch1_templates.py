@@ -257,6 +257,25 @@ def parse_line(line, st):
     if m:
         st.extra.setdefault('advanced_rules', {})['damage_immune'] = ("combat" if m[1] else "creatures" if m[2] else "all")
         return True
+    m = re.fullmatch(r"Hideaway (\d+)", line)
+    if m:
+        from .cards import Effect, Trigger
+        st.triggers.append(Trigger('etb', [Effect('hideaway', int(m[1]))]))
+        return True
+    m = re.fullmatch(r"((?:\{[^}]+\}, )*\{[^}]+\}): You may play the exiled card without paying its mana cost if (.+)\.", line)
+    if m and m[2] in HIDEAWAY_CONDS:
+        from .cards import Activated, Effect, parse_mana_cost
+        cost = parse_mana_cost("".join(c for c in re.findall(r"\{[^}]+\}", m[1]) if c != "{T}"))
+        st.activated.append(Activated("ability", cost, effects=[Effect('hideaway_play', data={'cond': HIDEAWAY_CONDS[m[2]]})],
+                                      extra_costs={"tap": True}, text=line))
+        if HIDEAWAY_CONDS[m[2]] == "damage7":
+            st.approximations.append("damage dealt to an opponent counts all life they lost this turn")
+        return True
+    m = re.fullmatch(r"When ~ leaves the battlefield, put the exiled card into its owner's hand\.", line)
+    if m:
+        from .cards import Effect, Trigger
+        st.triggers.append(Trigger('leaves', [Effect('hideaway_return')]))
+        return True
     if line == "Conspire":
         from .cards import Effect, Trigger
         st.triggers.append(Trigger('cast_self', [Effect('conspire')]))
@@ -351,6 +370,10 @@ def effect_value(game, player, effect, target):
                     hit = 0
                 value += -hit if pl is player else hit
         return value
+    if kind == 'hideaway_play':
+        src = getattr(game.target_source, 'source', game.target_source)
+        card = getattr(src, 'hidden', None)
+        return 1 + card.cmc if card is not None and hideaway_holds(game, player, effect.data['cond']) else 0
     if kind == 'conspire':
         return 0.5
     if kind == 'tuck_perm':
@@ -633,6 +656,27 @@ def block_restricted(blocker, attacker):
             return True
     limit = blocker.card.advanced_rules.get('cant_block_power')
     return bool(limit and attacker.power >= limit)
+
+
+HIDEAWAY_CONDS = {
+    "an opponent was dealt 7 or more damage this turn": "damage7",
+    "creatures you control have total power 10 or greater": "power10",
+    "you attacked with three or more creatures this turn": "attack3",
+    "a library has twenty or fewer cards in it": "library20",
+    "each player has no cards in hand": "nohands",
+}
+
+
+def hideaway_holds(game, p, cond):
+    if cond == "damage7":
+        return game.opponent(p).life_lost_amount >= 7
+    if cond == "power10":
+        return sum(max(0, c.power) for c in p.creatures) >= 10
+    if cond == "attack3":
+        return p.attacked_with >= 3
+    if cond == "library20":
+        return any(len(pl.library) <= 20 for pl in game.players)
+    return all(not pl.hand for pl in game.players)
 
 
 def spell_tax(game, player, card):
