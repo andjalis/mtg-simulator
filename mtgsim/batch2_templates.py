@@ -34,6 +34,9 @@ EFFECT_PATTERNS = [
      r"artifact or enchantment|instant or sorcery) spell",
      lambda m: _e("counter", target="spell", filter="types:" + ",".join(w.title() for w in m[1].split(" or ")))),
     (r"sacrifice (?:it|that creature|that token|them) at the beginning of the next end step", lambda m: _e("sac_at_end", target="prev")),
+    (r"(destroy|exile) (?:each|all) (.+)", lambda m: _group(m[1].lower(), m[2])),
+    (r"return (?:each|all) (.+) to (?:its|their) owners?'s? hands?", lambda m: _group("bounce", m[1])),
+    (r"~ deals (\d+|X) damage to (?:each|all) (.+)", lambda m: _group("damage", m[2], amount=m[1])),
     (r"return (another|a) (?:([\w ]+?) )?creature you control to its owner's hand",
      lambda m: _e("return_own", data={"kind": "creature", "other": m[1] == "another", "colors": _colors(m[2] or "")})),
     (r"return a permanent you control to its owner's hand", lambda m: _e("return_own", data={"kind": "permanent"})),
@@ -57,3 +60,26 @@ def _e(kind, amount=1, **kw):
 def _num(word):
     from .cards import _num as number
     return number(word)
+
+
+def _group(op, noun, amount="0"):
+    """Destroy, exile, bounce or damage every permanent a selector describes, all before state-based actions."""
+    from .permanent_templates import selector
+    from .cards import NO_MATCH
+    spec = selector(noun, plural=True)
+    if spec is None:
+        return NO_MATCH
+    data = {"selector": spec, "op": op}
+    if amount == "X":
+        data["x"] = True
+    return _e("group_remove", 0 if amount == "X" else int(amount), data=data)
+
+
+def overload_effects(text):
+    """The effects of an overloaded spell: every "target" becomes "each". Returns (effects, unparsed lines)."""
+    import re
+    from .cards import _parse_effects
+    lines = [l for l in text.split("\n") if l.strip() and not re.match(r"(Overload|Flash$|Split second$)", l)
+             and l.strip() not in ("This spell can't be countered.", "~ can't be countered.")]
+    body = re.sub(r"\b([Tt])arget\b", lambda m: "Each" if m[1] == "T" else "each", " ".join(lines) if False else "\n".join(lines))
+    return _parse_effects(body)

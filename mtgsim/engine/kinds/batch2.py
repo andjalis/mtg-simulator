@@ -100,3 +100,22 @@ def sac_now(game, item, **_):
     perm = item.context if item is not None else None
     if isinstance(perm, Permanent) and perm in perm.controller.battlefield:
         game.sacrifice(perm)
+
+
+@kind("group_remove")
+def group_remove(game, p, eff, item, cause, **_):
+    from ...permanent_templates import matches
+    source = item.source if item else None
+    victims = [x for pl in game.players for x in pl.battlefield if matches(game, x, eff.data["selector"], p, source)]
+    op = eff.data["op"]
+    sources = counter_mechanics.death_sources(game) if op == "destroy" else None
+    src = (item.source if item.source is not None else item.card) if item is not None else None
+    for perm in victims:
+        if perm not in perm.controller.battlefield:
+            continue
+        if op == "destroy":
+            game.destroy(perm, counter_sources=sources)
+        elif op == "damage":
+            game.deal_damage(perm, eff.amount, by=p, cause=cause, source=src)
+        else:
+            game.leave_battlefield(perm, "exile" if op == "exile" else "hand")

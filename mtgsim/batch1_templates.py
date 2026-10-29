@@ -333,6 +333,20 @@ def effect_value(game, player, effect, target):
         if not blocks or level >= max(b[0] for b in blocks):
             return 0                       # already in the last range
         return 1 + 0.5 * sum(b[2][0] + b[2][1] for b in blocks if b[2] and b[0] == level + 1)
+    if kind == 'group_remove':
+        from .permanent_templates import matches
+        src = getattr(game.target_source, 'source', game.target_source)
+        op = effect.data['op']
+        value = 0
+        for pl in game.players:
+            for perm in pl.battlefield:
+                if not matches(game, perm, effect.data['selector'], player, src):
+                    continue
+                hit = perm_value(perm) * (0.5 if op == 'bounce' else 1)
+                if op == 'damage' and effect.amount < perm.toughness - perm.damage:
+                    hit = 0
+                value += -hit if pl is player else hit
+        return value
     if kind == 'tuck_perm':
         return perm_value(target) if getattr(target, 'controller', None) is game.opponent(player) else -1
     if kind == 'lose_half':

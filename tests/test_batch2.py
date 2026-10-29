@@ -182,6 +182,32 @@ class Batch2(Batch1):
         self.apply("~ deals damage to target creature equal to the number of lands you control.", [victim])
         self.assertEqual(victim.damage, 3)
 
+    def test_group_destroy_and_damage(self):
+        mine, theirs = self.put(BIG), self.put(BIG, self.b)
+        self.apply("Destroy each creature you don't control.")
+        self.assertIn(mine, self.a.battlefield)
+        self.assertNotIn(theirs, self.b.battlefield)
+
+    def test_overload_cast(self):
+        from mtgsim.cards import parse_mana_cost
+        rift = card("Test Rift", "{1}{U}", "Instant", "Return target nonland permanent to its owner's hand.\nOverload {3}{U}{U}", None, None)
+        self.assertEqual([a.kind for a in rift.alt_costs], ["alt"])
+        self.assertEqual(rift.alt_costs[0].effects[0].kind, "group_remove")
+        self.assertEqual(rift.alt_costs[0].cost, parse_mana_cost("{3}{U}{U}"))
+
+    def test_overload_resolves_on_each(self):
+        from tests.test_templates import ISLAND
+        rift = card("Test Rift", "{1}{U}", "Instant", "Return target nonland permanent to its owner's hand.\nOverload {3}{U}{U}", None, None)
+        for _ in range(6):
+            self.put(ISLAND)
+        one, two = self.put(BIG, self.b), self.put(BIG, self.b)
+        self.a.hand.append(rift)
+        variant = next(v for v in self.g.spell_options(self.a) if self.g._origin(v)[1] == "alt")
+        self.g.cast(self.a, variant)
+        self.g.settle()
+        self.assertNotIn(one, self.b.battlefield)
+        self.assertNotIn(two, self.b.battlefield)
+
 
 if __name__ == "__main__":
     unittest.main()

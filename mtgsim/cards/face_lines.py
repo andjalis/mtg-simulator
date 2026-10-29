@@ -486,6 +486,10 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["etb_counters"] = -1
             return None
+        m = re.fullmatch(r"Overload ((?:\{[^}]+\})+)", line)
+        if m:
+            extra["overload"] = parse_mana_cost(m[1])
+            return None
         m = re.fullmatch(r"Kicker (\{[^ ]+\})", line)
         if m:
             extra["kicker"] = parse_mana_cost(m[1])
