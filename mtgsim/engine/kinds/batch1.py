@@ -140,3 +140,22 @@ def peek_hand(game, p, target, opp, **_):
 def become_monarch(game, p, **_):
     game.monarch = p
     game.log("becomes the monarch", p)
+
+
+@kind("switch_pt")
+def switch_pt(game, target, **_):
+    """Until end of turn the creature's power and toughness trade places."""
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        power, toughness = target.power, target.toughness
+        target.pump_p += toughness - power
+        target.pump_t += power - toughness
+
+
+@kind("set_base_pt")
+def set_base_pt(game, eff, target, **_):
+    """Until end of turn the creature's base power and toughness are N/M (pump counters and auras still apply)."""
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        base_p, base_t = target.card.power, target.card.toughness
+        if isinstance(base_p, int) and isinstance(base_t, int):
+            target.pump_p += eff.amount - base_p
+            target.pump_t += eff.amount2 - base_t

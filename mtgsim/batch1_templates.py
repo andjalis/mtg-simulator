@@ -19,6 +19,11 @@ EFFECT_PATTERNS = [
     (r"creatures you control get \+X/\+(X|0) until end of turn",
      lambda m: _e("pump_all", 0, data={"x": True, "x2": m[1] == "X", "other": False, "keyword": ""})),
     (r"incubate (\d+)", lambda m: _e("incubate", int(m[1]))),
+    (r"tap or untap target (creature|permanent)", lambda m: _e("tap", target=m[1], data={"or_untap": True})),
+    (r"switch target creature's power and toughness until end of turn", lambda m: _e("switch_pt", target="creature")),
+    (r"target creature has base power and toughness (\d+)/(\d+) until end of turn",
+     lambda m: _e("set_base_pt", int(m[1]), amount2=int(m[2]), target="creature")),
+    (r"target player loses (\d+) life", lambda m: _e("drain", int(m[1]), target="each_opponent")),
     (r"you become the monarch", lambda m: _e("become_monarch")),
     (r"(?:it|~) deals damage equal to its power to any target", lambda m: _e("damage", target="any", data={"source_power": True})),
 ]
@@ -129,6 +134,24 @@ def parse_line(line, st):
         from .cards import Effect, Trigger
         eff = Effect('host_lose', int(m[1])) if m[1] else Effect('host_damage', int(m[2])) if m[2] else Effect('host_shrink')
         st.triggers.append(Trigger('host_upkeep', [eff]))
+        return True
+    m = re.fullmatch(r"Other creatures you control with (flying|trample|menace|first strike|lifelink|deathtouch|infect|defender|haste|vigilance|reach) get "
+                     r"\+(\d+)/\+(\d+)\.", line)
+    if m:
+        st.extra["anthem_kw"] = st.extra.get("anthem_kw", ()) + ((m[1], int(m[2]), int(m[3]), True),)
+        return True
+    m = re.fullmatch(r"Creatures can't attack you or planeswalkers you control unless their controller pays \{(\d+)\} for each of those creatures\.", line)
+    if m:
+        st.extra.setdefault('advanced_rules', {})['attack_tax'] = int(m[1])
+        return True
+    m = re.fullmatch(r"(Each player|You) can't cast more than one spell each turn\.", line)
+    if m:
+        st.extra.setdefault('advanced_rules', {})['one_spell_each' if m[1] == 'Each player' else 'one_spell_you'] = True
+        return True
+    m = re.fullmatch(r"Whenever enchanted creature (deals|is dealt) damage, you gain that much life\.", line)
+    if m:
+        rules = st.extra.setdefault('advanced_rules', {})
+        rules['soul_link'] = rules.get('soul_link', ()) + (m[1],)
         return True
     m = re.fullmatch(r"Whenever (you|a player) taps? a land for mana, (?:(?:you|that player) adds?|add) one mana of any type that land produced\.", line)
     if m:
@@ -279,6 +302,24 @@ def soulbond_pair(game, p, perm):
     if pick is not None:
         perm.partner, pick.partner = pick, perm
         game.log(f"{perm.card.name} pairs with {pick.card.name}", p)
+
+
+def spell_limited(game, p):
+    """Rule of Law: only one spell per turn for everyone (or just you under Moderation)."""
+    from .residual_templates import sources
+    if game.spells_cast_turn(p) < 1:
+        return False
+    return bool(sources(game, 'one_spell_each') or [x for x in sources(game, 'one_spell_you') if x.controller is p])
+
+
+def soul_link(game, source, target, amount):
+    """Spirit Link: whenever the enchanted creature deals (or is dealt) damage, the Aura's controller gains that much life."""
+    from .engine.state import Permanent
+    for side, perm in (('deals', source), ('is dealt', target)):
+        if isinstance(perm, Permanent):
+            for aura in perm.auras:
+                if side in aura.card.advanced_rules.get('soul_link', ()) and not aura.abilities_suppressed:
+                    game.change_life(aura.controller, amount, f"{aura.card.name}: {side} damage")
 
 
 def has_blessing(game, player, item=None):

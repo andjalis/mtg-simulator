@@ -266,8 +266,8 @@ class Permanent:
                 bp += pp
                 bt += tt
         for x in self.controller.battlefield:
-            for kw, pp, tt in x.card.anthem_kw:
-                if creature and self.has(kw):
+            for kw, pp, tt, *other in x.card.anthem_kw:
+                if creature and self.has(kw) and not (other and x is self):
                     bp += pp
                     bt += tt
             if creature and x.card.anthem_chosen and x.chosen_type and x.chosen_type in self.card.subtypes:

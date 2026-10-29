@@ -356,6 +356,8 @@ class StackMixin:
                              if item.intervening_if and eff.cond == item.intervening_if else eff)
                 if not self.check_cond(p, condition, item, prev):
                     continue
+                if eff.data.get("may_hostile") and not self.hostile_target(p, tgt):
+                    continue                  # "you may ...": declined unless it hits the opponent
                 self.resolve(p, eff, tgt, item, prev)
                 if self.over:
                     break
@@ -394,6 +396,10 @@ class StackMixin:
             owner.exile.append(base)                 # "Exile ~." as the last line of an instant or sorcery
         elif kind not in ("channel", "prepared"):
             owner.graveyard.append(base)
+
+    def hostile_target(self, p: Player, tgt) -> bool:
+        opp = self.opponent(p)
+        return tgt is opp or isinstance(tgt, Permanent) and tgt.controller is opp
 
     def check_cond(self, p: Player, eff: Effect, item: StackItem, prev) -> bool:
         if eff.cond.startswith("not_owned>="):

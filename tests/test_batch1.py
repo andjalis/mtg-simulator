@@ -428,7 +428,7 @@ class Batch1(unittest.TestCase):
         self.assertEqual((bear.power, bear.toughness), (5, 2))
 
     def test_soulbond_pairs_and_pumps(self):
-        mauler = self.put(card("Test Mauler", "{1}{R}", "Creature", "Soulbond\nAs long as ~ is paired with another creature, both creatures have haste.", "Wolf", 2, 1))
+        mauler = self.put(card("Test Mauler", "{1}{R}", "Creature — Wolf", "Soulbond\nAs long as ~ is paired with another creature, both creatures have haste.", 2, 1))
         self.assertFalse(mauler.has("haste"))
         bear = self.put(BEAR)
         self.assertIs(bear.partner, mauler)
@@ -437,6 +437,71 @@ class Batch1(unittest.TestCase):
         self.g.destroy(bear) if hasattr(self.g, "destroy") else self.a.battlefield.remove(bear)
         self.g.settle()
         self.assertFalse(mauler.has("haste"))
+
+    def test_may_destroy_only_hits_the_opponent(self):
+        eff, bad = _parse_effects("You may destroy target artifact.")
+        self.assertFalse(bad)
+        mine = self.put(card("Test Rock", "{1}", "Artifact", ""))
+        theirs = self.put(card("Their Rock", "{1}", "Artifact", ""), self.b)
+        item = StackItem(self.a, eff, [mine])
+        self.g.stack.append(item)
+        self.g.resolve_top()
+        self.assertIn(mine, self.a.battlefield)
+        item = StackItem(self.a, eff, [theirs])
+        self.g.stack.append(item)
+        self.g.resolve_top()
+        self.assertNotIn(theirs, self.b.battlefield)
+
+    def test_tap_or_untap_and_switch(self):
+        mine, theirs = self.put(BEAR), self.put(BEAR, self.b)
+        mine.tapped = True
+        eff, bad = _parse_effects("Tap or untap target creature.")
+        self.assertFalse(bad)
+        self.g.resolve(self.a, eff[0], mine, StackItem(self.a, eff, [mine]))
+        self.assertFalse(mine.tapped)
+        self.g.resolve(self.a, eff[0], theirs, StackItem(self.a, eff, [theirs]))
+        self.assertTrue(theirs.tapped)
+        eff, bad = _parse_effects("Switch target creature's power and toughness until end of turn.")
+        self.assertFalse(bad)
+        big = self.put(card("Test Wall", "{1}", "Creature — Wall", "", 0, 5))
+        self.g.resolve(self.a, eff[0], big, StackItem(self.a, eff, [big]))
+        self.assertEqual((big.power, big.toughness), (5, 0))
+
+    def test_other_keyword_anthem(self):
+        eagle = self.put(card("Test Eagle", "{3}{W}", "Creature — Bird", "Flying\nOther creatures you control with flying get +1/+1.", 2, 2))
+        bird = self.put(card("Test Bird", "{1}", "Creature — Bird", "Flying", 1, 1))
+        ground = self.put(BEAR)
+        self.assertEqual((bird.power, bird.toughness), (2, 2))
+        self.assertEqual((eagle.power, eagle.toughness), (2, 2))
+        self.assertEqual((ground.power, ground.toughness), (2, 2))
+
+    def test_activation_limit_per_turn(self):
+        bat = self.put(card("Test Bat", "{1}{B}", "Creature — Bat", "{B}: ~ gets +1/+0 until end of turn. Activate no more than twice each turn.", 1, 1))
+        for _ in range(3):
+            self.put(card("Test Swamp", "", "Basic Land — Swamp", "{T}: Add {B}."))
+        self.assertTrue(self.g.activate(self.a, bat, "ability:0"))
+        self.assertTrue(self.g.activate(self.a, bat, "ability:0"))
+        self.assertFalse(self.g.can_activate(self.a, bat, 0))
+        self.assertEqual(bat.power, 3)
+
+    def test_one_spell_each_turn(self):
+        self.put(card("Test Law", "{1}{W}", "Enchantment", "Each player can't cast more than one spell each turn."))
+        spell = card("Test Zap", "", "Instant", "Test Zap deals 1 damage to any target.")
+        self.a.hand.append(spell)
+        self.a.hand.append(spell)
+        self.assertTrue(self.g.can_cast_now(self.a, spell))
+        self.g.spells_cast = {"turn": self.g.turn, self.a.name: 1}
+        self.assertFalse(self.g.can_cast_now(self.a, spell))
+
+    def test_soul_link_gains_life(self):
+        bear = self.put(BEAR)
+        link = self.put(card("Test Link", "{1}{W}", "Enchantment — Aura", "Enchant creature\nWhenever enchanted creature deals damage, you gain that much life.\nWhenever enchanted creature is dealt damage, you gain that much life."))
+        attach(self.g, link, bear)
+        before = self.a.life
+        self.g.deal_damage(self.b, 2, by=self.a, source=bear)
+        self.assertEqual(self.a.life, before + 2)
+        self.g.deal_damage(bear, 1, by=self.b)
+        self.assertEqual(self.a.life, before + 3)
 
 
 if __name__ == '__main__':
