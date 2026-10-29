@@ -177,6 +177,9 @@ class TargetsMixin:
         if item.card.is_instant or item.card.is_sorcery:
             if any(perm.card.protects_spells for perm in item.controller.battlefield):
                 return False
+        if item.card.is_creature and any(perm.card.advanced_rules.get('creatures_uncounterable')
+                                         for perm in item.controller.battlefield if not perm.abilities_suppressed):
+            return False
         return True
 
     def auto_targets(self, p: Player, effects: list, source=None, *, preset=None) -> list:

@@ -71,6 +71,10 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
 
     def change_life(self, player, delta, cause):
         before = player.life
+        if delta > 0:
+            from ..batch1_templates import lifegain_blocked
+            if lifegain_blocked(self, player):
+                return
         player.life += delta
         delta = player.life - before
         if delta > 0:
