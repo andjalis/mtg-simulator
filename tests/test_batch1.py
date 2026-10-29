@@ -522,6 +522,30 @@ class Batch1(unittest.TestCase):
         from mtgsim.engine.mana import _amount
         self.assertEqual(_amount(forest), 2)
 
+    def cast_curse(self, text, name="Test Curse"):
+        curse = card(name, "{1}", "Enchantment — Aura Curse", "Enchant player\n" + text)
+        self.a.hand.append(curse)
+        self.put(ISLAND)
+        self.assertTrue(self.g.cast(self.a, curse))
+        self.g.settle()
+        return next(x for x in self.a.battlefield if x.card.name == name)
+
+    def test_curse_upkeep_and_statics(self):
+        from mtgsim.batch1_templates import on_upkeep
+        mill = self.cast_curse("At the beginning of enchanted player's upkeep, that player mills two cards.", "Test Tome")
+        self.assertIs(mill.curse_target, self.b)
+        before = len(self.b.library)
+        on_upkeep(self.g, self.b)
+        self.g.settle()
+        self.assertEqual(len(self.b.library), before - 2)
+        self.cast_curse("Creatures enchanted player controls get -1/-1.", "Test Hold")
+        bear = self.put(BEAR, self.b)
+        self.assertEqual((bear.power, bear.toughness), (1, 1))
+        self.cast_curse("If a source would deal damage to enchanted player, it deals double that damage to that player instead.", "Test Blood")
+        life = self.b.life
+        self.g.deal_damage(self.b, 2, by=self.a, source=bear)
+        self.assertEqual(self.b.life, life - 4)
+
 
 if __name__ == '__main__':
     unittest.main()

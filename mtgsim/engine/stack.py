@@ -277,7 +277,7 @@ class StackMixin:
             if kind.startswith(("spent_", "evoke_")):
                 self._spent = kind.split("_")[1]
             self._aura_host = None
-            if base.aura:
+            if base.aura and base.aura != "player":
                 self._aura_host = auras.choose_host(self, p, base)
                 if self._aura_host is None:
                     self.log(f"{base.name} has nothing to enchant", p)
@@ -289,6 +289,8 @@ class StackMixin:
             else:
                 perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
             self._aura_host = None
+            if base.aura == "player":
+                perm.curse_target = self.opponent(p)
             self._entry_mana_colors = set()
             self._spent = ""
             if kind in ("disguise", "morph", "megamorph"):

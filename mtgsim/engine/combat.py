@@ -66,8 +66,10 @@ class CombatMixin:
             return
         attackers = [a for a in p.ai.choose_attackers(self, p, opp) if a.can_attack()
                      and (not a.card.attack_needs or any(a.card.attack_needs in x.card.subtypes for x in opp.battlefield))]
-        attackers += [a for a in p.creatures if (a.card.must_attack or a.has("must_attack_now")) and a.can_attack()
-                      and a not in attackers]
+        from ..batch1_templates import curses_on
+        cursed_to_attack = any(c.card.advanced_rules.get('curse_must_attack') for c in curses_on(self, p))
+        attackers += [a for a in p.creatures if (a.card.must_attack or a.has("must_attack_now") or cursed_to_attack)
+                      and a.can_attack() and a not in attackers]
         from ..backlog_templates import combat_limit
         limit = combat_limit(self, 'attack')
         if limit is not None:
@@ -96,6 +98,9 @@ class CombatMixin:
             return
         from ..batch1_templates import enlist
         enlist(self, p, attackers)
+        if any(t is opp for t in self.attack_targets.values()):
+            from ..batch1_templates import curse_event
+            curse_event(self, opp, 'curse_attacked')
         p.attacked_with = len(attackers)
         self.log(f"attacks with {attackers}" + (
             f" ({ {a: t for a, t in self.attack_targets.items() if t is not opp} })"

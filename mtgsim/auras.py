@@ -20,7 +20,7 @@ KINDS = {"tap_host", "attach_self"}
 _KW = ("flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|shroud|indestructible|"
        "menace|reach|protection from (?:white|blue|black|red|green)")
 _ENCHANT = re.compile(r"Enchant (creature|creature you control|creature or Vehicle|artifact or creature|"
-                      r"artifact creature|land|permanent|nonland permanent|artifact|creature an opponent controls)")
+                      r"artifact creature|land|permanent|nonland permanent|artifact|creature an opponent controls|player)")
 _SIGN = {"+": 1, "-": -1, "−": -1}
 
 
@@ -76,7 +76,7 @@ def finish(extra: dict):
     if extra.get("aura"):
         b = extra.get("equip_bonus", (0, 0))
         extra["aura_hostile"] = bool(extra.get("aura_flags")) or b[0] < 0 or b[1] < 0 or \
-            extra["aura"] == "creature an opponent controls"
+            extra["aura"] in ("creature an opponent controls", "player")
 
 
 EFFECT_PATTERNS = [
@@ -120,6 +120,8 @@ def hosts(game, p, card) -> list:
     """The permanents the Aura card could enchant when p casts it."""
     kinds = card.aura
     opp = game.opponent(p)
+    if kinds == "player":          # a Curse: it goes on the opponent, not on a permanent
+        return [opp]
     pool = [x for pl in game.players for x in pl.battlefield]
     out = []
     for x in pool:
