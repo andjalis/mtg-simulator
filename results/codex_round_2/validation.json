@@ -22,5 +22,11 @@
   "focused_new_tests": 11,
   "lint": "passed",
   "parse_diff": "passed; no new parser exceptions",
-  "regex_cache": "32768 only in temporary test/census runners; production unchanged"
+  "regex_cache": "32768 only in temporary test/census runners; production unchanged",
+  "post_suite_test_update": {
+    "change": "Unsupported multi-card example now includes different-name restriction, because round 4 adds ordinary bounded multi-card searches",
+    "runtime_source_changed": false,
+    "focused_tests_rerun": 11,
+    "current_test_sha256": "96457fec446d105a6fd7d6f994081d53663c5829903bd54892ced4eb32c9e19e"
+  }
 }

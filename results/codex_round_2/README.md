@@ -32,3 +32,7 @@ verification and merge are blocked by GitHub API access. Rebase onto current mai
 immediately before creating the PR and rerun checks if its source has changed.
 Never merge without green CI. BACKLOG.md, results/residual_batch/, and Claude's
 branches were not edited.
+
+Integration follow-up: the unsupported multi-card test now uses a different-name
+restriction, preserving its purpose after round 4 adds ordinary bounded searches.
+All eleven focused tests pass again; runtime source is unchanged.

@@ -131,7 +131,7 @@ class LibraryTopSearch(unittest.TestCase):
     def test_unsupported_search_filters_and_multiple_cards_remain_visible(self):
         for text in ('Search your library for a noncreature card, then shuffle and put the card on top.',
                      'Search your library for a colorless card, then shuffle and put the card on top.',
-                     'Search your library for two cards, then shuffle and put those cards on top.',
+                     'Search your library for two cards with different names, then shuffle and put those cards on top.',
                      "Search target opponent's library for a card, then shuffle and put that card on top."):
             with self.subTest(text=text):
                 effects, ignored = _parse_effects(text)
