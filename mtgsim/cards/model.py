@@ -126,6 +126,8 @@ class CardDef:
     approximations: list = field(default_factory=list)  # text the engine plays in a simplified way
     oracle: str = ""
     triggers: list = field(default_factory=list)       # Trigger, including the ETB one
+    restricted_mana_amount: int = 0                     # output amount of the restricted mana mode
+    first_spell_discounts: tuple = ()                   # (spell filter, generic reduction, own turns only)
     mana_amount: int = 1                                # Sol Ring makes 2
     tapped_condition: str = ""                          # "unless_2_lands" / "if_2_lands" / "shock"
     ward: int = 0
@@ -148,6 +150,7 @@ class CardDef:
     activated: list = field(default_factory=list)
     anthem: tuple = ()                                  # (power, toughness) for creatures you control
     crew: int = 0
+    crew_bonus: int = 0                                 # extra power only when crewing a Vehicle
     convoke: bool = False                               # creatures can be tapped to help pay the generic cost
     prepared: bool = False                              # enters prepared: may cast a copy of its spell (card.back) once
     changeling: bool = False                            # is every creature type

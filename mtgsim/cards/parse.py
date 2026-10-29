@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import graveyard, kicker, milling, modal, returns
+from .. import cost_mana, graveyard, kicker, milling, modal, returns
 from .. import auras as _auras, copies as _copies, counting as _counting
 from .model import (
     Activated, AltCost, BASIC_MANA, COLORS, CardDef, Effect, KEYWORDS, NO_MATCH, NUMBERS, Trigger, _num, add_mana,
@@ -321,6 +321,8 @@ def _face_special_lines(st, line):
             _apply_speed_gate(gate, triggers, activated)
             gate = None
         if not line:
+            return None
+        if cost_mana.parse_line(line, extra):
             return None
         gm = re.fullmatch(r"Max speed — (.+)", line)
         if gm:

@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING
 
-from .. import auras, copies, counting, returns
+from .. import auras, copies, cost_mana, counting, returns
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
@@ -34,16 +34,30 @@ class CostsMixin:
             if c.mana_tap_other and not any(x is not perm and not x.tapped and (x.is_creature or c.mana_tap_other == "permanent")
                                             for x in p.battlefield):
                 continue
-            if perm.card.restricted_produces and self.mana_allowed(perm, spell):
-                produces = produces | perm.card.restricted_produces
-            if not produces:
+            options = []
+            if produces:
+                options.append((frozenset(produces), c.mana_amount))
+            if c.restricted_produces and self.mana_allowed(perm, spell):
+                options.append((c.restricted_produces, c.restricted_mana_amount or c.mana_amount))
+            if not options:
                 continue
-            perm.produces_now = produces
+            perm.mana_options_now = tuple(dict.fromkeys(options))
+            perm.produces_now = frozenset().union(*(colors for colors, _ in options))
+            perm.mana_amount_now = max(amount for _, amount in options)
             out.append(perm)
         for mana in p.pool:
-            if not mana.tapped and mana is not exclude:
-                mana.produces_now = mana.card.produces
-                out.append(mana)
+            if mana.tapped or mana is exclude:
+                continue
+            c = mana.card
+            colors = c.produces
+            if c.restricted_produces and self.mana_allowed(mana, spell):
+                colors |= c.restricted_produces
+            if not colors or c.mana_restriction and not self.mana_allowed(mana, spell):
+                continue
+            mana.produces_now = colors
+            mana.mana_amount_now = c.restricted_mana_amount or c.mana_amount
+            mana.mana_options_now = ((colors, mana.mana_amount_now),)
+            out.append(mana)
         return out
 
     def mana_allowed(self, perm: Permanent, spell) -> bool:
@@ -53,6 +67,8 @@ class CostsMixin:
         if not isinstance(spell, CardDef):
             return False
         r = perm.card.mana_restriction
+        if r.startswith("types:"):
+            return bool(set(r[6:].split("|")) & spell.types)
         if r == "creature":
             return spell.is_creature
         if r == "artifact":
@@ -62,7 +78,7 @@ class CostsMixin:
         if r == "chosen_type":
             return spell.is_creature and perm.chosen_type in spell.subtypes
         if r.startswith("subtype:"):
-            return bool(set(r[8:].split("|")) & spell.subtypes)
+            return bool(set(r[8:].split("|")) & spell.subtypes) or spell.changeling and spell.is_creature
         return False
 
     def activations_stopped(self) -> bool:
@@ -289,6 +305,7 @@ class CostsMixin:
             n = sum(copies.fits(c, _gy_desc(card.cost_reduction[3:])) for c in p.graveyard)
         elif card.cost_reduction.startswith("affinity:"):
             n = sum(card_matches(x.card, "a " + card.cost_reduction[9:]) for x in p.battlefield)
+        n += cost_mana.first_discount(self, p, card)
         for x in p.battlefield:
             for flt, k in x.card.cost_discount:
                 if flt.startswith("has_adventure:"):

@@ -33,3 +33,7 @@ from .. import auras as _auras, copies as _copies, removal as _removal, search a
 _EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS
 _EFFECT_PATTERNS += _milling.EFFECT_PATTERNS + _distribute.EFFECT_PATTERNS
 _SUBS += _copies.SUBS + _counting.SUBS
+
+from .. import cost_mana as _cost_mana
+_EFFECT_PATTERNS += _cost_mana.EFFECT_PATTERNS
+_SUBS += _cost_mana.SUBS

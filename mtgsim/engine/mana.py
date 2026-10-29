@@ -15,7 +15,35 @@ def _mana_of(s) -> frozenset:
     return s.card.produces if now is None else now
 
 
+def _amount_of(source):
+    return getattr(source, "mana_amount_now", getattr(source.card, "mana_amount", 1))
+
+
+class _ManaMode:
+    """One exclusive output mode of a physical source, used only during payment search."""
+    def __init__(self, source, colors, amount):
+        self.source = source
+        self.produces_now = colors
+        self.mana_amount_now = amount
+
+    def __getattr__(self, name):
+        return getattr(self.source, name)
+
+
 def find_payment(sources: list[Permanent], cost: dict):
+    """Choose physical sources, using exactly one output mode per source."""
+    if any(len(getattr(s, "mana_options_now", ())) > 1 for s in sources):
+        modes = [[_ManaMode(s, colors, amount) for colors, amount in s.mana_options_now]
+                 if len(getattr(s, "mana_options_now", ())) > 1 else [s] for s in sources]
+        for choice in itertools.product(*modes):
+            paid = _filtered_payment(list(choice), cost)
+            if paid is not None:
+                return [s.source if isinstance(s, _ManaMode) else s for s in paid]
+        return None
+    return _filtered_payment(sources, cost)
+
+
+def _filtered_payment(sources: list[Permanent], cost: dict):
     """Pick which mana sources to tap for a cost, or None if it can't be paid. Filter lands ("{1}, {T}: Add one mana
     of any color") add no mana of their own: each one that is used recolours one other source's mana."""
     filt = [s for s in sources if s.card.mana_filter]
@@ -25,7 +53,7 @@ def find_payment(sources: list[Permanent], cost: dict):
     got = _find_payment(base, cost)
     if got is not None:
         return got
-    cands = [s for s in base if getattr(s.card, "mana_amount", 1) == 1]
+    cands = [s for s in base if _amount_of(s) == 1]
     for u in range(1, min(len(filt), len(cands)) + 1):
         for combo in itertools.combinations(cands, u):
             saved = [getattr(s, "produces_now", None) for s in combo]
@@ -44,12 +72,12 @@ def _find_payment(sources: list[Permanent], cost: dict):
     pips = [c for c in COLORS + ("C",) for _ in range(cost.get(c, 0))]
     generic = cost.get("generic", 0)
     # A source that makes several mana (Sol Ring) fills several slots.
-    slots = [s for s in sources for _ in range(max(1, getattr(s.card, "mana_amount", 1)))]
+    slots = [s for s in sources for _ in range(max(1, _amount_of(s)))]
     if len(pips) + generic > len(slots):
         return None
     # Mana that can only be spent on some spells goes first when it is allowed at all.
     slots = sorted(slots, key=lambda s: (not s.card.mana_restriction, s.card.token_kind == "treasure",
-                                         len(_mana_of(s)), s.is_creature, -getattr(s.card, "mana_amount", 1)))
+                                         len(_mana_of(s)), s.is_creature, -_amount_of(s)))
     pips.sort(key=lambda c: sum(c in _mana_of(s) for s in slots))
     used = [False] * len(slots)
 
@@ -70,7 +98,7 @@ def _find_payment(sources: list[Permanent], cost: dict):
     # Generic mana: first use leftover slots of sources already being tapped, then multi-mana ones.
     rest = [s for j, s in enumerate(slots) if not used[j]]
     rest.sort(key=lambda s: (s not in chosen, not s.card.mana_restriction, s.card.token_kind == "treasure",
-                             -getattr(s.card, "mana_amount", 1), len(_mana_of(s)), s.is_creature))
+                             -_amount_of(s), len(_mana_of(s)), s.is_creature))
     if len(rest) < generic:
         return None
     out = []
@@ -83,11 +111,11 @@ def _find_payment(sources: list[Permanent], cost: dict):
 def payable(sources: list[Permanent], cost: dict) -> bool:
     """Whether find_payment(sources, cost) would find a payment, without choosing which sources
     to tap: coloured pips need a matching, and generic mana any slots left over."""
-    if any(s.card.mana_filter for s in sources):
+    if any(s.card.mana_filter or len(getattr(s, "mana_options_now", ())) > 1 for s in sources):
         return find_payment(sources, cost) is not None
     pips = [c for c in COLORS + ("C",) for _ in range(cost.get(c, 0))]
     generic = cost.get("generic", 0)
-    slots = [_mana_of(s) for s in sources for _ in range(max(1, getattr(s.card, "mana_amount", 1)))]
+    slots = [_mana_of(s) for s in sources for _ in range(max(1, _amount_of(s)))]
     if len(pips) + generic > len(slots):
         return False
     if not pips:

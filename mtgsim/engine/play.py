@@ -214,6 +214,8 @@ class PlayMixin:
                             (trig.event == "cast_instant_sorcery" and (card.is_instant or card.is_sorcery))):
                         self.queue_trigger(p, trig.effects, perm, perm.card.name, modes=trig.modes,
                                            context=item if copies.wants_spell(trig.effects) else None)
+            from .. import cost_mana
+            cost_mana.on_cast(self, p, card)
             copies.on_cast(self, p, item)
             cast_triggers.on_cast(self, p, item)
             if self.spells_cast.get(p.name) == 2:
@@ -692,6 +694,8 @@ class PlayMixin:
             card = make_token(d.get("name", ""), d.get("power", 0), d.get("toughness", 0), d.get("keywords", ()),
                               d.get("triggers"), d.get("kind", ""), d.get("artifact", False), d.get("pt_per", ""),
                               colors=d.get("colors", ()))
+            if d.get("crew_bonus"):
+                card = dataclasses.replace(card, crew_bonus=d["crew_bonus"])
             if d.get("mercenary"):
                 card = dataclasses.replace(card, activated=[Activated("ability", {"generic": 0}, effects=[
                     Effect("pump", 1, 0, target="creature_mine")], extra_costs={"tap": True}, sorcery=True,

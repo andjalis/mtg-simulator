@@ -28,7 +28,11 @@ def counter(game, p, eff, target, item, **_):
 @kind("add_mana")
 def add_mana(game, p, eff, **_):
     for color in eff.data["colors"]:
-        p.pool.append(Permanent(pool_mana(color), p))
+        card = pool_mana(color)
+        if eff.data.get("restriction"):
+            card = dataclasses.replace(card, produces=frozenset(), restricted_produces=frozenset({color}),
+                                       mana_restriction=eff.data["restriction"], restricted_mana_amount=1)
+        p.pool.append(Permanent(card, p))
     game.log(f"adds {''.join(eff.data['colors'])}", p)
 
 
@@ -52,7 +56,7 @@ def pay_gate(game, p, eff, item, **_):
         item.gate_paid = False
         if "gate" in eff.data:
             item.gate_paid = game.pay_gate_cost(p, eff.data["gate"], item)
-        elif game.can_pay(p, eff.data["cost"]) and game.hook(p, "pay_optional")(game, p, eff.data["cost"], "gate"):
+        elif game.can_pay(p, eff.data["cost"], spell="ability") and game.hook(p, "pay_optional")(game, p, eff.data["cost"], "gate"):
             game.pay(p, eff.data["cost"])
             item.gate_paid = True
 
