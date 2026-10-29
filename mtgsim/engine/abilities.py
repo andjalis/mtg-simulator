@@ -211,6 +211,10 @@ class AbilitiesMixin:
         if self.nonmana_locked(p) or perm.abilities_suppressed or any('cant_activate' in a.card.aura_flags for a in perm.auras):
             return False
         act, c = acts[idx], acts[idx].extra_costs
+        if act.condition == "blessing":
+            from ..batch1_templates import has_blessing
+            if not has_blessing(self, p):
+                return False
         from ..residual_templates import activation_blocked, mana_ability, life_locked
         if activation_blocked(self, perm, mana=mana_ability(act)) or c.get("life") and life_locked(p):
             return False

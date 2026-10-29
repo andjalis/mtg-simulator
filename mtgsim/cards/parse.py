@@ -500,27 +500,30 @@ def _parse_ability(line: str, approximations: list):
     cost = _parse_ability_cost(m[1])
     if cost is None:
         return None
-    body, sorcery, once, approx = m[2], False, False, []
+    body, sorcery, once, approx, condition = m[2], False, False, [], ""
     while True:
-        r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|This ability costs [^.]+ "
+        r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|Activate only if you have the city's blessing|This ability costs [^.]+ "
                          r"less to activate[^.]*)\.", body)
         if not r:
             break
         body = r[1]
         sorcery |= r[2] == "Activate only as a sorcery"
         once |= r[2] == "Activate only once each turn"
+        if r[2].endswith("city's blessing"):
+            condition = "blessing"
         if r[2].startswith("This ability costs"):
             approx.append(f"cost reduction ignored: {r[2]}.")
     head = modal.parse_header(body)
     if head is not None and not head[1]:
         approximations += approx
-        return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=line,
+        return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=line, condition=condition,
                          modes=modal.Modes(spec=head[0]))
     effects, bad = _parse_effects(body)
     if bad or not effects:
         return None
     approximations += approx
-    return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=line)
+    return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=line,
+                     condition=condition)
 
 
 def _parse_trigger(line: str):

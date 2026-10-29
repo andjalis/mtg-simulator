@@ -94,6 +94,8 @@ class CombatMixin:
         self.attackers = attackers
         if not attackers:
             return
+        from ..batch1_templates import enlist
+        enlist(self, p, attackers)
         p.attacked_with = len(attackers)
         self.log(f"attacks with {attackers}" + (
             f" ({ {a: t for a, t in self.attack_targets.items() if t is not opp} })"

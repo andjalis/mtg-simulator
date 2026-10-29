@@ -92,6 +92,27 @@ def host_effects(game, p, eff, item, cause, **_):
         host.counters["-1/-1"] = host.m1 + 1
 
 
+@kind("exploit")
+def exploit(game, p, item, **_):
+    """You may sacrifice a creature (a token or a cheap one) when the exploiter enters."""
+    src = item.source if item is not None else None
+    if not isinstance(src, Permanent):
+        return
+    pool = [c for c in p.creatures if perm_value(c) <= 2.5 or c is src and src.card.token_kind]
+    token_first = sorted((c for c in pool), key=lambda c: (not c.card.is_token, perm_value(c)))
+    victim = next((c for c in token_first if c is not src), None)
+    if victim is None:
+        return
+    nontoken = not victim.card.is_token
+    game.log(f"exploits {victim.card.name}", p)
+    game.sacrifice(victim)
+    if src in p.battlefield:
+        game.fire(p, "exploit_self", src)
+    game.fire(p, "exploit_any")
+    if nontoken:
+        game.fire(p, "exploit_any_nontoken")
+
+
 @kind("peek_hand")
 def peek_hand(game, p, target, opp, **_):
     game.log(f"looks at {target or opp}'s hand", p)

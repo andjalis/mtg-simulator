@@ -129,6 +129,30 @@ def parse_line(line, st):
     if m:
         st.extra.setdefault('advanced_rules', {})['land_double'] = 'mine' if m[1] == 'you' else 'all'
         return True
+    if re.fullmatch(r"Ascend(?: \(.*\))?", line):
+        st.extra.setdefault('advanced_rules', {})['ascend'] = True
+        return True
+    if re.fullmatch(r"Melee(?: \(.*\))?", line):
+        from .cards import Effect, Trigger
+        st.triggers.append(Trigger('attacks', [Effect('pump', 1, 1, target='self')]))
+        return True
+    if re.fullmatch(r"Enlist(?: \(.*\))?", line):
+        st.extra.setdefault('advanced_rules', {})['enlist'] = True
+        return True
+    if re.fullmatch(r"Exploit(?: \(.*\))?", line):
+        from .cards import Effect, Trigger
+        st.triggers.append(Trigger('etb', [Effect('exploit')]))
+        return True
+    m = re.fullmatch(r"When ~ exploits a creature, (.+)", line) or re.fullmatch(r"Whenever ~ exploits a creature, (.+)", line)
+    m2 = re.fullmatch(r"Whenever a creature you control exploits (a|a nontoken) creature, (.+)", line)
+    if m or m2:
+        from .cards import Trigger
+        from .cards.parse import _parse_effects
+        effects, bad = _parse_effects((m or m2)[(m or m2).lastindex])
+        if effects and not bad:
+            event = 'exploit_self' if m else 'exploit_any_nontoken' if m2[1] == 'a nontoken' else 'exploit_any'
+            st.triggers.append(Trigger(event, effects))
+            return True
     if line == "Activated abilities of artifacts can't be activated.":
         st.extra.setdefault('advanced_rules', {})['artifact_activation_lock'] = True
         return True
@@ -162,6 +186,30 @@ def on_upkeep(game, active):
                 for trig in src.triggers:
                     if trig.event == 'host_upkeep':
                         game.queue_trigger(player, trig.effects, src, src.card.name, context=host)
+
+
+def has_blessing(game, player, item=None):
+    """The city's blessing: ten or more permanents while a permanent (or the resolving spell) has Ascend; kept for the game."""
+    if getattr(player, 'blessing', False):
+        return True
+    ascends = any(x.card.advanced_rules.get('ascend') for x in player.battlefield) or \
+        item is not None and item.card is not None and item.card.advanced_rules.get('ascend')
+    if ascends and len(player.battlefield) >= 10:
+        player.blessing = True
+    return bool(getattr(player, 'blessing', False))
+
+
+def enlist(game, p, attackers):
+    """Enlist: as the creature attacks, tap a non-attacking creature without summoning sickness; add its power."""
+    for a in attackers:
+        if not a.card.advanced_rules.get('enlist') or a.abilities_suppressed:
+            continue
+        pool = [c for c in p.creatures if c not in attackers and not c.tapped and (not c.sick or c.has("haste")) and c.power >= 2]
+        if pool:
+            helper = max(pool, key=lambda c: c.power)
+            helper.tapped = True
+            a.pump_p += helper.power
+            game.log(f"{a.card.name} enlists {helper.card.name} (+{helper.power})", p)
 
 
 def powerstone():
