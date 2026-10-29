@@ -161,7 +161,7 @@ _TRIGGERS = [
     (r"When(?:ever)? ~ enters or attacks, (.+)", ("etb", "attacks")),
     (r"When ~ enters and at the beginning of your upkeep, (.+)", ("etb", "upkeep")),
     (r"When(?:ever)? ~ enters?(?: the battlefield)?, (.+)", ("etb",)),
-    (r"When(?:ever)? ~ attacks while (?!saddled)(.+)", ("attacks",)),
+    (r"Whenever ~ attacks while (?!saddled)(.+)", ("attacks",)),
     (r"When(?:ever)? ~ attacks, (.+)", ("attacks",)),
     (r"When(?:ever)? ~ (?:blocks or becomes blocked|becomes blocked or blocks)(?: by a creature)?, (.+)", ("blocks", "becomes_blocked")),
     (r"When(?:ever)? ~ attacks or blocks, (.+)", ("attacks", "blocks")),
