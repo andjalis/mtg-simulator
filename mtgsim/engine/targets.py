@@ -163,6 +163,8 @@ class TargetsMixin:
             return False
         if eff.filter == "instant_sorcery" and not (card.is_instant or card.is_sorcery):
             return False
+        if eff.filter.startswith("types:") and not set(eff.filter[6:].split(",")) & card.types:
+            return False
         if eff.filter.startswith("cmc:") and card.cmc != int(eff.filter[4:]):
             return False
         if eff.filter.startswith("colors:") and not card.colors & set(eff.filter[7:]):

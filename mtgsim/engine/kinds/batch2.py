@@ -47,7 +47,7 @@ def wheel_all(game, p, eff, opp, **_):
 
 @kind("lose_half")
 def lose_half(game, p, eff, target, cause, **_):
-    who = target if isinstance(target, Player) else game.opponent(p)
+    who = p if eff.data.get("self") else target if isinstance(target, Player) else game.opponent(p)
     half = (who.life + (1 if eff.data.get("up") else 0)) // 2
     if half > 0:
         game.change_life(who, -half, cause)
@@ -68,7 +68,7 @@ def destroy_group(game, p, eff, opp, **_):
     d = eff.data
     for perm in [x for x in p.battlefield + opp.battlefield
                  if (not d.get("types") or d["types"] in x.card.types) and (not d.get("not") or d["not"] not in x.card.types)
-                 and (not d.get("sub") or d["sub"] in x.card.subtypes)]:
+                 and (not d.get("sub") or d["sub"] in x.card.subtypes) and (not d.get("tapped") or x.tapped)]:
         game.destroy(perm, counter_sources=sources)
 
 
@@ -76,3 +76,12 @@ def destroy_group(game, p, eff, opp, **_):
 def discard_hand(game, p, **_):
     for c in list(p.hand):
         game.discard_card(p, c)
+
+
+@kind("discard_random_target")
+def discard_random_target(game, p, eff, target, opp, **_):
+    who = target if isinstance(target, Player) else opp
+    if who.hand:
+        card = game.rng.choice(list(who.hand))
+        game.discard_card(who, card)
+        game.log(f"discards {card.name} at random", who)
