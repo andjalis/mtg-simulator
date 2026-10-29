@@ -413,6 +413,9 @@ class StackMixin:
         turn_condition = turn_conditions.check(self, p, c, item)
         if turn_condition is not None:
             return turn_condition
+        if c == "city_blessing":
+            from ..batch1_templates import has_blessing
+            return has_blessing(self, p, item)
         if c == "phase_player_empty_hand":
             return isinstance(getattr(item, "context", None), Player) and not item.context.hand
         if c[0] == "!":

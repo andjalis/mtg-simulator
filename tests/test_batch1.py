@@ -4,7 +4,7 @@ import unittest
 
 from mtgsim.cards import _parse_effects
 from mtgsim.auras import attach
-from mtgsim.batch1_templates import skips_draw
+from mtgsim.batch1_templates import has_blessing, skips_draw
 from mtgsim.engine import Game, Player, StackItem, can_block
 from mtgsim.residual_templates import activation_blocked
 from tests.test_combat_triggers import Scripted, BEAR
@@ -360,6 +360,46 @@ class Batch1(unittest.TestCase):
                               "Whenever you cast a Spirit or Arcane spell, you may put a ki counter on ~."))
         eff = altar.triggers[0]
         self.assertEqual(eff.filter, "spell:Spirit|Arcane")
+
+    def test_melee_pumps_when_attacking(self):
+        warden = self.put(card("Test Warden", "{2}{R}", "Creature — Human",
+                               "Melee (Whenever this creature attacks, it gets +1/+1 until end of turn for each opponent you attacked this combat.)", 2, 2))
+        self.a.ai.attack = (warden,)
+        self.g.combat(self.a, self.b)
+        self.assertEqual(self.b.life, 17)
+
+    def test_enlist_taps_a_helper_and_adds_power(self):
+        cavalier = self.put(card("Test Cavalier", "{2}{W}", "Creature — Human",
+                                 "Enlist (As this creature attacks, you may tap a nonattacking creature you control without summoning sickness. When you do, add its power to this creature's until end of turn.)", 2, 2))
+        helper = self.put(BEAR)
+        self.a.ai.attack = (cavalier,)
+        self.g.combat(self.a, self.b)
+        self.assertTrue(helper.tapped)
+        self.assertEqual(self.b.life, 16)
+
+    def test_exploit_sacrifices_a_token_and_triggers_payoff(self):
+        token = self.g.create_token(self.a, _parse_effects("Create a 1/1 white Soldier creature token.")[0][0])
+        butcher = card("Test Butcher", "{3}{B}", "Creature — Orc",
+                       "Exploit (When this creature enters, you may sacrifice a creature.)\n"
+                       "When ~ exploits a creature, you gain 3 life.", 3, 3)
+        self.assertFalse(butcher.unsupported)
+        life = self.a.life
+        self.put(butcher)
+        self.g.run_priority()
+        self.assertEqual(self.a.life, life + 3)
+        self.assertEqual(len([c for c in self.a.creatures if c.card.is_token]), 0)
+
+    def test_city_blessing_unlocks_activation_and_effects(self):
+        arch = self.put(card("Test Arch", "", "Land",
+                             "Ascend (If you control ten or more permanents, you get the city's blessing for the rest of the game.)\n"
+                             "{T}: Add {C}.\n{5}, {T}: Draw a card. Activate only if you have the city's blessing."))
+        self.assertFalse(self.g.can_activate(self.a, arch, 1))
+        for _ in range(9):
+            self.put(BEAR)
+        self.assertTrue(has_blessing(self.g, self.a))
+        self.assertTrue(self.a.blessing)
+        _, bad = _parse_effects("If you have the city's blessing, draw a card.")
+        self.assertFalse(bad)
 
 
 if __name__ == '__main__':
