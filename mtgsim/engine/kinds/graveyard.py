@@ -217,5 +217,5 @@ def rebound_cast(game, p, item, **_):
 
 
 @kind("appraise")
-def appraise(game, p, eff, **_):
-    counters_r3.appraise(game, p, eff)
+def appraise(game, p, eff, target, **_):
+    counters_r3.appraise(game, p, eff, target)

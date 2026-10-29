@@ -427,6 +427,8 @@ class PlayMixin:
             return False
         if act.condition == "opp_lost_life" and not self.opponent(p).lost_life_turn:
             return False
+        if act.condition == "coven" and len({x.power for x in p.creatures}) < 3:
+            return False
         if act.once_game and ("game", idx) in perm.ability_turns:
             return False
         if perm.net_locked and perm.tapped:

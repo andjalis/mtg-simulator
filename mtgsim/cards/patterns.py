@@ -350,7 +350,7 @@ _EFFECT_PATTERNS = [
     (r"create (a|one|two|three|four|five) (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: named [\w' ,-]+?)?(?: that's "
      r"(tapped and attacking))?(?: with ([\w ,]+))?",
      lambda m: _token(m[1], m[2], m[3], m[4], m[6], bool(m[5]))),
-    (r'create (a) (\d+)/(\d+) ((?:\w+ )+?)creature token with "(.+)"',
+    (r'create (a) (\d+)/(\d+) ((?:\w+ )+?)creature token(?: named [\w\'~ ,-]+?)? with "(.+)"',
      lambda m: _token(m[1], m[2], m[3], m[4], "", False, m[5])),
     (r"create (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
      lambda m: Effect("token", _num(m[1]), data={"kind": m[2].lower()})),

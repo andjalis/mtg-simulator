@@ -119,6 +119,10 @@ def target_active(eff, target, item):
     if eff.target == "graveyard_creature_life":
         ref = item.graveyard_targets.get(id(target))
         return ref is not None and ref.find(item.controller.graveyard) is target
+    if eff.target == "graveyard_creature_any":
+        ref = item.graveyard_targets.get(id(target))
+        zone = getattr(target, "zone", None)
+        return ref is not None and zone is not None and target in zone and ref.find(zone) is target
     return True
 
 

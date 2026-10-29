@@ -84,6 +84,8 @@ class TargetsMixin:
             return [self.opponent(p)] if eff.filter == "opp" else list(self.players)
         if t == "graveyard_creature_life":
             return [c for c in p.graveyard if c.is_creature and c.cmc <= p.life_gained_turn]
+        if t == "graveyard_creature_any":
+            return [c for pl in self.players for c in pl.graveyard if c.is_creature]
         if t == "spell_or_permanent":
             return everything + [i for i in self.stack if i.is_spell]
         if t == "spell":

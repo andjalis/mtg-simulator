@@ -282,6 +282,8 @@ def _parse_face(data: dict) -> CardDef:
     station_min = st.station_min
     triggers = st.triggers
     unsupported = st.unsupported
+    for group in (spell, *modes, *(t.effects for t in triggers), *(a.effects for a in activated)):
+        approximations += [e.data["approx"] for e in group if e.data.get("approx") and e.data["approx"] not in approximations]
     if "X is the amount of mana spent to cast" in oracle:
         for e in spell:
             if e.kind == "dig":
@@ -882,6 +884,9 @@ def _face_cost_and_static_lines(st, line):
         if m and m[2] != "Creature":
             extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
             return None
+        if (granted := _counters_r3.parse_team_keywords(line)) is not None:
+            extra["keyword_sub"] = extra.get("keyword_sub", ()) + granted
+            return None
         m = re.fullmatch(r"(Other )?([A-Z][a-z]+?)s you control have (menace|trample|flying|vigilance|haste|lifelink|"
                          r"first strike|double strike|deathtouch|reach|indestructible)\.", line)
         if m and m[2] != "Creature":
@@ -1280,6 +1285,7 @@ def _parse_ability_cost(text: str):
 
 def _parse_ability(line: str, approximations: list):
     """A general activated ability ("{2}, {T}: Draw a card."), or None."""
+    line = line.removeprefix("Coven — ")
     m = re.fullmatch(r"([^:\"•]+?): (.+)", line)
     if not m or not (m[1].startswith("{") or m[1].split()[0] in ("Sacrifice", "Discard", "Pay", "Remove", "Exile")):
         return None
@@ -1289,14 +1295,16 @@ def _parse_ability(line: str, approximations: list):
     body, sorcery, once, approx, condition = m[2], False, False, [], ""
     while True:
         r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|Activate only if an opponent "
-                         r"lost life this turn and only once each turn|This ability costs [^.]+ "
+                         r"lost life this turn and only once each turn|Activate only if you control three or more "
+                         r"creatures with different powers|This ability costs [^.]+ "
                          r"less to activate[^.]*)\.", body)
         if not r:
             break
         body = r[1]
         sorcery |= r[2] == "Activate only as a sorcery"
         once |= r[2] == "Activate only once each turn" or "only once each turn" in r[2]
-        condition = "opp_lost_life" if "opponent lost life" in r[2] else condition
+        condition = "opp_lost_life" if "opponent lost life" in r[2] else \
+            "coven" if "different powers" in r[2] else condition
         if r[2].startswith("This ability costs"):
             approx.append(f"cost reduction ignored: {r[2]}.")
     head = modal.parse_header(body)
