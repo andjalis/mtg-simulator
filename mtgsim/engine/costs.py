@@ -581,6 +581,9 @@ class CostsMixin:
             return False
         if card.is_land or not self._available(p, card):
             return False
+        from ..batch1_templates import spell_limited
+        if spell_limited(self, p):
+            return False
         base, kind, alt = self._origin(card)
         if self.nonmana_locked(p) and kind in ('channel', 'gy_ability', 'unearth'):
             return False

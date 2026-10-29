@@ -231,6 +231,10 @@ class AbilitiesMixin:
             return False
         if act.once_game and ("game", idx) in perm.ability_turns:
             return False
+        if act.max_per_turn:
+            seen = perm.ability_turns.get(("count", idx), (None, 0))
+            if seen[0] == self.turn and seen[1] >= act.max_per_turn:
+                return False
         if perm.net_locked and perm.tapped:
             return False
         if c.get("level_from") is not None and perm.counters.get("level", 1) != c["level_from"]:
@@ -281,6 +285,9 @@ class AbilitiesMixin:
             return False
         p.counters["energy"] = p.counters.get("energy", 0) - c.get("energy", 0)
         perm.ability_turns[idx] = self.turn
+        if act.max_per_turn:
+            seen = perm.ability_turns.get(("count", idx), (None, 0))
+            perm.ability_turns[("count", idx)] = (self.turn, seen[1] + 1 if seen[0] == self.turn else 1)
         if act.once_game:
             perm.ability_turns[("game", idx)] = self.turn
         if c.get("tap"):

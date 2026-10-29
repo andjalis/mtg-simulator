@@ -18,6 +18,16 @@ _MAY_DECLINED = {"sacrifice", "sacrifice_self", "discard", "discard_choice", "lo
                  "damage", "drain", "destroy", "exile", "exile_permanent", "wrath", "bounce"}
 
 
+def hostile_may(text, new):
+    """Mark a lone targeted "you may destroy/exile/return/deal damage to target ..." as optional-by-target (see Game.resolve_item)."""
+    from ..engine.state import TARGETED
+    if len(new) != 1 or new[0].kind not in ("destroy", "exile", "exile_permanent", "bounce", "damage", "tap") \
+            or new[0].target not in TARGETED or re.search(r"you control|you own|your ", text, re.I):
+        return False
+    new[0].data["may_hostile"] = True
+    return True
+
+
 def _parse_effects(text: str, opts: bool = False):
     """Parse a run of sentences into effects. Returns (effects, unmatched_sentences)."""
     effects, unmatched = [], []
@@ -103,6 +113,9 @@ def _parse_effects(text: str, opts: bool = False):
             new, bad = _parse_effects(mm[1][0].upper() + mm[1][1:] + ".")
             if bad or not new:
                 new, bad = _parse_effects("You " + mm[1] + ".")              # "you may gain 2 life"
+            if new and not bad and hostile_may(mm[1], new):
+                effects += new      # "you may destroy target ...": skipped at resolution unless the target is the opponent's
+                continue
             if new and not bad and not any(e.kind in _MAY_DECLINED for e in new):
                 effects += [Effect("pay_gate", data={"gate": ("may", "")})] + new   # always taken
                 gated = True
@@ -357,6 +370,10 @@ def _parse_face(data: dict) -> CardDef:
             if m and dig:
                 kicked_effects[kicked_effects.index(dig[0])] = dataclasses.replace(dig[0], amount2=_num(m[1]))
                 continue
+            m = re.fullmatch(r"it enters with (a|an|one|two|three|four|five) \+1/\+1 counters? on it\.", k)
+            if m:
+                extra.setdefault("advanced_rules", {})["kick_counters"] = _num(m[1])
+                continue
             effs, bad = _parse_effects(k)
             kicked_effects += effs
             unsupported += [f"if kicked: {b}" for b in bad]
@@ -500,15 +517,18 @@ def _parse_ability(line: str, approximations: list):
     cost = _parse_ability_cost(m[1])
     if cost is None:
         return None
-    body, sorcery, once, approx, condition = m[2], False, False, [], ""
+    body, sorcery, once, approx, condition, limit = m[2], False, False, [], "", 0
     while True:
-        r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|Activate only if you have the city's blessing|This ability costs [^.]+ "
+        r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|Activate no more than (?:once|twice|two times|three times) each turn|Activate only if you have the city's blessing|This ability costs [^.]+ "
                          r"less to activate[^.]*)\.", body)
         if not r:
             break
         body = r[1]
         sorcery |= r[2] == "Activate only as a sorcery"
         once |= r[2] == "Activate only once each turn"
+        mt = re.fullmatch(r"Activate no more than (once|twice|two times|three times) each turn", r[2])
+        if mt:
+            limit = {"once": 1, "twice": 2, "two times": 2, "three times": 3}[mt[1]]
         if r[2].endswith("city's blessing"):
             condition = "blessing"
         if r[2].startswith("This ability costs"):
@@ -517,13 +537,13 @@ def _parse_ability(line: str, approximations: list):
     if head is not None and not head[1]:
         approximations += approx
         return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=line, condition=condition,
-                         modes=modal.Modes(spec=head[0]))
+                         max_per_turn=limit, modes=modal.Modes(spec=head[0]))
     effects, bad = _parse_effects(body)
     if bad or not effects:
         return None
     approximations += approx
     return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=line,
-                     condition=condition)
+                     condition=condition, max_per_turn=limit)
 
 
 def _parse_trigger(line: str):

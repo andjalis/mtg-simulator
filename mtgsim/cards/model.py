@@ -105,6 +105,7 @@ class Activated:
     extra_costs: dict = field(default_factory=dict)
     sorcery: bool = False            # "Activate only as a sorcery."
     once: bool = False               # "Activate only once each turn."
+    max_per_turn: int = 0            # "Activate no more than twice each turn."
     min_charge: int = 0              # under "STATION N+": needs N charge counters
     needs_max_speed: bool = False    # "Max speed — COST: EFFECT"
     once_game: bool = False          # Exhaust / Power-up: each such ability is activated only once

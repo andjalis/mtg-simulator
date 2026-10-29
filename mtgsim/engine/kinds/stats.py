@@ -292,6 +292,9 @@ def untap_other(game, p, item, **_):
 
 @kind("tap")
 def tap(game, p, eff, target, item=None, **_):
+    if isinstance(target, Permanent) and eff.data.get("or_untap") and target.controller is p:
+        target.tapped = False         # "tap or untap target ...": untap your own, tap theirs
+        return
     if isinstance(target, Permanent):
         target.tapped = True
         if eff.data.get("freeze"):

@@ -67,6 +67,8 @@ class EffectsMixin:
                 target.damaged_by.append(source)       # "a creature dealt damage by ~ this turn dies"
         else:
             return
+        from ..batch1_templates import soul_link
+        soul_link(self, source, target, amount)
         if has("lifelink"):
             controller = source.controller if isinstance(source, Permanent) else by
             if controller is not None:
