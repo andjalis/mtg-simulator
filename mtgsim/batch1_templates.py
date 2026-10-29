@@ -14,6 +14,11 @@ EFFECT_PATTERNS = [
     (r"destroy target creature that was dealt damage this turn", lambda m: _e("destroy", target="creature", filter="damaged")),
     (r"look at target opponent's hand", lambda m: _e("peek_hand", target="player", filter="opp")),
     (r"create (a|one|two|three) (tapped )?powerstone tokens?", lambda m: _e("powerstone", _num(m[1]), data={"tapped": bool(m[2])})),
+    (r"target creature gets \+X/\+(X|0) until end of turn",
+     lambda m: _e("pump", 0, target="creature", data={"x": True, "x2": m[1] == "X"})),
+    (r"creatures you control get \+X/\+(X|0) until end of turn",
+     lambda m: _e("pump_all", 0, data={"x": True, "x2": m[1] == "X", "other": False, "keyword": ""})),
+    (r"incubate (\d+)", lambda m: _e("incubate", int(m[1]))),
     (r"you become the monarch", lambda m: _e("become_monarch")),
     (r"(?:it|~) deals damage equal to its power to any target", lambda m: _e("damage", target="any", data={"source_power": True})),
 ]
@@ -129,6 +134,19 @@ def parse_line(line, st):
     if m:
         st.extra.setdefault('advanced_rules', {})['land_double'] = 'mine' if m[1] == 'you' else 'all'
         return True
+    m = re.fullmatch(r"As long as ~ is paired with another creature, (?:both creatures|each of those creatures) (?:have ([a-z ]+)|gets? \+(\d+)/\+(\d+))\.", line)
+    if m:
+        rules = st.extra.setdefault('advanced_rules', {})
+        grant = dict(rules.get('soulbond') or {})
+        if m[1]:
+            grant['kw'] = tuple(x.strip() for x in re.split(r",| and ", m[1]) if x.strip())
+        else:
+            grant['pt'] = (int(m[2]), int(m[3]))
+        rules['soulbond'] = grant
+        return True
+    if re.fullmatch(r"Soulbond(?: \(.*\))?", line):
+        st.extra.setdefault('advanced_rules', {}).setdefault('soulbond', {})
+        return True
     if re.fullmatch(r"Ascend(?: \(.*\))?", line):
         st.extra.setdefault('advanced_rules', {})['ascend'] = True
         return True
@@ -186,6 +204,81 @@ def on_upkeep(game, active):
                 for trig in src.triggers:
                     if trig.event == 'host_upkeep':
                         game.queue_trigger(player, trig.effects, src, src.card.name, context=host)
+
+
+def effect_value(game, player, effect, target):
+    """AI worth of this module's kinds (None for kinds it does not own)."""
+    from .engine.policy import perm_value
+    kind = effect.kind
+    if kind in ('edict_player', 'edict_each'):
+        theirs = [perm_value(c) for c in game.opponent(player).creatures]
+        mine = [perm_value(c) for c in player.creatures]
+        if not theirs:
+            return -1
+        return min(theirs) - (min(mine) if kind == 'edict_each' and mine else 0)
+    if kind == 'become_monarch':
+        return 3
+    if kind in ('powerstone', 'provoke', 'incubate'):
+        return 1 + (effect.amount if kind == 'incubate' else 0)
+    if kind == 'exploit':
+        return 0.5
+    if kind == 'incubator_transform':
+        src = getattr(game.target_source, 'source', game.target_source)
+        return effect.amount if getattr(src, 'p1', 0) and game.step in ('main1', 'main2') else 0
+    return None
+
+
+def incubator():
+    from .cards import CardDef, Effect, Activated
+    return CardDef(name="Incubator", mana_cost={"generic": 0}, cmc=0, types=frozenset({"Artifact"}),
+                   subtypes=frozenset({"Incubator"}), is_token=True,
+                   activated=[Activated("ability", {"generic": 2}, effects=[Effect("incubator_transform")],
+                                        extra_costs={}, text="{2}: Transform this artifact.")])
+
+
+def paired(perm):
+    """The creature perm is soulbonded to, or None once the bond has ended."""
+    other = perm.partner
+    if other is None:
+        return None
+    if other.partner is perm and other in other.controller.battlefield and other.controller is perm.controller \
+            and other.is_creature and perm.is_creature:
+        return other
+    perm.partner = None
+    return None
+
+
+def soulbond_has(perm, keyword):
+    other = paired(perm)
+    return other is not None and any(keyword in (m.card.advanced_rules.get('soulbond') or {}).get('kw', ())
+                                     for m in (perm, other) if not m.abilities_suppressed)
+
+
+def soulbond_bonus(perm):
+    other = paired(perm)
+    if other is None:
+        return 0, 0
+    bonus = [0, 0]
+    for m in (perm, other):
+        pt = (m.card.advanced_rules.get('soulbond') or {}).get('pt')
+        if pt and not m.abilities_suppressed:
+            bonus[0] += pt[0]
+            bonus[1] += pt[1]
+    return bonus[0], bonus[1]
+
+
+def soulbond_pair(game, p, perm):
+    """When a creature enters, pair it with an unpaired soulbond creature (or pair a soulbond one with any other)."""
+    if not perm.is_creature or perm.partner is not None:
+        return
+    unpaired = [x for x in p.battlefield if x is not perm and x.is_creature and paired(x) is None]
+    if 'soulbond' in perm.card.advanced_rules and unpaired:
+        pick = max(unpaired, key=lambda x: x.power + x.toughness)
+    else:
+        pick = next((x for x in unpaired if 'soulbond' in x.card.advanced_rules), None)
+    if pick is not None:
+        perm.partner, pick.partner = pick, perm
+        game.log(f"{perm.card.name} pairs with {pick.card.name}", p)
 
 
 def has_blessing(game, player, item=None):

@@ -39,6 +39,24 @@ def powerstone(game, p, eff, **_):
     game.log(f"creates {eff.amount} Powerstone", p)
 
 
+@kind("incubate")
+def incubate(game, p, eff, **_):
+    from ...batch1_templates import incubator
+    token = game.enter_battlefield(p, incubator())
+    token.counters["+1/+1"] = eff.amount
+    game.log(f"incubates {eff.amount}", p)
+
+
+@kind("incubator_transform")
+def incubator_transform(game, p, item, **_):
+    import dataclasses
+    src = item.source if item is not None else None
+    if isinstance(src, Permanent) and src in p.battlefield and "Incubator" in src.card.subtypes:
+        src.card = dataclasses.replace(src.card, name="Phyrexian token", types=frozenset({"Artifact", "Creature"}),
+                                       subtypes=frozenset({"Phyrexian"}), power=0, toughness=0, activated=[])
+        game.log("incubator transforms into a Phyrexian", p)
+
+
 @kind("provoke")
 def provoke(game, p, item, opp, **_):
     """Untap the defender's creature that can block the source and is worth least; it must block if able."""

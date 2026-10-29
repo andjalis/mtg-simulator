@@ -401,6 +401,43 @@ class Batch1(unittest.TestCase):
         _, bad = _parse_effects("If you have the city's blessing, draw a card.")
         self.assertFalse(bad)
 
+    def test_incubate_and_transform(self):
+        self.apply("Incubate 3.")
+        incubator = next(x for x in self.a.battlefield if "Incubator" in x.card.subtypes)
+        self.assertFalse(incubator.is_creature)
+        self.assertEqual(incubator.p1, 3)
+        self.mana_for_two()
+        self.assertTrue(self.g.can_activate(self.a, incubator, 0))
+        item = StackItem(self.a, [], [], source=incubator)
+        from mtgsim.cards import Effect
+        self.g.resolve(self.a, Effect("incubator_transform"), None, item)
+        self.assertTrue(incubator.is_creature)
+        self.assertEqual((incubator.power, incubator.toughness), (3, 3))
+
+    def mana_for_two(self):
+        self.put(ISLAND)
+        self.put(ISLAND)
+
+    def test_x_pump_uses_paid_x(self):
+        bear = self.put(BEAR)
+        eff, bad = _parse_effects("Target creature gets +X/+0 until end of turn.")
+        self.assertFalse(bad)
+        item = StackItem(self.a, eff, [bear])
+        item.x = 3
+        self.g.resolve(self.a, eff[0], bear, item)
+        self.assertEqual((bear.power, bear.toughness), (5, 2))
+
+    def test_soulbond_pairs_and_pumps(self):
+        mauler = self.put(card("Test Mauler", "{1}{R}", "Creature", "Soulbond\nAs long as ~ is paired with another creature, both creatures have haste.", "Wolf", 2, 1))
+        self.assertFalse(mauler.has("haste"))
+        bear = self.put(BEAR)
+        self.assertIs(bear.partner, mauler)
+        self.assertTrue(bear.has("haste"))
+        self.assertTrue(mauler.has("haste"))
+        self.g.destroy(bear) if hasattr(self.g, "destroy") else self.a.battlefield.remove(bear)
+        self.g.settle()
+        self.assertFalse(mauler.has("haste"))
+
 
 if __name__ == '__main__':
     unittest.main()

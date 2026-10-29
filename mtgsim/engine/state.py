@@ -245,6 +245,11 @@ class Permanent:
         for equipment in self.equipment:
             bp += equipment.card.equip_bonus[0] + equipment.counters.get("hone", 0)
             bt += equipment.card.equip_bonus[1]
+        if self.partner is not None:
+            from ..batch1_templates import soulbond_bonus
+            sb = soulbond_bonus(self)
+            bp += sb[0]
+            bt += sb[1]
         for cond, pp, tt in self.card.pt_if:
             if not cond.startswith(("gy", "lands", "speed")):
                 if self.condition(cond):              # metalcraft, "as long as it's your turn / attacking"
@@ -356,6 +361,10 @@ class Permanent:
             for a in self.auras:
                 if kw in a.card.equip_keywords:
                     return True
+        if self.partner is not None:
+            from ..batch1_templates import soulbond_has
+            if soulbond_has(self, kw):
+                return True
         for k, cond in self.card.cond_keywords:
             if k == kw and self.condition(cond):
                 return True
@@ -372,6 +381,8 @@ class Permanent:
         if self.card.keyword_at_counters and self.p1 >= self.card.keyword_at_counters[0]:
             return kw == self.card.keyword_at_counters[1]
         return kw == "haste" and (self.blitz or self.dashed or self.unearthed)
+
+    partner = None      # Soulbond: the creature this one is paired with
 
     def condition(self, cond: str) -> bool:
         if cond.startswith("another:"):
