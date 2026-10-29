@@ -291,6 +291,11 @@ def parse_line(line, st):
         kws = frozenset(k.strip() for k in re.split(r", and |, | and ", m[5])) if m[5] else frozenset()
         st.extra['bestow_bonus'] = ((1 if m[1] == '+' else -1) * int(m[2]), (1 if m[3] == '+' else -1) * int(m[4]), kws)
         return True
+    if line == "Ravenous":
+        from .cards import Effect, Trigger
+        st.extra['etb_counters'] = -1
+        st.triggers.append(Trigger('etb', [Effect('draw', 1, cond='entered_x>=5')]))
+        return True
     if line == "Read ahead":
         st.approximations.append("read ahead: a Saga always starts at chapter I")
         return True

@@ -262,6 +262,17 @@ class Batch2(Batch1):
         self.g.settle()
         self.assertTrue(aura.is_creature and aura in self.a.battlefield)
 
+    def test_ravenous(self):
+        hydra = card("Test Hydra", "{X}{G}", "Creature — Hydra", "Ravenous", 0, 0)
+        self.a.library = [ISLAND] * 5
+        perm = self.g.enter_battlefield(self.a, hydra, x=5)
+        self.g.settle()
+        self.assertEqual(perm.p1, 5)
+        self.assertEqual(len(self.a.hand), 1)
+        small = self.g.enter_battlefield(self.a, hydra, x=3)
+        self.g.settle()
+        self.assertEqual((small.p1, len(self.a.hand)), (3, 1))
+
 
 if __name__ == "__main__":
     unittest.main()
