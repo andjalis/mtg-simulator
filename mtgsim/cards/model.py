@@ -194,6 +194,7 @@ class CardDef:
     equip_bonus: tuple = (0, 0)
     equip_keywords: frozenset = frozenset()
     equip_ward: int = 0
+    reconfigure: bool = False                           # Reconfigure: equip-like, and not a creature while attached
     equip_discount: int = 0                             # Dwarven Mauler: equip abilities targeting it cost less
     leyline: bool = False                               # may begin the game on the battlefield
     cond_keywords: tuple = ()                           # ((keyword, condition), ...): "another:Dwarf", "opp_life<=10"

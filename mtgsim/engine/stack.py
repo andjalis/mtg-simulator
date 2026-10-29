@@ -502,6 +502,8 @@ class StackMixin:
             return any(x.counters.get("+1/+1") for x in p.creatures)
         if c == "opp_lost_life":
             return self.opponent(p).lost_life_turn
+        if c == "entered_x>=5":
+            return item.source is not None and getattr(item.source, "entered_x", 0) >= 5
         if c == "tribute_unpaid":
             return False                        # the opponent always pays tribute
         if c == "gained_life":
