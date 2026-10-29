@@ -156,6 +156,10 @@ a successful, nonempty build. Forge's data has no sets or format legality.
 Each card's rules text is matched against templates the engine understands.
 Text that does not match is ignored and reported. Template coverage helps identify gaps;
 it cannot prove correct rules execution or quantify how trustworthy a win rate is.
+
+Card support is extended in order of reach: the wordings that make the most cards in the whole database fully
+supported per amount of code come first (`python3 -m mtgsim.database_coverage` ranks the gaps), and deck relevance
+only breaks ties. Text the engine can't play correctly stays ignored and reported rather than approximated silently.
 The [rules architecture audit and implementation plan](results/rules_architecture/README.md)
 documents reproduced gaps, Forge integration limits, and a proposed behavior-evidence report.
 The first behavior-evidence slice is available separately from template coverage:

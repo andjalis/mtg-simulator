@@ -20,10 +20,14 @@ python3 -m mtgsim A.txt B.txt -n 1000          # matchup
 python3 -m mtgsim A.txt --gauntlet B.txt C.txt # one deck vs several
 python3 -m mtgsim A.txt B.txt -n 1 --log       # play-by-play of one game
 python3 -m mtgsim A.txt --coverage             # which cards the engine can't fully play
-python3 -m mtgsim.database_coverage --save results/database_coverage  # all cards and ranked gaps
+python3 -m mtgsim.database_coverage --save results/database_coverage  # all cards and ranked gaps (pick card work from here)
 python3 -m mtgsim A.txt --ladder -n 200        # rank ladder, built-in engine
 python3 -m mtgsim.assess DECK.txt              # four graded criteria
 ```
+
+Card work priority: support every card in the database, choosing the wordings and families that make the most cards
+fully supported per amount of code (see `database_coverage`). Deck relevance only breaks ties. Never fake behaviour
+to raise the count: text the engine can't play correctly stays reported as unsupported.
 
 Python 3.10+ only, standard library only. Do not add dependencies. CI (`.github/workflows/tests.yml`)
 runs the tests on Python 3.10, 3.13 and 3.14; keep code compatible with all three. It also runs pyflakes
