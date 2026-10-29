@@ -1,0 +1,27 @@
+{
+  "expected": 1631,
+  "ran": 1631,
+  "success": true,
+  "inventory_matched": true,
+  "seconds": 218.30242849398928,
+  "failures": [],
+  "errors": [],
+  "skipped": [
+    [
+      "tests.test_forge.ForgeWrapperTests.test_stored_review_log_if_present",
+      "local review log not present (results/benchmark*/ is gitignored)"
+    ]
+  ],
+  "post_suite_cleanup": "Removed unused BEAR test import only; verified exact byte diff; all 12 focused tests rerun and passed",
+  "suite_workers": 4,
+  "python": "Python 3.12.14",
+  "source_sha256": {
+    "mtgsim/cards/__init__.py": "74cc2210b271e83e3b84ae7c0ee226a9b550c98db533b38513d8718f2bb17fdd",
+    "mtgsim/cx_tutors.py": "6a89af8bbc4220eb6ca41d71158590036865f64a10bcda87f61d9d783701475b",
+    "tests/test_cx_tutors.py": "b5d86ce45aa09e4f14255fe39e5d64acaf054452927b0b8f92b0487d9c693320"
+  },
+  "focused_new_tests": 12,
+  "lint": "passed",
+  "parse_diff": "passed; no new parser exceptions",
+  "regex_cache": "32768 only in temporary test/census runners; production unchanged"
+}

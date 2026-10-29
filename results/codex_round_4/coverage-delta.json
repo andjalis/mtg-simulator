@@ -1,0 +1,422 @@
+[
+  {
+    "name": "Amrou Scout",
+    "before": {
+      "name": "Amrou Scout",
+      "status": "partial",
+      "ignored_text": "{4}, {T}: Search your library for a Rebel permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Amrou Scout",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Behold the Beyond",
+    "before": {
+      "name": "Behold the Beyond",
+      "status": "partial",
+      "ignored_text": "Discard your hand.\nSearch your library for three cards, put them into your hand, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Behold the Beyond",
+      "status": "partial",
+      "ignored_text": "Discard your hand.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Blightspeaker",
+    "before": {
+      "name": "Blightspeaker",
+      "status": "partial",
+      "ignored_text": "{4}, {T}: Search your library for a Rebel permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Blightspeaker",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Bog Glider",
+    "before": {
+      "name": "Bog Glider",
+      "status": "partial",
+      "ignored_text": "{T}, Sacrifice a land: Search your library for a Mercenary permanent card with mana value 2 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Bog Glider",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Brightglass Gearhulk",
+    "before": {
+      "name": "Brightglass Gearhulk",
+      "status": "partial",
+      "ignored_text": "you may search your library for up to two artifact, creature, and/or enchantment cards with mana value 1 or less, reveal them, put them into your hand, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Brightglass Gearhulk",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Captain America, Liberator",
+    "before": {
+      "name": "Captain America, Liberator",
+      "status": "partial",
+      "ignored_text": "you may search your library for an Equipment card with mana value 3 or less, put it onto the battlefield, then shuffle.\nfor each Equipment attached to him, create a 1/1 white Soldier creature token.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Captain America, Liberator",
+      "status": "partial",
+      "ignored_text": "for each Equipment attached to him, create a 1/1 white Soldier creature token.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Cateran Brute",
+    "before": {
+      "name": "Cateran Brute",
+      "status": "partial",
+      "ignored_text": "{2}, {T}: Search your library for a Mercenary permanent card with mana value 2 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Cateran Brute",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Cateran Enforcer",
+    "before": {
+      "name": "Cateran Enforcer",
+      "status": "partial",
+      "ignored_text": "{4}, {T}: Search your library for a Mercenary permanent card with mana value 4 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Cateran Enforcer",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Cateran Kidnappers",
+    "before": {
+      "name": "Cateran Kidnappers",
+      "status": "partial",
+      "ignored_text": "{3}, {T}: Search your library for a Mercenary permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Cateran Kidnappers",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Cateran Overlord",
+    "before": {
+      "name": "Cateran Overlord",
+      "status": "partial",
+      "ignored_text": "{6}, {T}: Search your library for a Mercenary permanent card with mana value 6 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Cateran Overlord",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Cateran Persuader",
+    "before": {
+      "name": "Cateran Persuader",
+      "status": "partial",
+      "ignored_text": "{1}, {T}: Search your library for a Mercenary permanent card with mana value 1 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Cateran Persuader",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Cateran Slaver",
+    "before": {
+      "name": "Cateran Slaver",
+      "status": "partial",
+      "ignored_text": "{5}, {T}: Search your library for a Mercenary permanent card with mana value 5 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Cateran Slaver",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Congregation at Dawn",
+    "before": {
+      "name": "Congregation at Dawn",
+      "status": "partial",
+      "ignored_text": "Search your library for up to three creature cards, reveal them, then shuffle and put those cards on top in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Congregation at Dawn",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Defiant Falcon",
+    "before": {
+      "name": "Defiant Falcon",
+      "status": "partial",
+      "ignored_text": "{4}, {T}: Search your library for a Rebel permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Defiant Falcon",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Defiant Vanguard",
+    "before": {
+      "name": "Defiant Vanguard",
+      "status": "partial",
+      "ignored_text": "at end of combat, destroy it and all creatures it blocked this turn.\n{5}, {T}: Search your library for a Rebel permanent card with mana value 4 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Defiant Vanguard",
+      "status": "partial",
+      "ignored_text": "at end of combat, destroy it and all creatures it blocked this turn.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Planar Engineering",
+    "before": {
+      "name": "Planar Engineering",
+      "status": "partial",
+      "ignored_text": "Sacrifice two lands.\nSearch your library for four basic land cards, put them onto the battlefield tapped, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Planar Engineering",
+      "status": "partial",
+      "ignored_text": "Sacrifice two lands.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Ramosian Captain",
+    "before": {
+      "name": "Ramosian Captain",
+      "status": "partial",
+      "ignored_text": "{5}, {T}: Search your library for a Rebel permanent card with mana value 4 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Ramosian Captain",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Ramosian Commander",
+    "before": {
+      "name": "Ramosian Commander",
+      "status": "partial",
+      "ignored_text": "{6}, {T}: Search your library for a Rebel permanent card with mana value 5 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Ramosian Commander",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Ramosian Lieutenant",
+    "before": {
+      "name": "Ramosian Lieutenant",
+      "status": "partial",
+      "ignored_text": "{4}, {T}: Search your library for a Rebel permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Ramosian Lieutenant",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Ramosian Sergeant",
+    "before": {
+      "name": "Ramosian Sergeant",
+      "status": "partial",
+      "ignored_text": "{3}, {T}: Search your library for a Rebel permanent card with mana value 2 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Ramosian Sergeant",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Ramosian Sky Marshal",
+    "before": {
+      "name": "Ramosian Sky Marshal",
+      "status": "partial",
+      "ignored_text": "{7}, {T}: Search your library for a Rebel permanent card with mana value 6 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Ramosian Sky Marshal",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Ranger of Eos",
+    "before": {
+      "name": "Ranger of Eos",
+      "status": "partial",
+      "ignored_text": "you may search your library for up to two creature cards with mana value 1 or less, reveal them, put them into your hand, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Ranger of Eos",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Rathi Assassin",
+    "before": {
+      "name": "Rathi Assassin",
+      "status": "partial",
+      "ignored_text": "{3}, {T}: Search your library for a Mercenary permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Rathi Assassin",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Rathi Fiend",
+    "before": {
+      "name": "Rathi Fiend",
+      "status": "partial",
+      "ignored_text": "{3}, {T}: Search your library for a Mercenary permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Rathi Fiend",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Rathi Intimidator",
+    "before": {
+      "name": "Rathi Intimidator",
+      "status": "partial",
+      "ignored_text": "{2}, {T}: Search your library for a Mercenary permanent card with mana value 2 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Rathi Intimidator",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Reshape the Earth",
+    "before": {
+      "name": "Reshape the Earth",
+      "status": "partial",
+      "ignored_text": "Search your library for up to ten land cards, put them onto the battlefield tapped, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Reshape the Earth",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Soul of Mirrodin",
+    "before": {
+      "name": "Soul of Mirrodin",
+      "status": "partial",
+      "ignored_text": "{5}: Search your library for an artifact card with mana value 5 or less, put it onto the battlefield tapped, then shuffle.\n{5}, Exile ~ from your graveyard: Search your library for an artifact card with mana value 5 or less, put it onto the battlefield tapped, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Soul of Mirrodin",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Zur the Enchanter",
+    "before": {
+      "name": "Zur the Enchanter",
+      "status": "partial",
+      "ignored_text": "you may search your library for an enchantment card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Zur the Enchanter",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  }
+]
