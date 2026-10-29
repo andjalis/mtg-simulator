@@ -322,6 +322,45 @@ class Batch1(unittest.TestCase):
         self.g.run_priority()
         self.assertEqual(self.b.life, 19)
 
+    def test_land_mana_doubler_lets_two_lands_pay_four(self):
+        self.put(card("Test Wake", "{3}{G}", "Enchantment",
+                      "Whenever you tap a land for mana, add one mana of any type that land produced."))
+        self.put(ISLAND)
+        self.put(ISLAND)
+        spell = card("Test Bigspell", "{2}{U}{U}", "Sorcery", "Draw a card.")
+        self.a.hand = [spell]
+        hand = len(self.a.hand)
+        self.assertTrue(self.g.cast(self.a, spell))
+        self.g.run_priority()
+        self.assertEqual(len(self.a.hand), hand)      # spell left hand, drew one
+
+    def test_attack_with_two_creatures_triggers(self):
+        alliance = card("Test Alliance", "{2}{W}", "Enchantment",
+                        "Whenever you attack with two or more creatures, draw a card.")
+        self.put(alliance)
+        x, y = self.put(BEAR), self.put(BEAR)
+        hand = len(self.a.hand)
+        self.a.ai.attack = (x, y)
+        self.g.combat(self.a, self.b)
+        self.g.run_priority()
+        self.assertEqual(len(self.a.hand), hand + 1)
+
+    def test_sacrifice_another_permanent_grows_creature(self):
+        grower = self.put(card("Test Grower", "{2}{G}", "Creature — Plant",
+                               "Whenever you sacrifice another permanent, put a +1/+1 counter on ~.", 1, 1))
+        fodder = self.put(BEAR)
+        self.g.sacrifice(fodder)
+        self.g.run_priority()
+        self.assertEqual(grower.p1, 1)
+        self.g.sacrifice(grower)
+        self.assertNotIn(grower, self.a.battlefield)
+
+    def test_cast_trigger_for_either_subtype(self):
+        altar = self.put(card("Test Altar", "{3}", "Artifact",
+                              "Whenever you cast a Spirit or Arcane spell, you may put a ki counter on ~."))
+        eff = altar.triggers[0]
+        self.assertEqual(eff.filter, "spell:Spirit|Arcane")
+
 
 if __name__ == '__main__':
     unittest.main()

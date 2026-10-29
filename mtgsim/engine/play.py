@@ -224,13 +224,11 @@ class PlayMixin:
             for perm in list(p.battlefield):
                 for trig in perm.triggers:
                     flt = trig.filter
-                    if flt.startswith("spell:") and flt[6:] in SPELL_KINDS:
-                        if not SPELL_KINDS[flt[6:]](card):
-                            continue
-                    elif flt.startswith("spell:") and not (flt[6:] in card.subtypes or
-                                                         flt[6:].capitalize() in card.types or
-                                                         (flt[6:].lower() == "outlaw" and any(
-                                                             o in card.subtypes for o in OUTLAWS))):
+                    if flt.startswith("spell:") and not any(
+                            SPELL_KINDS[kind](card) if kind in SPELL_KINDS else
+                            kind in card.subtypes or kind.capitalize() in card.types or
+                            (kind.lower() == "outlaw" and any(o in card.subtypes for o in OUTLAWS))
+                            for kind in flt[6:].split("|")):
                         continue
                     if trig.event == "cast_cmc" and card.cmc < int(trig.filter[5:]):
                         continue

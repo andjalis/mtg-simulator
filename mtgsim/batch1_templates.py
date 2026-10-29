@@ -125,6 +125,10 @@ def parse_line(line, st):
         eff = Effect('host_lose', int(m[1])) if m[1] else Effect('host_damage', int(m[2])) if m[2] else Effect('host_shrink')
         st.triggers.append(Trigger('host_upkeep', [eff]))
         return True
+    m = re.fullmatch(r"Whenever (you|a player) taps? a land for mana, (?:(?:you|that player) adds?|add) one mana of any type that land produced\.", line)
+    if m:
+        st.extra.setdefault('advanced_rules', {})['land_double'] = 'mine' if m[1] == 'you' else 'all'
+        return True
     if line == "Activated abilities of artifacts can't be activated.":
         st.extra.setdefault('advanced_rules', {})['artifact_activation_lock'] = True
         return True
