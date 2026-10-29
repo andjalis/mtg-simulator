@@ -629,6 +629,7 @@ _TRIGGERS = [
     (r"Whenever you discard (?:a card|one or more cards), (.+)", ("you_discard",)),
     (r"Whenever you cast a spell with mana value (\d+) or greater, (.+)", ("cast_cmc",)),
     (r"Whenever ~ attacks while saddled, (.+)", ("attacks",)),
+    (r"Whenever ~ attacks while you control a creature with power (\d+) or greater, (.+)", ("attacks",)),
     (r"Whenever ~ becomes tapped, (.+)", ("becomes_tapped",)),
     (r"Whenever ~ enters or becomes tapped, (.+)", ("etb", "becomes_tapped")),
     (r"Whenever you expend (\d+), (.+)", ("expend",)),

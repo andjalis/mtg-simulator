@@ -5,7 +5,7 @@ override each one by defining the hook of the same name (see README and DEFAULTS
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from .. import copies, learning, proliferate, regeneration, removal
+from .. import copies, counters_r3, learning, proliferate, regeneration, removal
 from ..cards import COLORS, CardDef, Effect
 from .. import modal
 from .mana import add_costs, payable
@@ -73,6 +73,10 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
             theirs = [x for x in theirs if x.toughness <= eff.amount2]
         theirs = [x for x in theirs if not (k == "destroy" and x.has("indestructible"))]
         return max(theirs, key=perm_value, default=None)
+    if k == "p1_counters" and eff.filter == "opp":
+        return min(theirs, key=perm_value, default=None)    # a drawback: help the weakest opposing creature
+    if k == "blink":
+        return counters_r3.blink_target(game, me, mine)
     if k in ("pump", "p1_counters", "distribute_counters", "double_power", "grant", "explore", "attach_self", "force_blocked"):
         return max(mine, key=perm_value, default=None)
     if k == "oring":

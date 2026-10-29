@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from ... import copies
+from ... import copies, counters_r3
 from ...cards import CardDef, Effect, jace_token, make_token, role_token
 from ..policy import choose_basic, perm_value
 from ..state import Permanent, Player, is_basic_land
@@ -175,6 +175,11 @@ def blink_own(game, p, item, **_):
         if game.leave_battlefield(best, "exile"):
             p.exile.remove(card)
             game.enter_battlefield(p, card)
+
+
+@kind("blink")
+def blink(game, p, eff, target, **_):
+    counters_r3.blink(game, p, target, eff)
 
 
 @kind("blink_end")
