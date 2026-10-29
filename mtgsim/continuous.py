@@ -156,6 +156,11 @@ def base_pt(permanent):
 
 def pt(permanent):
     p, t = permanent.card.power or 0, permanent.card.toughness or 0
+    if permanent.card.level_blocks:
+        from .batch1_templates import level_block
+        block = level_block(permanent)
+        if block is not None and block[0] is not None:
+            p, t = block[0]
     effects = active(permanent)
     for effect in ordered(base_effects(permanent) + [e for e in effects if e.operation == 'set_base']):
         p, t = effect.power, effect.toughness

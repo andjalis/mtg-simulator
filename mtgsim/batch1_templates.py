@@ -151,6 +151,8 @@ def parse_line(line, st):
         return True
     if _curse_line(line, st):
         return True
+    if _level_up_line(line, st):
+        return True
     m = re.fullmatch(r"Cumulative upkeep(?: ((?:\{[^ }/]+\})+)|—Pay (\d+) life)\.?(?: \(.*\))?", line)
     if m:
         from .cards import parse_mana_cost
@@ -286,6 +288,13 @@ def effect_value(game, player, effect, target):
         return 1 + (effect.amount if kind == 'incubate' else 0)
     if kind == 'exploit':
         return 0.5
+    if kind == 'level_counter':
+        src = getattr(game.target_source, 'source', game.target_source)
+        blocks = getattr(getattr(src, 'card', None), 'level_blocks', ())
+        level = getattr(src, 'counters', {}).get('level', 0)
+        if not blocks or level >= max(b[0] for b in blocks):
+            return 0                       # already in the last range
+        return 1 + 0.5 * sum(b[2][0] + b[2][1] for b in blocks if b[2] and b[0] == level + 1)
     if kind == 'incubator_transform':
         src = getattr(game.target_source, 'source', game.target_source)
         return effect.amount if getattr(src, 'p1', 0) and game.step in ('main1', 'main2') else 0
@@ -343,6 +352,70 @@ def soulbond_pair(game, p, perm):
     if pick is not None:
         perm.partner, pick.partner = pick, perm
         game.log(f"{perm.card.name} pairs with {pick.card.name}", p)
+
+
+_LEVEL_KW = r"(?:flying|first strike|double strike|trample|haste|vigilance|lifelink|deathtouch|menace|reach|shadow|defender|indestructible|fear)"
+
+
+def _level_up_line(line, st):
+    """Level up creatures: "Level up {cost}", then "LEVEL 1-3" blocks of a power/toughness line and keywords or abilities."""
+    import re
+    from .cards import Activated, Effect, parse_mana_cost
+    m = re.fullmatch(r"Level up ((?:\{[^ }]+\})+)(?: \(.*\))?", line)
+    if m:
+        st.activated.append(Activated("ability", parse_mana_cost(m[1]), effects=[Effect('level_counter')], sorcery=True,
+                                      text=f"{m[1]}: Put a level counter on this. Level up only as a sorcery."))
+        st.extra['_lvl_blocks'] = []
+        return True
+    blocks = st.extra.get('_lvl_blocks')
+    if blocks is None:
+        return False
+    m = re.fullmatch(r"LEVEL (\d+)(?:-(\d+)|\+)", line)
+    if m:
+        blocks.append({'lo': int(m[1]), 'hi': int(m[2]) if m[2] else 999, 'a': len(st.activated), 't': len(st.triggers),
+                       'pt': None, 'kw': []})
+        return True
+    if not blocks:
+        return False
+    m = re.fullmatch(r"(\d+)/(\d+)", line)
+    if m and blocks[-1]['pt'] is None:
+        blocks[-1]['pt'] = (int(m[1]), int(m[2]))
+        return True
+    if re.fullmatch(rf"{_LEVEL_KW}(?:, {_LEVEL_KW})*", line, re.I):
+        blocks[-1]['kw'] += [k.strip().lower() for k in line.split(',')]
+        return True
+    return False
+
+
+def finish_level_up(extra, triggers, activated, approximations, produces=()):
+    """Close the LEVEL blocks: gate the abilities each one added to its level range."""
+    blocks = extra.pop('_lvl_blocks', None)
+    if blocks is None:
+        return
+    for i, b in enumerate(blocks):
+        a_end = blocks[i + 1]['a'] if i + 1 < len(blocks) else len(activated)
+        t_end = blocks[i + 1]['t'] if i + 1 < len(blocks) else len(triggers)
+        for act in activated[b['a']:a_end]:
+            act.extra_costs = dict(act.extra_costs, level_range=(b['lo'], b['hi']))
+        for trig in triggers[b['t']:t_end]:
+            trig.min_level = b['lo']
+            if b['hi'] != 999:
+                approximations.append("a level-range trigger keeps working above its range")
+    if produces:
+        approximations.append("a mana ability inside a level range works at every level")
+    extra['level_blocks'] = tuple((b['lo'], b['hi'], b['pt'], tuple(b['kw'])) for b in blocks)
+
+
+def level_block(perm):
+    """The (power, toughness, keywords) of the level range perm is in, or None."""
+    blocks = perm.card.level_blocks
+    if not blocks:
+        return None
+    level = perm.counters.get('level', 0)
+    for lo, hi, pt, kws in blocks:
+        if lo <= level <= hi:
+            return pt, kws
+    return None
 
 
 def _curse_line(line, st):
