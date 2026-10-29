@@ -573,6 +573,10 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["cost_discount"] = extra.get("cost_discount", ()) + ((m[1].lower(), int(m[2])),)
             return None
+        m = re.fullmatch(r"Spells you cast cost \{(\d+)\} less to cast\.", line)
+        if m:
+            extra["cost_discount"] = extra.get("cost_discount", ()) + (("spell", int(m[1])),)
+            return None
         m = re.fullmatch(r"(?:(Permanent|Creature|Artifact|Enchantment) )?[Ss]pells you cast that have an Adventure "
                          r"cost \{(\d+)\} less to cast\.", line)
         if m:

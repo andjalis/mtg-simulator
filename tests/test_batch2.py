@@ -146,6 +146,20 @@ class Batch2(Batch1):
         self.g.change_life(self.a, 3, "test")
         self.assertEqual((self.a.life, self.b.life), (23, 20))
 
+    def test_spell_tax(self):
+        self.put(card("Test Warden", "{1}{W}", "Creature — Human", "Noncreature spells cost {1} more to cast.", 2, 2))
+        self.assertEqual(self.g.cost_of(self.a, SPELL).get("generic"), 2)
+        self.assertEqual(self.g.cost_of(self.a, BIG).get("generic"), 4)
+
+    def test_opponent_spell_tax(self):
+        self.put(card("Test Jailer", "{1}{W}", "Creature — Human", "Spells your opponents cast cost {1} more to cast.", 2, 2))
+        self.assertEqual(self.g.cost_of(self.a, SPELL).get("generic"), 1)
+        self.assertEqual(self.g.cost_of(self.b, SPELL).get("generic"), 2)
+
+    def test_generic_discount(self):
+        self.put(card("Test Fountain", "{1}{U}", "Creature — Wizard", "Spells you cast cost {1} less to cast.", 2, 2))
+        self.assertEqual(self.g.cost_of(self.a, BIG).get("generic"), 3)
+
 
 if __name__ == "__main__":
     unittest.main()
