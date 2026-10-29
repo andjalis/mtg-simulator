@@ -1,0 +1,49 @@
+{
+  "expected": 1713,
+  "ran": 1713,
+  "success": true,
+  "inventory_matched": true,
+  "seconds": 608.3060141879978,
+  "failures": [],
+  "errors": [],
+  "skipped": [
+    [
+      "tests.test_forge.ForgeWrapperTests.test_stored_review_log_if_present",
+      "local review log not present (results/benchmark*/ is gitignored)"
+    ]
+  ],
+  "base_commit": "b8d12a61482b19e17005d6f74ad35815aff5cb8a",
+  "source_sha256": {
+    "mtgsim/cards/__init__.py": "d8fdac95eb252e9450de6a1e6f703f69342920a3c1bb0cfe5fd59042a91169bb",
+    "mtgsim/cards/parse.py": "9bb0c1939ae124e5b4e4f41ece51d3e1e5290a319ea4389a9e311ff6d51bff92",
+    "mtgsim/cx_exile.py": "daf7d2dc223466a8fe2bd386fa10e0487e709ae4c19473758b3c7df3e613629a",
+    "mtgsim/cx_graveyard.py": "2ff2c8e4428630af9e949a628df8d63a545c1a78480e907924477cbda74eaece",
+    "mtgsim/cx_library.py": "c74f3bd8b668b4e64990344e3db76cd5bc0c07d19b11c797c409ac547cc550ab",
+    "mtgsim/cx_milling.py": "feabf3573f2b9d94119a11f41062b7ffa47bad733fc2a1d61264cbfbb1de38e8",
+    "mtgsim/cx_recursion.py": "761025c000e703cf6ea1351ff94b453a5d2de6760d844909bf8df0537c34feb6",
+    "mtgsim/cx_selection.py": "3d0e495f75d28af5fb3a697e88bd5b73a52ca28d6bccab103262f77ab489f3c7",
+    "mtgsim/cx_tutors.py": "6a89af8bbc4220eb6ca41d71158590036865f64a10bcda87f61d9d783701475b",
+    "tests/test_cx_exile.py": "8775a6090d0b4dadb98dedbc33b77924613ded491f2213300bea9b2ebe2d8f2e",
+    "tests/test_cx_graveyard.py": "9763d4948137068cb9a2b2f3762182778a4c3a349e094f24725f6530d5554c41",
+    "tests/test_cx_library.py": "96457fec446d105a6fd7d6f994081d53663c5829903bd54892ced4eb32c9e19e",
+    "tests/test_cx_milling.py": "cc370f8055416c180ae462425018e99405c3479e8209acbde7446a5e92891774",
+    "tests/test_cx_recursion.py": "05a2470fcf7fa19b5422d41d6755c5690a281acd08688f5d6248af509edd8539",
+    "tests/test_cx_selection.py": "f7346352c92bcab5bad236e257861f90f5a99d13e257c44c83f6556d11cfff0b",
+    "tests/test_cx_tutors.py": "cd4a23e3414d03c8f97ca5b1ddcea9896d2d43d3f06907cfe856260757e0c7a1"
+  },
+  "focused_new_tests": 94,
+  "rounds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "coverage_changes": 100,
+  "new_full_matches": 73,
+  "merged": false,
+  "remote_ci_verified": false,
+  "scope": "Temporary detached integration checkout; no changes pushed to main or Claude branches"
+}

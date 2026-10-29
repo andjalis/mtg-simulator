@@ -1,0 +1,8 @@
+{
+  "branch": "codex/cards-7",
+  "pull_request": null,
+  "ci": "not verified",
+  "merged": false,
+  "blocker": "api.github.com is forbidden by current environment network policy; review/publish the previously saved API-domain configuration draft",
+  "status": "locally validated; ready for PR once API access is enabled"
+}

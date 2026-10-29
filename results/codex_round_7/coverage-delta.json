@@ -1,0 +1,77 @@
+[
+  {
+    "name": "A-Druidic Ritual",
+    "before": {
+      "name": "A-Druidic Ritual",
+      "status": "partial",
+      "ignored_text": "Then return up to two creature and/or land cards from your graveyard to your hand.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "A-Druidic Ritual",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Another Chance",
+    "before": {
+      "name": "Another Chance",
+      "status": "partial",
+      "ignored_text": "Then return up to two creature cards from your graveyard to your hand.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Another Chance",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Bond of Insight",
+    "before": {
+      "name": "Bond of Insight",
+      "status": "partial",
+      "ignored_text": "Return up to two instant and/or sorcery cards from your graveyard to your hand.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Bond of Insight",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Gix's Command",
+    "before": {
+      "name": "Gix's Command",
+      "status": "partial",
+      "ignored_text": "\u2022 Put two +1/+1 counters on up to one creature. It gains lifelink until end of turn.\n\u2022 Destroy each creature with power 2 or less.\n\u2022 Return up to two creature cards from your graveyard to your hand.\n\u2022 Each opponent sacrifices a creature with highest power among creatures they control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Gix's Command",
+      "status": "partial",
+      "ignored_text": "\u2022 Put two +1/+1 counters on up to one creature. It gains lifelink until end of turn.\n\u2022 Destroy each creature with power 2 or less.\n\u2022 Each opponent sacrifices a creature with highest power among creatures they control.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Kairi, the Swirling Sky",
+    "before": {
+      "name": "Kairi, the Swirling Sky",
+      "status": "partial",
+      "ignored_text": "\u2022 Return any number of target nonland permanents with total mana value 6 or less to their owners' hands.\n\u2022 Mill six cards, then return up to two instant and/or sorcery cards from your graveyard to your hand.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Kairi, the Swirling Sky",
+      "status": "partial",
+      "ignored_text": "\u2022 Return any number of target nonland permanents with total mana value 6 or less to their owners' hands.",
+      "simplifications": ""
+    }
+  }
+]

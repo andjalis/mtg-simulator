@@ -1,0 +1,1502 @@
+[
+  {
+    "name": "A-Druidic Ritual",
+    "before": {
+      "name": "A-Druidic Ritual",
+      "status": "partial",
+      "ignored_text": "Then return up to two creature and/or land cards from your graveyard to your hand.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "A-Druidic Ritual",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Accumulate Wisdom",
+    "before": {
+      "name": "Accumulate Wisdom",
+      "status": "partial",
+      "ignored_text": "Look at the top three cards of your library.\nPut one of those cards into your hand and the rest on the bottom of your library in any order.\nPut each of those cards into your hand instead if there are three or more Lesson cards in your graveyard.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Accumulate Wisdom",
+      "status": "partial",
+      "ignored_text": "Put each of those cards into your hand instead if there are three or more Lesson cards in your graveyard.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Aethergeode Miner",
+    "before": {
+      "name": "Aethergeode Miner",
+      "status": "partial",
+      "ignored_text": "Pay {E}{E}: Exile ~, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Aethergeode Miner",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Against All Odds",
+    "before": {
+      "name": "Against All Odds",
+      "status": "partial",
+      "ignored_text": "\u2022 Exile target artifact or creature you control, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Against All Odds",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Amrou Scout",
+    "before": {
+      "name": "Amrou Scout",
+      "status": "partial",
+      "ignored_text": "{4}, {T}: Search your library for a Rebel permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Amrou Scout",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Another Chance",
+    "before": {
+      "name": "Another Chance",
+      "status": "partial",
+      "ignored_text": "Then return up to two creature cards from your graveyard to your hand.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Another Chance",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Archive Trap",
+    "before": {
+      "name": "Archive Trap",
+      "status": "partial",
+      "ignored_text": "If an opponent searched their library this turn, you may pay {0} rather than pay ~'s mana cost.\nTarget opponent mills thirteen cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Archive Trap",
+      "status": "partial",
+      "ignored_text": "If an opponent searched their library this turn, you may pay {0} rather than pay ~'s mana cost.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Behold the Beyond",
+    "before": {
+      "name": "Behold the Beyond",
+      "status": "partial",
+      "ignored_text": "Discard your hand.\nSearch your library for three cards, put them into your hand, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Behold the Beyond",
+      "status": "partial",
+      "ignored_text": "Discard your hand.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Biblioplex Assistant",
+    "before": {
+      "name": "Biblioplex Assistant",
+      "status": "partial",
+      "ignored_text": "put up to one target instant or sorcery card from your graveyard on top of your library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Biblioplex Assistant",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Blightspeaker",
+    "before": {
+      "name": "Blightspeaker",
+      "status": "partial",
+      "ignored_text": "{4}, {T}: Search your library for a Rebel permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Blightspeaker",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Blur",
+    "before": {
+      "name": "Blur",
+      "status": "partial",
+      "ignored_text": "Exile target creature you control, then return that card to the battlefield under their owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Blur",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Bog Glider",
+    "before": {
+      "name": "Bog Glider",
+      "status": "partial",
+      "ignored_text": "{T}, Sacrifice a land: Search your library for a Mercenary permanent card with mana value 2 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Bog Glider",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Bond of Insight",
+    "before": {
+      "name": "Bond of Insight",
+      "status": "partial",
+      "ignored_text": "Return up to two instant and/or sorcery cards from your graveyard to your hand.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Bond of Insight",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Boseiju Reaches Skyward // Branch of Boseiju",
+    "before": {
+      "name": "Boseiju Reaches Skyward // Branch of Boseiju",
+      "status": "partial",
+      "ignored_text": "II \u2014 Put up to one target land card from your graveyard on top of your library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Boseiju Reaches Skyward // Branch of Boseiju",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Bramble Familiar // Fetch Quest",
+    "before": {
+      "name": "Bramble Familiar // Fetch Quest",
+      "status": "partial",
+      "ignored_text": "Fetch Quest: Mill seven cards, then put a creature, enchantment, or land card from among cards milled this way onto the battlefield.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Bramble Familiar // Fetch Quest",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Brightglass Gearhulk",
+    "before": {
+      "name": "Brightglass Gearhulk",
+      "status": "partial",
+      "ignored_text": "you may search your library for up to two artifact, creature, and/or enchantment cards with mana value 1 or less, reveal them, put them into your hand, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Brightglass Gearhulk",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Bringer of the Black Dawn",
+    "before": {
+      "name": "Bringer of the Black Dawn",
+      "status": "partial",
+      "ignored_text": "If you do, search your library for a card, then shuffle and put that card on top.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Bringer of the Black Dawn",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Captain America, Liberator",
+    "before": {
+      "name": "Captain America, Liberator",
+      "status": "partial",
+      "ignored_text": "you may search your library for an Equipment card with mana value 3 or less, put it onto the battlefield, then shuffle.\nfor each Equipment attached to him, create a 1/1 white Soldier creature token.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Captain America, Liberator",
+      "status": "partial",
+      "ignored_text": "for each Equipment attached to him, create a 1/1 white Soldier creature token.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Cateran Brute",
+    "before": {
+      "name": "Cateran Brute",
+      "status": "partial",
+      "ignored_text": "{2}, {T}: Search your library for a Mercenary permanent card with mana value 2 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Cateran Brute",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Cateran Enforcer",
+    "before": {
+      "name": "Cateran Enforcer",
+      "status": "partial",
+      "ignored_text": "{4}, {T}: Search your library for a Mercenary permanent card with mana value 4 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Cateran Enforcer",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Cateran Kidnappers",
+    "before": {
+      "name": "Cateran Kidnappers",
+      "status": "partial",
+      "ignored_text": "{3}, {T}: Search your library for a Mercenary permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Cateran Kidnappers",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Cateran Overlord",
+    "before": {
+      "name": "Cateran Overlord",
+      "status": "partial",
+      "ignored_text": "{6}, {T}: Search your library for a Mercenary permanent card with mana value 6 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Cateran Overlord",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Cateran Persuader",
+    "before": {
+      "name": "Cateran Persuader",
+      "status": "partial",
+      "ignored_text": "{1}, {T}: Search your library for a Mercenary permanent card with mana value 1 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Cateran Persuader",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Cateran Slaver",
+    "before": {
+      "name": "Cateran Slaver",
+      "status": "partial",
+      "ignored_text": "{5}, {T}: Search your library for a Mercenary permanent card with mana value 5 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Cateran Slaver",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Congregation at Dawn",
+    "before": {
+      "name": "Congregation at Dawn",
+      "status": "partial",
+      "ignored_text": "Search your library for up to three creature cards, reveal them, then shuffle and put those cards on top in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Congregation at Dawn",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Court Hussar",
+    "before": {
+      "name": "Court Hussar",
+      "status": "partial",
+      "ignored_text": "look at the top three cards of your library, then put one of them into your hand and the rest on the bottom of your library in any order.\nsacrifice it unless {W} was spent to cast it.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Court Hussar",
+      "status": "partial",
+      "ignored_text": "sacrifice it unless {W} was spent to cast it.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Cruel Tutor",
+    "before": {
+      "name": "Cruel Tutor",
+      "status": "partial",
+      "ignored_text": "Search your library for a card, then shuffle and put that card on top.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Cruel Tutor",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Defiant Falcon",
+    "before": {
+      "name": "Defiant Falcon",
+      "status": "partial",
+      "ignored_text": "{4}, {T}: Search your library for a Rebel permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Defiant Falcon",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Defiant Vanguard",
+    "before": {
+      "name": "Defiant Vanguard",
+      "status": "partial",
+      "ignored_text": "at end of combat, destroy it and all creatures it blocked this turn.\n{5}, {T}: Search your library for a Rebel permanent card with mana value 4 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Defiant Vanguard",
+      "status": "partial",
+      "ignored_text": "at end of combat, destroy it and all creatures it blocked this turn.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Distinguished Conjurer",
+    "before": {
+      "name": "Distinguished Conjurer",
+      "status": "partial",
+      "ignored_text": "{4}{W}, {T}: Exile another target creature you control, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Distinguished Conjurer",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Dread Summons",
+    "before": {
+      "name": "Dread Summons",
+      "status": "partial",
+      "ignored_text": "Each player mills X cards.\nFor each creature card put into a graveyard this way, you create a tapped 2/2 black Zombie creature token.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Dread Summons",
+      "status": "partial",
+      "ignored_text": "For each creature card put into a graveyard this way, you create a tapped 2/2 black Zombie creature token.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Dukhara Scavenger",
+    "before": {
+      "name": "Dukhara Scavenger",
+      "status": "partial",
+      "ignored_text": "you may put target artifact or creature card from your graveyard on top of your library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Dukhara Scavenger",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Elder Pine of Jukai",
+    "before": {
+      "name": "Elder Pine of Jukai",
+      "status": "partial",
+      "ignored_text": "reveal the top three cards of your library.\nPut all land cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Elder Pine of Jukai",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Emiel the Blessed",
+    "before": {
+      "name": "Emiel the Blessed",
+      "status": "partial",
+      "ignored_text": "{3}: Exile another target creature you control, then return it to the battlefield under its owner's control.\nyou may pay {G/W}.\nIf you do, put a +1/+1 counter on it.\nIf it's a Unicorn, put two +1/+1 counters on it instead.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Emiel the Blessed",
+      "status": "partial",
+      "ignored_text": "you may pay {G/W}.\nIf you do, put a +1/+1 counter on it.\nIf it's a Unicorn, put two +1/+1 counters on it instead.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Enlistment Officer",
+    "before": {
+      "name": "Enlistment Officer",
+      "status": "partial",
+      "ignored_text": "reveal the top four cards of your library.\nPut all Soldier cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Enlistment Officer",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Enshrined Memories",
+    "before": {
+      "name": "Enshrined Memories",
+      "status": "partial",
+      "ignored_text": "Reveal the top 1 cards of your library.\nPut all creature cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Enshrined Memories",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Experimental Augury",
+    "before": {
+      "name": "Experimental Augury",
+      "status": "partial",
+      "ignored_text": "Look at the top three cards of your library.\nPut one of them into your hand and rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Experimental Augury",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "False Mourning",
+    "before": {
+      "name": "False Mourning",
+      "status": "partial",
+      "ignored_text": "Put target card from your graveyard on top of your library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "False Mourning",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Fascination",
+    "before": {
+      "name": "Fascination",
+      "status": "partial",
+      "ignored_text": "\u2022 Each player draws X cards.\n\u2022 Each player mills X cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Fascination",
+      "status": "partial",
+      "ignored_text": "\u2022 Each player draws X cards.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Felidar Guardian",
+    "before": {
+      "name": "Felidar Guardian",
+      "status": "partial",
+      "ignored_text": "you may exile another target permanent you control, then return that card to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Felidar Guardian",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Flicker",
+    "before": {
+      "name": "Flicker",
+      "status": "partial",
+      "ignored_text": "Exile target nontoken permanent, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Flicker",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Flicker of Fate",
+    "before": {
+      "name": "Flicker of Fate",
+      "status": "partial",
+      "ignored_text": "Exile target creature or enchantment, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Flicker of Fate",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Flickering Hound",
+    "before": {
+      "name": "Flickering Hound",
+      "status": "partial",
+      "ignored_text": "exile up to one other target creature you control, then return that card to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Flickering Hound",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Flickering Spirit",
+    "before": {
+      "name": "Flickering Spirit",
+      "status": "partial",
+      "ignored_text": "{3}{W}: Exile ~, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Flickering Spirit",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Fractured Sanity",
+    "before": {
+      "name": "Fractured Sanity",
+      "status": "partial",
+      "ignored_text": "Each opponent mills fourteen cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Fractured Sanity",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Garruk, Caller of Beasts",
+    "before": {
+      "name": "Garruk, Caller of Beasts",
+      "status": "partial",
+      "ignored_text": "[+1]: Reveal the top five cards of your library.\n[+1]: Put all creature cards revealed this way into your hand and the rest on the bottom of your library in any order.\n[\u22123]: You may put a green creature card from your hand onto the battlefield.\n[\u22127]: You get an emblem with \"Whenever you cast a creature spell, you may search your library for a creature card, put it onto the battlefield, then shuffle.\"",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Garruk, Caller of Beasts",
+      "status": "partial",
+      "ignored_text": "[\u22123]: You may put a green creature card from your hand onto the battlefield.\n[\u22127]: You get an emblem with \"Whenever you cast a creature spell, you may search your library for a creature card, put it onto the battlefield, then shuffle.\"",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Gix's Command",
+    "before": {
+      "name": "Gix's Command",
+      "status": "partial",
+      "ignored_text": "\u2022 Put two +1/+1 counters on up to one creature. It gains lifelink until end of turn.\n\u2022 Destroy each creature with power 2 or less.\n\u2022 Return up to two creature cards from your graveyard to your hand.\n\u2022 Each opponent sacrifices a creature with highest power among creatures they control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Gix's Command",
+      "status": "partial",
+      "ignored_text": "\u2022 Put two +1/+1 counters on up to one creature. It gains lifelink until end of turn.\n\u2022 Destroy each creature with power 2 or less.\n\u2022 Each opponent sacrifices a creature with highest power among creatures they control.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Goblin Ringleader",
+    "before": {
+      "name": "Goblin Ringleader",
+      "status": "partial",
+      "ignored_text": "reveal the top four cards of your library.\nPut all Goblin cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Goblin Ringleader",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Grave Defiler",
+    "before": {
+      "name": "Grave Defiler",
+      "status": "partial",
+      "ignored_text": "reveal the top four cards of your library.\nPut all Zombie cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Grave Defiler",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Hallowed Respite",
+    "before": {
+      "name": "Hallowed Respite",
+      "status": "partial",
+      "ignored_text": "Exile target nonlegendary creature, then return it to the battlefield under its owner's control.\nIf it entered under your control, put a +1/+1 counter on it.\nOtherwise, tap it.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Hallowed Respite",
+      "status": "partial",
+      "ignored_text": "If it entered under your control, put a +1/+1 counter on it.\nOtherwise, tap it.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Imperial Seal",
+    "before": {
+      "name": "Imperial Seal",
+      "status": "partial",
+      "ignored_text": "Search your library for a card, then shuffle and put that card on top.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Imperial Seal",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Increasing Confusion",
+    "before": {
+      "name": "Increasing Confusion",
+      "status": "partial",
+      "ignored_text": "Target player mills X cards.\nIf ~ was cast from a graveyard, that player mills twice that many cards instead.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Increasing Confusion",
+      "status": "partial",
+      "ignored_text": "If ~ was cast from a graveyard, that player mills twice that many cards instead.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Jace Beleren",
+    "before": {
+      "name": "Jace Beleren",
+      "status": "partial",
+      "ignored_text": "[\u221210]: Target player mills twenty cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Jace Beleren",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Kairi, the Swirling Sky",
+    "before": {
+      "name": "Kairi, the Swirling Sky",
+      "status": "partial",
+      "ignored_text": "\u2022 Return any number of target nonland permanents with total mana value 6 or less to their owners' hands.\n\u2022 Mill six cards, then return up to two instant and/or sorcery cards from your graveyard to your hand.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Kairi, the Swirling Sky",
+      "status": "partial",
+      "ignored_text": "\u2022 Return any number of target nonland permanents with total mana value 6 or less to their owners' hands.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Kavu Howler",
+    "before": {
+      "name": "Kavu Howler",
+      "status": "partial",
+      "ignored_text": "reveal the top four cards of your library.\nPut all Kavu cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Kavu Howler",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Kimoyo Beads",
+    "before": {
+      "name": "Kimoyo Beads",
+      "status": "partial",
+      "ignored_text": "\u2022 Prime Bead \u2014 You gain 3 life. Exile ~, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Kimoyo Beads",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Lair Delve",
+    "before": {
+      "name": "Lair Delve",
+      "status": "partial",
+      "ignored_text": "Reveal the top two cards of your library.\nPut all creature and land cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Lair Delve",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Liliana Vess",
+    "before": {
+      "name": "Liliana Vess",
+      "status": "partial",
+      "ignored_text": "[\u22122]: Search your library for a card, then shuffle and put that card on top.\n[\u22128]: Put all creature cards from all graveyards onto the battlefield under your control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Liliana Vess",
+      "status": "partial",
+      "ignored_text": "[\u22128]: Put all creature cards from all graveyards onto the battlefield under your control.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Liliana's Indignation",
+    "before": {
+      "name": "Liliana's Indignation",
+      "status": "partial",
+      "ignored_text": "Mill X cards.\nTarget player loses 2 life for each creature card put into your graveyard this way.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Liliana's Indignation",
+      "status": "partial",
+      "ignored_text": "Target player loses 2 life for each creature card put into your graveyard this way.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Marina Vendrell",
+    "before": {
+      "name": "Marina Vendrell",
+      "status": "partial",
+      "ignored_text": "reveal the top seven cards of your library.\nPut all enchantment cards from among them into your hand and the rest on the bottom of your library in a random order.\n{T}: Lock or unlock a door of target Room you control. Activate only as a sorcery.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Marina Vendrell",
+      "status": "partial",
+      "ignored_text": "{T}: Lock or unlock a door of target Room you control. Activate only as a sorcery.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Meldweb Curator",
+    "before": {
+      "name": "Meldweb Curator",
+      "status": "partial",
+      "ignored_text": "put up to one target instant or sorcery card from your graveyard on top of your library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Meldweb Curator",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Merfolk Wayfinder",
+    "before": {
+      "name": "Merfolk Wayfinder",
+      "status": "partial",
+      "ignored_text": "reveal the top three cards of your library.\nPut all Island cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Merfolk Wayfinder",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Oji, the Exquisite Blade",
+    "before": {
+      "name": "Oji, the Exquisite Blade",
+      "status": "partial",
+      "ignored_text": "exile up to one target creature you control, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Oji, the Exquisite Blade",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Photon, Lady of Light",
+    "before": {
+      "name": "Photon, Lady of Light",
+      "status": "partial",
+      "ignored_text": "exile up to one other target creature you control, then return that card to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Photon, Lady of Light",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Planar Engineering",
+    "before": {
+      "name": "Planar Engineering",
+      "status": "partial",
+      "ignored_text": "Sacrifice two lands.\nSearch your library for four basic land cards, put them onto the battlefield tapped, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Planar Engineering",
+      "status": "partial",
+      "ignored_text": "Sacrifice two lands.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Prophetic Bolt",
+    "before": {
+      "name": "Prophetic Bolt",
+      "status": "partial",
+      "ignored_text": "Look at the top four cards of your library.\nPut one of those cards into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Prophetic Bolt",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Psychic Drain",
+    "before": {
+      "name": "Psychic Drain",
+      "status": "partial",
+      "ignored_text": "Target player mills X cards and you gain X life.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Psychic Drain",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Ramosian Captain",
+    "before": {
+      "name": "Ramosian Captain",
+      "status": "partial",
+      "ignored_text": "{5}, {T}: Search your library for a Rebel permanent card with mana value 4 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Ramosian Captain",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Ramosian Commander",
+    "before": {
+      "name": "Ramosian Commander",
+      "status": "partial",
+      "ignored_text": "{6}, {T}: Search your library for a Rebel permanent card with mana value 5 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Ramosian Commander",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Ramosian Lieutenant",
+    "before": {
+      "name": "Ramosian Lieutenant",
+      "status": "partial",
+      "ignored_text": "{4}, {T}: Search your library for a Rebel permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Ramosian Lieutenant",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Ramosian Sergeant",
+    "before": {
+      "name": "Ramosian Sergeant",
+      "status": "partial",
+      "ignored_text": "{3}, {T}: Search your library for a Rebel permanent card with mana value 2 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Ramosian Sergeant",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Ramosian Sky Marshal",
+    "before": {
+      "name": "Ramosian Sky Marshal",
+      "status": "partial",
+      "ignored_text": "{7}, {T}: Search your library for a Rebel permanent card with mana value 6 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Ramosian Sky Marshal",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Ranger of Eos",
+    "before": {
+      "name": "Ranger of Eos",
+      "status": "partial",
+      "ignored_text": "you may search your library for up to two creature cards with mana value 1 or less, reveal them, put them into your hand, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Ranger of Eos",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Rathi Assassin",
+    "before": {
+      "name": "Rathi Assassin",
+      "status": "partial",
+      "ignored_text": "{3}, {T}: Search your library for a Mercenary permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Rathi Assassin",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Rathi Fiend",
+    "before": {
+      "name": "Rathi Fiend",
+      "status": "partial",
+      "ignored_text": "{3}, {T}: Search your library for a Mercenary permanent card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Rathi Fiend",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Rathi Intimidator",
+    "before": {
+      "name": "Rathi Intimidator",
+      "status": "partial",
+      "ignored_text": "{2}, {T}: Search your library for a Mercenary permanent card with mana value 2 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Rathi Intimidator",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Reclaim",
+    "before": {
+      "name": "Reclaim",
+      "status": "partial",
+      "ignored_text": "Put target card from your graveyard on top of your library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Reclaim",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Reshape the Earth",
+    "before": {
+      "name": "Reshape the Earth",
+      "status": "partial",
+      "ignored_text": "Search your library for up to ten land cards, put them onto the battlefield tapped, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Reshape the Earth",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Runo Stromkirk // Krothuss, Lord of the Deep",
+    "before": {
+      "name": "Runo Stromkirk // Krothuss, Lord of the Deep",
+      "status": "partial",
+      "ignored_text": "put up to one target creature card from your graveyard on top of your library.\nlook at the top card of your library.\nYou may reveal that card.\nIf a creature card with mana value 6 or greater is revealed this way, transform ~.\nKrothuss, Lord of the Deep: create a tapped and attacking token that's a copy of another target attacking creature.\nKrothuss, Lord of the Deep: If that creature is a Kraken, Leviathan, Octopus, or Serpent, create two of those tokens instead.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Runo Stromkirk // Krothuss, Lord of the Deep",
+      "status": "partial",
+      "ignored_text": "look at the top card of your library.\nYou may reveal that card.\nIf a creature card with mana value 6 or greater is revealed this way, transform ~.\nKrothuss, Lord of the Deep: create a tapped and attacking token that's a copy of another target attacking creature.\nKrothuss, Lord of the Deep: If that creature is a Kraken, Leviathan, Octopus, or Serpent, create two of those tokens instead.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Salvage",
+    "before": {
+      "name": "Salvage",
+      "status": "partial",
+      "ignored_text": "Put target card from your graveyard on top of your library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Salvage",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Scrollshift",
+    "before": {
+      "name": "Scrollshift",
+      "status": "partial",
+      "ignored_text": "Exile up to one target artifact, creature, or enchantment you control, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Scrollshift",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "See the Truth",
+    "before": {
+      "name": "See the Truth",
+      "status": "partial",
+      "ignored_text": "Look at the top three cards of your library.\nPut one of those cards into your hand and the rest on the bottom of your library in any order.\nIf ~ was cast from anywhere other than your hand, put each of those cards into your hand instead.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "See the Truth",
+      "status": "partial",
+      "ignored_text": "If ~ was cast from anywhere other than your hand, put each of those cards into your hand instead.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Skycoach Conductor // All Aboard",
+    "before": {
+      "name": "Skycoach Conductor // All Aboard",
+      "status": "partial",
+      "ignored_text": "All Aboard: Exile target non-Pilot creature you control, then return that card to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Skycoach Conductor // All Aboard",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Soul of Mirrodin",
+    "before": {
+      "name": "Soul of Mirrodin",
+      "status": "partial",
+      "ignored_text": "{5}: Search your library for an artifact card with mana value 5 or less, put it onto the battlefield tapped, then shuffle.\n{5}, Exile ~ from your graveyard: Search your library for an artifact card with mana value 5 or less, put it onto the battlefield tapped, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Soul of Mirrodin",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Soulherder",
+    "before": {
+      "name": "Soulherder",
+      "status": "partial",
+      "ignored_text": "Whenever a creature is exiled from the battlefield, put a +1/+1 counter on ~.\nyou may exile another target creature you control, then return that card to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Soulherder",
+      "status": "partial",
+      "ignored_text": "Whenever a creature is exiled from the battlefield, put a +1/+1 counter on ~.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Startled Awake // Persistent Nightmare",
+    "before": {
+      "name": "Startled Awake // Persistent Nightmare",
+      "status": "partial",
+      "ignored_text": "Target opponent mills thirteen cards.\n{3}{U}{U}: Put ~ from your graveyard onto the battlefield transformed.\nActivate only as a sorcery.\nPersistent Nightmare: When ~ deals combat damage to a player, return it to its owner's hand.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Startled Awake // Persistent Nightmare",
+      "status": "partial",
+      "ignored_text": "{3}{U}{U}: Put ~ from your graveyard onto the battlefield transformed.\nActivate only as a sorcery.\nPersistent Nightmare: When ~ deals combat damage to a player, return it to its owner's hand.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Summons of Saruman",
+    "before": {
+      "name": "Summons of Saruman",
+      "status": "partial",
+      "ignored_text": "Amass Orcs X.\nMill X cards.\nYou may cast an instant or sorcery spell with mana value X or less from among them without paying its mana cost.\nFlashback\u2014{3}{U}{R}, Exile X cards from your graveyard.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Summons of Saruman",
+      "status": "partial",
+      "ignored_text": "Amass Orcs X.\nYou may cast an instant or sorcery spell with mana value X or less from among them without paying its mana cost.\nFlashback\u2014{3}{U}{R}, Exile X cards from your graveyard.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Sylvan Messenger",
+    "before": {
+      "name": "Sylvan Messenger",
+      "status": "partial",
+      "ignored_text": "reveal the top four cards of your library.\nPut all Elf cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Sylvan Messenger",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Teleportation Circle",
+    "before": {
+      "name": "Teleportation Circle",
+      "status": "partial",
+      "ignored_text": "exile up to one target artifact or creature you control, then return that card to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Teleportation Circle",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "The Cyber-Controller",
+    "before": {
+      "name": "The Cyber-Controller",
+      "status": "partial",
+      "ignored_text": "each opponent mills X cards.\nPut all creature cards milled this way onto the battlefield face down under your control.\nThey're 2/2 Cyberman artifact creatures.\nOther artifact creatures you control get +1/+1.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "The Cyber-Controller",
+      "status": "partial",
+      "ignored_text": "Put all creature cards milled this way onto the battlefield face down under your control.\nThey're 2/2 Cyberman artifact creatures.\nOther artifact creatures you control get +1/+1.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Tidal Courier",
+    "before": {
+      "name": "Tidal Courier",
+      "status": "partial",
+      "ignored_text": "reveal the top four cards of your library.\nPut all Merfolk cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Tidal Courier",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Treason of Isengard",
+    "before": {
+      "name": "Treason of Isengard",
+      "status": "partial",
+      "ignored_text": "Put up to one target instant or sorcery card from your graveyard on top of your library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Treason of Isengard",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Vampiric Tutor",
+    "before": {
+      "name": "Vampiric Tutor",
+      "status": "partial",
+      "ignored_text": "Search your library for a card, then shuffle and put that card on top.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Vampiric Tutor",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Vivien on the Hunt",
+    "before": {
+      "name": "Vivien on the Hunt",
+      "status": "partial",
+      "ignored_text": "[+2]: If you do, search your library for a creature card with mana value equal to 1 plus the sacrificed creature's mana value, put it onto the battlefield, then shuffle.\n[+1]: Mill five cards, then put any number of creature cards milled this way into your hand.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Vivien on the Hunt",
+      "status": "partial",
+      "ignored_text": "[+2]: If you do, search your library for a creature card with mana value equal to 1 plus the sacrificed creature's mana value, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Wispweaver Angel",
+    "before": {
+      "name": "Wispweaver Angel",
+      "status": "partial",
+      "ignored_text": "you may exile another target creature you control, then return that card to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Wispweaver Angel",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Witness the Future",
+    "before": {
+      "name": "Witness the Future",
+      "status": "partial",
+      "ignored_text": "Target player shuffles up to four target cards from their graveyard into their library.\nYou look at the top four cards of your library, then put one of those cards into your hand and the rest on the bottom of your library in a random order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Witness the Future",
+      "status": "partial",
+      "ignored_text": "Target player shuffles up to four target cards from their graveyard into their library.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Woodland Acolyte // Mend the Wilds",
+    "before": {
+      "name": "Woodland Acolyte // Mend the Wilds",
+      "status": "partial",
+      "ignored_text": "Mend the Wilds: Put target permanent card from your graveyard on top of your library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Woodland Acolyte // Mend the Wilds",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Worldly Tutor",
+    "before": {
+      "name": "Worldly Tutor",
+      "status": "partial",
+      "ignored_text": "Search your library for a creature card, reveal it, then shuffle and put the card on top.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Worldly Tutor",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Xho Cai, Flickering Talon",
+    "before": {
+      "name": "Xho Cai, Flickering Talon",
+      "status": "partial",
+      "ignored_text": "the next noncreature spell you cast costs {1} less to cast.\nexile up to one target creature you control, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Xho Cai, Flickering Talon",
+      "status": "partial",
+      "ignored_text": "the next noncreature spell you cast costs {1} less to cast.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Zur the Enchanter",
+    "before": {
+      "name": "Zur the Enchanter",
+      "status": "partial",
+      "ignored_text": "you may search your library for an enchantment card with mana value 3 or less, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Zur the Enchanter",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  }
+]

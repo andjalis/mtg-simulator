@@ -52,3 +52,6 @@ _EFFECT_PATTERNS += _batch1_templates.EFFECT_PATTERNS
 from .. import residual_templates as _residual_templates
 _EFFECT_PATTERNS += _residual_templates.EFFECT_PATTERNS
 _SUBS += _residual_templates.SUBS
+from .. import cx_recursion as _cx_recursion
+_EFFECT_PATTERNS += _cx_recursion.EFFECT_PATTERNS
+_SUBS += _cx_recursion.SUBS
