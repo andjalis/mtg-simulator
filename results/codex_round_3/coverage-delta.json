@@ -1,0 +1,197 @@
+[
+  {
+    "name": "Archive Trap",
+    "before": {
+      "name": "Archive Trap",
+      "status": "partial",
+      "ignored_text": "If an opponent searched their library this turn, you may pay {0} rather than pay ~'s mana cost.\nTarget opponent mills thirteen cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Archive Trap",
+      "status": "partial",
+      "ignored_text": "If an opponent searched their library this turn, you may pay {0} rather than pay ~'s mana cost.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Bramble Familiar // Fetch Quest",
+    "before": {
+      "name": "Bramble Familiar // Fetch Quest",
+      "status": "partial",
+      "ignored_text": "Fetch Quest: Mill seven cards, then put a creature, enchantment, or land card from among cards milled this way onto the battlefield.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Bramble Familiar // Fetch Quest",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Dread Summons",
+    "before": {
+      "name": "Dread Summons",
+      "status": "partial",
+      "ignored_text": "Each player mills X cards.\nFor each creature card put into a graveyard this way, you create a tapped 2/2 black Zombie creature token.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Dread Summons",
+      "status": "partial",
+      "ignored_text": "For each creature card put into a graveyard this way, you create a tapped 2/2 black Zombie creature token.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Fascination",
+    "before": {
+      "name": "Fascination",
+      "status": "partial",
+      "ignored_text": "\u2022 Each player draws X cards.\n\u2022 Each player mills X cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Fascination",
+      "status": "partial",
+      "ignored_text": "\u2022 Each player draws X cards.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Fractured Sanity",
+    "before": {
+      "name": "Fractured Sanity",
+      "status": "partial",
+      "ignored_text": "Each opponent mills fourteen cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Fractured Sanity",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Increasing Confusion",
+    "before": {
+      "name": "Increasing Confusion",
+      "status": "partial",
+      "ignored_text": "Target player mills X cards.\nIf ~ was cast from a graveyard, that player mills twice that many cards instead.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Increasing Confusion",
+      "status": "partial",
+      "ignored_text": "If ~ was cast from a graveyard, that player mills twice that many cards instead.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Jace Beleren",
+    "before": {
+      "name": "Jace Beleren",
+      "status": "partial",
+      "ignored_text": "[\u221210]: Target player mills twenty cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Jace Beleren",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Liliana's Indignation",
+    "before": {
+      "name": "Liliana's Indignation",
+      "status": "partial",
+      "ignored_text": "Mill X cards.\nTarget player loses 2 life for each creature card put into your graveyard this way.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Liliana's Indignation",
+      "status": "partial",
+      "ignored_text": "Target player loses 2 life for each creature card put into your graveyard this way.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Psychic Drain",
+    "before": {
+      "name": "Psychic Drain",
+      "status": "partial",
+      "ignored_text": "Target player mills X cards and you gain X life.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Psychic Drain",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Startled Awake // Persistent Nightmare",
+    "before": {
+      "name": "Startled Awake // Persistent Nightmare",
+      "status": "partial",
+      "ignored_text": "Target opponent mills thirteen cards.\n{3}{U}{U}: Put ~ from your graveyard onto the battlefield transformed.\nActivate only as a sorcery.\nPersistent Nightmare: When ~ deals combat damage to a player, return it to its owner's hand.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Startled Awake // Persistent Nightmare",
+      "status": "partial",
+      "ignored_text": "{3}{U}{U}: Put ~ from your graveyard onto the battlefield transformed.\nActivate only as a sorcery.\nPersistent Nightmare: When ~ deals combat damage to a player, return it to its owner's hand.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Summons of Saruman",
+    "before": {
+      "name": "Summons of Saruman",
+      "status": "partial",
+      "ignored_text": "Amass Orcs X.\nMill X cards.\nYou may cast an instant or sorcery spell with mana value X or less from among them without paying its mana cost.\nFlashback\u2014{3}{U}{R}, Exile X cards from your graveyard.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Summons of Saruman",
+      "status": "partial",
+      "ignored_text": "Amass Orcs X.\nYou may cast an instant or sorcery spell with mana value X or less from among them without paying its mana cost.\nFlashback\u2014{3}{U}{R}, Exile X cards from your graveyard.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "The Cyber-Controller",
+    "before": {
+      "name": "The Cyber-Controller",
+      "status": "partial",
+      "ignored_text": "each opponent mills X cards.\nPut all creature cards milled this way onto the battlefield face down under your control.\nThey're 2/2 Cyberman artifact creatures.\nOther artifact creatures you control get +1/+1.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "The Cyber-Controller",
+      "status": "partial",
+      "ignored_text": "Put all creature cards milled this way onto the battlefield face down under your control.\nThey're 2/2 Cyberman artifact creatures.\nOther artifact creatures you control get +1/+1.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Vivien on the Hunt",
+    "before": {
+      "name": "Vivien on the Hunt",
+      "status": "partial",
+      "ignored_text": "[+2]: If you do, search your library for a creature card with mana value equal to 1 plus the sacrificed creature's mana value, put it onto the battlefield, then shuffle.\n[+1]: Mill five cards, then put any number of creature cards milled this way into your hand.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Vivien on the Hunt",
+      "status": "partial",
+      "ignored_text": "[+2]: If you do, search your library for a creature card with mana value equal to 1 plus the sacrificed creature's mana value, put it onto the battlefield, then shuffle.",
+      "simplifications": ""
+    }
+  }
+]
