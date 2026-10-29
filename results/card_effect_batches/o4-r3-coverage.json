@@ -1,5 +1,5 @@
 {
-  "batch": "o4-r3 (counters, spells, cost-mana) + o4-r3b-spells",
+  "batch": "O4 rounds 3, 3b, 3c and 4 (counters, spells, cost-mana, lands)",
   "base": {
     "engine": "b68b9c1",
     "counts": {
@@ -26,5 +26,24 @@
       "partial": 26108,
       "parse_error": 0
     }
+  },
+  "sonnet_round3b": {
+    "engine": "511cf62",
+    "counts": {
+      "full": 8715,
+      "simplified": 105,
+      "partial": 26102,
+      "parse_error": 0
+    }
+  },
+  "final": {
+    "engine": "d0888f3",
+    "counts": {
+      "full": 8822,
+      "simplified": 105,
+      "partial": 25995,
+      "parse_error": 0
+    },
+    "deck_copies_full": "2173 / 2400"
   }
 }

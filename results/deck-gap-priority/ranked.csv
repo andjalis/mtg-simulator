@@ -5,60 +5,26 @@ candidates,36.2,4,0,1,ninjutsu {1}{u}{b},"Kaito, Bane of Nightmares",,
 candidates,35.2,4,0,1,"i — if it's a permanent card, put it into your hand.",Esper Origins,,
 candidates,35.2,4,0,1,i — reveal the top card of your library.,Esper Origins,,
 candidates,35.2,4,0,1,"if ~ was cast from a graveyard, exile it, then put it onto the battlefield transformed under its owner's control with a finality counter on it.",Esper Origins,graveyard; counters; exile,
-candidates,35.1,4,0,1,"if x is three or more, that creature gains lifelink until end of turn.",Obsessive Pursuit,X costs,
-candidates,35.1,4,0,1,"put x +1/+1 counters on target attacking creature, where x is the number of permanents you've sacrificed this turn.",Obsessive Pursuit,counters; X costs,
 candidates,34.6,4,0,1,"if you do, create a treasure token.","Sarkhan, Dragon Ascendant",tokens,
 candidates,34.6,4,0,1,"until end of turn, ~ becomes a dragon in addition to his other types and gains flying.","Sarkhan, Dragon Ascendant",,
 candidates,34.6,4,0,1,you may behold a dragon.,"Sarkhan, Dragon Ascendant",set: behold,
-candidates,24.0,6,6,2,you may cast this card from your graveyard using its blitz ability.,Tenacious Underdog,graveyard,
-candidates,24.0,4,0,1,"solved — sacrifice this case: creature cards in your graveyard gain ""you may cast this card from your graveyard"" until end of turn.",Case of the Uneaten Feast,graveyard; sacrifice; set: case,
-candidates,24.0,4,0,1,to solve — you've gained 5 or more life this turn.,Case of the Uneaten Feast,,
 candidates,24.0,4,0,1,"{5}: if ~ isn't a creature, it becomes a 2/4 wizard creature with ""whenever you cast an instant or sorcery spell, ~ gets +1/+0 until end of turn."" it's still a land.",Great Hall of the Biblioplex,activated abilities,
 candidates,21.0,3,3,1,"until end of turn, you may activate loyalty abilities of jace planeswalkers you control on any player's turn any time you could cast an instant.",Jace's Machinations,,
 candidates,20.0,4,0,1,"as long as you have an enduring story, you may pay {0} rather than pay the equip cost of the first equip ability you activate each turn.",Kíli the Resourceful,equipment,
-candidates,20.0,4,0,1,choose one of them.,Fireglass Mentor,modal (choose),
 candidates,20.0,4,0,1,storied,Kíli the Resourceful,,
-candidates,20.0,4,0,1,"until end of turn, you may play that card.",Fireglass Mentor,,
 candidates,20.0,4,0,1,"when one or more equipment become attached to that creature this way, that creature deals damage equal to its power to up to one target creature.","Thorin, Mountain-king",equipment; triggered (whenever/when),
-candidates,18.1,2,0,1,counter up to one target activated or triggered ability.,Tishana's Tidebinder,counters,
-candidates,18.0,3,0,1,"[−10]: you get an emblem with ""creatures you control get +2/+2.""",Ajani Resolute,+1/+1 static (anthems),
-candidates,18.0,3,0,1,"[−4]: create a 2/2 white cat soldier creature token named ~'s pridemate with ""whenever you gain life, put a +1/+1 counter on ~.""",Ajani Resolute,tokens; counters,
-candidates,16.0,4,4,3,"channel — {2}{w}, discard this card: it deals 4 damage to target attacking or blocking creature. this ability costs {1} less to activate for each legendary creature you control.","Eiganjo, Seat of the Empire",cost reduction,
-candidates,16.0,4,4,1,"ii — when you next cast a creature spell this turn, that creature enters with an additional +1/+1 counter on it.",Kumano Faces Kakkazan,counters,
+candidates,18.0,3,3,1,"[−10]: you get an emblem with ""creatures you control get +2/+2.""",Ajani Resolute,+1/+1 static (anthems),
 candidates,16.0,4,0,1,cards in graveyards can't be the targets of spells or abilities.,"Dennick, Pious Apprentice",graveyard; can't restrictions,
 candidates,16.0,4,0,1,disturb {2}{w}{u},"Dennick, Pious Apprentice",,
-candidates,16.0,4,0,1,exile up to one target creature card from a graveyard.,Corpse Appraiser,graveyard; exile,
-candidates,16.0,4,0,1,"if a card is put into exile this way, look at the top three cards of your library, then put one of those cards into your hand and the rest into your graveyard.",Corpse Appraiser,graveyard; exile,
 candidates,16.0,4,0,1,"it's an aura enchantment with enchant forest you control and ""enchanted forest has '{t}: add {g}{g}' and '{1}, {t}, sacrifice ~: create a tapped 4/4 green troll warrior creature token with trample.'""",Old-Growth Troll,tokens; sacrifice; auras/enchant,
 candidates,16.0,4,0,1,return it to the battlefield.,Old-Growth Troll,,
 candidates,16.0,4,0,1,"whenever one or more creature cards are put into graveyards from anywhere, investigate. this ability triggers only once each turn.","Dennick, Pious Apprentice",graveyard; triggered (whenever/when),
-candidates,15.0,3,3,1,other creatures you control enter with an additional +1/+1 counter on them for each opponent who lost life this turn.,"Gev, Scaled Scorch",counters,
-candidates,15.0,3,3,1,put a hone counter on each equipment you control.,"Dwalin, Weaponmaster",counters; equipment,
-candidates,15.0,3,0,1,up to one target creature gets +1/+1 until end of turn.,Dissection Practice,,
-candidates,15.0,3,0,1,up to one target creature gets -1/-1 until end of turn.,Dissection Practice,,
 candidates,15.0,3,0,1,"whenever an opponent casts a spell with mana value of the chosen quality, choose one that hasn't been chosen —","Gollum, Riddle Master",triggered (whenever/when); modal (choose),
 candidates,15.0,3,0,1,• draw a card.,"Gollum, Riddle Master",,
 candidates,15.0,3,0,1,• each opponent loses 2 life and you gain 2 life.,"Gollum, Riddle Master",,
 candidates,15.0,3,0,1,• put a +1/+1 counter on ~.,"Gollum, Riddle Master",counters,
 candidates,13.8,2,0,1,"if you cast him, exile up to one target nonland card of each card type from your graveyard.",Uldaros Theorix,graveyard; exile,
-candidates,12.0,8,8,2,target player discards two cards.,Mind Rot,,
-candidates,12.0,3,3,3,"channel — {3}{u}, discard this card: return target artifact, creature, enchantment, or planeswalker to its owner's hand. this ability costs {1} less to activate for each legendary creature you control.","Otawara, Soaring City",cost reduction,
-candidates,12.0,3,3,1,coven — {1}{w}{w}: transform ~. activate only if you control three or more creatures with different powers.,Ambitious Farmhand,transform,
-candidates,12.0,3,3,1,"when it connives this way, return up to one target spell to its owner's hand.",Obscura Interceptor,triggered (whenever/when),
-candidates,12.0,2,2,1,"if ~ was cast from a graveyard, draw two cards instead.",Plunder the Trollshaws,graveyard,
-candidates,12.0,2,2,1,return target creature or vehicle to its owner's hand.,Bounce Off,,
 candidates,12.0,2,2,1,the flashback cost is equal to its mana cost.,Flashback,,
-candidates,12.0,2,0,1,"demons you control have menace, lifelink, and haste.","Ardyn, the Usurper",,
-candidates,12.0,3,0,1,"if they can't, they lose 2 life and you draw a card.",Invoke Despair,can't restrictions,
-candidates,12.0,2,0,1,look at target opponent's hand.,Deep-Cavern Bat,,
-candidates,12.0,3,0,1,then repeat this process for an enchantment and a planeswalker.,Invoke Despair,,
-candidates,12.0,3,0,1,"when loran enters, destroy up to one target artifact or enchantment.",Loran of the Third Path,triggered (whenever/when),
-candidates,12.0,2,0,1,you may exile a nonland card from it until ~ leaves the battlefield.,Deep-Cavern Bat,exile,
-candidates,12.0,3,0,1,{t}: you and target opponent each draw a card.,Loran of the Third Path,activated abilities,
-candidates,12.0,2,0,1,"• conceal — until end of turn, target creature you control becomes a citizen with base power and toughness 1/1 and gains hexproof.",Secret Identity,,
-candidates,12.0,2,0,1,"• reveal — until end of turn, target creature you control becomes a hero with base power and toughness 3/4 and gains flying and vigilance.",Secret Identity,,
-candidates,10.0,2,2,1,"if there are seven or more cards in your graveyard, exile a card at random from your graveyard.",Tersa Lightshatter,graveyard; exile,
-candidates,10.0,2,2,1,"{r}, {t}: target lizard, mouse, otter, or raccoon you control gets +1/+0 and gains haste until end of turn. activate only as a sorcery.",Rockface Village,activated abilities,
 candidates,10.0,2,0,1,"darkness — whenever ~ deals damage, you lose that much life. then if your life total is less than or equal to half your starting life total, untap ~ and transform it.","Cecil, Dark Knight",transform,
 candidates,10.0,2,0,1,"protect — whenever ~ attacks, other attacking creatures gain indestructible until end of turn.","Cecil, Dark Knight",,
 candidates,9.1,1,0,1,put x +1/+1 counters on him.,"Wan Shi Tong, Librarian",counters,
@@ -66,7 +32,6 @@ candidates,9.1,1,0,1,"then draw half x cards, rounded down.","Wan Shi Tong, Libr
 candidates,9.1,1,0,1,"whenever an opponent searches their library, put a +1/+1 counter on ~ and draw a card.","Wan Shi Tong, Librarian",counters; triggered (whenever/when),
 candidates,8.8,1,1,1,"{2}, {t}, sacrifice ~: destroy target nonbasic land an opponent controls. that land's controller may search their library for a basic land card, put it onto the battlefield, then shuffle. you may search your library for a basic land card, put it onto the battlefield, then shuffle.",Demolition Field,sacrifice; library search; activated abilities,
 candidates,8.0,4,4,1,"whenever a creature dealt damage by ~ this turn dies, put a +1/+1 counter on ~.",Sengir Vampire,counters; triggered (whenever/when),
-candidates,8.0,2,2,2,"channel — {3}{b}, discard this card: mill three cards, then return a creature or planeswalker card from your graveyard to your hand. this ability costs {1} less to activate for each legendary creature you control.","Takenuma, Abandoned Mire",graveyard; cost reduction,
 candidates,8.0,2,2,1,counter target artifact or creature spell unless its controller pays {4}.,Scatter Ray,,
 candidates,8.0,2,2,1,destroy target creature with total power and toughness 5 or less.,Cut Down,,
 candidates,8.0,2,2,1,"once during each of your turns, you may play a land from your graveyard or cast a permanent spell with mana value 3 or less from your graveyard. if you do, it gains ""when ~ is put into a graveyard from the battlefield, exile it and you gain 2 life.""",Serra Paragon,graveyard; exile,
@@ -106,15 +71,15 @@ candidates,4.0,1,0,1,• exile all graveyards.,Farewell,graveyard; exile,
 blocked,39.0,6,6,2,"if that spell is countered this way, exile it instead of putting it into its owner's graveyard.",No More Lies,graveyard; exile,replacement effects
 blocked,20.0,4,4,1,"as long as you have one or fewer cards in hand, if you would draw one or more cards, you draw that many cards plus one instead.",Quantum Riddler,,replacement effects
 blocked,20.0,4,0,1,attach any number of target equipment you control to target creature you control.,"Thorin, Mountain-king",equipment,auras/equipment attach
+blocked,18.1,2,2,1,"if an ability of an artifact, creature, or planeswalker is countered this way, that permanent loses all abilities for as long as ~ remains on the battlefield.",Tishana's Tidebinder,,type/ability change
 blocked,18.1,2,2,1,"wasp's sting — when ~ enters, tap up to one target creature. it loses all abilities for as long as ~ remains on the battlefield.",The Wondrous Wasp,,type/ability change
-blocked,18.1,2,0,1,"if an ability of an artifact, creature, or planeswalker is countered this way, that permanent loses all abilities for as long as ~ remains on the battlefield.",Tishana's Tidebinder,,type/ability change
 blocked,16.1,2,2,1,tap two other untapped artifacts you control: ~ becomes an artifact creature until end of turn.,Spring-Loaded Sawblades,,type/ability change
 blocked,16.0,4,0,1,"if ~ would be put into a graveyard from anywhere, exile it instead.","Dennick, Pious Apprentice",graveyard; exile,replacement effects
 blocked,15.0,3,3,1,"if a lizard, mouse, otter, or raccoon you control would deal damage to a permanent or player, it deals that much damage plus 1 instead.",Valley Flamecaller,,replacement effects
 blocked,15.0,3,0,1,"as ~ enters, choose odd or even.","Gollum, Riddle Master",,replacement effects
 blocked,13.8,2,0,1,copy those cards.,Uldaros Theorix,copy effects,copy effects
 blocked,13.8,2,0,1,you may cast any number of spells with total mana value 6 or less from among the copies without paying their mana costs.,Uldaros Theorix,copy effects,copy effects
-blocked,12.0,2,0,1,"starscourge — at the beginning of combat on your turn, exile up to one target creature card from a graveyard. if you exiled a card this way, create a token that's a copy of that card, except it's a 5/5 black demon.","Ardyn, the Usurper",tokens; graveyard; exile; copy effects,copy effects
+blocked,12.0,2,2,1,"starscourge — at the beginning of combat on your turn, exile up to one target creature card from a graveyard. if you exiled a card this way, create a token that's a copy of that card, except it's a 5/5 black demon.","Ardyn, the Usurper",tokens; graveyard; exile; copy effects,copy effects
 blocked,8.1,1,1,1,"12+ | {3}{w}, {t}: create a token that's a copy of target artifact or enchantment you control, except it's legendary. activate only as a sorcery.","Adagia, Windswept Bastion",tokens; copy effects; activated abilities,copy effects
 blocked,5.0,1,1,1,you may attach ~ to it.,Doc Ock's Tentacles,,auras/equipment attach
 blocked,5.0,1,0,1,"when you do, attach it to target creature you control.",Dáin Ironfoot,triggered (whenever/when),auras/equipment attach
