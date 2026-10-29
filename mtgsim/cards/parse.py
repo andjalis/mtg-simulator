@@ -67,6 +67,13 @@ def _parse_effects(text: str, opts: bool = False):
                 and effects and effects[-1].kind == "damage":
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
             continue
+        # "They gain haste until end of turn" after a token line: the tokens are created with haste.
+        if re.fullmatch(r"(?:it|they|those tokens) gains? haste(?: until end of turn)?", s, re.I) and effects \
+                and effects[-1].kind in ("token", "copy_token"):
+            kws = set(effects[-1].data.get("keywords", ()))
+            kws.add("haste")
+            effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, keywords=frozenset(kws)))
+            continue
         end_rider = re.fullmatch(r"(sacrifice|exile) (?:it|that token|the token|them|those tokens|the tokens) at the "
                                  r"beginning of (?:the|your) next end step", s, re.I)
         if end_rider and effects and effects[-1].kind == "token":
@@ -311,7 +318,7 @@ def _parse_face(data: dict) -> CardDef:
                   text, flags=re.I)
     text = re.sub(r"\b(protection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
                   r"\1 and protection from \2", text)
-    text = re.sub(r"(becomes the target of a spell or ability), sacrifice it\.", r"\1, sacrifice ~.", text)
+    text = re.sub(r"(becomes the target of (?:a spell or ability|a spell)), sacrifice it\.", r"\1, sacrifice ~.", text)
     # The two-sentence O-ring wording ("... exile X. When ~ leaves the battlefield, return the exiled
     # card(s) to the battlefield ...") is the single-sentence "exile X until ~ leaves the battlefield"
     # the oring templates already implement (the engine returns the card when the source leaves).
@@ -559,12 +566,12 @@ def _parse_ability(line: str, approximations: list):
     body, sorcery, once, approx, condition, limit = m[2], False, False, [], "", 0
     while True:
         r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|Activate no more than (?:once|twice|two times|three times) each turn|Activate only if you have the city's blessing|This ability costs [^.]+ "
-                         r"less to activate[^.]*)\.", body)
+                         r"less to activate[^.]*|Do this only once each turn)\.", body)
         if not r:
             break
         body = r[1]
         sorcery |= r[2] == "Activate only as a sorcery"
-        once |= r[2] == "Activate only once each turn"
+        once |= r[2] in ("Activate only once each turn", "Do this only once each turn")
         mt = re.fullmatch(r"Activate no more than (once|twice|two times|three times) each turn", r[2])
         if mt:
             limit = {"once": 1, "twice": 2, "two times": 2, "three times": 3}[mt[1]]
@@ -587,9 +594,10 @@ def _parse_ability(line: str, approximations: list):
 
 def _parse_trigger(line: str):
     """(triggers, unmatched, modes list to fill or None) for a triggered ability line, else None."""
-    once = line.endswith(" This ability triggers only once each turn.")
+    once = line.endswith(" This ability triggers only once each turn.") or line.endswith(" Do this only once each turn.")
     if once:
-        line = line[:-len(" This ability triggers only once each turn.")]
+        line = line[:-len(" This ability triggers only once each turn.")] \
+            if line.endswith(" This ability triggers only once each turn.") else line[:-len(" Do this only once each turn.")]
     once_game = line.endswith(" This ability triggers only once.")
     if once_game:
         line = line[:-len(" This ability triggers only once.")]
