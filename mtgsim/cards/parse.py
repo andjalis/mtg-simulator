@@ -302,6 +302,9 @@ def _parse_face(data: dict) -> CardDef:
                   r"\1 and protection from \2", text)
     text = re.sub(r"(becomes the target of a spell or ability), sacrifice it\.", r"\1, sacrifice ~.", text)
     text = text.replace("Whenever ~ or another creature you control dies", "Whenever a creature you control dies")
+    from ..cx_selection import preserve_x
+    if cost.get("X") and types & {"Instant", "Sorcery"}:
+        text = preserve_x(text)
     text = re.sub(r", where X is the amount of mana spent to cast ~\.", ".", text).replace(
         "the top X cards", f"the top {int(data.get('cmc', 0) or 0)} cards")
 

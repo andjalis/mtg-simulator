@@ -1,0 +1,22 @@
+[
+  {
+    "pilot": "HeuristicAI",
+    "card": "Flash of Insight",
+    "mode": "ordinary hand cast; special flashback still ignored",
+    "paid_x": 4,
+    "printed_mana_value": 2,
+    "cast": true,
+    "selected_exact_deep_card": true,
+    "library_remaining": 4
+  },
+  {
+    "pilot": "BaselineAI",
+    "card": "Flash of Insight",
+    "mode": "ordinary hand cast; special flashback still ignored",
+    "paid_x": 4,
+    "printed_mana_value": 2,
+    "cast": true,
+    "selected_exact_deep_card": true,
+    "library_remaining": 4
+  }
+]

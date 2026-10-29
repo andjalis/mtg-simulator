@@ -1,0 +1,272 @@
+[
+  {
+    "name": "Accumulate Wisdom",
+    "before": {
+      "name": "Accumulate Wisdom",
+      "status": "partial",
+      "ignored_text": "Look at the top three cards of your library.\nPut one of those cards into your hand and the rest on the bottom of your library in any order.\nPut each of those cards into your hand instead if there are three or more Lesson cards in your graveyard.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Accumulate Wisdom",
+      "status": "partial",
+      "ignored_text": "Put each of those cards into your hand instead if there are three or more Lesson cards in your graveyard.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Court Hussar",
+    "before": {
+      "name": "Court Hussar",
+      "status": "partial",
+      "ignored_text": "look at the top three cards of your library, then put one of them into your hand and the rest on the bottom of your library in any order.\nsacrifice it unless {W} was spent to cast it.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Court Hussar",
+      "status": "partial",
+      "ignored_text": "sacrifice it unless {W} was spent to cast it.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Elder Pine of Jukai",
+    "before": {
+      "name": "Elder Pine of Jukai",
+      "status": "partial",
+      "ignored_text": "reveal the top three cards of your library.\nPut all land cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Elder Pine of Jukai",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Enlistment Officer",
+    "before": {
+      "name": "Enlistment Officer",
+      "status": "partial",
+      "ignored_text": "reveal the top four cards of your library.\nPut all Soldier cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Enlistment Officer",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Enshrined Memories",
+    "before": {
+      "name": "Enshrined Memories",
+      "status": "partial",
+      "ignored_text": "Reveal the top 1 cards of your library.\nPut all creature cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Enshrined Memories",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Experimental Augury",
+    "before": {
+      "name": "Experimental Augury",
+      "status": "partial",
+      "ignored_text": "Look at the top three cards of your library.\nPut one of them into your hand and rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Experimental Augury",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Garruk, Caller of Beasts",
+    "before": {
+      "name": "Garruk, Caller of Beasts",
+      "status": "partial",
+      "ignored_text": "[+1]: Reveal the top five cards of your library.\n[+1]: Put all creature cards revealed this way into your hand and the rest on the bottom of your library in any order.\n[\u22123]: You may put a green creature card from your hand onto the battlefield.\n[\u22127]: You get an emblem with \"Whenever you cast a creature spell, you may search your library for a creature card, put it onto the battlefield, then shuffle.\"",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Garruk, Caller of Beasts",
+      "status": "partial",
+      "ignored_text": "[\u22123]: You may put a green creature card from your hand onto the battlefield.\n[\u22127]: You get an emblem with \"Whenever you cast a creature spell, you may search your library for a creature card, put it onto the battlefield, then shuffle.\"",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Goblin Ringleader",
+    "before": {
+      "name": "Goblin Ringleader",
+      "status": "partial",
+      "ignored_text": "reveal the top four cards of your library.\nPut all Goblin cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Goblin Ringleader",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Grave Defiler",
+    "before": {
+      "name": "Grave Defiler",
+      "status": "partial",
+      "ignored_text": "reveal the top four cards of your library.\nPut all Zombie cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Grave Defiler",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Kavu Howler",
+    "before": {
+      "name": "Kavu Howler",
+      "status": "partial",
+      "ignored_text": "reveal the top four cards of your library.\nPut all Kavu cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Kavu Howler",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Lair Delve",
+    "before": {
+      "name": "Lair Delve",
+      "status": "partial",
+      "ignored_text": "Reveal the top two cards of your library.\nPut all creature and land cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Lair Delve",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Marina Vendrell",
+    "before": {
+      "name": "Marina Vendrell",
+      "status": "partial",
+      "ignored_text": "reveal the top seven cards of your library.\nPut all enchantment cards from among them into your hand and the rest on the bottom of your library in a random order.\n{T}: Lock or unlock a door of target Room you control. Activate only as a sorcery.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Marina Vendrell",
+      "status": "partial",
+      "ignored_text": "{T}: Lock or unlock a door of target Room you control. Activate only as a sorcery.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Merfolk Wayfinder",
+    "before": {
+      "name": "Merfolk Wayfinder",
+      "status": "partial",
+      "ignored_text": "reveal the top three cards of your library.\nPut all Island cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Merfolk Wayfinder",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Prophetic Bolt",
+    "before": {
+      "name": "Prophetic Bolt",
+      "status": "partial",
+      "ignored_text": "Look at the top four cards of your library.\nPut one of those cards into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Prophetic Bolt",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "See the Truth",
+    "before": {
+      "name": "See the Truth",
+      "status": "partial",
+      "ignored_text": "Look at the top three cards of your library.\nPut one of those cards into your hand and the rest on the bottom of your library in any order.\nIf ~ was cast from anywhere other than your hand, put each of those cards into your hand instead.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "See the Truth",
+      "status": "partial",
+      "ignored_text": "If ~ was cast from anywhere other than your hand, put each of those cards into your hand instead.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Sylvan Messenger",
+    "before": {
+      "name": "Sylvan Messenger",
+      "status": "partial",
+      "ignored_text": "reveal the top four cards of your library.\nPut all Elf cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Sylvan Messenger",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Tidal Courier",
+    "before": {
+      "name": "Tidal Courier",
+      "status": "partial",
+      "ignored_text": "reveal the top four cards of your library.\nPut all Merfolk cards revealed this way into your hand and the rest on the bottom of your library in any order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Tidal Courier",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Witness the Future",
+    "before": {
+      "name": "Witness the Future",
+      "status": "partial",
+      "ignored_text": "Target player shuffles up to four target cards from their graveyard into their library.\nYou look at the top four cards of your library, then put one of those cards into your hand and the rest on the bottom of your library in a random order.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Witness the Future",
+      "status": "partial",
+      "ignored_text": "Target player shuffles up to four target cards from their graveyard into their library.",
+      "simplifications": ""
+    }
+  }
+]
