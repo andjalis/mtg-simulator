@@ -53,8 +53,10 @@ def _parse_effects(text: str, opts: bool = False):
         from ..emerge import parse_rider as emerge_rider
         if batch1_rider(s, effects) or emerge_rider(s, effects):
             continue
-        if re.fullmatch(r"(?:it|they|those creatures|a creature destroyed this way) can't be regenerated", s, re.I) and effects and \
-                effects[-1].kind in ("destroy", "wrath", "wrath_pw", "selected_mass_move", "group_remove"):
+        if re.fullmatch(r"(?:it|they|those creatures|the creatures?|a creature destroyed this way) can't be "
+                       r"regenerated(?:, of course)?", s, re.I) and effects and \
+                effects[-1].kind in ("destroy", "wrath", "wrath_pw", "selected_mass_move", "group_remove",
+                                     "destroy_all", "destroy_group"):
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
             continue
         if re.fullmatch(r"if that spell is countered this way, exile it instead of putting it into its owner's graveyard", s,
@@ -310,6 +312,12 @@ def _parse_face(data: dict) -> CardDef:
     text = re.sub(r"\b(protection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
                   r"\1 and protection from \2", text)
     text = re.sub(r"(becomes the target of a spell or ability), sacrifice it\.", r"\1, sacrifice ~.", text)
+    # The two-sentence O-ring wording ("... exile X. When ~ leaves the battlefield, return the exiled
+    # card(s) to the battlefield ...") is the single-sentence "exile X until ~ leaves the battlefield"
+    # the oring templates already implement (the engine returns the card when the source leaves).
+    text = re.sub(r"(exile [^.\n]*?)\.\s*When ~ leaves the battlefield, return the exiled cards? to the "
+                  r"battlefield under (?:its|their) (?:owner's|owners') control\.",
+                  r"\1 until ~ leaves the battlefield.", text, flags=re.I)
     text = text.replace("Whenever ~ or another creature you control dies", "Whenever a creature you control dies")
     text = re.sub(r", where X is the amount of mana spent to cast ~\.", ".", text).replace(
         "the top X cards", f"the top {int(data.get('cmc', 0) or 0)} cards")

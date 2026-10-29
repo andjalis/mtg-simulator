@@ -44,6 +44,8 @@ def _damage(m):
 EFFECT_PATTERNS = [
     (r"you gain that much life", _that_much("gain_life")),
     (r"you lose that much life", _that_much("lose_life")),
+    (r"draw that many cards", _that_much("draw")),
+    (r"discard that many cards", _that_much("discard")),
     (r"(?:target|each) opponent loses that much life", _that_much("drain", target="each_opponent")),
     (_SRC + r" deals that much damage to (any target|target opponent|target player|each opponent|each player|target creature)", _damage),
 ]

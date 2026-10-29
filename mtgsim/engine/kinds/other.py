@@ -108,9 +108,9 @@ def add_mana(game, p, eff, **_):
     if eff.data.get("choice"):                 # "{U} or {R}", "one mana of any color": what the hand needs most
         need = {c: sum(card.mana_cost.get(c, 0) for card in p.hand) for c in eff.data["choice"]}
         colors.append(max(eff.data["choice"], key=lambda c: need[c]))
-    for color in colors:
+    for color in colors * max(1, eff.amount):
         p.pool.append(Permanent(pool_mana(color), p))
-    game.log(f"adds {''.join(colors)}", p)
+    game.log(f"adds {''.join(colors * max(1, eff.amount))}", p)
 
 
 @kind("firebend")

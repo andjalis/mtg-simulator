@@ -148,6 +148,7 @@ class PlayMixin:
             self.change_life(p, -alt.life, f"{card.name}: alternative cost")
         if card.extra_life_cost:
             self.change_life(p, -card.extra_life_cost, f"{card.name}: additional cost")
+        sac_stats = None
         if plan.sacrifice is not None:
             victim = plan.sacrifice
             if victim not in p.battlefield:
@@ -155,6 +156,7 @@ class PlayMixin:
             self.log(f"sacrifices {victim.card.name} for {card.name}", p)
             if kind == "emerge":
                 emerge.sacrificing(self, p, victim, card)
+            sac_stats = (victim.power, victim.toughness, victim.card.cmc)
             self.sacrifice(victim)
         if kind == "prepared":
             next(x for x in p.battlefield if x.front is base and x.prepared).prepared = False
@@ -214,6 +216,7 @@ class PlayMixin:
         item.teamwork = teamwork_paid
         item.evidence = self.collect_evidence(p, card)
         item.emerged_toughness = getattr(self, "_emerge_toughness", None) if kind == "emerge" else None
+        item.sac_stats = sac_stats
         item.bargained = bool(card.bargain) and self.pay_bargain(p, card)
         item.gifted = bool(card.gift)
         item.uncounterable = any(s.card.mana_restriction == "chosen_type" and self.mana_allowed(s, card)
