@@ -156,6 +156,8 @@ _SUBS = [
 
 _TRIGGERS = [
     (r"Whenever ~ mutates, (.+)", ("mutates",)),
+    (r"When ~ enters or the creature it haunts dies, (.+)", ("etb", "haunt_dies")),
+    (r"When the creature ~ haunts dies, (.+)", ("haunt_dies",)),
     (r"When ~ becomes level (\d+), (.+)", ("class_level",)),
     (r"Whenever you proliferate, (.+)", ("proliferate",)),
     (r"Whenever an opponent searches their library, (.+)", ("opp_searches",)),

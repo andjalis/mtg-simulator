@@ -396,6 +396,8 @@ def _parse_face(data: dict) -> CardDef:
         else:
             extra.setdefault("advanced_rules", {})["bestow_bonus"] = bonus
             alt_costs.append(AltCost("bestow", cost))
+    if (extra.get("advanced_rules") or {}).get("haunt") and "Creature" in types:
+        triggers.append(Trigger("dies", [Effect("haunt_attach")]))
     if "mutate" in extra:
         alt_costs.append(AltCost("mutate", extra.pop("mutate")))
     if "overload" in extra:

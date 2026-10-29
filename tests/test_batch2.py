@@ -311,6 +311,37 @@ class Batch2(Batch1):
         self.g.settle()
         self.assertNotIn(token, self.a.battlefield)
 
+    def test_haunt_creature(self):
+        spirit = card("Test Spirit", "{1}{W}", "Creature — Spirit", "Haunt\nWhen ~ enters or the creature it haunts dies, you gain 2 life.", 1, 1)
+        self.assertFalse(spirit.unsupported)
+        victim = self.put(card("Test Ogre", "{3}", "Creature — Ogre", "", 3, 3), self.b)
+        mine = self.put(spirit)
+        life = self.a.life
+        self.g.destroy(mine)
+        self.g.settle()
+        self.assertIn(spirit, self.a.exile)
+        self.assertNotIn(spirit, self.a.graveyard)
+        self.assertEqual(victim.haunters, [(self.a, spirit)])
+        self.g.destroy(victim)
+        self.g.settle()
+        self.assertEqual(self.a.life, life + 2)
+
+    def test_haunt_spell(self):
+        spell = card("Test Whisper", "{1}{B}", "Sorcery", "You gain 1 life.\nHaunt\nWhen the creature ~ haunts dies, you gain 3 life.")
+        self.assertFalse(spell.unsupported)
+        from tests.test_templates import SWAMP
+        for _ in range(2):
+            self.put(SWAMP)
+        victim = self.put(card("Test Ogre", "{3}", "Creature — Ogre", "", 3, 3), self.b)
+        self.a.hand.append(spell)
+        self.g.cast(self.a, spell)
+        self.g.settle()
+        self.assertIn(spell, self.a.exile)
+        life = self.a.life
+        self.g.destroy(victim)
+        self.g.settle()
+        self.assertEqual(self.a.life, life + 3)
+
     def test_mutate_needs_non_human_host(self):
         from tests.test_templates import PLAINS
         drake = card("Test Drake", "{4}{W}", "Creature — Drake", "Mutate {1}{W}", 3, 3)

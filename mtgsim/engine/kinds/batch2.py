@@ -103,6 +103,15 @@ def sac_now(game, item, **_):
         game.sacrifice(perm)
 
 
+@kind("haunt_attach")
+def haunt_attach(game, p, item, **_):
+    """Haunt: the dead creature is exiled from the graveyard, haunting a creature."""
+    from ...batch2_templates import haunt_card
+    perm = item.source if item is not None else None
+    if isinstance(perm, Permanent):
+        haunt_card(game, perm.owner, perm.front)
+
+
 @kind("group_remove")
 def group_remove(game, p, eff, item, cause, **_):
     from ...permanent_templates import matches

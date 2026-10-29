@@ -427,6 +427,9 @@ class StackMixin:
             owner.exile.append(base)                 # "Exile ~." as the last line of an instant or sorcery
         elif kind not in ("channel", "prepared"):
             owner.graveyard.append(base)
+            if base.advanced_rules.get("haunt"):
+                from ..batch2_templates import haunt_card
+                haunt_card(self, owner, base)
 
     def hostile_target(self, p: Player, tgt) -> bool:
         opp = self.opponent(p)

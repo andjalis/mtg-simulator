@@ -286,6 +286,9 @@ def parse_line(line, st):
         from .cards import parse_mana_cost
         st.extra['bestow'] = parse_mana_cost(m[1])
         return True
+    if line == "Haunt":
+        st.extra.setdefault('advanced_rules', {})['haunt'] = True
+        return True
     m = re.fullmatch(r"Encore ((?:\{[^}]+\})+)", line)
     if m:
         from .cards import parse_mana_cost, AltCost

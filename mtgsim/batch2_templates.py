@@ -141,3 +141,16 @@ def encore_actions(game, p):
         from .cards import Effect
         game.delayed_end_step.append((p, [Effect("sac_now")], None, perm))
         game.settle()
+
+
+def haunt_card(game, owner, card):
+    """Haunt: exile the card from its owner's graveyard haunting the creature easiest to kill, preferring an
+    opponent's; the creature's death later fires the card's "haunt_dies" triggers."""
+    victims = [x for pl in game.players for x in pl.battlefield if x.is_creature]
+    if card not in owner.graveyard or not victims:
+        return
+    opp = game.opponent(owner)
+    host = min(victims, key=lambda x: (x.controller is not opp, x.toughness))
+    game.move_card(card, owner.graveyard, owner.exile, reason="haunt")
+    host.haunters = list(getattr(host, "haunters", ())) + [(owner, card)]
+    game.log(f"{card.name} haunts {host.card.name}", owner)
