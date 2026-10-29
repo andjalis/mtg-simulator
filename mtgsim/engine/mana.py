@@ -18,7 +18,17 @@ def _mana_of(s) -> frozenset:
 def _amount(s) -> int:
     """How much mana s makes right now (Tablet of Discovery's restricted {R}{R} is 2, its {R} is 1)."""
     now = getattr(s, "amount_now", None)
-    return getattr(s.card, "mana_amount", 1) if now is None else now
+    base = getattr(s.card, "mana_amount", 1) if now is None else now
+    return base * 2 if s.card.is_land and _doubled(s) else base
+
+
+def _doubled(land) -> bool:
+    """"Whenever you tap a land for mana, add one mana of any type that land produced" (Mirari's Wake, Heartbeat of Spring)."""
+    game = getattr(land.controller, "_game", None)
+    if game is None:
+        return False
+    from ..residual_templates import sources
+    return any(x.controller is land.controller or x.card.advanced_rules['land_double'] == 'all' for x in sources(game, 'land_double'))
 
 
 def find_payment(sources: list[Permanent], cost: dict):

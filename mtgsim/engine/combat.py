@@ -105,6 +105,8 @@ class CombatMixin:
         if len(attackers) == 1:
             self.fire(p, "attacks_alone", context=attackers[0])
         self.fire(p, "you_attack")
+        if len(attackers) >= 2:
+            self.fire(p, "attack_two_plus")
         self.run_priority(until_empty_stack=False)
         attackers = [a for a in self.attackers if a in p.battlefield]
         self.attackers = attackers

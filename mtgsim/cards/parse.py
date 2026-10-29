@@ -584,7 +584,7 @@ def _parse_trigger_line(line: str):
         if events == ("cast_spell",) and "during an opponent's turn" in pat:
             flt = "opp_turn"
         if events == ("cast_spell",) and m.lastindex == 2:
-            flt = f"spell:{m[1]}"
+            flt = "spell:" + m[1].replace(" or ", "|")
         if events == ("sacrifice",):
             flt = m[1]
         if events == ("you_attack",) and m.lastindex == 2:

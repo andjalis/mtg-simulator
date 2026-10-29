@@ -205,7 +205,7 @@ _TRIGGERS = [
     (r"Whenever you cast a spell that targets ~, (.+)", ("heroic",)),
     (r"Whenever you cast a spell during an opponent's turn, (.+)", ("cast_spell",)),
     (r"Whenever you cast a spell, (.+)", ("cast_spell",)),
-    (r"Whenever you cast an? ([A-Z]\w+|creature|artifact|enchantment|outlaw|multicolored|historic|white|blue|black|red|"
+    (r"Whenever you cast an? ([A-Z]\w+(?: or [A-Z]\w+)?|creature|artifact|enchantment|outlaw|multicolored|historic|white|blue|black|red|"
      r"green|colorless) spell, (.+)", ("cast_spell",)),
     (r"Whenever you gain life, (.+)", ("gain_life",)),
     (r"Whenever (?:the Ring tempts you|you choose a creature as your Ring-bearer), (.+)", ("ring_tempts",)),
@@ -234,7 +234,8 @@ _TRIGGERS = [
      r"enters| and whenever you fully unlock a Room)?, (.+)",
      ("permanent_enters",)),
     (r"Whenever you draw a card, (.+)", ("you_draw",)),
-    (r"Whenever you sacrifice (an? [\w ]+?), (.+)", ("sacrifice",)),
+    (r"Whenever you sacrifice (an? [\w ]+?|another [\w ]+?), (.+)", ("sacrifice",)),
+    (r"Whenever you attack with two or more creatures, (.+)", ("attack_two_plus",)),
     (r"Whenever an opponent draws a card, (.+)", ("opp_draw",)),
     (r"Whenever ~ becomes the target of a spell, (.+)", ("targeted_by_spell",)),
     (r"When(?:ever)? ~ enters or dies, (.+)", ("etb", "dies")),
