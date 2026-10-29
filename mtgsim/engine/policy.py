@@ -489,7 +489,7 @@ def choose_crew(game: Game, me: Player, vehicle: Permanent):
     if vehicle.sick or vehicle.tapped:
         return None
     cands = sorted((c for c in me.creatures if c is not vehicle and not c.tapped),
-                   key=lambda c: (not c.sick, c.power))
+                   key=lambda c: (not c.sick, c.power + c.card.crew_bonus))
     crew, total = [], 0
     for c in cands:
         if total >= vehicle.card.crew:
@@ -497,7 +497,7 @@ def choose_crew(game: Game, me: Player, vehicle: Permanent):
         if not c.sick and c.power >= vehicle.card.power:
             break
         crew.append(c)
-        total += c.power
+        total += c.power + c.card.crew_bonus
     return crew if total >= vehicle.card.crew else None
 
 
@@ -587,7 +587,7 @@ def use_abilities(game: Game, me: Player):
         if (c in me.hand and not c.modes) or c.instant_speed or not game.can_cast_now(me, c):
             continue
         need = add_costs(game.cost_of(me, c), {"generic": _reserve(game, me)})
-        if not payable(game.mana_sources(me), need):
+        if not payable(game.mana_sources(me, spell=c), need):
             continue
         if _option_value(game, me, c) > 0:
             game.cast(me, c, None)
