@@ -94,6 +94,17 @@ def parse_line(line, st):
         rules = st.extra.setdefault('advanced_rules', {})
         rules['evade_vs'] = rules.get('evade_vs', ()) + ({"artifact creatures": "artifact", "walls": "Wall", "creatures with flying": "flying"}[m[1].lower()],)
         return True
+    m = re.fullmatch(r"~ can't be blocked by (white|blue|black|red|green) creatures\.", line)
+    if m:
+        rules = st.extra.setdefault('advanced_rules', {})
+        rules['evade_vs'] = rules.get('evade_vs', ()) + ("color:" + _COLOR[m[1]],)
+        return True
+    m = re.fullmatch(r"~ can't be blocked except by (?:(white|blue|black|red|green) creatures|creatures with (flying)(?: or (reach))?)\.", line)
+    if m:
+        rules = st.extra.setdefault('advanced_rules', {})
+        only = ("color:" + _COLOR[m[1]],) if m[1] else tuple(w for w in m[2:] if w)
+        rules['evade_except'] = rules.get('evade_except', ()) + (only,)
+        return True
     m = re.fullmatch(r"~ can't block creatures with power (\d+) or greater\.", line)
     if m:
         st.extra.setdefault('advanced_rules', {})['cant_block_power'] = int(m[1])
@@ -567,11 +578,21 @@ def phantom_prevents(target):
     return False
 
 
+_COLOR = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
+
+
+def _is(blocker, kind):
+    return blocker.has(kind) if not kind.startswith("color:") else kind[6:] in blocker.card.colors
+
+
 def block_restricted(blocker, attacker):
     """Blocking limits from evasion ("can't be blocked by walls") and from the blocker ("can't block power 2 or greater")."""
     for kind in attacker.card.advanced_rules.get('evade_vs', ()):
         if kind == 'artifact' and blocker.card.is_artifact or kind == 'flying' and blocker.has('flying') \
-                or kind in blocker.card.subtypes:
+                or kind.startswith('color:') and _is(blocker, kind) or kind in blocker.card.subtypes:
+            return True
+    for only in attacker.card.advanced_rules.get('evade_except', ()):
+        if not any(_is(blocker, kind) for kind in only):
             return True
     limit = blocker.card.advanced_rules.get('cant_block_power')
     return bool(limit and attacker.power >= limit)

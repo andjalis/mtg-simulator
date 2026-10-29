@@ -99,6 +99,39 @@ class Batch2(Batch1):
         self.apply("Gain control of target creature an opponent controls until end of turn.", [perm])
         self.assertIn(perm, self.a.battlefield)
 
+    def test_destroy_tapped_creatures(self):
+        up, down = self.put(BIG), self.put(BIG, self.b)
+        down.tapped = True
+        self.apply("Destroy all tapped creatures.")
+        self.assertIn(up, self.a.battlefield)
+        self.assertNotIn(down, self.b.battlefield)
+
+    def test_lose_half_self(self):
+        self.a.life = 9
+        self.apply("You lose half your life, rounded up.")
+        self.assertEqual(self.a.life, 4)
+
+    def test_discard_random_target(self):
+        self.b.hand[:] = [SPELL]
+        self.apply("Target opponent discards a card at random.", [self.b])
+        self.assertEqual(len(self.b.hand), 0)
+
+    def test_counter_by_type(self):
+        from mtgsim.cards import _parse_effects as parse
+        eff = parse("Counter target sorcery spell.")[0][0]
+        self.assertEqual(eff.filter, "types:Sorcery")
+
+    def test_evasion_by_color(self):
+        from mtgsim.engine import can_block
+        wall = card("Test Knight", "{1}{W}", "Creature — Knight", "", 2, 2)
+        raider = card("Test Raider", "{1}{B}", "Creature — Rogue", "~ can't be blocked by white creatures.", 2, 2)
+        shade = card("Test Shade", "{1}{B}", "Creature — Shade", "~ can't be blocked except by black creatures.", 2, 2)
+        blocker, black = self.put(wall, self.b), self.put(card("Test Imp", "{B}", "Creature — Imp", "", 1, 1), self.b)
+        self.assertFalse(can_block(blocker, self.put(raider)))
+        self.assertTrue(can_block(black, self.put(raider)))
+        self.assertFalse(can_block(blocker, self.put(shade)))
+        self.assertTrue(can_block(black, self.put(shade)))
+
 
 if __name__ == "__main__":
     unittest.main()
