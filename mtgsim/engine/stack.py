@@ -166,8 +166,17 @@ class StackMixin:
                     if not isinstance(defender, Player) or defender.life < max(pl.life for pl in self.players):
                         continue
                 if trig.filter.startswith("attacker:") and not (isinstance(context, Permanent)
-                                                                and trig.filter[9:] in context.card.subtypes):
+                                                                and any(k in context.card.subtypes
+                                                                        for k in trig.filter[9:].split("|"))):
                     continue
+                if event == "attacks_alone" and trig.filter == "self" and context is not perm:
+                    continue
+                if event == "any_cast" and ":" in trig.filter:
+                    who, kinds = trig.filter.split(":", 1)
+                    from ..batch1_templates import spell_kind_ok
+                    if (who == "opp" and context is perm.controller) or \
+                            not any(spell_kind_ok(subject, kind) for kind in kinds.split("|")):
+                        continue
                 if trig.filter.startswith("with:") and \
                         not any(trig.filter[5:] in a.card.subtypes for a in self.attackers):
                     continue

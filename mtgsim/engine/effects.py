@@ -286,6 +286,7 @@ class EffectsMixin:
         card = self.move_card(card, p.hand, p.graveyard, reason="discard")
         p.discarded_cards.append(card)
         self.fire(p, "you_discard")
+        self.fire(self.opponent(p), "opp_discard")
 
     def cast_free(self, p: Player, card: CardDef) -> bool:
         """Cast a discovered card from exile, or put it into hand if it cannot be cast."""

@@ -618,6 +618,12 @@ def _parse_trigger_line(line: str):
             flt = "opp_turn"
         if events == ("cast_spell",) and m.lastindex == 2:
             flt = "spell:" + m[1].replace(" or ", "|")
+        if events == ("any_cast",) and pat.startswith("Whenever (a player|an opponent) casts an?"):
+            flt = f"{'opp' if m[1] == 'an opponent' else 'any'}:{m[2].replace(' or ', '|')}"
+        if events == ("attacks_alone",) and pat.startswith("Whenever ~ attacks alone"):
+            flt = "self"
+        elif events == ("attacks_alone",) and m.lastindex == 2:
+            flt = "attacker:" + m[1].replace(" or ", "|")
         if events == ("sacrifice",):
             flt = m[1]
         if events == ("you_attack",) and m.lastindex == 2:

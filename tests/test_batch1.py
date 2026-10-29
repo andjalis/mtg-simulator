@@ -617,6 +617,28 @@ class Batch1(unittest.TestCase):
         self.assertEqual(len(copies), 3)
         self.assertEqual(sum(1 for x in copies if x.card.is_token), 2)
 
+    def test_new_trigger_events(self):
+        watcher = self.put(card("Test Watcher", "{1}", "Creature — Human",
+                                "Whenever an opponent casts a creature spell, you gain 1 life.\n"
+                                "Whenever ~ attacks alone, you gain 2 life.\n"
+                                "Whenever an opponent discards a card, you gain 4 life.", 1, 1))
+        before = self.a.life
+        self.g.fire(self.a, "any_cast", context=self.b, subject=BEAR)
+        self.g.settle()
+        self.assertEqual(self.a.life, before + 1)
+        self.g.fire(self.a, "any_cast", context=self.a, subject=BEAR)
+        self.g.settle()
+        self.assertEqual(self.a.life, before + 1)
+        self.g.fire(self.a, "any_cast", context=self.b, subject=ISLAND)
+        self.g.settle()
+        self.b.hand.append(BEAR)
+        self.g.discard_card(self.b, BEAR)
+        self.g.settle()
+        self.assertEqual(self.a.life, before + 1 + 4)
+        self.g.fire(self.a, "attacks_alone", context=watcher)
+        self.g.settle()
+        self.assertEqual(self.a.life, before + 1 + 4 + 2)
+
 
 if __name__ == '__main__':
     unittest.main()

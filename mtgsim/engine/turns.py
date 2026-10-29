@@ -213,6 +213,7 @@ class TurnsMixin:
                 continue
             self.discard_card(p, card)
             self.log(f"cycles {card.name}", p)
+            self.fire(p, "you_cycle")
             for trig in card.cycle_self_triggers:
                 self.queue_trigger(p, trig.effects, None, f"{card.name}: cycled")
             if spec["land"]:

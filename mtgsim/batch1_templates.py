@@ -491,6 +491,16 @@ def curse_event(game, player, event, context=None):
                                    context=player if context is None else context)
 
 
+def spell_kind_ok(card, kind):
+    """Whether this spell card is a creature / noncreature / instant / ... / white / ... spell."""
+    if kind == 'noncreature':
+        return not card.is_creature
+    from .engine.play import SPELL_KINDS
+    if kind in SPELL_KINDS:
+        return SPELL_KINDS[kind](card)
+    return kind.capitalize() in card.types
+
+
 def spell_limited(game, p):
     """Rule of Law: only one spell per turn for everyone (or just you under Moderation)."""
     from .residual_templates import sources
