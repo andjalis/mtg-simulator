@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from .. import auras, cast_triggers, copies, counting, removal, search, xspells
+from .. import auras, cast_triggers, copies, counting, removal, search, xspells, r3_spells
 from ..cards import Effect
 from .state import Permanent, Player, StackItem
 from .kinds import HANDLERS, NO_SBA
@@ -44,6 +44,10 @@ class ResolveMixin:
                     if what == "artifacts" else x.is_creature if what == "creatures" else x.card.is_land
                     for x in p.battlefield)
             eff = dataclasses.replace(eff, amount=n)
+        if k == "bounce_self" and item is not None and item.is_spell:
+            r3_spells.return_spell(self, item)
+            self.state_based_actions()
+            return
         handler = HANDLERS.get(k)
         if handler is not None:
             if handler(self, p=p, eff=eff, target=target, item=item, prev=prev, opp=opp, k=k, source=source,
@@ -59,6 +63,8 @@ class ResolveMixin:
             search.resolve(self, p, eff, target, item)
         elif k in auras.KINDS:
             auras.resolve(self, p, eff, target, item)
+        elif k in r3_spells.KINDS:
+            r3_spells.resolve(self, p, eff, target, item)
         elif k in removal.KINDS:
             removal.resolve(self, p, eff, target, item)
         self.state_based_actions()

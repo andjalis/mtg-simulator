@@ -234,10 +234,10 @@ class MechanicsTests(unittest.TestCase):
         tusker = perm("Kalonian Tusker", self.b)
         maw = perm("Colossal Dreadmaw", self.b)
         push = CARDS["Fatal Push"]
-        self.assertEqual(self.game.legal_targets(self.a, push.spell_effects[0]), [tusker])
+        self.assertEqual(self.game.legal_targets(self.a, push.spell_effects[0]), [tusker, maw])
         self.a.hand = [push]
         self.game.cast(self.a, push, [maw])
-        self.assertIn(maw, self.b.battlefield)    # illegal target: fizzles
+        self.assertIn(maw, self.b.battlefield)    # legal target, but the mana-value condition prevents destruction
 
     def test_wedding_announcement_and_anthem(self):
         wa = perm("Wedding Announcement", self.a)

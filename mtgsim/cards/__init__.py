@@ -33,3 +33,8 @@ from .. import auras as _auras, copies as _copies, removal as _removal, search a
 _EFFECT_PATTERNS += _copies.EFFECT_PATTERNS + _removal.EFFECT_PATTERNS + _auras.EFFECT_PATTERNS + _search.EFFECT_PATTERNS + _xspells.EFFECT_PATTERNS + _counting.EFFECT_PATTERNS
 _EFFECT_PATTERNS += _milling.EFFECT_PATTERNS + _distribute.EFFECT_PATTERNS
 _SUBS += _copies.SUBS + _counting.SUBS
+
+from .. import r3_spells as _r3_spells  # noqa: E402
+_EFFECT_PATTERNS += _r3_spells.EFFECT_PATTERNS
+_SUBS += _r3_spells.SUBS
+_TRIGGERS += _r3_spells.TRIGGERS

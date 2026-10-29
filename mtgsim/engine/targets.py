@@ -28,8 +28,6 @@ class TargetsMixin:
             return r
         if f.startswith("max_cmc:"):
             limit = int(f.split(":")[1])
-            if by.perm_left_turn and eff.kind == "destroy":
-                limit = max(limit, 4)  # Fatal Push's revolt
             return perm.card.cmc <= limit
         if f == "plains":
             return perm.card.cmc <= sum(1 for x in by.battlefield if x.card.name.endswith("Plains"))
@@ -82,6 +80,8 @@ class TargetsMixin:
             return creatures + [x for x in everything if x.is_planeswalker] + list(self.players)
         if t == "player":
             return [self.opponent(p)] if eff.filter == "opp" else list(self.players)
+        if t == "spell_or_permanent":
+            return everything + [i for i in self.stack if i.is_spell]
         if t == "spell":
             return [i for i in self.stack if self.can_counter(eff, i, p)]
         return []

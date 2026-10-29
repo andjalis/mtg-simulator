@@ -11,6 +11,8 @@ from . import NO_SBA, kind
 @kind("draw")
 def draw(game, p, eff, opp, **_):
     who = opp if eff.target == "each_opponent" else p
+    if eff.data.get("control_type") and not any(eff.data["control_type"] in x.card.types for x in p.battlefield):
+        return
     n = eff.amount
     if eff.data.get("x_count"):
         n = sum(card_matches(x.card, "a " + eff.data["x_count"]) for x in p.battlefield)
@@ -80,7 +82,7 @@ def discard(game, p, eff, target, **_):
         game.log(f"discards {card.name}", who)
     who.discarded_last = []
     for _ in range(0 if basics else min(eff.amount, len(who.hand))):
-        card = who.ai.choose_discard(game, who)
+        card = game.rng.choice(who.hand) if eff.data.get("random") else who.ai.choose_discard(game, who)
         game.discard_card(who, card)
         who.discarded_last.append(card)
         game.log(f"discards {card.name}", who)
