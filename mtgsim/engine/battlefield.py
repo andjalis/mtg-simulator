@@ -134,6 +134,8 @@ class BattlefieldMixin:
         from ..residual_templates import tapped_by_opponent
         perm.tapped |= tapped or tapped_by_opponent(self, perm)
         p.battlefield.append(perm)
+        from ..batch1_templates import soulbond_pair
+        soulbond_pair(self, p, perm)
         self._residual_source_index = None
         if not card.is_land:
             p.entered_nonland_turn += 1

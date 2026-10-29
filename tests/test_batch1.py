@@ -427,6 +427,17 @@ class Batch1(unittest.TestCase):
         self.g.resolve(self.a, eff[0], bear, item)
         self.assertEqual((bear.power, bear.toughness), (5, 2))
 
+    def test_soulbond_pairs_and_pumps(self):
+        mauler = self.put(card("Test Mauler", "{1}{R}", "Creature", "Soulbond\nAs long as ~ is paired with another creature, both creatures have haste.", "Wolf", 2, 1))
+        self.assertFalse(mauler.has("haste"))
+        bear = self.put(BEAR)
+        self.assertIs(bear.partner, mauler)
+        self.assertTrue(bear.has("haste"))
+        self.assertTrue(mauler.has("haste"))
+        self.g.destroy(bear) if hasattr(self.g, "destroy") else self.a.battlefield.remove(bear)
+        self.g.settle()
+        self.assertFalse(mauler.has("haste"))
+
 
 if __name__ == '__main__':
     unittest.main()
