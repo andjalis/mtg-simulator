@@ -18,9 +18,10 @@ def edict_player(game, p, target, opp, **_):
 
 
 @kind("edict_each")
-def edict_each(game, p, opp, **_):
+def edict_each(game, p, eff, opp, **_):
     for pl in (p, opp):
-        _edict(game, p, pl)
+        for _ in range(eff.amount):
+            _edict(game, p, pl)
 
 
 @kind("gain_prev_stat")

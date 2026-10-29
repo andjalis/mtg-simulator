@@ -61,7 +61,9 @@ def return_own(game, p, eff, item, **_):
     before a nonbasic), then the cheapest creature; the source itself only when nothing else is left."""
     src = item.source if item is not None else None
     land = eff.data["kind"] == "land"
-    pool = [x for x in p.battlefield if (x.card.is_land if land else x.is_creature)]
+    pool = [x for x in p.battlefield if (x.card.is_land if land else x.is_creature or eff.data["kind"] == "permanent")
+            and (x is not src or not eff.data.get("other"))
+            and (not eff.data.get("colors") or set(eff.data["colors"]) & set(x.card.colors))]
     if not pool:
         return
     pick = min(pool, key=lambda x: (x is src, not x.tapped, not is_basic_land(x.card)) if land else
@@ -266,12 +268,13 @@ def irencrag(game, p, item, **_):
 
 
 @kind("threaten")
-def threaten(game, p, target, **_):
+def threaten(game, p, eff, target, **_):
     if isinstance(target, Permanent) and target in target.controller.battlefield:
         victim = target
         counter_mechanics.add_control(game, victim, p, until_eot=True)
-        victim.tapped = False
-        victim.sick = False
+        if not eff.data.get("plain"):
+            victim.tapped = False
+            victim.sick = False
         game.log(f"gains control of {victim.card.name}", p)
 
 

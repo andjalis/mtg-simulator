@@ -305,6 +305,14 @@ def effect_value(game, player, effect, target):
         if not blocks or level >= max(b[0] for b in blocks):
             return 0                       # already in the last range
         return 1 + 0.5 * sum(b[2][0] + b[2][1] for b in blocks if b[2] and b[0] == level + 1)
+    if kind == 'tuck_perm':
+        return perm_value(target) if getattr(target, 'controller', None) is game.opponent(player) else -1
+    if kind == 'lose_half':
+        return game.opponent(player).life / 4
+    if kind == 'wheel_all':
+        return len(player.hand) * -0.5 + effect.amount * 0.5 - len(game.opponent(player).hand) * -0.25
+    if kind == 'shuffle_gy':
+        return -1 if target is not game.opponent(player) else 0
     if kind == 'incubator_transform':
         src = getattr(game.target_source, 'source', game.target_source)
         return effect.amount if getattr(src, 'p1', 0) and game.step in ('main1', 'main2') else 0
