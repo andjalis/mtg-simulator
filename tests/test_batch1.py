@@ -378,7 +378,7 @@ class Batch1(unittest.TestCase):
         self.assertEqual(self.b.life, 16)
 
     def test_exploit_sacrifices_a_token_and_triggers_payoff(self):
-        token = self.g.create_token(self.a, _parse_effects("Create a 1/1 white Soldier creature token.")[0][0])
+        self.g.create_token(self.a, _parse_effects("Create a 1/1 white Soldier creature token.")[0][0])
         butcher = card("Test Butcher", "{3}{B}", "Creature — Orc",
                        "Exploit (When this creature enters, you may sacrifice a creature.)\n"
                        "When ~ exploits a creature, you gain 3 life.", 3, 3)
