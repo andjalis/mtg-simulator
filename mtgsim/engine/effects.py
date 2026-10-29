@@ -1,7 +1,7 @@
 """Game methods for game events that effects and rules cause: damage, destroy, sacrifice, dying, state-based actions."""
 from __future__ import annotations
 
-from .. import continuous, counter_mechanics
+from .. import continuous, counter_mechanics, that_much
 
 from .. import auras
 from ..cards import AltCost, CardDef, Effect
@@ -15,6 +15,9 @@ class EffectsMixin:
     def deal_damage(self, target, amount: int, by: Player | None = None,
                     cause="noncombat damage", *, source=None, combat=False):
         """Damage with source abilities; infect changes its results rather than its amount."""
+        if amount <= 0:
+            return
+        amount = that_much.damage_amount(self, target, amount, by, source, combat)
         if amount <= 0:
             return
         def has(keyword):
@@ -41,13 +44,18 @@ class EffectsMixin:
             if amount <= 0:
                 return
         infect = has("infect")
+        self.event_amount = amount          # "that much" for the triggers fired below
         if isinstance(source, Permanent) and source in source.controller.battlefield:
+            self.fire(source.controller, "deals_damage", source, context=target)
             if isinstance(target, Player):
                 self.fire(source.controller, "damages_player", source, context=target)
             elif combat and isinstance(target, Permanent) and target.is_creature:
                 self.fire(source.controller, "combat_damage_creature", source, context=target)
         if isinstance(target, Permanent) and target in target.controller.battlefield:
             self.fire(target.controller, "dealt_damage", target, context=source)
+            if combat:
+                self.fire(target.controller, "dealt_combat_damage", target, context=source)
+        self.event_amount = None
         if isinstance(target, Player):
             if combat and isinstance(source, Permanent) and source.card.toxic:
                 target.counters["poison"] = target.counters.get("poison", 0) + source.card.toxic

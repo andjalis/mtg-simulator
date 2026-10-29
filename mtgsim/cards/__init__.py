@@ -54,3 +54,6 @@ _EFFECT_PATTERNS += _batch2_templates.EFFECT_PATTERNS
 from .. import residual_templates as _residual_templates
 _EFFECT_PATTERNS += _residual_templates.EFFECT_PATTERNS
 _SUBS += _residual_templates.SUBS
+from .. import that_much as _that_much
+_EFFECT_PATTERNS += _that_much.EFFECT_PATTERNS
+_TRIGGERS += _that_much.TRIGGERS

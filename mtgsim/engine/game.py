@@ -5,7 +5,7 @@ import json
 import random
 from typing import TYPE_CHECKING
 
-from .. import rules_events
+from .. import rules_events, that_much
 from .abilities import AbilitiesMixin
 from .battlefield import BattlefieldMixin
 from .combat import CombatMixin
@@ -75,11 +75,20 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
             from ..batch1_templates import lifegain_blocked
             if lifegain_blocked(self, player):
                 return
+            delta = that_much.gain_amount(self, player, delta)
+        elif delta < 0:
+            delta = -that_much.loss_amount(self, player, -delta)
         player.life += delta
         delta = player.life - before
         if delta > 0:
             player.life_gained_turn += delta
+            self.event_amount = delta
             self.fire(player, "gain_life")
+            self.event_amount = None
+        elif delta < 0:
+            self.event_amount = -delta
+            self.fire(self.opponent(player), "opp_loses_life")
+            self.event_amount = None
         if delta < 0 and player is not self.active and self.active.speed_turn != self.turn and \
                 0 < self.active.speed < 4:
             self.active.speed += 1               # an opponent lost life on your turn

@@ -115,7 +115,7 @@ def group_remove(game, p, eff, item, cause, **_):
         if perm not in perm.controller.battlefield:
             continue
         if op == "destroy":
-            game.destroy(perm, counter_sources=sources)
+            game.destroy(perm, counter_sources=sources, no_regen=eff.data.get("no_regen", False))
         elif op == "damage":
             game.deal_damage(perm, eff.amount, by=p, cause=cause, source=src)
         else:
