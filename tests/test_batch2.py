@@ -131,6 +131,8 @@ class Batch2(Batch1):
         self.assertTrue(can_block(black, self.put(raider)))
         self.assertFalse(can_block(blocker, self.put(shade)))
         self.assertTrue(can_block(black, self.put(shade)))
+        flyer = self.put(card("Test Scout", "{G}", "Creature — Elf", "~ can't be blocked except by creatures with flying.", 1, 1))
+        self.assertFalse(can_block(blocker, flyer))
 
     def test_color_anthem(self):
         self.put(card("Test Druid", "{1}{G}", "Creature — Druid", "Other green creatures you control get +1/+1.", 1, 1))

@@ -102,7 +102,7 @@ def parse_line(line, st):
     m = re.fullmatch(r"~ can't be blocked except by (?:(white|blue|black|red|green) creatures|creatures with (flying)(?: or (reach))?)\.", line)
     if m:
         rules = st.extra.setdefault('advanced_rules', {})
-        only = ("color:" + _COLOR[m[1]],) if m[1] else tuple(w for w in m[2:] if w)
+        only = ("color:" + _COLOR[m[1]],) if m[1] else tuple(w for w in m.groups()[1:] if w)
         rules['evade_except'] = rules.get('evade_except', ()) + (only,)
         return True
     m = re.fullmatch(r"~ can't block creatures with power (\d+) or greater\.", line)
