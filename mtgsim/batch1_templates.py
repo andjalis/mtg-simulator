@@ -708,6 +708,19 @@ def bestow_face(card, cost):
                                advanced_rules=dict(card.advanced_rules, bestowed=True, bestow_base=card))
 
 
+def bestow_worth(game, player, aura):
+    """Value of casting a bestow card as an Aura on our best creature, or None when it is better as a creature."""
+    from . import auras
+    from .ai import card_value
+    base = aura.advanced_rules['bestow_base']
+    if auras.choose_host(game, player, aura) is None:
+        return None
+    gain = 0.4 * (aura.equip_bonus[0] + aura.equip_bonus[1]) + 0.8 * len(aura.equip_keywords)
+    if gain < 2:
+        return None
+    return card_value(base) + 0.5 * base.cmc + gain
+
+
 def unbestow(game, aura):
     """The enchanted creature left: a bestowed Aura stays on the battlefield as the creature it was printed as."""
     base = aura.card.advanced_rules.get('bestow_base')
