@@ -48,6 +48,10 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     k = eff.kind
+    if k == "draw" and eff.target == "player":
+        return me
+    if eff.target == "player" and eff.filter == "opp":
+        return opp
     if eff.target == "graveyard_creature_life":
         return max(legal, key=lambda c: c.cmc, default=None)
     if k == "connive_many":
@@ -462,6 +466,10 @@ def pay_shock(game: Game, me: Player, card: CardDef) -> bool:
     return me.life > 8
 
 
+def choose_sacrifice(game: Game, me: Player, candidates):
+    return min(candidates, key=perm_value, default=None)
+
+
 def choose_discard_from(game: Game, me: Player, victim: Player):
     spells = [c for c in victim.hand if not c.is_land]
     return max(spells, key=lambda c: c.cmc, default=None)
@@ -648,7 +656,7 @@ DEFAULTS = {
     "sneak": default_sneak,
     "respond": respond, "choose_target": choose_target, "choose_modes": default_choose_modes,
     "scry": scry, "choose_dig": choose_dig, "pay_unless": pay_unless, "pay_optional": pay_optional,
-    "pay_shock": pay_shock, "choose_discard_from": choose_discard_from, "choose_rummage": choose_rummage,
+    "choose_sacrifice": choose_sacrifice, "pay_shock": pay_shock, "choose_discard_from": choose_discard_from, "choose_rummage": choose_rummage,
     "choose_crew": choose_crew, "before_attacks": before_attacks, "choose_attack_targets": choose_attack_targets,
     "use_abilities": use_abilities, "respond_extras": respond_extras, "choose_equip_target": choose_equip_target,
 }

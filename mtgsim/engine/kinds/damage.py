@@ -30,13 +30,14 @@ def gain_life(game, p, eff, target, cause, **_):
 
 
 @kind("drain")
-def drain(game, eff, opp, cause, **_):
-    game.change_life(opp, -eff.amount, cause)
+def drain(game, eff, target, opp, cause, **_):
+    who = target if eff.target == "player" and isinstance(target, Player) else opp
+    game.change_life(who, -eff.amount, cause)
 
 
 @kind("lose_life")
 def lose_life(game, p, eff, target, cause, **_):
-    who = target if eff.target in ("that_player", "that_controller") and isinstance(target, Player) else p
+    who = target if eff.target in ("player", "prev", "that_player", "that_controller") and isinstance(target, Player) else p
     game.change_life(who, -eff.amount, cause)
 
 

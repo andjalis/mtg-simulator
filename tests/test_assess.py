@@ -118,7 +118,7 @@ class MetaTests(unittest.TestCase):
 
 
 # 24 Swamps play fully; the 36 spells each ignore some text, so the built-in engine covers 40%
-LOW = {"Swamp": 24, "Deep-Cavern Bat": 12, "Preacher of the Schism": 12, "Lord Skitter's Blessing": 12}
+LOW = {"Swamp": 24, "Atraxa, Grand Unifier": 12, "Preacher of the Schism": 12, "Lord Skitter's Blessing": 12}
 
 
 def meta_dir(tmp, decks):

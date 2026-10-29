@@ -765,8 +765,12 @@ class HeuristicAI:
                 value += 1.5 * (eff.amount2 if eff.kind == "dig" else eff.amount) * \
                     (0.3 if eff.kind in ("scry", "surveil") else 1)
             elif eff.kind == "discard":
-                targets.append(None)
-                value -= 0.8 * eff.amount
+                if eff.target == "player":
+                    targets.append(opp)
+                    value += 0.8 * min(eff.amount, len(opp.hand))
+                else:
+                    targets.append(None)
+                    value -= 0.8 * eff.amount
             elif eff.kind == "gain_life":
                 targets.append(None)
                 value += life_value(me.life + eff.amount) - life_value(me.life)

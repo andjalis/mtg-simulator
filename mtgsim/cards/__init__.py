@@ -46,3 +46,7 @@ _SUBS += _cost_mana.SUBS
 from .. import r3b_spells as _r3b_spells  # noqa: E402
 _EFFECT_PATTERNS += _r3b_spells.EFFECT_PATTERNS
 _SUBS += _r3b_spells.SUBS
+
+from .. import r4_spells as _r4_spells  # noqa: E402
+_EFFECT_PATTERNS += _r4_spells.EFFECT_PATTERNS
+_SUBS += _r4_spells.SUBS

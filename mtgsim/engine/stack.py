@@ -249,7 +249,8 @@ class StackMixin:
             self.log(f"{item} does not resolve (intervening condition false)", p)
             self.state_based_actions()
             return
-        targeted = [(e, t) for e, t in zip(item.effects, item.targets) if e.target in TARGETED]
+        targeted = [(e, t) for e, t in zip(item.effects, item.targets) if e.target in TARGETED
+                    and not (t is None and e.data.get("optional"))]
         item.resolved = not (targeted and all(not self.legal_item_target(p, e, t, item) for e, t in targeted))
         if not item.resolved:
             self.log(f"{item} fizzles (no legal target)", p)
@@ -264,6 +265,9 @@ class StackMixin:
                     item.targets[i - 1].exile_turn = self.turn
             for eff, tgt in zip(item.effects, item.targets):
                 if eff.target in TARGETED:
+                    if tgt is None and eff.data.get("optional"):
+                        prev = None
+                        continue
                     if not self.legal_item_target(p, eff, tgt, item):
                         prev = None
                         continue
@@ -309,6 +313,11 @@ class StackMixin:
         if eff.data.get("milled_condition") and not milling.condition_met(p, eff, item):
             return False
         c = eff.cond
+        if c == "cast_from_graveyard":
+            return item is not None and item.is_spell and item.kind != "copy" and bool(
+                getattr(item, "cast_from_graveyard", False))
+        if c.startswith("gy_size>="):
+            return len(p.graveyard) >= int(c.split(">=")[1])
         if not c:
             return True
         if c[0] == "!":
