@@ -546,6 +546,35 @@ class Batch1(unittest.TestCase):
         self.g.deal_damage(self.b, 2, by=self.a, source=bear)
         self.assertEqual(self.b.life, life - 4)
 
+    def test_outlast_adds_a_counter_at_sorcery_speed(self):
+        monk = self.put(card("Test Monk", "{1}{W}", "Creature — Human Monk", "Outlast {1} ({1}, {T}: Put a +1/+1 counter on this creature. Outlast only as a sorcery.)", 1, 2))
+        self.put(ISLAND)
+        self.assertTrue(self.g.activate(self.a, monk, "ability:0"))
+        self.g.settle()
+        self.assertEqual(monk.p1, 1)
+        self.assertTrue(monk.tapped)
+
+    def test_cumulative_upkeep_pays_then_sacrifices(self):
+        from mtgsim.batch1_templates import on_upkeep
+        ants = self.put(card("Test Ants", "{2}{G}", "Creature — Insect", "Cumulative upkeep {1}", 2, 2))
+        for _ in range(3):
+            self.put(ISLAND)
+        on_upkeep(self.g, self.a)
+        self.assertEqual(ants.counters.get("age"), 1)
+        self.assertIn(ants, self.a.battlefield)
+        self.assertEqual(sum(1 for x in self.a.battlefield if x.card.is_land and x.tapped), 1)
+        for x in self.a.battlefield:
+            x.tapped = False
+        on_upkeep(self.g, self.a)
+        self.assertEqual(ants.counters.get("age"), 2)
+        self.assertEqual(sum(1 for x in self.a.battlefield if x.card.is_land and x.tapped), 2)
+        for x in self.a.battlefield:
+            x.tapped = False
+        on_upkeep(self.g, self.a)
+        on_upkeep(self.g, self.a)
+        self.g.settle()
+        self.assertNotIn(ants, self.a.battlefield)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -151,6 +151,19 @@ def parse_line(line, st):
         return True
     if _curse_line(line, st):
         return True
+    m = re.fullmatch(r"Cumulative upkeep(?: ((?:\{[^ }/]+\})+)|—Pay (\d+) life)\.?(?: \(.*\))?", line)
+    if m:
+        from .cards import parse_mana_cost
+        st.extra.setdefault('advanced_rules', {})['cumulative_upkeep'] = (
+            ('mana', parse_mana_cost(m[1])) if m[1] else ('life', int(m[2])))
+        return True
+    m = re.fullmatch(r"Outlast ((?:\{[^ }]+\})+)(?: \(.*\))?", line)
+    if m:
+        from .cards import Activated, Effect, parse_mana_cost
+        st.activated.append(Activated("ability", parse_mana_cost(m[1]), effects=[Effect('p1_counters', 1, target='self')],
+                                      extra_costs={"tap": True}, sorcery=True,
+                                      text=f"{m[1]}, {{T}}: Put a +1/+1 counter on this creature. Activate only as a sorcery."))
+        return True
     m = re.fullmatch(r"(Each player|You) can't cast more than one spell each turn\.", line)
     if m:
         st.extra.setdefault('advanced_rules', {})['one_spell_each' if m[1] == 'Each player' else 'one_spell_you'] = True
@@ -228,6 +241,9 @@ def mark_exile_dying(game, creature):
 def on_upkeep(game, active):
     """Auras that act at the upkeep of the enchanted creature's controller."""
     curse_event(game, active, 'curse_upkeep')
+    for perm in list(active.battlefield):
+        if perm.card.advanced_rules.get('cumulative_upkeep') and not perm.abilities_suppressed:
+            cumulative_upkeep(game, active, perm)
     for player in game.players:
         for src in list(player.battlefield):
             host = src.aura_host
@@ -235,6 +251,23 @@ def on_upkeep(game, active):
                 for trig in src.triggers:
                     if trig.event == 'host_upkeep':
                         game.queue_trigger(player, trig.effects, src, src.card.name, context=host)
+
+
+def cumulative_upkeep(game, p, perm):
+    """Add an age counter, then pay the upkeep cost once per age counter or sacrifice it (the AI stops paying when it gets steep)."""
+    age = perm.counters.get('age', 0) + 1
+    perm.counters['age'] = age
+    kind, cost = perm.card.advanced_rules['cumulative_upkeep']
+    if kind == 'life':
+        if p.life - cost * age >= 8:
+            game.change_life(p, -cost * age, f"{perm.card.name}: cumulative upkeep")
+            return
+    else:
+        total = {k: v * age for k, v in cost.items()}
+        if sum(total.values()) <= 3 and game.can_pay(p, total) and game.pay(p, total) is not None:
+            return
+    game.log(f"does not pay cumulative upkeep for {perm.card.name}", p)
+    game.sacrifice(perm)
 
 
 def effect_value(game, player, effect, target):
