@@ -81,6 +81,7 @@ class AltCost:
     life: int = 0
     hybrid: tuple = ()               # hybrid pips in cost, e.g. ("UB", "UB") for {U/B}{U/B}
     counters: int = 0                # impending: time counters it enters with
+    activation_discount: tuple = ()  # (controlled permanent description, generic reduction per match)
 
 
 @dataclass
@@ -106,6 +107,7 @@ class Activated:
     text: str = ""
     modes: list = field(default_factory=list)    # "COST: Choose one —": a modal.Modes
     condition: str = ""              # graveyard activation restriction: delirium, gy8
+    activation_discount: tuple = ()  # same scaling reduction as channel costs
 
 
 @dataclass
@@ -250,6 +252,7 @@ class CardDef:
     storm: int = 0
     basic: bool = False
     legendary: bool = False
+    case_solve_life: int = 0                            # gained-life threshold for solving at own end step
 
     @property
     def colors(self) -> frozenset:

@@ -402,7 +402,8 @@ class PlayMixin:
         return sorted(out, key=perm_value)
 
     def ability_cost(self, p: Player, perm: Permanent, act) -> dict:
-        cost = act.cost
+        from .. import cost_mana
+        cost = cost_mana.reduced_ability_cost(self, p, act.cost, act.activation_discount)
         if act.power_up and perm.entered_turn == self.turn:
             cost = {k: max(0, v - perm.card.mana_cost.get(k, 0)) if isinstance(v, int) else v for k, v in cost.items()}
         if perm.card.is_token and perm.card.is_artifact and cost.get("generic"):
@@ -427,6 +428,8 @@ class PlayMixin:
         if act.sorcery and not (p is self.active and self.step in ("main1", "main2") and not self.stack):
             return False
         if act.once and perm.ability_turns.get(idx) == self.turn:
+            return False
+        if act.condition == "case_solved" and not perm.solved:
             return False
         if act.condition == "opp_lost_life" and not self.opponent(p).lost_life_turn:
             return False
@@ -456,7 +459,7 @@ class PlayMixin:
 
     def valid_action_targets(self, p, effects, targets, source=None):
         return all(e.target not in TARGETED or (i < len(targets) and
-                   self.legal_target(p, e, targets[i]) and
+                   (targets[i] is None and e.data.get("optional") or self.legal_target(p, e, targets[i])) and
                    not (e.data.get("other") and targets[i] is source)) for i, e in enumerate(effects))
 
     @atomic_action
@@ -597,6 +600,10 @@ class PlayMixin:
         cond = card.tapped_condition
         if cond == "unless_2_lands":
             perm.tapped = others < 2
+        elif cond == "unless_2_basics":
+            perm.tapped = sum(is_basic_land(x.card) for x in p.battlefield) < 2
+        elif cond == "unless_2_opponents":
+            perm.tapped = len(self.players) < 3
         elif cond == "if_2_lands":
             perm.tapped = others >= 2
         elif cond == "unless_le_2_lands":

@@ -5,7 +5,7 @@ override each one by defining the hook of the same name (see README and DEFAULTS
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from .. import copies, counters_r3, learning, proliferate, regeneration, removal
+from .. import cost_mana, copies, counters_r3, learning, proliferate, regeneration, removal
 from ..cards import COLORS, CardDef, Effect
 from .. import modal
 from .mana import add_costs, payable
@@ -107,6 +107,9 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     if k == "unblockable":
         ready = [x for x in mine if x.can_attack() and x.power > 0]
         return max(ready, key=lambda x: x.power, default=None)
+    if k == "counter_ability":
+        fallback = None if eff.data.get("optional") else next(iter(legal), None)
+        return next((i for i in reversed(game.stack) if i in legal and i.controller is opp), fallback)
     if k in ("counter", "bounce_spell"):
         return next((i for i in reversed(game.stack) if i in legal), None)
     if k in ("discard", "discard_choice"):
@@ -364,11 +367,13 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
     """Whether to activate perm's general ability idx now, outside combat."""
     act = perm.card.activated[idx]
     c = act.extra_costs
+    if any(e.kind == "grant_gy_cast" for e in act.effects) and not cost_mana.can_use_graveyard_permission(game, me):
+        return False
     if _self_pump(act) and not any(e.kind == "p1_counters" for e in act.effects):
         return False    # used in combat (combat_pump)
     if not game.can_activate(me, perm, idx):
         return False
-    need = add_costs(act.cost, {"generic": reserve})
+    need = add_costs(game.ability_cost(me, perm, act), {"generic": reserve})
     if not payable(game.mana_sources(me, perm if c.get("tap") else None, "ability"), need):
         return False
     value = _mode_value(game, me, act.effects)
@@ -600,6 +605,7 @@ def use_abilities(game: Game, me: Player):
                 if act.kind == "ability" and act.effects and act.effects[0].kind == "unblockable" and \
                         perm in me.battlefield and ability_worth(game, me, perm, i):
                     game.activate(me, perm, f"ability:{i}")
+    cost_mana.activate_graveyard_permission(game, me)
     # Spells from other zones or with alternative costs the AI may not look at.
     for c in game.spell_options(me):
         if (c in me.hand and not c.modes) or c.instant_speed or not game.can_cast_now(me, c):

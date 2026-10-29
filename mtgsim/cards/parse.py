@@ -1087,13 +1087,10 @@ def _face_keyword_ability_lines(st, line):
         if m and alt_costs and alt_costs[-1].kind == "alt":
             alt_costs[-1].extra.append(Effect("draw", 1, target="each_opponent"))
             return None
-        m = re.fullmatch(r"Channel — (\{[^,]+\}), Discard ~: (.+?)(?: This ability costs \{1\} less to activate "
-                         r"for each legendary creature you control\.)?", line)
-        if m:
-            effs, bad = _parse_effects(m[2])
-            if effs and not bad:
-                alt_costs.append(AltCost("channel", parse_mana_cost(m[1]), effects=effs))
-                return None
+        channel = cost_mana.parse_channel(line, st.types)
+        if channel is not None:
+            alt_costs.append(channel)
+            return None
         if re.fullmatch(r"As long as ~ entered this turn, you may activate (?:her|his|its) loyalty abilities any "
                         r"time you could cast an instant\.", line):
             extra["pw_instant_on_entry"] = True
@@ -1180,6 +1177,10 @@ def _face_ability_lines(st, line):
         clone = _copies.parse_line(line)
         if clone is not None:
             extra.update(clone)
+            return None
+        solved = cost_mana.parse_solved_ability(line)
+        if solved is not None:
+            activated.append(solved)
             return None
         mp = re.fullmatch(r"(Power-up|Exhaust) — (.+)", line)
         act = _parse_ability(mp[2] if mp else line, approximations)
@@ -1310,7 +1311,7 @@ def _parse_ability(line: str, approximations: list):
     cost = _parse_ability_cost(m[1])
     if cost is None:
         return None
-    body, sorcery, once, approx, condition = m[2], False, False, [], ""
+    body, sorcery, once, approx, condition, discount = m[2], False, False, [], "", ()
     while True:
         r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|Activate only if an opponent "
                          r"lost life this turn and only once each turn|Activate only if you control three or more "
@@ -1324,18 +1325,22 @@ def _parse_ability(line: str, approximations: list):
         condition = "opp_lost_life" if "opponent lost life" in r[2] else \
             "coven" if "different powers" in r[2] else condition
         if r[2].startswith("This ability costs"):
-            approx.append(f"cost reduction ignored: {r[2]}.")
+            known_discount = cost_mana.activation_discount(r[2] + ".")
+            if known_discount:
+                discount = known_discount
+            else:
+                approx.append(f"cost reduction ignored: {r[2]}.")
     head = modal.parse_header(body)
     if head is not None and not head[1]:
         approximations += approx
         return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=line,
-                         modes=modal.Modes(spec=head[0]), condition=condition)
+                         modes=modal.Modes(spec=head[0]), condition=condition, activation_discount=discount)
     effects, bad = _parse_effects(body)
     if bad or not effects:
         return None
     approximations += approx
     return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=line,
-                     condition=condition)
+                     condition=condition, activation_discount=discount)
 
 
 def _parse_trigger(line: str):

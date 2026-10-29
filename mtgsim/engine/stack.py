@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import auras, copies, graveyard, kicker, milling, r3b_spells
+from .. import auras, copies, cost_mana, graveyard, kicker, milling, r3b_spells
 from ..cards import CardDef, Effect
 from .. import modal, rules_events
 from ..identity import CardInstance, CardZone
@@ -85,6 +85,8 @@ class StackMixin:
 
     def _dispatch_trigger_event(self, p, event, source=None, context=None, subject=None):
         graveyard.observe_event(self, p, event, source, context, subject)
+        if event == "end_step" and source is None:
+            cost_mana.queue_case_solutions(self, p)
         perms = [source] if source is not None else list(p.battlefield)
         for perm in perms:
             for i, trig in enumerate(perm.triggers):

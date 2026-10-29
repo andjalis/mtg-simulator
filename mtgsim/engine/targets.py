@@ -1,7 +1,7 @@
 """Game methods for targeting: legal targets, filters, counterability and automatic targets."""
 from __future__ import annotations
 
-from .. import removal
+from .. import cost_mana, removal
 from ..cards import Effect
 from .policy import default_choose_target, perm_value
 from .state import Permanent, Player, StackItem, TARGETED, is_basic_land
@@ -92,6 +92,8 @@ class TargetsMixin:
             return [c for pl in self.players for c in pl.graveyard if c.is_creature]
         if t == "spell_or_permanent":
             return everything + [i for i in self.stack if i.is_spell]
+        if t == "ability":
+            return [i for i in self.stack if cost_mana.can_counter_ability(eff, i)]
         if t == "spell":
             return [i for i in self.stack if self.can_counter(eff, i, p)]
         return []
@@ -103,6 +105,8 @@ class TargetsMixin:
         return any(tgt is candidate for candidate in self.legal_targets(p, eff))
 
     def can_counter(self, eff: Effect, item: StackItem, by: Player | None = None) -> bool:
+        if eff.kind == "counter_ability":
+            return item in self.stack and cost_mana.can_counter_ability(eff, item)
         if eff.kind not in ("counter", "bounce_spell") or not item.is_spell or item not in self.stack:
             return False
         if by is not None and item.controller is by:

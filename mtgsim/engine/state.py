@@ -15,7 +15,7 @@ TrackedZone = CardZone  # public compatibility alias
 TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
 COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "land", "artifact", "artifact_enchantment",
-            "player", "spell", "spell_or_permanent", "graveyard_creature_life", "graveyard_creature_any", "creature_vehicle")
+            "player", "spell", "spell_or_permanent", "graveyard_creature_life", "graveyard_creature_any", "creature_vehicle", "ability")
 
 
 class Permanent:
@@ -87,6 +87,7 @@ class Permanent:
         self.warped = False
         self.was_cast = False              # "if you cast it"
         self.hidden = None                 # the real card of a face-down (disguised) creature
+        self.solved = False                # Case solving is status of this battlefield object
         self.prepared = False              # a prepared creature may cast a copy of its spell
         self.saddled = False               # a Mount saddled this turn
         self.copy_revert = None            # the card this permanent is while it is a copy until end of turn
@@ -388,6 +389,7 @@ class Player:
         self.discarded_last: list[CardDef] = []
         self.discarded_cards: list[CardDef] = []      # discarded this turn (Mayhem)
         self.granted_fb: list[CardDef] = []           # graveyard cards that gained flashback this turn
+        self.granted_gy_cast: list = []              # (graveyard object reference, permission turn)
         self.mulligans = 0
         self.lost_life_turn = False
         self.perm_left_turn = False
