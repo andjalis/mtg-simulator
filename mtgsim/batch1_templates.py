@@ -286,6 +286,12 @@ def parse_line(line, st):
         from .cards import parse_mana_cost
         st.extra['bestow'] = parse_mana_cost(m[1])
         return True
+    m = re.fullmatch(r"Mutate ((?:\{[^}]+\})+)", line)
+    if m:
+        from .cards import parse_mana_cost
+        st.extra['mutate'] = parse_mana_cost(m[1])
+        st.approximations.append("mutate: the merged creature takes the new card's characteristics and loses the host's abilities")
+        return True
     m = re.fullmatch(r"Enchanted creature gets ([+-])(\d+)/([+-])(\d+)(?: and has ([a-z ]+(?:, [a-z ]+)*(?:,? and [a-z ]+)?))?\.", line)
     if m and 'bestow' in st.extra and not st.extra.get('aura'):
         kws = frozenset(k.strip() for k in re.split(r", and |, | and ", m[5])) if m[5] else frozenset()

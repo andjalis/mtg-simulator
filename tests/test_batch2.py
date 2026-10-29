@@ -262,6 +262,47 @@ class Batch2(Batch1):
         self.g.settle()
         self.assertTrue(aura.is_creature and aura in self.a.battlefield)
 
+    def test_mutate(self):
+        from tests.test_templates import PLAINS
+        drake = card("Test Drake", "{4}{W}", "Creature — Drake", "Mutate {1}{W}\nFlying\nWhenever ~ mutates, you gain 3 life.", 3, 3)
+        for _ in range(2):
+            self.put(PLAINS)
+        host = self.put(card("Test Bear", "{1}{G}", "Creature — Bear", "", 2, 2))
+        host.counters["+1/+1"] = 1
+        self.a.hand.append(drake)
+        self.assertFalse(drake.unsupported)
+        variant = next(v for v in self.g.spell_options(self.a) if self.g._origin(v)[1] == "mutate")
+        life = self.a.life
+        self.g.cast(self.a, variant)
+        self.g.settle()
+        self.assertEqual(host.card.name, "Test Drake")
+        self.assertEqual((host.power, host.toughness), (4, 4))
+        self.assertEqual(self.a.life, life + 3)
+        self.assertEqual(len([x for x in self.a.battlefield if x.is_creature]), 1)
+
+    def test_mutate_count_drain(self):
+        from tests.test_templates import SWAMP
+        bat = card("Test Bat", "{4}{B}", "Creature — Vampire Bat", "Mutate {1}{B}\nWhenever ~ mutates, each opponent loses X life and you gain X life, where X is the number of times ~ has mutated.", 3, 3)
+        self.assertFalse(bat.unsupported)
+        for _ in range(2):
+            self.put(SWAMP)
+        self.put(card("Test Bear", "{1}{G}", "Creature — Bear", "", 2, 2))
+        self.a.hand.append(bat)
+        variant = next(v for v in self.g.spell_options(self.a) if self.g._origin(v)[1] == "mutate")
+        opp_life = self.b.life
+        self.g.cast(self.a, variant)
+        self.g.settle()
+        self.assertEqual(self.b.life, opp_life - 1)
+
+    def test_mutate_needs_non_human_host(self):
+        from tests.test_templates import PLAINS
+        drake = card("Test Drake", "{4}{W}", "Creature — Drake", "Mutate {1}{W}", 3, 3)
+        for _ in range(2):
+            self.put(PLAINS)
+        self.put(card("Test Human", "{1}", "Creature — Human", "", 1, 1))
+        self.a.hand.append(drake)
+        self.assertFalse(any(self.g._origin(v)[1] == "mutate" for v in self.g.spell_options(self.a)))
+
     def test_ravenous(self):
         hydra = card("Test Hydra", "{X}{G}", "Creature — Hydra", "Ravenous", 0, 0)
         self.a.library = [ISLAND] * 5

@@ -84,3 +84,36 @@ def overload_effects(text):
              and l.strip() not in ("This spell can't be countered.", "~ can't be countered.")]
     body = re.sub(r"\b([Tt])arget\b", lambda m: "Each" if m[1] == "T" else "each", " ".join(lines) if False else "\n".join(lines))
     return _parse_effects(body)
+
+
+def mutate_hosts(game, p, card):
+    """Non-Human creatures p controls that a mutating creature spell could merge with."""
+    return [x for x in p.battlefield if x.is_creature and "Human" not in x.card.subtypes]
+
+
+def mutate_host(game, p, spell):
+    """The host the AI picks: the creature whose body we lose the least by replacing."""
+    from .ai import card_value
+    hosts = mutate_hosts(game, p, spell)
+    return min(hosts, key=lambda h: card_value(h.card) - 0.5 * h.p1) if hosts else None
+
+
+def mutate_worth(game, p, spell):
+    """Value of mutating onto our weakest host (no summoning sickness, counters and auras kept), or None."""
+    from .ai import card_value
+    host = mutate_host(game, p, spell)
+    if host is None:
+        return None
+    base = spell.advanced_rules["mutate_base"]
+    if card_value(base) < card_value(host.card):
+        return None
+    return card_value(base) + 0.5 * base.cmc + 0.3 * card_value(host.card) + 1
+
+
+def merge_mutation(game, p, host, base):
+    """The mutating card goes on top of host: it keeps its counters, auras, damage and readiness."""
+    host.card = base
+    host.mutations = getattr(host, "mutations", 0) + 1
+    game.log(f"{base.name} mutates onto the host", p)
+    game.fire(p, "mutates", host)
+    game.settle()

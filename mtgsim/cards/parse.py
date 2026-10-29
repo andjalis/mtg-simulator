@@ -396,6 +396,8 @@ def _parse_face(data: dict) -> CardDef:
         else:
             extra.setdefault("advanced_rules", {})["bestow_bonus"] = bonus
             alt_costs.append(AltCost("bestow", cost))
+    if "mutate" in extra:
+        alt_costs.append(AltCost("mutate", extra.pop("mutate")))
     if "overload" in extra:
         from ..batch2_templates import overload_effects
         overload = overload_effects(text)
