@@ -1,6 +1,6 @@
 # Remaining card-capability backlog
 
-Reviewed 2026-10-28. **The next thirty requested effects are complete.** All thirty recorded ignored clauses now match, and all 25 associated cards are full template matches. This includes the nine residual clauses from the previous batch.
+Reviewed 2026-10-29. **The next thirty requested effects are complete.** All thirty recorded ignored clauses now match, and all 25 associated cards are full template matches. This includes the nine residual clauses from the previous batch.
 
 See the [completion report](results/residual_batch/README.md), [closed tasks](results/residual_batch/completed-backlog.json), and [clause proof](results/residual_batch/completed-clauses.json). Earlier batches and backlog snapshots are historical records, not open work.
 
@@ -8,11 +8,11 @@ Only exact residual ignored text on partial cards appears below. Fully matched c
 
 ## Current findings
 
-The full offline census covers 34,129 entries: **12,054 full**, 231 with recorded simplifications, 21,844 partial and zero parser errors. This batch improves **137 cards**, including **85 newly full matches**, with zero status regressions. See [every changed card](results/residual_batch/coverage-delta.json) and the [complete census](results/residual_batch/after/README.md).
+The full offline census (2026-10-29, [results/database_coverage_2026-10-29](results/database_coverage_2026-10-29/README.md)) covers 34,130 entries: **13,087 full** (38.34%), 258 with recorded simplifications, 20,785 partial and zero parser errors. Unclassified wording still affects 9,874 cards (6,544 would be full if only that wording were matched). The card database was rebuilt from Forge's card scripts because Scryfall was unreachable, so totals differ slightly from the 2026-10-28 census (12,054 full of 34,129).
 
-Existing foundations now include filtered mass moves, graveyard exile, Miracle, Adapt and next-Adapt exceptions, other-land entry predicates, ownership and cast-payment trigger checks, Aura-host end steps, graveyard access restrictions, creature entry/death trigger suppression, mana/nonmana activation restrictions, life and counter locks, layered keyword removal, broader static anthems, and opponents entering tapped. The remaining scopes extend these foundations.
+Existing foundations now include filtered mass moves, graveyard exile, Miracle, Adapt and next-Adapt exceptions, other-land entry predicates, ownership and cast-payment trigger checks, Aura-host end steps, graveyard access restrictions, creature entry/death trigger suppression, mana/nonmana activation restrictions, life and counter locks, layered keyword removal, broader static anthems, opponents entering tapped, and Overload. The remaining scopes extend these foundations.
 
-The batch adds 73 behavior tests, retains the previous 67, and records a four-game functional comparison with both pilot assignments. See [validation evidence](results/residual_batch/validation.json). Parser coverage remains separate from complete rules correctness; no pilot-strength claim is made.
+Parser coverage remains separate from complete rules correctness; no pilot-strength claim is made. Earlier batches and their reports are historical records, not open work.
 
 ## Measured remaining broad families
 
@@ -20,45 +20,39 @@ These overlapping counts are upper bounds, not disjoint gain forecasts or wholly
 
 | Family | Partial cards affected | Potential new full matches |
 | --- | ---: | ---: |
-| triggered (whenever/when) | 3,364 | 2,072 |
-| counters | 2,848 | 1,934 |
-| activated abilities | 2,566 | 1,931 |
-| graveyard | 2,680 | 1,500 |
-| tokens | 2,170 | 1,217 |
-| sacrifice | 1,921 | 1,143 |
-| exile | 2,070 | 1,041 |
-| auras/enchant | 1,042 | 865 |
-| can't restrictions | 1,283 | 716 |
-| X costs | 1,203 | 685 |
-| equipment | 560 | 412 |
-| copy effects | 669 | 342 |
-| library search | 469 | 244 |
-| cost reduction | 368 | 188 |
-| +1/+1 static (anthems) | 243 | 133 |
+| activated abilities | 2,508 | 1,934 |
+| triggered (whenever/when) | 3,052 | 1,911 |
+| counters | 2,741 | 1,905 |
+| graveyard | 2,638 | 1,508 |
+| tokens | 2,126 | 1,241 |
+| sacrifice | 1,805 | 1,104 |
+| exile | 2,028 | 1,043 |
+| auras/enchant | 945 | 814 |
+| X costs | 1,193 | 696 |
+| can't restrictions | 1,183 | 681 |
+| equipment | 557 | 421 |
+| copy effects | 668 | 355 |
+| library search | 467 | 250 |
+| cost reduction | 364 | 192 |
+| +1/+1 static (anthems) | 216 | 122 |
 
 ## Verified residual scopes
 
-The order below is an engineering suggestion. The [machine-readable backlog](results/residual_batch/backlog.json) contains the same five scopes and seven exact clauses, re-parsed against the latest database.
+The order below is an engineering suggestion. The [machine-readable backlog](results/residual_batch/backlog.json) from the previous batch lists five scopes; Overload (Cyclonic Rift) has since been resolved, leaving the four below, re-checked against the 2026-10-29 census.
 
-### 1. Overload target rewriting and alternative costs
-
-**Cyclonic Rift** (partial):
-
-> Overload {6}{U}
-
-### 2. Scoped keyword removal and gain prohibitions
+### 1. Scoped keyword removal and gain prohibitions
 
 **Archetype of Imagination** (partial):
 
 > Creatures your opponents control lose flying and can't have or gain flying.
 
-### 3. Shared creature-type counts for dynamic anthems
+### 2. Shared creature-type counts for dynamic anthems
 
 **Coat of Arms** (partial):
 
 > Each creature gets +1/+1 for each other creature on the battlefield that shares at least one creature type with it.
 
-### 4. Color choice bound to team protection
+### 3. Color choice bound to team protection
 
 **Brave the Elements** (partial):
 
@@ -68,7 +62,7 @@ The order below is an engineering suggestion. The [machine-readable backlog](res
 
 > White creatures you control gain protection from the chosen color until end of turn.
 
-### 5. Linked temporary exile and owner compensation tokens
+### 4. Linked temporary exile and owner compensation tokens
 
 **Skyclave Apparition** (partial):
 
