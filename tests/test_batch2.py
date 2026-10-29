@@ -131,6 +131,20 @@ class Batch2(Batch1):
         self.assertTrue(can_block(black, self.put(raider)))
         self.assertFalse(can_block(blocker, self.put(shade)))
         self.assertTrue(can_block(black, self.put(shade)))
+        flyer = self.put(card("Test Scout", "{G}", "Creature — Elf", "~ can't be blocked except by creatures with flying.", 1, 1))
+        self.assertFalse(can_block(blocker, flyer))
+
+    def test_color_anthem(self):
+        self.put(card("Test Druid", "{1}{G}", "Creature — Druid", "Other green creatures you control get +1/+1.", 1, 1))
+        green = self.put(card("Test Elk", "{G}", "Creature — Elk", "", 2, 2))
+        blue = self.put(card("Test Fish", "{U}", "Creature — Fish", "", 2, 2))
+        self.assertEqual((green.power, blue.power), (3, 2))
+
+    def test_no_lifegain(self):
+        self.put(card("Test Mute", "{2}", "Creature — Wizard", "Your opponents can't gain life.", 1, 1))
+        self.g.change_life(self.b, 3, "test")
+        self.g.change_life(self.a, 3, "test")
+        self.assertEqual((self.a.life, self.b.life), (23, 20))
 
 
 if __name__ == "__main__":

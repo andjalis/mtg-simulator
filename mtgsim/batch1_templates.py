@@ -102,7 +102,7 @@ def parse_line(line, st):
     m = re.fullmatch(r"~ can't be blocked except by (?:(white|blue|black|red|green) creatures|creatures with (flying)(?: or (reach))?)\.", line)
     if m:
         rules = st.extra.setdefault('advanced_rules', {})
-        only = ("color:" + _COLOR[m[1]],) if m[1] else tuple(w for w in m[2:] if w)
+        only = ("color:" + _COLOR[m[1]],) if m[1] else tuple(w for w in m.groups()[1:] if w)
         rules['evade_except'] = rules.get('evade_except', ()) + (only,)
         return True
     m = re.fullmatch(r"~ can't block creatures with power (\d+) or greater\.", line)
@@ -239,6 +239,13 @@ def parse_line(line, st):
             return True
     if line == "Activated abilities of artifacts can't be activated.":
         st.extra.setdefault('advanced_rules', {})['artifact_activation_lock'] = True
+        return True
+    m = re.fullmatch(r"(Players|Your opponents|You) can't gain life\.", line)
+    if m:
+        st.extra.setdefault('advanced_rules', {})['no_lifegain'] = {"Players": "all", "Your opponents": "opp", "You": "you"}[m[1]]
+        return True
+    if line == "Creature spells you control can't be countered.":
+        st.extra.setdefault('advanced_rules', {})['creatures_uncounterable'] = True
         return True
     if line == "Skip your draw step.":
         st.extra.setdefault('advanced_rules', {})['skip_draw'] = True
@@ -596,6 +603,15 @@ def block_restricted(blocker, attacker):
             return True
     limit = blocker.card.advanced_rules.get('cant_block_power')
     return bool(limit and attacker.power >= limit)
+
+
+def lifegain_blocked(game, player):
+    from .residual_templates import sources
+    for x in sources(game, 'no_lifegain'):
+        scope = x.card.advanced_rules['no_lifegain']
+        if scope == 'all' or (scope == 'you') == (x.controller is player):
+            return True
+    return False
 
 
 def skips_draw(game, player):

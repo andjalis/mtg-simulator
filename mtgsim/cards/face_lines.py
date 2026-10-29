@@ -624,6 +624,11 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["discount_if"] = extra.get("discount_if", ()) + ((m[2], int(m[1])),)
             return None
+        m = re.fullmatch(r"(Other )?(white|blue|black|red|green|artifact) creatures you control get \+(\d+)/\+(\d+)\.", line)
+        if m:
+            tag = "type:Artifact" if m[2] == "artifact" else "color:" + {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}[m[2]]
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((tag, int(m[3]), int(m[4]), bool(m[1])),)
+            return None
         m = re.fullmatch(r"(Other )?(?!Enchanted)([A-Z][\w-]+) creatures you control get \+(\d+)/\+(\d+)\.", line)
         if m:
             extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
