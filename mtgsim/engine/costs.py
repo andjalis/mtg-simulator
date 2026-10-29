@@ -17,6 +17,11 @@ if TYPE_CHECKING:
 FACE_DOWN = ("disguise", "morph", "megamorph")   # cast face down for {3} as a 2/2, turned face up for this cost
 
 
+def _mutate_hosts(game, p, card):
+    from ..batch2_templates import mutate_hosts
+    return mutate_hosts(game, p, card)
+
+
 class CostsMixin:
     def mana_sources(self, p: Player, exclude=None, spell=None, *, reserved_counters=()):
         """p's untapped mana sources. ``spell`` decides what restricted mana (Cavern of Souls) can
@@ -159,6 +164,8 @@ class CostsMixin:
             return max(0, getattr(who, spec[2], 0)) if isinstance(who, Permanent) else 0
         if kind == "greatest":
             return max((getattr(x, spec[1]) for x in p.creatures), default=0)
+        if kind == "mutated":
+            return getattr(src, "mutations", 0) if src is not None else 0
         if kind == "counters":
             return src.counters.get(spec[1], 0) if src is not None else 0
         if kind == "gy":
@@ -438,6 +445,9 @@ class CostsMixin:
                 from ..batch1_templates import bestow_face
                 v = bestow_face(card, alt.cost)
                 v.name = f"{card.name} (bestow)"
+            elif kind == "mutate":
+                v = dataclasses.replace(card, name=f"{card.name} (mutate)", mana_cost=alt.cost,
+                                        advanced_rules=dict(card.advanced_rules, mutating=True, mutate_base=card))
             elif kind in ("channel", "gy_ability"):
                 v = CardDef(name=f"{card.name} ({kind})", mana_cost=alt.cost, cmc=card.cmc,
                             types=frozenset({"Instant"}), spell_effects=list(alt.effects), is_ability=True)
@@ -519,7 +529,7 @@ class CostsMixin:
             if c.adventure:
                 out.append(self._variant(c, "adventure"))
             for a in c.alt_costs:
-                if a.kind in ("alt", "kicker", "bestow") or (a.kind == "spectacle" and opp.lost_life_turn) or \
+                if (a.kind == "mutate" and _mutate_hosts(self, p, c)) or a.kind in ("alt", "kicker", "bestow") or (a.kind == "spectacle" and opp.lost_life_turn) or \
                         (a.kind in ("blitz", "dash") and "hand" in a.zone):
                     out.append(self._variant(c, a.kind, a))
         out += [self._variant(x.front, "prepared") for x in p.battlefield if x.prepared and x.card.back is not None]

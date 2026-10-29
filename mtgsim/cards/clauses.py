@@ -155,6 +155,9 @@ _SUBS = [
 
 
 _TRIGGERS = [
+    (r"Whenever ~ mutates, (.+)", ("mutates",)),
+    (r"When ~ enters or the creature it haunts dies, (.+)", ("etb", "haunt_dies")),
+    (r"When the creature ~ haunts dies, (.+)", ("haunt_dies",)),
     (r"When ~ becomes level (\d+), (.+)", ("class_level",)),
     (r"Whenever you proliferate, (.+)", ("proliferate",)),
     (r"Whenever an opponent searches their library, (.+)", ("opp_searches",)),
@@ -318,6 +321,8 @@ def _xq(text: str):
     m = re.fullmatch(r"the greatest (power|toughness) among creatures you control", t, re.I)
     if m:
         return ("greatest", m[1])
+    if tl == "the number of times ~ has mutated":
+        return ("mutated",)
     m = re.fullmatch(r"the number of ([\w+/ -]+?) counters on ~", t, re.I)
     if m:
         return ("counters", m[1])
