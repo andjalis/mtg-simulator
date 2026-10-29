@@ -503,6 +503,25 @@ class Batch1(unittest.TestCase):
         self.g.deal_damage(bear, 1, by=self.b)
         self.assertEqual(self.a.life, before + 3)
 
+    def test_kicked_creature_enters_with_counters(self):
+        drake = card("Test Drake", "{1}{U}", "Creature — Drake",
+                     "Kicker {2}\nFlying\nIf Test Drake was kicked, it enters with two +1/+1 counters on it.", 1, 1)
+        for _ in range(4):
+            self.put(ISLAND)
+        self.a.hand.append(drake)
+        kicked = next(c for c in self.g.spell_options(self.a) if self.g._origin(c)[1] == "kicker")
+        self.assertTrue(self.g.cast(self.a, kicked))
+        self.g.settle()
+        perm = next(x for x in self.a.battlefield if x.card.name == "Test Drake")
+        self.assertEqual(perm.p1, 2)
+
+    def test_aura_adds_extra_mana(self):
+        forest = self.put(card("Test Forest", "", "Basic Land — Forest", "{T}: Add {G}."))
+        grow = self.put(card("Test Growth", "{G}", "Enchantment — Aura", "Enchant land\nWhenever enchanted land is tapped for mana, its controller adds an additional {G}."))
+        attach(self.g, grow, forest)
+        from mtgsim.engine.mana import _amount
+        self.assertEqual(_amount(forest), 2)
+
 
 if __name__ == '__main__':
     unittest.main()

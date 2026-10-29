@@ -370,6 +370,10 @@ def _parse_face(data: dict) -> CardDef:
             if m and dig:
                 kicked_effects[kicked_effects.index(dig[0])] = dataclasses.replace(dig[0], amount2=_num(m[1]))
                 continue
+            m = re.fullmatch(r"it enters with (a|an|one|two|three|four|five) \+1/\+1 counters? on it\.", k)
+            if m:
+                extra.setdefault("advanced_rules", {})["kick_counters"] = _num(m[1])
+                continue
             effs, bad = _parse_effects(k)
             kicked_effects += effs
             unsupported += [f"if kicked: {b}" for b in bad]

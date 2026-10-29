@@ -19,7 +19,10 @@ def _amount(s) -> int:
     """How much mana s makes right now (Tablet of Discovery's restricted {R}{R} is 2, its {R} is 1)."""
     now = getattr(s, "amount_now", None)
     base = getattr(s.card, "mana_amount", 1) if now is None else now
-    return base * 2 if s.card.is_land and _doubled(s) else base
+    if s.card.is_land:
+        base += sum(a.card.advanced_rules.get('aura_mana', 0) for a in s.auras if not a.abilities_suppressed)
+        return base * 2 if _doubled(s) else base
+    return base
 
 
 def _doubled(land) -> bool:

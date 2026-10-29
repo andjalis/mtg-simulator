@@ -118,6 +118,8 @@ def _face_special_lines(st, line):
             extra["_gy_draw"] = _num(m[1])
             line = line.replace(m[0], "").strip()
         line = re.sub(r"\s*If ~ was kicked, .+?\.", "", line).strip()
+        if not line:
+            return None
         lv = re.fullmatch(r"((?:\{[WUBRGC0-9/]+\})+): Level (\d+)", line)
         if lv:
             n = int(lv[2])

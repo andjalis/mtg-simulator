@@ -144,6 +144,11 @@ def parse_line(line, st):
     if m:
         st.extra.setdefault('advanced_rules', {})['attack_tax'] = int(m[1])
         return True
+    m = re.fullmatch(r"Whenever enchanted land is tapped for mana, its controller adds an additional (one mana of any color|two mana in any combination of colors|\{[WUBRG]\}(?:\{[WUBRG]\})?)\.", line)
+    if m:
+        st.extra.setdefault('advanced_rules', {})['aura_mana'] = {'one': 1, 'two': 2}.get(m[1][:3], m[1].count('{'))
+        st.approximations.append("extra mana from an enchanted land is the land's own colour")
+        return True
     m = re.fullmatch(r"(Each player|You) can't cast more than one spell each turn\.", line)
     if m:
         st.extra.setdefault('advanced_rules', {})['one_spell_each' if m[1] == 'Each player' else 'one_spell_you'] = True

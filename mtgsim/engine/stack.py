@@ -304,6 +304,8 @@ class StackMixin:
             if kind == "warp":
                 perm.warped = True
             perm.was_cast = True
+            if kind == "kicker" and base.advanced_rules.get("kick_counters"):
+                perm.counters["+1/+1"] = perm.p1 + base.advanced_rules["kick_counters"]
             perm.bargained = getattr(item, "bargained", False)
             perm.gifted = getattr(item, "gifted", False)
             if perm.gifted:
