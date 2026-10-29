@@ -1,7 +1,8 @@
 """Library and hand effects of batch2_templates."""
+from ..policy import perm_value
 from ..state import Permanent, Player
 from . import kind
-from ... import counter_mechanics
+from ... import copies, counter_mechanics
 
 
 @kind("tuck_perm")
@@ -119,3 +120,19 @@ def group_remove(game, p, eff, item, cause, **_):
             game.deal_damage(perm, eff.amount, by=p, cause=cause, source=src)
         else:
             game.leave_battlefield(perm, "exile" if op == "exile" else "hand")
+
+
+@kind("conspire")
+def conspire(game, p, item, **_):
+    """Conspire: tap two untapped creatures that share a colour with the spell, and copy it."""
+    spell = item.context if item is not None else None
+    if spell is None or spell not in game.stack or spell.card is None:
+        return
+    colors = spell.card.colors
+    pool = sorted((c for c in p.creatures if not c.tapped and colors & c.card.colors), key=perm_value)
+    if len(pool) < 2 or not any(e.kind != "conspire" for e in spell.effects):
+        return
+    for c in pool[:2]:
+        c.tapped = True
+    game.log(f"conspires {spell.card.name}", p)
+    copies.copy_spell(game, p, spell)

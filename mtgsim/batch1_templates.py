@@ -257,6 +257,10 @@ def parse_line(line, st):
     if m:
         st.extra.setdefault('advanced_rules', {})['damage_immune'] = ("combat" if m[1] else "creatures" if m[2] else "all")
         return True
+    if line == "Conspire":
+        from .cards import Effect, Trigger
+        st.triggers.append(Trigger('cast_self', [Effect('conspire')]))
+        return True
     if line == "Skip your draw step.":
         st.extra.setdefault('advanced_rules', {})['skip_draw'] = True
         return True
@@ -347,6 +351,8 @@ def effect_value(game, player, effect, target):
                     hit = 0
                 value += -hit if pl is player else hit
         return value
+    if kind == 'conspire':
+        return 0.5
     if kind == 'tuck_perm':
         return perm_value(target) if getattr(target, 'controller', None) is game.opponent(player) else -1
     if kind == 'lose_half':

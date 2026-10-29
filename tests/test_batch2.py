@@ -208,6 +208,18 @@ class Batch2(Batch1):
         self.assertNotIn(one, self.b.battlefield)
         self.assertNotIn(two, self.b.battlefield)
 
+    def test_conspire_copies_spell(self):
+        from tests.test_templates import MOUNTAIN
+        bolt = card("Test Burn", "{R}", "Instant", "~ deals 2 damage to any target.\nConspire", None, None)
+        for _ in range(2):
+            self.put(card("Test Red Cub", "{R}", "Creature — Goblin", "", 1, 1))
+        self.put(MOUNTAIN)
+        self.a.hand.append(bolt)
+        self.b.life = 20
+        self.g.cast(self.a, bolt)
+        self.g.settle()
+        self.assertEqual(self.b.life, 16)
+
 
 if __name__ == "__main__":
     unittest.main()
