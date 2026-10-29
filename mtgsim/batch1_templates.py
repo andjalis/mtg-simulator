@@ -153,6 +153,16 @@ def parse_line(line, st):
         return True
     if _level_up_line(line, st):
         return True
+    if re.fullmatch(r"Partner(?: with [^.]+|—[^.]+)?", line):
+        return True                         # deck construction only: nothing happens in a game
+    m = re.fullmatch(r"(Multikicker|Squad) ((?:\{[^ }]+\})+)(?: \(.*\))?", line)
+    if m:
+        from .cards import parse_mana_cost
+        st.extra.setdefault('advanced_rules', {})['multipay'] = (m[1].lower(), parse_mana_cost(m[2]))
+        return True
+    if re.fullmatch(r"(?:~|This creature|It) enters with an? \+1/\+1 counter on (?:it|him|her) for each time (?:it|he|she|~) was kicked\.", line):
+        st.extra.setdefault('advanced_rules', {})['kick_counters_each'] = True
+        return True
     m = re.fullmatch(r"Cumulative upkeep(?: ((?:\{[^ }/]+\})+)|—Pay (\d+) life)\.?(?: \(.*\))?", line)
     if m:
         from .cards import parse_mana_cost

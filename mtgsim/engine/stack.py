@@ -306,6 +306,14 @@ class StackMixin:
             if kind == "warp":
                 perm.warped = True
             perm.was_cast = True
+            perm.kicks = getattr(item, "kicks", 0)
+            if perm.kicks and base.advanced_rules.get("kick_counters_each"):
+                perm.counters["+1/+1"] = perm.p1 + perm.kicks
+            if perm.kicks and (base.advanced_rules.get("multipay") or ("",))[0] == "squad":
+                token = dataclasses.replace(base, name=f"{base.name} token", is_token=True, alt_costs=[],
+                                            advanced_rules={k: v for k, v in base.advanced_rules.items() if k != "multipay"})
+                for _ in range(perm.kicks):
+                    self.queue_trigger(p, [Effect("token_copy", data={"card": token})], perm, f"{base.name} squad")
             if kind == "kicker" and base.advanced_rules.get("kick_counters"):
                 perm.counters["+1/+1"] = perm.p1 + base.advanced_rules["kick_counters"]
             perm.bargained = getattr(item, "bargained", False)

@@ -134,6 +134,16 @@ class PlayMixin:
                 x += 1
             if x:
                 payment += self.pay(p, {"generic": x}, spell=card, exclude_many=plan.exclude)
+        kicks = 0
+        multipay = card.advanced_rules.get("multipay")
+        if multipay is not None and kind == "":
+            unit = multipay[1]
+            def times(n):
+                return {k: v * n for k, v in unit.items()}
+            while kicks < 10 and payable([s for s in self.mana_sources(p, spell=card) if s not in plan.exclude], times(kicks + 1)):
+                kicks += 1
+            if kicks:
+                payment += self.pay(p, times(kicks), spell=card, exclude_many=plan.exclude)
         if alt is not None and alt.life:
             self.change_life(p, -alt.life, f"{card.name}: alternative cost")
         if card.extra_life_cost:
@@ -198,6 +208,7 @@ class PlayMixin:
                 source.grave_cast_turn = self.turn
         item.snow_spent = sum(1 for s in payment if s.card.snow)
         item.x = x
+        item.kicks = kicks
         item.teamwork = teamwork_paid
         item.evidence = self.collect_evidence(p, card)
         item.bargained = bool(card.bargain) and self.pay_bargain(p, card)

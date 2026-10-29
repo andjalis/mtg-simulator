@@ -168,6 +168,7 @@ class Permanent:
         self.regeneration_blocked = False
         self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
         self.auras: list["Permanent"] = []   # Auras on this permanent (they sit on their caster's battlefield)
+        self.kicks = 0                                 # times a multikicker / squad cost was paid
         self.curse_target = None                       # a Curse: the player it enchants
         self.aura_host: "Permanent | None" = None      # the permanent this Aura enchants
         self.attached_to: "Permanent | None" = None    # Equipment: the creature it is attached to

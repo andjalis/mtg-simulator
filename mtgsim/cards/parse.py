@@ -120,6 +120,14 @@ def _parse_effects(text: str, opts: bool = False):
                 effects += [Effect("pay_gate", data={"gate": ("may", "")})] + new   # always taken
                 gated = True
                 continue
+        mk = re.fullmatch(r"(.+?) for each time (?:it|~|this spell) was kicked", s, re.I)
+        if mk:
+            new, bad = _parse_effects(mk[1] + ".")
+            if new and not bad:
+                for e in new:
+                    e.data["per_kick"] = True
+                effects += new
+                continue
         mx = re.fullmatch(r"(.+?),? where X is (.+)", s, re.I)
         if mx and re.search(r"\bX\b", mx[1]) and _xq(mx[2]):
             spec = _xq(mx[2])

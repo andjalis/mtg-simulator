@@ -31,6 +31,12 @@ class ResolveMixin:
         if eff.data.get("per"):    # "for each X you control"
             src = item.source if item is not None else None
             eff = dataclasses.replace(eff, amount=eff.amount * counting.count(self, p, eff.data["per"], src))
+        if eff.data.get("per_kick"):    # "for each time it was kicked" (multikicker)
+            src = item.source if item is not None else None
+            kicks = getattr(item, "kicks", 0) or getattr(src, "kicks", 0)
+            if not kicks:
+                return
+            eff = dataclasses.replace(eff, amount=eff.amount * kicks)
         if eff.data.get("xq"):     # ", where X is the number of ..."
             n = self.x_quantity(p, eff.data["xq"], item, prev)
             if eff.data.get("xq_size"):
