@@ -80,6 +80,7 @@ class PlayMixin:
                 card.origin = (actual, kind, alt)
             base = actual
         effects = [] if card.is_permanent else list(card.spell_effects)
+        provided_targets = len(targets) if targets is not None else 0
         targets = list(targets or [])
         targets += [None] * (len(effects) - len(targets))
         if card.tapped_discount and not card.is_permanent:
@@ -87,7 +88,8 @@ class PlayMixin:
             idx = next((i for i, e in enumerate(effects) if e.target in TARGETED), None)
             if tapped and idx is not None and targets[idx] not in tapped:
                 targets[idx] = max(tapped, key=perm_value)
-        missing = [i for i, e in enumerate(effects) if e.target in TARGETED and targets[i] is None]
+        missing = [i for i, e in enumerate(effects) if e.target in TARGETED and targets[i] is None
+                   and (i >= provided_targets or not e.data.get("optional"))]
         if missing:   # targets the AI didn't pick (effects it doesn't know about)
             filled = self.auto_targets(p, [effects[i] for i in missing])
             for i, t in zip(missing, filled):
@@ -173,6 +175,7 @@ class PlayMixin:
             base.pending_move = None
             base.generation += 1
             base.zone = item
+        item.cast_from_graveyard = zone is p.graveyard and kind not in ("gy_ability", "channel")
         item.cast_from_hand = self._zone(p, kind) is p.hand and kind not in ("free", "channel", "gy_ability", "prepared")
         item.snow_spent = sum(1 for s in payment if s.card.snow)
         item.x = x

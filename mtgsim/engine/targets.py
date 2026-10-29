@@ -31,6 +31,8 @@ class TargetsMixin:
             return perm.card.cmc <= limit
         if f == "plains":
             return perm.card.cmc <= sum(1 for x in by.battlefield if x.card.name.endswith("Plains"))
+        if f.startswith("subtypes:"):
+            return any(t in perm.card.subtypes or perm.card.changeling for t in f[9:].split("|"))
         if f == "attacking":
             return perm in self.attackers
         if f == "tapped":
@@ -65,6 +67,8 @@ class TargetsMixin:
         t = eff.target
         if t == "creature":
             return creatures
+        if t == "creature_vehicle":
+            return [x for x in everything if x.is_creature or "Vehicle" in x.card.subtypes]
         if t == "creature_pw":
             return [x for x in everything if (x.is_creature or x.is_planeswalker) and self.passes_filter(eff, x, p)]
         if t == "creature_mine":
@@ -94,6 +98,8 @@ class TargetsMixin:
 
     def legal_target(self, p: Player, eff: Effect, tgt) -> bool:
         """Use the same type, controller, filter and presence checks as enumeration."""
+        if tgt is None and eff.data.get("optional"):
+            return True
         return any(tgt is candidate for candidate in self.legal_targets(p, eff))
 
     def can_counter(self, eff: Effect, item: StackItem, by: Player | None = None) -> bool:
@@ -134,6 +140,9 @@ class TargetsMixin:
                 out.append(None)
                 continue
             tgt = self.hook(p, "choose_target")(self, p, e)
+            if tgt is None and e.data.get("optional"):
+                out.append(None)
+                continue
             if tgt is None or not self.legal_target(p, e, tgt):
                 tgt = default_choose_target(self, p, e)
             if tgt is not None and e.data.get("distinct") and any(

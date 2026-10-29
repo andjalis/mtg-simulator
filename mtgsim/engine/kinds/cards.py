@@ -9,8 +9,8 @@ from . import NO_SBA, kind
 
 
 @kind("draw")
-def draw(game, p, eff, opp, **_):
-    who = opp if eff.target == "each_opponent" else p
+def draw(game, p, eff, target, opp, **_):
+    who = target if eff.target == "player" and isinstance(target, Player) else opp if eff.target == "each_opponent" else p
     if eff.data.get("control_type") and not any(eff.data["control_type"] in x.card.types for x in p.battlefield):
         return
     n = eff.amount

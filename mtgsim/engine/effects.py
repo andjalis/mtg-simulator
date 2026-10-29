@@ -1,7 +1,7 @@
 """Game methods for game events that effects and rules cause: damage, destroy, sacrifice, dying, state-based actions."""
 from __future__ import annotations
 
-from .. import auras, r3b_spells
+from .. import auras, r3b_spells, r4_spells
 from ..cards import AltCost, CardDef, Effect
 from .. import rules_events
 from .mana import find_payment
@@ -181,6 +181,7 @@ class EffectsMixin:
             auras.detach(a)
             self.leave_battlefield(a, "graveyard")
         self.fire(controller, "leaves", perm)
+        r4_spells.return_hand_exiles(self, perm)
         returning, perm.exiled_cards = perm.exiled_cards, []
         for card, card_owner in returning:
             if card in card_owner.exile:

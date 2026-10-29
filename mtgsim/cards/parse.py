@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import cost_mana, graveyard, kicker, milling, modal, returns, r3_spells, r3b_spells
+from .. import cost_mana, graveyard, kicker, milling, modal, returns, r3_spells, r3b_spells, r4_spells
 from .. import auras as _auras, copies as _copies, counters_r3 as _counters_r3, counting as _counting
 from .model import (
     Activated, AltCost, BASIC_MANA, COLORS, CardDef, Effect, KEYWORDS, NO_MATCH, NUMBERS, Trigger, _num, add_mana,
@@ -13,8 +13,11 @@ from .model import (
 from .patterns import _EFFECT_PATTERNS, _SUBS, _TRIGGERS, _if_cond, _opt_rider, _parse_mana_ability, _xq
 
 
-def _parse_effects(text: str, opts: bool = False):
+def _parse_effects(text: str, opts: bool = False, origin_riders: bool = False):
     """Parse a run of sentences into effects. Returns (effects, unmatched_sentences)."""
+    sequence = r4_spells.parse_sequence(text)
+    if sequence is not None:
+        return sequence, []
     effects, unmatched = [], []
     for rx, rep in _SUBS:
         text = rx.sub(rep, text)
@@ -30,6 +33,16 @@ def _parse_effects(text: str, opts: bool = False):
         if re.fullmatch(r"(?:a creature|creatures) dealt damage this way can't be regenerated this turn", s, re.I) \
                 and effects and effects[-1].kind == "damage":
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
+            continue
+        if origin_riders:
+            origin = r4_spells.origin_rider(s, effects)
+            if origin is not None:
+                if not origin:
+                    unmatched.append(sentence.strip())
+                continue
+        early = r4_spells.parse_early(s)
+        if early is not None:
+            effects += early
             continue
         reward = r3b_spells.parse_rider(s, effects)
         if reward is not None:
@@ -223,7 +236,7 @@ def _parse_face(data: dict) -> CardDef:
     text = text.replace(name, "~")
     if "," in name and "Legendary" in type_line:
         text = re.sub(rf"\b{re.escape(name.split(',')[0])}\b", "~", text)  # "Iymrith" for "Iymrith, Desert Doom"
-    elif "Legendary" in type_line and " " in name and " the " not in name and len(name.split()[0]) >= 4 and \
+    elif "Legendary" in type_line and " " in name and len(name.split()[0]) >= 4 and \
             name.split()[0] not in ("The", "Lord", "Lady", "King", "Queen", "Sir") and \
             re.search(rf"\b{re.escape(name.split()[0])}\b", text):
         text = re.sub(rf"\b{re.escape(name.split()[0])}\b", "~", text)  # "Ajani" for "Ajani Resolute"
@@ -1199,6 +1212,11 @@ def _face_ability_lines(st, line):
             unsupported += bad
             return None
         if not types.isdisjoint({"Instant", "Sorcery"}):
+            origin = r4_spells.origin_rider(line.rstrip("."), spell)
+            if origin is not None:
+                if not origin:
+                    unsupported.append(line)
+                return None
             revolt = r3_spells.parse_revolt(line.rstrip("."), spell)
             if revolt is not None:
                 if not revolt:
@@ -1211,7 +1229,7 @@ def _face_ability_lines(st, line):
                 approximations += head[1]
                 mode_sink = modes
                 return None
-            effs, bad = _parse_effects(line, opts=bool(extra.get("bargain") or extra.get("gift")))
+            effs, bad = _parse_effects(line, opts=bool(extra.get("bargain") or extra.get("gift")), origin_riders=True)
             spell += effs
             unsupported += bad
             return None
@@ -1339,7 +1357,7 @@ def _parse_trigger(line: str):
 
 
 def _parse_trigger_line(line: str):
-    special = r3b_spells.parse_trigger(line)
+    special = r4_spells.parse_trigger(line) or r3b_spells.parse_trigger(line)
     if special is not None:
         return special
     for pat, events in _TRIGGERS:

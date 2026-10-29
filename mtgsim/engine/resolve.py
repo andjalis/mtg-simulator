@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from .. import auras, cast_triggers, copies, counting, removal, search, xspells, r3_spells, r3b_spells
+from .. import auras, cast_triggers, copies, counting, removal, search, xspells, r3_spells, r3b_spells, r4_spells
 from ..cards import Effect
 from .state import Permanent, Player, StackItem
 from .kinds import HANDLERS, NO_SBA
@@ -15,7 +15,7 @@ class ResolveMixin:
         if eff.target == "self" and item is not None:
             target = item.source
         if eff.target == "that_player" and item is not None:
-            target = item.context
+            target = prev if isinstance(prev, Player) else item.context
         if eff.target == "trigger_subject" and item is not None:
             target = item.context if isinstance(item.context, Permanent) and item.context in item.context.controller.battlefield \
                 else None
@@ -64,6 +64,8 @@ class ResolveMixin:
             search.resolve(self, p, eff, target, item)
         elif k in auras.KINDS:
             auras.resolve(self, p, eff, target, item)
+        elif k in r4_spells.KINDS:
+            r4_spells.resolve(self, p, eff, target, item)
         elif k in r3b_spells.KINDS:
             with r3b_spells.graveyard_event(self, k in r3b_spells.BATCH_KINDS):
                 r3b_spells.resolve(self, p, eff, target, item)
