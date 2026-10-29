@@ -135,7 +135,8 @@ def anthem_bonus(permanent):
 
 
 def activation_blocked(game, perm, *, mana=False):
-    return bool(perm.is_creature and sources(game, 'creature_activation_lock') or not mana and
+    return bool(perm.is_creature and sources(game, 'creature_activation_lock') or
+                perm.card.is_artifact and sources(game, 'artifact_activation_lock') or not mana and
                 (perm.is_creature or perm.card.is_artifact) and sources(game, 'nonmana_activation_lock'))
 
 

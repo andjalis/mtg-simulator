@@ -163,6 +163,10 @@ class AbilitiesMixin:
                     if b not in taken and can_block(b, a):
                         blocks.setdefault(a, []).append(b)
                         taken.add(b)
+        for b, a in list(getattr(self, "provoked", {}).items()):
+            if b in me.creatures and a in attackers and b not in taken and can_block(b, a):
+                blocks.setdefault(a, []).append(b)
+                taken.add(b)
         for b in me.creatures:
             if b.has("must_block_now") and b not in taken:
                 able = [a for a in attackers if can_block(b, a)]

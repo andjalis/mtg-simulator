@@ -278,7 +278,8 @@ class TurnsMixin:
         self.fire(p, "draw_step")
         for pl in self.players:
             self.fire(pl, "each_draw_step", context=p)
-        if self.turn > 1:
+        from ..batch1_templates import skips_draw
+        if self.turn > 1 and not skips_draw(self, p):
             self.draw(p)
             self.settle()
             if self.over:
@@ -382,6 +383,8 @@ class TurnsMixin:
 
     def begin_upkeep(self, p: Player):
         """Queue one-shot delayed draws before any upkeep ability can create new ones."""
+        from ..batch1_templates import on_upkeep
+        on_upkeep(self, p)
         waiting, self.delayed_upkeep = self.delayed_upkeep, []
         for controller, amount, source, name, scope in waiting:
             if scope == "you" and p is not controller:

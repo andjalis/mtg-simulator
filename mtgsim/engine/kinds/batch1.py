@@ -1,6 +1,6 @@
 """Edicts on a chosen player, life from a destroyed creature's stats, peeking, and the monarch."""
 from ..policy import perm_value
-from ..state import Permanent
+from ..state import Permanent, Player, can_block
 from . import kind
 from ... import counter_mechanics
 
@@ -26,8 +26,70 @@ def edict_each(game, p, opp, **_):
 @kind("gain_prev_stat")
 def gain_prev_stat(game, p, eff, prev, cause, **_):
     if isinstance(prev, Permanent):
-        value = prev.power if eff.data["stat"] == "power" else prev.toughness
+        value = {"power": lambda: prev.power, "toughness": lambda: prev.toughness,
+                 "mana value": lambda: prev.card.cmc}[eff.data["stat"]]()
         game.change_life(p, max(0, value), cause)
+
+
+@kind("powerstone")
+def powerstone(game, p, eff, **_):
+    from ...batch1_templates import powerstone as make
+    for _ in range(eff.amount):
+        game.enter_battlefield(p, make(), tapped=bool(eff.data.get("tapped")))
+    game.log(f"creates {eff.amount} Powerstone", p)
+
+
+@kind("provoke")
+def provoke(game, p, item, opp, **_):
+    """Untap the defender's creature that can block the source and is worth least; it must block if able."""
+    src = item.source if item is not None else None
+    if not isinstance(src, Permanent):
+        return
+    able = [c for c in opp.creatures if can_block(c, src)]
+    if not able:
+        able = [c for c in opp.creatures if c.tapped and not c.has("cant_block_now")]
+    if able:
+        pick = min(able, key=perm_value)
+        pick.tapped = False
+        game.__dict__.setdefault("provoked", {})[pick] = src
+        game.log(f"{pick.card.name} must block {src.card.name}", p)
+
+
+@kind("sac_land_each")
+def sac_land_each(game, p, opp, **_):
+    for pl in (p, opp):
+        lands = [x for x in pl.battlefield if x.card.is_land]
+        if lands:
+            game.sacrifice(min(lands, key=perm_value))
+
+
+@kind("discard_random_that")
+def discard_random_that(game, p, target, **_):
+    if isinstance(target, Player) and target.hand:
+        card = game.rng.choice(list(target.hand))
+        game.discard_card(target, card)
+        game.log(f"discards {card.name} at random", target)
+
+
+@kind("damage_group")
+def damage_group(game, p, eff, opp, cause, item, **_):
+    src = item.source if item is not None else None
+    victims = game.attackers if eff.data["group"] == "attacking" else opp.creatures
+    for c in list(victims):
+        game.deal_damage(c, eff.amount, by=p, cause=cause, source=src)
+
+
+@kind("host_lose", "host_damage", "host_shrink")
+def host_effects(game, p, eff, item, cause, **_):
+    host = item.context if item is not None else None
+    if not isinstance(host, Permanent) or host not in host.controller.battlefield:
+        return
+    if eff.kind == "host_lose":
+        game.change_life(host.controller, -eff.amount, cause)
+    elif eff.kind == "host_damage":
+        game.deal_damage(host.controller, eff.amount, by=p, cause=cause, source=item.source)
+    else:
+        host.counters["-1/-1"] = host.m1 + 1
 
 
 @kind("peek_hand")

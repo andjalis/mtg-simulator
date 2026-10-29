@@ -71,6 +71,8 @@ class TargetsMixin:
             return perm.controller is not by
         if f == "mine":
             return perm.controller is by
+        if f == "damaged":
+            return perm.damage > 0
         if f == "opp_damaged":
             return perm.controller is not by and perm.damage > 0
         if f == "opp_artifact_creature":

@@ -3,7 +3,10 @@ import random
 import unittest
 
 from mtgsim.cards import _parse_effects
-from mtgsim.engine import Game, Player, StackItem
+from mtgsim.auras import attach
+from mtgsim.batch1_templates import skips_draw
+from mtgsim.engine import Game, Player, StackItem, can_block
+from mtgsim.residual_templates import activation_blocked
 from tests.test_combat_triggers import Scripted, BEAR
 from tests.test_templates import ISLAND, card
 
@@ -151,6 +154,173 @@ class Batch1(unittest.TestCase):
         life = self.b.life
         self.g.resolve(self.a, eff[0], self.b, StackItem(self.a, eff, [self.b], source=redcap))
         self.assertEqual(self.b.life, life - 2)
+
+    def test_enters_tapped_with_charge_counters(self):
+        vivid = card("Test Vivid", "", "Land", "~ enters tapped with two charge counters on it.\n{T}: Add {U}.")
+        perm = self.g.enter_battlefield(self.a, vivid)
+        self.assertTrue(perm.tapped)
+        self.assertEqual(perm.counters["charge"], 2)
+
+    def test_powerstone_mana_only_casts_artifacts(self):
+        self.apply("Create a tapped Powerstone token.")
+        stone = next(x for x in self.a.battlefield if x.card.token_kind == "powerstone")
+        self.assertTrue(stone.tapped)
+        stone.tapped = False
+        self.assertEqual(stone.card.mana_restriction, "artifact")
+
+    def test_provoke_untaps_and_forces_block(self):
+        goblin = card("Test Provoker", "{2}{R}", "Creature — Goblin", "Provoke", 2, 2)
+        attacker = self.put(goblin)
+        wall = self.put(card("Test Wall", "{1}", "Creature — Wall", "", 0, 4), self.b)
+        wall.tapped = True
+        self.a.ai.attack = (attacker,)
+        self.g.combat(self.a, self.b)
+        self.assertEqual(self.b.life, 20)
+        self.assertEqual(wall.damage, 2)
+
+    def test_assign_combat_damage_as_though_unblocked(self):
+        wolf = self.put(card("Test Wolf", "{2}{G}", "Creature — Wolf",
+                             "You may have ~ assign its combat damage as though it weren't blocked.", 3, 3))
+        wall = self.put(card("Test Wall", "{1}", "Creature — Wall", "", 0, 6), self.b)
+        self.a.ai.attack = (wolf,)
+        self.b.ai.block = {wolf: (wall,)}
+        self.g.combat(self.a, self.b)
+        self.assertEqual(self.b.life, 17)
+
+    def test_phantom_prevents_damage_and_loses_a_counter(self):
+        phantom = self.put(card("Test Phantom", "{2}{G}", "Creature — Spirit",
+                                "~ enters with three +1/+1 counters on it.\n"
+                                "If damage would be dealt to ~, prevent that damage. Remove a +1/+1 counter from ~.", 0, 0))
+        self.assertEqual(phantom.p1, 3)
+        self.g.deal_damage(phantom, 5, by=self.b)
+        self.assertEqual((phantom.damage, phantom.p1), (0, 2))
+
+    def test_converge_counts_colors_spent(self):
+        crawler = card("Test Crawler", "{2}", "Artifact Creature — Construct",
+                       "Converge — ~ enters with a +1/+1 counter on it for each color of mana spent to cast it.", 0, 0)
+        self.assertTrue(crawler.advanced_rules.get("sunburst"))
+
+    def test_conditional_pump_for_basic_land_type(self):
+        aven = self.put(card("Test Aven", "{1}{W}", "Creature — Bird", "~ gets +1/+1 as long as you control a Plains.", 1, 1))
+        self.assertEqual(aven.power, 1)
+        self.put(card("Plains", types="Basic Land — Plains"))
+        self.assertEqual(aven.power, 2)
+
+    def test_cant_be_blocked_by_walls_and_fliers(self):
+        rat = self.put(card("Test Rat", "{1}", "Creature — Rat", "~ can't be blocked by Walls.", 1, 1))
+        wall = self.put(card("Test Wall", "{1}", "Creature — Wall", "", 0, 4), self.b)
+        bear = self.put(BEAR, self.b)
+        self.assertFalse(can_block(wall, rat))
+        self.assertTrue(can_block(bear, rat))
+
+    def test_cant_block_big_attackers(self):
+        orc = self.put(card("Test Orc", "{1}{R}", "Creature — Orc", "~ can't block creatures with power 2 or greater.", 2, 2), self.b)
+        bear = self.put(BEAR)
+        small = self.put(card("Test Mite", "{1}", "Creature — Insect", "", 1, 1))
+        self.assertFalse(can_block(orc, bear))
+        self.assertTrue(can_block(orc, small))
+
+    def test_cant_attack_alone_without_block_clause(self):
+        construct = self.put(card("Test Construct", "{2}", "Artifact Creature — Construct", "~ can't attack alone.", 3, 3))
+        self.a.ai.attack = (construct,)
+        self.g.combat(self.a, self.b)
+        self.assertEqual(self.b.life, 20)
+
+    def test_skip_draw_step(self):
+        self.put(card("Test Appeasement", "{3}{R}", "Enchantment", "Skip your draw step."), self.a)
+        self.assertTrue(skips_draw(self.g, self.a))
+        self.assertFalse(skips_draw(self.g, self.b))
+
+    def test_artifacts_cannot_be_activated(self):
+        self.put(card("Test Ouphe", "{1}{G}", "Creature — Ouphe", "Activated abilities of artifacts can't be activated.", 1, 1), self.b)
+        rock = self.put(card("Test Rock", "{1}", "Artifact", "{T}: Add {C}."), self.a)
+        self.assertTrue(activation_blocked(self.g, rock, mana=True))
+
+    def test_damage_each_attacking_and_opponent_creatures(self):
+        mine = self.put(BEAR, self.a)
+        theirs = self.put(BEAR, self.b)
+        self.g.attackers = [theirs]
+        self.apply("~ deals 1 damage to each attacking creature.")
+        self.assertEqual((mine.damage, theirs.damage), (0, 1))
+        self.apply("~ deals 1 damage to each creature your opponents control.")
+        self.assertEqual((mine.damage, theirs.damage), (0, 2))
+
+    def test_destroy_damaged_creature(self):
+        fresh, hurt = self.put(BEAR, self.b), self.put(BEAR, self.b)
+        hurt.damage = 1
+        eff, _ = _parse_effects("Destroy target creature that was dealt damage this turn.")
+        legal = self.g.legal_targets(self.a, eff[0])
+        self.assertIn(hurt, legal)
+        self.assertNotIn(fresh, legal)
+
+    def test_defending_player_discards(self):
+        self.b.hand = [ISLAND]
+        eff, _ = _parse_effects("Defending player discards a card.")
+        self.g.resolve(self.a, eff[0], None, StackItem(self.a, eff, [None], context=self.b))
+        self.assertEqual(len(self.b.hand), 0)
+
+    def test_each_player_sacrifices_a_land(self):
+        mine, theirs = self.put(ISLAND, self.a), self.put(ISLAND, self.b)
+        self.apply("Each player sacrifices a land.")
+        self.assertNotIn(mine, self.a.battlefield)
+        self.assertNotIn(theirs, self.b.battlefield)
+
+    def test_power_from_graveyard_cards(self):
+        self.a.graveyard.extend([BEAR, BEAR])
+        wurm = self.put(card("Test Wurm", "{3}{B}", "Creature — Wurm",
+                             "~'s power and toughness are each equal to the number of creature cards in your graveyard.", 0, 0))
+        self.assertEqual(wurm.power, 2)
+        elite = self.put(card("Test Elite", "{1}{B}", "Creature — Zombie",
+                              "~ gets +1/+1 for each creature card in your graveyard.", 1, 1))
+        self.assertEqual(elite.power, 3)
+        drake = self.put(card("Test Drake", "{1}{U}", "Creature — Drake",
+                              "~'s power is equal to the number of instant and sorcery cards in your graveyard.", 0, 3))
+        self.assertEqual(drake.power, 0)
+        self.a.graveyard.append(card("Shock", "{R}", "Instant", "~ deals 2 damage to any target."))
+        self.assertEqual(drake.power, 1)
+
+    def test_pump_per_attached_aura(self):
+        artisan = self.put(card("Test Artisan", "{1}{W}", "Creature — Human",
+                                "~ gets +2/+2 for each Aura attached to it.", 1, 1))
+        aura = self.g.enter_battlefield(self.a, card("Test Aura", "{W}", "Enchantment — Aura", "Enchant creature"))
+        aura.attached_to = artisan
+        artisan.auras.append(aura)
+        self.assertEqual(artisan.power, 3)
+
+    def test_aura_grants_shroud(self):
+        cloak = card("Test Cloak", "{W}", "Enchantment — Aura", "Enchant creature\nEnchanted creature has shroud.")
+        self.assertFalse(cloak.unsupported)
+
+    def test_creatures_with_counters_have_trample(self):
+        self.put(card("Test Ceratok", "{2}{G}", "Creature — Rhino",
+                      "Each creature you control with a +1/+1 counter on it has trample.", 3, 3))
+        plain, grown = self.put(BEAR), self.put(BEAR)
+        grown.counters["+1/+1"] = 1
+        self.assertTrue(grown.has("trample"))
+        self.assertFalse(plain.has("trample"))
+
+    def test_attacker_sacrifices_itself_at_end_of_combat(self):
+        colossus = self.put(card("Test Colossus", "{4}", "Artifact Creature — Golem",
+                                 "When ~ attacks, sacrifice it at end of combat.", 7, 4))
+        self.a.ai.attack = (colossus,)
+        self.g.combat(self.a, self.b)
+        self.g.end_combat(self.a)
+        self.g.settle()
+        self.assertEqual(self.b.life, 13)
+        self.assertNotIn(colossus, self.a.battlefield)
+
+    def test_aura_upkeep_life_loss_for_hosts_controller(self):
+        lashes = card("Test Lashes", "{2}{B}", "Enchantment — Aura", "Enchant creature\n"
+                      "At the beginning of the upkeep of enchanted creature's controller, that player loses 1 life.")
+        host = self.put(BEAR, self.b)
+        aura = self.g.enter_battlefield(self.a, lashes)
+        attach(self.g, aura, host)
+        self.g.begin_upkeep(self.b)
+        self.g.run_priority()
+        self.assertEqual(self.b.life, 19)
+        self.g.begin_upkeep(self.a)
+        self.g.run_priority()
+        self.assertEqual(self.b.life, 19)
 
 
 if __name__ == '__main__':
