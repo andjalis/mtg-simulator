@@ -166,8 +166,17 @@ class StackMixin:
                     if not isinstance(defender, Player) or defender.life < max(pl.life for pl in self.players):
                         continue
                 if trig.filter.startswith("attacker:") and not (isinstance(context, Permanent)
-                                                                and trig.filter[9:] in context.card.subtypes):
+                                                                and any(k in context.card.subtypes
+                                                                        for k in trig.filter[9:].split("|"))):
                     continue
+                if event == "attacks_alone" and trig.filter == "self" and context is not perm:
+                    continue
+                if event == "any_cast" and ":" in trig.filter:
+                    who, kinds = trig.filter.split(":", 1)
+                    from ..batch1_templates import spell_kind_ok
+                    if (who == "opp" and context is perm.controller) or \
+                            not any(spell_kind_ok(subject, kind) for kind in kinds.split("|")):
+                        continue
                 if trig.filter.startswith("with:") and \
                         not any(trig.filter[5:] in a.card.subtypes for a in self.attackers):
                     continue
@@ -306,6 +315,14 @@ class StackMixin:
             if kind == "warp":
                 perm.warped = True
             perm.was_cast = True
+            perm.kicks = getattr(item, "kicks", 0)
+            if perm.kicks and base.advanced_rules.get("kick_counters_each"):
+                perm.counters["+1/+1"] = perm.p1 + perm.kicks
+            if perm.kicks and (base.advanced_rules.get("multipay") or ("",))[0] == "squad":
+                token = dataclasses.replace(base, name=f"{base.name} token", is_token=True, alt_costs=[],
+                                            advanced_rules={k: v for k, v in base.advanced_rules.items() if k != "multipay"})
+                for _ in range(perm.kicks):
+                    self.queue_trigger(p, [Effect("token_copy", data={"card": token})], perm, f"{base.name} squad")
             if kind == "kicker" and base.advanced_rules.get("kick_counters"):
                 perm.counters["+1/+1"] = perm.p1 + base.advanced_rules["kick_counters"]
             perm.bargained = getattr(item, "bargained", False)

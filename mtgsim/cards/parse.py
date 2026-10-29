@@ -120,6 +120,14 @@ def _parse_effects(text: str, opts: bool = False):
                 effects += [Effect("pay_gate", data={"gate": ("may", "")})] + new   # always taken
                 gated = True
                 continue
+        mk = re.fullmatch(r"(.+?) for each time (?:it|~|this spell) was kicked", s, re.I)
+        if mk:
+            new, bad = _parse_effects(mk[1] + ".")
+            if new and not bad:
+                for e in new:
+                    e.data["per_kick"] = True
+                effects += new
+                continue
         mx = re.fullmatch(r"(.+?),? where X is (.+)", s, re.I)
         if mx and re.search(r"\bX\b", mx[1]) and _xq(mx[2]):
             spec = _xq(mx[2])
@@ -610,6 +618,12 @@ def _parse_trigger_line(line: str):
             flt = "opp_turn"
         if events == ("cast_spell",) and m.lastindex == 2:
             flt = "spell:" + m[1].replace(" or ", "|")
+        if events == ("any_cast",) and pat.startswith("Whenever (a player|an opponent) casts an?"):
+            flt = f"{'opp' if m[1] == 'an opponent' else 'any'}:{m[2].replace(' or ', '|')}"
+        if events == ("attacks_alone",) and pat.startswith("Whenever ~ attacks alone"):
+            flt = "self"
+        elif events == ("attacks_alone",) and m.lastindex == 2:
+            flt = "attacker:" + m[1].replace(" or ", "|")
         if events == ("sacrifice",):
             flt = m[1]
         if events == ("you_attack",) and m.lastindex == 2:

@@ -114,6 +114,11 @@ class CombatMixin:
         self.fire(p, "you_attack")
         if len(attackers) >= 2:
             self.fire(p, "attack_two_plus")
+        if len(attackers) >= 3:
+            self.fire(p, "attack_three_plus")
+        for a in attackers:
+            if self.attack_targets.get(a) is opp or isinstance(self.attack_targets.get(a), Permanent):
+                self.fire(opp, "opp_creature_attacks", context=a)
         self.run_priority(until_empty_stack=False)
         attackers = [a for a in self.attackers if a in p.battlefield]
         self.attackers = attackers

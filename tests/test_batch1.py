@@ -594,6 +594,51 @@ class Batch1(unittest.TestCase):
         self.assertTrue(student.has("double strike"))
         self.assertFalse(student.has("first strike"))
 
+    def cast_from_hand(self, definition, lands):
+        for _ in range(lands):
+            self.put(ISLAND)
+        self.a.hand.append(definition)
+        self.assertTrue(self.g.cast(self.a, definition))
+        self.g.settle()
+
+    def test_multikicker_counters_and_triggers(self):
+        hawks = card("Test Hawks", "{1}", "Creature — Bird", "Multikicker {1}\nFlying\nTest Hawks enters with a +1/+1 counter on it for each time it was kicked.", 1, 1)
+        self.cast_from_hand(hawks, 4)
+        perm = next(x for x in self.a.battlefield if x.card.name == "Test Hawks")
+        self.assertEqual((perm.kicks, perm.p1), (3, 3))
+        wolf = card("Test Wolfbriar", "{2}", "Creature — Elemental", "Multikicker {1}\nWhen Test Wolfbriar enters, create a 2/2 green Wolf creature token for each time it was kicked.", 1, 1)
+        self.cast_from_hand(wolf, 3)
+        self.assertEqual(sum(1 for x in self.a.battlefield if x.card.is_token), 1)
+
+    def test_squad_makes_token_copies(self):
+        squad = card("Test Squad", "{1}", "Creature — Soldier", "Squad {1}\nVigilance", 1, 1)
+        self.cast_from_hand(squad, 3)
+        copies = [x for x in self.a.battlefield if x.card.name.startswith("Test Squad")]
+        self.assertEqual(len(copies), 3)
+        self.assertEqual(sum(1 for x in copies if x.card.is_token), 2)
+
+    def test_new_trigger_events(self):
+        watcher = self.put(card("Test Watcher", "{1}", "Creature — Human",
+                                "Whenever an opponent casts a creature spell, you gain 1 life.\n"
+                                "Whenever ~ attacks alone, you gain 2 life.\n"
+                                "Whenever an opponent discards a card, you gain 4 life.", 1, 1))
+        before = self.a.life
+        self.g.fire(self.a, "any_cast", context=self.b, subject=BEAR)
+        self.g.settle()
+        self.assertEqual(self.a.life, before + 1)
+        self.g.fire(self.a, "any_cast", context=self.a, subject=BEAR)
+        self.g.settle()
+        self.assertEqual(self.a.life, before + 1)
+        self.g.fire(self.a, "any_cast", context=self.b, subject=ISLAND)
+        self.g.settle()
+        self.b.hand.append(BEAR)
+        self.g.discard_card(self.b, BEAR)
+        self.g.settle()
+        self.assertEqual(self.a.life, before + 1 + 4)
+        self.g.fire(self.a, "attacks_alone", context=watcher)
+        self.g.settle()
+        self.assertEqual(self.a.life, before + 1 + 4 + 2)
+
 
 if __name__ == '__main__':
     unittest.main()
