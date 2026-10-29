@@ -156,7 +156,11 @@ def exile_top(game, p, eff, **_):
 
 @kind("may_play_exiled")
 def may_play_exiled(game, p, eff, **_):
-    p.impulse += [(c, game.turn + eff.amount) for c in p.impulse_new]
+    new = p.impulse_new
+    if eff.data.get("one") and new:     # "Choose one of them. Until end of turn, you may play that card."
+        from ...ai import card_value
+        new = [max(new, key=card_value)]
+    p.impulse += [(c, game.turn + eff.amount) for c in new]
     p.impulse_new = []
 
 

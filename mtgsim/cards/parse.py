@@ -968,6 +968,10 @@ def _face_cost_and_static_lines(st, line):
             extra["etb_counters_if"] = ({"an opponent lost life": "opp_lost_life", "a creature died": "creature_died",
                                          "you attacked": "attacked"}[m[1]], 1)
             return None
+        if re.fullmatch(r"Other creatures you control enter with an additional \+1/\+1 counter on them for each opponent "
+                        r"who lost life this turn\.", line):
+            extra["others_enter_counters"] = "opp_lost_life"
+            return None
         m = re.fullmatch(r"Creatures you control get \+(\d+)/\+(\d+)\.", line)
         if m:
             extra["anthem"] = (int(m[1]), int(m[2]))
@@ -1052,11 +1056,11 @@ def _face_keyword_ability_lines(st, line):
         if m:
             alt_costs.append(AltCost("blitz", parse_mana_cost(m[1]), zone="hand", life=int(m[2])))
             return None
-        if re.fullmatch(r"You may cast ~ from your graveyard using its blitz ability\.", line):
-            for a in alt_costs:
-                if a.kind == "blitz":
-                    a.zone = "hand+graveyard"
-            return None
+        if re.fullmatch(r"You may cast (?:~|this card) from your graveyard using its blitz ability\.", line):
+            blitz = [a for a in alt_costs if a.kind == "blitz"]
+            for a in blitz:
+                a.zone = "hand+graveyard"
+            return None if blitz else line      # without a parsed blitz cost the sentence stays unsupported
         m = re.fullmatch(r"You may pay (\{[^ ]+\}) rather than pay ~'s mana cost\.", line)
         if m:
             alt_costs.append(AltCost("alt", parse_mana_cost(m[1])))

@@ -88,6 +88,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return max(theirs, key=perm_value, default=None)
     if k == "p1_counters" and eff.filter == "opp":
         return min(theirs, key=perm_value, default=None)    # a drawback: help the weakest opposing creature
+    if k == "add_counter" and eff.target == "creature_mine":
+        return max(mine, key=perm_value, default=None)
     if k == "blink":
         return counters_r3.blink_target(game, me, mine)
     if k in ("pump", "p1_counters", "distribute_counters", "double_power", "grant", "explore", "attach_self", "force_blocked"):

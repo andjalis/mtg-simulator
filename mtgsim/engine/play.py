@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING
 
-from .. import auras, cast_triggers, copies, proliferate
+from .. import auras, cast_triggers, copies, counters_r3, proliferate
 from ..cards import Activated, CardDef, Effect, make_token
 from .. import modal, rules_events
 from ..identity import CardInstance, instance
@@ -643,6 +643,8 @@ class PlayMixin:
             perm.counters[card.etb_named_counters[0]] = card.etb_named_counters[1]
         for kind, n in (counters or {}).items():
             perm.counters[kind] = perm.counters.get(kind, 0) + n
+        if perm.is_creature and (bonus := counters_r3.enter_bonus(self, p, perm)):
+            perm.counters["+1/+1"] = perm.p1 + bonus
         perm.tapped |= tapped
         p.battlefield.append(perm)
         self.rule_events.emit(rules_events.RulesEvent("zone_change", p, source=perm,
