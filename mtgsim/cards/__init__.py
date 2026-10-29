@@ -49,6 +49,8 @@ _EFFECT_PATTERNS += _advanced_templates.EFFECT_PATTERNS
 _SUBS += _advanced_templates.SUBS
 from .. import batch1_templates as _batch1_templates
 _EFFECT_PATTERNS += _batch1_templates.EFFECT_PATTERNS
+from .. import batch2_templates as _batch2_templates
+_EFFECT_PATTERNS += _batch2_templates.EFFECT_PATTERNS
 from .. import residual_templates as _residual_templates
 _EFFECT_PATTERNS += _residual_templates.EFFECT_PATTERNS
 _SUBS += _residual_templates.SUBS
