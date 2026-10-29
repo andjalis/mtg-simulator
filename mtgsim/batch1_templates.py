@@ -14,6 +14,11 @@ EFFECT_PATTERNS = [
     (r"destroy target creature that was dealt damage this turn", lambda m: _e("destroy", target="creature", filter="damaged")),
     (r"look at target opponent's hand", lambda m: _e("peek_hand", target="player", filter="opp")),
     (r"create (a|one|two|three) (tapped )?powerstone tokens?", lambda m: _e("powerstone", _num(m[1]), data={"tapped": bool(m[2])})),
+    (r"target creature gets \+X/\+(X|0) until end of turn",
+     lambda m: _e("pump", 0, target="creature", data={"x": True, "x2": m[1] == "X"})),
+    (r"creatures you control get \+X/\+(X|0) until end of turn",
+     lambda m: _e("pump_all", 0, data={"x": True, "x2": m[1] == "X", "other": False, "keyword": ""})),
+    (r"incubate (\d+)", lambda m: _e("incubate", int(m[1]))),
     (r"you become the monarch", lambda m: _e("become_monarch")),
     (r"(?:it|~) deals damage equal to its power to any target", lambda m: _e("damage", target="any", data={"source_power": True})),
 ]
@@ -186,6 +191,36 @@ def on_upkeep(game, active):
                 for trig in src.triggers:
                     if trig.event == 'host_upkeep':
                         game.queue_trigger(player, trig.effects, src, src.card.name, context=host)
+
+
+def effect_value(game, player, effect, target):
+    """AI worth of this module's kinds (None for kinds it does not own)."""
+    from .engine.policy import perm_value
+    kind = effect.kind
+    if kind in ('edict_player', 'edict_each'):
+        theirs = [perm_value(c) for c in game.opponent(player).creatures]
+        mine = [perm_value(c) for c in player.creatures]
+        if not theirs:
+            return -1
+        return min(theirs) - (min(mine) if kind == 'edict_each' and mine else 0)
+    if kind == 'become_monarch':
+        return 3
+    if kind in ('powerstone', 'provoke', 'incubate'):
+        return 1 + (effect.amount if kind == 'incubate' else 0)
+    if kind == 'exploit':
+        return 0.5
+    if kind == 'incubator_transform':
+        src = getattr(game.target_source, 'source', game.target_source)
+        return effect.amount if getattr(src, 'p1', 0) and game.step in ('main1', 'main2') else 0
+    return None
+
+
+def incubator():
+    from .cards import CardDef, Effect, Activated
+    return CardDef(name="Incubator", mana_cost={"generic": 0}, cmc=0, types=frozenset({"Artifact"}),
+                   subtypes=frozenset({"Incubator"}), is_token=True,
+                   activated=[Activated("ability", {"generic": 2}, effects=[Effect("incubator_transform")],
+                                        extra_costs={}, text="{2}: Transform this artifact.")])
 
 
 def has_blessing(game, player, item=None):
