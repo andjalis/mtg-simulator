@@ -62,6 +62,9 @@ EFFECT_PATTERNS = [
      lambda m: _scaled(_per("gain_life")(m), int(m[1]))),
     (r"you lose (\d+) life for each (?P<what>[\w -]+?) you control",
      lambda m: _scaled(_per("lose_life")(m), int(m[1]))),
+    (r"~ deals damage to (?P<t>target creature|any target|target player|target opponent) equal to the number of "
+     r"(?P<what>[\w -]+?) you control",
+     lambda m: _per("damage", target={"target creature": "creature", "any target": "any"}.get(m["t"], "player"))(m)),
     (r"put a \+1/\+1 counter on ~ for each (?P<what>[\w -]+?) you control",
      lambda m: _scaled(_per("p1_counters", target="self")(m), 1)),
 ]

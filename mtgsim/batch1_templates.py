@@ -247,6 +247,16 @@ def parse_line(line, st):
     if line == "Creature spells you control can't be countered.":
         st.extra.setdefault('advanced_rules', {})['creatures_uncounterable'] = True
         return True
+    m = re.fullmatch(r"(Noncreature |Creature |Artifact |Enchantment |Instant and sorcery |Instant |Sorcery |)[Ss]pells "
+                     r"(your opponents cast |)cost \{(\d+)\} more to cast\.", line)
+    if m:
+        rules = st.extra.setdefault('advanced_rules', {})
+        rules['spell_tax'] = rules.get('spell_tax', ()) + ((m[1].strip().lower(), bool(m[2]), int(m[3])),)
+        return True
+    m = re.fullmatch(r"Prevent all (combat )?damage that would be dealt to ~( by creatures)?\.", line)
+    if m:
+        st.extra.setdefault('advanced_rules', {})['damage_immune'] = ("combat" if m[1] else "creatures" if m[2] else "all")
+        return True
     if line == "Skip your draw step.":
         st.extra.setdefault('advanced_rules', {})['skip_draw'] = True
         return True
@@ -603,6 +613,30 @@ def block_restricted(blocker, attacker):
             return True
     limit = blocker.card.advanced_rules.get('cant_block_power')
     return bool(limit and attacker.power >= limit)
+
+
+def spell_tax(game, player, card):
+    """Extra generic mana from "noncreature spells cost {1} more" style statics."""
+    from .residual_templates import sources
+    total = 0
+    for x in sources(game, 'spell_tax'):
+        if x.abilities_suppressed:
+            continue
+        for flt, opponents_only, n in x.card.advanced_rules['spell_tax']:
+            if opponents_only and x.controller is player:
+                continue
+            if not flt or (flt == 'noncreature' and not card.is_creature) or (flt == 'instant and sorcery' and (card.is_instant or card.is_sorcery)) \
+                    or flt in ('creature', 'artifact', 'enchantment', 'instant', 'sorcery') and flt.capitalize() in card.types:
+                total += n
+    return total
+
+
+def damage_immune(target, source, combat):
+    """Self-protection statics: all damage, only combat damage, or only damage from creatures."""
+    from .engine.state import Permanent
+    kind = target.card.advanced_rules.get('damage_immune') if isinstance(target, Permanent) and not target.abilities_suppressed else None
+    return bool(kind) and (kind == 'all' or kind == 'combat' and combat
+                           or kind == 'creatures' and isinstance(source, Permanent) and source.is_creature)
 
 
 def lifegain_blocked(game, player):

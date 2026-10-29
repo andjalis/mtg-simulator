@@ -146,6 +146,42 @@ class Batch2(Batch1):
         self.g.change_life(self.a, 3, "test")
         self.assertEqual((self.a.life, self.b.life), (23, 20))
 
+    def test_spell_tax(self):
+        self.put(card("Test Warden", "{1}{W}", "Creature — Human", "Noncreature spells cost {1} more to cast.", 2, 2))
+        self.assertEqual(self.g.cost_of(self.a, SPELL).get("generic"), 2)
+        self.assertEqual(self.g.cost_of(self.a, BIG).get("generic"), 4)
+
+    def test_opponent_spell_tax(self):
+        self.put(card("Test Jailer", "{1}{W}", "Creature — Human", "Spells your opponents cast cost {1} more to cast.", 2, 2))
+        self.assertEqual(self.g.cost_of(self.a, SPELL).get("generic"), 1)
+        self.assertEqual(self.g.cost_of(self.b, SPELL).get("generic"), 2)
+
+    def test_generic_discount(self):
+        self.put(card("Test Fountain", "{1}{U}", "Creature — Wizard", "Spells you cast cost {1} less to cast.", 2, 2))
+        self.assertEqual(self.g.cost_of(self.a, BIG).get("generic"), 3)
+
+    def test_damage_immunity(self):
+        rock = self.put(card("Test Rock", "{2}", "Creature — Golem", "Prevent all damage that would be dealt to ~.", 1, 1), self.b)
+        self.g.deal_damage(rock, 5, self.a)
+        self.assertEqual(rock.damage, 0)
+
+    def test_sacrifice_at_end_step(self):
+        perm = self.put(BIG, self.b)
+        self.g.resolve(self.a, self.apply_effects("Gain control of target creature an opponent controls until end of turn.")[0], perm,
+                       StackItem(self.a, [], []))
+        effects = self.apply_effects("Sacrifice it at the beginning of the next end step.")
+        self.g.resolve(self.a, effects[0], None, StackItem(self.a, effects, []), prev=perm)
+        self.g.begin_end_step(self.a)
+        self.g.settle()
+        self.assertNotIn(perm, self.a.battlefield)
+
+    def test_damage_per_land(self):
+        for _ in range(3):
+            self.put(card("Mountain", "", "Basic Land — Mountain", "", None, None))
+        victim = self.put(BIG, self.b)
+        self.apply("~ deals damage to target creature equal to the number of lands you control.", [victim])
+        self.assertEqual(victim.damage, 3)
+
 
 if __name__ == "__main__":
     unittest.main()

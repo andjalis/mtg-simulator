@@ -85,3 +85,18 @@ def discard_random_target(game, p, eff, target, opp, **_):
         card = game.rng.choice(list(who.hand))
         game.discard_card(who, card)
         game.log(f"discards {card.name} at random", who)
+
+
+@kind("sac_at_end")
+def sac_at_end(game, p, prev, item, **_):
+    """Sacrifice the permanent made or targeted earlier in this ability at the next end step."""
+    if isinstance(prev, Permanent):
+        from ...cards import Effect
+        game.delayed_end_step.append((p, [Effect("sac_now")], item.source if item is not None else None, prev))
+
+
+@kind("sac_now")
+def sac_now(game, item, **_):
+    perm = item.context if item is not None else None
+    if isinstance(perm, Permanent) and perm in perm.controller.battlefield:
+        game.sacrifice(perm)

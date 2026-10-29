@@ -352,7 +352,7 @@ class CostsMixin:
                                                       scope.capitalize() in card.types):
                         n += k
                     continue
-                if (flt in ("instant and sorcery",) and (card.is_instant or card.is_sorcery)) or \
+                if flt == "spell" or (flt in ("instant and sorcery",) and (card.is_instant or card.is_sorcery)) or \
                         (flt in COLOR_WORDS and COLOR_WORDS[flt] in card.colors) or \
                         (flt in ("creature", "artifact") and flt.capitalize() in card.types) or \
                         (flt == "noncreature" and not card.is_creature and not card.is_land) or \
@@ -372,6 +372,8 @@ class CostsMixin:
         for key, k in card.per_discount:
             n += k * discounts.count(self, p, key)
         cost["generic"] = max(0, cost.get("generic", 0) - n)
+        from ..batch1_templates import spell_tax
+        cost["generic"] += spell_tax(self, p, card)
         if card.extra_discard and card.discard_or_pay and self.spare_cards(p, card) < 1:
             cost["generic"] += card.discard_or_pay
         if card.behold_or_pay:
