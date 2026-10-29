@@ -1,0 +1,302 @@
+[
+  {
+    "name": "Aethergeode Miner",
+    "before": {
+      "name": "Aethergeode Miner",
+      "status": "partial",
+      "ignored_text": "Pay {E}{E}: Exile ~, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Aethergeode Miner",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Against All Odds",
+    "before": {
+      "name": "Against All Odds",
+      "status": "partial",
+      "ignored_text": "\u2022 Exile target artifact or creature you control, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Against All Odds",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Blur",
+    "before": {
+      "name": "Blur",
+      "status": "partial",
+      "ignored_text": "Exile target creature you control, then return that card to the battlefield under their owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Blur",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Distinguished Conjurer",
+    "before": {
+      "name": "Distinguished Conjurer",
+      "status": "partial",
+      "ignored_text": "{4}{W}, {T}: Exile another target creature you control, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Distinguished Conjurer",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Emiel the Blessed",
+    "before": {
+      "name": "Emiel the Blessed",
+      "status": "partial",
+      "ignored_text": "{3}: Exile another target creature you control, then return it to the battlefield under its owner's control.\nyou may pay {G/W}.\nIf you do, put a +1/+1 counter on it.\nIf it's a Unicorn, put two +1/+1 counters on it instead.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Emiel the Blessed",
+      "status": "partial",
+      "ignored_text": "you may pay {G/W}.\nIf you do, put a +1/+1 counter on it.\nIf it's a Unicorn, put two +1/+1 counters on it instead.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Felidar Guardian",
+    "before": {
+      "name": "Felidar Guardian",
+      "status": "partial",
+      "ignored_text": "you may exile another target permanent you control, then return that card to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Felidar Guardian",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Flicker",
+    "before": {
+      "name": "Flicker",
+      "status": "partial",
+      "ignored_text": "Exile target nontoken permanent, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Flicker",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Flicker of Fate",
+    "before": {
+      "name": "Flicker of Fate",
+      "status": "partial",
+      "ignored_text": "Exile target creature or enchantment, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Flicker of Fate",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Flickering Hound",
+    "before": {
+      "name": "Flickering Hound",
+      "status": "partial",
+      "ignored_text": "exile up to one other target creature you control, then return that card to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Flickering Hound",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Flickering Spirit",
+    "before": {
+      "name": "Flickering Spirit",
+      "status": "partial",
+      "ignored_text": "{3}{W}: Exile ~, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Flickering Spirit",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Hallowed Respite",
+    "before": {
+      "name": "Hallowed Respite",
+      "status": "partial",
+      "ignored_text": "Exile target nonlegendary creature, then return it to the battlefield under its owner's control.\nIf it entered under your control, put a +1/+1 counter on it.\nOtherwise, tap it.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Hallowed Respite",
+      "status": "partial",
+      "ignored_text": "If it entered under your control, put a +1/+1 counter on it.\nOtherwise, tap it.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Kimoyo Beads",
+    "before": {
+      "name": "Kimoyo Beads",
+      "status": "partial",
+      "ignored_text": "\u2022 Prime Bead \u2014 You gain 3 life. Exile ~, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Kimoyo Beads",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Oji, the Exquisite Blade",
+    "before": {
+      "name": "Oji, the Exquisite Blade",
+      "status": "partial",
+      "ignored_text": "exile up to one target creature you control, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Oji, the Exquisite Blade",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Photon, Lady of Light",
+    "before": {
+      "name": "Photon, Lady of Light",
+      "status": "partial",
+      "ignored_text": "exile up to one other target creature you control, then return that card to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Photon, Lady of Light",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Scrollshift",
+    "before": {
+      "name": "Scrollshift",
+      "status": "partial",
+      "ignored_text": "Exile up to one target artifact, creature, or enchantment you control, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Scrollshift",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Skycoach Conductor // All Aboard",
+    "before": {
+      "name": "Skycoach Conductor // All Aboard",
+      "status": "partial",
+      "ignored_text": "All Aboard: Exile target non-Pilot creature you control, then return that card to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Skycoach Conductor // All Aboard",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Soulherder",
+    "before": {
+      "name": "Soulherder",
+      "status": "partial",
+      "ignored_text": "Whenever a creature is exiled from the battlefield, put a +1/+1 counter on ~.\nyou may exile another target creature you control, then return that card to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Soulherder",
+      "status": "partial",
+      "ignored_text": "Whenever a creature is exiled from the battlefield, put a +1/+1 counter on ~.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Teleportation Circle",
+    "before": {
+      "name": "Teleportation Circle",
+      "status": "partial",
+      "ignored_text": "exile up to one target artifact or creature you control, then return that card to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Teleportation Circle",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Wispweaver Angel",
+    "before": {
+      "name": "Wispweaver Angel",
+      "status": "partial",
+      "ignored_text": "you may exile another target creature you control, then return that card to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Wispweaver Angel",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Xho Cai, Flickering Talon",
+    "before": {
+      "name": "Xho Cai, Flickering Talon",
+      "status": "partial",
+      "ignored_text": "the next noncreature spell you cast costs {1} less to cast.\nexile up to one target creature you control, then return it to the battlefield under its owner's control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Xho Cai, Flickering Talon",
+      "status": "partial",
+      "ignored_text": "the next noncreature spell you cast costs {1} less to cast.",
+      "simplifications": ""
+    }
+  }
+]

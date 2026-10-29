@@ -1,0 +1,135 @@
+[
+  {
+    "name": "Blur",
+    "status": "partial",
+    "ignored": [
+      "Exile target creature you control, then return that card to the battlefield under their owner's control."
+    ],
+    "oracle": "Exile target creature you control, then return that card to the battlefield under their owner's control.\nDraw a card.",
+    "role": "fresh partial candidate; only supported blink subset selected"
+  },
+  {
+    "name": "Flicker of Fate",
+    "status": "partial",
+    "ignored": [
+      "Exile target creature or enchantment, then return it to the battlefield under its owner's control."
+    ],
+    "oracle": "Exile target creature or enchantment, then return it to the battlefield under its owner's control.",
+    "role": "fresh partial candidate; only supported blink subset selected"
+  },
+  {
+    "name": "Flicker",
+    "status": "partial",
+    "ignored": [
+      "Exile target nontoken permanent, then return it to the battlefield under its owner's control."
+    ],
+    "oracle": "Exile target nontoken permanent, then return it to the battlefield under its owner's control.",
+    "role": "fresh partial candidate; only supported blink subset selected"
+  },
+  {
+    "name": "Against All Odds",
+    "status": "partial",
+    "ignored": [
+      "\u2022 Exile target artifact or creature you control, then return it to the battlefield under its owner's control."
+    ],
+    "oracle": "Choose one or both \u2014\n\u2022 Exile target artifact or creature you control, then return it to the battlefield under its owner's control.\n\u2022 Return target artifact or creature card with mana value 3 or less from your graveyard to the battlefield.",
+    "role": "fresh partial candidate; only supported blink subset selected"
+  },
+  {
+    "name": "Aethergeode Miner",
+    "status": "partial",
+    "ignored": [
+      "Pay {E}{E}: Exile ~, then return it to the battlefield under its owner's control."
+    ],
+    "oracle": "Whenever Aethergeode Miner attacks, you get {E}{E} (two energy counters).\nPay {E}{E}: Exile Aethergeode Miner, then return it to the battlefield under its owner's control.",
+    "role": "fresh partial candidate; only supported blink subset selected"
+  },
+  {
+    "name": "Eerie Interlude",
+    "status": "partial",
+    "ignored": [
+      "Exile any number of target creatures you control.",
+      "Return those cards to the battlefield under their owner's control at the beginning of the next end step."
+    ],
+    "oracle": "Exile any number of target creatures you control. Return those cards to the battlefield under their owner's control at the beginning of the next end step.",
+    "role": "fresh partial candidate; only supported blink subset selected"
+  },
+  {
+    "name": "Mistmeadow Witch",
+    "status": "full",
+    "ignored": [],
+    "oracle": "{2}{W}{U}: Exile target creature. Return that card to the battlefield under its owner's control at the beginning of the next end step.",
+    "role": "already-covered control, not a todo"
+  },
+  {
+    "name": "Teferi, Timebender",
+    "status": "full",
+    "ignored": [],
+    "oracle": "+2: Untap up to one target artifact or creature.\n\u22123: You gain 2 life and draw two cards.\n\u22129: Take an extra turn after this one.",
+    "role": "already-covered control, not a todo"
+  },
+  {
+    "name": "Venser, the Sojourner",
+    "status": "partial",
+    "ignored": [
+      "[+2]: Exile target permanent you own.",
+      "[+2]: Return it to the battlefield under your control at the beginning of the next end step.",
+      "[\u22121]: Creatures can't be blocked this turn.",
+      "[\u22128]: You get an emblem with \"Whenever you cast a spell, exile target permanent.\""
+    ],
+    "oracle": "+2: Exile target permanent you own. Return it to the battlefield under your control at the beginning of the next end step.\n\u22121: Creatures can't be blocked this turn.\n\u22128: You get an emblem with \"Whenever you cast a spell, exile target permanent.\"",
+    "role": "fresh partial candidate; only supported blink subset selected"
+  },
+  {
+    "name": "Cloudshift",
+    "status": "partial",
+    "ignored": [
+      "Exile target creature you control, then return that card to the battlefield under your control."
+    ],
+    "oracle": "Exile target creature you control, then return that card to the battlefield under your control.",
+    "role": "fresh partial candidate; only supported blink subset selected"
+  },
+  {
+    "name": "Charming Prince",
+    "status": "partial",
+    "ignored": [
+      "\u2022 Exile another target creature you own. Return it to the battlefield under your control at the beginning of the next end step."
+    ],
+    "oracle": "When Charming Prince enters, choose one \u2014\n\u2022 Scry 2.\n\u2022 You gain 3 life.\n\u2022 Exile another target creature you own. Return it to the battlefield under your control at the beginning of the next end step.",
+    "role": "fresh partial candidate; only supported blink subset selected"
+  },
+  {
+    "name": "Roon of the Hidden Realm",
+    "status": "full",
+    "ignored": [],
+    "oracle": "Vigilance, trample\n{2}, {T}: Exile another target creature. Return that card to the battlefield under its owner's control at the beginning of the next end step.",
+    "role": "already-covered control, not a todo"
+  },
+  {
+    "name": "Eldrazi Displacer",
+    "status": "partial",
+    "ignored": [
+      "{2}{C}: Exile another target creature, then return it to the battlefield tapped under its owner's control."
+    ],
+    "oracle": "Devoid (This card has no color.)\n{2}{C}: Exile another target creature, then return it to the battlefield tapped under its owner's control. ({C} represents colorless mana.)",
+    "role": "fresh partial candidate; only supported blink subset selected"
+  },
+  {
+    "name": "Essence Flux",
+    "status": "partial",
+    "ignored": [
+      "If it's a Spirit, put a +1/+1 counter on it."
+    ],
+    "oracle": "Exile target creature you control, then return that card to the battlefield under its owner's control. If it's a Spirit, put a +1/+1 counter on it.",
+    "role": "fresh partial candidate; only supported blink subset selected"
+  },
+  {
+    "name": "Restoration Angel",
+    "status": "partial",
+    "ignored": [
+      "you may exile target non-Angel creature you control, then return that card to the battlefield under your control."
+    ],
+    "oracle": "Flash\nFlying\nWhen Restoration Angel enters, you may exile target non-Angel creature you control, then return that card to the battlefield under your control.",
+    "role": "fresh partial candidate; only supported blink subset selected"
+  }
+]
