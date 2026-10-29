@@ -48,7 +48,31 @@ def that_many(events, rest: str) -> str:
     return rest
 
 
+_KW = r"(?:menace|trample|flying|vigilance|haste|lifelink|first strike|double strike|deathtouch|reach|indestructible|hexproof)"
+_KW_LIST = rf"{_KW}(?:, {_KW})*,? and {_KW}|{_KW} and {_KW}"
+
+
+def parse_team_keywords(line: str):
+    """(("Demon", "menace", other), ...) for "Demons you control have menace, lifelink, and haste.", else None."""
+    m = re.fullmatch(rf"(Other )?([A-Z][a-z]+?)s you control have ({_KW_LIST})\.", line)
+    if m is None or m[2] == "Creature":
+        return None
+    return tuple((m[2], kw, bool(m[1])) for kw in re.findall(_KW, m[3]))
+
+
+def _become(m):
+    from .cards import Effect
+    kws = re.findall(_KW, m[4] or "")
+    return Effect("become_base", int(m[2]), int(m[3]), target="creature_mine",
+                  data={"keywords": kws, "approx": f"becomes a {m[1]}: the creature type change is not applied"})
+
+
 EFFECT_PATTERNS = [
+    (r"until end of turn, target creature you control becomes an? ([A-Z]\w+) with base power and toughness (\d+)/(\d+)"
+     rf"(?: and gains ((?:{_KW_LIST})|{_KW}))?", _become),
+    (r"put a hone counter on each equipment you control", lambda m: _effect("hone_all")),
+    (r"when it connives this way, return up to one target spell to its owner's hand",
+     lambda m: _effect("connive_reflex")),
     (rf"put {_NUM} \+1/\+1 counters? on target creature an opponent controls",
      lambda m: _opp_counter(m)),
     (r"exile target creature you control, then return (?:that card|it) to the battlefield under (its owner's|your) "
@@ -67,6 +91,11 @@ def _opp_counter(m):
     return Effect("p1_counters", _num(m[1]), target="creature", filter="opp")
 
 
+def _effect(kind, *args, **kw):
+    from .cards import Effect
+    return Effect(kind, *args, **kw)
+
+
 def _next_counter():
     from .cards import Effect
     return Effect("next_creature_counter")
@@ -80,7 +109,7 @@ def _obsessive():
 
 def _appraise(m):
     from .cards import Effect, _num
-    return Effect("appraise", _num(m[1]))
+    return Effect("appraise", _num(m[1]), target="graveyard_creature_any")
 
 
 def _play_one():
@@ -138,21 +167,50 @@ def enter_bonus(game, p, perm) -> int:
     return lost * sum(x.card.others_enter_counters == "opp_lost_life" for x in p.battlefield)
 
 
-def appraise(game, p, eff):
-    """Exile the best creature card from a graveyard (an opponent's first), then keep the best of the top cards."""
-    pool = [(c, pl) for pl in sorted(game.players, key=lambda pl: pl is p) for c in pl.graveyard if c.is_creature]
-    if not pool:
+def appraise(game, p, eff, target):
+    """Exile the targeted creature card, then keep the best of the top cards and bin the rest.
+    Nothing is exiled, and so nothing is dug, when the target is gone or was never chosen."""
+    from .r3b_spells import graveyard_event
+    zone = getattr(target, "zone", None)
+    if target is None or zone is None or target not in zone or not hasattr(zone, "owner"):
         return
-    card, owner = max(pool, key=lambda t: (t[1] is not p, t[0].cmc))
-    game.move_card(card, owner.graveyard, owner.exile, reason="exile")
-    game.log(f"exiles {card.name} from {owner}'s graveyard", p)
+    game.move_card(target, zone, zone.owner.exile, reason="exile")
+    game.log(f"exiles {target.name} from {zone.owner}'s graveyard", p)
     from .ai import card_value
-    top = [p.library.pop() for _ in range(min(eff.amount, len(p.library)))]
+    top = list(reversed(p.library[-min(eff.amount, len(p.library)):]))
     if not top:
         return
     keep = max(top, key=card_value)
-    p.hand.append(keep)
-    for c in top:
-        if c is not keep:
-            p.graveyard.append(c)
+    game.move_card(keep, p.library, p.hand, reason="appraiser-keep")
+    with graveyard_event(game):
+        for c in top:
+            if c is not keep:
+                game.move_card(c, p.library, p.graveyard, reason="appraiser-bin")
     game.log(f"keeps {keep.name} and puts {len(top) - 1} card(s) into the graveyard", p)
+
+
+def become_base(game, p, eff, target):
+    """Until end of turn: base power and toughness (layer 7b) and keywords (layer 6)."""
+    from . import continuous
+    from .engine import Permanent
+    if not (isinstance(target, Permanent) and target in target.controller.battlefield):
+        return
+    continuous.add(game, target, "set_base", power=eff.amount, toughness=eff.amount2, until_eot=True)
+    for kw in eff.data.get("keywords", ()):
+        continuous.add(game, target, "grant", keyword=kw, until_eot=True)
+    game.log(f"{target.card.name} becomes {eff.amount}/{eff.amount2}" + (
+        " with " + ", ".join(eff.data["keywords"]) if eff.data.get("keywords") else "") + " until end of turn", p)
+
+
+def hone_all(game, p):
+    for x in p.battlefield:
+        if "Equipment" in x.card.subtypes:
+            x.counters["hone"] = x.counters.get("hone", 0) + 1
+
+
+def connive_reflex(game, p, item):
+    """"When it connives this way, return up to one target spell": a reflexive trigger, only if a spell can be hit."""
+    from .cards import Effect
+    eff = Effect("bounce_spell", target="spell")
+    if game.legal_targets(p, eff):
+        game.queue_trigger(p, [eff], item.source if item is not None else None, "connive reflexive trigger")

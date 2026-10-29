@@ -182,6 +182,21 @@ def blink(game, p, eff, target, **_):
     counters_r3.blink(game, p, target, eff)
 
 
+@kind("become_base")
+def become_base(game, p, eff, target, **_):
+    counters_r3.become_base(game, p, eff, target)
+
+
+@kind("hone_all")
+def hone_all(game, p, **_):
+    counters_r3.hone_all(game, p)
+
+
+@kind("connive_reflex")
+def connive_reflex(game, p, item, **_):
+    counters_r3.connive_reflex(game, p, item)
+
+
 @kind("blink_end")
 def blink_end(game, p, target, **_):
     if isinstance(target, Permanent) and target in target.controller.battlefield:

@@ -48,6 +48,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     k = eff.kind
+    if eff.target == "graveyard_creature_any":       # exile an opposing creature card; our own only if nothing else
+        return max(legal, key=lambda c: (c.zone.owner is not me, c.cmc), default=None)
     if eff.target == "graveyard_creature_life":
         return max(legal, key=lambda c: c.cmc, default=None)
     if k == "connive_many":
