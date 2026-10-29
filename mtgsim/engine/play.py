@@ -423,6 +423,8 @@ class PlayMixin:
             return False
         if act.once and perm.ability_turns.get(idx) == self.turn:
             return False
+        if act.condition == "opp_lost_life" and not self.opponent(p).lost_life_turn:
+            return False
         if act.once_game and ("game", idx) in perm.ability_turns:
             return False
         if perm.net_locked and perm.tapped:

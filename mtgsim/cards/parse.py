@@ -5,7 +5,7 @@ import dataclasses
 import re
 
 from .. import graveyard, kicker, milling, modal, returns
-from .. import auras as _auras, copies as _copies, counting as _counting
+from .. import auras as _auras, copies as _copies, counters_r3 as _counters_r3, counting as _counting
 from .model import (
     Activated, AltCost, BASIC_MANA, COLORS, CardDef, Effect, KEYWORDS, NO_MATCH, NUMBERS, Trigger, _num, add_mana,
     parse_mana_cost,
@@ -1249,27 +1249,30 @@ def _parse_ability(line: str, approximations: list):
     cost = _parse_ability_cost(m[1])
     if cost is None:
         return None
-    body, sorcery, once, approx = m[2], False, False, []
+    body, sorcery, once, approx, condition = m[2], False, False, [], ""
     while True:
-        r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|This ability costs [^.]+ "
+        r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|Activate only if an opponent "
+                         r"lost life this turn and only once each turn|This ability costs [^.]+ "
                          r"less to activate[^.]*)\.", body)
         if not r:
             break
         body = r[1]
         sorcery |= r[2] == "Activate only as a sorcery"
-        once |= r[2] == "Activate only once each turn"
+        once |= r[2] == "Activate only once each turn" or "only once each turn" in r[2]
+        condition = "opp_lost_life" if "opponent lost life" in r[2] else condition
         if r[2].startswith("This ability costs"):
             approx.append(f"cost reduction ignored: {r[2]}.")
     head = modal.parse_header(body)
     if head is not None and not head[1]:
         approximations += approx
         return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=line,
-                         modes=modal.Modes(spec=head[0]))
+                         modes=modal.Modes(spec=head[0]), condition=condition)
     effects, bad = _parse_effects(body)
     if bad or not effects:
         return None
     approximations += approx
-    return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=line)
+    return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=line,
+                     condition=condition)
 
 
 def _parse_trigger(line: str):
@@ -1311,6 +1314,9 @@ def _parse_trigger_line(line: str):
             flt = f"{'other' if m[1] == 'another' else 'any'}||{m[2]}"
         if events == ("attacks",) and "while saddled" in pat:
             flt = "saddled"
+        if events == ("attacks",) and "with power" in pat:
+            rest = f"if you control a creature with power {m[1]} or greater, {rest}"
+        rest = _counters_r3.that_many(events, rest)
         if events == ("cast_instant_sorcery",) and "that targets a creature" in pat:
             flt = "targets_creature"
         if events == ("targeted_mine",):
