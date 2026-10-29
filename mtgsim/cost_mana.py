@@ -71,6 +71,16 @@ def parse_line(line, extra):
     if m:
         extra["crew_bonus"] = int(m[1])
         return True
+    m = re.fullmatch(r"To solve — You've gained (\d+) or more life this turn\.", line, re.I)
+    if m:
+        extra["case_solve_life"] = int(m[1])
+        return True
+    if line == "~ enters tapped unless you control two or more basic lands.":
+        extra["tapped_condition"] = "unless_2_basics"
+        return True
+    if line == "~ enters tapped unless you have two or more opponents.":
+        extra["tapped_condition"] = "unless_2_opponents"
+        return True
     return False
 
 
@@ -139,3 +149,131 @@ EFFECT_PATTERNS = [
     (r'then if there are no (\w+) counters on ~, create a Treasure token and a (\d+)/(\d+) colorless Pilot '
      r'creature token with "(?:~|this token) crews Vehicles as though its power were (\d+) greater\."', _empty_reward),
 ]
+
+
+def activation_discount(text):
+    m = re.fullmatch(r"This ability costs \{(\d+)\} less to activate for each "
+                     r"((?:legendary )?(?:creature|artifact|enchantment|land|planeswalker|permanent)) you control\.", text)
+    return (m[2], int(m[1])) if m else ()
+
+
+def reduced_ability_cost(game, player, cost, discount):
+    cost = dict(cost)
+    if discount:
+        what, amount = discount
+        legendary = what.startswith("legendary ")
+        kind = what.removeprefix("legendary ")
+        def fits(source):
+            if legendary and not source.card.legendary:
+                return False
+            if kind == "creature":
+                return source.is_creature
+            return kind == "permanent" or kind.capitalize() in source.card.types
+        count = sum(fits(x) for x in player.battlefield)
+        cost["generic"] = max(0, cost.get("generic", 0) - amount * count)
+    return cost
+
+
+def parse_channel(line, source_types=()):
+    from .cards import AltCost, _parse_effects, parse_mana_cost
+    m = re.fullmatch(r"Channel — (\{[^,]+\}), Discard (?:this card|~): (.+)", line)
+    if not m:
+        return None
+    mana_cost = parse_mana_cost(m[1])
+    if mana_cost.get("X", 0) > 1:
+        return None
+    body, discount = m[2], ()
+    rider = re.fullmatch(r"(.+\.) (This ability costs .+\.)", body)
+    if rider:
+        discount = activation_discount(rider[2])
+        if not discount:
+            return None
+        body = rider[1]
+    body = re.sub(r"^It deals\b", "~ deals", body, flags=re.I)
+    if "Creature" in source_types and re.search(r"target [^.]+ from your graveyard", body, re.I):
+        return None  # Targets must be chosen before discarding; resolution-time regrow cannot model that.
+    effects, bad = _parse_effects(body)
+    if bad or not effects:
+        return None
+    return AltCost("channel", mana_cost, effects=effects, activation_discount=discount)
+
+
+def parse_solved_ability(line):
+    from .cards import _parse_ability
+    if not line.startswith("Solved — "):
+        return None
+    notes = []
+    body = line[len("Solved — "):].replace("Sacrifice this Case:", "Sacrifice ~:")
+    act = _parse_ability(body, notes)
+    if act is None or notes or act.condition or not any(e.kind == "grant_gy_cast" for e in act.effects):
+        return None
+    act.condition = "case_solved"
+    act.text = line
+    return act
+
+
+def queue_case_solutions(game, player):
+    from .cards import Effect
+    for source in list(player.battlefield):
+        if source.card.case_solve_life and not source.solved and player.life_gained_turn >= source.card.case_solve_life:
+            game.queue_trigger(player, [Effect("solve_case", source.card.case_solve_life, target="self")], source, f"{source.card.name}: solve")
+
+
+def grant_gy_cast(game, player):
+    for card in list(player.graveyard):
+        if card.is_creature:
+            player.granted_gy_cast.append((player.graveyard.reference(card), game.turn))
+
+
+def graveyard_cast_options(game, player):
+    cards = []
+    for ref, turn in player.granted_gy_cast:
+        card = ref.find(player.graveyard) if turn == game.turn else None
+        if card is not None and not any(card is old for old in cards):
+            cards.append(card)
+    return cards
+
+
+def can_counter_ability(effect, item):
+    if item.is_spell or item.kind not in ("ability", "trigger", "chapter", "loyalty", "channel"):
+        return False
+    activated = item.kind in ("ability", "loyalty", "channel")
+    if effect.filter == "activated" and not activated or effect.filter == "triggered" and activated:
+        return False
+    # Activated mana abilities have no target, can produce mana, and are not loyalty abilities.
+    if item.kind in ("ability", "channel") and any(e.kind in ("add_mana", "firebend") for e in item.effects) and \
+            all(e.target in ("none", "self") for e in item.effects):
+        return False
+    return True
+
+
+def _effect(kind, **kw):
+    from .cards import Effect
+    return Effect(kind, **kw)
+
+
+EFFECT_PATTERNS += [
+    (r"counter (up to one )?target (activated or triggered|activated|triggered) ability",
+     lambda m: _effect("counter_ability", target="ability", filter="" if " or " in m[2].lower() else m[2].lower(),
+                       data={"optional": bool(m[1])})),
+    (r"return (?:a|one) land you control to its owner's hand", lambda m: _effect("bounce_land_own")),
+    (r'creature cards in your graveyard gain "you may cast (?:this card|~) from your graveyard" until end of turn',
+     lambda m: _effect("grant_gy_cast")),
+]
+
+
+def can_use_graveyard_permission(game, player):
+    return player is game.active and game.step in ("main1", "main2") and not game.stack and \
+        any(c.is_creature and game.spell_payable(player, c) for c in player.graveyard)
+
+
+def activate_graveyard_permission(game, player):
+    """Grant permission before the policy loops over spells from other zones."""
+    if not can_use_graveyard_permission(game, player):
+        return
+    for source in list(player.battlefield):
+        for index, act in enumerate(source.card.activated):
+            if act.condition == "case_solved" and any(e.kind == "grant_gy_cast" for e in act.effects) and \
+                    game.can_activate(player, source, index):
+                game.activate_ability(player, source, index)
+                return  # A second Case should not be spent on the same graveyard cards.

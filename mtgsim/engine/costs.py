@@ -64,7 +64,7 @@ class CostsMixin:
         """Whether perm's restricted mana may pay for spell (see mana_sources)."""
         if spell is None:
             return True
-        if not isinstance(spell, CardDef):
+        if not isinstance(spell, CardDef) or spell.is_ability:
             return False
         r = perm.card.mana_restriction
         if r.startswith("types:"):
@@ -292,6 +292,9 @@ class CostsMixin:
     def cost_of(self, p: Player, card: CardDef, *, assist=True) -> dict:
         """The mana cost after cost reductions (Tolarian Terror, Ghalta)."""
         cost = dict(card.mana_cost)
+        if card.is_ability:
+            _, _, alt = self._origin(card)
+            return cost_mana.reduced_ability_cost(self, p, cost, getattr(alt, "activation_discount", ()))
         n = 0
         if card.cost_reduction == "instant_sorcery_gy":
             n = sum(c.is_instant or c.is_sorcery for c in p.graveyard)
@@ -375,14 +378,19 @@ class CostsMixin:
         return cost, improvised, delved
 
     def _variant(self, card: CardDef, kind: str, alt: AltCost | None = None) -> CardDef:
-        key = (getattr(card, "physical_id", id(card)), getattr(card, "generation", 0), kind)
+        key = (getattr(card, "physical_id", id(card)), getattr(card, "generation", 0), kind,
+               id(alt) if kind == "channel" else None)
         if key not in self._variants:
             if kind == "adventure":
                 v = dataclasses.replace(card.adventure)
             elif kind == "prepared":
                 v = dataclasses.replace(card.back, name=f"{card.name} (prepared)")
             elif kind in ("channel", "gy_ability"):
-                v = CardDef(name=f"{card.name} ({kind})", mana_cost=alt.cost, cmc=card.cmc,
+                label = kind
+                if kind == "channel" and sum(a.kind == "channel" for a in card.alt_costs) > 1:
+                    mode = next((i + 1 for i, a in enumerate(card.alt_costs) if a is alt), 1)
+                    label = f"channel {mode}"
+                v = CardDef(name=f"{card.name} ({label})", mana_cost=alt.cost, cmc=card.cmc,
                             types=frozenset({"Instant"}), spell_effects=list(alt.effects), is_ability=True)
             else:
                 v = dataclasses.replace(card, name=f"{card.name} ({kind})")
@@ -454,7 +462,7 @@ class CostsMixin:
             if c.adventure:
                 out.append(self._variant(c, "adventure"))
             for a in c.alt_costs:
-                if a.kind in ("alt", "kicker") or (a.kind == "spectacle" and opp.lost_life_turn) or \
+                if a.kind in ("alt", "kicker", "channel") or (a.kind == "spectacle" and opp.lost_life_turn) or \
                         (a.kind == "blitz" and "hand" in a.zone):
                     out.append(self._variant(c, a.kind, a))
         out += [self._variant(x.card, "prepared") for x in p.battlefield if x.prepared and x.card.back is not None]
@@ -468,6 +476,8 @@ class CostsMixin:
         for c in self.impulse_cards(p):
             if not c.is_land:
                 out.append(self._variant(c, "impulse"))
+        for c in cost_mana.graveyard_cast_options(self, p):
+            out.append(self._variant(c, "graveyard_cast"))
         for c in p.granted_fb:
             if c in p.graveyard:
                 out.append(self._variant(c, "flashback", AltCost("flashback", dict(c.mana_cost))))
@@ -490,7 +500,7 @@ class CostsMixin:
         """The zone a spell_options() variant of this kind is cast from."""
         return {"from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile,
-                "mayhem": p.graveyard, "impulse": p.exile, "rebound": p.exile,
+                "mayhem": p.graveyard, "graveyard_cast": p.graveyard, "impulse": p.exile, "rebound": p.exile,
                 "cascade": p.exile, "cascade_adventure": p.exile,
                 "rebound_adventure": p.exile, "discover": p.exile}.get(kind, p.hand)
 
@@ -498,6 +508,8 @@ class CostsMixin:
         base, kind, _ = self._origin(card)
         generation = getattr(card, "origin_generation", None)
         if generation is not None and generation != getattr(base, "generation", None):
+            return False
+        if kind == "graveyard_cast" and not any(base is c for c in cost_mana.graveyard_cast_options(self, p)):
             return False
         if kind == "prepared":
             return any(x.card is base and x.prepared for x in p.battlefield)
@@ -516,7 +528,7 @@ class CostsMixin:
             return False
         if card.extra_discard and not card.discard_or_pay and self.spare_cards(p, card) < 1:
             return False
-        if self.active is not p and any(x.card.opp_no_cast for x in self.opponent(p).battlefield):
+        if not card.is_ability and self.active is not p and any(x.card.opp_no_cast for x in self.opponent(p).battlefield):
             return False
         if card.extra_sacrifice and not card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
             return False
@@ -524,6 +536,9 @@ class CostsMixin:
             return False
         if not during_resolution and not card.instant_speed and not (p is self.active and self.step in ("main1", "main2")
                                            and not self.stack):
+            return False
+        if any(e.target == "ability" and not e.data.get("optional") and not self.legal_targets(p, e)
+               for e in card.spell_effects):
             return False
         if any(e.target == "spell" for e in card.spell_effects):
             if not any(self.can_counter(e, item, p) for e in card.spell_effects if e.kind == "counter"

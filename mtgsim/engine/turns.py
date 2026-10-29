@@ -297,6 +297,7 @@ class TurnsMixin:
         self.expire_continuous_effects()
         for pl in self.players:
             pl.granted_fb = []
+            pl.granted_gy_cast = []
         self.state_based_actions()
 
     def begin_upkeep(self, p: Player):

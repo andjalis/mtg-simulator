@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import auras, copies, graveyard, kicker, milling
+from .. import auras, copies, cost_mana, graveyard, kicker, milling
 from ..cards import CardDef, Effect
 from .. import modal, rules_events
 from ..identity import CardInstance, CardZone
@@ -85,6 +85,8 @@ class StackMixin:
 
     def _dispatch_trigger_event(self, p, event, source=None, context=None, subject=None):
         graveyard.observe_event(self, p, event, source, context, subject)
+        if event == "end_step" and source is None:
+            cost_mana.queue_case_solutions(self, p)
         perms = [source] if source is not None else list(p.battlefield)
         for perm in perms:
             for i, trig in enumerate(perm.triggers):
@@ -244,7 +246,8 @@ class StackMixin:
             self.log(f"{item} does not resolve (intervening condition false)", p)
             self.state_based_actions()
             return
-        targeted = [(e, t) for e, t in zip(item.effects, item.targets) if e.target in TARGETED]
+        targeted = [(e, t) for e, t in zip(item.effects, item.targets) if e.target in TARGETED
+                    and not (t is None and e.data.get("optional"))]
         item.resolved = not (targeted and all(not self.legal_target(p, e, t) for e, t in targeted))
         if not item.resolved:
             self.log(f"{item} fizzles (no legal target)", p)

@@ -104,3 +104,35 @@ def earthbend(game, p, eff, **_):
         land.animated = Activated("animate", {}, 0, 0, frozenset({"haste"}), text="earthbend")
         land.counters["+1/+1"] = land.p1 + eff.amount
         game.log(f"earthbends {land.card.name} ({eff.amount})", p)
+
+
+@kind("counter_ability")
+def counter_ability(game, p, eff, target, **_):
+    from ... import cost_mana
+    if isinstance(target, StackItem) and target in game.stack and cost_mana.can_counter_ability(eff, target):
+        game.stack.remove(target)
+        game.log(f"{target} is countered", p)
+
+
+@kind("bounce_land_own")
+def bounce_land_own(game, p, item, **_):
+    lands = [x for x in p.battlefield if x.card.is_land]
+    if lands:
+        chosen = min(lands, key=lambda x: (x is getattr(item, "source", None), not x.tapped))
+        game.leave_battlefield(chosen, "hand")
+        game.log(f"returns {chosen.card.name} to its owner's hand", p)
+
+
+@kind("solve_case")
+def solve_case(game, p, eff, item, **_):
+    source = item.source if item is not None else None
+    if source is not None and source in source.controller.battlefield and not source.solved and \
+            p.life_gained_turn >= eff.amount:
+        source.solved = True
+        game.log(f"solves {source.card.name}", p)
+
+
+@kind("grant_gy_cast")
+def grant_gy_cast(game, p, **_):
+    from ... import cost_mana
+    cost_mana.grant_gy_cast(game, p)
