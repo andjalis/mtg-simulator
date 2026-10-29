@@ -17,7 +17,7 @@ def proliferate(game, p, eff, **_):
 def equip(game, p, eff, target, item, **_):
     equipment = item.source if item is not None else None
     if equipment is not None and equipment in equipment.controller.battlefield and \
-            "Equipment" in equipment.card.subtypes and not equipment.is_creature and \
+            "Equipment" in equipment.card.subtypes and (not equipment.is_creature or equipment.card.reconfigure) and \
             isinstance(target, Permanent) and game.legal_target(p, eff, target) and target is not equipment:
         equipment.attached_to = target
         game.log(f"equips {equipment.card.name} to {target.card.name}", p)

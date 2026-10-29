@@ -311,6 +311,10 @@ def _face_land_and_mana_lines(st, line):
             if m[2]:
                 approximations.append(f"cost reduction ignored:{m[2]}")
             return None
+        m = re.fullmatch(r"Reconfigure (\{[^ .]+\})", line)
+        if m:
+            extra.update(equip_cost=parse_mana_cost(m[1]), reconfigure=True)
+            return None
         m = re.fullmatch(r"Equip abilities you activate that target ~ cost \{(\d+)\} less to activate\.", line)
         if m:
             extra["equip_discount"] = int(m[1])

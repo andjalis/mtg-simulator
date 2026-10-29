@@ -133,7 +133,7 @@ class AbilitiesMixin:
         if creature is None:
             creature = self.hook(p, "choose_equip_target")(self, p, equipment)
         if creature is None or creature not in p.battlefield or not creature.is_creature or \
-                creature is equipment.attached_to or not self.targetable(creature, p, equipment):
+                creature is equipment.attached_to or creature is equipment or not self.targetable(creature, p, equipment):
             return False
         if self.pay(p, self.equip_cost(equipment, creature)) is None:
             return False

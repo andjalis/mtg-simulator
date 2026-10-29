@@ -430,6 +430,8 @@ class Permanent:
     def is_creature(self):
         if self.impending and self.counters.get("time"):
             return False
+        if self.card.reconfigure and self.attached_to is not None:
+            return False
         return "Creature" in self.card.types
 
     @property

@@ -273,6 +273,19 @@ class Batch2(Batch1):
         self.g.settle()
         self.assertEqual((small.p1, len(self.a.hand)), (3, 1))
 
+    def test_reconfigure(self):
+        blades = card("Test Blades", "{1}", "Artifact Creature — Equipment", "Equipped creature gets +1/+1.\nReconfigure {0}", 1, 1)
+        self.assertFalse(blades.unsupported)
+        eq = self.put(blades)
+        bear = self.put(card("Bear", "{1}{G}", "Creature — Bear", "", 2, 2))
+        self.assertTrue(eq.is_creature)
+        self.assertFalse(self.g.equip(self.a, eq, eq))
+        self.assertTrue(self.g.equip(self.a, eq, bear))
+        self.g.settle()
+        self.assertIs(eq.attached_to, bear)
+        self.assertFalse(eq.is_creature)
+        self.assertEqual(bear.power, 3)
+
 
 if __name__ == "__main__":
     unittest.main()
