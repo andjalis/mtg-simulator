@@ -50,6 +50,7 @@ def drain_devotion(game, p, eff, opp, cause, **_):
 
 
 @kind("damage_each_player")
-def damage_each_player(game, eff, cause, **_):
+def damage_each_player(game, p, eff, item, cause, **_):
+    src = (item.source if item.source is not None else item.card) if item is not None else None
     for pl in game.players:
-        game.change_life(pl, -eff.amount, cause)
+        game.deal_damage(pl, eff.amount, by=p, cause=cause, source=src)

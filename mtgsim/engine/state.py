@@ -15,7 +15,7 @@ TrackedZone = CardZone  # public compatibility alias
 TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
 COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "land", "artifact", "artifact_enchantment",
-            "player", "spell")
+            "player", "spell", "spell_or_permanent")
 
 
 class Permanent:

@@ -282,7 +282,7 @@ class StackMixin:
         self.state_based_actions()
 
     def to_graveyard_after_resolving(self, item: StackItem):
-        if item.kind == "copy":
+        if item.kind == "copy" or getattr(item, "left_stack", False):
             return
         base, kind, _ = self._origin(item.card)
         owner = item.controller

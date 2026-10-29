@@ -38,6 +38,8 @@ class EffectsMixin:
                 target.deathtouched = True
         else:
             return
+        if isinstance(target, Player) and not combat:
+            self.fire(self.opponent(target), "opponents_noncombat_damage", context=source)
         if has("lifelink"):
             controller = source.controller if isinstance(source, Permanent) else by
             if controller is not None:

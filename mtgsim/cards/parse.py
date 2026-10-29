@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import graveyard, kicker, milling, modal, returns
+from .. import graveyard, kicker, milling, modal, returns, r3_spells
 from .. import auras as _auras, copies as _copies, counters_r3 as _counters_r3, counting as _counting
 from .model import (
     Activated, AltCost, BASIC_MANA, COLORS, CardDef, Effect, KEYWORDS, NO_MATCH, NUMBERS, Trigger, _num, add_mana,
@@ -30,6 +30,11 @@ def _parse_effects(text: str, opts: bool = False):
         if re.fullmatch(r"(?:a creature|creatures) dealt damage this way can't be regenerated this turn", s, re.I) \
                 and effects and effects[-1].kind == "damage":
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
+            continue
+        revolt = r3_spells.parse_revolt(s, effects)
+        if revolt is not None:
+            if not revolt:
+                unmatched.append(sentence.strip())
             continue
         conditional = milling.parse_conditional(s, effects)
         if conditional is not None:
@@ -1162,6 +1167,11 @@ def _face_ability_lines(st, line):
             unsupported += bad
             return None
         if not types.isdisjoint({"Instant", "Sorcery"}):
+            revolt = r3_spells.parse_revolt(line.rstrip("."), spell)
+            if revolt is not None:
+                if not revolt:
+                    unsupported.append(line)
+                return None
             head = modal.parse_header(line)
             if head is not None and not modes:
                 modes = modal.Modes(spec=head[0])

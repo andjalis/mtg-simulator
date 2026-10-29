@@ -48,6 +48,13 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     k = eff.kind
+    if k == "bounce_spell_permanent":
+        return next((i for i in reversed(game.stack) if i in legal and i.controller is opp),
+                    max(theirs, key=perm_value, default=None))
+    if k == "destroy_mv":
+        limit = eff.data["revolt_limit"] if me.perm_left_turn else eff.data["limit"]
+        return max((x for x in theirs if x.card.cmc <= limit and not x.has("indestructible")),
+                   key=perm_value, default=None)
     if k == "damage":
         if eff.target == "player":
             return opp
