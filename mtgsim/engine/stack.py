@@ -286,7 +286,11 @@ class StackMixin:
             if kind.startswith(("spent_", "evoke_")):
                 self._spent = kind.split("_")[1]
             self._aura_host = None
-            if base.aura and base.aura != "player":
+            if kind == "bestow":                      # an Aura if the creature still has a host, else just the creature
+                self._aura_host = auras.choose_host(self, p, item.card)
+                if self._aura_host is not None:
+                    base = item.card
+            elif base.aura and base.aura != "player":
                 self._aura_host = auras.choose_host(self, p, base)
                 if self._aura_host is None:
                     self.log(f"{base.name} has nothing to enchant", p)
