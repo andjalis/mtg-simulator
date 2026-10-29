@@ -33,6 +33,7 @@ EFFECT_PATTERNS = [
     (r"counter target (sorcery|instant|planeswalker|land|enchantment|artifact|creature or planeswalker|"
      r"artifact or enchantment|instant or sorcery) spell",
      lambda m: _e("counter", target="spell", filter="types:" + ",".join(w.title() for w in m[1].split(" or ")))),
+    (r"sacrifice (?:it|that creature|that token|them) at the beginning of the next end step", lambda m: _e("sac_at_end", target="prev")),
     (r"return (another|a) (?:([\w ]+?) )?creature you control to its owner's hand",
      lambda m: _e("return_own", data={"kind": "creature", "other": m[1] == "another", "colors": _colors(m[2] or "")})),
     (r"return a permanent you control to its owner's hand", lambda m: _e("return_own", data={"kind": "permanent"})),
