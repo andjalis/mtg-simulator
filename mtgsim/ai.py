@@ -738,6 +738,10 @@ class HeuristicAI:
                 return None  # keep mana open for the trick; cast it after combat
             if me is game.active and not card.is_creature and self._flash_removal(card):
                 return None  # a flash "when this enters, deal damage to a creature": cast it on their turn
+            if card.advanced_rules.get("mutating"):
+                from .batch2_templates import mutate_worth
+                worth = mutate_worth(game, me, card)
+                return None if worth is None else (worth, None)
             if card.advanced_rules.get("bestowed"):
                 from .batch1_templates import bestow_worth
                 worth = bestow_worth(game, me, card)

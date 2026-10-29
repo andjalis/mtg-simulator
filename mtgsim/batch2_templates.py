@@ -84,3 +84,73 @@ def overload_effects(text):
              and l.strip() not in ("This spell can't be countered.", "~ can't be countered.")]
     body = re.sub(r"\b([Tt])arget\b", lambda m: "Each" if m[1] == "T" else "each", " ".join(lines) if False else "\n".join(lines))
     return _parse_effects(body)
+
+
+def mutate_hosts(game, p, card):
+    """Non-Human creatures p controls that a mutating creature spell could merge with."""
+    return [x for x in p.battlefield if x.is_creature and "Human" not in x.card.subtypes]
+
+
+def mutate_host(game, p, spell):
+    """The host the AI picks: the creature whose body we lose the least by replacing."""
+    from .ai import card_value
+    hosts = mutate_hosts(game, p, spell)
+    return min(hosts, key=lambda h: card_value(h.card) - 0.5 * h.p1) if hosts else None
+
+
+def mutate_worth(game, p, spell):
+    """Value of mutating onto our weakest host (no summoning sickness, counters and auras kept), or None."""
+    from .ai import card_value
+    host = mutate_host(game, p, spell)
+    if host is None:
+        return None
+    base = spell.advanced_rules["mutate_base"]
+    if card_value(base) < card_value(host.card):
+        return None
+    return card_value(base) + 0.5 * base.cmc + 0.3 * card_value(host.card) + 1
+
+
+def merge_mutation(game, p, host, base):
+    """The mutating card goes on top of host: it keeps its counters, auras, damage and readiness."""
+    host.card = base
+    host.mutations = getattr(host, "mutations", 0) + 1
+    game.log(f"{base.name} mutates onto the host", p)
+    game.fire(p, "mutates", host)
+    game.settle()
+
+
+def encore_actions(game, p):
+    """Encore: exile the card from the graveyard to make a hasty token copy per opponent that must attack
+    and is sacrificed at the next end step (sorcery speed, so only in our main phase with an empty stack)."""
+    import dataclasses
+    if not (p is game.active and game.step in ("main1", "main2") and not game.stack):
+        return
+    for card in list(p.graveyard):
+        alt = next((a for a in card.alt_costs if a.kind == "encore"), None)
+        if alt is None or card not in p.graveyard or not (card.power or 0):
+            continue
+        if not game.can_pay(p, alt.cost) or game.pay(p, alt.cost) is None:
+            continue
+        game.move_card(card, p.graveyard, p.exile, reason="encore")
+        token = dataclasses.replace(card, name=f"{card.name} token", is_token=True, alt_costs=[])
+        game.log(f"encores {card.name}", p)
+        perm = game.enter_battlefield(p, token)
+        perm.perm_kw.add("haste")
+        perm.temp_kw.add("must_attack_now")
+        perm.sick = False
+        from .cards import Effect
+        game.delayed_end_step.append((p, [Effect("sac_now")], None, perm))
+        game.settle()
+
+
+def haunt_card(game, owner, card):
+    """Haunt: exile the card from its owner's graveyard haunting the creature easiest to kill, preferring an
+    opponent's; the creature's death later fires the card's "haunt_dies" triggers."""
+    victims = [x for pl in game.players for x in pl.battlefield if x.is_creature]
+    if card not in owner.graveyard or not victims:
+        return
+    opp = game.opponent(owner)
+    host = min(victims, key=lambda x: (x.controller is not opp, x.toughness))
+    game.move_card(card, owner.graveyard, owner.exile, reason="haunt")
+    host.haunters = list(getattr(host, "haunters", ())) + [(owner, card)]
+    game.log(f"{card.name} haunts {host.card.name}", owner)

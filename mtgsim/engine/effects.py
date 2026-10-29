@@ -372,6 +372,10 @@ class EffectsMixin:
                                    f"{perm.card.name}: {keyword}", context=(perm.owner, perm.front,
                                    perm.owner.graveyard.version(perm.front)))
             self.fire(perm.controller, "dies", perm)
+            for owner, haunter in getattr(perm, "haunters", ()):
+                for trig in haunter.triggers:
+                    if trig.event == "haunt_dies":
+                        self.queue_trigger(owner, trig.effects, None, f"{haunter.name} haunt", modes=trig.modes)
             for x in attached:
                 for trig in x.card.host_triggers:
                     if trig.event == "dies":

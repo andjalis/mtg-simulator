@@ -286,6 +286,12 @@ class StackMixin:
             if kind.startswith(("spent_", "evoke_")):
                 self._spent = kind.split("_")[1]
             self._aura_host = None
+            if kind == "mutate":
+                from ..batch2_templates import merge_mutation, mutate_host
+                host = mutate_host(self, p, item.card)
+                if host is not None:
+                    merge_mutation(self, p, host, base)
+                    return
             if kind == "bestow":                      # an Aura if the creature still has a host, else just the creature
                 self._aura_host = auras.choose_host(self, p, item.card)
                 if self._aura_host is not None:
@@ -421,6 +427,9 @@ class StackMixin:
             owner.exile.append(base)                 # "Exile ~." as the last line of an instant or sorcery
         elif kind not in ("channel", "prepared"):
             owner.graveyard.append(base)
+            if base.advanced_rules.get("haunt"):
+                from ..batch2_templates import haunt_card
+                haunt_card(self, owner, base)
 
     def hostile_target(self, p: Player, tgt) -> bool:
         opp = self.opponent(p)
