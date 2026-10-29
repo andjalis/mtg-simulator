@@ -42,3 +42,7 @@ _TRIGGERS += _r3_spells.TRIGGERS
 from .. import cost_mana as _cost_mana  # noqa: E402
 _EFFECT_PATTERNS += _cost_mana.EFFECT_PATTERNS
 _SUBS += _cost_mana.SUBS
+
+from .. import r3b_spells as _r3b_spells  # noqa: E402
+_EFFECT_PATTERNS += _r3b_spells.EFFECT_PATTERNS
+_SUBS += _r3b_spells.SUBS

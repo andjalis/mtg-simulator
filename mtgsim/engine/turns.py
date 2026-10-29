@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from .. import auras, copies, graveyard
+from .. import auras, copies, graveyard, r3b_spells
 from ..cards import CardDef, Effect
 from .. import rules_events, continuous
 from ..identity import CardInstance, Graveyard
@@ -23,6 +23,7 @@ class TurnsMixin:
         self.rule_events.emit(rules_events.RulesEvent("zone_change", actor, source=source,
             subject=card, before=before, destination=destination.name,
             source_zone=origin, reason=getattr(self, "_zone_reason", "move"), replacements=replacements))
+        r3b_spells.graveyard_arrival(self, card, destination)
 
     def next_effect_timestamp(self):
         self.effect_clock += 1

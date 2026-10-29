@@ -1,7 +1,7 @@
 """Game methods for game events that effects and rules cause: damage, destroy, sacrifice, dying, state-based actions."""
 from __future__ import annotations
 
-from .. import auras
+from .. import auras, r3b_spells
 from ..cards import AltCost, CardDef, Effect
 from .. import rules_events
 from .mana import find_payment
@@ -309,29 +309,30 @@ class EffectsMixin:
                         if not any(keep is candidate for candidate in group):
                             keep = group[0]
                         legend_losers.extend(perm for perm in group if perm is not keep)
-            for p in self.players:
-                for perm in list(p.battlefield):
-                    if perm.is_planeswalker and perm.loyalty <= 0:
-                        self.dies(perm)
-                        changed = True
-                    elif perm.is_creature:
-                        if perm.toughness <= 0:
+            with r3b_spells.graveyard_event(self):
+                for p in self.players:
+                    for perm in list(p.battlefield):
+                        if perm.is_planeswalker and perm.loyalty <= 0:
                             self.dies(perm)
                             changed = True
-                        elif (perm.damage >= perm.toughness or perm.deathtouched) and not perm.has("indestructible"):
-                            self.destroy(perm)
-                            changed = True
-                    # Dying objects retain their counters as last-known information.
-                    if perm in p.battlefield:
-                        cancelled = min(perm.p1, perm.m1)
-                        if cancelled > 0:
-                            perm.counters["+1/+1"] -= cancelled
-                            perm.counters["-1/-1"] -= cancelled
-                            changed = True
-            for perm in legend_losers:
-                if perm in perm.controller.battlefield:
-                    self.dies(perm)
-                    changed = True
+                        elif perm.is_creature:
+                            if perm.toughness <= 0:
+                                self.dies(perm)
+                                changed = True
+                            elif (perm.damage >= perm.toughness or perm.deathtouched) and not perm.has("indestructible"):
+                                self.destroy(perm)
+                                changed = True
+                        # Dying objects retain their counters as last-known information.
+                        if perm in p.battlefield:
+                            cancelled = min(perm.p1, perm.m1)
+                            if cancelled > 0:
+                                perm.counters["+1/+1"] -= cancelled
+                                perm.counters["-1/-1"] -= cancelled
+                                changed = True
+                for perm in legend_losers:
+                    if perm in perm.controller.battlefield:
+                        self.dies(perm)
+                        changed = True
         for p in self.players:
             if p.counters.get("poison", 0) >= 10:
                 if not p.lost:

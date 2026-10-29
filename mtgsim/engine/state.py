@@ -15,7 +15,7 @@ TrackedZone = CardZone  # public compatibility alias
 TEAM_KEYWORDS = frozenset({"haste", "trample", "vigilance", "lifelink", "menace", "flying", "reach"})
 COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 TARGETED = ("any", "creature", "creature_pw", "creature_mine", "nonland_perm", "land", "artifact", "artifact_enchantment",
-            "player", "spell", "spell_or_permanent")
+            "player", "spell", "spell_or_permanent", "graveyard_creature_life")
 
 
 class Permanent:
@@ -430,6 +430,8 @@ class StackItem:
         self.controller = controller
         self.effects = effects
         self.targets = targets
+        self.graveyard_targets = {id(t): t.zone.reference(t) for t in targets
+                                  if isinstance(t, CardInstance) and isinstance(t.zone, Graveyard) and t in t.zone}
         self.card = card
         self.source = source
         self.name = name or (card.name if card else "ability")

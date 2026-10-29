@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import auras, copies, graveyard, kicker, milling
+from .. import auras, copies, graveyard, kicker, milling, r3b_spells
 from ..cards import CardDef, Effect
 from .. import modal, rules_events
 from ..identity import CardInstance, CardZone
@@ -89,6 +89,8 @@ class StackMixin:
         for perm in perms:
             for i, trig in enumerate(perm.triggers):
                 if trig.event != event:
+                    continue
+                if event == "permanent_cards_to_gy" and not perm.counters.get(trig.filter, 0):
                     continue
                 if trig.filter.startswith("attackers>=") and p.attacked_with < int(trig.filter.split(">=")[1]):
                     continue
@@ -193,6 +195,9 @@ class StackMixin:
                 if item.is_spell:
                     self.fire(tgt.controller, "targeted_by_spell", tgt, context=item.controller)
 
+    def legal_item_target(self, p, eff, target, item):
+        return self.legal_target(p, eff, target) and r3b_spells.target_active(eff, target, item)
+
     def resolve_top(self):
         item = self.stack.pop()
         p = item.controller
@@ -245,7 +250,7 @@ class StackMixin:
             self.state_based_actions()
             return
         targeted = [(e, t) for e, t in zip(item.effects, item.targets) if e.target in TARGETED]
-        item.resolved = not (targeted and all(not self.legal_target(p, e, t) for e, t in targeted))
+        item.resolved = not (targeted and all(not self.legal_item_target(p, e, t, item) for e, t in targeted))
         if not item.resolved:
             self.log(f"{item} fizzles (no legal target)", p)
         else:
@@ -259,7 +264,7 @@ class StackMixin:
                     item.targets[i - 1].exile_turn = self.turn
             for eff, tgt in zip(item.effects, item.targets):
                 if eff.target in TARGETED:
-                    if not self.legal_target(p, eff, tgt):
+                    if not self.legal_item_target(p, eff, tgt, item):
                         prev = None
                         continue
                     prev = tgt

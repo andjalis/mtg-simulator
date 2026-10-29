@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from .. import auras, cast_triggers, copies, counting, removal, search, xspells, r3_spells
+from .. import auras, cast_triggers, copies, counting, removal, search, xspells, r3_spells, r3b_spells
 from ..cards import Effect
 from .state import Permanent, Player, StackItem
 from .kinds import HANDLERS, NO_SBA
@@ -50,9 +50,10 @@ class ResolveMixin:
             return
         handler = HANDLERS.get(k)
         if handler is not None:
-            if handler(self, p=p, eff=eff, target=target, item=item, prev=prev, opp=opp, k=k, source=source,
-                       cause=cause) is NO_SBA:
-                return
+            with r3b_spells.graveyard_event(self, k in r3b_spells.BATCH_KINDS):
+                if handler(self, p=p, eff=eff, target=target, item=item, prev=prev, opp=opp, k=k, source=source,
+                           cause=cause) is NO_SBA:
+                    return
         elif k in cast_triggers.KINDS:
             cast_triggers.resolve(self, p, eff, item)
         elif k in copies.KINDS:
@@ -63,8 +64,12 @@ class ResolveMixin:
             search.resolve(self, p, eff, target, item)
         elif k in auras.KINDS:
             auras.resolve(self, p, eff, target, item)
+        elif k in r3b_spells.KINDS:
+            with r3b_spells.graveyard_event(self, k in r3b_spells.BATCH_KINDS):
+                r3b_spells.resolve(self, p, eff, target, item)
         elif k in r3_spells.KINDS:
-            r3_spells.resolve(self, p, eff, target, item)
+            with r3b_spells.graveyard_event(self, k in r3b_spells.BATCH_KINDS):
+                r3_spells.resolve(self, p, eff, target, item)
         elif k in removal.KINDS:
             removal.resolve(self, p, eff, target, item)
         self.state_based_actions()

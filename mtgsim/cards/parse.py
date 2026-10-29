@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import cost_mana, graveyard, kicker, milling, modal, returns, r3_spells
+from .. import cost_mana, graveyard, kicker, milling, modal, returns, r3_spells, r3b_spells
 from .. import auras as _auras, copies as _copies, counters_r3 as _counters_r3, counting as _counting
 from .model import (
     Activated, AltCost, BASIC_MANA, COLORS, CardDef, Effect, KEYWORDS, NO_MATCH, NUMBERS, Trigger, _num, add_mana,
@@ -30,6 +30,18 @@ def _parse_effects(text: str, opts: bool = False):
         if re.fullmatch(r"(?:a creature|creatures) dealt damage this way can't be regenerated this turn", s, re.I) \
                 and effects and effects[-1].kind == "damage":
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
+            continue
+        reward = r3b_spells.parse_rider(s, effects)
+        if reward is not None:
+            if reward is False:
+                unmatched.append(sentence.strip())
+            else:
+                effects += reward
+            continue
+        life = re.fullmatch(r"you may pay (\d+) life", s, re.I)
+        if life:
+            effects.append(Effect("pay_life_gate", int(life[1])))
+            gated = True
             continue
         revolt = r3_spells.parse_revolt(s, effects)
         if revolt is not None:
@@ -61,6 +73,10 @@ def _parse_effects(text: str, opts: bool = False):
                 gate = ("blight", mg[4])
             effects.append(Effect("pay_gate", data={"gate": gate}))
             gated = True
+            continue
+        dynamic = r3b_spells.parse_dynamic(s)
+        if dynamic is not None:
+            effects.append(dynamic)
             continue
         mx = re.fullmatch(r"(.+?),? where X is (.+)", s, re.I)
         if mx and re.search(r"\bX\b", mx[1]) and _xq(mx[2]):
@@ -99,6 +115,9 @@ def _parse_effects(text: str, opts: bool = False):
         first = len(effects)
         paid = False
         if gated:
+            if any(e.kind == "pay_life_gate" for e in effects) and s.lower().startswith("when you do, "):
+                unmatched.append(sentence.strip())  # reflexive triggers need their own stack object
+                continue
             g = re.fullmatch(r"(?:if you do|when you do), (.+)", s, re.I)
             if g:
                 s, paid = g[1], True
@@ -415,7 +434,7 @@ def _face_special_lines(st, line):
                                        extra_costs={"level_from": n - 1}, sorcery=True, text=line))
             level_marks.append((n, len(triggers)))
             return None
-        line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious) — (?=When|At|If)", "", line)
+        line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Infusion) — (?=When|At|If)", "", line)
         parts = [p.strip().lower() for p in line.split(",")]
         if all(p in KEYWORDS or re.fullmatch(r"ward \{\d+\}", p) for p in parts):
             for p in parts:
@@ -852,6 +871,8 @@ def _face_cost_and_static_lines(st, line):
                          r"\+(\d+)/\+(\d+)\.", line)
         if m:
             extra["anthem_kw"] = extra.get("anthem_kw", ()) + ((m[1], int(m[2]), int(m[3])),)
+            return None
+        if r3b_spells.parse_static(line, extra):
             return None
         m = re.fullmatch(r"Creature tokens you control get \+(\d+)/\+(\d+)\.", line)
         if m:
@@ -1306,12 +1327,15 @@ def _parse_trigger(line: str):
 
 
 def _parse_trigger_line(line: str):
+    special = r3b_spells.parse_trigger(line)
+    if special is not None:
+        return special
     for pat, events in _TRIGGERS:
         m = re.fullmatch(pat, line)
         if not m:
             continue
         flt = ""
-        rest = m[m.lastindex]
+        rest = r3b_spells.source_pronouns(m[m.lastindex], events)
         if events == ("any_cast",):
             flt = f"cmc<={m[1]}"
         if "while saddled" in pat or events[-1] == "becomes_tapped":
