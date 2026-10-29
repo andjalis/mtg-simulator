@@ -2,12 +2,124 @@
 from __future__ import annotations
 
 import dataclasses
+import re
 
 from ... import cast_triggers, returns, counter_mechanics
 from ...cards import CardDef, Effect
 from ...identity import Graveyard
-from ..state import TrackedZone
+from ..state import Permanent, Player, TrackedZone, card_matches
 from . import NO_SBA, kind
+
+
+@kind("dig_gy")
+def dig_gy(game, p, eff, **_):
+    """"Look at/reveal the top N: some go to your hand (or back on top), the rest into your graveyard."""
+    n = eff.amount
+    cards = list(reversed(p.library[-min(n, len(p.library)):])) if n else []
+    keep, rest = [], list(cards)
+    if eff.data.get("types"):    # "a creature card and/or an enchantment card": one of each type
+        for t in eff.data["types"]:
+            allowed = [c for c in cards if not any(c is x for x in keep) and card_matches(c, f"a {t} card")]
+            if allowed:
+                keep.append(max(allowed, key=lambda c: c.cmc))
+    elif eff.data.get("to_top"):     # the best card goes back on top, the rest into the graveyard
+        if cards:
+            rest.remove(max(cards, key=lambda c: c.cmc))
+    else:
+        desc = eff.data.get("filter")
+        allowed = [c for c in cards if card_matches(c, _filter_desc(desc))] if desc else cards
+        if eff.data.get("any"):
+            keep = allowed
+        else:
+            keep = [c for c in game.hook(p, "choose_dig")(game, p, list(allowed), eff.amount2)
+                    if any(c is x for x in cards)][:eff.amount2]
+    for c in keep:
+        rest.remove(c)
+        game.move_card(c, p.library, p.hand, reason="dig")
+    for c in rest:
+        game.move_card(c, p.library, p.graveyard, reason="dig")
+    if keep or rest:
+        game.log(f"digs {n}, keeps {len(keep)}, mills {len(rest)}", p)
+
+
+def _filter_desc(desc: str) -> str:
+    """A search description card_matches understands: commas become alternatives."""
+    return "a " + re.sub(r",?\s+or\s+", " or a ", desc.replace(", ", " or "))
+
+
+@kind("fof")
+def fof(game, p, eff, item, **_):
+    """Fact or Fiction: an opponent splits the top N into two piles; you keep the better half."""
+    from ...ai import card_value
+    n = eff.amount + (getattr(item, "x", 0) if eff.data.get("x_plus") and item is not None else 0)
+    cards = list(reversed(p.library[-min(n, len(p.library)):]))
+    keep = sorted(cards, key=card_value, reverse=True)[:max(1, (n + 1) // 2)] if cards else []
+    rest = list(cards)
+    for c in keep:
+        rest.remove(c)
+        game.move_card(c, p.library, p.hand, reason="fact-or-fiction")
+    for c in rest:
+        game.move_card(c, p.library, p.graveyard, reason="fact-or-fiction")
+    game.log(f"keeps {len(keep)} of the top {n}, mills {len(rest)}", p)
+
+
+@kind("exile_self_payoff")
+def exile_self_payoff(game, p, eff, item, **_):
+    """A dies trigger's "you may exile it. If you do, <payoff>": exile the dead card, then queue the payoff."""
+    src = item.source if item is not None else None
+    card = src.front if isinstance(src, Permanent) else (item.context if item is not None else None)
+    owner = src.owner if isinstance(src, Permanent) else p
+    if card is not None and any(card is c for c in owner.graveyard):
+        game.move_card(card, owner.graveyard, owner.exile, reason="exile")
+        game.log(f"exiles {card.name} from the graveyard", p)
+        game.queue_trigger(p, eff.data["effects"], src, "payoff")
+
+
+@kind("exile_hand_perm")
+def exile_hand_perm(game, p, eff, target, **_):
+    """Reveal a player's hand, you choose a card, exile it for good (Night Terrors)."""
+    from .cards import _HAND_FILTERS
+    if isinstance(target, Player) and target.hand:
+        legal = [c for c in target.hand if _HAND_FILTERS[eff.filter](c)]
+        if legal:
+            card = max(legal, key=lambda c: c.cmc)
+            game.move_card(card, target.hand, target.exile, reason="exile")
+            game.log(f"exiles {card.name} from {target}'s hand", p)
+
+
+@kind("exiled_returned")
+def exiled_returned(game, **_):
+    """"When ~ leaves the battlefield, return the exiled card ...": the exile effect that took
+    the card (exiled_cards / exiled_to_hand on the source) already returned it."""
+    return NO_SBA
+
+
+@kind("reanimate_temp")
+def reanimate_temp(game, p, eff, item, **_):
+    """"Return a creature card from your graveyard ... it gains haste. Exile it at the next
+    end step" (Goryo's Vengeance, Dawn of the Dead)."""
+    if eff.data.get("top"):
+        cands = [c for c in reversed(list(p.graveyard)) if c.is_creature][:1]
+    else:
+        cands = [c for c in p.graveyard if c.is_creature and not (eff.data.get("legendary") and not c.legendary)]
+        if eff.data.get("x") and item is not None:
+            cands = [c for c in cands if c.cmc <= (getattr(item, "x", 0) or 0)]
+    if not cands:
+        return
+    card = cands[0] if eff.data.get("top") else max(cands, key=lambda c: c.cmc)
+    p.graveyard.remove(card)
+    game.log(f"returns {card.name} to the battlefield", p)
+    perm = game.enter_battlefield(p, card)
+    if perm is not None:
+        game.resolve(p, Effect("grant", data={"keyword": "haste"}), perm, item)
+        game.delayed_end_step.append((p, [Effect("exile_at_end")], item.source if item is not None else None, perm))
+
+
+@kind("exile_at_end")
+def exile_at_end(game, item, **_):
+    perm = item.context if item is not None else None
+    if isinstance(perm, Permanent) and perm in perm.controller.battlefield:
+        game.leave_battlefield(perm, "exile")
 
 
 @kind("regrow")

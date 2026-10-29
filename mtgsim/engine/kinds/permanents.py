@@ -402,6 +402,16 @@ def sacrifice_self(game, p, eff, target, **_):
         game.sacrifice(target)
 
 
+@kind("sac_self_payoff")
+def sac_self_payoff(game, p, eff, item, **_):
+    """A trigger's "you may sacrifice it. If you do, <payoff>": sacrifice the source when it
+    resolves (the greedy policy always takes the may), then queue the payoff effects."""
+    src = item.source if item is not None else None
+    if isinstance(src, Permanent) and src in p.battlefield:
+        game.sacrifice(src)
+        game.queue_trigger(p, eff.data["effects"], src, "payoff")
+
+
 @kind("decayed_delay")
 def decayed_delay(game, p, target, **_):
     if isinstance(target, Permanent):

@@ -57,3 +57,12 @@ _SUBS += _residual_templates.SUBS
 from .. import that_much as _that_much
 _EFFECT_PATTERNS += _that_much.EFFECT_PATTERNS
 _TRIGGERS += _that_much.TRIGGERS
+from .. import graveyard_templates as _graveyard_templates
+_EFFECT_PATTERNS += _graveyard_templates.EFFECT_PATTERNS
+_SUBS += _graveyard_templates.SUBS
+from .. import exile_templates as _exile_templates
+_EFFECT_PATTERNS += _exile_templates.EFFECT_PATTERNS
+_SUBS += _exile_templates.SUBS
+from .. import sacrifice_templates as _sacrifice_templates
+_EFFECT_PATTERNS += _sacrifice_templates.EFFECT_PATTERNS
+_SUBS += _sacrifice_templates.SUBS
