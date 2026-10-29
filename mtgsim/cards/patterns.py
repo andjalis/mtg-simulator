@@ -719,6 +719,8 @@ def _xq(text: str):
 
 
 _IF_CONDS = [
+    (r"you gained life this turn", "gained_life"),
+    (r"you descended this turn", "descended"),
     (r"you(?:'ve| have)? cast (?:three|3) or more instant and sorcery spells this turn", "instants_sorceries>=3"),
     (r"(?:two|2) or more creatures died this turn", "creatures_died>=2"),
     (r"a creature entered and a creature died this turn", "creature_entered_and_died"),

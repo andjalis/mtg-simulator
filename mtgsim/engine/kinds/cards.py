@@ -46,8 +46,11 @@ def scry(game, p, eff, **_):
 
 
 @kind("surveil")
-def surveil(game, p, eff, **_):
+def surveil(game, p, eff, item, **_):
+    before = {c.physical_id for c in p.graveyard}
     game.scry(p, eff.amount, to_graveyard=True)
+    if item is not None:
+        item.surveilled = {p: [p.graveyard.reference(c) for c in p.graveyard if c.physical_id not in before]}
     game.fire(p, "scry_surveil")
 
 

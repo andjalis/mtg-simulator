@@ -48,6 +48,12 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     k = eff.kind
+    if eff.target == "graveyard_creature_life":
+        return max(legal, key=lambda c: c.cmc, default=None)
+    if k == "connive_many":
+        return max(mine, key=perm_value, default=None)
+    if k == "grant" and eff.target == "creature_pw" and eff.filter == "mine":
+        return max(mine, key=perm_value, default=None)
     if k == "bounce_spell_permanent":
         return next((i for i in reversed(game.stack) if i in legal and i.controller is opp),
                     max(theirs, key=perm_value, default=None))

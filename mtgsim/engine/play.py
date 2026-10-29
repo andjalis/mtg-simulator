@@ -237,7 +237,7 @@ class PlayMixin:
         if not instant_ok and not (p is self.active and self.step in ("main1", "main2") and not self.stack):
             return False
         targets = self.auto_targets(p, effects, pw) if targets is None else list(targets)
-        if not self.valid_action_targets(p, effects, targets):
+        if not self.valid_action_targets(p, effects, targets, source=pw):
             return False
         pw.counters["loyalty"] = pw.loyalty + cost
         pw.loyalty_used = True
@@ -445,9 +445,10 @@ class PlayMixin:
             return False
         return payable(self.mana_sources(p, perm if c.get("tap") else None, "ability"), self.ability_cost(p, perm, act))
 
-    def valid_action_targets(self, p, effects, targets):
+    def valid_action_targets(self, p, effects, targets, source=None):
         return all(e.target not in TARGETED or (i < len(targets) and
-                   self.legal_target(p, e, targets[i])) for i, e in enumerate(effects))
+                   self.legal_target(p, e, targets[i]) and
+                   not (e.data.get("other") and targets[i] is source)) for i, e in enumerate(effects))
 
     @atomic_action
     def activate_ability(self, p: Player, perm: Permanent, idx: int, targets=None) -> bool:
@@ -456,7 +457,7 @@ class PlayMixin:
             return False
         act, c = perm.card.activated[idx], perm.card.activated[idx].extra_costs
         targets = self.auto_targets(p, act.effects, perm) if targets is None else list(targets)
-        if not self.valid_action_targets(p, act.effects, targets):
+        if not self.valid_action_targets(p, act.effects, targets, source=perm):
             return False
         if self.pay(p, self.ability_cost(p, perm, act), exclude=perm if c.get("tap") else None) is None:
             return False
@@ -507,7 +508,7 @@ class PlayMixin:
             mode_effects = modal.pick(self, p, act.modes, perm)
             effects += mode_effects
             targets = list(targets) + self.auto_targets(p, mode_effects, perm)
-            if not self.valid_action_targets(p, mode_effects, targets[-len(mode_effects):]):
+            if not self.valid_action_targets(p, mode_effects, targets[-len(mode_effects):], source=perm):
                 return False
         item = StackItem(p, effects, list(targets), source=perm, name=f"{perm.card.name} ability",
                          kind="ability")

@@ -31,6 +31,8 @@ class TargetsMixin:
             return perm.card.cmc <= limit
         if f == "plains":
             return perm.card.cmc <= sum(1 for x in by.battlefield if x.card.name.endswith("Plains"))
+        if f == "attacking":
+            return perm in self.attackers
         if f == "tapped":
             return perm.tapped
         if f == "attacking_blocking":
@@ -80,6 +82,8 @@ class TargetsMixin:
             return creatures + [x for x in everything if x.is_planeswalker] + list(self.players)
         if t == "player":
             return [self.opponent(p)] if eff.filter == "opp" else list(self.players)
+        if t == "graveyard_creature_life":
+            return [c for c in p.graveyard if c.is_creature and c.cmc <= p.life_gained_turn]
         if t == "spell_or_permanent":
             return everything + [i for i in self.stack if i.is_spell]
         if t == "spell":
@@ -136,5 +140,8 @@ class TargetsMixin:
                 tgt = max((x for x in self.legal_targets(p, e) if all(x is not t for t in taken)
                            and (x.controller is not p) == (tgt.controller is not p)), key=perm_value, default=None) \
                     if isinstance(tgt, Permanent) else None
+            if e.data.get("other") and tgt is source:
+                tgt = max((x for x in self.legal_targets(p, e) if x is not source),
+                          key=perm_value, default=None)
             out.append(tgt)
         return out
