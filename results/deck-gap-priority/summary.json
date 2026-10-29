@@ -1,28 +1,14 @@
 {
- "measured_on": "2026-10-28",
+ "measured_on": "2026-10-29",
  "totals": {
   "decks": 40,
   "copies": 2400,
-  "full_copies": 2010,
-  "partial_copies": 270
+  "full_copies": 2099,
+  "partial_copies": 181
  },
  "missing_cards": [],
  "weighting": "score = sum of main-deck copies x (rank 1-7 + metagame share % / 5)",
  "candidates": [
-  {
-   "line": "the first non-lemur creature spell with flying you cast during each of your turns costs {1} less to cast.",
-   "score": 54.6,
-   "copies": 8,
-   "unlock_copies": 8,
-   "decks": 2,
-   "cards": [
-    "Momo, Friendly Flier"
-   ],
-   "families": [
-    "cost reduction"
-   ],
-   "blocked_by": []
-  },
   {
    "line": "[+1]: you get an emblem with \"ninjas you control get +1/+1.\"",
    "score": 36.2,
@@ -171,22 +157,6 @@
    "blocked_by": []
   },
   {
-   "line": "{2}, {t}, remove a charge counter from ~: draw a card. then if there are no charge counters on ~, create a treasure token and a 1/1 colorless pilot creature token with \"~ crews vehicles as though its power were 2 greater.\"",
-   "score": 32.0,
-   "copies": 8,
-   "unlock_copies": 8,
-   "decks": 2,
-   "cards": [
-    "Reckoner Bankbuster"
-   ],
-   "families": [
-    "tokens",
-    "counters",
-    "activated abilities"
-   ],
-   "blocked_by": []
-  },
-  {
    "line": "you may cast this card from your graveyard using its blitz ability.",
    "score": 24.0,
    "copies": 6,
@@ -197,45 +167,6 @@
    ],
    "families": [
     "graveyard"
-   ],
-   "blocked_by": []
-  },
-  {
-   "line": "return target spell or permanent to its owner's hand.",
-   "score": 24.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Jeskai Revelation"
-   ],
-   "families": [],
-   "blocked_by": []
-  },
-  {
-   "line": "then destroy all other creatures if its power is exactly 20.",
-   "score": 24.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Amalia Benavides Aguirre"
-   ],
-   "families": [],
-   "blocked_by": []
-  },
-  {
-   "line": "{t}: add {r}{r}. spend this mana only to cast instant and sorcery spells.",
-   "score": 24.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Tablet of Discovery"
-   ],
-   "families": [
-    "mana restrictions",
-    "activated abilities"
    ],
    "blocked_by": []
   },
@@ -294,134 +225,6 @@
    "blocked_by": []
   },
   {
-   "line": "discard a card: ~ gains indestructible until end of turn. tap it.",
-   "score": 20.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Iron-Shield Elf"
-   ],
-   "families": [],
-   "blocked_by": []
-  },
-  {
-   "line": "exile target creature you control, then return that card to the battlefield under its owner's control with a +1/+1 counter on it.",
-   "score": 20.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Daydream"
-   ],
-   "families": [
-    "counters",
-    "exile"
-   ],
-   "blocked_by": []
-  },
-  {
-   "line": "put a +1/+1 counter on target creature an opponent controls.",
-   "score": 20.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Sunset Saboteur"
-   ],
-   "families": [
-    "counters"
-   ],
-   "blocked_by": []
-  },
-  {
-   "line": "put that many +1/+1 counters on ~.",
-   "score": 20.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Marauding Mako"
-   ],
-   "families": [
-    "counters"
-   ],
-   "blocked_by": []
-  },
-  {
-   "line": "search your library for a card, put it into your hand, shuffle, then discard a card at random.",
-   "score": 20.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Cool but Rude"
-   ],
-   "families": [
-    "library search"
-   ],
-   "blocked_by": []
-  },
-  {
-   "line": "whenever one or more opponents are dealt noncombat damage, creatures you control get +1/+0 until end of turn.",
-   "score": 20.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Master of Barbs"
-   ],
-   "families": [
-    "+1/+1 static (anthems)",
-    "triggered (whenever/when)"
-   ],
-   "blocked_by": []
-  },
-  {
-   "line": "whenever one or more permanent cards are put into your graveyard from anywhere while ~ has a -1/-1 counter on it, remove a -1/-1 counter from ~.",
-   "score": 20.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Moonshadow"
-   ],
-   "families": [
-    "graveyard",
-    "counters",
-    "triggered (whenever/when)"
-   ],
-   "blocked_by": []
-  },
-  {
-   "line": "whenever ~ attacks while you control a creature with power 4 or greater, ~ gets +2/+2 until end of turn.",
-   "score": 20.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Nighthowl Pursuer"
-   ],
-   "families": [
-    "triggered (whenever/when)"
-   ],
-   "blocked_by": []
-  },
-  {
-   "line": "{1}{r}: put a +1/+1 counter on ~. activate only if an opponent lost life this turn and only once each turn.",
-   "score": 20.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Hired Claw"
-   ],
-   "families": [
-    "counters"
-   ],
-   "blocked_by": []
-  },
-  {
    "line": "as long as you have an enduring story, you may pay {0} rather than pay the equip cost of the first equip ability you activate each turn.",
    "score": 20.0,
    "copies": 4,
@@ -447,30 +250,6 @@
    "families": [
     "modal (choose)"
    ],
-   "blocked_by": []
-  },
-  {
-   "line": "if you do, return ~ to its owner's hand.",
-   "score": 20.0,
-   "copies": 4,
-   "unlock_copies": 0,
-   "decks": 1,
-   "cards": [
-    "Corpses of the Lost"
-   ],
-   "families": [],
-   "blocked_by": []
-  },
-  {
-   "line": "skeletons you control get +1/+0 and have haste.",
-   "score": 20.0,
-   "copies": 4,
-   "unlock_copies": 0,
-   "decks": 1,
-   "cards": [
-    "Corpses of the Lost"
-   ],
-   "families": [],
    "blocked_by": []
   },
   {
@@ -513,18 +292,6 @@
    "blocked_by": []
   },
   {
-   "line": "you may pay 1 life.",
-   "score": 20.0,
-   "copies": 4,
-   "unlock_copies": 0,
-   "decks": 1,
-   "cards": [
-    "Corpses of the Lost"
-   ],
-   "families": [],
-   "blocked_by": []
-  },
-  {
    "line": "counter up to one target activated or triggered ability.",
    "score": 18.1,
    "copies": 2,
@@ -535,49 +302,6 @@
    ],
    "families": [
     "counters"
-   ],
-   "blocked_by": []
-  },
-  {
-   "line": "if you put a card with mana value less than or equal to the amount of life you gained this turn into your graveyard this way, put that card into your hand.",
-   "score": 18.0,
-   "copies": 3,
-   "unlock_copies": 3,
-   "decks": 1,
-   "cards": [
-    "Enlightened Confidant"
-   ],
-   "families": [
-    "graveyard"
-   ],
-   "blocked_by": []
-  },
-  {
-   "line": "infusion \u2014 at the beginning of your end step, if you gained life this turn, return up to one target creature card with mana value x or less from your graveyard to the battlefield, where x is the amount of life you gained this turn.",
-   "score": 18.0,
-   "copies": 3,
-   "unlock_copies": 3,
-   "decks": 1,
-   "cards": [
-    "Moseo, Vein's New Dean"
-   ],
-   "families": [
-    "graveyard",
-    "X costs"
-   ],
-   "blocked_by": []
-  },
-  {
-   "line": "{1}, {t}, discard a card: another target creature or planeswalker you control gains hexproof until end of turn.",
-   "score": 18.0,
-   "copies": 3,
-   "unlock_copies": 3,
-   "decks": 1,
-   "cards": [
-    "Liliana the Faultless"
-   ],
-   "families": [
-    "activated abilities"
    ],
    "blocked_by": []
   },
@@ -635,47 +359,6 @@
    ],
    "families": [
     "counters"
-   ],
-   "blocked_by": []
-  },
-  {
-   "line": "revolt \u2014 destroy that creature if it has mana value 4 or less instead if a permanent left the battlefield under your control this turn.",
-   "score": 16.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Fatal Push"
-   ],
-   "families": [],
-   "blocked_by": []
-  },
-  {
-   "line": "target attacking creature connives x, where x is the number of attacking creatures.",
-   "score": 16.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Raffine, Scheming Seer"
-   ],
-   "families": [
-    "X costs"
-   ],
-   "blocked_by": []
-  },
-  {
-   "line": "{2}, {t}, sacrifice ~: draw a card if you control an artifact. draw a card if you control an enchantment.",
-   "score": 16.0,
-   "copies": 4,
-   "unlock_copies": 4,
-   "decks": 1,
-   "cards": [
-    "Roadside Reliquary"
-   ],
-   "families": [
-    "sacrifice",
-    "activated abilities"
    ],
    "blocked_by": []
   },

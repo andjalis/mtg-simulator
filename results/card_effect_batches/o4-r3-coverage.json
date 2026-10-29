@@ -1,0 +1,30 @@
+{
+  "batch": "o4-r3 (counters, spells, cost-mana) + o4-r3b-spells",
+  "base": {
+    "engine": "b68b9c1",
+    "counts": {
+      "full": 8647,
+      "simplified": 104,
+      "partial": 26171,
+      "parse_error": 0
+    }
+  },
+  "round3": {
+    "engine": "32eda6a",
+    "counts": {
+      "full": 8694,
+      "simplified": 104,
+      "partial": 26124,
+      "parse_error": 0
+    }
+  },
+  "round3b_spells": {
+    "engine": "dfa58c6",
+    "counts": {
+      "full": 8709,
+      "simplified": 105,
+      "partial": 26108,
+      "parse_error": 0
+    }
+  }
+}
