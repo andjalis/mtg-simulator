@@ -453,7 +453,7 @@ _EFFECT_PATTERNS = [
     (r"support (\d+|one|two|three|four|five|six)", lambda m: Effect("support", _num(m[1]))),
     (r"(?:target|each) opponent sacrifices a creature(?: of their choice)?", lambda m: Effect("edict", 1)),
     (r"target player sacrifices a creature(?: of their choice)?", lambda m: Effect("edict", 1, target="player")),
-    (r"each player sacrifices a creature(?: of their choice)?", lambda m: Effect("edict", 1)),
+    (r"each player sacrifices a creature(?: of their choice)?", lambda m: Effect("edict_each", 1)),
     (r"each other player sacrifices a creature", lambda m: Effect("edict", 1)),
     (r"reveal the top card of your library and put (?:it|that card) into your hand", lambda m: Effect("dig", 1, 1)),
     (r"creatures without flying can't block this turn", lambda m: Effect("cant_block_all", filter="nonflying")),

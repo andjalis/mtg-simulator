@@ -108,11 +108,12 @@ class SmolBatch2Parse(unittest.TestCase):
         self.assertTrue(act.activated[0].once)
 
     def test_edict_wordings(self):
-        for text in ("Each player sacrifices a creature of their choice.",
-                     "Target player sacrifices a creature of their choice."):
-            c = card("Deathpact", "{1}{B}", "Sorcery", text)
-            self.clean(c)
-            self.assertEqual([e.kind for e in c.spell_effects], ["edict"])
+        each = card("Deathpact", "{1}{B}", "Sorcery", "Each player sacrifices a creature of their choice.")
+        self.clean(each)
+        self.assertEqual([e.kind for e in each.spell_effects], ["edict_each"])
+        target = card("Deathpact", "{1}{B}", "Sorcery", "Target player sacrifices a creature of their choice.")
+        self.clean(target)
+        self.assertEqual([e.kind for e in target.spell_effects], ["edict"])
 
     def test_reveal_top_card_to_hand(self):
         c = card("Insight Pulse", "{2}{U}", "Instant",
