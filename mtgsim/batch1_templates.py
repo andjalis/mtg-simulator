@@ -253,6 +253,10 @@ def parse_line(line, st):
         rules = st.extra.setdefault('advanced_rules', {})
         rules['spell_tax'] = rules.get('spell_tax', ()) + ((m[1].strip().lower(), bool(m[2]), int(m[3])),)
         return True
+    m = re.fullmatch(r"Prevent all (combat )?damage that would be dealt to ~( by creatures)?\.", line)
+    if m:
+        st.extra.setdefault('advanced_rules', {})['damage_immune'] = ("combat" if m[1] else "creatures" if m[2] else "all")
+        return True
     if line == "Skip your draw step.":
         st.extra.setdefault('advanced_rules', {})['skip_draw'] = True
         return True
@@ -625,6 +629,14 @@ def spell_tax(game, player, card):
                     or flt in ('creature', 'artifact', 'enchantment', 'instant', 'sorcery') and flt.capitalize() in card.types:
                 total += n
     return total
+
+
+def damage_immune(target, source, combat):
+    """Self-protection statics: all damage, only combat damage, or only damage from creatures."""
+    from .engine.state import Permanent
+    kind = target.card.advanced_rules.get('damage_immune') if isinstance(target, Permanent) and not target.abilities_suppressed else None
+    return bool(kind) and (kind == 'all' or kind == 'combat' and combat
+                           or kind == 'creatures' and isinstance(source, Permanent) and source.is_creature)
 
 
 def lifegain_blocked(game, player):

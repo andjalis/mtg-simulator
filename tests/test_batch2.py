@@ -160,6 +160,11 @@ class Batch2(Batch1):
         self.put(card("Test Fountain", "{1}{U}", "Creature — Wizard", "Spells you cast cost {1} less to cast.", 2, 2))
         self.assertEqual(self.g.cost_of(self.a, BIG).get("generic"), 3)
 
+    def test_damage_immunity(self):
+        rock = self.put(card("Test Rock", "{2}", "Creature — Golem", "Prevent all damage that would be dealt to ~.", 1, 1), self.b)
+        self.g.deal_damage(rock, 5, self.a)
+        self.assertEqual(rock.damage, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

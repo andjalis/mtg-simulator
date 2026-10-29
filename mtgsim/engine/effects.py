@@ -26,8 +26,8 @@ class EffectsMixin:
         if protected_from(target, source):
             self.log(f"{target.card.name}'s protection prevents {amount} damage", target.controller)
             return
-        from ..batch1_templates import phantom_prevents
-        if isinstance(target, Permanent) and phantom_prevents(target):
+        from ..batch1_templates import phantom_prevents, damage_immune
+        if isinstance(target, Permanent) and (phantom_prevents(target) or damage_immune(target, source, combat)):
             return
         if isinstance(target, Player):
             from ..batch1_templates import curses_on

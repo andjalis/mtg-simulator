@@ -98,7 +98,7 @@ def _face_special_lines(st, line):
         if line == "~ attacks each combat if able.":
             extra["must_attack"] = True
             return None
-        m = re.fullmatch(r"~ enters with (\w+) -1/-1 counters on it\.", line)
+        m = re.fullmatch(r"~ enters with (\w+) -1/-1 counters? on it\.", line)
         if m:
             extra["etb_named_counters"] = ("-1/-1", _num(m[1]))
             return None
@@ -382,7 +382,7 @@ def _face_land_and_mana_lines(st, line):
         if re.fullmatch(r"~ enters(?: the battlefield)? tapped unless you control two or fewer other lands\.", line):
             extra["tapped_condition"] = "unless_le_2_lands"
             return None
-        m = re.fullmatch(r"~ enters(?: the battlefield)? with (a|one|two|three|four|five) \+1/\+1 counters? on it\.",
+        m = re.fullmatch(r"~ enters(?: the battlefield)? with (a|one|two|three|four|five|six|seven|eight|nine|ten) \+1/\+1 counters? on it\.",
                          line)
         if m:
             extra["etb_counters"] = _num(m[1])
