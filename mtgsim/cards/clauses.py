@@ -343,6 +343,7 @@ _IF_CONDS = [
     (r"you control a creature with power (\d+) or greater", None),
     (r"you sacrificed a permanent this turn", "sacrificed_turn"),
     (r"you have the city's blessing", "city_blessing"),
+    (r"tribute wasn't paid", "tribute_unpaid"),
 ]
 
 

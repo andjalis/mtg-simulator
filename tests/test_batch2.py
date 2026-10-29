@@ -4,6 +4,7 @@ import unittest
 from mtgsim.cards import _parse_effects
 from mtgsim.engine import StackItem
 from tests.test_batch1 import Batch1, BIG
+from tests.test_templates import ISLAND
 from tests.test_templates import card
 
 SPELL = card("Test Spell", "{1}", "Sorcery", "", None, None)
@@ -181,6 +182,67 @@ class Batch2(Batch1):
         victim = self.put(BIG, self.b)
         self.apply("~ deals damage to target creature equal to the number of lands you control.", [victim])
         self.assertEqual(victim.damage, 3)
+
+    def test_group_destroy_and_damage(self):
+        mine, theirs = self.put(BIG), self.put(BIG, self.b)
+        self.apply("Destroy each creature you don't control.")
+        self.assertIn(mine, self.a.battlefield)
+        self.assertNotIn(theirs, self.b.battlefield)
+
+    def test_overload_cast(self):
+        from mtgsim.cards import parse_mana_cost
+        rift = card("Test Rift", "{1}{U}", "Instant", "Return target nonland permanent to its owner's hand.\nOverload {3}{U}{U}", None, None)
+        self.assertEqual([a.kind for a in rift.alt_costs], ["alt"])
+        self.assertEqual(rift.alt_costs[0].effects[0].kind, "group_remove")
+        self.assertEqual(rift.alt_costs[0].cost, parse_mana_cost("{3}{U}{U}"))
+
+    def test_overload_resolves_on_each(self):
+        from tests.test_templates import ISLAND
+        rift = card("Test Rift", "{1}{U}", "Instant", "Return target nonland permanent to its owner's hand.\nOverload {3}{U}{U}", None, None)
+        for _ in range(6):
+            self.put(ISLAND)
+        one, two = self.put(BIG, self.b), self.put(BIG, self.b)
+        self.a.hand.append(rift)
+        variant = next(v for v in self.g.spell_options(self.a) if self.g._origin(v)[1] == "alt")
+        self.g.cast(self.a, variant)
+        self.g.settle()
+        self.assertNotIn(one, self.b.battlefield)
+        self.assertNotIn(two, self.b.battlefield)
+
+    def test_conspire_copies_spell(self):
+        from tests.test_templates import MOUNTAIN
+        bolt = card("Test Burn", "{R}", "Instant", "~ deals 2 damage to any target.\nConspire", None, None)
+        for _ in range(2):
+            self.put(card("Test Red Cub", "{R}", "Creature — Goblin", "", 1, 1))
+        self.put(MOUNTAIN)
+        self.a.hand.append(bolt)
+        self.b.life = 20
+        self.g.cast(self.a, bolt)
+        self.g.settle()
+        self.assertEqual(self.b.life, 16)
+
+    def test_hideaway(self):
+        land = card("Test Knoll", "", "Land", "Hideaway 4\n{G}, {T}: You may play the exiled card without paying its mana cost if "
+                    "creatures you control have total power 10 or greater.", None, None)
+        gem = card("Test Gem", "{4}", "Artifact", "", None, None)
+        self.a.library[-4:] = [ISLAND, ISLAND, gem, ISLAND]
+        perm = self.put(land)
+        self.assertEqual(perm.hidden.name, "Test Gem")
+        self.assertIn(perm.hidden, self.a.exile)
+        self.put(BIG), self.put(BIG), self.put(BIG)
+        item = StackItem(self.a, [], [], source=perm)
+        self.g.resolve(self.a, land.activated[0].effects[0], None, item)
+        self.g.settle()
+        self.assertTrue(any(x.card.name == "Test Gem" for x in self.a.battlefield))
+
+    def test_tribute_counters(self):
+        giant = self.put(card("Test Giant Tribute", "{4}{R}", "Creature — Giant", "Tribute 2\nWhen ~ enters, if tribute wasn't paid, ~ deals 5 damage to each opponent.", 4, 4))
+        self.assertEqual(giant.p1, 2)
+        self.assertEqual(self.b.life, 20)
+
+    def test_draw_each_two(self):
+        self.apply("You and target opponent each draw two cards.")
+        self.assertEqual((len(self.a.hand), len(self.b.hand)), (2, 2))
 
 
 if __name__ == "__main__":

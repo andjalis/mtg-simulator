@@ -388,6 +388,14 @@ def _parse_face(data: dict) -> CardDef:
         alt_costs.append(AltCost("kicker", add_mana(cost, extra.pop("kicker")), effects=kicked_effects))
     elif kicked:
         unsupported += [f"if kicked: {k}" for k in kicked]
+    if "overload" in extra:
+        from ..batch2_templates import overload_effects
+        overload = overload_effects(text)
+        if overload[1]:
+            unsupported += [f"overload: {b}" for b in overload[1]]
+        else:
+            alt_costs.append(AltCost("alt", extra.pop("overload"), effects=overload[0]))
+        extra.pop("overload", None)
     gy_draw = extra.pop("_gy_draw", 0)
     gy_casts = [a for a in alt_costs if a.zone == "graveyard" and a.effects is None]
     draws = [e for e in spell if e.kind == "draw"]
