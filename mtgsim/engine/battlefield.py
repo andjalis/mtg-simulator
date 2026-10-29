@@ -136,6 +136,9 @@ class BattlefieldMixin:
         p.battlefield.append(perm)
         from ..batch1_templates import soulbond_pair
         soulbond_pair(self, p, perm)
+        if perm.is_creature:
+            from ..batch1_templates import curse_event
+            curse_event(self, p, 'curse_creature_enters')
         self._residual_source_index = None
         if not card.is_land:
             p.entered_nonland_turn += 1

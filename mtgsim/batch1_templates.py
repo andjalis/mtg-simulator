@@ -149,6 +149,21 @@ def parse_line(line, st):
         st.extra.setdefault('advanced_rules', {})['aura_mana'] = {'one': 1, 'two': 2}.get(m[1][:3], m[1].count('{'))
         st.approximations.append("extra mana from an enchanted land is the land's own colour")
         return True
+    if _curse_line(line, st):
+        return True
+    m = re.fullmatch(r"Cumulative upkeep(?: ((?:\{[^ }/]+\})+)|—Pay (\d+) life)\.?(?: \(.*\))?", line)
+    if m:
+        from .cards import parse_mana_cost
+        st.extra.setdefault('advanced_rules', {})['cumulative_upkeep'] = (
+            ('mana', parse_mana_cost(m[1])) if m[1] else ('life', int(m[2])))
+        return True
+    m = re.fullmatch(r"Outlast ((?:\{[^ }]+\})+)(?: \(.*\))?", line)
+    if m:
+        from .cards import Activated, Effect, parse_mana_cost
+        st.activated.append(Activated("ability", parse_mana_cost(m[1]), effects=[Effect('p1_counters', 1, target='self')],
+                                      extra_costs={"tap": True}, sorcery=True,
+                                      text=f"{m[1]}, {{T}}: Put a +1/+1 counter on this creature. Activate only as a sorcery."))
+        return True
     m = re.fullmatch(r"(Each player|You) can't cast more than one spell each turn\.", line)
     if m:
         st.extra.setdefault('advanced_rules', {})['one_spell_each' if m[1] == 'Each player' else 'one_spell_you'] = True
@@ -225,6 +240,10 @@ def mark_exile_dying(game, creature):
 
 def on_upkeep(game, active):
     """Auras that act at the upkeep of the enchanted creature's controller."""
+    curse_event(game, active, 'curse_upkeep')
+    for perm in list(active.battlefield):
+        if perm.card.advanced_rules.get('cumulative_upkeep') and not perm.abilities_suppressed:
+            cumulative_upkeep(game, active, perm)
     for player in game.players:
         for src in list(player.battlefield):
             host = src.aura_host
@@ -232,6 +251,23 @@ def on_upkeep(game, active):
                 for trig in src.triggers:
                     if trig.event == 'host_upkeep':
                         game.queue_trigger(player, trig.effects, src, src.card.name, context=host)
+
+
+def cumulative_upkeep(game, p, perm):
+    """Add an age counter, then pay the upkeep cost once per age counter or sacrifice it (the AI stops paying when it gets steep)."""
+    age = perm.counters.get('age', 0) + 1
+    perm.counters['age'] = age
+    kind, cost = perm.card.advanced_rules['cumulative_upkeep']
+    if kind == 'life':
+        if p.life - cost * age >= 8:
+            game.change_life(p, -cost * age, f"{perm.card.name}: cumulative upkeep")
+            return
+    else:
+        total = {k: v * age for k, v in cost.items()}
+        if sum(total.values()) <= 3 and game.can_pay(p, total) and game.pay(p, total) is not None:
+            return
+    game.log(f"does not pay cumulative upkeep for {perm.card.name}", p)
+    game.sacrifice(perm)
 
 
 def effect_value(game, player, effect, target):
@@ -309,12 +345,76 @@ def soulbond_pair(game, p, perm):
         game.log(f"{perm.card.name} pairs with {pick.card.name}", p)
 
 
+def _curse_line(line, st):
+    """Curses ("Enchant player" Auras): upkeep and attack triggers and static rules on the enchanted player."""
+    import re
+    from .cards import Effect, Trigger, _parse_effects
+    rules = st.extra.setdefault('advanced_rules', {})
+    m = re.fullmatch(r"At the beginning of enchanted player's upkeep, (?:that player (loses|mills) (\w+) (?:life|cards)|"
+                     r"that player exiles (\w+) cards from their graveyard|~ deals (\d+) damage to that player"
+                     r"( or a planeswalker that player controls)?|~ deals damage to that player equal to the number of Curses attached to them)\.", line)
+    if m:
+        if m[1] == 'loses':
+            eff = Effect('curse_lose', _num(m[2]))
+        elif m[1] == 'mills':
+            eff = Effect('curse_mill', _num(m[2]))
+        elif m[3]:
+            eff = Effect('curse_exile_gy', _num(m[3]))
+        elif m[4]:
+            eff = Effect('curse_damage', int(m[4]))
+            if m[5]:
+                st.approximations.append("the planeswalker option is ignored")
+        else:
+            eff = Effect('curse_damage', 0, data={'per_curse': True})
+        st.triggers.append(Trigger('curse_upkeep', [eff]))
+        return True
+    m = re.fullmatch(r"Creatures enchanted player controls get ([+−-])(\d+)/([+−-])(\d+)\.", line)
+    if m:
+        sign = lambda c: -1 if c in '−-' else 1
+        rules['curse_pt'] = (sign(m[1]) * int(m[2]), sign(m[3]) * int(m[4]))
+        return True
+    simple = {"Enchanted player can't cast more than one spell each turn.": 'curse_one_spell',
+              "If a source would deal damage to enchanted player, it deals double that damage to that player instead.": 'curse_double',
+              "Creatures enchanted player controls attack each combat if able.": 'curse_must_attack'}
+    if line in simple:
+        rules[simple[line]] = True
+        return True
+    m = re.fullmatch(r"Whenever enchanted player is attacked, (.+?\.) Each opponent attacking that player does the same\.", line)
+    if m:
+        effects, bad = _parse_effects(m[1])
+        if effects and not bad:
+            st.triggers.append(Trigger('curse_attacked', effects))
+            return True
+    if line == "Whenever a creature enters under enchanted player's control, that player loses 1 life and you gain 1 life.":
+        st.triggers.append(Trigger('curse_creature_enters', [Effect('drain', 1, target='each_opponent', data={'gain': True})]))
+        return True
+    return False
+
+
+def curses_on(game, player):
+    """The Curses attached to this player."""
+    if game is None:
+        return []
+    return [x for pl in game.players for x in pl.battlefield
+            if x.curse_target is player and not x.abilities_suppressed]
+
+
+def curse_event(game, player, event, context=None):
+    """Queue the triggers of every Curse on player for this event."""
+    for curse in curses_on(game, player):
+        for trig in curse.triggers:
+            if trig.event == event:
+                game.queue_trigger(curse.controller, trig.effects, curse, curse.card.name,
+                                   context=player if context is None else context)
+
+
 def spell_limited(game, p):
     """Rule of Law: only one spell per turn for everyone (or just you under Moderation)."""
     from .residual_templates import sources
     if game.spells_cast_turn(p) < 1:
         return False
-    return bool(sources(game, 'one_spell_each') or [x for x in sources(game, 'one_spell_you') if x.controller is p])
+    return bool(sources(game, 'one_spell_each') or [x for x in sources(game, 'one_spell_you') if x.controller is p]
+                or any(c.card.advanced_rules.get('curse_one_spell') for c in curses_on(game, p)))
 
 
 def soul_link(game, source, target, amount):

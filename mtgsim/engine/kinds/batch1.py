@@ -159,3 +159,26 @@ def set_base_pt(game, eff, target, **_):
         if isinstance(base_p, int) and isinstance(base_t, int):
             target.pump_p += eff.amount - base_p
             target.pump_t += eff.amount2 - base_t
+
+
+@kind("curse_lose", "curse_mill", "curse_exile_gy", "curse_damage")
+def curse_effects(game, p, eff, item, cause, **_):
+    """Upkeep effects of a Curse on the enchanted player (the trigger's context)."""
+    victim = item.context if item is not None else None
+    if not isinstance(victim, Player):
+        return
+    if eff.kind == "curse_lose":
+        game.change_life(victim, -eff.amount, cause)
+    elif eff.kind == "curse_mill":
+        for _ in range(min(eff.amount, len(victim.library))):
+            card = victim.library.pop(0)
+            victim.graveyard.append(card)
+        game.log(f"mills {eff.amount}", victim)
+    elif eff.kind == "curse_exile_gy":
+        for card in list(victim.graveyard)[:eff.amount]:
+            victim.graveyard.remove(card)
+            victim.exile.append(card)
+    else:
+        from ...batch1_templates import curses_on
+        amount = len(curses_on(game, victim)) if eff.data.get("per_curse") else eff.amount
+        game.deal_damage(victim, amount, by=p, cause=cause, source=item.source)

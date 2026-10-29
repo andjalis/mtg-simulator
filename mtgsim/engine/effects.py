@@ -29,6 +29,10 @@ class EffectsMixin:
         from ..batch1_templates import phantom_prevents
         if isinstance(target, Permanent) and phantom_prevents(target):
             return
+        if isinstance(target, Player):
+            from ..batch1_templates import curses_on
+            if any(c.card.advanced_rules.get('curse_double') for c in curses_on(self, target)):
+                amount *= 2
         shield = getattr(target, "prevent_next", 0)
         if shield:
             prevented = min(shield, amount)
