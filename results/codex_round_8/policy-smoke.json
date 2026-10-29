@@ -1,0 +1,49 @@
+{
+  "purpose": "Functional completion and new-mechanic exercise with both pilots; not a strength estimate",
+  "games": [
+    {
+      "seed": 0,
+      "first_player": "HeuristicAI",
+      "finished": true,
+      "turns": 13,
+      "recycle_player_operations": {
+        "HeuristicAI": 5,
+        "BaselineAI": 5
+      },
+      "winner": "HeuristicAI"
+    },
+    {
+      "seed": 1,
+      "first_player": "BaselineAI",
+      "finished": true,
+      "turns": 40,
+      "recycle_player_operations": {
+        "BaselineAI": 34,
+        "HeuristicAI": 40
+      },
+      "winner": null
+    },
+    {
+      "seed": 2,
+      "first_player": "HeuristicAI",
+      "finished": true,
+      "turns": 25,
+      "recycle_player_operations": {
+        "HeuristicAI": 24,
+        "BaselineAI": 20
+      },
+      "winner": "HeuristicAI"
+    },
+    {
+      "seed": 3,
+      "first_player": "BaselineAI",
+      "finished": true,
+      "turns": 33,
+      "recycle_player_operations": {
+        "BaselineAI": 18,
+        "HeuristicAI": 22
+      },
+      "winner": "BaselineAI"
+    }
+  ]
+}

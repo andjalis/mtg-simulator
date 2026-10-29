@@ -1,0 +1,326 @@
+{
+  "measured_on": "2026-10-29",
+  "total": 34129,
+  "counts": {
+    "full": 12578,
+    "simplified": 243,
+    "partial": 21308,
+    "parse_error": 0
+  },
+  "parse_errors": [],
+  "ranking_method": "Potential full matches have every ignored line in the gap and no recorded simplifications. Counts are upper bounds, overlap, and must not be summed.",
+  "unclassified": {
+    "gap": "unclassified",
+    "affected_cards": 10286,
+    "potential_full_matches": 6757,
+    "examples": [
+      "A-Cabaretti Charm",
+      "A-Case the Joint",
+      "A-Cosmos Elixir"
+    ]
+  },
+  "families": [
+    {
+      "gap": "triggered (whenever/when)",
+      "affected_cards": 3218,
+      "potential_full_matches": 2024,
+      "examples": [
+        "A Display of My Dark Power",
+        "A Good Day to Die",
+        "A Good Day to Pie"
+      ]
+    },
+    {
+      "gap": "activated abilities",
+      "affected_cards": 2527,
+      "potential_full_matches": 1920,
+      "examples": [
+        "A-Baba Lysaga, Night Witch",
+        "A-Carnelian Orb of Dragonkind",
+        "A-Dungeon Descent"
+      ]
+    },
+    {
+      "gap": "counters",
+      "affected_cards": 2777,
+      "potential_full_matches": 1903,
+      "examples": [
+        "A-Briar Hydra",
+        "A-Celebrity Fencer",
+        "A-Celestial Regulator"
+      ]
+    },
+    {
+      "gap": "graveyard",
+      "affected_cards": 2659,
+      "potential_full_matches": 1503,
+      "examples": [
+        "A Good Day to Pie",
+        "A-Ardent Dustspeaker",
+        "A-Cobbled Lancer"
+      ]
+    },
+    {
+      "gap": "tokens",
+      "affected_cards": 2135,
+      "potential_full_matches": 1221,
+      "examples": [
+        "A-Elderleaf Mentor",
+        "A-Elven Bow",
+        "A-Esika's Chariot"
+      ]
+    },
+    {
+      "gap": "sacrifice",
+      "affected_cards": 1854,
+      "potential_full_matches": 1114,
+      "examples": [
+        "A-Baba Lysaga, Night Witch",
+        "A-Capenna Express",
+        "A-Forge Boss"
+      ]
+    },
+    {
+      "gap": "exile",
+      "affected_cards": 2055,
+      "potential_full_matches": 1039,
+      "examples": [
+        "A-Ardent Dustspeaker",
+        "A-Cobbled Lancer",
+        "A-Elderfang Ritualist"
+      ]
+    },
+    {
+      "gap": "auras/enchant",
+      "affected_cards": 985,
+      "potential_full_matches": 813,
+      "examples": [
+        "A-Public Enemy",
+        "Aboshan's Desire",
+        "Absorbing Man"
+      ]
+    },
+    {
+      "gap": "can't restrictions",
+      "affected_cards": 1225,
+      "potential_full_matches": 696,
+      "examples": [
+        "A-Goma Fada Vanguard",
+        "A-Ready to Rumble",
+        "A-Sewer Crocodile"
+      ]
+    },
+    {
+      "gap": "X costs",
+      "affected_cards": 1197,
+      "potential_full_matches": 690,
+      "examples": [
+        "A-Briar Hydra",
+        "A-Maelstrom Muse",
+        "A-Nael, Avizoa Aeronaut"
+      ]
+    },
+    {
+      "gap": "equipment",
+      "affected_cards": 557,
+      "potential_full_matches": 411,
+      "examples": [
+        "A-Bruenor Battlehammer",
+        "A-Dwarfhold Champion",
+        "A-Goma Fada Vanguard"
+      ]
+    },
+    {
+      "gap": "copy effects",
+      "affected_cards": 668,
+      "potential_full_matches": 348,
+      "examples": [
+        "A-Mentor's Guidance",
+        "A-Ocelot Pride",
+        "A-Symmetry Sage"
+      ]
+    },
+    {
+      "gap": "library search",
+      "affected_cards": 467,
+      "potential_full_matches": 248,
+      "examples": [
+        "A-Navigation Orb",
+        "A-Phantom Carriage",
+        "A-Sprouting Goblin"
+      ]
+    },
+    {
+      "gap": "cost reduction",
+      "affected_cards": 368,
+      "potential_full_matches": 188,
+      "examples": [
+        "A-Cosmos Charger",
+        "A-Knockout Blow",
+        "A-Llanowar Greenwidow"
+      ]
+    },
+    {
+      "gap": "+1/+1 static (anthems)",
+      "affected_cards": 242,
+      "potential_full_matches": 135,
+      "examples": [
+        "A-Steadfast Unicorn",
+        "Akoum Battlesinger",
+        "Alistair, the Brigadier"
+      ]
+    }
+  ],
+  "exact_wording": [
+    {
+      "gap": "venture into the dungeon.",
+      "affected_cards": 23,
+      "potential_full_matches": 12,
+      "examples": [
+        "A-Fates' Reversal",
+        "Clattering Skeletons",
+        "Delver's Torch"
+      ]
+    },
+    {
+      "gap": "cast ~ only during the declare attackers step and only if you've been attacked this step.",
+      "affected_cards": 14,
+      "potential_full_matches": 10,
+      "examples": [
+        "Assassin's Blade",
+        "Champion's Victory",
+        "Defiant Stand"
+      ]
+    },
+    {
+      "gap": "banding",
+      "affected_cards": 13,
+      "potential_full_matches": 10,
+      "examples": [
+        "Benalish Hero",
+        "Benalish Infantry",
+        "Icatian Phalanx"
+      ]
+    },
+    {
+      "gap": "draft a card from ~'s spellbook.",
+      "affected_cards": 14,
+      "potential_full_matches": 8,
+      "examples": [
+        "Boseiju Pathlighter",
+        "Cursebound Witch",
+        "Emmara, Voice of the Conclave"
+      ]
+    },
+    {
+      "gap": "double team",
+      "affected_cards": 18,
+      "potential_full_matches": 7,
+      "examples": [
+        "Amber-Plate Ainok",
+        "Giant Fire Beetles",
+        "Lizardfolk Librarians"
+      ]
+    },
+    {
+      "gap": "open an attraction.",
+      "affected_cards": 17,
+      "potential_full_matches": 7,
+      "examples": [
+        "Coming Attraction",
+        "Deadbeat Attendant",
+        "Petting Zookeeper"
+      ]
+    },
+    {
+      "gap": "return the exiled card to the battlefield under its owner's control.",
+      "affected_cards": 13,
+      "potential_full_matches": 7,
+      "examples": [
+        "Faceless Devourer",
+        "Fiend Hunter",
+        "Journey to Nowhere"
+      ]
+    },
+    {
+      "gap": "conspire",
+      "affected_cards": 11,
+      "potential_full_matches": 7,
+      "examples": [
+        "Barkshell Blessing",
+        "Burn Trail",
+        "Ghastly Discovery"
+      ]
+    },
+    {
+      "gap": "exile ~ with three time counters on it.",
+      "affected_cards": 10,
+      "potential_full_matches": 7,
+      "examples": [
+        "Arc Blade",
+        "Charnel Serenade",
+        "Cyclical Evolution"
+      ]
+    },
+    {
+      "gap": "phasing",
+      "affected_cards": 12,
+      "potential_full_matches": 6,
+      "examples": [
+        "Breezekeeper",
+        "Merfolk Raiders",
+        "Sandbar Crocodile"
+      ]
+    },
+    {
+      "gap": "~ costs {1} less to cast for each creature in your party.",
+      "affected_cards": 10,
+      "potential_full_matches": 6,
+      "examples": [
+        "Deadly Alliance",
+        "Journey to Oblivion",
+        "Sea Gate Colossus"
+      ]
+    },
+    {
+      "gap": "as an additional cost to cast ~, exile a creature card from your graveyard.",
+      "affected_cards": 9,
+      "potential_full_matches": 6,
+      "examples": [
+        "Cobbled Lancer",
+        "Headless Skaab",
+        "Makeshift Mauler"
+      ]
+    },
+    {
+      "gap": "return that card to the battlefield under your control.",
+      "affected_cards": 7,
+      "potential_full_matches": 6,
+      "examples": [
+        "False Demise",
+        "Fool's Demise",
+        "Minion's Return"
+      ]
+    },
+    {
+      "gap": "you get {tk}, then you may put a sticker on a nonland permanent you own.",
+      "affected_cards": 6,
+      "potential_full_matches": 6,
+      "examples": [
+        "Aerialephant",
+        "Carnival Carnivore",
+        "Chicken Troupe"
+      ]
+    },
+    {
+      "gap": "you take the initiative.",
+      "affected_cards": 20,
+      "potential_full_matches": 5,
+      "examples": [
+        "Aarakocra Sneak",
+        "Avenging Hunter",
+        "Explore the Underdark"
+      ]
+    }
+  ]
+}

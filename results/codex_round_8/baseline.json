@@ -1,0 +1,6 @@
+{
+  "base_commit": "688e8541087b23de9c2a8c50e4bd92a279587564",
+  "database_entries": 34129,
+  "database_sha256": "b69f4273177e76ef08ad88b323a1eebad1329b29059500fa6f42853ceddaf2f1",
+  "measurement": "fresh python3 -m mtgsim.database_coverage before and after; all faces included"
+}

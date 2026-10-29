@@ -48,6 +48,9 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     k = eff.kind
+    if k == 'cx_recycle':
+        from ..cx_recycle import choose_target as recycle_target
+        return recycle_target(game, me, eff)
     if k == 'linked_exile':
         enemies = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
         if enemies:

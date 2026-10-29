@@ -18,3 +18,6 @@ def _module_kinds(module):
 
 for _module in (copies, xspells, search, auras, removal, combat_triggers, creature_keywords, ring):
     _module_kinds(_module)
+
+from ... import cx_recycle as _cx_recycle
+_module_kinds(_cx_recycle)

@@ -52,3 +52,6 @@ _EFFECT_PATTERNS += _batch1_templates.EFFECT_PATTERNS
 from .. import residual_templates as _residual_templates
 _EFFECT_PATTERNS += _residual_templates.EFFECT_PATTERNS
 _SUBS += _residual_templates.SUBS
+from .. import cx_recycle as _cx_recycle
+_EFFECT_PATTERNS += _cx_recycle.EFFECT_PATTERNS
+_SUBS += _cx_recycle.SUBS

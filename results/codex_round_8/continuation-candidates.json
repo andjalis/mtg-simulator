@@ -1,0 +1,249 @@
+{
+  "scope": "Reviewed shortlist re-parsed on main 688e854 with rounds 1\u20138 together; fully matched cards excluded",
+  "candidates": [
+    {
+      "name": "Forbidden Alchemy",
+      "family": "library selection with graveyard remainder",
+      "status": "partial",
+      "ignored": [
+        "Look at the top four cards of your library.",
+        "Put one of them into your hand and the rest into your graveyard."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Bitter Revelation",
+      "family": "library selection with graveyard remainder",
+      "status": "partial",
+      "ignored": [
+        "Look at the top four cards of your library.",
+        "Put two of them into your hand and the rest into your graveyard."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Strategic Planning",
+      "family": "library selection with graveyard remainder",
+      "status": "partial",
+      "ignored": [
+        "Look at the top three cards of your library.",
+        "Put one of them into your hand and the rest into your graveyard."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Ancestral Memories",
+      "family": "library selection with graveyard remainder",
+      "status": "partial",
+      "ignored": [
+        "Look at the top seven cards of your library.",
+        "Put two of them into your hand and the rest into your graveyard."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Mulch",
+      "family": "library selection with graveyard remainder",
+      "status": "partial",
+      "ignored": [
+        "Reveal the top four cards of your library.",
+        "Put all land cards revealed this way into your hand and the rest into your graveyard."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Pieces of the Puzzle",
+      "family": "library selection with graveyard remainder",
+      "status": "partial",
+      "ignored": [
+        "Reveal the top five cards of your library.",
+        "Put up to two instant and/or sorcery cards from among them into your hand and the rest into your graveyard."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Cultivate",
+      "family": "split-destination library search",
+      "status": "partial",
+      "ignored": [
+        "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Kodama's Reach",
+      "family": "split-destination library search",
+      "status": "partial",
+      "ignored": [
+        "Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield tapped and the other into your hand, then shuffle."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Chord of Calling",
+      "family": "X-dependent library search",
+      "status": "partial",
+      "ignored": [
+        "Search your library for a creature card with mana value X or less, put it onto the battlefield, then shuffle."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Whir of Invention",
+      "family": "X-dependent library search",
+      "status": "partial",
+      "ignored": [
+        "Search your library for an artifact card with mana value X or less, put it onto the battlefield, then shuffle."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Wargate",
+      "family": "X-dependent library search",
+      "status": "partial",
+      "ignored": [
+        "Search your library for a permanent card with mana value X or less, put it onto the battlefield, then shuffle."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Cloudshift",
+      "family": "caster-control or tapped-return blink",
+      "status": "partial",
+      "ignored": [
+        "Exile target creature you control, then return that card to the battlefield under your control."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Charming Prince",
+      "family": "caster-control or tapped-return blink",
+      "status": "partial",
+      "ignored": [
+        "\u2022 Exile another target creature you own. Return it to the battlefield under your control at the beginning of the next end step."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Eldrazi Displacer",
+      "family": "caster-control or tapped-return blink",
+      "status": "partial",
+      "ignored": [
+        "{2}{C}: Exile another target creature, then return it to the battlefield tapped under its owner's control."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Noxious Revival",
+      "family": "graveyard target ownership or multiple returns",
+      "status": "partial",
+      "ignored": [
+        "Put target card from a graveyard on top of its owner's library."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Pulse of Murasa",
+      "family": "graveyard target ownership or multiple returns",
+      "status": "partial",
+      "ignored": [
+        "Return target creature or land card from a graveyard to its owner's hand."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Footbottom Feast",
+      "family": "graveyard target ownership or multiple returns",
+      "status": "partial",
+      "ignored": [
+        "Put any number of target creature cards from your graveyard on top of your library."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Gravepurge",
+      "family": "graveyard target ownership or multiple returns",
+      "status": "partial",
+      "ignored": [
+        "Put any number of target creature cards from your graveyard on top of your library."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Forever Young",
+      "family": "graveyard target ownership or multiple returns",
+      "status": "partial",
+      "ignored": [
+        "Put any number of target creature cards from your graveyard on top of your library."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Insidious Dreams",
+      "family": "additional costs and multiple library-top selections",
+      "status": "partial",
+      "ignored": [
+        "As an additional cost to cast ~, discard X cards.",
+        "Search your library for X cards, then shuffle and put those cards on top in any order."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Liliana Vess",
+      "family": "planeswalker loyalty bodies",
+      "status": "partial",
+      "ignored": [
+        "[\u22128]: Put all creature cards from all graveyards onto the battlefield under your control."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Jace, the Mind Sculptor",
+      "family": "planeswalker loyalty bodies",
+      "status": "partial",
+      "ignored": [
+        "[+2]: Look at the top card of target player's library.",
+        "[+2]: You may put that card on the bottom of that player's library.",
+        "[0]: Draw three cards, then put two cards from your hand on top of your library in any order.",
+        "[\u221212]: Exile all cards from target player's library, then that player shuffles their hand into their library."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Twincast",
+      "family": "copy effects",
+      "status": "partial",
+      "ignored": [
+        "Copy target instant or sorcery spell."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Reverberate",
+      "family": "copy effects",
+      "status": "partial",
+      "ignored": [
+        "Copy target instant or sorcery spell."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Sculpting Steel",
+      "family": "copy effects",
+      "status": "partial",
+      "ignored": [
+        "You may have ~ enter as a copy of any artifact on the battlefield."
+      ],
+      "simplifications": []
+    },
+    {
+      "name": "Phyrexian Metamorph",
+      "family": "copy effects",
+      "status": "partial",
+      "ignored": [
+        "You may have ~ enter as a copy of any artifact or creature on the battlefield, except it's an artifact in addition to its other types."
+      ],
+      "simplifications": []
+    }
+  ]
+}

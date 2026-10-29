@@ -1,0 +1,57 @@
+{
+  "expected": 1734,
+  "ran": 1734,
+  "success": true,
+  "inventory_matched": true,
+  "seconds": 372.5447548920056,
+  "failures": [],
+  "errors": [],
+  "skipped": [
+    [
+      "tests.test_forge.ForgeWrapperTests.test_stored_review_log_if_present",
+      "local review log not present (results/benchmark*/ is gitignored)"
+    ]
+  ],
+  "base_commit": "688e8541087b23de9c2a8c50e4bd92a279587564",
+  "source_sha256": {
+    "mtgsim/ai.py": "3cc6ea68528325292af82d72a74e72412acb6699475ced725bea2473d07c9e4b",
+    "mtgsim/cards/__init__.py": "b4c058e2569281376cd46a57e4f98911bb71128a0297175c84b8d04f7a3c1b00",
+    "mtgsim/cards/parse.py": "9bb0c1939ae124e5b4e4f41ece51d3e1e5290a319ea4389a9e311ff6d51bff92",
+    "mtgsim/cx_exile.py": "daf7d2dc223466a8fe2bd386fa10e0487e709ae4c19473758b3c7df3e613629a",
+    "mtgsim/cx_graveyard.py": "2ff2c8e4428630af9e949a628df8d63a545c1a78480e907924477cbda74eaece",
+    "mtgsim/cx_library.py": "c74f3bd8b668b4e64990344e3db76cd5bc0c07d19b11c797c409ac547cc550ab",
+    "mtgsim/cx_milling.py": "feabf3573f2b9d94119a11f41062b7ffa47bad733fc2a1d61264cbfbb1de38e8",
+    "mtgsim/cx_recursion.py": "761025c000e703cf6ea1351ff94b453a5d2de6760d844909bf8df0537c34feb6",
+    "mtgsim/cx_recycle.py": "855829631e9bea8afd02b4b4ebf5ee13d7b1c8d94127afa8ef94f3bcb39aea91",
+    "mtgsim/cx_selection.py": "3d0e495f75d28af5fb3a697e88bd5b73a52ca28d6bccab103262f77ab489f3c7",
+    "mtgsim/cx_tutors.py": "6a89af8bbc4220eb6ca41d71158590036865f64a10bcda87f61d9d783701475b",
+    "mtgsim/engine/kinds/mechanics.py": "122b58ca5818495b89f80d1a5c599cfbb3c1c8c02be53fcfba3294465ce2b01c",
+    "mtgsim/engine/policy.py": "bdf8026049f9921ffaa9f94f5fb76a7075f6500a499d08f66b17aa395cb54b79",
+    "tests/test_cx_exile.py": "8775a6090d0b4dadb98dedbc33b77924613ded491f2213300bea9b2ebe2d8f2e",
+    "tests/test_cx_graveyard.py": "9763d4948137068cb9a2b2f3762182778a4c3a349e094f24725f6530d5554c41",
+    "tests/test_cx_library.py": "96457fec446d105a6fd7d6f994081d53663c5829903bd54892ced4eb32c9e19e",
+    "tests/test_cx_milling.py": "cc370f8055416c180ae462425018e99405c3479e8209acbde7446a5e92891774",
+    "tests/test_cx_recursion.py": "05a2470fcf7fa19b5422d41d6755c5690a281acd08688f5d6248af509edd8539",
+    "tests/test_cx_recycle.py": "34d8f66da3a69d5923fcbe877d0dd9cae2cd17079b1d484f4fd494810c82b4a6",
+    "tests/test_cx_selection.py": "f7346352c92bcab5bad236e257861f90f5a99d13e257c44c83f6556d11cfff0b",
+    "tests/test_cx_tutors.py": "cd4a23e3414d03c8f97ca5b1ddcea9896d2d43d3f06907cfe856260757e0c7a1"
+  },
+  "focused_new_tests": 112,
+  "rounds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "coverage_changes": 129,
+  "new_full_matches": 86,
+  "lint": "passed",
+  "parse_diff": "passed; 130 raw database parses change and zero new exceptions",
+  "merged": false,
+  "remote_ci_verified": false,
+  "scope": "Temporary detached integration checkout on main 688e854; no main or Claude branch writes"
+}

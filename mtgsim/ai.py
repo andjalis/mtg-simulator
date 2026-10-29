@@ -95,6 +95,10 @@ MINOR_EFFECTS = {"treasure": 1.0, "rummage": 0.3, "surveil": 0.3, "scry": 0.3, "
                  "draw_up_to": 1.5, "grant": 0.5, "add_counter": 0.5, "transform": 1.0}
 
 
+from .cx_recycle import MINOR_VALUES as _RECYCLE_VALUES
+MINOR_EFFECTS.update(_RECYCLE_VALUES)
+
+
 def _boost(card: CardDef):
     """(effect, +power, +toughness) for a spell that pumps or puts +1/+1 counters on our creature."""
     for e in card.spell_effects:

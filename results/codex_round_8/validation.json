@@ -1,0 +1,29 @@
+{
+  "expected": 1640,
+  "ran": 1640,
+  "success": true,
+  "inventory_matched": true,
+  "seconds": 379.7466656690085,
+  "failures": [],
+  "errors": [],
+  "skipped": [
+    [
+      "tests.test_forge.ForgeWrapperTests.test_stored_review_log_if_present",
+      "local review log not present (results/benchmark*/ is gitignored)"
+    ]
+  ],
+  "suite_workers": 4,
+  "python": "Python 3.12.14",
+  "source_sha256": {
+    "mtgsim/ai.py": "3cc6ea68528325292af82d72a74e72412acb6699475ced725bea2473d07c9e4b",
+    "mtgsim/cards/__init__.py": "f8bbef1f0a9cf382834836872c4f66f5fbbb6f98ec1376c8f4b03737d7cbc9e9",
+    "mtgsim/cx_recycle.py": "855829631e9bea8afd02b4b4ebf5ee13d7b1c8d94127afa8ef94f3bcb39aea91",
+    "mtgsim/engine/kinds/mechanics.py": "122b58ca5818495b89f80d1a5c599cfbb3c1c8c02be53fcfba3294465ce2b01c",
+    "mtgsim/engine/policy.py": "bdf8026049f9921ffaa9f94f5fb76a7075f6500a499d08f66b17aa395cb54b79",
+    "tests/test_cx_recycle.py": "34d8f66da3a69d5923fcbe877d0dd9cae2cd17079b1d484f4fd494810c82b4a6"
+  },
+  "focused_new_tests": 18,
+  "lint": "passed",
+  "parse_diff": "passed; no new parser exceptions",
+  "regex_cache": "32768 only in temporary test/census runners; production unchanged"
+}

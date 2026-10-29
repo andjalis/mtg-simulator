@@ -1,0 +1,437 @@
+[
+  {
+    "name": "Archival Whorl",
+    "before": {
+      "name": "Archival Whorl",
+      "status": "partial",
+      "ignored_text": "Gift a Rhystic Study\nShuffle your hand and graveyard into your library, then draw seven cards.\nIf the gift wasn't promised, each other player also shuffles their hand and graveyard into their library, then draws seven cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Archival Whorl",
+      "status": "partial",
+      "ignored_text": "Gift a Rhystic Study\nIf the gift wasn't promised, each other player also shuffles their hand and graveyard into their library, then draws seven cards.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Arzakon",
+    "before": {
+      "name": "Arzakon",
+      "status": "partial",
+      "ignored_text": "[+2]: ~ deals 3 damage to any other target.\n[\u22123]: Create a Black Lotus token.\n[\u22127]: Each player shuffles their hand and graveyard into their library, then draws seven cards.\n~ can be your commander.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Arzakon",
+      "status": "partial",
+      "ignored_text": "[+2]: ~ deals 3 damage to any other target.\n[\u22123]: Create a Black Lotus token.\n~ can be your commander.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Blessed Respite",
+    "before": {
+      "name": "Blessed Respite",
+      "status": "partial",
+      "ignored_text": "Target player shuffles their graveyard into their library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Blessed Respite",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Clear the Mind",
+    "before": {
+      "name": "Clear the Mind",
+      "status": "partial",
+      "ignored_text": "Target player shuffles their graveyard into their library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Clear the Mind",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Commit // Memory",
+    "before": {
+      "name": "Commit // Memory",
+      "status": "partial",
+      "ignored_text": "Put target spell or nonland permanent into its owner's library second from the top.\nMemory: Each player shuffles their hand and graveyard into their library, then draws seven cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Commit // Memory",
+      "status": "partial",
+      "ignored_text": "Put target spell or nonland permanent into its owner's library second from the top.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Cranial Archive",
+    "before": {
+      "name": "Cranial Archive",
+      "status": "partial",
+      "ignored_text": "{2}, Exile ~: Target player shuffles their graveyard into their library. Draw a card.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Cranial Archive",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Day's Undoing",
+    "before": {
+      "name": "Day's Undoing",
+      "status": "partial",
+      "ignored_text": "Each player shuffles their hand and graveyard into their library, then draws seven cards.\nIf it's your turn, end the turn.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Day's Undoing",
+      "status": "partial",
+      "ignored_text": "If it's your turn, end the turn.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Diminishing Returns",
+    "before": {
+      "name": "Diminishing Returns",
+      "status": "partial",
+      "ignored_text": "Each player shuffles their hand and graveyard into their library.\nYou exile the top ten cards of your library.\nThen each player draws up to seven cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Diminishing Returns",
+      "status": "partial",
+      "ignored_text": "You exile the top ten cards of your library.\nThen each player draws up to seven cards.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Echo of Eons",
+    "before": {
+      "name": "Echo of Eons",
+      "status": "partial",
+      "ignored_text": "Each player shuffles their hand and graveyard into their library, then draws seven cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Echo of Eons",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Emergency Powers",
+    "before": {
+      "name": "Emergency Powers",
+      "status": "partial",
+      "ignored_text": "Each player shuffles their hand and graveyard into their library, then draws seven cards.\nAddendum \u2014 If you cast ~ during your main phase, you may put a permanent card with mana value 7 or less from your hand onto the battlefield.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Emergency Powers",
+      "status": "partial",
+      "ignored_text": "Addendum \u2014 If you cast ~ during your main phase, you may put a permanent card with mana value 7 or less from your hand onto the battlefield.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Enhanced Surveillance",
+    "before": {
+      "name": "Enhanced Surveillance",
+      "status": "partial",
+      "ignored_text": "You may look at an additional two cards each time you surveil.\nExile ~: Shuffle your graveyard into your library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Enhanced Surveillance",
+      "status": "partial",
+      "ignored_text": "You may look at an additional two cards each time you surveil.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Feldon's Cane",
+    "before": {
+      "name": "Feldon's Cane",
+      "status": "partial",
+      "ignored_text": "{T}, Exile ~: Shuffle your graveyard into your library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Feldon's Cane",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Game Plan",
+    "before": {
+      "name": "Game Plan",
+      "status": "partial",
+      "ignored_text": "Each player shuffles their hand and graveyard into their library, then draws seven cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Game Plan",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Immortus, Master of Eternity",
+    "before": {
+      "name": "Immortus, Master of Eternity",
+      "status": "partial",
+      "ignored_text": "{T}: Add {U} for each card you've drawn this turn. Spend this mana only to cast noncreature spells.\nPower-up \u2014 {5}{U}{U}: Each player shuffles their hand and graveyard into their library, then draws seven cards. Put a +1/+1 counter on ~.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Immortus, Master of Eternity",
+      "status": "partial",
+      "ignored_text": "{T}: Add {U} for each card you've drawn this turn. Spend this mana only to cast noncreature spells.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Jace, the Living Guildpact",
+    "before": {
+      "name": "Jace, the Living Guildpact",
+      "status": "partial",
+      "ignored_text": "[+1]: Look at the top two cards of your library.\n[+1]: Put one of them into your graveyard.\n[\u22128]: Each player shuffles their hand and graveyard into their library.\n[\u22128]: You draw seven cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Jace, the Living Guildpact",
+      "status": "partial",
+      "ignored_text": "[+1]: Look at the top two cards of your library.\n[+1]: Put one of them into your graveyard.\n[\u22128]: You draw seven cards.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Learn from the Past",
+    "before": {
+      "name": "Learn from the Past",
+      "status": "partial",
+      "ignored_text": "Target player shuffles their graveyard into their library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Learn from the Past",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Mine, Mine, Mine!",
+    "before": {
+      "name": "Mine, Mine, Mine!",
+      "status": "partial",
+      "ignored_text": "each player puts their library into their hand.\nPlayers have no maximum hand size and don't lose the game for drawing from an empty library.\neach player shuffles their hand and graveyard into their library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Mine, Mine, Mine!",
+      "status": "partial",
+      "ignored_text": "each player puts their library into their hand.\nPlayers have no maximum hand size and don't lose the game for drawing from an empty library.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Mnemonic Nexus",
+    "before": {
+      "name": "Mnemonic Nexus",
+      "status": "partial",
+      "ignored_text": "Each player shuffles their graveyard into their library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Mnemonic Nexus",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Paradigm Shift",
+    "before": {
+      "name": "Paradigm Shift",
+      "status": "partial",
+      "ignored_text": "Exile all cards from your library.\nThen shuffle your graveyard into your library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Paradigm Shift",
+      "status": "partial",
+      "ignored_text": "Exile all cards from your library.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Primal Command",
+    "before": {
+      "name": "Primal Command",
+      "status": "partial",
+      "ignored_text": "\u2022 Put target noncreature permanent on top of its owner's library.\n\u2022 Target player shuffles their graveyard into their library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Primal Command",
+      "status": "partial",
+      "ignored_text": "\u2022 Put target noncreature permanent on top of its owner's library.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Reminisce",
+    "before": {
+      "name": "Reminisce",
+      "status": "partial",
+      "ignored_text": "Target player shuffles their graveyard into their library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Reminisce",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Struggle // Survive",
+    "before": {
+      "name": "Struggle // Survive",
+      "status": "partial",
+      "ignored_text": "~ deals damage to target creature equal to the number of lands you control.\nSurvive: Each player shuffles their graveyard into their library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Struggle // Survive",
+      "status": "partial",
+      "ignored_text": "~ deals damage to target creature equal to the number of lands you control.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Temporal Cascade",
+    "before": {
+      "name": "Temporal Cascade",
+      "status": "partial",
+      "ignored_text": "\u2022 Each player shuffles their hand and graveyard into their library.\n\u2022 Each player draws seven cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Temporal Cascade",
+      "status": "partial",
+      "ignored_text": "\u2022 Each player draws seven cards.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "The Mending of Dominaria",
+    "before": {
+      "name": "The Mending of Dominaria",
+      "status": "partial",
+      "ignored_text": "III \u2014 Return all land cards from your graveyard to the battlefield, then shuffle your graveyard into your library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "The Mending of Dominaria",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Thran Foundry",
+    "before": {
+      "name": "Thran Foundry",
+      "status": "partial",
+      "ignored_text": "{1}, {T}, Exile ~: Target player shuffles their graveyard into their library.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Thran Foundry",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Time Reversal",
+    "before": {
+      "name": "Time Reversal",
+      "status": "partial",
+      "ignored_text": "Each player shuffles their hand and graveyard into their library, then draws seven cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Time Reversal",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Time Spiral",
+    "before": {
+      "name": "Time Spiral",
+      "status": "partial",
+      "ignored_text": "Each player shuffles their hand and graveyard into their library, then draws seven cards.\nYou untap up to six lands.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Time Spiral",
+      "status": "partial",
+      "ignored_text": "You untap up to six lands.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Timetwister",
+    "before": {
+      "name": "Timetwister",
+      "status": "partial",
+      "ignored_text": "Each player shuffles their hand and graveyard into their library, then draws seven cards.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Timetwister",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Weftwalking",
+    "before": {
+      "name": "Weftwalking",
+      "status": "partial",
+      "ignored_text": "Shuffle your hand and graveyard into your library, then draw seven cards.\nThe first spell each player casts during each of their turns may be cast without paying its mana cost.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Weftwalking",
+      "status": "partial",
+      "ignored_text": "The first spell each player casts during each of their turns may be cast without paying its mana cost.",
+      "simplifications": ""
+    }
+  }
+]
