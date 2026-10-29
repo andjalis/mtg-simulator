@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from ... import cast_triggers, returns
+from ... import cast_triggers, counters_r3, returns
 from ...cards import CardDef, Effect
 from ...identity import Graveyard
 from ..state import TrackedZone
@@ -214,3 +214,8 @@ def rebound_cast(game, p, item, **_):
     if not any(c is card for c in p.exile) or not game.hook(p, "choose_rebound")(game, p, card):
         return NO_SBA
     cast_triggers.cast_exiled(game, p, card, "rebound")
+
+
+@kind("appraise")
+def appraise(game, p, eff, **_):
+    counters_r3.appraise(game, p, eff)

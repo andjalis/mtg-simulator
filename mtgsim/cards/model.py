@@ -188,6 +188,7 @@ class CardDef:
     extra_lands: int = 0                                # "You may play an additional land on each of your turns."
     lands_from_gy: bool = False                         # "You may play lands from your graveyard."
     etb_counters_if: tuple = ()                         # ("opp_lost_life", n): "enters with a +1/+1 counter if ..."
+    others_enter_counters: str = ""                     # "opp_lost_life": other creatures you control enter with a +1/+1 counter per ...
     team_keywords: frozenset = frozenset()              # "Creatures you control have haste."
     collect_evidence: int = 0                           # "you may collect evidence N" (exile graveyard cards worth N mana value)
     chosen_land_lock: bool = False                      # Petrified Hamlet: choose a land name, stifle it and make it tap for {C}
