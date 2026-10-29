@@ -14,6 +14,7 @@ TOKEN_ABILITIES = {
               "tapped, then shuffle.",
     "food": "{2}, {T}, Sacrifice ~: You gain 3 life.",
     "mutagen": "{1}, Sacrifice ~: Put a +1/+1 counter on target creature you control. Activate only as a sorcery.",
+    "junk": "{T}, Sacrifice ~: Exile the top card of your library. You may play that card this turn.",
 }
 
 

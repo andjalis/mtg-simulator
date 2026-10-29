@@ -412,6 +412,20 @@ def sac_self_payoff(game, p, eff, item, **_):
         game.queue_trigger(p, eff.data["effects"], src, "payoff")
 
 
+@kind("sac_unless_discard")
+def sac_unless_discard(game, p, eff, item, **_):
+    """"Sacrifice ~ unless you discard a card": the greedy policy keeps the permanent when
+    it can afford the discard."""
+    src = item.source if item is not None else None
+    if not isinstance(src, Permanent) or src not in p.battlefield:
+        return
+    if len(p.hand) >= max(1, eff.amount):
+        for _ in range(max(1, eff.amount)):
+            game.discard_card(p, p.ai.choose_discard(game, p))
+    else:
+        game.sacrifice(src)
+
+
 @kind("decayed_delay")
 def decayed_delay(game, p, target, **_):
     if isinstance(target, Permanent):

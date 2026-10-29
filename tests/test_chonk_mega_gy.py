@@ -3,10 +3,10 @@ Fact-or-Fiction splits, self-return riders, optional self-sacrifice / self-exile
 hand-exile O-rings and temporary reanimation."""
 import unittest
 
-from mtgsim.cards import _parse_effects, CardDef, Effect
-from mtgsim.engine import Game, Player, StackItem
+from mtgsim.cards import Effect, _parse_effects
+from mtgsim.engine import StackItem
 from tests.test_batch1 import Batch1
-from tests.test_combat_triggers import BEAR, Scripted
+from tests.test_combat_triggers import BEAR
 from tests.test_templates import ISLAND, card
 
 BIG = card("Test Giant", "{4}", "Creature — Giant", "", 4, 5)
@@ -133,6 +133,53 @@ class MegaChonkGraveyard(Batch1):
         self.apply("Each player sacrifices a creature of their choice.")
         self.assertNotIn(weak, self.b.battlefield)
         self.assertIn(strong, self.b.battlefield)
+
+
+
+    def test_process_payoff(self):
+        stranded = card("Test Stranded", "{2}", "Creature", "", 2, 2)
+        self.b.exile.append(stranded)
+        victim = self.put(BEAR, self.b)
+        effects = self.apply_effects("You may put a card an opponent owns from exile into that "
+                                     "player's graveyard. If you do, target creature gets -3/-3 until end of turn.")
+        item = StackItem(self.a, effects, [None, victim])
+        self.g.resolve(self.a, effects[0], None, item)
+        self.g.settle()
+        self.assertIn(stranded, self.b.graveyard)
+        self.assertNotIn(stranded, self.b.exile)
+        self.assertEqual(victim.toughness, 2 - 3)
+
+    def test_process_nothing_in_exile(self):
+        victim = self.put(BEAR, self.b)
+        effects = self.apply_effects("You may put a card an opponent owns from exile into that "
+                                     "player's graveyard. If you do, target creature gets -3/-3 until end of turn.")
+        item = StackItem(self.a, effects, [None, victim])
+        self.g.resolve(self.a, effects[0], None, item)
+        self.g.settle()
+        self.assertEqual(victim.toughness, 2)
+
+    def test_sac_unless_discard_pays(self):
+        masticore = self.put(card("Test Masticore", "{4}", "Artifact Creature — Masticore", "", 4, 4))
+        self.a.hand[:] = [SPELL, SPELL]
+        effect = self.apply_effects("Sacrifice ~ unless you discard a card.")[0]
+        self.g.resolve(self.a, effect, None, StackItem(self.a, [effect], [], source=masticore))
+        self.assertEqual((len(self.a.hand), masticore in self.a.battlefield), (1, True))
+
+    def test_sac_unless_discard_sacrifices_when_empty(self):
+        masticore = self.put(card("Test Masticore", "{4}", "Artifact Creature — Masticore", "", 4, 4))
+        self.a.hand.clear()
+        effect = self.apply_effects("Sacrifice ~ unless you discard a card.")[0]
+        self.g.resolve(self.a, effect, None, StackItem(self.a, [effect], [], source=masticore))
+        self.assertNotIn(masticore, self.a.battlefield)
+
+    def test_junk_token_parse(self):
+        from mtgsim.cards.tokens import make_token
+        junk = make_token("", 0, 0, kind="junk")
+        self.assertEqual(junk.token_kind, "junk")
+        self.assertTrue(junk.activated)
+        effects, ignored = _parse_effects("Create a Junk token.")
+        self.assertFalse(ignored, ignored)
+        self.assertEqual([(e.kind, e.amount, e.data.get("kind")) for e in effects], [("token", 1, "junk")])
 
 
 if __name__ == "__main__":

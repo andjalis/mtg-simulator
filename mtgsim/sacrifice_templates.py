@@ -12,6 +12,9 @@ import re
 
 EFFECT_PATTERNS = [
     (r"SACSELF (.+)", lambda m: _sac_self(m)),
+    # "At the beginning of your upkeep, sacrifice ~ unless you discard a card." (Masticore cycle)
+    (r"sacrifice (?:~|it|this card|this creature) unless you discard (a|one|two) cards?",
+     lambda m: _e("sac_unless_discard", _num(m[1]))),
 ]
 
 SUBS = [
@@ -43,3 +46,13 @@ def _sac_self(m):
     if not effects or bad:
         return NO_MATCH
     return Effect("sac_self_payoff", data={"effects": effects})
+
+
+def _e(kind, amount=1, **kw):
+    from .cards import Effect
+    return Effect(kind, amount, **kw)
+
+
+def _num(word):
+    from .cards import _num as number
+    return number(word)

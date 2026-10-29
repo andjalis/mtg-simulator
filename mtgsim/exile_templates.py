@@ -13,6 +13,7 @@ import re
 
 EFFECT_PATTERNS = [
     (r"MAYEXILESELF (.+)", lambda m: _exile_self(m)),
+    (r"PROCESSEXILE (.+)", lambda m: _process(m)),
     (r"EXILEHAND (.+)", lambda m: _e("exile_hand_perm", target="player", filter=m[1])),
     # Redundant with the engine's exiled_cards / exiled_to_hand return-on-leaves: the
     # exile effect that took the card in the first place puts it back when ~ leaves.
@@ -24,6 +25,10 @@ EFFECT_PATTERNS = [
 
 SUBS = [
     (re.compile(r"(you may exile (?:it|this card)\. (?:if|when) you do, )(.+)", re.I), lambda m: _may_exile_sub(m)),
+    # "you may put a card an opponent owns from exile into that player's graveyard. If you
+    # do, <payoff>" (the Process cards: Wasteland Strangler, Ulamog's Reclaimer, ...)
+    (re.compile(r"(you may put a card an opponent owns from exile into that player's graveyard\. "
+                r"(?:if|when) you do, )(.+)", re.I), lambda m: _may_exile_sub(m, "PROCESSEXILE")),
     # "... reveals their hand and you choose a <filter> card from it. Exile that card. When ~
     # leaves the battlefield, return the exiled card to its owner's hand." (Mesmeric Fiend)
     (re.compile(r"(?:target|that) (?:opponent|player) reveals their hand and you choose "
@@ -45,14 +50,25 @@ SUBS = [
 ]
 
 
-def _may_exile_sub(m):
-    """Rewrite into the MAYEXILESELF sentinel only when the payoff parses; leave the
-    original wording (so it stays a readable ignored line) when it does not."""
+def _may_exile_sub(m, sentinel="MAYEXILESELF"):
+    """Rewrite into the sentinel only when the payoff parses; leave the original wording
+    (so it stays a readable ignored line) when it does not."""
     from .cards import _parse_effects
     effects, bad = _parse_effects(m[2])
     if not effects or bad:
         return m[0]
-    return f"MAYEXILESELF {m[2]}"
+    return f"{sentinel} {m[2]}"
+
+
+def _process(m):
+    """Wrap the payoff in a process_payoff effect: move an exiled card of the opponent's
+    to their graveyard, then run the payoff."""
+    from .cards import NO_MATCH, Effect, _parse_effects
+    body = m[1].strip()
+    effects, bad = _parse_effects(body[0].upper() + body[1:])
+    if not effects or bad:
+        return NO_MATCH
+    return Effect("process_payoff", data={"effects": effects})
 
 
 def _reanim_sub(m):

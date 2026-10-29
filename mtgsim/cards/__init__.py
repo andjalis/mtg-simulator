@@ -66,3 +66,6 @@ _SUBS += _exile_templates.SUBS
 from .. import sacrifice_templates as _sacrifice_templates
 _EFFECT_PATTERNS += _sacrifice_templates.EFFECT_PATTERNS
 _SUBS += _sacrifice_templates.SUBS
+from .. import token_templates as _token_templates
+_EFFECT_PATTERNS += _token_templates.EFFECT_PATTERNS
+_SUBS += _token_templates.SUBS

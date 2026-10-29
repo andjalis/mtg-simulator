@@ -63,6 +63,18 @@ def fof(game, p, eff, item, **_):
     game.log(f"keeps {len(keep)} of the top {n}, mills {len(rest)}", p)
 
 
+@kind("process_payoff")
+def process_payoff(game, p, eff, item, opp, **_):
+    """Process: put a card an opponent owns from exile into their graveyard; if one is there,
+    run the "If you do, <payoff>" effects."""
+    src = item.source if item is not None else None
+    if opp.exile:
+        card = max(opp.exile, key=lambda c: c.cmc)
+        game.move_card(card, opp.exile, opp.graveyard, reason="process")
+        game.log(f"puts {card.name} from exile into {opp}'s graveyard", p)
+        game.queue_trigger(p, eff.data["effects"], src, "payoff")
+
+
 @kind("exile_self_payoff")
 def exile_self_payoff(game, p, eff, item, **_):
     """A dies trigger's "you may exile it. If you do, <payoff>": exile the dead card, then queue the payoff."""
