@@ -121,6 +121,17 @@ class Batch2(Batch1):
         eff = parse("Counter target sorcery spell.")[0][0]
         self.assertEqual(eff.filter, "types:Sorcery")
 
+    def test_evasion_by_color(self):
+        from mtgsim.engine import can_block
+        wall = card("Test Knight", "{1}{W}", "Creature — Knight", "", 2, 2)
+        raider = card("Test Raider", "{1}{B}", "Creature — Rogue", "~ can't be blocked by white creatures.", 2, 2)
+        shade = card("Test Shade", "{1}{B}", "Creature — Shade", "~ can't be blocked except by black creatures.", 2, 2)
+        blocker, black = self.put(wall, self.b), self.put(card("Test Imp", "{B}", "Creature — Imp", "", 1, 1), self.b)
+        self.assertFalse(can_block(blocker, self.put(raider)))
+        self.assertTrue(can_block(black, self.put(raider)))
+        self.assertFalse(can_block(blocker, self.put(shade)))
+        self.assertTrue(can_block(black, self.put(shade)))
+
 
 if __name__ == "__main__":
     unittest.main()
