@@ -9,9 +9,9 @@ import random
 import unittest
 
 from mtgsim.cards import Effect
-from mtgsim.engine import Game, Permanent, Player, StackItem
+from mtgsim.engine import Game, Player, StackItem
 from tests.test_combat_triggers import Scripted
-from tests.test_templates import BEAR, ISLAND, MOUNTAIN, PLAINS, SWAMP, card
+from tests.test_templates import BEAR, ISLAND, MOUNTAIN, SWAMP, card
 
 BEAST = card("Test Beast", "{2}{G}", "Creature — Beast", "", 3, 3)          # power/toughness 3, mana value 3
 FLING = card("Test Fling", "{1}{R}", "Sorcery",
