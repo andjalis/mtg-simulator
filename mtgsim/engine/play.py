@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from .. import alt_casts, cast_triggers, copies
+from .. import alt_casts, cast_triggers, copies, emerge
 from ..cards import CardDef
 from .. import modal, rules_events, costs
 from ..actions import atomic_action
@@ -153,6 +153,8 @@ class PlayMixin:
             if victim not in p.battlefield:
                 return False
             self.log(f"sacrifices {victim.card.name} for {card.name}", p)
+            if kind == "emerge":
+                emerge.sacrificing(self, p, victim, card)
             self.sacrifice(victim)
         if kind == "prepared":
             next(x for x in p.battlefield if x.front is base and x.prepared).prepared = False
@@ -211,6 +213,7 @@ class PlayMixin:
         item.kicks = kicks
         item.teamwork = teamwork_paid
         item.evidence = self.collect_evidence(p, card)
+        item.emerged_toughness = getattr(self, "_emerge_toughness", None) if kind == "emerge" else None
         item.bargained = bool(card.bargain) and self.pay_bargain(p, card)
         item.gifted = bool(card.gift)
         item.uncounterable = any(s.card.mana_restriction == "chosen_type" and self.mana_allowed(s, card)

@@ -47,17 +47,20 @@ def plan(game, player, cost, *, spell='ability', sacrifices=((None, 0),),
                 continue
             reserved = tuple(exclude) + tuple(x for x in selected if x in sources and consumed_for_mana(x))
             payable_cost = dict(cost)
-            payable_cost['generic'] = payable_cost.get('generic', 0) + tax
+            payable_cost['generic'] = max(0, payable_cost.get('generic', 0) + tax)
             if find_payment([s for s in sources if s not in reserved and getattr(s, 'stored_in', None) not in reserved], payable_cost) is not None:
                 return PaymentPlan(payable_cost, reserved, victim, material)
     return None
 
 
 def spell_plan(game, player, card, cost, *, exclude=()):
+    from . import emerge
     options = [(None, 0)]
     if card.extra_sacrifice:
         candidates = game.extra_sac_candidates(player, card)
         options = [(c, 0) for c in candidates]
+        if game._origin(card)[1] == "emerge":
+            options = emerge.sacrifice_options(game, player, card, candidates)
         if card.extra_sac_or_pay:
             # cost_of already includes this tax when there are no candidates.
             options.append((None, card.extra_sac_or_pay if candidates else 0))

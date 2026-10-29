@@ -5,7 +5,7 @@ override each one by defining the hook of the same name (see README and DEFAULTS
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from .. import alt_casts, copies, learning, proliferate, regeneration, removal, costs
+from .. import alt_casts, transmute, copies, learning, proliferate, regeneration, removal, costs
 from ..cards import COLORS, CardDef, Effect
 from .. import modal
 from .mana import add_costs, payable
@@ -727,6 +727,7 @@ def use_abilities(game: Game, me: Player):
             if alt_casts.worth_suspending(game, me, card):
                 alt_casts.suspend(game, me, card)
         alt_casts.graveyard_actions(game, me)
+        transmute.actions(game, me)
         from ..batch2_templates import encore_actions
         encore_actions(game, me)
 

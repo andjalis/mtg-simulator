@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 from typing import TYPE_CHECKING
 
-from .. import alt_casts, auras, copies, counting, discounts, returns, costs, storage
+from .. import alt_casts, emerge, auras, copies, counting, discounts, returns, costs, storage
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
@@ -525,6 +525,7 @@ class CostsMixin:
                 continue
             out += self._hand_options(p, c)
             out += alt_casts.variants(self, p, c)
+            out += emerge.variants(self, p, c)
             if c.adventure:
                 out.append(self._variant(c, "adventure"))
             for a in c.alt_costs:

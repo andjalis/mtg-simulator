@@ -83,6 +83,8 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("damage", int(m[1]), target="creature", filter="attacking_blocking")),
     (_SRC + r" deals (\d+) damage to target tapped creature(?: an opponent controls)?",
      lambda m: Effect("damage", int(m[1]), target="creature", filter="tapped")),
+    (_SRC + r" deals X damage to target creature without flying(?: you don't control)?",
+     lambda m: Effect("damage", 0, target="creature", filter="nonflying", data={"x": True})),
     (_SRC + r" deals (\d+) damage to target creature without flying",
      lambda m: Effect("damage", int(m[1]), target="creature", filter="nonflying")),
     (_SRC + r" deals (\d+) damage to (?:up to one )?target (?:creature or planeswalker|creature)"

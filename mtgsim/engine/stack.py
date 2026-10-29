@@ -200,6 +200,9 @@ class StackMixin:
                 if event == "dies":
                     effects = [dataclasses.replace(e, data=dict(e.data, counters=dict(perm.counters)))
                                if e.kind == "inherit_counters" else e for e in effects]
+                if getattr(self, "event_amount", None) is not None and any(e.data.get("that_much") for e in effects):
+                    effects = [dataclasses.replace(e, amount=self.event_amount) if e.data.get("that_much") else e
+                               for e in effects]
                 if subject is not None and any(e.data.get("subject_power") for e in effects):
                     effects = [dataclasses.replace(e, amount=max(0, subject.power)) if e.data.get("subject_power")
                                else e for e in effects]
@@ -326,6 +329,7 @@ class StackMixin:
                 perm.warped = True
             perm.was_cast = True
             perm.kicks = getattr(item, "kicks", 0)
+            perm.emerged_toughness = getattr(item, "emerged_toughness", None)
             if perm.kicks and base.advanced_rules.get("kick_counters_each"):
                 perm.counters["+1/+1"] = perm.p1 + perm.kicks
             if perm.kicks and (base.advanced_rules.get("multipay") or ("",))[0] == "squad":
