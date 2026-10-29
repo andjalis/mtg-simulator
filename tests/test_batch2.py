@@ -244,6 +244,24 @@ class Batch2(Batch1):
         self.apply("You and target opponent each draw two cards.")
         self.assertEqual((len(self.a.hand), len(self.b.hand)), (2, 2))
 
+    def test_bestow_aura_then_creature(self):
+        from tests.test_templates import PLAINS
+        spirit = card("Test Eidolon", "{1}{W}", "Enchantment Creature — Spirit",
+                      "Bestow {3}{W}\nEnchanted creature gets +3/+3.", 2, 2)
+        for _ in range(5):
+            self.put(PLAINS)
+        host = self.put(card("Test Host", "{1}", "Creature — Human", "", 1, 1))
+        self.a.hand.append(spirit)
+        variant = next(v for v in self.g.spell_options(self.a) if self.g._origin(v)[1] == "bestow")
+        self.g.cast(self.a, variant)
+        self.g.settle()
+        self.assertEqual(host.power, 4)
+        aura = next(x for x in self.a.battlefield if x.card.name.startswith("Test Eidolon"))
+        self.assertFalse(aura.is_creature)
+        self.g.destroy(host)
+        self.g.settle()
+        self.assertTrue(aura.is_creature and aura in self.a.battlefield)
+
 
 if __name__ == "__main__":
     unittest.main()

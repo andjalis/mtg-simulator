@@ -388,6 +388,14 @@ def _parse_face(data: dict) -> CardDef:
         alt_costs.append(AltCost("kicker", add_mana(cost, extra.pop("kicker")), effects=kicked_effects))
     elif kicked:
         unsupported += [f"if kicked: {k}" for k in kicked]
+    if "bestow" in extra:
+        bonus = extra.pop("bestow_bonus", None)
+        cost = extra.pop("bestow")
+        if bonus is None:
+            unsupported.append("Bestow without a plain 'Enchanted creature gets' line")
+        else:
+            extra.setdefault("advanced_rules", {})["bestow_bonus"] = bonus
+            alt_costs.append(AltCost("bestow", cost))
     if "overload" in extra:
         from ..batch2_templates import overload_effects
         overload = overload_effects(text)

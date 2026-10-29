@@ -434,6 +434,10 @@ class CostsMixin:
                 v = dataclasses.replace(card.split_right, name=f"{card.name} ({card.split_right.name})")
             elif kind == "disturb":
                 v = dataclasses.replace(card.back, name=f"{card.back.name} (disturb)", mana_cost=alt.cost)
+            elif kind == "bestow":
+                from ..batch1_templates import bestow_face
+                v = bestow_face(card, alt.cost)
+                v.name = f"{card.name} (bestow)"
             elif kind in ("channel", "gy_ability"):
                 v = CardDef(name=f"{card.name} ({kind})", mana_cost=alt.cost, cmc=card.cmc,
                             types=frozenset({"Instant"}), spell_effects=list(alt.effects), is_ability=True)
@@ -514,7 +518,7 @@ class CostsMixin:
             if c.adventure:
                 out.append(self._variant(c, "adventure"))
             for a in c.alt_costs:
-                if a.kind in ("alt", "kicker") or (a.kind == "spectacle" and opp.lost_life_turn) or \
+                if a.kind in ("alt", "kicker", "bestow") or (a.kind == "spectacle" and opp.lost_life_turn) or \
                         (a.kind in ("blitz", "dash") and "hand" in a.zone):
                     out.append(self._variant(c, a.kind, a))
         out += [self._variant(x.front, "prepared") for x in p.battlefield if x.prepared and x.card.back is not None]

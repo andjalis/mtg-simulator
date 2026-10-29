@@ -281,6 +281,16 @@ def parse_line(line, st):
         st.extra['etb_counters'] = int(m[1])
         st.approximations.append("the opponent always pays tribute")
         return True
+    m = re.fullmatch(r"Bestow ((?:\{[^}]+\})+)", line)
+    if m:
+        from .cards import parse_mana_cost
+        st.extra['bestow'] = parse_mana_cost(m[1])
+        return True
+    m = re.fullmatch(r"Enchanted creature gets ([+-])(\d+)/([+-])(\d+)(?: and has ([a-z ]+(?:, [a-z ]+)*(?:,? and [a-z ]+)?))?\.", line)
+    if m and 'bestow' in st.extra and not st.extra.get('aura'):
+        kws = frozenset(k.strip() for k in re.split(r", and |, | and ", m[5])) if m[5] else frozenset()
+        st.extra['bestow_bonus'] = ((1 if m[1] == '+' else -1) * int(m[2]), (1 if m[3] == '+' else -1) * int(m[4]), kws)
+        return True
     if line == "Read ahead":
         st.approximations.append("read ahead: a Saga always starts at chapter I")
         return True
@@ -685,6 +695,26 @@ def hideaway_holds(game, p, cond):
     if cond == "library20":
         return any(len(pl.library) <= 20 for pl in game.players)
     return all(not pl.hand for pl in game.players)
+
+
+def bestow_face(card, cost):
+    """The Aura a bestow card becomes when cast for its bestow cost."""
+    import dataclasses
+    bonus = card.advanced_rules['bestow_bonus']
+    return dataclasses.replace(card, mana_cost=cost, types=frozenset({"Enchantment"}), subtypes=frozenset({"Aura"}),
+                               power=None, toughness=None, aura="creature", equip_bonus=bonus[:2],
+                               equip_keywords=bonus[2], aura_hostile=bonus[0] < 0 or bonus[1] < 0,
+                               triggers=[], activated=[], keywords=frozenset(),
+                               advanced_rules=dict(card.advanced_rules, bestowed=True, bestow_base=card))
+
+
+def unbestow(game, aura):
+    """The enchanted creature left: a bestowed Aura stays on the battlefield as the creature it was printed as."""
+    base = aura.card.advanced_rules.get('bestow_base')
+    if base is None:
+        return False
+    aura.card = base
+    return True
 
 
 def spell_tax(game, player, card):

@@ -234,6 +234,10 @@ class EffectsMixin:
                 x.attached_to = None
         for a in list(perm.auras):
             auras.detach(a)
+            from ..batch1_templates import unbestow
+            if unbestow(self, a):
+                self.log(f"{a.card.name} stays as a creature", a.controller)
+                continue
             self.leave_battlefield(a, "graveyard")
         self.fire(controller, "leaves", perm)
         returning, perm.exiled_cards = perm.exiled_cards, []
