@@ -294,6 +294,23 @@ class Batch2(Batch1):
         self.g.settle()
         self.assertEqual(self.b.life, opp_life - 1)
 
+    def test_encore(self):
+        from tests.test_templates import PLAINS
+        from mtgsim.batch2_templates import encore_actions
+        thrull = card("Test Adept", "{1}{W}", "Creature — Human Cleric", "Encore {1}{W}", 2, 2)
+        self.assertFalse(thrull.unsupported)
+        for _ in range(2):
+            self.put(PLAINS)
+        self.a.graveyard.append(thrull)
+        encore_actions(self.g, self.a)
+        self.g.settle()
+        self.assertNotIn(thrull, self.a.graveyard)
+        token = next(x for x in self.a.battlefield if x.card.name == "Test Adept token")
+        self.assertTrue(token.has("haste") and token.card.is_token)
+        self.g.begin_end_step(self.a)
+        self.g.settle()
+        self.assertNotIn(token, self.a.battlefield)
+
     def test_mutate_needs_non_human_host(self):
         from tests.test_templates import PLAINS
         drake = card("Test Drake", "{4}{W}", "Creature — Drake", "Mutate {1}{W}", 3, 3)

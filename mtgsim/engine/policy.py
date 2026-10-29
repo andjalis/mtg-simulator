@@ -727,6 +727,8 @@ def use_abilities(game: Game, me: Player):
             if alt_casts.worth_suspending(game, me, card):
                 alt_casts.suspend(game, me, card)
         alt_casts.graveyard_actions(game, me)
+        from ..batch2_templates import encore_actions
+        encore_actions(game, me)
 
 
 def default_sneak(game: Game, me: Player, attackers, blocks):

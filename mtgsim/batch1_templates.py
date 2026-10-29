@@ -286,6 +286,11 @@ def parse_line(line, st):
         from .cards import parse_mana_cost
         st.extra['bestow'] = parse_mana_cost(m[1])
         return True
+    m = re.fullmatch(r"Encore ((?:\{[^}]+\})+)", line)
+    if m:
+        from .cards import parse_mana_cost, AltCost
+        st.alt_costs.append(AltCost("encore", parse_mana_cost(m[1]), zone="graveyard"))
+        return True
     m = re.fullmatch(r"Mutate ((?:\{[^}]+\})+)", line)
     if m:
         from .cards import parse_mana_cost

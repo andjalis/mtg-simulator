@@ -117,3 +117,27 @@ def merge_mutation(game, p, host, base):
     game.log(f"{base.name} mutates onto the host", p)
     game.fire(p, "mutates", host)
     game.settle()
+
+
+def encore_actions(game, p):
+    """Encore: exile the card from the graveyard to make a hasty token copy per opponent that must attack
+    and is sacrificed at the next end step (sorcery speed, so only in our main phase with an empty stack)."""
+    import dataclasses
+    if not (p is game.active and game.step in ("main1", "main2") and not game.stack):
+        return
+    for card in list(p.graveyard):
+        alt = next((a for a in card.alt_costs if a.kind == "encore"), None)
+        if alt is None or card not in p.graveyard or not (card.power or 0):
+            continue
+        if not game.can_pay(p, alt.cost) or game.pay(p, alt.cost) is None:
+            continue
+        game.move_card(card, p.graveyard, p.exile, reason="encore")
+        token = dataclasses.replace(card, name=f"{card.name} token", is_token=True, alt_costs=[])
+        game.log(f"encores {card.name}", p)
+        perm = game.enter_battlefield(p, token)
+        perm.perm_kw.add("haste")
+        perm.temp_kw.add("must_attack_now")
+        perm.sick = False
+        from .cards import Effect
+        game.delayed_end_step.append((p, [Effect("sac_now")], None, perm))
+        game.settle()
