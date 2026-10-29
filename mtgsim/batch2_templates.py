@@ -37,6 +37,7 @@ EFFECT_PATTERNS = [
     (r"(destroy|exile) (?:each|all) (.+)", lambda m: _group(m[1].lower(), m[2])),
     (r"return (?:each|all) (.+) to (?:its|their) owners?'s? hands?", lambda m: _group("bounce", m[1])),
     (r"~ deals (\d+|X) damage to (?:each|all) (.+)", lambda m: _group("damage", m[2], amount=m[1])),
+    (r"(?:you and target opponent|each player) each draws? (two|three|four) cards", lambda m: _e("draw_each", _num(m[1]))),
     (r"return (another|a) (?:([\w ]+?) )?creature you control to its owner's hand",
      lambda m: _e("return_own", data={"kind": "creature", "other": m[1] == "another", "colors": _colors(m[2] or "")})),
     (r"return a permanent you control to its owner's hand", lambda m: _e("return_own", data={"kind": "permanent"})),

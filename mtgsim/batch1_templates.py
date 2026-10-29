@@ -276,6 +276,14 @@ def parse_line(line, st):
         from .cards import Effect, Trigger
         st.triggers.append(Trigger('leaves', [Effect('hideaway_return')]))
         return True
+    m = re.fullmatch(r"Tribute (\d+)", line)
+    if m:
+        st.extra['etb_counters'] = int(m[1])
+        st.approximations.append("the opponent always pays tribute")
+        return True
+    if line == "Read ahead":
+        st.approximations.append("read ahead: a Saga always starts at chapter I")
+        return True
     if line == "Conspire":
         from .cards import Effect, Trigger
         st.triggers.append(Trigger('cast_self', [Effect('conspire')]))

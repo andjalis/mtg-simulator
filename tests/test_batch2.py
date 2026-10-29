@@ -235,6 +235,15 @@ class Batch2(Batch1):
         self.g.settle()
         self.assertTrue(any(x.card.name == "Test Gem" for x in self.a.battlefield))
 
+    def test_tribute_counters(self):
+        giant = self.put(card("Test Giant Tribute", "{4}{R}", "Creature — Giant", "Tribute 2\nWhen ~ enters, if tribute wasn't paid, ~ deals 5 damage to each opponent.", 4, 4))
+        self.assertEqual(giant.p1, 2)
+        self.assertEqual(self.b.life, 20)
+
+    def test_draw_each_two(self):
+        self.apply("You and target opponent each draw two cards.")
+        self.assertEqual((len(self.a.hand), len(self.b.hand)), (2, 2))
+
 
 if __name__ == "__main__":
     unittest.main()

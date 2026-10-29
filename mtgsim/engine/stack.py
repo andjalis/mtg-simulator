@@ -498,6 +498,8 @@ class StackMixin:
             return any(x.counters.get("+1/+1") for x in p.creatures)
         if c == "opp_lost_life":
             return self.opponent(p).lost_life_turn
+        if c == "tribute_unpaid":
+            return False                        # the opponent always pays tribute
         if c == "gained_life":
             return p.life_gained_turn > 0
         if c.startswith("gained_life>="):
