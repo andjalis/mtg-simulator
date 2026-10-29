@@ -1,0 +1,92 @@
+[
+  {
+    "name": "Bringer of the Black Dawn",
+    "before": {
+      "name": "Bringer of the Black Dawn",
+      "status": "partial",
+      "ignored_text": "If you do, search your library for a card, then shuffle and put that card on top.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Bringer of the Black Dawn",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Cruel Tutor",
+    "before": {
+      "name": "Cruel Tutor",
+      "status": "partial",
+      "ignored_text": "Search your library for a card, then shuffle and put that card on top.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Cruel Tutor",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Imperial Seal",
+    "before": {
+      "name": "Imperial Seal",
+      "status": "partial",
+      "ignored_text": "Search your library for a card, then shuffle and put that card on top.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Imperial Seal",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Liliana Vess",
+    "before": {
+      "name": "Liliana Vess",
+      "status": "partial",
+      "ignored_text": "[\u22122]: Search your library for a card, then shuffle and put that card on top.\n[\u22128]: Put all creature cards from all graveyards onto the battlefield under your control.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Liliana Vess",
+      "status": "partial",
+      "ignored_text": "[\u22128]: Put all creature cards from all graveyards onto the battlefield under your control.",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Vampiric Tutor",
+    "before": {
+      "name": "Vampiric Tutor",
+      "status": "partial",
+      "ignored_text": "Search your library for a card, then shuffle and put that card on top.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Vampiric Tutor",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  },
+  {
+    "name": "Worldly Tutor",
+    "before": {
+      "name": "Worldly Tutor",
+      "status": "partial",
+      "ignored_text": "Search your library for a creature card, reveal it, then shuffle and put the card on top.",
+      "simplifications": ""
+    },
+    "after": {
+      "name": "Worldly Tutor",
+      "status": "full",
+      "ignored_text": "",
+      "simplifications": ""
+    }
+  }
+]

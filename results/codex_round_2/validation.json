@@ -1,0 +1,26 @@
+{
+  "expected": 1622,
+  "ran": 1622,
+  "success": true,
+  "inventory_matched": true,
+  "seconds": 224.12593142400146,
+  "failures": [],
+  "errors": [],
+  "skipped": [
+    [
+      "tests.test_forge.ForgeWrapperTests.test_stored_review_log_if_present",
+      "local review log not present (results/benchmark*/ is gitignored)"
+    ]
+  ],
+  "suite_workers": 4,
+  "python": "Python 3.12.14",
+  "source_sha256": {
+    "mtgsim/cards/__init__.py": "87a9db76242a8ad52a402221044037d75994d524197230b15246cac9380dc316",
+    "mtgsim/cx_library.py": "c74f3bd8b668b4e64990344e3db76cd5bc0c07d19b11c797c409ac547cc550ab",
+    "tests/test_cx_library.py": "be714691d812543504e530d11f6fd9bd63ebce880443b819eeae150e61bccf8b"
+  },
+  "focused_new_tests": 11,
+  "lint": "passed",
+  "parse_diff": "passed; no new parser exceptions",
+  "regex_cache": "32768 only in temporary test/census runners; production unchanged"
+}
