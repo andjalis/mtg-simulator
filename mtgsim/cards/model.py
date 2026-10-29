@@ -282,6 +282,7 @@ class CardDef:
     extra_sac_or_pay: int = 0                           # "... pay {4} or sacrifice ...": the generic alternative
     aura: str = ""                                      # "Enchant creature" (what it enchants; mtgsim.auras)
     aura_flags: frozenset = frozenset()                 # no_untap, cant_attack_block
+    level_blocks: tuple = ()                            # Level up: ((lo, hi, (power, toughness) | None, keywords), ...)
     aura_hostile: bool = False                          # goes on an opponent's permanent
     clone: dict | None = None                           # "You may have ~ enter as a copy of ..." (mtgsim.copies)
     cast_copy: dict | None = None                       # "When you cast ~, copy it." (mtgsim.copies)

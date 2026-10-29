@@ -182,3 +182,10 @@ def curse_effects(game, p, eff, item, cause, **_):
         from ...batch1_templates import curses_on
         amount = len(curses_on(game, victim)) if eff.data.get("per_curse") else eff.amount
         game.deal_damage(victim, amount, by=p, cause=cause, source=item.source)
+
+
+@kind("level_counter")
+def level_counter(game, p, item, **_):
+    src = item.source if item is not None else None
+    if isinstance(src, Permanent) and src in src.controller.battlefield:
+        src.counters["level"] = src.counters.get("level", 0) + 1

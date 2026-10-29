@@ -353,6 +353,11 @@ class Permanent:
                     if not source.abilities_suppressed and any(kw in kws and matches(game, self, spec, source.controller, source)
                             for spec, kws in source.card.static_keyword_grants):
                         return True
+        if self.card.level_blocks:
+            from ..batch1_templates import level_block
+            block = level_block(self)
+            if block is not None and kw in block[1]:
+                return True
         if kw in self.card.keywords or kw in self.temp_kw or kw in self.perm_kw or (kw in KEYWORDS and self.counters.get(kw, 0) > 0):
             return True
         if kw in ('training', 'dethrone') and self.is_creature and any(k == kw and not (other and source is self)

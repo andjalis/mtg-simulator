@@ -575,6 +575,25 @@ class Batch1(unittest.TestCase):
         self.g.settle()
         self.assertNotIn(ants, self.a.battlefield)
 
+    def test_level_up_sets_stats_and_keywords(self):
+        student = self.put(card("Test Student", "{W}", "Creature — Human Knight",
+                                "Level up {W} ({W}: Put a level counter on this. Level up only as a sorcery.)\n"
+                                "LEVEL 2-6\n3/3\nFirst strike\nLEVEL 7+\n4/4\nDouble strike", 1, 1))
+        self.assertEqual((student.power, student.toughness), (1, 1))
+        for _ in range(2):
+            self.put(card("Test Plains", "", "Basic Land — Plains", "{T}: Add {W}."))
+        self.assertTrue(self.g.activate(self.a, student, "ability:0"))
+        self.g.settle()
+        self.assertEqual((student.power, student.toughness), (1, 1))
+        self.assertTrue(self.g.activate(self.a, student, "ability:0"))
+        self.g.settle()
+        self.assertEqual((student.power, student.toughness), (3, 3))
+        self.assertTrue(student.has("first strike"))
+        student.counters["level"] = 7
+        self.assertEqual((student.power, student.toughness), (4, 4))
+        self.assertTrue(student.has("double strike"))
+        self.assertFalse(student.has("first strike"))
+
 
 if __name__ == '__main__':
     unittest.main()

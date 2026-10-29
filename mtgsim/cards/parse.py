@@ -394,6 +394,8 @@ def _parse_face(data: dict) -> CardDef:
         end = level_marks[i + 1][1] if i + 1 < len(level_marks) else len(triggers)
         for t in triggers[start:end]:
             t.min_level = n
+    from ..batch1_templates import finish_level_up
+    finish_level_up(extra, triggers, activated, approximations, produces)
     extra.pop("is_spree", None)
     extra.pop("_subtypes", None)
     _auras.finish(extra)

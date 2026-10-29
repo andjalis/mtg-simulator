@@ -239,6 +239,8 @@ class AbilitiesMixin:
             return False
         if c.get("level_from") is not None and perm.counters.get("level", 1) != c["level_from"]:
             return False
+        if c.get("level_range") is not None and not c["level_range"][0] <= perm.counters.get("level", 0) <= c["level_range"][1]:
+            return False
         if p.counters.get("energy", 0) < c.get("energy", 0):
             return False
         if c.get("life") and p.life <= c["life"]:
