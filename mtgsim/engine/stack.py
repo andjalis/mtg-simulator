@@ -449,6 +449,8 @@ class StackMixin:
             return sum(x.owner is not p for x in p.battlefield) >= int(eff.cond.split(">=")[1])
         if eff.cond == "source_untapped":
             return item is not None and isinstance(item.source, Permanent) and not item.source.tapped
+        if eff.cond == "no_creatures_bf":           # "if no creatures are on the battlefield"
+            return not any(pl.creatures for pl in self.players)
         if eff.data.get("milled_condition") and not milling.condition_met(p, eff, item):
             return False
         c = eff.cond
