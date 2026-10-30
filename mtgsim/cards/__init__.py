@@ -126,3 +126,5 @@ _SUBS += _prepare.SUBS
 from .. import cx_triggers as _cx_triggers
 _EFFECT_PATTERNS += _cx_triggers.EFFECT_PATTERNS
 _SUBS += _cx_triggers.SUBS
+from .. import cx_damage as _cx_damage
+_EFFECT_PATTERNS += _cx_damage.EFFECT_PATTERNS
