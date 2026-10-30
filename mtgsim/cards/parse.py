@@ -186,6 +186,12 @@ def _parse_effects(text: str, opts: bool = False):
             g = re.fullmatch(r"(?:if you do|when you do), (.+)", s, re.I)
             if g:
                 s, paid = g[1], True
+            g = re.fullmatch(r"if you don't, (.+)", s, re.I)
+            if g:      # the "you may" above is always taken (Game.pay_gate_cost), so !paid never fires
+                new, bad = _parse_effects(g[1][0].upper() + g[1][1:] + ".")
+                if new and not bad:
+                    effects += [dataclasses.replace(e, cond=e.cond or "!paid") for e in new]
+                    continue
         for pat, build in _EFFECT_PATTERNS:
             m = re.fullmatch(pat, s, flags=re.IGNORECASE)
             if m is None and s.lower().startswith("then "):

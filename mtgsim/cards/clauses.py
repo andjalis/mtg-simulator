@@ -172,7 +172,7 @@ _TRIGGERS = [
     (r"When ~ becomes level (\d+), (.+)", ("class_level",)),
     (r"Whenever you proliferate, (.+)", ("proliferate",)),
     (r"Whenever an opponent searches their library, (.+)", ("opp_searches",)),
-    (r"When(?:ever)? ~ enters or attacks, (.+)", ("etb", "attacks")),
+    (r"When(?:ever)? ~ enters? or attacks?, (.+)", ("etb", "attacks")),
     (r"When ~ enters and at the beginning of your upkeep, (.+)", ("etb", "upkeep")),
     (r"When(?:ever)? ~ enters?(?: the battlefield)?, (.+)", ("etb",)),
     (r"Whenever ~ attacks while (?!saddled)(.+)", ("attacks",)),
