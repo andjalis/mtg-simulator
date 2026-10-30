@@ -96,3 +96,9 @@ _TRIGGERS += _ripple.TRIGGERS
 from .. import manifest as _manifest
 _EFFECT_PATTERNS += _manifest.EFFECT_PATTERNS
 _TRIGGERS += _manifest.TRIGGERS
+from .. import demonstrate as _demonstrate
+_EFFECT_PATTERNS += _demonstrate.EFFECT_PATTERNS
+_TRIGGERS += _demonstrate.TRIGGERS
+from .. import amplify as _amplify
+_EFFECT_PATTERNS += _amplify.EFFECT_PATTERNS
+_TRIGGERS += _amplify.TRIGGERS
