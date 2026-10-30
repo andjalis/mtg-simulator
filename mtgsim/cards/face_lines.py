@@ -212,7 +212,7 @@ def _face_mode_and_ward_lines(st, line):
             if amount > 1:
                 extra["restricted_amount"] = amount
             if m[1]:
-                approximations.append(f"the {re.search(r'\d+', m[1])[0]} life for restricted mana isn't paid")
+                approximations.append("the " + re.search(r'\d+', m[1])[0] + " life for restricted mana isn't paid")
             return None
         return line
     finally:
