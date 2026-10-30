@@ -38,6 +38,14 @@ EFFECT_PATTERNS = [
     # "Shuffle ~ into its owner's library." (the Beacon and Zenith spells): a marker the
     # stack reads after the spell resolves (Game.to_graveyard_after_resolving).
     (r"shuffle ~ into its owner's library", lambda m: _e("shuffle_self")),
+    # "Shuffle it / this card into its owner's library." on a dies (or put-into-a-graveyard)
+    # trigger: the source has already left the battlefield, so shuffle_away takes the card
+    # out of its owner's graveyard instead (Angel of Fury, Cavalier of Gales, Dread).
+    (r"shuffle (?:it|this card) into (?:its|his|her) owner's library",
+     lambda m: _e("shuffle_away", target="self")),
+    # "You may exile a <desc> card from your graveyard. If you do, <X>." — the exile twin
+    # of the may-sacrifice gates: pay_exile_gy exiles the card and gates the payoff.
+    (r"EXILEGYGATE ([\w, -]+) RIDER (.+)", lambda m: _exile_gy_gate(m)),
     # Bottom-of-library dig sentinels (see SUBS): keep up to K (or all matching, or up to
     # two revealed) in hand, the rest shuffled to the bottom; DIGBPUT puts up to K
     # matching cards onto the battlefield (tapped) instead of into the hand.
@@ -68,6 +76,12 @@ def _diggy_choose(m):
 
 
 SUBS = [
+    # "You may exile a <desc> card from your graveyard. If you do, <payoff>." (Aphemia,
+    # Masked Vandal): fold the pair into an EXILEGYGATE sentinel whose builder returns
+    # the pay_exile_gy gate plus the payoff with cond "paid".
+    (re.compile(r"you may exile an? ([\w, -]+?) card from your graveyard\. "
+                r"if you do, ([^.]+)\.?", re.I),
+     lambda m: f"EXILEGYGATE {m[1]} RIDER {m[2]}."),
     (re.compile(r"(?:look at|reveal) the top (\w+) cards of your library[.,]?\s*(?:then )?"
                 r"put (one|two|three|four|five|six|seven|eight|nine|ten|\d+)(?: of them)? into your hand "
                 r"and the (?:other|rest) into your graveyard\.?", re.I),
@@ -218,6 +232,16 @@ def _card_desc(words):
 
 
 
+
+def _exile_gy_gate(m):
+    import dataclasses
+    from .cards import Effect, NO_MATCH, _parse_effects
+    payoff, bad = _parse_effects(m[2][0].upper() + m[2][1:] + ".")
+    if bad or not payoff:
+        return NO_MATCH
+    return [Effect("pay_exile_gy", filter=m[1])] + [
+        dataclasses.replace(e, cond=e.cond or "paid") for e in payoff]
+
 def _e(kind, amount=1, amount2=0, **kw):
     from .cards import Effect
     return Effect(kind, amount, amount2, **kw)
@@ -226,3 +250,11 @@ def _e(kind, amount=1, amount2=0, **kw):
 def _num(word):
     from .cards import _num as number
     return number(word)
+
+
+# "When ~ is put into a graveyard from anywhere, ..." (the Lorwyn incarnations and friends:
+# Dread, Serra Avatar, Worldspine Wurm). Approximated as a dies trigger — the engine has no
+# put-into-graveyard-from-anywhere event, so discards and mills of the card don't fire it.
+TRIGGERS = [
+    (r"When ~ is put into a graveyard from anywhere, (.+)", ("dies",)),
+]

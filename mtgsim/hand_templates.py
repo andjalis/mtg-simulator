@@ -75,4 +75,14 @@ EFFECT_PATTERNS = [
                   data=_mv(m))),
     (r"TUCKCHOICE ([\w, -]+?) (\d+)",
      lambda m: _e("tuck_choice", target="player", filter=m[1], data={"depth": int(m[2])})),
+    # "Put a/two/N card(s) from your hand on the top/bottom of your library [in any order]"
+    # (Brainstorm's rider, Amass the Components, Cavalier of Gales).
+    (r"put (a|one|two|three|four|five|six|seven|\d+) cards? from your hand on "
+     r"(?:the )?(top|bottom) of your library(?: in any order)?",
+     lambda m: _lib(m)),
 ]
+
+
+def _lib(m):
+    from .cards import Effect, _num
+    return Effect("hand_to_library", _num(m[1]), data={"bottom": m[2] == "bottom"})

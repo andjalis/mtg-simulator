@@ -364,13 +364,40 @@ def stun_discarded(game, p, opp, **_):
 @kind("shuffle_away")
 def shuffle_away(game, p, target, item, **_):
     for perm in (target, item.source if item else None):
-        if isinstance(perm, Permanent) and perm in perm.controller.battlefield:
+        if not isinstance(perm, Permanent):
+            continue
+        if perm in perm.controller.battlefield:
             owner = perm.controller
             if game.leave_battlefield(perm, "graveyard") and not perm.front.is_token:
                 owner.graveyard.remove(perm.front)
                 owner.library.append(perm.front)
                 owner.library.shuffle(game.rng)
             game.log(f"shuffles {perm.card.name} into its owner's library", p)
+        elif not perm.front.is_token and any(c is perm.front for c in perm.owner.graveyard):
+            # Already dead (a dies/put-into-graveyard trigger): take the card out of
+            # its owner's graveyard and shuffle it into the library instead.
+            perm.owner.graveyard.remove(perm.front)
+            perm.owner.library.append(perm.front)
+            perm.owner.library.shuffle(game.rng)
+            game.log(f"shuffles {perm.card.name} into its owner's library", p)
+
+
+@kind("hand_to_library")
+def hand_to_library(game, p, eff, **_):
+    """Put N cards from your hand on the top or bottom of your library (Brainstorm's rider,
+    Amass the Components): the least valuable cards in hand go to that end of the library."""
+    n = min(eff.amount, len(p.hand))
+    moved = []
+    for _ in range(n):
+        card = p.ai.choose_discard(game, p)
+        p.hand.remove(card)
+        moved.append(card)
+    bottom = eff.data.get("bottom")
+    for card in reversed(moved) if bottom else moved:
+        p.library.insert(0, card) if bottom else p.library.append(card)
+    if moved:
+        game.log(f"puts {n} card{'s' if n != 1 else ''} from their hand on the "
+                 f"{'bottom' if bottom else 'top'} of their library", p)
 
 
 @kind("connive")
@@ -502,3 +529,31 @@ def explore(game, p, target, **_):
             if game.hook(p, "scry")(game, p, [top]):
                 p.graveyard.append(p.library.pop())
         game.log(f"{target.card.name} explores", p)
+
+
+@kind("clash")
+def clash(game, p, eff, item, opp, **_):
+    """\"Clash with an opponent\" (chance_templates.py): reveal the top card of each
+    library, the bigger mana value wins (an empty library loses). The revealed cards stay
+    on top (simplification: the real wording returns them top or bottom at choice) and
+    an \"If you win\" rider rides item.gate_paid, the pay_gate pattern."""
+    mine = p.library[-1] if p.library else None
+    theirs = opp.library[-1] if opp.library else None
+    won = mine is not None and (theirs is None or mine.cmc > theirs.cmc)
+    if item is not None:
+        item.gate_paid = won
+    game.log(f"clashes: {mine.name if mine else 'nothing'} ({mine.cmc if mine else 0}) vs "
+             f"{theirs.name if theirs else 'nothing'} ({theirs.cmc if theirs else 0})", p)
+    game.fire(p, "you_clash")
+    if won:
+        game.fire(p, "you_win_clash")
+
+
+@kind("flip_coin")
+def flip_coin(game, p, eff, item, **_):
+    """\"Flip a coin. If you win/lose the flip, <X>\" (chance_templates.py): a fair coin
+    decides; the rider (cond \"paid\") runs on the named side of the flip."""
+    won = game.rng.random() < 0.5
+    if item is not None:
+        item.gate_paid = won != bool(eff.data.get("on_lose"))
+    game.log(f"flips a coin and {'wins' if won else 'loses'}", p)

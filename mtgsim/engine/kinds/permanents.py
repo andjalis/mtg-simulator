@@ -136,6 +136,29 @@ def regenerate(game, p, eff, target, opp, **_):
             perm.regeneration_shields += eff.amount
 
 
+@kind("no_regen_lock")
+def no_regen_lock(game, p, eff, target, **_):
+    """"Target creature can't be regenerated this turn" (Gravebind, Hurr Jackal): block the
+    target's regeneration responses until end of turn."""
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        target.regeneration_blocked = True
+        game.log(f"{target.card.name} can't be regenerated this turn", p)
+
+
+@kind("animate_land")
+def animate_land(game, p, eff, target, prev, **_):
+    """"Target land (you control) becomes an N/N creature with keywords until end of turn.
+    It's still a land" (animate_templates.py): the land keeps its types — the animated
+    temporary carries the power, toughness and keywords, and turns.py clears it at EOT."""
+    from ...cards import Activated
+    land = prev if eff.target == "prev" else target
+    if isinstance(land, Permanent) and land in land.controller.battlefield and land.card.is_land:
+        land.animated = Activated("animate", {}, eff.amount, eff.amount2,
+                                  keywords=frozenset(eff.data.get("keywords", ())))
+        game.log(f"{land.card.name} becomes a {eff.amount}/{eff.amount2} creature until end "
+                 f"of turn", p)
+
+
 @kind("token")
 def token(game, p, eff, target, item, **_):
     who = target if eff.target == "that_controller" and isinstance(target, Player) else p

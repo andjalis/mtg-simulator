@@ -21,6 +21,13 @@ EFFECT_PATTERNS = [
      lambda m: _e("exiled_returned")),
     (r"REANIMTEMP (.+)", lambda m: _reanim(m)),
     (r"REANIMTOP", lambda m: _e("reanimate_temp", data={"top": True})),
+    # "Exile ~ with three time counters on it." (Inspiring Refrain and the other
+    # self-suspend spells): the resolving spell suspends itself instead of going to the
+    # graveyard; the pending stack hook (see the batch report) reads item.self_suspend.
+    (r"exile ~ with (a|one|two|three|four|five|six|\d+) time counters? on it",
+     lambda m: _e("self_suspend", {"a": 1, "one": 1, "two": 2, "three": 3, "four": 4,
+                                   "five": 5, "six": 6}.get(m[1].lower(), m[1])
+                                   if not m[1].isdigit() else int(m[1]))),
 ]
 
 SUBS = [

@@ -60,6 +60,7 @@ _TRIGGERS += _that_much.TRIGGERS
 from .. import graveyard_templates as _graveyard_templates
 _EFFECT_PATTERNS += _graveyard_templates.EFFECT_PATTERNS
 _SUBS += _graveyard_templates.SUBS
+_TRIGGERS += _graveyard_templates.TRIGGERS
 from .. import exile_templates as _exile_templates
 _EFFECT_PATTERNS += _exile_templates.EFFECT_PATTERNS
 _SUBS += _exile_templates.SUBS
@@ -102,3 +103,17 @@ _TRIGGERS += _demonstrate.TRIGGERS
 from .. import amplify as _amplify
 _EFFECT_PATTERNS += _amplify.EFFECT_PATTERNS
 _TRIGGERS += _amplify.TRIGGERS
+
+from .. import prevent_templates as _prevent_templates
+_EFFECT_PATTERNS += _prevent_templates.EFFECT_PATTERNS
+_SUBS += _prevent_templates.SUBS
+from .. import energy_templates as _energy_templates
+_EFFECT_PATTERNS += _energy_templates.EFFECT_PATTERNS
+_SUBS += _energy_templates.SUBS
+from .. import animate_templates as _animate_templates
+_EFFECT_PATTERNS += _animate_templates.EFFECT_PATTERNS
+_SUBS += _animate_templates.SUBS
+from .. import chance_templates as _chance_templates
+_EFFECT_PATTERNS += _chance_templates.EFFECT_PATTERNS
+_SUBS += _chance_templates.SUBS
+_TRIGGERS += _chance_templates.TRIGGERS
