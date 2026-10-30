@@ -33,7 +33,10 @@ current party; GO TO JAIL's owner-upkeep roll is made by the effect's controller
 odds are the same); regrow-by-budget and fetch-N-lands pick greedily; "As ~ enters"
 rolls resolve as ETB triggers just after entering, so 0/0 bodies that live on the
 rolled counters (Hydradoodle, Neverwinter Hydra, Jumbo Imp, Hammer Jammer, Temp of the
-Damned) stay unsupported until entering can roll.
+Damned) stay unsupported until entering can roll; the free cast of a rolled budget
+(Arcane Endeavor) always casts the biggest affordable instant or sorcery; Mr. House's
+Treasure-scaled ability rolls one die, and its "instead" rider only adds the Treasure
+(the Robot comes from the roll trigger).
 """
 from __future__ import annotations
 
@@ -217,7 +220,17 @@ EFFECT_PATTERNS = [
     # counts the existing treasure template doesn't reach ("Create five Treasure tokens.")
     (r"create (\w+) (treasure|clue|blood|map|food) tokens?",
      lambda m: _e("token", _num(m[1]), data={"kind": m[2].lower()})),
+    # Arcane Endeavor: free cast from hand with a budget read back from the roll
+    (r"you may cast an instant or sorcery spell with mana value less than or equal to "
+     r"(the other result|that result|the result) from your hand without paying its mana cost",
+     lambda m: _e("die_free_cast", data={"agg": _RESULT_AGG[m[1]]})),
+    # Mr. House: the "instead" rider carries the Treasure (the Robot came from the
+    # roll trigger on the line above, which fires on the same 6-or-higher face)
+    (r"instead create that token and a treasure token",
+     lambda m: _e("token", 1, data={"kind": "treasure"})),
 ]
+
+_RESULT_AGG = {"the other result": "other", "that result": "chosen", "the result": None}
 
 # Outcome-table lines ("1—9 | ...", "4 or 5 — ...") become die:LO-HI triggers that the
 # die_roll handler dispatches when a roll lands in range; the "you roll" listeners
@@ -271,6 +284,10 @@ TRIGGERS = [
 SUBS = [
     # Treasure Chest: "1 | Trapped! — You lose 3 life."
     (re.compile(r"^[A-Z][\w' ]*! — "), ""),
+    # Mr. House's activated ability scales its die count with the Treasures spent on it;
+    # the engine cannot track that, so one die is rolled (recorded simplification).
+    (re.compile(r" plus an additional six-sided die for each mana from Treasures spent to "
+                r"activate this ability", re.I), ""),
 ]
 
 
@@ -721,3 +738,20 @@ def remove_all_counters(game, p, eff, item):
         n = src.counters.get(name, 0)
         src.counters[name] = 0
         game.log(f"removes all {n} {name} counters from {src.card.name}", p)
+
+
+def die_free_cast(game, p, eff, item):
+    """Arcane Endeavor's rider: cast an instant or sorcery from hand with mana value up to
+    the roll result, without paying its mana cost (the biggest affordable one)."""
+    from .cards import AltCost
+    budget = _aggregate(game, p, eff)
+    if not budget:
+        return
+    cands = [c for c in p.hand if (c.is_instant or c.is_sorcery) and c.cmc <= budget]
+    if not cands:
+        return
+    best = max(cands, key=lambda c: (c.cmc, len(c.spell_effects)))
+    free = game._variant(best, "freecast", AltCost("freecast", {"generic": 0}))
+    targets = game.auto_targets(p, free.spell_effects)
+    if game.can_cast_now(p, free, during_resolution=True) and game.cast(p, free, targets):
+        game.log(f"casts {best.name} free (mana value up to {budget})", p)

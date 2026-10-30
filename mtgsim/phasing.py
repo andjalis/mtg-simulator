@@ -23,7 +23,8 @@ most valuable lands / artifacts / creatures beyond the controller's own count; T
 Realm phases out the nontoken slice that costs its (active) player the least; the
 Adversary cycle's "you may pay {cost} any number of times" pays up to three times
 (Spectral's phase-outs take the opponents' most valuable nonland permanents first,
-Tainted's riders land the counters and twice-that-many Zombie tokens); the "protection from everything / life total can't
+Tainted's riders land the counters and twice-that-many Zombie tokens; Primal's rider
+animates the first of the controller's lands as 3/3 Wolves with haste permanently); the "protection from everything / life total can't
 change" riders of Teferi's Protection and Perch Protection stay unsupported; King of the
 Oathbreakers only hears itself phase in, not other Spirits; The War Doctor's
 cross-permanent phase-out listener is not built.
@@ -136,6 +137,14 @@ EFFECT_PATTERNS = [
      lambda m: _e("phase_out_paid")),
     (r"when you pay this cost one or more times, put that many ([\w+/-]+) counters? on ~",
      lambda m: _e("pay_repeat_counters", target="self", data={"counter": m[1]})),
+    # Primal Adversary: the counters, then that many of the controller's lands animate
+    # permanently (3/3 Wolf creatures with haste that are still lands).
+    (r"when you pay this cost one or more times, put that many ([\w+/-]+) counters? on ~, "
+     r"then up to that many target lands you control become (\d+)/(\d+) (\w+) creatures? "
+     r"with (\w+) that are still lands",
+     lambda m: _e("pay_repeat_lands", target="self",
+                  data={"counter": m[1], "power": int(m[2]), "toughness": int(m[3]),
+                        "subtype": m[4], "keyword": m[5].lower()})),
     (r"create twice that many (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: with ([\w ,]+))?",
      lambda m: _e("pay_repeat_tokens", data=_token_data(m[1], m[2], m[3], m[4]))),
 ]
@@ -421,6 +430,28 @@ def pay_repeat_counters(game, p, eff, target, item):
         name = eff.data.get("counter", "+1/+1")
         src.counters[name] = (src.p1 if name == "+1/+1" else src.counters.get(name, 0)) + n
         game.log(f"puts {n} {name} counter(s) on {src.card.name}", p)
+
+
+def pay_repeat_lands(game, p, eff, target, item):
+    """Primal Adversary's rider: the counters for the payments, then that many of the
+    controller's lands become N/N creatures with haste permanently (still lands)."""
+    from . import continuous
+    from .engine.state import Permanent
+    src = item.source if item is not None else None
+    n = getattr(item, "pay_repeat", 0) if item is not None else 0
+    if isinstance(src, Permanent) and src in p.battlefield and n:
+        name = eff.data.get("counter", "+1/+1")
+        src.counters[name] = (src.p1 if name == "+1/+1" else src.counters.get(name, 0)) + n
+        game.log(f"puts {n} {name} counter(s) on {src.card.name}", p)
+    power, toughness = eff.data.get("power", 3), eff.data.get("toughness", 3)
+    subtype = eff.data.get("subtype", "Wolf")
+    keyword = eff.data.get("keyword", "haste")
+    for land in [x for x in p.battlefield if x.card.is_land][:max(0, n)]:
+        continuous.add(game, land, "add_types", types=frozenset({"Creature"}))
+        continuous.add(game, land, "add_subtypes", subtypes=frozenset({subtype}))
+        continuous.add(game, land, "set_base", power=power, toughness=toughness)
+        continuous.add(game, land, "grant", keyword=keyword)
+        game.log(f"{land.card.name} becomes a {power}/{toughness} {subtype} (still a land)", p)
 
 
 def pay_repeat_tokens(game, p, eff, item):

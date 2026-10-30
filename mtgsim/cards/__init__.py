@@ -117,3 +117,9 @@ from .. import chance_templates as _chance_templates
 _EFFECT_PATTERNS += _chance_templates.EFFECT_PATTERNS
 _SUBS += _chance_templates.SUBS
 _TRIGGERS += _chance_templates.TRIGGERS
+from .. import for_mirrodin as _for_mirrodin
+_EFFECT_PATTERNS += _for_mirrodin.EFFECT_PATTERNS
+_TRIGGERS += _for_mirrodin.TRIGGERS
+from .. import prepare as _prepare
+_EFFECT_PATTERNS += _prepare.EFFECT_PATTERNS
+_SUBS += _prepare.SUBS

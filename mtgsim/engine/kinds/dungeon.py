@@ -54,3 +54,9 @@ def destroy_power_ge(game, p, eff, **_):
 def remove_all_counters(game, p, eff, item, **_):
     from ... import dungeon_mechanics
     dungeon_mechanics.remove_all_counters(game, p, eff, item)
+
+
+@kind("die_free_cast")
+def die_free_cast(game, p, eff, item, **_):
+    from ... import dungeon_mechanics
+    dungeon_mechanics.die_free_cast(game, p, eff, item)

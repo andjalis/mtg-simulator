@@ -56,6 +56,12 @@ def pay_repeat_counters(game, p, eff, target, item, **_):
     phasing.pay_repeat_counters(game, p, eff, target, item)
 
 
+@kind("pay_repeat_lands")
+def pay_repeat_lands(game, p, eff, target, item, **_):
+    from ... import phasing
+    phasing.pay_repeat_lands(game, p, eff, target, item)
+
+
 @kind("pay_repeat_tokens")
 def pay_repeat_tokens(game, p, eff, item, **_):
     from ... import phasing
