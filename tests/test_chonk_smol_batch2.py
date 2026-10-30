@@ -24,13 +24,18 @@ class SmolBatch2Parse(unittest.TestCase):
     def test_targeted_discard_filters(self):
         for text in ("Target player reveals their hand. You choose an artifact or creature card from it. "
                      "That player discards that card.",
-                     "Target opponent reveals their hand. You choose a nonland permanent card from it. "
-                     "That player discards that card.",
                      "Target player reveals their hand. You choose a nonland card from it. "
                      "That player discards that card."):
             c = card("Divest", "{1}{B}", "Sorcery", text)
             self.clean(c)
             self.assertEqual([e.kind for e in c.spell_effects], ["discard_choice"])
+        # "nonland permanent card" is not expressible as a hand filter: it parses
+        # with an honest approximation note since smol-batch7 (the filter is honored).
+        c = card("Lay Bare the Heart", "{1}{W}", "Sorcery",
+                 "Target opponent reveals their hand. You choose a nonland permanent card from it. "
+                 "That player discards that card.")
+        self.assertEqual([e.kind for e in c.spell_effects], ["discard_choice"])
+        self.assertTrue(c.approximations)
 
     def test_return_this_card_from_graveyard(self):
         c = card("Eternal Idea", "{3}{U}", "Creature — Elemental",
