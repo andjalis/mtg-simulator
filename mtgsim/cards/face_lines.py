@@ -521,6 +521,18 @@ def _face_cost_and_static_lines(st, line):
         if line == "Spree":
             extra["is_spree"] = True
             return None
+        if line == "Tiered":      # Spree with exactly one mode: "• Name — {cost} — effect"
+            extra["is_spree"] = True
+            extra.setdefault("advanced_rules", {})["tiered"] = True
+            return None
+        m = re.fullmatch(r"• [^—]+ — (\{[^ ]+\}) — (.+)", line)
+        if m and extra.get("is_spree") and extra.get("advanced_rules", {}).get("tiered"):
+            effs, bad = _parse_effects(m[2])
+            if effs and not bad:
+                extra.setdefault("spree", []).append((parse_mana_cost(m[1]), effs))
+            else:
+                unsupported.append(line)
+            return None
         m = re.fullmatch(r"\+ (\{[^ ]+\}) — (.+)", line)
         if m and extra.get("is_spree"):
             effs, bad = _parse_effects(m[2])
