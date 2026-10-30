@@ -53,17 +53,34 @@ def _parse_effects(text: str, opts: bool = False):
         from ..emerge import parse_rider as emerge_rider
         if batch1_rider(s, effects) or emerge_rider(s, effects):
             continue
-        if re.fullmatch(r"(?:it|they|those creatures|a creature destroyed this way) can't be regenerated", s, re.I) and effects and \
-                effects[-1].kind in ("destroy", "wrath", "wrath_pw", "selected_mass_move", "group_remove"):
+        if re.fullmatch(r"(?:it|they|those creatures|the creatures?|a creature destroyed this way) can't be "
+                       r"regenerated(?:, of course)?", s, re.I) and effects and \
+                effects[-1].kind in ("destroy", "wrath", "wrath_pw", "selected_mass_move", "group_remove",
+                                     "destroy_all", "destroy_group"):
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
             continue
         if re.fullmatch(r"if that spell is countered this way, exile it instead of putting it into its owner's graveyard", s,
                         re.I) and effects and effects[-1].kind == "counter":
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, exile=True))
             continue
+        # "you may cast [a card] from a graveyard ... If that spell would be put into a graveyard, exile it instead":
+        # the rider replaces where the just-cast spell ends up (consumed once its base effect parses; the engine
+        # reads gy_instead from the cast-from-graveyard effect).
+        if re.fullmatch(r"if that spell would be put into (?:a|your) graveyard, "
+                        r"(?:exile it instead|put it on the bottom of its owner's library instead)", s, re.I) and effects:
+            effects[-1] = dataclasses.replace(effects[-1], data=dict(
+                effects[-1].data, gy_instead="exile" if re.search(r"exile", s, re.I) else "bottom"))
+            continue
         if re.fullmatch(r"(?:a creature|creatures) dealt damage this way can't be regenerated this turn", s, re.I) \
                 and effects and effects[-1].kind == "damage":
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
+            continue
+        # "They gain haste until end of turn" after a token line: the tokens are created with haste.
+        if re.fullmatch(r"(?:it|they|those tokens) gains? haste(?: until end of turn)?", s, re.I) and effects \
+                and effects[-1].kind in ("token", "copy_token"):
+            kws = set(effects[-1].data.get("keywords", ()))
+            kws.add("haste")
+            effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, keywords=frozenset(kws)))
             continue
         end_rider = re.fullmatch(r"(sacrifice|exile) (?:it|that token|the token|them|those tokens|the tokens) at the "
                                  r"beginning of (?:the|your) next end step", s, re.I)
@@ -74,6 +91,26 @@ def _parse_effects(text: str, opts: bool = False):
                 and effects[-1].kind == "token":
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, spawn_mana=True))
             continue
+        # "That creature doesn't untap during its controller's untap step for as long as ~ remains
+        # tapped." (Amber Prison and the stay-tapped family): the lock extends the preceding tap.
+        # data["lock"] carries the duration for the engine's link recording (the AI's
+        # choose_stay_tapped reads frozen_by/locked_by/net_locked_by); "freeze" keeps the honest
+        # one-skipped-untap-step subset until that lands (approximation note in clauses._SUB_NOTES).
+        lock = re.fullmatch(r"(?:that (?:permanent|creature)|it|those creatures|they|each of those creatures) "
+                            r"(?:doesn't|don't) untap "
+                            r"during (?:its controller's|their controllers') untap steps? "
+                            r"for as long as (~ remains tapped|you control ~|~ remains on the battlefield)", s, re.I)
+        if lock and effects and effects[-1].kind in ("tap", "permanent_group"):
+            duration = ("tapped" if "remains tapped" in lock[1]
+                        else "controlled" if lock[1].startswith("you") else "battlefield")
+            if effects[-1].kind == "permanent_group":
+                inner = effects[-1].data["effect"]
+                inner = dataclasses.replace(inner, data=dict(inner.data, lock=duration, freeze=True))
+                effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, effect=inner))
+            else:
+                effects[-1] = dataclasses.replace(effects[-1],
+                                                  data=dict(effects[-1].data, lock=duration, freeze=True))
+            continue
         conditional = milling.parse_conditional(s, effects)
         if conditional is not None:
             effects += conditional
@@ -82,7 +119,9 @@ def _parse_effects(text: str, opts: bool = False):
         if rider is not None:
             effects += rider
             continue
-        mp = re.fullmatch(r"you may pay ((?:\{[WUBRGC0-9]+\})+)", s, re.I)
+        # Hybrid symbols too: "you may pay {U/B}" (Kels, Fight Fixer); parse_mana_cost
+        # simplifies them to the first coloured half.
+        mp = re.fullmatch(r"you may pay ((?:\{[WUBRGC0-9]+(?:/[WUBRGC2P])?\})+)", s, re.I)
         if mp:
             effects.append(Effect("pay_gate", data={"cost": parse_mana_cost(mp[1])}))
             gated = True
@@ -146,6 +185,16 @@ def _parse_effects(text: str, opts: bool = False):
                     e.data["xq_size"] = bool(re.search(r"\bX/X\b", mx[1]))
                 effects += new
                 continue
+        mparty = re.fullmatch(r"(.+?) for each creature in your party", s, re.I)
+        if mparty:
+            # "create a 1/1 ... token for each creature in your party" (Squad Commander): the base
+            # effect parses on its own and is scaled by the ("party",) X-quantity.
+            new, bad = _parse_effects(mparty[1][0].upper() + mparty[1][1:] + ".")
+            if new and not bad:
+                for e in new:
+                    e.data["xq"] = ("party",)
+                effects += new
+                continue
         if opts:
             new = _opt_rider(s, effects)
             if new is not None:
@@ -169,6 +218,12 @@ def _parse_effects(text: str, opts: bool = False):
             g = re.fullmatch(r"(?:if you do|when you do), (.+)", s, re.I)
             if g:
                 s, paid = g[1], True
+            g = re.fullmatch(r"if you don't, (.+)", s, re.I)
+            if g:      # the "you may" above is always taken (Game.pay_gate_cost), so !paid never fires
+                new, bad = _parse_effects(g[1][0].upper() + g[1][1:] + ".")
+                if new and not bad:
+                    effects += [dataclasses.replace(e, cond=e.cond or "!paid") for e in new]
+                    continue
         for pat, build in _EFFECT_PATTERNS:
             m = re.fullmatch(pat, s, flags=re.IGNORECASE)
             if m is None and s.lower().startswith("then "):
@@ -309,8 +364,22 @@ def _parse_face(data: dict) -> CardDef:
                   text, flags=re.I)
     text = re.sub(r"\b(protection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
                   r"\1 and protection from \2", text)
-    text = re.sub(r"(becomes the target of a spell or ability), sacrifice it\.", r"\1, sacrifice ~.", text)
+    text = re.sub(r"(becomes the target of (?:a spell or ability|a spell)), sacrifice it\.", r"\1, sacrifice ~.", text)
+    # The two-sentence O-ring wording ("... exile X. When ~ leaves the battlefield, return the exiled
+    # card(s) to the battlefield ...") is the single-sentence "exile X until ~ leaves the battlefield"
+    # the oring templates already implement (the engine returns the card when the source leaves).
+    text = re.sub(r"(exile [^.\n]*?)\.\s*When ~ leaves the battlefield, return the exiled cards? to the "
+                  r"battlefield under (?:its|their) (?:owner's|owners') control\.",
+                  r"\1 until ~ leaves the battlefield.", text, flags=re.I)
     text = text.replace("Whenever ~ or another creature you control dies", "Whenever a creature you control dies")
+    # The multi-mana aura wording 'Enchanted land has "{T}: Add {G}{G}." / "... two mana of any one color."'
+    # is the "Whenever enchanted land is tapped for mana, its controller adds an additional ..." line
+    # batch1_templates implements; the single-mana variants stay with the granted_mana path, which
+    # models them exactly.
+    text = re.sub(r'Enchanted land has "\{T\}: Add (two mana of any one color|\{[WUBRG]\}\{[WUBRG]\})\.(")',
+                  lambda m: 'Whenever enchanted land is tapped for mana, its controller adds an additional '
+                            + ('two mana in any combination of colors' if m[1] == 'two mana of any one color'
+                               else m[1]) + '.', text)
     text = re.sub(r", where X is the amount of mana spent to cast ~\.", ".", text).replace(
         "the top X cards", f"the top {int(data.get('cmc', 0) or 0)} cards")
 
@@ -470,6 +539,13 @@ def _mana_restriction(text: str):
         return "artifact"
     if re.fullmatch(r"to cast (?:an instant or sorcery spell|instant and sorcery spells)", text):
         return "instant_sorcery"
+    if re.fullmatch(r"to cast legendary spells", text):
+        return "legendary"
+    if re.fullmatch(r"to cast spells with \{x\} in their mana costs?", text):
+        return "x_cost"
+    m = re.fullmatch(r"on costs that contain \{([xc])\}", text)
+    if m:
+        return "x_cost" if m[1] == "x" else "c_cost"
     m = re.fullmatch(r"to cast (?:colorless )?(\w+) spells or activate abilities of (?:colorless )?(\w+)", text)
     if m and m[2].rstrip("s") == m[1].rstrip("s"):         # Eldrazi Temple: spells only, its abilities are not paid
         word = m[1].rstrip("s").lower()
@@ -485,13 +561,17 @@ _SACRIFICE_KINDS = {"token", "artifact", "creature", "creature or artifact", "ar
 
 
 def _parse_ability_cost(text: str):
-    """(mana cost, other costs) for an activated ability's cost, or None if a part isn't modelled."""
+    """(mana cost, other costs) for an activated ability's cost, or None if a part isn't modelled.
+
+    A leading ability word ("Secrets of the Soul — ", "Vivid — ") is not part of the cost."""
     mana, extra = {"generic": 0}, {}
-    for part in text.split(", "):
+    parts = text.split(", ")
+    parts[0] = re.sub(r"^[A-Z][\w' ]* — ", "", parts[0])
+    for part in parts:
         m = None
         if part == "{T}":
             extra["tap"] = True
-        elif re.fullmatch(r"(\{[0-9WUBRGC/P]+\})+", part):        # Phyrexian {B/P} is paid as {B}, as in spell costs
+        elif re.fullmatch(r"(\{[0-9WUBRGCX/P]+\})+", part):        # Phyrexian {B/P} is paid as {B}, as in spell costs
             mana = add_mana(mana, parse_mana_cost(part))
         elif part == "Sacrifice ~":
             extra["sac_self"] = True
@@ -501,6 +581,16 @@ def _parse_ability_cost(text: str):
             extra["discard"] = 1
         elif re.fullmatch(r"Pay (?:\{E\})+", part):
             extra["energy"] = part.count("{E}")
+        elif (m := re.fullmatch(r"Pay (one|two|three|four|five|six|seven|eight|nine|ten|\d+) \{E\}", part)):
+            extra["energy"] = _num(m[1])
+        elif (m := re.fullmatch(r"Exile (?:another |an? )?(card|creature|artifact|enchantment|land|instant|sorcery|"
+                               r"instant or sorcery|artifact or creature|creature or artifact|[A-Z]\w+) cards? "
+                               r"from your graveyard", part)):
+            # "Exile a creature card from your graveyard:" (Molten-Tail Masticore, Moorland Haunt):
+            # the descriptor the engine's gy_exile_candidates matches graveyard cards against.
+            if "exile_gy_card" in extra:
+                return None
+            extra["exile_gy_card"] = "card" if m[1] == "card" else m[1] + " card"
         elif (m := re.fullmatch(r"Pay (\d+) life", part)):
             extra["life"] = int(m[1])
         elif (m := re.fullmatch(r"Remove (a|an|one|two|three|four|five|six|seven|eight|nine|ten|\d+) "
@@ -541,22 +631,34 @@ def _parse_ability_cost(text: str):
 
 
 def _parse_ability(line: str, approximations: list):
-    """A general activated ability ("{2}, {T}: Draw a card."), or None."""
+    """A general activated ability ("{2}, {T}: Draw a card."), or None.
+
+    A leading ability word ("Secrets of the Soul — {T}, Sacrifice ...: ...") is stripped; the
+    ability keeps its original wording as text."""
+    original = line
+    aw = re.fullmatch(r"[A-Z][\w' ]* — (.+)", line)
+    if aw is not None:
+        line = aw[1]
     m = re.fullmatch(r"([^:\"•]+?): (.+)", line)
     if not m or not (m[1].startswith("{") or m[1].split()[0] in ("Sacrifice", "Discard", "Pay", "Remove", "Exile")):
         return None
     cost = _parse_ability_cost(m[1])
     if cost is None:
         return None
-    body, sorcery, once, approx, condition, limit = m[2], False, False, [], "", 0
+    body, sorcery, once, approx, condition, limit, any_player = m[2], False, False, [], "", 0, False
     while True:
-        r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|Activate no more than (?:once|twice|two times|three times) each turn|Activate only if you have the city's blessing|This ability costs [^.]+ "
-                         r"less to activate[^.]*)\.", body)
+        r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|Activate no more than "
+                         r"(?:once|twice|two times|three times) each turn|Activate only if you have the city's blessing|"
+                         r"This ability costs [^.]+ less to activate[^.]*|Do this only once each turn|"
+                         r"Any player may activate this ability(?: but only (?:during their turn|during any upkeep "
+                         r"step|during their draw step|as a sorcery))?)\.", body)
         if not r:
             break
         body = r[1]
-        sorcery |= r[2] == "Activate only as a sorcery"
-        once |= r[2] == "Activate only once each turn"
+        any_player |= r[2].startswith("Any player")
+        sorcery |= r[2] in ("Activate only as a sorcery",
+                            "Any player may activate this ability but only as a sorcery")
+        once |= r[2] in ("Activate only once each turn", "Do this only once each turn")
         mt = re.fullmatch(r"Activate no more than (once|twice|two times|three times) each turn", r[2])
         if mt:
             limit = {"once": 1, "twice": 2, "two times": 2, "three times": 3}[mt[1]]
@@ -567,21 +669,22 @@ def _parse_ability(line: str, approximations: list):
     head = modal.parse_header(body)
     if head is not None and not head[1]:
         approximations += approx
-        return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=line, condition=condition,
-                         max_per_turn=limit, modes=modal.Modes(spec=head[0]))
+        return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=original, condition=condition,
+                         max_per_turn=limit, modes=modal.Modes(spec=head[0]), any_player=any_player)
     effects, bad = _parse_effects(body)
     if bad or not effects:
         return None
     approximations += approx
-    return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=line,
-                     condition=condition, max_per_turn=limit)
+    return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=original,
+                     condition=condition, max_per_turn=limit, any_player=any_player)
 
 
 def _parse_trigger(line: str):
     """(triggers, unmatched, modes list to fill or None) for a triggered ability line, else None."""
-    once = line.endswith(" This ability triggers only once each turn.")
+    once = line.endswith(" This ability triggers only once each turn.") or line.endswith(" Do this only once each turn.")
     if once:
-        line = line[:-len(" This ability triggers only once each turn.")]
+        line = line[:-len(" This ability triggers only once each turn.")] \
+            if line.endswith(" This ability triggers only once each turn.") else line[:-len(" Do this only once each turn.")]
     once_game = line.endswith(" This ability triggers only once.")
     if once_game:
         line = line[:-len(" This ability triggers only once.")]
@@ -602,6 +705,12 @@ def _parse_trigger_line(line: str):
             continue
         flt = ""
         rest = m[m.lastindex]
+        # Cross-event compounds carry a different filter per event (clauses.py: "cast X or Y enters",
+        # "enters or dies").
+        flt_map = {("cast_spell", "permanent_enters"): lambda: {"cast_spell": "spell:" + m[1].lower(),
+                                                                "permanent_enters": f"noself|any|{m[2]}"},
+                   ("permanent_enters", "ally_dies"): lambda: {"permanent_enters": f"noself|other|{m[1]}",
+                                                               "ally_dies": f"other||{m[1]}"}}.get(events, lambda: None)()
         intervening = rest.startswith("if ")
         if events == ("any_cast",):
             flt = f"cmc<={m[1]}"
@@ -638,7 +747,10 @@ def _parse_trigger_line(line: str):
         if events == ("cast_spell",) and "during an opponent's turn" in pat:
             flt = "opp_turn"
         if events == ("cast_spell",) and m.lastindex == 2:
-            flt = "spell:" + m[1].replace(" or ", "|")
+            sub = re.fullmatch(r"([A-Z]\w+) (?:planeswalker|creature|artifact|enchantment)", m[1])
+            # "a Bolas planeswalker spell": the subtype implies the card type, and the engine's
+            # spell: filter ORs kinds, so the type word is dropped rather than ORed in.
+            flt = "spell:" + (sub[1] if sub else m[1]).replace(" or ", "|")
         if events == ("any_cast",) and pat.startswith("Whenever (a player|an opponent) casts an?"):
             flt = f"{'opp' if m[1] == 'an opponent' else 'any'}:{m[2].replace(' or ', '|')}"
         if events == ("attacks_alone",) and pat.startswith("Whenever ~ attacks alone"):
@@ -647,6 +759,10 @@ def _parse_trigger_line(line: str):
             flt = "attacker:" + m[1].replace(" or ", "|")
         if events == ("sacrifice",):
             flt = m[1]
+        if events == ("opp_discard",) and m.lastindex == 2:
+            # Typed discard ("whenever an opponent discards a creature card", Waste Not): the
+            # filter is a card description the dispatch matches against the discarded card.
+            flt = m[1] + " card"
         if events == ("you_attack",) and m.lastindex == 2:
             flt = f"with:{m[1].rstrip('s')}"
         if "creature cards are put into graveyards" in pat:
@@ -661,7 +777,7 @@ def _parse_trigger_line(line: str):
         head = modal.parse_header(rest)
         if head is not None and not head[1]:
             modes = modal.Modes(spec=head[0])
-            return [Trigger(e, [], flt, modes) for e in events], [], modes
+            return [Trigger(e, [], flt_map[e] if flt_map else flt, modes) for e in events], [], modes
         spent = re.fullmatch(r"if \{([WUBRG])\}\{\1\} was spent to cast it, (.+)", rest, flags=re.S)
         cond = f"spent:{spent[1]}" if spent else ""
         if spent:
@@ -671,7 +787,8 @@ def _parse_trigger_line(line: str):
             intervening = True
         gate_if = re.fullmatch(r"if (.+?), (.+)", rest, flags=re.S)
         if gate_if and gate_if[1].lower().startswith(("you control", "there are", "a permanent left", "two or more",
-                                                      "three or more", "four or more", "you don't control")):
+                                                      "three or more", "four or more", "you don't control",
+                                                      "you have", "you haven't", "you or a player")):
             gated = _if_cond(gate_if[1])
             if gated:
                 cond, rest = gated, gate_if[2]
@@ -726,7 +843,7 @@ def _parse_trigger_line(line: str):
         if not effs:
             return [], bad or [line], None
         gate = (cond or effs[0].cond) if intervening else ""
-        return [Trigger(e, effs, flt, once=events == ("targeted_mine",),
+        return [Trigger(e, effs, flt_map[e] if flt_map else flt, once=events == ("targeted_mine",),
                         intervening_if=gate) for e in events], bad, None
     return None
 

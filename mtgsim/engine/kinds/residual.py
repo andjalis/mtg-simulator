@@ -85,3 +85,15 @@ def miracle_cast(game, p, item, **_):
         game.cast(p, game._variant(card, 'miracle', AltCost('miracle', cost)))
     finally:
         game._miracle_permission = previous
+
+
+@kind('pay_energy')
+def pay_energy(game, p, eff, item, **_):
+    """An energy pay gate ("you may pay {E}{E}. If you do, ...", energy_templates.py):
+    pay the counters when there are enough, and mark the item so the cond "paid"
+    payoff effects after it resolve (the pay_gate pattern)."""
+    if item is not None:
+        item.gate_paid = p.counters.get('energy', 0) >= eff.amount
+        if item.gate_paid:
+            p.counters['energy'] -= eff.amount
+            game.log(f"pays {eff.amount} energy", p)

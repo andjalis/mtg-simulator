@@ -9,34 +9,43 @@ from . import kind
 
 @kind("damage")
 def damage(game, p, eff, target, item, opp, cause, **_):
-    _damage(game, p, eff, target, item, opp, cause)
-    if eff.data.get("exile_dying"):
+    src = (item.source if item.source is not None else item.card) if item is not None else None
+    victims = _damage(game, p, eff, target, item, opp, cause)
+    if eff.data.get("exile_dying") or (isinstance(src, Permanent) and src.card.exile_damaged):
         from ...batch1_templates import mark_exile_dying
-        victims = [x for pl in game.players for x in pl.creatures] if eff.target == "each_creature" else [target]
         for v in victims:
             if isinstance(v, Permanent) and v.is_creature and v.damage > 0 and v in v.controller.battlefield:
                 mark_exile_dying(game, v)
 
 
 def _damage(game, p, eff, target, item, opp, cause):
+    """Deal the effect's damage; return the permanents and players it was dealt to."""
     src = (item.source if item.source is not None else item.card) if item is not None else None
+    victims = []
     if eff.data.get("source_power"):
         eff = dataclasses.replace(eff, amount=max(0, src.power) if isinstance(src, Permanent) else 0)
     if eff.target == "each_creature":
         for perm in p.creatures + opp.creatures:
             if eff.filter == "nonflying" and perm.has("flying"):
                 continue
+            if eff.filter == "flying" and not perm.has("flying"):
+                continue
             if eff.data.get("no_regen") and eff.amount > 0:
                 perm.regeneration_blocked = True
             game.deal_damage(perm, eff.amount, by=p, cause=cause, source=src)
+            victims.append(perm)
     elif eff.target == "each_opp_and_pw":
         game.deal_damage(opp, eff.amount, by=p, cause=cause, source=src)
+        victims.append(opp)
         for pw in opp.planeswalkers:
             game.deal_damage(pw, eff.amount, by=p, cause=cause, source=src)
+            victims.append(pw)
     else:
         if eff.data.get("no_regen") and eff.amount > 0 and isinstance(target, Permanent) and target.is_creature:
             target.regeneration_blocked = True
         game.deal_damage(target, eff.amount, by=p, cause=cause, source=src)
+        victims.append(target)
+    return victims
 
 
 @kind("gain_life")
@@ -78,6 +87,29 @@ def drain_devotion(game, p, eff, opp, cause, **_):
     game.change_life(opp, -n, cause)
     game.change_life(p, n, cause)
     game.log(f"drains {n} (devotion)", p)
+
+
+@kind("prevent_shield")
+def prevent_shield(game, p, eff, target, item, **_):
+    """A "prevent the next N damage" shield (prevent_templates.py), optionally sized by
+    devotion or the X paid, with an optional "If damage is prevented this way" rider
+    installed as a damage_prevented trigger on the shielded permanent (or the resolving
+    source), where the le-batch5 event finds it with event_amount set to the prevented total."""
+    n = eff.amount
+    if eff.data.get("devotion"):
+        n = sum(x.card.mana_cost.get(eff.data["devotion"], 0) for x in p.battlefield)
+    who = p if eff.target == "none" else target
+    if not isinstance(who, (Permanent, Player)):
+        return
+    who.prevent_next += n
+    name = who.card.name if isinstance(who, Permanent) else str(who)
+    game.log(f"prevents the next {n} damage to {name}", p)
+    rider = eff.data.get("rider")
+    if rider:
+        carrier = who if isinstance(who, Permanent) else (item.source if item is not None else None)
+        if isinstance(carrier, Permanent) and carrier in carrier.controller.battlefield:
+            from ...cards import Trigger
+            carrier.temp_triggers.append(Trigger("damage_prevented", list(rider)))
 
 
 @kind("damage_each_player")

@@ -113,6 +113,7 @@ class Activated:
     text: str = ""
     modes: list = field(default_factory=list)    # "COST: Choose one —": a modal.Modes
     condition: str = ""              # graveyard activation restriction: delirium, gy8
+    any_player: bool = False         # "Any player may activate this ability."
 
 
 @dataclass
@@ -263,6 +264,7 @@ class CardDef:
     needs_land: str = ""                          # "When you control no Islands, sacrifice ~."
     attack_needs: str = ""                              # "can't attack unless defending player controls an Island"
     no_untap: bool = False                              # "~ doesn't untap during your untap step."
+    stay_tapped: bool = False                           # "You may choose not to untap ~ during your untap step."
     toxic: int = 0                                      # Toxic N: poison counters with combat damage to a player
     untap_each_untap: bool = False                      # "Untap ~ during each other player's untap step"
     anthem_enchanted: tuple = ()                        # "Enchanted creatures you control get +N/+N"
@@ -281,6 +283,7 @@ class CardDef:
     pt_per: str = ""                                    # "~ gets +1/+1 for each artifact you control": "artifact"
     extra_sacrifice: str = ""                           # "As an additional cost to cast ~, sacrifice an artifact or creature"
     extra_sac_or_pay: int = 0                           # "... pay {4} or sacrifice ...": the generic alternative
+    extra_exile_gy: str = ""                            # "As an additional cost to cast ~, exile a creature card from your graveyard"
     aura: str = ""                                      # "Enchant creature" (what it enchants; mtgsim.auras)
     aura_flags: frozenset = frozenset()                 # no_untap, cant_attack_block
     level_blocks: tuple = ()                            # Level up: ((lo, hi, (power, toughness) | None, keywords), ...)

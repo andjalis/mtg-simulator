@@ -4,6 +4,9 @@ Decisions the heuristic AI doesn't make are taken by these functions; an AI can
 override each one by defining the hook of the same name (see README and DEFAULTS)."""
 from __future__ import annotations
 
+import dataclasses
+import re
+
 from typing import TYPE_CHECKING
 from .. import alt_casts, transmute, copies, learning, proliferate, regeneration, removal, costs
 from ..cards import COLORS, CardDef, Effect
@@ -22,6 +25,28 @@ def perm_value(x: Permanent) -> float:
     if x.card.token_kind:
         return 0.5
     return x.card.cmc + (x.power + x.toughness) / 2 + 0.5 * len(x.card.keywords)
+
+
+_ANY_PLAYER = re.compile(r"any player may activate", re.I)
+_ANY_PLAYER_WINDOW = re.compile(r"any player may activate this ability but only "
+                                r"(during their turn|during any upkeep step|during their draw step|as a sorcery)", re.I)
+_ANY_PLAYER_WINDOWS = {"during their turn": "their_turn", "during any upkeep step": "upkeep",
+                       "during their draw step": "draw_step", "as a sorcery": "sorcery"}
+
+
+def any_player_ability(act) -> bool:
+    """Whether any player, not just the controller, may activate this ability
+    ("Any player may activate this ability."). ``Activated.any_player`` is the parsed flag
+    when the parser records one; the text fallback keeps hand-built abilities working."""
+    return bool(getattr(act, "any_player", False) or _ANY_PLAYER.search(act.text or ""))
+
+
+def any_player_window(act) -> str:
+    """The timing restriction of "Any player may activate this ability but only ...":
+    "their_turn" (their own turn), "upkeep" (any upkeep step), "draw_step" (their draw
+    step), "sorcery", or "" when there is none."""
+    m = _ANY_PLAYER_WINDOW.search(act.text or "")
+    return _ANY_PLAYER_WINDOWS.get(m[1].lower(), "") if m else ""
 
 
 def _threat(game: Game, me: Player, item: StackItem) -> float:
@@ -217,6 +242,13 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
             k = e.kind
             from ..residual_templates import effect_value
             residual_value = effect_value(game, me, e, tgt)
+            if residual_value is None:
+                # New modules' kinds (venture, the initiative, die rolls): the module's
+                # own values when it provides them, else the conservative default below.
+                # Tolerant of the module not exporting effect_value yet.
+                from .. import dungeon_mechanics
+                dungeon_effect_value = getattr(dungeon_mechanics, "effect_value", None)
+                residual_value = dungeon_effect_value(game, me, e, tgt) if dungeon_effect_value else None
             if residual_value is not None:
                 total += residual_value
             elif k in ("return_tribal_grave", "grave_library_top"):
@@ -398,6 +430,22 @@ def protective_ability(game: Game, me: Player, item, victim):
                 continue
             first = [] if e.target == "self" else [victim]
             return ("activate", perm, f"ability:{i}", first + [None] * (len(act.effects) - len(first)))
+    for pl in game.players:      # an "any player may activate" saver on someone else's permanent
+        if pl is me:
+            continue
+        for perm in pl.battlefield:
+            for i, act in enumerate(perm.activated):
+                if not act.effects or not any_player_ability(act) or not game.can_activate(me, perm, i):
+                    continue
+                e = act.effects[0]
+                keyword = e.data.get("keyword") if e.kind == "grant" else None
+                saves = (keyword == "hexproof" or keyword == "indestructible" and
+                         (any(x.kind == "destroy" for x in item.effects)
+                          or damage >= victim.toughness - victim.damage)
+                         or e.kind == "prevent_next" and damage and victim.toughness - victim.damage > damage - e.amount)
+                if not saves or e.target not in ("creature", "creature_mine", "any"):
+                    continue
+                return ("activate", perm, f"ability:{i}", [victim] + [None] * (len(act.effects) - 1))
     return None
 
 
@@ -458,10 +506,17 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
         return False    # used in combat (combat_pump)
     if not game.can_activate(me, perm, idx):
         return False
-    need = add_costs(act.cost, {"generic": reserve})
+    x = game.ability_x(me, perm, act) if act.cost.get("X") else None
+    if act.cost.get("X") and x is None:
+        return False
+    need = add_costs({k: v for k, v in act.cost.items() if k != "X"},
+                     {"generic": (x or 0) + reserve})
     if not payable(game.mana_sources(me, perm if c.get("tap") else None, "ability"), need):
         return False
     effects = act.effects
+    if x is not None:               # the X paid as mana: judge the effects at full size
+        effects = [dataclasses.replace(e, amount=x, amount2=x if e.data.get("x2") else e.amount2)
+                   if e.data.get("x") else e for e in effects]
     if c.get('remove_creature_counters') in ('x', 'positive'):
         payment = costs.ability_plan(game, me, perm, act, game.ability_cost(me, perm, act))
         if payment is None:
@@ -489,9 +544,20 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
     return True
 
 
+def equip_matches(creature: Permanent, restriction: str) -> bool:
+    """Whether creature satisfies an Equip restriction: a subtype ("Equip Wizard {1}"), a
+    creature type list, or "legendary" ("Equip legendary creature {1}")."""
+    if restriction == "legendary":
+        return creature.card.legendary
+    return any(t in creature.card.subtypes or creature.card.changeling
+               for t in restriction.split(" or "))
+
+
 def choose_equip_target(game: Game, me: Player, equipment: Permanent):
     """The creature to equip: the best one that can attack this turn, else the best one."""
-    cands = [c for c in me.creatures if (not c.card.is_token or c.power > 0) and game.targetable(c, me)]
+    restriction = equipment.card.advanced_rules.get("equip_restriction")
+    cands = [c for c in me.creatures if (not c.card.is_token or c.power > 0) and game.targetable(c, me)
+             and (not restriction or equip_matches(c, restriction))]
     if not cands:
         return None
     ready = [c for c in cands if not c.sick or c.has("haste") or "haste" in equipment.card.equip_keywords]
@@ -510,15 +576,61 @@ def equip_all(game: Game, me: Player):
             game.equip(me, eq, tgt)
 
 
+def any_player_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: int = 0) -> bool:
+    """Whether me activating an "any player may activate" ability on a permanent someone else
+    controls is worth its cost. Self-targeted effects are valued from my side: growing the
+    controller's permanent counts against it, shrinking it counts for it; damage to every
+    player is a wash unless it finishes the controller."""
+    act = perm.activated[idx]
+    c = act.extra_costs
+    if not game.can_activate(me, perm, idx):
+        return False
+    need = add_costs(act.cost, {"generic": reserve})
+    if not payable(game.mana_sources(me, perm if c.get("tap") else None, "ability"), need):
+        return False
+    with game.targeting(perm):
+        value = _mode_value(game, me, [e for e in act.effects if e.target != "self"])
+        for e in act.effects:
+            if e.target == "self":
+                if e.kind in ("pump", "p1_counters"):
+                    value += -1 if e.amount + e.amount2 >= 0 else 1
+                else:
+                    value -= 1        # other self effects (bounce_self, untap_self, ...) serve the controller
+            elif e.kind == "damage_each_player":
+                value += 90 if e.amount >= perm.controller.life else -2
+    if act.modes:
+        value += modal.value(game, me, act.modes, perm)
+    if value <= 0:
+        return False
+    if c.get("discard") and not choose_rummage(game, me, c["discard"]) and len(me.hand) <= 4:
+        return False
+    if c.get("sacrifice") == "land" and sum(x.card.is_land for x in me.battlefield) < 4:
+        return False
+    if c.get("life") and me.life <= 10:
+        return False
+    return True
+
+
 def choose_ability(game: Game, me: Player, instant: bool):
     """An ("activate", permanent, "ability:N") action worth taking now, or None. With instant=True
-    only abilities without "Activate only as a sorcery"."""
+    only abilities without "Activate only as a sorcery". "Any player may activate" abilities on
+    other players' permanents are considered too (any_player_worth)."""
     for perm in list(me.battlefield):
         for i, act in enumerate(perm.activated):
             if act.kind != "ability" or (instant and act.sorcery):
                 continue
             if ability_worth(game, me, perm, i, 0 if instant else _reserve(game, me)):
                 return ("activate", perm, f"ability:{i}")
+    for pl in game.players:
+        if pl is me:
+            continue
+        for perm in list(pl.battlefield):
+            for i, act in enumerate(perm.activated):
+                sorcery = act.sorcery or any_player_window(act) == "sorcery"
+                if act.kind != "ability" or (instant and sorcery) or not any_player_ability(act):
+                    continue
+                if any_player_worth(game, me, perm, i, 0 if instant else _reserve(game, me)):
+                    return ("activate", perm, f"ability:{i}")
     return None
 
 
@@ -628,6 +740,14 @@ def before_attacks(game: Game, me: Player):
             if act.kind not in ("animate", "barrens"):
                 continue
             need = add_costs(act.cost, {"generic": _reserve(game, me)})
+            if act.power == -1 and act.toughness == -1:
+                # "{X}{G}: ~ becomes an X/X creature" (Lair of the Hydra): fold the
+                # largest affordable {X} into the generic cost before checking.
+                x = game.ability_x(me, land, act)
+                if x is None:
+                    continue
+                need = {k: v for k, v in need.items() if k != "X"}
+                need["generic"] = need.get("generic", 0) + x
             if payable(game.mana_sources(me, exclude=land), need):
                 game.activate(me, land, act.kind)
                 break

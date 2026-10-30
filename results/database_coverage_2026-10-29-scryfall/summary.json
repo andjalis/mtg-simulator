@@ -1,0 +1,326 @@
+{
+  "measured_on": "2026-10-29",
+  "total": 35225,
+  "counts": {
+    "full": 13429,
+    "simplified": 284,
+    "partial": 21512,
+    "parse_error": 0
+  },
+  "parse_errors": [],
+  "ranking_method": "Potential full matches have every ignored line in the gap and no recorded simplifications. Counts are upper bounds, overlap, and must not be summed.",
+  "unclassified": {
+    "gap": "unclassified",
+    "affected_cards": 10331,
+    "potential_full_matches": 6809,
+    "examples": [
+      "A Chaotic Night in Vegas",
+      "A Real Handful",
+      "AWOL"
+    ]
+  },
+  "families": [
+    {
+      "gap": "activated abilities",
+      "affected_cards": 2596,
+      "potential_full_matches": 1989,
+      "examples": [
+        "A Container of Booster Packs",
+        "A-Town",
+        "Aang's Iceberg"
+      ]
+    },
+    {
+      "gap": "counters",
+      "affected_cards": 2837,
+      "potential_full_matches": 1948,
+      "examples": [
+        "Aang, Airbending Master",
+        "Aang, Swift Savior // Aang and La, Ocean's Fury",
+        "Abomination, Irradiated Brute"
+      ]
+    },
+    {
+      "gap": "triggered (whenever/when)",
+      "affected_cards": 2965,
+      "potential_full_matches": 1805,
+      "examples": [
+        "A Good Day to Die",
+        "A Good Day to Pie",
+        "Aang and Katara"
+      ]
+    },
+    {
+      "gap": "graveyard",
+      "affected_cards": 2724,
+      "potential_full_matches": 1566,
+      "examples": [
+        "\"Rumors of My Death . . .\"",
+        "A Good Day to Pie",
+        "Aang, A Lot to Learn"
+      ]
+    },
+    {
+      "gap": "tokens",
+      "affected_cards": 2217,
+      "potential_full_matches": 1270,
+      "examples": [
+        "Aang and Katara",
+        "Aatchik, Emerald Radian",
+        "Abhorrent Overlord"
+      ]
+    },
+    {
+      "gap": "sacrifice",
+      "affected_cards": 1938,
+      "potential_full_matches": 1164,
+      "examples": [
+        "Aang's Iceberg",
+        "Abjure",
+        "Abyssal Gatekeeper"
+      ]
+    },
+    {
+      "gap": "exile",
+      "affected_cards": 2096,
+      "potential_full_matches": 1073,
+      "examples": [
+        "\"Rumors of My Death . . .\"",
+        "A Container of Booster Packs",
+        "Abdel Adrian, Gorion's Ward"
+      ]
+    },
+    {
+      "gap": "auras/enchant",
+      "affected_cards": 969,
+      "potential_full_matches": 828,
+      "examples": [
+        "Aboshan's Desire",
+        "Absorbing Man",
+        "Abzan Runemark"
+      ]
+    },
+    {
+      "gap": "X costs",
+      "affected_cards": 1230,
+      "potential_full_matches": 735,
+      "examples": [
+        "Aang and Katara",
+        "Abaddon the Despoiler",
+        "Abzan Monument"
+      ]
+    },
+    {
+      "gap": "can't restrictions",
+      "affected_cards": 1229,
+      "potential_full_matches": 693,
+      "examples": [
+        "Abyssal Persecutor",
+        "Academic Probation",
+        "Aether Storm"
+      ]
+    },
+    {
+      "gap": "equipment",
+      "affected_cards": 570,
+      "potential_full_matches": 428,
+      "examples": [
+        "Ace's Baseball Bat",
+        "Acquisition Octopus",
+        "Adaptive Omnitool"
+      ]
+    },
+    {
+      "gap": "copy effects",
+      "affected_cards": 711,
+      "potential_full_matches": 376,
+      "examples": [
+        "Aboleth Spawn",
+        "Absorb Identity",
+        "Absorbing Man"
+      ]
+    },
+    {
+      "gap": "library search",
+      "affected_cards": 486,
+      "potential_full_matches": 259,
+      "examples": [
+        "Aerial Surveyor",
+        "Amrou Scout",
+        "Andromedan Automatons"
+      ]
+    },
+    {
+      "gap": "cost reduction",
+      "affected_cards": 383,
+      "potential_full_matches": 197,
+      "examples": [
+        "Absorb Energy",
+        "Acolyte of Bahamut",
+        "Alisaie Leveilleur"
+      ]
+    },
+    {
+      "gap": "+1/+1 static (anthems)",
+      "affected_cards": 221,
+      "potential_full_matches": 135,
+      "examples": [
+        "Aardwolf's Advantage",
+        "Akoum Battlesinger",
+        "Alistair, the Brigadier"
+      ]
+    }
+  ],
+  "exact_wording": [
+    {
+      "gap": "venture into the dungeon.",
+      "affected_cards": 22,
+      "potential_full_matches": 12,
+      "examples": [
+        "Bar the Gate",
+        "Clattering Skeletons",
+        "Delver's Torch"
+      ]
+    },
+    {
+      "gap": "banding",
+      "affected_cards": 14,
+      "potential_full_matches": 10,
+      "examples": [
+        "Benalish Hero",
+        "Benalish Infantry",
+        "Icatian Phalanx"
+      ]
+    },
+    {
+      "gap": "cast ~ only during the declare attackers step and only if you've been attacked this step.",
+      "affected_cards": 14,
+      "potential_full_matches": 10,
+      "examples": [
+        "Assassin's Blade",
+        "Champion's Victory",
+        "Defiant Stand"
+      ]
+    },
+    {
+      "gap": "you may return this card from your graveyard to your hand.",
+      "affected_cards": 11,
+      "potential_full_matches": 10,
+      "examples": [
+        "Aurora Eidolon",
+        "Enigma Eidolon",
+        "Entropic Eidolon"
+      ]
+    },
+    {
+      "gap": "return the exiled card to the battlefield under its owner's control.",
+      "affected_cards": 13,
+      "potential_full_matches": 8,
+      "examples": [
+        "Faceless Butcher",
+        "Faceless Devourer",
+        "Fiend Hunter"
+      ]
+    },
+    {
+      "gap": "open an attraction.",
+      "affected_cards": 17,
+      "potential_full_matches": 7,
+      "examples": [
+        "Coming Attraction",
+        "Deadbeat Attendant",
+        "Petting Zookeeper"
+      ]
+    },
+    {
+      "gap": "draft a card from ~'s spellbook.",
+      "affected_cards": 13,
+      "potential_full_matches": 7,
+      "examples": [
+        "Boseiju Pathlighter",
+        "Cursebound Witch",
+        "Emmara, Voice of the Conclave"
+      ]
+    },
+    {
+      "gap": "each player sacrifices a creature of their choice.",
+      "affected_cards": 10,
+      "potential_full_matches": 7,
+      "examples": [
+        "Abyssal Gatekeeper",
+        "Fleshbag Marauder",
+        "Innocent Blood"
+      ]
+    },
+    {
+      "gap": "exile ~ with three time counters on it.",
+      "affected_cards": 10,
+      "potential_full_matches": 7,
+      "examples": [
+        "Arc Blade",
+        "Charnel Serenade",
+        "Cyclical Evolution"
+      ]
+    },
+    {
+      "gap": "if you do, return this card from your graveyard to your hand.",
+      "affected_cards": 12,
+      "potential_full_matches": 6,
+      "examples": [
+        "Lingering Phantom",
+        "Masked Admirers",
+        "Redtooth Vanguard"
+      ]
+    },
+    {
+      "gap": "phasing",
+      "affected_cards": 12,
+      "potential_full_matches": 6,
+      "examples": [
+        "Breezekeeper",
+        "Merfolk Raiders",
+        "Sandbar Crocodile"
+      ]
+    },
+    {
+      "gap": "~ costs {1} less to cast for each creature in your party.",
+      "affected_cards": 10,
+      "potential_full_matches": 6,
+      "examples": [
+        "Deadly Alliance",
+        "Journey to Oblivion",
+        "Sea Gate Colossus"
+      ]
+    },
+    {
+      "gap": "as an additional cost to cast ~, exile a creature card from your graveyard.",
+      "affected_cards": 8,
+      "potential_full_matches": 6,
+      "examples": [
+        "Cobbled Lancer",
+        "Headless Skaab",
+        "Makeshift Mauler"
+      ]
+    },
+    {
+      "gap": "return that card to the battlefield under your control.",
+      "affected_cards": 7,
+      "potential_full_matches": 6,
+      "examples": [
+        "False Demise",
+        "Fool's Demise",
+        "Minion's Return"
+      ]
+    },
+    {
+      "gap": "you get {tk}, then you may put a sticker on a nonland permanent you own.",
+      "affected_cards": 6,
+      "potential_full_matches": 6,
+      "examples": [
+        "Aerialephant",
+        "Carnival Carnivore",
+        "Chicken Troupe"
+      ]
+    }
+  ]
+}

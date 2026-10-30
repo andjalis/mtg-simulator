@@ -148,6 +148,7 @@ class PlayMixin:
             self.change_life(p, -alt.life, f"{card.name}: alternative cost")
         if card.extra_life_cost:
             self.change_life(p, -card.extra_life_cost, f"{card.name}: additional cost")
+        sac_stats = None
         if plan.sacrifice is not None:
             victim = plan.sacrifice
             if victim not in p.battlefield:
@@ -155,7 +156,21 @@ class PlayMixin:
             self.log(f"sacrifices {victim.card.name} for {card.name}", p)
             if kind == "emerge":
                 emerge.sacrificing(self, p, victim, card)
+            sac_stats = (victim.power, victim.toughness, victim.card.cmc)
             self.sacrifice(victim)
+        exiled_gy = None
+        if getattr(card, "extra_exile_gy", ""):
+            # "As an additional cost to cast ~, exile a(n) <desc> card from your graveyard"
+            # (Makeshift Mauler, Corpse Lunge): the plan carries the chosen card(s).
+            picks = tuple(getattr(plan, "exile_gy_cards", None) or
+                          ((plan.exile_gy_card,) if getattr(plan, "exile_gy_card", None) else ()))
+            if not picks or any(gy not in p.graveyard for gy in picks):
+                return False
+            for gy in picks:
+                p.graveyard.remove(gy)
+                p.exile.append(gy)
+            self.log(f"exiles {[gy.name for gy in picks]} from their graveyard for {card.name}", p)
+            exiled_gy = picks[0]
         if kind == "prepared":
             next(x for x in p.battlefield if x.front is base and x.prepared).prepared = False
         elif kind in ("rebound", "cascade", "cascade_adventure", "rebound_adventure"):
@@ -214,6 +229,9 @@ class PlayMixin:
         item.teamwork = teamwork_paid
         item.evidence = self.collect_evidence(p, card)
         item.emerged_toughness = getattr(self, "_emerge_toughness", None) if kind == "emerge" else None
+        item.sac_stats = sac_stats
+        if exiled_gy is not None:    # for ("exiled_gy", "power") and friends (Corpse Lunge)
+            item.exiled_gy_stats = (int(exiled_gy.power or 0), int(exiled_gy.toughness or 0), exiled_gy.cmc)
         item.bargained = bool(card.bargain) and self.pay_bargain(p, card)
         item.gifted = bool(card.gift)
         item.uncounterable = any(s.card.mana_restriction == "chosen_type" and self.mana_allowed(s, card)
@@ -238,12 +256,16 @@ class PlayMixin:
             for perm in list(p.battlefield):
                 for trig in perm.triggers:
                     flt = trig.filter
-                    if flt.startswith("spell:") and not any(
-                            SPELL_KINDS[kind](card) if kind in SPELL_KINDS else
-                            kind in card.subtypes or kind.capitalize() in card.types or
-                            (kind.lower() == "outlaw" and any(o in card.subtypes for o in OUTLAWS))
-                            for kind in flt[6:].split("|")):
-                        continue
+                    if flt.startswith("spell:"):
+                        kinds, _, cmc_gate = flt[6:].partition("&")
+                        if not any(
+                                SPELL_KINDS[kind](card) if kind in SPELL_KINDS else
+                                kind in card.subtypes or kind.capitalize() in card.types or
+                                (kind.lower() == "outlaw" and any(o in card.subtypes for o in OUTLAWS))
+                                for kind in kinds.split("|")):
+                            continue
+                        if cmc_gate.startswith("cmc>=") and card.cmc < int(cmc_gate[5:]):
+                            continue    # "a colorless spell with mana value 7 or greater" (Sanctum of Ugin)
                     if trig.event == "cast_cmc" and card.cmc < int(trig.filter[5:]):
                         continue
                     if flt == "opp_turn" and p is self.active:

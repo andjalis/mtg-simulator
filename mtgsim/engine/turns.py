@@ -229,6 +229,45 @@ class TurnsMixin:
                 self.draw(p)
             self.settle()
 
+    def untap_step(self, p: Player):
+        """The controller's untap step: untap everything except permanents that skip it, are
+        stunned, block their own untap, or whose controller recorded a "choose not to untap"
+        choice (perm.stay_tapped)."""
+        from ..phasing import phasing_untap
+        phasing_untap(self, p)
+        for perm in self.opponent(p).battlefield:
+            if perm.card.untap_each_untap and perm.tapped:
+                perm.tapped = False
+                self.fire(perm.controller, "becomes_untapped", source=perm)
+        storage.before_untap(self, p)
+        choose_stay = getattr(p.ai, "choose_stay_tapped", None)
+        if choose_stay is not None:              # HeuristicAI: "You may choose not to untap ~"
+            choose_stay(self, p)
+        for perm in p.battlefield:
+            if perm.skip_untap:
+                perm.skip_untap -= 1        # "doesn't untap during its controller's next untap step"
+            elif perm.tapped and perm.counters.get("stun"):
+                perm.counters["stun"] -= 1   # a stun counter is removed instead of untapping
+            elif perm.tapped and getattr(perm, "stay_tapped", False):
+                # "You may choose not to untap ~ during your untap step" (~40 cards, e.g. Amber
+                # Prison): the recorded choice (perm.stay_tapped) is consumed by this untap step.
+                perm.stay_tapped = False
+            elif perm.tapped and perm.auras and auras.blocks_untap(perm):
+                pass
+            elif perm.tapped and perm.card.no_untap:
+                pass                        # "~ doesn't untap during your untap step."
+            elif perm.tapped and storage.keeps_tapped(self, p, perm):
+                pass                        # a storage land kept tapped to bank a counter
+            else:
+                was_tapped = perm.tapped
+                perm.tapped = False
+                if was_tapped:
+                    # "Whenever ~ becomes untapped" (e.g. Dungeon Map): queued and resolved at
+                    # the upkeep settle, per CR 116.5-style trigger handling in this engine.
+                    self.fire(perm.controller, "becomes_untapped", source=perm)
+            perm.sick = False
+            perm.loyalty_used = False
+
     def take_turn(self, p: Player):
         opp = self.opponent(p)
         for pl in self.players:
@@ -246,25 +285,7 @@ class TurnsMixin:
         from ..advanced_templates import begin_turn
         begin_turn(self, p)
         self.step = "untap"
-        for perm in self.opponent(p).battlefield:
-            if perm.card.untap_each_untap:
-                perm.tapped = False
-        storage.before_untap(self, p)
-        for perm in p.battlefield:
-            if perm.skip_untap:
-                perm.skip_untap -= 1        # "doesn't untap during its controller's next untap step"
-            elif perm.tapped and perm.counters.get("stun"):
-                perm.counters["stun"] -= 1   # a stun counter is removed instead of untapping
-            elif perm.tapped and perm.auras and auras.blocks_untap(perm):
-                pass
-            elif perm.tapped and perm.card.no_untap:
-                pass                        # "~ doesn't untap during your untap step."
-            elif perm.tapped and storage.keeps_tapped(self, p, perm):
-                pass                        # a storage land kept tapped to bank a counter
-            else:
-                perm.tapped = False
-            perm.sick = False
-            perm.loyalty_used = False
+        self.untap_step(p)
         p.land_played = False
         p.extra_lands_turn = 0
         p.sacrificed_turn = 0
@@ -367,6 +388,8 @@ class TurnsMixin:
         p.next_creature_counters = 0
         p.action_lock_turn = opp.action_lock_turn = None
         p.prevent_next = opp.prevent_next = 0
+        self.no_prevention_turn = False                # "this turn" spell riders expire in cleanup
+        self.no_lifegain_turn = set()
         self.expire_continuous_effects()
         for pl in self.players:
             pl.granted_fb = []
@@ -387,6 +410,8 @@ class TurnsMixin:
         """Queue one-shot delayed draws before any upkeep ability can create new ones."""
         from ..batch1_templates import on_upkeep
         on_upkeep(self, p)
+        from ..dungeon_mechanics import initiative_upkeep
+        initiative_upkeep(self, p)
         waiting, self.delayed_upkeep = self.delayed_upkeep, []
         for controller, amount, source, name, scope in waiting:
             if scope == "you" and p is not controller:

@@ -10,6 +10,8 @@ engine hands the effect kinds in KINDS to resolve() here.
     You may have ~ enter as a copy of any creature on the battlefield[, except ...].
     When you next cast an instant or sorcery spell this turn, copy that spell [twice].
     Copy target instant or sorcery spell you control.  /  (cast trigger) copy that spell.
+    "Copy target spell" without "you control" matches the same template: the engine only ever
+    copies spells you control, so the restriction is implicit rather than a wording approximation.
 
     ~ becomes a copy of target creature you control until end of turn.  (reverts in the cleanup step)
     Copy target activated or triggered ability you control [from a creature source] [X times].
@@ -130,7 +132,7 @@ EFFECT_PATTERNS = [
     (r"you may choose new targets for the cop(?:y|ies)", lambda m: None),
     (r"(?:you may )?copy (?:that spell|it)( twice)?(?: and you may choose new targets for the copy)?",
      lambda m: _effect("copy_spell", of="that", n=2 if m[1] else 1)),
-    (r"copy target (?P<what>instant or sorcery |instant |sorcery |creature )?spell you control",
+    (r"copy target (?P<what>instant or sorcery |instant |sorcery |creature )?spell(?: you control)?",
      lambda m: _effect("copy_spell", of="target", what=(m["what"] or "").strip(), n=1)),
     (r"when you (?:next cast an? (?P<a>instant or sorcery|creature) spell|cast your next (?P<b>instant or sorcery) "
      r"spell(?: with mana value (?P<cmc>\d+) or less)?) this turn, copy (?:that spell|it)(?P<twice> twice)?"
@@ -240,6 +242,8 @@ def fits(card, what: str, perm=None) -> bool:
                 ok &= is_creature
             elif lw in _TYPES:
                 ok &= _TYPES[lw] in card.types
+            elif lw == "basic":
+                ok &= card.basic
             elif w[0].isupper():
                 ok &= w in card.subtypes or card.changeling
             else:

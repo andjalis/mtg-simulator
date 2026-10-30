@@ -72,6 +72,20 @@ def return_own(game, p, eff, item, **_):
     game.leave_battlefield(pick, "hand")
 
 
+@kind("destroy_that_player")
+def destroy_that_player(game, p, eff, item, **_):
+    """"Destroy target <type> that player controls" inside a trigger: the "that player" is
+    the trigger's context (the player dealt damage), and the most valuable permanent of
+    theirs that fits is destroyed, not a normally chosen target."""
+    who = item.context if item is not None and isinstance(item.context, Player) else game.opponent(p)
+    what = eff.data.get("type", "creature")
+    fits = lambda x: x.is_creature if what == "creature" else True
+    cands = [x for x in who.battlefield if fits(x)]
+    if cands:
+        game.destroy(max(cands, key=perm_value), no_regen=eff.data.get("no_regen", False))
+        game.log(f"destroys the best {what} {who} controls", p)
+
+
 @kind("sac_own")
 def sac_own(game, p, eff, **_):
     """"Sacrifice a creature / land": p's least valuable one."""
@@ -120,6 +134,29 @@ def regenerate(game, p, eff, target, opp, **_):
     for perm in victims:
         if isinstance(perm, Permanent) and perm in perm.controller.battlefield:
             perm.regeneration_shields += eff.amount
+
+
+@kind("no_regen_lock")
+def no_regen_lock(game, p, eff, target, **_):
+    """"Target creature can't be regenerated this turn" (Gravebind, Hurr Jackal): block the
+    target's regeneration responses until end of turn."""
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        target.regeneration_blocked = True
+        game.log(f"{target.card.name} can't be regenerated this turn", p)
+
+
+@kind("animate_land")
+def animate_land(game, p, eff, target, prev, **_):
+    """"Target land (you control) becomes an N/N creature with keywords until end of turn.
+    It's still a land" (animate_templates.py): the land keeps its types — the animated
+    temporary carries the power, toughness and keywords, and turns.py clears it at EOT."""
+    from ...cards import Activated
+    land = prev if eff.target == "prev" else target
+    if isinstance(land, Permanent) and land in land.controller.battlefield and land.card.is_land:
+        land.animated = Activated("animate", {}, eff.amount, eff.amount2,
+                                  keywords=frozenset(eff.data.get("keywords", ())))
+        game.log(f"{land.card.name} becomes a {eff.amount}/{eff.amount2} creature until end "
+                 f"of turn", p)
 
 
 @kind("token")
@@ -278,6 +315,53 @@ def threaten(game, p, eff, target, **_):
         game.log(f"gains control of {victim.card.name}", p)
 
 
+@kind("mass_threaten")
+def mass_threaten(game, p, eff, target, **_):
+    """Mass threaten: gain control of all creatures (or artifacts) an opponent / target player
+    controls until end of turn, untapping them and giving them haste. ``swap`` (Reins of Power)
+    exchanges each side's creatures in one simultaneous effect; ``power_min``/``power_max``
+    are the Mob Rule filters; ``until_eot=False`` (Emrakul) keeps control indefinitely."""
+    typ = eff.data.get("type", "creature")
+    until_eot = eff.data.get("until_eot", True)
+
+    def fits(v):
+        if typ == "creature":
+            return v.is_creature
+        if typ == "artifact":
+            return "Artifact" in v.card.types
+        return not v.card.is_land          # "all nonland permanents"
+
+    if eff.data.get("swap") and isinstance(target, Player):
+        pool = [x for pl in (p, target) for x in pl.battlefield if fits(x)]
+        for v in pool:
+            new = target if v.controller is p else p
+            if v.controller is not new:
+                counter_mechanics.add_control(game, v, new, until_eot=until_eot)
+        game.log(f"swaps control of {len(pool)} creatures", p)
+    else:
+        ctl = p
+        if isinstance(target, Player):
+            owners = [target]
+        else:
+            owners = [pl for pl in game.players if pl is not p]
+        pool = [x for pl in owners for x in pl.battlefield if fits(x)]
+        if eff.data.get("power_min"):
+            pool = [x for x in pool if x.power >= eff.data["power_min"]]
+        if eff.data.get("power_max"):
+            pool = [x for x in pool if x.power <= eff.data["power_max"]]
+        for v in pool:
+            if v.controller is not ctl:
+                counter_mechanics.add_control(game, v, ctl, until_eot=until_eot)
+                game.log(f"gains control of {v.card.name}", ctl)
+        game.log(f"threatens {len(pool)} permanents", p)
+    if eff.data.get("untap", True):
+        for v in pool:
+            v.tapped = False
+    if eff.data.get("haste", True):
+        for v in pool:
+            v.sick = False
+
+
 @kind("mass_bounce")
 def mass_bounce(game, p, eff, **_):
     keep = eff.data.get("except", "")
@@ -400,6 +484,31 @@ def token_copy(game, p, eff, **_):
 def sacrifice_self(game, p, eff, target, **_):
     if isinstance(target, Permanent) and target.controller is p and target in p.battlefield:
         game.sacrifice(target)
+
+
+@kind("sac_self_payoff")
+def sac_self_payoff(game, p, eff, item, **_):
+    """A trigger's "you may sacrifice it. If you do, <payoff>": sacrifice the source when it
+    resolves (the greedy policy always takes the may), then queue the payoff effects with
+    the triggering context ("that player ...") carried over."""
+    src = item.source if item is not None else None
+    if isinstance(src, Permanent) and src in p.battlefield:
+        game.sacrifice(src)
+        game.queue_trigger(p, eff.data["effects"], src, "payoff", context=getattr(item, "context", None))
+
+
+@kind("sac_unless_discard")
+def sac_unless_discard(game, p, eff, item, **_):
+    """"Sacrifice ~ unless you discard a card": the greedy policy keeps the permanent when
+    it can afford the discard."""
+    src = item.source if item is not None else None
+    if not isinstance(src, Permanent) or src not in p.battlefield:
+        return
+    if len(p.hand) >= max(1, eff.amount):
+        for _ in range(max(1, eff.amount)):
+            game.discard_card(p, p.ai.choose_discard(game, p))
+    else:
+        game.sacrifice(src)
 
 
 @kind("decayed_delay")
