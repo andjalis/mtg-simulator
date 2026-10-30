@@ -69,26 +69,36 @@ _SRC = r"(?:~|it|he|she)"
 
 def _add_amount(m):
     """``Add an amount of {C} equal to <quantity>``: one mana per unit, when the quantity is a known one."""
+    return _add_xq(m[2], Effect("add_mana", 1, data={"colors": [m[1]]}))
+
+
+def _add_xq(text: str, eff: Effect):
+    """eff with its amount scaled by the known X-quantity in text (", where X is ..." amounts), or NO_MATCH."""
     from .clauses import _xq
-    spec = _xq(m[2])
+    spec = _xq(text)
     if spec is None:
         return NO_MATCH
-    return Effect("add_mana", 1, data={"colors": [m[1]], "xq": spec})
+    eff.data["xq"] = spec
+    return eff
 
 
 _EFFECT_PATTERNS = [
-    # "Equal to the sacrificed creature's stat" effects: amount 1 times the ("sac", stat) X-quantity,
-    # which the engine reads from the creature sacrificed to pay the spell or ability's cost.
-    (r"~ deals damage equal to the sacrificed creature's (power|toughness) to (any target|target creature or planeswalker|"
+    # "Equal to the sacrificed <permanent>'s stat" effects: amount 1 times the ("sac", stat) X-quantity,
+    # which the engine reads from the permanent sacrificed to pay the spell or ability's cost.
+    (r"~ deals damage equal to the sacrificed (?:creature|artifact|enchantment|planeswalker|land|permanent)'s "
+     r"(power|toughness|mana value) to (any target|target creature or planeswalker|"
      r"target player or planeswalker|target player)",
      lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature",
                                           "target player or planeswalker": "player", "target player": "player"}[m[2]],
                       data={"xq": ("sac", m[1])})),
-    (r"you gain life equal to the sacrificed creature's (power|toughness)",
+    (r"you gain life equal to the sacrificed (?:creature|artifact|enchantment|planeswalker|land|permanent)'s "
+     r"(power|toughness|mana value)",
      lambda m: Effect("gain_life", 1, data={"xq": ("sac", m[1])})),
-    (r"draw cards equal to the sacrificed creature's (power|toughness)",
+    (r"draw cards equal to the sacrificed (?:creature|artifact|enchantment|planeswalker|land|permanent)'s "
+     r"(power|toughness|mana value)",
      lambda m: Effect("draw", 1, data={"xq": ("sac", m[1])})),
-    (r"target player discards a number of cards equal to the sacrificed creature's (power|toughness|mana value)",
+    (r"target player discards a number of cards equal to the sacrificed "
+     r"(?:creature|artifact|enchantment|planeswalker|land|permanent)'s (power|toughness|mana value)",
      lambda m: Effect("discard", 1, target="player", data={"xq": ("sac", m[1])})),
     (r"add an amount of \{([WUBRGC])\} equal to (.+)", _add_amount),
     (r"learn", lambda m: Effect("learn")),
@@ -546,6 +556,8 @@ _EFFECT_PATTERNS = [
     (r"put (a|one|two|three) \+1/\+1 counters? on (?:up to one )?target creature(?: or Vehicle)?(?: you control)?",
      lambda m: Effect("p1_counters", _num(m[1]), target="creature_mine")),
     (r"put (a|one|two|three) \+1/\+1 counters? on ~", lambda m: Effect("p1_counters", _num(m[1]), target="self")),
+    (r"put a number of \+1/\+1 counters? on ~ equal to (.+)",
+     lambda m: _add_xq(m[1], Effect("p1_counters", 1, target="self"))),
     (r"put x \+1/\+1 counters on (?:~|him|her|it)", lambda m: Effect("p1_counters", 0, target="self", data={"x": "entered"})),
     (r"(?:then )?draw half x cards, rounded down", lambda m: Effect("draw", 0, data={"x_half": True})),
     (r"ELSPETHPLUS", lambda m: Effect("p1_counters", 1, target="creature_mine", data={"keyword": "flying"})),

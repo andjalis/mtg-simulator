@@ -500,9 +500,13 @@ _SACRIFICE_KINDS = {"token", "artifact", "creature", "creature or artifact", "ar
 
 
 def _parse_ability_cost(text: str):
-    """(mana cost, other costs) for an activated ability's cost, or None if a part isn't modelled."""
+    """(mana cost, other costs) for an activated ability's cost, or None if a part isn't modelled.
+
+    A leading ability word ("Secrets of the Soul — ", "Vivid — ") is not part of the cost."""
     mana, extra = {"generic": 0}, {}
-    for part in text.split(", "):
+    parts = text.split(", ")
+    parts[0] = re.sub(r"^[A-Z][\w' ]* — ", "", parts[0])
+    for part in parts:
         m = None
         if part == "{T}":
             extra["tap"] = True
@@ -556,7 +560,14 @@ def _parse_ability_cost(text: str):
 
 
 def _parse_ability(line: str, approximations: list):
-    """A general activated ability ("{2}, {T}: Draw a card."), or None."""
+    """A general activated ability ("{2}, {T}: Draw a card."), or None.
+
+    A leading ability word ("Secrets of the Soul — {T}, Sacrifice ...: ...") is stripped; the
+    ability keeps its original wording as text."""
+    original = line
+    aw = re.fullmatch(r"[A-Z][\w' ]* — (.+)", line)
+    if aw is not None:
+        line = aw[1]
     m = re.fullmatch(r"([^:\"•]+?): (.+)", line)
     if not m or not (m[1].startswith("{") or m[1].split()[0] in ("Sacrifice", "Discard", "Pay", "Remove", "Exile")):
         return None
@@ -582,13 +593,13 @@ def _parse_ability(line: str, approximations: list):
     head = modal.parse_header(body)
     if head is not None and not head[1]:
         approximations += approx
-        return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=line, condition=condition,
+        return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=original, condition=condition,
                          max_per_turn=limit, modes=modal.Modes(spec=head[0]))
     effects, bad = _parse_effects(body)
     if bad or not effects:
         return None
     approximations += approx
-    return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=line,
+    return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=original,
                      condition=condition, max_per_turn=limit)
 
 

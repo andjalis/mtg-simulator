@@ -144,9 +144,6 @@ _SUBS = [
     (re.compile(r"\breturn this card from your graveyard\b", re.I), r"return ~ from your graveyard"),
     # "You may have ~ deal N damage to ...": always taken, so the damage is certain (Game.resolve_item).
     (re.compile(r"you may have ~ deal (\d+) damage to (any target|target [a-z' ]+)", re.I), r"~ deals \1 damage to \2"),
-    # The engine copies only spells you control (see copies.py).
-    (re.compile(r"copy target ((?:instant or sorcery|instant|sorcery) )?spell(?!\b[^.]* you control)", re.I),
-     r"copy target \1spell you control"),
     (re.compile(r"then return a creature or planeswalker card with mana value X or less from your graveyard to "
                 r"the battlefield, where X is the amount of \{S\} spent to cast ~\.", re.I),
      lambda m: "REANIMATESNOW."),
@@ -335,7 +332,8 @@ def _xq(text: str):
         re.fullmatch(r"(its) (power|toughness)", t, re.I)
     if m:
         return ("stat", "prev" if m[1] == "that creature" else "self", m[2])
-    m = re.fullmatch(r"the sacrificed creature's (power|toughness|mana value)", t, re.I)
+    m = re.fullmatch(r"the sacrificed (?:creature|artifact|enchantment|planeswalker|land|permanent)'s "
+                     r"(power|toughness|mana value)", t, re.I)
     if m:
         return ("sac", m[1])
     m = re.fullmatch(r"the greatest (power|toughness) among creatures you control", t, re.I)
