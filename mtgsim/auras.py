@@ -48,8 +48,11 @@ def parse_line(line: str, extra: dict, types) -> bool:
     if m and (extra.get("aura") or "Equipment" in extra.get("_subtypes", ())):
         # "Equipped/Enchanted creature gets +1/+1 for each <kind> you control" (Adaptive Omnitool,
         # Ethereal Armor): counted while the card stays attached (state.py's power calculation).
-        from .counting import _singular
-        extra["pt_per"] = ("other " if m[3] else "") + _singular(m[4])
+        # Only lowercase common nouns are singularized: "Plains" is a subtype as written.
+        what = m[4]
+        if what == what.lower() and what.endswith("s") and not what.endswith("ss"):
+            what = what[:-1]
+        extra["pt_per"] = ("other " if m[3] else "") + what
         extra["pt_scale"] = (int(m[1]), int(m[2]))
         if m[5]:
             extra["equip_keywords"] = extra.get("equip_keywords", frozenset()) | \
