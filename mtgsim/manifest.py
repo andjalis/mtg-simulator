@@ -13,6 +13,12 @@ creature cards automatically once the mana is spare. Noncreature cards stay face
 Manifest dread (Duskmourn) looks at the top two cards, manifests one (a creature if there
 is one) and mills the other.
 
+The bare "Manifest dread." wording parses to the foundation kind
+(engine/kinds/permanents.py, from cards/patterns.py); the variants that single effect
+can't express ride this module's manifest_dread_more kind instead — "manifest dread
+twice", "manifest dread, then attach this Equipment" and Valgavoth's Onslaught's
+"manifest dread X times, then put X +1/+1 counters on each of those creatures".
+
 Recorded simplifications: manifest dread always manifests a creature over a noncreature;
 Fierce Invocation's "+1/+1 counters on it" is applied by the manifest effect itself; the
 from-hand and graveyard-pile manifests (Kozilek, Ghastly Conscription, The Good Time
@@ -39,6 +45,8 @@ EFFECT_PATTERNS = [
     (r"manifest dread twice", lambda m: _e("manifest_dread_more", 2)),
     (r"manifest dread, then attach this equipment to that creature",
      lambda m: _e("manifest_dread_more", 1, data={"attach": True})),
+    (r"manifest dread X times, then put X \+1/\+1 counters on each of those creatures",
+     lambda m: _e("manifest_dread_more", 1, data={"times": "x", "counters": ("+1/+1", "x")})),
     (r"manifest one of those cards, then put the other on the top or bottom of your library",
      lambda m: _e("manifest", 1)),
 ]
@@ -92,13 +100,18 @@ def manifest(game, p, eff, item):
 
 
 def manifest_dread(game, p, eff, item):
-    for _ in range(eff.amount or 1):
+    n = eff.amount or 1
+    if eff.data.get("times") == "x":       # "manifest dread X times"
+        n = getattr(item, "x", 0) if item is not None else 0
+    made = []
+    for _ in range(max(0, n)):
         if not p.library:
-            return
+            break
         look = [p.library.pop() for _ in range(min(2, len(p.library)))]
         pick = next((c for c in look if c.is_creature), look[0])
         look.remove(pick)
         perm = manifest_one(game, p, pick)
+        made.append(perm)
         for other in look:
             p.graveyard.append(other)
             game.log(f"mills {other.name}", p)
@@ -106,3 +119,11 @@ def manifest_dread(game, p, eff, item):
                 and "Equipment" in item.source.card.types:
             item.source.attached_to = perm
             game.log(f"attaches {item.source.card.name} to the manifested creature", p)
+    kind, n2 = eff.data.get("counters", (None, 0))
+    if kind and made:
+        if n2 == "x":
+            n2 = getattr(item, "x", 0) if item is not None else 0
+        for perm in made:
+            if perm is not None:
+                perm.counters[kind] = perm.p1 + n2
+    return made
