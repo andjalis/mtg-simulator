@@ -359,6 +359,15 @@ def undying_return(game, item, k, **_):
         game.enter_battlefield(owner, card, counters={"-1/-1" if k == "persist_return" else "+1/+1": 1})
 
 
+@kind("shuffle_self")
+def shuffle_self(game, p, eff, item, **_):
+    """"Shuffle ~ into its owner's library" (the Beacon and Zenith spells): mark the
+    resolving spell so Game.to_graveyard_after_resolving puts it into its owner's
+    library, shuffled, instead of the graveyard (the stack hook reads item.shuffle_self)."""
+    if item is not None and item.is_spell:
+        item.shuffle_self = True
+
+
 @kind("rebound_cast")
 def rebound_cast(game, p, item, **_):
     card, version = item.context

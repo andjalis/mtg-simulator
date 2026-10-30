@@ -32,6 +32,9 @@ EFFECT_PATTERNS = [
      lambda m: _e("return_self_gy", data={"to": "hand"})),
     (r"(?:you may )?return this card from your graveyard to the battlefield( tapped)?",
      lambda m: _e("return_self_gy", data={"tapped": bool(m[1])})),
+    # "Shuffle ~ into its owner's library." (the Beacon and Zenith spells): a marker the
+    # stack reads after the spell resolves (Game.to_graveyard_after_resolving).
+    (r"shuffle ~ into its owner's library", lambda m: _e("shuffle_self")),
 ]
 
 
