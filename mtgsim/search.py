@@ -68,11 +68,13 @@ SUBS = [
     (re.compile(r"search (?:target opponent's|target player's) library for a card and exile it"
                 r"(?:[.,]?\s*then (?:that|the) player shuffles?)?", re.I),
      lambda m: "SEARCHOPP EXILE 1 card."),
-    # Quiet Speculation: put cards from an opponent's library into their graveyard.
-    (re.compile(r"search (?:target opponent's|target player's) library for up to (\w+) cards with "
-                r"([\w ,'/-]+?) and put them into that player's graveyard\.?(?:\s*then (?:that|the) "
-                r"player shuffles?)?", re.I),
-     lambda m: f"SEARCHOPP GY {_NUM.get(m[1], 1)} {m[2]}."),
+    # Quiet Speculation ("... cards with flashback ...") and Life's Finale ("... creature
+    # cards ..."): put cards from an opponent's library into their graveyard.
+    (re.compile(r"search (?:target opponent's|target player's) library for up to (\w+) "
+                r"(?:cards with ([\w ,'/-]+?)|([\w ,'/-]+?) cards) and put them into "
+                r"(?:that player's|their) graveyard\.?(?:\s*then (?:that|the) player shuffles?)?",
+                re.I),
+     lambda m: f"SEARCHOPP GY {_NUM.get(m[1], 1)} {m[2] or m[3]}."),
     # Lost Legacy / Infinite Obliteration: name a card, strip the copies from their zones.
     (re.compile(r"choose an? (nonartifact, nonland|nonland|noncreature, nonland|artifact|creature|"
                 r"enchantment|instant or sorcery|planeswalker)? ?card name\. search "
