@@ -739,7 +739,8 @@ class CostsMixin:
             return False
         if card.extra_sacrifice and not card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
             return False
-        if getattr(card, "extra_exile_gy", "") and not self.gy_exile_candidates(p, card.extra_exile_gy):
+        if getattr(card, "extra_exile_gy", "") and len(self.gy_exile_candidates(p, card.extra_exile_gy)) < \
+                getattr(card, "extra_exile_gy_count", 1):
             return False       # "As an additional cost to cast ~, exile a(n) <desc> from your graveyard"
         if card.aura and not auras.hosts(self, p, card):
             return False

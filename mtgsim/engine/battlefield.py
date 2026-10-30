@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import dataclasses
+import re
 from typing import TYPE_CHECKING
 
 from .. import auras, copies, creature_keywords, proliferate
@@ -13,6 +14,31 @@ from .state import Permanent, StackItem, is_basic_land
 
 if TYPE_CHECKING:
     from .state import Player
+
+# "As ~ enters, roll a d6/six-sided die. It enters with a number of +1/+1 counters on it
+# equal to the result." (Hydradoodle, Jumbo Imp, Hammer Jammer, Temp of the Damned,
+# Neverwinter Hydra). The roll happens during the enters event itself, not as a trigger:
+# the counters land on the card before state-based actions run, so 0/0 bodies survive.
+_AS_ENTERS_ROLL = re.compile(
+    r"As [^\n]+? enters, roll (a |an |one |two |three |four |five |X )?"
+    r"(?:d(\d+)|(\w+)-sided (?:die|dice))\. "
+    r"(?:[^\n]+?) enters with a number of ([+\w/\-]+) counters? on it equal to the "
+    r"(?:total of those results|result)")
+_DIE_SIDES = {"four": 4, "six": 6, "eight": 8, "ten": 10, "twelve": 12, "twenty": 20}
+_DIE_COUNT = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5}
+
+
+def as_enters_roll(card: CardDef, x: int = 0):
+    """(sides, count, counter kind) when ``card`` is an "As ~ enters, roll ... enters with
+    a number of counters on it equal to the result" creature, else None. ``x`` is the {X}
+    paid for cards like Hydradoodle that roll X dice."""
+    m = _AS_ENTERS_ROLL.search(card.oracle or "")
+    if m is None:
+        return None
+    prefix = (m[1] or "").strip()
+    count = max(0, x) if prefix == "X" else _DIE_COUNT.get(prefix, 1)
+    sides = int(m[2]) if m[2] else _DIE_SIDES.get((m[3] or "six").lower(), 6)
+    return sides, count, m[4].lower()
 
 
 class BattlefieldMixin:
@@ -110,6 +136,22 @@ class BattlefieldMixin:
                     for t in c.subtypes:
                         types[t] = types.get(t, 0) + 1
             perm.chosen_type = max(types, key=types.get, default="")
+        elif card.choose_type == "land":
+            # Shimmer: "As ~ enters, choose a land type. Each land of the chosen type has
+            # phasing." The default pick is the opponent's most common basic land type.
+            counts: dict = {}
+            for pl in self.players:
+                weight = 1 if pl is self.opponent(p) else 0
+                for c in pl.deck:
+                    if c.is_land and is_basic_land(c):
+                        for t in c.subtypes:
+                            counts[t] = counts.get(t, 0) + weight
+            if not counts:
+                for c in p.deck:
+                    if c.is_land and is_basic_land(c):
+                        for t in c.subtypes:
+                            counts[t] = counts.get(t, 0) + 1
+            perm.chosen_type = max(counts, key=counts.get, default="Island")
         elif card.choose_type == "basic_land":
             perm.card = dataclasses.replace(card, produces=frozenset({choose_color(self, p)}))
         if card.loyalty:
@@ -129,6 +171,15 @@ class BattlefieldMixin:
             perm.counters[kind] = perm.counters.get(kind, 0) + amount(self, p, spec)
         if card.etb_named_counters:
             perm.counters[card.etb_named_counters[0]] = card.etb_named_counters[1]
+        roll = as_enters_roll(card, perm.entered_x)
+        if roll is not None:
+            sides, n, kind = roll
+            if n > 0:
+                from ..dungeon_mechanics import roll as roll_dice
+                roll_dice(self, p, Effect("die_roll", data={"sides": sides, "count": n}), None, None, None)
+                total = self._die_rolls.get(p, 0)     # roll() records the total per player
+                perm.counters[kind] = perm.counters.get(kind, 0) + total
+                perm._etb_roll_consumed = True        # stack.py: the etb die_roll trigger is spent
         for kind, n in (counters or {}).items():
             perm.counters[kind] = perm.counters.get(kind, 0) + n
         from ..residual_templates import tapped_by_opponent
@@ -179,6 +230,11 @@ class BattlefieldMixin:
         from ..backlog_templates import filtered_entry
         filtered_entry(self, perm)
         self.fire(p, "permanent_enters", subject=perm)
+        for pl in self.players:
+            if pl is not p:
+                # "~ or another Zombie enters" (Noxious Ghoul): flagged triggers hear any entry;
+                # stack.py skips the controller-scoped ones.
+                self.fire(pl, "permanent_enters", subject=perm)
         if card.is_land:
             self.fire(p, "land_enters", subject=perm)
         if getattr(self, '_entry_batch', None) is None:

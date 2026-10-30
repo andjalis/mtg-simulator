@@ -9,7 +9,7 @@ from ..cards import Effect
 from .. import modal, costs, counter_mechanics
 from ..actions import atomic_action
 from .policy import any_player_ability, any_player_window, default_choose_target, perm_value, saddle_creatures
-from .state import Permanent, StackItem, TARGETED, can_block
+from .state import Permanent, StackItem, TARGETED, can_block, card_matches
 
 if TYPE_CHECKING:
     from .state import Player
@@ -94,11 +94,33 @@ class AbilitiesMixin:
             self.check_ward(item)
         elif what in ("animate", "barrens"):
             act = next((a for a in perm.activated if a.kind == what), None)
-            if act is None or self.pay(p, act.cost, exclude=perm) is None:
+            if act is None:
                 return False
-            if what == "barrens":
-                perm.counters["+1/+1"] = perm.p1 + 2
-            perm.animated = act
+            if act.power == -1 and act.toughness == -1:
+                # "{X}{G}: Until end of turn, ~ becomes an X/X creature. It's still a land."
+                # (Lair of the Hydra): power and toughness are the {X} paid, at least 1.
+                # The land pays its own cost's {G} only through its other mana: the search
+                # and the payment must both exclude the land itself.
+                from .mana import find_payment
+                base = {k: v for k, v in act.cost.items() if k != "X"}
+                x = 0
+                for n in range(1, 21):
+                    if find_payment(self.mana_sources(p, spell="ability", exclude=perm),
+                                    dict(base, generic=base.get("generic", 0) + n)) is None:
+                        break
+                    x = n
+                if x < 1:
+                    return False
+                cost = dict(base, generic=base.get("generic", 0) + x)
+                if self.pay(p, cost, exclude=perm) is None:
+                    return False
+                perm.animated = dataclasses.replace(act, power=x, toughness=x)
+            else:
+                if self.pay(p, act.cost, exclude=perm) is None:
+                    return False
+                if what == "barrens":
+                    perm.counters["+1/+1"] = perm.p1 + 2
+                perm.animated = act
             self.log(f"animates {perm}", p)
         elif what == "saddle":
             crew = saddle_creatures(self, p, perm)
@@ -233,6 +255,8 @@ class AbilitiesMixin:
         if self.nonmana_locked(p) or perm.abilities_suppressed or any('cant_activate' in a.card.aura_flags for a in perm.auras):
             return False
         act, c = acts[idx], acts[idx].extra_costs
+        if act.condition == "coven" and not perm.condition("coven"):
+            return False    # "Activate only if you control three or more creatures with different powers."
         if act.condition == "blessing":
             from ..batch1_templates import has_blessing
             if not has_blessing(self, p):
@@ -277,6 +301,8 @@ class AbilitiesMixin:
             return False
         if c.get("exile_gy_card") and not self.gy_exile_candidates(p, c["exile_gy_card"]):
             return False
+        if c.get("tap_other") and not self.tap_other_candidates(p, perm, c["tap_other"]):
+            return False
         if act.needs_max_speed and p.speed < 4:
             return False
         if act.min_charge and perm.counters.get("charge", 0) < act.min_charge:
@@ -290,8 +316,19 @@ class AbilitiesMixin:
             cost = {k: v for k, v in cost.items() if k != "X"}
             cost["generic"] = cost.get("generic", 0) + x
         return costs.ability_plan(self, p, perm, act, cost,
-                                  x=x if c.get("remove_creature_counters") else None,
+                                  x=x if c.get("remove_creature_counters") or c.get("exile_gy_count") == "x" else None,
                                   counter_choices=counter_choices) is not None
+
+    def tap_other_candidates(self, p: Player, perm: Permanent, desc: str) -> list:
+        """Untapped creatures for a "Tap another untapped <desc> creature you control" cost
+        (Dungeon Descent, Ranger's Hawk, Chicken a la King). A leading "another" excludes the
+        source itself; otherwise it may tap for its own ability."""
+        import re as _re
+        other = desc.startswith("another ")
+        d = desc[8:] if other else _re.sub(r"^an? ", "", desc)
+        return [x for x in p.battlefield
+                if x.is_creature and not x.tapped and (x is not perm or not other)
+                and (x is perm or card_matches(x.card, "a " + d))]
 
     def ability_x(self, p: Player, perm: Permanent, act) -> int | None:
         """The X to choose for an activated ability whose mana cost contains {X} (Cinder Elemental,
@@ -330,7 +367,7 @@ class AbilitiesMixin:
             cost = {k: v for k, v in cost.items() if k != "X"}
             cost["generic"] = cost.get("generic", 0) + x
         plan = costs.ability_plan(self, p, perm, act, cost,
-                                  x=x if c.get("remove_creature_counters") else None,
+                                  x=x if c.get("remove_creature_counters") or c.get("exile_gy_count") == "x" else None,
                                   counter_choices=counter_choices)
         if plan is None:
             return False
@@ -352,6 +389,15 @@ class AbilitiesMixin:
             perm.ability_turns[("game", idx)] = self.turn
         if c.get("tap"):
             perm.tapped = True
+        if c.get("tap_other"):
+            # "{T}, Tap another untapped <desc> creature you control: ..." — the planner
+            # already kept this creature out of the mana payment.
+            donor = getattr(plan, "tap_other", None)
+            if donor is None or donor not in p.battlefield or donor.tapped:
+                return False
+            donor.tapped = True
+            self.fire(p, "becomes_tapped", donor)
+            self.log(f"taps {donor.card.name}", p)
         if c.get("life"):
             self.change_life(p, -c["life"], f"{perm.card.name}: ability cost")
         for _ in range(c.get("discard", 0)):
@@ -392,15 +438,18 @@ class AbilitiesMixin:
             self.log(f"exiles {name} to craft", p)
         if c.get("exile_gy_card"):
             # "{...}, Exile a(n) <desc> card from your graveyard: ..." (Molten-Tail Masticore,
-            # Moorland Haunt): the plan carries the chosen card; its stats are recorded for
-            # ("exiled_gy", "power")-style quantities.
-            gy = getattr(plan, "exile_gy_card", None)
-            if gy is None or gy not in p.graveyard:
+            # Moorland Haunt), or several of them ("Exile two cards from your graveyard":
+            # Psychatog, Bearscape). The plan carries the chosen cards; the first one's stats
+            # are recorded for ("exiled_gy", "power")-style quantities.
+            picks = tuple(getattr(plan, "exile_gy_cards", None) or
+                          ((plan.exile_gy_card,) if getattr(plan, "exile_gy_card", None) else ()))
+            if not picks or any(gy not in p.graveyard for gy in picks):
                 return False
-            p.graveyard.remove(gy)
-            p.exile.append(gy)
-            perm.last_exiled_gy = (int(gy.power or 0), int(gy.toughness or 0), gy.cmc)
-            self.log(f"exiles {gy.name} from their graveyard", p)
+            for gy in picks:
+                p.graveyard.remove(gy)
+                p.exile.append(gy)
+            perm.last_exiled_gy = (int(picks[0].power or 0), int(picks[0].toughness or 0), picks[0].cmc)
+            self.log(f"exiles {[gy.name for gy in picks]} from their graveyard", p)
         if c.get("sac_self"):
             self.sacrifice(perm)
         elif c.get("exile_self"):
