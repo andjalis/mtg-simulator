@@ -15,6 +15,12 @@ _SUB_NOTES = [
     (re.compile(r"target creature or planeswalker you control gains", re.I), "the target is a creature, not a planeswalker"),
     (re.compile(r"you don't lose this mana as steps and phases end", re.I),
      "the mana pool still empties at the end of each phase"),
+    # Typed reveal-and-discard with words the hand matcher has no notion of ("a nonland
+    # permanent card", "a nonbasic land card"): the restriction is narrowed to the words
+    # it can match (see _hand_filter below).
+    (re.compile(r"reveals their hand\. you (?:may )?choose an? [\w, -]*?"
+                r"(?:nonbasic|nonlegendary|permanent|legendary|colorless)[\w, -]*? card from it", re.I),
+     "part of the revealed-card description is ignored: only card types, colors and subtypes are matched"),
 ]
 
 _SUBS = [
@@ -128,6 +134,14 @@ _SUBS = [
     (re.compile(r"look at the top \w+ cards of your library, where X is the number of (artifacts|creatures|lands) "
                 r"you control\. put (\w+) of those cards into your hand and the rest on the bottom of your library "
                 r"in (?:a random|any) order\.", re.I), lambda m: f"DIGCOUNT {m[1][:-1]} {_num(m[2])}."),
+    # Same X-scaled look, but the keep is a described card: "You may reveal a creature or land
+    # card from among them and put it into your hand. Put the rest ..." (Seismic Sense). The
+    # count word is \w+ because the face parser resolves "X" to its declared value first.
+    (re.compile(r"look at the top \w+ cards of your library, where X is the number of "
+                r"(artifacts|creatures|enchantments|lands) you control\. you may reveal (an? [\w, -]+? card) "
+                r"from among them and put it into your hand\. put the rest on the bottom of your library "
+                r"in (?:a random|any) order\.?", re.I),
+     lambda m: f"DIGCOUNTFILT {m[1][:-1]} {m[2]}."),
     (re.compile(r"look at the top (\w+) cards of your library\. put up to (two) noncreature, nonland permanent "
                 r"cards with mana value (\d+) or less from among them onto the battlefield\. put the rest on the "
                 r"bottom of your library in a random order\.", re.I),
@@ -140,8 +154,14 @@ _SUBS = [
     (re.compile(r"exile the top (card|\w+ cards) of your library\. until (?:the end of your next turn|end of turn), you "
                 r"may play (?:that card|those cards)(?: this turn)?\.", re.I),
      lambda m: f"IMPULSE {1 if m[1] == 'card' else _num(m[1].split()[0])}."),
-    (re.compile(r"target (?:player|opponent) reveals their hand\. you choose an? ([\w, -]+?) card from it\. "
-                r"that player discards that card\.", re.I), lambda m: "TARGETDISCARD."),
+    # Typed reveal-and-discard (Thoughtseize, Despise, Divest): the description is kept —
+    # TARGETDISCARD2's builder (hand_templates) matches it with _hand_matches, where an
+    # earlier revision dropped it and made every card in the hand fair game. "You may
+    # choose ... That player discards that card" (Extract the Truth) always takes the
+    # choice: declining it discards nothing, and an empty hand is no-op either way.
+    (re.compile(r"(?:target|that) (?:player|opponent) reveals their hand\. you (?:may )?choose an? "
+                r"([\w, -]+?) card from it\. (?:that player|they) discards? that card\.", re.I),
+     lambda m: _target_discard(m)),
     # "Return this card from your graveyard": the card itself is "~".
     (re.compile(r"\breturn this card from your graveyard\b", re.I), r"return ~ from your graveyard"),
     # "You may have ~ deal N damage to ...": always taken, so the damage is certain (Game.resolve_item).
@@ -270,6 +290,11 @@ _TRIGGERS = [
     (r"Whenever you attack with two or more creatures, (.+)", ("attack_two_plus",)),
     (r"Whenever you attack with three or more creatures, (.+)", ("attack_three_plus",)),
     (r"Whenever you attack a player, (.+)", ("you_attack",)),
+    # "Whenever one or more creatures you control attack, ..." is the combat-wide event the
+    # engine already fires as "you attack"; two/three-or-more use the count-gated events.
+    (r"Whenever one or more creatures you control attack(?: a player)?, (.+)", ("you_attack",)),
+    (r"Whenever two or more creatures you control attack(?: a player)?, (.+)", ("attack_two_plus",)),
+    (r"Whenever three or more creatures you control attack(?: a player)?, (.+)", ("attack_three_plus",)),
     (r"Whenever ~ attacks alone, (.+)", ("attacks_alone",)),
     (r"Whenever an? ([A-Z]\w+(?: or [A-Z]\w+)?) you control attacks alone, (.+)", ("attacks_alone",)),
     (r"Whenever ~ deals combat damage to an opponent, (.+)", ("combat_damage_player",)),
@@ -333,6 +358,46 @@ def _opt_rider(s: str, effects: list):
     for e in new:
         e.cond = e.cond or cond
     return new
+
+
+_HAND_TYPES = {"creature", "land", "artifact", "enchantment", "planeswalker", "instant", "sorcery"}
+_HAND_COLORS = {"white", "blue", "black", "red", "green"}
+
+
+def _hand_filter(words: str):
+    """Split a revealed-hand card description into (matched, ignored) tokens: the hand
+    matcher (engine/kinds/cards._hand_matches) knows card types, colors, capitalised
+    subtypes and non-<type> words, but has no notion of "permanent", "nonbasic",
+    "nonlegendary", "battle", "colorless", ..."""
+    matched, ignored = [], []
+    for w in words.split():
+        bare = w.strip(",")
+        if bare in ("or", "and/or"):
+            continue
+        if (bare in _HAND_TYPES or bare in _HAND_COLORS
+                or (bare.startswith("non") and bare[3:] in _HAND_TYPES)
+                or re.fullmatch(r"[A-Z][a-z]+(?:-[A-Z][a-z]+)?", bare)):
+            matched.append(w)
+        else:
+            ignored.append(bare)
+    return matched, ignored
+
+
+def _target_discard(m):
+    """TARGETDISCARD2 with the widest restriction the hand matcher can honour. Words it
+    can't match are dropped (with the _SUB_NOTES approximation note); if nothing is left,
+    the line stays unsupported rather than broadening the choice to the whole hand."""
+    matched, ignored = _hand_filter(m[1])
+    if ignored:
+        if not matched:
+            return m[0]
+        rest = re.sub(rf"\b(?:{'|'.join(map(re.escape, ignored))})\b,?\s*", "", m[1])
+        rest = re.sub(r"\s+", " ", rest).strip(" ,").strip()
+        rest = re.sub(r",?\s+(?:or|and/or)\s*$", "", rest).strip(" ,")
+        if not rest:
+            return m[0]
+        return f"TARGETDISCARD2 {rest}."
+    return f"TARGETDISCARD2 {m[1]}."
 
 
 def _xq(text: str):
