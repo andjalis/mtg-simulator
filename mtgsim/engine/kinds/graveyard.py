@@ -488,6 +488,21 @@ def gy_cast(game, p, eff, item, opp, **_):
             return
 
 
+@kind("gy_top")
+def gy_top(game, p, eff, **_):
+    """"Put any number of target <desc> cards from your graveyard on top of your library"
+    (Bone Harvest): all of them, most valuable drawn first (the library top is the end)."""
+    from ...ai import card_value
+    desc = _filter_desc(eff.data["desc"]) if eff.data.get("desc") else ""
+    cards = [c for c in p.graveyard if not desc or card_matches(c, desc)]
+    cards.sort(key=card_value)
+    for card in cards:
+        p.graveyard.remove(card)
+        p.library.append(card)
+    if cards:
+        game.log(f"puts {len(cards)} card(s) from their graveyard on top of their library", p)
+
+
 @kind("gy_cast_aftermath")
 def gy_cast_aftermath(game, p, eff, item, **_):
     """"If that spell would be put into a graveyard, exile it instead" (or the bottom of

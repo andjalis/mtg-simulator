@@ -80,6 +80,10 @@ EFFECT_PATTERNS = [
     (r"you may cast target ([a-z, ]+?) card from (your|a|an opponent's|that player's) graveyard"
      r"( without paying its mana cost)?",
      lambda m: _gy_cast(m[1], m[2], m[3])),
+    # "Put any number of target <desc> cards from your graveyard on top of your library"
+    # (Bone Harvest): every matching card goes back on top of the library.
+    (r"put any number of target ([\w, '/-]+?) cards from your graveyard on top of your library",
+     lambda m: _e("gy_top", data={"desc": m[1]})),
 ]
 
 
