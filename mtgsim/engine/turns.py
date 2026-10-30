@@ -233,6 +233,8 @@ class TurnsMixin:
         """The controller's untap step: untap everything except permanents that skip it, are
         stunned, block their own untap, or whose controller recorded a "choose not to untap"
         choice (perm.stay_tapped)."""
+        from ..phasing import phasing_untap
+        phasing_untap(self, p)
         for perm in self.opponent(p).battlefield:
             if perm.card.untap_each_untap:
                 perm.tapped = False

@@ -439,6 +439,9 @@ class StackMixin:
         elif getattr(item, "shuffle_self", False):
             owner.library.append(base)               # "Shuffle ~ into its owner's library."
             owner.library.shuffle(self.rng)
+        elif getattr(item, "self_suspend", 0):
+            owner.exile.append(base)                 # "Exile ~ with N time counters."
+            owner.suspended.append([base, item.self_suspend])
         elif kind not in ("channel", "prepared"):
             owner.graveyard.append(base)
             if base.advanced_rules.get("haunt"):
