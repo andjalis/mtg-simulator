@@ -389,6 +389,8 @@ class TurnsMixin:
         """Queue one-shot delayed draws before any upkeep ability can create new ones."""
         from ..batch1_templates import on_upkeep
         on_upkeep(self, p)
+        from ..dungeon_mechanics import initiative_upkeep
+        initiative_upkeep(self, p)
         waiting, self.delayed_upkeep = self.delayed_upkeep, []
         for controller, amount, source, name, scope in waiting:
             if scope == "you" and p is not controller:

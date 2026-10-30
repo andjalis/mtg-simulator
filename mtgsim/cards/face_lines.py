@@ -131,7 +131,7 @@ def _face_special_lines(st, line):
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
         # Any ability word ("Phalanx Commander —", "Life Drain —") before a When/At/If line; "Survival — "
         # keeps its prefix: it names a distinct engine event.
-        line = re.sub(r"^(?!Survival — )[A-Z][\w'&/ ]+ — (?=When|At|If)", "", line)
+        line = re.sub(r"^(?!(?:Survival|Pack tactics) — )[A-Z][\w'&/ ]+ — (?=When|At|If)", "", line)
         # Discard triggers fire once per card, so "that many" counters is one counter each time.
         line = re.sub(r"^(Whenever you discard one or more cards), put that many \+1/\+1 counters on ~\.$",
                       r"\1, put a +1/+1 counter on ~.", line)
