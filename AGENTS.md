@@ -103,3 +103,18 @@ tasks in manageable batches. Do not carry this preference into other projects.
 If you are a delegated model (launched with `ask`), you may not have file or command access.
 Work from the text supplied in the prompt, state what you could not verify, and do not claim a
 test passed unless you ran it. Local llama.cpp models cannot read files at all.
+
+## Local-model pilot gate
+
+Run `python3 scripts/pilot_gate.py --base origin/main [--worktree PATH] [--fast]`
+before accepting a pilot change. Requires the offline card database and pyflakes.
+The gate writes `verdict.json`, compact `verdict.md`, and full logs under
+`results/pilot_gate/<branch>-<UTC time>/`; keep these local rather than committing them.
+It checks lint, tests, parser exceptions, full-match regressions, all-card and saved
+Standard-snapshot coverage deltas, ten seeded newly-full parse samples, an exercise step
+that resolves every effect of each newly-full card once on a stock board (any exception
+fails; it checks for crashes, not behavior), and 50 seeded AI smoke games (20 seconds per game). Suspicious sample fields fail for human review;
+`target='none'` is listed but does not fail, since untargeted effects use it. `--fast` selects tests by changed/related filenames,
+falling back to the full suite for broad or unmapped Python changes. Base coverage is
+cached by commit plus code/data fingerprints. A PASS is a review aid, not evidence
+of complete rules correctness; read the sampled Oracle/parse pairs.

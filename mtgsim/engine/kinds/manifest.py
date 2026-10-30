@@ -17,3 +17,15 @@ def manifest(game, p, eff, item, **_):
 def manifest_dread_more(game, p, eff, item, **_):
     from ... import manifest as _manifest
     _manifest.manifest_dread(game, p, eff, item)
+
+
+@kind("shuffle_enchanted")
+def shuffle_enchanted(game, p, eff, item, **_):
+    from ... import manifest as _manifest
+    _manifest.shuffle_enchanted(game, p, eff, item)
+
+
+@kind("manifest_recover")
+def manifest_recover(game, p, eff, item, **_):
+    from ... import manifest as _manifest
+    _manifest.manifest_recover(game, p, eff, item)

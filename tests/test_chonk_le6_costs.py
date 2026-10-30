@@ -105,7 +105,9 @@ class ExileGraveyardCosts(unittest.TestCase):
         life = self.b.life
         self.assertTrue(self.g.cast(self.a, lunge, [self.b]))
         self.g.settle()
-        self.assertEqual(self.b.life, life - 2)    # BEAR (power 2) was exiled as the cost
+        # the payout reads the exiled card's power, so the biggest creature card (BIG,
+        # power 4) is exiled — see costs._pick_gy_exile
+        self.assertEqual(self.b.life, life - 4)
 
     # ------------------------------------------------------ ability costs
     def test_ability_exiles_and_reads_the_graveyard_card(self):
@@ -118,10 +120,12 @@ class ExileGraveyardCosts(unittest.TestCase):
         self.assertTrue(self.g.can_activate(self.a, core, 0))
         self.assertTrue(self.g.activate_ability(self.a, core, 0, [self.b]))
         self.g.settle()
-        self.assertIn(BEAR, self.a.exile)          # cheapest creature card
-        self.assertNotIn(BEAR, self.a.graveyard)
-        self.assertEqual(core.last_exiled_gy, (2, 2, 2))
-        self.assertEqual(self.b.life, life - 2)
+        # the payout reads the exiled card's power, so the biggest creature card (BIG,
+        # 4/5) is exiled — see costs._pick_gy_exile
+        self.assertIn(BIG, self.a.exile)
+        self.assertNotIn(BIG, self.a.graveyard)
+        self.assertEqual(core.last_exiled_gy, (4, 5, 4))
+        self.assertEqual(self.b.life, life - 4)
 
     def test_ability_is_refused_without_a_creature_in_the_graveyard(self):
         core = Permanent(MASTICORE, self.a)

@@ -99,6 +99,46 @@ def _x_sized_token(m):
 
 
 _EFFECT_PATTERNS = [
+    # "N plus the sacrificed <permanent>'s stat" (Broadside Bombardiers, Oswald Fiddlebender):
+    # the ("sac_plus", n, stat) X-quantity reads the same recorded stats as ("sac", stat).
+    (r"~ deals damage equal to (\w+) plus the sacrificed "
+     r"(?:creature|artifact|enchantment|planeswalker|land|permanent)'s "
+     r"(power|toughness|mana value) to (any target|target creature or planeswalker|target player)",
+     lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature",
+                                           "target player": "player"}[m[3]],
+                      data={"xq": ("sac_plus", _num(m[1]), m[2])})),
+    # "the exiled card's stat": the graveyard card exiled to pay the spell or ability's cost
+    # (Corpse Lunge, Molten-Tail Masticore): the ("exiled_gy", stat) X-quantity.
+    (r"~ deals damage equal to the exiled card's (power|toughness|mana value) to "
+     r"(any target|target creature or planeswalker|target creature|target player)",
+     lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature",
+                                           "target creature": "creature", "target player": "player"}[m[2]],
+                      data={"xq": ("exiled_gy", m[1])})),
+    # Dark Confidant family: the mana value of the card the resolving dig just put into the hand.
+    (r"you lose life equal to (?:its|it's|that card's) mana value",
+     lambda m: Effect("lose_life", 1, data={"xq": ("revealed", "mana value")})),
+    # Energy counters as a plain effect (the "If you do, ..." payoff of an energy pay gate).
+    (r"you get ((?:\{E\})+)", lambda m: Effect("energy", m[1].count("{E}"))),
+    # Candelabra of Tawnos / Magus of the Candelabra: X is the {X} paid for the ability.
+    (r"untap X target lands", lambda m: Effect("untap_lands", 0, data={"x": True})),
+    # Skullcrack / Atarka's Command: who can't gain life this turn.
+    (r"(players|your opponents|you) can't gain life this turn",
+     lambda m: Effect("no_lifegain_turn", data={"scope": {"players": "all", "your opponents": "opponents",
+                                                          "you": "you"}[m[1].lower()]})),
+    # Energy Tap sentinel (clauses.py folds the two sentences into this): the tap gate, then the
+    # ("tap", stat) X-quantity read of the creature it tapped.
+    (r"ENERGYTAP", lambda m: [Effect("pay_gate", data={"gate": ("tap", "creature")}),
+                              Effect("add_mana", 1, data={"colors": ["C"], "xq": ("tap", "mana value")},
+                                     cond="paid")]),
+    # "reveal a number of cards ... equal to <quantity>" sentinel (clauses.py): a discard scaled
+    # by the X-quantity (Acquisitions Expert: ("party",)).
+    (r"XDISCARD (.+)", lambda m: _add_xq(m[1], Effect("discard", 1, target="player"))),
+    # Literal-name library fetches (Squadron Hawk, Screaming Seahawk): "~" in the description is
+    # the resolving card's own name (engine.resolve substitutes it).
+    (r"(?:you may )?search your library for (?:up to (one|two|three|four) |a |an )cards? named ([^.]+?), "
+     r"reveal (?:it|them), put (?:it|them) into your hand, then shuffle",
+     lambda m: Effect("search", data={"what": f"a card named {m[2]}", "n": _num(m[1] or "a"),
+                                       "dest": "hand"})),
     # "Equal to the sacrificed <permanent>'s stat" effects: amount 1 times the ("sac", stat) X-quantity,
     # which the engine reads from the permanent sacrificed to pay the spell or ability's cost.
     (r"~ deals damage equal to the sacrificed (?:creature|artifact|enchantment|planeswalker|land|permanent)'s "
@@ -415,10 +455,17 @@ _EFFECT_PATTERNS = [
     (r"DIGFILTER (\d+) (.+)", lambda m: Effect("dig", int(m[1]), 1, data={"filter": m[2]})),
     (r"DIGLANDS (\d+)", lambda m: Effect("dig", 0, int(m[1]), data={"x_lands": True})),
     (r"DIGCOUNT (\w+) (\d+)", lambda m: Effect("dig", 0, int(m[2]), data={"x_count": m[1]})),
+    # X-scaled look with a described keep (see the DIGCOUNTFILT sub in clauses.py)
+    (r"DIGCOUNTFILT (\w+) (.+)", lambda m: Effect("dig", 0, 1,
+     data={"x_lands": True, "filter": m[2]} if m[1] == "land" else {"x_count": m[1], "filter": m[2]})),
     (r"IMPULSE (\d+)", lambda m: Effect("draw", int(m[1]))),   # "exile the top N, you may play them"
     (r"TARGETDISCARD", lambda m: Effect("discard_choice", 1, target="player")),
     (r"HANDEXILE (.+)", lambda m: Effect("hand_exile", target="player", filter=m[1])),
     (r"TARGETDISCARDNONCREATURE", lambda m: Effect("discard_choice", 1, target="player", filter="noncreature")),
+    # "Target opponent reveals their hand": the peek_hand kind logs the look; the AI never
+    # acts on revealed information, so that log line is the whole honest simulation.
+    (r"(?:(target) (?:player|opponent)|(that player)) reveals (?:their|his or her) hand",
+     lambda m: Effect("peek_hand", target="that_player" if m[2] else "player")),
     (r"(?:you may )?exile the top (card|one card|two cards|three cards|four cards|\d+ cards) of your library",
      lambda m: Effect("exile_top", _N_WORDS.get(m[1].split()[0], 1) if m[1] != "card" else 1)
      if not m[1][0].isdigit() else Effect("exile_top", int(m[1].split()[0]))),
@@ -430,7 +477,7 @@ _EFFECT_PATTERNS = [
     (r"choose one of them", lambda m: Effect("choose_one_exiled")),
     (r"tap (?:up to one )?target (?:creature|nonland permanent)(?: an opponent controls| you don't control)?",
      lambda m: Effect("tap", 1, target="creature")),
-    (r"tap up to (two|three) target creatures", lambda m: Effect("tap", _num(m[1]), target="creature")),
+    (r"tap up to (two|three|four|five) target creatures", lambda m: Effect("tap", _num(m[1]), target="creature")),
     (r"tap target creature(?: an opponent controls)? and put (a|two|three) stun counters? on it",
      lambda m: [Effect("tap", 1, target="creature"), Effect("stun", _num(m[1]), target="prev")]),
     (r"put (a|two|three) stun counters? on it", lambda m: Effect("stun", _num(m[1]), target="prev")),
@@ -510,10 +557,22 @@ _EFFECT_PATTERNS = [
     (r"up to (two|three) target creatures each get \+(\d+)/\+(\d+) until end of turn",
      lambda m: [Effect("pump", int(m[2]), int(m[3]), target="creature_mine", data={"distinct": True})
                 for _ in range(_num(m[1]))]),
-    (r"untap all (creatures|lands) you control", lambda m: Effect("untap_all", data={"what": m[1]})),
+    (r"untap a creature you control", lambda m: Effect("untap_target", target="creature_mine")),
+    (r"untap all (creatures|lands) you control(?: instead)?", lambda m: Effect("untap_all", data={"what": m[1]})),
     (r"sacrifice ~", lambda m: Effect("sacrifice_self", target="self")),
     (r"sacrifice a creature", lambda m: Effect("sac_own", data={"kind": "creature"})),
-    (r"sacrifice (?:~|it) unless you pay ((?:\{[^}]+\})+)", lambda m: Effect("pay_or_sac", data={"cost": parse_mana_cost(m[1])})),
+    # "sacrifice ~ unless you pay {E}{E}" (Lathnu Hellion): pay the counters when there are
+    # enough, sacrifice otherwise — the pay_energy gate plus a !paid sacrifice.
+    (r"sacrifice (?:~|it) unless you pay ((?:\{E\})+)",
+     lambda m: [Effect("pay_energy", m[1].count("{E}")),
+                Effect("sacrifice_self", target="self", cond="!paid")]),
+    # "tap ~ unless you pay {E}" (Electrozoa): the same energy gate keeping the permanent tapped.
+    (r"tap (?:~|it) unless you pay ((?:\{E\})+)",
+     lambda m: [Effect("pay_energy", m[1].count("{E}")),
+                Effect("tap", 1, target="self", cond="!paid")]),
+    # Energy in a pay_or_sac cost would be a free payment (parse_mana_cost drops {E}), so the
+    # mana variant below must not swallow it.
+    (r"sacrifice (?:~|it) unless you pay ((?:\{[WUBRGCX0-9/P]+\})+)", lambda m: Effect("pay_or_sac", data={"cost": parse_mana_cost(m[1])})),
     (r"~ can't be blocked this turn", lambda m: Effect("unblockable", target="self")),
     (r"monstrosity (\d+|x)", lambda m: Effect("monstrosity", 0 if m[1].lower() == "x" else int(m[1]),
                                               data={"x": True} if m[1].lower() == "x" else {})),
@@ -556,7 +615,7 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("discard", _num(m[1]), data={"unless": "basic_land"})),
     (r"(?:then )?discard (a|one|two|three) cards?(?: unless .*)?", lambda m: Effect("discard", _num(m[1]))),
     (r"RUMMAGE (\d+)", lambda m: Effect("rummage", int(m[1]))),
-    (r"create (a|one|two|three|four|five) (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: named [\w' ,-]+?)?(?: that's "
+    (r"create (a|one|two|three|four|five) (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: named [\w' ,-]+?)?(?: that(?:'s| are) "
      r"(tapped and attacking))?(?: with ([\w ,]+))?",
      lambda m: _token(m[1], m[2], m[3], m[4], m[6], bool(m[5]))),
     (r'create (a|one|two|three|four|five|six) (\d+)/(\d+) ((?:\w+ )+?)creature tokens? with "(.+?)"'

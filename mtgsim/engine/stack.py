@@ -111,12 +111,19 @@ class StackMixin:
                     continue
                 if trig.data.get("enters_untapped") and perm.tapped:
                     continue
+                if (event == "etb" and getattr(perm, "_etb_roll_consumed", False)
+                        and [e.kind for e in trig.effects] == ["die_roll"]):
+                    continue    # "As ~ enters, roll ...": enter_battlefield already rolled
                 if trig.intervening_if and not self.check_cond(perm.controller,
                         Effect("condition", cond=trig.intervening_if),
                         StackItem(perm.controller, [], [], source=perm, context=context), None):
                     continue
                 if event == "permanent_enters":
                     me_ok, other, desc = trig.filter.split("|", 2)
+                    if subject.controller is not p and not trig.data.get("any_controller"):
+                        continue    # only "~ or another Zombie enters" triggers see foreign entries
+                    if trig.data.get("enters_tapped") and not getattr(subject, "tapped", False):
+                        continue    # "Whenever a permanent you control enters tapped" (Amulet of Vigor)
                     if subject is perm and me_ok == "self":
                         pass
                     elif subject is perm and other == "other":
@@ -475,6 +482,11 @@ class StackMixin:
         if c == "city_blessing":
             from ..batch1_templates import has_blessing
             return has_blessing(self, p, item)
+        if c == "initiative":                    # "if you have the initiative"
+            return getattr(self, "initiative", None) is p
+        if c == "dungeon_complete":             # "if you've completed a dungeon"
+            from ..dungeon_mechanics import completed as dungeons_completed
+            return bool(dungeons_completed(self, p))
         if c == "phase_player_empty_hand":
             return isinstance(getattr(item, "context", None), Player) and not item.context.hand
         if c[0] == "!":

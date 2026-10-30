@@ -161,13 +161,16 @@ class PlayMixin:
         exiled_gy = None
         if getattr(card, "extra_exile_gy", ""):
             # "As an additional cost to cast ~, exile a(n) <desc> card from your graveyard"
-            # (Makeshift Mauler, Corpse Lunge): the plan carries the chosen card.
-            exiled_gy = plan.exile_gy_card
-            if exiled_gy is None or exiled_gy not in p.graveyard:
+            # (Makeshift Mauler, Corpse Lunge): the plan carries the chosen card(s).
+            picks = tuple(getattr(plan, "exile_gy_cards", None) or
+                          ((plan.exile_gy_card,) if getattr(plan, "exile_gy_card", None) else ()))
+            if not picks or any(gy not in p.graveyard for gy in picks):
                 return False
-            p.graveyard.remove(exiled_gy)
-            p.exile.append(exiled_gy)
-            self.log(f"exiles {exiled_gy.name} from their graveyard for {card.name}", p)
+            for gy in picks:
+                p.graveyard.remove(gy)
+                p.exile.append(gy)
+            self.log(f"exiles {[gy.name for gy in picks]} from their graveyard for {card.name}", p)
+            exiled_gy = picks[0]
         if kind == "prepared":
             next(x for x in p.battlefield if x.front is base and x.prepared).prepared = False
         elif kind in ("rebound", "cascade", "cascade_adventure", "rebound_adventure"):
@@ -253,12 +256,16 @@ class PlayMixin:
             for perm in list(p.battlefield):
                 for trig in perm.triggers:
                     flt = trig.filter
-                    if flt.startswith("spell:") and not any(
-                            SPELL_KINDS[kind](card) if kind in SPELL_KINDS else
-                            kind in card.subtypes or kind.capitalize() in card.types or
-                            (kind.lower() == "outlaw" and any(o in card.subtypes for o in OUTLAWS))
-                            for kind in flt[6:].split("|")):
-                        continue
+                    if flt.startswith("spell:"):
+                        kinds, _, cmc_gate = flt[6:].partition("&")
+                        if not any(
+                                SPELL_KINDS[kind](card) if kind in SPELL_KINDS else
+                                kind in card.subtypes or kind.capitalize() in card.types or
+                                (kind.lower() == "outlaw" and any(o in card.subtypes for o in OUTLAWS))
+                                for kind in kinds.split("|")):
+                            continue
+                        if cmc_gate.startswith("cmc>=") and card.cmc < int(cmc_gate[5:]):
+                            continue    # "a colorless spell with mana value 7 or greater" (Sanctum of Ugin)
                     if trig.event == "cast_cmc" and card.cmc < int(trig.filter[5:]):
                         continue
                     if flt == "opp_turn" and p is self.active:

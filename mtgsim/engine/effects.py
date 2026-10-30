@@ -102,25 +102,28 @@ class EffectsMixin:
                 self.change_life(controller, amount, f"{name}: lifelink")
 
     def adversary(self, p: Player, item, eff: Effect):
-        """Bloodthirsty Adversary: pay {2}{R} once (if the AI wants), get a +1/+1 counter and cast a
-        copy of an instant or sorcery with mana value 3 or less from the graveyard."""
-        cards = [c for c in p.graveyard if (c.is_instant or c.is_sorcery) and c.cmc <= 3 and c.spell_effects]
-        if not cards or not self.can_pay(p, eff.data["cost"]):
-            return
-        if not self.hook(p, "pay_optional")(self, p, eff.data["cost"], "adversary"):
-            return
-        self.pay(p, eff.data["cost"])
-        src = item.source if item else None
-        if src is not None and src in p.battlefield:
-            src.counters["+1/+1"] = src.p1 + 1
-        card = max(cards, key=lambda c: c.cmc)
-        p.graveyard.remove(card)
-        p.exile.append(card)
-        targets = self.auto_targets(p, card.spell_effects)
-        copy = StackItem(p, list(card.spell_effects), targets, card=card, name=f"copy of {card.name}", kind="copy")
-        self.stack.append(copy)
-        self.log(f"casts a copy of {card.name} -> {targets}", p)
-        self.check_ward(copy)
+        """Bloodthirsty Adversary: "you may pay {2}{R} any number of times. When you pay
+        this cost one or more times, put that many +1/+1 counters on ~, then exile up to
+        that many target instant and/or sorcery cards with mana value 3 or less from your
+        graveyard and copy them." The payments go through phasing's pay_repeat plumbing
+        (the Adversary cycle); the copies stay here."""
+        from ..phasing import pay_repeat
+        pay_repeat(self, p, eff, item)
+        n = getattr(item, "pay_repeat", 0) if item is not None else 0
+        src = item.source if item is not None else None
+        if src is not None and src in p.battlefield and n:
+            src.counters["+1/+1"] = src.p1 + n
+        cards = sorted((c for c in p.graveyard
+                        if (c.is_instant or c.is_sorcery) and c.cmc <= 3 and c.spell_effects),
+                       key=lambda c: c.cmc, reverse=True)
+        for card in cards[:n]:
+            p.graveyard.remove(card)
+            p.exile.append(card)
+            targets = self.auto_targets(p, card.spell_effects)
+            copy = StackItem(p, list(card.spell_effects), targets, card=card, name=f"copy of {card.name}", kind="copy")
+            self.stack.append(copy)
+            self.log(f"casts a copy of {card.name} -> {targets}", p)
+            self.check_ward(copy)
 
     def counter(self, p: Player, eff: Effect, target):
         if not isinstance(target, StackItem) or target not in self.stack:

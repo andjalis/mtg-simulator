@@ -8,7 +8,18 @@ Only exact residual ignored text on partial cards appears below. Fully matched c
 
 ## Current findings
 
-The full offline census (2026-10-29, [results/database_coverage_2026-10-29](results/database_coverage_2026-10-29/README.md)) covers 34,130 entries: **13,087 full** (38.34%), 258 with recorded simplifications, 20,785 partial and zero parser errors. Unclassified wording still affects 9,874 cards (6,544 would be full if only that wording were matched). The card database was rebuilt from Forge's card scripts because Scryfall was unreachable, so totals differ slightly from the 2026-10-28 census (12,054 full of 34,129).
+The full offline census (2026-10-30 Scryfall DB, [results/database_coverage_2026-10-30-morning](results/database_coverage_2026-10-30-morning/README.md)) covers 35,225 entries: **13,848 full** (39.31%), 327 with recorded simplifications, 21,050 partial and zero parser errors. That census predates the last chonk merge rounds of 2026-10-30 (see below), which promoted several hundred more cards; the next census will re-baseline.
+
+## Chonk session 2026-10-30 — landed and remaining
+
+Landed this session (review the PRs for detail): sac-stat X-quantities, any-player activated abilities, mass threaten, reveal-hand/discard clusters, Rebel-MV and opponent-library searches, dig-bottom and O-ring variants, Beacon shuffle-self, MAYSACSELF payoffs, venture/initiative/dungeons, die rolls (incl. multi-face), phasing, ripple, manifest, demonstrate/amplify, For Mirrodin!/Prepare, energy pay-gates, clash/coin, self-suspend, prevention shields, exact named-card matching, typed-discard filters, exile-from-graveyard costs (cast + activated, X counts), party, initiative/dungeon-complete conds, ETB die rolls, fail-closed `card_matches` vocabulary, AI stay-tapped wiring and a deterministic lethal-setup budget guard.
+
+Remaining, in rough value order (counts from the morning census unless noted):
+
+- **Parser templates whose engine halves have landed** (smol-lane, quick wins): gy-cast family (16 cards — engine kind `gy_cast` is on `chonk/mega-batch6`, pending review), Militia Bugler power-bound dig family (~5), `discard_all_filter` (~12 Amnesia/Persecute/Cabal Therapy), le-batch9's emitted shapes (exile-gy counts, tap-other costs, coven condition, enters-tapped/any-controller data, `spell:<kinds>&cmc>=N`, animate X/X, Shimmer's chosen-type phasing).
+- **Engine/foundation work**: tap-lock link consumption (`data["lock"]` → frozen_by links in `kinds/stats.py` tap + untap-step honoring — 16 parser-ready cards); "still a land" permanent/counter/Zendikan animate shapes (~111 partials, `animate_templates.py`); reveal-until dig kind (~14); intensity (20) and specialize (~76) engine state machines; "choose not to untap" continuous-effect pairing for the stay-tapped flags; initiative-any cond; per-opponent sacrifice-choice riders (Acererak residual).
+- **Bigger foundations** (out of current scope, need DB data or new engine systems): Attraction/Contraption decks + spellbook (light ranges/spellbook contents are not in `cards.sqlite3` — needs `build_carddb` changes first), Rooms (split permanents), banding (combat damage assignment), cleave and "first spell this game" alt-cost machinery.
+- **Known issues**: pre-existing BaselineAI hang in lethal_setup search paths is now budget-guarded (deterministic 100k cap); Treasure Vault's historical `_num('X')` parse raise is fixed on main.
 
 Existing foundations now include filtered mass moves, graveyard exile, Miracle, Adapt and next-Adapt exceptions, other-land entry predicates, ownership and cast-payment trigger checks, Aura-host end steps, graveyard access restrictions, creature entry/death trigger suppression, mana/nonmana activation restrictions, life and counter locks, layered keyword removal, broader static anthems, opponents entering tapped, and Overload. The remaining scopes extend these foundations.
 
