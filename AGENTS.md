@@ -71,7 +71,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how pull requests are opened and merg
 - **Card data is generated.** Do not commit `mtgsim/data/cards.sqlite3`. Rebuild it with
   `build_carddb` when needed. Card text the engine doesn't match is ignored on purpose, so
   coverage gaps show up in `--coverage` and in run output; do not hide them.
-- **Where new code goes.** A new mechanic family gets its own template module (like `removal.py`) exporting
+- **Where new code goes.** A card that fails only on an unrecognised wording of an existing effect needs a data entry,
+  not code: see `mtgsim/data/wordings/README.md`. A new mechanic family gets its own template module (like `removal.py`) exporting
   `EFFECT_PATTERNS`/`SUBS`, joined at the end of `cards/__init__.py`, with any engine helper it needs in that
   module. Small general templates go in `cards/patterns.py` (trigger templates and substitutions in `cards/clauses.py`); new effect kinds as an `@kind(...)` handler in the
   matching `engine/kinds/` family module (damage, cards, graveyard, permanents, stats, other); rules
