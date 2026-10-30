@@ -167,6 +167,8 @@ class StackMixin:
                     context = subject
                 if trig.filter == "graft" and context is perm:
                     continue
+                if trig.filter.startswith("pack:") and len(self.attackers) < int(trig.filter[5:]) + 1:
+                    continue
                 if trig.filter == "first_attack" and getattr(perm, 'attack_count', (None, 0)) != (self.turn, 1):
                     continue
                 # These attack conditions are checked only when the ability triggers.
@@ -287,6 +289,7 @@ class StackMixin:
                     self.queue_trigger(tgt.controller, [Effect("counter", 1, target="spell",
                                                                data={"discard": True})], tgt,
                                        f"{tgt.card.name} ward", targets=[item])
+                self.fire(tgt.controller, "targeted_opp", tgt, context=item.controller)
                 if item.is_spell:
                     self.fire(tgt.controller, "targeted_by_spell", tgt, context=item.controller)
 

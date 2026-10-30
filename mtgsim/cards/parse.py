@@ -739,6 +739,8 @@ def _parse_trigger_line(line: str):
             rest = rest.replace(" it", " ~", 1)      # "When ~ attacks or blocks, sacrifice it at end of combat"
         if events == ("attacks",) and "while saddled" in pat:
             flt = "saddled"
+        if events == ("attacks",) and pat.startswith("Whenever ~ and at least"):
+            flt = f"pack:{_num(m[1])}"
         if events == ("creature_dies",) and "another creature" in pat:
             flt = "other"
         if events == ("any_cast",) and "an opponent casts" in line:
