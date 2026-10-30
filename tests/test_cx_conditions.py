@@ -13,6 +13,11 @@ ARTILLERIST = card("Test Artillerist", "{2}{G}", "Creature — Human",
                    "~ has reach as long as it has a +1/+1 counter on it.", 2, 2)
 VIGIL = card("Test Vigil", "{1}{W}", "Creature — Human",
              "~ has vigilance as long as there are three or more card types among cards in your graveyard.", 2, 2)
+COHORT = card("Test Cohort", "{1}{B}", "Creature — Human", "~ gets +1/+1 as long as you control another black creature.", 2, 2)
+UNDERLING = card("Test Underling", "{1}{R}", "Creature — Goblin",
+                 "As long as you have seven or more cards in hand, ~ gets +2/+1 and has first strike.", 1, 1)
+VANGUARD = card("Test Vanguard", "{1}{W}", "Creature — Human", "As long as ~ is attacking, it gets +2/+0.", 1, 1)
+BLACKBEAR = card("Black Bear", "{1}{B}", "Creature — Bear", "", 2, 2)
 ROCK = card("Test Rock", "{1}", "Artifact", "")
 
 
@@ -49,6 +54,19 @@ class Conditional(unittest.TestCase):
         self.assertFalse(a.has("reach"))
         a.counters["+1/+1"] = 1
         self.assertTrue(a.has("reach"))
+
+    def test_leading_form_and_another(self):
+        for c in (COHORT, UNDERLING, VANGUARD):
+            self.assertEqual(c.unsupported, [], c.name)
+        cohort = self.put(COHORT)
+        self.assertEqual(cohort.power, 2)       # itself is black but "another" is required
+        self.put(BLACKBEAR)
+        self.assertEqual(cohort.power, 3)
+        under = self.put(UNDERLING)
+        self.a.hand = [BEAR] * 6
+        self.assertEqual(under.power, 1)
+        self.a.hand = [BEAR] * 7
+        self.assertEqual((under.power, under.toughness, under.has("first strike")), (3, 2, True))
 
     def test_graveyard_types(self):
         v = self.put(VIGIL)
