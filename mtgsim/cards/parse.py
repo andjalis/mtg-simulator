@@ -326,10 +326,11 @@ def _parse_face(data: dict) -> CardDef:
                   r"battlefield under (?:its|their) (?:owner's|owners') control\.",
                   r"\1 until ~ leaves the battlefield.", text, flags=re.I)
     text = text.replace("Whenever ~ or another creature you control dies", "Whenever a creature you control dies")
-    # The old aura wording 'Enchanted land has "{T}: Add ..."' is the "Whenever enchanted land is tapped
-    # for mana, its controller adds an additional ..." line batch1_templates already implements.
-    text = re.sub(r'Enchanted land has "\{T\}: Add (two mana of any one color|one mana of any color|'
-                  r'\{[WUBRG]\}(?:\{[WUBRG]\})?)\.("|\.)',
+    # The multi-mana aura wording 'Enchanted land has "{T}: Add {G}{G}." / "... two mana of any one color."'
+    # is the "Whenever enchanted land is tapped for mana, its controller adds an additional ..." line
+    # batch1_templates implements; the single-mana variants stay with the granted_mana path, which
+    # models them exactly.
+    text = re.sub(r'Enchanted land has "\{T\}: Add (two mana of any one color|\{[WUBRG]\}\{[WUBRG]\})\.(")',
                   lambda m: 'Whenever enchanted land is tapped for mana, its controller adds an additional '
                             + ('two mana in any combination of colors' if m[1] == 'two mana of any one color'
                                else m[1]) + '.', text)

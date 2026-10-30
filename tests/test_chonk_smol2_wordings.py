@@ -99,10 +99,12 @@ class AuraManaWording(unittest.TestCase):
         self.assertEqual(PARADISE.unsupported, [])
         self.assertEqual(PARADISE.advanced_rules.get("aura_mana"), 2)
         self.assertIn("extra mana from an enchanted land is the land's own colour", PARADISE.approximations)
+        # a single mana stays with the exact granted_mana path, not the approximation
         GROWTH = card("Test Wild Growth", "{G}", "Enchantment — Aura",
                       'Enchant land\nEnchanted land has "{T}: Add {G}."')
         self.assertEqual(GROWTH.unsupported, [])
-        self.assertEqual(GROWTH.advanced_rules.get("aura_mana"), 1)
+        self.assertEqual(GROWTH.approximations, [])
+        self.assertFalse(GROWTH.advanced_rules.get("aura_mana"))
 
 
 
