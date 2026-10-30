@@ -138,7 +138,7 @@ class DungeonEngine(unittest.TestCase):
         self.assertIs(self.g.initiative, self.b)
 
     def test_complete_dungeon_trigger_fires(self):
-        dispute = self.put(LOOT_DISPUTE)                   # etb: initiative + Treasure
+        self.put(LOOT_DISPUTE)                              # etb: initiative + Treasure
         self.assertEqual(self.g.initiative, self.a)
         st = self.state()
         st["dungeon"], st["room"] = "Lost Mine of Phandelver", "Dark Pool"
