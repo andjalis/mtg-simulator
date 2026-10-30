@@ -15,7 +15,8 @@ Grandmaster, MMR), and deck assessment. The built-in engine is the default;
 
 ```
 python3 -m mtgsim.build_carddb                 # once per clone; builds mtgsim/data/cards.sqlite3 (~13 s)
-python3 -m unittest discover -s tests -t .     # full suite (900+ tests, about five minutes)
+python3 scripts/fast_check.py                  # what a PR must pass: lint, sampled card parse, games, fast tests (~2 min on 4 cores)
+python3 -m unittest discover -s tests -t .     # full suite (900+ tests, about five minutes; runs nightly in CI)
 python3 -m mtgsim A.txt B.txt -n 1000          # matchup
 python3 -m mtgsim A.txt --gauntlet B.txt C.txt # one deck vs several
 python3 -m mtgsim A.txt B.txt -n 1 --log       # play-by-play of one game
@@ -26,14 +27,17 @@ python3 -m mtgsim.assess DECK.txt              # four graded criteria
 ```
 
 Python 3.10+ only, standard library only. Do not add dependencies. CI (`.github/workflows/tests.yml`)
-runs the tests on Python 3.10, 3.13 and 3.14; keep code compatible with all three. It also runs pyflakes
-(`python3 scripts/lint.py`, after `pip install pyflakes`; findings fail the build) and, on pull requests,
+runs `scripts/fast_check.py` on every push and pull request; the full suite on Python 3.10, 3.13 and 3.14
+runs nightly (`nightly.yml`) and on demand, so keep code compatible with all three. The fast check includes pyflakes
+(`python3 scripts/lint.py`, after `pip install pyflakes`; findings fail the build). Pull requests also run,
 `scripts/parse_diff.py`, which lists every card whose parse changed against the base branch (in the job
 summary and a PR comment) and fails if a card starts raising. Run `python3 scripts/parse_diff.py local --show 5`
 before pushing a parser change to see the same list for your working tree. Card-database tests are
 skipped when `cards.sqlite3` is missing, so build it before trusting a green run. The Forge tests use
 a fake Forge directory and don't need a real install; a real Forge run needs Java 17+, Maven and
 `scripts/install_forge.sh` (about 1.5 GB).
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how pull requests are opened and merged.
 
 ## Layout
 

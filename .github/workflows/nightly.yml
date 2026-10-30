@@ -1,0 +1,40 @@
+name: Nightly
+
+# The slow tests and the full card parse, on all supported Python versions. Runs every night and on demand
+# (Actions tab, "Run workflow"). A failure here means a recent merge broke something the fast check skips:
+# find it with `git log` since the last green nightly and fix or revert it first.
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+jobs:
+  full:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Build card database
+        run: python3 -m mtgsim.build_carddb
+
+      - name: Install pyflakes
+        run: python3 -m pip install pyflakes==4.0.3
+
+      - name: Lint
+        run: python3 scripts/lint.py
+
+      - name: Parse every card
+        run: |
+          python3 scripts/parse_diff.py dump "$RUNNER_TEMP/all.tsv"
+          ! grep -P '\tERR' "$RUNNER_TEMP/all.tsv" | head -20 | grep .
+
+      - name: Full test suite
+        run: python3 -m unittest discover -s tests -t . -v

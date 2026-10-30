@@ -76,6 +76,7 @@ def describe(v, seen=frozenset()) -> str:
 
 
 def dump(out: str) -> None:
+    re._MAXCACHE = 1_000_000    # the parser uses thousands of patterns; the default cache of 512 recompiles them per card
     from mtgsim import cards
     print(f"parsing with {Path(cards.__file__).parent.parent}", file=sys.stderr)
     db = sqlite3.connect(DB)
