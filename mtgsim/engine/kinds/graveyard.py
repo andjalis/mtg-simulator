@@ -359,6 +359,31 @@ def undying_return(game, item, k, **_):
         game.enter_battlefield(owner, card, counters={"-1/-1" if k == "persist_return" else "+1/+1": 1})
 
 
+@kind("dig_all")
+def dig_all(game, p, eff, **_):
+    """Reveal the top N: all cards matching the description go to one zone (hand or
+    graveyard), the rest to the other zone or to the bottom of the library, shuffled
+    (Mulch, Beast Hunt, Goblin Ringleader, The Fourteenth Doctor)."""
+    n = eff.amount
+    cards = list(reversed(p.library[-min(n, len(p.library)):])) if n else []
+    desc = eff.data.get("filter")
+    keep = [c for c in cards if card_matches(c, _filter_desc(desc))] if desc else list(cards)
+    rest = [c for c in cards if not any(c is x for x in keep)]
+    dest_keep = p.hand if eff.data.get("keep") == "hand" else p.graveyard
+    for c in keep:
+        game.move_card(c, p.library, dest_keep, reason="dig")
+    if eff.data.get("rest") == "bottom":
+        if rest:
+            game.rng.shuffle(rest)
+            p.library.reorder(list(reversed(rest)) + [c for c in p.library if c not in rest])
+    else:
+        dest_rest = p.hand if eff.data["rest"] == "hand" else p.graveyard
+        for c in rest:
+            game.move_card(c, p.library, dest_rest, reason="dig")
+    if keep or rest:
+        game.log(f"reveals {n}, keeps {len(keep)}, {len(rest)} to the {eff.data['rest']}", p)
+
+
 @kind("shuffle_self")
 def shuffle_self(game, p, eff, item, **_):
     """"Shuffle ~ into its owner's library" (the Beacon and Zenith spells): mark the

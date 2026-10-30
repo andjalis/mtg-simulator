@@ -93,6 +93,36 @@ def discard_random(game, p, eff, **_):
         game.log(f"discards {card.name} at random", p)
 
 
+@kind("dig_put_filter")
+def dig_put_filter(game, p, eff, **_):
+    """Look at the top N: up to K cards matching the description (and mana value bound) go
+    onto the battlefield (tapped), the rest to the bottom of the library or, with
+    data["rest"], to the hand (Expand the Sphere, Collected Company, Genesis Ultimatum)."""
+    cards = list(reversed(p.library[-min(eff.amount, len(p.library)):])) if eff.amount else []
+    desc = eff.data.get("filter")
+    limit = eff.data.get("max_cmc")
+    allowed = [c for c in cards
+               if (not desc or card_matches(c, desc.replace(" or ", " or a ")))
+               and (not limit or c.cmc <= limit)]
+    keep = sorted(allowed, key=lambda c: c.cmc, reverse=True)[:eff.amount2]
+    rest = list(cards)
+    for c in keep:
+        rest.remove(c)
+        p.library.remove(c)
+        game.log(f"puts {c.name} onto the battlefield", p)
+        game.enter_battlefield(p, c, tapped=eff.data.get("tapped", False))
+    if eff.data.get("rest") == "hand":
+        for c in rest:
+            game.move_card(c, p.library, p.hand, reason="dig")
+        game.log(f"digs {eff.amount}, plays {len(keep)}, draws {len(rest)}", p)
+        return
+    if rest:
+        game.rng.shuffle(rest)
+        p.library.reorder(list(reversed(rest)) + [c for c in p.library if c not in rest])
+    if keep or rest:
+        game.log(f"digs {eff.amount}, plays {len(keep)}, bottoms {len(rest)}", p)
+
+
 @kind("discard_defender")
 def discard_defender(game, p, eff, item, **_):
     """\"Defending player discards N cards\" (Mindstab Thrull): in the two-player game the

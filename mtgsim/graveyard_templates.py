@@ -35,6 +35,20 @@ EFFECT_PATTERNS = [
     # "Shuffle ~ into its owner's library." (the Beacon and Zenith spells): a marker the
     # stack reads after the spell resolves (Game.to_graveyard_after_resolving).
     (r"shuffle ~ into its owner's library", lambda m: _e("shuffle_self")),
+    # Bottom-of-library dig sentinels (see SUBS): keep up to K (or all matching, or up to
+    # two revealed) in hand, the rest shuffled to the bottom; DIGBPUT puts up to K
+    # matching cards onto the battlefield (tapped) instead of into the hand.
+    (r"DIGB2 (\d+) (\d+) (.+)", lambda m: _e("dig", int(m[1]), int(m[2]), data={"filter": m[3]})),
+    (r"DIGBANY (\d+) (.+)", lambda m: _e("dig", int(m[1]), int(m[1]), data={"filter": m[2]})),
+    (r"DIGBPUT (\d+) (\d+) (.+?)( tapped)?(?: mv(\d+))?( hand)?",
+     lambda m: _e("dig_put_filter", int(m[1]), int(m[2]),
+                  data={"filter": m[3], "tapped": bool(m[4]),
+                        "max_cmc": int(m[5]) if m[5] else None, "rest": "hand" if m[6] else "bottom"})),
+    (r"DIGBATTLE (\d+) (.+?)( hand)?",
+     lambda m: _e("dig_put_filter", int(m[1]), int(m[1]),
+                  data={"filter": m[2], "rest": "hand" if m[3] else "bottom"})),
+    (r"DIGALL (\d+) (hand|gy|bottom) (hand|gy|bottom) (.+)",
+     lambda m: _e("dig_all", int(m[1]), data={"keep": m[2], "rest": m[3], "filter": m[4]})),
 ]
 
 
@@ -82,7 +96,121 @@ SUBS = [
                 r"an opponent chooses one of those piles\. put that pile into your hand and the other into "
                 r"your graveyard\.?", re.I),
      lambda m: f"FOF {_num(m[1])}."),
+    # Bottom-of-library dig variants the cards/clauses.py sentinels don't cover: "put that
+    # card into your hand", "reveal up to two <desc> cards ... put them", "any number of
+    # <desc> cards" (reveal or plain) and "put (up to) <desc> cards onto the battlefield".
+    (re.compile(r"(?:look at|reveal) the top (\w+) cards of your library\. you may reveal "
+                r"(an? [^.]+? card) from among them and put that card into your hand\. "
+                r"put the rest on the bottom of your library in (?:a random|any) order\.?", re.I),
+     lambda m: _sentinel(m, "DIGFILTER", [1], extra=2)),
+    (re.compile(r"(?:look at|reveal) the top (\w+) cards of your library\. you may reveal "
+                r"up to (two|three|four) ([^.]+?) cards from among them and put them into your hand\. "
+                r"put the rest on the bottom of your library in (?:a random|any) order\.?", re.I),
+     lambda m: _sentinel(m, "DIGB2", [1, 2], desc=3)),
+    (re.compile(r"(?:look at|reveal) the top (\w+) cards of your library\. you may reveal "
+                r"any number of ([^.]+?) cards from among them and put the revealed cards into "
+                r"your hand\. put the rest on the bottom of your library in (?:a random|any) order\.?",
+                re.I), lambda m: _digbany(m)),
+    (re.compile(r"(?:look at|reveal) the top (\w+) cards of your library\. you may put "
+                r"any number of ([^.]+?) cards from among them into your hand\. "
+                r"put the rest on the bottom of your library in (?:a random|any) order\.?", re.I),
+     lambda m: _digbany(m)),
+    (re.compile(r"(?:look at|reveal) the top (\w+) cards of your library\. put up to "
+                r"(one|two|three|four) ([^.]+?) cards(?: with mana value (\w+) or less)? from among "
+                r"them onto the battlefield( tapped)?[.,]? ?(?:and|then put|put) the rest on the "
+                r"bottom of your library in (?:a random|any) order\.?", re.I),
+     lambda m: _digbput(m)),
+    (re.compile(r"(?:look at|reveal) the top (\w+) cards of your library\. you may put "
+                r"an? ([^.]+?) card from among them onto the battlefield( tapped)?\. "
+                r"put the rest on the bottom of your library in (?:a random|any) order\.?", re.I),
+     lambda m: _digbput(m, single=True)),
+    # "... Put any number of <desc> cards from among them onto the battlefield and the
+    # rest into your hand / on the bottom of the library." (Genesis Ultimatum)
+    (re.compile(r"(?:look at|reveal) the top (\w+) cards of your library\. (?:you may )?put "
+                r"any number of ([^.]+?) cards? from among them onto the battlefield"
+                r"(,? and the rest into your hand|\. put the rest on the bottom of your "
+                r"library in (?:a random|any) order)\.?", re.I),
+     lambda m: _digbattle(m)),
+    # "Reveal the top N cards of your library. Put all <desc> cards revealed this way into
+    # your hand or graveyard and the rest into the other zone / on the bottom of the
+    # library." (Mulch, Beast Hunt, Goblin Ringleader, Elder Pine of Jukai, ...)
+    (re.compile(r"(?:reveal|look at) the top (\w+) cards of your library\. put all ([^.]+?) cards "
+                r"revealed this way into your (hand|graveyard) and the rest (?:into your "
+                r"(graveyard|hand)|on the bottom of your library in (?:a random|any) order)\.?",
+                re.I), lambda m: _digall(m)),
 ]
+
+
+def _sentinel(m, name, numbers, desc=None, extra=None):
+    """name + the converted numbers + the normalized description (or an extra raw group),
+    or the original line when a number word is beyond the table (fourteen, twenty, ...)."""
+    from .cards import _num
+    out = name
+    for group in numbers:
+        try:
+            out += f" {_num(m[group])}"
+        except ValueError:
+            return m[0]
+    if desc is not None:
+        out += f" {_card_desc(m[desc])}"
+    if extra is not None:
+        out += f" {m[extra]}"
+    return out + "."
+
+
+def _digbput(m, single=False):
+    """DIGBPUT with optional tapped and mana-value-bound suffixes."""
+    from .cards import _num
+    try:
+        n = _num(m[1])
+        k = 1 if single else _num(m[2])
+        mv = _num(m[4]) if not single and m[4] else None
+    except ValueError:
+        return m[0]
+    desc = _card_desc(m[2] if single else m[3])
+    tapped = m[3] if single else m[5]
+    out = f"DIGBPUT {n} {k} {desc}{' tapped' if tapped else ''}{' mv' + str(mv) if mv else ''}."
+    return out
+
+
+def _digbattle(m):
+    """DIGBATTLE: all matching cards onto the battlefield, the rest to hand or bottom."""
+    from .cards import _num
+    try:
+        n = _num(m[1])
+    except ValueError:
+        return m[0]
+    return f"DIGBATTLE {n} {_card_desc(m[2])}{' hand' if 'hand' in (m[3] or '') else ''}."
+
+
+def _digall(m):
+    """"Put all <desc> cards revealed this way ...": the chosen type is not tracked, so the
+    wording stays a readable ignored line rather than dumping every revealed card."""
+    if "chosen" in m[2]:
+        return m[0]
+    from .cards import _num
+    try:
+        n = _num(m[1])
+    except ValueError:
+        return m[0]
+    keep = "hand" if m[3] == "hand" else "gy"
+    rest = {"graveyard": "gy", "hand": "hand"}.get(m[4], "bottom")
+    return f"DIGALL {n} {keep} {rest} {_card_desc(m[2])}."
+
+
+def _digbany(m):
+    """"any number of <desc> cards": the chosen type is not tracked, so the wording
+    stays a readable ignored line rather than keeping nothing."""
+    if "chosen" in m[2]:
+        return m[0]
+    return _sentinel(m, "DIGBANY", [1], desc=2)
+
+
+def _card_desc(words):
+    """"artifact cards" / "creature cards" → "an artifact card", the filter style
+    card_matches understands (alternatives stay alternatives)."""
+    words = words.replace(" and/or ", " or ").replace(", or ", " or ").replace(", ", " or ").strip()
+    return ("an " if words[0].lower() in "aeiou" else "a ") + words
 
 
 
