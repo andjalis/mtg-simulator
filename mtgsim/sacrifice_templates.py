@@ -15,15 +15,23 @@ EFFECT_PATTERNS = [
     # "At the beginning of your upkeep, sacrifice ~ unless you discard a card." (Masticore cycle)
     (r"sacrifice (?:~|it|this card|this creature) unless you discard (a|one|two) cards?",
      lambda m: _e("sac_unless_discard", _num(m[1]))),
+    # Multi-card payoffs of the sacrifice gates: the one-card wordings live in cards/patterns.py
+    # and batch1_templates.py ("that player discards a card"); these cover the larger counts.
+    (r"that player discards (a|one|two|three|four|five|six|seven|eight|nine|ten|\d+) cards?",
+     lambda m: _e("discard", _num(m[1]), target="that_player")),
+    # "Whenever ~ attacks and isn't blocked, you may sacrifice it. If you do, defending
+    # player discards three cards." (Mindstab Thrull): the defender is the source's opponent.
+    (r"defending player discards (a|one|two|three|four|five|six|seven|eight|nine|ten|\d+) cards?",
+     lambda m: _e("discard_defender", _num(m[1]))),
 ]
 
 SUBS = [
     # "Each player sacrifices a creature of their choice" is the plain edict wording.
     (re.compile(r"(sacrifices? [a-z][^.;\n]*?) of their choice", re.I), r"\1"),
     # "You may sacrifice it. If you do, <payoff>" / "Sacrifice it. When you do, <payoff>".
-    (re.compile(r"(you may sacrifice (?:it|~|this (?:card|creature|land|artifact|enchantment|permanent))"
+    (re.compile(r"(you may sacrifice (?:it|~|this (?:card|creature|land|artifact|enchantment|equipment|aura|permanent))"
                 r"\. (?:if|when) you do, )(.+)", re.I), lambda m: _gate_sub(m)),
-    (re.compile(r"(sacrifice (?:it|~|this (?:card|creature|land|artifact|enchantment|permanent))\. "
+    (re.compile(r"(sacrifice (?:it|~|this (?:card|creature|land|artifact|enchantment|equipment|aura|permanent))\. "
                 r"when you do, )(.+)", re.I), lambda m: _gate_sub(m)),
 ]
 

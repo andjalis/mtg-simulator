@@ -93,6 +93,18 @@ def discard_random(game, p, eff, **_):
         game.log(f"discards {card.name} at random", p)
 
 
+@kind("discard_defender")
+def discard_defender(game, p, eff, item, **_):
+    """\"Defending player discards N cards\" (Mindstab Thrull): in the two-player game the
+    defender is the opponent of the trigger source's controller."""
+    src = item.source if item is not None else None
+    who = game.opponent(src.controller) if isinstance(src, Permanent) else game.opponent(p)
+    for _ in range(min(eff.amount, len(who.hand))):
+        card = who.ai.choose_discard(game, who)
+        game.discard_card(who, card)
+        game.log(f"discards {card.name}", who)
+
+
 @kind("discard_each")
 def discard_each(game, p, eff, opp, **_):
     for who in (p, opp):

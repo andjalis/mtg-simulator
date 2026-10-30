@@ -58,6 +58,10 @@ EFFECT_PATTERNS = [
     (r"untap target creature", lambda m: _effect("untap_target", "creature")),
     (rf"target creature you control gains ({_KW}) until end of turn",
      lambda m: _effect("grant", "creature_mine", data={"keyword": m[1].lower()})),
+    # "Destroy target creature that player controls" (Blind Zealot): the trigger's
+    # damaged player, not a normally chosen target.
+    (r"destroy target (creature|artifact|enchantment|land|nonland permanent|permanent) that player controls",
+     lambda m: _effect("destroy_that_player", "none", data={"type": m[1].lower()})),
 ]
 
 

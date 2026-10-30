@@ -72,7 +72,7 @@ def process_payoff(game, p, eff, item, opp, **_):
         card = max(opp.exile, key=lambda c: c.cmc)
         game.move_card(card, opp.exile, opp.graveyard, reason="process")
         game.log(f"puts {card.name} from exile into {opp}'s graveyard", p)
-        game.queue_trigger(p, eff.data["effects"], src, "payoff")
+        game.queue_trigger(p, eff.data["effects"], src, "payoff", context=getattr(item, "context", None))
 
 
 @kind("exile_self_payoff")
@@ -84,7 +84,7 @@ def exile_self_payoff(game, p, eff, item, **_):
     if card is not None and any(card is c for c in owner.graveyard):
         game.move_card(card, owner.graveyard, owner.exile, reason="exile")
         game.log(f"exiles {card.name} from the graveyard", p)
-        game.queue_trigger(p, eff.data["effects"], src, "payoff")
+        game.queue_trigger(p, eff.data["effects"], src, "payoff", context=getattr(item, "context", None))
 
 
 @kind("exile_hand_perm")
