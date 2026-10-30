@@ -48,3 +48,15 @@ def pay_repeat(game, p, eff, item, **_):
 def phase_out_paid(game, p, eff, target, item, **_):
     from ... import phasing
     phasing.phase_out_paid(game, p, eff, target, item)
+
+
+@kind("pay_repeat_counters")
+def pay_repeat_counters(game, p, eff, target, item, **_):
+    from ... import phasing
+    phasing.pay_repeat_counters(game, p, eff, target, item)
+
+
+@kind("pay_repeat_tokens")
+def pay_repeat_tokens(game, p, eff, item, **_):
+    from ... import phasing
+    phasing.pay_repeat_tokens(game, p, eff, item)

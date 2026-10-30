@@ -20,6 +20,7 @@ def real(name):
 
 
 ADVERSARY = real("Spectral Adversary")
+TAINTED = real("Tainted Adversary")
 EQUIPOISE = real("Equipoise")
 REALM = real("Teferi's Realm")
 DJINN = real("Vaporous Djinn")
@@ -138,6 +139,18 @@ class PhasingEngineBatch3(unittest.TestCase):
         self.assertIn(bear, self.b.battlefield)
         self.assertIn(engine, self.b.battlefield)
         self.assertIn(realm, self.b.battlefield)               # the Realm itself stays
+
+    def test_tainted_adversary_riders(self):
+        tainted = self.put(TAINTED)
+        swamp = card("Test Swamp", types="Basic Land — Swamp", text="({T}: Add {B}.)")
+        for _ in range(9):                                # {2}{B}: nine swamps, three pays
+            self.g.enter_battlefield(self.a, swamp)
+        trig = TAINTED.triggers[0]
+        self.resolve(trig.effects, tainted)
+        self.assertEqual(tainted.counters.get("+1/+1", 0), 3)
+        zombies = [x for x in self.a.battlefield if "Zombie" in x.card.subtypes
+                   and x is not tainted]
+        self.assertEqual(len(zombies), 6)                  # twice that many
 
     def test_spectral_adversary_pays_and_phases(self):
         adversary = self.put(ADVERSARY)

@@ -20,9 +20,10 @@ and only phase out broke (Vaporous Djinn, Warping Wurm); "any number of target" 
 "up to X target" phase-outs affect one target or the obvious slice; Teferi's Veil rides the
 shared "at end of combat" delay; Equipoise hits every opponent's
 most valuable lands / artifacts / creatures beyond the controller's own count; Teferi's
-Realm phases out the nontoken slice that costs its (active) player the least; Spectral
-Adversary pays {1}{U} up to three times, and its phase-outs take the opponents' most
-valuable nonland permanents first; the "protection from everything / life total can't
+Realm phases out the nontoken slice that costs its (active) player the least; the
+Adversary cycle's "you may pay {cost} any number of times" pays up to three times
+(Spectral's phase-outs take the opponents' most valuable nonland permanents first,
+Tainted's riders land the counters and twice-that-many Zombie tokens); the "protection from everything / life total can't
 change" riders of Teferi's Protection and Perch Protection stay unsupported; King of the
 Oathbreakers only hears itself phase in, not other Spirits; The War Doctor's
 cross-permanent phase-out listener is not built.
@@ -40,6 +41,11 @@ def _e(kind, amount=1, **kw):
 def _cost(text):
     from .cards.model import parse_mana_cost
     return parse_mana_cost(text)
+
+
+def _token_data(power, toughness, desc, with_kw=""):
+    from .dungeon_mechanics import _token_data as build
+    return build(power, toughness, desc, with_kw)
 
 
 EFFECT_PATTERNS = [
@@ -120,11 +126,18 @@ EFFECT_PATTERNS = [
     # Teferi's Realm: the type is chosen as the trigger resolves (see SUBS)
     (r"that player phases out all nontoken permanents of a chosen type",
      lambda m: _e("phase_out_realm")),
-    # --- pay a cost any number of times as ~ enters (Spectral Adversary) ---------------
-    (r"you may pay \{1\}\{U\} any number of times", lambda m: _e("pay_repeat")),
+    # --- pay a cost any number of times as ~ enters (the Adversary cycle) -------------
+    # The pay carries the count on the resolving item (pay_repeat); the "when you pay
+    # this cost" riders read it back (phase_out_paid / pay_repeat_counters / tokens).
+    (r"you may pay ((?:\{[WUBRGC0-9]+\})+) any number of times",
+     lambda m: _e("pay_repeat", data={"cost": _cost(m[1])})),
     (r"when you pay this cost one or more times, put that many \+1/\+1 counters on ~, "
      r"then up to that many other target artifacts, creatures, and/or enchantments phase out",
      lambda m: _e("phase_out_paid")),
+    (r"when you pay this cost one or more times, put that many ([\w+/-]+) counters? on ~",
+     lambda m: _e("pay_repeat_counters", target="self", data={"counter": m[1]})),
+    (r"create twice that many (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: with ([\w ,]+))?",
+     lambda m: _e("pay_repeat_tokens", data=_token_data(m[1], m[2], m[3], m[4]))),
 ]
 
 TRIGGERS = [
@@ -372,7 +385,7 @@ def phase_out_realm(game, p, eff, target, item):
 def pay_repeat(game, p, eff, item):
     """"You may pay {1}{U} any number of times": pay while the mana is there (up to three
     times, enough for every realistic board)."""
-    cost = {"generic": 1, "U": 1}
+    cost = eff.data.get("cost") or {"generic": 1, "U": 1}
     n = 0
     while n < 3 and game.can_pay(p, cost):
         game.pay(p, cost)
@@ -396,6 +409,28 @@ def phase_out_paid(game, p, eff, target, item):
     cands.sort(key=lambda x: (x.controller is not p, perm_value(x)), reverse=True)
     for perm in cands[:n]:
         phase_out(game, perm)
+
+
+def pay_repeat_counters(game, p, eff, target, item):
+    """\"When you pay this cost one or more times, put that many N counters on ~\" (the
+    Adversary cycle's counters, valor or +1/+1, land with the payments)."""
+    from .engine.state import Permanent
+    src = item.source if item is not None else None
+    n = getattr(item, "pay_repeat", 0) if item is not None else 0
+    if isinstance(src, Permanent) and src in p.battlefield and n:
+        name = eff.data.get("counter", "+1/+1")
+        src.counters[name] = (src.p1 if name == "+1/+1" else src.counters.get(name, 0)) + n
+        game.log(f"puts {n} {name} counter(s) on {src.card.name}", p)
+
+
+def pay_repeat_tokens(game, p, eff, item):
+    """\"... then create twice that many N tokens\" (Tainted Adversary)."""
+    from .cards import Effect
+    n = getattr(item, "pay_repeat", 0) if item is not None else 0
+    n *= 2
+    if n:
+        game.create_token(p, Effect("token", n, data=dict(eff.data)))
+        game.log(f"creates {n} token(s)", p)
 
 
 def phase_out_count(game, p, eff, target, item):
