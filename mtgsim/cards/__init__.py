@@ -82,3 +82,7 @@ _SUBS += _search.SUBS
 from .. import mega2_templates as _mega2_templates
 _EFFECT_PATTERNS += _mega2_templates.EFFECT_PATTERNS
 _SUBS += _mega2_templates.SUBS
+from .. import dungeon_mechanics as _dungeon_mechanics
+_EFFECT_PATTERNS += _dungeon_mechanics.EFFECT_PATTERNS
+_SUBS += _dungeon_mechanics.SUBS
+_TRIGGERS += _dungeon_mechanics.TRIGGERS
