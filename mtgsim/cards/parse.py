@@ -28,6 +28,9 @@ def hostile_may(text, new):
     return True
 
 
+_COMPILED = {}      # the effect templates, compiled: there are more of them than re's own cache holds
+
+
 def _parse_effects(text: str, opts: bool = False):
     """Parse a run of sentences into effects. Returns (effects, unmatched_sentences)."""
     effects, unmatched = [], []
@@ -225,9 +228,10 @@ def _parse_effects(text: str, opts: bool = False):
                     effects += [dataclasses.replace(e, cond=e.cond or "!paid") for e in new]
                     continue
         for pat, build in _EFFECT_PATTERNS:
-            m = re.fullmatch(pat, s, flags=re.IGNORECASE)
+            rx = _COMPILED.get(pat) or _COMPILED.setdefault(pat, re.compile(pat, re.IGNORECASE))
+            m = rx.fullmatch(s)
             if m is None and s.lower().startswith("then "):
-                m = re.fullmatch(pat, s[5:], flags=re.IGNORECASE)
+                m = rx.fullmatch(s[5:])
             if m:
                 eff = build(m)
                 if eff is NO_MATCH:
