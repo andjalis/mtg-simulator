@@ -699,7 +699,10 @@ def _parse_trigger_line(line: str):
         if events == ("cast_spell",) and "during an opponent's turn" in pat:
             flt = "opp_turn"
         if events == ("cast_spell",) and m.lastindex == 2:
-            flt = "spell:" + m[1].replace(" or ", "|")
+            sub = re.fullmatch(r"([A-Z]\w+) (?:planeswalker|creature|artifact|enchantment)", m[1])
+            # "a Bolas planeswalker spell": the subtype implies the card type, and the engine's
+            # spell: filter ORs kinds, so the type word is dropped rather than ORed in.
+            flt = "spell:" + (sub[1] if sub else m[1]).replace(" or ", "|")
         if events == ("any_cast",) and pat.startswith("Whenever (a player|an opponent) casts an?"):
             flt = f"{'opp' if m[1] == 'an opponent' else 'any'}:{m[2].replace(' or ', '|')}"
         if events == ("attacks_alone",) and pat.startswith("Whenever ~ attacks alone"):

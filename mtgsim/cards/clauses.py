@@ -224,7 +224,8 @@ _TRIGGERS = [
     (r"Whenever you cast a spell that targets ~, (.+)", ("heroic",)),
     (r"Whenever you cast a spell during an opponent's turn, (.+)", ("cast_spell",)),
     (r"Whenever you cast a spell, (.+)", ("cast_spell",)),
-    (r"When(?:ever)? you cast an? ([A-Z]\w+(?: or [A-Z]\w+)?|creature|artifact|enchantment|outlaw|multicolored|historic|white|blue|black|red|"
+    (r"When(?:ever)? you cast an? ([A-Z]\w+(?: or [A-Z]\w+)?|[A-Z]\w+ (?:planeswalker|creature|artifact|enchantment)|"
+     r"creature|artifact|enchantment|outlaw|multicolored|historic|white|blue|black|red|"
      r"green|colorless) spell, (.+)", ("cast_spell",)),
     (r"Whenever you gain life, (.+)", ("gain_life",)),
     (r"Whenever (?:the Ring tempts you|you choose a creature as your Ring-bearer), (.+)", ("ring_tempts",)),
