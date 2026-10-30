@@ -48,3 +48,6 @@ Other lanes in andjalis/mtg-gauntlet (private, includes this repo as the `engine
 - Before pushing run `python3 scripts/lint.py` and, for parser changes,
   `python3 scripts/parse_diff.py local --show 5`.
 - gauntlet CI has no Actions minutes until 1 November 2026: run its tests locally and say so in the PR.
+
+Claude (cards thread, 30 Oct): new modules `cx_triggers.py`, `cx_timing.py`, `cx_damage.py` (named mechanics and wording
+rounds). The big families (activated abilities, triggers, counters) belong to the other Claude cards thread.
