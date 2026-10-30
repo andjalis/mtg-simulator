@@ -89,6 +89,29 @@ def drain_devotion(game, p, eff, opp, cause, **_):
     game.log(f"drains {n} (devotion)", p)
 
 
+@kind("prevent_shield")
+def prevent_shield(game, p, eff, target, item, **_):
+    """A "prevent the next N damage" shield (prevent_templates.py), optionally sized by
+    devotion or the X paid, with an optional "If damage is prevented this way" rider
+    installed as a damage_prevented trigger on the shielded permanent (or the resolving
+    source), where the le-batch5 event finds it with event_amount set to the prevented total."""
+    n = eff.amount
+    if eff.data.get("devotion"):
+        n = sum(x.card.mana_cost.get(eff.data["devotion"], 0) for x in p.battlefield)
+    who = p if eff.target == "none" else target
+    if not isinstance(who, (Permanent, Player)):
+        return
+    who.prevent_next += n
+    name = who.card.name if isinstance(who, Permanent) else str(who)
+    game.log(f"prevents the next {n} damage to {name}", p)
+    rider = eff.data.get("rider")
+    if rider:
+        carrier = who if isinstance(who, Permanent) else (item.source if item is not None else None)
+        if isinstance(carrier, Permanent) and carrier in carrier.controller.battlefield:
+            from ...cards import Trigger
+            carrier.temp_triggers.append(Trigger("damage_prevented", list(rider)))
+
+
 @kind("damage_each_player")
 def damage_each_player(game, eff, cause, **_):
     for pl in game.players:
