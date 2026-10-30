@@ -16,6 +16,9 @@ _CONDS = [
     (rf"there are {_N} or more card types among cards in your graveyard", "cx:gy_types>={0}"),
     (rf"you have {_N} or more life", "cx:life>={0}"),
     (r"you have no cards in hand", "cx:hand=0"),
+    (r"you have one or fewer cards in hand", "cx:hand<=1"),
+    (r"a creature died under your control this turn", "cx:creature_died"),
+    (r"a player has no cards in hand", "cx:any_empty_hand"),
     (r"you have the city's blessing", "cx:blessing"),
     (r"it's untapped", "cx:untapped"),
     (r"it's enchanted", "cx:enchanted"),
@@ -54,6 +57,8 @@ _NUMS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven"
 
 
 def parse_line(line: str, st) -> bool:
+    if parse_restriction(line, st):
+        return True
     m = _LINE.fullmatch(line)
     if m is not None:
         cond, clause = m[5], m.groups()[:4]
@@ -80,6 +85,13 @@ def holds(perm, cond: str) -> bool:
         return len({t for card in c.graveyard for t in card.types}) >= int(name[10:])
     if name.startswith("life>="):
         return c.life >= int(name[6:])
+    if name == "hand<=1":
+        return len(c.hand) <= 1
+    if name == "creature_died":
+        return bool(getattr(c, "creature_died_turn", False))
+    if name == "any_empty_hand":
+        game = getattr(c, "_game", None)
+        return game is not None and any(not pl.hand for pl in game.players)
     if name == "hand=0":
         return not c.hand
     if name == "blessing":
@@ -124,3 +136,22 @@ def holds(perm, cond: str) -> bool:
         game = getattr(c, "_game", None)
         return game is not None and any(rest in x.card.subtypes for x in game.opponent(c).battlefield)
     return False
+
+
+_UNLESS = re.compile(r"~ can't attack or block unless (.+)\.")
+
+
+def parse_restriction(line: str, st) -> bool:
+    """"~ can't attack or block unless COND." (Bast, Kefnet the Mindful): stored as ``advanced_rules['combat_unless']``."""
+    m = _UNLESS.fullmatch(line)
+    code = _code(m[1]) if m else None
+    if code is None:
+        return False
+    st.extra.setdefault("advanced_rules", {})["combat_unless"] = code
+    return True
+
+
+def combat_blocked(perm) -> bool:
+    """True when ~'s "can't attack or block unless" condition isn't met."""
+    code = perm.card.advanced_rules.get("combat_unless")
+    return bool(code) and not perm.condition(code)

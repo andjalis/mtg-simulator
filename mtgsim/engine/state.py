@@ -529,7 +529,13 @@ class Permanent:
         return (self.is_creature and not self.tapped and self.detained_by is None and not self.has("defender") and not (self.card.cant_attack and not self.abilities_suppressed)
                 and not (self.auras and auras.stops_combat(self))
                 and not (self.auras and any("cant_attack" in a.card.aura_flags for a in self.auras))
-                and (not self.sick or self.has("haste")))
+                and (not self.sick or self.has("haste")) and not self._combat_unless())
+
+    def _combat_unless(self):
+        if not self.card.advanced_rules.get("combat_unless") or self.abilities_suppressed:
+            return False
+        from ..cx_conditions import combat_blocked
+        return combat_blocked(self)
 
     @property
     def activated(self):
@@ -713,6 +719,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if not blocker.is_creature or blocker.tapped or blocker.detained_by is not None:
         return False
     if blocker.card.unleash and blocker.p1 > 0:
+        return False
+    if blocker.card.advanced_rules.get("combat_unless") and blocker._combat_unless():
         return False
     if (blocker.card.cant_block and not blocker.abilities_suppressed) or blocker.has("cant_block_now") or blocker.has("decayed") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
         return False
