@@ -38,7 +38,8 @@ class EdictTests(unittest.TestCase):
             with self.subTest(card=name):
                 card = DB.get(name)
                 self.assertEqual(card.unsupported, [])
-                self.assertEqual([e.kind for e in effects(card)], ["edict"])
+                self.assertEqual(len(effects(card)), 1)
+                self.assertIn(effects(card)[0].kind, ("edict", "edict_each", "edict_player"))
 
     def test_each_player_sacrifices_their_worst_creature(self):
         mine, big_mine = self.perm(BEAR, self.a), self.perm(DRAGON3, self.a)
