@@ -11,6 +11,12 @@ when the Aura resolves (it isn't targeted, so it can't be fizzled by hexproof), 
 isn't cast. Friendly Auras (a bonus, a keyword) go on the caster's best creature, hostile ones (a penalty, "doesn't
 untap", "can't attack or block") on the opponent's best. Not modelled: "you control enchanted creature", "loses all
 abilities", Auras that can be moved.
+
+Aura restrictions the engine models as a keyword granted to the host while the Aura stays attached
+(``equip_keywords``, like Equipment): "can't be blocked" (unblockable), "can't block" (cant_block_now),
+"attacks each combat if able" (must_attack_now) and "can't attack" (defender — an approximation: cards that
+reference defender see it). "Can't attack or block" and "activated abilities can't be activated" are
+``aura_flags``, consumed by can_attack/can_block and the ability checks.
 """
 from __future__ import annotations
 
@@ -40,11 +46,38 @@ def parse_line(line: str, extra: dict, types) -> bool:
     if re.fullmatch(r"Enchanted (?:creature|permanent) doesn't untap during its controller's untap step\.", line):
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"no_untap"}
         return True
-    if re.fullmatch(r"Enchanted creature can't attack or block\.", line):
+    if re.fullmatch(r"Enchanted (?:creature|permanent) can't attack or block\.", line):
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"cant_attack_block"}
         return True
-    if re.fullmatch(r"Enchanted creature can't attack or block, and its activated abilities can't be activated\.", line):
+    if re.fullmatch(r"Enchanted (?:creature|permanent) can't attack or block, and its activated abilities "
+                    r"can't be activated\.", line):
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"cant_attack_block", "cant_activate"}
+        return True
+    m = re.fullmatch(r"Enchanted permanent doesn't untap during its controller's untap step and its "
+                     r"activated abilities can't be activated\.", line)
+    if m:
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"no_untap", "cant_activate"}
+        return True
+    m = re.fullmatch(r"Enchanted creature (?:gets ([+−-])(\d+)/([+−-])(\d+) and )?can't be blocked\.", line)
+    if m:
+        if m[1]:
+            extra["equip_bonus"] = (_n(m[1], m[2]), _n(m[3], m[4]))
+        extra["equip_keywords"] = extra.get("equip_keywords", frozenset()) | {"unblockable"}
+        return True
+    m = re.fullmatch(r"Enchanted creature gets ([+−-])(\d+)/([+−-])(\d+) and can't block\.", line)
+    if m:
+        extra["equip_bonus"] = (_n(m[1], m[2]), _n(m[3], m[4]))
+        extra["equip_keywords"] = extra.get("equip_keywords", frozenset()) | {"cant_block_now"}
+        return True
+    m = re.fullmatch(r"Enchanted creature gets ([+−-])(\d+)/([+−-])(\d+) and attacks each combat if able\.", line)
+    if m:
+        extra["equip_bonus"] = (_n(m[1], m[2]), _n(m[3], m[4]))
+        extra["equip_keywords"] = extra.get("equip_keywords", frozenset()) | {"must_attack_now"}
+        return True
+    if re.fullmatch(r"Enchanted creature can't attack\.", line):
+        extra["equip_keywords"] = extra.get("equip_keywords", frozenset()) | {"defender"}
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"hostile"}
+        extra.setdefault("_approx", []).append("can't attack is played as defender")
         return True
     m = re.fullmatch(r"Enchanted (?:creature|permanent) loses all abilities(?: and doesn't untap during its controller's "
                      r"untap step)?\.", line)
@@ -85,12 +118,18 @@ EFFECT_PATTERNS = [
     (r"attach it to target creature you control", lambda m: _effect("attach_self", "creature_mine")),
     (rf"(?:that creature|it) gains ({_KW}) until end of turn",
      lambda m: _effect("grant", "prev", {"keyword": m[1].lower()})),
+    (r"target creature gets ([+−-])(\d+)/([+−-])(\d+) until end of turn and can't be blocked this turn",
+     lambda m: _effect("pump", "creature", {"keyword": "unblockable"}, _n(m[1], m[2]), _n(m[3], m[4]))),
+    (r"(?:(?P<self>~)|(?P<prev>it)|another target attacking creature|target creature) can't be blocked this turn",
+     lambda m: _effect("unblockable", "self" if m["self"] else "prev" if m["prev"] else "creature",
+                       {"other": True} if "another" in m[0] else None,
+                       filter="attacking" if "attacking" in m[0] else "")),
 ]
 
 
-def _effect(kind, target, data=None):
+def _effect(kind, target, data=None, amount=0, amount2=0, filter=""):
     from .cards import Effect
-    return Effect(kind, target=target, data=data or {})
+    return Effect(kind, amount, amount2, target=target, data=data or {}, filter=filter)
 
 
 # ------------------------------------------------------------------ the engine side

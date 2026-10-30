@@ -81,6 +81,12 @@ class CostsMixin:
             return spell.is_artifact
         if r == "instant_sorcery":
             return spell.is_instant or spell.is_sorcery
+        if r == "legendary":
+            return spell.legendary
+        if r == "x_cost":                 # "spend this mana only to cast spells with {X} in their mana costs"
+            return "X" in spell.mana_cost
+        if r == "c_cost":                 # "... only on costs that contain {C}"
+            return "C" in spell.mana_cost
         if r == "chosen_type":
             return spell.is_creature and perm.chosen_type in spell.subtypes
         if r.startswith("subtype:"):
@@ -167,6 +173,19 @@ class CostsMixin:
             return max(0, getattr(who, spec[2], 0)) if isinstance(who, Permanent) else 0
         if kind == "greatest":
             return max((getattr(x, spec[1]) for x in p.creatures), default=0)
+        if kind == "greatest_perm":
+            # "the greatest power/toughness/mana value among permanents you control"
+            if spec[1] == "mana value":
+                return max((x.card.cmc for x in p.battlefield), default=0)
+            return max((max(0, getattr(x, spec[1], 0)) for x in p.battlefield), default=0)
+        if kind == "tapped_any":
+            # "the number of tapped artifacts and/or creatures you control": a permanent that is
+            # both counts once. spec[1] is the tuple of descriptions, matched with copies.fits.
+            return sum(1 for x in p.battlefield if x.tapped
+                       and any(copies.fits(x.card, what, x) for what in spec[1]))
+        if kind == "defenders":
+            # "the number of creatures you control with defender"
+            return sum(1 for c in p.creatures if c.has("defender"))
         if kind == "mutated":
             return getattr(src, "mutations", 0) if src is not None else 0
         if kind == "counters":
@@ -621,6 +640,11 @@ class CostsMixin:
         from ..batch1_templates import spell_limited
         if spell_limited(self, p):
             return False
+        from ..batch1_templates import spell_kind_ok
+        if any(not x.abilities_suppressed and x.card.advanced_rules.get("no_cast") and
+               any(spell_kind_ok(card, kind) for kind in x.card.advanced_rules["no_cast"])
+               for pl in self.players for x in pl.battlefield):
+            return False          # "Creature spells can't be cast" (Aether Storm): the ban applies to everyone
         base, kind, alt = self._origin(card)
         if self.nonmana_locked(p) and kind in ('channel', 'gy_ability', 'unearth'):
             return False
