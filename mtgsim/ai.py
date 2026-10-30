@@ -26,6 +26,26 @@ MAX_ENUMERATE = 6       # try every attack set up to this many ready creatures
 REMOVAL_BAR = 4.5       # least a creature must be worth to spend instant removal on it
 PW_KEEP = 2.0           # value of a planeswalker still being on the battlefield next turn
 SWEEP_BAR = 6.0         # least net value for a sweeper when we are not under pressure
+SETUP_FIGHT_BUDGET = 100_000    # fight simulations one lethal_setup search may spend
+
+# Armed while lethal_setup searches: fight_group decrements it and raises when spent, so a
+# wide board with many setup spells degrades to the normal main phase instead of stalling
+# the match for tens of minutes. Deterministic: the same game state always aborts the same way.
+_fight_budget = None
+
+
+class _FightBudgetExceeded(Exception):
+    pass
+
+
+def _arm_fight_budget():
+    global _fight_budget
+    _fight_budget = SETUP_FIGHT_BUDGET
+
+
+def _disarm_fight_budget():
+    global _fight_budget
+    _fight_budget = None
 
 
 def card_value(card: CardDef) -> float:
@@ -218,6 +238,11 @@ def fight_group(a: Permanent, blockers, bonus=0, include_poison=False) -> tuple:
     Fights are independent of each other, so a whole combat is the sum of its groups.
     Returns (dead permanents, damage to defending player, attacker life gain, defender life gain).
     """
+    global _fight_budget
+    if _fight_budget is not None:
+        _fight_budget -= 1
+        if _fight_budget <= 0:
+            raise _FightBudgetExceeded
     group = [a, *blockers]
     dmg = {c: c.damage for c in group}
     minus = {c: 0 for c in group}
@@ -510,21 +535,27 @@ class HeuristicAI:
             return False   # already lethal: keep the spells
         sources = game.mana_sources(me)
         best = None
-        for r in range(1, min(len(spells), 4) + 1):
-            for combo in combinations(spells, r):
-                cost = {}
-                for c in combo:
-                    for k, v in self._cost(game, me, c).items():
-                        cost[k] = cost.get(k, 0) + v
-                if not payable(sources, cost):
-                    continue
-                plan = self._setup_plan(game, me, opp, combo)
-                if plan is not None:
-                    key = (r, sum(c.cmc for c in combo))
-                    if best is None or key < best[0]:
-                        best = (key, plan)
-            if best is not None:
-                break   # fewest spells first
+        _arm_fight_budget()
+        try:
+            for r in range(1, min(len(spells), 4) + 1):
+                for combo in combinations(spells, r):
+                    cost = {}
+                    for c in combo:
+                        for k, v in self._cost(game, me, c).items():
+                            cost[k] = cost.get(k, 0) + v
+                    if not payable(sources, cost):
+                        continue
+                    plan = self._setup_plan(game, me, opp, combo)
+                    if plan is not None:
+                        key = (r, sum(c.cmc for c in combo))
+                        if best is None or key < best[0]:
+                            best = (key, plan)
+                if best is not None:
+                    break   # fewest spells first
+        except _FightBudgetExceeded:
+            return False    # too many boards and spells to search; play the normal main phase
+        finally:
+            _disarm_fight_budget()
         if best is None:
             return False
         cast = False
