@@ -1,0 +1,62 @@
+[
+  {
+    "match": "put target (?:creature|nonland permanent) you control on top of its owner's library",
+    "effect": "tuck_perm",
+    "target": "creature_mine",
+    "example": "Put target creature you control on top of its owner's library",
+    "cards": ["Civic Guildmage"]
+  },
+  {
+    "match": "target creature's owner puts it on their choice of the top or bottom of their library",
+    "effect": "tuck_perm",
+    "target": "creature",
+    "example": "Target creature's owner puts it on their choice of the top or bottom of their library",
+    "cards": ["Return to the Sewers"]
+  },
+  {
+    "match": "target creature can't be regenerated this turn",
+    "effect": "no_regen_lock",
+    "target": "creature",
+    "example": "Target creature can't be regenerated this turn",
+    "cards": ["Furnace Brood"]
+  },
+  {
+    "match": "(?:it|that creature|he|she) deals damage equal to its power to (?:up to one )?target creature (?:an opponent controls|you don't control)",
+    "effect": "bite",
+    "target": "creature",
+    "filter": "opp",
+    "example": "It deals damage equal to its power to target creature an opponent controls",
+    "cards": ["Ambuscade"]
+  },
+  {
+    "match": "(?:it|that creature|he|she) fights (?:up to one )?target creature (?:an opponent controls|you don't control)",
+    "effect": "fight",
+    "target": "creature",
+    "filter": "opp",
+    "example": "He fights up to one target creature an opponent controls",
+    "cards": ["Abomination, Terrifying Titan"]
+  },
+  {
+    "match": "untap target creature",
+    "effect": "untap_target",
+    "target": "creature",
+    "example": "Untap target creature",
+    "cards": ["Act of Heroism"]
+  },
+  {
+    "match": "target creature you control gains (flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach) until end of turn",
+    "effect": "grant",
+    "target": "creature_mine",
+    "data": {"keyword": "$1:lower"},
+    "example": "Target creature you control gains double strike until end of turn",
+    "cards": ["Ajani Fells the Godsire"]
+  },
+  {
+    "match": "destroy target (creature|artifact|enchantment|land|nonland permanent|permanent) that player controls",
+    "effect": "destroy_that_player",
+    "target": "none",
+    "data": {"type": "$1:lower"},
+    "example": "destroy target creature that player controls",
+    "cards": ["Blind Zealot"]
+  }
+]

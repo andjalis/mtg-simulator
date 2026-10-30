@@ -1,0 +1,8 @@
+[
+  {
+    "match": "the ring tempts you",
+    "effect": "ring_tempts",
+    "example": "the Ring tempts you",
+    "cards": ["Bilbo, Retired Burglar"]
+  }
+]

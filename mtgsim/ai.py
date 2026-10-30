@@ -1229,7 +1229,9 @@ class HeuristicAI:
         return None
 
     def counter(self, game: Game, me: Player, item, options):
-        if not item.is_spell or not game.counterable(item):
+        if not item.is_spell:
+            return self.stifle(game, me, item, options)
+        if not game.counterable(item):
             return None
         opp = game.opponent(me)
         counters = []
@@ -1255,6 +1257,17 @@ class HeuristicAI:
             return None
         card = min(counters, key=lambda c: (c.cmc, card_value(c)))
         return card, [item if e.target == "spell" else None for e in card.spell_effects]
+
+    def stifle(self, game: Game, me: Player, item, options):
+        """An instant that counters an ability (Stifle, Squelch), used on a loyalty ability or one that hurts us."""
+        if item.kind not in ("ability", "trigger", "loyalty") or not (
+                item.kind == "loyalty" or self.threat(game, me, item) >= 3):
+            return None
+        kind = {"trigger": "triggered"}.get(item.kind, "activated")
+        for card in sorted(options, key=lambda c: c.cmc):
+            if any(e.kind == "counter_stack_ability" and e.data.get(kind) for e in card.spell_effects):
+                return card, [None] * len(card.spell_effects)
+        return None
 
     def _removal_on(self, game: Game, me: Player, card: CardDef, pool):
         """(value, targets) for using removal card on the best creature in pool."""

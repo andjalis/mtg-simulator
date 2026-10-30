@@ -22,6 +22,10 @@ def parse(phrase: str) -> str:
     m = re.fullmatch(r"(two|three|four) or more nonland permanents entered the battlefield under your control this turn", phrase)
     if m:
         return f"entered_nonland>={_N[m[1]]}"
+    if phrase == "you don't control a ring-bearer":
+        return "no_ring_bearer"
+    if re.fullmatch(r"you chose a creature other than [^,]+ as your ring-bearer", phrase):
+        return "ring_other"
     if phrase == "no spells were cast last turn":
         return "no_spells_last_turn"
     if phrase == "a player cast two or more spells last turn":
@@ -44,6 +48,12 @@ def check(game, p, cond: str, item):
         for c in p.graveyard:
             kinds |= set(c.types)
         return len(kinds) >= 4
+    if cond in ("no_ring_bearer", "ring_other"):
+        from .ring import bearer
+        found = bearer(p)
+        if cond == "no_ring_bearer":
+            return found is None
+        return found is not None and (item is None or found is not item.source)
     if cond == "perm_left":
         return p.perm_left_turn
     if cond == "no_spells_last_turn":

@@ -15,6 +15,7 @@ resolves instead of putting it into the graveyard; on a permanent it exiles the 
 Not modelled: "blocks or becomes blocked by a <kind of> creature", banding, "blocking that creature" tokens.
 """
 from __future__ import annotations
+from . import wordings
 
 KINDS = {"exile_self"}
 
@@ -36,16 +37,8 @@ def _later(m):
 
 _SUBJECT = r"(?:that creature|it|the creature|that permanent)"
 
-EFFECT_PATTERNS = [
+EFFECT_PATTERNS = wordings.patterns("combat_triggers") + [
     (r"(.+) at end of combat", _later),
-    (r"(?:~|it) deals (\d+) damage to that creature", lambda m: _effect("damage", int(m[1]), target="prev")),
-    (rf"{_SUBJECT} doesn't untap during its controller's next untap step", lambda m: _effect("skip_untap", target="prev")),
-    (r"tap that creature", lambda m: _effect("tap", target="prev")),
-    (r"untap that creature", lambda m: _effect("untap_prev", target="prev")),
-    (r"return that creature to its owner's hand", lambda m: _effect("bounce", target="prev")),
-    (r"put an? (-1/-1|\+1/\+1) counter on that creature",
-     lambda m: _effect("add_counter", 1, target="prev", data={"counter": m[1]})),
-    (r"exile ~", lambda m: _effect("exile_self")),
 ]
 
 

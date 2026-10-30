@@ -15,6 +15,7 @@ The engine calls ``attacks``, ``blocked`` and ``combat_damage`` from combat. Not
 conditions and choosing a Ring-bearer other than the best creature; being legendary has no effect.
 """
 from __future__ import annotations
+from . import wordings
 
 KINDS = {"ring_tempts"}
 _LOOT = None
@@ -25,9 +26,7 @@ def _effect(kind, amount=0, **kw):
     return Effect(kind, amount, **kw)
 
 
-EFFECT_PATTERNS = [
-    (r"the ring tempts you", lambda m: _effect("ring_tempts")),
-]
+EFFECT_PATTERNS = wordings.patterns("ring")
 
 
 def bearer(p):

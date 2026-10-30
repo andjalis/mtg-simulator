@@ -1,0 +1,53 @@
+[
+  {
+    "match": "(?:~|it) deals (\\d+) damage to that creature",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "prev",
+    "example": "it deals 2 damage to that creature",
+    "cards": ["Acolyte of the Inferno"]
+  },
+  {
+    "match": "(?:that creature|it|the creature|that permanent) doesn't untap during its controller's next untap step",
+    "effect": "skip_untap",
+    "target": "prev",
+    "example": "That creature doesn't untap during its controller's next untap step",
+    "cards": ["Abominable Treefolk"]
+  },
+  {
+    "match": "tap that creature",
+    "effect": "tap",
+    "target": "prev",
+    "example": "Tap that creature",
+    "cards": ["Frostwalk Bastion"]
+  },
+  {
+    "match": "untap that creature",
+    "effect": "untap_prev",
+    "target": "prev",
+    "example": "Untap that creature",
+    "cards": ["Act of Aggression"]
+  },
+  {
+    "match": "return that creature to its owner's hand",
+    "effect": "bounce",
+    "target": "prev",
+    "example": "Return that creature to its owner's hand",
+    "cards": ["Aether Membrane"]
+  },
+  {
+    "match": "put an? (-1/-1|\\+1/\\+1) counter on that creature",
+    "effect": "add_counter",
+    "amount": 1,
+    "target": "prev",
+    "data": {"counter": "$1"},
+    "example": "put a +1/+1 counter on that creature",
+    "cards": ["Cazur, Ruthless Stalker"]
+  },
+  {
+    "match": "exile ~",
+    "effect": "exile_self",
+    "example": "Exile ~",
+    "cards": ["Aethergeode Miner"]
+  }
+]

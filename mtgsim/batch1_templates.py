@@ -1,31 +1,17 @@
 """Edicts, "gain life equal to its power", looking at a hand, "can't attack or block alone" and the monarch."""
 from __future__ import annotations
 
-EFFECT_PATTERNS = [
+from . import wordings
+
+EFFECT_PATTERNS = wordings.patterns("batch1") + [
     (r"target player sacrifices a creature", lambda m: _e("edict_player", target="player", filter="opp")),
     (r"each player sacrifices a creature", lambda m: _e("edict_each")),
-    (r"you gain life equal to its (power|toughness|mana value)", lambda m: _e("gain_prev_stat", data={"stat": m[1].lower()})),
-    (r"(?:that|defending) player sacrifices a creature", lambda m: _e("edict_player", target="that_player")),
-    (r"each player sacrifices a land", lambda m: _e("sac_land_each")),
-    (r"(?:that|defending) player discards a card at random", lambda m: _e("discard_random_that", target="that_player")),
-    (r"(?:defending|that) player discards a card", lambda m: _e("discard", target="that_player")),
     (r"~ deals (\d+) damage to each (attacking creature|creature your opponents control)",
      lambda m: _e("damage_group", int(m[1]), data={"group": "attacking" if m[2].startswith("attacking") else "opp"})),
-    (r"destroy target creature that was dealt damage this turn", lambda m: _e("destroy", target="creature", filter="damaged")),
-    (r"look at target opponent's hand", lambda m: _e("peek_hand", target="player", filter="opp")),
-    (r"create (a|one|two|three) (tapped )?powerstone tokens?", lambda m: _e("powerstone", _num(m[1]), data={"tapped": bool(m[2])})),
     (r"target creature gets \+X/\+(X|0) until end of turn",
      lambda m: _e("pump", 0, target="creature", data={"x": True, "x2": m[1] == "X"})),
     (r"creatures you control get \+X/\+(X|0) until end of turn",
      lambda m: _e("pump_all", 0, data={"x": True, "x2": m[1] == "X", "other": False, "keyword": ""})),
-    (r"incubate (\d+)", lambda m: _e("incubate", int(m[1]))),
-    (r"tap or untap target (creature|permanent)", lambda m: _e("tap", target=m[1], data={"or_untap": True})),
-    (r"switch target creature's power and toughness until end of turn", lambda m: _e("switch_pt", target="creature")),
-    (r"target creature has base power and toughness (\d+)/(\d+) until end of turn",
-     lambda m: _e("set_base_pt", int(m[1]), amount2=int(m[2]), target="creature")),
-    (r"target player loses (\d+) life", lambda m: _e("drain", int(m[1]), target="each_opponent")),
-    (r"you become the monarch", lambda m: _e("become_monarch")),
-    (r"(?:it|~) deals damage equal to its power to any target", lambda m: _e("damage", target="any", data={"source_power": True})),
 ]
 SUBS = []
 

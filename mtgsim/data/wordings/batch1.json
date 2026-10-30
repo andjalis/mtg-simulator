@@ -1,0 +1,124 @@
+[
+  {
+    "match": "you gain life equal to its (power|toughness|mana value)",
+    "effect": "gain_prev_stat",
+    "amount": 1,
+    "data": {"stat": "$1:lower"},
+    "example": "you gain life equal to its toughness",
+    "cards": ["Angelic Chorus"]
+  },
+  {
+    "match": "(?:that|defending) player sacrifices a creature",
+    "effect": "edict_player",
+    "amount": 1,
+    "target": "that_player",
+    "example": "that player sacrifices a creature",
+    "cards": ["Cabal Executioner"]
+  },
+  {
+    "match": "each player sacrifices a land",
+    "effect": "sac_land_each",
+    "amount": 1,
+    "example": "each player sacrifices a land",
+    "cards": ["Akki Blizzard-Herder"]
+  },
+  {
+    "match": "(?:that|defending) player discards a card at random",
+    "effect": "discard_random_that",
+    "amount": 1,
+    "target": "that_player",
+    "example": "that player discards a card at random",
+    "cards": ["Bottomless Pit"]
+  },
+  {
+    "match": "(?:defending|that) player discards a card",
+    "effect": "discard",
+    "amount": 1,
+    "target": "that_player",
+    "example": "defending player discards a card",
+    "cards": ["Abyssal Nightstalker"]
+  },
+  {
+    "match": "destroy target creature that was dealt damage this turn",
+    "effect": "destroy",
+    "amount": 1,
+    "target": "creature",
+    "filter": "damaged",
+    "example": "Destroy target creature that was dealt damage this turn",
+    "cards": ["Fatal Blow"]
+  },
+  {
+    "match": "look at target opponent's hand",
+    "effect": "peek_hand",
+    "amount": 1,
+    "target": "player",
+    "filter": "opp",
+    "example": "Look at target opponent's hand",
+    "cards": ["Abandon Hope"]
+  },
+  {
+    "match": "create (a|one|two|three) (tapped )?powerstone tokens?",
+    "effect": "powerstone",
+    "amount": "$1:num",
+    "data": {"tapped": "$2:bool"},
+    "example": "Create a tapped Powerstone token",
+    "cards": ["A-Excavation Explosion"]
+  },
+  {
+    "match": "incubate (\\d+)",
+    "effect": "incubate",
+    "amount": "$1:int",
+    "example": "Incubate 1",
+    "cards": ["Blight Titan"]
+  },
+  {
+    "match": "tap or untap target (creature|permanent)",
+    "effect": "tap",
+    "amount": 1,
+    "target": "$1",
+    "data": {"or_untap": true},
+    "example": "Tap or untap target creature",
+    "cards": ["Bounding Krasis"]
+  },
+  {
+    "match": "switch target creature's power and toughness until end of turn",
+    "effect": "switch_pt",
+    "amount": 1,
+    "target": "creature",
+    "example": "Switch target creature's power and toughness until end of turn",
+    "cards": ["About Face"]
+  },
+  {
+    "match": "target creature has base power and toughness (\\d+)/(\\d+) until end of turn",
+    "effect": "set_base_pt",
+    "amount": "$1:int",
+    "amount2": "$2:int",
+    "target": "creature",
+    "example": "Target creature has base power and toughness 1/1 until end of turn",
+    "cards": ["Diminish"]
+  },
+  {
+    "match": "target player loses (\\d+) life",
+    "effect": "drain",
+    "amount": "$1:int",
+    "target": "each_opponent",
+    "example": "Target player loses 1 life",
+    "cards": ["Acolyte of Xathrid"]
+  },
+  {
+    "match": "you become the monarch",
+    "effect": "become_monarch",
+    "amount": 1,
+    "example": "you become the monarch",
+    "cards": ["Aragorn, King of Gondor"]
+  },
+  {
+    "match": "(?:it|~) deals damage equal to its power to any target",
+    "effect": "damage",
+    "amount": 1,
+    "target": "any",
+    "data": {"source_power": true},
+    "example": "it deals damage equal to its power to any target",
+    "cards": ["Balduvian Berserker"]
+  }
+]

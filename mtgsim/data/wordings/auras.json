@@ -1,0 +1,24 @@
+[
+  {
+    "match": "tap enchanted (?:creature|permanent)",
+    "effect": "tap_host",
+    "target": "none",
+    "example": "tap enchanted creature",
+    "cards": ["Bewitching Leechcraft"]
+  },
+  {
+    "match": "attach it to target creature you control",
+    "effect": "attach_self",
+    "target": "creature_mine",
+    "example": "attach it to target creature you control",
+    "cards": ["Barbed Bloodletter"]
+  },
+  {
+    "match": "(?:that creature|it) gains (flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|shroud|indestructible|menace|reach|fear|intimidate|infect|wither|skulk|shadow|horsemanship|phasing|swampwalk|forestwalk|mountainwalk|islandwalk|plainswalk|protection from (?:white|blue|black|red|green|creatures)) until end of turn",
+    "effect": "grant",
+    "target": "prev",
+    "data": {"keyword": "$1:lower"},
+    "example": "It gains deathtouch until end of turn",
+    "cards": ["A-Tyvar Kell"]
+  }
+]
