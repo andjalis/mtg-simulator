@@ -129,6 +129,9 @@ def _face_special_lines(st, line):
             return None
         line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration|Heroic) — (?=When|At|If)", "", line)
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
+        # Any ability word ("Phalanx Commander —", "Life Drain —") before a When/At/If line; "Survival — "
+        # keeps its prefix: it names a distinct engine event.
+        line = re.sub(r"^(?!Survival — )[A-Z][\w'&/ ]+ — (?=When|At|If)", "", line)
         # Discard triggers fire once per card, so "that many" counters is one counter each time.
         line = re.sub(r"^(Whenever you discard one or more cards), put that many \+1/\+1 counters on ~\.$",
                       r"\1, put a +1/+1 counter on ~.", line)
@@ -192,7 +195,7 @@ def _face_mode_and_ward_lines(st, line):
         if m:
             extra.update(ward=int(m[1]), ward_untapped_only=True)
             return None
-        m = re.fullmatch(r"\{T\}(, Pay 1 life)?: Add (one mana of any color|(?:\{[WUBRGC]\})+)\. Spend this mana only "
+        m = re.fullmatch(r"\{T\}(, Pay \d+ life)?: Add (one mana of any color|(?:\{[WUBRGC]\})+)\. Spend this mana only "
                          r"(.+)\.", line)
         if m:
             restriction = _mana_restriction(m[3])
@@ -209,7 +212,7 @@ def _face_mode_and_ward_lines(st, line):
             if amount > 1:
                 extra["restricted_amount"] = amount
             if m[1]:
-                approximations.append("the 1 life for restricted mana isn't paid")
+                approximations.append(f"the {re.search(r'\d+', m[1])[0]} life for restricted mana isn't paid")
             return None
         return line
     finally:
@@ -314,6 +317,22 @@ def _face_land_and_mana_lines(st, line):
             if m[2]:
                 approximations.append(f"cost reduction ignored:{m[2]}")
             return None
+        m = re.fullmatch(r"Equip (legendary creature|[A-Z]\w+(?:,? or [A-Z]\w+)*) (\{[^ .]+\})"
+                         r"(\. This ability costs [^.]+ less to activate[^.]*\.)?", line)
+        if m:      # "Equip Wizard {1}" / "Equip legendary creature {1}": only those creatures may be equipped
+            kinds = [k.strip() for k in re.split(r", or |, | or ", m[1])]
+            if m[1] == "legendary creature":
+                restriction = "legendary"
+            elif kinds and all(re.fullmatch(r"[A-Z]\w+", k) for k in kinds):
+                restriction = " or ".join(kinds)
+            else:
+                restriction = None
+            if restriction is not None:
+                extra["equip_cost"] = parse_mana_cost(m[2])
+                extra.setdefault("advanced_rules", {})["equip_restriction"] = restriction
+                if m[3]:
+                    approximations.append(f"cost reduction ignored:{m[3]}")
+                return None
         m = re.fullmatch(r"Reconfigure (\{[^ .]+\})", line)
         if m:
             extra.update(equip_cost=parse_mana_cost(m[1]), reconfigure=True)
@@ -429,8 +448,8 @@ def _face_land_and_mana_lines(st, line):
                         r"that many -1/-1 counters on that creature instead\.", line):
             extra["wither_noncombat"] = True
             return None
-        if re.fullmatch(r"If a creature dealt damage this turn by a source you controlled would die, exile it "
-                        r"instead\.", line):
+        if re.fullmatch(r"If a creature dealt damage (?:this turn by a source you controlled|by (?:~|enchanted "
+                        r"creature) this turn) would die, exile it instead\.", line):
             extra["exile_damaged"] = True
             return None
         if line in ("Daybound", "Nightbound"):
@@ -712,6 +731,11 @@ def _face_cost_and_static_lines(st, line):
             return None
         if line == "Your opponents can't cast spells during your turn.":
             extra["opp_no_cast"] = True
+            return None
+        m = re.fullmatch(r"((?:Noncreature|Creature|Artifact|Enchantment|Instant|Sorcery|Planeswalker|Battle) "
+                         r"spells) can't be cast\.", line)
+        if m:      # Aether Storm: advanced_rules["no_cast"] is the tuple of banned spell kinds (engine: costs.py)
+            extra.setdefault("advanced_rules", {})["no_cast"] = (m[1].split()[0].lower(),)
             return None
         m = re.fullmatch(r"During your turn, ~ has (\w+(?: \w+)?)\.", line)
         if m and m[1].lower() in KEYWORDS:

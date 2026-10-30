@@ -63,6 +63,14 @@ def _parse_effects(text: str, opts: bool = False):
                         re.I) and effects and effects[-1].kind == "counter":
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, exile=True))
             continue
+        # "you may cast [a card] from a graveyard ... If that spell would be put into a graveyard, exile it instead":
+        # the rider replaces where the just-cast spell ends up (consumed once its base effect parses; the engine
+        # reads gy_instead from the cast-from-graveyard effect).
+        if re.fullmatch(r"if that spell would be put into (?:a|your) graveyard, "
+                        r"(?:exile it instead|put it on the bottom of its owner's library instead)", s, re.I) and effects:
+            effects[-1] = dataclasses.replace(effects[-1], data=dict(
+                effects[-1].data, gy_instead="exile" if re.search(r"exile", s, re.I) else "bottom"))
+            continue
         if re.fullmatch(r"(?:a creature|creatures) dealt damage this way can't be regenerated this turn", s, re.I) \
                 and effects and effects[-1].kind == "damage":
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, no_regen=True))
@@ -493,6 +501,13 @@ def _mana_restriction(text: str):
         return "artifact"
     if re.fullmatch(r"to cast (?:an instant or sorcery spell|instant and sorcery spells)", text):
         return "instant_sorcery"
+    if re.fullmatch(r"to cast legendary spells", text):
+        return "legendary"
+    if re.fullmatch(r"to cast spells with \{x\} in their mana costs?", text):
+        return "x_cost"
+    m = re.fullmatch(r"on costs that contain \{([xc])\}", text)
+    if m:
+        return "x_cost" if m[1] == "x" else "c_cost"
     m = re.fullmatch(r"to cast (?:colorless )?(\w+) spells or activate abilities of (?:colorless )?(\w+)", text)
     if m and m[2].rstrip("s") == m[1].rstrip("s"):         # Eldrazi Temple: spells only, its abilities are not paid
         word = m[1].rstrip("s").lower()
@@ -518,7 +533,7 @@ def _parse_ability_cost(text: str):
         m = None
         if part == "{T}":
             extra["tap"] = True
-        elif re.fullmatch(r"(\{[0-9WUBRGC/P]+\})+", part):        # Phyrexian {B/P} is paid as {B}, as in spell costs
+        elif re.fullmatch(r"(\{[0-9WUBRGCX/P]+\})+", part):        # Phyrexian {B/P} is paid as {B}, as in spell costs
             mana = add_mana(mana, parse_mana_cost(part))
         elif part == "Sacrifice ~":
             extra["sac_self"] = True
@@ -582,14 +597,19 @@ def _parse_ability(line: str, approximations: list):
     cost = _parse_ability_cost(m[1])
     if cost is None:
         return None
-    body, sorcery, once, approx, condition, limit = m[2], False, False, [], "", 0
+    body, sorcery, once, approx, condition, limit, any_player = m[2], False, False, [], "", 0, False
     while True:
-        r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|Activate no more than (?:once|twice|two times|three times) each turn|Activate only if you have the city's blessing|This ability costs [^.]+ "
-                         r"less to activate[^.]*|Do this only once each turn)\.", body)
+        r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|Activate no more than "
+                         r"(?:once|twice|two times|three times) each turn|Activate only if you have the city's blessing|"
+                         r"This ability costs [^.]+ less to activate[^.]*|Do this only once each turn|"
+                         r"Any player may activate this ability(?: but only (?:during their turn|during any upkeep "
+                         r"step|during their draw step|as a sorcery))?)\.", body)
         if not r:
             break
         body = r[1]
-        sorcery |= r[2] == "Activate only as a sorcery"
+        any_player |= r[2].startswith("Any player")
+        sorcery |= r[2] in ("Activate only as a sorcery",
+                            "Any player may activate this ability but only as a sorcery")
         once |= r[2] in ("Activate only once each turn", "Do this only once each turn")
         mt = re.fullmatch(r"Activate no more than (once|twice|two times|three times) each turn", r[2])
         if mt:
@@ -602,13 +622,13 @@ def _parse_ability(line: str, approximations: list):
     if head is not None and not head[1]:
         approximations += approx
         return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=original, condition=condition,
-                         max_per_turn=limit, modes=modal.Modes(spec=head[0]))
+                         max_per_turn=limit, modes=modal.Modes(spec=head[0]), any_player=any_player)
     effects, bad = _parse_effects(body)
     if bad or not effects:
         return None
     approximations += approx
     return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=original,
-                     condition=condition, max_per_turn=limit)
+                     condition=condition, max_per_turn=limit, any_player=any_player)
 
 
 def _parse_trigger(line: str):
