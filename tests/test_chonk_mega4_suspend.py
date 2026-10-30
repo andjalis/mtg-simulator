@@ -68,6 +68,7 @@ class SelfSuspendBehavior(Batch1):
         item = self.resolve_refrain()
         self.assertEqual(len(self.a.hand), n + 2)   # the first cast drew its cards
         base, _, _ = self.g._origin(item.card)
+        # the direct resolve() here bypasses the stack, so the hook is fired by hand
         self.a.exile.append(base)
         self.a.suspended.append([base, item.self_suspend])
         from mtgsim import alt_casts
@@ -77,10 +78,10 @@ class SelfSuspendBehavior(Batch1):
         alt_casts.upkeep(self.g, self.a)
         self.assertEqual(self.a.suspended, [[base, 1]])
         alt_casts.upkeep(self.g, self.a)
-        self.assertEqual(self.a.suspended, [])
         # cast() outside a priority loop resolves before returning: the recast drew two
-        # more cards (and, once the stack hook lands, suspends itself again)
+        # more cards, and the real stack hook re-suspended it for another three counters
         self.assertEqual(len(self.a.hand), n + 4)
+        self.assertEqual(self.a.suspended, [[base, 3]])
 
 
 class SelfSuspendDatabase(unittest.TestCase):
