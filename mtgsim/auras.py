@@ -26,7 +26,7 @@ import re
 
 KINDS = {"tap_host", "attach_self"}
 _KW = ("flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|shroud|indestructible|"
-       "menace|reach|fear|intimidate|infect|wither|skulk|shadow|horsemanship|"
+       "menace|reach|fear|intimidate|infect|wither|skulk|shadow|horsemanship|phasing|"
        "swampwalk|forestwalk|mountainwalk|islandwalk|plainswalk|protection from (?:white|blue|black|red|green|creatures)")
 _ENCHANT = re.compile(r"Enchant (creature|creature you control|creature or Vehicle|artifact or creature|"
                       r"artifact creature|land|permanent|nonland permanent|artifact|creature an opponent controls|player)")
