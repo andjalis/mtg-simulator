@@ -537,9 +537,20 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
     return True
 
 
+def equip_matches(creature: Permanent, restriction: str) -> bool:
+    """Whether creature satisfies an Equip restriction: a subtype ("Equip Wizard {1}"), a
+    creature type list, or "legendary" ("Equip legendary creature {1}")."""
+    if restriction == "legendary":
+        return creature.card.legendary
+    return any(t in creature.card.subtypes or creature.card.changeling
+               for t in restriction.split(" or "))
+
+
 def choose_equip_target(game: Game, me: Player, equipment: Permanent):
     """The creature to equip: the best one that can attack this turn, else the best one."""
-    cands = [c for c in me.creatures if (not c.card.is_token or c.power > 0) and game.targetable(c, me)]
+    restriction = equipment.card.advanced_rules.get("equip_restriction")
+    cands = [c for c in me.creatures if (not c.card.is_token or c.power > 0) and game.targetable(c, me)
+             and (not restriction or equip_matches(c, restriction))]
     if not cands:
         return None
     ready = [c for c in cands if not c.sick or c.has("haste") or "haste" in equipment.card.equip_keywords]

@@ -142,6 +142,10 @@ class AbilitiesMixin:
         if creature is None or creature not in p.battlefield or not creature.is_creature or \
                 creature is equipment.attached_to or creature is equipment or not self.targetable(creature, p, equipment):
             return False
+        from .policy import equip_matches
+        restriction = equipment.card.advanced_rules.get("equip_restriction")
+        if restriction and not equip_matches(creature, restriction):
+            return False        # "Equip Wizard {1}" / "Equip legendary creature {1}"
         if self.pay(p, self.equip_cost(equipment, creature)) is None:
             return False
         item = StackItem(p, [Effect("equip", target="creature_mine")], [creature],
