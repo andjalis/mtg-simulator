@@ -455,10 +455,17 @@ _EFFECT_PATTERNS = [
     (r"DIGFILTER (\d+) (.+)", lambda m: Effect("dig", int(m[1]), 1, data={"filter": m[2]})),
     (r"DIGLANDS (\d+)", lambda m: Effect("dig", 0, int(m[1]), data={"x_lands": True})),
     (r"DIGCOUNT (\w+) (\d+)", lambda m: Effect("dig", 0, int(m[2]), data={"x_count": m[1]})),
+    # X-scaled look with a described keep (see the DIGCOUNTFILT sub in clauses.py)
+    (r"DIGCOUNTFILT (\w+) (.+)", lambda m: Effect("dig", 0, 1,
+     data={"x_lands": True, "filter": m[2]} if m[1] == "land" else {"x_count": m[1], "filter": m[2]})),
     (r"IMPULSE (\d+)", lambda m: Effect("draw", int(m[1]))),   # "exile the top N, you may play them"
     (r"TARGETDISCARD", lambda m: Effect("discard_choice", 1, target="player")),
     (r"HANDEXILE (.+)", lambda m: Effect("hand_exile", target="player", filter=m[1])),
     (r"TARGETDISCARDNONCREATURE", lambda m: Effect("discard_choice", 1, target="player", filter="noncreature")),
+    # "Target opponent reveals their hand": the peek_hand kind logs the look; the AI never
+    # acts on revealed information, so that log line is the whole honest simulation.
+    (r"(?:(target) (?:player|opponent)|(that player)) reveals (?:their|his or her) hand",
+     lambda m: Effect("peek_hand", target="that_player" if m[2] else "player")),
     (r"(?:you may )?exile the top (card|one card|two cards|three cards|four cards|\d+ cards) of your library",
      lambda m: Effect("exile_top", _N_WORDS.get(m[1].split()[0], 1) if m[1] != "card" else 1)
      if not m[1][0].isdigit() else Effect("exile_top", int(m[1].split()[0]))),
