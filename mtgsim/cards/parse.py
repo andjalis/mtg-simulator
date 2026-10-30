@@ -765,7 +765,8 @@ def _parse_trigger_line(line: str):
             intervening = True
         gate_if = re.fullmatch(r"if (.+?), (.+)", rest, flags=re.S)
         if gate_if and gate_if[1].lower().startswith(("you control", "there are", "a permanent left", "two or more",
-                                                      "three or more", "four or more", "you don't control")):
+                                                      "three or more", "four or more", "you don't control",
+                                                      "you have", "you haven't", "you or a player")):
             gated = _if_cond(gate_if[1])
             if gated:
                 cond, rest = gated, gate_if[2]

@@ -378,9 +378,12 @@ class RealCards(unittest.TestCase):
                              ("Chicken à la King", "Tap an untapped Bird")):
             with self.subTest(card=name):
                 self.assertTrue(any(needle in u for u in self.card(name).unsupported))
-        # Acererak's completed-dungeon gate is a pending engine condition
+        # Acererak's completed-dungeon gate now parses to "!dungeon_complete" (any-dungeon
+        # narrowing recorded as an approximation note); the per-opponent Zombie attack
+        # line is the remaining gap.
         acererak = self.card("Acererak the Archlich")
-        self.assertTrue(any("completed Tomb of Annihilation" in u for u in acererak.unsupported))
+        self.assertTrue(any("for each opponent" in u for u in acererak.unsupported))
+        self.assertTrue(any("Tomb of Annihilation" in a for a in acererak.approximations))
 
     def test_stay_tapped_flag_on_real_cards(self):
         self.assertTrue(self.card("Amber Prison").stay_tapped)

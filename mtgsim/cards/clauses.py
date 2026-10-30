@@ -21,6 +21,16 @@ _SUB_NOTES = [
     (re.compile(r"reveals their hand\. you (?:may )?choose an? [\w, -]*?"
                 r"(?:nonbasic|nonlegendary|permanent|legendary|colorless)[\w, -]*? card from it", re.I),
      "part of the revealed-card description is ignored: only card types, colors and subtypes are matched"),
+    # Initiative / dungeon completion gates: the engine conds are "initiative" (the resolving
+    # player has it) and "dungeon_complete" (any completed dungeon), so both Undercellar Sweep's
+    # "you or a player you're attacking" and Acererak's named-dungeon gate are narrowed.
+    (re.compile(r"if you or a player you're attacking has the initiative", re.I),
+     "the gate counts only your own initiative (engine cond 'initiative')"),
+    (re.compile(r"you haven't completed Tomb of Annihilation", re.I),
+     "any completed dungeon stands in for Tomb of Annihilation in the gate"),
+    # Caves of Chaos Adventurer: the free/paid may-play pair is the impulse approximation below.
+    (re.compile(r"if you've completed a dungeon, you may play that card this turn without paying its mana cost", re.I),
+     "the may-play riders are played as the impulse draw, so the free cast is never granted"),
 ]
 
 _SUBS = [
@@ -154,6 +164,20 @@ _SUBS = [
     (re.compile(r"exile the top (card|\w+ cards) of your library\. until (?:the end of your next turn|end of turn), you "
                 r"may play (?:that card|those cards)(?: this turn)?\.", re.I),
      lambda m: f"IMPULSE {1 if m[1] == 'card' else _num(m[1].split()[0])}."),
+    # Caves of Chaos Adventurer: the dungeon-complete free may-play and the plain "you may
+    # play it" branch are the same impulse; the rewrite feeds the IMPULSE sub above (the
+    # free cast is approximated away, see _SUB_NOTES).
+    (re.compile(r"exile the top card of your library\. if you've completed a dungeon, you may play "
+                r"that card this turn without paying its mana cost\. otherwise, you may play that "
+                r"card this turn\.?", re.I),
+     lambda m: "exile the top card of your library. until end of turn, you may play that card."),
+    # "that creature also gets" (Rilsa Rael's dungeon-complete rider): "also" only marks the
+    # second half of an already-parsed grant; the token templates take it without the word.
+    (re.compile(r"that creature also gets", re.I), r"that creature gets"),
+    # "you create X" bodies (Undercellar Sweep's gated tokens, Smothering Tithe's treasure):
+    # the effect templates are imperative, and no trigger header starts with "you create"
+    # (those "whenever you create ..." lines never reach a body parse).
+    (re.compile(r"\byou create\b", re.I), r"create"),
     # Typed reveal-and-discard (Thoughtseize, Despise, Divest): the description is kept —
     # TARGETDISCARD2's builder (hand_templates) matches it with _hand_matches, where an
     # earlier revision dropped it and made every card in the hand fair game. "You may
@@ -474,6 +498,14 @@ _IF_CONDS = [
     (r"you control a creature with power (\d+) or greater", None),
     (r"you sacrificed a permanent this turn", "sacrificed_turn"),
     (r"you have the city's blessing", "city_blessing"),
+    (r"you have the initiative", "initiative"),
+    # "if you or a player you're attacking has the initiative" (Undercellar Sweep): in this
+    # two-player engine the honest form is "anyone has the initiative"; the cond that exists
+    # is the resolving player's own, and _SUB_NOTES records the narrowing.
+    (r"you or a player you're attacking has the initiative", "initiative"),
+    (r"you've completed a dungeon", "dungeon_complete"),
+    # Acererak: any-dungeon completion stands in for Tomb of Annihilation (_SUB_NOTES records it).
+    (r"you haven't completed Tomb of Annihilation", "!dungeon_complete"),
     (r"tribute wasn't paid", "tribute_unpaid"),
 ]
 
