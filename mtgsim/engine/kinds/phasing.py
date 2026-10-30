@@ -24,3 +24,39 @@ def phase_out_count(game, p, eff, target, item, **_):
 def phase_coin(game, p, eff, target, item, **_):
     from ... import phasing
     phasing.phase_coin(game, p, eff, target, item)
+
+
+@kind("phase_out_excess")
+def phase_out_excess(game, p, eff, item, **_):
+    from ... import phasing
+    phasing.phase_out_excess(game, p, eff, item)
+
+
+@kind("phase_out_realm")
+def phase_out_realm(game, p, eff, target, item, **_):
+    from ... import phasing
+    phasing.phase_out_realm(game, p, eff, target, item)
+
+
+@kind("pay_repeat")
+def pay_repeat(game, p, eff, item, **_):
+    from ... import phasing
+    phasing.pay_repeat(game, p, eff, item)
+
+
+@kind("phase_out_paid")
+def phase_out_paid(game, p, eff, target, item, **_):
+    from ... import phasing
+    phasing.phase_out_paid(game, p, eff, target, item)
+
+
+@kind("pay_repeat_counters")
+def pay_repeat_counters(game, p, eff, target, item, **_):
+    from ... import phasing
+    phasing.pay_repeat_counters(game, p, eff, target, item)
+
+
+@kind("pay_repeat_tokens")
+def pay_repeat_tokens(game, p, eff, item, **_):
+    from ... import phasing
+    phasing.pay_repeat_tokens(game, p, eff, item)
