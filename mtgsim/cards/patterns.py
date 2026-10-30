@@ -549,6 +549,8 @@ _EFFECT_PATTERNS = [
     (r"each player sacrifices a creature(?: of their choice)?", lambda m: Effect("edict_each", 1)),
     (r"each other player sacrifices a creature", lambda m: Effect("edict", 1)),
     (r"reveal the top card of your library and put (?:it|that card) into your hand", lambda m: Effect("dig", 1, 1)),
+    (r"target player sacrifices a creature", lambda m: Effect("edict", 1)),     # the AI aims it at the opponent
+    (r"each player sacrifices a creature", lambda m: Effect("edict", 1, data={"self": True})),
     (r"creatures without flying can't block this turn", lambda m: Effect("cant_block_all", filter="nonflying")),
     (r"creatures your opponents control can't block this turn",
      lambda m: Effect("cant_block_all", data={"theirs": True})),
