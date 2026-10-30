@@ -45,6 +45,8 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
         self.rule_events = rules_events.EventBus(capture=log)
         self.step = "main1"
         self.stack: list[StackItem] = []
+        self.no_lifegain_turn: set[Player] = set()   # "players can't gain life this turn" (Skullcrack family)
+        self.no_prevention_turn = False              # "damage can't be prevented this turn"
         self.pending: list[tuple] = []   # triggered abilities waiting to be put on the stack
         self.delayed_upkeep: list[tuple] = []  # (controller, amount, source, name, scope)
         self.delayed_end_step: list[tuple] = []
@@ -72,6 +74,8 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
     def change_life(self, player, delta, cause):
         before = player.life
         if delta > 0:
+            if player in self.no_lifegain_turn:      # turn-scoped: the statics below can also block the gain
+                return
             from ..batch1_templates import lifegain_blocked
             if lifegain_blocked(self, player):
                 return
@@ -84,6 +88,8 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
             player.life_gained_turn += delta
             self.event_amount = delta
             self.fire(player, "gain_life")
+            # the other player's "whenever an opponent gains life" listeners (Punishing Fire cluster)
+            self.fire(self.opponent(player), "opp_gain_life", context=player)
             self.event_amount = None
         elif delta < 0:
             self.event_amount = -delta

@@ -42,6 +42,7 @@ class RulesEvent:
     reason: str = ""
     replacements: tuple = ()
     source_zone: str = ""
+    amount: int = 0        # the life gained/lost, damage dealt or damage prevented, when the kind has one
 
 
 class EventBus:
