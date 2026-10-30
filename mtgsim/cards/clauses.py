@@ -172,7 +172,7 @@ _TRIGGERS = [
     (r"When ~ becomes level (\d+), (.+)", ("class_level",)),
     (r"Whenever you proliferate, (.+)", ("proliferate",)),
     (r"Whenever an opponent searches their library, (.+)", ("opp_searches",)),
-    (r"When(?:ever)? ~ enters or attacks, (.+)", ("etb", "attacks")),
+    (r"When(?:ever)? ~ enters? or attacks?, (.+)", ("etb", "attacks")),
     (r"When ~ enters and at the beginning of your upkeep, (.+)", ("etb", "upkeep")),
     (r"When(?:ever)? ~ enters?(?: the battlefield)?, (.+)", ("etb",)),
     (r"Whenever ~ attacks while (?!saddled)(.+)", ("attacks",)),
@@ -341,6 +341,15 @@ def _xq(text: str):
     m = re.fullmatch(r"the greatest (power|toughness) among creatures you control", t, re.I)
     if m:
         return ("greatest", m[1])
+    m = re.fullmatch(r"the greatest (power|toughness|mana value) among permanents you control", t, re.I)
+    if m:
+        return ("greatest_perm", m[1])
+    if tl == "the number of creatures you control with defender":
+        return ("defenders",)
+    m = re.fullmatch(r"the number of tapped ([\w-]+(?: (?:and|or|and/or) [\w-]+)*|[\w-]+/[\w-]+) you control", t, re.I)
+    if m:
+        kinds = [k for part in re.split(r" and/or | and | or ", m[1]) for k in part.split("/")]
+        return ("tapped_any", tuple(_singular(k) for k in kinds))
     if tl == "the number of times ~ has mutated":
         return ("mutated",)
     m = re.fullmatch(r"the number of ([\w+/ -]+?) counters on ~", t, re.I)
@@ -358,6 +367,7 @@ def _xq(text: str):
 
 
 _IF_CONDS = [
+    (r"no creatures are on the battlefield", "no_creatures_bf"),
     (r"you control a creature with a \+1/\+1 counter on it that attacked this turn", "p1_attacked_turn"),
     (r"you attacked this turn", "attacked_turn"),
     (r"an opponent controls more lands than you", "opp_more_lands"),

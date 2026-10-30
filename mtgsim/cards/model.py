@@ -113,6 +113,7 @@ class Activated:
     text: str = ""
     modes: list = field(default_factory=list)    # "COST: Choose one —": a modal.Modes
     condition: str = ""              # graveyard activation restriction: delirium, gy8
+    any_player: bool = False         # "Any player may activate this ability."
 
 
 @dataclass
