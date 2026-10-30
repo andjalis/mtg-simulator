@@ -69,3 +69,9 @@ _SUBS += _sacrifice_templates.SUBS
 from .. import token_templates as _token_templates
 _EFFECT_PATTERNS += _token_templates.EFFECT_PATTERNS
 _SUBS += _token_templates.SUBS
+from .. import threaten_templates as _threaten_templates
+_EFFECT_PATTERNS += _threaten_templates.EFFECT_PATTERNS
+_SUBS += _threaten_templates.SUBS
+from .. import life_templates as _life_templates
+_EFFECT_PATTERNS += _life_templates.EFFECT_PATTERNS
+_TRIGGERS += _life_templates.TRIGGERS

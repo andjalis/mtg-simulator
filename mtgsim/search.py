@@ -13,6 +13,7 @@ _NUM = {"one": 1, "two": 2, "three": 3, "four": 4}
 
 _SEARCH = (r"(?P<who>you may |its controller may |that player may )?search (?:your|their) library for "
            r"(?P<n>an? |up to (?P<up>one|two|three|four) )(?P<what>[\w ,'/-]+?) cards?"
+           r"(?: with mana value (?P<mv>\d+) or (?P<mvdir>less|greater))?"
            r"(?:,? (?:and )?reveal (?:it|them|that card))?"
            r"(?:,? put (?:it|them|that card) (?P<dest>into your hand|onto the battlefield(?P<tapped> tapped)?)"
            r",? then shuffle|,? then shuffle and put (?:that card|it) on top(?: of your library)?)")
@@ -27,8 +28,12 @@ def _search(m):
     from .cards import Effect
     dest = "top" if not m["dest"] else "hand" if m["dest"].startswith("into") else "battlefield"
     theirs = (m["who"] or "").startswith(("its", "that"))
+    what = f"a {m['what']} card"
+    if m["mv"]:
+        # "a Rebel permanent card with mana value 3 or less": card_matches understands the clause.
+        what = f"{what} with mana value {m['mv']} or {m['mvdir']}"
     return Effect("search", target="that_controller" if theirs else "none",
-                  data={"what": f"a {m['what']} card", "n": _NUM.get(m["up"], 1), "dest": dest,
+                  data={"what": what, "n": _NUM.get(m["up"], 1), "dest": dest,
                         "tapped": bool(m["tapped"])})
 
 
