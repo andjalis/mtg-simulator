@@ -104,6 +104,12 @@ def parse_line(line: str, st) -> bool:
         mode = "lose" if m[1].startswith("its") else "damage"
         rules["damage_link"] = rules.get("damage_link", ()) + (mode,)
         return True
+    if line == "~ doesn't untap during your untap step if it has a depletion counter on it.":
+        # Land Cap and friends: tapping puts a depletion counter on it, and the upkeep removes it after the untap step,
+        # so it skips exactly one untap step, like the "slow" duals.
+        st.extra["color_skips_untap"] = True
+        st.approximations.append("the depletion counter is only added when its colored mana is needed")
+        return True
     if line == "Whenever a creature you control deals combat damage, you gain that much life.":
         rules["combat_gain"] = True
         return True

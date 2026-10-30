@@ -62,7 +62,35 @@ def parse_window(text: str):
     return steps, turn, attacked
 
 
+_N = {"two": 2, "three": 3, "four": 4}
+
+
+def parse_condition(text: str):
+    """The state test behind "Cast this spell only if <text>.", or None."""
+    t = text.strip().rstrip(".")
+    if t == "you control a snow land":
+        return ("snow_land",)
+    if t == "a creature is attacking you":
+        return ("attacked_now",)
+    if t == "you control fewer creatures than each opponent":
+        return ("fewer_creatures",)
+    if t == "you've cast another spell this turn":
+        return ("another_spell",)
+    m = re.fullmatch(r"you control (two|three|four) or more ([A-Z][a-z]+)s", t)
+    if m:
+        return ("tribe", m[2], _N[m[1]])
+    m = re.fullmatch(r"no permanents named (.+) are on the battlefield", t)
+    if m:
+        return ("no_named", m[1])
+    return None
+
+
 def parse_line(line: str, st) -> bool:
+    cond = re.fullmatch(r"Cast (?:this spell|~) only if (.+)", line)
+    if cond and parse_condition(cond[1]) is not None:
+        rules = st.extra.setdefault("advanced_rules", {})
+        rules["cast_if"] = rules.get("cast_if", ()) + (parse_condition(cond[1]),)
+        return True
     m = re.fullmatch(r"Cast (?:this spell|~) only (.+)", line)
     if not m:
         return False
@@ -73,7 +101,27 @@ def parse_line(line: str, st) -> bool:
     return True
 
 
+def _condition_ok(game, p, card, cond) -> bool:
+    kind = cond[0]
+    if kind == "snow_land":
+        return any(x.card.is_land and x.card.snow for x in p.battlefield)
+    if kind == "attacked_now":
+        return game.active is not p and any(game.attack_targets.get(a) is p for a in game.attackers)
+    if kind == "fewer_creatures":
+        return all(len(p.creatures) < len(o.creatures) for o in game.players if o is not p)
+    if kind == "another_spell":
+        return game.spells_cast_turn(p) >= 1
+    if kind == "tribe":
+        return sum(cond[1] in x.card.subtypes for x in p.battlefield) >= cond[2]
+    if kind == "no_named":
+        return not any(x.card.name == cond[1] or x.card.name == card.name for pl in game.players
+                       for x in pl.battlefield)
+    return True
+
+
 def window_ok(game, p, card) -> bool:
+    if any(not _condition_ok(game, p, card, c) for c in card.advanced_rules.get("cast_if", ())):
+        return False
     window = card.advanced_rules.get("cast_window")
     if window is None:
         return True
