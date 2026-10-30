@@ -40,6 +40,15 @@ FOREST = card("Test Forest", "", "Basic Land — Forest", "({T}: Add {G}.)")
 RENDEZVOUS = card("Secret Rendezvous", "{1}{W}", "Instant", "You draw a card.")
 PREPARED_DUDE = dataclasses.replace(BEAR, name="Prepared Dude", back=RENDEZVOUS)
 BOLT = card("Test Bolt", "{2}{R}", "Instant", "Test Bolt deals 3 damage to any target.")
+ANALYST = card("Paranormal Analyst", "{1}{U}", "Creature — Human Detective",
+               "Whenever you manifest dread, put a card you put into your graveyard this "
+               "way into your hand.", 2, 2)
+PIPES = card("They Came from the Pipes", "{2}{U}", "Sorcery", "Manifest dread twice.")
+STAY_HIDDEN = card("Stay Hidden, Stay Silent", "{2}{U}", "Enchantment — Aura", "Enchant creature\n"
+                   "When this Aura enters, tap enchanted creature.\nEnchanted creature doesn't "
+                   "untap during its controller's untap step.\n{4}{U}{U}: Shuffle enchanted "
+                   "creature into its owner's library, then manifest dread. Activate only as a "
+                   "sorcery.")
 
 
 def _kinds(effects):
@@ -77,6 +86,15 @@ class ParseBatch4(unittest.TestCase):
         effs, bad = _parse_effects("Each creature you control becomes prepared.")
         self.assertFalse(bad)
         self.assertEqual(effs[0].kind, "prepare_all")
+
+    def test_manifest_dread_listener_parse(self):
+        self.assertEqual(ANALYST.unsupported, [])
+        self.assertEqual([(t.event, _kinds(t.effects)) for t in ANALYST.triggers],
+                         [("manifest_dread", ["manifest_recover"])])
+        self.assertEqual(STAY_HIDDEN.unsupported, [])
+        shuffle = [a for a in STAY_HIDDEN.activated if "Shuffle" in a.text]
+        self.assertEqual(len(shuffle), 1)
+        self.assertEqual(_kinds(shuffle[0].effects), ["shuffle_enchanted", "manifest_dread"])
 
     def test_arcane_endeavor_free_cast_parse(self):
         self.assertEqual(ARCANE.unsupported, [])
@@ -248,6 +266,36 @@ class EngineBatch4(unittest.TestCase):
             self.assertTrue(wolf.has("haste"))
         self.assertEqual(primal.counters.get("+1/+1", 0), 3)
         self.assertEqual(primal.power, 5)                # 2/2 with three +1/+1 counters
+
+    # --- manifest dread residuals ----------------------------------------------
+    def test_paranormal_analyst_recovers_milled_card(self):
+        self.g.enter_battlefield(self.a, ANALYST)
+        fresh = [card("Doomed Bear", "{1}{G}", "Creature — Bear", "", 2, 2),
+                 card("Doomed Bolt", "{1}{R}", "Instant", "Doomed Bolt deals 3 damage to any target.")]
+        self.a.library = [card("Island", types="Basic Land — Island", text="({T}: Add {U}.)")
+                          for _ in range(20)] + fresh    # top of the library: the fresh cards
+        self.apply("Manifest dread twice.")
+        self.assertEqual(len(self.a.graveyard), 0)        # both milled cards were recovered
+        self.assertEqual(len([c for c in fresh if c in self.a.hand]), 1)   # the Bear manifested,
+        faces = [x for x in self.a.battlefield if x.card.name == "Face-down creature"]
+        self.assertEqual(len(faces), 2)                  # the Bolt came back instead
+
+    def test_stay_hidden_shuffles_host_then_dreads(self):
+        aura = self.g.enter_battlefield(self.a, STAY_HIDDEN)
+        bear = self.g.enter_battlefield(self.b, BEAR)     # opponent's host: shuffled away
+        aura.aura_host = bear
+        self.g.settle()
+        effs, bad = _parse_effects("Shuffle enchanted creature into its owner's library, "
+                                   "then manifest dread.")
+        self.assertFalse(bad)
+        item = StackItem(self.a, list(effs), [], source=aura)
+        for eff in effs:
+            self.g.resolve(self.a, eff, None, item)
+        self.g.settle()
+        self.assertNotIn(bear, self.b.battlefield)        # the host is gone from play
+        self.assertIn(bear.front, self.b.library)         # it sits in its owner's library
+        faces = [x for x in self.a.battlefield if x.card.name == "Manifest"]
+        self.assertEqual(len(faces), 1)                   # the dread manifested the top card
 
 
 if __name__ == "__main__":

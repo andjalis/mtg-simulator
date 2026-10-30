@@ -19,10 +19,23 @@ can't express ride this module's manifest_dread_more kind instead — "manifest 
 twice", "manifest dread, then attach this Equipment" and Valgavoth's Onslaught's
 "manifest dread X times, then put X +1/+1 counters on each of those creatures".
 
+Batch 4 adds the Paranormal Analyst's listener ("Whenever you manifest dread, put a
+card you put into your graveyard this way into your hand"): this module's dread
+resolution records the milled cards on the game and fires a manifest_dread event the
+trigger reads back. The foundation kind (bare "Manifest dread.") does not fire it yet —
+see the cross-area note — so until that lands the listener only hears the
+manifest_dread_more dreads. Stay Hidden, Stay Silent's "Shuffle enchanted creature into
+its owner's library, then manifest dread" is a shuffle_enchanted effect (the aura's
+host leaves for a random spot of its owner's library) followed by the foundation dread.
+
 Recorded simplifications: manifest dread always manifests a creature over a noncreature;
 Fierce Invocation's "+1/+1 counters on it" is applied by the manifest effect itself; the
 from-hand and graveyard-pile manifests (Kozilek, Ghastly Conscription, The Good Time
-Sleuth) and the becomes-an-Aura templates (Cloudform, Rageform) are not built.
+Sleuth) and the becomes-an-Aura templates (Cloudform, Rageform) are not built;
+the recovered card is the most valuable one milled by the dread (a card, as written);
+Disturbing Mirth's "When you sacrifice this enchantment" is not built (the sacrifice
+trigger dispatch has no self-only convention), and neither is Turn Inside Out's
+"When it dies this turn" delayed trigger (no floating one-turn trigger foundation).
 """
 from __future__ import annotations
 
@@ -49,10 +62,18 @@ EFFECT_PATTERNS = [
      lambda m: _e("manifest_dread_more", 1, data={"times": "x", "counters": ("+1/+1", "x")})),
     (r"manifest one of those cards, then put the other on the top or bottom of your library",
      lambda m: _e("manifest", 1)),
+    # Stay Hidden, Stay Silent: the aura's host leaves for a random spot of its owner's
+    # library, then the foundation's bare dread resolves.
+    (r"shuffle enchanted creature into its owner's library, then manifest dread",
+     lambda m: [_e("shuffle_enchanted"), _e("manifest_dread")]),
+    # Paranormal Analyst: read back a card the dread just milled.
+    (r"put a card you put into your graveyard this way into your hand",
+     lambda m: _e("manifest_recover")),
 ]
 
 TRIGGERS = [
     (r"Whenever you cast an instant or sorcery spell from your hand, (.+)", ("cast_instant_sorcery",)),
+    (r"Whenever you manifest dread, (.+)", ("manifest_dread",)),
 ]
 
 
@@ -112,9 +133,14 @@ def manifest_dread(game, p, eff, item):
         look.remove(pick)
         perm = manifest_one(game, p, pick)
         made.append(perm)
+        milled = []
         for other in look:
             p.graveyard.append(other)
+            milled.append(other)
             game.log(f"mills {other.name}", p)
+        if milled:
+            game.__dict__["_manifest_dread_milled"] = milled
+            game.fire(p, "manifest_dread", context=tuple(milled))   # Paranormal Analyst's listener
         if perm is not None and eff.data.get("attach") and item is not None and item.source is not None \
                 and "Equipment" in item.source.card.types:
             item.source.attached_to = perm
@@ -127,3 +153,32 @@ def manifest_dread(game, p, eff, item):
             if perm is not None:
                 perm.counters[kind] = perm.p1 + n2
     return made
+
+
+def shuffle_enchanted(game, p, eff, item):
+    """Stay Hidden, Stay Silent: the aura's host leaves for a random spot of its owner's library."""
+    from .engine.state import Permanent
+    src = item.source if item is not None else None
+    host = getattr(src, "aura_host", None)
+    if not isinstance(host, Permanent) or host not in host.controller.battlefield:
+        return
+    owner = host.owner
+    if game.leave_battlefield(host, "graveyard") and not host.front.is_token \
+            and host.front in owner.graveyard:
+        owner.graveyard.remove(host.front)
+        owner.library.insert(game.rng.randrange(len(owner.library) + 1), host.front)
+        game.log(f"shuffles {host.card.name} into its owner's library", p)
+
+
+def manifest_recover(game, p, eff, item):
+    """Paranormal Analyst: a card the last dread milled goes back to the hand."""
+    milled = getattr(item, "context", None) if item is not None else None
+    if not isinstance(milled, (tuple, list)):
+        milled = game.__dict__.get("_manifest_dread_milled", ())
+    milled = [c for c in milled if c in p.graveyard]
+    if not milled:
+        return
+    best = max(milled, key=lambda c: (c.cmc, getattr(c, "power", 0) or 0))
+    p.graveyard.remove(best)
+    p.hand.append(best)
+    game.log(f"recovers {best.name} from the dread", p)
