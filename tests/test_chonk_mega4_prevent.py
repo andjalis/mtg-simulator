@@ -9,10 +9,10 @@ the le-batch5 event (fired to the shield holder with event_amount) then deals "t
 """
 import unittest
 
-from mtgsim.cards import Effect, Trigger, _parse_effects
-from mtgsim.engine import Game, Permanent, Player, StackItem
+from mtgsim.cards import _parse_effects
+from mtgsim.engine import StackItem
 from tests.test_batch1 import Batch1
-from tests.test_templates import BEAR, ISLAND, card
+from tests.test_templates import BEAR, card
 
 REWARD = card("Test Reward", "{1}{W}", "Instant",
               "Prevent the next X damage that would be dealt to target creature this turn, "

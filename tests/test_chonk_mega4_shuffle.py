@@ -12,9 +12,9 @@ library in any order" (also the bottom variant) is a ``hand_to_library`` kind.
 import unittest
 
 from mtgsim.cards import _parse_effects
-from mtgsim.engine import Game, Player, Permanent, StackItem
+from mtgsim.engine import StackItem
 from tests.test_batch1 import Batch1
-from tests.test_templates import ISLAND, card
+from tests.test_templates import card
 
 DRAGON = card("Test Alabaster", "{4}{W}{W}", "Creature — Dragon",
               "Flying\nWhen this creature dies, shuffle it into its owner's library.", 4, 4)

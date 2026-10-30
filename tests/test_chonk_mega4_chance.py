@@ -11,7 +11,7 @@ import unittest
 from mtgsim.cards import _parse_effects
 from mtgsim.engine import StackItem
 from tests.test_batch1 import Batch1
-from tests.test_templates import ISLAND, card
+from tests.test_templates import card
 
 BIG = card("Test Expensive", "{7}{U}", "Sorcery", "", cmc=8)
 CHEAP = card("Test Cheap", "{U}", "Instant", "", cmc=1)
