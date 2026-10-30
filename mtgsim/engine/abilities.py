@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from ..cards import Effect
 from .. import modal, costs, counter_mechanics
 from ..actions import atomic_action
-from .policy import default_choose_target, perm_value, saddle_creatures
+from .policy import any_player_ability, any_player_window, default_choose_target, perm_value, saddle_creatures
 from .state import Permanent, StackItem, TARGETED, can_block
 
 if TYPE_CHECKING:
@@ -48,11 +48,16 @@ class AbilitiesMixin:
     @atomic_action
     def activate(self, p: Player, perm: Permanent, what: str, target=None) -> bool:
         """Non-loyalty activated abilities: Clue, Blood, Bloodtithe Harvester, manlands, crew, and
-        "ability:N" for the card's Nth activated ability (see activate_ability)."""
+        "ability:N" for the card's Nth activated ability (see activate_ability). An "any player
+        may activate" ability may be used through here by a player who doesn't control perm."""
+        if what.startswith("ability:"):
+            idx = int(what[8:])
+            if perm not in p.battlefield and not (0 <= idx < len(perm.activated)
+                                                   and any_player_ability(perm.activated[idx])):
+                return False
+            return self.activate_ability(p, perm, idx, targets=target)
         if perm not in p.battlefield:
             return False
-        if what.startswith("ability:"):
-            return self.activate_ability(p, perm, int(what[8:]), targets=target)
         if what.startswith("equip"):
             return self.equip(p, perm, target)
         from ..residual_templates import activation_blocked
@@ -204,9 +209,20 @@ class AbilitiesMixin:
         return activation_cost(self, p, perm, cost)
 
     def can_activate(self, p: Player, perm: Permanent, idx: int, *, x=None, counter_choices=None) -> bool:
-        """Whether perm's activated ability idx (kind "ability") can be activated now."""
+        """Whether perm's activated ability idx (kind "ability") can be activated now, by p.
+        "Any player may activate" abilities may be used by players who don't control perm."""
         acts = perm.activated
-        if perm not in p.battlefield or idx < 0 or idx >= len(acts) or acts[idx].kind != "ability":
+        if idx < 0 or idx >= len(acts) or acts[idx].kind != "ability":
+            return False
+        act = acts[idx]
+        if perm not in p.battlefield and not any_player_ability(act):
+            return False
+        window = any_player_window(act)
+        if window == "their_turn" and p is not self.active:
+            return False
+        if window == "upkeep" and self.step != "upkeep":
+            return False
+        if window == "draw_step" and not (p is self.active and self.step == "draw"):
             return False
         if self.nonmana_locked(p) or perm.abilities_suppressed or any('cant_activate' in a.card.aura_flags for a in perm.auras):
             return False
@@ -225,7 +241,7 @@ class AbilitiesMixin:
             return False
         if c.get("tap") and (perm.tapped or (perm.is_creature and perm.sick)):
             return False
-        if act.sorcery and not (p is self.active and self.step in ("main1", "main2") and not self.stack):
+        if (act.sorcery or window == "sorcery") and not (p is self.active and self.step in ("main1", "main2") and not self.stack):
             return False
         if act.once and perm.ability_turns.get(idx) == self.turn:
             return False
