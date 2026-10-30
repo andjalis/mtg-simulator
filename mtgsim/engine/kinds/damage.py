@@ -28,6 +28,8 @@ def _damage(game, p, eff, target, item, opp, cause):
         for perm in p.creatures + opp.creatures:
             if eff.filter == "nonflying" and perm.has("flying"):
                 continue
+            if eff.filter == "flying" and not perm.has("flying"):
+                continue
             if eff.data.get("no_regen") and eff.amount > 0:
                 perm.regeneration_blocked = True
             game.deal_damage(perm, eff.amount, by=p, cause=cause, source=src)
