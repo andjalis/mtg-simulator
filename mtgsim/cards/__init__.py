@@ -75,3 +75,6 @@ _SUBS += _threaten_templates.SUBS
 from .. import life_templates as _life_templates
 _EFFECT_PATTERNS += _life_templates.EFFECT_PATTERNS
 _TRIGGERS += _life_templates.TRIGGERS
+from .. import hand_templates as _hand_templates
+_EFFECT_PATTERNS += _hand_templates.EFFECT_PATTERNS
+_SUBS += _hand_templates.SUBS

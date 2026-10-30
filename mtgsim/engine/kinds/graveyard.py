@@ -89,10 +89,14 @@ def exile_self_payoff(game, p, eff, item, **_):
 
 @kind("exile_hand_perm")
 def exile_hand_perm(game, p, eff, target, **_):
-    """Reveal a player's hand, you choose a card, exile it for good (Night Terrors)."""
-    from .cards import _HAND_FILTERS
+    """Reveal a player's hand, you choose a card, exile it for good (Night Terrors,
+    Castigate, Appetite for Brains)."""
+    from .cards import _HAND_FILTERS, _hand_matches
     if isinstance(target, Player) and target.hand:
-        legal = [c for c in target.hand if _HAND_FILTERS[eff.filter](c)]
+        if eff.filter in _HAND_FILTERS and not eff.data.get("mv"):
+            legal = [c for c in target.hand if _HAND_FILTERS[eff.filter](c)]
+        else:
+            legal = [c for c in target.hand if _hand_matches(c, eff)]
         if legal:
             card = max(legal, key=lambda c: c.cmc)
             game.move_card(card, target.hand, target.exile, reason="exile")
