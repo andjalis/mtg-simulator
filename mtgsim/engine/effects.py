@@ -23,26 +23,40 @@ class EffectsMixin:
         def has(keyword):
             return (source.has(keyword) if isinstance(source, Permanent)
                     else isinstance(source, CardDef) and keyword in source.keywords)
+        preventable = not self.no_prevention_turn     # "damage can't be prevented this turn" (Skullcrack)
         fog = getattr(self, "fog", None)
-        if combat and fog and fog[0] == self.turn and (fog[1] is None or getattr(source, "controller", None) is fog[1]):
+        if preventable and combat and fog and fog[0] == self.turn and (fog[1] is None or getattr(source, "controller", None) is fog[1]):
             return
-        if protected_from(target, source):
+        if protected_from(target, source) and preventable:
             self.log(f"{target.card.name}'s protection prevents {amount} damage", target.controller)
             return
         from ..batch1_templates import phantom_prevents, damage_immune
-        if isinstance(target, Permanent) and (phantom_prevents(target) or damage_immune(target, source, combat)):
+        if preventable and isinstance(target, Permanent) and (phantom_prevents(target) or damage_immune(target, source, combat)):
             return
         if isinstance(target, Player):
             from ..batch1_templates import curses_on
             if any(c.card.advanced_rules.get('curse_double') for c in curses_on(self, target)):
                 amount *= 2
+        prevented = 0
+        if preventable and isinstance(source, Permanent) and \
+                any("prevent_source_damage" in a.card.aura_flags for a in source.auras):
+            prevented = amount       # Defang: "Prevent all damage that would be dealt by enchanted creature"
+            amount = 0
         shield = getattr(target, "prevent_next", 0)
-        if shield:
-            prevented = min(shield, amount)
-            target.prevent_next -= prevented
-            amount -= prevented
-            if amount <= 0:
-                return
+        if preventable and shield:
+            n = min(shield, amount)
+            target.prevent_next -= n
+            prevented += n
+            amount -= n
+        if prevented:
+            # the prevented amount, for "If damage is prevented this way, ... that much ..." riders
+            # (Acolyte's Reward); fired to whoever holds the prevention shield
+            self.event_amount = prevented
+            self.fire(target.controller if isinstance(target, Permanent) else target,
+                      "damage_prevented", context=source)
+            self.event_amount = None
+        if amount <= 0:
+            return
         infect = has("infect")
         self.event_amount = amount          # "that much" for the triggers fired below
         if isinstance(source, Permanent) and source in source.controller.battlefield:

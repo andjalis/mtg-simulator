@@ -367,6 +367,8 @@ class TurnsMixin:
         p.next_creature_counters = 0
         p.action_lock_turn = opp.action_lock_turn = None
         p.prevent_next = opp.prevent_next = 0
+        self.no_prevention_turn = False                # "this turn" spell riders expire in cleanup
+        self.no_lifegain_turn = set()
         self.expire_continuous_effects()
         for pl in self.players:
             pl.granted_fb = []

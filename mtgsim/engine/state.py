@@ -65,6 +65,8 @@ def protected_from(perm, source) -> bool:
     card = source.card if isinstance(source, Permanent) else source
     if not isinstance(card, CardDef) or not isinstance(perm, Permanent):
         return False
+    if perm.has("protection from creatures") and isinstance(source, Permanent) and source.is_creature:
+        return True
     return any(perm.has(PROTECTION[c]) for c in card.colors) or \
         len(card.colors) >= 2 and perm.has("protection from multicolored") or \
         card.is_artifact and perm.has("protection from artifacts")
@@ -157,6 +159,7 @@ class Permanent:
         self.exile_turn = -1
         self.chosen_land = ""
         self.chosen_type = ""              # Cavern of Souls
+        self.chosen_name = ""              # Meddling Mage: spells with this name can't be cast
         self.silenced_by = None            # Tishana's Tidebinder: loses all abilities while it stays out
         self.net_locked = False            # Braided Net: no activated abilities while it stays tapped
         self.bargained = self.gifted = False   # cast with Bargain / the gift promised
@@ -247,6 +250,11 @@ class Permanent:
         for equipment in self.equipment:
             bp += equipment.card.equip_bonus[0] + equipment.counters.get("hone", 0)
             bt += equipment.card.equip_bonus[1]
+            per, scale = equipment.card.pt_per, equipment.card.pt_scale
+            if per:      # "Equipped creature gets +1/+1 for each artifact you control" (Adaptive Omnitool)
+                n = counting.count(None, self.controller, {"what": per, "zone": "battlefield"}, equipment)
+                bp += n * scale[0]
+                bt += n * scale[1]
         if self.partner is not None:
             from ..batch1_templates import soulbond_bonus
             sb = soulbond_bonus(self)
@@ -307,6 +315,11 @@ class Permanent:
                 e = a.card.equip_bonus
                 bp += e[0]
                 bt += e[1]
+                per, scale = a.card.pt_per, a.card.pt_scale
+                if per:    # "Enchanted creature gets +1/+1 for each <kind> you control"
+                    n = counting.count(None, self.controller, {"what": per, "zone": "battlefield"}, a)
+                    bp += n * scale[0]
+                    bt += n * scale[1]
                 if "per_enchantment" in a.card.aura_flags:     # Virtuous Role
                     n = sum("Enchantment" in y.card.types for y in self.controller.battlefield)
                     bp += n
@@ -492,6 +505,7 @@ class Permanent:
     def can_attack(self):
         return (self.is_creature and not self.tapped and not self.has("defender") and not (self.card.cant_attack and not self.abilities_suppressed)
                 and not (self.auras and auras.stops_combat(self))
+                and not (self.auras and any("cant_attack" in a.card.aura_flags for a in self.auras))
                 and (not self.sick or self.has("haste")))
 
     @property
@@ -685,7 +699,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
                                     ("mountainwalk", "Mountain"), ("islandwalk", "Island"),
                                     ("plainswalk", "Plains"))):
         return False
-    if blocker.card.block_only_flying and not attacker.has("flying"):
+    if (blocker.card.block_only_flying or any(a.card.block_only_flying for a in blocker.auras)) \
+            and not attacker.has("flying"):
         return False
     if attacker.has("nonbasic landwalk") and any(x.card.is_land and not is_basic_land(x.card)
                                                 for x in blocker.controller.battlefield):

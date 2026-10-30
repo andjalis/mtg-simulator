@@ -82,7 +82,9 @@ class StackMixin:
         """Deliver a typed event, then queue the existing supported trigger listeners."""
         before = rules_events.snapshot(source) if source is not None and (self.rule_events.history is not None
             or self.rule_events.listeners) else None
-        self.rule_events.emit(rules_events.RulesEvent(event, p, source, context, subject, before))
+        amount = getattr(self, "event_amount", None)
+        self.rule_events.emit(rules_events.RulesEvent(event, p, source, context, subject, before,
+                                                      amount=amount if amount is not None else 0))
         self._dispatch_trigger_event(p, event, source, context, subject)
         if source is None and event in ("upkeep", "end_step"):
             for controller in self.players:
