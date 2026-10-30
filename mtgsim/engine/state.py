@@ -454,6 +454,9 @@ class Permanent:
         if cond.startswith("opp_life<="):
             opp = getattr(self.controller, "opponent", None)
             return opp is not None and opp.life <= int(cond[10:])
+        if cond.startswith("cx:"):
+            from ..cx_conditions import holds
+            return holds(self, cond)
         return False
 
     @property
