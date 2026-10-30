@@ -154,7 +154,7 @@ _EFFECT_PATTERNS = [
     (r"~ also deals (\d+) damage to that permanent's controller if you control a modified creature",
      lambda m: Effect("damage", int(m[1]), target="that_controller", cond="modified")),
     (r"~ deals (\d+) damage to each creature", lambda m: Effect("damage", int(m[1]), target="each_creature")),
-    (r"~ deals (\d+|X) damage to each creature( with(?:out)? flying)? and each player",
+    (_SRC + r" deals (\d+|X) damage to each creature( with(?:out)? flying)? and each player",
      lambda m: (lambda n: [Effect("damage", n, target="each_creature",
                                   filter={" without flying": "nonflying", " with flying": "flying"}.get(m[2], ""),
                                   data={} if m[1].isdigit() else {"x": True}),
