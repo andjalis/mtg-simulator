@@ -86,3 +86,6 @@ _SUBS += _mega2_templates.SUBS
 from .. import prevent_templates as _prevent_templates
 _EFFECT_PATTERNS += _prevent_templates.EFFECT_PATTERNS
 _SUBS += _prevent_templates.SUBS
+from .. import energy_templates as _energy_templates
+_EFFECT_PATTERNS += _energy_templates.EFFECT_PATTERNS
+_SUBS += _energy_templates.SUBS
