@@ -72,7 +72,7 @@ def process_payoff(game, p, eff, item, opp, **_):
         card = max(opp.exile, key=lambda c: c.cmc)
         game.move_card(card, opp.exile, opp.graveyard, reason="process")
         game.log(f"puts {card.name} from exile into {opp}'s graveyard", p)
-        game.queue_trigger(p, eff.data["effects"], src, "payoff")
+        game.queue_trigger(p, eff.data["effects"], src, "payoff", context=getattr(item, "context", None))
 
 
 @kind("exile_self_payoff")
@@ -84,7 +84,7 @@ def exile_self_payoff(game, p, eff, item, **_):
     if card is not None and any(card is c for c in owner.graveyard):
         game.move_card(card, owner.graveyard, owner.exile, reason="exile")
         game.log(f"exiles {card.name} from the graveyard", p)
-        game.queue_trigger(p, eff.data["effects"], src, "payoff")
+        game.queue_trigger(p, eff.data["effects"], src, "payoff", context=getattr(item, "context", None))
 
 
 @kind("exile_hand_perm")
@@ -357,6 +357,40 @@ def undying_return(game, item, k, **_):
     if index is not None and isinstance(grave, Graveyard) and grave.version(card) == version:
         del grave[index]
         game.enter_battlefield(owner, card, counters={"-1/-1" if k == "persist_return" else "+1/+1": 1})
+
+
+@kind("dig_all")
+def dig_all(game, p, eff, **_):
+    """Reveal the top N: all cards matching the description go to one zone (hand or
+    graveyard), the rest to the other zone or to the bottom of the library, shuffled
+    (Mulch, Beast Hunt, Goblin Ringleader, The Fourteenth Doctor)."""
+    n = eff.amount
+    cards = list(reversed(p.library[-min(n, len(p.library)):])) if n else []
+    desc = eff.data.get("filter")
+    keep = [c for c in cards if card_matches(c, _filter_desc(desc))] if desc else list(cards)
+    rest = [c for c in cards if not any(c is x for x in keep)]
+    dest_keep = p.hand if eff.data.get("keep") == "hand" else p.graveyard
+    for c in keep:
+        game.move_card(c, p.library, dest_keep, reason="dig")
+    if eff.data.get("rest") == "bottom":
+        if rest:
+            game.rng.shuffle(rest)
+            p.library.reorder(list(reversed(rest)) + [c for c in p.library if c not in rest])
+    else:
+        dest_rest = p.hand if eff.data["rest"] == "hand" else p.graveyard
+        for c in rest:
+            game.move_card(c, p.library, dest_rest, reason="dig")
+    if keep or rest:
+        game.log(f"reveals {n}, keeps {len(keep)}, {len(rest)} to the {eff.data['rest']}", p)
+
+
+@kind("shuffle_self")
+def shuffle_self(game, p, eff, item, **_):
+    """"Shuffle ~ into its owner's library" (the Beacon and Zenith spells): mark the
+    resolving spell so Game.to_graveyard_after_resolving puts it into its owner's
+    library, shuffled, instead of the graveyard (the stack hook reads item.shuffle_self)."""
+    if item is not None and item.is_spell:
+        item.shuffle_self = True
 
 
 @kind("rebound_cast")

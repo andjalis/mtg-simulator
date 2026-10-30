@@ -72,6 +72,20 @@ def return_own(game, p, eff, item, **_):
     game.leave_battlefield(pick, "hand")
 
 
+@kind("destroy_that_player")
+def destroy_that_player(game, p, eff, item, **_):
+    """"Destroy target <type> that player controls" inside a trigger: the "that player" is
+    the trigger's context (the player dealt damage), and the most valuable permanent of
+    theirs that fits is destroyed, not a normally chosen target."""
+    who = item.context if item is not None and isinstance(item.context, Player) else game.opponent(p)
+    what = eff.data.get("type", "creature")
+    fits = lambda x: x.is_creature if what == "creature" else True
+    cands = [x for x in who.battlefield if fits(x)]
+    if cands:
+        game.destroy(max(cands, key=perm_value), no_regen=eff.data.get("no_regen", False))
+        game.log(f"destroys the best {what} {who} controls", p)
+
+
 @kind("sac_own")
 def sac_own(game, p, eff, **_):
     """"Sacrifice a creature / land": p's least valuable one."""
@@ -452,11 +466,12 @@ def sacrifice_self(game, p, eff, target, **_):
 @kind("sac_self_payoff")
 def sac_self_payoff(game, p, eff, item, **_):
     """A trigger's "you may sacrifice it. If you do, <payoff>": sacrifice the source when it
-    resolves (the greedy policy always takes the may), then queue the payoff effects."""
+    resolves (the greedy policy always takes the may), then queue the payoff effects with
+    the triggering context ("that player ...") carried over."""
     src = item.source if item is not None else None
     if isinstance(src, Permanent) and src in p.battlefield:
         game.sacrifice(src)
-        game.queue_trigger(p, eff.data["effects"], src, "payoff")
+        game.queue_trigger(p, eff.data["effects"], src, "payoff", context=getattr(item, "context", None))
 
 
 @kind("sac_unless_discard")
