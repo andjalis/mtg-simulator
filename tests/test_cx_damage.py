@@ -52,5 +52,21 @@ class DividedDamage(unittest.TestCase):
         self.assertEqual(big.damage, 3)
 
 
+STRIKE = card("Test Strike", "{1}{R}", "Instant", "Test Strike deals 2 damage to target creature and 2 damage to target "
+              "player or planeswalker.\nDraw a card.")
+
+
+class TwoTargets(DividedDamage):
+    def test_two_independent_targets(self):
+        self.assertEqual(STRIKE.unsupported, [])
+        bear = self.perm(BEAR, self.b)
+        life = self.b.life
+        self.game.stack.append(StackItem(self.a, list(STRIKE.spell_effects), [bear, self.b, None], card=STRIKE,
+                                         name=STRIKE.name))
+        self.game.resolve_top()
+        self.assertNotIn(bear, self.b.battlefield)
+        self.assertEqual(self.b.life, life - 2)
+
+
 if __name__ == "__main__":
     unittest.main()

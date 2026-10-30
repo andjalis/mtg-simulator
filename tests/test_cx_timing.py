@@ -14,6 +14,8 @@ BERSERK = card("Test Frenzy", "{G}", "Instant", "Cast this spell only before the
                "creature gets +2/+2 until end of turn.")
 GLYPH = card("Test Glyph", "{U}", "Instant", "Cast this spell only after combat.\nDraw a card.")
 TURN = card("Test Turn", "{U}", "Instant", "Cast this spell only during your turn.\nDraw a card.")
+COND = card("Test Cond", "{1}{U}", "Creature — Bird", "Cast this spell only if you've cast another spell this turn.", 2, 2)
+TRIBE = card("Test Tribe", "{B}", "Instant", "Cast this spell only if you control two or more Vampires.\nDraw a card.")
 UNKNOWN = card("Test Unknown", "{U}", "Instant", "Cast this spell only if a creature died this turn.\nDraw a card.")
 
 
@@ -62,6 +64,18 @@ class CastWindows(unittest.TestCase):
         self.assertTrue(self.window(TURN))
         self.game.active_idx = 1
         self.assertFalse(self.window(TURN))
+
+    def test_conditions(self):
+        from mtgsim.cx_timing import window_ok
+        self.assertEqual(COND.unsupported + TRIBE.unsupported, [])
+        self.game.step = "main1"
+        self.assertFalse(window_ok(self.game, self.a, COND))
+        self.game.spells_cast = {"turn": self.game.turn, self.a.name: 1}
+        self.assertTrue(window_ok(self.game, self.a, COND))
+        vamp = card("Test Vampire", "{B}", "Creature — Vampire", "", 1, 1)
+        self.assertFalse(window_ok(self.game, self.a, TRIBE))
+        self.a.battlefield += [Permanent(vamp, self.a), Permanent(vamp, self.a)]
+        self.assertTrue(window_ok(self.game, self.a, TRIBE))
 
 
 if __name__ == "__main__":
