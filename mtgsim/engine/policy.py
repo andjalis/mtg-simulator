@@ -740,6 +740,14 @@ def before_attacks(game: Game, me: Player):
             if act.kind not in ("animate", "barrens"):
                 continue
             need = add_costs(act.cost, {"generic": _reserve(game, me)})
+            if act.power == -1 and act.toughness == -1:
+                # "{X}{G}: ~ becomes an X/X creature" (Lair of the Hydra): fold the
+                # largest affordable {X} into the generic cost before checking.
+                x = game.ability_x(me, land, act)
+                if x is None:
+                    continue
+                need = {k: v for k, v in need.items() if k != "X"}
+                need["generic"] = need.get("generic", 0) + x
             if payable(game.mana_sources(me, exclude=land), need):
                 game.activate(me, land, act.kind)
                 break
