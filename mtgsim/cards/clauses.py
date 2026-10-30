@@ -117,6 +117,9 @@ _SUBS = [
     (re.compile(r"look at the top (\w+) cards of your library\. you may reveal (an? .+? card) from among them and "
                 r"put it into your hand\. put the rest on the bottom of your library in (?:a random|any) order\.",
                 re.I), lambda m: f"DIGFILTER {_num(m[1])} {m[2]}."),
+    (re.compile(r"look at the top (\w+) cards of your library\. you may put (an? [\w, -]+? card) from among them "
+                r"into your hand\. put the rest on the bottom of your library in (?:a random|any) order\.",
+                re.I), lambda m: f"DIGFILTER {_num(m[1])} {m[2]}."),
     (re.compile(r"look at the top \w+ cards of your library, where X is the number of lands you control\. put "
                 r"(\w+) of those cards into your hand\. put the rest on the bottom of your library in (?:a random|"
                 r"any) order\.", re.I), lambda m: f"DIGLANDS {_num(m[1])}."),
@@ -127,15 +130,23 @@ _SUBS = [
                 r"cards with mana value (\d+) or less from among them onto the battlefield\. put the rest on the "
                 r"bottom of your library in a random order\.", re.I),
      lambda m: f"DIGPUTNONCREATURE {_num(m[1])} {m[3]} {_num(m[2])}."),
-    (re.compile(r"look at the top (\w+) cards of your library\. you may put a permanent card with mana value "
-                r"(\d+) or less from among them onto the battlefield(?: with a shield counter on it)?\. put the rest "
+    (re.compile(r"look at the top (\w+) cards of your library\. you may put an? (?:permanent|creature|artifact|"
+                r"enchantment) card with mana value (\d+) or less from among them onto the battlefield"
+                r"(?: with a shield counter on it)?\. put the rest "
                 r"on the bottom of your library in a random order\.", re.I),
      lambda m: f"DIGPUT {_num(m[1])} {m[2]}."),
     (re.compile(r"exile the top (card|\w+ cards) of your library\. until (?:the end of your next turn|end of turn), you "
                 r"may play (?:that card|those cards)(?: this turn)?\.", re.I),
      lambda m: f"IMPULSE {1 if m[1] == 'card' else _num(m[1].split()[0])}."),
-    (re.compile(r"target (?:player|opponent) reveals their hand\. you choose a nonland card from it\. that player discards "
-                r"that card\.", re.I), lambda m: "TARGETDISCARD."),
+    (re.compile(r"target (?:player|opponent) reveals their hand\. you choose an? ([\w, -]+?) card from it\. "
+                r"that player discards that card\.", re.I), lambda m: "TARGETDISCARD."),
+    # "Return this card from your graveyard": the card itself is "~".
+    (re.compile(r"\breturn this card from your graveyard\b", re.I), r"return ~ from your graveyard"),
+    # "You may have ~ deal N damage to ...": always taken, so the damage is certain (Game.resolve_item).
+    (re.compile(r"you may have ~ deal (\d+) damage to (any target|target [a-z' ]+)", re.I), r"~ deals \1 damage to \2"),
+    # The engine copies only spells you control (see copies.py).
+    (re.compile(r"copy target ((?:instant or sorcery|instant|sorcery) )?spell(?!\b[^.]* you control)", re.I),
+     r"copy target \1spell you control"),
     (re.compile(r"then return a creature or planeswalker card with mana value X or less from your graveyard to "
                 r"the battlefield, where X is the amount of \{S\} spent to cast ~\.", re.I),
      lambda m: "REANIMATESNOW."),
@@ -194,7 +205,12 @@ _TRIGGERS = [
     (r"At end of combat, (.+)", ("end_combat",)),
     (r"When ~ becomes monstrous, (.+)", ("monstrous",)),
     (r"Whenever one or more \+1/\+1 counters are put on ~, (.+)", ("p1_added",)),
+    (r"Whenever you put one or more \+1/\+1 counters on ~, (.+)", ("p1_added",)),
     (r"Whenever (?:equipped|enchanted) creature deals combat damage to a player, (.+)", ("host:combat_damage_player",)),
+    (r"Whenever (?:equipped|enchanted) creature deals damage to (?:a player|an opponent), (.+)", ("host:damages_player",)),
+    (r"When(?:ever)? (?:equipped|enchanted) creature is dealt damage, (.+)", ("host:dealt_damage",)),
+    (r"Whenever ~ deals combat damage to a player or planeswalker, (.+)", ("combat_damage_player",)),
+    (r"When(?:ever)? ~ becomes the target of a spell, (.+)", ("targeted_by_spell",)),
     (r"Whenever a creature dealt damage by ~ this turn dies, (.+)", ("damaged_dies",)),
     (r"When(?:ever)? ~ dies, (?:if it was a creature, )?(.+)", ("dies",)),
     (r"Whenever ~ deals combat damage to a player, (.+)", ("combat_damage_player",)),
@@ -209,7 +225,7 @@ _TRIGGERS = [
     (r"Whenever you cast a spell that targets ~, (.+)", ("heroic",)),
     (r"Whenever you cast a spell during an opponent's turn, (.+)", ("cast_spell",)),
     (r"Whenever you cast a spell, (.+)", ("cast_spell",)),
-    (r"Whenever you cast an? ([A-Z]\w+(?: or [A-Z]\w+)?|creature|artifact|enchantment|outlaw|multicolored|historic|white|blue|black|red|"
+    (r"When(?:ever)? you cast an? ([A-Z]\w+(?: or [A-Z]\w+)?|creature|artifact|enchantment|outlaw|multicolored|historic|white|blue|black|red|"
      r"green|colorless) spell, (.+)", ("cast_spell",)),
     (r"Whenever you gain life, (.+)", ("gain_life",)),
     (r"Whenever (?:the Ring tempts you|you choose a creature as your Ring-bearer), (.+)", ("ring_tempts",)),

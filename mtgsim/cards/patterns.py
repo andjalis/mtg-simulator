@@ -452,7 +452,10 @@ _EFFECT_PATTERNS = [
     (r"bolster (\d+|one|two|three|four|five|six)", lambda m: Effect("bolster", _num(m[1]))),
     (r"support (\d+|one|two|three|four|five|six)", lambda m: Effect("support", _num(m[1]))),
     (r"(?:target|each) opponent sacrifices a creature(?: of their choice)?", lambda m: Effect("edict", 1)),
+    (r"target player sacrifices a creature(?: of their choice)?", lambda m: Effect("edict", 1, target="player")),
+    (r"each player sacrifices a creature(?: of their choice)?", lambda m: Effect("edict_each", 1)),
     (r"each other player sacrifices a creature", lambda m: Effect("edict", 1)),
+    (r"reveal the top card of your library and put (?:it|that card) into your hand", lambda m: Effect("dig", 1, 1)),
     (r"creatures without flying can't block this turn", lambda m: Effect("cant_block_all", filter="nonflying")),
     (r"attacking creatures (?:you control )?get \+(\d+)/\+(\d+) until end of turn",
      lambda m: Effect("pump_attackers", int(m[1]), int(m[2]))),
@@ -508,8 +511,9 @@ _EFFECT_PATTERNS = [
     (r"create (a|one|two|three|four|five) (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: named [\w' ,-]+?)?(?: that's "
      r"(tapped and attacking))?(?: with ([\w ,]+))?",
      lambda m: _token(m[1], m[2], m[3], m[4], m[6], bool(m[5]))),
-    (r'create (a) (\d+)/(\d+) ((?:\w+ )+?)creature token with "(.+)"',
-     lambda m: _token(m[1], m[2], m[3], m[4], "", False, m[5])),
+    (r'create (a|one|two|three|four|five|six) (\d+)/(\d+) ((?:\w+ )+?)creature tokens? with "(.+?)"'
+     r'(?: (?:It|They|This token) gains? (haste) until end of turn)?',
+     lambda m: _token(m[1], m[2], m[3], m[4], m[6] or "", False, m[5])),
     (r"create (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
      lambda m: Effect("token", _num(m[1]), data={"kind": m[2].lower()})),
     (r"create (a|one|two|three|four|five|six|seven|eight|nine|ten) tapped (treasure|clue|blood|map|lander|food|mutagen) "
