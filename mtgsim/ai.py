@@ -459,6 +459,20 @@ class HeuristicAI:
         pool = [c for c in spells if c not in castable_soon] or spells or me.hand
         return max(pool, key=lambda c: (c.cmc, -card_value(c)))
 
+    # ---------------------------------------------------------- untap choice
+    def choose_stay_tapped(self, game: Game, me: Player):
+        """"You may choose not to untap ~ during your untap step" (Amber Prison and ~40
+        similar permanents): stay tapped while being tapped keeps one of the opponent's
+        permanents locked (a "doesn't untap ... as long as ~ remains tapped" freeze).
+        The lock links are read tolerantly; with no active lock the flag is never set."""
+        opp = game.opponent(me)
+        for perm in me.battlefield:
+            if not perm.tapped:
+                continue
+            if any(getattr(t, link, None) is perm
+                   for t in opp.battlefield for link in ("frozen_by", "locked_by", "net_locked_by")):
+                perm.stay_tapped = True
+
     # ------------------------------------------------------------ main phase
     def main_phase(self, game: Game, me: Player):
         precombat = getattr(game, "step", "main1") != "main2"

@@ -27,6 +27,30 @@ def consumed_for_mana(permanent):
     return permanent.card.token_kind == 'treasure' or permanent.card.mana_sac or permanent.card.mana_sac_only
 
 
+def _gy_payout_stat(effects):
+    """The stat an effect reads off the graveyard card exiled as a cost ("deals damage equal
+    to the exiled card's power": Molten-Tail Masticore, Corpse Lunge), or None when the
+    exile is a plain cost. Tolerant of effects without an x-quantity."""
+    for e in effects:
+        data = getattr(e, "data", None)
+        spec = data.get("xq") if isinstance(data, dict) else None
+        if spec and spec[0] == "exiled_gy":
+            return spec[1] if len(spec) > 1 else "power"
+    return None
+
+
+def _pick_gy_exile(effects, candidates):
+    """The card to exile from the graveyard: the best stat when the payout scales with it,
+    else the least valuable candidate (a plain cost)."""
+    stat = _gy_payout_stat(effects)
+    if stat is None:
+        return candidates[0]
+    read = {"power": lambda c: int(getattr(c, "power", 0) or 0),
+            "toughness": lambda c: int(getattr(c, "toughness", 0) or 0),
+            "mana value": lambda c: c.cmc}.get(stat, lambda c: 0)
+    return max(candidates, key=lambda c: (read(c), -c.cmc))
+
+
 def counter_effects(ability, payment):
     """Preview counter X for target selection without changing the blueprint."""
     if ability.extra_costs.get('remove_creature_counters') not in ('x', 'positive'):
@@ -67,9 +91,11 @@ def spell_plan(game, player, card, cost, *, exclude=()):
             options.append((None, card.extra_sac_or_pay if candidates else 0))
     result = plan(game, player, cost, spell=card, sacrifices=options, exclude=exclude)
     if result is not None and getattr(card, "extra_exile_gy", ""):
-        # The exiled graveyard card never feeds the mana payment, so the cheapest candidate
-        # can be attached after planning (can_cast_now gates on candidates existing).
-        result = replace(result, exile_gy_card=game.gy_exile_candidates(player, card.extra_exile_gy)[0])
+        # The exiled graveyard card never feeds the mana payment, so the candidate can be
+        # attached after planning (can_cast_now gates on candidates existing). A payout that
+        # scales with the exiled card (Corpse Lunge) wants the best stat, not the cheapest.
+        result = replace(result, exile_gy_card=_pick_gy_exile(
+            card.spell_effects, game.gy_exile_candidates(player, card.extra_exile_gy)))
     return result
 
 
@@ -96,8 +122,8 @@ def ability_plan(game, player, permanent, ability, cost, *, x=None, counter_choi
         if result is not None:
             result = replace(result, counter_payments=counters)
             if costs.get('exile_gy_card'):
-                result = replace(result, exile_gy_card=game.gy_exile_candidates(
-                    player, costs['exile_gy_card'])[0])
+                result = replace(result, exile_gy_card=_pick_gy_exile(
+                    ability.effects, game.gy_exile_candidates(player, costs['exile_gy_card'])))
             return result
     return None
 

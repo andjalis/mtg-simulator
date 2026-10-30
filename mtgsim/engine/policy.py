@@ -242,6 +242,13 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
             k = e.kind
             from ..residual_templates import effect_value
             residual_value = effect_value(game, me, e, tgt)
+            if residual_value is None:
+                # New modules' kinds (venture, the initiative, die rolls): the module's
+                # own values when it provides them, else the conservative default below.
+                # Tolerant of the module not exporting effect_value yet.
+                from .. import dungeon_mechanics
+                dungeon_effect_value = getattr(dungeon_mechanics, "effect_value", None)
+                residual_value = dungeon_effect_value(game, me, e, tgt) if dungeon_effect_value else None
             if residual_value is not None:
                 total += residual_value
             elif k in ("return_tribal_grave", "grave_library_top"):
