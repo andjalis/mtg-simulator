@@ -4,6 +4,8 @@ Decisions the heuristic AI doesn't make are taken by these functions; an AI can
 override each one by defining the hook of the same name (see README and DEFAULTS)."""
 from __future__ import annotations
 
+import re
+
 from typing import TYPE_CHECKING
 from .. import alt_casts, transmute, copies, learning, proliferate, regeneration, removal, costs
 from ..cards import COLORS, CardDef, Effect
@@ -22,6 +24,28 @@ def perm_value(x: Permanent) -> float:
     if x.card.token_kind:
         return 0.5
     return x.card.cmc + (x.power + x.toughness) / 2 + 0.5 * len(x.card.keywords)
+
+
+_ANY_PLAYER = re.compile(r"any player may activate", re.I)
+_ANY_PLAYER_WINDOW = re.compile(r"any player may activate this ability but only "
+                                r"(during their turn|during any upkeep step|during their draw step|as a sorcery)", re.I)
+_ANY_PLAYER_WINDOWS = {"during their turn": "their_turn", "during any upkeep step": "upkeep",
+                       "during their draw step": "draw_step", "as a sorcery": "sorcery"}
+
+
+def any_player_ability(act) -> bool:
+    """Whether any player, not just the controller, may activate this ability
+    ("Any player may activate this ability."). ``Activated.any_player`` is the parsed flag
+    when the parser records one; the text fallback keeps hand-built abilities working."""
+    return bool(getattr(act, "any_player", False) or _ANY_PLAYER.search(act.text or ""))
+
+
+def any_player_window(act) -> str:
+    """The timing restriction of "Any player may activate this ability but only ...":
+    "their_turn" (their own turn), "upkeep" (any upkeep step), "draw_step" (their draw
+    step), "sorcery", or "" when there is none."""
+    m = _ANY_PLAYER_WINDOW.search(act.text or "")
+    return _ANY_PLAYER_WINDOWS.get(m[1].lower(), "") if m else ""
 
 
 def _threat(game: Game, me: Player, item: StackItem) -> float:
@@ -398,6 +422,22 @@ def protective_ability(game: Game, me: Player, item, victim):
                 continue
             first = [] if e.target == "self" else [victim]
             return ("activate", perm, f"ability:{i}", first + [None] * (len(act.effects) - len(first)))
+    for pl in game.players:      # an "any player may activate" saver on someone else's permanent
+        if pl is me:
+            continue
+        for perm in pl.battlefield:
+            for i, act in enumerate(perm.activated):
+                if not act.effects or not any_player_ability(act) or not game.can_activate(me, perm, i):
+                    continue
+                e = act.effects[0]
+                keyword = e.data.get("keyword") if e.kind == "grant" else None
+                saves = (keyword == "hexproof" or keyword == "indestructible" and
+                         (any(x.kind == "destroy" for x in item.effects)
+                          or damage >= victim.toughness - victim.damage)
+                         or e.kind == "prevent_next" and damage and victim.toughness - victim.damage > damage - e.amount)
+                if not saves or e.target not in ("creature", "creature_mine", "any"):
+                    continue
+                return ("activate", perm, f"ability:{i}", [victim] + [None] * (len(act.effects) - 1))
     return None
 
 
@@ -510,15 +550,61 @@ def equip_all(game: Game, me: Player):
             game.equip(me, eq, tgt)
 
 
+def any_player_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: int = 0) -> bool:
+    """Whether me activating an "any player may activate" ability on a permanent someone else
+    controls is worth its cost. Self-targeted effects are valued from my side: growing the
+    controller's permanent counts against it, shrinking it counts for it; damage to every
+    player is a wash unless it finishes the controller."""
+    act = perm.activated[idx]
+    c = act.extra_costs
+    if not game.can_activate(me, perm, idx):
+        return False
+    need = add_costs(act.cost, {"generic": reserve})
+    if not payable(game.mana_sources(me, perm if c.get("tap") else None, "ability"), need):
+        return False
+    with game.targeting(perm):
+        value = _mode_value(game, me, [e for e in act.effects if e.target != "self"])
+        for e in act.effects:
+            if e.target == "self":
+                if e.kind in ("pump", "p1_counters"):
+                    value += -1 if e.amount + e.amount2 >= 0 else 1
+                else:
+                    value -= 1        # other self effects (bounce_self, untap_self, ...) serve the controller
+            elif e.kind == "damage_each_player":
+                value += 90 if e.amount >= perm.controller.life else -2
+    if act.modes:
+        value += modal.value(game, me, act.modes, perm)
+    if value <= 0:
+        return False
+    if c.get("discard") and not choose_rummage(game, me, c["discard"]) and len(me.hand) <= 4:
+        return False
+    if c.get("sacrifice") == "land" and sum(x.card.is_land for x in me.battlefield) < 4:
+        return False
+    if c.get("life") and me.life <= 10:
+        return False
+    return True
+
+
 def choose_ability(game: Game, me: Player, instant: bool):
     """An ("activate", permanent, "ability:N") action worth taking now, or None. With instant=True
-    only abilities without "Activate only as a sorcery"."""
+    only abilities without "Activate only as a sorcery". "Any player may activate" abilities on
+    other players' permanents are considered too (any_player_worth)."""
     for perm in list(me.battlefield):
         for i, act in enumerate(perm.activated):
             if act.kind != "ability" or (instant and act.sorcery):
                 continue
             if ability_worth(game, me, perm, i, 0 if instant else _reserve(game, me)):
                 return ("activate", perm, f"ability:{i}")
+    for pl in game.players:
+        if pl is me:
+            continue
+        for perm in list(pl.battlefield):
+            for i, act in enumerate(perm.activated):
+                sorcery = act.sorcery or any_player_window(act) == "sorcery"
+                if act.kind != "ability" or (instant and sorcery) or not any_player_ability(act):
+                    continue
+                if any_player_worth(game, me, perm, i, 0 if instant else _reserve(game, me)):
+                    return ("activate", perm, f"ability:{i}")
     return None
 
 
