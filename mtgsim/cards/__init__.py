@@ -78,3 +78,4 @@ _TRIGGERS += _life_templates.TRIGGERS
 from .. import hand_templates as _hand_templates
 _EFFECT_PATTERNS += _hand_templates.EFFECT_PATTERNS
 _SUBS += _hand_templates.SUBS
+_SUBS += _search.SUBS
