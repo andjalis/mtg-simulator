@@ -128,5 +128,5 @@ _EFFECT_PATTERNS += _cx_triggers.EFFECT_PATTERNS
 _SUBS += _cx_triggers.SUBS
 from .. import cx_damage as _cx_damage
 _EFFECT_PATTERNS += _cx_damage.EFFECT_PATTERNS
-from .. import cx_death_triggers as _cx_death_triggers
-_TRIGGERS += _cx_death_triggers.TRIGGERS
+from .. import cx_event_triggers as _cx_event_triggers
+_TRIGGERS += _cx_event_triggers.TRIGGERS

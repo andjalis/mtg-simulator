@@ -212,6 +212,9 @@ class Permanent:
 
     def _cda_count(self, what: str) -> int:
         c = self.controller
+        if what.startswith("cx:"):
+            from ..cx_cda import count
+            return count(self, what)
         if what == "cards in your hand":
             return len(c.hand)
         if what == "cards in your graveyard":
