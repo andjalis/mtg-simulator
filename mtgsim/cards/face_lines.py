@@ -236,6 +236,22 @@ def _face_land_and_mana_lines(st, line):
         if re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a creature type\.", line):
             extra["choose_type"] = "creature"
             return None
+        if re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a(?: nonland)? card name\.", line):
+            # Meddling Mage, Nevermore: the choose_name kind names the card, and the static line
+            # below is the ban that kind carries out (Game.named_cast_banned).
+            triggers.append(Trigger("etb", [Effect("choose_name")]))
+            return None
+        if line == "Spells with the chosen name can't be cast." and \
+                any(t.event == "etb" and any(e.kind == "choose_name" for e in t.effects) for t in triggers):
+            return None        # the ban is what the choose_name kind carries out (named_cast_banned)
+        m = re.fullmatch(r"You may choose not to untap [^.]+? during your untap step\.(?: If you do, (.+))?", line)
+        if m and "Land" not in types:
+            # The recorded choice (perm.stay_tapped) is consumed by the untap step; storage lands
+            # keep their own hold rule (mtgsim.storage). The subject is always the source itself.
+            extra["stay_tapped"] = True
+            if m[1]:
+                st.unsupported.append("If you do, " + m[1].rstrip(".") + ".")
+            return None
         if re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a basic land type\. Then you may pay 2 life\. If you "
                         r"don't, it enters tapped\.", line):
             extra.update(choose_type="basic_land", tapped_condition="shock")
@@ -566,6 +582,9 @@ def _face_cost_and_static_lines(st, line):
         if re.fullmatch(r"~ costs \{1\} less to cast for each instant and sorcery card in your graveyard\.", line):
             extra["cost_reduction"] = "instant_sorcery_gy"
             return None
+        if re.fullmatch(r"~ costs \{1\} less to cast for each creature in your party\.", line):
+            extra["cost_reduction"] = "party"
+            return None
         if re.fullmatch(r"~ costs \{X\} less to cast, where X is the number of cards in your graveyard that are instant "
                         r"cards, sorcery cards, and/or have an Adventure\.", line):
             extra["cost_reduction"] = "instant_sorcery_adventure_gy"
@@ -594,6 +613,19 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["extra_sacrifice"] = m[2]
             extra["extra_sac_or_pay"] = int(m[1] or m[3] or 0)
+            return None
+        m = re.fullmatch(r"As an additional cost to cast ~, exile (a|an|one|two|three|four|five|six|seven|eight|X) "
+                         r"((?:(?:creature|artifact|enchantment|instant|sorcery|land|[A-Z]\w+)(?: or )?)+ )?cards? "
+                         r"from your graveyard\.", line)
+        if m:
+            # "exile a creature card from your graveyard" (Makeshift Mauler, Corpse Lunge): the
+            # descriptor the engine's gy_exile_candidates matches graveyard cards against. Multi-card
+            # and X costs currently exile the cheapest single matching card.
+            desc = (m[2] or "").strip()
+            extra["extra_exile_gy"] = desc + " card" if desc else "card"
+            if m[1] not in ("a", "an"):
+                approximations.append(f"the additional cost exiles one {extra['extra_exile_gy']} "
+                                      f"instead of {m[1]}")
             return None
         m = re.fullmatch(r"~ can't be blocked by creatures with power (\d+) or less\.", line)
         if m:
