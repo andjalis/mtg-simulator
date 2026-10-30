@@ -761,14 +761,29 @@ def card_matches(card: CardDef, desc: str, ref: CardDef | None = None) -> bool:
     name of ref (the resolving source card) and matches nothing when ref is unknown. A word the
     vocabulary below does not know makes the alternative match nothing (fail closed) rather than
     everything. "you control"/"you own" tails are scope, not vocabulary: the caller enforces them."""
-    for alt in re.split(r" or (?=an? )", desc.strip()):
+    # "up to one target" separates the target slots of one spell (Relive the Past,
+    # Pull from the Deep); a target matching any slot's description is a legal pick.
+    for alt in re.split(r" or (?=an? )|,? (?:and )?up to one target ", desc.strip()):
         alt = re.sub(r"^(?:an? )+", "", alt)    # tolerate a doubled article ("a a land")
         alt = re.sub(r" you (?:own|control)", "", alt)
+        alt = re.sub(r"^(?:another |other )", "", alt)       # relationship, not vocabulary
+        alt = re.sub(r", reveal that card$", "", alt)         # search riders
+        m = re.search(r" with mana value (\d+)$", alt)        # an exact mana value
+        if m:
+            if card.cmc != int(m[1]):
+                continue
+            alt = alt[:m.start()]
         m = re.search(r" with mana value (\d+) or (less|greater)$", alt)
         if m:
             if (card.cmc > int(m[1])) if m[2] == "less" else (card.cmc < int(m[1])):
                 continue
             alt = alt[:m.start()]
+        pstat = re.search(r" with (power|toughness) (\d+) or (less|greater)$", alt)
+        if pstat:     # "a creature card with power 2 or less"
+            v = int(getattr(card, pstat[1], 0) or 0)
+            if (v > int(pstat[2])) if pstat[3] == "less" else (v < int(pstat[2])):
+                continue
+            alt = alt[:pstat.start()]
         kw = re.search(r" with (flying|reach|haste|trample|lifelink|deathtouch)$", alt)
         if kw:
             if kw[1] not in card.keywords:
@@ -795,8 +810,9 @@ def card_matches(card: CardDef, desc: str, ref: CardDef | None = None) -> bool:
                     (int(stats[1]), int(stats[2])):
                 continue
             alt = alt[stats.end():]
-        words = [w for w in ("" if alt == "card" else alt.replace(" card", "")).split()
-                 if w not in ("or", "and/or")]
+        words = [w for w in ("" if alt == "card" else alt.replace(" cards", "").replace(" card", "")).split()
+                 if w not in ("or", "and", "and/or")]
+        words = [w[:-1] if w.endswith("s") and w[:-1] in _TYPE_WORDS else w for w in words]   # plurals
         ok = True
         if "token" in words:
             ok = card.is_token
@@ -808,6 +824,7 @@ def card_matches(card: CardDef, desc: str, ref: CardDef | None = None) -> bool:
         if types and not any(t.capitalize() in card.types for t in types):
             ok = False
         _COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
+        _TOKEN_KINDS = ("food", "clue", "blood", "treasure", "gold")   # lowercase sacrifice filters
         for w, check in (("basic", is_basic_land(card)),
                          ("nonbasic", not is_basic_land(card)),
                          ("snow", bool(card.snow)),
@@ -818,6 +835,7 @@ def card_matches(card: CardDef, desc: str, ref: CardDef | None = None) -> bool:
                          ("multicolored", len(card.colors) >= 2),
                          ("colorless", not card.colors),
                          ("double-faced", getattr(card, "back", None) is not None),
+                         *((k, k.capitalize() in card.subtypes) for k in _TOKEN_KINDS),
                          *((col, _COLORS[col] in card.colors) for col in _COLORS),
                          *(("non" + col, _COLORS[col] not in card.colors) for col in _COLORS)):
             if w in words and not check:
@@ -825,11 +843,15 @@ def card_matches(card: CardDef, desc: str, ref: CardDef | None = None) -> bool:
         if ok:
             words = [w for w in words if w not in
                      ("basic", "nonbasic", "snow", "legendary", "permanent", "historic",
-                      "outlaw", "multicolored", "colorless", "double-faced", *_COLORS,
-                      *("non" + col for col in _COLORS))]
+                      "outlaw", "multicolored", "colorless", "double-faced", *_TOKEN_KINDS,
+                      *_COLORS, *("non" + col for col in _COLORS))]
         for w in words:
+            m_nonsub = re.fullmatch(r"non-([A-Z]\w*)", w)
             if w.startswith("non") and w[3:].rstrip(",") in _TYPE_WORDS:
                 if w[3:].rstrip(",").capitalize() in card.types:    # "a noncreature, nonland card"
+                    ok = False
+            elif m_nonsub:                                          # "artifact and/or non-Aura enchantment"
+                if m_nonsub[1] in card.subtypes:
                     ok = False
             elif w[0].isupper() and w not in card.subtypes and w != card.name and not \
                     (card.changeling and card.is_creature):

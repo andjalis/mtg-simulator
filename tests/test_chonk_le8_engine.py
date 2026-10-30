@@ -206,7 +206,7 @@ class CardMatchesVocabulary(unittest.TestCase):
 
     def test_snow(self):
         self.assertTrue(card_matches(self.SNOW_CREATURE, "a snow permanent you control"))
-        self.assertFalse(card_matches(card_matches_card := BEAR, "a snow permanent you control"))
+        self.assertFalse(card_matches(BEAR, "a snow permanent you control"))
 
     def test_nontoken_historic(self):
         artifact = card("Test Relic", "{2}", "Artifact", "")
@@ -242,6 +242,28 @@ class CardMatchesVocabulary(unittest.TestCase):
         self.assertFalse(card_matches(BEAR, "a kind creature card"))
         self.assertTrue(card_matches(BEAR, "a creature card"))
         self.assertTrue(card_matches(BEAR, "a card"))
+
+    def test_sample_corpus_shapes(self):
+        """Desc shapes found by a 4000-card vocabulary sample of the card database."""
+        bear3 = card("Bear3", "{3}{G}", "Creature — Bear", "", 3, 3)
+        aura = card("Test Aura", "{1}{W}", "Enchantment — Aura", "")
+        land = card("Test Wastes", "", "Land", "")
+        self.assertTrue(card_matches(BEAR, "creatures"))                      # plural type word
+        self.assertFalse(card_matches(land, "creatures"))
+        exact = card("Exact2", "{2}", "Artifact", "")
+        self.assertTrue(card_matches(exact, "an artifact card with mana value 2, reveal that card"))
+        self.assertFalse(card_matches(bear3, "an artifact card with mana value 2, reveal that card"))
+        # the target slots of one spell are alternatives (Relive the Past, Pull from the Deep)
+        saga = card("Test Saga2", "{2}{W}", "Enchantment — Saga", "")
+        self.assertFalse(card_matches(aura, "artifact card, up to one target land card, and up to "
+                                            "one target non-Aura enchantment"))   # it IS an Aura
+        self.assertTrue(card_matches(saga, "artifact card, up to one target land card, and up to "
+                                           "one target non-Aura enchantment"))
+        self.assertTrue(card_matches(land, "artifact card, up to one target land card, and up to "
+                                           "one target non-Aura enchantment"))
+        self.assertFalse(card_matches(bear3, "instant card and up to one target sorcery"))
+        self.assertTrue(card_matches(card("Test Bolt2", "{2}{R}", "Instant", ""), "instant card and "
+                                     "up to one target sorcery"))
 
 
 class AnyControllerEnters(Chonk8):
