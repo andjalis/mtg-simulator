@@ -529,3 +529,31 @@ def explore(game, p, target, **_):
             if game.hook(p, "scry")(game, p, [top]):
                 p.graveyard.append(p.library.pop())
         game.log(f"{target.card.name} explores", p)
+
+
+@kind("clash")
+def clash(game, p, eff, item, opp, **_):
+    """\"Clash with an opponent\" (chance_templates.py): reveal the top card of each
+    library, the bigger mana value wins (an empty library loses). The revealed cards stay
+    on top (simplification: the real wording returns them top or bottom at choice) and
+    an \"If you win\" rider rides item.gate_paid, the pay_gate pattern."""
+    mine = p.library[-1] if p.library else None
+    theirs = opp.library[-1] if opp.library else None
+    won = mine is not None and (theirs is None or mine.cmc > theirs.cmc)
+    if item is not None:
+        item.gate_paid = won
+    game.log(f"clashes: {mine.name if mine else 'nothing'} ({mine.cmc if mine else 0}) vs "
+             f"{theirs.name if theirs else 'nothing'} ({theirs.cmc if theirs else 0})", p)
+    game.fire(p, "you_clash")
+    if won:
+        game.fire(p, "you_win_clash")
+
+
+@kind("flip_coin")
+def flip_coin(game, p, eff, item, **_):
+    """\"Flip a coin. If you win/lose the flip, <X>\" (chance_templates.py): a fair coin
+    decides; the rider (cond \"paid\") runs on the named side of the flip."""
+    won = game.rng.random() < 0.5
+    if item is not None:
+        item.gate_paid = won != bool(eff.data.get("on_lose"))
+    game.log(f"flips a coin and {'wins' if won else 'loses'}", p)

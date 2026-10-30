@@ -92,3 +92,7 @@ _SUBS += _energy_templates.SUBS
 from .. import animate_templates as _animate_templates
 _EFFECT_PATTERNS += _animate_templates.EFFECT_PATTERNS
 _SUBS += _animate_templates.SUBS
+from .. import chance_templates as _chance_templates
+_EFFECT_PATTERNS += _chance_templates.EFFECT_PATTERNS
+_SUBS += _chance_templates.SUBS
+_TRIGGERS += _chance_templates.TRIGGERS
