@@ -2,19 +2,32 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING
 
 from .. import alt_casts, emerge, auras, copies, counting, discounts, returns, costs, storage
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
-from .state import COLOR_WORDS, Permanent, TARGETED, _gy_desc, card_matches
-
-if TYPE_CHECKING:
-    from .state import Player
-
+from .state import COLOR_WORDS, Permanent, Player, TARGETED, _gy_desc, card_matches
 
 FACE_DOWN = ("disguise", "morph", "megamorph")   # cast face down for {3} as a 2/2, turned face up for this cost
+
+_STAT_OF = {"power": 0, "toughness": 1, "mana value": 2}   # a (power, toughness, mana value) stats triple
+
+
+def _gate_sac_stats(item, src):
+    """The stats of the permanent sacrificed to pay for item, whichever way it was paid:
+    a spell cost (item.sac_stats, set in play.cast), a "you may sacrifice. If you do" gate
+    (item.gate_sac_stats, pay_gate_cost) or an activated ability's cost (src.last_sacrificed)."""
+    stats = getattr(item, "gate_sac_stats", None)
+    if stats is None:
+        stats = getattr(item, "sac_stats", None)
+    if stats is None and src is not None:
+        stats = getattr(src, "last_sacrificed", None)
+    return stats
+
+
+def _stat_of(stats, stat: str) -> int:
+    return stats[_STAT_OF[stat]] if stats is not None else 0
 
 
 def _mutate_hosts(game, p, card):
@@ -194,14 +207,31 @@ class CostsMixin:
             # "the sacrificed creature's power/toughness/mana value": paid as a spell cost (item.sac_stats,
             # set in play.cast), a "you may sacrifice. If you do" gate (item.gate_sac_stats, pay_gate_cost),
             # or an activated ability's cost (source.last_sacrificed, abilities.py).
-            stats = getattr(item, "gate_sac_stats", None)
-            if stats is None:
-                stats = getattr(item, "sac_stats", None)
-            if stats is None and src is not None:
-                stats = getattr(src, "last_sacrificed", None)
-            if stats is None:
-                return 0
-            return {"power": stats[0], "toughness": stats[1], "mana value": stats[2]}[spec[1]]
+            stats = _gate_sac_stats(item, src)
+            return _stat_of(stats, spec[1])
+        if kind == "sac_plus":
+            # "N plus the sacrificed permanent's mana value/power" (Oswald Fiddlebender, Enigmatic
+            # Incarnation): the same stats lookup as "sac", plus a constant.
+            stats = _gate_sac_stats(item, src)
+            return spec[1] + _stat_of(stats, spec[2])
+        if kind == "tap":
+            # "that creature's power/toughness/mana value" after "Tap target untapped creature you
+            # control. If you do, ..." (Energy Tap): the ("tap", "creature") gate records the stats
+            # as it taps (pay_gate_cost).
+            return _stat_of(getattr(item, "gate_tap_stats", None), spec[1])
+        if kind == "revealed":
+            # "You lose life equal to its mana value" (Dark Confidant): the mana value of the card
+            # the dig put into its owner's hand, recorded on the resolving item.
+            return getattr(item, "revealed_cmc", 0) if item is not None else 0
+        if kind == "arith":
+            # "3 minus the number of cards in their hand" (Rackling) or "... minus 4" (Iron Maiden):
+            # each side is a number or another quantity; "their ..." quantities evaluate for the
+            # trigger's context player ("that player") when there is one.
+            who = item.context if item is not None and isinstance(item.context, Player) else p
+            lhs, op, rhs = spec[1], spec[2], spec[3]
+            a = self.x_quantity(who, lhs, item, prev) if isinstance(lhs, tuple) else lhs
+            b = self.x_quantity(who, rhs, item, prev) if isinstance(rhs, tuple) else rhs
+            return max(0, a - b if op == "-" else a + b)
         if kind == "gy":
             return counting.count(self, p, {"what": spec[1], "zone": "graveyard"}, src)
         return counting.count(self, p, {"what": spec[1], "zone": "battlefield"}, src)
@@ -295,6 +325,20 @@ class CostsMixin:
                                                        and sum(x.card.is_land for x in p.battlefield) >= 5)):
                 return False
             self.discard_card(p, p.ai.choose_discard(self, p))
+            return True
+        if kind == "tap":
+            # ("tap", "creature"): "Tap target untapped creature you control. If you do, ..."
+            # (Energy Tap): tap the untapped creature with the highest mana value (that is what
+            # the gate pays out) and record its stats for a following ("tap", stat) X-quantity.
+            spare = [x for x in p.creatures if not x.tapped]
+            if not spare:
+                return False
+            victim = max(spare, key=lambda x: (x.card.cmc, -perm_value(x)))
+            if item is not None:
+                item.gate_tap_stats = (victim.power, victim.toughness, victim.card.cmc)
+            victim.tapped = True
+            self.fire(p, "becomes_tapped", victim)
+            self.log(f"taps {victim.card.name}", p)
             return True
         if kind == "forage":
             if len(p.graveyard) >= 3:
@@ -634,6 +678,8 @@ class CostsMixin:
             return False
         from ..advanced_templates import cast_allowed
         if not cast_allowed(self, p, card):
+            return False
+        if self.named_cast_banned(card):    # "Spells with the chosen name can't be cast" (Meddling Mage)
             return False
         if card.is_land or not self._available(p, card):
             return False
