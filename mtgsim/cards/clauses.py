@@ -249,10 +249,14 @@ _TRIGGERS = [
     (r"Whenever another creature you control enters or dies, if that creature's power is greater than ~'s, (.+)",
      ("other_creature_enters", "other_creature_dies")),
     (r"Whenever a land you control enters, (.+)", ("land_enters",)),
-    (r"When(?:ever)? (~ or )?(another|an?) ((?:[\w-]+(?:,? or |, | ))*?(?:creature|artifact|enchantment|planeswalker|"
+    (r"When(?:ever)? (~ or )?(another|an?) ((?:[\w-]+(?:,? or |, | ))*?(?:creature|artifact|enchantment|planeswalker|token|"
      r"[A-Z]\w+)s?) you control( with mana value \d+ or greater| with (?:flying|reach|haste|trample|lifelink|deathtouch))? enters(?: and whenever an? ([A-Z]\w+) you control "
      r"enters| and whenever you fully unlock a Room)?, (.+)",
      ("permanent_enters",)),
+    # Cross-event compounds: one sentence, two triggers with different filters.
+    (r"Whenever you cast an? (white|blue|black|red|green) spell(?: or| and whenever) (?:a|an) ([A-Z]\w+) you control enters, (.+)",
+     ("cast_spell", "permanent_enters")),
+    (r"Whenever another ([\w, -]+?) you control enters or dies, (.+)", ("permanent_enters", "ally_dies")),
     (r"Whenever you draw a card, (.+)", ("you_draw",)),
     (r"Whenever you sacrifice (an? [\w ]+?|another [\w ]+?), (.+)", ("sacrifice",)),
     (r"Whenever you attack with two or more creatures, (.+)", ("attack_two_plus",)),

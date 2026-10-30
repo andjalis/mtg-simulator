@@ -663,6 +663,12 @@ def _parse_trigger_line(line: str):
             continue
         flt = ""
         rest = m[m.lastindex]
+        # Cross-event compounds carry a different filter per event (clauses.py: "cast X or Y enters",
+        # "enters or dies").
+        flt_map = {("cast_spell", "permanent_enters"): lambda: {"cast_spell": "spell:" + m[1].lower(),
+                                                                "permanent_enters": f"noself|any|{m[2]}"},
+                   ("permanent_enters", "ally_dies"): lambda: {"permanent_enters": f"noself|other|{m[1]}",
+                                                               "ally_dies": f"other||{m[1]}"}}.get(events, lambda: None)()
         intervening = rest.startswith("if ")
         if events == ("any_cast",):
             flt = f"cmc<={m[1]}"
@@ -725,7 +731,7 @@ def _parse_trigger_line(line: str):
         head = modal.parse_header(rest)
         if head is not None and not head[1]:
             modes = modal.Modes(spec=head[0])
-            return [Trigger(e, [], flt, modes) for e in events], [], modes
+            return [Trigger(e, [], flt_map[e] if flt_map else flt, modes) for e in events], [], modes
         spent = re.fullmatch(r"if \{([WUBRG])\}\{\1\} was spent to cast it, (.+)", rest, flags=re.S)
         cond = f"spent:{spent[1]}" if spent else ""
         if spent:
@@ -790,7 +796,7 @@ def _parse_trigger_line(line: str):
         if not effs:
             return [], bad or [line], None
         gate = (cond or effs[0].cond) if intervening else ""
-        return [Trigger(e, effs, flt, once=events == ("targeted_mine",),
+        return [Trigger(e, effs, flt_map[e] if flt_map else flt, once=events == ("targeted_mine",),
                         intervening_if=gate) for e in events], bad, None
     return None
 
