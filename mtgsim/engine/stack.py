@@ -431,6 +431,9 @@ class StackMixin:
             owner.hand.append(base)                  # buyback paid: back to its owner's hand
         elif getattr(item, "exile_self", False):
             owner.exile.append(base)                 # "Exile ~." as the last line of an instant or sorcery
+        elif getattr(item, "shuffle_self", False):
+            owner.library.append(base)               # "Shuffle ~ into its owner's library."
+            owner.library.shuffle(self.rng)
         elif kind not in ("channel", "prepared"):
             owner.graveyard.append(base)
             if base.advanced_rules.get("haunt"):
