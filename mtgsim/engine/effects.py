@@ -1,7 +1,7 @@
 """Game methods for game events that effects and rules cause: damage, destroy, sacrifice, dying, state-based actions."""
 from __future__ import annotations
 
-from .. import continuous, counter_mechanics, that_much
+from .. import continuous, counter_mechanics, cx_triggers, that_much
 
 from .. import auras
 from ..cards import AltCost, CardDef, Effect
@@ -95,6 +95,7 @@ class EffectsMixin:
             return
         from ..batch1_templates import soul_link
         soul_link(self, source, target, amount)
+        cx_triggers.on_damage(self, source, target, amount, combat)
         if has("lifelink"):
             controller = source.controller if isinstance(source, Permanent) else by
             if controller is not None:

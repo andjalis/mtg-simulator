@@ -177,6 +177,7 @@ class Permanent:
         self.attached_to: "Permanent | None" = None    # Equipment: the creature it is attached to
         self.damaged_by: list = []                      # permanents that dealt it damage this turn
         self.prevent_next = 0                           # "prevent the next N damage ... this turn"
+        self.detained_by = None                         # Player who detained it: no attack, block or activation until their turn
         self.skip_untap = 0                             # untap steps it skips ("doesn't untap during ... next untap step")
         self.spent_color = ""              # "if {U}{U} was spent to cast it"
         self.exiled_cards: list = []       # (card, owner) exiled until this leaves the battlefield
@@ -374,6 +375,10 @@ class Permanent:
             block = level_block(self)
             if block is not None and kw in block[1]:
                 return True
+        if kw == 'hexproof' and self.card.advanced_rules.get('hexproof_entered'):
+            from ..cx_triggers import hexproof_entered
+            if hexproof_entered(self):
+                return True
         if kw in self.card.keywords or kw in self.temp_kw or kw in self.perm_kw or (kw in KEYWORDS and self.counters.get(kw, 0) > 0):
             return True
         if kw in ('training', 'dethrone') and self.is_creature and any(k == kw and not (other and source is self)
@@ -515,7 +520,7 @@ class Permanent:
                    [a.card.equip_ward for a in self.auras])
 
     def can_attack(self):
-        return (self.is_creature and not self.tapped and not self.has("defender") and not (self.card.cant_attack and not self.abilities_suppressed)
+        return (self.is_creature and not self.tapped and self.detained_by is None and not self.has("defender") and not (self.card.cant_attack and not self.abilities_suppressed)
                 and not (self.auras and auras.stops_combat(self))
                 and not (self.auras and any("cant_attack" in a.card.aura_flags for a in self.auras))
                 and (not self.sick or self.has("haste")))
@@ -699,7 +704,7 @@ class StackItem:
 
 
 def can_block(blocker: Permanent, attacker: Permanent) -> bool:
-    if not blocker.is_creature or blocker.tapped:
+    if not blocker.is_creature or blocker.tapped or blocker.detained_by is not None:
         return False
     if blocker.card.unleash and blocker.p1 > 0:
         return False

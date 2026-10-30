@@ -240,7 +240,7 @@ class AbilitiesMixin:
         """Whether perm's activated ability idx (kind "ability") can be activated now, by p.
         "Any player may activate" abilities may be used by players who don't control perm."""
         acts = perm.activated
-        if idx < 0 or idx >= len(acts) or acts[idx].kind != "ability":
+        if idx < 0 or idx >= len(acts) or acts[idx].kind != "ability" or perm.detained_by is not None:
             return False
         act = acts[idx]
         if perm not in p.battlefield and not any_player_ability(act):
