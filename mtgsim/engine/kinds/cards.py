@@ -275,8 +275,12 @@ def rummage(game, p, eff, **_):
 
 
 @kind("tutor")
-def tutor(game, p, eff, **_):
-    cands = [c for c in p.library if card_matches(c, eff.data["what"])]
+def tutor(game, p, eff, item, **_):
+    # ref: "search for a card named ~" matches the resolving source's own name even when
+    # the effect reaches this handler without resolve()'s "~" substitution.
+    ref = (item.card or item.source.card) if item is not None and \
+        (item.card is not None or isinstance(item.source, Permanent)) else None
+    cands = [c for c in p.library if card_matches(c, eff.data["what"], ref=ref)]
     if cands:
         card = choose_tutor(game, p, cands)
         p.library.remove(card)
@@ -335,8 +339,10 @@ def mill_repeat(game, p, eff, item, **_):
 
 
 @kind("discard_tutor")
-def discard_tutor(game, p, eff, **_):
-    cands = [c for c in p.library if card_matches(c, eff.data["desc"])]
+def discard_tutor(game, p, eff, item, **_):
+    ref = (item.card or item.source.card) if item is not None and \
+        (item.card is not None or isinstance(item.source, Permanent)) else None
+    cands = [c for c in p.library if card_matches(c, eff.data["desc"], ref=ref)]
     if p.hand and cands:
         card = p.ai.choose_discard(game, p)
         game.discard_card(p, card)
