@@ -3,6 +3,9 @@
 Joined at the end of ``cards/__init__.py``. Wordings that already parse are left to the
 tables defined earlier; the DIGGY/FOF sentinels below are produced by SUBS rewrites of the
 "look/reveal the top N ... put K into your hand and the rest into your graveyard" cluster.
+The same goes for the bottom-of-library dig riders ("put the rest on the bottom of your
+library in a random order"), the "put all <desc> cards revealed this way" splits, the
+battlefield dig puts (DIGBPUT/DIGBATTLE) and "Shuffle ~ into its owner's library."
 """
 from __future__ import annotations
 
