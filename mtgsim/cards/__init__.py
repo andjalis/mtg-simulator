@@ -89,3 +89,6 @@ _SUBS += _prevent_templates.SUBS
 from .. import energy_templates as _energy_templates
 _EFFECT_PATTERNS += _energy_templates.EFFECT_PATTERNS
 _SUBS += _energy_templates.SUBS
+from .. import animate_templates as _animate_templates
+_EFFECT_PATTERNS += _animate_templates.EFFECT_PATTERNS
+_SUBS += _animate_templates.SUBS

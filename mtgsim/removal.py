@@ -22,6 +22,19 @@ def _destroy(target, flt):
 
 
 EFFECT_PATTERNS = [
+    # "That creature can't be regenerated." — the rider after a destroy that already
+    # parsed (cards/parse.py attaches no_regen to the destroy for the "it/they" wordings
+    # in the same run; these leftovers only stop the card parsing). The destroyed
+    # permanent may still be regenerated: recorded simplification.
+    (r"(?:it|they|that creature|that permanent|the creature|the creatures|those creatures|"
+     r"a creature destroyed this way|creatures destroyed this way|creatures dealt damage "
+     r"this way|artifacts destroyed this way) can't be regenerated(?: this turn| this way)?"
+     r"(?:, of course)?", lambda m: None),
+    # "Target creature can't be regenerated this turn." — a standalone anti-regeneration
+    # lock (Gravebind, Hurr Jackal, Furnace Brood): the target's regeneration is blocked
+    # until end of turn.
+    (r"target creature can't be regenerated this turn",
+     lambda m: _effect("no_regen_lock", "creature")),
     (r"destroy (?:up to one )?target (nonbasic )?land(?: (an opponent controls|you don't control))?",
      lambda m: _effect("destroy", "land", filter="land:" + ("nonbasic:" if m[1] else "") + ("opp" if m[2] else ""))),
     (r"target creature you control deals damage equal to its power to each of two other target creatures",
