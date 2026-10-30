@@ -4,10 +4,12 @@ Most cards the engine can't fully play fail on one sentence whose wording the pa
 while the effect itself already exists. For those, add a wording entry to a JSON file in this folder.
 No Python changes are needed.
 
-`mtgsim/cards/wordings.py` loads the files listed in its `FILES` tuple, in that order. `core.json` holds the
-general one-sentence effects (damage, draw, life, counters, simple removal). Its entries are tried before
-the effect templates still written in Python (`mtgsim/cards/patterns.py` and the mechanic modules), in the order
-they appear in the file.
+`mtgsim/wordings.py` loads these files. `core.json` holds the general one-sentence effects (damage, draw,
+life, counters, simple removal); its entries are tried before the effect templates still written in Python
+(`mtgsim/cards/patterns.py` and the mechanic modules), in the order they appear in the file. Each other file
+belongs to the mechanic module of the same name (`removal.json` to `removal.py`, `batch1.json` to
+`batch1_templates.py`) and is tried just before that module's Python templates. Add new entries to `core.json`
+unless one of the other files is plainly about the same mechanic.
 
 ## When an entry is the right fix
 

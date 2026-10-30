@@ -1,0 +1,151 @@
+[
+  {
+    "match": "look at target player's hand",
+    "effect": "peek_hand",
+    "amount": 1,
+    "target": "player",
+    "example": "Look at target player's hand",
+    "cards": ["Agonizing Memories"]
+  },
+  {
+    "match": "target player shuffles their graveyard into their library",
+    "effect": "shuffle_gy",
+    "amount": 1,
+    "target": "player",
+    "example": "Target player shuffles their graveyard into their library",
+    "cards": ["Blessed Respite"]
+  },
+  {
+    "match": "put target nonland permanent on top of its owner's library",
+    "effect": "tuck_perm",
+    "amount": 1,
+    "target": "nonland_perm",
+    "example": "Put target nonland permanent on top of its owner's library",
+    "cards": ["Lashweed Lurker"]
+  },
+  {
+    "match": "each player discards their hand, then draws (\\w+) cards",
+    "effect": "wheel_all",
+    "amount": "$1:num",
+    "example": "Each player discards their hand, then draws three cards",
+    "cards": ["Chandra Ablaze"]
+  },
+  {
+    "match": "each player shuffles their hand and graveyard into their library, then draws (\\w+) cards",
+    "effect": "wheel_all",
+    "amount": "$1:num",
+    "data": {"shuffle_gy": true},
+    "example": "Each player shuffles their hand and graveyard into their library, then draws seven cards",
+    "cards": ["Arzakon"]
+  },
+  {
+    "match": "double target creature's power until end of turn",
+    "effect": "double_power",
+    "amount": 1,
+    "target": "creature",
+    "example": "double target creature's power until end of turn",
+    "cards": ["A-Mr. Orfeo, the Boulder"]
+  },
+  {
+    "match": "gain control of target creature an opponent controls until end of turn",
+    "effect": "threaten",
+    "amount": 1,
+    "target": "creature",
+    "filter": "opp",
+    "data": {"plain": true},
+    "example": "Gain control of target creature an opponent controls until end of turn",
+    "cards": ["Act of Aggression"]
+  },
+  {
+    "match": "each player sacrifices (two|three) creatures",
+    "effect": "edict_each",
+    "amount": "$1:num",
+    "example": "each player sacrifices two creatures",
+    "cards": ["Abyssal Gorestalker"]
+  },
+  {
+    "match": "discard your hand",
+    "effect": "discard_hand",
+    "amount": 1,
+    "example": "Discard your hand",
+    "cards": ["Ajani Unrelenting"]
+  },
+  {
+    "match": "target player draws (four|five|six|seven|\\d+) cards?",
+    "effect": "draw",
+    "amount": "$1:num",
+    "example": "Target player draws four cards",
+    "cards": ["Careful Consideration"]
+  },
+  {
+    "match": "target (?:player|opponent) discards a card at random",
+    "effect": "discard_random_target",
+    "amount": 1,
+    "target": "player",
+    "example": "target opponent discards a card at random",
+    "cards": ["Black Cat"]
+  },
+  {
+    "match": "destroy all nonland permanents",
+    "effect": "destroy_group",
+    "amount": 1,
+    "data": {"not": "Land"},
+    "example": "Destroy all nonland permanents",
+    "cards": ["Ashling, the Extinguisher Avatar"]
+  },
+  {
+    "match": "destroy all tapped creatures",
+    "effect": "destroy_group",
+    "amount": 1,
+    "data": {"types": "Creature", "tapped": true},
+    "example": "Destroy all tapped creatures",
+    "cards": ["Don't Move"]
+  },
+  {
+    "match": "target player takes an extra turn after this one",
+    "effect": "extra_turn",
+    "amount": 1,
+    "example": "Target player takes an extra turn after this one",
+    "cards": ["Beacon of Tomorrows"]
+  },
+  {
+    "match": "look at the top card of target player's library",
+    "effect": "peek_hand",
+    "amount": 1,
+    "target": "player",
+    "example": "look at the top card of target player's library",
+    "cards": ["Dewdrop Spy"]
+  },
+  {
+    "match": "put target attacking or blocking creature on top of its owner's library",
+    "effect": "tuck_perm",
+    "amount": 1,
+    "target": "creature",
+    "filter": "attacking_blocking",
+    "example": "Put target attacking or blocking creature on top of its owner's library",
+    "cards": ["Aethertow"]
+  },
+  {
+    "match": "sacrifice (?:it|that creature|that token|them) at the beginning of the next end step",
+    "effect": "sac_at_end",
+    "amount": 1,
+    "target": "prev",
+    "example": "Sacrifice it at the beginning of the next end step",
+    "cards": ["Arms Race"]
+  },
+  {
+    "match": "(?:you and target opponent|each player) each draws? (two|three|four) cards",
+    "effect": "draw_each",
+    "amount": "$1:num",
+    "example": "You and target opponent each draw two cards",
+    "cards": ["Fall of the First Civilization"]
+  },
+  {
+    "match": "return a permanent you control to its owner's hand",
+    "effect": "return_own",
+    "amount": 1,
+    "data": {"kind": "permanent"},
+    "example": "return a permanent you control to its owner's hand",
+    "cards": ["Cache Raiders"]
+  }
+]

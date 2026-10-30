@@ -23,6 +23,7 @@ can_attack/can_block and the ability checks; "can't attack" alone is the exact p
 from __future__ import annotations
 
 import re
+from . import wordings
 
 KINDS = {"tap_host", "attach_self"}
 _KW = ("flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|shroud|indestructible|"
@@ -138,11 +139,7 @@ def finish(extra: dict):
             extra["aura"] in ("creature an opponent controls", "player")
 
 
-EFFECT_PATTERNS = [
-    (r"tap enchanted (?:creature|permanent)", lambda m: _effect("tap_host", "none")),
-    (r"attach it to target creature you control", lambda m: _effect("attach_self", "creature_mine")),
-    (rf"(?:that creature|it) gains ({_KW}) until end of turn",
-     lambda m: _effect("grant", "prev", {"keyword": m[1].lower()})),
+EFFECT_PATTERNS = wordings.patterns("auras") + [
     (r"target creature gets ([+−-])(\d+)/([+−-])(\d+) until end of turn and can't be blocked this turn",
      lambda m: _effect("pump", "creature", {"keyword": "unblockable"}, _n(m[1], m[2]), _n(m[3], m[4]))),
     (r"(?:(?P<self>~)|(?P<prev>it)|another target attacking creature|target creature) can't be blocked this turn",
