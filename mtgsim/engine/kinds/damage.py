@@ -9,6 +9,7 @@ from . import kind
 
 @kind("damage")
 def damage(game, p, eff, target, item, opp, cause, **_):
+    src = (item.source if item.source is not None else item.card) if item is not None else None
     victims = _damage(game, p, eff, target, item, opp, cause)
     if eff.data.get("exile_dying") or (isinstance(src, Permanent) and src.card.exile_damaged):
         from ...batch1_templates import mark_exile_dying

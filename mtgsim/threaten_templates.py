@@ -75,6 +75,5 @@ def _massgain(m):
     if m["scope"] == "target":
         return _e("mass_threaten", target="player", data=data)
     if m["scope"] == "swap":
-        return [_e("mass_threaten", target="player", data=data),
-                _e("mass_threaten", target="player", data=dict(data, swap=True))]
+        return _e("mass_threaten", target="player", data=dict(data, swap=True))
     return _e("mass_threaten", data=data)
