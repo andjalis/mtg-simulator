@@ -285,6 +285,10 @@ class TurnsMixin:
         from ..advanced_templates import begin_turn
         begin_turn(self, p)
         self.step = "untap"
+        for pl in self.players:
+            for x in pl.battlefield:
+                if x.detained_by is p:
+                    x.detained_by = None      # detain lasts until its source's controller's next turn
         self.untap_step(p)
         p.land_played = False
         p.extra_lands_turn = 0

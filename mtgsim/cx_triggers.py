@@ -22,12 +22,18 @@ import re
 
 _NUM = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5}
 
-KINDS = {"exile_three_zones"}
+KINDS = {"exile_three_zones", "detain"}
 
 
 def _tap(m, **data):
     from .cards import Effect
     return Effect("tap", _NUM[m[1]], target="permanent", data=data)
+
+
+def _detain(m):
+    from .cards import Effect
+    n = _NUM.get(m[1], 1) if m[1] else 1
+    return Effect("detain", n, target="nonland_perm" if "nonland" in m[0] else "creature", filter="opp")
 
 
 def _two_discards(m):
@@ -58,6 +64,8 @@ SUBS = [
 
 EFFECT_PATTERNS = [
     (r"tap up to (two|three|four|five) target permanents", _tap),
+    (r"detain (?:up to (two) )?target (?:creatures?|nonland permanents?) (?:an opponent controls|your opponents control)",
+     _detain),
     (r"TAPSTUNEACH (two|three|four|five)",
      lambda m: _tap(m, stun_each=True)),
     (r"TARGETDISCARD3 (card|[\w, -]+?) (\d+) (less|greater)", _discard_prev),
@@ -110,7 +118,21 @@ def hexproof_entered(perm) -> bool:
     return game is not None and perm.card.advanced_rules.get("hexproof_entered") and perm.entered_turn == game.turn
 
 
+def detain(game, p, eff, target):
+    chosen = [target] if target is not None else []
+    from .engine.policy import perm_value
+    more = sorted((x for x in game.legal_targets(p, eff) if x not in chosen and x.controller is game.opponent(p)),
+                  key=perm_value, reverse=True)
+    chosen += more[:eff.amount - len(chosen)]
+    for perm in chosen:
+        if hasattr(perm, "detained_by"):
+            perm.detained_by = p
+            game.log(f"detains {perm.card.name}", p)
+
+
 def resolve(game, p, eff, target, item):
+    if eff.kind == "detain":
+        return detain(game, p, eff, target)
     if eff.kind != "exile_three_zones" or not hasattr(target, "library"):
         return
     from . import cast_triggers

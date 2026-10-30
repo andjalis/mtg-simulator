@@ -187,6 +187,9 @@ def cast_allowed(game, p, card):
     from .residual_templates import cast_locked
     if cast_locked(game, p, card):
         return False
+    from .cx_timing import window_ok
+    if not window_ok(game, p, card):
+        return False
     if not card.is_creature and any(rules(x).get('land_cast_limit') for x in game.opponent(p).battlefield):
         return card.cmc <= sum(x.card.is_land for x in p.battlefield)
     return True

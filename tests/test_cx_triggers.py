@@ -25,6 +25,9 @@ CRAB = card("Test Crab", "{5}{B}", "Creature — Eldrazi", "When ~ enters, targe
             "spell from among cards exiled this way without paying its mana cost.", 5, 5)
 RIDDLE = card("Test Riddlekeeper", "{5}{U}", "Creature — Eldrazi", "When you cast this spell, tap up to two target "
               "permanents. Put a stun counter on each of them.", 3, 3)
+ARRESTER = card("Test Arrester", "{3}{W}", "Creature — Human", "When ~ enters, detain target creature an opponent "
+                "controls.", 2, 2)
+DECREE = card("Test Decree", "{1}{W}{U}", "Sorcery", "Detain up to two target creatures your opponents control.")
 SMALL = card("Test Small", "{2}", "Artifact", "")
 BIG = card("Test Big", "{4}", "Artifact", "")
 
@@ -65,6 +68,18 @@ class CxTriggers(unittest.TestCase):
         self.resolve_effects(RIDDLE.cast_self_triggers[0].effects, [theirs[0]])
         self.assertEqual([t.tapped for t in theirs].count(True), 2)
         self.assertEqual(sum(t.counters.get("stun", 0) for t in theirs), 2)
+
+    def test_detain(self):
+        from mtgsim.engine import can_block
+        self.assertEqual(ARRESTER.unsupported + DECREE.unsupported, [])
+        theirs = [self.perm(BEAR, self.b) for _ in range(2)]
+        mine = self.perm(BEAR, self.a)
+        self.resolve_effects(DECREE.spell_effects, [theirs[0]])
+        self.assertEqual([t.detained_by for t in theirs], [self.a, self.a])
+        self.assertFalse(theirs[0].can_attack())
+        self.assertFalse(can_block(theirs[1], mine))
+        self.game.take_turn(self.a)
+        self.assertEqual([t.detained_by for t in theirs], [None, None])
 
     def test_hexproof_only_the_turn_it_entered(self):
         mon = self.game.enter_battlefield(self.a, BEHEMOTH)
