@@ -30,6 +30,7 @@ the files it may edit. Stay in your lane; this file replaces a pile of issues. O
 | Card DB, coverage and Forge tooling | `mtgsim/build_carddb.py`, `carddb.py`, `database_coverage.py`, `coverage.py`, `forge*.py`, `crosscheck.py`, `scripts/` | free |
 | Browser bundle | `mtgsim/browser.py` | free |
 | Card wordings as data: loader, data files, core templates | `mtgsim/cards/wordings.py`, `mtgsim/data/wordings/` (the loader and format; adding entries to a wordings file is open to every card lane), `mtgsim/cards/patterns.py`, `mtgsim/cards/parse.py`, `tests/test_wordings.py` | Claude |
+| Card wording entries (data only, batch by batch) | `mtgsim/data/wordings/*.json` entries, `tests/test_wordings.py` | Claude |
 | Backlog and docs | `BACKLOG.md`, `README.md`, `results/residual_batch/` | Claude |
 
 Other lanes in andjalis/mtg-gauntlet (private, includes this repo as the `engine/` submodule):
