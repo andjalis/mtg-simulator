@@ -48,7 +48,19 @@ def _search_opp(m):
     return Effect("search", target="player", data=data)
 
 
+def _named_multi(m):
+    from .cards import Effect
+    return Effect("tutor_named", _NUM.get(m[1] or "", 0), data={"what": "a card named ~"})
+
+
 EFFECT_PATTERNS = [
+    # "Search your library for any number of / up to N cards named ~, reveal them, put
+    # them into your hand, then shuffle" (Howling Wolf, Andromedan Automatons, Squadron
+    # Hawk): the tutor_named kind takes the copies of the resolving card itself.
+    (r"search your library for (?:any number of|up to (one|two|three|four)) cards? named ~, "
+     r"reveal (?:it|them),? put (?:it|them) into your hand, then shuffle",
+     _named_multi),
+
     (_SEARCH, lambda m: _search(m)),
     (r"if you search your library this way, shuffle", lambda m: []),
     (r"SEARCHOPP (?P<dest>STEAL|EXILE|GY|NAME) (?P<n>\d+) (?P<what>[^.]+)", _search_opp),

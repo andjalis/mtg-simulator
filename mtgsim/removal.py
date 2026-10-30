@@ -22,6 +22,14 @@ def _destroy(target, flt):
 
 
 EFFECT_PATTERNS = [
+    # "Put target creature you control on top of its owner's library" (Civic Guildmage):
+    # the tuck_perm kind with an own-permanent target.
+    (r"put target (?:creature|nonland permanent) you control on top of its owner's library",
+     lambda m: _effect("tuck_perm", "creature_mine")),
+    # "Target creature's owner puts it on their choice of the top or bottom of their
+    # library." (Dire Downdraft) — always the top here.
+    (r"target creature's owner puts it on their choice of the top or bottom of their library",
+     lambda m: _effect("tuck_perm", "creature")),
     # "That creature can't be regenerated." — the rider after a destroy that already
     # parsed (cards/parse.py attaches no_regen to the destroy for the "it/they" wordings
     # in the same run; these leftovers only stop the card parsing). The destroyed

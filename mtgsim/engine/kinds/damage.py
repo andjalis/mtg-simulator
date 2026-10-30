@@ -98,7 +98,7 @@ def prevent_shield(game, p, eff, target, item, **_):
     n = eff.amount
     if eff.data.get("devotion"):
         n = sum(x.card.mana_cost.get(eff.data["devotion"], 0) for x in p.battlefield)
-    who = p if eff.target == "none" else target
+    who = p if eff.target in ("none", "youperms") else target
     if not isinstance(who, (Permanent, Player)):
         return
     who.prevent_next += n
@@ -110,6 +110,38 @@ def prevent_shield(game, p, eff, target, item, **_):
         if isinstance(carrier, Permanent) and carrier in carrier.controller.battlefield:
             from ...cards import Trigger
             carrier.temp_triggers.append(Trigger("damage_prevented", list(rider)))
+        elif isinstance(who, Player):
+            # Divine Deflection, Deflecting Palm: a resolving spell with no permanent of
+            # the shield holder's to carry the rider.
+            from ...prevent_templates import install_player_rider
+            install_player_rider(game, who, rider, game.turn)
+
+
+@kind("deflect")
+def deflect(game, p, eff, item, cause, **_):
+    """"~ deals that much damage to that source's controller" (Deflecting Palm's rider):
+    the damage_prevented context is the source whose damage was prevented."""
+    who = getattr(item, "context", None) if item is not None else None
+    who = who.controller if isinstance(who, Permanent) else who
+    if isinstance(who, Player):
+        game.deal_damage(who, eff.amount, by=p, cause=cause,
+                         source=item.source if item is not None else None)
+
+
+@kind("prevent_all_turn")
+def prevent_all_turn(game, p, eff, **_):
+    """"Prevent all damage that would be dealt to you and permanents you control this turn
+    by sources you don't control" (Channel Harm): a rest-of-turn pool on the player and
+    their permanents (the pool model can't tell damage sources apart), with the rider
+    listening for the prevented totals."""
+    p.prevent_next += eff.amount
+    for perm in p.battlefield:
+        perm.prevent_next += eff.amount
+    game.log("prevents all damage to themselves and their permanents this turn", p)
+    rider = eff.data.get("rider")
+    if rider:
+        from ...prevent_templates import install_player_rider
+        install_player_rider(game, p, rider, game.turn)
 
 
 @kind("damage_each_player")

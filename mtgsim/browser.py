@@ -40,7 +40,8 @@ def package_zip() -> bytes:
         pkg = Path(__file__).parent
         for f in sorted(pkg.rglob("*.py")):
             z.write(f, f"mtgsim/{f.relative_to(pkg).as_posix()}")
-        z.write(Path(__file__).parent / "data" / "builtin_cards.json", "mtgsim/data/builtin_cards.json")
+        for f in [pkg / "data" / "builtin_cards.json", *sorted((pkg / "data" / "wordings").glob("*.json"))]:
+            z.write(f, f"mtgsim/{f.relative_to(pkg).as_posix()}")
     return buf.getvalue()
 
 

@@ -80,6 +80,9 @@ EFFECT_PATTERNS = [
     (r"put (a|one|two|three|four|five|six|seven|\d+) cards? from your hand on "
      r"(?:the )?(top|bottom) of your library(?: in any order)?",
      lambda m: _lib(m)),
+    # "Discard all the cards in your hand, then draw that many cards" (Decaying Time Loop).
+    (r"discard all the cards in your hand, then draw that many cards",
+     lambda m: _e("discard_redraw")),
 ]
 
 
