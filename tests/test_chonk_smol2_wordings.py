@@ -11,7 +11,7 @@ import unittest
 from mtgsim.cards import Effect
 from mtgsim.engine import Game, Player
 from tests.test_combat_triggers import Scripted
-from tests.test_templates import card
+from tests.test_templates import BEAR, ISLAND, card
 
 
 class ManaAddWordings(unittest.TestCase):
@@ -105,6 +105,72 @@ class AuraManaWording(unittest.TestCase):
         self.assertEqual(GROWTH.advanced_rules.get("aura_mana"), 1)
 
 
+
+
+class CountedWordings(unittest.TestCase):
+    """Effects whose amount is a count or a previously targeted permanent's controller."""
+
+    def setUp(self):
+        self.a = Player("a", [], Scripted())
+        self.b = Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0))
+        self.game.turn, self.game.step = 2, "main1"
+        self.game.active_idx = 0
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 20
+            p.ai.attack, p.ai.block = (), {}
+
+    def test_controller_discard_after_destroy(self):
+        STRIKE = card("Test Strike", "{4}{B}", "Sorcery",
+                      "Destroy target creature. Its controller discards a card.")
+        self.assertEqual(STRIKE.unsupported, [])
+        self.assertEqual([e.kind for e in STRIKE.spell_effects], ["destroy", "discard"])
+        SWAMP = card("Test Swamp", types="Basic Land — Swamp", text="({T}: Add {B}.)")
+        for _ in range(5):
+            self.game.enter_battlefield(self.a, SWAMP)
+        bear = self.game.enter_battlefield(self.b, BEAR)
+        self.b.hand = [ISLAND] * 3
+        self.a.hand = [STRIKE]
+        self.assertTrue(self.game.cast(self.a, STRIKE, targets=[bear]))
+        self.game.settle()
+        self.assertNotIn(bear, self.b.battlefield)
+        self.assertEqual(len(self.b.hand), 2)      # its controller discarded a card
+
+    def test_tokens_for_each_you_control(self):
+        ELVEN = card("Test Elven Ambush", "{3}{G}", "Instant",
+                     "Create a 1/1 green Elf Warrior creature token for each Elf you control.")
+        self.assertEqual(ELVEN.unsupported, [])
+        self.assertEqual(ELVEN.spell_effects[0].data["per"], {"what": "Elf", "zone": "battlefield"})
+        FOREST = card("Test Forest", types="Basic Land — Forest", text="({T}: Add {G}.)")
+        ELF = card("Test Elf", "{1}{G}", "Creature — Elf Warrior", "", 2, 2)
+        for _ in range(5):
+            self.game.enter_battlefield(self.a, FOREST)
+        self.game.enter_battlefield(self.a, ELF)
+        self.game.enter_battlefield(self.a, ELF)
+        self.game.settle()
+        self.a.hand = [ELVEN]
+        self.assertTrue(self.game.cast(self.a, ELVEN))
+        self.game.settle()
+        self.assertEqual(sum(x.card.is_token and "Elf" in x.card.subtypes
+                              for x in self.a.battlefield), 2)
+
+    def test_add_for_each_basic_land_you_control(self):
+        STRONGHOLD = card("Test Stronghold", "", "Land — Lair",
+                          "{3}, {T}: Add {B} for each basic Swamp you control.")
+        self.assertEqual(STRONGHOLD.unsupported, [])
+        self.assertEqual(STRONGHOLD.approximations, [])
+        SWAMP = card("Test Swamp", types="Basic Land — Swamp", text="({T}: Add {B}.)")
+        from mtgsim.copies import fits
+        self.assertTrue(fits(SWAMP, "basic Swamp"))
+        for _ in range(3):
+            self.game.enter_battlefield(self.a, SWAMP)
+        self.game.settle()
+        perm = self.game.enter_battlefield(self.a, STRONGHOLD)
+        self.game.settle()
+        self.a.pool = []
+        self.assertTrue(self.game.activate_ability(self.a, perm, 0))
+        self.game.settle()
+        self.assertEqual(sum("B" in m.card.produces for m in self.a.pool), 3)
 
 
 if __name__ == "__main__":

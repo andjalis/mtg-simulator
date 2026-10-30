@@ -379,9 +379,10 @@ def _face_land_and_mana_lines(st, line):
             cols, amount = _parse_mana_ability(m[1])
             produces |= cols
             extra["mana_amount"] = max(amount, extra.get("mana_amount", 1))
-            if "equal to" in m[1]:
-                # "Add an amount of {G} equal to this creature's power": mana_amount is a fixed number,
-                # so the dynamic amount is simplified to 1 (the engine has no stat-based mana amount).
+            if "equal to" in m[1] or " for each " in m[1]:
+                # "Add an amount of {G} equal to this creature's power" / "Add {C} for each charge
+                # counter on this artifact": mana_amount is a fixed number, so a dynamic amount is
+                # simplified to 1 (the engine has no stat- or counter-based mana amount).
                 approximations.append(f"mana amount fixed at {amount}: \"Add {m[1]}\"")
             return None
         if re.fullmatch(r"~ enters(?: the battlefield)? tapped\.", line):

@@ -72,6 +72,13 @@ def _add_amount(m):
     return _add_xq(m[2], Effect("add_mana", 1, data={"colors": [m[1]]}))
 
 
+def _per_token(what, power, toughness, desc):
+    """``Create a N/N ... creature token for each <what> you control``: amount = the number you control."""
+    eff = _token("a", power, toughness, desc)
+    eff.data["per"] = {"what": what, "zone": "battlefield"}
+    return eff
+
+
 def _add_xq(text: str, eff: Effect):
     """eff with its amount scaled by the known X-quantity in text (", where X is ..." amounts), or NO_MATCH."""
     from .clauses import _xq
@@ -101,6 +108,8 @@ _EFFECT_PATTERNS = [
      r"(?:creature|artifact|enchantment|planeswalker|land|permanent)'s (power|toughness|mana value)",
      lambda m: Effect("discard", 1, target="player", data={"xq": ("sac", m[1])})),
     (r"add an amount of \{([WUBRGC])\} equal to (.+)", _add_amount),
+    (r"add \{([WUBRGC])\} for each ([\w' -]+?) you control",
+     lambda m: Effect("add_mana", 1, data={"colors": [m[1]], "xq": ("count", m[2])})),
     (r"learn", lambda m: Effect("learn")),
     (r"regenerate (~|it|target creature(?: you control)?|target artifact)",
      lambda m: Effect("regenerate", 1, target={"~": "self", "it": "prev", "target creature": "creature",
@@ -539,6 +548,8 @@ _EFFECT_PATTERNS = [
     (r'create (a|one|two|three|four|five|six) (\d+)/(\d+) ((?:\w+ )+?)creature tokens? with "(.+?)"'
      r'(?: (?:It|They|This token) gains? (haste) until end of turn)?',
      lambda m: _token(m[1], m[2], m[3], m[4], m[6] or "", False, m[5])),
+    (r"create (?:a|one) (\d+)/(\d+) ((?:\w+ )+?)creature tokens? for each ([\w' -]+?) you control",
+     lambda m: _per_token(m[4], m[1], m[2], m[3])),
     (r"create (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
      lambda m: Effect("token", _num(m[1]), data={"kind": m[2].lower()})),
     (r"create (a|one|two|three|four|five|six|seven|eight|nine|ten) tapped (treasure|clue|blood|map|lander|food|mutagen) "
@@ -555,6 +566,7 @@ _EFFECT_PATTERNS = [
     (r"~ explores", lambda m: Effect("explore", target="self")),
     (r"its controller (?:may search their library|searches their library) for a basic land card, puts? it onto the "
      r"battlefield tapped, then shuffles?", lambda m: Effect("fetch_basic", target="that_controller")),
+    (r"its controller discards a card", lambda m: Effect("discard", 1, target="that_controller")),
     (r"exile target nonland permanent(?: an opponent controls| you don't control)?(?: with mana value (\d+) or "
      r"less)? until ~ leaves the battlefield",
      lambda m: Effect("oring", target="nonland_perm", filter=f"max_cmc:{m[1]}" if m[1] else "opp")),
@@ -564,8 +576,11 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("destroy", target="nonland_perm")),
     (r"its controller loses (\d+) life and you gain (\d+) life",
      lambda m: [Effect("lose_life", int(m[1]), target="that_controller"), Effect("gain_life", int(m[2]))]),
-    (_SRC + r" deals damage equal to the number of (treasures|artifacts|creatures|lands) you control to any target",
-     lambda m: Effect("damage", 0, target="any", data={"count": m[1].lower()})),
+    (_SRC + r" deals damage equal to the number of (treasures|artifacts|creatures|lands) you control to "
+     r"(any target|target creature or planeswalker|target player or planeswalker|target player)",
+     lambda m: Effect("damage", 0, target={"any target": "any", "target creature or planeswalker": "creature",
+                                           "target player or planeswalker": "player",
+                                           "target player": "player"}[m[2]], data={"count": m[1].lower()})),
     (r"its controller investigates", lambda m: Effect("token", 1, target="that_controller", data={"kind": "clue"})),
     (r"create a token that's a copy of target token you control", lambda m: Effect("copy_token")),
     (r"put (a|one|two|three) \+1/\+1 counters? on (?:up to one )?target creature(?: or Vehicle)?(?: you control)?",

@@ -242,6 +242,8 @@ def fits(card, what: str, perm=None) -> bool:
                 ok &= is_creature
             elif lw in _TYPES:
                 ok &= _TYPES[lw] in card.types
+            elif lw == "basic":
+                ok &= card.basic
             elif w[0].isupper():
                 ok &= w in card.subtypes or card.changeling
             else:
