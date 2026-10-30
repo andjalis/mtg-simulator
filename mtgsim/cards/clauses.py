@@ -167,7 +167,7 @@ _SUBS = [
                 r"that creature's mana value\.", re.I), lambda m: "ENERGYTAP."),
     # Acquisitions Expert / Mire's Toll: reveal-and-discard scaled by an X-quantity.
     (re.compile(r"target (?:player|opponent) reveals a number of cards from (?:their|his or her) hand equal "
-                r"to ((?:one plus )?the number of [\w' -]+?)\. you choose one of those cards\. that player "
+                r"to ((?:one plus )?the number of [\w' -]+?)\. you choose one of (?:those cards|them)\. that player "
                 r"discards that card\.", re.I),
      lambda m: f"XDISCARD {m[1]}."),
 ]
