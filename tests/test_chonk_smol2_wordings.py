@@ -175,5 +175,20 @@ class CountedWordings(unittest.TestCase):
         self.assertEqual(sum("B" in m.card.produces for m in self.a.pool), 3)
 
 
+class ShockTappedCondition(unittest.TestCase):
+    def test_three_life_variant_uses_the_shock_condition(self):
+        GATE = card("Test Black Gate", "", "Land — Gate",
+                    "As Test Black Gate enters, you may pay 3 life. If you don't, it enters tapped.\n"
+                    "{T}: Add {B}.")
+        self.assertEqual(GATE.unsupported, [])
+        self.assertEqual(GATE.approximations, ["the 3 life enters-uncovered cost is paid as 2 life"])
+        self.assertEqual(GATE.tapped_condition, "shock")
+        GROVE = card("Test Stomping Ground", "", "Land — Mountain Forest",
+                     "As Test Stomping Ground enters, you may pay 2 life. If you don't, it enters tapped.\n"
+                     "{T}: Add {R} or {G}.")
+        self.assertEqual((GROVE.unsupported, GROVE.approximations), ([], []))
+        self.assertEqual(GROVE.tapped_condition, "shock")
+
+
 if __name__ == "__main__":
     unittest.main()

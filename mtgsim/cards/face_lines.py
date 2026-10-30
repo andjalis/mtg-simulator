@@ -526,9 +526,13 @@ def _face_cost_and_static_lines(st, line):
         if re.fullmatch(r"If you control two or more other lands, ~ enters(?: the battlefield)? tapped\.", line):
             extra["tapped_condition"] = "if_2_lands"
             return None
-        if re.fullmatch(r"As ~ enters(?: the battlefield)?, you may pay 2 life\. If you don't, it enters "
-                        r"(?:the battlefield )?tapped\.", line):
+        m = re.fullmatch(r"As ~ enters(?: the battlefield)?, you may pay (\d+) life\. If you don't, it "
+                         r"enters (?:the battlefield )?tapped\.", line)
+        if m:
+            # the engine's shock cost is fixed at 2 life
             extra["tapped_condition"] = "shock"
+            if m[1] != "2":
+                approximations.append(f"the {m[1]} life enters-uncovered cost is paid as 2 life")
             return None
         if re.fullmatch(r"~ can't be countered\.", line):
             extra["uncounterable"] = True
