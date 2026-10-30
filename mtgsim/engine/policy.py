@@ -4,6 +4,7 @@ Decisions the heuristic AI doesn't make are taken by these functions; an AI can
 override each one by defining the hook of the same name (see README and DEFAULTS)."""
 from __future__ import annotations
 
+import dataclasses
 import re
 
 from typing import TYPE_CHECKING
@@ -498,10 +499,17 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
         return False    # used in combat (combat_pump)
     if not game.can_activate(me, perm, idx):
         return False
-    need = add_costs(act.cost, {"generic": reserve})
+    x = game.ability_x(me, perm, act) if act.cost.get("X") else None
+    if act.cost.get("X") and x is None:
+        return False
+    need = add_costs({k: v for k, v in act.cost.items() if k != "X"},
+                     {"generic": (x or 0) + reserve})
     if not payable(game.mana_sources(me, perm if c.get("tap") else None, "ability"), need):
         return False
     effects = act.effects
+    if x is not None:               # the X paid as mana: judge the effects at full size
+        effects = [dataclasses.replace(e, amount=x, amount2=x if e.data.get("x2") else e.amount2)
+                   if e.data.get("x") else e for e in effects]
     if c.get('remove_creature_counters') in ('x', 'positive'):
         payment = costs.ability_plan(game, me, perm, act, game.ability_cost(me, perm, act))
         if payment is None:

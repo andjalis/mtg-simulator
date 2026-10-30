@@ -1,6 +1,8 @@
 """Game methods for activated abilities: loyalty, equip, costs, activation and targets."""
 from __future__ import annotations
 
+import dataclasses
+
 from typing import TYPE_CHECKING
 
 from ..cards import Effect
@@ -273,8 +275,31 @@ class AbilitiesMixin:
             return False
         if act.min_charge and perm.counters.get("charge", 0) < act.min_charge:
             return False
-        return costs.ability_plan(self, p, perm, act, self.ability_cost(p, perm, act),
-                                  x=x, counter_choices=counter_choices) is not None
+        cost = self.ability_cost(p, perm, act)
+        if x is None and cost.get("X"):
+            x = self.ability_x(p, perm, act)
+            if x is None:
+                return False
+        if x is not None and cost.get("X"):
+            cost = {k: v for k, v in cost.items() if k != "X"}
+            cost["generic"] = cost.get("generic", 0) + x
+        return costs.ability_plan(self, p, perm, act, cost,
+                                  x=x if c.get("remove_creature_counters") else None,
+                                  counter_choices=counter_choices) is not None
+
+    def ability_x(self, p: Player, perm: Permanent, act) -> int | None:
+        """The X to choose for an activated ability whose mana cost contains {X} (Cinder Elemental,
+        Candelabra of Tawnos): the most the remaining mana allows after the ability's other costs,
+        at least 1. The chosen X is paid as generic mana and lands on ``item.x`` for the effects."""
+        base = self.ability_cost(p, perm, act)
+        best = None
+        for n in range(1, 21):
+            cost = {k: v for k, v in base.items() if k != "X"}
+            cost["generic"] = cost.get("generic", 0) + n
+            if costs.ability_plan(self, p, perm, act, cost) is None:
+                break
+            best = n
+        return best
 
     def valid_action_targets(self, p, effects, targets, source=None):
         with self.targeting(source if source is not None else self.target_source):
@@ -292,11 +317,22 @@ class AbilitiesMixin:
         if not self.can_activate(p, perm, idx, x=x, counter_choices=counter_choices):
             return False
         act, c = perm.activated[idx], perm.activated[idx].extra_costs
-        plan = costs.ability_plan(self, p, perm, act, self.ability_cost(p, perm, act),
-                                  x=x, counter_choices=counter_choices)
+        cost = self.ability_cost(p, perm, act)
+        if x is None and cost.get("X"):
+            x = self.ability_x(p, perm, act)
+        if x is not None and cost.get("X"):
+            cost = {k: v for k, v in cost.items() if k != "X"}
+            cost["generic"] = cost.get("generic", 0) + x
+        plan = costs.ability_plan(self, p, perm, act, cost,
+                                  x=x if c.get("remove_creature_counters") else None,
+                                  counter_choices=counter_choices)
         if plan is None:
             return False
-        targets = self.auto_targets(p, costs.counter_effects(act, plan), perm) if targets is None else list(targets)
+        preview = costs.counter_effects(act, plan)
+        if x is not None and act.cost.get("X"):        # X paid as mana: effects see it at full size
+            preview = [dataclasses.replace(e, amount=x, amount2=x if e.data.get("x2") else e.amount2)
+                       if e.data.get("x") else e for e in preview]
+        targets = self.auto_targets(p, preview, perm) if targets is None else list(targets)
         if not self.valid_action_targets(p, act.effects, targets, perm):
             return False
         if plan is None or self.pay(p, plan.cost, exclude_many=plan.exclude, reserved_counters=plan.counter_payments) is None:
@@ -366,6 +402,8 @@ class AbilitiesMixin:
         item.counter_x = sum(n for _, _, n in plan.counter_payments)
         if c.get("remove_creature_counters") in ("x", "positive"):
             item.x = item.counter_x
+        elif act.cost.get("X") and x:
+            item.x = x
         self.stack.append(item)
         self.log(f"activates {item}" + (f" -> {targets}" if any(targets) else ""), p)
         self.check_ward(item)
