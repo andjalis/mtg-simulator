@@ -229,6 +229,14 @@ class CardMatchesVocabulary(unittest.TestCase):
         self.assertTrue(card_matches(BEAR, "a creature you control"))
         self.assertTrue(card_matches(BEAR, "a creature you own"))
 
+    def test_color_words(self):
+        black = card("Black Dude", "{1}{B}", "Creature — Human", "", 1, 1)
+        white = card("White Dude", "{1}{W}", "Creature — Human", "", 1, 1)
+        self.assertTrue(card_matches(black, "a black creature"))
+        self.assertFalse(card_matches(white, "a black creature"))
+        self.assertTrue(card_matches(white, "a nonblack creature"))
+        self.assertFalse(card_matches(black, "a nonblack creature"))
+
     def test_unknown_words_fail_closed(self):
         self.assertFalse(card_matches(BEAR, "a zibzab creature"))
         self.assertFalse(card_matches(BEAR, "a kind creature card"))

@@ -807,6 +807,7 @@ def card_matches(card: CardDef, desc: str, ref: CardDef | None = None) -> bool:
         types = [w for w in words if w in _TYPE_WORDS]
         if types and not any(t.capitalize() in card.types for t in types):
             ok = False
+        _COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
         for w, check in (("basic", is_basic_land(card)),
                          ("nonbasic", not is_basic_land(card)),
                          ("snow", bool(card.snow)),
@@ -815,13 +816,17 @@ def card_matches(card: CardDef, desc: str, ref: CardDef | None = None) -> bool:
                          ("historic", bool(card.is_artifact or card.legendary or card.is_saga)),
                          ("outlaw", any(o in card.subtypes for o in OUTLAWS)),
                          ("multicolored", len(card.colors) >= 2),
-                         ("colorless", not card.colors)):
+                         ("colorless", not card.colors),
+                         ("double-faced", getattr(card, "back", None) is not None),
+                         *((col, _COLORS[col] in card.colors) for col in _COLORS),
+                         *(("non" + col, _COLORS[col] not in card.colors) for col in _COLORS)):
             if w in words and not check:
                 ok = False
         if ok:
             words = [w for w in words if w not in
                      ("basic", "nonbasic", "snow", "legendary", "permanent", "historic",
-                      "outlaw", "multicolored", "colorless")]
+                      "outlaw", "multicolored", "colorless", "double-faced", *_COLORS,
+                      *("non" + col for col in _COLORS))]
         for w in words:
             if w.startswith("non") and w[3:].rstrip(",") in _TYPE_WORDS:
                 if w[3:].rstrip(",").capitalize() in card.types:    # "a noncreature, nonland card"
