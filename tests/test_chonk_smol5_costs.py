@@ -15,7 +15,7 @@ were already on the branch base:
 import random
 import unittest
 
-from mtgsim.cards import card_from_scryfall
+
 from mtgsim.engine import Game, Permanent, Player, StackItem
 from mtgsim.identity import instance
 from tests.test_templates import BEAR, ISLAND, MOUNTAIN, SWAMP, card
