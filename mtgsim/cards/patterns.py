@@ -428,6 +428,8 @@ _EFFECT_PATTERNS = [
     (r"support (\d+|one|two|three|four|five|six)", lambda m: Effect("support", _num(m[1]))),
     (r"(?:target|each) opponent sacrifices a creature(?: of their choice)?", lambda m: Effect("edict", 1)),
     (r"each other player sacrifices a creature", lambda m: Effect("edict", 1)),
+    (r"target player sacrifices a creature", lambda m: Effect("edict", 1)),     # the AI aims it at the opponent
+    (r"each player sacrifices a creature", lambda m: Effect("edict", 1, data={"self": True})),
     (r"creatures without flying can't block this turn", lambda m: Effect("cant_block_all", filter="nonflying")),
     (r"attacking creatures (?:you control )?get \+(\d+)/\+(\d+) until end of turn",
      lambda m: Effect("pump_attackers", int(m[1]), int(m[2]))),
