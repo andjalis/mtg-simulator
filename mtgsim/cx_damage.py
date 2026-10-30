@@ -22,7 +22,28 @@ def _divided(m):
     return Effect("divided_damage", int(m[1]), target="none", data={"scope": _SCOPES[m[3]], "max": _COUNTS[m[2]]})
 
 
+def _two_targets(first, second, flip=False):
+    """Two damage effects with their own targets: (creature, player) or the reverse; "player or planeswalker" is
+    played as the opponent."""
+    def make(m):
+        from .cards import Effect
+        pair = {"creature": Effect("damage", int(m[1]), target="creature", filter="opp"),
+                "player": Effect("damage", int(m[2]), target="player", filter="opp"),
+                "mine": Effect("damage", int(m[2]), target="creature_mine")}
+        if flip:
+            pair["creature"] = Effect("damage", int(m[2]), target="creature", filter="opp")
+            pair["player"] = Effect("damage", int(m[1]), target="player", filter="opp")
+        return [pair[first], pair[second]]
+    return make
+
+
 EFFECT_PATTERNS = [
+    (r"(?:~|it) deals (\d+) damage to target creature and (\d+) damage to target player or planeswalker",
+     _two_targets("creature", "player")),
+    (r"(?:~|it) deals (\d+) damage to target player or planeswalker and (\d+) damage to target creature",
+     _two_targets("player", "creature", flip=True)),
+    (r"(?:~|it) deals (\d+) damage to target creature you don't control and (\d+) damage to target creature you "
+     r"control", _two_targets("creature", "mine")),
     (r"(?:~|it|he|she) deals (\d+) damage divided as you choose among (one or two|one, two, or three|any number of) "
      r"(targets|target creatures|target creatures and/or planeswalkers)", _divided),
 ]
@@ -32,6 +53,12 @@ def _note():
     from .cards import clauses
     clauses._SUB_NOTES.append((re.compile(r"damage divided as you choose among (?:one|any number)", re.I),
                                "the damage is divided on resolution, not when the targets are chosen"))
+
+
+    clauses._SUB_NOTES.append((re.compile(r"damage to target creature and \d+ damage to target player or planeswalker|"
+                                          r"damage to target player or planeswalker and \d+ damage to target creature",
+                                          re.I),
+                               "the player-or-planeswalker target is always the opponent"))
 
 
 _note()
