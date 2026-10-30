@@ -239,3 +239,13 @@ def choose_name(game, p, item, **_):
     src.chosen_name = max(counts, key=counts.get, default="")
     if src.chosen_name:
         game.log(f"names {src.chosen_name}", p)
+
+
+@kind("party_counters")
+def party_counters(game, p, eff, **_):
+    """\"Put a +1/+1 counter on each creature in your party\" (Squad Commander)."""
+    members = game.party_members(p)
+    for m in members:
+        m.counters["+1/+1"] = m.p1 + eff.amount
+    if members:
+        game.log(f"puts a +1/+1 counter on each of the {len(members)} party member(s)", p)

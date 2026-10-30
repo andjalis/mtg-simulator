@@ -36,6 +36,22 @@ def _mutate_hosts(game, p, card):
 
 
 class CostsMixin:
+    PARTY_CLASSES = ("Cleric", "Rogue", "Warrior", "Wizard")
+
+    def party_members(self, p: Player) -> list:
+        """The creatures making up p's party: up to one each of Cleric, Rogue, Warrior and
+        Wizard (Coveted Prize, Acquisitions Expert, Squad Commander). A creature fills at
+        most one slot even if it has several of the classes (or is a Changeling)."""
+        members = []
+        for cls in self.PARTY_CLASSES:
+            pick = next((x for x in p.creatures if x not in members and card_matches(x.card, "a " + cls)), None)
+            if pick is not None:
+                members.append(pick)
+        return members
+
+    def party_size(self, p: Player) -> int:
+        return len(self.party_members(p))
+
     def mana_sources(self, p: Player, exclude=None, spell=None, *, reserved_counters=()):
         """p's untapped mana sources. ``spell`` decides what restricted mana (Cavern of Souls) can
         pay for: a CardDef, "ability" for activated abilities, or None to count it (AI estimates)."""
@@ -223,6 +239,9 @@ class CostsMixin:
             # "You lose life equal to its mana value" (Dark Confidant): the mana value of the card
             # the dig put into its owner's hand, recorded on the resolving item.
             return getattr(item, "revealed_cmc", 0) if item is not None else 0
+        if kind == "party":
+            # "where X is the number of creatures in your party" (Acquisitions Expert)
+            return self.party_size(p)
         if kind == "exiled_gy":
             # "Damage equal to the exiled card's power" (Molten-Tail Masticore, Corpse Lunge):
             # the card exiled from the graveyard as a cost — item.exiled_gy_stats (spell cost,
@@ -442,6 +461,9 @@ class CostsMixin:
             n = sum(copies.fits(c, _gy_desc(card.cost_reduction[3:])) for c in p.graveyard)
         elif card.cost_reduction.startswith("affinity:"):
             n = sum(card_matches(x.card, "a " + card.cost_reduction[9:]) for x in p.battlefield)
+        elif card.cost_reduction == "party":
+            # "This spell costs {1} less to cast for each creature in your party" (Coveted Prize)
+            n = self.party_size(p)
         for x in p.battlefield:
             for flt, k in x.card.cost_discount:
                 if flt.startswith("has_adventure:"):
