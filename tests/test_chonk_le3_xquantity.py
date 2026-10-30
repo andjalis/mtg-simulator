@@ -15,9 +15,8 @@ import dataclasses
 import random
 import unittest
 
-from mtgsim.cards import CardDef
 from mtgsim.engine import Game, Permanent, Player
-from tests.test_templates import BEAR, ISLAND, MOUNTAIN, card
+from tests.test_templates import BEAR, MOUNTAIN, card
 
 ARTIFACT5 = card("Test Engine", "{5}", "Artifact", "")
 DRAGON = card("Test Dragon", "{3}{R}", "Creature — Dragon", "Flying", 4, 4)

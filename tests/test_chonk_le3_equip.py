@@ -12,7 +12,7 @@ import unittest
 
 from mtgsim.engine import Game, Permanent, Player
 from mtgsim.engine.policy import choose_equip_target, equip_matches
-from tests.test_templates import BEAR, ISLAND, MOUNTAIN, card
+from tests.test_templates import BEAR, MOUNTAIN, card
 
 SWORD = dataclasses.replace(
     card("Test Sword", "{1}", "Artifact — Equipment", "Equipped creature gets +1/+1.\nEquip {1}"),

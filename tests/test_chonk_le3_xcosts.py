@@ -15,7 +15,7 @@ import unittest
 from mtgsim.cards import Activated, Effect
 from mtgsim.engine import Game, Permanent, Player
 from mtgsim.engine.policy import ability_worth
-from tests.test_templates import BEAR, ISLAND, MOUNTAIN, card
+from tests.test_templates import ISLAND, MOUNTAIN, card
 
 CINDER = dataclasses.replace(                    # Cinder Elemental wording
     card("Test Cinder", "{3}{R}", "Creature — Elemental", "", 0, 2),
