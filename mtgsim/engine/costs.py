@@ -613,6 +613,8 @@ class CostsMixin:
                     out.append(self._variant(c, kind, AltCost(a.kind, self._hybrid_cost(a.cost, a.hybrid, col)
                                                               if col else a.cost)))
         for mask in range(1, 2 ** len(c.spree)):
+            if c.advanced_rules.get("tiered") and mask & (mask - 1):
+                continue      # Tiered: choose exactly one additional cost
             modes = [m for i, m in enumerate(c.spree) if mask >> i & 1]
             cost = add_mana(c.mana_cost, *(m[0] for m in modes))
             effects = [e for m in modes for e in m[1]]
