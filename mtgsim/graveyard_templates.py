@@ -43,6 +43,10 @@ EFFECT_PATTERNS = [
     # out of its owner's graveyard instead (Angel of Fury, Cavalier of Gales, Dread).
     (r"shuffle (?:it|this card) into (?:its|his|her) owner's library",
      lambda m: _e("shuffle_away", target="self")),
+    # "When ~ is put into a graveyard from anywhere, its owner shuffles their graveyard
+    # into their library." (Emrakul, Kozilek, Ulamog): the dies approximation of the
+    # graveyard_templates TRIGGERS table, with the shuffle_gy body.
+    (r"its owner shuffles their graveyard into their library", lambda m: _e("shuffle_gy")),
     # "You may exile a <desc> card from your graveyard. If you do, <X>." — the exile twin
     # of the may-sacrifice gates: pay_exile_gy exiles the card and gates the payoff.
     (r"EXILEGYGATE ([\w, -]+) RIDER (.+)", lambda m: _exile_gy_gate(m)),
@@ -60,7 +64,47 @@ EFFECT_PATTERNS = [
                   data={"filter": m[2], "rest": "hand" if m[3] else "bottom"})),
     (r"DIGALL (\d+) (hand|gy|bottom) (hand|gy|bottom) (.+)",
      lambda m: _e("dig_all", int(m[1]), data={"keep": m[2], "rest": m[3], "filter": m[4]})),
+    # "You may cast target <desc> card from <whose> graveyard [without paying its mana
+    # cost]" (Wrexial, Toshiro Umezawa, Memory Plunder, Torrential Gearhulk, Sins of the
+    # Past, Goblin Dark-Dwellers, the Chandra planeswalkers' loyalty abilities): a
+    # graveyard-cast effect; the "If that spell would be put into a graveyard, exile it
+    # instead" rider (parse.py) lands on it as gy_instead. Fixed caps ("mana value 3 or
+    # less") and the Dreadhorde Arcanist power cap are data max_cmc.
+    (r"you may cast target ([a-z, ]+?) card with mana value (\w+) or less from "
+     r"(your|a|an opponent's|that player's) graveyard( without paying its mana cost)?",
+     lambda m: _gy_cast(m[1], m[3], m[4], cap=m[2])),
+    (r"you may cast target ([a-z, ]+?) card with mana value less than or equal to "
+     r"(?:~|this [a-z]+?)'s power from (your|a|an opponent's|that player's) graveyard"
+     r"( without paying its mana cost)?",
+     lambda m: _gy_cast(m[1], m[2], m[3], cap="power")),
+    (r"you may cast target ([a-z, ]+?) card from (your|a|an opponent's|that player's) graveyard"
+     r"( without paying its mana cost)?",
+     lambda m: _gy_cast(m[1], m[2], m[3])),
 ]
+
+
+_GY_ZONES = {"your": "yours", "a": "any", "an opponent's": "opponents", "that player's": "context"}
+
+
+def _gy_cast(desc, zone, free, cap=None):
+    from .cards import Effect, NO_MATCH, _num
+    # Only the instant/sorcery (plus Victor Timely's artifact) descriptors; anything
+    # else ("a red instant or sorcery card", "a card with the same name as that spell")
+    # stays an ignored line rather than silently over-matching.
+    words = [w for w in re.split(r"[,\s]+", desc.strip()) if w != "or"]
+    if not words or any(w not in ("instant", "sorcery", "artifact") for w in words):
+        return NO_MATCH
+    data = {"desc": desc.strip(), "gy": _GY_ZONES[zone]}
+    if free:
+        data["free"] = True
+    if cap == "power":
+        data["max_cmc"] = "power"
+    elif cap is not None:
+        try:
+            data["max_cmc"] = _num(cap)
+        except ValueError:
+            return NO_MATCH
+    return Effect("gy_cast", data=data)
 
 
 
@@ -76,6 +120,16 @@ def _diggy_choose(m):
 
 
 SUBS = [
+    # "If an instant or sorcery spell cast this way would be put into your graveyard,
+    # exile it instead" (Scholar of the Lost Trove): the same graveyard-cast rider the
+    # parse.py one attaches, in its per-type wording.
+    (re.compile(r"if an? [a-z, ]+? spell cast this way would be put into (?:a|your) graveyard, "
+                r"exile it instead", re.I),
+     lambda m: "if that spell would be put into your graveyard, exile it instead"),
+    # "If that spell would be put into their graveyard, exile it instead" (Arcane Heist:
+    # cast from an opponent's graveyard): the same rider, normalized for parse.py.
+    (re.compile(r"if that spell would be put into their graveyard, exile it instead", re.I),
+     lambda m: "if that spell would be put into a graveyard, exile it instead"),
     # "You may exile a <desc> card from your graveyard. If you do, <payoff>." (Aphemia,
     # Masked Vandal): fold the pair into an EXILEGYGATE sentinel whose builder returns
     # the pay_exile_gy gate plus the payoff with cond "paid".
@@ -257,4 +311,10 @@ def _num(word):
 # put-into-graveyard-from-anywhere event, so discards and mills of the card don't fire it.
 TRIGGERS = [
     (r"When ~ is put into a graveyard from anywhere, (.+)", ("dies",)),
+    # "If ~ would be put into a graveyard from anywhere, reveal ~ and shuffle it into its
+    # owner's library instead." (Darksteel and Blightsteel Colossus, Progenitus, Serra
+    # Avatar, Nexus of Fate): a replacement with the same dies-trigger approximation —
+    # when it dies the card is taken out of the graveyard and shuffled into the library.
+    (r"If ~ would be put into a graveyard from anywhere, reveal ~ and "
+     r"(shuffle it into its owner's library) instead\.?", ("dies",)),
 ]

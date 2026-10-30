@@ -5,7 +5,7 @@ import dataclasses
 import re
 
 from ... import cast_triggers, returns, counter_mechanics
-from ...cards import CardDef, Effect
+from ...cards import AltCost, CardDef, Effect
 from ...identity import Graveyard
 from ..state import Permanent, Player, TrackedZone, card_matches
 from . import NO_SBA, kind
@@ -429,3 +429,78 @@ def rebound_cast(game, p, item, **_):
     if not any(c is card for c in p.exile) or not game.hook(p, "choose_rebound")(game, p, card):
         return NO_SBA
     cast_triggers.cast_exiled(game, p, card, "rebound")
+
+
+def _cast_from_graveyard(game, p, owner, card, free):
+    """Cast one graveyard card as a one-off. Own-graveyard cards go through a graveyard
+    origin (blitz_gy: cast from the graveyard, then to its owner's graveyard); a card
+    from another player's graveyard needs the foreign-zone permission spell_options
+    reads (advanced_templates.permission_options), which is removed once the cast is
+    on the stack so the spell can't be cast twice."""
+    if owner is p:
+        cost = {"generic": 0} if free else dict(card.mana_cost)
+        return game.cast(p, game._variant(card, "blitz_gy", AltCost("gy_cast", cost)))
+    key = "foreign_" + str(card.physical_id)
+    if not hasattr(game, "foreign_zones"):
+        game.foreign_zones = {}
+    game.foreign_zones[(id(p), key)] = owner.graveyard
+    entry = (owner.graveyard, owner.graveyard.reference(card))
+    p.foreign_permissions = list(getattr(p, "foreign_permissions", [])) + [entry]
+    try:
+        alt = AltCost("gy_cast", {"generic": 0}) if free else None
+        return game.cast(p, game._variant(card, key, alt))
+    finally:
+        p.foreign_permissions.remove(entry)
+        game.foreign_zones.pop((id(p), key), None)
+
+
+@kind("gy_cast")
+def gy_cast(game, p, eff, item, opp, **_):
+    """"You may cast target <desc> card from a graveyard" (graveyard_templates.py): cast
+    the best matching spell, free when the wording says so and for its own cost
+    otherwise. The "If that spell would be put into a graveyard, exile it instead"
+    rider (parse.py attaches it as gy_instead) queues a one-shot that applies it once
+    the cast spell has resolved."""
+    from ...ai import card_value
+    zone = eff.data.get("gy", "yours")
+    if zone == "context":
+        who = getattr(item, "context", None) if item is not None else None
+        owners = [who] if isinstance(who, Player) else []
+    else:
+        owners = {"yours": [p], "opponents": [game.opponent(p)],
+                  "any": list(game.players)}.get(zone, [p])
+    cap = eff.data.get("max_cmc")
+    if cap == "power":
+        src = item.source if item is not None else None
+        cap = src.power if isinstance(src, Permanent) and src in src.controller.battlefield else None
+    desc = _filter_desc(eff.data["desc"])
+    cands = [(o, c) for o in owners for c in o.graveyard
+             if card_matches(c, desc) and (cap is None or c.cmc <= cap)]
+    if not cands:
+        return
+    cands.sort(key=lambda pair: card_value(pair[1]), reverse=True)
+    for owner, card in cands[:4] if eff.data.get("free") else cands:
+        if _cast_from_graveyard(game, p, owner, card, eff.data.get("free")):
+            rider = eff.data.get("gy_instead")
+            if rider:
+                game.queue_trigger(p, [Effect("gy_cast_aftermath", data={"mode": rider})],
+                                   name=f"{card.name}: graveyard-cast rider", context=card)
+            return
+
+
+@kind("gy_cast_aftermath")
+def gy_cast_aftermath(game, p, eff, item, **_):
+    """"If that spell would be put into a graveyard, exile it instead" (or the bottom of
+    its owner's library): the spell a gy_cast effect cast from a graveyard has resolved
+    or been countered and landed in its owner's graveyard; the rider moves it on."""
+    card = getattr(item, "context", None) if item is not None else None
+    if not isinstance(card, CardDef) or not any(c is card for c in getattr(card, "owner", p).graveyard):
+        return
+    owner = card.owner or p
+    if eff.data.get("mode") == "bottom":
+        owner.graveyard.remove(card)
+        owner.library.insert(0, card)
+        game.log(f"puts {card.name} on the bottom of its owner's library", p)
+    else:
+        game.move_card(card, owner.graveyard, owner.exile, reason="exile-instead")
+        game.log(f"exiles {card.name} instead of putting it into a graveyard", p)
