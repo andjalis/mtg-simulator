@@ -379,6 +379,11 @@ def _face_land_and_mana_lines(st, line):
             cols, amount = _parse_mana_ability(m[1])
             produces |= cols
             extra["mana_amount"] = max(amount, extra.get("mana_amount", 1))
+            if "equal to" in m[1] or " for each " in m[1]:
+                # "Add an amount of {G} equal to this creature's power" / "Add {C} for each charge
+                # counter on this artifact": mana_amount is a fixed number, so a dynamic amount is
+                # simplified to 1 (the engine has no stat- or counter-based mana amount).
+                approximations.append(f"mana amount fixed at {amount}: \"Add {m[1]}\"")
             return None
         if re.fullmatch(r"~ enters(?: the battlefield)? tapped\.", line):
             enters_tapped = True
@@ -521,9 +526,13 @@ def _face_cost_and_static_lines(st, line):
         if re.fullmatch(r"If you control two or more other lands, ~ enters(?: the battlefield)? tapped\.", line):
             extra["tapped_condition"] = "if_2_lands"
             return None
-        if re.fullmatch(r"As ~ enters(?: the battlefield)?, you may pay 2 life\. If you don't, it enters "
-                        r"(?:the battlefield )?tapped\.", line):
+        m = re.fullmatch(r"As ~ enters(?: the battlefield)?, you may pay (\d+) life\. If you don't, it "
+                         r"enters (?:the battlefield )?tapped\.", line)
+        if m:
+            # the engine's shock cost is fixed at 2 life
             extra["tapped_condition"] = "shock"
+            if m[1] != "2":
+                approximations.append(f"the {m[1]} life enters-uncovered cost is paid as 2 life")
             return None
         if re.fullmatch(r"~ can't be countered\.", line):
             extra["uncounterable"] = True
