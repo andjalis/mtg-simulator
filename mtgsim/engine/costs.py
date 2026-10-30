@@ -640,6 +640,11 @@ class CostsMixin:
         from ..batch1_templates import spell_limited
         if spell_limited(self, p):
             return False
+        from ..batch1_templates import spell_kind_ok
+        if any(not x.abilities_suppressed and x.card.advanced_rules.get("no_cast") and
+               any(spell_kind_ok(card, kind) for kind in x.card.advanced_rules["no_cast"])
+               for pl in self.players for x in pl.battlefield):
+            return False          # "Creature spells can't be cast" (Aether Storm): the ban applies to everyone
         base, kind, alt = self._origin(card)
         if self.nonmana_locked(p) and kind in ('channel', 'gy_ability', 'unearth'):
             return False

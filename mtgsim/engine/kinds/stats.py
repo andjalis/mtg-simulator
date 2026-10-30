@@ -249,6 +249,8 @@ def grant_types(game, p, eff, **_):
 @kind("cant_block_all")
 def cant_block_all(game, p, eff, opp, **_):
     for c in p.creatures + opp.creatures:
+        if eff.data.get("theirs") and c.controller is p:
+            continue                       # "Creatures your opponents control can't block this turn."
         if not (eff.filter == "nonflying" and c.has("flying")):
             c.temp_kw.add("cant_block_now")
 
