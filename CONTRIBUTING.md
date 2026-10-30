@@ -7,7 +7,7 @@ task; one **integrator** merges green PRs in batches. Nobody waits on CI for the
 
 | Check | When | Cost | What it covers |
 | --- | --- | --- | --- |
-| `python3 scripts/fast_check.py` | every push and PR (CI job `fast check`) | about 2 min on 4 cores | pyflakes, a 1-in-10 sample of the card database parsed (must not raise), short seeded games, all test modules except the slow ones |
+| `python3 scripts/fast_check.py` | every push and PR (CI job `fast check`) | about 2 min on 4 cores | pyflakes, every card parsed (none may raise), short seeded games, all test modules except the slow ones |
 | `parse-diff` | every PR | a few minutes | every card parsed with the base and head code; lists cards whose parse changed, fails if one starts raising |
 | Nightly (`nightly.yml`) | 03:17 UTC daily and on demand | about 6 min per Python version | the slow test modules, the full suite on Python 3.10, 3.13 and 3.14, every card parsed |
 
