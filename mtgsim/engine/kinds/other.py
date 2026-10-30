@@ -201,3 +201,41 @@ def extra_land(game, p, **_):
 def extra_turn(game, p, **_):
     game.extra_turns.append(p)
     game.log("will take an extra turn", p)
+
+
+@kind("no_lifegain_turn")
+def no_lifegain_turn(game, p, eff, **_):
+    """\"Players can't gain life this turn\" (Skullcrack): the scoped players join
+    game.no_lifegain_turn until cleanup; change_life refuses their gains. ``data["scope"]``
+    is "all" (default), "you" ("You can't gain life this turn") or "opponents"
+    ("Your opponents can't gain life this turn", Atarka's Command)."""
+    scope = eff.data.get("scope", "all")
+    who = [p] if scope == "you" else [x for x in game.players if x is not p] if scope == "opponents" \
+        else list(game.players)
+    game.no_lifegain_turn.update(who)
+    game.log("can't gain life this turn", p)
+
+
+@kind("no_prevention_turn")
+def no_prevention_turn(game, p, **_):
+    """\"Damage can't be prevented this turn\" (Skullcrack, Flaring Pain): game.no_prevention_turn,
+    consulted by deal_damage until cleanup."""
+    game.no_prevention_turn = True
+    game.log("damage can't be prevented this turn", p)
+
+
+@kind("choose_name")
+def choose_name(game, p, item, **_):
+    """\"As ~ enters, choose a nonland card name\" (Meddling Mage): name the nonland card the
+    opponent runs the most copies of. Spells with that name can't be cast while ~ stays on
+    the battlefield (Game.named_cast_banned, consulted by can_cast_now)."""
+    src = item.source if item is not None else None
+    if not isinstance(src, Permanent) or src not in src.controller.battlefield:
+        return
+    counts: dict = {}
+    for c in game.opponent(p).deck:
+        if not c.is_land:
+            counts[c.name] = counts.get(c.name, 0) + 1
+    src.chosen_name = max(counts, key=counts.get, default="")
+    if src.chosen_name:
+        game.log(f"names {src.chosen_name}", p)

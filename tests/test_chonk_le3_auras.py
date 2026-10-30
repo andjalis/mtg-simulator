@@ -68,8 +68,10 @@ class AuraRestrictionTests(unittest.TestCase):
         self.assertEqual(TUNNEL.equip_keywords, frozenset({"unblockable"}))
         self.assertEqual(BLIGHT.equip_keywords, frozenset({"cant_block_now"}))
         self.assertEqual(FRENZY.equip_keywords, frozenset({"must_attack_now"}))
-        self.assertEqual(ARREST.equip_keywords, frozenset({"defender"}))
-        self.assertIn("defender", ARREST.approximations[0])
+        # le-batch6: the exact per-aura flag replaces the defender approximation
+        self.assertEqual(ARREST.aura_flags, frozenset({"cant_attack"}))
+        self.assertEqual(ARREST.equip_keywords, frozenset())
+        self.assertEqual(ARREST.approximations, [])
         self.assertEqual(BINDS.aura_flags, frozenset({"cant_attack_block", "cant_activate"}))
         self.assertEqual(RUST.aura_flags, frozenset({"no_untap", "cant_activate"}))
 
