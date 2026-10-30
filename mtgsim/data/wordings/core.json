@@ -1,0 +1,1812 @@
+[
+  {
+    "match": "untap X target lands",
+    "effect": "untap_lands",
+    "amount": 0,
+    "data": {"x": true},
+    "example": "Untap X target lands",
+    "cards": ["Candelabra of Tawnos"]
+  },
+  {
+    "match": "(players|your opponents|you) can't gain life this turn",
+    "effect": "no_lifegain_turn",
+    "data": {"scope": {"$map": "$1:lower", "values": {"players": "all", "your opponents": "opponents", "you": "you"}}},
+    "example": "Your opponents can't gain life this turn",
+    "cards": ["Atarka's Command"]
+  },
+  {
+    "match": "learn",
+    "effect": "learn",
+    "example": "Learn",
+    "cards": ["Academic Dispute"]
+  },
+  {
+    "match": "regenerate (~|it|target creature(?: you control)?|target artifact)",
+    "effect": "regenerate",
+    "amount": 1,
+    "target": {"$map": "$1:lower", "values": {"~": "self", "it": "prev", "target creature": "creature", "target creature you control": "creature_mine", "target artifact": "artifact"}},
+    "example": "Regenerate ~",
+    "cards": ["Albino Troll"]
+  },
+  {
+    "match": "(?:~|it|he|she) deals (\\d+) damage to any target",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "any",
+    "example": "~ deals 2 damage to any target",
+    "cards": ["Acidic Sliver"]
+  },
+  {
+    "match": "(?:~|it|he|she) deals X damage to any target",
+    "effect": "damage",
+    "amount": 0,
+    "target": "any",
+    "data": {"x": true},
+    "example": "it deals X damage to any target",
+    "cards": ["Ajani's Anguish"]
+  },
+  {
+    "match": "(?:~|it|he|she) deals (\\d+) damage to target attacking or blocking creature",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "creature",
+    "filter": "attacking_blocking",
+    "example": "~ deals 3 damage to target attacking or blocking creature",
+    "cards": ["Arbalest Elite"]
+  },
+  {
+    "match": "(?:~|it|he|she) deals (\\d+) damage to target tapped creature(?: an opponent controls)?",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "creature",
+    "filter": "tapped",
+    "example": "~ deals 4 damage to target tapped creature",
+    "cards": ["Ajani, Outland Chaperone"]
+  },
+  {
+    "match": "(?:~|it|he|she) deals X damage to target creature without flying(?: you don't control)?",
+    "effect": "damage",
+    "amount": 0,
+    "target": "creature",
+    "filter": "nonflying",
+    "data": {"x": true},
+    "example": "~ deals X damage to target creature without flying",
+    "cards": ["Clan Defiance"]
+  },
+  {
+    "match": "(?:~|it|he|she) deals (\\d+) damage to target creature without flying",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "creature",
+    "filter": "nonflying",
+    "example": "~ deals 3 damage to target creature without flying",
+    "cards": ["Branching Bolt"]
+  },
+  {
+    "match": "(?:~|it|he|she) deals (\\d+) damage to (?:up to one )?target (?:creature or planeswalker|creature)(?: an opponent controls| you don't control)?",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "creature",
+    "example": "~ deals 3 damage to target creature",
+    "cards": ["Abrade"]
+  },
+  {
+    "match": "(?:~|it|he|she) deals (\\d+) damage to (?:target player or planeswalker|target player|target opponent(?: or planeswalker)?|each opponent)",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "player",
+    "example": "It deals 2 damage to each opponent",
+    "cards": ["A-Glamorous Outlaw"]
+  },
+  {
+    "match": "(?:~|it|he|she) deals (\\d+) damage to each opponent and each planeswalker they control",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "each_opp_and_pw",
+    "example": "it deals 1 damage to each opponent and each planeswalker they control",
+    "cards": ["Cavalier of Flame"]
+  },
+  {
+    "match": "(?:~|it|he|she) deals (\\d+) damage to (?:that player|that spell's controller)",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "that_player",
+    "example": "~ deals 1 damage to that player",
+    "cards": ["Aether Sting"]
+  },
+  {
+    "match": "(?:~|it|he|she) deals (\\d+) damage to you",
+    "effect": "lose_life",
+    "amount": "$1:int",
+    "example": "~ deals 3 damage to you",
+    "cards": ["Aftershock"]
+  },
+  {
+    "match": "~ also deals (\\d+) damage to that permanent's controller if you control a modified creature",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "that_controller",
+    "cond": "modified",
+    "example": "~ also deals 2 damage to that permanent's controller if you control a modified creature",
+    "cards": ["Kami's Flare"]
+  },
+  {
+    "match": "~ deals (\\d+) damage to each creature",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "each_creature",
+    "example": "~ deals 3 damage to each creature",
+    "cards": ["Anger of the Gods"]
+  },
+  {
+    "match": "~ deals (\\d+) damage to each creature without flying",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "each_creature",
+    "filter": "nonflying",
+    "example": "~ deals 1 damage to each creature without flying",
+    "cards": ["Ashen Firebeast"]
+  },
+  {
+    "match": "revolt — destroy that creature if it has mana value (\\d+) or less instead if a permanent you controlled left the battlefield this turn",
+    "effect": "revolt",
+    "amount": "$1:int",
+    "target": "prev",
+    "example": "Revolt — Destroy that creature if it has mana value 4 or less instead if a permanent you controlled left the battlefield this turn",
+    "cards": ["Fatal Push"]
+  },
+  {
+    "match": "exile target creature with mana value less than or equal to the number of plains you control",
+    "effect": "destroy",
+    "target": "creature",
+    "filter": "plains",
+    "example": "Exile target creature with mana value less than or equal to the number of Plains you control",
+    "cards": ["Lay Down Arms"]
+  },
+  {
+    "match": "(?:destroy|exile) target tapped creature(?: an opponent controls| you don't control)?",
+    "effect": "destroy",
+    "target": "creature",
+    "filter": "tapped",
+    "example": "Destroy target tapped creature",
+    "cards": ["A-Knockout Blow"]
+  },
+  {
+    "match": "(?:destroy|exile) target attacking or blocking creature",
+    "effect": "destroy",
+    "target": "creature",
+    "filter": "attacking_blocking",
+    "example": "Exile target attacking or blocking creature",
+    "cards": ["Devouring Light"]
+  },
+  {
+    "match": "(?:destroy|exile) target untapped creature(?: an opponent controls| you don't control)?",
+    "effect": "destroy",
+    "target": "creature",
+    "filter": "untapped",
+    "example": "Destroy target untapped creature",
+    "cards": ["Asphyxiate"]
+  },
+  {
+    "match": "destroy target nonartifact creature",
+    "effect": "destroy",
+    "target": "creature",
+    "filter": "nonartifact",
+    "example": "Destroy target nonartifact creature",
+    "cards": ["Go for the Throat"]
+  },
+  {
+    "match": "(?:destroy|exile) target (?:[\\w-]+,? )*?creature(?:, enchantment,)? or planeswalker",
+    "effect": "destroy",
+    "target": "creature_pw",
+    "example": "Destroy target creature or planeswalker",
+    "cards": ["Annihilating Glare"]
+  },
+  {
+    "match": "(?:destroy|exile) target (?:[\\w-]+,? )*?creature(?: an opponent controls| you don't control)?",
+    "effect": "destroy",
+    "target": "creature",
+    "example": "Destroy target creature",
+    "cards": ["Afterlife"]
+  },
+  {
+    "match": "destroy target artifact",
+    "effect": "destroy",
+    "target": "artifact",
+    "example": "Destroy target artifact",
+    "cards": ["A-Ready to Rumble"]
+  },
+  {
+    "match": "(?:destroy|exile) target artifact or enchantment(?: an opponent controls)?",
+    "effect": "destroy",
+    "target": "artifact_enchantment",
+    "filter": "opp",
+    "example": "Destroy target artifact or enchantment",
+    "cards": ["Abolish"]
+  },
+  {
+    "match": "if you control a Squirrel or returned a Squirrel card to your hand this way, create a food token",
+    "effect": "token",
+    "amount": 1,
+    "cond": "squirrel",
+    "data": {"kind": "food"},
+    "example": "If you control a Squirrel or returned a Squirrel card to your hand this way, create a Food token",
+    "cards": ["Cache Grab"]
+  },
+  {
+    "match": "(?:you may )?return (?:a|up to one) (?:non-\\w+ )?creature card(?: or a planeswalker card)? from your graveyard to your hand",
+    "effect": "regrow",
+    "example": "Return a creature card from your graveyard to your hand",
+    "cards": ["Corpse Churn"]
+  },
+  {
+    "match": "DISCARDTUTOR",
+    "effect": "discard_tutor",
+    "data": {"desc": "a creature card"},
+    "example": "DISCARDTUTOR",
+    "cards": ["Formidable Speaker"]
+  },
+  {
+    "match": "when you discard one or more nonland cards this way, tap up to that many target creatures and put a stun counter on each of them",
+    "effect": "stun_discarded",
+    "example": "When you discard one or more nonland cards this way, tap up to that many target creatures and put a stun counter on each of them",
+    "cards": ["Seasoned Cryomancer"]
+  },
+  {
+    "match": "(?:~|it|he|she) deals damage equal to that creature's power to any target",
+    "effect": "damage",
+    "amount": 0,
+    "target": "any",
+    "data": {"subject_power": true},
+    "example": "~ deals damage equal to that creature's power to any target",
+    "cards": ["Grab the Reins"]
+  },
+  {
+    "match": "shuffle ~ and target creature with a stun counter on it into their owners' libraries",
+    "effect": "shuffle_away",
+    "target": "creature",
+    "filter": "stunned",
+    "example": "Shuffle ~ and target creature with a stun counter on it into their owners' libraries",
+    "cards": ["Floodpits Drowner"]
+  },
+  {
+    "match": "RETURNENCHANT",
+    "effect": "return_as_enchantment",
+    "example": "RETURNENCHANT",
+    "cards": ["Enduring Courage"]
+  },
+  {
+    "match": "LASTGIFT",
+    "effect": "last_gift",
+    "example": "LASTGIFT",
+    "cards": ["Bringer of the Last Gift"]
+  },
+  {
+    "match": "target opponent exiles a creature they control and their graveyard",
+    "effects": [{"effect": "edict", "amount": 1, "data": {"exile": true}}, {"effect": "exile_gy"}],
+    "example": "Target opponent exiles a creature they control and their graveyard",
+    "cards": ["Strategic Betrayal"]
+  },
+  {
+    "match": "untap another target permanent",
+    "effect": "untap_other",
+    "example": "Untap another target permanent",
+    "cards": ["D'Vana Tendi, Optimistic Ensign"]
+  },
+  {
+    "match": "draw a card for each (artifact|creature|land) you control",
+    "effect": "draw",
+    "amount": 0,
+    "data": {"x_count": "$1"},
+    "example": "Draw a card for each creature you control",
+    "cards": ["Ajani Unrelenting"]
+  },
+  {
+    "match": "put ~ into its owner's library third from the top",
+    "effect": "tuck_self",
+    "amount": 3,
+    "example": "Put ~ into its owner's library third from the top",
+    "cards": ["Borborygmos and Fblthp"]
+  },
+  {
+    "match": "(?:you )?draw (a|one|two|three|four|\\d+) cards?",
+    "effect": "draw",
+    "amount": "$1:num",
+    "example": "draw a card",
+    "cards": ["A-Akki Ronin"]
+  },
+  {
+    "match": "(?:then )?if you have fewer than (three) cards in hand, draw cards equal to the difference",
+    "effect": "draw_up_to",
+    "amount": "$1:num",
+    "example": "Then if you have fewer than three cards in hand, draw cards equal to the difference",
+    "cards": ["Iymrith, Desert Doom"]
+  },
+  {
+    "match": "you gain (\\d+) life",
+    "effect": "gain_life",
+    "amount": "$1:int",
+    "example": "you gain 3 life",
+    "cards": ["A-Circuit Mender"]
+  },
+  {
+    "match": "its controller gains (\\d+) life",
+    "effect": "gain_life",
+    "amount": "$1:int",
+    "target": "that_controller",
+    "example": "Its controller gains 2 life",
+    "cards": ["Ajani, Inspiring Leader"]
+  },
+  {
+    "match": "(?:each|target) opponent loses (\\d+) life",
+    "effect": "drain",
+    "amount": "$1:int",
+    "target": "each_opponent",
+    "example": "each opponent loses 1 life",
+    "cards": ["A-The Meathook Massacre"]
+  },
+  {
+    "match": "each opponent loses (\\d+) life and you gain (\\d+) life",
+    "effects": [{"effect": "drain", "amount": "$1:int", "target": "each_opponent"}, {"effect": "gain_life", "amount": "$2:int"}],
+    "example": "each opponent loses 1 life and you gain 1 life",
+    "cards": ["A-Cauldron Familiar"]
+  },
+  {
+    "match": "DEVOTIONDRAIN ([WUBRG])",
+    "effect": "drain_devotion",
+    "data": {"color": "$1"},
+    "example": "DEVOTIONDRAIN B",
+    "cards": ["Gray Merchant of Asphodel"]
+  },
+  {
+    "match": "enchanted creature gains (flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach) until end of turn",
+    "effect": "grant",
+    "target": "none",
+    "data": {"keyword": "$1:lower", "host": true},
+    "example": "enchanted creature gains hexproof until end of turn",
+    "cards": ["Accelerated Evolution"]
+  },
+  {
+    "match": "destroy target creature or enchantment",
+    "effect": "destroy",
+    "target": "nonland_perm",
+    "filter": "creature_or_ench",
+    "example": "Destroy target creature or enchantment",
+    "cards": ["Ethersworn Adjudicator"]
+  },
+  {
+    "match": "destroy target creature an opponent controls that was dealt damage this turn",
+    "effect": "destroy",
+    "target": "creature",
+    "filter": "opp_damaged",
+    "example": "destroy target creature an opponent controls that was dealt damage this turn",
+    "cards": ["A-Manticore"]
+  },
+  {
+    "match": "counter target artifact or enchantment spell",
+    "effect": "counter",
+    "target": "spell",
+    "filter": "artifact_ench",
+    "example": "Counter target artifact or enchantment spell",
+    "cards": ["Annul"]
+  },
+  {
+    "match": "destroy target noncreature, nonland permanent",
+    "effect": "destroy",
+    "target": "nonland_perm",
+    "filter": "noncreature",
+    "example": "Destroy target noncreature, nonland permanent",
+    "cards": ["Archive Arbiter"]
+  },
+  {
+    "match": "return target card from your graveyard to your hand",
+    "effect": "regrow_any",
+    "example": "Return target card from your graveyard to your hand",
+    "cards": ["Auroral Procession"]
+  },
+  {
+    "match": "untap target artifact or creature",
+    "effect": "untap_target",
+    "target": "creature_mine",
+    "example": "Untap target artifact or creature",
+    "cards": ["Aphetto Alchemist"]
+  },
+  {
+    "match": "exile (?:each opponent's|target player's) graveyard",
+    "effect": "exile_gy",
+    "example": "exile target player's graveyard",
+    "cards": ["Agent of Erebos"]
+  },
+  {
+    "match": "exile target card from an opponent's graveyard",
+    "effect": "exile_gy",
+    "amount": 1,
+    "example": "exile target card from an opponent's graveyard",
+    "cards": ["Carrion Locust"]
+  },
+  {
+    "match": "target player draws (a|two|three) cards?",
+    "effect": "draw",
+    "amount": "$1:num",
+    "example": "Target player draws three cards",
+    "cards": ["Ancestral Recall"]
+  },
+  {
+    "match": "target player draws (a|two|three) cards? and loses (\\d+) life",
+    "effects": [{"effect": "draw", "amount": "$1:num"}, {"effect": "lose_life", "amount": "$2:int"}],
+    "example": "Target player draws two cards and loses 2 life",
+    "cards": ["Blood Pact"]
+  },
+  {
+    "match": "~ deals (\\d+) damage to each player",
+    "effect": "damage_each_player",
+    "amount": "$1:int",
+    "example": "~ deals 2 damage to each player",
+    "cards": ["Cast Away Doubt"]
+  },
+  {
+    "match": "put (a|one|two|three|four|five|six) \\+1/\\+1 counters? on it",
+    "effect": "p1_counters",
+    "amount": "$1:num",
+    "target": "prev",
+    "example": "Put three +1/+1 counters on it",
+    "cards": ["Additive Evolution"]
+  },
+  {
+    "match": "put (a|one|two|three|four) -1/-1 counters? on (?:up to one )?target creature",
+    "effect": "shrink",
+    "amount": "$1:num",
+    "target": "creature",
+    "filter": "opp",
+    "example": "Put a -1/-1 counter on target creature",
+    "cards": ["Banewhip Punisher"]
+  },
+  {
+    "match": "put (a|one|two) -1/-1 counters? on each creature",
+    "effect": "shrink_all",
+    "amount": "$1:num",
+    "example": "Put two -1/-1 counters on each creature",
+    "cards": ["Darkness Descends"]
+  },
+  {
+    "match": "return all attacking creatures to their owner's hand",
+    "effect": "mass_bounce",
+    "data": {"only": "attacking"},
+    "example": "Return all attacking creatures to their owner's hand",
+    "cards": ["Aetherize"]
+  },
+  {
+    "match": "tap target permanent",
+    "effect": "tap",
+    "amount": 1,
+    "target": "nonland_perm",
+    "example": "Tap target permanent",
+    "cards": ["Dream's Grip"]
+  },
+  {
+    "match": "tap ~",
+    "effect": "tap",
+    "amount": 1,
+    "target": "self",
+    "example": "Tap ~",
+    "cards": ["Bloodsworn Squire // Bloodsworn Knight"]
+  },
+  {
+    "match": "return target permanent to its owner's hand",
+    "effect": "bounce",
+    "target": "nonland_perm",
+    "example": "Return target permanent to its owner's hand",
+    "cards": ["Aether Helix"]
+  },
+  {
+    "match": "destroy target permanent",
+    "effect": "destroy",
+    "target": "nonland_perm",
+    "example": "destroy target permanent",
+    "cards": ["Angel of Despair"]
+  },
+  {
+    "match": "you and target opponent each draw a card",
+    "effect": "draw_each",
+    "amount": 1,
+    "example": "you and target opponent each draw a card",
+    "cards": ["Farsight Adept"]
+  },
+  {
+    "match": "put a \\+1/\\+1 counter on target creature an opponent controls",
+    "effect": "add_counter",
+    "amount": 1,
+    "target": "creature",
+    "filter": "opp",
+    "data": {"counter": "+1/+1"},
+    "example": "put a +1/+1 counter on target creature an opponent controls",
+    "cards": ["Sunset Saboteur"]
+  },
+  {
+    "match": "exile target creature you control, then return (?:it|that card) to the battlefield under its owner's control( with a \\+1/\\+1 counter on it)?",
+    "effect": "flicker",
+    "target": "creature_mine",
+    "data": {"counter": "$1:bool"},
+    "example": "Exile target creature you control, then return that card to the battlefield under its owner's control",
+    "cards": ["Acrobatic Maneuver"]
+  },
+  {
+    "match": "search your library for a card, put it into your hand, shuffle, then discard a card at random",
+    "effects": [{"effect": "tutor", "data": {"what": "a card"}}, {"effect": "discard_random", "amount": 1}],
+    "example": "search your library for a card, put it into your hand, shuffle, then discard a card at random",
+    "cards": ["Cool but Rude"]
+  },
+  {
+    "match": "its controller mills (\\w+) cards?",
+    "effect": "mill",
+    "amount": "$1:num",
+    "target": "that_controller",
+    "example": "Its controller mills four cards",
+    "cards": ["Countermand"]
+  },
+  {
+    "match": "you may play an additional land this turn",
+    "effect": "extra_land",
+    "example": "You may play an additional land this turn",
+    "cards": ["Azusa's Many Journeys // Likeness of the Seeker"]
+  },
+  {
+    "match": "you gain life equal to that creature's toughness",
+    "effect": "gain_prev_toughness",
+    "example": "you gain life equal to that creature's toughness",
+    "cards": ["Abattoir Ghoul"]
+  },
+  {
+    "match": "~ deals (\\d+) damage to that creature's controller",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "that_controller",
+    "example": "~ deals 2 damage to that creature's controller",
+    "cards": ["Blur of Blades"]
+  },
+  {
+    "match": "gain control of target creature until end of turn",
+    "effect": "threaten",
+    "target": "creature",
+    "filter": "opp",
+    "example": "Gain control of target creature until end of turn",
+    "cards": ["Angrath, the Flame-Chained"]
+  },
+  {
+    "match": "target player gains (\\d+) life",
+    "effect": "gain_life",
+    "amount": "$1:int",
+    "example": "Target player gains 4 life",
+    "cards": ["Blessed Alliance"]
+  },
+  {
+    "match": "target creature deals damage to itself equal to its power",
+    "effect": "self_damage",
+    "target": "creature",
+    "example": "Target creature deals damage to itself equal to its power",
+    "cards": ["Cut Propulsion"]
+  },
+  {
+    "match": "sacrifice a land",
+    "effect": "sac_own",
+    "data": {"kind": "land"},
+    "example": "Sacrifice a land",
+    "cards": ["Cycle of Renewal"]
+  },
+  {
+    "match": "~ deals (\\d+) damage to any target and (\\d+) damage to you",
+    "effects": [{"effect": "damage", "amount": "$1:int", "target": "any"}, {"effect": "lose_life", "amount": "$2:int"}],
+    "example": "~ deals 1 damage to any target and 1 damage to you",
+    "cards": ["Brothers of Fire"]
+  },
+  {
+    "match": "take an extra turn after this one",
+    "effect": "extra_turn",
+    "example": "Take an extra turn after this one",
+    "cards": ["A-Alrund's Epiphany"]
+  },
+  {
+    "match": "return ~ from your graveyard to your hand",
+    "effect": "return_self_gy",
+    "data": {"to": "hand"},
+    "example": "Return ~ from your graveyard to your hand",
+    "cards": ["Aurora Eidolon"]
+  },
+  {
+    "match": "(?:you may )?put a land card from your hand onto the battlefield(?: tapped)?",
+    "effect": "land_from_hand",
+    "example": "Put a land card from your hand onto the battlefield tapped",
+    "cards": ["Arboreal Grazer"]
+  },
+  {
+    "match": "tap target creature defending player controls",
+    "effect": "tap",
+    "amount": 1,
+    "target": "creature",
+    "filter": "opp",
+    "example": "tap target creature defending player controls",
+    "cards": ["Captain America's Shield"]
+  },
+  {
+    "match": "each player draws a card",
+    "effect": "draw_each",
+    "amount": 1,
+    "example": "each player draws a card",
+    "cards": ["Cutthroat Negotiator"]
+  },
+  {
+    "match": "target creature(?: an opponent controls)? can't block this turn",
+    "effect": "cant_block_turn",
+    "target": "creature",
+    "example": "target creature an opponent controls can't block this turn",
+    "cards": ["A-Sizzling Soloist"]
+  },
+  {
+    "match": "(?:it|that creature|the other) can't block this turn",
+    "effect": "cant_block_turn",
+    "target": "prev",
+    "example": "That creature can't block this turn",
+    "cards": ["Blindblast"]
+  },
+  {
+    "match": "target creature blocks this turn if able",
+    "effect": "force_block",
+    "target": "creature",
+    "example": "target creature blocks this turn if able",
+    "cards": ["A-Shessra, Death's Whisper"]
+  },
+  {
+    "match": "target creature attacks or blocks this turn if able",
+    "effect": "force_block",
+    "target": "creature",
+    "data": {"attack": true},
+    "example": "Target creature attacks or blocks this turn if able",
+    "cards": ["Hustle // Bustle"]
+  },
+  {
+    "match": "target opponent exiles a card from their hand",
+    "effect": "opp_exile_hand",
+    "example": "target opponent exiles a card from their hand",
+    "cards": ["Kyoki, Sanity's Eclipse"]
+  },
+  {
+    "match": "return target creature card from your graveyard to the battlefield",
+    "effect": "reanimate_one",
+    "example": "Return target creature card from your graveyard to the battlefield",
+    "cards": ["A-Graveyard Shift"]
+  },
+  {
+    "match": "return up to one target permanent card from your graveyard to your hand",
+    "effect": "regrow_perm",
+    "example": "Return up to one target permanent card from your graveyard to your hand",
+    "cards": ["Badlands Revival"]
+  },
+  {
+    "match": "counter target artifact or creature spell",
+    "effect": "counter",
+    "target": "spell",
+    "filter": "artifact_creature",
+    "example": "Counter target artifact or creature spell",
+    "cards": ["Hurl into History"]
+  },
+  {
+    "match": "if the discovered card's mana value is less than 10, create a number of tapped treasure tokens equal to the difference",
+    "effect": "discover_treasures",
+    "example": "If the discovered card's mana value is less than 10, create a number of tapped Treasure tokens equal to the difference",
+    "cards": ["Hit the Mother Lode"]
+  },
+  {
+    "match": "exile all creatures",
+    "effect": "exile_all_creatures",
+    "example": "Exile all creatures",
+    "cards": ["Beyond the Quiet"]
+  },
+  {
+    "match": "empower jace x, where x is the number of creatures exiled this way",
+    "effect": "empower",
+    "amount": 0,
+    "data": {"count": "exiled"},
+    "example": "Empower Jace X, where X is the number of creatures exiled this way",
+    "cards": ["Overwrite the Multiverse"]
+  },
+  {
+    "match": "COUNTERTW (\\d+) (\\d+)",
+    "effect": "counter",
+    "amount": "$1:int",
+    "target": "spell",
+    "data": {"tw": "$2:int"},
+    "example": "COUNTERTW 2 4",
+    "cards": ["We Say Thee Nay!"]
+  },
+  {
+    "match": "counter target creature or enchantment spell",
+    "effect": "counter",
+    "target": "spell",
+    "filter": "creature_ench",
+    "example": "Counter target creature or enchantment spell",
+    "cards": ["Deny the Divine"]
+  },
+  {
+    "match": "return target spell you don't control to its owner's hand",
+    "effect": "bounce_spell",
+    "target": "spell",
+    "example": "Return target spell you don't control to its owner's hand",
+    "cards": ["A-Hullbreaker Horror"]
+  },
+  {
+    "match": "you lose (\\d+) life",
+    "effect": "lose_life",
+    "amount": "$1:int",
+    "example": "You lose 2 life",
+    "cards": ["A-Demon's Due"]
+  },
+  {
+    "match": "(?:you may )?attach (?:~|this Equipment) to (?:it|that creature)",
+    "effect": "attach_self",
+    "target": "prev",
+    "example": "Attach ~ to it",
+    "cards": ["A-Cori-Steel Cutter"]
+  },
+  {
+    "match": "when you do, attach it to target creature you control",
+    "effect": "attach_new_equipment",
+    "target": "creature_mine",
+    "example": "When you do, attach it to target creature you control",
+    "cards": ["Dáin Ironfoot"]
+  },
+  {
+    "match": "put a hone counter on each Equipment you control",
+    "effect": "hone",
+    "example": "put a hone counter on each Equipment you control",
+    "cards": ["Dwalin, Weaponmaster"]
+  },
+  {
+    "match": "its controller draws a card",
+    "effect": "draw",
+    "amount": 1,
+    "target": "that_controller",
+    "example": "Its controller draws a card",
+    "cards": ["Call to Heel"]
+  },
+  {
+    "match": "(?:that player|they) loses? (\\d+) life",
+    "effect": "lose_life",
+    "amount": "$1:int",
+    "target": "that_player",
+    "example": "that player loses 2 life",
+    "cards": ["Assault Intercessor"]
+  },
+  {
+    "match": "destroy all artifacts and creatures",
+    "effects": [{"effect": "destroy_all", "data": {"type": "Artifact"}}, {"effect": "wrath", "target": "each_creature"}],
+    "example": "Destroy all artifacts and creatures",
+    "cards": ["Ultima"]
+  },
+  {
+    "match": "destroy all creatures",
+    "effect": "wrath",
+    "target": "each_creature",
+    "example": "Destroy all creatures",
+    "cards": ["Avenge"]
+  },
+  {
+    "match": "destroy all planeswalkers",
+    "effect": "wrath_pw",
+    "example": "Destroy all planeswalkers",
+    "cards": ["Blood on the Snow"]
+  },
+  {
+    "match": "destroy target artifact or land",
+    "effect": "destroy",
+    "target": "artifact_land",
+    "example": "Destroy target artifact or land",
+    "cards": ["Demolish"]
+  },
+  {
+    "match": "that player discards (a|two) cards?",
+    "effect": "discard",
+    "amount": "$1:num",
+    "target": "that_player",
+    "example": "that player discards a card",
+    "cards": ["Abyssal Specter"]
+  },
+  {
+    "match": "that player exiles the top card of their library",
+    "effect": "exile_top_of",
+    "target": "that_player",
+    "example": "that player exiles the top card of their library",
+    "cards": ["Nightveil Specter"]
+  },
+  {
+    "match": "regenerate enchanted creature",
+    "effect": "regenerate",
+    "amount": 1,
+    "target": "host",
+    "example": "Regenerate enchanted creature",
+    "cards": ["Blessing of Leeches"]
+  },
+  {
+    "match": "return (?:up to one )?(?:other )?target (?:nonland permanent|creature|artifact, creature, enchantment, or planeswalker)(?: an opponent controls| you don't control)? to its owner's hand",
+    "effect": "bounce",
+    "target": "nonland_perm",
+    "example": "Return target nonland permanent to its owner's hand",
+    "cards": ["A-Hullbreaker Horror"]
+  },
+  {
+    "match": "scry (\\d+)",
+    "effect": "scry",
+    "amount": "$1:int",
+    "example": "Scry 2",
+    "cards": ["A-Glamorous Outlaw"]
+  },
+  {
+    "match": "surveil (\\d+)",
+    "effect": "surveil",
+    "amount": "$1:int",
+    "example": "surveil 1",
+    "cards": ["A-Dragon's Rage Channeler"]
+  },
+  {
+    "match": "for each opponent, return up to one target artifact or creature that player controls to its owner's hand",
+    "effect": "bounce",
+    "target": "nonland_perm",
+    "filter": "opp",
+    "example": "For each opponent, return up to one target artifact or creature that player controls to its owner's hand",
+    "cards": ["The Theorist, Jace Beleren"]
+  },
+  {
+    "match": "transform ~",
+    "effect": "transform",
+    "target": "self",
+    "example": "Transform ~",
+    "cards": ["Aang, Swift Savior // Aang and La, Ocean's Fury"]
+  },
+  {
+    "match": "TAPSILENCE",
+    "effect": "tap",
+    "amount": 1,
+    "target": "creature",
+    "data": {"silence": true},
+    "example": "TAPSILENCE",
+    "cards": ["The Wondrous Wasp"]
+  },
+  {
+    "match": "NETTAP",
+    "effect": "tap",
+    "amount": 1,
+    "target": "nonland_perm",
+    "data": {"net": true},
+    "example": "NETTAP",
+    "cards": ["Braided Net // Braided Quipu"]
+  },
+  {
+    "match": "OPTCOST (\\S+) (\\d+)",
+    "effect": "opt_cost_draw",
+    "amount": "$2:int",
+    "data": {"cost": "$1"},
+    "example": "OPTCOST discard 2",
+    "cards": ["Abandon Attachments"]
+  },
+  {
+    "match": "THREATEN",
+    "effect": "threaten",
+    "target": "creature",
+    "filter": "opp",
+    "example": "THREATEN",
+    "cards": ["Act of Treason"]
+  },
+  {
+    "match": "IRENCRAG",
+    "effect": "irencrag",
+    "example": "IRENCRAG",
+    "cards": ["The Irencrag"]
+  },
+  {
+    "match": "harness ~",
+    "effect": "harness",
+    "example": "Harness ~",
+    "cards": ["The Mind Stone"]
+  },
+  {
+    "match": "search your library for a card, put it into your graveyard, then shuffle",
+    "effect": "tutor_gy",
+    "example": "Search your library for a card, put it into your graveyard, then shuffle",
+    "cards": ["Cynical Loner"]
+  },
+  {
+    "match": "return up to two creature cards with total mana value 4 or less from your graveyard to the battlefield",
+    "effect": "reanimate_total",
+    "amount": 4,
+    "example": "Return up to two creature cards with total mana value 4 or less from your graveyard to the battlefield",
+    "cards": ["Lively Dirge"]
+  },
+  {
+    "match": "search your library for an artifact card with mana value equal to 1 plus the sacrificed artifact's mana value, put that card onto the battlefield, then shuffle",
+    "effect": "bay_search",
+    "example": "Search your library for an artifact card with mana value equal to 1 plus the sacrificed artifact's mana value, put that card onto the battlefield, then shuffle",
+    "cards": ["Repurposing Bay"]
+  },
+  {
+    "match": "STARCAGE",
+    "effect": "starcage",
+    "example": "STARCAGE",
+    "cards": ["Pinnacle Starcage"]
+  },
+  {
+    "match": "COVERUP",
+    "effect": "cover_up",
+    "cond": "evidence",
+    "example": "COVERUP",
+    "cards": ["Deadly Cover-Up"]
+  },
+  {
+    "match": "OBSESS",
+    "effect": "add_counter",
+    "amount": 0,
+    "target": "creature_mine",
+    "data": {"counter": "+1/+1", "x": "sacrificed"},
+    "example": "OBSESS",
+    "cards": ["Obsessive Pursuit"]
+  },
+  {
+    "match": "SACDRAWTREASURE",
+    "effect": "sac_draw_treasure",
+    "example": "SACDRAWTREASURE",
+    "cards": ["The Sackville-Bagginses"]
+  },
+  {
+    "match": "IMPULSE (\\d+)",
+    "effect": "draw",
+    "amount": "$1:int",
+    "example": "IMPULSE 1",
+    "cards": ["Abbot of Keral Keep"]
+  },
+  {
+    "match": "TARGETDISCARD",
+    "effect": "discard_choice",
+    "amount": 1,
+    "target": "player",
+    "example": "TARGETDISCARD",
+    "cards": ["Brainbite"]
+  },
+  {
+    "match": "HANDEXILE (.+)",
+    "effect": "hand_exile",
+    "target": "player",
+    "filter": "$1",
+    "example": "HANDEXILE nonland",
+    "cards": ["Biting-Palm Ninja"]
+  },
+  {
+    "match": "TARGETDISCARDNONCREATURE",
+    "effect": "discard_choice",
+    "amount": 1,
+    "target": "player",
+    "filter": "noncreature",
+    "example": "TARGETDISCARDNONCREATURE",
+    "cards": ["Duress"]
+  },
+  {
+    "match": "choose one of them",
+    "effect": "choose_one_exiled",
+    "example": "Choose one of them",
+    "cards": ["Boareskyr Tollkeeper"]
+  },
+  {
+    "match": "tap (?:up to one )?target (?:creature|nonland permanent)(?: an opponent controls| you don't control)?",
+    "effect": "tap",
+    "amount": 1,
+    "target": "creature",
+    "example": "Tap target creature",
+    "cards": ["A-Dreamshackle Geist"]
+  },
+  {
+    "match": "tap up to (two|three|four|five) target creatures",
+    "effect": "tap",
+    "amount": "$1:num",
+    "target": "creature",
+    "example": "Tap up to two target creatures",
+    "cards": ["A Good Day to Pie"]
+  },
+  {
+    "match": "tap target creature(?: an opponent controls)? and put (a|two|three) stun counters? on it",
+    "effects": [{"effect": "tap", "amount": 1, "target": "creature"}, {"effect": "stun", "amount": "$1:num", "target": "prev"}],
+    "example": "tap target creature an opponent controls and put a stun counter on it",
+    "cards": ["Alchemax Slayer-Bots"]
+  },
+  {
+    "match": "put (a|two|three) stun counters? on it",
+    "effect": "stun",
+    "amount": "$1:num",
+    "target": "prev",
+    "example": "Put three stun counters on it",
+    "cards": ["Ambling Stormshell"]
+  },
+  {
+    "match": "put (a|two|three) stun counters? on (?:up to one )?target tapped creature(?: an opponent controls)?",
+    "effect": "stun",
+    "amount": "$1:num",
+    "target": "creature",
+    "filter": "tapped",
+    "example": "Put a stun counter on up to one target tapped creature",
+    "cards": ["Cryogen Relic"]
+  },
+  {
+    "match": "(?:up to one )?target creature you control can't be blocked this turn",
+    "effect": "unblockable",
+    "target": "creature_mine",
+    "example": "target creature you control can't be blocked this turn",
+    "cards": ["Bria, Riptide Rogue"]
+  },
+  {
+    "match": "earthbend (\\w+)",
+    "effect": "earthbend",
+    "amount": "$1:num",
+    "example": "earthbend 2",
+    "cards": ["Aang, at the Crossroads // Aang, Destined Savior"]
+  },
+  {
+    "match": "GOBLINGUIDE",
+    "effect": "reveal_land",
+    "target": "each_opponent",
+    "example": "GOBLINGUIDE",
+    "cards": ["Goblin Guide"]
+  },
+  {
+    "match": "FETCHBASIC( UNTAP4)?",
+    "effect": "fetch_basic",
+    "data": {"untap4": "$1:bool"},
+    "example": "FETCHBASIC",
+    "cards": ["A-Scout the Wilderness"]
+  },
+  {
+    "match": "double the number of \\+1/\\+1 counters on ~",
+    "effect": "double_counters",
+    "target": "self",
+    "example": "double the number of +1/+1 counters on ~",
+    "cards": ["Ascendant Acolyte"]
+  },
+  {
+    "match": "double the power of target creature you control until end of turn",
+    "effect": "double_power",
+    "target": "creature_mine",
+    "example": "double the power of target creature you control until end of turn",
+    "cards": ["Mightform Harmonizer"]
+  },
+  {
+    "match": "(?:then )?draw a card for each opponent who lost life this turn",
+    "effect": "draw",
+    "amount": 1,
+    "cond": "opp_lost_life",
+    "example": "Then draw a card for each opponent who lost life this turn",
+    "cards": ["Kaito, Bane of Nightmares"]
+  },
+  {
+    "match": "target player discards a card",
+    "effect": "discard",
+    "amount": 1,
+    "target": "player",
+    "example": "Target player discards a card",
+    "cards": ["Cat Burglar"]
+  },
+  {
+    "match": "each opponent discards a card",
+    "effect": "discard",
+    "amount": 1,
+    "target": "player",
+    "example": "each opponent discards a card",
+    "cards": ["Aclazotz, Deepest Betrayal // Temple of the Dead"]
+  },
+  {
+    "match": "if (?:that|the) (?:creature|permanent|creature or planeswalker) would die this turn, exile it instead",
+    "effect": "exile_instead",
+    "target": "prev",
+    "example": "If that creature would die this turn, exile it instead",
+    "cards": ["Agate Assault"]
+  },
+  {
+    "match": "discard your hand, then draw two cards",
+    "effect": "wheel_self",
+    "example": "discard your hand, then draw two cards",
+    "cards": ["Case of the Crimson Pulse"]
+  },
+  {
+    "match": "return all non-(\\w+) creatures to their owners' hands",
+    "effect": "mass_bounce",
+    "data": {"except": "$1"},
+    "example": "Return all non-Phyrexian creatures to their owners' hands",
+    "cards": ["Jin-Gitaxias // The Great Synthesis"]
+  },
+  {
+    "match": "return one or two target creatures and/or enchantments you own to your hand",
+    "effect": "bounce_own",
+    "target": "nonland_perm",
+    "filter": "mine",
+    "example": "Return one or two target creatures and/or enchantments you own to your hand",
+    "cards": ["Get Out"]
+  },
+  {
+    "match": "(?:you )?recruit",
+    "effect": "recruit",
+    "example": "recruit",
+    "cards": ["Bard's Company"]
+  },
+  {
+    "match": "return up to (one|two) target creature cards? from your graveyard to your hand",
+    "effect": "regrow",
+    "amount": "$1:num",
+    "example": "Return up to one target creature card from your graveyard to your hand",
+    "cards": ["A-Fates' Reversal"]
+  },
+  {
+    "match": "return ~ to its owner's hand",
+    "effect": "bounce_self",
+    "example": "Return ~ to its owner's hand",
+    "cards": ["Acererak the Archlich"]
+  },
+  {
+    "match": "empower jace (\\d+)",
+    "effect": "empower",
+    "amount": "$1:int",
+    "example": "Empower Jace 2",
+    "cards": ["Academic Ascent"]
+  },
+  {
+    "match": "discover (\\d+)",
+    "effect": "discover",
+    "amount": "$1:int",
+    "example": "Discover 3",
+    "cards": ["A-Geological Appraiser"]
+  },
+  {
+    "match": "(?:~|it|he|she) connives",
+    "effect": "connive",
+    "target": "prev",
+    "example": "it connives",
+    "cards": ["A-Psionic Snoop"]
+  },
+  {
+    "match": "(?:up to one )?target creature you control connives",
+    "effect": "connive",
+    "target": "creature_mine",
+    "example": "target creature you control connives",
+    "cards": ["Leader, Super-Genius"]
+  },
+  {
+    "match": "target attacking creature connives x, where x is the number of attacking creatures",
+    "effect": "connive",
+    "target": "creature_mine",
+    "filter": "attacking",
+    "data": {"per_attacker": true},
+    "example": "target attacking creature connives X, where X is the number of attacking creatures",
+    "cards": ["Raffine, Scheming Seer"]
+  },
+  {
+    "match": "STUNLANDSWAP",
+    "effect": "land_swap",
+    "example": "STUNLANDSWAP",
+    "cards": ["Magmatic Hellkite"]
+  },
+  {
+    "match": "THEORIX (\\d+)",
+    "effect": "gy_type_spree",
+    "amount": "$1:int",
+    "example": "THEORIX 6",
+    "cards": ["Uldaros Theorix"]
+  },
+  {
+    "match": "FLIPFROMGY",
+    "effect": "flip_from_gy",
+    "example": "FLIPFROMGY",
+    "cards": ["Esper Origins // Summon: Esper Maduin"]
+  },
+  {
+    "match": "REVEALTOP (permanent|land|creature)",
+    "effect": "reveal_top_to_hand",
+    "data": {"what": "$1"},
+    "example": "REVEALTOP permanent",
+    "cards": ["Esper Origins // Summon: Esper Maduin"]
+  },
+  {
+    "match": "BOTHLANDSWAP",
+    "effect": "land_swap",
+    "data": {"both": true},
+    "example": "BOTHLANDSWAP",
+    "cards": ["Demolition Field"]
+  },
+  {
+    "match": "(?:defending player|target opponent|target player) loses (\\d+) life and you gain (\\d+) life",
+    "effects": [{"effect": "drain", "amount": "$1:int", "target": "each_opponent"}, {"effect": "gain_life", "amount": "$2:int"}],
+    "example": "target opponent loses 1 life and you gain 1 life",
+    "cards": ["A-Blood Artist"]
+  },
+  {
+    "match": "you draw a card and lose (\\d+) life",
+    "effects": [{"effect": "draw", "amount": 1}, {"effect": "lose_life", "amount": "$1:int"}],
+    "example": "you draw a card and lose 1 life",
+    "cards": ["Agent Venom"]
+  },
+  {
+    "match": "(?:target|each) opponent discards (a|two|three) cards?",
+    "effect": "discard",
+    "amount": "$1:num",
+    "target": "player",
+    "example": "Each opponent discards two cards",
+    "cards": ["Arterial Flow"]
+  },
+  {
+    "match": "target player discards (two|three) cards",
+    "effect": "discard",
+    "amount": "$1:num",
+    "target": "player",
+    "example": "target player discards two cards",
+    "cards": ["Abyssal Horror"]
+  },
+  {
+    "match": "each player discards (a|two|three) cards?",
+    "effect": "discard_each",
+    "amount": "$1:num",
+    "example": "each player discards a card",
+    "cards": ["Creeping Dread"]
+  },
+  {
+    "match": "each player loses (\\d+) life",
+    "effect": "lose_each",
+    "amount": "$1:int",
+    "example": "Each player loses 2 life",
+    "cards": ["Bad Deal"]
+  },
+  {
+    "match": "look at the top (two|three|four|five|\\d+) cards of your library(?:,)? then put them back in any order",
+    "effect": "reorder_top",
+    "amount": "$1:num",
+    "example": "look at the top four cards of your library, then put them back in any order",
+    "cards": ["Aven Fateshaper"]
+  },
+  {
+    "match": "~ deals (\\d+) damage to target creature with flying",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "creature",
+    "filter": "flying",
+    "example": "~ deals 2 damage to target creature with flying",
+    "cards": ["Bow of Nylea"]
+  },
+  {
+    "match": "~ gains shroud until end of turn",
+    "effect": "grant",
+    "target": "self",
+    "data": {"keyword": "shroud"},
+    "example": "~ gains shroud until end of turn",
+    "cards": ["Advanced Hoverguard"]
+  },
+  {
+    "match": "bolster (\\d+|one|two|three|four|five|six)",
+    "effect": "bolster",
+    "amount": "$1:num",
+    "example": "Bolster 1",
+    "cards": ["Abzan Advantage"]
+  },
+  {
+    "match": "support (\\d+|one|two|three|four|five|six)",
+    "effect": "support",
+    "amount": "$1:num",
+    "example": "support 2",
+    "cards": ["Aerie Auxiliary"]
+  },
+  {
+    "match": "(?:target|each) opponent sacrifices a creature(?: of their choice)?",
+    "effect": "edict",
+    "amount": 1,
+    "example": "each opponent sacrifices a creature",
+    "cards": ["Agent of the Fates"]
+  },
+  {
+    "match": "target player sacrifices a creature(?: of their choice)?",
+    "effect": "edict",
+    "amount": 1,
+    "target": "player",
+    "example": "Target player sacrifices a creature",
+    "cards": ["Angrath's Rampage"]
+  },
+  {
+    "match": "each player sacrifices a creature(?: of their choice)?",
+    "effect": "edict_each",
+    "amount": 1,
+    "example": "each player sacrifices a creature",
+    "cards": ["Abyssal Gatekeeper"]
+  },
+  {
+    "match": "each other player sacrifices a creature",
+    "effect": "edict",
+    "amount": 1,
+    "example": "each other player sacrifices a creature",
+    "cards": ["Grave Pact"]
+  },
+  {
+    "match": "creatures without flying can't block this turn",
+    "effect": "cant_block_all",
+    "filter": "nonflying",
+    "example": "Creatures without flying can't block this turn",
+    "cards": ["Destructive Tampering"]
+  },
+  {
+    "match": "creatures your opponents control can't block this turn",
+    "effect": "cant_block_all",
+    "data": {"theirs": true},
+    "example": "Creatures your opponents control can't block this turn",
+    "cards": ["Cosmotronic Wave"]
+  },
+  {
+    "match": "untap a creature you control",
+    "effect": "untap_target",
+    "target": "creature_mine",
+    "example": "untap a creature you control",
+    "cards": ["White Plume Adventurer"]
+  },
+  {
+    "match": "untap all (creatures|lands) you control(?: instead)?",
+    "effect": "untap_all",
+    "data": {"what": "$1"},
+    "example": "Untap all creatures you control",
+    "cards": ["Aggravated Assault"]
+  },
+  {
+    "match": "sacrifice ~",
+    "effect": "sacrifice_self",
+    "target": "self",
+    "example": "Sacrifice ~",
+    "cards": ["Aang's Iceberg"]
+  },
+  {
+    "match": "sacrifice a creature",
+    "effect": "sac_own",
+    "data": {"kind": "creature"},
+    "example": "Sacrifice a creature",
+    "cards": ["A-Minsc & Boo, Timeless Heroes"]
+  },
+  {
+    "match": "~ can't be blocked this turn",
+    "effect": "unblockable",
+    "target": "self",
+    "example": "~ can't be blocked this turn",
+    "cards": ["Aetherling"]
+  },
+  {
+    "match": "target creature can't be blocked this turn",
+    "effect": "unblockable",
+    "target": "creature_mine",
+    "example": "target creature can't be blocked this turn",
+    "cards": ["A-Krydle of Baldur's Gate"]
+  },
+  {
+    "match": "put target creature on top of its owner's library",
+    "effect": "tuck_top",
+    "target": "creature",
+    "example": "Put target creature on top of its owner's library",
+    "cards": ["Anchor to the Aether"]
+  },
+  {
+    "match": "search your library for a card, put (?:that card|it) into your hand, then shuffle",
+    "effect": "tutor",
+    "data": {"what": "a card"},
+    "example": "Search your library for a card, put it into your hand, then shuffle",
+    "cards": ["Coveted Prize"]
+  },
+  {
+    "match": "exile target card from a graveyard",
+    "effect": "exile_gy",
+    "amount": 1,
+    "example": "Exile target card from a graveyard",
+    "cards": ["Agatha's Soul Cauldron"]
+  },
+  {
+    "match": "its controller loses (\\d+) life",
+    "effect": "lose_life",
+    "amount": "$1:int",
+    "target": "that_controller",
+    "example": "its controller loses 2 life",
+    "cards": ["Archfiend of the Dross"]
+  },
+  {
+    "match": "prevent all combat damage that would be dealt this turn",
+    "effect": "fog",
+    "example": "Prevent all combat damage that would be dealt this turn",
+    "cards": ["Angelsong"]
+  },
+  {
+    "match": "return an? (land|creature) you control to its owner's hand",
+    "effect": "return_own",
+    "data": {"kind": "$1:lower"},
+    "example": "return a land you control to its owner's hand",
+    "cards": ["Arid Archway"]
+  },
+  {
+    "match": "another target creature you control gains (deathtouch|first strike|lifelink|trample|haste|indestructible|hexproof|vigilance|menace|reach|flying) until end of turn",
+    "effect": "grant",
+    "target": "creature_mine",
+    "data": {"keyword": "$1:lower"},
+    "example": "another target creature you control gains deathtouch until end of turn",
+    "cards": ["Blooming Stinger"]
+  },
+  {
+    "match": "put (a|one|two|three) \\+1/\\+1 counters? on another target creature you control",
+    "effect": "p1_counters",
+    "amount": "$1:num",
+    "target": "creature_mine",
+    "example": "put a +1/+1 counter on another target creature you control",
+    "cards": ["Ascendant Dustspeaker"]
+  },
+  {
+    "match": "~ deals 1 damage to each of one or two targets",
+    "effect": "damage",
+    "amount": 1,
+    "target": "any",
+    "example": "~ deals 1 damage to each of one or two targets",
+    "cards": ["Prismari Charm"]
+  },
+  {
+    "match": "investigate",
+    "effect": "token",
+    "amount": 1,
+    "data": {"kind": "clue"},
+    "example": "investigate",
+    "cards": ["Agent 13, Sharon Carter"]
+  },
+  {
+    "match": "(?:~|it|this creature) endures (\\d+)",
+    "effect": "endure",
+    "amount": "$1:int",
+    "example": "It endures 1",
+    "cards": ["Amber-Plate Ainok"]
+  },
+  {
+    "match": "manifest dread",
+    "effect": "manifest_dread",
+    "example": "manifest dread",
+    "cards": ["Abhorrent Oculus"]
+  },
+  {
+    "match": "untap ~",
+    "effect": "untap_self",
+    "example": "untap ~",
+    "cards": ["Ambling Stormshell"]
+  },
+  {
+    "match": "untap it",
+    "effect": "untap_prev",
+    "target": "prev",
+    "example": "untap it",
+    "cards": ["A-Raiyuu, Storm's Edge"]
+  },
+  {
+    "match": "it explores",
+    "effect": "explore",
+    "target": "prev",
+    "example": "it explores",
+    "cards": ["Brazen Buccaneers"]
+  },
+  {
+    "match": "exile up to (one|two) target cards? from (?:a|a single) graveyard",
+    "effect": "exile_gy_cards",
+    "amount": "$1:num",
+    "example": "exile up to one target card from a graveyard",
+    "cards": ["Afterthought Sentry"]
+  },
+  {
+    "match": "(?:then )?discard (a|one|two|three) cards? unless you discard an? basic land card",
+    "effect": "discard",
+    "amount": "$1:num",
+    "data": {"unless": "basic_land"},
+    "example": "Then discard two cards unless you discard a basic land card",
+    "cards": ["Thirst for Discovery"]
+  },
+  {
+    "match": "(?:then )?discard (a|one|two|three) cards?(?: unless .*)?",
+    "effect": "discard",
+    "amount": "$1:num",
+    "example": "Discard a card",
+    "cards": ["A-Dragonborn Looter"]
+  },
+  {
+    "match": "RUMMAGE (\\d+)",
+    "effect": "rummage",
+    "amount": "$1:int",
+    "example": "RUMMAGE 2",
+    "cards": ["Cathartic Pyre"]
+  },
+  {
+    "match": "create (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
+    "effect": "token",
+    "amount": "$1:num",
+    "data": {"kind": "$2:lower"},
+    "example": "Create a Treasure token",
+    "cards": ["A-Glittermonger"]
+  },
+  {
+    "match": "target player creates (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
+    "effect": "token",
+    "amount": "$1:num",
+    "data": {"kind": "$2:lower"},
+    "example": "Target player creates two Treasure tokens",
+    "cards": ["Ashling's Command"]
+  },
+  {
+    "match": "its controller creates (a|one|two|three) (treasure|clue|blood|map|lander|food|mutagen) tokens?",
+    "effect": "token",
+    "amount": "$1:num",
+    "target": "that_controller",
+    "data": {"kind": "$2:lower"},
+    "example": "Its controller creates a Treasure token",
+    "cards": ["A-Buy Your Silence"]
+  },
+  {
+    "match": "target creature you control explores",
+    "effect": "explore",
+    "target": "creature_mine",
+    "example": "Target creature you control explores",
+    "cards": ["Enter the Unknown"]
+  },
+  {
+    "match": "(?:you may )?return ~ from your graveyard to the battlefield( tapped)?",
+    "effect": "return_self_gy",
+    "data": {"tapped": "$1:bool"},
+    "example": "return ~ from your graveyard to the battlefield",
+    "cards": ["Akoum Firebird"]
+  },
+  {
+    "match": "~ explores",
+    "effect": "explore",
+    "target": "self",
+    "example": "~ explores",
+    "cards": ["Amalia Benavides Aguirre"]
+  },
+  {
+    "match": "its controller (?:may search their library|searches their library) for a basic land card, puts? it onto the battlefield tapped, then shuffles?",
+    "effect": "fetch_basic",
+    "target": "that_controller",
+    "example": "Its controller may search their library for a basic land card, put it onto the battlefield tapped, then shuffle",
+    "cards": ["Avengers Disassembled"]
+  },
+  {
+    "match": "its controller discards a card",
+    "effect": "discard",
+    "amount": 1,
+    "target": "that_controller",
+    "example": "Its controller discards a card",
+    "cards": ["Assassin's Strike"]
+  },
+  {
+    "match": "exile all artifacts and creatures with mana value (\\d+) or less until ~ leaves the battlefield",
+    "effect": "oring_all",
+    "amount": "$1:int",
+    "example": "exile all artifacts and creatures with mana value 2 or less until ~ leaves the battlefield",
+    "cards": ["Pinnacle Starcage"]
+  },
+  {
+    "match": "(?:destroy|exile) target nonland permanent(?: an opponent controls| you don't control)?",
+    "effect": "destroy",
+    "target": "nonland_perm",
+    "example": "Destroy target nonland permanent",
+    "cards": ["Angelic Rocket"]
+  },
+  {
+    "match": "its controller loses (\\d+) life and you gain (\\d+) life",
+    "effects": [{"effect": "lose_life", "amount": "$1:int", "target": "that_controller"}, {"effect": "gain_life", "amount": "$2:int"}],
+    "example": "Its controller loses 2 life and you gain 2 life",
+    "cards": ["Certain Death"]
+  },
+  {
+    "match": "(?:~|it|he|she) deals damage equal to the number of (treasures|artifacts|creatures|lands) you control to (any target|target creature or planeswalker|target player or planeswalker|target player)",
+    "effect": "damage",
+    "amount": 0,
+    "target": {"$map": "$2", "values": {"any target": "any", "target creature or planeswalker": "creature", "target player or planeswalker": "player", "target player": "player"}},
+    "data": {"count": "$1:lower"},
+    "example": "~ deals damage equal to the number of creatures you control to target creature or planeswalker",
+    "cards": ["Cabaretti Charm"]
+  },
+  {
+    "match": "its controller investigates",
+    "effect": "token",
+    "amount": 1,
+    "target": "that_controller",
+    "data": {"kind": "clue"},
+    "example": "Its controller investigates",
+    "cards": ["Fateful Absence"]
+  },
+  {
+    "match": "create a token that's a copy of target token you control",
+    "effect": "copy_token",
+    "example": "create a token that's a copy of target token you control",
+    "cards": ["Caretaker's Talent"]
+  },
+  {
+    "match": "put (a|one|two|three) \\+1/\\+1 counters? on (?:up to one )?target creature(?: or Vehicle)?(?: you control)?",
+    "effect": "p1_counters",
+    "amount": "$1:num",
+    "target": "creature_mine",
+    "example": "Put a +1/+1 counter on up to one target creature",
+    "cards": ["A-Fall of the Impostor"]
+  },
+  {
+    "match": "put (a|one|two|three) \\+1/\\+1 counters? on ~",
+    "effect": "p1_counters",
+    "amount": "$1:num",
+    "target": "self",
+    "example": "put a +1/+1 counter on ~",
+    "cards": ["Aang, A Lot to Learn"]
+  },
+  {
+    "match": "put x \\+1/\\+1 counters on (?:~|him|her|it)",
+    "effect": "p1_counters",
+    "amount": 0,
+    "target": "self",
+    "data": {"x": "entered"},
+    "example": "Put X +1/+1 counters on it",
+    "cards": ["Anthroplasm"]
+  },
+  {
+    "match": "(?:then )?draw half x cards, rounded down",
+    "effect": "draw",
+    "amount": 0,
+    "data": {"x_half": true},
+    "example": "Then draw half X cards, rounded down",
+    "cards": ["Wan Shi Tong, Librarian"]
+  },
+  {
+    "match": "ELSPETHPLUS",
+    "effect": "p1_counters",
+    "amount": 1,
+    "target": "creature_mine",
+    "data": {"keyword": "flying"},
+    "example": "ELSPETHPLUS",
+    "cards": ["Elspeth Resplendent"]
+  },
+  {
+    "match": "destroy that creature",
+    "effect": "destroy",
+    "target": "prev",
+    "example": "Destroy that creature",
+    "cards": ["Creepy Doll"]
+  },
+  {
+    "match": "~ also deals (\\d+) damage to that creature's controller",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "that_controller",
+    "example": "~ also deals 3 damage to that creature's controller",
+    "cards": ["Blooming Blast"]
+  },
+  {
+    "match": "it gains (hexproof|first strike|haste|indestructible|trample|lifelink|flying|vigilance|menace) until end of turn",
+    "effect": "grant",
+    "target": "prev",
+    "data": {"keyword": "$1:lower"},
+    "example": "It gains trample until end of turn",
+    "cards": ["A-Phylath, World Sculptor"]
+  },
+  {
+    "match": "target creature gains ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) and ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) until end of turn",
+    "effects": [{"effect": "grant", "target": "creature", "data": {"keyword": "$1:lower"}}, {"effect": "grant", "target": "prev", "data": {"keyword": "$2:lower"}}],
+    "example": "Target creature gains flying and double strike until end of turn",
+    "cards": ["Ajani, Caller of the Pride"]
+  },
+  {
+    "match": "target creature gains your choice of ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) or (?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach) until end of turn",
+    "effect": "grant",
+    "target": "creature",
+    "data": {"keyword": "$1:lower"},
+    "example": "target creature gains your choice of first strike or vigilance until end of turn",
+    "cards": ["Éowyn, Lady of Rohan"]
+  },
+  {
+    "match": "put (a|one|two) \\+1/\\+1 counters? on each creature target player controls",
+    "effect": "p1_counters",
+    "amount": "$1:num",
+    "target": "my_creatures",
+    "example": "Put a +1/+1 counter on each creature target player controls",
+    "cards": ["Collective Effort"]
+  },
+  {
+    "match": "that creature deals (\\d+) damage to each opponent",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "player",
+    "example": "that creature deals 1 damage to each opponent",
+    "cards": ["Ingris Stingerquill"]
+  },
+  {
+    "match": "target creature gains (double strike|first strike|trample|haste|hexproof|indestructible|flying|lifelink|deathtouch|vigilance|menace|reach) until end of turn",
+    "effect": "grant",
+    "target": "creature",
+    "data": {"keyword": "$1:lower"},
+    "example": "Target creature gains indestructible until end of turn",
+    "cards": ["A-Blessed Hippogriff // A-Tyr's Blesing"]
+  },
+  {
+    "match": "target instant or sorcery card in your graveyard gains flashback until end of turn",
+    "effect": "grant_flashback",
+    "example": "target instant or sorcery card in your graveyard gains flashback until end of turn",
+    "cards": ["Archmage's Newt"]
+  },
+  {
+    "match": "put an? (\\w+) counter on ~",
+    "effect": "add_counter",
+    "amount": 1,
+    "target": "self",
+    "data": {"counter": "$1:lower"},
+    "example": "Put a charge counter on ~",
+    "cards": ["Aether Vial"]
+  },
+  {
+    "match": "if you attacked with two or more creatures this turn, draw a card",
+    "effect": "draw",
+    "amount": 1,
+    "cond": "attacked2",
+    "example": "If you attacked with two or more creatures this turn, draw a card",
+    "cards": ["Wedding Announcement // Wedding Festivity"]
+  },
+  {
+    "match": "then if ~ has (three) or more \\w+ counters on it, transform it",
+    "effect": "transform",
+    "target": "self",
+    "cond": "counters3",
+    "example": "Then if ~ has three or more invitation counters on it, transform it",
+    "cards": ["Wedding Announcement // Wedding Festivity"]
+  },
+  {
+    "match": "exile this saga, then return it to the battlefield transformed under your control|exile ~, then return it to the battlefield transformed under your control",
+    "effect": "transform",
+    "target": "self",
+    "example": "Exile ~, then return it to the battlefield transformed under your control",
+    "cards": ["A-Kumano Faces Kakkazan // A-Etching of Kumano"]
+  },
+  {
+    "match": "if a player is dealt damage this way, scry (\\d+)",
+    "effect": "scry",
+    "amount": "$1:int",
+    "cond": "target_player",
+    "example": "If a player is dealt damage this way, scry 1",
+    "cards": ["Play with Fire"]
+  },
+  {
+    "match": "REANIMATESNOW",
+    "effect": "reanimate_snow",
+    "example": "REANIMATESNOW",
+    "cards": ["Blood on the Snow"]
+  },
+  {
+    "match": "GYHATE (\\d+)",
+    "effect": "gy_hate",
+    "amount": "$1:int",
+    "example": "GYHATE 2",
+    "cards": ["Diregraf Scavenger"]
+  },
+  {
+    "match": "ADVERSARY",
+    "effect": "adversary",
+    "data": {"cost": {"generic": 2, "R": 1}},
+    "example": "ADVERSARY",
+    "cards": ["Bloodthirsty Adversary"]
+  },
+  {
+    "match": "COUNTERABILITY",
+    "effect": "counter_ability",
+    "example": "COUNTERABILITY",
+    "cards": ["Tishana's Tidebinder"]
+  },
+  {
+    "match": "BLINKEND",
+    "effect": "blink_end",
+    "target": "creature_mine",
+    "example": "BLINKEND",
+    "cards": ["Baboon Spirit"]
+  },
+  {
+    "match": "double the number of \\+1/\\+1 counters on each creature you control",
+    "effect": "double_counters",
+    "target": "my_creatures",
+    "example": "Double the number of +1/+1 counters on each creature you control",
+    "cards": ["Bristly Bill, Spine Sower"]
+  }
+]
