@@ -57,6 +57,17 @@ class MillPickDescriptions(unittest.TestCase):
         self.assertEqual(effects[-1].data["alts"], [([], [], None)])
         self.assertTrue(_alt_matches(BEAR, [([], [], None)]))
 
+    def test_revealed_cards_from_among_them_stay_unsupported(self):
+        # "them" can be the revealed cards of a dig (Planar Genesis, Storm the Festival):
+        # resolving those as a mill_pick would pull from the graveyard instead.
+        for text in ("If you don't, put a card from among them into your hand.",
+                     "You may put up to two permanent cards with mana value 5 or less from among "
+                     "them onto the battlefield.",
+                     "You may put a nonland permanent card with mana value 3 or less from among "
+                     "them onto the battlefield."):
+            effects, bad = _parse_effects(text)
+            self.assertEqual((effects, len(bad)), ([], 1), text)
+
     def test_alternatives_split_before_articles_not_riders(self):
         specs = _alt_specs("Plains card or a creature card with mana value 3 or less")
         self.assertEqual(specs, [(["Plains"], [], None), (["creature"], [], ("less", 3))])

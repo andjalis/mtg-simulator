@@ -57,7 +57,7 @@ def _alt_specs(desc):
     words that must not, and an optional ("less"/"greater", n) mana-value rider. Unrecognised
     words stay unsupported rather than silently broadening the selection."""
     specs = []
-    for alt in re.split(r" or (?=an? )", desc.strip()):
+    for alt in re.split(r" or (?=an? |[A-Z])", desc.strip()):
         m = _CMC_RIDER.search(alt)
         cmc = (m[2], int(m[1])) if m else None
         if m:
@@ -115,9 +115,12 @@ EFFECT_PATTERNS = [
      r"(?P<dest>into your hand|to your hand|onto the battlefield(?: tapped)?|on top of your library)", _pick),
     # Rich descriptions the simple type list can't express: "a Plains card or a creature card with
     # mana value 3 or less", "a noncreature, nonland card", "a card". Validated by _alt_specs.
+    # Only the explicit milled-cards wordings: "from among them" can also refer to revealed cards
+    # (Planar Genesis, Storm the Festival), and resolving those as a mill_pick would pull from the
+    # graveyard instead of the revealed cards.
     (rf"(?:you may )?(?:put|return) (?P<n>an?|up to (?:{_COUNT})|all|each) (?P<desc>.+?) "
-     r"(?:from among (?:the milled cards|the cards milled this way|them)|milled this way) "
-     r"(?P<dest>into your hand|to your hand|onto the battlefield(?: tapped)?|on top of your library)", _pick_desc),
+     rf"from among (?:the milled cards|the cards milled this way|milled this way) "
+     rf"(?P<dest>into your hand|to your hand|onto the battlefield(?: tapped)?|on top of your library)", _pick_desc),
 ]
 
 
