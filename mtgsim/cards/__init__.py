@@ -123,3 +123,6 @@ _TRIGGERS += _for_mirrodin.TRIGGERS
 from .. import prepare as _prepare
 _EFFECT_PATTERNS += _prepare.EFFECT_PATTERNS
 _SUBS += _prepare.SUBS
+from .. import cx_triggers as _cx_triggers
+_EFFECT_PATTERNS += _cx_triggers.EFFECT_PATTERNS
+_SUBS += _cx_triggers.SUBS

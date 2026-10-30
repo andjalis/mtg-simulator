@@ -374,6 +374,10 @@ class Permanent:
             block = level_block(self)
             if block is not None and kw in block[1]:
                 return True
+        if kw == 'hexproof' and self.card.advanced_rules.get('hexproof_entered'):
+            from ..cx_triggers import hexproof_entered
+            if hexproof_entered(self):
+                return True
         if kw in self.card.keywords or kw in self.temp_kw or kw in self.perm_kw or (kw in KEYWORDS and self.counters.get(kw, 0) > 0):
             return True
         if kw in ('training', 'dethrone') and self.is_creature and any(k == kw and not (other and source is self)

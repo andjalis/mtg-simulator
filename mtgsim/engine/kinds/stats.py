@@ -314,6 +314,8 @@ def tap(game, p, eff, target, item=None, **_):
         return
     if isinstance(target, Permanent):
         target.tapped = True
+        if eff.data.get("stun_each"):
+            target.counters["stun"] = target.counters.get("stun", 0) + 1
         if eff.data.get("freeze"):
             target.skip_untap = max(target.skip_untap, 1)
         src = item.source if item is not None else None
@@ -325,6 +327,8 @@ def tap(game, p, eff, target, item=None, **_):
         extra = default_choose_target(game, p, eff)
         if extra is not None:
             extra.tapped = True
+            if eff.data.get("stun_each"):
+                extra.counters["stun"] = extra.counters.get("stun", 0) + 1
             if eff.data.get("freeze"):
                 extra.skip_untap = max(extra.skip_untap, 1)
 
