@@ -158,6 +158,16 @@ class PlayMixin:
                 emerge.sacrificing(self, p, victim, card)
             sac_stats = (victim.power, victim.toughness, victim.card.cmc)
             self.sacrifice(victim)
+        exiled_gy = None
+        if getattr(card, "extra_exile_gy", ""):
+            # "As an additional cost to cast ~, exile a(n) <desc> card from your graveyard"
+            # (Makeshift Mauler, Corpse Lunge): the plan carries the chosen card.
+            exiled_gy = plan.exile_gy_card
+            if exiled_gy is None or exiled_gy not in p.graveyard:
+                return False
+            p.graveyard.remove(exiled_gy)
+            p.exile.append(exiled_gy)
+            self.log(f"exiles {exiled_gy.name} from their graveyard for {card.name}", p)
         if kind == "prepared":
             next(x for x in p.battlefield if x.front is base and x.prepared).prepared = False
         elif kind in ("rebound", "cascade", "cascade_adventure", "rebound_adventure"):
@@ -217,6 +227,8 @@ class PlayMixin:
         item.evidence = self.collect_evidence(p, card)
         item.emerged_toughness = getattr(self, "_emerge_toughness", None) if kind == "emerge" else None
         item.sac_stats = sac_stats
+        if exiled_gy is not None:    # for ("exiled_gy", "power") and friends (Corpse Lunge)
+            item.exiled_gy_stats = (int(exiled_gy.power or 0), int(exiled_gy.toughness or 0), exiled_gy.cmc)
         item.bargained = bool(card.bargain) and self.pay_bargain(p, card)
         item.gifted = bool(card.gift)
         item.uncounterable = any(s.card.mana_restriction == "chosen_type" and self.mana_allowed(s, card)

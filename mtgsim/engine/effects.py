@@ -298,6 +298,13 @@ class EffectsMixin:
                        or (x.is_creature and "creature" in card.extra_sacrifice)),
                       key=lambda x: (not x.card.is_token, perm_value(x) if x.is_creature else x.card.cmc))
 
+    def gy_exile_candidates(self, p: Player, desc: str) -> list:
+        """Cards in p's graveyard that could be exiled for "Exile a(n) <desc> card from your
+        graveyard" (a spell's or activated ability's additional cost), least valuable first."""
+        d = desc if desc.startswith(("a ", "an ")) else "a " + desc
+        return sorted((c for c in p.graveyard if card_matches(c, d.replace(" or ", " or a "))),
+                      key=lambda c: (c.cmc, getattr(c, "power", 0) or 0))
+
     def sacrifice(self, perm: Permanent, *, counter_sources=None):
         """Sacrifice perm, firing "whenever you sacrifice" triggers."""
         p = perm.controller

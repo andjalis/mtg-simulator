@@ -223,6 +223,14 @@ class CostsMixin:
             # "You lose life equal to its mana value" (Dark Confidant): the mana value of the card
             # the dig put into its owner's hand, recorded on the resolving item.
             return getattr(item, "revealed_cmc", 0) if item is not None else 0
+        if kind == "exiled_gy":
+            # "Damage equal to the exiled card's power" (Molten-Tail Masticore, Corpse Lunge):
+            # the card exiled from the graveyard as a cost — item.exiled_gy_stats (spell cost,
+            # set in play.cast) or src.last_exiled_gy (an activated ability's cost, abilities.py).
+            stats = getattr(item, "exiled_gy_stats", None)
+            if stats is None and src is not None:
+                stats = getattr(src, "last_exiled_gy", None)
+            return _stat_of(stats, spec[1])
         if kind == "arith":
             # "3 minus the number of cards in their hand" (Rackling) or "... minus 4" (Iron Maiden):
             # each side is a number or another quantity; "their ..." quantities evaluate for the
@@ -709,6 +717,8 @@ class CostsMixin:
             return False
         if card.extra_sacrifice and not card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
             return False
+        if getattr(card, "extra_exile_gy", "") and not self.gy_exile_candidates(p, card.extra_exile_gy):
+            return False       # "As an additional cost to cast ~, exile a(n) <desc> from your graveyard"
         if card.aura and not auras.hosts(self, p, card):
             return False
         if not during_resolution and not card.instant_speed and not (p is self.active and self.step in ("main1", "main2")
