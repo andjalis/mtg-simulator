@@ -44,7 +44,8 @@ def _flip(m):
     return _gated(Effect("flip_coin", data=data), m[2])
 
 
-def _plain():
+def _plain(m):
+    """A bare "Flip a coin." sentence: the coin toss on its own."""
     from .cards import Effect
     return Effect("flip_coin")
 
