@@ -234,9 +234,13 @@ class TurnsMixin:
         stunned, block their own untap, or whose controller recorded a "choose not to untap"
         choice (perm.stay_tapped)."""
         for perm in self.opponent(p).battlefield:
-            if perm.card.untap_each_untap:
+            if perm.card.untap_each_untap and perm.tapped:
                 perm.tapped = False
+                self.fire(perm.controller, "becomes_untapped", source=perm)
         storage.before_untap(self, p)
+        choose_stay = getattr(p.ai, "choose_stay_tapped", None)
+        if choose_stay is not None:              # HeuristicAI: "You may choose not to untap ~"
+            choose_stay(self, p)
         for perm in p.battlefield:
             if perm.skip_untap:
                 perm.skip_untap -= 1        # "doesn't untap during its controller's next untap step"
@@ -253,7 +257,12 @@ class TurnsMixin:
             elif perm.tapped and storage.keeps_tapped(self, p, perm):
                 pass                        # a storage land kept tapped to bank a counter
             else:
+                was_tapped = perm.tapped
                 perm.tapped = False
+                if was_tapped:
+                    # "Whenever ~ becomes untapped" (e.g. Dungeon Map): queued and resolved at
+                    # the upkeep settle, per CR 116.5-style trigger handling in this engine.
+                    self.fire(perm.controller, "becomes_untapped", source=perm)
             perm.sick = False
             perm.loyalty_used = False
 

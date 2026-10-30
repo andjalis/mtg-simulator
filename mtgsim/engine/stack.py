@@ -472,6 +472,11 @@ class StackMixin:
         if c == "city_blessing":
             from ..batch1_templates import has_blessing
             return has_blessing(self, p, item)
+        if c == "initiative":                    # "if you have the initiative"
+            return getattr(self, "initiative", None) is p
+        if c == "dungeon_complete":             # "if you've completed a dungeon"
+            from ..dungeon_mechanics import completed as dungeons_completed
+            return bool(dungeons_completed(self, p))
         if c == "phase_player_empty_hand":
             return isinstance(getattr(item, "context", None), Player) and not item.context.hand
         if c[0] == "!":
