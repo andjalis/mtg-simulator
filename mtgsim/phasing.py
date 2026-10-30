@@ -15,12 +15,17 @@ rules-event listener returns those permanents when the anchor leaves. The untap-
 hook ``phasing_untap(game, p)`` is for turns.py; until it is landed there, permanents
 with phasing keep phasing only through explicit phase-out effects.
 
-Recorded simplifications: "unless you pay" upkeep phase-outs always phase out (Vaporous
-Djinn, Warping Wurm); "any number of target" and "up to X target" phase-outs affect one
-target or the obvious slice; Teferi's Veil phases out at combat's end immediately; the
-"protection from everything / life total can't change" riders of Teferi's Protection and
-Perch Protection stay unsupported; King of the Oathbreakers only hears itself phase in,
-not other Spirits; The War Doctor's cross-permanent phase-out listener is not built.
+Recorded simplifications: "unless you pay" upkeep phase-outs pay when the mana is there
+and only phase out broke (Vaporous Djinn, Warping Wurm); "any number of target" and
+"up to X target" phase-outs affect one target or the obvious slice; Teferi's Veil rides the
+shared "at end of combat" delay; Equipoise hits every opponent's
+most valuable lands / artifacts / creatures beyond the controller's own count; Teferi's
+Realm phases out the nontoken slice that costs its (active) player the least; Spectral
+Adversary pays {1}{U} up to three times, and its phase-outs take the opponents' most
+valuable nonland permanents first; the "protection from everything / life total can't
+change" riders of Teferi's Protection and Perch Protection stay unsupported; King of the
+Oathbreakers only hears itself phase in, not other Spirits; The War Doctor's
+cross-permanent phase-out listener is not built.
 """
 from __future__ import annotations
 
@@ -32,16 +37,21 @@ def _e(kind, amount=1, **kw):
     return Effect(kind, amount, **kw)
 
 
+def _cost(text):
+    from .cards.model import parse_mana_cost
+    return parse_mana_cost(text)
+
+
 EFFECT_PATTERNS = [
     # --- one permanent phases out -------------------------------------------------
-    (r"~ phases out(?: unless you pay (?:\{[WUBRGC0-9/]+\})+)?", lambda m: _e("phase_out", target="self")),
+    (r"~ phases out unless you pay ((?:\{[WUBRGC0-9]+\})+)",
+     lambda m: _e("phase_out", target="self", data={"unless": _cost(m[1])})),
+    (r"~ phases out", lambda m: _e("phase_out", target="self")),
     (r"~ phases out or is sacrificed on a coin flip",
      lambda m: _e("phase_coin", target="self")),
     (r"(?:~|this (?:creature|permanent)) and that creature phase out",
      lambda m: [_e("phase_out", target="self"), _e("phase_out", target="trigger_subject")]),
-    (r"it phases out( at end of combat)?",
-     lambda m: _e("phase_out", target="trigger_subject" if m[1] else "prev",
-                  data={"fallback_self": not m[1]})),
+    (r"it phases out", lambda m: _e("phase_out", target="prev", data={"fallback_self": True})),
     (r"it phases out until ~ leaves the battlefield",
      lambda m: _e("phase_out", target="prev", data={"until_leaves": True})),
     (r"target creature phases out( tapped)? until ~ leaves the battlefield",
@@ -99,9 +109,27 @@ EFFECT_PATTERNS = [
     # --- riders that read the phase-out just before them -----------------------------
     (r"put a time counter on ~ for each creature that phased out this way",
      lambda m: _e("phase_out_count", data={"counter": "time"})),
+    # --- upkeep phase-outs of a whole type slice -------------------------------------
+    # Equipoise: "for each land [artifact, creature] the opponent has beyond ours"
+    (r"for each land target player controls in excess of the number you control, choose a "
+     r"land that player controls, then the chosen permanents phase out",
+     lambda m: _e("phase_out_excess", data={"type": "land"})),
+    (r"repeat this process for artifacts and creatures",
+     lambda m: [_e("phase_out_excess", data={"type": "Artifact"}),
+                _e("phase_out_excess", data={"type": "Creature"})]),
+    # Teferi's Realm: the type is chosen as the trigger resolves (see SUBS)
+    (r"that player phases out all nontoken permanents of a chosen type",
+     lambda m: _e("phase_out_realm")),
+    # --- pay a cost any number of times as ~ enters (Spectral Adversary) ---------------
+    (r"you may pay \{1\}\{U\} any number of times", lambda m: _e("pay_repeat")),
+    (r"when you pay this cost one or more times, put that many \+1/\+1 counters on ~, "
+     r"then up to that many other target artifacts, creatures, and/or enchantments phase out",
+     lambda m: _e("phase_out_paid")),
 ]
 
 TRIGGERS = [
+    # Teferi's Realm: the effect's context is the player whose upkeep it is
+    (r"At the beginning of each player's upkeep, (.+)", ("each_upkeep",)),
     (r"Whenever ~ phases out, (.+)", ("phases_out",)),
     (r"Whenever ~ phases in, (.+)", ("phases_in",)),
     (r"When ~ phases out or leaves the battlefield, (.+)", ("phases_out",)),
@@ -130,6 +158,11 @@ SUBS = [
     (re.compile(r"Flip a coin\. If you win the flip, ~ phases out\. If you lose the flip, "
                 r"sacrifice ~\."),
      "~ phases out or is sacrificed on a coin flip."),
+    # Teferi's Realm: the choice and the phase-out are one effect (the type is chosen
+    # as the trigger resolves, by whoever's upkeep it is).
+    (re.compile(r"that player chooses artifact, creature, land, or non-Aura enchantment\. "
+                r"All nontoken permanents of that type phase out\."),
+     "that player phases out all nontoken permanents of a chosen type."),
 ]
 
 
@@ -213,6 +246,12 @@ def _ensure_listener(game):
 
 def resolve_phase_out(game, p, eff, target, item, prev):
     d = eff.data
+    cost = d.get("unless")
+    if cost is not None and game.can_pay(p, cost) \
+            and game.hook(p, "pay_optional")(game, p, cost, "unless"):
+        game.pay(p, cost)                  # "phases out unless you pay": paid, so it stays
+        game.log("pays to keep it from phasing out", p)
+        return
     until = item.source if d.get("until_leaves") and item is not None else None
     if target is None and d.get("fallback_self") and item is not None:
         target = item.source        # "it phases out" in a trigger: the trigger's source
@@ -294,6 +333,69 @@ def phase_coin(game, p, eff, target, item):
     else:
         game.log(f"flips a coin and loses ({src.card.name})", p)
         game.sacrifice(src)
+
+
+def phase_out_excess(game, p, eff, item):
+    """Equipoise: the opponent's lands (or artifacts, creatures) beyond p's own count."""
+    from .engine.policy import perm_value
+    kind = eff.data.get("type")
+    has = (lambda x: x.card.is_land) if kind == "land" else \
+        (lambda x: x.card.is_creature if kind == "Creature" else kind in x.card.types)
+    mine = sum(1 for x in p.battlefield if has(x))
+    for opp in game.players:
+        if opp is p:
+            continue
+        theirs = sorted((x for x in opp.battlefield if has(x)), key=perm_value, reverse=True)
+        for perm in theirs[:max(0, len(theirs) - mine)]:
+            phase_out(game, perm)
+
+
+def phase_out_realm(game, p, eff, target, item):
+    """Teferi's Realm: in whosever upkeep this resolves, they lose the nontoken permanents
+    of the type that costs them the least."""
+    from .engine.policy import perm_value
+    who = getattr(item, "context", None) if item is not None else None
+    if who is None or not hasattr(who, "battlefield"):
+        who = p
+    slices = {}
+    for name, has in (("Artifact", lambda x: "Artifact" in x.card.types),
+                      ("Creature", lambda x: x.is_creature),
+                      ("Land", lambda x: x.card.is_land),
+                      ("Enchantment", lambda x: "Enchantment" in x.card.types
+                       and "Aura" not in x.card.subtypes)):
+        slices[name] = [x for x in who.battlefield if not x.card.is_token and has(x)]
+    _, victims = min(slices.items(), key=lambda kv: sum(perm_value(x) for x in kv[1]))
+    for perm in victims:
+        phase_out(game, perm)
+
+
+def pay_repeat(game, p, eff, item):
+    """"You may pay {1}{U} any number of times": pay while the mana is there (up to three
+    times, enough for every realistic board)."""
+    cost = {"generic": 1, "U": 1}
+    n = 0
+    while n < 3 and game.can_pay(p, cost):
+        game.pay(p, cost)
+        n += 1
+    if item is not None:
+        item.pay_repeat = n
+    game.log(f"pays {n} time(s)", p)
+
+
+def phase_out_paid(game, p, eff, target, item):
+    """"When you pay this cost one or more times, ...": that many counters on ~, then that
+    many other permanents phase out (the opponents' best first)."""
+    from .engine.state import Permanent
+    from .engine.policy import perm_value
+    n = getattr(item, "pay_repeat", 0) if item is not None else 0
+    src = item.source if item is not None else None
+    if not n or not isinstance(src, Permanent) or src not in p.battlefield:
+        return
+    src.counters["+1/+1"] = src.p1 + n
+    cands = [x for pl in game.players for x in pl.battlefield if x is not src and not x.card.is_land]
+    cands.sort(key=lambda x: (x.controller is not p, perm_value(x)), reverse=True)
+    for perm in cands[:n]:
+        phase_out(game, perm)
 
 
 def phase_out_count(game, p, eff, target, item):
