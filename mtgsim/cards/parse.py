@@ -91,6 +91,26 @@ def _parse_effects(text: str, opts: bool = False):
                 and effects[-1].kind == "token":
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, spawn_mana=True))
             continue
+        # "That creature doesn't untap during its controller's untap step for as long as ~ remains
+        # tapped." (Amber Prison and the stay-tapped family): the lock extends the preceding tap.
+        # data["lock"] carries the duration for the engine's link recording (the AI's
+        # choose_stay_tapped reads frozen_by/locked_by/net_locked_by); "freeze" keeps the honest
+        # one-skipped-untap-step subset until that lands (approximation note in clauses._SUB_NOTES).
+        lock = re.fullmatch(r"(?:that (?:permanent|creature)|it|those creatures|they|each of those creatures) "
+                            r"(?:doesn't|don't) untap "
+                            r"during (?:its controller's|their controllers') untap steps? "
+                            r"for as long as (~ remains tapped|you control ~|~ remains on the battlefield)", s, re.I)
+        if lock and effects and effects[-1].kind in ("tap", "permanent_group"):
+            duration = ("tapped" if "remains tapped" in lock[1]
+                        else "controlled" if lock[1].startswith("you") else "battlefield")
+            if effects[-1].kind == "permanent_group":
+                inner = effects[-1].data["effect"]
+                inner = dataclasses.replace(inner, data=dict(inner.data, lock=duration, freeze=True))
+                effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, effect=inner))
+            else:
+                effects[-1] = dataclasses.replace(effects[-1],
+                                                  data=dict(effects[-1].data, lock=duration, freeze=True))
+            continue
         conditional = milling.parse_conditional(s, effects)
         if conditional is not None:
             effects += conditional

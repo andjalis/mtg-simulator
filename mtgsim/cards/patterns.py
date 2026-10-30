@@ -477,7 +477,7 @@ _EFFECT_PATTERNS = [
     (r"choose one of them", lambda m: Effect("choose_one_exiled")),
     (r"tap (?:up to one )?target (?:creature|nonland permanent)(?: an opponent controls| you don't control)?",
      lambda m: Effect("tap", 1, target="creature")),
-    (r"tap up to (two|three) target creatures", lambda m: Effect("tap", _num(m[1]), target="creature")),
+    (r"tap up to (two|three|four|five) target creatures", lambda m: Effect("tap", _num(m[1]), target="creature")),
     (r"tap target creature(?: an opponent controls)? and put (a|two|three) stun counters? on it",
      lambda m: [Effect("tap", 1, target="creature"), Effect("stun", _num(m[1]), target="prev")]),
     (r"put (a|two|three) stun counters? on it", lambda m: Effect("stun", _num(m[1]), target="prev")),

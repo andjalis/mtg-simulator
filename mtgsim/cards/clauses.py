@@ -31,6 +31,12 @@ _SUB_NOTES = [
     # Caves of Chaos Adventurer: the free/paid may-play pair is the impulse approximation below.
     (re.compile(r"if you've completed a dungeon, you may play that card this turn without paying its mana cost", re.I),
      "the may-play riders are played as the impulse draw, so the free cast is never granted"),
+    # Tap-lock riders ("... doesn't untap during its controller's untap step for as long as ~
+    # remains tapped / you control ~ / ~ remains on the battlefield"): the parser records the
+    # duration on the tap effect (data["lock"]) for the engine's link recording; until that lands,
+    # the lock is played as a single skipped untap step (the freeze subset).
+    (re.compile(r"doesn't untap during (?:its controller's|their controllers') untap steps? for as long as", re.I),
+     "the tap-lock is played as a single skipped untap step (the persistent link isn't recorded yet)"),
 ]
 
 _SUBS = [
