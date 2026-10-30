@@ -106,6 +106,13 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
     def opponent(self, p: Player) -> Player:
         return self.players[1] if p is self.players[0] else self.players[0]
 
+    def named_cast_banned(self, card) -> bool:
+        """"Spells with the chosen name can't be cast" (Meddling Mage): whether any permanent
+        on the battlefield chose this card's name. Consulted by the cast-legality check."""
+        name = getattr(card, "name", "")
+        return bool(name) and any(x.chosen_name == name for pl in self.players for x in pl.battlefield
+                                 if not x.abilities_suppressed)
+
     @property
     def active(self) -> Player: return self.players[self.active_idx]
 
