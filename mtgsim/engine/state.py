@@ -742,9 +742,11 @@ def is_basic_land(c) -> bool:
 _TYPE_WORDS = {"creature", "land", "artifact", "enchantment", "planeswalker", "instant", "sorcery", "battle"}
 
 
-def card_matches(card: CardDef, desc: str) -> bool:
+def card_matches(card: CardDef, desc: str, ref: CardDef | None = None) -> bool:
     """Whether card fits a search description such as "a basic Plains card or a creature card with mana
-    value 1 or less", "a Dragon card", "an instant or sorcery card" or "a card"."""
+    value 1 or less", "a Dragon card", "an instant or sorcery card" or "a card". A "card named X"
+    alternative matches only cards whose name is exactly X; "named ~" means the name of ref (the
+    resolving source card) and matches nothing when ref is unknown."""
     for alt in re.split(r" or (?=an? )", desc.strip()):
         alt = re.sub(r"^an? ", "", alt)
         m = re.search(r" with mana value (\d+) or (less|greater)$", alt)
@@ -757,6 +759,16 @@ def card_matches(card: CardDef, desc: str) -> bool:
             if kw[1] not in card.keywords:
                 continue
             alt = alt[:kw.start()]
+        named = re.search(r" named (~|.+)$", alt)
+        name_ok = True
+        if named:
+            want = named[1].strip()
+            name_ok = (ref is not None and card.name == ref.name) if want == "~" else card.name == want
+            alt = alt[:named.start()].strip()
+            if not alt or alt == "card":
+                if name_ok:
+                    return True
+                continue
         words = [w for w in alt.replace(" card", "").split() if w not in ("or", "and/or")]
         ok = True
         if "token" in words:
@@ -768,9 +780,12 @@ def card_matches(card: CardDef, desc: str) -> bool:
         if "basic" in words and not is_basic_land(card):
             ok = False
         for w in words:
-            if w[0].isupper() and w not in card.subtypes and w != card.name and not \
+            if w.startswith("non") and w[3:].rstrip(",") in _TYPE_WORDS:
+                if w[3:].rstrip(",").capitalize() in card.types:    # "a noncreature, nonland card"
+                    ok = False
+            elif w[0].isupper() and w not in card.subtypes and w != card.name and not \
                     (card.changeling and card.is_creature):
                 ok = False
-        if ok:
+        if ok and name_ok:
             return True
     return False

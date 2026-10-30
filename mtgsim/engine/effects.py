@@ -185,6 +185,11 @@ class EffectsMixin:
         self.rng.shuffle(rest)
         p.library.reorder(list(reversed(rest)) + [c for c in p.library if c not in rest])
         self.log(f"digs {n}, keeps {chosen}", p)
+        # Dark Confidant: "reveal that card and lose life equal to its mana value" — record the
+        # revealed card's mana value on the resolving item for the ("revealed", "mana value") xq.
+        item = getattr(self, "resolving_item", None)
+        if item is not None and chosen:
+            item.revealed_cmc = chosen[-1].cmc
 
     def dig_put(self, p: Player, n: int, max_cmc: int, count: int = 1, noncreature: bool = False):
         cards = list(reversed(p.library[-min(n, len(p.library)):])) if n else []
@@ -312,7 +317,9 @@ class EffectsMixin:
         card = self.move_card(card, p.hand, p.graveyard, reason="discard")
         p.discarded_cards.append(card)
         self.fire(p, "you_discard")
-        self.fire(self.opponent(p), "opp_discard")
+        # The subject lets typed listeners ("whenever an opponent discards a creature/land card",
+        # Waste Not) filter on the discarded card's types.
+        self.fire(self.opponent(p), "opp_discard", subject=card)
 
     def cast_free(self, p: Player, card: CardDef) -> bool:
         """Cast a discovered card from exile, or put it into hand if it cannot be cast."""
