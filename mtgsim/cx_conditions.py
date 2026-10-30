@@ -22,13 +22,23 @@ _CONDS = [
     (r"it has an? (\+1/\+1|-1/-1) counter on it", "cx:counter:{0}"),
     (rf"you control {_N} or more (artifacts|creatures|lands|enchantments)", "cx:ctrl>={0}:{1}"),
     (r"you control no untapped lands", "cx:no_untapped_lands"),
-    (r"you control (another )?an? (white|blue|black|red|green) (creature|permanent)", "cx:ctrl_color:{0}:{1}:{2}"),
-    (r"you control (another )?an? ((?:artifact|[A-Z]\w+))( planeswalker)?", "cx:ctrl_kind:{0}:{1}:{2}"),
+    (r"you control (another )?(?:an? )?(white|blue|black|red|green) (creature|permanent)", "cx:ctrl_color:{0}:{1}:{2}"),
+    (r"you control (another )?(?:an? )?((?:artifact|[A-Z]\w+))( planeswalker)?", "cx:ctrl_kind:{0}:{1}:{2}"),
+    (r"an opponent controls an? (?:nontoken )?(white|blue|black|red|green) permanent", "cx:opp_ctrl_color:{0}"),
+    (r"you have " + _N + r" or more cards in (?:your )?hand", "cx:hand>={0}"),
+    (r"(?:~|it) is attacking|it's attacking", "attacking"),
+    (r"it's your turn", "your_turn"),
+    (r"(?:~|it) is equipped", "cx:equipped"),
+    (r"there are " + _N + r" or more cards in your graveyard", "cx:gy>={0}"),
+    (r"there are " + _N + r" or more mana values among cards in your graveyard", "cx:gy_cmcs>={0}"),
+    (r"an opponent has " + _N + r" or more cards in their graveyard", "cx:opp_gy>={0}"),
     (r"an opponent controls an? (Island|Swamp|Forest|Mountain|Plains)", "cx:opp_ctrl_kind:{0}"),
 ]
 _COMPILED = [(re.compile(p), c) for p, c in _CONDS]
-_LINE = re.compile(rf"(?:\w+ — )?~ (?:gets ([+-]\d+)/([+-]\d+)(?: and has ({_KEYWORDS}))?|has ({_KEYWORDS})) "
-                   r"as long as (.+)\.")
+_KWS = rf"(?:{_KEYWORDS})(?:(?:, | and |, and )(?:{_KEYWORDS}))*"
+_CLAUSE = rf"(?:gets ([+-]\d+)/([+-]\d+)(?: and has ({_KWS}))?|has ({_KWS}))"
+_LINE = re.compile(rf"(?:\w+ — )?~ {_CLAUSE} as long as (.+)\.")
+_LEADING = re.compile(rf"(?:\w+ — )?As long as (.+?), (?:~|it) {_CLAUSE}\.")
 
 
 def _code(text: str):
@@ -45,16 +55,21 @@ _NUMS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven"
 
 def parse_line(line: str, st) -> bool:
     m = _LINE.fullmatch(line)
-    if m is None:
-        return False
-    code = _code(m[5])
+    if m is not None:
+        cond, clause = m[5], m.groups()[:4]
+    else:
+        m = _LEADING.fullmatch(line)
+        if m is None:
+            return False
+        cond, clause = m[1], m.groups()[1:5]
+    code = _code(cond)
     if code is None:
         return False
-    if m[1] is not None:
-        st.extra["pt_if"] = st.extra.get("pt_if", ()) + ((code, int(m[1]), int(m[2])),)
-    keyword = m[3] or m[4]
-    if keyword:
-        st.extra["cond_keywords"] = st.extra.get("cond_keywords", ()) + ((keyword, code),)
+    if clause[0] is not None:
+        st.extra["pt_if"] = st.extra.get("pt_if", ()) + ((code, int(clause[0]), int(clause[1])),)
+    for keyword in re.split(r", and |, | and ", clause[2] or clause[3] or ""):
+        if keyword:
+            st.extra["cond_keywords"] = st.extra.get("cond_keywords", ()) + ((keyword, code),)
     return True
 
 
@@ -79,6 +94,20 @@ def holds(perm, cond: str) -> bool:
     if name.startswith("ctrl>="):
         kind = rest[:-1].capitalize()
         return sum(kind in x.card.types for x in c.battlefield) >= int(name[6:])
+    if name.startswith("hand>="):
+        return len(c.hand) >= int(name[6:])
+    if name.startswith("gy>="):
+        return len(c.graveyard) >= int(name[4:])
+    if name.startswith("gy_cmcs>="):
+        return len({card.cmc for card in c.graveyard}) >= int(name[9:])
+    if name.startswith("opp_gy>="):
+        game = getattr(c, "_game", None)
+        return game is not None and len(game.opponent(c).graveyard) >= int(name[8:])
+    if name == "equipped":
+        return any(x.attached_to is perm for x in c.battlefield)
+    if name == "opp_ctrl_color":
+        game = getattr(c, "_game", None)
+        return game is not None and any(_COLORS[rest] in x.card.colors for x in game.opponent(c).battlefield)
     if name == "no_untapped_lands":
         return not any(x.card.is_land and not x.tapped for x in c.battlefield)
     others = [x for x in c.battlefield]
