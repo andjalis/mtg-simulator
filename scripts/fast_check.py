@@ -4,8 +4,8 @@
     python3 scripts/fast_check.py --no-lint  # without pyflakes (not installed locally)
     python3 scripts/fast_check.py --jobs 2
 
-Steps: pyflakes, parse a sample of the card database (every STRIDE-th card; a full parse takes about
-several minutes, so the whole database is covered by the nightly run and by parse-diff), a few short seeded
+Steps: pyflakes, parse every card in the database (about a minute on one core since the effect templates
+are compiled once), a few short seeded
 games, and the unit tests except the modules in SLOW_TESTS, run as parallel processes. The slow modules run in the nightly workflow
 (`.github/workflows/nightly.yml`) and on demand.
 """
@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 DB = ROOT / "mtgsim" / "data" / "cards.sqlite3"
-STRIDE = 10
+SHARDS = 16     # the card database is parsed in this many interleaved slices, one per pool task
 SMOKE = [("decks/green_stompy.txt", "decks/mono_red_aggro.txt"), ("decks/orzhov_midrange.txt", "decks/green_stompy.txt")]
 # Test modules that take over a minute each; they run nightly instead. Measured 2026-10-30.
 SLOW_TESTS = {"test_standard_coverage", "test_early_stop", "test_assess", "test_ranks", "test_sideboard", "test_coverage"}
@@ -76,9 +76,9 @@ def main(argv=None) -> int:
 
     with ProcessPoolExecutor(a.jobs) as pool:
         t = time.time()
-        shards = [(i, STRIDE) for i in range(STRIDE)]
+        shards = [(i, SHARDS) for i in range(SHARDS)]
         bad = [b for part in pool.map(_parse_shard, shards) for b in part]
-        results.append(step(f"parse 1 of every {STRIDE} cards", not bad, "\n".join(bad[:20]), t))
+        results.append(step("parse every card", not bad, "\n".join(bad[:20]), t))
 
         t = time.time()
         procs = [subprocess.Popen([sys.executable, "-m", "mtgsim", x, y, "-n", "4", "--seed", "1"], cwd=ROOT,
