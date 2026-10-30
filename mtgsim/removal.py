@@ -8,6 +8,7 @@ opponent's creature, and resolve() reads the first target from the stack item.
 from __future__ import annotations
 
 import re
+from . import wordings
 
 KINDS = {"fight_mark", "fight", "bite", "untap_target", "bounce_own"}
 _KW = "flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach"
@@ -21,15 +22,11 @@ def _destroy(target, flt):
     return build
 
 
-EFFECT_PATTERNS = [
+EFFECT_PATTERNS = wordings.patterns("removal") + [
     # "Put target creature you control on top of its owner's library" (Civic Guildmage):
     # the tuck_perm kind with an own-permanent target.
-    (r"put target (?:creature|nonland permanent) you control on top of its owner's library",
-     lambda m: _effect("tuck_perm", "creature_mine")),
     # "Target creature's owner puts it on their choice of the top or bottom of their
     # library." (Dire Downdraft) — always the top here.
-    (r"target creature's owner puts it on their choice of the top or bottom of their library",
-     lambda m: _effect("tuck_perm", "creature")),
     # "That creature can't be regenerated." — the rider after a destroy that already
     # parsed (cards/parse.py attaches no_regen to the destroy for the "it/they" wordings
     # in the same run; these leftovers only stop the card parsing). The destroyed
@@ -41,8 +38,6 @@ EFFECT_PATTERNS = [
     # "Target creature can't be regenerated this turn." — a standalone anti-regeneration
     # lock (Gravebind, Hurr Jackal, Furnace Brood): the target's regeneration is blocked
     # until end of turn.
-    (r"target creature can't be regenerated this turn",
-     lambda m: _effect("no_regen_lock", "creature")),
     (r"destroy (?:up to one )?target (nonbasic )?land(?: (an opponent controls|you don't control))?",
      lambda m: _effect("destroy", "land", filter="land:" + ("nonbasic:" if m[1] else "") + ("opp" if m[2] else ""))),
     (r"target creature you control deals damage equal to its power to each of two other target creatures",
@@ -70,19 +65,10 @@ EFFECT_PATTERNS = [
     (r"target creature you control fights target creature " + _THEIRS, lambda m: _pair("fight")),
     (r"target creature you control deals damage equal to its power to target creature " + _THEIRS,
      lambda m: _pair("bite")),
-    (r"(?:it|that creature|he|she) deals damage equal to its power to (?:up to one )?target creature " + _THEIRS,
-     lambda m: _effect("bite", "creature", filter="opp")),
-    (r"(?:it|that creature|he|she) fights (?:up to one )?target creature " + _THEIRS,
-     lambda m: _effect("fight", "creature", filter="opp")),
     (r"target creature you control deals damage equal to its power to target creature or planeswalker( " + _THEIRS + ")?",
      lambda m: _pair("bite", "creature_pw", "opp" if m[1] else "")),
-    (r"untap target creature", lambda m: _effect("untap_target", "creature")),
-    (rf"target creature you control gains ({_KW}) until end of turn",
-     lambda m: _effect("grant", "creature_mine", data={"keyword": m[1].lower()})),
     # "Destroy target creature that player controls" (Blind Zealot): the trigger's
     # damaged player, not a normally chosen target.
-    (r"destroy target (creature|artifact|enchantment|land|nonland permanent|permanent) that player controls",
-     lambda m: _effect("destroy_that_player", "none", data={"type": m[1].lower()})),
 ]
 
 
