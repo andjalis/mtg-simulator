@@ -86,3 +86,13 @@ from .. import dungeon_mechanics as _dungeon_mechanics
 _EFFECT_PATTERNS += _dungeon_mechanics.EFFECT_PATTERNS
 _SUBS += _dungeon_mechanics.SUBS
 _TRIGGERS += _dungeon_mechanics.TRIGGERS
+from .. import phasing as _phasing
+_EFFECT_PATTERNS += _phasing.EFFECT_PATTERNS
+_SUBS += _phasing.SUBS
+_TRIGGERS += _phasing.TRIGGERS
+from .. import ripple as _ripple
+_EFFECT_PATTERNS += _ripple.EFFECT_PATTERNS
+_TRIGGERS += _ripple.TRIGGERS
+from .. import manifest as _manifest
+_EFFECT_PATTERNS += _manifest.EFFECT_PATTERNS
+_TRIGGERS += _manifest.TRIGGERS
