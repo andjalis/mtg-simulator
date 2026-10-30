@@ -1,6 +1,8 @@
 """Cards in hand and library: draw, discard, scry, surveil, dig, mill, tutor, explore, connive."""
 from __future__ import annotations
 
+import re
+
 from ... import learning, milling
 from ...cards import make_token
 from ..policy import choose_basic, choose_tutor, perm_value
@@ -138,15 +140,68 @@ def discard_choice(game, p, eff, target, **_):
             legal = [c for c in target.hand if not c.is_land and not c.is_creature]
             if card not in legal:
                 card = max(legal, key=lambda c: c.cmc, default=None)
+        elif eff.filter or eff.data.get("mv"):
+            # A described card ("artifact, instant, or sorcery", "green or white creature") and/or
+            # a mana-value bound (Inquisition of Kozilek): the best legal card.
+            legal = [c for c in target.hand if _hand_matches(c, eff)]
+            card = max(legal, key=lambda c: c.cmc, default=None)
         if card is not None:
             game.discard_card(target, card)
             game.log(f"makes {target} discard {card.name}", p)
+
+
+@kind("tuck_choice")
+def tuck_choice(game, p, eff, target, **_):
+    """Lost Hours: reveal a player's hand, you choose a card, that player puts it into their
+    library Nth from the top."""
+    if isinstance(target, Player):
+        legal = [c for c in target.hand if _hand_matches(c, eff)]
+        card = max(legal, key=lambda c: c.cmc, default=None)
+        if card is not None:
+            target.hand.remove(card)
+            depth = eff.data.get("depth", 1)
+            target.library.insert(max(0, len(target.library) - depth + 1), card)
+            game.log(f"puts {card.name} {depth} from the top of their library", p)
 
 
 _HAND_FILTERS = {"nonland": lambda c: not c.is_land,
                  "noncreature, nonland": lambda c: not c.is_land and not c.is_creature,
                  "nonartifact, nonland": lambda c: not c.is_land and not c.is_artifact,
                  "instant or sorcery": lambda c: c.is_instant or c.is_sorcery}
+
+_TYPES = {"creature": lambda c: c.is_creature, "land": lambda c: c.is_land,
+          "artifact": lambda c: c.is_artifact,
+          "enchantment": lambda c: "Enchantment" in c.types,
+          "planeswalker": lambda c: c.is_planeswalker, "instant": lambda c: c.is_instant,
+          "sorcery": lambda c: c.is_sorcery}
+_COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
+
+
+def _hand_matches(card, eff):
+    """Whether a hand card fits a reveal-and-choose description: free-form filter words
+    (comma- and "or"-separated alternatives such as "artifact, instant, or sorcery" or
+    "green or white creature") plus an optional mana-value bound in eff.data["mv"]."""
+    if card is None:
+        return False
+    mv = eff.data.get("mv")
+    if mv and not (card.cmc <= mv[0] if mv[1] == "less" else card.cmc >= mv[0]):
+        return False
+    desc = (eff.filter or "").strip().lower()
+    if not desc or desc in ("card", "any card", "any"):
+        return True
+    if desc in _HAND_FILTERS:
+        return _HAND_FILTERS[desc](card)
+    subtypes = {s.lower() for s in card.subtypes}
+    for alt in re.split(r",? or |,\s*", desc):
+        tokens = [t for t in alt.split() if t not in ("or", "and")]
+        if tokens and all(
+                (not t.startswith("non") and
+                 (_TYPES[t](card) if t in _TYPES else
+                  _COLORS[t] in card.colors if t in _COLORS else t in subtypes))
+                or (t.startswith("non") and not _TYPES.get(t[3:], lambda c: False)(card))
+                for t in tokens):
+            return True
+    return False
 
 
 @kind("hand_exile")

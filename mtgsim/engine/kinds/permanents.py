@@ -278,6 +278,53 @@ def threaten(game, p, eff, target, **_):
         game.log(f"gains control of {victim.card.name}", p)
 
 
+@kind("mass_threaten")
+def mass_threaten(game, p, eff, target, **_):
+    """Mass threaten: gain control of all creatures (or artifacts) an opponent / target player
+    controls until end of turn, untapping them and giving them haste. ``swap`` (Reins of Power)
+    exchanges each side's creatures in one simultaneous effect; ``power_min``/``power_max``
+    are the Mob Rule filters; ``until_eot=False`` (Emrakul) keeps control indefinitely."""
+    typ = eff.data.get("type", "creature")
+    until_eot = eff.data.get("until_eot", True)
+
+    def fits(v):
+        if typ == "creature":
+            return v.is_creature
+        if typ == "artifact":
+            return "Artifact" in v.card.types
+        return not v.card.is_land          # "all nonland permanents"
+
+    if eff.data.get("swap") and isinstance(target, Player):
+        pool = [x for pl in (p, target) for x in pl.battlefield if fits(x)]
+        for v in pool:
+            new = target if v.controller is p else p
+            if v.controller is not new:
+                counter_mechanics.add_control(game, v, new, until_eot=until_eot)
+        game.log(f"swaps control of {len(pool)} creatures", p)
+    else:
+        ctl = p
+        if isinstance(target, Player):
+            owners = [target]
+        else:
+            owners = [pl for pl in game.players if pl is not p]
+        pool = [x for pl in owners for x in pl.battlefield if fits(x)]
+        if eff.data.get("power_min"):
+            pool = [x for x in pool if x.power >= eff.data["power_min"]]
+        if eff.data.get("power_max"):
+            pool = [x for x in pool if x.power <= eff.data["power_max"]]
+        for v in pool:
+            if v.controller is not ctl:
+                counter_mechanics.add_control(game, v, ctl, until_eot=until_eot)
+                game.log(f"gains control of {v.card.name}", ctl)
+        game.log(f"threatens {len(pool)} permanents", p)
+    if eff.data.get("untap", True):
+        for v in pool:
+            v.tapped = False
+    if eff.data.get("haste", True):
+        for v in pool:
+            v.sick = False
+
+
 @kind("mass_bounce")
 def mass_bounce(game, p, eff, **_):
     keep = eff.data.get("except", "")

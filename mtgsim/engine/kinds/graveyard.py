@@ -89,10 +89,14 @@ def exile_self_payoff(game, p, eff, item, **_):
 
 @kind("exile_hand_perm")
 def exile_hand_perm(game, p, eff, target, **_):
-    """Reveal a player's hand, you choose a card, exile it for good (Night Terrors)."""
-    from .cards import _HAND_FILTERS
+    """Reveal a player's hand, you choose a card, exile it for good (Night Terrors,
+    Castigate, Appetite for Brains)."""
+    from .cards import _HAND_FILTERS, _hand_matches
     if isinstance(target, Player) and target.hand:
-        legal = [c for c in target.hand if _HAND_FILTERS[eff.filter](c)]
+        if eff.filter in _HAND_FILTERS and not eff.data.get("mv"):
+            legal = [c for c in target.hand if _HAND_FILTERS[eff.filter](c)]
+        else:
+            legal = [c for c in target.hand if _hand_matches(c, eff)]
         if legal:
             card = max(legal, key=lambda c: c.cmc)
             game.move_card(card, target.hand, target.exile, reason="exile")
@@ -108,8 +112,23 @@ def exiled_returned(game, **_):
 
 @kind("reanimate_temp")
 def reanimate_temp(game, p, eff, item, **_):
-    """"Return a creature card from your graveyard ... it gains haste. Exile it at the next
-    end step" (Goryo's Vengeance, Dawn of the Dead)."""
+    """Return a creature card from a graveyard ... it gains haste, exiled at the next end
+    step (Goryo's Vengeance, Dawn of the Dead); data["zone"] ("any" / "opp") widens the
+    source graveyard to anyone's or an opponent's (Gruesome Encore)."""
+    if eff.data.get("zone") in ("any", "opp"):
+        owners = [p, game.opponent(p)] if eff.data["zone"] == "any" else [game.opponent(p)]
+        pairs = [(o, c) for o in owners for c in o.graveyard if c.is_creature]
+        if not pairs:
+            return
+        owner, card = max(pairs, key=lambda oc: oc[1].cmc)
+        owner.graveyard.remove(card)
+        game.log(f"returns {card.name} to the battlefield", p)
+        perm = game.enter_battlefield(p, card)
+        if perm is not None:
+            game.resolve(p, Effect("grant", data={"keyword": "haste"}), perm, item)
+            game.delayed_end_step.append((p, [Effect("exile_at_end")],
+                                          item.source if item is not None else None, perm))
+        return
     if eff.data.get("top"):
         cands = [c for c in reversed(list(p.graveyard)) if c.is_creature][:1]
     else:
@@ -238,7 +257,15 @@ def regrow_perm(game, p, **_):
 
 @kind("gy_move")
 def gy_move(game, p, eff, item, **_):
+    """Return cards from a graveyard; with data["haste"] the returned permanents gain haste."""
+    if not eff.data.get("haste"):
+        game.gy_move(p, eff, item)
+        return
+    before = {id(x) for x in p.battlefield}
     game.gy_move(p, eff, item)
+    for perm in p.battlefield:
+        if id(perm) not in before:
+            game.resolve(p, Effect("grant", data={"keyword": "haste"}), perm, item)
 
 
 @kind("grant_flashback")
