@@ -315,8 +315,9 @@ class Party(Chonk5Templates):
 class StayTapped(Chonk5Templates):
     def test_choose_not_to_untap_sets_the_flag(self):
         self.assertTrue(AMBER_PRISON.stay_tapped)
-        # the "as long as ~ remains tapped" freeze ability is still an open engine gap
-        self.assertTrue(any("remains tapped" in u for u in AMBER_PRISON.unsupported))
+        # the "as long as ~ remains tapped" lock now parses (data["lock"] on the tap, with the
+        # freeze subset); the link recording itself is the open engine gap
+        self.assertTrue(any("single skipped untap step" in a for a in AMBER_PRISON.approximations))
 
     def test_storage_lands_keep_their_own_hold_rule(self):
         # storage.parse_line consumes the line for lands: no stay_tapped flag is set
