@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import re
 
-from . import wordings
+from .. import wordings
 from .model import COLORS, COLOR_WORDS, Effect, KEYWORDS, NO_MATCH, _distinct_bounce, _distinct_pump, _num, parse_mana_cost
 
 

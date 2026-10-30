@@ -3,7 +3,7 @@ import re
 import unittest
 
 from mtgsim import cards
-from mtgsim.cards import wordings
+from mtgsim import wordings
 from mtgsim.cards.model import NO_MATCH, Effect
 from mtgsim.engine.kinds import HANDLERS
 

@@ -70,6 +70,17 @@ EFFECT_PATTERNS = [
     # graveyard-cast effect; the "If that spell would be put into a graveyard, exile it
     # instead" rider (parse.py) lands on it as gy_instead. Fixed caps ("mana value 3 or
     # less") and the Dreadhorde Arcanist power cap are data max_cmc.
+    # The non-targeting wordings (Diviner of Mist, Sorcerous Squall, Sword of Once and Future) and "Until end of turn,
+    # you may cast target ..." (Sins of the Past) resolve as an immediate cast.
+    (r"you may cast an? ([a-z, ]+?) spell from (your|a|an opponent's|that player's) graveyard "
+     r"with mana value (\w+) or less( without paying its mana cost)?",
+     lambda m: _gy_cast(m[1], m[2], m[4], cap=m[3])),
+    (r"you may cast an? ([a-z, ]+?) spell(?: with mana value (\w+) or less)? from "
+     r"(your|a|an opponent's|that player's) graveyard( without paying its mana cost)?",
+     lambda m: _gy_cast(m[1], m[3], m[4], cap=m[2])),
+    (r"until end of turn, you may cast target ([a-z, ]+?) card from (your|a|an opponent's|that player's) graveyard"
+     r"( without paying its mana cost)?",
+     lambda m: _gy_cast(m[1], m[2], m[3])),
     (r"you may cast target ([a-z, ]+?) card with mana value (\w+) or less from "
      r"(your|a|an opponent's|that player's) graveyard( without paying its mana cost)?",
      lambda m: _gy_cast(m[1], m[3], m[4], cap=m[2])),

@@ -1,14 +1,10 @@
 """Small library and hand effects: tucking, second from the top, shuffling a graveyard, wheels, halving life."""
 
-EFFECT_PATTERNS = [
-    (r"look at target player's hand", lambda m: _e("peek_hand", target="player")),
-    (r"target player shuffles their graveyard into their library", lambda m: _e("shuffle_gy", target="player")),
-    (r"put target nonland permanent on top of its owner's library", lambda m: _e("tuck_perm", target="nonland_perm")),
+from . import wordings
+
+EFFECT_PATTERNS = wordings.patterns("batch2") + [
     (r"put target (creature|nonland permanent) into its owner's library second from the top",
      lambda m: _e("tuck_perm", target="creature" if m[1] == "creature" else "nonland_perm", data={"depth": 1})),
-    (r"each player discards their hand, then draws (\w+) cards", lambda m: _e("wheel_all", _num(m[1]))),
-    (r"each player shuffles their hand and graveyard into their library, then draws (\w+) cards",
-     lambda m: _e("wheel_all", _num(m[1]), data={"shuffle_gy": True})),
     (r"(that|target) (?:player|opponent) loses half their life, rounded (up|down)",
      lambda m: _e("lose_half", target="that_player" if m[1] == "that" else "player", data={"up": m[2] == "up"})),
     (r"(each opponent|defending player|target player|target opponent|each player) gets? (a|one|two|three|\d+) poison counters?",
@@ -16,31 +12,15 @@ EFFECT_PATTERNS = [
     (r"destroy all (non\w+) creatures", lambda m: _e("destroy_group", data={"types": "Creature", "not": m[1][3:].title()})),
     (r"destroy all (plains|islands|swamps|mountains|forests)",
      lambda m: _e("destroy_group", data={"sub": m[1][:-1].title()})),
-    (r"double target creature's power until end of turn", lambda m: _e("double_power", target="creature")),
-    (r"gain control of target creature an opponent controls until end of turn",
-     lambda m: _e("threaten", target="creature", filter="opp", data={"plain": True})),
-    (r"each player sacrifices (two|three) creatures", lambda m: _e("edict_each", _num(m[1]))),
-    (r"discard your hand", lambda m: _e("discard_hand")),
-    (r"target player draws (four|five|six|seven|\d+) cards?", lambda m: _e("draw", _num(m[1]))),
-    (r"target (?:player|opponent) discards a card at random", lambda m: _e("discard_random_target", target="player")),
-    (r"destroy all nonland permanents", lambda m: _e("destroy_group", data={"not": "Land"})),
-    (r"destroy all tapped creatures", lambda m: _e("destroy_group", data={"types": "Creature", "tapped": True})),
     (r"you lose half your life, rounded (up|down)", lambda m: _e("lose_half", data={"up": m[1] == "up", "self": True})),
-    (r"target player takes an extra turn after this one", lambda m: _e("extra_turn")),
-    (r"look at the top card of target player's library", lambda m: _e("peek_hand", target="player")),
-    (r"put target attacking or blocking creature on top of its owner's library",
-     lambda m: _e("tuck_perm", target="creature", filter="attacking_blocking")),
     (r"counter target (sorcery|instant|planeswalker|land|enchantment|artifact|creature or planeswalker|"
      r"artifact or enchantment|instant or sorcery) spell",
      lambda m: _e("counter", target="spell", filter="types:" + ",".join(w.title() for w in m[1].split(" or ")))),
-    (r"sacrifice (?:it|that creature|that token|them) at the beginning of the next end step", lambda m: _e("sac_at_end", target="prev")),
     (r"(destroy|exile) (?:each|all) (.+)", lambda m: _group(m[1].lower(), m[2])),
     (r"return (?:each|all) (.+) to (?:its|their) owners?'s? hands?", lambda m: _group("bounce", m[1])),
     (r"~ deals (\d+|X) damage to (?:each|all) (.+)", lambda m: _group("damage", m[2], amount=m[1])),
-    (r"(?:you and target opponent|each player) each draws? (two|three|four) cards", lambda m: _e("draw_each", _num(m[1]))),
     (r"return (another|a) (?:([\w ]+?) )?creature you control to its owner's hand",
      lambda m: _e("return_own", data={"kind": "creature", "other": m[1] == "another", "colors": _colors(m[2] or "")})),
-    (r"return a permanent you control to its owner's hand", lambda m: _e("return_own", data={"kind": "permanent"})),
 ]
 SUBS = []
 

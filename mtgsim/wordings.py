@@ -1,5 +1,8 @@
 """Effect templates kept as data: mtgsim/data/wordings/*.json.
 
+The core file is the start of cards/patterns.py's table; every other file is the start of the EFFECT_PATTERNS of
+the mechanic module with the same name (batch1.json for batch1_templates.py, and so on). FILES lists them all.
+
 Each entry is one Oracle wording (a regex that must match a whole sentence) and the Effect it builds. Adding a
 card that fails only on a new wording means adding an entry, not code; mtgsim/data/wordings/README.md is the
 guide. Values in an entry are literals, except:
@@ -17,11 +20,16 @@ import json
 import pkgutil
 import re
 
-from .model import Effect, _num
-
-FILES = ("core",)
+FILES = ("core", "batch1", "batch2", "removal", "ring", "combat_triggers", "auras")
 _EFFECT_KEYS = {"effect", "amount", "amount2", "target", "filter", "cond", "data"}
 _ENTRY_KEYS = _EFFECT_KEYS | {"match", "effects", "example", "cards", "note"}
+
+
+def _num(text):
+    from .cards.model import _num as number      # deferred: this module loads before mtgsim.cards finishes
+    return number(text)
+
+
 _CASTS = {"int": int, "num": _num, "lower": str.lower, "bool": bool}
 _REF = re.compile(r"\$(\d+)(?::(int|num|lower|bool))?")
 
@@ -40,7 +48,8 @@ def _value(spec, m):
     return spec
 
 
-def _effect(spec, m) -> Effect:
+def _effect(spec, m):
+    from .cards.model import Effect
     kw = {k: _value(spec[k], m) for k in ("amount2", "target", "filter", "cond", "data") if k in spec}
     return Effect(spec["effect"], _value(spec.get("amount", 0), m), **kw)
 

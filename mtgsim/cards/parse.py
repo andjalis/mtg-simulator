@@ -69,7 +69,7 @@ def _parse_effects(text: str, opts: bool = False):
         # "you may cast [a card] from a graveyard ... If that spell would be put into a graveyard, exile it instead":
         # the rider replaces where the just-cast spell ends up (consumed once its base effect parses; the engine
         # reads gy_instead from the cast-from-graveyard effect).
-        if re.fullmatch(r"if that spell would be put into (?:a|your) graveyard, "
+        if re.fullmatch(r"if (?:that|an instant or sorcery) spell(?: cast this way)? would be put into (?:a|your) graveyard(?: this turn)?, "
                         r"(?:exile it instead|put it on the bottom of its owner's library instead)", s, re.I) and effects:
             effects[-1] = dataclasses.replace(effects[-1], data=dict(
                 effects[-1].data, gy_instead="exile" if re.search(r"exile", s, re.I) else "bottom"))
@@ -739,6 +739,8 @@ def _parse_trigger_line(line: str):
             rest = rest.replace(" it", " ~", 1)      # "When ~ attacks or blocks, sacrifice it at end of combat"
         if events == ("attacks",) and "while saddled" in pat:
             flt = "saddled"
+        if events == ("attacks",) and pat.startswith("Whenever ~ and at least"):
+            flt = f"pack:{_num(m[1])}"
         if events == ("creature_dies",) and "another creature" in pat:
             flt = "other"
         if events == ("any_cast",) and "an opponent casts" in line:

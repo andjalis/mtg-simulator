@@ -212,6 +212,9 @@ class Permanent:
 
     def _cda_count(self, what: str) -> int:
         c = self.controller
+        if what.startswith("cx:"):
+            from ..cx_cda import count
+            return count(self, what)
         if what == "cards in your hand":
             return len(c.hand)
         if what == "cards in your graveyard":
@@ -454,6 +457,9 @@ class Permanent:
         if cond.startswith("opp_life<="):
             opp = getattr(self.controller, "opponent", None)
             return opp is not None and opp.life <= int(cond[10:])
+        if cond.startswith("cx:"):
+            from ..cx_conditions import holds
+            return holds(self, cond)
         return False
 
     @property
