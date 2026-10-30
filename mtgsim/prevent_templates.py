@@ -99,20 +99,33 @@ def _sentinel(m, head, rider):
     """head + RIDER + the rider, or the original text when the rider's effects don't parse
     (Ria Ivor's Mite rider: toxic isn't in the token keyword vocabulary yet), so the
     wording stays a readable ignored line."""
-    from .cards import _parse_effects
+    return f"{head} {rider}." if _rider(rider) else m[0]
+
+
+def _rider(rider):
+    """The rider's effects. The prevention-rider wordings are built here rather than as
+    general effect patterns: standalone they would mis-parse "You gain life equal to the
+    damage prevented this way" sentences on cards whose shield itself doesn't parse
+    (Awe Strike, Hallow, Chant of Vitu-Ghazi)."""
+    from .cards import Effect, _parse_effects
+    low = rider.lower().strip().rstrip(".")
+    if low.startswith("you gain life equal to the damage prevented this way"):
+        return [Effect("gain_life", data={"that_much": True})]
+    if low.startswith("you may have ~ deal that much damage to target creature"):
+        return [Effect("damage", target="creature", data={"that_much": True})]
+    if low.startswith("~ deals that much damage to that source's controller"):
+        return [Effect("deflect", data={"that_much": True})]
     effects, bad = _parse_effects(rider[0].upper() + rider[1:] + ".")
-    if bad or not effects:
-        return m[0]
-    return f"{head} {rider}."
+    return effects if effects and not bad else None
 
 
 def _shield_effect(m, kind):
     """A PALMSHIELD/ALLSHIELD sentinel: the rider effects plus which pool the kind fills
     (a full turn's worth for the one-shot wordings, whose real "the next time" limit the
     pool model can't express)."""
-    from .cards import Effect, NO_MATCH, _parse_effects
-    rider, bad = _parse_effects(m[1][0].upper() + m[1][1:] + ".")
-    if bad or not rider:
+    from .cards import Effect, NO_MATCH
+    rider = _rider(m[1])
+    if not rider:
         return NO_MATCH
     return Effect(kind, 99, data={"rider": rider})
 
@@ -132,13 +145,6 @@ EFFECT_PATTERNS = [
     (r"PREVENTSHIELD (\d+|X) (\w+) (-|[WUBRG]) RIDER (.+)", _effect),
     (r"PALMSHIELD RIDER (.+)", lambda m: _shield_effect(m, "prevent_shield")),
     (r"ALLSHIELD RIDER (.+)", lambda m: _shield_effect(m, "prevent_all_turn")),
-    # The riders the player-side shields carry (the trigger's context is the damage source)
-    (r"~ deals that much damage to that source's controller",
-     lambda m: _e("deflect", data={"that_much": True})),
-    (r"you gain life equal to the damage prevented this way",
-     lambda m: _e("gain_life", data={"that_much": True})),
-    (r"you may have ~ deal that much damage to target creature",
-     lambda m: _e("damage", target="creature", data={"that_much": True})),
     (r"create that many (.+?) tokens( .+?)?\.\"?", _that_many_tokens),
 ]
 
