@@ -79,6 +79,15 @@ def discard_hand(game, p, **_):
         game.discard_card(p, c)
 
 
+@kind("discard_redraw")
+def discard_redraw(game, p, **_):
+    """"Discard all the cards in your hand, then draw that many cards" (Decaying Time Loop)."""
+    n = len(p.hand)
+    for c in list(p.hand):
+        game.discard_card(p, c)
+    game.draw(p, n)
+
+
 @kind("discard_random_target")
 def discard_random_target(game, p, eff, target, opp, **_):
     who = target if isinstance(target, Player) else opp

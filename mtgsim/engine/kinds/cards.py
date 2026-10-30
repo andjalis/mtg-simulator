@@ -274,9 +274,29 @@ def rummage(game, p, eff, **_):
     game.draw(p, len(cards))
 
 
+@kind("tutor_named")
+def tutor_named(game, p, eff, item, **_):
+    """"Search your library for any number of cards named ~, reveal them, put them into
+    your hand, then shuffle" (Howling Wolf, Andromedan Automatons): every (or up to
+    eff.amount) copy of the resolving source's own name."""
+    ref = (item.card or item.source.card) if item is not None and \
+        (item.card is not None or isinstance(item.source, Permanent)) else None
+    cands = [c for c in p.library if card_matches(c, eff.data["what"], ref=ref)]
+    for card in cands[:eff.amount] if eff.amount else cands:
+        p.library.remove(card)
+        p.hand.append(card)
+        game.log(f"searches for {card.name}", p)
+    p.library.shuffle(game.rng)
+    game.library_searched(p)
+
+
 @kind("tutor")
-def tutor(game, p, eff, **_):
-    cands = [c for c in p.library if card_matches(c, eff.data["what"])]
+def tutor(game, p, eff, item, **_):
+    # ref: "search for a card named ~" matches the resolving source's own name even when
+    # the effect reaches this handler without resolve()'s "~" substitution.
+    ref = (item.card or item.source.card) if item is not None and \
+        (item.card is not None or isinstance(item.source, Permanent)) else None
+    cands = [c for c in p.library if card_matches(c, eff.data["what"], ref=ref)]
     if cands:
         card = choose_tutor(game, p, cands)
         p.library.remove(card)
@@ -335,8 +355,10 @@ def mill_repeat(game, p, eff, item, **_):
 
 
 @kind("discard_tutor")
-def discard_tutor(game, p, eff, **_):
-    cands = [c for c in p.library if card_matches(c, eff.data["desc"])]
+def discard_tutor(game, p, eff, item, **_):
+    ref = (item.card or item.source.card) if item is not None and \
+        (item.card is not None or isinstance(item.source, Permanent)) else None
+    cands = [c for c in p.library if card_matches(c, eff.data["desc"], ref=ref)]
     if p.hand and cands:
         card = p.ai.choose_discard(game, p)
         game.discard_card(p, card)
