@@ -384,6 +384,24 @@ def dig_all(game, p, eff, **_):
         game.log(f"reveals {n}, keeps {len(keep)}, {len(rest)} to the {eff.data['rest']}", p)
 
 
+@kind("pay_exile_gy")
+def pay_exile_gy(game, p, eff, item, **_):
+    """'"You may exile a <desc> card from your graveyard. If you do, ..."' (the exile twin
+    of MAYSACSELF, graveyard_templates.py): exile the worst matching card when there is
+    one; the payoff (cond "paid") follows, the pay_gate pattern."""
+    if item is None:
+        return
+    item.gate_paid = False
+    desc = _filter_desc(eff.filter) if eff.filter else ""
+    match = [c for c in p.graveyard if card_matches(c, desc)] if desc else list(p.graveyard)
+    if match:
+        card = min(match, key=lambda c: c.cmc)
+        p.graveyard.remove(card)
+        p.exile.append(card)
+        item.gate_paid = True
+        game.log(f"exiles {card.name} from their graveyard", p)
+
+
 @kind("shuffle_self")
 def shuffle_self(game, p, eff, item, **_):
     """"Shuffle ~ into its owner's library" (the Beacon and Zenith spells): mark the
