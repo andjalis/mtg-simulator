@@ -108,8 +108,10 @@ class ExileGraveyardCastCost(Chonk5Costs):
         victim = self.perm(BEAR, self.b)
         self.assertTrue(self.g.cast(self.a, lunge, [victim]))
         self.g.settle()
-        self.assertIn(BEAR, self.a.exile)            # BEAR (power 2) exiled as the cost
-        self.assertNotIn(victim, self.b.battlefield)  # 2 damage kills the 2/2
+        # le-batch8: stat-reading exile-gy costs pick the best payout card, so
+        # the Giant (power 4) is exiled over the Bear — 4 damage still kills the 2/2
+        self.assertIn(BIG, self.a.exile)
+        self.assertNotIn(victim, self.b.battlefield)
 
 
 class ExileGraveyardAbilityCost(Chonk5Costs):
