@@ -13,7 +13,7 @@ import unittest
 from mtgsim.ai import HeuristicAI
 from mtgsim.cards import Activated, Effect
 from mtgsim.engine import Game, Permanent, Player, StackItem
-from tests.test_templates import BEAR, ISLAND, MOUNTAIN, card
+from tests.test_templates import BEAR, MOUNTAIN, card
 
 CLERIC = card("Test Cleric", "{1}{W}", "Creature — Human Cleric", "", 1, 1)
 ROGUE = card("Test Rogue", "{1}{B}", "Creature — Human Rogue", "", 1, 1)

@@ -148,7 +148,6 @@ class ExileGraveyardCosts(unittest.TestCase):
 
     # ------------------------------------------------------------ x-quantity
     def test_exiled_gy_xq_without_a_recording_is_zero(self):
-        item = self.g and None
         from mtgsim.engine import StackItem
         it = StackItem(self.a, [], [])
         self.assertEqual(self.g.x_quantity(self.a, ("exiled_gy", "power"), it, None), 0)
