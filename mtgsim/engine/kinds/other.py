@@ -108,9 +108,12 @@ def add_mana(game, p, eff, **_):
     if eff.data.get("choice"):                 # "{U} or {R}", "one mana of any color": what the hand needs most
         need = {c: sum(card.mana_cost.get(c, 0) for card in p.hand) for c in eff.data["choice"]}
         colors.append(max(eff.data["choice"], key=lambda c: need[c]))
-    for color in colors * max(1, eff.amount):
+    # "Add {R}" carries no amount (the Effect default is 0): one of each color. "Add an amount
+    # of {R} equal to X" carries X as its amount, and 0 there means no mana at all.
+    n = eff.amount if eff.data.get("xq") is not None else max(1, eff.amount)
+    for color in colors * n:
         p.pool.append(Permanent(pool_mana(color), p))
-    game.log(f"adds {''.join(colors * max(1, eff.amount))}", p)
+    game.log(f"adds {''.join(colors * n)}", p)
 
 
 @kind("firebend")

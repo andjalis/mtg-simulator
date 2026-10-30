@@ -173,8 +173,11 @@ class CostsMixin:
             return src.counters.get(spec[1], 0) if src is not None else 0
         if kind == "sac":
             # "the sacrificed creature's power/toughness/mana value": paid as a spell cost (item.sac_stats,
-            # set in play.cast) or as an activated ability's cost (source.last_sacrificed, abilities.py).
-            stats = getattr(item, "sac_stats", None)
+            # set in play.cast), a "you may sacrifice. If you do" gate (item.gate_sac_stats, pay_gate_cost),
+            # or an activated ability's cost (source.last_sacrificed, abilities.py).
+            stats = getattr(item, "gate_sac_stats", None)
+            if stats is None:
+                stats = getattr(item, "sac_stats", None)
             if stats is None and src is not None:
                 stats = getattr(src, "last_sacrificed", None)
             if stats is None:
@@ -261,7 +264,12 @@ class CostsMixin:
                      and (x.card.is_token or perm_value(x) <= 2)]
             if not spare:
                 return False
-            self.sacrifice(min(spare, key=perm_value))
+            victim = min(spare, key=perm_value)
+            if item is not None:
+                # the ("sac", stat) X-quantity of a following "If you do, ... equal to the
+                # sacrificed creature's power/toughness/mana value" effect reads this.
+                item.gate_sac_stats = (victim.power, victim.toughness, victim.card.cmc)
+            self.sacrifice(victim)
             return True
         if kind == "discard":
             if not p.hand or not (len(p.hand) >= 4 or (any(c.is_land for c in p.hand)
