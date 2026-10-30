@@ -261,6 +261,10 @@ class AbilitiesMixin:
             from ..batch1_templates import has_blessing
             if not has_blessing(self, p):
                 return False
+        if act.restrictions:
+            from ..cx_activation import allowed
+            if not allowed(self, p, perm, act.restrictions):
+                return False
         from ..residual_templates import activation_blocked, mana_ability, life_locked
         if activation_blocked(self, perm, mana=mana_ability(act)) or c.get("life") and life_locked(p):
             return False
