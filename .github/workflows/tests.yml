@@ -1,5 +1,7 @@
 name: Tests
 
+# Fast check on every push and pull request (about two minutes). The full suite on Python
+# 3.10, 3.13 and 3.14 runs nightly in nightly.yml, and on demand from the Actions tab.
 on:
   push:
   pull_request:
@@ -7,17 +9,14 @@ on:
 
 jobs:
   test:
+    name: fast check
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v7
 
       - uses: actions/setup-python@v7
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: "3.13"
 
       # The card database is ~27 MB and not committed. Cache it per week and per
       # version of the builder, so new cards arrive weekly and builder changes rebuild it.
@@ -36,24 +35,14 @@ jobs:
         if: steps.carddb.outputs.cache-hit != 'true'
         run: python3 -m mtgsim.build_carddb
 
-      - name: Run tests
-        run: python3 -m unittest discover -s tests -t . -v
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/setup-python@v7
-        with:
-          python-version: "3.13"
-
       # pyflakes is a CI-only tool; the simulator itself stays standard library only.
       - name: Install pyflakes
         run: python3 -m pip install pyflakes==4.0.3
 
-      - name: Run pyflakes
-        run: python3 scripts/lint.py
+      # Lint, a sample of the card database parsed, short games, and every test module except
+      # SLOW_TESTS in scripts/fast_check.py, in parallel.
+      - name: Fast check
+        run: python3 scripts/fast_check.py
 
   parse-diff:
     if: github.event_name == 'pull_request'
