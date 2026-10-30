@@ -114,6 +114,7 @@ class Activated:
     modes: list = field(default_factory=list)    # "COST: Choose one —": a modal.Modes
     condition: str = ""              # graveyard activation restriction: delirium, gy8
     any_player: bool = False         # "Any player may activate this ability."
+    restrictions: tuple = ()         # cx_activation codes: "Activate only during your turn, before attackers..."
 
 
 @dataclass

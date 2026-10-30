@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import milling, modal, returns, permanent_templates
+from .. import cx_activation, milling, modal, returns, permanent_templates
 from .. import auras as _auras, storage as _storage
 from .model import (
     Activated, AltCost, BASIC_MANA, CardDef, Effect, NO_MATCH, Trigger, _num, add_mana, parse_mana_cost,
@@ -650,6 +650,10 @@ def _parse_ability(line: str, approximations: list):
     if cost is None:
         return None
     body, sorcery, once, approx, condition, limit, any_player = m[2], False, False, [], "", 0, False
+    restrictions, once_game = (), False
+    stripped = cx_activation.strip(body)
+    if stripped is not None:
+        body, restrictions, sorcery, once, once_game = stripped
     while True:
         r = re.fullmatch(r"(.+?\.) (Activate only as a sorcery|Activate only once each turn|Activate no more than "
                          r"(?:once|twice|two times|three times) each turn|Activate only if you have the city's blessing|"
@@ -674,13 +678,15 @@ def _parse_ability(line: str, approximations: list):
     if head is not None and not head[1]:
         approximations += approx
         return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=original, condition=condition,
-                         max_per_turn=limit, modes=modal.Modes(spec=head[0]), any_player=any_player)
+                         max_per_turn=limit, modes=modal.Modes(spec=head[0]), any_player=any_player,
+                         restrictions=restrictions, once_game=once_game)
     effects, bad = _parse_effects(body)
     if bad or not effects:
         return None
     approximations += approx
     return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=original,
-                     condition=condition, max_per_turn=limit, any_player=any_player)
+                     condition=condition, max_per_turn=limit, any_player=any_player, restrictions=restrictions,
+                     once_game=once_game)
 
 
 def _parse_trigger(line: str):
@@ -713,6 +719,7 @@ def _parse_trigger_line(line: str):
         # "enters or dies").
         flt_map = {("cast_spell", "permanent_enters"): lambda: {"cast_spell": "spell:" + m[1].lower(),
                                                                 "permanent_enters": f"noself|any|{m[2]}"},
+                   ("dies", "creature_dies"): lambda: {"dies": "", "creature_dies": "other"},
                    ("permanent_enters", "ally_dies"): lambda: {"permanent_enters": f"noself|other|{m[1]}",
                                                                "ally_dies": f"other||{m[1]}"}}.get(events, lambda: None)()
         intervening = rest.startswith("if ")
