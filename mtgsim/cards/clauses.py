@@ -13,6 +13,8 @@ _SUB_NOTES = [
     (re.compile(r"counter target spell, activated ability, or triggered ability", re.I),
      "only spells are countered, not abilities"),
     (re.compile(r"target creature or planeswalker you control gains", re.I), "the target is a creature, not a planeswalker"),
+    (re.compile(r"you don't lose this mana as steps and phases end", re.I),
+     "the mana pool still empties at the end of each phase"),
 ]
 
 _SUBS = [
