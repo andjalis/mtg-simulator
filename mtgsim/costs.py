@@ -16,6 +16,7 @@ class PaymentPlan:
     sacrifice: object = None
     craft: object = None
     counter_payments: tuple = ()
+    exile_gy_card: object = None      # "Exile a(n) <desc> card from your graveyard" cost: the chosen card
 
     @property
     def victims(self):
@@ -64,7 +65,12 @@ def spell_plan(game, player, card, cost, *, exclude=()):
         if card.extra_sac_or_pay:
             # cost_of already includes this tax when there are no candidates.
             options.append((None, card.extra_sac_or_pay if candidates else 0))
-    return plan(game, player, cost, spell=card, sacrifices=options, exclude=exclude)
+    result = plan(game, player, cost, spell=card, sacrifices=options, exclude=exclude)
+    if result is not None and getattr(card, "extra_exile_gy", ""):
+        # The exiled graveyard card never feeds the mana payment, so the cheapest candidate
+        # can be attached after planning (can_cast_now gates on candidates existing).
+        result = replace(result, exile_gy_card=game.gy_exile_candidates(player, card.extra_exile_gy)[0])
+    return result
 
 
 def ability_plan(game, player, permanent, ability, cost, *, x=None, counter_choices=None):
@@ -88,7 +94,11 @@ def ability_plan(game, player, permanent, ability, cost, *, x=None, counter_choi
         result = plan(game, player, cost, sacrifices=choices, materials=materials,
                       consumed=consumed, exclude=excluded, reserved_counters=counters + own)
         if result is not None:
-            return replace(result, counter_payments=counters)
+            result = replace(result, counter_payments=counters)
+            if costs.get('exile_gy_card'):
+                result = replace(result, exile_gy_card=game.gy_exile_candidates(
+                    player, costs['exile_gy_card'])[0])
+            return result
     return None
 
 

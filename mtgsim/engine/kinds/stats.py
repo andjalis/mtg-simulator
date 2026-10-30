@@ -292,6 +292,21 @@ def untap_other(game, p, item, **_):
         best.tapped = False
 
 
+@kind("untap_lands")
+def untap_lands(game, p, eff, item, **_):
+    """\"Untap X target lands\" (Candelabra of Tawnos): X is the X paid for the ability
+    (eff.data["x"], landing on item.x) or the effect's amount; the controller's tapped lands
+    are untapped, the best mana producers first."""
+    n = (item.x if item is not None else 0) if eff.data.get("x") else eff.amount
+    cands = sorted((x for x in p.battlefield if x.tapped and x.card.is_land),
+                   key=lambda x: (bool(x.card.produces), x.card.cmc), reverse=True)
+    untapped = cands[:max(0, n)]
+    for x in untapped:
+        x.tapped = False
+    if untapped:
+        game.log(f"untaps {[x.card.name for x in untapped]}", p)
+
+
 @kind("tap")
 def tap(game, p, eff, target, item=None, **_):
     if isinstance(target, Permanent) and eff.data.get("or_untap") and target.controller is p:

@@ -275,6 +275,8 @@ class AbilitiesMixin:
             return False
         if c.get("craft") and not self.craft_materials(p, perm):
             return False
+        if c.get("exile_gy_card") and not self.gy_exile_candidates(p, c["exile_gy_card"]):
+            return False
         if act.needs_max_speed and p.speed < 4:
             return False
         if act.min_charge and perm.counters.get("charge", 0) < act.min_charge:
@@ -388,6 +390,17 @@ class AbilitiesMixin:
                 self.leave_battlefield(material, "exile")
                 name = material.card.name
             self.log(f"exiles {name} to craft", p)
+        if c.get("exile_gy_card"):
+            # "{...}, Exile a(n) <desc> card from your graveyard: ..." (Molten-Tail Masticore,
+            # Moorland Haunt): the plan carries the chosen card; its stats are recorded for
+            # ("exiled_gy", "power")-style quantities.
+            gy = getattr(plan, "exile_gy_card", None)
+            if gy is None or gy not in p.graveyard:
+                return False
+            p.graveyard.remove(gy)
+            p.exile.append(gy)
+            perm.last_exiled_gy = (int(gy.power or 0), int(gy.toughness or 0), gy.cmc)
+            self.log(f"exiles {gy.name} from their graveyard", p)
         if c.get("sac_self"):
             self.sacrifice(perm)
         elif c.get("exile_self"):

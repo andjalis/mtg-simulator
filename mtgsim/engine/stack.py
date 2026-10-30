@@ -128,6 +128,11 @@ class StackMixin:
                     continue
                 if event == "expend" and trig.filter != str(subject):
                     continue
+                # Typed discard ("whenever an opponent discards a creature card", Waste Not): the
+                # filter is a card description matched against the discarded card.
+                if event == "opp_discard" and trig.filter and (subject is None or
+                        not card_matches(subject, "a " + trig.filter)):
+                    continue
                 if event == "gy_leave":
                     desc, during = trig.filter.split("|")
                     if (during and not perm.controller.my_turn) or \
