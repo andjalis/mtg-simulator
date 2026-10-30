@@ -65,7 +65,32 @@ def _tapped(eff):
 
 
 _SRC = r"(?:~|it|he|she)"
+
+
+def _add_amount(m):
+    """``Add an amount of {C} equal to <quantity>``: one mana per unit, when the quantity is a known one."""
+    from .clauses import _xq
+    spec = _xq(m[2])
+    if spec is None:
+        return NO_MATCH
+    return Effect("add_mana", 1, data={"colors": [m[1]], "xq": spec})
+
+
 _EFFECT_PATTERNS = [
+    # "Equal to the sacrificed creature's stat" effects: amount 1 times the ("sac", stat) X-quantity,
+    # which the engine reads from the creature sacrificed to pay the spell or ability's cost.
+    (r"~ deals damage equal to the sacrificed creature's (power|toughness) to (any target|target creature or planeswalker|"
+     r"target player or planeswalker|target player)",
+     lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature",
+                                          "target player or planeswalker": "player", "target player": "player"}[m[2]],
+                      data={"xq": ("sac", m[1])})),
+    (r"you gain life equal to the sacrificed creature's (power|toughness)",
+     lambda m: Effect("gain_life", 1, data={"xq": ("sac", m[1])})),
+    (r"draw cards equal to the sacrificed creature's (power|toughness)",
+     lambda m: Effect("draw", 1, data={"xq": ("sac", m[1])})),
+    (r"target player discards a number of cards equal to the sacrificed creature's (power|toughness|mana value)",
+     lambda m: Effect("discard", 1, target="player", data={"xq": ("sac", m[1])})),
+    (r"add an amount of \{([WUBRGC])\} equal to (.+)", _add_amount),
     (r"learn", lambda m: Effect("learn")),
     (r"regenerate (~|it|target creature(?: you control)?|target artifact)",
      lambda m: Effect("regenerate", 1, target={"~": "self", "it": "prev", "target creature": "creature",

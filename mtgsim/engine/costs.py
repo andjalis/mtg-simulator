@@ -160,7 +160,10 @@ class CostsMixin:
         if kind == "stat":
             who = prev if spec[1] == "prev" else src
             if spec[2] == "mana value":
-                return item.card.cmc if spec[1] == "self" and item is not None and item.card else 0
+                if spec[1] == "self" and item is not None and item.card:
+                    return item.card.cmc
+                card = getattr(who, "card", None)
+                return card.cmc if card is not None else 0
             return max(0, getattr(who, spec[2], 0)) if isinstance(who, Permanent) else 0
         if kind == "greatest":
             return max((getattr(x, spec[1]) for x in p.creatures), default=0)
@@ -168,6 +171,15 @@ class CostsMixin:
             return getattr(src, "mutations", 0) if src is not None else 0
         if kind == "counters":
             return src.counters.get(spec[1], 0) if src is not None else 0
+        if kind == "sac":
+            # "the sacrificed creature's power/toughness/mana value": paid as a spell cost (item.sac_stats,
+            # set in play.cast) or as an activated ability's cost (source.last_sacrificed, abilities.py).
+            stats = getattr(item, "sac_stats", None)
+            if stats is None and src is not None:
+                stats = getattr(src, "last_sacrificed", None)
+            if stats is None:
+                return 0
+            return {"power": stats[0], "toughness": stats[1], "mana value": stats[2]}[spec[1]]
         if kind == "gy":
             return counting.count(self, p, {"what": spec[1], "zone": "graveyard"}, src)
         return counting.count(self, p, {"what": spec[1], "zone": "battlefield"}, src)

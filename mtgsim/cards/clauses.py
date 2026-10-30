@@ -21,7 +21,8 @@ _SUBS = [
                 r"until ~ leaves the battlefield\.", re.I), lambda m: f"HANDEXILE {m[1].lower()}."),
     (re.compile(r"^(~ gains [a-z]+ until end of turn)\. tap it\.", re.I), r"\1. Tap ~."),
     # The AI never aims its removal at its own creature, so "another" target is any target.
-    (re.compile(r"destroy another target (creature or planeswalker|creature|nonland permanent)", re.I), r"destroy target \1"),
+    (re.compile(r"(destroy|exile) another target (creature or planeswalker|creature|nonland permanent)", re.I),
+     r"\1 target \2"),
     # Activated and triggered abilities can't be countered in the engine: these counter spells only.
     (re.compile(r"counter target spell, activated ability, or triggered ability", re.I), "counter target spell"),
     # Planeswalkers rarely matter as the target: "creature or planeswalker you control gains ..." is the creature.
@@ -318,6 +319,9 @@ def _xq(text: str):
         re.fullmatch(r"(its) (power|toughness)", t, re.I)
     if m:
         return ("stat", "prev" if m[1] == "that creature" else "self", m[2])
+    m = re.fullmatch(r"the sacrificed creature's (power|toughness|mana value)", t, re.I)
+    if m:
+        return ("sac", m[1])
     m = re.fullmatch(r"the greatest (power|toughness) among creatures you control", t, re.I)
     if m:
         return ("greatest", m[1])

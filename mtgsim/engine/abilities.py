@@ -318,6 +318,7 @@ class AbilitiesMixin:
                 return False
             self.log(f"sacrifices {victim.card.name}", p)
             perm.last_sacrificed_cmc = victim.card.cmc
+            perm.last_sacrificed = (victim.power, victim.toughness, victim.card.cmc)
             self.sacrifice(victim, counter_sources=counter_sources)
         if c.get("craft"):
             material = plan.craft
