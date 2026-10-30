@@ -91,6 +91,26 @@ def _parse_effects(text: str, opts: bool = False):
                 and effects[-1].kind == "token":
             effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, spawn_mana=True))
             continue
+        # "That creature doesn't untap during its controller's untap step for as long as ~ remains
+        # tapped." (Amber Prison and the stay-tapped family): the lock extends the preceding tap.
+        # data["lock"] carries the duration for the engine's link recording (the AI's
+        # choose_stay_tapped reads frozen_by/locked_by/net_locked_by); "freeze" keeps the honest
+        # one-skipped-untap-step subset until that lands (approximation note in clauses._SUB_NOTES).
+        lock = re.fullmatch(r"(?:that (?:permanent|creature)|it|those creatures|they|each of those creatures) "
+                            r"(?:doesn't|don't) untap "
+                            r"during (?:its controller's|their controllers') untap steps? "
+                            r"for as long as (~ remains tapped|you control ~|~ remains on the battlefield)", s, re.I)
+        if lock and effects and effects[-1].kind in ("tap", "permanent_group"):
+            duration = ("tapped" if "remains tapped" in lock[1]
+                        else "controlled" if lock[1].startswith("you") else "battlefield")
+            if effects[-1].kind == "permanent_group":
+                inner = effects[-1].data["effect"]
+                inner = dataclasses.replace(inner, data=dict(inner.data, lock=duration, freeze=True))
+                effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, effect=inner))
+            else:
+                effects[-1] = dataclasses.replace(effects[-1],
+                                                  data=dict(effects[-1].data, lock=duration, freeze=True))
+            continue
         conditional = milling.parse_conditional(s, effects)
         if conditional is not None:
             effects += conditional
@@ -99,7 +119,9 @@ def _parse_effects(text: str, opts: bool = False):
         if rider is not None:
             effects += rider
             continue
-        mp = re.fullmatch(r"you may pay ((?:\{[WUBRGC0-9]+\})+)", s, re.I)
+        # Hybrid symbols too: "you may pay {U/B}" (Kels, Fight Fixer); parse_mana_cost
+        # simplifies them to the first coloured half.
+        mp = re.fullmatch(r"you may pay ((?:\{[WUBRGC0-9]+(?:/[WUBRGC2P])?\})+)", s, re.I)
         if mp:
             effects.append(Effect("pay_gate", data={"cost": parse_mana_cost(mp[1])}))
             gated = True
@@ -765,7 +787,8 @@ def _parse_trigger_line(line: str):
             intervening = True
         gate_if = re.fullmatch(r"if (.+?), (.+)", rest, flags=re.S)
         if gate_if and gate_if[1].lower().startswith(("you control", "there are", "a permanent left", "two or more",
-                                                      "three or more", "four or more", "you don't control")):
+                                                      "three or more", "four or more", "you don't control",
+                                                      "you have", "you haven't", "you or a player")):
             gated = _if_cond(gate_if[1])
             if gated:
                 cond, rest = gated, gate_if[2]

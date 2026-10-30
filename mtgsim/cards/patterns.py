@@ -477,7 +477,7 @@ _EFFECT_PATTERNS = [
     (r"choose one of them", lambda m: Effect("choose_one_exiled")),
     (r"tap (?:up to one )?target (?:creature|nonland permanent)(?: an opponent controls| you don't control)?",
      lambda m: Effect("tap", 1, target="creature")),
-    (r"tap up to (two|three) target creatures", lambda m: Effect("tap", _num(m[1]), target="creature")),
+    (r"tap up to (two|three|four|five) target creatures", lambda m: Effect("tap", _num(m[1]), target="creature")),
     (r"tap target creature(?: an opponent controls)? and put (a|two|three) stun counters? on it",
      lambda m: [Effect("tap", 1, target="creature"), Effect("stun", _num(m[1]), target="prev")]),
     (r"put (a|two|three) stun counters? on it", lambda m: Effect("stun", _num(m[1]), target="prev")),
@@ -557,7 +557,8 @@ _EFFECT_PATTERNS = [
     (r"up to (two|three) target creatures each get \+(\d+)/\+(\d+) until end of turn",
      lambda m: [Effect("pump", int(m[2]), int(m[3]), target="creature_mine", data={"distinct": True})
                 for _ in range(_num(m[1]))]),
-    (r"untap all (creatures|lands) you control", lambda m: Effect("untap_all", data={"what": m[1]})),
+    (r"untap a creature you control", lambda m: Effect("untap_target", target="creature_mine")),
+    (r"untap all (creatures|lands) you control(?: instead)?", lambda m: Effect("untap_all", data={"what": m[1]})),
     (r"sacrifice ~", lambda m: Effect("sacrifice_self", target="self")),
     (r"sacrifice a creature", lambda m: Effect("sac_own", data={"kind": "creature"})),
     # "sacrifice ~ unless you pay {E}{E}" (Lathnu Hellion): pay the counters when there are
@@ -614,7 +615,7 @@ _EFFECT_PATTERNS = [
      lambda m: Effect("discard", _num(m[1]), data={"unless": "basic_land"})),
     (r"(?:then )?discard (a|one|two|three) cards?(?: unless .*)?", lambda m: Effect("discard", _num(m[1]))),
     (r"RUMMAGE (\d+)", lambda m: Effect("rummage", int(m[1]))),
-    (r"create (a|one|two|three|four|five) (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: named [\w' ,-]+?)?(?: that's "
+    (r"create (a|one|two|three|four|five) (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: named [\w' ,-]+?)?(?: that(?:'s| are) "
      r"(tapped and attacking))?(?: with ([\w ,]+))?",
      lambda m: _token(m[1], m[2], m[3], m[4], m[6], bool(m[5]))),
     (r'create (a|one|two|three|four|five|six) (\d+)/(\d+) ((?:\w+ )+?)creature tokens? with "(.+?)"'

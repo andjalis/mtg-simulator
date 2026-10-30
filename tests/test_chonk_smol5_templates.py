@@ -315,8 +315,9 @@ class Party(Chonk5Templates):
 class StayTapped(Chonk5Templates):
     def test_choose_not_to_untap_sets_the_flag(self):
         self.assertTrue(AMBER_PRISON.stay_tapped)
-        # the "as long as ~ remains tapped" freeze ability is still an open engine gap
-        self.assertTrue(any("remains tapped" in u for u in AMBER_PRISON.unsupported))
+        # the "as long as ~ remains tapped" lock now parses (data["lock"] on the tap, with the
+        # freeze subset); the link recording itself is the open engine gap
+        self.assertTrue(any("single skipped untap step" in a for a in AMBER_PRISON.approximations))
 
     def test_storage_lands_keep_their_own_hold_rule(self):
         # storage.parse_line consumes the line for lands: no stay_tapped flag is set
@@ -378,9 +379,12 @@ class RealCards(unittest.TestCase):
                              ("Chicken à la King", "Tap an untapped Bird")):
             with self.subTest(card=name):
                 self.assertTrue(any(needle in u for u in self.card(name).unsupported))
-        # Acererak's completed-dungeon gate is a pending engine condition
+        # Acererak's completed-dungeon gate now parses to "!dungeon_complete" (any-dungeon
+        # narrowing recorded as an approximation note); the per-opponent Zombie attack
+        # line is the remaining gap.
         acererak = self.card("Acererak the Archlich")
-        self.assertTrue(any("completed Tomb of Annihilation" in u for u in acererak.unsupported))
+        self.assertTrue(any("for each opponent" in u for u in acererak.unsupported))
+        self.assertTrue(any("Tomb of Annihilation" in a for a in acererak.approximations))
 
     def test_stay_tapped_flag_on_real_cards(self):
         self.assertTrue(self.card("Amber Prison").stay_tapped)
