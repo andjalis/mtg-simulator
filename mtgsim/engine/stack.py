@@ -111,12 +111,19 @@ class StackMixin:
                     continue
                 if trig.data.get("enters_untapped") and perm.tapped:
                     continue
+                if (event == "etb" and getattr(perm, "_etb_roll_consumed", False)
+                        and [e.kind for e in trig.effects] == ["die_roll"]):
+                    continue    # "As ~ enters, roll ...": enter_battlefield already rolled
                 if trig.intervening_if and not self.check_cond(perm.controller,
                         Effect("condition", cond=trig.intervening_if),
                         StackItem(perm.controller, [], [], source=perm, context=context), None):
                     continue
                 if event == "permanent_enters":
                     me_ok, other, desc = trig.filter.split("|", 2)
+                    if subject.controller is not p and not trig.data.get("any_controller"):
+                        continue    # only "~ or another Zombie enters" triggers see foreign entries
+                    if trig.data.get("enters_tapped") and not getattr(subject, "tapped", False):
+                        continue    # "Whenever a permanent you control enters tapped" (Amulet of Vigor)
                     if subject is perm and me_ok == "self":
                         pass
                     elif subject is perm and other == "other":
