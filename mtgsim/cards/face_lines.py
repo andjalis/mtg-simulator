@@ -244,10 +244,13 @@ def _face_land_and_mana_lines(st, line):
         if line == "Spells with the chosen name can't be cast." and \
                 any(t.event == "etb" and any(e.kind == "choose_name" for e in t.effects) for t in triggers):
             return None        # the ban is what the choose_name kind carries out (named_cast_banned)
-        if re.fullmatch(r"You may choose not to untap ~ during your untap step\.", line) and "Land" not in types:
+        m = re.fullmatch(r"You may choose not to untap [^.]+? during your untap step\.(?: If you do, (.+))?", line)
+        if m and "Land" not in types:
             # The recorded choice (perm.stay_tapped) is consumed by the untap step; storage lands
-            # keep their own hold rule (mtgsim.storage).
+            # keep their own hold rule (mtgsim.storage). The subject is always the source itself.
             extra["stay_tapped"] = True
+            if m[1]:
+                st.unsupported.append("If you do, " + m[1].rstrip(".") + ".")
             return None
         if re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a basic land type\. Then you may pay 2 life\. If you "
                         r"don't, it enters tapped\.", line):
