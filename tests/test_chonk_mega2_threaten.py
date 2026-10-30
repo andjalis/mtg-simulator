@@ -236,3 +236,31 @@ class Mega2OppGainsLife(Batch1):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Mega2GraveyardRiders(Batch1):
+    def test_grave_upheaval_returns_from_any_graveyard_with_haste(self):
+        BIG = card("Test Giant", "{4}", "Creature — Giant", "", 4, 5)
+        self.b.graveyard.append(BIG)
+        self.apply("Put target creature card from a graveyard onto the battlefield under your "
+                   "control. It gains haste.")
+        self.assertEqual([x.card.name for x in self.a.creatures], ["Test Giant"])
+        self.assertTrue(self.a.creatures[0].has("haste"))
+        self.assertNotIn(BIG, self.b.graveyard)
+
+    def test_gruesome_encore_takes_from_opponents_graveyard_and_exiles(self):
+        BIG = card("Test Giant", "{4}", "Creature — Giant", "", 4, 5)
+        self.b.graveyard.append(BIG)
+        effects, ignored = _parse_effects(
+            "Put target creature card from an opponent's graveyard onto the battlefield under "
+            "your control. It gains haste. Exile it at the beginning of the next end step.")
+        self.assertEqual([e.kind for e in effects], ["reanimate_temp"])
+        self.assertEqual(effects[0].data["zone"], "opp")
+        item = StackItem(self.a, effects, [])
+        self.g.resolve(self.a, effects[0], None, item)
+        self.assertEqual([x.card.name for x in self.a.creatures], ["Test Giant"])
+        self.assertTrue(self.a.creatures[0].has("haste"))
+        self.g.begin_end_step(self.a)
+        self.g.settle()
+        self.assertEqual(self.a.creatures, [])
+        self.assertIn(BIG, self.b.exile)
