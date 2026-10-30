@@ -393,6 +393,16 @@ def shuffle_self(game, p, eff, item, **_):
         item.shuffle_self = True
 
 
+@kind("self_suspend")
+def self_suspend(game, p, eff, item, **_):
+    """"Exile ~ with N time counters on it" (Inspiring Refrain and the other self-suspend
+    spells): mark the resolving spell with the counter count; the pending stack hook in
+    Game.to_graveyard_after_resolving (see the batch report) then exiles it into its
+    owner's suspended list instead of the graveyard, so the existing upkeep tick recasts it."""
+    if item is not None and item.is_spell:
+        item.self_suspend = eff.amount
+
+
 @kind("rebound_cast")
 def rebound_cast(game, p, item, **_):
     card, version = item.context
