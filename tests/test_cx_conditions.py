@@ -18,6 +18,9 @@ UNDERLING = card("Test Underling", "{1}{R}", "Creature — Goblin",
                  "As long as you have seven or more cards in hand, ~ gets +2/+1 and has first strike.", 1, 1)
 VANGUARD = card("Test Vanguard", "{1}{W}", "Creature — Human", "As long as ~ is attacking, it gets +2/+0.", 1, 1)
 BLACKBEAR = card("Black Bear", "{1}{B}", "Creature — Bear", "", 2, 2)
+BAST = card("Test Goddess", "{2}{B}", "Creature — God",
+            "~ can't attack or block unless you control three or more creatures.", 4, 4)
+GIANT = card("Test Giant", "{2}{R}", "Creature — Giant", "~ can't attack or block unless you control another Giant.", 3, 3)
 ROCK = card("Test Rock", "{1}", "Artifact", "")
 
 
@@ -67,6 +70,25 @@ class Conditional(unittest.TestCase):
         self.assertEqual(under.power, 1)
         self.a.hand = [BEAR] * 7
         self.assertEqual((under.power, under.toughness, under.has("first strike")), (3, 2, True))
+
+    def test_cant_attack_or_block_unless(self):
+        for c in (BAST, GIANT):
+            self.assertEqual(c.unsupported, [], c.name)
+        from mtgsim.engine.state import can_block
+        god = self.put(BAST)
+        god.sick = False
+        attacker = self.game.enter_battlefield(self.b, BEAR)
+        self.assertFalse(god.can_attack())
+        self.assertFalse(can_block(god, attacker))
+        self.put(BEAR)
+        self.put(BEAR)
+        self.assertTrue(god.can_attack())
+        self.assertTrue(can_block(god, attacker))
+        giant = self.put(GIANT)
+        giant.sick = False
+        self.assertFalse(giant.can_attack())
+        self.put(GIANT)
+        self.assertTrue(giant.can_attack())
 
     def test_graveyard_types(self):
         v = self.put(VIGIL)
