@@ -25,6 +25,19 @@ Existing foundations now include filtered mass moves, graveyard exile, Miracle, 
 
 Parser coverage remains separate from complete rules correctness; no pilot-strength claim is made. Earlier batches and their reports are historical records, not open work.
 
+## Cards thread 2026-10-30 (cx_* modules)
+
+Landed in `mtgsim/cx_triggers.py`, `cx_timing.py` and `cx_damage.py` (PRs #77, #79, #82, #84, #88; about 210 cards):
+tap-up-to-N with stun counters, entered-this-turn hexproof, enchanted-creature damage links, Noble Purpose, two-card hand
+discard, Crabomination, detain, "Cast this spell only ..." windows and "only if" conditions, divided damage (split on
+resolution), two-target damage, graveyard-cast riders and non-targeting casts, Ring-bearer conditions, Tiered, attach
+Equipment (picked on resolution), counter-an-ability spells and Land Cap-style depletion lands.
+
+Still open from that work: the Peat Bog depletion lands (two-mana tap that sacrifices at zero counters), "until your next
+turn" effects (about 120 cards, no common shape; needs a duration that ends at its controller's next turn), planeswalker
+targets for "player or planeswalker" damage, Trickbind's "can't activate this turn" rider, and "cast only if an opponent cast
+a creature spell this turn".
+
 ## Measured remaining broad families
 
 These overlapping counts are upper bounds, not disjoint gain forecasts or wholly missing systems. Do not sum them.
