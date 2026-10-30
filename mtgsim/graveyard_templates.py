@@ -38,6 +38,11 @@ EFFECT_PATTERNS = [
     # "Shuffle ~ into its owner's library." (the Beacon and Zenith spells): a marker the
     # stack reads after the spell resolves (Game.to_graveyard_after_resolving).
     (r"shuffle ~ into its owner's library", lambda m: _e("shuffle_self")),
+    # "Shuffle it / this card into its owner's library." on a dies (or put-into-a-graveyard)
+    # trigger: the source has already left the battlefield, so shuffle_away takes the card
+    # out of its owner's graveyard instead (Angel of Fury, Cavalier of Gales, Dread).
+    (r"shuffle (?:it|this card) into (?:its|his|her) owner's library",
+     lambda m: _e("shuffle_away", target="self")),
     # Bottom-of-library dig sentinels (see SUBS): keep up to K (or all matching, or up to
     # two revealed) in hand, the rest shuffled to the bottom; DIGBPUT puts up to K
     # matching cards onto the battlefield (tapped) instead of into the hand.
@@ -226,3 +231,11 @@ def _e(kind, amount=1, amount2=0, **kw):
 def _num(word):
     from .cards import _num as number
     return number(word)
+
+
+# "When ~ is put into a graveyard from anywhere, ..." (the Lorwyn incarnations and friends:
+# Dread, Serra Avatar, Worldspine Wurm). Approximated as a dies trigger — the engine has no
+# put-into-graveyard-from-anywhere event, so discards and mills of the card don't fire it.
+TRIGGERS = [
+    (r"When ~ is put into a graveyard from anywhere, (.+)", ("dies",)),
+]

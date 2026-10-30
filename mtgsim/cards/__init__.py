@@ -60,6 +60,7 @@ _TRIGGERS += _that_much.TRIGGERS
 from .. import graveyard_templates as _graveyard_templates
 _EFFECT_PATTERNS += _graveyard_templates.EFFECT_PATTERNS
 _SUBS += _graveyard_templates.SUBS
+_TRIGGERS += _graveyard_templates.TRIGGERS
 from .. import exile_templates as _exile_templates
 _EFFECT_PATTERNS += _exile_templates.EFFECT_PATTERNS
 _SUBS += _exile_templates.SUBS
@@ -82,3 +83,6 @@ _SUBS += _search.SUBS
 from .. import mega2_templates as _mega2_templates
 _EFFECT_PATTERNS += _mega2_templates.EFFECT_PATTERNS
 _SUBS += _mega2_templates.SUBS
+from .. import prevent_templates as _prevent_templates
+_EFFECT_PATTERNS += _prevent_templates.EFFECT_PATTERNS
+_SUBS += _prevent_templates.SUBS
