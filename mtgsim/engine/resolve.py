@@ -28,6 +28,11 @@ class ResolveMixin:
         source = (item.card.name if item and item.card else
                   item.source.card.name if item and isinstance(item.source, Permanent) else "effect")
         cause = f"{source}: {k}"
+        if item is not None and eff.data and "~" in "".join(v for v in eff.data.values() if isinstance(v, str)):
+            # "~" in an effect's data is the resolving card's own name ("search for a card named ~",
+            # Squadron Hawk / Screaming Seahawk): resolve it here so the handlers see a literal name.
+            eff = dataclasses.replace(eff, data={k2: v.replace("~", source) if isinstance(v, str) else v
+                                                 for k2, v in eff.data.items()})
         if eff.data.get("per"):    # "for each X you control"
             src = item.source if item is not None else None
             eff = dataclasses.replace(eff, amount=eff.amount * counting.count(self, p, eff.data["per"], src))

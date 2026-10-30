@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from .model import _num
+from .model import NUMBERS, _num
 from .patterns import _N_WORDS
 
 
@@ -13,6 +13,30 @@ _SUB_NOTES = [
     (re.compile(r"counter target spell, activated ability, or triggered ability", re.I),
      "only spells are countered, not abilities"),
     (re.compile(r"target creature or planeswalker you control gains", re.I), "the target is a creature, not a planeswalker"),
+    (re.compile(r"you don't lose this mana as steps and phases end", re.I),
+     "the mana pool still empties at the end of each phase"),
+    # Typed reveal-and-discard with words the hand matcher has no notion of ("a nonland
+    # permanent card", "a nonbasic land card"): the restriction is narrowed to the words
+    # it can match (see _hand_filter below).
+    (re.compile(r"reveals their hand\. you (?:may )?choose an? [\w, -]*?"
+                r"(?:nonbasic|nonlegendary|permanent|legendary|colorless)[\w, -]*? card from it", re.I),
+     "part of the revealed-card description is ignored: only card types, colors and subtypes are matched"),
+    # Initiative / dungeon completion gates: the engine conds are "initiative" (the resolving
+    # player has it) and "dungeon_complete" (any completed dungeon), so both Undercellar Sweep's
+    # "you or a player you're attacking" and Acererak's named-dungeon gate are narrowed.
+    (re.compile(r"if you or a player you're attacking has the initiative", re.I),
+     "the gate counts only your own initiative (engine cond 'initiative')"),
+    (re.compile(r"you haven't completed Tomb of Annihilation", re.I),
+     "any completed dungeon stands in for Tomb of Annihilation in the gate"),
+    # Caves of Chaos Adventurer: the free/paid may-play pair is the impulse approximation below.
+    (re.compile(r"if you've completed a dungeon, you may play that card this turn without paying its mana cost", re.I),
+     "the may-play riders are played as the impulse draw, so the free cast is never granted"),
+    # Tap-lock riders ("... doesn't untap during its controller's untap step for as long as ~
+    # remains tapped / you control ~ / ~ remains on the battlefield"): the parser records the
+    # duration on the tap effect (data["lock"]) for the engine's link recording; until that lands,
+    # the lock is played as a single skipped untap step (the freeze subset).
+    (re.compile(r"doesn't untap during (?:its controller's|their controllers') untap steps? for as long as", re.I),
+     "the tap-lock is played as a single skipped untap step (the persistent link isn't recorded yet)"),
 ]
 
 _SUBS = [
@@ -21,7 +45,8 @@ _SUBS = [
                 r"until ~ leaves the battlefield\.", re.I), lambda m: f"HANDEXILE {m[1].lower()}."),
     (re.compile(r"^(~ gains [a-z]+ until end of turn)\. tap it\.", re.I), r"\1. Tap ~."),
     # The AI never aims its removal at its own creature, so "another" target is any target.
-    (re.compile(r"destroy another target (creature or planeswalker|creature|nonland permanent)", re.I), r"destroy target \1"),
+    (re.compile(r"(destroy|exile) another target (creature or planeswalker|creature|nonland permanent)", re.I),
+     r"\1 target \2"),
     # Activated and triggered abilities can't be countered in the engine: these counter spells only.
     (re.compile(r"counter target spell, activated ability, or triggered ability", re.I), "counter target spell"),
     # Planeswalkers rarely matter as the target: "creature or planeswalker you control gains ..." is the creature.
@@ -116,25 +141,61 @@ _SUBS = [
     (re.compile(r"look at the top (\w+) cards of your library\. you may reveal (an? .+? card) from among them and "
                 r"put it into your hand\. put the rest on the bottom of your library in (?:a random|any) order\.",
                 re.I), lambda m: f"DIGFILTER {_num(m[1])} {m[2]}."),
+    (re.compile(r"look at the top (\w+) cards of your library\. you may put (an? [\w, -]+? card) from among them "
+                r"into your hand\. put the rest on the bottom of your library in (?:a random|any) order\.",
+                re.I), lambda m: f"DIGFILTER {_num(m[1])} {m[2]}."),
     (re.compile(r"look at the top \w+ cards of your library, where X is the number of lands you control\. put "
                 r"(\w+) of those cards into your hand\. put the rest on the bottom of your library in (?:a random|"
                 r"any) order\.", re.I), lambda m: f"DIGLANDS {_num(m[1])}."),
     (re.compile(r"look at the top \w+ cards of your library, where X is the number of (artifacts|creatures|lands) "
                 r"you control\. put (\w+) of those cards into your hand and the rest on the bottom of your library "
                 r"in (?:a random|any) order\.", re.I), lambda m: f"DIGCOUNT {m[1][:-1]} {_num(m[2])}."),
+    # Same X-scaled look, but the keep is a described card: "You may reveal a creature or land
+    # card from among them and put it into your hand. Put the rest ..." (Seismic Sense). The
+    # count word is \w+ because the face parser resolves "X" to its declared value first.
+    (re.compile(r"look at the top \w+ cards of your library, where X is the number of "
+                r"(artifacts|creatures|enchantments|lands) you control\. you may reveal (an? [\w, -]+? card) "
+                r"from among them and put it into your hand\. put the rest on the bottom of your library "
+                r"in (?:a random|any) order\.?", re.I),
+     lambda m: f"DIGCOUNTFILT {m[1][:-1]} {m[2]}."),
     (re.compile(r"look at the top (\w+) cards of your library\. put up to (two) noncreature, nonland permanent "
                 r"cards with mana value (\d+) or less from among them onto the battlefield\. put the rest on the "
                 r"bottom of your library in a random order\.", re.I),
      lambda m: f"DIGPUTNONCREATURE {_num(m[1])} {m[3]} {_num(m[2])}."),
-    (re.compile(r"look at the top (\w+) cards of your library\. you may put a permanent card with mana value "
-                r"(\d+) or less from among them onto the battlefield(?: with a shield counter on it)?\. put the rest "
+    (re.compile(r"look at the top (\w+) cards of your library\. you may put an? (?:permanent|creature|artifact|"
+                r"enchantment) card with mana value (\d+) or less from among them onto the battlefield"
+                r"(?: with a shield counter on it)?\. put the rest "
                 r"on the bottom of your library in a random order\.", re.I),
      lambda m: f"DIGPUT {_num(m[1])} {m[2]}."),
     (re.compile(r"exile the top (card|\w+ cards) of your library\. until (?:the end of your next turn|end of turn), you "
                 r"may play (?:that card|those cards)(?: this turn)?\.", re.I),
      lambda m: f"IMPULSE {1 if m[1] == 'card' else _num(m[1].split()[0])}."),
-    (re.compile(r"target (?:player|opponent) reveals their hand\. you choose a nonland card from it\. that player discards "
-                r"that card\.", re.I), lambda m: "TARGETDISCARD."),
+    # Caves of Chaos Adventurer: the dungeon-complete free may-play and the plain "you may
+    # play it" branch are the same impulse; the rewrite feeds the IMPULSE sub above (the
+    # free cast is approximated away, see _SUB_NOTES).
+    (re.compile(r"exile the top card of your library\. if you've completed a dungeon, you may play "
+                r"that card this turn without paying its mana cost\. otherwise, you may play that "
+                r"card this turn\.?", re.I),
+     lambda m: "exile the top card of your library. until end of turn, you may play that card."),
+    # "that creature also gets" (Rilsa Rael's dungeon-complete rider): "also" only marks the
+    # second half of an already-parsed grant; the token templates take it without the word.
+    (re.compile(r"that creature also gets", re.I), r"that creature gets"),
+    # "you create X" bodies (Undercellar Sweep's gated tokens, Smothering Tithe's treasure):
+    # the effect templates are imperative, and no trigger header starts with "you create"
+    # (those "whenever you create ..." lines never reach a body parse).
+    (re.compile(r"\byou create\b", re.I), r"create"),
+    # Typed reveal-and-discard (Thoughtseize, Despise, Divest): the description is kept —
+    # TARGETDISCARD2's builder (hand_templates) matches it with _hand_matches, where an
+    # earlier revision dropped it and made every card in the hand fair game. "You may
+    # choose ... That player discards that card" (Extract the Truth) always takes the
+    # choice: declining it discards nothing, and an empty hand is no-op either way.
+    (re.compile(r"(?:target|that) (?:player|opponent) reveals their hand\. you (?:may )?choose an? "
+                r"([\w, -]+?) card from it\. (?:that player|they) discards? that card\.", re.I),
+     lambda m: _target_discard(m)),
+    # "Return this card from your graveyard": the card itself is "~".
+    (re.compile(r"\breturn this card from your graveyard\b", re.I), r"return ~ from your graveyard"),
+    # "You may have ~ deal N damage to ...": always taken, so the damage is certain (Game.resolve_item).
+    (re.compile(r"you may have ~ deal (\d+) damage to (any target|target [a-z' ]+)", re.I), r"~ deals \1 damage to \2"),
     (re.compile(r"then return a creature or planeswalker card with mana value X or less from your graveyard to "
                 r"the battlefield, where X is the amount of \{S\} spent to cast ~\.", re.I),
      lambda m: "REANIMATESNOW."),
@@ -151,6 +212,14 @@ _SUBS = [
                 r"creature\.\))?", re.I), lambda m: "RETURNENCHANT."),
     (re.compile(r"you may pay \{2\}\{R\} any number of times\. when you pay this cost one or more times, .*",
                 re.I | re.S), lambda m: "ADVERSARY."),
+    # Energy Tap: the tap gate plus an add_mana that reads the tapped creature's mana value.
+    (re.compile(r"tap target untapped creature you control\. if you do, add an amount of \{C\} equal to "
+                r"that creature's mana value\.", re.I), lambda m: "ENERGYTAP."),
+    # Acquisitions Expert / Mire's Toll: reveal-and-discard scaled by an X-quantity.
+    (re.compile(r"target (?:player|opponent) reveals a number of cards from (?:their|his or her) hand equal "
+                r"to ((?:one plus )?the number of [\w' -]+?)\. you choose one of (?:those cards|them)\. that player "
+                r"discards that card\.", re.I),
+     lambda m: f"XDISCARD {m[1]}."),
 ]
 
 
@@ -161,7 +230,7 @@ _TRIGGERS = [
     (r"When ~ becomes level (\d+), (.+)", ("class_level",)),
     (r"Whenever you proliferate, (.+)", ("proliferate",)),
     (r"Whenever an opponent searches their library, (.+)", ("opp_searches",)),
-    (r"When(?:ever)? ~ enters or attacks, (.+)", ("etb", "attacks")),
+    (r"When(?:ever)? ~ enters? or attacks?, (.+)", ("etb", "attacks")),
     (r"When ~ enters and at the beginning of your upkeep, (.+)", ("etb", "upkeep")),
     (r"When(?:ever)? ~ enters?(?: the battlefield)?, (.+)", ("etb",)),
     (r"Whenever ~ attacks while (?!saddled)(.+)", ("attacks",)),
@@ -193,7 +262,12 @@ _TRIGGERS = [
     (r"At end of combat, (.+)", ("end_combat",)),
     (r"When ~ becomes monstrous, (.+)", ("monstrous",)),
     (r"Whenever one or more \+1/\+1 counters are put on ~, (.+)", ("p1_added",)),
+    (r"Whenever you put one or more \+1/\+1 counters on ~, (.+)", ("p1_added",)),
     (r"Whenever (?:equipped|enchanted) creature deals combat damage to a player, (.+)", ("host:combat_damage_player",)),
+    (r"Whenever (?:equipped|enchanted) creature deals damage to (?:a player|an opponent), (.+)", ("host:damages_player",)),
+    (r"When(?:ever)? (?:equipped|enchanted) creature is dealt damage, (.+)", ("host:dealt_damage",)),
+    (r"Whenever ~ deals combat damage to a player or planeswalker, (.+)", ("combat_damage_player",)),
+    (r"When(?:ever)? ~ becomes the target of a spell, (.+)", ("targeted_by_spell",)),
     (r"Whenever a creature dealt damage by ~ this turn dies, (.+)", ("damaged_dies",)),
     (r"When(?:ever)? ~ dies, (?:if it was a creature, )?(.+)", ("dies",)),
     (r"Whenever ~ deals combat damage to a player, (.+)", ("combat_damage_player",)),
@@ -208,7 +282,8 @@ _TRIGGERS = [
     (r"Whenever you cast a spell that targets ~, (.+)", ("heroic",)),
     (r"Whenever you cast a spell during an opponent's turn, (.+)", ("cast_spell",)),
     (r"Whenever you cast a spell, (.+)", ("cast_spell",)),
-    (r"Whenever you cast an? ([A-Z]\w+(?: or [A-Z]\w+)?|creature|artifact|enchantment|outlaw|multicolored|historic|white|blue|black|red|"
+    (r"When(?:ever)? you cast an? ([A-Z]\w+(?: or [A-Z]\w+)?|[A-Z]\w+ (?:planeswalker|creature|artifact|enchantment)|"
+     r"creature|artifact|enchantment|outlaw|multicolored|historic|white|blue|black|red|"
      r"green|colorless) spell, (.+)", ("cast_spell",)),
     (r"Whenever you gain life, (.+)", ("gain_life",)),
     (r"Whenever (?:the Ring tempts you|you choose a creature as your Ring-bearer), (.+)", ("ring_tempts",)),
@@ -232,15 +307,24 @@ _TRIGGERS = [
     (r"Whenever another creature you control enters or dies, if that creature's power is greater than ~'s, (.+)",
      ("other_creature_enters", "other_creature_dies")),
     (r"Whenever a land you control enters, (.+)", ("land_enters",)),
-    (r"When(?:ever)? (~ or )?(another|an?) ((?:[\w-]+(?:,? or |, | ))*?(?:creature|artifact|enchantment|planeswalker|"
+    (r"When(?:ever)? (~ or )?(another|an?) ((?:[\w-]+(?:,? or |, | ))*?(?:creature|artifact|enchantment|planeswalker|token|"
      r"[A-Z]\w+)s?) you control( with mana value \d+ or greater| with (?:flying|reach|haste|trample|lifelink|deathtouch))? enters(?: and whenever an? ([A-Z]\w+) you control "
      r"enters| and whenever you fully unlock a Room)?, (.+)",
      ("permanent_enters",)),
+    # Cross-event compounds: one sentence, two triggers with different filters.
+    (r"Whenever you cast an? (white|blue|black|red|green) spell(?: or| and whenever) (?:a|an) ([A-Z]\w+) you control enters, (.+)",
+     ("cast_spell", "permanent_enters")),
+    (r"Whenever another ([\w, -]+?) you control enters or dies, (.+)", ("permanent_enters", "ally_dies")),
     (r"Whenever you draw a card, (.+)", ("you_draw",)),
     (r"Whenever you sacrifice (an? [\w ]+?|another [\w ]+?), (.+)", ("sacrifice",)),
     (r"Whenever you attack with two or more creatures, (.+)", ("attack_two_plus",)),
     (r"Whenever you attack with three or more creatures, (.+)", ("attack_three_plus",)),
     (r"Whenever you attack a player, (.+)", ("you_attack",)),
+    # "Whenever one or more creatures you control attack, ..." is the combat-wide event the
+    # engine already fires as "you attack"; two/three-or-more use the count-gated events.
+    (r"Whenever one or more creatures you control attack(?: a player)?, (.+)", ("you_attack",)),
+    (r"Whenever two or more creatures you control attack(?: a player)?, (.+)", ("attack_two_plus",)),
+    (r"Whenever three or more creatures you control attack(?: a player)?, (.+)", ("attack_three_plus",)),
     (r"Whenever ~ attacks alone, (.+)", ("attacks_alone",)),
     (r"Whenever an? ([A-Z]\w+(?: or [A-Z]\w+)?) you control attacks alone, (.+)", ("attacks_alone",)),
     (r"Whenever ~ deals combat damage to an opponent, (.+)", ("combat_damage_player",)),
@@ -249,6 +333,8 @@ _TRIGGERS = [
     (r"Whenever you cast an? (instant|sorcery) spell, (.+)", ("cast_spell",)),
     (r"Whenever you cycle a card, (.+)", ("you_cycle",)),
     (r"Whenever you cycle or discard a card, (.+)", ("you_discard",)),
+    (r"Whenever an opponent discards an? (noncreature, nonland|creature|artifact|enchantment|instant|sorcery|land|instant or sorcery) card, (.+)",
+     ("opp_discard",)),
     (r"Whenever an opponent discards a card, (.+)", ("opp_discard",)),
     (r"Whenever a creature attacks you or a planeswalker you control, (.+)", ("opp_creature_attacks",)),
     (r"Whenever an opponent draws a card, (.+)", ("opp_draw",)),
@@ -304,6 +390,46 @@ def _opt_rider(s: str, effects: list):
     return new
 
 
+_HAND_TYPES = {"creature", "land", "artifact", "enchantment", "planeswalker", "instant", "sorcery"}
+_HAND_COLORS = {"white", "blue", "black", "red", "green"}
+
+
+def _hand_filter(words: str):
+    """Split a revealed-hand card description into (matched, ignored) tokens: the hand
+    matcher (engine/kinds/cards._hand_matches) knows card types, colors, capitalised
+    subtypes and non-<type> words, but has no notion of "permanent", "nonbasic",
+    "nonlegendary", "battle", "colorless", ..."""
+    matched, ignored = [], []
+    for w in words.split():
+        bare = w.strip(",")
+        if bare in ("or", "and/or"):
+            continue
+        if (bare in _HAND_TYPES or bare in _HAND_COLORS
+                or (bare.startswith("non") and bare[3:] in _HAND_TYPES)
+                or re.fullmatch(r"[A-Z][a-z]+(?:-[A-Z][a-z]+)?", bare)):
+            matched.append(w)
+        else:
+            ignored.append(bare)
+    return matched, ignored
+
+
+def _target_discard(m):
+    """TARGETDISCARD2 with the widest restriction the hand matcher can honour. Words it
+    can't match are dropped (with the _SUB_NOTES approximation note); if nothing is left,
+    the line stays unsupported rather than broadening the choice to the whole hand."""
+    matched, ignored = _hand_filter(m[1])
+    if ignored:
+        if not matched:
+            return m[0]
+        rest = re.sub(rf"\b(?:{'|'.join(map(re.escape, ignored))})\b,?\s*", "", m[1])
+        rest = re.sub(r"\s+", " ", rest).strip(" ,").strip()
+        rest = re.sub(r",?\s+(?:or|and/or)\s*$", "", rest).strip(" ,")
+        if not rest:
+            return m[0]
+        return f"TARGETDISCARD2 {rest}."
+    return f"TARGETDISCARD2 {m[1]}."
+
+
 def _xq(text: str):
     """The quantity in ", where X is ...": a tuple the engine evaluates, or None when it isn't a known one."""
     t = text.strip().rstrip(".")
@@ -318,9 +444,22 @@ def _xq(text: str):
         re.fullmatch(r"(its) (power|toughness)", t, re.I)
     if m:
         return ("stat", "prev" if m[1] == "that creature" else "self", m[2])
+    m = re.fullmatch(r"the sacrificed (?:creature|artifact|enchantment|planeswalker|land|permanent)'s "
+                     r"(power|toughness|mana value)", t, re.I)
+    if m:
+        return ("sac", m[1])
     m = re.fullmatch(r"the greatest (power|toughness) among creatures you control", t, re.I)
     if m:
         return ("greatest", m[1])
+    m = re.fullmatch(r"the greatest (power|toughness|mana value) among permanents you control", t, re.I)
+    if m:
+        return ("greatest_perm", m[1])
+    if tl == "the number of creatures you control with defender":
+        return ("defenders",)
+    m = re.fullmatch(r"the number of tapped ([\w-]+(?: (?:and|or|and/or) [\w-]+)*|[\w-]+/[\w-]+) you control", t, re.I)
+    if m:
+        kinds = [k for part in re.split(r" and/or | and | or ", m[1]) for k in part.split("/")]
+        return ("tapped_any", tuple(_singular(k) for k in kinds))
     if tl == "the number of times ~ has mutated":
         return ("mutated",)
     m = re.fullmatch(r"the number of ([\w+/ -]+?) counters on ~", t, re.I)
@@ -334,10 +473,27 @@ def _xq(text: str):
     m = re.fullmatch(r"the number of ([\w -]+?) you control", t, re.I)
     if m and " with " not in m[1] and " that " not in m[1]:
         return ("count", _singular(m[1]))
+    if tl == "the number of creatures in your party":
+        return ("party",)
+    # "3 minus the number of cards in their hand" (Rackling), "the number of cards in their hand
+    # minus 4" (Iron Maiden), "one plus the number of creature cards in your graveyard": each side
+    # is a number or another quantity ("their ..." quantities evaluate for the context player).
+    m = re.fullmatch(r"(.+?) (minus|plus) (.+)", t, re.I)
+    if m:
+        def side(x):
+            if re.fullmatch(r"\d+", x):
+                return int(x)
+            if x.lower() in NUMBERS:
+                return _num(x)
+            return _xq(re.sub(r"\btheir\b", "your", x, flags=re.I))
+        lhs, rhs = side(m[1]), side(m[3])
+        if lhs is not None and rhs is not None:
+            return ("arith", lhs, "-" if m[2].lower() == "minus" else "+", rhs)
     return None
 
 
 _IF_CONDS = [
+    (r"no creatures are on the battlefield", "no_creatures_bf"),
     (r"you control a creature with a \+1/\+1 counter on it that attacked this turn", "p1_attacked_turn"),
     (r"you attacked this turn", "attacked_turn"),
     (r"an opponent controls more lands than you", "opp_more_lands"),
@@ -348,6 +504,14 @@ _IF_CONDS = [
     (r"you control a creature with power (\d+) or greater", None),
     (r"you sacrificed a permanent this turn", "sacrificed_turn"),
     (r"you have the city's blessing", "city_blessing"),
+    (r"you have the initiative", "initiative"),
+    # "if you or a player you're attacking has the initiative" (Undercellar Sweep): in this
+    # two-player engine the honest form is "anyone has the initiative"; the cond that exists
+    # is the resolving player's own, and _SUB_NOTES records the narrowing.
+    (r"you or a player you're attacking has the initiative", "initiative"),
+    (r"you've completed a dungeon", "dungeon_complete"),
+    # Acererak: any-dungeon completion stands in for Tomb of Annihilation (_SUB_NOTES records it).
+    (r"you haven't completed Tomb of Annihilation", "!dungeon_complete"),
     (r"tribute wasn't paid", "tribute_unpaid"),
 ]
 

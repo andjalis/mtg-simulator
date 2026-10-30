@@ -1,13 +1,15 @@
 """Game methods for activated abilities: loyalty, equip, costs, activation and targets."""
 from __future__ import annotations
 
+import dataclasses
+
 from typing import TYPE_CHECKING
 
 from ..cards import Effect
 from .. import modal, costs, counter_mechanics
 from ..actions import atomic_action
-from .policy import default_choose_target, perm_value, saddle_creatures
-from .state import Permanent, StackItem, TARGETED, can_block
+from .policy import any_player_ability, any_player_window, default_choose_target, perm_value, saddle_creatures
+from .state import Permanent, StackItem, TARGETED, can_block, card_matches
 
 if TYPE_CHECKING:
     from .state import Player
@@ -48,11 +50,16 @@ class AbilitiesMixin:
     @atomic_action
     def activate(self, p: Player, perm: Permanent, what: str, target=None) -> bool:
         """Non-loyalty activated abilities: Clue, Blood, Bloodtithe Harvester, manlands, crew, and
-        "ability:N" for the card's Nth activated ability (see activate_ability)."""
+        "ability:N" for the card's Nth activated ability (see activate_ability). An "any player
+        may activate" ability may be used through here by a player who doesn't control perm."""
+        if what.startswith("ability:"):
+            idx = int(what[8:])
+            if perm not in p.battlefield and not (0 <= idx < len(perm.activated)
+                                                   and any_player_ability(perm.activated[idx])):
+                return False
+            return self.activate_ability(p, perm, idx, targets=target)
         if perm not in p.battlefield:
             return False
-        if what.startswith("ability:"):
-            return self.activate_ability(p, perm, int(what[8:]), targets=target)
         if what.startswith("equip"):
             return self.equip(p, perm, target)
         from ..residual_templates import activation_blocked
@@ -87,11 +94,33 @@ class AbilitiesMixin:
             self.check_ward(item)
         elif what in ("animate", "barrens"):
             act = next((a for a in perm.activated if a.kind == what), None)
-            if act is None or self.pay(p, act.cost, exclude=perm) is None:
+            if act is None:
                 return False
-            if what == "barrens":
-                perm.counters["+1/+1"] = perm.p1 + 2
-            perm.animated = act
+            if act.power == -1 and act.toughness == -1:
+                # "{X}{G}: Until end of turn, ~ becomes an X/X creature. It's still a land."
+                # (Lair of the Hydra): power and toughness are the {X} paid, at least 1.
+                # The land pays its own cost's {G} only through its other mana: the search
+                # and the payment must both exclude the land itself.
+                from .mana import find_payment
+                base = {k: v for k, v in act.cost.items() if k != "X"}
+                x = 0
+                for n in range(1, 21):
+                    if find_payment(self.mana_sources(p, spell="ability", exclude=perm),
+                                    dict(base, generic=base.get("generic", 0) + n)) is None:
+                        break
+                    x = n
+                if x < 1:
+                    return False
+                cost = dict(base, generic=base.get("generic", 0) + x)
+                if self.pay(p, cost, exclude=perm) is None:
+                    return False
+                perm.animated = dataclasses.replace(act, power=x, toughness=x)
+            else:
+                if self.pay(p, act.cost, exclude=perm) is None:
+                    return False
+                if what == "barrens":
+                    perm.counters["+1/+1"] = perm.p1 + 2
+                perm.animated = act
             self.log(f"animates {perm}", p)
         elif what == "saddle":
             crew = saddle_creatures(self, p, perm)
@@ -135,6 +164,10 @@ class AbilitiesMixin:
         if creature is None or creature not in p.battlefield or not creature.is_creature or \
                 creature is equipment.attached_to or creature is equipment or not self.targetable(creature, p, equipment):
             return False
+        from .policy import equip_matches
+        restriction = equipment.card.advanced_rules.get("equip_restriction")
+        if restriction and not equip_matches(creature, restriction):
+            return False        # "Equip Wizard {1}" / "Equip legendary creature {1}"
         if self.pay(p, self.equip_cost(equipment, creature)) is None:
             return False
         item = StackItem(p, [Effect("equip", target="creature_mine")], [creature],
@@ -204,13 +237,26 @@ class AbilitiesMixin:
         return activation_cost(self, p, perm, cost)
 
     def can_activate(self, p: Player, perm: Permanent, idx: int, *, x=None, counter_choices=None) -> bool:
-        """Whether perm's activated ability idx (kind "ability") can be activated now."""
+        """Whether perm's activated ability idx (kind "ability") can be activated now, by p.
+        "Any player may activate" abilities may be used by players who don't control perm."""
         acts = perm.activated
-        if perm not in p.battlefield or idx < 0 or idx >= len(acts) or acts[idx].kind != "ability":
+        if idx < 0 or idx >= len(acts) or acts[idx].kind != "ability":
+            return False
+        act = acts[idx]
+        if perm not in p.battlefield and not any_player_ability(act):
+            return False
+        window = any_player_window(act)
+        if window == "their_turn" and p is not self.active:
+            return False
+        if window == "upkeep" and self.step != "upkeep":
+            return False
+        if window == "draw_step" and not (p is self.active and self.step == "draw"):
             return False
         if self.nonmana_locked(p) or perm.abilities_suppressed or any('cant_activate' in a.card.aura_flags for a in perm.auras):
             return False
         act, c = acts[idx], acts[idx].extra_costs
+        if act.condition == "coven" and not perm.condition("coven"):
+            return False    # "Activate only if you control three or more creatures with different powers."
         if act.condition == "blessing":
             from ..batch1_templates import has_blessing
             if not has_blessing(self, p):
@@ -225,7 +271,7 @@ class AbilitiesMixin:
             return False
         if c.get("tap") and (perm.tapped or (perm.is_creature and perm.sick)):
             return False
-        if act.sorcery and not (p is self.active and self.step in ("main1", "main2") and not self.stack):
+        if (act.sorcery or window == "sorcery") and not (p is self.active and self.step in ("main1", "main2") and not self.stack):
             return False
         if act.once and perm.ability_turns.get(idx) == self.turn:
             return False
@@ -253,12 +299,50 @@ class AbilitiesMixin:
             return False
         if c.get("craft") and not self.craft_materials(p, perm):
             return False
+        if c.get("exile_gy_card") and not self.gy_exile_candidates(p, c["exile_gy_card"]):
+            return False
+        if c.get("tap_other") and not self.tap_other_candidates(p, perm, c["tap_other"]):
+            return False
         if act.needs_max_speed and p.speed < 4:
             return False
         if act.min_charge and perm.counters.get("charge", 0) < act.min_charge:
             return False
-        return costs.ability_plan(self, p, perm, act, self.ability_cost(p, perm, act),
-                                  x=x, counter_choices=counter_choices) is not None
+        cost = self.ability_cost(p, perm, act)
+        if x is None and cost.get("X"):
+            x = self.ability_x(p, perm, act)
+            if x is None:
+                return False
+        if x is not None and cost.get("X"):
+            cost = {k: v for k, v in cost.items() if k != "X"}
+            cost["generic"] = cost.get("generic", 0) + x
+        return costs.ability_plan(self, p, perm, act, cost,
+                                  x=x if c.get("remove_creature_counters") or c.get("exile_gy_count") == "x" else None,
+                                  counter_choices=counter_choices) is not None
+
+    def tap_other_candidates(self, p: Player, perm: Permanent, desc: str) -> list:
+        """Untapped creatures for a "Tap another untapped <desc> creature you control" cost
+        (Dungeon Descent, Ranger's Hawk, Chicken a la King). A leading "another" excludes the
+        source itself; otherwise it may tap for its own ability."""
+        import re as _re
+        other = desc.startswith("another ")
+        d = desc[8:] if other else _re.sub(r"^an? ", "", desc)
+        return [x for x in p.battlefield
+                if x.is_creature and not x.tapped and (x is not perm or not other)
+                and (x is perm or card_matches(x.card, "a " + d))]
+
+    def ability_x(self, p: Player, perm: Permanent, act) -> int | None:
+        """The X to choose for an activated ability whose mana cost contains {X} (Cinder Elemental,
+        Candelabra of Tawnos): the most the remaining mana allows after the ability's other costs,
+        at least 1. The chosen X is paid as generic mana and lands on ``item.x`` for the effects."""
+        base = self.ability_cost(p, perm, act)
+        best = None
+        for n in range(1, 21):
+            cost = {k: v for k, v in base.items() if k != "X"}
+            cost["generic"] = cost.get("generic", 0) + n
+            if costs.ability_plan(self, p, perm, act, cost) is None:
+                break
+            best = n
+        return best
 
     def valid_action_targets(self, p, effects, targets, source=None):
         with self.targeting(source if source is not None else self.target_source):
@@ -276,11 +360,22 @@ class AbilitiesMixin:
         if not self.can_activate(p, perm, idx, x=x, counter_choices=counter_choices):
             return False
         act, c = perm.activated[idx], perm.activated[idx].extra_costs
-        plan = costs.ability_plan(self, p, perm, act, self.ability_cost(p, perm, act),
-                                  x=x, counter_choices=counter_choices)
+        cost = self.ability_cost(p, perm, act)
+        if x is None and cost.get("X"):
+            x = self.ability_x(p, perm, act)
+        if x is not None and cost.get("X"):
+            cost = {k: v for k, v in cost.items() if k != "X"}
+            cost["generic"] = cost.get("generic", 0) + x
+        plan = costs.ability_plan(self, p, perm, act, cost,
+                                  x=x if c.get("remove_creature_counters") or c.get("exile_gy_count") == "x" else None,
+                                  counter_choices=counter_choices)
         if plan is None:
             return False
-        targets = self.auto_targets(p, costs.counter_effects(act, plan), perm) if targets is None else list(targets)
+        preview = costs.counter_effects(act, plan)
+        if x is not None and act.cost.get("X"):        # X paid as mana: effects see it at full size
+            preview = [dataclasses.replace(e, amount=x, amount2=x if e.data.get("x2") else e.amount2)
+                       if e.data.get("x") else e for e in preview]
+        targets = self.auto_targets(p, preview, perm) if targets is None else list(targets)
         if not self.valid_action_targets(p, act.effects, targets, perm):
             return False
         if plan is None or self.pay(p, plan.cost, exclude_many=plan.exclude, reserved_counters=plan.counter_payments) is None:
@@ -294,6 +389,15 @@ class AbilitiesMixin:
             perm.ability_turns[("game", idx)] = self.turn
         if c.get("tap"):
             perm.tapped = True
+        if c.get("tap_other"):
+            # "{T}, Tap another untapped <desc> creature you control: ..." — the planner
+            # already kept this creature out of the mana payment.
+            donor = getattr(plan, "tap_other", None)
+            if donor is None or donor not in p.battlefield or donor.tapped:
+                return False
+            donor.tapped = True
+            self.fire(p, "becomes_tapped", donor)
+            self.log(f"taps {donor.card.name}", p)
         if c.get("life"):
             self.change_life(p, -c["life"], f"{perm.card.name}: ability cost")
         for _ in range(c.get("discard", 0)):
@@ -318,6 +422,7 @@ class AbilitiesMixin:
                 return False
             self.log(f"sacrifices {victim.card.name}", p)
             perm.last_sacrificed_cmc = victim.card.cmc
+            perm.last_sacrificed = (victim.power, victim.toughness, victim.card.cmc)
             self.sacrifice(victim, counter_sources=counter_sources)
         if c.get("craft"):
             material = plan.craft
@@ -331,6 +436,20 @@ class AbilitiesMixin:
                 self.leave_battlefield(material, "exile")
                 name = material.card.name
             self.log(f"exiles {name} to craft", p)
+        if c.get("exile_gy_card"):
+            # "{...}, Exile a(n) <desc> card from your graveyard: ..." (Molten-Tail Masticore,
+            # Moorland Haunt), or several of them ("Exile two cards from your graveyard":
+            # Psychatog, Bearscape). The plan carries the chosen cards; the first one's stats
+            # are recorded for ("exiled_gy", "power")-style quantities.
+            picks = tuple(getattr(plan, "exile_gy_cards", None) or
+                          ((plan.exile_gy_card,) if getattr(plan, "exile_gy_card", None) else ()))
+            if not picks or any(gy not in p.graveyard for gy in picks):
+                return False
+            for gy in picks:
+                p.graveyard.remove(gy)
+                p.exile.append(gy)
+            perm.last_exiled_gy = (int(picks[0].power or 0), int(picks[0].toughness or 0), picks[0].cmc)
+            self.log(f"exiles {[gy.name for gy in picks]} from their graveyard", p)
         if c.get("sac_self"):
             self.sacrifice(perm)
         elif c.get("exile_self"):
@@ -349,6 +468,8 @@ class AbilitiesMixin:
         item.counter_x = sum(n for _, _, n in plan.counter_payments)
         if c.get("remove_creature_counters") in ("x", "positive"):
             item.x = item.counter_x
+        elif act.cost.get("X") and x:
+            item.x = x
         self.stack.append(item)
         self.log(f"activates {item}" + (f" -> {targets}" if any(targets) else ""), p)
         self.check_ward(item)

@@ -65,6 +65,8 @@ def protected_from(perm, source) -> bool:
     card = source.card if isinstance(source, Permanent) else source
     if not isinstance(card, CardDef) or not isinstance(perm, Permanent):
         return False
+    if perm.has("protection from creatures") and isinstance(source, Permanent) and source.is_creature:
+        return True
     return any(perm.has(PROTECTION[c]) for c in card.colors) or \
         len(card.colors) >= 2 and perm.has("protection from multicolored") or \
         card.is_artifact and perm.has("protection from artifacts")
@@ -157,6 +159,7 @@ class Permanent:
         self.exile_turn = -1
         self.chosen_land = ""
         self.chosen_type = ""              # Cavern of Souls
+        self.chosen_name = ""              # Meddling Mage: spells with this name can't be cast
         self.silenced_by = None            # Tishana's Tidebinder: loses all abilities while it stays out
         self.net_locked = False            # Braided Net: no activated abilities while it stays tapped
         self.bargained = self.gifted = False   # cast with Bargain / the gift promised
@@ -247,6 +250,11 @@ class Permanent:
         for equipment in self.equipment:
             bp += equipment.card.equip_bonus[0] + equipment.counters.get("hone", 0)
             bt += equipment.card.equip_bonus[1]
+            per, scale = equipment.card.pt_per, equipment.card.pt_scale
+            if per:      # "Equipped creature gets +1/+1 for each artifact you control" (Adaptive Omnitool)
+                n = counting.count(None, self.controller, {"what": per, "zone": "battlefield"}, equipment)
+                bp += n * scale[0]
+                bt += n * scale[1]
         if self.partner is not None:
             from ..batch1_templates import soulbond_bonus
             sb = soulbond_bonus(self)
@@ -307,6 +315,11 @@ class Permanent:
                 e = a.card.equip_bonus
                 bp += e[0]
                 bt += e[1]
+                per, scale = a.card.pt_per, a.card.pt_scale
+                if per:    # "Enchanted creature gets +1/+1 for each <kind> you control"
+                    n = counting.count(None, self.controller, {"what": per, "zone": "battlefield"}, a)
+                    bp += n * scale[0]
+                    bt += n * scale[1]
                 if "per_enchantment" in a.card.aura_flags:     # Virtuous Role
                     n = sum("Enchantment" in y.card.types for y in self.controller.battlefield)
                     bp += n
@@ -387,6 +400,15 @@ class Permanent:
         if any(sub in self.card.subtypes and k == kw and not (other and x is self)
                for x in self.controller.battlefield for sub, k, other in x.card.keyword_sub):
             return True
+        # A chosen-type grant (Shimmer: "Each land of the chosen type has phasing") — the
+        # "@chosen" marker reads the source's chosen_type; these grants are not scoped to
+        # the source's controller.
+        game = getattr(self.controller, "_game", None)
+        players = game.players if game is not None else (self.controller,)
+        if any(sub == "@chosen" and k == kw and not (other and x is self)
+               and getattr(x, "chosen_type", "") and x.chosen_type in self.card.subtypes
+               for pl in players for x in pl.battlefield for sub, k, other in x.card.keyword_sub):
+            return True
         if self.is_creature and self.p1 > 0 and any(kw in x.card.counter_team_keywords
                                                     for x in self.controller.battlefield):
             return True
@@ -410,6 +432,9 @@ class Permanent:
             return self.controller.my_turn
         if cond == "delirium":
             return len({t for c in self.controller.graveyard for t in c.types}) >= 4
+        if cond == "coven":
+            # "Activate only if you control three or more creatures with different powers."
+            return len({x.power for x in self.controller.creatures}) >= 3
         if cond.startswith("land:"):
             return any(cond[5:] in x.card.subtypes for x in self.controller.battlefield if x.card.is_land)
         if cond.startswith("artifacts>="):
@@ -492,6 +517,7 @@ class Permanent:
     def can_attack(self):
         return (self.is_creature and not self.tapped and not self.has("defender") and not (self.card.cant_attack and not self.abilities_suppressed)
                 and not (self.auras and auras.stops_combat(self))
+                and not (self.auras and any("cant_attack" in a.card.aura_flags for a in self.auras))
                 and (not self.sick or self.has("haste")))
 
     @property
@@ -552,7 +578,7 @@ def pool_mana(color: str) -> CardDef:
     return _POOL_MANA[color]
 
 
-OUTLAWS = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock")
+OUTLAWS = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock", "Wizard")
 
 
 class Player:
@@ -685,7 +711,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
                                     ("mountainwalk", "Mountain"), ("islandwalk", "Island"),
                                     ("plainswalk", "Plains"))):
         return False
-    if blocker.card.block_only_flying and not attacker.has("flying"):
+    if (blocker.card.block_only_flying or any(a.card.block_only_flying for a in blocker.auras)) \
+            and not attacker.has("flying"):
         return False
     if attacker.has("nonbasic landwalk") and any(x.card.is_land and not is_basic_land(x.card)
                                                 for x in blocker.controller.battlefield):
@@ -727,35 +754,110 @@ def is_basic_land(c) -> bool:
 _TYPE_WORDS = {"creature", "land", "artifact", "enchantment", "planeswalker", "instant", "sorcery", "battle"}
 
 
-def card_matches(card: CardDef, desc: str) -> bool:
+def card_matches(card: CardDef, desc: str, ref: CardDef | None = None) -> bool:
     """Whether card fits a search description such as "a basic Plains card or a creature card with mana
-    value 1 or less", "a Dragon card", "an instant or sorcery card" or "a card"."""
-    for alt in re.split(r" or (?=an? )", desc.strip()):
-        alt = re.sub(r"^an? ", "", alt)
+    value 1 or less", "a Dragon card", "an instant or sorcery card", "a 1/1 creature" or "a card".
+    A "card named X" alternative matches only cards whose name is exactly X; "named ~" means the
+    name of ref (the resolving source card) and matches nothing when ref is unknown. A word the
+    vocabulary below does not know makes the alternative match nothing (fail closed) rather than
+    everything. "you control"/"you own" tails are scope, not vocabulary: the caller enforces them."""
+    # "up to one target" separates the target slots of one spell (Relive the Past,
+    # Pull from the Deep); a target matching any slot's description is a legal pick.
+    for alt in re.split(r" or (?=an? )|,? (?:and )?up to one target ", desc.strip()):
+        alt = re.sub(r"^(?:an? )+", "", alt)    # tolerate a doubled article ("a a land")
+        alt = re.sub(r" you (?:own|control)", "", alt)
+        alt = re.sub(r"^(?:another |other )", "", alt)       # relationship, not vocabulary
+        alt = re.sub(r", reveal that card$", "", alt)         # search riders
+        m = re.search(r" with mana value (\d+)$", alt)        # an exact mana value
+        if m:
+            if card.cmc != int(m[1]):
+                continue
+            alt = alt[:m.start()]
         m = re.search(r" with mana value (\d+) or (less|greater)$", alt)
         if m:
             if (card.cmc > int(m[1])) if m[2] == "less" else (card.cmc < int(m[1])):
                 continue
             alt = alt[:m.start()]
+        pstat = re.search(r" with (power|toughness) (\d+) or (less|greater)$", alt)
+        if pstat:     # "a creature card with power 2 or less"
+            v = int(getattr(card, pstat[1], 0) or 0)
+            if (v > int(pstat[2])) if pstat[3] == "less" else (v < int(pstat[2])):
+                continue
+            alt = alt[:pstat.start()]
         kw = re.search(r" with (flying|reach|haste|trample|lifelink|deathtouch)$", alt)
         if kw:
             if kw[1] not in card.keywords:
                 continue
             alt = alt[:kw.start()]
-        words = [w for w in alt.replace(" card", "").split() if w not in ("or", "and/or")]
+        stat_cmp = re.search(r" with (power|toughness) greater than its (power|toughness)$", alt)
+        if stat_cmp:   # Fecund Greenshell: "a creature ... with toughness greater than its power"
+            if int(getattr(card, stat_cmp[1], 0) or 0) <= int(getattr(card, stat_cmp[2], 0) or 0):
+                continue
+            alt = alt[:stat_cmp.start()]
+        named = re.search(r" named (~|.+)$", alt)
+        name_ok = True
+        if named:
+            want = named[1].strip()
+            name_ok = (ref is not None and card.name == ref.name) if want == "~" else card.name == want
+            alt = alt[:named.start()].strip()
+            if not alt or alt == "card":
+                if name_ok:
+                    return True
+                continue
+        stats = re.match(r"(\d+)/(\d+) ", alt)
+        if stats:      # Sword of the Meek: "a 1/1 creature"
+            if (int(getattr(card, "power", 0) or 0), int(getattr(card, "toughness", 0) or 0)) != \
+                    (int(stats[1]), int(stats[2])):
+                continue
+            alt = alt[stats.end():]
+        words = [w for w in ("" if alt == "card" else alt.replace(" cards", "").replace(" card", "")).split()
+                 if w not in ("or", "and", "and/or")]
+        words = [w[:-1] if w.endswith("s") and w[:-1] in _TYPE_WORDS else w for w in words]   # plurals
         ok = True
         if "token" in words:
             ok = card.is_token
             words.remove("token")
+        if "nontoken" in words:   # Arbaaz Mir: "a nontoken historic permanent"
+            ok = ok and not card.is_token
+            words.remove("nontoken")
         types = [w for w in words if w in _TYPE_WORDS]
         if types and not any(t.capitalize() in card.types for t in types):
             ok = False
-        if "basic" in words and not is_basic_land(card):
-            ok = False
-        for w in words:
-            if w[0].isupper() and w not in card.subtypes and w != card.name and not \
-                    (card.changeling and card.is_creature):
+        _COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
+        _TOKEN_KINDS = ("food", "clue", "blood", "treasure", "gold")   # lowercase sacrifice filters
+        for w, check in (("basic", is_basic_land(card)),
+                         ("nonbasic", not is_basic_land(card)),
+                         ("snow", bool(card.snow)),
+                         ("legendary", bool(card.legendary)),
+                         ("permanent", bool(card.is_permanent)),
+                         ("historic", bool(card.is_artifact or card.legendary or card.is_saga)),
+                         ("outlaw", any(o in card.subtypes for o in OUTLAWS)),
+                         ("multicolored", len(card.colors) >= 2),
+                         ("colorless", not card.colors),
+                         ("double-faced", getattr(card, "back", None) is not None),
+                         *((k, k.capitalize() in card.subtypes) for k in _TOKEN_KINDS),
+                         *((col, _COLORS[col] in card.colors) for col in _COLORS),
+                         *(("non" + col, _COLORS[col] not in card.colors) for col in _COLORS)):
+            if w in words and not check:
                 ok = False
         if ok:
+            words = [w for w in words if w not in
+                     ("basic", "nonbasic", "snow", "legendary", "permanent", "historic",
+                      "outlaw", "multicolored", "colorless", "double-faced", *_TOKEN_KINDS,
+                      *_COLORS, *("non" + col for col in _COLORS))]
+        for w in words:
+            m_nonsub = re.fullmatch(r"non-([A-Z]\w*)", w)
+            if w.startswith("non") and w[3:].rstrip(",") in _TYPE_WORDS:
+                if w[3:].rstrip(",").capitalize() in card.types:    # "a noncreature, nonland card"
+                    ok = False
+            elif m_nonsub:                                          # "artifact and/or non-Aura enchantment"
+                if m_nonsub[1] in card.subtypes:
+                    ok = False
+            elif w[0].isupper() and w not in card.subtypes and w != card.name and not \
+                    (card.changeling and card.is_creature):
+                ok = False
+            elif not w[0].isupper() and w not in _TYPE_WORDS and w not in ("basic", "token"):
+                ok = False    # unknown vocabulary fails closed
+        if ok and name_ok:
             return True
     return False

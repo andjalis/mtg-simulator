@@ -129,6 +129,9 @@ def _face_special_lines(st, line):
             return None
         line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration|Heroic) — (?=When|At|If)", "", line)
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
+        # Any ability word ("Phalanx Commander —", "Life Drain —") before a When/At/If line; "Survival — "
+        # keeps its prefix: it names a distinct engine event.
+        line = re.sub(r"^(?!(?:Survival|Pack tactics) — )[A-Z][\w'&/ ]+ — (?=When|At|If)", "", line)
         # Discard triggers fire once per card, so "that many" counters is one counter each time.
         line = re.sub(r"^(Whenever you discard one or more cards), put that many \+1/\+1 counters on ~\.$",
                       r"\1, put a +1/+1 counter on ~.", line)
@@ -192,7 +195,7 @@ def _face_mode_and_ward_lines(st, line):
         if m:
             extra.update(ward=int(m[1]), ward_untapped_only=True)
             return None
-        m = re.fullmatch(r"\{T\}(, Pay 1 life)?: Add (one mana of any color|(?:\{[WUBRGC]\})+)\. Spend this mana only "
+        m = re.fullmatch(r"\{T\}(, Pay \d+ life)?: Add (one mana of any color|(?:\{[WUBRGC]\})+)\. Spend this mana only "
                          r"(.+)\.", line)
         if m:
             restriction = _mana_restriction(m[3])
@@ -209,7 +212,7 @@ def _face_mode_and_ward_lines(st, line):
             if amount > 1:
                 extra["restricted_amount"] = amount
             if m[1]:
-                approximations.append("the 1 life for restricted mana isn't paid")
+                approximations.append("the " + re.search(r'\d+', m[1])[0] + " life for restricted mana isn't paid")
             return None
         return line
     finally:
@@ -232,6 +235,22 @@ def _face_land_and_mana_lines(st, line):
     try:
         if re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a creature type\.", line):
             extra["choose_type"] = "creature"
+            return None
+        if re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a(?: nonland)? card name\.", line):
+            # Meddling Mage, Nevermore: the choose_name kind names the card, and the static line
+            # below is the ban that kind carries out (Game.named_cast_banned).
+            triggers.append(Trigger("etb", [Effect("choose_name")]))
+            return None
+        if line == "Spells with the chosen name can't be cast." and \
+                any(t.event == "etb" and any(e.kind == "choose_name" for e in t.effects) for t in triggers):
+            return None        # the ban is what the choose_name kind carries out (named_cast_banned)
+        m = re.fullmatch(r"You may choose not to untap [^.]+? during your untap step\.(?: If you do, (.+))?", line)
+        if m and "Land" not in types:
+            # The recorded choice (perm.stay_tapped) is consumed by the untap step; storage lands
+            # keep their own hold rule (mtgsim.storage). The subject is always the source itself.
+            extra["stay_tapped"] = True
+            if m[1]:
+                st.unsupported.append("If you do, " + m[1].rstrip(".") + ".")
             return None
         if re.fullmatch(r"As ~ enters(?: the battlefield)?, choose a basic land type\. Then you may pay 2 life\. If you "
                         r"don't, it enters tapped\.", line):
@@ -314,6 +333,22 @@ def _face_land_and_mana_lines(st, line):
             if m[2]:
                 approximations.append(f"cost reduction ignored:{m[2]}")
             return None
+        m = re.fullmatch(r"Equip (legendary creature|[A-Z]\w+(?:,? or [A-Z]\w+)*) (\{[^ .]+\})"
+                         r"(\. This ability costs [^.]+ less to activate[^.]*\.)?", line)
+        if m:      # "Equip Wizard {1}" / "Equip legendary creature {1}": only those creatures may be equipped
+            kinds = [k.strip() for k in re.split(r", or |, | or ", m[1])]
+            if m[1] == "legendary creature":
+                restriction = "legendary"
+            elif kinds and all(re.fullmatch(r"[A-Z]\w+", k) for k in kinds):
+                restriction = " or ".join(kinds)
+            else:
+                restriction = None
+            if restriction is not None:
+                extra["equip_cost"] = parse_mana_cost(m[2])
+                extra.setdefault("advanced_rules", {})["equip_restriction"] = restriction
+                if m[3]:
+                    approximations.append(f"cost reduction ignored:{m[3]}")
+                return None
         m = re.fullmatch(r"Reconfigure (\{[^ .]+\})", line)
         if m:
             extra.update(equip_cost=parse_mana_cost(m[1]), reconfigure=True)
@@ -379,6 +414,11 @@ def _face_land_and_mana_lines(st, line):
             cols, amount = _parse_mana_ability(m[1])
             produces |= cols
             extra["mana_amount"] = max(amount, extra.get("mana_amount", 1))
+            if "equal to" in m[1] or " for each " in m[1]:
+                # "Add an amount of {G} equal to this creature's power" / "Add {C} for each charge
+                # counter on this artifact": mana_amount is a fixed number, so a dynamic amount is
+                # simplified to 1 (the engine has no stat- or counter-based mana amount).
+                approximations.append(f"mana amount fixed at {amount}: \"Add {m[1]}\"")
             return None
         if re.fullmatch(r"~ enters(?: the battlefield)? tapped\.", line):
             enters_tapped = True
@@ -424,8 +464,8 @@ def _face_land_and_mana_lines(st, line):
                         r"that many -1/-1 counters on that creature instead\.", line):
             extra["wither_noncombat"] = True
             return None
-        if re.fullmatch(r"If a creature dealt damage this turn by a source you controlled would die, exile it "
-                        r"instead\.", line):
+        if re.fullmatch(r"If a creature dealt damage (?:this turn by a source you controlled|by (?:~|enchanted "
+                        r"creature) this turn) would die, exile it instead\.", line):
             extra["exile_damaged"] = True
             return None
         if line in ("Daybound", "Nightbound"):
@@ -521,9 +561,13 @@ def _face_cost_and_static_lines(st, line):
         if re.fullmatch(r"If you control two or more other lands, ~ enters(?: the battlefield)? tapped\.", line):
             extra["tapped_condition"] = "if_2_lands"
             return None
-        if re.fullmatch(r"As ~ enters(?: the battlefield)?, you may pay 2 life\. If you don't, it enters "
-                        r"(?:the battlefield )?tapped\.", line):
+        m = re.fullmatch(r"As ~ enters(?: the battlefield)?, you may pay (\d+) life\. If you don't, it "
+                         r"enters (?:the battlefield )?tapped\.", line)
+        if m:
+            # the engine's shock cost is fixed at 2 life
             extra["tapped_condition"] = "shock"
+            if m[1] != "2":
+                approximations.append(f"the {m[1]} life enters-uncovered cost is paid as 2 life")
             return None
         if re.fullmatch(r"~ can't be countered\.", line):
             extra["uncounterable"] = True
@@ -537,6 +581,9 @@ def _face_cost_and_static_lines(st, line):
             return None
         if re.fullmatch(r"~ costs \{1\} less to cast for each instant and sorcery card in your graveyard\.", line):
             extra["cost_reduction"] = "instant_sorcery_gy"
+            return None
+        if re.fullmatch(r"~ costs \{1\} less to cast for each creature in your party\.", line):
+            extra["cost_reduction"] = "party"
             return None
         if re.fullmatch(r"~ costs \{X\} less to cast, where X is the number of cards in your graveyard that are instant "
                         r"cards, sorcery cards, and/or have an Adventure\.", line):
@@ -566,6 +613,19 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["extra_sacrifice"] = m[2]
             extra["extra_sac_or_pay"] = int(m[1] or m[3] or 0)
+            return None
+        m = re.fullmatch(r"As an additional cost to cast ~, exile (a|an|one|two|three|four|five|six|seven|eight|X) "
+                         r"((?:(?:creature|artifact|enchantment|instant|sorcery|land|[A-Z]\w+)(?: or )?)+ )?cards? "
+                         r"from your graveyard\.", line)
+        if m:
+            # "exile a creature card from your graveyard" (Makeshift Mauler, Corpse Lunge): the
+            # descriptor the engine's gy_exile_candidates matches graveyard cards against. Multi-card
+            # and X costs currently exile the cheapest single matching card.
+            desc = (m[2] or "").strip()
+            extra["extra_exile_gy"] = desc + " card" if desc else "card"
+            if m[1] not in ("a", "an"):
+                approximations.append(f"the additional cost exiles one {extra['extra_exile_gy']} "
+                                      f"instead of {m[1]}")
             return None
         m = re.fullmatch(r"~ can't be blocked by creatures with power (\d+) or less\.", line)
         if m:
@@ -703,6 +763,11 @@ def _face_cost_and_static_lines(st, line):
             return None
         if line == "Your opponents can't cast spells during your turn.":
             extra["opp_no_cast"] = True
+            return None
+        m = re.fullmatch(r"((?:Noncreature|Creature|Artifact|Enchantment|Instant|Sorcery|Planeswalker|Battle) "
+                         r"spells) can't be cast\.", line)
+        if m:      # Aether Storm: advanced_rules["no_cast"] is the tuple of banned spell kinds (engine: costs.py)
+            extra.setdefault("advanced_rules", {})["no_cast"] = (m[1].split()[0].lower(),)
             return None
         m = re.fullmatch(r"During your turn, ~ has (\w+(?: \w+)?)\.", line)
         if m and m[1].lower() in KEYWORDS:

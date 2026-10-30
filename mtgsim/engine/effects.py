@@ -23,26 +23,40 @@ class EffectsMixin:
         def has(keyword):
             return (source.has(keyword) if isinstance(source, Permanent)
                     else isinstance(source, CardDef) and keyword in source.keywords)
+        preventable = not self.no_prevention_turn     # "damage can't be prevented this turn" (Skullcrack)
         fog = getattr(self, "fog", None)
-        if combat and fog and fog[0] == self.turn and (fog[1] is None or getattr(source, "controller", None) is fog[1]):
+        if preventable and combat and fog and fog[0] == self.turn and (fog[1] is None or getattr(source, "controller", None) is fog[1]):
             return
-        if protected_from(target, source):
+        if protected_from(target, source) and preventable:
             self.log(f"{target.card.name}'s protection prevents {amount} damage", target.controller)
             return
         from ..batch1_templates import phantom_prevents, damage_immune
-        if isinstance(target, Permanent) and (phantom_prevents(target) or damage_immune(target, source, combat)):
+        if preventable and isinstance(target, Permanent) and (phantom_prevents(target) or damage_immune(target, source, combat)):
             return
         if isinstance(target, Player):
             from ..batch1_templates import curses_on
             if any(c.card.advanced_rules.get('curse_double') for c in curses_on(self, target)):
                 amount *= 2
+        prevented = 0
+        if preventable and isinstance(source, Permanent) and \
+                any("prevent_source_damage" in a.card.aura_flags for a in source.auras):
+            prevented = amount       # Defang: "Prevent all damage that would be dealt by enchanted creature"
+            amount = 0
         shield = getattr(target, "prevent_next", 0)
-        if shield:
-            prevented = min(shield, amount)
-            target.prevent_next -= prevented
-            amount -= prevented
-            if amount <= 0:
-                return
+        if preventable and shield:
+            n = min(shield, amount)
+            target.prevent_next -= n
+            prevented += n
+            amount -= n
+        if prevented:
+            # the prevented amount, for "If damage is prevented this way, ... that much ..." riders
+            # (Acolyte's Reward); fired to whoever holds the prevention shield
+            self.event_amount = prevented
+            self.fire(target.controller if isinstance(target, Permanent) else target,
+                      "damage_prevented", context=source)
+            self.event_amount = None
+        if amount <= 0:
+            return
         infect = has("infect")
         self.event_amount = amount          # "that much" for the triggers fired below
         if isinstance(source, Permanent) and source in source.controller.battlefield:
@@ -88,25 +102,28 @@ class EffectsMixin:
                 self.change_life(controller, amount, f"{name}: lifelink")
 
     def adversary(self, p: Player, item, eff: Effect):
-        """Bloodthirsty Adversary: pay {2}{R} once (if the AI wants), get a +1/+1 counter and cast a
-        copy of an instant or sorcery with mana value 3 or less from the graveyard."""
-        cards = [c for c in p.graveyard if (c.is_instant or c.is_sorcery) and c.cmc <= 3 and c.spell_effects]
-        if not cards or not self.can_pay(p, eff.data["cost"]):
-            return
-        if not self.hook(p, "pay_optional")(self, p, eff.data["cost"], "adversary"):
-            return
-        self.pay(p, eff.data["cost"])
-        src = item.source if item else None
-        if src is not None and src in p.battlefield:
-            src.counters["+1/+1"] = src.p1 + 1
-        card = max(cards, key=lambda c: c.cmc)
-        p.graveyard.remove(card)
-        p.exile.append(card)
-        targets = self.auto_targets(p, card.spell_effects)
-        copy = StackItem(p, list(card.spell_effects), targets, card=card, name=f"copy of {card.name}", kind="copy")
-        self.stack.append(copy)
-        self.log(f"casts a copy of {card.name} -> {targets}", p)
-        self.check_ward(copy)
+        """Bloodthirsty Adversary: "you may pay {2}{R} any number of times. When you pay
+        this cost one or more times, put that many +1/+1 counters on ~, then exile up to
+        that many target instant and/or sorcery cards with mana value 3 or less from your
+        graveyard and copy them." The payments go through phasing's pay_repeat plumbing
+        (the Adversary cycle); the copies stay here."""
+        from ..phasing import pay_repeat
+        pay_repeat(self, p, eff, item)
+        n = getattr(item, "pay_repeat", 0) if item is not None else 0
+        src = item.source if item is not None else None
+        if src is not None and src in p.battlefield and n:
+            src.counters["+1/+1"] = src.p1 + n
+        cards = sorted((c for c in p.graveyard
+                        if (c.is_instant or c.is_sorcery) and c.cmc <= 3 and c.spell_effects),
+                       key=lambda c: c.cmc, reverse=True)
+        for card in cards[:n]:
+            p.graveyard.remove(card)
+            p.exile.append(card)
+            targets = self.auto_targets(p, card.spell_effects)
+            copy = StackItem(p, list(card.spell_effects), targets, card=card, name=f"copy of {card.name}", kind="copy")
+            self.stack.append(copy)
+            self.log(f"casts a copy of {card.name} -> {targets}", p)
+            self.check_ward(copy)
 
     def counter(self, p: Player, eff: Effect, target):
         if not isinstance(target, StackItem) or target not in self.stack:
@@ -171,6 +188,11 @@ class EffectsMixin:
         self.rng.shuffle(rest)
         p.library.reorder(list(reversed(rest)) + [c for c in p.library if c not in rest])
         self.log(f"digs {n}, keeps {chosen}", p)
+        # Dark Confidant: "reveal that card and lose life equal to its mana value" — record the
+        # revealed card's mana value on the resolving item for the ("revealed", "mana value") xq.
+        item = getattr(self, "resolving_item", None)
+        if item is not None and chosen:
+            item.revealed_cmc = chosen[-1].cmc
 
     def dig_put(self, p: Player, n: int, max_cmc: int, count: int = 1, noncreature: bool = False):
         cards = list(reversed(p.library[-min(n, len(p.library)):])) if n else []
@@ -279,6 +301,13 @@ class EffectsMixin:
                        or (x.is_creature and "creature" in card.extra_sacrifice)),
                       key=lambda x: (not x.card.is_token, perm_value(x) if x.is_creature else x.card.cmc))
 
+    def gy_exile_candidates(self, p: Player, desc: str) -> list:
+        """Cards in p's graveyard that could be exiled for "Exile a(n) <desc> card from your
+        graveyard" (a spell's or activated ability's additional cost), least valuable first."""
+        d = desc if desc.startswith(("a ", "an ")) else "a " + desc
+        return sorted((c for c in p.graveyard if card_matches(c, d.replace(" or ", " or a "))),
+                      key=lambda c: (c.cmc, getattr(c, "power", 0) or 0))
+
     def sacrifice(self, perm: Permanent, *, counter_sources=None):
         """Sacrifice perm, firing "whenever you sacrifice" triggers."""
         p = perm.controller
@@ -298,7 +327,9 @@ class EffectsMixin:
         card = self.move_card(card, p.hand, p.graveyard, reason="discard")
         p.discarded_cards.append(card)
         self.fire(p, "you_discard")
-        self.fire(self.opponent(p), "opp_discard")
+        # The subject lets typed listeners ("whenever an opponent discards a creature/land card",
+        # Waste Not) filter on the discarded card's types.
+        self.fire(self.opponent(p), "opp_discard", subject=card)
 
     def cast_free(self, p: Player, card: CardDef) -> bool:
         """Cast a discovered card from exile, or put it into hand if it cannot be cast."""

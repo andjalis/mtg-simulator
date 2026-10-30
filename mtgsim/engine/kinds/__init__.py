@@ -21,4 +21,5 @@ def kind(*names):
     return register
 
 
-from . import batch1, batch2, residual, advanced, roadmap, cards, counters, damage, graveyard, mechanics, other, permanents, stats  # noqa: E402,F401  (registers the handlers)
+from . import batch1, batch2, residual, advanced, roadmap, cards, counters, damage, dungeon, graveyard, mechanics, other, permanents, stats  # noqa: E402,F401  (registers the handlers)
+from . import phasing, ripple, manifest, demonstrate, amplify, mirrodin, prepare  # noqa: E402,F401  (registers the handlers)

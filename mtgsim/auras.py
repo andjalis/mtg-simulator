@@ -11,6 +11,14 @@ when the Aura resolves (it isn't targeted, so it can't be fizzled by hexproof), 
 isn't cast. Friendly Auras (a bonus, a keyword) go on the caster's best creature, hostile ones (a penalty, "doesn't
 untap", "can't attack or block") on the opponent's best. Not modelled: "you control enchanted creature", "loses all
 abilities", Auras that can be moved.
+
+Aura restrictions the engine models as a keyword granted to the host while the Aura stays attached
+(``equip_keywords``, like Equipment): "can't be blocked" (unblockable), "can't block" (cant_block_now),
+"attacks each combat if able" (must_attack_now) and "protection from creatures" (Holy Mantle).
+"Can't attack or block" and "activated abilities can't be activated" are ``aura_flags`` consumed by
+can_attack/can_block and the ability checks; "can't attack" alone is the exact per-aura aura_flags
+{"cant_attack"} (state.py), "can block only creatures with flying" is ``block_only_flying`` and
+"prevent all damage that would be dealt by enchanted creature" is aura_flags {"prevent_source_damage"}.
 """
 from __future__ import annotations
 
@@ -18,8 +26,8 @@ import re
 
 KINDS = {"tap_host", "attach_self"}
 _KW = ("flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|shroud|indestructible|"
-       "menace|reach|fear|intimidate|infect|wither|skulk|shadow|horsemanship|"
-       "swampwalk|forestwalk|mountainwalk|islandwalk|plainswalk|protection from (?:white|blue|black|red|green)")
+       "menace|reach|fear|intimidate|infect|wither|skulk|shadow|horsemanship|phasing|"
+       "swampwalk|forestwalk|mountainwalk|islandwalk|plainswalk|protection from (?:white|blue|black|red|green|creatures)")
 _ENCHANT = re.compile(r"Enchant (creature|creature you control|creature or Vehicle|artifact or creature|"
                       r"artifact creature|land|permanent|nonland permanent|artifact|creature an opponent controls|player)")
 _SIGN = {"+": 1, "-": -1, "−": -1}
@@ -35,16 +43,66 @@ def parse_line(line: str, extra: dict, types) -> bool:
     if m and "Aura" in extra.get("_subtypes", ()):
         extra["aura"] = m[1]
         return True
+    m = re.fullmatch(r"(?:Enchanted|Equipped) creature gets \+(\d+)/\+(\d+) for each (other )?([\w -]+?) you control"
+                     rf"(?: and has ((?:{_KW})(?:(?:, | and |, and )(?:{_KW}))*))?\.", line)
+    if m and (extra.get("aura") or "Equipment" in extra.get("_subtypes", ())):
+        # "Equipped/Enchanted creature gets +1/+1 for each <kind> you control" (Adaptive Omnitool,
+        # Ethereal Armor): counted while the card stays attached (state.py's power calculation).
+        # Only lowercase common nouns are singularized: "Plains" is a subtype as written.
+        what = m[4]
+        if what == what.lower() and what.endswith("s") and not what.endswith("ss"):
+            what = what[:-1]
+        extra["pt_per"] = ("other " if m[3] else "") + what
+        extra["pt_scale"] = (int(m[1]), int(m[2]))
+        if m[5]:
+            extra["equip_keywords"] = extra.get("equip_keywords", frozenset()) | \
+                frozenset(k.strip() for k in re.split(r", and |, | and ", m[5]))
+        return True
     if not extra.get("aura"):
         return False
     if re.fullmatch(r"Enchanted (?:creature|permanent) doesn't untap during its controller's untap step\.", line):
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"no_untap"}
         return True
-    if re.fullmatch(r"Enchanted creature can't attack or block\.", line):
+    if re.fullmatch(r"Enchanted (?:creature|permanent) can't attack or block\.", line):
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"cant_attack_block"}
         return True
-    if re.fullmatch(r"Enchanted creature can't attack or block, and its activated abilities can't be activated\.", line):
+    if re.fullmatch(r"Enchanted (?:creature|permanent) can't attack or block, and its activated abilities "
+                    r"can't be activated\.", line):
         extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"cant_attack_block", "cant_activate"}
+        return True
+    m = re.fullmatch(r"Enchanted permanent doesn't untap during its controller's untap step and its "
+                     r"activated abilities can't be activated\.", line)
+    if m:
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"no_untap", "cant_activate"}
+        return True
+    m = re.fullmatch(r"Enchanted creature (?:gets ([+−-])(\d+)/([+−-])(\d+) and )?can't be blocked\.", line)
+    if m:
+        if m[1]:
+            extra["equip_bonus"] = (_n(m[1], m[2]), _n(m[3], m[4]))
+        extra["equip_keywords"] = extra.get("equip_keywords", frozenset()) | {"unblockable"}
+        return True
+    m = re.fullmatch(r"Enchanted creature gets ([+−-])(\d+)/([+−-])(\d+) and can't block\.", line)
+    if m:
+        extra["equip_bonus"] = (_n(m[1], m[2]), _n(m[3], m[4]))
+        extra["equip_keywords"] = extra.get("equip_keywords", frozenset()) | {"cant_block_now"}
+        return True
+    m = re.fullmatch(r"Enchanted creature gets ([+−-])(\d+)/([+−-])(\d+) and attacks each combat if able\.", line)
+    if m:
+        extra["equip_bonus"] = (_n(m[1], m[2]), _n(m[3], m[4]))
+        extra["equip_keywords"] = extra.get("equip_keywords", frozenset()) | {"must_attack_now"}
+        return True
+    if re.fullmatch(r"Enchanted creature can't attack\.", line):
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"cant_attack"}
+        return True
+    if re.fullmatch(r"Enchanted creature can block only creatures with flying\.", line):
+        extra["block_only_flying"] = True
+        return True
+    m = re.fullmatch(r"Prevent all (?:combat )?damage that would be dealt (?:(by)|to (?:and|or) dealt by) "
+                     r"enchanted creature\.", line)
+    if m:
+        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"prevent_source_damage"}
+        if not m[1]:
+            extra.setdefault("_approx", []).append("only the damage dealt by enchanted creature is prevented")
         return True
     m = re.fullmatch(r"Enchanted (?:creature|permanent) loses all abilities(?: and doesn't untap during its controller's "
                      r"untap step)?\.", line)
@@ -85,12 +143,18 @@ EFFECT_PATTERNS = [
     (r"attach it to target creature you control", lambda m: _effect("attach_self", "creature_mine")),
     (rf"(?:that creature|it) gains ({_KW}) until end of turn",
      lambda m: _effect("grant", "prev", {"keyword": m[1].lower()})),
+    (r"target creature gets ([+−-])(\d+)/([+−-])(\d+) until end of turn and can't be blocked this turn",
+     lambda m: _effect("pump", "creature", {"keyword": "unblockable"}, _n(m[1], m[2]), _n(m[3], m[4]))),
+    (r"(?:(?P<self>~)|(?P<prev>it)|another target attacking creature|target creature) can't be blocked this turn",
+     lambda m: _effect("unblockable", "self" if m["self"] else "prev" if m["prev"] else "creature",
+                       {"other": True} if "another" in m[0] else None,
+                       filter="attacking" if "attacking" in m[0] else "")),
 ]
 
 
-def _effect(kind, target, data=None):
+def _effect(kind, target, data=None, amount=0, amount2=0, filter=""):
     from .cards import Effect
-    return Effect(kind, target=target, data=data or {})
+    return Effect(kind, amount, amount2, target=target, data=data or {}, filter=filter)
 
 
 # ------------------------------------------------------------------ the engine side

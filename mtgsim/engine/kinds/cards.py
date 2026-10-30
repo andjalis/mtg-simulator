@@ -1,6 +1,8 @@
 """Cards in hand and library: draw, discard, scry, surveil, dig, mill, tutor, explore, connive."""
 from __future__ import annotations
 
+import re
+
 from ... import learning, milling
 from ...cards import make_token
 from ..policy import choose_basic, choose_tutor, perm_value
@@ -91,6 +93,48 @@ def discard_random(game, p, eff, **_):
         game.log(f"discards {card.name} at random", p)
 
 
+@kind("dig_put_filter")
+def dig_put_filter(game, p, eff, **_):
+    """Look at the top N: up to K cards matching the description (and mana value bound) go
+    onto the battlefield (tapped), the rest to the bottom of the library or, with
+    data["rest"], to the hand (Expand the Sphere, Collected Company, Genesis Ultimatum)."""
+    cards = list(reversed(p.library[-min(eff.amount, len(p.library)):])) if eff.amount else []
+    desc = eff.data.get("filter")
+    limit = eff.data.get("max_cmc")
+    allowed = [c for c in cards
+               if (not desc or card_matches(c, desc.replace(" or ", " or a ")))
+               and (not limit or c.cmc <= limit)]
+    keep = sorted(allowed, key=lambda c: c.cmc, reverse=True)[:eff.amount2]
+    rest = list(cards)
+    for c in keep:
+        rest.remove(c)
+        p.library.remove(c)
+        game.log(f"puts {c.name} onto the battlefield", p)
+        game.enter_battlefield(p, c, tapped=eff.data.get("tapped", False))
+    if eff.data.get("rest") == "hand":
+        for c in rest:
+            game.move_card(c, p.library, p.hand, reason="dig")
+        game.log(f"digs {eff.amount}, plays {len(keep)}, draws {len(rest)}", p)
+        return
+    if rest:
+        game.rng.shuffle(rest)
+        p.library.reorder(list(reversed(rest)) + [c for c in p.library if c not in rest])
+    if keep or rest:
+        game.log(f"digs {eff.amount}, plays {len(keep)}, bottoms {len(rest)}", p)
+
+
+@kind("discard_defender")
+def discard_defender(game, p, eff, item, **_):
+    """\"Defending player discards N cards\" (Mindstab Thrull): in the two-player game the
+    defender is the opponent of the trigger source's controller."""
+    src = item.source if item is not None else None
+    who = game.opponent(src.controller) if isinstance(src, Permanent) else game.opponent(p)
+    for _ in range(min(eff.amount, len(who.hand))):
+        card = who.ai.choose_discard(game, who)
+        game.discard_card(who, card)
+        game.log(f"discards {card.name}", who)
+
+
 @kind("discard_each")
 def discard_each(game, p, eff, opp, **_):
     for who in (p, opp):
@@ -138,15 +182,68 @@ def discard_choice(game, p, eff, target, **_):
             legal = [c for c in target.hand if not c.is_land and not c.is_creature]
             if card not in legal:
                 card = max(legal, key=lambda c: c.cmc, default=None)
+        elif eff.filter or eff.data.get("mv"):
+            # A described card ("artifact, instant, or sorcery", "green or white creature") and/or
+            # a mana-value bound (Inquisition of Kozilek): the best legal card.
+            legal = [c for c in target.hand if _hand_matches(c, eff)]
+            card = max(legal, key=lambda c: c.cmc, default=None)
         if card is not None:
             game.discard_card(target, card)
             game.log(f"makes {target} discard {card.name}", p)
+
+
+@kind("tuck_choice")
+def tuck_choice(game, p, eff, target, **_):
+    """Lost Hours: reveal a player's hand, you choose a card, that player puts it into their
+    library Nth from the top."""
+    if isinstance(target, Player):
+        legal = [c for c in target.hand if _hand_matches(c, eff)]
+        card = max(legal, key=lambda c: c.cmc, default=None)
+        if card is not None:
+            target.hand.remove(card)
+            depth = eff.data.get("depth", 1)
+            target.library.insert(max(0, len(target.library) - depth + 1), card)
+            game.log(f"puts {card.name} {depth} from the top of their library", p)
 
 
 _HAND_FILTERS = {"nonland": lambda c: not c.is_land,
                  "noncreature, nonland": lambda c: not c.is_land and not c.is_creature,
                  "nonartifact, nonland": lambda c: not c.is_land and not c.is_artifact,
                  "instant or sorcery": lambda c: c.is_instant or c.is_sorcery}
+
+_TYPES = {"creature": lambda c: c.is_creature, "land": lambda c: c.is_land,
+          "artifact": lambda c: c.is_artifact,
+          "enchantment": lambda c: "Enchantment" in c.types,
+          "planeswalker": lambda c: c.is_planeswalker, "instant": lambda c: c.is_instant,
+          "sorcery": lambda c: c.is_sorcery}
+_COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
+
+
+def _hand_matches(card, eff):
+    """Whether a hand card fits a reveal-and-choose description: free-form filter words
+    (comma- and "or"-separated alternatives such as "artifact, instant, or sorcery" or
+    "green or white creature") plus an optional mana-value bound in eff.data["mv"]."""
+    if card is None:
+        return False
+    mv = eff.data.get("mv")
+    if mv and not (card.cmc <= mv[0] if mv[1] == "less" else card.cmc >= mv[0]):
+        return False
+    desc = (eff.filter or "").strip().lower()
+    if not desc or desc in ("card", "any card", "any"):
+        return True
+    if desc in _HAND_FILTERS:
+        return _HAND_FILTERS[desc](card)
+    subtypes = {s.lower() for s in card.subtypes}
+    for alt in re.split(r",? or |,\s*", desc):
+        tokens = [t for t in alt.split() if t not in ("or", "and")]
+        if tokens and all(
+                (not t.startswith("non") and
+                 (_TYPES[t](card) if t in _TYPES else
+                  _COLORS[t] in card.colors if t in _COLORS else t in subtypes))
+                or (t.startswith("non") and not _TYPES.get(t[3:], lambda c: False)(card))
+                for t in tokens):
+            return True
+    return False
 
 
 @kind("hand_exile")
@@ -267,13 +364,40 @@ def stun_discarded(game, p, opp, **_):
 @kind("shuffle_away")
 def shuffle_away(game, p, target, item, **_):
     for perm in (target, item.source if item else None):
-        if isinstance(perm, Permanent) and perm in perm.controller.battlefield:
+        if not isinstance(perm, Permanent):
+            continue
+        if perm in perm.controller.battlefield:
             owner = perm.controller
             if game.leave_battlefield(perm, "graveyard") and not perm.front.is_token:
                 owner.graveyard.remove(perm.front)
                 owner.library.append(perm.front)
                 owner.library.shuffle(game.rng)
             game.log(f"shuffles {perm.card.name} into its owner's library", p)
+        elif not perm.front.is_token and any(c is perm.front for c in perm.owner.graveyard):
+            # Already dead (a dies/put-into-graveyard trigger): take the card out of
+            # its owner's graveyard and shuffle it into the library instead.
+            perm.owner.graveyard.remove(perm.front)
+            perm.owner.library.append(perm.front)
+            perm.owner.library.shuffle(game.rng)
+            game.log(f"shuffles {perm.card.name} into its owner's library", p)
+
+
+@kind("hand_to_library")
+def hand_to_library(game, p, eff, **_):
+    """Put N cards from your hand on the top or bottom of your library (Brainstorm's rider,
+    Amass the Components): the least valuable cards in hand go to that end of the library."""
+    n = min(eff.amount, len(p.hand))
+    moved = []
+    for _ in range(n):
+        card = p.ai.choose_discard(game, p)
+        p.hand.remove(card)
+        moved.append(card)
+    bottom = eff.data.get("bottom")
+    for card in reversed(moved) if bottom else moved:
+        p.library.insert(0, card) if bottom else p.library.append(card)
+    if moved:
+        game.log(f"puts {n} card{'s' if n != 1 else ''} from their hand on the "
+                 f"{'bottom' if bottom else 'top'} of their library", p)
 
 
 @kind("connive")
@@ -405,3 +529,31 @@ def explore(game, p, target, **_):
             if game.hook(p, "scry")(game, p, [top]):
                 p.graveyard.append(p.library.pop())
         game.log(f"{target.card.name} explores", p)
+
+
+@kind("clash")
+def clash(game, p, eff, item, opp, **_):
+    """\"Clash with an opponent\" (chance_templates.py): reveal the top card of each
+    library, the bigger mana value wins (an empty library loses). The revealed cards stay
+    on top (simplification: the real wording returns them top or bottom at choice) and
+    an \"If you win\" rider rides item.gate_paid, the pay_gate pattern."""
+    mine = p.library[-1] if p.library else None
+    theirs = opp.library[-1] if opp.library else None
+    won = mine is not None and (theirs is None or mine.cmc > theirs.cmc)
+    if item is not None:
+        item.gate_paid = won
+    game.log(f"clashes: {mine.name if mine else 'nothing'} ({mine.cmc if mine else 0}) vs "
+             f"{theirs.name if theirs else 'nothing'} ({theirs.cmc if theirs else 0})", p)
+    game.fire(p, "you_clash")
+    if won:
+        game.fire(p, "you_win_clash")
+
+
+@kind("flip_coin")
+def flip_coin(game, p, eff, item, **_):
+    """\"Flip a coin. If you win/lose the flip, <X>\" (chance_templates.py): a fair coin
+    decides; the rider (cond \"paid\") runs on the named side of the flip."""
+    won = game.rng.random() < 0.5
+    if item is not None:
+        item.gate_paid = won != bool(eff.data.get("on_lose"))
+    game.log(f"flips a coin and {'wins' if won else 'loses'}", p)

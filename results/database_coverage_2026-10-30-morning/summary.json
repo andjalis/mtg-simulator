@@ -1,0 +1,326 @@
+{
+  "measured_on": "2026-10-30",
+  "total": 35225,
+  "counts": {
+    "full": 13848,
+    "simplified": 327,
+    "partial": 21050,
+    "parse_error": 0
+  },
+  "parse_errors": [],
+  "ranking_method": "Potential full matches have every ignored line in the gap and no recorded simplifications. Counts are upper bounds, overlap, and must not be summed.",
+  "unclassified": {
+    "gap": "unclassified",
+    "affected_cards": 10104,
+    "potential_full_matches": 6756,
+    "examples": [
+      "A Chaotic Night in Vegas",
+      "A Real Handful",
+      "AWOL"
+    ]
+  },
+  "families": [
+    {
+      "gap": "counters",
+      "affected_cards": 2810,
+      "potential_full_matches": 1937,
+      "examples": [
+        "Aang, Airbending Master",
+        "Aang, Swift Savior // Aang and La, Ocean's Fury",
+        "Abomination, Irradiated Brute"
+      ]
+    },
+    {
+      "gap": "activated abilities",
+      "affected_cards": 2515,
+      "potential_full_matches": 1933,
+      "examples": [
+        "A Container of Booster Packs",
+        "A-Town",
+        "Aang's Iceberg"
+      ]
+    },
+    {
+      "gap": "triggered (whenever/when)",
+      "affected_cards": 2901,
+      "potential_full_matches": 1781,
+      "examples": [
+        "A Good Day to Die",
+        "A Good Day to Pie",
+        "Aang and Katara"
+      ]
+    },
+    {
+      "gap": "graveyard",
+      "affected_cards": 2606,
+      "potential_full_matches": 1556,
+      "examples": [
+        "\"Rumors of My Death . . .\"",
+        "A Good Day to Pie",
+        "Aang, A Lot to Learn"
+      ]
+    },
+    {
+      "gap": "tokens",
+      "affected_cards": 2169,
+      "potential_full_matches": 1255,
+      "examples": [
+        "Aang and Katara",
+        "Aatchik, Emerald Radian",
+        "Abhorrent Overlord"
+      ]
+    },
+    {
+      "gap": "exile",
+      "affected_cards": 2034,
+      "potential_full_matches": 1088,
+      "examples": [
+        "\"Rumors of My Death . . .\"",
+        "A Container of Booster Packs",
+        "Abdel Adrian, Gorion's Ward"
+      ]
+    },
+    {
+      "gap": "sacrifice",
+      "affected_cards": 1791,
+      "potential_full_matches": 1082,
+      "examples": [
+        "Aang's Iceberg",
+        "Abjure",
+        "Abzan Advantage"
+      ]
+    },
+    {
+      "gap": "auras/enchant",
+      "affected_cards": 928,
+      "potential_full_matches": 785,
+      "examples": [
+        "Aboshan's Desire",
+        "Absorbing Man",
+        "Abzan Runemark"
+      ]
+    },
+    {
+      "gap": "X costs",
+      "affected_cards": 1207,
+      "potential_full_matches": 727,
+      "examples": [
+        "Aang and Katara",
+        "Abaddon the Despoiler",
+        "Abzan Monument"
+      ]
+    },
+    {
+      "gap": "can't restrictions",
+      "affected_cards": 1189,
+      "potential_full_matches": 666,
+      "examples": [
+        "Abyssal Persecutor",
+        "Academic Probation",
+        "Aether Storm"
+      ]
+    },
+    {
+      "gap": "equipment",
+      "affected_cards": 569,
+      "potential_full_matches": 428,
+      "examples": [
+        "Ace's Baseball Bat",
+        "Acquisition Octopus",
+        "Adaptive Omnitool"
+      ]
+    },
+    {
+      "gap": "copy effects",
+      "affected_cards": 701,
+      "potential_full_matches": 374,
+      "examples": [
+        "Aboleth Spawn",
+        "Absorb Identity",
+        "Absorbing Man"
+      ]
+    },
+    {
+      "gap": "library search",
+      "affected_cards": 443,
+      "potential_full_matches": 238,
+      "examples": [
+        "Aerial Surveyor",
+        "Andromedan Automatons",
+        "Angel's Herald"
+      ]
+    },
+    {
+      "gap": "cost reduction",
+      "affected_cards": 381,
+      "potential_full_matches": 199,
+      "examples": [
+        "Absorb Energy",
+        "Acolyte of Bahamut",
+        "Alisaie Leveilleur"
+      ]
+    },
+    {
+      "gap": "+1/+1 static (anthems)",
+      "affected_cards": 219,
+      "potential_full_matches": 135,
+      "examples": [
+        "Aardwolf's Advantage",
+        "Akoum Battlesinger",
+        "Alistair, the Brigadier"
+      ]
+    }
+  ],
+  "exact_wording": [
+    {
+      "gap": "venture into the dungeon.",
+      "affected_cards": 22,
+      "potential_full_matches": 12,
+      "examples": [
+        "Bar the Gate",
+        "Clattering Skeletons",
+        "Delver's Torch"
+      ]
+    },
+    {
+      "gap": "banding",
+      "affected_cards": 14,
+      "potential_full_matches": 10,
+      "examples": [
+        "Benalish Hero",
+        "Benalish Infantry",
+        "Icatian Phalanx"
+      ]
+    },
+    {
+      "gap": "cast ~ only during the declare attackers step and only if you've been attacked this step.",
+      "affected_cards": 14,
+      "potential_full_matches": 10,
+      "examples": [
+        "Assassin's Blade",
+        "Champion's Victory",
+        "Defiant Stand"
+      ]
+    },
+    {
+      "gap": "open an attraction.",
+      "affected_cards": 17,
+      "potential_full_matches": 7,
+      "examples": [
+        "Coming Attraction",
+        "Deadbeat Attendant",
+        "Petting Zookeeper"
+      ]
+    },
+    {
+      "gap": "draft a card from ~'s spellbook.",
+      "affected_cards": 13,
+      "potential_full_matches": 7,
+      "examples": [
+        "Boseiju Pathlighter",
+        "Cursebound Witch",
+        "Emmara, Voice of the Conclave"
+      ]
+    },
+    {
+      "gap": "exile ~ with three time counters on it.",
+      "affected_cards": 10,
+      "potential_full_matches": 7,
+      "examples": [
+        "Arc Blade",
+        "Charnel Serenade",
+        "Cyclical Evolution"
+      ]
+    },
+    {
+      "gap": "you take the initiative.",
+      "affected_cards": 21,
+      "potential_full_matches": 6,
+      "examples": [
+        "Aarakocra Sneak",
+        "Avenging Hunter",
+        "Explore the Underdark"
+      ]
+    },
+    {
+      "gap": "phasing",
+      "affected_cards": 12,
+      "potential_full_matches": 6,
+      "examples": [
+        "Breezekeeper",
+        "Merfolk Raiders",
+        "Sandbar Crocodile"
+      ]
+    },
+    {
+      "gap": "~ costs {1} less to cast for each creature in your party.",
+      "affected_cards": 10,
+      "potential_full_matches": 6,
+      "examples": [
+        "Deadly Alliance",
+        "Journey to Oblivion",
+        "Sea Gate Colossus"
+      ]
+    },
+    {
+      "gap": "as an additional cost to cast ~, exile a creature card from your graveyard.",
+      "affected_cards": 8,
+      "potential_full_matches": 6,
+      "examples": [
+        "Cobbled Lancer",
+        "Headless Skaab",
+        "Makeshift Mauler"
+      ]
+    },
+    {
+      "gap": "return that card to the battlefield under your control.",
+      "affected_cards": 7,
+      "potential_full_matches": 6,
+      "examples": [
+        "False Demise",
+        "Fool's Demise",
+        "Minion's Return"
+      ]
+    },
+    {
+      "gap": "you get {tk}, then you may put a sticker on a nonland permanent you own.",
+      "affected_cards": 6,
+      "potential_full_matches": 6,
+      "examples": [
+        "Aerialephant",
+        "Carnival Carnivore",
+        "Chicken Troupe"
+      ]
+    },
+    {
+      "gap": "for mirrodin!",
+      "affected_cards": 15,
+      "potential_full_matches": 5,
+      "examples": [
+        "Dragonwing Glider",
+        "Goldwarden's Helm",
+        "Mirran Bardiche"
+      ]
+    },
+    {
+      "gap": "shuffle ~ into its owner's library.",
+      "affected_cards": 11,
+      "potential_full_matches": 5,
+      "examples": [
+        "Beacon of Creation",
+        "Beacon of Destruction",
+        "Beacon of Tomorrows"
+      ]
+    },
+    {
+      "gap": "you may cast ~ as though it had flash. if you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step.",
+      "affected_cards": 10,
+      "potential_full_matches": 5,
+      "examples": [
+        "Lightning Reflexes",
+        "Mystic Veil",
+        "Parapet"
+      ]
+    }
+  ]
+}

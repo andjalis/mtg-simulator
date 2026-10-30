@@ -57,3 +57,69 @@ _SUBS += _residual_templates.SUBS
 from .. import that_much as _that_much
 _EFFECT_PATTERNS += _that_much.EFFECT_PATTERNS
 _TRIGGERS += _that_much.TRIGGERS
+from .. import graveyard_templates as _graveyard_templates
+_EFFECT_PATTERNS += _graveyard_templates.EFFECT_PATTERNS
+_SUBS += _graveyard_templates.SUBS
+_TRIGGERS += _graveyard_templates.TRIGGERS
+from .. import exile_templates as _exile_templates
+_EFFECT_PATTERNS += _exile_templates.EFFECT_PATTERNS
+_SUBS += _exile_templates.SUBS
+from .. import sacrifice_templates as _sacrifice_templates
+_EFFECT_PATTERNS += _sacrifice_templates.EFFECT_PATTERNS
+_SUBS += _sacrifice_templates.SUBS
+from .. import token_templates as _token_templates
+_EFFECT_PATTERNS += _token_templates.EFFECT_PATTERNS
+_SUBS += _token_templates.SUBS
+from .. import threaten_templates as _threaten_templates
+_EFFECT_PATTERNS += _threaten_templates.EFFECT_PATTERNS
+_SUBS += _threaten_templates.SUBS
+from .. import life_templates as _life_templates
+_EFFECT_PATTERNS += _life_templates.EFFECT_PATTERNS
+_TRIGGERS += _life_templates.TRIGGERS
+from .. import hand_templates as _hand_templates
+_EFFECT_PATTERNS += _hand_templates.EFFECT_PATTERNS
+_SUBS += _hand_templates.SUBS
+_SUBS += _search.SUBS
+from .. import mega2_templates as _mega2_templates
+_EFFECT_PATTERNS += _mega2_templates.EFFECT_PATTERNS
+_SUBS += _mega2_templates.SUBS
+from .. import dungeon_mechanics as _dungeon_mechanics
+_EFFECT_PATTERNS += _dungeon_mechanics.EFFECT_PATTERNS
+_SUBS += _dungeon_mechanics.SUBS
+_TRIGGERS += _dungeon_mechanics.TRIGGERS
+from .. import phasing as _phasing
+_EFFECT_PATTERNS += _phasing.EFFECT_PATTERNS
+_SUBS += _phasing.SUBS
+_TRIGGERS += _phasing.TRIGGERS
+from .. import ripple as _ripple
+_EFFECT_PATTERNS += _ripple.EFFECT_PATTERNS
+_TRIGGERS += _ripple.TRIGGERS
+from .. import manifest as _manifest
+_EFFECT_PATTERNS += _manifest.EFFECT_PATTERNS
+_TRIGGERS += _manifest.TRIGGERS
+from .. import demonstrate as _demonstrate
+_EFFECT_PATTERNS += _demonstrate.EFFECT_PATTERNS
+_TRIGGERS += _demonstrate.TRIGGERS
+from .. import amplify as _amplify
+_EFFECT_PATTERNS += _amplify.EFFECT_PATTERNS
+_TRIGGERS += _amplify.TRIGGERS
+
+from .. import prevent_templates as _prevent_templates
+_EFFECT_PATTERNS += _prevent_templates.EFFECT_PATTERNS
+_SUBS += _prevent_templates.SUBS
+from .. import energy_templates as _energy_templates
+_EFFECT_PATTERNS += _energy_templates.EFFECT_PATTERNS
+_SUBS += _energy_templates.SUBS
+from .. import animate_templates as _animate_templates
+_EFFECT_PATTERNS += _animate_templates.EFFECT_PATTERNS
+_SUBS += _animate_templates.SUBS
+from .. import chance_templates as _chance_templates
+_EFFECT_PATTERNS += _chance_templates.EFFECT_PATTERNS
+_SUBS += _chance_templates.SUBS
+_TRIGGERS += _chance_templates.TRIGGERS
+from .. import for_mirrodin as _for_mirrodin
+_EFFECT_PATTERNS += _for_mirrodin.EFFECT_PATTERNS
+_TRIGGERS += _for_mirrodin.TRIGGERS
+from .. import prepare as _prepare
+_EFFECT_PATTERNS += _prepare.EFFECT_PATTERNS
+_SUBS += _prepare.SUBS
