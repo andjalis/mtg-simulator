@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 
-from .model import _num
+from .model import NUMBERS, _num
 from .patterns import _N_WORDS
 
 
@@ -162,6 +162,14 @@ _SUBS = [
                 r"creature\.\))?", re.I), lambda m: "RETURNENCHANT."),
     (re.compile(r"you may pay \{2\}\{R\} any number of times\. when you pay this cost one or more times, .*",
                 re.I | re.S), lambda m: "ADVERSARY."),
+    # Energy Tap: the tap gate plus an add_mana that reads the tapped creature's mana value.
+    (re.compile(r"tap target untapped creature you control\. if you do, add an amount of \{C\} equal to "
+                r"that creature's mana value\.", re.I), lambda m: "ENERGYTAP."),
+    # Acquisitions Expert / Mire's Toll: reveal-and-discard scaled by an X-quantity.
+    (re.compile(r"target (?:player|opponent) reveals a number of cards from (?:their|his or her) hand equal "
+                r"to ((?:one plus )?the number of [\w' -]+?)\. you choose one of those cards\. that player "
+                r"discards that card\.", re.I),
+     lambda m: f"XDISCARD {m[1]}."),
 ]
 
 
@@ -270,6 +278,8 @@ _TRIGGERS = [
     (r"Whenever you cast an? (instant|sorcery) spell, (.+)", ("cast_spell",)),
     (r"Whenever you cycle a card, (.+)", ("you_cycle",)),
     (r"Whenever you cycle or discard a card, (.+)", ("you_discard",)),
+    (r"Whenever an opponent discards an? (noncreature, nonland|creature|artifact|enchantment|instant|sorcery|land|instant or sorcery) card, (.+)",
+     ("opp_discard",)),
     (r"Whenever an opponent discards a card, (.+)", ("opp_discard",)),
     (r"Whenever a creature attacks you or a planeswalker you control, (.+)", ("opp_creature_attacks",)),
     (r"Whenever an opponent draws a card, (.+)", ("opp_draw",)),
@@ -368,6 +378,22 @@ def _xq(text: str):
     m = re.fullmatch(r"the number of ([\w -]+?) you control", t, re.I)
     if m and " with " not in m[1] and " that " not in m[1]:
         return ("count", _singular(m[1]))
+    if tl == "the number of creatures in your party":
+        return ("party",)
+    # "3 minus the number of cards in their hand" (Rackling), "the number of cards in their hand
+    # minus 4" (Iron Maiden), "one plus the number of creature cards in your graveyard": each side
+    # is a number or another quantity ("their ..." quantities evaluate for the context player).
+    m = re.fullmatch(r"(.+?) (minus|plus) (.+)", t, re.I)
+    if m:
+        def side(x):
+            if re.fullmatch(r"\d+", x):
+                return int(x)
+            if x.lower() in NUMBERS:
+                return _num(x)
+            return _xq(re.sub(r"\btheir\b", "your", x, flags=re.I))
+        lhs, rhs = side(m[1]), side(m[3])
+        if lhs is not None and rhs is not None:
+            return ("arith", lhs, "-" if m[2].lower() == "minus" else "+", rhs)
     return None
 
 

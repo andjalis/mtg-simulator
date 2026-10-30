@@ -163,6 +163,16 @@ def _parse_effects(text: str, opts: bool = False):
                     e.data["xq_size"] = bool(re.search(r"\bX/X\b", mx[1]))
                 effects += new
                 continue
+        mparty = re.fullmatch(r"(.+?) for each creature in your party", s, re.I)
+        if mparty:
+            # "create a 1/1 ... token for each creature in your party" (Squad Commander): the base
+            # effect parses on its own and is scaled by the ("party",) X-quantity.
+            new, bad = _parse_effects(mparty[1][0].upper() + mparty[1][1:] + ".")
+            if new and not bad:
+                for e in new:
+                    e.data["xq"] = ("party",)
+                effects += new
+                continue
         if opts:
             new = _opt_rider(s, effects)
             if new is not None:
@@ -549,6 +559,16 @@ def _parse_ability_cost(text: str):
             extra["discard"] = 1
         elif re.fullmatch(r"Pay (?:\{E\})+", part):
             extra["energy"] = part.count("{E}")
+        elif (m := re.fullmatch(r"Pay (one|two|three|four|five|six|seven|eight|nine|ten|\d+) \{E\}", part)):
+            extra["energy"] = _num(m[1])
+        elif (m := re.fullmatch(r"Exile (?:another |an? )?(card|creature|artifact|enchantment|land|instant|sorcery|"
+                               r"instant or sorcery|artifact or creature|creature or artifact|[A-Z]\w+) cards? "
+                               r"from your graveyard", part)):
+            # "Exile a creature card from your graveyard:" (Molten-Tail Masticore, Moorland Haunt):
+            # the descriptor the engine's gy_exile_candidates matches graveyard cards against.
+            if "exile_gy_card" in extra:
+                return None
+            extra["exile_gy_card"] = "card" if m[1] == "card" else m[1] + " card"
         elif (m := re.fullmatch(r"Pay (\d+) life", part)):
             extra["life"] = int(m[1])
         elif (m := re.fullmatch(r"Remove (a|an|one|two|three|four|five|six|seven|eight|nine|ten|\d+) "
@@ -717,6 +737,10 @@ def _parse_trigger_line(line: str):
             flt = "attacker:" + m[1].replace(" or ", "|")
         if events == ("sacrifice",):
             flt = m[1]
+        if events == ("opp_discard",) and m.lastindex == 2:
+            # Typed discard ("whenever an opponent discards a creature card", Waste Not): the
+            # filter is a card description the dispatch matches against the discarded card.
+            flt = m[1] + " card"
         if events == ("you_attack",) and m.lastindex == 2:
             flt = f"with:{m[1].rstrip('s')}"
         if "creature cards are put into graveyards" in pat:
