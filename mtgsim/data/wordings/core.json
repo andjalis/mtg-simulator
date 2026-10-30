@@ -1808,5 +1808,26 @@
     "target": "my_creatures",
     "example": "Double the number of +1/+1 counters on each creature you control",
     "cards": ["Bristly Bill, Spine Sower"]
+  },
+  {
+    "match": "investigate twice",
+    "effect": "token",
+    "amount": 2,
+    "data": {"kind": "clue"},
+    "example": "investigate twice",
+    "cards": ["Armed with Proof"]
+  },
+  {
+    "match": "destroy all artifacts and enchantments",
+    "effects": [{"effect": "destroy_all", "data": {"type": "Artifact"}}, {"effect": "destroy_all", "data": {"type": "Enchantment"}}],
+    "example": "destroy all artifacts and enchantments",
+    "cards": ["Bane of Progress"]
+  },
+  {
+    "match": "(?:you )?discard a card at random",
+    "effect": "discard_random",
+    "amount": 1,
+    "example": "discard a card at random",
+    "cards": ["Aether Rift"]
   }
 ]
