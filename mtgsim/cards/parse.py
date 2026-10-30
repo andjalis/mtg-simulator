@@ -69,7 +69,7 @@ def _parse_effects(text: str, opts: bool = False):
         # "you may cast [a card] from a graveyard ... If that spell would be put into a graveyard, exile it instead":
         # the rider replaces where the just-cast spell ends up (consumed once its base effect parses; the engine
         # reads gy_instead from the cast-from-graveyard effect).
-        if re.fullmatch(r"if that spell would be put into (?:a|your) graveyard, "
+        if re.fullmatch(r"if (?:that|an instant or sorcery) spell(?: cast this way)? would be put into (?:a|your) graveyard(?: this turn)?, "
                         r"(?:exile it instead|put it on the bottom of its owner's library instead)", s, re.I) and effects:
             effects[-1] = dataclasses.replace(effects[-1], data=dict(
                 effects[-1].data, gy_instead="exile" if re.search(r"exile", s, re.I) else "bottom"))
