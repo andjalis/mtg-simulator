@@ -145,8 +145,10 @@ EFFECT_PATTERNS = [
      lambda m: _e("pay_repeat_lands", target="self",
                   data={"counter": m[1], "power": int(m[2]), "toughness": int(m[3]),
                         "subtype": m[4], "keyword": m[5].lower()})),
-    (r"create twice that many (\d+)/(\d+) ((?:\w+ )+?)creature tokens?(?: with ([\w ,]+))?",
-     lambda m: _e("pay_repeat_tokens", data=_token_data(m[1], m[2], m[3], m[4]))),
+    # the colour comes before the size in current Oracle text ("black 2/2 Zombie"), after it in the old text
+    (r"create twice that many ((?:(?:white|blue|black|red|green|colorless) )*)(\d+)/(\d+) "
+     r"((?:\w+ )*?)creature tokens?(?: with ([\w ,]+))?",
+     lambda m: _e("pay_repeat_tokens", data=_token_data(m[2], m[3], m[1] + m[4], m[5]))),
 ]
 
 TRIGGERS = [
