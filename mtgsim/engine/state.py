@@ -331,7 +331,9 @@ class Permanent:
                     n = sum("Enchantment" in y.card.types for y in self.controller.battlefield)
                     bp += n
                     bt += n
-        return bp, bt
+        from ..cx_statics import pt_bonus as conditional_bonus     # "as long as" Aura / Equipment bonuses, anthems
+        cp, ct = conditional_bonus(self)
+        return bp + cp, bt + ct
 
     @property
     def power(self):
@@ -408,6 +410,9 @@ class Permanent:
         for k, cond in self.card.cond_keywords:
             if k == kw and self.condition(cond):
                 return True
+        from ..cx_statics import grants as conditional_grant
+        if conditional_grant(self, kw):
+            return True
         if any(sub in self.card.subtypes and k == kw and not (other and x is self)
                for x in self.controller.battlefield for sub, k, other in x.card.keyword_sub):
             return True

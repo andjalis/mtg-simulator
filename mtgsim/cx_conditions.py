@@ -10,7 +10,8 @@ import re
 _N = r"(\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
 _COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 _KEYWORDS = ("flying|first strike|double strike|trample|haste|lifelink|vigilance|menace|deathtouch|reach|indestructible|"
-             "hexproof|flash|defender|shroud|shadow|fear|intimidate|wither|persist|undying|infect|skulk|horsemanship")
+             "hexproof|flash|defender|shroud|shadow|fear|intimidate|wither|persist|undying|infect|skulk|horsemanship|banding|"
+             "protection from (?:white|blue|black|red|green)|cascade")
 
 # (pattern, code template); groups are substituted into the template.
 _CONDS = [
@@ -41,8 +42,9 @@ _CONDS = [
 _COMPILED = [(re.compile(p), c) for p, c in _CONDS]
 _KWS = rf"(?:{_KEYWORDS})(?:(?:, | and |, and )(?:{_KEYWORDS}))*"
 _CLAUSE = rf"(?:gets ([+-]\d+)/([+-]\d+)(?: and has ({_KWS}))?|has ({_KWS}|can't be blocked))"
-_LINE = re.compile(rf"(?:\w+ — )?~ {_CLAUSE} as long as (.+)\.")
-_LEADING = re.compile(rf"(?:\w+ — )?As long as (.+?), (?:~|it) {_CLAUSE}\.")
+_LABEL = r"(?:[A-Z][\w' ]* — )?"
+_LINE = re.compile(rf"{_LABEL}~ {_CLAUSE} as long as (.+)\.")
+_LEADING = re.compile(rf"{_LABEL}As long as (.+?), (?:~|it) {_CLAUSE}\.")
 
 
 def _code(text: str):
@@ -68,7 +70,9 @@ def parse_line(line: str, st) -> bool:
     else:
         m = _LEADING.fullmatch(line)
         if m is None:
-            return False
+            from .cx_statics import parse_line as statics_line
+            from .cx_altcost import parse_line as altcost_line
+            return statics_line(line, st) or altcost_line(line, st)
         cond, clause = m[1], m.groups()[1:5]
     code = _code(cond)
     if code is None:

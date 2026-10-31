@@ -149,3 +149,5 @@ _EFFECT_PATTERNS += _cx_links.EFFECT_PATTERNS
 from .. import cx_events as _cx_events
 _TRIGGERS += _cx_events.TRIGGERS
 _TRIGGERS += _cx_links.TRIGGERS
+from .. import cx_statics as _cx_statics
+_EFFECT_PATTERNS += _cx_statics.EFFECT_PATTERNS

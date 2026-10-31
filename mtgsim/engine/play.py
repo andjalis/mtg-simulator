@@ -172,6 +172,10 @@ class PlayMixin:
                 p.exile.append(gy)
             self.log(f"exiles {[gy.name for gy in picks]} from their graveyard for {card.name}", p)
             exiled_gy = picks[0]
+        if kind.startswith("cond_alt_"):
+            from ..cx_altcost import pay as pay_alternative
+            if not pay_alternative(self, p, base, kind):
+                return False
         if kind == "prepared":
             next(x for x in p.battlefield if x.front is base and x.prepared).prepared = False
         elif kind in ("rebound", "cascade", "cascade_adventure", "rebound_adventure"):

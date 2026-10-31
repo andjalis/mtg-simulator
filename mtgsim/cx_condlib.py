@@ -87,8 +87,12 @@ def _word_spec(word: str, spec: dict, plural: bool = True) -> bool:
         spec["token"] = False
     elif low == "modified":
         spec["modified"] = True
+    elif low in ("snow", "historic"):
+        spec[low] = True
     elif low in ("multicolored", "colorless", "monocolored"):
         spec["colorcount"] = low
+    elif low.startswith("non") and low[3:] in _COLORS:
+        spec.setdefault("not_colors", []).append(_COLORS[low[3:]])
     elif low in _COLORS:
         spec.setdefault("colors", []).append(_COLORS[low])
     elif low.startswith("non") and low[3:].rstrip("s") in _TYPES:
@@ -110,7 +114,7 @@ def _word_spec(word: str, spec: dict, plural: bool = True) -> bool:
 
 def _filter(text: str, plural: bool = True):
     """A permanent/card filter from "other untapped legendary creatures with flying", or None."""
-    text = text.strip()
+    text = text.strip().replace(",", "")
     spec: dict = {}
     m = re.fullmatch(r"(.+?) with (?:power|mana value) (\d+) or (greater|more|less)", text)
     if m:
@@ -176,6 +180,8 @@ def _card_ok(card, spec: dict, perm=None) -> bool:
         return False
     if spec.get("colors") and not all(c in card.colors for c in spec["colors"]):
         return False
+    if any(c in card.colors for c in spec.get("not_colors", ())):
+        return False
     if spec.get("any_color") and not any(c in card.colors for c in spec["any_color"]):
         return False
     cc = spec.get("colorcount")
@@ -189,6 +195,10 @@ def _card_ok(card, spec: dict, perm=None) -> bool:
     if spec.get("token") is False and card.is_token:
         return False
     if "mv" in spec and not _cmp(card.cmc, *spec["mv"]):
+        return False
+    if spec.get("snow") and not getattr(card, "snow", False):
+        return False
+    if spec.get("historic") and not (card.is_artifact or card.legendary or getattr(card, "is_saga", False)):
         return False
     if perm is not None:
         if "tapped" in spec and bool(perm.tapped) != spec["tapped"]:
@@ -259,6 +269,23 @@ _ALIASES = {
     "~ is enchanted": "lib:[\"src_enchanted\"]",
     "~ is equipped": "lib:[\"src_equipped\"]",
     "you have the initiative": "initiative",
+    "you've completed a dungeon": "dungeon_complete",
+    "you attacked this turn": "lib:[\"attacked\",1]",
+    "an opponent gained life this turn": "lib:[\"opp_gained\"]",
+    "exactly one creature is attacking": "lib:[\"attackers\",\"==\",1]",
+    "an opponent is poisoned": "lib:[\"res\",\"opp\",\"poison\",\">=\",1]",
+    "you've committed a crime this turn": "lib:[\"event\",\"crime\"]",
+    "it's modified": "lib:[\"prev_is\",{\"modified\":true}]",
+    "it entered this turn": "lib:[\"src_entered\",\"it\"]",
+    "~ entered this turn": "lib:[\"src_entered\"]",
+    "it's attacking alone": "lib:[\"src_alone\",\"it\"]",
+    "~ is attacking alone": "lib:[\"src_alone\"]",
+    "it's not attacking": "!lib:[\"src_attacking\",\"it\"]",
+    "it isn't attacking": "!lib:[\"src_attacking\",\"it\"]",
+    "it isn't attacking or blocking": "!lib:[\"src_combat\",\"it\"]",
+    "it's attacking or blocking": "lib:[\"src_combat\",\"it\"]",
+    "it's blocking": "lib:[\"prev_is\",{\"state\":\"blocking\"}]",
+    "an opponent owns a card in exile": "lib:[\"exile\",\"opp\"]",
     "you have more life than an opponent": "lib:[\"life_vs_opp\",\">\"]",
     "an opponent has more life than you": "lib:[\"life_vs_opp\",\"<\"]",
     "you have less life than an opponent": "lib:[\"life_vs_opp\",\"<\"]",
@@ -300,6 +327,43 @@ def _opp_control(m):
     return _code("ctl", "opp", f, op, n)
 
 
+@rule(r"no opponent controls (?:a|an|any) (?P<f>.+?)")
+def _no_opp_control(m):
+    f = _filter(m["f"], plural=False)
+    return _code("ctl", "opp", f, "==", 0) if f is not None else ""
+
+
+@rule(r"(?:any player|a player) controls (?:a|an) (?P<f>.+?)")
+def _any_control(m):
+    f = _filter(m["f"], plural=False)
+    return _code("or", _code("ctl", "you", f, ">=", 1), _code("ctl", "opp", f, ">=", 1)) if f is not None else ""
+
+
+@rule(rf"(?P<n>{_NUM}) or more (?P<f>Equipment|Auras) are attached to (?:it|~)")
+def _attached_n(m):
+    return _code("attached", m["f"].lower(), _n(m["n"]), *_ref(m))
+
+
+@rule(r"(?:it|~) has (?P<k>flying|defender|first strike|trample|haste|vigilance|reach|lifelink|deathtouch|menace)")
+def _src_kw(m):
+    return _code("src_kw", m["k"].lower(), *_ref(m))
+
+
+@rule(rf"there are (?P<n>{_NUM}) or more card types among cards in your graveyard")
+def _gy_types(m):
+    return _code("gy_types", _n(m["n"]))
+
+
+@rule(rf"there are (?P<n>{_NUM}) or more cards in a single graveyard")
+def _single_gy(m):
+    return _code("any_gy", _n(m["n"]))
+
+
+@rule(rf"a library has (?P<n>{_NUM}) or fewer cards in it")
+def _small_library(m):
+    return _code("small_library", _n(m["n"]))
+
+
 @rule(r"(?:an opponent|defending player|that player) controls more (?P<f>.+?) than you")
 def _opp_more(m):
     f = _filter(m["f"])
@@ -318,7 +382,7 @@ def _you_fewer(m):
     return _code("ctl_vs", f, "<") if f is not None else ""
 
 
-@rule(rf"(?:there (?:are|is)|you have) {_QUANT} (?P<f>.+?) in your graveyard")
+@rule(rf"(?:there (?:are|is)|there's|you have) {_QUANT} (?P<f>.+?) in your graveyard")
 def _graveyard(m):
     op, n = _quant(m["q"])
     f = _filter(m["f"], _plural(m["q"]))
@@ -548,8 +612,20 @@ def _history(phrase: str) -> str:
     return ""
 
 
+_EVENTS = ("crime",)
+
+
 def record(game, p, event, source=None, context=None, subject=None):
     """Engine hook (Game.fire): count every registered turn-history head this event matches, per player."""
+    if event == "becomes_untapped" and source is not None:
+        from .cx_statics import on_untap
+        on_untap(game, source)
+    if event in _EVENTS:
+        hist = getattr(game, "_condlib_hist", None)
+        if hist is None or hist[0] != game.turn:
+            hist = game._condlib_hist = (game.turn, {})
+        key = ("@" + event, p.name)
+        hist[1][key] = hist[1].get(key, 0) + 1
     if not _HIST_HEADS:
         return
     if event == "perm_to_gy" and source is not None or event == "any_cast" and context is not p:
@@ -739,6 +815,21 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         if state == "enchanted":
             return bool(obj.auras)
         return _card_ok(obj.card, spec, obj)
+    if kind == "event":
+        hist = getattr(game, "_condlib_hist", None)
+        return hist is not None and hist[0] == game.turn and hist[1].get(("@" + args[0], p.name), 0) > 0
+    if kind == "opp_gained":
+        return getattr(game.opponent(p), "life_gained_turn", 0) > 0
+    if kind == "attackers":
+        return _cmp(len(getattr(game, "attackers", ()) or ()), *args)
+    if kind == "exile":
+        return any(True for _ in game.opponent(p).exile)
+    if kind == "gy_types":
+        return len({t for c in p.graveyard for t in c.types}) >= args[0]
+    if kind == "any_gy":
+        return any(len(pl.graveyard) >= args[0] for pl in game.players)
+    if kind == "small_library":
+        return any(len(pl.library) <= args[0] for pl in game.players)
     if kind == "monarch":
         return getattr(game, "monarch", None) is p
     if kind == "no_monarch":
@@ -760,6 +851,21 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         from .engine.state import Permanent
         if isinstance(ctx, Permanent):
             source = ctx
+    if kind == "src_entered":
+        return source is not None and getattr(source, "entered_turn", -1) == game.turn
+    if kind == "src_alone":
+        return source is not None and list(getattr(game, "attackers", ())) == [source]
+    if kind == "src_combat":
+        blocks = getattr(game, "blocks", None)
+        blocking = isinstance(blocks, dict) and any(source in v for v in blocks.values())
+        return source is not None and (source in getattr(game, "attackers", ()) or blocking)
+    if kind == "src_kw":
+        return source is not None and source.has(args[0])
+    if kind == "attached":
+        what, n = args
+        sub = "Equipment" if what == "equipment" else "Aura"
+        return source is not None and sum(sub in x.card.subtypes and source in (x.attached_to, x.aura_host)
+                                          for pl in game.players for x in pl.battlefield) >= n
     if kind == "src_attacking":
         return source is not None and source in getattr(game, "attackers", ())
     if kind == "src_tapped":
@@ -837,7 +943,18 @@ def holds(perm, code: str) -> bool:
     if game is None:
         return False
 
+    return holds_for(perm, code)
+
+
+def holds_for(source, code: str, ref=None) -> bool:
+    """A static's condition from ``source``'s point of view; "it" is ``ref`` (the enchanted / equipped / affected
+    permanent) when given, else the source itself."""
+    p = source.controller
+    game = _game_of(p)
+    if game is None:
+        return False
+
     class _Src:
-        source = perm
-        context = None
-    return bool(_eval_any(game, p, code, _Src, perm))
+        pass
+    _Src.source, _Src.context = source, ref
+    return bool(_eval_any(game, p, code, _Src, source, ref or source))
