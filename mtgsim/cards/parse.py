@@ -650,7 +650,9 @@ def _parse_ability_cost(text: str):
             extra["sacrifice"] = m[2].lower()
             extra["sac_n"] = _num(m[1])
         else:
-            return None
+            from ..cx_costs import parse_part      # tap / discard / return / mill / exert ... cost parts
+            if not parse_part(part, extra):
+                return None
     return mana, extra
 
 
@@ -664,7 +666,8 @@ def _parse_ability(line: str, approximations: list):
     if aw is not None:
         line = aw[1]
     m = re.fullmatch(r"([^:\"•]+?): (.+)", line)
-    if not m or not (m[1].startswith("{") or m[1].split()[0] in ("Sacrifice", "Discard", "Pay", "Remove", "Exile")):
+    if not m or not (m[1].startswith("{") or m[1].split()[0] in ("Sacrifice", "Discard", "Pay", "Remove", "Exile", "Tap",
+                                                                    "Return", "Mill", "Put", "Exert")):
         return None
     cost = _parse_ability_cost(m[1])
     if cost is None:

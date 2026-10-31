@@ -66,8 +66,20 @@ def strip(body: str):
                                                    for g in a.groups()]))
                     break
             else:
-                return None
+                code = _lib_code(atom)
+                if code is None:
+                    return None
+                codes.append(code)
     return m[1], tuple(codes), sorcery, once, once_game
+
+
+def _lib_code(atom: str):
+    """"only if <condition>" through the shared condition library (cx_condlib), or None."""
+    m = re.fullmatch(r"if (.+)", atom)
+    if m is None:
+        return None
+    from .cx_condlib import as_static
+    return as_static(m[1]) or None
 
 
 _WORDS = {"one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"}
@@ -88,6 +100,11 @@ def _control(p, noun: str) -> int:
 
 def allowed(game, p, perm, codes) -> bool:
     for code in codes:
+        if code.startswith("lib:"):
+            from .cx_condlib import holds_for
+            if not holds_for(perm, code):
+                return False
+            continue
         name, _, rest = code.partition(">=")
         n = int(rest.split(":")[0]) if rest else 0
         if name == "pre_attack:mine":

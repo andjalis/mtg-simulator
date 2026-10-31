@@ -33,6 +33,7 @@ the files it may edit. Stay in your lane; this file replaces a pile of issues. O
 | Card wording entries (data only, batch by batch) | `mtgsim/data/wordings/*.json` entries, `tests/test_wordings.py` | Claude |
 | Backlog and docs | `BACKLOG.md`, `README.md`, `results/residual_batch/` | Claude |
 | Cards: shared condition library and linked results ("If <condition>,", "if you do", "this way") | `mtgsim/cx_condlib.py`, `mtgsim/cx_links.py`, `tests/test_cx_condlib.py`, `tests/test_cx_links.py` | Claude |
+| Cards: conditional statics and anthems, "for as long as" durations, alternative costs, ability cost parts and effects | `mtgsim/cx_statics.py`, `mtgsim/cx_altcost.py`, `mtgsim/cx_costs.py`, `mtgsim/cx_ability_effects.py`, `mtgsim/engine/kinds/cx_statics.py`, `tests/test_cx_statics.py`, `tests/test_cx_costs.py` | Claude |
 
 Other lanes in andjalis/mtg-gauntlet (private, includes this repo as the `engine/` submodule):
 

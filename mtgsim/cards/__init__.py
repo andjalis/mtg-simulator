@@ -154,3 +154,6 @@ _EFFECT_PATTERNS += _cx_statics.EFFECT_PATTERNS
 from .. import cx_effects as _cx_effects
 _EFFECT_PATTERNS += _cx_effects.EFFECT_PATTERNS
 _SUBS += _cx_effects.SUBS
+
+from .. import cx_ability_effects as _cx_ability_effects
+_EFFECT_PATTERNS += _cx_ability_effects.EFFECT_PATTERNS
