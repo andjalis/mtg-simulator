@@ -1076,7 +1076,7 @@ class HeuristicAI:
                     v = perm_value(c) + 0.5
                     if v > kill_val:
                         best_kill, kill_val = c, v
-        if eff.target in ("any", "creature_pw"):
+        if eff.target in ("any", "creature_pw") or eff.data.get("or_pw"):
             for pw in getattr(opp, "planeswalkers", []):
                 if not pw.is_creature and pw.loyalty <= eff.amount and _legal(game, me, eff, pw, card):
                     v = perm_value(pw) + 0.5

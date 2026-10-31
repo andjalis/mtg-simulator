@@ -80,16 +80,16 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         cards = [x for x in legal if isinstance(x, CardDef)]
         return max(cards, key=lambda c: c.cmc, default=None)
     if k == "damage":
-        if eff.target == "player":
+        if eff.target == "player" and not (eff.data.get("or_pw") and eff.amount < opp.life):
             return opp
         if eff.target == "any" and eff.amount >= opp.life:
             return opp
-        killable = [x for x in theirs if (x.is_creature and x.toughness - x.damage <= eff.amount and
+        killable = [x for x in theirs if (x.is_creature and eff.target != "player" and x.toughness - x.damage <= eff.amount and
                                           not x.has("indestructible")) or (x.is_planeswalker and not x.is_creature
                                                                            and x.loyalty <= eff.amount)]
         if killable:
             return max(killable, key=perm_value)
-        return opp if eff.target == "any" else None
+        return opp if eff.target in ("any", "player") else None
     if k in removal.KINDS:
         return removal.choose(game, me, eff)
     if k in ('graveyard_exile_all', 'graveyard_exile_choice'):

@@ -145,7 +145,9 @@ def mana_ability(act):
 
 
 def life_locked(player):
-    return any(rules(x).get('life_lock') for x in player.battlefield)
+    from .cx_next_turn import player_flag
+    return any(rules(x).get('life_lock') for x in player.battlefield) or \
+        player_flag(getattr(player, '_game', None), player, 'life_lock')
 
 
 def player_counter_allowed(player, name):

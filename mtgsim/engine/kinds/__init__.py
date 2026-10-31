@@ -23,3 +23,4 @@ def kind(*names):
 
 from . import batch1, batch2, residual, advanced, roadmap, cards, counters, damage, dungeon, graveyard, mechanics, other, permanents, stats  # noqa: E402,F401  (registers the handlers)
 from . import phasing, ripple, manifest, demonstrate, amplify, mirrodin, prepare, cx_damage, cx_triggers  # noqa: E402,F401  (registers the handlers)
+from . import cx_next_turn  # noqa: E402,F401

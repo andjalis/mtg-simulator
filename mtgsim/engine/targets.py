@@ -131,7 +131,8 @@ class TargetsMixin:
         if t == "any":
             return creatures + [x for x in everything if x.is_planeswalker] + [x for x in self.players if player_targetable(self, x, p)]
         if t == "player":
-            return [x for x in ([self.opponent(p)] if eff.filter == "opp" else list(self.players)) if player_targetable(self, x, p)]
+            walkers = [x for x in everything if x.is_planeswalker] if eff.data.get("or_pw") else []   # "player or planeswalker"
+            return [x for x in ([self.opponent(p)] if eff.filter == "opp" else list(self.players)) if player_targetable(self, x, p)] + walkers
         if t == "spell":
             return [i for i in self.stack if self.can_counter(eff, i, p)]
         return []

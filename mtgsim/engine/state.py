@@ -526,7 +526,7 @@ class Permanent:
                    [a.card.equip_ward for a in self.auras])
 
     def can_attack(self):
-        return (self.is_creature and not self.tapped and self.detained_by is None and not self.has("defender") and not (self.card.cant_attack and not self.abilities_suppressed)
+        return (self.is_creature and not self.tapped and self.detained_by is None and not self.has("defender") and not self.has("cant_attack_now") and not (self.card.cant_attack and not self.abilities_suppressed)
                 and not (self.auras and auras.stops_combat(self))
                 and not (self.auras and any("cant_attack" in a.card.aura_flags for a in self.auras))
                 and (not self.sick or self.has("haste")) and not self._combat_unless())

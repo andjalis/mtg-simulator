@@ -370,7 +370,9 @@ class TurnsMixin:
         self.step = "cleanup"
         counter_mechanics.expire_source_control(self, cleanup=True)
         max_hand = 7 + sum(x.card.hand_size_mod for x in p.battlefield) + sum(x.card.opp_hand_size_mod for x in opp.battlefield)
-        while len(p.hand) > max(max_hand, 0) and not any(x.card.no_max_hand for x in p.battlefield):
+        from ..cx_next_turn import player_flag
+        while len(p.hand) > max(max_hand, 0) and not any(x.card.no_max_hand for x in p.battlefield) \
+                and not player_flag(self, p, 'no_max_hand'):
             card = p.ai.choose_discard(self, p)
             self.discard_card(p, card)
         for perm in p.battlefield + opp.battlefield:
