@@ -110,3 +110,31 @@ class ConditionEngine(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TurnHistory(unittest.TestCase):
+    def setUp(self):
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 10
+
+    def holds(self, phrase):
+        code = parse(phrase)
+        self.assertTrue(code, phrase)
+        return self.game.check_cond(self.a, Effect("draw", cond=code), StackItem(self.a, [], []), None)
+
+    def test_entered_and_died(self):
+        self.assertFalse(self.holds("a creature entered the battlefield under your control this turn"))
+        bear = self.game.enter_battlefield(self.a, BEAR)
+        self.game.settle()
+        self.assertTrue(self.holds("a creature entered the battlefield under your control this turn"))
+        self.assertFalse(self.holds("two or more creatures died this turn"))
+        self.game.destroy(bear)
+        self.game.enter_battlefield(self.b, BEAR)
+        self.game.destroy(self.b.battlefield[-1])
+        self.game.settle()
+        self.assertTrue(self.holds("two or more creatures died this turn"))
+        self.game.turn += 1
+        self.assertFalse(self.holds("a creature entered the battlefield under your control this turn"))

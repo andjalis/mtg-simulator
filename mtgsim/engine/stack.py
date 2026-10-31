@@ -87,6 +87,7 @@ class StackMixin:
                                                       amount=amount if amount is not None else 0))
         self._dispatch_trigger_event(p, event, source, context, subject)
         cx_events.observe(self, p, event, source, context, subject)
+        cx_condlib.record(self, p, event, source, context, subject)
         if source is None and event in ("upkeep", "end_step"):
             for controller in self.players:
                 self.fire(controller, "each_upkeep" if event == "upkeep" else "each_end_step", context=p)

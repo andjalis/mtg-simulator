@@ -18,7 +18,7 @@ import re
 
 
 TAKEN = 'lib:["link_taken"]'
-_COSTS = {"sacrifice", "sacrifice_self", "sac_own", "sac_filtered", "tap_own", "discard", "discard_choice",
+_COSTS = {"exert_self", "sacrifice", "sacrifice_self", "sac_own", "sac_filtered", "tap_own", "discard", "discard_choice",
           "discard_hand", "lose_life", "mill", "damage", "drain", "destroy", "exile", "exile_permanent", "wrath",
           "bounce"}
 
@@ -34,8 +34,12 @@ def parse_may_link(s: str, following: str):
     if not _FOLLOW.match(following or ""):
         return None
     m = re.fullmatch(r"you may (.+)", s, re.I)
-    if not m:
-        return None
+    forced = m is None
+    if forced:
+        # "Discard a card. If you do, draw a card.": a mandatory action whose reward still needs it to happen.
+        if not re.match(r"\s*if you do\b", following, re.I):
+            return None
+        m = re.fullmatch(r"(.+)", s)
     from .cards import _parse_effects
     body = m[1]
     new, bad = _parse_effects(body[0].upper() + body[1:] + ".")
@@ -46,7 +50,7 @@ def parse_may_link(s: str, following: str):
     if not any(e.kind in _COSTS for e in new):
         return None             # the plain "you may" gate (always taken) already covers it
     kinds = tuple(e.kind for e in new)
-    return ([Effect("link_start", data={"kinds": kinds})] + [dataclasses.replace(e, cond=TAKEN) for e in new]
+    return ([Effect("link_start", data={"kinds": kinds, "forced": forced})] + [dataclasses.replace(e, cond=TAKEN) for e in new]
             + [Effect("link_check")])
 
 
@@ -69,7 +73,7 @@ def snapshot(game):
     for pl in game.players:
         out += [pl.life, len(pl.hand), len(pl.library), len(pl.graveyard), len(pl.exile),
                 tuple(sorted(pl.counters.items())),
-                tuple((id(x), x.tapped, tuple(sorted(x.counters.items())), x.attached_to is not None)
+                tuple((id(x), x.tapped, x.skip_untap, tuple(sorted(x.counters.items())), x.attached_to is not None)
                       for x in pl.battlefield)]
     return tuple(out)
 
@@ -108,6 +112,13 @@ EFFECT_PATTERNS = [
      lambda m: _tap_own({"n": "one", "f": m["f"], "other": "other"} if m["n"] == "another" else
                         {"n": "one", "f": m["f"], "other": ""})),
     (r"pay (?P<n>\d+) life", lambda m: Effect("lose_life", amount=int(m["n"]))),
+    (r"exert (?:~|it)(?: as it attacks)?", lambda m: Effect("exert_self")),
+]
+
+# "You may exert ~ as it attacks. When you do, X": an attack trigger whose body is the whole line, so the
+# "you may exert" lead and its "When you do" reward are linked by parse_may_link.
+TRIGGERS = [
+    (r"(You may exert ~ as it attacks\. When you do, .+)", ("attacks",)),
 ]
 
 
