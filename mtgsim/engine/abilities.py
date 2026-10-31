@@ -308,6 +308,10 @@ class AbilitiesMixin:
             return False
         if c.get("tap_other") and not self.tap_other_candidates(p, perm, c["tap_other"]):
             return False
+        if c.get("cx_costs"):
+            from ..cx_costs import payable
+            if not payable(self, p, perm, c["cx_costs"]):
+                return False
         if act.needs_max_speed and p.speed < 4:
             return False
         if act.min_charge and perm.counters.get("charge", 0) < act.min_charge:
@@ -405,6 +409,10 @@ class AbilitiesMixin:
             self.log(f"taps {donor.card.name}", p)
         if c.get("life"):
             self.change_life(p, -c["life"], f"{perm.card.name}: ability cost")
+        if c.get("cx_costs"):
+            from ..cx_costs import pay as pay_parts
+            if not pay_parts(self, p, perm, c["cx_costs"]):
+                return False
         for _ in range(c.get("discard", 0)):
             card = p.ai.choose_discard(self, p)
             if card not in p.hand:

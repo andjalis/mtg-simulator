@@ -110,7 +110,8 @@ def _payable(game, p, card, parts) -> bool:
 
 
 def variants(game, p, card) -> list:
-    out = []
+    # Channel and "{cost}, Discard ~:" abilities of a nonland card (lands get theirs in Game.spell_options).
+    out = [game._variant(card, "channel", a) for a in card.alt_costs if a.kind == "channel"]
     rules = card.advanced_rules.get("alt_if") if card.advanced_rules else None
     if not rules:
         return out
@@ -161,4 +162,22 @@ def pay(game, p, card, kind: str) -> bool:
             elif part == "bounce":
                 game.leave_battlefield(thing, "hand")
         game.log(f"pays {part} x{n} for {card.name}", p)
+    return True
+
+
+_DISCARD_SELF = re.compile(r"(?:[A-Z][\w' ]* — )?((?:\{[^}]+\})*)(?:, )?Discard (?:~|this card): (.+)")
+
+
+def parse_discard_ability(line: str, st) -> bool:
+    """"{1}{G}, Discard ~: <effects>" (and "Discard this card"): an ability activated from the hand, cast like
+    channel (AltCost "channel": the card goes to the graveyard and the effects resolve)."""
+    m = _DISCARD_SELF.fullmatch(line)
+    if not m or "Activate only" in m[2]:
+        return False
+    from .cards import _parse_effects
+    from .cards.model import AltCost, parse_mana_cost
+    effects, bad = _parse_effects(m[2])
+    if bad or not effects:
+        return False
+    st.alt_costs.append(AltCost("channel", parse_mana_cost(m[1]) if m[1] else {"generic": 0}, effects=effects))
     return True
