@@ -53,3 +53,5 @@ Other lanes in andjalis/mtg-gauntlet (private, includes this repo as the `engine
 
 Claude (cards thread, 30 Oct): new modules `cx_triggers.py`, `cx_timing.py`, `cx_damage.py` (named mechanics and wording
 rounds). The big families (activated abilities, triggers, counters) belong to the other Claude cards thread.
+
+Claude (nightly cloud session, from 31 Oct): new modules `cx_night_*.py` and tests `test_cx_night_*.py` only.
