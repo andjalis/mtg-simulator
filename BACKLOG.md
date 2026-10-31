@@ -38,6 +38,18 @@ turn" effects (about 120 cards, no common shape; needs a duration that ends at i
 targets for "player or planeswalker" damage, Trickbind's "can't activate this turn" rider, and "cast only if an opponent cast
 a creature spell this turn".
 
+## Until-next-turn thread 2026-10-31 (cx_next_turn)
+
+Landed in `mtgsim/cx_next_turn.py` (about 65 cards newly fully matched, about 230 change parse): "until your next
+turn" durations (the end-of-turn reading, extended to the controller's next turn on resolution), can't
+attack/block/activate locks, filtered group keyword grants, base P/T, player flags (hexproof, protection from
+everything, life lock, damage prevention, can't be attacked, attack tax, no maximum hand size, spell tax, sorcery
+flash), and real planeswalker targets for "target player/opponent or planeswalker" damage.
+
+Still open from that work: copy effects until your next turn (Shapesharer, Volrath, Taskmaster), "whenever ..." delayed
+triggers bounded by the duration (Don't Move, Vraska the Unseen, Jace), name locks (Reflector Mage), animations that last
+until your next turn, "the player or planeswalker it's attacking" damage, and Archenemy schemes.
+
 ## Nightly cloud session 2026-10-31 (cx_night_* modules)
 
 Landed in `mtgsim/cx_night_quantity.py`, `cx_night_buffs.py`, `cx_night_multi.py` and one selector tweak in
