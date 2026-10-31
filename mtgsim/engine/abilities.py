@@ -40,6 +40,8 @@ class AbilitiesMixin:
                          kind="loyalty")
         self.stack.append(item)
         self.log(f"activates {item}" + (f" -> {targets}" if any(targets) else ""), p)
+        from .. import cx_abilitycopy
+        cx_abilitycopy.on_activate(self, p, item)
         if self.commits_crime(p, targets):
             self.fire(p, "crime")
         self.check_ward(item)
@@ -485,6 +487,8 @@ class AbilitiesMixin:
             item.x = x
         self.stack.append(item)
         self.log(f"activates {item}" + (f" -> {targets}" if any(targets) else ""), p)
+        from .. import cx_abilitycopy     # "Whenever you activate an ability, ... copy that ability."
+        cx_abilitycopy.on_activate(self, p, item)
         self.check_ward(item)
         self.settle()
         return True

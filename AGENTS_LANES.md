@@ -76,3 +76,4 @@ flag in `cx_next_turn._live`, and Alchemy "A-" self-names in `cards/parse.py`.
 Round 5 adds target-land animations ("It's still a land", lasting or until end of turn) to `cx_effects.py`, an
 `animate_land` target choice in `engine/policy.py`, and "look at the top card any time" in `cx_replace.py`.
 Round 6 adds Awaken to `alt_casts.py` (an alternative cost whose extra effects reuse the round 5 land animation).
+Round 7 adds `mtgsim/cx_top.py` (play lands / cast spells from the top of your library; hooks in `engine/costs.py`, `engine/play.py`, `ai.py`), `mtgsim/cx_abilitycopy.py` ("whenever you activate an ability ... copy that ability", hooked in `engine/abilities.py`), copy-ability source filters in `copies.py`, and snow-land animation targets in `cx_effects.py`.

@@ -99,6 +99,12 @@ class Effects(unittest.TestCase):
         self.assertEqual((land.power, land.toughness), (3, 1))
         self.assertEqual(land.animated.text, "permanent")
 
+    def test_snow_land_target(self):
+        snowy = self.game.enter_battlefield(self.a, card("Snow Isle", "", "Basic Snow Land — Island", ""))
+        self.game.enter_battlefield(self.a, MOUNTAIN)
+        eff = effects("Target snow land becomes a 2/2 creature until end of turn. It's still a land.")[0]
+        self.assertEqual(self.game.legal_targets(self.a, eff), [snowy])
+
     def test_animate_it_after_counters(self):
         land = self.game.enter_battlefield(self.a, LAND)
         self.run_effects("Put four +1/+1 counters on target land you control. It becomes a 0/0 Elemental creature "

@@ -704,7 +704,9 @@ class HeuristicAI:
         return card, plans[card][1]
 
     def play_land(self, game: Game, me: Player):
-        lands = [c for c in me.hand if c.is_land]
+        from . import cx_top
+        top = cx_top.top(me)
+        lands = ([top] if cx_top.land_ok(me, top) else []) + [c for c in me.hand if c.is_land]   # the top first
         if me.land_played:
             return
         if not lands:
