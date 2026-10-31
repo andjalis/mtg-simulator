@@ -137,3 +137,9 @@ Recorded simplifications remain in the census, outside the parser backlog. Verif
 Landed: "gains flashback until end of turn" for every instant and sorcery in the graveyard (Past in Flames, Backdraft Hellkite), "cast as though it had flash if you pay {N} more" (14 cards), and Peat Bog-style depletion lands (five lands, two mana per tap, sacrificed at zero counters).
 
 Still open: conditional flash ("if you control a Faerie"), "next spell can be cast as though it had flash", non-mana flashback costs ("Flashback—Pay 3 life"), static "has flashback" grants (Lier, Otaria).
+
+## Flashback costs batch 2026-10-31 (`cx_night_flash.py`)
+
+Landed: flashback with a single sacrifice (Lava Dart, Cabal Therapy's cost), Lier's static flashback grant, and the Tainted Adversary token wording (colour before size). The round was small (4 cards change parse).
+
+Still open: flashback costs that tap or sacrifice several creatures (Dread Return, Battle Screech, Group Project), "Discard X cards" / "Sacrifice X Mountains", Otaria (any graveyard), Iroh's Lesson flashback, "Spells can't be countered" (Lier), Cabal Therapy's name choice.

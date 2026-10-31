@@ -50,6 +50,15 @@ def parse_line(st, line: str):
     if m:                                       # the life is paid through AltCost.life when it is cast
         st.alt_costs.append(AltCost("flashback", parse_mana_cost(m[1]), zone="graveyard", life=int(m[2])))
         return None
+    m = re.fullmatch(r"Flashback—((?:\{[^ ]+?\})*)(?:, )?Sacrifice (an? [A-Z]?[\w ]+?)\.?", line)
+    if m:                                       # Lava Dart, Cabal Therapy: one permanent as the whole cost
+        st.alt_costs.append(AltCost("flashback", parse_mana_cost(m[1]) if m[1] else {}, zone="graveyard",
+                                    sacrifice=m[2]))
+        return None
+    if line == "Each instant and sorcery card in your graveyard has flashback. The flashback cost is equal to that " \
+               "card's mana cost.":
+        st.extra["gy_flashback"] = True
+        return None
     m = re.fullmatch(r"~ enters(?: the battlefield)? tapped with (two|three|four) depletion counters on it\.", line)
     if m:
         st.enters_tapped = True

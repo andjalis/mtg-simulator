@@ -30,7 +30,7 @@ class Parsing(unittest.TestCase):
     def test_cards_fully_parse(self):
         from mtgsim.coverage import card_coverage
         for name in ("Rout", "Ghitu Fire", "Past in Flames", "Backdraft Hellkite", "Peat Bog", "Hickory Woodlot",
-                     "Saprazzan Skerry", "Deep Analysis", "Acorn Harvest"):
+                     "Saprazzan Skerry", "Deep Analysis", "Acorn Harvest", "Lava Dart"):
             self.assertEqual(card_coverage(DB.get(name)).ignored, [], name)
 
     def test_flash_tax_cost(self):
@@ -50,6 +50,26 @@ class LifeFlashback(FlashFixture):
         self.assertEqual(len(flash), 1)
         self.assertTrue(self.game.cast(self.a, flash[0]))
         self.assertEqual(self.a.life, 17)
+
+
+class OtherFlashbackCosts(FlashFixture):
+    def test_lava_dart_sacrifices_a_mountain(self):
+        dart = DB.get("Lava Dart")
+        mountain = self.perm("Mountain")
+        self.a.graveyard = [dart]
+        opts = [c for c in self.game.spell_options(self.a) if c.name == "Lava Dart (flashback)"]
+        self.assertEqual(len(opts), 1)
+        self.assertTrue(self.game.cast(self.a, opts[0]))
+        self.assertNotIn(mountain, self.a.battlefield)
+
+    def test_lier_gives_every_graveyard_spell_flashback(self):
+        self.perm("Lier, Disciple of the Drowned")
+        for _ in range(3):
+            self.perm("Mountain")
+        bolt = DB.get("Lightning Bolt")
+        self.a.graveyard = [bolt]
+        names = [c.name for c in self.game.spell_options(self.a)]
+        self.assertIn("Lightning Bolt (flashback)", names)
 
 
 class Behaviour(FlashFixture):

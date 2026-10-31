@@ -580,6 +580,10 @@ class CostsMixin:
                     v.keywords = card.keywords | {"flash"}
                 elif alt is not None:
                     v.mana_cost = alt.cost
+                    if alt.sacrifice:
+                        v.extra_sacrifice = alt.sacrifice
+                    if alt.discard:
+                        v.extra_discard = alt.discard
                     v.spell_effects = list(alt.effects if alt.effects is not None else card.spell_effects) + \
                         list(alt.extra)
                     v.cost_reduction = ""
@@ -677,6 +681,10 @@ class CostsMixin:
         for c in p.granted_fb:
             if c in p.graveyard:
                 out.append(self._variant(c, "flashback", AltCost("flashback", dict(c.mana_cost))))
+        if any(x.card.gy_flashback and not x.abilities_suppressed for x in p.battlefield):
+            for c in p.graveyard:      # Lier: every instant and sorcery has flashback for its own mana cost
+                if (c.is_instant or c.is_sorcery) and c not in p.granted_fb:
+                    out.append(self._variant(c, "flashback", AltCost("flashback", dict(c.mana_cost))))
         for c in p.graveyard:
             out += alt_casts.graveyard_variants(self, p, c)
             for a in c.alt_costs:
