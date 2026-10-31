@@ -370,7 +370,7 @@ def _parse_face(data: dict) -> CardDef:
         text = re.sub(rf"\b{re.escape(name.split(' the ')[0])}\b", "~", text)  # "Smaug the Magnificent"
     for index, token_name in enumerate(token_names):
         text = text.replace('TOKENNAME' + str(index), token_name)
-    text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment|class)\b", "~",
+    text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment|class|spacecraft|battle)\b", "~",
                   text, flags=re.I)
     text = re.sub(r"\b(protection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
                   r"\1 and protection from \2", text)
@@ -721,6 +721,13 @@ def _parse_trigger_line(line: str):
             continue
         flt = ""
         rest = m[m.lastindex]
+        if events == ("ev",):      # the trigger-event library (cx_events.py): subject + event grammar
+            from .. import cx_events
+            got = cx_events.split_head(line)
+            if got is None:
+                continue
+            events, flt, rest = got
+            rest = rest if rest.startswith("~") else rest[0].upper() + rest[1:]
         # Cross-event compounds carry a different filter per event (clauses.py: "cast X or Y enters",
         # "enters or dies").
         flt_map = {("cast_spell", "permanent_enters"): lambda: {"cast_spell": "spell:" + m[1].lower(),

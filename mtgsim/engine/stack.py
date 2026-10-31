@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import alt_casts, auras, copies, milling
+from .. import alt_casts, auras, copies, cx_events, milling
 from ..cards import CardDef, Effect
 from .. import modal, rules_events, phase_conditions, turn_conditions, counter_mechanics
 from ..identity import CardInstance, CardZone
@@ -86,6 +86,7 @@ class StackMixin:
         self.rule_events.emit(rules_events.RulesEvent(event, p, source, context, subject, before,
                                                       amount=amount if amount is not None else 0))
         self._dispatch_trigger_event(p, event, source, context, subject)
+        cx_events.observe(self, p, event, source, context, subject)
         if source is None and event in ("upkeep", "end_step"):
             for controller in self.players:
                 self.fire(controller, "each_upkeep" if event == "upkeep" else "each_end_step", context=p)

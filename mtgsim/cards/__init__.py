@@ -144,3 +144,5 @@ from .. import cx_night_flash as _cx_night_flash
 _EFFECT_PATTERNS += _cx_night_flash.EFFECT_PATTERNS
 from .. import cx_next_turn as _cx_next_turn
 _EFFECT_PATTERNS += _cx_next_turn.EFFECT_PATTERNS
+from .. import cx_events as _cx_events
+_TRIGGERS += _cx_events.TRIGGERS
