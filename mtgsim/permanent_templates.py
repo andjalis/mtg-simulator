@@ -195,7 +195,8 @@ def selector(text, *, plural=False):
         result['other'] = True
         text = text.split(' ', 1)[1]
     text = re.sub(r'^(?:a|an) ', '', text, flags=re.I)
-    for scope, label in ((" you control", 'mine'), (" an opponent controls", 'opp'), (" you don't control", 'opp'), (" your opponents control", 'opp')):
+    for scope, label in ((" you control", 'mine'), (" an opponent controls", 'opp'), (" you don't control", 'opp'), (" your opponents control", 'opp'),
+                         (" each opponent controls", 'opp'), (" target opponent controls", 'opp')):
         if scope in text.lower():
             if 'controller' in result or text.lower().count(scope) != 1:
                 return None
