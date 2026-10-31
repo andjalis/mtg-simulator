@@ -488,7 +488,7 @@ class StackMixin:
         if turn_condition is not None:
             return turn_condition
         if c.startswith("lib:"):
-            return cx_condlib.check(self, p, c, item)
+            return cx_condlib.check(self, p, c, item, prev=prev)
         if c == "city_blessing":
             from ..batch1_templates import has_blessing
             return has_blessing(self, p, item)

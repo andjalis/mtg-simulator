@@ -411,6 +411,48 @@ def _src_power(m):
     return _code("src_power", ">=" if m["d"] != "less" else "<=", _n(m["n"]), *_ref(m))
 
 
+@rule(r"(?:it's|it is|that creature is|that permanent is) (?P<q>a|an) (?P<f>[\w ,/-]+?)")
+def _prev_is(m):
+    """"Target creature gets +2/+2. If it's a Vampire, ...": the object the previous effect targeted."""
+    if m["f"].lower().endswith(("card", "spell", "token")) or re.search(r"\b(?:turn|phase|step|time)\b", m["f"]):
+        return ""
+    f = _filter(m["f"].replace(",", ""), plural=False)
+    return _code("prev_is", f) if f is not None else ""
+
+
+@rule(r"(?:it's|it is|that creature is) (?P<w>legendary|tapped|untapped|attacking|blocking|equipped|enchanted)")
+def _prev_state(m):
+    w = m["w"].lower()
+    spec = {"legendary": True} if w == "legendary" else {"tapped": w == "tapped"} if w in ("tapped", "untapped") else \
+        {"state": w}
+    return _code("prev_is", spec)
+
+
+@rule(r"(?:it|that creature|that card|that permanent) was (?P<q>a|an) (?P<f>[\w ,/-]+?)")
+def _prev_was(m):
+    """Last-known information of the referent: "if it was a creature card", "if that creature was a Human"."""
+    f = _filter(m["f"].replace(",", ""), plural=False)
+    return _code("prev_is", f) if f is not None else ""
+
+
+@rule(rf"(?:its|that card's|that creature's|that spell's|that permanent's) mana value (?:was|is) (?P<n>{_NUM}) or "
+      r"(?P<d>less|fewer|greater|more)|(?:it|that card) had mana value (?P<n2>\d+) or (?P<d2>less|greater)")
+def _prev_mv(m):
+    n, d = (m["n"], m["d"]) if m["n"] else (m["n2"], m["d2"])
+    return _code("prev_is", {"mv": [">=" if d in ("greater", "more") else "<=", _n(n)]})
+
+
+@rule(rf"(?:it|that creature) had (?P<q>{_NUM}|{_NUM} or more|no) (?P<c>\+1/\+1|-1/-1|[a-z]+) counters? on it")
+def _had_counters(m):
+    op, n = _quant(m["q"])
+    return _code("counters", m["c"], op, n, "it")
+
+
+@rule(r"this is the (?P<n>second|third|fourth|fifth) time this ability has resolved this turn")
+def _nth_resolution(m):
+    return _code("nth_resolve", {"second": 2, "third": 3, "fourth": 4, "fifth": 5}[m["n"].lower()])
+
+
 def _ref(m) -> tuple:
     """("it",) when the phrase says "it": the trigger's referent (the creature it triggered on) before the source."""
     return ("it",) if m[0].lower().startswith("it") or " on it" in m[0].lower() and "~" not in m[0] else ()
@@ -578,7 +620,7 @@ def _kicked(game, item, source) -> bool:
     return bool(origin and origin[1] == "kicker") or bool(getattr(item, "kicks", 0))
 
 
-def check(game, p, code: str, item=None, source=None):
+def check(game, p, code: str, item=None, source=None, prev=None):
     """True/False for a condition this library owns, None otherwise."""
     if not code.startswith("lib:"):
         return None
@@ -589,7 +631,7 @@ def check(game, p, code: str, item=None, source=None):
     if source is None:
         source = _source(item)
     if kind in ("or", "and"):
-        results = [_eval_any(game, p, sub, item, source) for sub in args]
+        results = [_eval_any(game, p, sub, item, source, prev) for sub in args]
         return any(results) if kind == "or" else all(results)
     if kind == "ctl":
         who, spec, op, n = args
@@ -616,9 +658,8 @@ def check(game, p, code: str, item=None, source=None):
         return _cmp(len(p.hand), args[0], len(game.opponent(p).hand))
     if kind == "link_taken":                 # cx_links: the optional action of "you may ... If you do" was taken
         return bool(getattr(item, "link_taken", False))
-    if kind == "ref_card":                   # cx_links: the looked-at top card is still on top and matches
-        card = getattr(item, "link_card", None)
-        return card is not None and bool(p.library) and p.library[-1] is card and _card_ok(card, args[0])
+    if kind == "ref_card":                   # cx_links: the looked-at card is still where it went, and matches
+        return linked_zone(p, item) is not None and _card_ok(item.link_card, args[0])
     if kind == "hist":
         head, n = args
         if head not in _HIST_HEADS:
@@ -629,6 +670,38 @@ def check(game, p, code: str, item=None, source=None):
             _HIST_HEADS[head] = got
         hist = getattr(game, "_condlib_hist", None)
         return hist is not None and hist[0] == game.turn and hist[1].get((head, p.name), 0) >= n
+    if kind == "nth_resolve":
+        if item is None:
+            return False
+        count = getattr(item, "_resolve_count", None)
+        if count is None:
+            counts = getattr(game, "_condlib_resolves", None)
+            if counts is None or counts[0] != game.turn:
+                counts = game._condlib_resolves = (game.turn, {})
+            key = (id(source), item.name)
+            count = counts[1][key] = counts[1].get(key, 0) + 1
+            item._resolve_count = count
+        return count == args[0]
+    if kind == "prev_is":
+        from .engine.state import Permanent
+        obj = prev if isinstance(prev, Permanent) else getattr(item, "context", None)
+        spec = args[0]
+        if prev is None and not isinstance(obj, Permanent):
+            prev = getattr(item, "exiled_card", None)
+        if not isinstance(obj, Permanent):
+            # a card target ("return target creature card ... If it's an Angel"): its printed characteristics
+            return prev is not None and hasattr(prev, "types") and not spec.get("state") and _card_ok(prev, spec)
+        state = spec.get("state")
+        if state == "attacking":
+            return obj in getattr(game, "attackers", ())
+        if state == "blocking":
+            return any(obj in v for v in getattr(game, "blocks", {}).values()) if isinstance(
+                getattr(game, "blocks", None), dict) else False
+        if state == "equipped":
+            return any(x.attached_to is obj for pl in game.players for x in pl.battlefield)
+        if state == "enchanted":
+            return bool(obj.auras)
+        return _card_ok(obj.card, spec, obj)
     if kind == "monarch":
         return getattr(game, "monarch", None) is p
     if kind == "no_monarch":
@@ -688,13 +761,25 @@ def check(game, p, code: str, item=None, source=None):
     return False
 
 
-def _eval_any(game, p, code, item, source):
+def _eval_any(game, p, code, item, source, prev=None):
     """Evaluate a sub-code that may be a library code or an existing engine condition name."""
-    owned = check(game, p, code, item, source)
+    owned = check(game, p, code, item, source, prev)
     if owned is not None:
         return owned
     from .cards.model import Effect
-    return game.check_cond(p, Effect("lib", cond=code), item, None)
+    return game.check_cond(p, Effect("lib", cond=code), item, prev)
+
+
+def linked_zone(p, item):
+    """The zone holding the card cx_links remembered (top of library, or in exile / the graveyard), or None."""
+    card = getattr(item, "link_card", None)
+    if card is None:
+        return None
+    zone = getattr(item, "link_zone", "library")
+    if zone == "library":
+        return p.library if p.library and p.library[-1] is card else None
+    cards = p.exile if zone == "exile" else p.graveyard
+    return cards if any(c is card for c in cards) else None
 
 
 def as_static(phrase: str) -> str:

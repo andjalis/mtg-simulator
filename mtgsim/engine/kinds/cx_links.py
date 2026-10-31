@@ -59,6 +59,7 @@ def peek_top(game, p, eff, item, **_):
     """"Look at / reveal the top card of your library": remembered for "if it's a ... card" (cx_links)."""
     if item is not None:
         item.link_card = p.library[-1] if p.library else None
+        item.link_zone = eff.data.get("zone", "library")
     if p.library and eff.data.get("reveal"):
         game.log(f"reveals {p.library[-1].name}", p)
 
@@ -66,20 +67,25 @@ def peek_top(game, p, eff, item, **_):
 @kind("ref_move")
 def ref_move(game, p, eff, item, **_):
     """Put the looked-at top card into a hand, onto the battlefield, into the graveyard or on the bottom."""
+    from ...cx_condlib import linked_zone
     card = getattr(item, "link_card", None)
-    if card is None or not p.library or p.library[-1] is not card:
+    zone = linked_zone(p, item)
+    if zone is None:
         return
     to = eff.data["to"]
     if to == "battlefield":
-        p.library.remove(card)
+        zone.remove(card)
         perm = game.enter_battlefield(p, card)
         if eff.data.get("tapped"):
             perm.tapped = True
     elif to == "bottom":
-        p.library.remove(card)
+        zone.remove(card)
         p.library.insert(0, card)
     else:
-        game.move_card(card, p.library, p.hand if to == "hand" else p.graveyard, reason="ref_move")
+        dest = p.hand if to == "hand" else p.graveyard
+        if dest is zone:
+            return
+        game.move_card(card, zone, dest, reason="ref_move")
     game.log(f"puts {card.name} {'on the bottom of the library' if to == 'bottom' else 'into ' + to}", p)
     item.link_card = None
 

@@ -289,12 +289,14 @@ def regrow_any(game, p, **_):
 
 
 @kind("exile_gy")
-def exile_gy(game, eff, opp, **_):
+def exile_gy(game, eff, opp, item=None, **_):
     if eff.amount:
         if opp.graveyard:
-            card = max(opp.graveyard, key=lambda c: c.cmc)
+            card = max(opp.graveyard, key=lambda c: (c.is_creature, c.cmc))
             opp.graveyard.remove(card)
             opp.exile.append(card)
+            if item is not None:
+                item.exiled_card = card      # "If it was a creature card, ..." (cx_condlib prev_is)
     else:
         for card in list(opp.graveyard):
             game.move_card(card, opp.graveyard, opp.exile, reason="exile_graveyard")

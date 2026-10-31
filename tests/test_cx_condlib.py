@@ -138,3 +138,49 @@ class TurnHistory(unittest.TestCase):
         self.assertTrue(self.holds("two or more creatures died this turn"))
         self.game.turn += 1
         self.assertFalse(self.holds("a creature entered the battlefield under your control this turn"))
+
+
+ZEAL = card("Test Zeal", "{W}", "Instant",
+            "Target creature gets +2/+2 until end of turn. If it's a Vampire, it gains first strike until end of turn.")
+VAMP = card("Test Vampire", "{1}{B}", "Creature — Vampire", "", 2, 2)
+
+
+class PreviousTarget(unittest.TestCase):
+    def setUp(self):
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 10
+
+    def test_if_its_a_vampire(self):
+        self.assertEqual(ZEAL.unsupported, [])
+        for target, expected in ((VAMP, True), (BEAR, False)):
+            perm = self.game.enter_battlefield(self.a, target)
+            land = self.game.enter_battlefield(self.a, card("Plains", types="Basic Land — Plains", text="({T}: Add {W}.)"))
+            land.sick = False
+            self.a.hand = [ZEAL]
+            self.assertTrue(self.game.cast(self.a, ZEAL, [perm]))
+            self.game.settle()
+            self.assertEqual(perm.power, 4)
+            self.assertEqual(perm.has("first strike"), expected, target.name)
+
+
+OOZE = card("Test Ooze", "{1}{G}", "Creature — Ooze",
+            "{G}: Exile target card from a graveyard. If it was a creature card, put a +1/+1 counter on ~ and you "
+            "gain 1 life.", 2, 2)
+
+
+class ExiledCard(unittest.TestCase):
+    def test_it_was_a_creature_card(self):
+        a, b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        game = Game(a, b, random.Random(0), log=True)
+        self.assertEqual(OOZE.unsupported, [])
+        ooze = game.enter_battlefield(a, OOZE)
+        b.graveyard.extend([ISLAND, BEAR])
+        item = StackItem(a, list(OOZE.activated[0].effects), [None] * len(OOZE.activated[0].effects), source=ooze)
+        for eff in item.effects:
+            if game.check_cond(a, eff, item, None):
+                game.resolve(a, eff, None, item, None)
+        self.assertEqual(a.life, 21)
+        self.assertIn(BEAR, b.exile)
