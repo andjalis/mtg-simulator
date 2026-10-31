@@ -97,6 +97,11 @@ def replace_event(intent, replacements, choose):
     return intent
 
 
+def _cx_exiles(game, permanent):
+    from .cx_replace import exiles      # "If ~ / a creature an opponent controls would die, exile it instead."
+    return exiles(game, permanent)
+
+
 def zone_destination(game, permanent, destination):
     """The supported battlefield-to-graveyard replacements; no printed-text guesses."""
     def to_exile(intent):
@@ -109,6 +114,8 @@ def zone_destination(game, permanent, destination):
         Replacement("exile-damaged", lambda e: e.destination == "graveyard" and permanent.is_creature and
                     bool(permanent.damage or permanent.deathtouched) and
                     any(x.card.exile_damaged for x in game.opponent(permanent.controller).battlefield), to_exile),
+        Replacement("would-die-exile", lambda e: e.destination == "graveyard" and _cx_exiles(game, permanent),
+                    to_exile),
     ]
     return replace_event(MoveIntent(destination), replacements,
         lambda choices, event: game.hook(permanent.controller, "choose_replacement")(

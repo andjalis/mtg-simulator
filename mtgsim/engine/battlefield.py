@@ -176,6 +176,9 @@ class BattlefieldMixin:
                 perm.counters["+1/+1"] = n
         if card.etb_counters_if and self._etb_cond(p, card.etb_counters_if[0]):
             perm.counters["+1/+1"] = perm.p1 + card.etb_counters_if[1]
+        if card.advanced_rules.get("cx_etb_if"):
+            from .. import cx_replace
+            cx_replace.entry_counters(self, p, perm)
         if card.entry_counter_quantity:
             from ..backlog_templates import amount
             kind, spec = card.entry_counter_quantity
