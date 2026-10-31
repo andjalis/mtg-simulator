@@ -48,7 +48,7 @@ def _code(*parts) -> str:
 # Filters
 # ---------------------------------------------------------------------------
 
-_QUANT = (rf"(?P<q>no|exactly {_NUM}|at least {_NUM}|fewer than {_NUM}|more than {_NUM}|{_NUM} or more|"
+_QUANT = (rf"(?P<q>another|no|exactly {_NUM}|at least {_NUM}|fewer than {_NUM}|more than {_NUM}|{_NUM} or more|"
           rf"{_NUM} or fewer|{_NUM} or less|{_NUM})")
 
 
@@ -57,6 +57,8 @@ def _quant(q: str):
     q = q.lower()
     if q == "no":
         return "==", 0
+    if q == "another":
+        return ">=", 1
     m = re.fullmatch(rf"(exactly|at least|fewer than|more than) ({_NUM})", q)
     if m:
         return {"exactly": "==", "at least": ">=", "fewer than": "<", "more than": ">"}[m[1]], _n(m[2])
@@ -83,6 +85,8 @@ def _word_spec(word: str, spec: dict, plural: bool = True) -> bool:
         spec["basic"] = low == "basic"
     elif low in ("nontoken",):
         spec["token"] = False
+    elif low == "modified":
+        spec["modified"] = True
     elif low in ("multicolored", "colorless", "monocolored"):
         spec["colorcount"] = low
     elif low in _COLORS:
@@ -191,6 +195,11 @@ def _card_ok(card, spec: dict, perm=None) -> bool:
             return False
         if "counter" in spec and not perm.counters.get(spec["counter"], 0):
             return False
+        if "toughness" in spec and not _cmp(perm.toughness, *spec["toughness"]):
+            return False
+        if spec.get("modified") and not (any(v > 0 for v in perm.counters.values()) or perm.auras or
+                                         any(x.attached_to is perm for x in perm.controller.battlefield)):
+            return False
     elif "power" in spec and not _cmp(int(card.power or 0), *spec["power"]):
         return False
     return True
@@ -271,6 +280,8 @@ def _you_control(m):
     f = _filter(m["f"], _plural(m["q"]))
     if f is None:
         return ""
+    if m["q"].lower() == "another":
+        f = dict(f, other=True)
     return _code("ctl", "you", f, op, n)
 
 
@@ -446,6 +457,16 @@ def _prev_mv(m):
 def _had_counters(m):
     op, n = _quant(m["q"])
     return _code("counters", m["c"], op, n, "it")
+
+
+@rule(r"(?:it|that creature) had counters on it")
+def _had_any_counters(m):
+    return _code("any_counters", "it")
+
+
+@rule(rf"(?:its|that creature's) (?P<w>power|toughness) (?:is|was) (?P<n>{_NUM}) or (?P<d>greater|more|less)")
+def _prev_power(m):
+    return _code("prev_is", {m["w"].lower(): [">=" if m["d"] != "less" else "<=", _n(m["n"])]})
 
 
 @rule(r"this is the (?P<n>second|third|fourth|fifth) time this ability has resolved this turn")
@@ -670,6 +691,11 @@ def check(game, p, code: str, item=None, source=None, prev=None):
             _HIST_HEADS[head] = got
         hist = getattr(game, "_condlib_hist", None)
         return hist is not None and hist[0] == game.turn and hist[1].get((head, p.name), 0) >= n
+    if kind == "any_counters":
+        from .engine.state import Permanent
+        ctx = getattr(item, "context", None)
+        obj = prev if isinstance(prev, Permanent) else ctx if isinstance(ctx, Permanent) else source
+        return obj is not None and any(v > 0 for v in obj.counters.values())
     if kind == "nth_resolve":
         if item is None:
             return False
