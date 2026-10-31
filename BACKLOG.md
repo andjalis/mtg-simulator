@@ -52,6 +52,12 @@ Still open from that work: counts with filters the quantity table does not know 
 and/or planeswalkers") for multi-target spells; "up to N" is played as N. Per-wording gaps are now long-tail
 (the largest single unmatched sentence affects 10 cards), so rounds add cards in tens, not hundreds.
 
+Later PRs the same night: #100 (docs), #101 (damage to a group with "and each", "it deals N damage to each"), #102
+(selector-counted quantities such as "the number of attacking creatures"), #103 (player effects sized by X).
+Census before and after, full matches of 34,130 cards: 14,664 to 14,869 (+205, measured after #102; #103 adds
+about 19 more). Remaining single-sentence gaps are keyword and flavor lines (banding, double team, spellbooks,
+attractions), so the next gains need new mechanics or multi-gap frames, not wording entries.
+
 ## Measured remaining broad families
 
 These overlapping counts are upper bounds, not disjoint gain forecasts or wholly missing systems. Do not sum them.
