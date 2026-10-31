@@ -74,3 +74,22 @@ class DiscardAbility(unittest.TestCase):
         game.settle()
         self.assertEqual(a.life, 24)
         self.assertEqual([c.name for c in a.graveyard], ["Test Outburst"])
+
+
+class SnowMana(unittest.TestCase):
+    def test_snow_pip_needs_a_snow_source(self):
+        from mtgsim.engine import Game, Player
+        centaur = card("Test Centaur", "{2}{G}", "Snow Creature — Centaur", "{S}: ~ gets +1/+1 until end of turn.", 2, 2)
+        snow_forest = card("Snow-Covered Forest", types="Basic Snow Land — Forest", text="({T}: Add {G}.)")
+        self.assertEqual(centaur.unsupported, [])
+        self.assertEqual(centaur.activated[0].cost.get("S"), 1)
+        a, b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        game = Game(a, b, random.Random(0), log=True)
+        game.turn, game.step = 2, "main1"
+        perm = game.enter_battlefield(a, centaur)
+        game.enter_battlefield(a, FOREST).sick = False
+        self.assertFalse(game.can_activate(a, perm, 0))
+        game.enter_battlefield(a, snow_forest).sick = False
+        self.assertTrue(game.activate_ability(a, perm, 0))
+        game.settle()
+        self.assertEqual(perm.power, 3)

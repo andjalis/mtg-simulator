@@ -371,6 +371,8 @@ def parse_mana_cost(cost: str) -> dict:
             out["generic"] += int(sym)
         elif sym == "X":
             out["X"] = out.get("X", 0) + 1
+        elif sym == "S":       # snow: one mana from a snow source (engine/mana.py)
+            out["S"] = out.get("S", 0) + 1
         else:
             # Hybrid / Phyrexian: pay with the first coloured half (simplification).
             parts = [p for p in sym.split("/") if p in COLORS or p == "C"]

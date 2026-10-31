@@ -34,3 +34,15 @@ def linked_pump(game, p, target, eff, item, **_):
     if not hasattr(game, "_linked_statics"):
         game._linked_statics = []
     game._linked_statics.append((source, target, mode, p, tuple(eff.data["pt"]), tuple(eff.data["kws"])))
+
+
+@kind("hand_to_battlefield")
+def hand_to_battlefield(game, p, eff, **_):
+    """"You may put a creature card from your hand onto the battlefield" (Elvish Piper): the costliest match."""
+    from ...cx_condlib import _card_ok
+    cards = [c for c in p.hand if _card_ok(c, eff.data["spec"])]
+    if cards:
+        card = max(cards, key=lambda c: c.cmc)
+        p.hand.remove(card)
+        game.enter_battlefield(p, card)
+        game.log(f"puts {card.name} onto the battlefield", p)
