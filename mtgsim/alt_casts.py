@@ -87,7 +87,8 @@ def variants(game, p, card) -> list:
                 out.append(game._variant(card, f"replicate_{k}", AltCost(f"replicate_{k}", add_mana(card.mana_cost, extra))))
         elif a.kind == "entwine" and card.modes:      # Game.cast chooses all the modes of this variant
             out.append(game._variant(card, "entwine", AltCost("entwine", add_mana(card.mana_cost, a.cost))))
-    return out
+    from .cx_altcost import variants as conditional_alts    # "[If ...,] you may ... rather than pay ~'s mana cost"
+    return out + conditional_alts(game, p, card)
 
 
 def graveyard_variants(game, p, card) -> list:

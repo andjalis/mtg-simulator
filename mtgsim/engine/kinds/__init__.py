@@ -25,3 +25,4 @@ from . import batch1, batch2, residual, advanced, roadmap, cards, counters, dama
 from . import phasing, ripple, manifest, demonstrate, amplify, mirrodin, prepare, cx_damage, cx_triggers, cx_effects  # noqa: E402,F401  (registers the handlers)
 from . import cx_next_turn  # noqa: E402,F401
 from . import cx_links  # noqa: E402,F401  (registers the handlers)
+from . import cx_statics  # noqa: E402,F401
