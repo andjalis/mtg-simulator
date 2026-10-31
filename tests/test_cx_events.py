@@ -127,6 +127,19 @@ class Observer(unittest.TestCase):
         self.game.settle()
         self.assertNotIn(bear, self.b.battlefield)
 
+    def test_artifact_animates_until_end_of_turn(self):
+        rune = self.put(self.a, card("Test Keyrune", "{3}", "Artifact",
+                                     "{1}{R}: ~ becomes a 3/3 red Beast artifact creature with trample until end of turn."))
+        self.assertEqual(rune.card.unsupported, [])
+        for _ in range(2):
+            self.game.enter_battlefield(self.a, MOUNTAIN).tapped = False
+        self.assertFalse(rune.is_creature)
+        self.assertTrue(self.game.activate(self.a, rune, "animate"))
+        self.assertTrue(rune.is_creature and rune.has("trample"))
+        self.a.ai.attack = [rune]
+        self.game.combat(self.a, self.b)
+        self.assertEqual(self.b.life, 17)
+
     def test_sacrifice_and_land_played(self):
         self.put(self.a, ALTAR)
         self.put(self.a, LORE)

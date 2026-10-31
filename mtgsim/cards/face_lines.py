@@ -1068,7 +1068,7 @@ def _face_ability_lines(st, line):
                                        keywords=frozenset({m[4].lower()}) & KEYWORDS, text="permanent"))
             return None
         m = re.fullmatch(r"(\{[^:]+\}): ~ becomes an? (\d+)/(\d+) [\w ]*? creature(?: with ([\w ,]+))? until end of "
-                         r"turn\. It's still a land\.", line)
+                         r"turn\.(?: It's still a land\.)?", line)     # manlands, and artifacts that animate
         if m:
             kws = frozenset(k.strip().lower() for k in re.split(r",| and ", m[4] or "") if k.strip().lower() in KEYWORDS)
             activated.append(Activated("animate", parse_mana_cost(m[1]), int(m[2]), int(m[3]), keywords=kws))
