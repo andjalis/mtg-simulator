@@ -366,7 +366,7 @@ def _spell_spec(text: str):
     return spec if spec["alts"] is not None else None
 
 
-def _spell_ok(game, spec, item, caster, me) -> bool:
+def _spell_ok(game, spec, item, caster, me, copied=False) -> bool:
     if item is None or item.card is None:
         return False
     if not any(all(_spell_word(item, w) for w in ws) for ws in spec["alts"]):
@@ -400,7 +400,7 @@ def _spell_ok(game, spec, item, caster, me) -> bool:
         if spec["targets"] == "my_creature" and not any(isinstance(t, Permanent) and t.is_creature
                                                          and t.controller is caster for t in tg):
             return False
-    if spec["nth"] and game.spells_cast_turn(caster) != spec["nth"]:
+    if spec["nth"] and (copied or game.spells_cast_turn(caster) != spec["nth"]):
         return False
     return True
 
@@ -451,6 +451,8 @@ _PLAYER_SUBJ = {"you": "you", "a player": "any", "an opponent": "opp", "each opp
 _DISCARD = r"discards? (a card|one or more cards|an? (?:creature|land|noncreature|nonland|artifact|instant or sorcery|" \
            r"instant|sorcery|enchantment|noncreature, nonland) card|another card)"
 _PLAYER_VERBS = [
+    (r"casts? or cop(?:y|ies) (.+)", "cast_copy"),
+    (r"cop(?:y|ies) (.+)", "copy"),
     (r"casts? (.+)", "cast"),
     (r"draws? a card", "draw"),
     (r"draws? (?:their|your) (second|third) card each turn", "draw_nth"),
@@ -465,7 +467,7 @@ _PLAYER_VERBS = [
     (r"attacks?", "attack"),
     (r"scry|scries", "scry"),
 ]
-_PLAYER_RAW = {"cast": ("any_cast",), "draw": ("you_draw",), "draw_nth": ("you_draw",), "gain": ("gain_life",),
+_PLAYER_RAW = {"cast": ("any_cast",), "cast_copy": ("any_cast", "spell_copied"), "copy": ("spell_copied",), "draw": ("you_draw",), "draw_nth": ("you_draw",), "gain": ("gain_life",),
                "gain_first": ("gain_life",), "lose": ("opp_loses_life",), "discard": ("you_discard",),
                "cycle": ("you_cycle",), "cycle_discard": ("you_discard",), "sacrifice": ("sacrificed",),
                "land": ("land_played",), "attack": ("you_attack",), "scry": ("you_scry",)}
@@ -488,7 +490,7 @@ def compile_head(head: str):
             if not vm:
                 continue
             spec = {"player": who, "kind": kind}
-            if kind == "cast":
+            if kind in ("cast", "cast_copy", "copy"):
                 spell = _spell_spec(vm[1])
                 if spell is None:
                     return None
@@ -588,7 +590,7 @@ _OBSERVED = {"attacks", "blocks", "becomes_blocked", "dies", "etb", "leaves", "b
              "combat_damage_player", "combat_damage_creature", "damages_player", "deals_damage", "dealt_damage",
              "targeted", "targeted_opp", "targeted_mine", "targeted_by_spell", "turned_face_up", "perm_to_gy",
              "any_cast", "you_draw", "gain_life", "opp_loses_life", "you_discard", "you_cycle", "sacrificed",
-             "land_played", "you_attack", "you_scry"}
+             "land_played", "you_attack", "you_scry", "spell_copied"}
 
 
 def _has_ev(perm) -> bool:
@@ -669,12 +671,12 @@ def _match(game, spec, event, perm, p, source, context, subject, wants_player=Fa
         if spec["player"] == "opp" and actor is me:
             return False
         kind = spec["kind"]
-        if kind == "cast":
+        if kind in ("cast", "cast_copy", "copy"):
             item = next((s for s in reversed(game.stack) if s.is_spell and s.card is subject), None) \
                 if subject is not None else None
             if item is None and game.stack and game.stack[-1].is_spell:
                 item = game.stack[-1]
-            if not _spell_ok(game, spec["spell"], item, actor, me):
+            if not _spell_ok(game, spec["spell"], item, actor, me, copied=event == "spell_copied"):
                 return False
             return item if actor is me else actor
         if kind == "draw_nth":

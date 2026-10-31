@@ -64,5 +64,6 @@ one-line hooks in `cards/parse.py`, `engine/resolve.py` and the engine checks th
 Claude (trigger-event thread, from 31 Oct): `mtgsim/cx_events.py` and `tests/test_cx_events.py` (the "When(ever)
 <subject> <event>" grammar and its engine observer), with one-line hooks in `cards/parse.py` (trigger loop),
 `engine/stack.py` (`fire`), `engine/play.py` (land played, cast zone) and `engine/effects.py` (sacrificed).
-Later items from the same plan (choices, animate, replacement effects) go in new `cx_choices.py`,
-`cx_animate.py`, `cx_replace.py` modules.
+Round 2 adds `mtgsim/cx_replace.py` and `tests/test_cx_replace.py` (conditional entry counters, "would die, exile it
+instead", draw replacements, two-player "choose an opponent"), with one-line hooks in `cards/face_lines.py`,
+`cards/parse.py`, `engine/battlefield.py`, `engine/turns.py`, `rules_events.py` and `copies.py` (spell_copied).

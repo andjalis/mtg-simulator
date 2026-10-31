@@ -421,6 +421,7 @@ def copy_spell(game, p, spell):
     copy.x = getattr(spell, "x", 0)
     game.stack.append(copy)
     game.log(f"copies {spell.card.name}" + (f" -> {targets}" if any(targets) else ""), p)
+    game.fire(p, "spell_copied", subject=copy.card)     # "whenever you cast or copy ..." (cx_events)
     game.check_ward(copy)
 
 

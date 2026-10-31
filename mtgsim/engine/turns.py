@@ -65,6 +65,11 @@ class TurnsMixin:
             if recipient is not p:
                 self.draw(recipient, _replaced=_replaced + (replacement,))
                 continue
+            from ..cx_replace import extra_draws
+            more = extra_draws(self, p, _replaced)
+            if more:        # "If you would draw a card, draw two cards instead."
+                self.draw(p, more + 1, _replaced=_replaced + ("cx_draw",))
+                continue
             if not p.library:
                 if not p.lost:
                     self.audit("loss", seat=self.players.index(p), cause="drew from empty library")

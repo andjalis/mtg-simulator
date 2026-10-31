@@ -382,6 +382,8 @@ def _parse_face(data: dict) -> CardDef:
         text = re.sub(rf"\b{re.escape(name.split(' the ')[0])}\b", "~", text)  # "Smaug the Magnificent"
     for index, token_name in enumerate(token_names):
         text = text.replace('TOKENNAME' + str(index), token_name)
+    from .. import cx_replace
+    text = cx_replace.two_player_text(text)
     text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment|class|spacecraft|battle)\b", "~",
                   text, flags=re.I)
     text = re.sub(r"\b(protection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
