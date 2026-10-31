@@ -95,6 +95,11 @@ def _face_special_lines(st, line):
         if line == "You have no maximum hand size.":
             extra["no_max_hand"] = True
             return None
+        m = re.fullmatch(r"(Your|Each opponent's) maximum hand size is (increased|reduced) by (\w+)\.", line)
+        if m and m[3].lower() in NUMBERS:
+            n = NUMBERS[m[3].lower()] * (1 if m[2] == "increased" else -1)
+            extra["hand_size_mod" if m[1] == "Your" else "opp_hand_size_mod"] = n
+            return None
         if line == "~ attacks each combat if able.":
             extra["must_attack"] = True
             return None

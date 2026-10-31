@@ -225,6 +225,8 @@ class CardDef:
     blocker_power_rel: bool = False                     # "Creatures with power less than ~'s power can't block it."
     max_blocker_power: int = 0                          # "can't be blocked by creatures with power N or greater"
     no_max_hand: bool = False                           # "You have no maximum hand size."
+    hand_size_mod: int = 0                              # "Your maximum hand size is increased/reduced by N."
+    opp_hand_size_mod: int = 0                          # "Each opponent's maximum hand size is reduced by N."
     must_attack: bool = False                           # "~ attacks each combat if able."
     gy_needs_speed: bool = False
     start_engines: bool = False                         # "Start your engines!": speed starts at 1 when it enters or is cast
