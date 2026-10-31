@@ -40,7 +40,8 @@ def _parse_effects(text: str, opts: bool = False):
     from ..permanent_templates import split_sentences
     from ..cx_next_turn import mark, rewrite
     pending = None
-    for sentence in split_sentences(text.strip()):
+    sentences = list(split_sentences(text.strip()))
+    for index, sentence in enumerate(sentences):
         s = sentence.strip().rstrip(".").strip()
         if not s:
             continue
@@ -155,6 +156,17 @@ def _parse_effects(text: str, opts: bool = False):
         if ml:
             effects.append(Effect("pay_gate", data={"gate": ("life", ml[1])}))
             gated = True
+            continue
+        from ..cx_links import parse_may_link
+        linked = parse_may_link(s, sentences[index + 1] if index + 1 < len(sentences) else "")
+        if linked is not None:
+            effects += linked
+            gated = True
+            continue
+        from ..cx_links import parse_ref
+        linked = parse_ref(s, effects)
+        if linked is not None:
+            effects += linked
             continue
         mm = re.fullmatch(r"you may (.+)", s, re.I)
         if mm:

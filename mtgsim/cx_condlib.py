@@ -248,6 +248,10 @@ _ALIASES = {
     "an opponent has more life than you": "lib:[\"life_vs_opp\",\"<\"]",
     "you have less life than an opponent": "lib:[\"life_vs_opp\",\"<\"]",
     "you have more cards in hand than an opponent": "lib:[\"hand_vs_opp\",\">\"]",
+    "you have more cards in hand than each opponent": "lib:[\"hand_vs_opp\",\">\"]",
+    "you have more life than each opponent": "lib:[\"life_vs_opp\",\">\"]",
+    "you have less life than each opponent": "lib:[\"life_vs_opp\",\"<\"]",
+    "you have fewer cards in hand than each opponent": "lib:[\"hand_vs_opp\",\"<\"]",
     "an opponent has more cards in hand than you": "lib:[\"hand_vs_opp\",\"<\"]",
 }
 
@@ -526,6 +530,11 @@ def check(game, p, code: str, item=None, source=None):
         return _cmp(p.life, args[0], game.opponent(p).life)
     if kind == "hand_vs_opp":
         return _cmp(len(p.hand), args[0], len(game.opponent(p).hand))
+    if kind == "link_taken":                 # cx_links: the optional action of "you may ... If you do" was taken
+        return bool(getattr(item, "link_taken", False))
+    if kind == "ref_card":                   # cx_links: the looked-at top card is still on top and matches
+        card = getattr(item, "link_card", None)
+        return card is not None and bool(p.library) and p.library[-1] is card and _card_ok(card, args[0])
     if kind == "monarch":
         return getattr(game, "monarch", None) is p
     if kind == "no_monarch":
