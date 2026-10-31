@@ -52,7 +52,8 @@ def _scaled(fixed):
     return build
 
 
-_PLURAL_ZONES = {"card in your hand": "cards in your hand", "card in your graveyard": "cards in your graveyard"}
+_PLURAL_ZONES = {"card in your hand": "cards in your hand", "card in an opponent's hand": "cards in an opponent's hand",
+                 "card in your graveyard": "cards in your graveyard"}
 _SCALES = {"pump", "debuff", "pump_all", "damage", "gain_life", "lose_life", "drain", "draw", "mill"}
 
 

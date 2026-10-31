@@ -30,6 +30,10 @@ class TargetsMixin:
             source = self.target_source.source if isinstance(self.target_source, StackItem) else self.target_source
             if not permanent_templates.matches(self, perm, spec, by, source):
                 return False
+        if eff.data.get('cx_desc'):
+            from ..cx_effects import passes
+            if not passes(self, eff, perm, by):
+                return False
         f = eff.filter
         if eff.data.get('attached_aura') and (not perm.card.aura or perm.aura_host is None):
             return False
