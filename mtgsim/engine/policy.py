@@ -108,6 +108,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return max(theirs, key=perm_value, default=None)
     if k == 'untap_prev':
         return max((x for x in mine if x.tapped), key=perm_value, default=None)
+    if k == 'animate_land':     # one of my lands that isn't a creature yet, untapped first
+        return min((x for x in mine if not x.is_creature), key=lambda x: (x.tapped, perm_value(x)), default=None)
     if k == 'move_counter_self':
         source = getattr(game.target_source, 'source', game.target_source)
         return max((x for x in mine if x is not source and x.p1), key=lambda x: (x.p1, perm_value(x)), default=None)

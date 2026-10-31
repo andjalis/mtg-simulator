@@ -11,6 +11,10 @@
 * "for each card in target opponent's hand" / "in each opponent's hand": the opponent's hand size.
 * "You win the game." / "You lose the game."; "You have no maximum hand size for the rest of the game.";
   "Put ~ on top of its owner's library."
+* Land animations the animate_templates SUBS leave: "[Up to one] target [snow] land / Mountain [you control] becomes
+  a N/N ... creature [with kws] [until end of turn]. It's still a land." (or "that's still a land"), and "It /
+  That land becomes a 0/0 ... creature ..." after counters were put on it. Without "until end of turn" the land
+  stays a creature. The animating player picks one of their own lands.
 """
 from __future__ import annotations
 
@@ -101,7 +105,44 @@ EFFECT_PATTERNS = [
      _exile_prev),
 ]
 
+def _animate(m):
+    from .cards.model import NO_MATCH
+    from .cards import Effect
+    from .animate_templates import _KEYWORDS
+    desc = re.sub(r" you control$", "", m["desc"].strip())
+    desc = " ".join(w.title() if w in ("mountain", "forest", "plains", "island", "swamp", "cave", "desert") else w
+                    for w in desc.split())
+    if m["who"] == "t" and desc != "land" and not _desc_ok(desc):
+        return NO_MATCH
+    kws = frozenset(k.strip() for k in re.split(r",| and ", m["kws"] or "") if k.strip())
+    if not kws <= set(_KEYWORDS.split("|")):
+        return NO_MATCH
+    data = {"selector": {"controller": "mine", "types_all": ["land"]}, "keywords": kws, "permanent": m["perm"] == "1"}
+    if m["who"] == "t" and desc != "land":
+        data["cx_desc"] = desc
+    return Effect("animate_land", int(m["p"]), int(m["t"]), target="permanent" if m["who"] == "t" else "prev",
+                  data=data)
+
+
+_LAND = r"(?:snow |basic |nonbasic )?land|mountain|forest|plains|island|swamp|cave|desert"
+_ANIM = re.compile(
+    r"(?:(?:up to one )?target (?P<desc>(?:" + _LAND + r")(?: you control)?)|(?P<it>it|that land)) becomes an? "
+    r"(?P<p>\d+)/(?P<t>\d+) [\w ]*?creature(?: with (?P<kws>[\w ,]+?))?(?P<eot> until end of turn)?"
+    r"(?:\. it's still a land| that's still a land)(?=\.|$)", re.I)
+
+
+def _anim_sub(m):
+    who = "p" if m["it"] else "t"
+    desc = (m["desc"] or "").lower()
+    if desc.startswith("snow "):
+        return m[0]
+    return f"CXANIM {who} {m['p']} {m['t']} {0 if m['eot'] else 1} {desc}|{m['kws'] or ''}"
+
+EFFECT_PATTERNS.append(
+    (r"cxanim (?P<who>[tp]) (?P<p>\d+) (?P<t>\d+) (?P<perm>[01]) (?P<desc>[\w ]*)\|(?P<kws>[\w ,]*)", _animate))
+
 SUBS = [
+    (_ANIM, _anim_sub),
     (re.compile(r"for each card in (?:target|each) opponent's hand", re.I), "for each card in an opponent's hand"),
 ]
 

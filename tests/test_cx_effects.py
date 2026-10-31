@@ -6,7 +6,7 @@ import unittest
 from mtgsim.cards import _parse_effects
 from mtgsim.engine import Game, Player
 from tests.test_combat_triggers import Scripted
-from tests.test_templates import BEAR, ISLAND, SHOCK, card
+from tests.test_templates import BEAR, ISLAND, MOUNTAIN, SHOCK, card
 
 VEHICLE = card("Test Wagon", "{2}", "Artifact — Vehicle", "Crew 1", 3, 3)
 LAND = card("Test Waste", "", "Land", "")
@@ -30,8 +30,10 @@ class Effects(unittest.TestCase):
         p = p or self.a
         effs = effects(text)
         targets = self.game.auto_targets(p, effs)
+        prev = None
         for e, t in zip(effs, targets):
-            self.game.resolve(p, e, t)
+            self.game.resolve(p, e, t, prev=prev)
+            prev = t if t is not None else prev
         self.game.settle()
         return targets
 
@@ -86,6 +88,23 @@ class Effects(unittest.TestCase):
         for e in ab.effects:
             self.game.resolve(self.a, e, None, StackItem(self.a, ab.effects, [], source=perm))
         self.assertEqual(self.a.library[-1].name, clique.name)
+
+    def test_target_land_stays_a_creature(self):
+        land = self.game.enter_battlefield(self.a, MOUNTAIN)
+        self.game.enter_battlefield(self.b, MOUNTAIN)
+        effs = effects("Target Mountain becomes a 3/1 creature. It's still a land.")
+        self.assertEqual(self.game.legal_targets(self.a, effs[0]), [land])
+        self.run_effects("Target Mountain becomes a 3/1 creature. It's still a land.")
+        self.assertTrue(land.is_creature and land.card.is_land)
+        self.assertEqual((land.power, land.toughness), (3, 1))
+        self.assertEqual(land.animated.text, "permanent")
+
+    def test_animate_it_after_counters(self):
+        land = self.game.enter_battlefield(self.a, LAND)
+        self.run_effects("Put four +1/+1 counters on target land you control. It becomes a 0/0 Elemental creature "
+                         "with haste. It's still a land.")
+        self.assertEqual((land.power, land.toughness), (4, 4))
+        self.assertTrue(land.has("haste"))
 
 
 class AlchemyNames(unittest.TestCase):

@@ -50,6 +50,8 @@ def parse_line(line: str, st) -> bool:
     if m:
         _rules(st)["cx_draw"] = (_N[m[2]], bool(m[1]))
         return True
+    if re.fullmatch(r"(?:[A-Z][\w' -]* — )?You may look at the top card of your library any time\.", line):
+        return True     # information only: the AI players don't hide the library's top card from its owner
     if re.fullmatch(r"(?:As ~ enters(?: the battlefield)?, )?(?:secretly )?choose an opponent(?: at random)?\.", line):
         return True     # two players: the chosen player is the opponent (two_player_text)
     return False

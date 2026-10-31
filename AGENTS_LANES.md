@@ -72,3 +72,5 @@ targets, opponent draws, graveyard-to-top, random graveyard returns, exile-this-
 one-line hooks in `engine/targets.py`, `engine/costs.py`, `cards/clauses.py` and `cx_night_quantity.py`.
 Round 4 adds win/lose the game, rest-of-game hand size and "put ~ on top" to `cx_effects.py`, a `forever`
 flag in `cx_next_turn._live`, and Alchemy "A-" self-names in `cards/parse.py`.
+Round 5 adds target-land animations ("It's still a land", lasting or until end of turn) to `cx_effects.py`, an
+`animate_land` target choice in `engine/policy.py`, and "look at the top card any time" in `cx_replace.py`.

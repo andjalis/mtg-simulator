@@ -154,9 +154,10 @@ def animate_land(game, p, eff, target, prev, **_):
     land = prev if eff.target == "prev" else target
     if isinstance(land, Permanent) and land in land.controller.battlefield and land.card.is_land:
         land.animated = Activated("animate", {}, eff.amount, eff.amount2,
-                                  keywords=frozenset(eff.data.get("keywords", ())))
-        game.log(f"{land.card.name} becomes a {eff.amount}/{eff.amount2} creature until end "
-                 f"of turn", p)
+                                  keywords=frozenset(eff.data.get("keywords", ())),
+                                  text="permanent" if eff.data.get("permanent") else "")
+        game.log(f"{land.card.name} becomes a {eff.amount}/{eff.amount2} creature"
+                 + ("" if eff.data.get("permanent") else " until end of turn"), p)
 
 
 @kind("token")
