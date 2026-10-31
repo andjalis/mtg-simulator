@@ -7,7 +7,6 @@ creature" already does). "Up to" and "one or two" are played as the full number:
 """
 from __future__ import annotations
 
-import re
 
 _NUMBERS = {"two": 2, "three": 3, "up to two": 2, "up to three": 3, "one or two": 2, "one, two, or three": 3}
 _COUNT = "|".join(sorted(_NUMBERS, key=len, reverse=True))
