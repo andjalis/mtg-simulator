@@ -80,6 +80,8 @@ class CostsMixin:
                     open_ = perm.entered_turn == self.turn or any(is_basic_land(x.card) for x in p.battlefield)
                 if not open_:
                     produces = produces - set(gate_colors)
+            if c.mana_pay_life and p.life <= c.mana_pay_life:
+                produces = produces & {"C"} if "C" in produces else produces & set()
             if c.mana_tap_other and not any(x is not perm and not x.tapped and (x.is_creature or c.mana_tap_other == "permanent")
                                             for x in p.battlefield):
                 continue
@@ -168,6 +170,8 @@ class CostsMixin:
                 continue
             if s.card.color_skips_untap and self._needed_color(p, s, payment, cost):
                 s.skip_untap = max(s.skip_untap, 1)   # its colored mana was spent: it skips its next untap
+            if s.card.mana_pay_life and self._needed_color(p, s, payment, cost):
+                self.change_life(p, -s.card.mana_pay_life, "paid life")
             if s.card.mana_filter == "once":
                 s.ability_turns["filter"] = self.turn
             else:
@@ -486,6 +490,8 @@ class CostsMixin:
             n = sum(copies.fits(c, _gy_desc(card.cost_reduction[3:])) for c in p.graveyard)
         elif card.cost_reduction.startswith("affinity:"):
             n = sum(card_matches(x.card, "a " + card.cost_reduction[9:]) for x in p.battlefield)
+        elif card.cost_reduction == "domain":    # "costs {1} less for each basic land type among lands you control"
+            n = self.x_quantity(p, ("domain",), None, None)
         elif card.cost_reduction == "party":
             # "This spell costs {1} less to cast for each creature in your party" (Coveted Prize)
             n = self.party_size(p)

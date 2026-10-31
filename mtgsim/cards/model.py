@@ -285,6 +285,7 @@ class CardDef:
     gy_flashback: bool = False                          # Lier: instants and sorceries in your graveyard have flashback
     mana_depletion: bool = False                        # Peat Bog: each tap removes a depletion counter; sacrificed at none
     mana_sac: bool = False                              # "{T}, Sacrifice ~: Add one mana of any color."
+    mana_pay_life: int = 0                              # "{T}, Pay 1 life: Add one mana of any color": life paid when a colour is used
     mana_cond: str = ""                                 # "Dragon": only while you control one
     mana_gate: tuple = ()                               # ((colours, land types), ...): colours need one of the types; () types = entered this turn or a basic
     pt_scale: tuple = (1, 1)                            # (power, toughness) gained per counted permanent
