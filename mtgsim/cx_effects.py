@@ -9,12 +9,18 @@
 * "If a creature would die this turn, exile it instead." (every creature, for the rest of the turn) and
   "If it / that creature would die this turn, exile it instead." (the previous target).
 * "for each card in target opponent's hand" / "in each opponent's hand": the opponent's hand size.
+* "You win the game." / "You lose the game."; "You have no maximum hand size for the rest of the game.";
+  "Put ~ on top of its owner's library."
+* Land animations the animate_templates SUBS leave: "[Up to one] target [snow] land / Mountain [you control] becomes
+  a N/N ... creature [with kws] [until end of turn]. It's still a land." (or "that's still a land"), and "It /
+  That land becomes a 0/0 ... creature ..." after counters were put on it. Without "until end of turn" the land
+  stays a creature. The animating player picks one of their own lands.
 """
 from __future__ import annotations
 
 import re
 
-KINDS = {"cx_gy_top", "cx_gy_random", "cx_exile_turn"}
+KINDS = {"cx_gy_top", "cx_gy_random", "cx_exile_turn", "cx_win"}
 _N = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5}
 
 
@@ -74,7 +80,19 @@ def _exile_prev(m):
     return Effect("exile_instead", target="prev")
 
 
+def _simple(kind, **kw):
+    def make(m):
+        from .cards import Effect
+        return Effect(kind, **kw)
+    return make
+
+
 EFFECT_PATTERNS = [
+    (r"you win the game", _simple("cx_win", data={"win": True})),
+    (r"you lose the game", _simple("cx_win", data={"win": False})),
+    (r"you have no maximum hand size for the rest of the game",
+     _simple("cx_player_flag", data={"flag": "no_max_hand", "who": "you", "forever": True})),
+    (r"put ~ on top of its owner's library", _simple("tuck_perm", target="self", data={"depth": 0})),
     (r"destroy target ([\w ,/-]+?)", _targeted("destroy")),
     (r"exile target ([\w ,/-]+?)", _targeted("exile_permanent")),
     (r"return target ([\w ,/-]+?) to its owner's hand", _targeted("bounce")),
@@ -87,7 +105,44 @@ EFFECT_PATTERNS = [
      _exile_prev),
 ]
 
+def _animate(m):
+    from .cards.model import NO_MATCH
+    from .cards import Effect
+    from .animate_templates import _KEYWORDS
+    desc = re.sub(r" you control$", "", m["desc"].strip())
+    desc = " ".join(w.title() if w in ("mountain", "forest", "plains", "island", "swamp", "cave", "desert") else w
+                    for w in desc.split())
+    if m["who"] == "t" and desc != "land" and not _desc_ok(desc):
+        return NO_MATCH
+    kws = frozenset(k.strip() for k in re.split(r",| and ", m["kws"] or "") if k.strip())
+    if not kws <= set(_KEYWORDS.split("|")):
+        return NO_MATCH
+    data = {"selector": {"controller": "mine", "types_all": ["land"]}, "keywords": kws, "permanent": m["perm"] == "1"}
+    if m["who"] == "t" and desc != "land":
+        data["cx_desc"] = desc
+    return Effect("animate_land", int(m["p"]), int(m["t"]), target="permanent" if m["who"] == "t" else "prev",
+                  data=data)
+
+
+_LAND = r"(?:snow |basic |nonbasic )?land|mountain|forest|plains|island|swamp|cave|desert"
+_ANIM = re.compile(
+    r"(?:(?:up to one )?target (?P<desc>(?:" + _LAND + r")(?: you control)?)|(?P<it>it|that land)) becomes an? "
+    r"(?P<p>\d+)/(?P<t>\d+) [\w ]*?creature(?: with (?P<kws>[\w ,]+?))?(?P<eot> until end of turn)?"
+    r"(?:\. it's still a land| that's still a land)(?=\.|$)", re.I)
+
+
+def _anim_sub(m):
+    who = "p" if m["it"] else "t"
+    desc = (m["desc"] or "").lower()
+    if desc.startswith("snow "):
+        return m[0]
+    return f"CXANIM {who} {m['p']} {m['t']} {0 if m['eot'] else 1} {desc}|{m['kws'] or ''}"
+
+EFFECT_PATTERNS.append(
+    (r"cxanim (?P<who>[tp]) (?P<p>\d+) (?P<t>\d+) (?P<perm>[01]) (?P<desc>[\w ]*)\|(?P<kws>[\w ,]*)", _animate))
+
 SUBS = [
+    (_ANIM, _anim_sub),
     (re.compile(r"for each card in (?:target|each) opponent's hand", re.I), "for each card in an opponent's hand"),
 ]
 
@@ -138,3 +193,10 @@ def gy_random(game, p, eff):
 
 def exile_this_turn(game, perm) -> bool:
     return getattr(game, "cx_exile_turn", None) == game.turn and perm.is_creature
+
+
+def win(game, p, eff):
+    loser = [x for x in game.players if x is not p][0] if eff.data["win"] else p
+    if not loser.lost:
+        game.audit("loss", seat=game.players.index(loser), cause="a card's effect")
+        loser.lost = True

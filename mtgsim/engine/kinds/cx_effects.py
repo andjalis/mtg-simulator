@@ -18,3 +18,8 @@ def gy_random(game, p, eff, **_):
 @kind("cx_exile_turn")
 def exile_turn(game, p, **_):
     game.cx_exile_turn = game.turn      # "If a creature would die this turn, exile it instead."
+
+
+@kind("cx_win")
+def win(game, p, eff, **_):
+    cx_effects.win(game, p, eff)        # "You win the game." / "You lose the game."

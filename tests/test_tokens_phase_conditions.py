@@ -275,7 +275,7 @@ class TokensPhaseConditions(unittest.TestCase):
                                   text=f'At the beginning of each upkeep, if {condition}, you gain 1 life.')
                 self.assertTrue(definition.unsupported)
                 self.assertFalse(definition.triggers)
-        self.assertTrue(self.real('Test of Endurance').unsupported)  # a recognized life gate does not implement winning
+        self.assertFalse(self.real('Test of Endurance').unsupported)  # the life gate and "you win the game" (cx_effects)
 
 
 if __name__ == '__main__':
