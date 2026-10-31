@@ -280,6 +280,7 @@ class CardDef:
     mana_filter: str = ""                               # "tap": {1},{T}: add any colour; "once": {1}: add .... once each turn
     mana_tap_other: str = ""                            # "creature"/"permanent": also tap an untapped one as a cost
     mana_sac_only: bool = False                         # "Sacrifice ~: Add {C}.": no tap, so sick or tapped is fine
+    mana_depletion: bool = False                        # Peat Bog: each tap removes a depletion counter; sacrificed at none
     mana_sac: bool = False                              # "{T}, Sacrifice ~: Add one mana of any color."
     mana_cond: str = ""                                 # "Dragon": only while you control one
     pt_scale: tuple = (1, 1)                            # (power, toughness) gained per counted permanent

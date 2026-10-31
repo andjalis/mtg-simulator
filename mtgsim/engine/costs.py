@@ -167,6 +167,10 @@ class CostsMixin:
                 s.tapped = True
             if s.card.token_kind == "treasure" or s.card.mana_sac or s.card.mana_sac_only:
                 self.sacrifice(s)
+            if s.card.mana_depletion:
+                s.counters["depletion"] = s.counters.get("depletion", 0) - 1
+                if s.counters["depletion"] <= 0:
+                    self.sacrifice(s)
             if s.card.mana_tap_other:
                 spare = [x for x in p.battlefield if x is not s and not x.tapped and x not in payment
                          and x not in exclude_many
@@ -571,7 +575,10 @@ class CostsMixin:
                             types=frozenset({"Instant"}), spell_effects=list(alt.effects), is_ability=True)
             else:
                 v = dataclasses.replace(card, name=f"{card.name} ({kind})")
-                if alt is not None:
+                if kind == "flash_tax":
+                    v.mana_cost = add_mana(card.mana_cost, alt.cost)
+                    v.keywords = card.keywords | {"flash"}
+                elif alt is not None:
                     v.mana_cost = alt.cost
                     v.spell_effects = list(alt.effects if alt.effects is not None else card.spell_effects) + \
                         list(alt.extra)
@@ -649,6 +656,9 @@ class CostsMixin:
             if c.adventure:
                 out.append(self._variant(c, "adventure"))
             for a in c.alt_costs:
+                if a.kind == "flash_tax" and not c.instant_speed and not (
+                        p is self.active and self.step in ("main1", "main2") and not self.stack):
+                    out.append(self._variant(c, "flash_tax", a))      # at sorcery speed the plain cast is cheaper
                 if (a.kind == "mutate" and _mutate_hosts(self, p, c)) or a.kind in ("alt", "kicker", "bestow") or (a.kind == "spectacle" and opp.lost_life_turn) or \
                         (a.kind in ("blitz", "dash") and "hand" in a.zone):
                     out.append(self._variant(c, a.kind, a))

@@ -33,7 +33,7 @@ discard, Crabomination, detain, "Cast this spell only ..." windows and "only if"
 resolution), two-target damage, graveyard-cast riders and non-targeting casts, Ring-bearer conditions, Tiered, attach
 Equipment (picked on resolution), counter-an-ability spells and Land Cap-style depletion lands.
 
-Still open from that work: the Peat Bog depletion lands (two-mana tap that sacrifices at zero counters), "until your next
+Still open from that work: "until your next
 turn" effects (about 120 cards, no common shape; needs a duration that ends at its controller's next turn), planeswalker
 targets for "player or planeswalker" damage, Trickbind's "can't activate this turn" rider, and "cast only if an opponent cast
 a creature spell this turn".
@@ -119,3 +119,9 @@ The order below is an engineering suggestion. The [machine-readable backlog](res
 ## Other work classes
 
 Recorded simplifications remain in the census, outside the parser backlog. Verified behavioral defects belong in a separate record with a reproducible scenario. The source-exclusion anthem bug exposed by this batch is fixed and recorded in its completion report.
+
+## Flash and flashback batch 2026-10-31 (`cx_night_flash.py`)
+
+Landed: "gains flashback until end of turn" for every instant and sorcery in the graveyard (Past in Flames, Backdraft Hellkite), "cast as though it had flash if you pay {N} more" (14 cards), and Peat Bog-style depletion lands (five lands, two mana per tap, sacrificed at zero counters).
+
+Still open: conditional flash ("if you control a Faerie"), "next spell can be cast as though it had flash", non-mana flashback costs ("Flashback—Pay 3 life"), static "has flashback" grants (Lier, Otaria).
