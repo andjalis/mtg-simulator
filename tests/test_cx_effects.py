@@ -6,7 +6,7 @@ import unittest
 from mtgsim.cards import _parse_effects
 from mtgsim.engine import Game, Player
 from tests.test_combat_triggers import Scripted
-from tests.test_templates import BEAR, ISLAND, MOUNTAIN, SHOCK, card
+from tests.test_templates import BEAR, FOREST, ISLAND, MOUNTAIN, SHOCK, card
 
 VEHICLE = card("Test Wagon", "{2}", "Artifact — Vehicle", "Crew 1", 3, 3)
 LAND = card("Test Waste", "", "Land", "")
@@ -105,6 +105,23 @@ class Effects(unittest.TestCase):
                          "with haste. It's still a land.")
         self.assertEqual((land.power, land.toughness), (4, 4))
         self.assertTrue(land.has("haste"))
+
+    def test_awaken(self):
+        arms = card("Test Arms", "{G}", "Sorcery", "You gain 1 life.\nAwaken 2—{G}{G}")
+        self.assertEqual(arms.unsupported, [])
+        lands = [self.game.enter_battlefield(self.a, FOREST) for _ in range(3)]
+        for x in lands:
+            x.tapped = False
+        self.a.hand = [arms]
+        awaken = [v for v in self.game.spell_options(self.a) if v.name.endswith("(awaken)")]
+        self.assertEqual(len(awaken), 1)
+        targets = self.game.auto_targets(self.a, awaken[0].spell_effects)
+        self.assertTrue(self.game.cast(self.a, awaken[0], targets))
+        self.game.settle()
+        animated = [x for x in lands if x.is_creature]
+        self.assertEqual(len(animated), 1)
+        self.assertEqual((animated[0].power, animated[0].toughness, self.a.life), (2, 2, 21))
+        self.assertTrue(animated[0].has("haste"))
 
 
 class AlchemyNames(unittest.TestCase):

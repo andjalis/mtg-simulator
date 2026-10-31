@@ -75,3 +75,4 @@ Round 4 adds win/lose the game, rest-of-game hand size and "put ~ on top" to `cx
 flag in `cx_next_turn._live`, and Alchemy "A-" self-names in `cards/parse.py`.
 Round 5 adds target-land animations ("It's still a land", lasting or until end of turn) to `cx_effects.py`, an
 `animate_land` target choice in `engine/policy.py`, and "look at the top card any time" in `cx_replace.py`.
+Round 6 adds Awaken to `alt_casts.py` (an alternative cost whose extra effects reuse the round 5 land animation).
