@@ -5,6 +5,7 @@
   because the engine casts a granted card for its own mana cost.
 * "You may cast ~ as though it had flash if you pay {2} more to cast it." (Rout, Ghitu Fire): an ``AltCost("flash_tax")``
   whose cost is the extra mana; the engine offers it as a copy of the spell with flash and the full cost.
+* "Flashback—{1}{U}, Pay 3 life." (Deep Analysis and five others): a flashback AltCost with ``life``.
 * Peat Bog and friends: enters tapped with two depletion counters; "{T}, Remove a depletion counter: Add {B}{B}" makes
   two mana (``mana_amount``) and the land is sacrificed when the last counter is gone (``mana_depletion``)."""
 from __future__ import annotations
@@ -44,6 +45,10 @@ def parse_line(st, line: str):
     m = re.fullmatch(r"You may cast ~ as though it had flash if you pay ((?:\{[0-9WUBRGC]\})+) more to cast it\.", line)
     if m:
         st.alt_costs.append(AltCost("flash_tax", parse_mana_cost(m[1])))
+        return None
+    m = re.fullmatch(r"Flashback—((?:\{[^ ]+?\})+), Pay (\d+) life\.?", line)
+    if m:                                       # the life is paid through AltCost.life when it is cast
+        st.alt_costs.append(AltCost("flashback", parse_mana_cost(m[1]), zone="graveyard", life=int(m[2])))
         return None
     m = re.fullmatch(r"~ enters(?: the battlefield)? tapped with (two|three|four) depletion counters on it\.", line)
     if m:
