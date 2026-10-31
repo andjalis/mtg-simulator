@@ -135,6 +135,10 @@ class TargetsMixin:
             return [x for x in ([self.opponent(p)] if eff.filter == "opp" else list(self.players)) if player_targetable(self, x, p)] + walkers
         if t == "spell":
             return [i for i in self.stack if self.can_counter(eff, i, p)]
+        if t in ("spell_or_permanent", "spell_or_creature"):
+            spells = [i for i in self.stack if self.can_counter(eff, i, p)]
+            return spells + [x for x in (creatures if t == "spell_or_creature" else everything)
+                             if self.passes_filter(eff, x, p)]
         return []
 
     def legal_target(self, p: Player, eff: Effect, tgt) -> bool:
@@ -167,6 +171,10 @@ class TargetsMixin:
         if eff.filter.startswith("types:") and not set(eff.filter[6:].split(",")) & card.types:
             return False
         if eff.filter.startswith("cmc:") and card.cmc != int(eff.filter[4:]):
+            return False
+        if eff.filter.startswith("min_cmc:") and card.cmc < int(eff.filter[8:]):
+            return False
+        if eff.filter.startswith("max_cmc:") and card.cmc > int(eff.filter[8:]):
             return False
         if eff.filter.startswith("colors:") and not card.colors & set(eff.filter[7:]):
             return False

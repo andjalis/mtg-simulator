@@ -286,6 +286,7 @@ class CardDef:
     mana_depletion: bool = False                        # Peat Bog: each tap removes a depletion counter; sacrificed at none
     mana_sac: bool = False                              # "{T}, Sacrifice ~: Add one mana of any color."
     mana_cond: str = ""                                 # "Dragon": only while you control one
+    mana_gate: tuple = ()                               # ((colours, land types), ...): colours need one of the types; () types = entered this turn or a basic
     pt_scale: tuple = (1, 1)                            # (power, toughness) gained per counted permanent
     pt_per: str = ""                                    # "~ gets +1/+1 for each artifact you control": "artifact"
     extra_sacrifice: str = ""                           # "As an additional cost to cast ~, sacrifice an artifact or creature"

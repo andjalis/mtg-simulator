@@ -7,7 +7,7 @@ from .. import alt_casts, emerge, auras, copies, counting, discounts, returns, c
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
-from .state import COLOR_WORDS, Permanent, Player, TARGETED, _gy_desc, card_matches
+from .state import COLOR_WORDS, Permanent, Player, TARGETED, _gy_desc, card_matches, is_basic_land
 
 FACE_DOWN = ("disguise", "morph", "megamorph")   # cast face down for {3} as a 2/2, turned face up for this cost
 
@@ -73,6 +73,13 @@ class CostsMixin:
                 continue
             if c.mana_cond and not any(c.mana_cond in x.card.subtypes for x in p.battlefield):
                 continue
+            for gate_colors, gate_types in c.mana_gate:
+                if gate_types:
+                    open_ = any(t in x.card.subtypes for x in p.battlefield for t in gate_types)
+                else:
+                    open_ = perm.entered_turn == self.turn or any(is_basic_land(x.card) for x in p.battlefield)
+                if not open_:
+                    produces = produces - set(gate_colors)
             if c.mana_tap_other and not any(x is not perm and not x.tapped and (x.is_creature or c.mana_tap_other == "permanent")
                                             for x in p.battlefield):
                 continue
@@ -263,6 +270,15 @@ class CostsMixin:
             a = self.x_quantity(who, lhs, item, prev) if isinstance(lhs, tuple) else lhs
             b = self.x_quantity(who, rhs, item, prev) if isinstance(rhs, tuple) else rhs
             return max(0, a - b if op == "-" else a + b)
+        if kind == "domain":     # "the number of basic land types among lands you control"
+            return len({t for x in p.battlefield if x.card.is_land
+                        for t in x.card.subtypes & {"Plains", "Island", "Swamp", "Mountain", "Forest"}})
+        if kind == "colors_among":   # "the number of colors among permanents you control"
+            return len({c for x in p.battlefield for c in x.card.colors})
+        if kind == "colors_among_lands":
+            return len({c for x in p.battlefield if x.card.is_land for c in x.card.colors})
+        if kind == "named_lands":    # "the number of differently named lands you control"
+            return len({x.card.name for x in p.battlefield if x.card.is_land})
         if kind == "selector":
             # "the number of creatures you control with flying", "... attacking creatures": a battlefield noun phrase
             # parsed by permanent_templates.selector and counted with the same matcher the group effects use.

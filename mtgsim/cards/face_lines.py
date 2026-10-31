@@ -133,6 +133,7 @@ def _face_special_lines(st, line):
             level_marks.append((n, len(triggers)))
             return None
         line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration|Heroic) — (?=When|At|If)", "", line)
+        line = re.sub(r"^(?:Domain|Vivid) — ", "", line)    # ability words with no rules meaning of their own
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
         # Any ability word ("Phalanx Commander —", "Life Drain —") before a When/At/If line; "Survival — "
         # keeps its prefix: it names a distinct engine event.
@@ -398,6 +399,19 @@ def _face_land_and_mana_lines(st, line):
         if m:
             produces |= set(COLORS)
             extra["mana_cond"] = m[1]
+            return None
+        m = re.fullmatch(r"\{T\}: Add (\{[WUBRG]\}(?: or \{[WUBRG]\})?)\. Activate only if you control an? (Plains|Island|Swamp|Mountain|Forest)"
+                         r"(?: or an? (Plains|Island|Swamp|Mountain|Forest))?\.", line)
+        if m:
+            colors = "".join(re.findall(r"[WUBRG]", m[1]))
+            produces |= set(colors)
+            extra["mana_gate"] = extra.get("mana_gate", ()) + ((colors, tuple(t for t in (m[2], m[3]) if t)),)
+            return None
+        m = re.fullmatch(r"\{T\}: Add (\{[WUBRG]\}(?: or \{[WUBRG]\})?)\. Activate only if ~ entered this turn or if your control a basic land\.", line)
+        if m:
+            colors = "".join(re.findall(r"[WUBRG]", m[1]))
+            produces |= set(colors)
+            extra["mana_gate"] = extra.get("mana_gate", ()) + ((colors, ()),)
             return None
         m = re.fullmatch(r"\{T\}: Add (\{[WUBRG]\}(?: or \{[WUBRG]\})?)\. (Activate only if [^.]+\.)", line)
         if m:
