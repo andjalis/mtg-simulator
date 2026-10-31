@@ -131,6 +131,11 @@ class EffectsMixin:
             self.check_ward(copy)
 
     def counter(self, p: Player, eff: Effect, target):
+        if eff.kind == "bounce_spell" and isinstance(target, Permanent):   # "target spell or permanent"
+            if target in target.controller.battlefield:
+                self.log(f"{target.card.name} returns to hand", p)
+                self.leave_battlefield(target, "hand")
+            return
         if not isinstance(target, StackItem) or target not in self.stack:
             return
         if eff.kind == "bounce_spell":

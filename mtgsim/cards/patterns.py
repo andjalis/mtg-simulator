@@ -209,6 +209,8 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
          m[1].split()[-1] if m[1].startswith("up to") else m[1], 2))]),
     (r"(?:it|~) must be blocked (?:this turn|each combat this turn) if able",
      lambda m: Effect("force_blocked", target="prev" if m[0].lower().startswith("it") else "self")),
+    (r"counter target spell with mana value (\d+) or (greater|less)",
+     lambda m: Effect("counter", target="spell", filter=f"{'min' if m[2] == 'greater' else 'max'}_cmc:{m[1]}")),
     (r"counter target spell with mana value (\d+)",
      lambda m: Effect("counter", target="spell", filter=f"cmc:{m[1]}")),
     (r"counter target (white|blue|black|red|green)(?: or (white|blue|black|red|green))? spell",

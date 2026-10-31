@@ -34,15 +34,19 @@ class Gap:
     label: str
     affected: set[str] = field(default_factory=set)
     candidates: set[str] = field(default_factory=set)
+    weight: float = 0.0              # summed play weight of the candidates (0 without --weights)
 
     def as_dict(self):
-        return {"gap": self.label, "affected_cards": len(self.affected),
+        extra = {"weighted_potential": round(self.weight, 3)} if self.weight else {}
+        return {"gap": self.label, "affected_cards": len(self.affected), **extra,
                 "potential_full_matches": len(self.candidates),
                 "examples": sorted(self.candidates or self.affected)[:3]}
 
 
-def ranked(gaps):
-    return sorted(gaps.values(), key=lambda g: (-len(g.candidates), -len(g.affected), g.label))
+def ranked(gaps, weighted=False):
+    """By potential full matches, or (weighted) by the play weight those matches carry."""
+    lead = (lambda g: -g.weight) if weighted else (lambda g: 0)
+    return sorted(gaps.values(), key=lambda g: (lead(g), -len(g.candidates), -len(g.affected), g.label))
 
 
 @dataclass
@@ -52,6 +56,7 @@ class DatabaseReport:
     errors: list[dict] = field(default_factory=list)
     families: dict[str, Gap] = field(default_factory=dict)
     wording: dict[str, Gap] = field(default_factory=dict)
+    weights: dict[str, float] = field(default_factory=dict)    # play weights by card name (empty = unweighted)
 
     @property
     def counts(self):
@@ -64,8 +69,13 @@ class DatabaseReport:
                 "ranking_method": "Potential full matches have every ignored line in the gap and no recorded simplifications. "
                                   "Counts are upper bounds, overlap, and must not be summed.",
                 "unclassified": self.families.get("unclassified", Gap("unclassified")).as_dict(),
-                "families": [g.as_dict() for g in ranked(self.families) if g.label != "unclassified"][:top],
-                "exact_wording": [g.as_dict() for g in ranked(self.wording)[:top]]}
+                "families": [g.as_dict() for g in ranked(self.families, bool(self.weights)) if g.label != "unclassified"][:top],
+                "exact_wording": [g.as_dict() for g in ranked(self.wording, bool(self.weights))[:top]]}
+
+
+def card_weight(report, name):
+    w = report.weights
+    return w.get(name, w.get(name.split(" // ")[0], 0.0)) if w else 0.0
 
 
 def record_gaps(report, row, ignored):
@@ -79,18 +89,20 @@ def record_gaps(report, row, ignored):
         gap.affected.add(row.name)
         if not row.simplified and all(name in group for group in line_families):
             gap.candidates.add(row.name)
+            gap.weight += card_weight(report, row.name)
     for line in lines:
         gap = report.wording.setdefault(line, Gap(line))
         gap.affected.add(row.name)
         if len(lines) == 1 and not row.simplified:
             gap.candidates.add(row.name)
+            gap.weight += card_weight(report, row.name)
 
 
-def measure(db, progress=None):
+def measure(db, progress=None, weights=None):
     if db._all is None:
         raise ValueError("no card database; run python3 -m mtgsim.build_carddb first")
     names = [r[0] for r in db._all.execute("SELECT name FROM cards ORDER BY key")]
-    report = DatabaseReport()
+    report = DatabaseReport(weights=weights or {})
     for i, name in enumerate(names, 1):
         try:
             card = db.get(name)
@@ -142,15 +154,20 @@ def format_report(report, top=15):
     if other:
         lines += ["", f"Unclassified wording affects {len(other.affected):,} cards; {len(other.candidates):,} have all "
                   "their remaining gaps unclassified. This bucket is separate from the effect-family ranking."]
+    if report.weights:
+        lines += ["", "Gaps are ranked by the play weight of the cards they would unlock "
+                  f"({sum(1 for r in report.rows if card_weight(report, r.name)):,} cards carry a weight), then by potential full matches."]
     for title, gaps in (("Effect families", report.families), ("Exact ignored wording", report.wording)):
         if not top:
             continue
-        lines += ["", f"### {title}", "", "| Gap | Potential full matches | Cards affected | Examples |",
-                  "| --- | ---: | ---: | --- |"]
-        ordered = [g for g in ranked(gaps) if title != "Effect families" or g.label != "unclassified"]
+        wt = bool(report.weights)
+        lines += ["", f"### {title}", "", "| Gap | Potential full matches | " + ("Play weight | " if wt else "") + "Cards affected | Examples |",
+                  "| --- | ---: | " + ("---: | " if wt else "") + "---: | --- |"]
+        ordered = [g for g in ranked(gaps, bool(report.weights)) if title != "Effect families" or g.label != "unclassified"]
         for gap in ordered[:top]:
             g = gap.as_dict()
-            lines.append(f"| {_cell(gap.label)} | {g['potential_full_matches']:,} | {g['affected_cards']:,} | "
+            lines.append(f"| {_cell(gap.label)} | {g['potential_full_matches']:,} | "
+                         + (f"{gap.weight:.2f} | " if wt else "") + f"{g['affected_cards']:,} | "
                          f"{_cell('; '.join(g['examples']))} |")
     if report.errors:
         lines += ["", "## Parser errors", ""]
@@ -173,7 +190,7 @@ def save_report(report, dest, top=15):
         writer = csv.writer(stream, lineterminator="\n")
         writer.writerow(["kind", "gap", "potential_full_matches", "affected_cards", "examples"])
         for kind, gaps in (("family", report.families), ("exact_wording", report.wording)):
-            for gap in ranked(gaps):
+            for gap in ranked(gaps, bool(report.weights)):
                 g = gap.as_dict()
                 writer.writerow([kind, gap.label, g["potential_full_matches"], g["affected_cards"], "; ".join(g["examples"])])
 
@@ -183,6 +200,8 @@ def main(argv=None):
     ap.add_argument("--save", type=Path, metavar="DIR", help="save Markdown, JSON, per-card CSV and ranked-gap CSV")
     ap.add_argument("--json", action="store_true", help="print the summary and top rankings as JSON")
     ap.add_argument("--top", type=int, default=15, help="number of rows in each ranking (default 15)")
+    ap.add_argument("--weights", type=Path, nargs="+", metavar="FILE",
+                    help="play-weight JSON files (see mtgsim.play_weights); gaps are then ranked by the weight they unlock")
     ap.add_argument("--progress", action="store_true", help="report progress on stderr")
     args = ap.parse_args(argv)
     if args.top < 0:
@@ -193,7 +212,11 @@ def main(argv=None):
         return 2
     progress = (lambda i, total: print(f"Measured {i:,} / {total:,} cards", file=sys.stderr, flush=True)) if args.progress else None
     try:
-        report = measure(db, progress)
+        weights = None
+        if args.weights:
+            from .play_weights import load
+            weights = load(args.weights)
+        report = measure(db, progress, weights)
         if args.save:
             save_report(report, args.save, args.top)
         print(json.dumps(report.as_dict(args.top), indent=2, ensure_ascii=False) if args.json else format_report(report, args.top), end="\n")

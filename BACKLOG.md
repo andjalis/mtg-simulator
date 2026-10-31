@@ -50,6 +50,15 @@ Still open from that work: copy effects until your next turn (Shapesharer, Volra
 triggers bounded by the duration (Don't Move, Vraska the Unseen, Jace), name locks (Reflector Mage), animations that last
 until your next turn, "the player or planeswalker it's attacking" damage, and Archenemy schemes.
 
+## 2026-10-31: ladder-pool cleanup, domain quantities, play weighting
+
+Verge and Bastion/Lair lands now gate their second colour on a matching land type (or a basic / entering this turn);
+"counter target spell with mana value N or greater/less"; "return target spell or permanent/creature to its owner's
+hand"; "Domain —/Vivid —" prefixes; quantities for basic land types, colours among permanents/lands and differently
+named lands. Census after: 15,038 full of 34,130 (44.06%). `mtgsim/play_weights.py` builds weights from MTGJSON
+(`edhrecRank`, MIT licence; the host is blocked in cloud sessions, so download `AtomicCards.json.gz` locally) or from
+the rank-pool decks, and `database_coverage --weights FILE...` ranks gaps by the play weight they unlock.
+
 ## Nightly cloud session 2026-10-31 (cx_night_* modules)
 
 Landed in `mtgsim/cx_night_quantity.py`, `cx_night_buffs.py`, `cx_night_multi.py` and one selector tweak in

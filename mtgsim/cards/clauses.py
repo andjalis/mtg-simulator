@@ -470,6 +470,11 @@ def _xq(text: str):
         return ("gy", _singular(m[1]))
     if tl == "the number of cards in your graveyard":
         return ("gy", "")
+    if tl in ("the number of basic land types among lands you control", "the number of colors among permanents you control",
+              "the number of differently named lands you control", "the number of colors among lands you control"):
+        return ({"basic land types among lands": ("domain",), "colors among permanents": ("colors_among",),
+                 "colors among lands": ("colors_among_lands",), "differently named lands": ("named_lands",)}
+                [tl[len("the number of "):-len(" you control")]])
     m = re.fullmatch(r"the number of ([\w -]+?) you control", t, re.I)
     if m and " with " not in m[1] and " that " not in m[1]:
         return ("count", _singular(m[1]))

@@ -734,6 +734,20 @@
     "cards": ["A-Hullbreaker Horror"]
   },
   {
+    "match": "return target spell or (permanent|creature) to its owner's hand",
+    "effect": "bounce_spell",
+    "target": {"$map": "$1:lower", "values": {"permanent": "spell_or_permanent", "creature": "spell_or_creature"}},
+    "example": "Return target spell or permanent to its owner's hand",
+    "cards": ["Jeskai Revelation", "Fatehold Charm"]
+  },
+  {
+    "match": "return target spell to its owner's hand",
+    "effect": "bounce_spell",
+    "target": "spell",
+    "example": "Return target spell to its owner's hand",
+    "cards": ["Bilbo's Gambit"]
+  },
+  {
     "match": "you lose (\\d+) life",
     "effect": "lose_life",
     "amount": "$1:int",
