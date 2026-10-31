@@ -59,10 +59,11 @@ class CompoundParse(unittest.TestCase):
         self.assertEqual(trigs[0].filter, "noself|other|creature token")
 
     def test_words_the_engine_cant_match_stay_unsupported(self):
+        self.assertIsNone(_parse_trigger("Whenever another snow permanent you control enters, scry 1."))
+        # outlaw and historic are known to the trigger-event library (cx_events.py)
         for text in ("Whenever another outlaw you control enters, ~ deals 1 damage to target opponent.",
-                     "Whenever another snow permanent you control enters, scry 1.",
                      "Whenever another nontoken historic permanent you control enters, you gain 1 life."):
-            self.assertIsNone(_parse_trigger(text), text)
+            self.assertEqual(_parse_trigger(text)[0][0].event, "ev:etb", text)
 
 
 class CompoundEngine(unittest.TestCase):
