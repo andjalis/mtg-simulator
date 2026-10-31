@@ -86,6 +86,12 @@ class BattlefieldMixin:
         perm.entered_x = x
         perm.prepared = bool(card.prepared and card.back is not None)
         perm.spent_color = getattr(self, "_spent", "")
+        cast = getattr(self, "_entry_cast", None)       # the spell this permanent resolved from (cx_condlib)
+        if cast is not None:
+            self._entry_cast = None
+            perm.kicked = cast[0]
+            perm.cast_from_hand = cast[1]
+            perm.mana_spent = cast[2]
         others = sum(x.card.is_land for x in p.battlefield)
         cond = card.tapped_condition
         if cond.startswith("other_subtype:"):

@@ -32,6 +32,7 @@ the files it may edit. Stay in your lane; this file replaces a pile of issues. O
 | Card wordings as data: loader, data files, core templates | `mtgsim/wordings.py`, `mtgsim/data/wordings/` (the loader and format; adding entries to a wordings file is open to every card lane), `mtgsim/cards/patterns.py`, `mtgsim/cards/parse.py`, `tests/test_wordings.py` | Claude |
 | Card wording entries (data only, batch by batch) | `mtgsim/data/wordings/*.json` entries, `tests/test_wordings.py` | Claude |
 | Backlog and docs | `BACKLOG.md`, `README.md`, `results/residual_batch/` | Claude |
+| Cards: shared condition library and linked results ("If <condition>,", "if you do", "this way") | `mtgsim/cx_condlib.py`, `mtgsim/cx_links.py`, `tests/test_cx_condlib.py`, `tests/test_cx_links.py` | Claude |
 
 Other lanes in andjalis/mtg-gauntlet (private, includes this repo as the `engine/` submodule):
 

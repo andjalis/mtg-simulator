@@ -50,7 +50,8 @@ def _code(text: str):
         m = pat.fullmatch(text)
         if m:
             return code.format(*[str(_num(g)) if g and g.lower() in _NUMS else (g or "") for g in m.groups()])
-    return None
+    from .cx_condlib import as_static
+    return as_static(text) or None
 
 
 _NUMS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}

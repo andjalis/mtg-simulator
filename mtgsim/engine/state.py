@@ -172,6 +172,9 @@ class Permanent:
         self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
         self.auras: list["Permanent"] = []   # Auras on this permanent (they sit on their caster's battlefield)
         self.kicks = 0                                 # times a multikicker / squad cost was paid
+        self.kicked = False                            # cast with a kicker cost ("if it was kicked")
+        self.cast_from_hand = False                    # "if you cast it from your hand"
+        self.mana_spent = 0                            # "if at least N mana was spent to cast it"
         self.curse_target = None                       # a Curse: the player it enchants
         self.aura_host: "Permanent | None" = None      # the permanent this Aura enchants
         self.attached_to: "Permanent | None" = None    # Equipment: the creature it is attached to
@@ -460,6 +463,9 @@ class Permanent:
         if cond.startswith("cx:"):
             from ..cx_conditions import holds
             return holds(self, cond)
+        if cond.startswith("lib:"):
+            from ..cx_condlib import holds as lib_holds
+            return lib_holds(self, cond)
         return False
 
     @property
