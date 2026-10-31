@@ -154,11 +154,22 @@ def _since_peek(effects):
     return None
 
 
-def parse_ref(s: str, effects):
+_MOVE_TOP = re.compile(r"(?:(?P<ex>exile)|(?P<mill>mill)) (?:the top card of your library|a card)", re.I)
+_REF_NEXT = re.compile(r"\s*if (?:it's|it is|that card is) (?:a|an) ", re.I)
+
+
+def parse_ref(s: str, effects, following: str = ""):
     """The top-card reveal sequence, sentence by sentence; None when s isn't part of one."""
     m = _PEEK.fullmatch(s)
     if m:
         return [Effect("peek_top", data={"reveal": m["how"].lower() == "reveal"})]
+    m = _MOVE_TOP.fullmatch(s)
+    if m and _REF_NEXT.match(following or "") and not (m["mill"] and "top card" in s.lower()):
+        # "Exile the top card of your library. If it's a land card, ...": remember the card, then move it.
+        from .cards import _parse_effects
+        new, bad = _parse_effects(s[0].upper() + s[1:] + ".")
+        if new and not bad:
+            return [Effect("peek_top", data={"zone": "exile" if m["ex"] else "graveyard"})] + new
     after = _since_peek(effects)
     if after is None:
         return None

@@ -9,7 +9,8 @@ import re
 
 _N = r"(\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
 _COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
-_KEYWORDS = "flying|first strike|double strike|trample|haste|lifelink|vigilance|menace|deathtouch|reach|indestructible|hexproof|flash|defender"
+_KEYWORDS = ("flying|first strike|double strike|trample|haste|lifelink|vigilance|menace|deathtouch|reach|indestructible|"
+             "hexproof|flash|defender|shroud|shadow|fear|intimidate|wither|persist|undying|infect|skulk|horsemanship")
 
 # (pattern, code template); groups are substituted into the template.
 _CONDS = [
@@ -39,7 +40,7 @@ _CONDS = [
 ]
 _COMPILED = [(re.compile(p), c) for p, c in _CONDS]
 _KWS = rf"(?:{_KEYWORDS})(?:(?:, | and |, and )(?:{_KEYWORDS}))*"
-_CLAUSE = rf"(?:gets ([+-]\d+)/([+-]\d+)(?: and has ({_KWS}))?|has ({_KWS}))"
+_CLAUSE = rf"(?:gets ([+-]\d+)/([+-]\d+)(?: and has ({_KWS}))?|has ({_KWS}|can't be blocked))"
 _LINE = re.compile(rf"(?:\w+ — )?~ {_CLAUSE} as long as (.+)\.")
 _LEADING = re.compile(rf"(?:\w+ — )?As long as (.+?), (?:~|it) {_CLAUSE}\.")
 
@@ -60,6 +61,7 @@ _NUMS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven"
 def parse_line(line: str, st) -> bool:
     if parse_restriction(line, st):
         return True
+    line = re.sub(r"(~|, ~|, it) can't be blocked( as long as|\.$)", r"\1 has can't be blocked\2", line)
     m = _LINE.fullmatch(line)
     if m is not None:
         cond, clause = m[5], m.groups()[:4]
@@ -74,6 +76,7 @@ def parse_line(line: str, st) -> bool:
     if clause[0] is not None:
         st.extra["pt_if"] = st.extra.get("pt_if", ()) + ((code, int(clause[0]), int(clause[1])),)
     for keyword in re.split(r", and |, | and ", clause[2] or clause[3] or ""):
+        keyword = "unblockable" if keyword == "can't be blocked" else keyword
         if keyword:
             st.extra["cond_keywords"] = st.extra.get("cond_keywords", ()) + ((keyword, code),)
     return True

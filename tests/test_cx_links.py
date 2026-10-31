@@ -13,6 +13,9 @@ SACKER = card("Test Sacker", "{2}{B}", "Creature — Vampire",
 SCOUT = card("Test Scout", "{1}{G}", "Creature — Elf",
              "When ~ enters, look at the top card of your library. If it's a land card, you may put it onto the "
              "battlefield tapped. Otherwise, put it into your hand.", 1, 1)
+JESTER = card("Test Jester", "{2}{R}", "Creature — Human",
+              "When ~ enters, exile the top card of your library. If that card is a land card, you gain 3 life. "
+              "Otherwise, you lose 1 life.", 2, 2)
 TRINKET = card("Test Trinket", "{1}", "Artifact", "")
 SNARL = card("Test Snarl", "", "Land",
              "As ~ enters, you may reveal an Island or Mountain card from your hand. If you don't, ~ enters tapped.\n"
@@ -23,7 +26,7 @@ EXERTER = card("Test Exerter", "{1}{R}", "Creature — Human Warrior",
 
 class LinkParse(unittest.TestCase):
     def test_parse(self):
-        for c in (TAPPER, SACKER, SCOUT, SNARL, EXERTER):
+        for c in (TAPPER, SACKER, SCOUT, SNARL, EXERTER, JESTER):
             self.assertEqual(c.unsupported, [], c.name)
 
 
@@ -65,6 +68,15 @@ class LinkEngine(unittest.TestCase):
         self.game.enter_battlefield(self.a, SCOUT)
         self.game.settle()
         self.assertIn(BEAR, self.a.hand)
+
+    def test_exiled_top_card(self):
+        self.a.library = [BEAR, ISLAND]
+        self.game.enter_battlefield(self.a, JESTER)
+        self.game.settle()
+        self.assertEqual(self.a.life, 23)
+        self.game.enter_battlefield(self.a, JESTER)
+        self.game.settle()
+        self.assertEqual(self.a.life, 22)
 
     def test_reveal_land(self):
         self.a.hand = []
