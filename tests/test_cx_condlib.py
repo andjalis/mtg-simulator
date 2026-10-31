@@ -184,3 +184,18 @@ class ExiledCard(unittest.TestCase):
                 game.resolve(a, eff, None, item, None)
         self.assertEqual(a.life, 21)
         self.assertIn(BEAR, b.exile)
+
+
+BEEBLES = card("Test Beebles", "{1}{U}", "Creature — Beeble",
+               "~ can't be blocked as long as defending player controls an artifact.", 1, 1)
+
+
+class StaticKeywords(unittest.TestCase):
+    def test_cant_be_blocked_as_long_as(self):
+        a, b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        game = Game(a, b, random.Random(0), log=True)
+        self.assertEqual(BEEBLES.unsupported, [])
+        beebles = game.enter_battlefield(a, BEEBLES)
+        self.assertFalse(beebles.has("unblockable"))
+        game.enter_battlefield(b, card("Test Rock", "{1}", "Artifact", ""))
+        self.assertTrue(beebles.has("unblockable"))

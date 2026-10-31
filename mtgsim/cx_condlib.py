@@ -126,6 +126,10 @@ def _filter(text: str, plural: bool = True):
     if m:
         spec["counter"] = m[2]
         text = m[1]
+    colors = re.fullmatch(r"(white|blue|black|red|green) or (white|blue|black|red|green) (.+)", text)
+    if colors:
+        spec["any_color"] = [_COLORS[colors[1]], _COLORS[colors[2]]]
+        text = colors[3]
     any_of = re.fullmatch(r"(\w+) (?:and/or|or) (\w+)( .+)?", text)
     if any_of and any_of[1].lower().rstrip("s") in _TYPES + ("sorcerie",) and \
             any_of[2].lower().rstrip("s") in _TYPES + ("sorcerie",):
@@ -171,6 +175,8 @@ def _card_ok(card, spec: dict, perm=None) -> bool:
     if any(s not in subs for s in spec.get("sub", ())):
         return False
     if spec.get("colors") and not all(c in card.colors for c in spec["colors"]):
+        return False
+    if spec.get("any_color") and not any(c in card.colors for c in spec["any_color"]):
         return False
     cc = spec.get("colorcount")
     if cc == "multicolored" and len(card.colors) < 2 or cc == "colorless" and card.colors or \
@@ -379,6 +385,11 @@ def _spells_turn(m):
 @rule(rf"you(?:'ve| have)? gained (?P<n>{_NUM}) or more life this turn")
 def _gained(m):
     return f"gained_life>={_n(m['n'])}"
+
+
+@rule(rf"you(?:'ve| have)? drawn (?P<n>{_NUM}) or more cards this turn")
+def _drawn(m):
+    return _code("drawn", _n(m["n"]))
 
 
 @rule(rf"you attacked with (?P<n>{_NUM}) or more creatures this turn")
@@ -765,6 +776,9 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         return bool(p.creature_died_turn)
     if kind == "spells":
         return _cmp(game.spells_cast_turn(p), *args)
+    if kind == "drawn":
+        drawn = getattr(p, "drawn_turn", (None, 0))
+        return drawn[0] == game.turn and drawn[1] >= args[0]
     if kind == "attacked":
         return p.attacked_with >= args[0]
     if kind == "total_power":
