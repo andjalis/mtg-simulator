@@ -436,10 +436,11 @@ def _xq(text: str):
     tl = t.lower()
     from ..counting import _singular
     if tl in ("your life total", "your speed", "the amount of life you gained this turn",
-             "the number of cards in your hand"):
+             "the number of cards in your hand", "the number of cards in an opponent's hand"):
         return ({"your life total": ("life",), "your speed": ("speed",),
                  "the amount of life you gained this turn": ("gained",),
-                 "the number of cards in your hand": ("hand",)}[tl])
+                 "the number of cards in your hand": ("hand",),
+                 "the number of cards in an opponent's hand": ("opp_hand",)}[tl])
     m = re.fullmatch(r"(~|its|that creature|that spell)'s? (power|toughness|mana value)", t, re.I) or \
         re.fullmatch(r"(its) (power|toughness)", t, re.I)
     if m:

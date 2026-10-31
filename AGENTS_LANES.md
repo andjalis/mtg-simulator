@@ -67,3 +67,6 @@ Claude (trigger-event thread, from 31 Oct): `mtgsim/cx_events.py` and `tests/tes
 Round 2 adds `mtgsim/cx_replace.py` and `tests/test_cx_replace.py` (conditional entry counters, "would die, exile it
 instead", draw replacements, two-player "choose an opponent"), with one-line hooks in `cards/face_lines.py`,
 `cards/parse.py`, `engine/battlefield.py`, `engine/turns.py`, `rules_events.py` and `copies.py` (spell_copied).
+Round 3 adds `mtgsim/cx_effects.py`, `mtgsim/engine/kinds/cx_effects.py` and `tests/test_cx_effects.py` (disjunctive
+targets, opponent draws, graveyard-to-top, random graveyard returns, exile-this-turn, opponent hand counts), with
+one-line hooks in `engine/targets.py`, `engine/costs.py`, `cards/clauses.py` and `cx_night_quantity.py`.

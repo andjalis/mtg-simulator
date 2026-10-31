@@ -151,3 +151,6 @@ _TRIGGERS += _cx_events.TRIGGERS
 _TRIGGERS += _cx_links.TRIGGERS
 from .. import cx_statics as _cx_statics
 _EFFECT_PATTERNS += _cx_statics.EFFECT_PATTERNS
+from .. import cx_effects as _cx_effects
+_EFFECT_PATTERNS += _cx_effects.EFFECT_PATTERNS
+_SUBS += _cx_effects.SUBS

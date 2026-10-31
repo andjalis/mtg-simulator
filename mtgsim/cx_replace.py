@@ -93,7 +93,8 @@ def exiles(game, perm) -> bool:
     """Whether a "would die, exile it instead" static applies to this dying creature."""
     if not perm.is_creature:
         return False
-    if _rules_of(perm).get("cx_exile_self"):
+    from .cx_effects import exile_this_turn
+    if exile_this_turn(game, perm) or _rules_of(perm).get("cx_exile_self"):
         return True
     from .cx_events import _object_subject, _subject_ok
     for pl in game.players:

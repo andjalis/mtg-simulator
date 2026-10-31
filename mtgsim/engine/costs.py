@@ -207,6 +207,8 @@ class CostsMixin:
             return p.life_gained_turn
         if kind == "hand":
             return len(p.hand)
+        if kind == "opp_hand":
+            return len(self.opponent(p).hand)
         if kind == "stat":
             who = prev if spec[1] == "prev" else src
             if spec[2] == "mana value":
