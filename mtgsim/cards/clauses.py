@@ -539,4 +539,5 @@ def _if_cond(phrase: str) -> str:
         if "tapped" in rx:
             return f"tapped_creatures>={_N_WORDS.get(m[1].lower(), 2)}"
         return f"power_ge:{m[1]}"
-    return ""
+    from .. import cx_condlib
+    return cx_condlib.parse(phrase)

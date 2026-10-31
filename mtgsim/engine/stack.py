@@ -6,7 +6,7 @@ import re
 
 from .. import alt_casts, auras, copies, milling
 from ..cards import CardDef, Effect
-from .. import modal, rules_events, phase_conditions, turn_conditions, counter_mechanics
+from .. import modal, rules_events, phase_conditions, turn_conditions, counter_mechanics, cx_condlib
 from ..identity import CardInstance, CardZone
 from ..actions import perform, can_perform
 from .state import Permanent, Player, StackItem, TARGETED, TrackedZone, _gy_desc, card_matches
@@ -323,11 +323,14 @@ class StackMixin:
                     p.graveyard.append(base)
                     return
             self._entry_mana_colors = getattr(item, "mana_colors", set())
+            self._entry_cast = (kind == "kicker" or getattr(item, "kicks", 0) > 0,
+                                bool(getattr(item, "cast_from_hand", False)), getattr(item, "mana_spent", 0))
             if kind == "disturb":                   # cast transformed: its back face enters
                 perm = self.enter_battlefield(p, base.back, x=getattr(item, "x", 0), physical_card=base)
             else:
                 perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
             self._aura_host = None
+            self._entry_cast = None
             if base.aura == "player":
                 perm.curse_target = self.opponent(p)
             self._entry_mana_colors = set()
@@ -482,6 +485,8 @@ class StackMixin:
         turn_condition = turn_conditions.check(self, p, c, item)
         if turn_condition is not None:
             return turn_condition
+        if c.startswith("lib:"):
+            return cx_condlib.check(self, p, c, item)
         if c == "city_blessing":
             from ..batch1_templates import has_blessing
             return has_blessing(self, p, item)
