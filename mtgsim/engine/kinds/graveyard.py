@@ -269,9 +269,12 @@ def gy_move(game, p, eff, item, **_):
 
 
 @kind("grant_flashback")
-def grant_flashback(game, p, **_):
+def grant_flashback(game, p, eff, **_):
     cands = [c for c in p.graveyard if (c.is_instant or c.is_sorcery) and c.alt_costs is not None]
-    if cands:
+    if cands and eff.data.get("all"):
+        p.granted_fb += [c for c in cands if c not in p.granted_fb]
+        game.log(f"{len(cands)} graveyard spells gain flashback", p)
+    elif cands:
         best = max(cands, key=lambda c: c.cmc)
         p.granted_fb.append(best)
         game.log(f"{best.name} gains flashback", p)

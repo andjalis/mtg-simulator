@@ -140,3 +140,5 @@ from .. import cx_night_xplayer as _cx_night_xplayer
 _EFFECT_PATTERNS += _cx_night_xplayer.EFFECT_PATTERNS
 from .. import cx_night_untap as _cx_night_untap
 _EFFECT_PATTERNS += _cx_night_untap.EFFECT_PATTERNS
+from .. import cx_night_flash as _cx_night_flash
+_EFFECT_PATTERNS += _cx_night_flash.EFFECT_PATTERNS
