@@ -32,8 +32,22 @@ class Buffs(unittest.TestCase):
                 self.assertEqual(len(c.ability_grants), 1)
         self.assertEqual((PINGER.equip_bonus, CROWBAR.equip_bonus), ((2, 2), (1, 1)))
 
-    def test_granted_trigger_stays_unsupported(self):
-        self.assertEqual(len(TRIGGERED.unsupported), 1)
+    def test_granted_trigger_becomes_a_host_trigger(self):
+        self.assertEqual(TRIGGERED.unsupported, [])
+        self.assertEqual([t.event for t in TRIGGERED.host_triggers], ["combat_damage_player"])
+        self.assertEqual(TRIGGERED.equip_bonus, (1, 0))
+
+    def test_keywords_and_granted_ability(self):
+        c = card("Test Kite", "{1}", "Artifact — Equipment",
+                 "Equipped creature has flying and \"{T}: Add {C}.\"\nEquip {1}")
+        self.assertEqual(c.unsupported, [])
+        self.assertEqual(c.equip_keywords, frozenset({"flying"}))
+        self.assertEqual(len(c.ability_grants), 1)
+
+    def test_upkeep_grant_stays_unsupported(self):
+        c = card("Test Fervor", "{1}{R}", "Enchantment — Aura", "Enchant creature\nEnchanted creature gets +3/+3 and has "
+                 "\"At the beginning of your upkeep, put a -1/-1 counter on ~.\"")
+        self.assertEqual(len(c.unsupported), 1)
 
     def test_aura_gives_bonus_and_ability(self):
         host = self.game.enter_battlefield(self.a, BEAR)
