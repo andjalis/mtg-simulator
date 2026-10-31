@@ -30,4 +30,9 @@ EFFECT_PATTERNS = [
     (r"put ~ on top of its owner's library", lambda m: _effect("tuck_top", target="self")),
     (r"exile enchanted creature", lambda m: _effect("exile_permanent", target="host")),
     (r"exile target creature card from a graveyard", lambda m: _effect("exile_gy", 1)),
+    (r"~ gains protection from the color of your choice until end of turn",
+     lambda m: _effect("grant", target="self", data={"keyword": "protection_choice"})),
+    # "Defender" stays; Permanent.can_attack lets the creature attack while it has this keyword.
+    (r"~ can attack this turn as though it didn't have defender",
+     lambda m: _effect("grant", target="self", data={"keyword": "attacks_despite_defender"})),
 ]

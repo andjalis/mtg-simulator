@@ -71,8 +71,8 @@ def parse_line(line: str, st) -> bool:
         m = _LEADING.fullmatch(line)
         if m is None:
             from .cx_statics import parse_line as statics_line
-            from .cx_altcost import parse_line as altcost_line
-            return statics_line(line, st) or altcost_line(line, st)
+            from .cx_altcost import parse_line as altcost_line, parse_discard_ability
+            return statics_line(line, st) or altcost_line(line, st) or parse_discard_ability(line, st)
         cond, clause = m[1], m.groups()[1:5]
     code = _code(cond)
     if code is None:

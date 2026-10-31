@@ -56,3 +56,21 @@ class CostParts(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DiscardAbility(unittest.TestCase):
+    def test_discard_self_from_hand(self):
+        from mtgsim.engine import Game, Player
+        outburst = card("Test Outburst", "{3}{G}", "Creature — Elf", "{G}, Discard ~: You gain 4 life.", 3, 3)
+        self.assertEqual(outburst.unsupported, [])
+        a, b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        game = Game(a, b, random.Random(0), log=True)
+        game.turn, game.step = 2, "main1"
+        game.enter_battlefield(a, FOREST).sick = False
+        a.hand = [outburst]
+        options = [v for v in game.spell_options(a) if getattr(v, "origin", (None, ""))[1] == "channel"]
+        self.assertTrue(options)
+        self.assertTrue(game.cast(a, options[0], []))
+        game.settle()
+        self.assertEqual(a.life, 24)
+        self.assertEqual([c.name for c in a.graveyard], ["Test Outburst"])
