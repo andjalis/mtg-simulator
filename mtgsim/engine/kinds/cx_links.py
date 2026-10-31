@@ -10,7 +10,7 @@ def link_start(game, p, eff, item, **_):
     if item is None:
         return
     item.gate_paid = False
-    item.link_taken = decide(game, p, eff.data.get("kinds", ()))
+    item.link_taken = eff.data.get("forced") or decide(game, p, eff.data.get("kinds", ()))
     item.link_snapshot = snapshot(game) if item.link_taken else None
 
 
@@ -82,3 +82,15 @@ def ref_move(game, p, eff, item, **_):
         game.move_card(card, p.library, p.hand if to == "hand" else p.graveyard, reason="ref_move")
     game.log(f"puts {card.name} {'on the bottom of the library' if to == 'bottom' else 'into ' + to}", p)
     item.link_card = None
+
+
+@kind("exert_self")
+def exert_self(game, p, item, **_):
+    """Exert: the source doesn't untap during its controller's next untap step (once per exert)."""
+    src = getattr(item, "source", None)
+    if src is None or src not in p.battlefield or getattr(src, "exerted_turn", None) == game.turn:
+        return
+    src.exerted_turn = game.turn
+    src.skip_untap += 1
+    game.fire(p, "exerted", src)
+    game.log(f"exerts {src.card.name}", p)

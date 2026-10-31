@@ -420,6 +420,90 @@ def _plural(q: str) -> bool:
     return q.lower() not in ("a", "an", "one", "another", "exactly one")
 
 
+# ---------------------------------------------------------------------------
+# Turn history: "if <event> this turn", reusing the trigger-event grammar (cx_events)
+# ---------------------------------------------------------------------------
+
+_HIST_HEADS: dict = {}       # present-tense trigger head -> (raw events, matcher spec)
+_SUBJ_Q = rf"(?P<q>a|an|{_NUM} or more|one or more)"     # "another" would count the source itself
+_PAST = [
+    (rf"{_SUBJ_Q} (?P<s>.+?) entered(?: the battlefield)? under your control", "{q} {s} you control enters"),
+    (rf"{_SUBJ_Q} (?P<s>.+?) entered(?: the battlefield)?", "{q} {s} enters"),
+    (rf"{_SUBJ_Q} (?P<s>.+?) died under your control", "{q} {s} you control dies"),
+    (rf"{_SUBJ_Q} (?P<s>.+?) died", "{q} {s} dies"),
+    (rf"{_SUBJ_Q} (?P<s>.+?) left the battlefield under your control", "{q} {s} you control leaves the battlefield"),
+    (rf"{_SUBJ_Q} (?P<s>.+?) left the battlefield", "{q} {s} leaves the battlefield"),
+    (rf"you(?:'ve| have)? cast {_SUBJ_Q} (?P<s>.+?)", "you cast {q} {s}"),
+    (rf"you(?:'ve| have)? sacrificed {_SUBJ_Q} (?P<s>.+?)", "you sacrifice {q} {s}"),
+    (r"you(?:'ve| have)? discarded (?P<q>a|one or more) (?P<s>cards?)", "you discard a card"),
+    (r"you(?:'ve| have)? cycled (?P<q>a|one or more) (?P<s>cards?)", "you cycle a card"),
+]
+
+
+def _history(phrase: str) -> str:
+    """A code for "<something happened> this turn", or ""."""
+    m = re.fullmatch(r"(.+?) this turn", phrase.strip(), re.I)
+    if not m:
+        return ""
+    body, negate = m[1], False
+    neg = re.fullmatch(r"you haven't (cast|sacrificed|discarded|cycled) (.+)", body, re.I)
+    if neg:
+        body, negate = f"you {neg[1]} {neg[2]}", True
+    for pat, template in _PAST:
+        pm = re.fullmatch(pat, body, re.I)
+        if not pm:
+            continue
+        q = pm["q"].lower()
+        count = 1
+        qm = re.fullmatch(rf"({_NUM}) or more", q)
+        if qm:
+            count = _n(qm[1])
+        sub = pm["s"]
+        if count > 1 or q == "one or more":
+            # singular subject for the head: "two or more creatures" -> "a creature"
+            sub = re.sub(r"(\w+?)(?:ies)$", r"\1y", sub) if sub.endswith("ies") else re.sub(r"s\b", "", sub, count=1)
+            q = "a" if not re.match(r"[aeiou]", sub, re.I) else "an"
+        head = template.format(q=q, s=sub)
+        from .cx_events import compile_head
+        got = compile_head("Whenever " + head)
+        if got is None:
+            continue
+        _HIST_HEADS[head] = got
+        code = _code("hist", head, count)
+        return "!" + code if negate else code
+    return ""
+
+
+def record(game, p, event, source=None, context=None, subject=None):
+    """Engine hook (Game.fire): count every registered turn-history head this event matches, per player."""
+    if not _HIST_HEADS:
+        return
+    if event == "perm_to_gy" and source is not None or event == "any_cast" and context is not p:
+        return
+    hist = getattr(game, "_condlib_hist", None)
+    if hist is None or hist[0] != game.turn:
+        hist = game._condlib_hist = (game.turn, {})
+    from .cx_events import _match
+    for head, (raws, spec) in _HIST_HEADS.items():
+        if event not in raws:
+            continue
+        for pl in game.players:
+            try:
+                ok = _match(game, spec, event, _Watcher(pl), p, source, context, subject)
+            except Exception:       # a matcher that needs a real permanent: this head can't count the event
+                ok = False
+            if ok is not False:
+                key = (head, pl.name)
+                hist[1][key] = hist[1].get(key, 0) + 1
+
+
+class _Watcher:
+    """Stands in for the permanent that would own the trigger: only its controller matters here."""
+    def __init__(self, controller):
+        self.controller = controller
+        self.card = None
+
+
 def _who(word: str) -> str:
     word = word.lower()
     if word == "you":
@@ -445,7 +529,7 @@ def _plain(phrase: str) -> str:
 
 def parse(phrase: str) -> str:
     """The condition code for a phrase, or ""; tries "A or B" and "A and B" when the whole doesn't parse."""
-    code = _plain(phrase)
+    code = _plain(phrase) or _history(phrase)
     if code:
         return code
     for joiner, kind in ((" or ", "or"), (" and ", "and")):
@@ -535,6 +619,16 @@ def check(game, p, code: str, item=None, source=None):
     if kind == "ref_card":                   # cx_links: the looked-at top card is still on top and matches
         card = getattr(item, "link_card", None)
         return card is not None and bool(p.library) and p.library[-1] is card and _card_ok(card, args[0])
+    if kind == "hist":
+        head, n = args
+        if head not in _HIST_HEADS:
+            from .cx_events import compile_head
+            got = compile_head("Whenever " + head)
+            if got is None:
+                return False
+            _HIST_HEADS[head] = got
+        hist = getattr(game, "_condlib_hist", None)
+        return hist is not None and hist[0] == game.turn and hist[1].get((head, p.name), 0) >= n
     if kind == "monarch":
         return getattr(game, "monarch", None) is p
     if kind == "no_monarch":

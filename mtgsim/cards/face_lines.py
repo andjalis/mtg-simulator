@@ -285,6 +285,16 @@ def _face_land_and_mana_lines(st, line):
         if m:
             extra["tapped_condition"] = f"behold:{m[1]}"
             return None
+        m = re.fullmatch(r"As ~ enters(?: the battlefield)?, you may reveal an? ([\w ,/-]+?) card from your hand\. If you "
+                         r"don't, ~ enters (?:the battlefield )?tapped\.", line)
+        if m:
+            from ..cx_condlib import _filter
+            parts = [w.strip() for w in re.split(r",? or |, ", m[1]) if w.strip()]
+            specs = [_filter(w + " card", plural=False) for w in parts]
+            if all(specs):
+                import json
+                extra["tapped_condition"] = "reveal:" + json.dumps(specs, separators=(",", ":"))
+                return None
         if line == "~ must be blocked if able.":
             extra["must_be_blocked"] = True
             return None

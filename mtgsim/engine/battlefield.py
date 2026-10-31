@@ -114,6 +114,11 @@ class BattlefieldMixin:
         elif cond.startswith("behold:"):
             kind = cond.split(":", 1)[1]
             perm.tapped = not any(kind in c.subtypes for c in [x.card for x in p.battlefield] + p.hand)
+        elif cond.startswith("reveal:"):     # "you may reveal a Giant card from your hand. If you don't, ... tapped"
+            import json
+            from ..cx_condlib import _card_ok
+            specs = json.loads(cond[7:])
+            perm.tapped = not any(_card_ok(c, spec) for c in p.hand for spec in specs)
         elif cond == "always":
             perm.tapped = True
         elif cond.startswith("unless_basics>="):

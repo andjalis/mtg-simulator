@@ -14,11 +14,16 @@ SCOUT = card("Test Scout", "{1}{G}", "Creature — Elf",
              "When ~ enters, look at the top card of your library. If it's a land card, you may put it onto the "
              "battlefield tapped. Otherwise, put it into your hand.", 1, 1)
 TRINKET = card("Test Trinket", "{1}", "Artifact", "")
+SNARL = card("Test Snarl", "", "Land",
+             "As ~ enters, you may reveal an Island or Mountain card from your hand. If you don't, ~ enters tapped.\n"
+             "{T}: Add {U} or {R}.")
+EXERTER = card("Test Exerter", "{1}{R}", "Creature — Human Warrior",
+               "You may exert ~ as it attacks. When you do, it gets +2/+0 until end of turn.", 2, 2)
 
 
 class LinkParse(unittest.TestCase):
     def test_parse(self):
-        for c in (TAPPER, SACKER, SCOUT):
+        for c in (TAPPER, SACKER, SCOUT, SNARL, EXERTER):
             self.assertEqual(c.unsupported, [], c.name)
 
 
@@ -61,6 +66,24 @@ class LinkEngine(unittest.TestCase):
         self.game.settle()
         self.assertIn(BEAR, self.a.hand)
 
+    def test_reveal_land(self):
+        self.a.hand = []
+        self.assertTrue(self.game.enter_battlefield(self.a, SNARL).tapped)
+        self.a.hand = [ISLAND]
+        self.assertFalse(self.game.enter_battlefield(self.a, SNARL).tapped)
+
+    def test_exert(self):
+        from mtgsim.engine.state import StackItem
+        trig = EXERTER.triggers[0]
+        self.assertEqual(trig.event, "attacks")
+        self.assertEqual([e.kind for e in trig.effects][:3], ["link_start", "exert_self", "link_check"])
+        perm = self.game.enter_battlefield(self.a, EXERTER)
+        item = StackItem(self.a, list(trig.effects), [None] * len(trig.effects), source=perm)
+        for eff in trig.effects:
+            if self.game.check_cond(self.a, eff, item, None):
+                self.game.resolve(self.a, eff, None, item, None)
+        self.assertEqual(perm.skip_untap, 1)
+        self.assertTrue(item.gate_paid)
 
 if __name__ == "__main__":
     unittest.main()
