@@ -38,6 +38,20 @@ turn" effects (about 120 cards, no common shape; needs a duration that ends at i
 targets for "player or planeswalker" damage, Trickbind's "can't activate this turn" rider, and "cast only if an opponent cast
 a creature spell this turn".
 
+## Nightly cloud session 2026-10-31 (cx_night_* modules)
+
+Landed in `mtgsim/cx_night_quantity.py`, `cx_night_buffs.py`, `cx_night_multi.py` and one selector tweak in
+`permanent_templates.py` (PRs #94 to #99; about 215 cards change parse):
+"... equal to <quantity>" damage, life, draw and mill; "<fixed effect> for each <thing>" for pump, damage, life,
+draw and mill; Aura/Equipment "gets +A/+B and has <keywords / activated ability / granted host trigger>"; "each
+opponent controls" and "target opponent controls" group scopes; "each of two target creatures" and "destroy
+two target ..." (one copy per target, flagged `distinct`).
+
+Still open from that work: counts with filters the quantity table does not know ("with flying", "attacking",
+"blocking it", "defending player controls"); granted upkeep triggers on Auras; compound target nouns ("creatures
+and/or planeswalkers") for multi-target spells; "up to N" is played as N. Per-wording gaps are now long-tail
+(the largest single unmatched sentence affects 10 cards), so rounds add cards in tens, not hundreds.
+
 ## Measured remaining broad families
 
 These overlapping counts are upper bounds, not disjoint gain forecasts or wholly missing systems. Do not sum them.
