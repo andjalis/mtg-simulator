@@ -20,6 +20,13 @@ def _any_one_color(m):
     return _effect("add_mana", _NUMS[m["n"].lower()], data={"colors": [], "choice": ["W", "U", "B", "R", "G"]})
 
 
+def _hand_to_battlefield(m):
+    from .cards.model import NO_MATCH
+    from .cx_condlib import _filter
+    spec = _filter(m["f"], plural=False)
+    return _effect("hand_to_battlefield", data={"spec": spec}) if spec else NO_MATCH
+
+
 EFFECT_PATTERNS = [
     (r"switch ~'s power and toughness until end of turn", lambda m: _effect("switch_pt", target="self")),
     (r"target creature doesn't untap during its controller's next untap step",
@@ -32,6 +39,12 @@ EFFECT_PATTERNS = [
     (r"exile target creature card from a graveyard", lambda m: _effect("exile_gy", 1)),
     (r"~ gains protection from the color of your choice until end of turn",
      lambda m: _effect("grant", target="self", data={"keyword": "protection_choice"})),
+    (r"attach ~ to target creature you control", lambda m: _effect("attach_self", target="creature_mine")),
+    (r"(?P<who>target|that) creature attacks this turn if able",
+     lambda m: _effect("grant", target="creature" if m["who"].lower() == "target" else "prev",
+                       data={"keyword": "must_attack_now"})),
+    (r"(?:you may )?put an? (?P<f>creature|artifact|enchantment|artifact or creature|[A-Z]\w+ creature) card "
+     r"from your hand onto the battlefield", _hand_to_battlefield),
     # "Defender" stays; Permanent.can_attack lets the creature attack while it has this keyword.
     (r"~ can attack this turn as though it didn't have defender",
      lambda m: _effect("grant", target="self", data={"keyword": "attacks_despite_defender"})),
