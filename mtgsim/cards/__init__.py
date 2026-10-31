@@ -132,5 +132,7 @@ from .. import cx_event_triggers as _cx_event_triggers
 _TRIGGERS += _cx_event_triggers.TRIGGERS
 from .. import cx_night_quantity as _cx_night_quantity
 _EFFECT_PATTERNS += _cx_night_quantity.EFFECT_PATTERNS
+from .. import cx_night_groups as _cx_night_groups
+_EFFECT_PATTERNS += _cx_night_groups.EFFECT_PATTERNS
 from .. import cx_night_multi as _cx_night_multi
 _EFFECT_PATTERNS += _cx_night_multi.EFFECT_PATTERNS
