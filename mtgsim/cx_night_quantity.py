@@ -11,8 +11,11 @@ from __future__ import annotations
 def _known_words(what):
     """Whether copies.fits understands every word of a count's description (an unknown lower-case word counts nothing)."""
     from .copies import _TYPES
+    if what.startswith("other "):
+        what = what[6:]
     return all(w[0].isupper() or w.lower() in _TYPES or w.lower() in ("creature", "token", "nontoken", "nonland",
-                                                                    "noncreature", "nonartifact", "basic", "permanent")
+                                                                    "noncreature", "nonartifact", "basic", "permanent",
+                                                                    "or", "and", "and/or")
                or w.lower().startswith("non-") for w in what.split())
 
 
@@ -40,6 +43,24 @@ def _scaled(fixed):
     return build
 
 
+_SCALES = {"pump", "debuff", "pump_all", "damage", "gain_life", "lose_life", "drain", "draw", "mill"}
+
+
+def _for_each(m):
+    """``<fixed effect> for each <thing>``: the fixed sentence scaled by the number of things, for the effect kinds
+    whose amount the X-quantity scales."""
+    from .cards import _parse_effects
+    from .cards.model import NO_MATCH
+    spec = _quantity("the number of " + ("cards in your hand" if m[2] == "card in your hand" else m[2]))
+    if spec is None:
+        return NO_MATCH
+    effects, unmatched = _parse_effects(m[1][0].upper() + m[1][1:])
+    if unmatched or len(effects) != 1 or effects[0].kind not in _SCALES or effects[0].data:
+        return NO_MATCH
+    effects[0].data["xq"] = spec
+    return effects[0]
+
+
 EFFECT_PATTERNS = [
     (r"~ deals damage to (any target|target [\w ,'-]+?) equal to (.+)",
      _scaled(lambda m: f"~ deals 1 damage to {m[1]}")),
@@ -51,4 +72,5 @@ EFFECT_PATTERNS = [
     (r"target player draws cards equal to (.+)", _scaled(lambda m: "Target player draws a card")),
     (r"(target player|target opponent|each opponent) mills cards equal to (.+)",
      _scaled(lambda m: f"{m[1]} mills a card")),
+    (r"(.+?) for each (.+)", _for_each),
 ]
