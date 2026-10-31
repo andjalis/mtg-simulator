@@ -7,6 +7,8 @@ target ("that creature's power") is left alone: it is only right after a destroy
 """
 from __future__ import annotations
 
+import re
+
 
 def _known_words(what):
     """Whether copies.fits understands every word of a count's description (an unknown lower-case word counts nothing)."""
@@ -19,12 +21,19 @@ def _known_words(what):
                or w.lower().startswith("non-") for w in what.split())
 
 
-def _quantity(text):
+def _quantity(text, plural=True):
     from .cards.clauses import _xq
     spec = _xq(text)
-    if spec is None or "prev" in spec or (spec[0] == "count" and not _known_words(spec[1])):
+    if spec is not None and "prev" not in spec and not (spec[0] == "count" and not _known_words(spec[1])):
+        return spec
+    # a battlefield noun phrase the count table does not know ("creatures you control with flying", "attacking
+    # creatures", "creatures on the battlefield"): counted with the selector the group effects use
+    m = re.fullmatch(r"the number of (.+?)( on the battlefield)?", text.strip(), re.I)
+    if m is None or m[2] and " control" in m[1]:
         return None
-    return spec
+    from .permanent_templates import selector
+    sel = selector(m[1], plural=plural)
+    return ("selector", sel) if sel else None
 
 
 def _scaled(fixed):
@@ -43,6 +52,7 @@ def _scaled(fixed):
     return build
 
 
+_PLURAL_ZONES = {"card in your hand": "cards in your hand", "card in your graveyard": "cards in your graveyard"}
 _SCALES = {"pump", "debuff", "pump_all", "damage", "gain_life", "lose_life", "drain", "draw", "mill"}
 
 
@@ -51,7 +61,7 @@ def _for_each(m):
     whose amount the X-quantity scales."""
     from .cards import _parse_effects
     from .cards.model import NO_MATCH
-    spec = _quantity("the number of " + ("cards in your hand" if m[2] == "card in your hand" else m[2]))
+    spec = _quantity("the number of " + _PLURAL_ZONES.get(m[2], m[2]), plural=False)
     if spec is None:
         return NO_MATCH
     effects, unmatched = _parse_effects(m[1][0].upper() + m[1][1:])

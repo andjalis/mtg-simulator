@@ -49,8 +49,20 @@ class Quantity(unittest.TestCase):
 
     def test_unknown_quantity_is_not_guessed(self):
         self.assertEqual(len(STRANGE.unsupported), 1)
-        self.assertEqual(len(card("Test Lone", "{W}", "Instant", "You gain 1 life for each attacking creature.")
+        self.assertEqual(len(card("Test Lone", "{W}", "Instant", "You gain 1 life for each creature defending player controls.")
                              .unsupported), 1)
+
+    def test_selector_counts_keywords_and_attackers(self):
+        flier = card("Test Flier", "{1}", "Creature — Bird", "Flying", 1, 1)
+        self.perm(flier, self.a)
+        self.perm(flier, self.a)
+        self.perm(BEAR, self.a)
+        self.perm(flier, self.b)
+        heal = card("Test Heal", "{W}", "Instant", "You gain 2 life for each creature you control with flying.")
+        self.assertEqual(heal.unsupported, [])
+        life = self.a.life
+        self.cast(heal)
+        self.assertEqual(self.a.life, life + 4)
 
     def test_for_each_parses(self):
         for c in (PUMP, LEECH, GRAVE, HOUND):
