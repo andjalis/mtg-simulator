@@ -142,3 +142,5 @@ from .. import cx_night_untap as _cx_night_untap
 _EFFECT_PATTERNS += _cx_night_untap.EFFECT_PATTERNS
 from .. import cx_night_flash as _cx_night_flash
 _EFFECT_PATTERNS += _cx_night_flash.EFFECT_PATTERNS
+from .. import cx_next_turn as _cx_next_turn
+_EFFECT_PATTERNS += _cx_next_turn.EFFECT_PATTERNS

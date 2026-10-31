@@ -316,6 +316,9 @@ def player_targetable(game, player, by):
     """"You have hexproof": the player can't be targeted by opponents' spells and abilities."""
     if player is by:
         return True
+    from .cx_next_turn import player_flag
+    if player_flag(game, player, 'hexproof') or player_flag(game, player, 'protection'):
+        return False
     from .residual_templates import sources
     return not any(x.controller is player for x in sources(game, 'player_hexproof'))
 
@@ -748,6 +751,8 @@ def spell_tax(game, player, card):
             if not flt or (flt == 'noncreature' and not card.is_creature) or (flt == 'instant and sorcery' and (card.is_instant or card.is_sorcery)) \
                     or flt in ('creature', 'artifact', 'enchantment', 'instant', 'sorcery') and flt.capitalize() in card.types:
                 total += n
+    from .cx_next_turn import flag_tax
+    total += flag_tax(game, player, card)
     return total
 
 

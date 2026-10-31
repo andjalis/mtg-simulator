@@ -27,6 +27,10 @@ class EffectsMixin:
         fog = getattr(self, "fog", None)
         if preventable and combat and fog and fog[0] == self.turn and (fog[1] is None or getattr(source, "controller", None) is fog[1]):
             return
+        if preventable and isinstance(target, Player):
+            from ..cx_next_turn import player_flag
+            if player_flag(self, target, 'protection') or player_flag(self, target, 'prevent_damage'):
+                return
         if protected_from(target, source) and preventable:
             self.log(f"{target.card.name}'s protection prevents {amount} damage", target.controller)
             return

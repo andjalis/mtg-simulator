@@ -38,10 +38,15 @@ def _parse_effects(text: str, opts: bool = False):
         text = rx.sub(rep, text)
     gated = False
     from ..permanent_templates import split_sentences
+    from ..cx_next_turn import mark, rewrite
+    pending = None
     for sentence in split_sentences(text.strip()):
         s = sentence.strip().rstrip(".").strip()
         if not s:
             continue
+        mark(effects, pending)       # "until your next turn" / "player or planeswalker" (cx_next_turn)
+        s, kind = rewrite(s)
+        pending = (len(effects), kind) if kind else None
         from ..residual_templates import parse_effect as residual_effect
         residual = residual_effect(s)
         if residual is not None:
@@ -253,6 +258,7 @@ def _parse_effects(text: str, opts: bool = False):
         for eff in effects[first:]:
             if eff.data.get("unparsed_token_keywords"):
                 unmatched.append("Unsupported token keywords: " + ", ".join(eff.data["unparsed_token_keywords"]))
+    mark(effects, pending)
     return effects, unmatched
 
 

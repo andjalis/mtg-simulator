@@ -176,16 +176,22 @@ def begin_turn(game, p):
         if controller is p:
             if effect in game.continuous_effects:
                 game.continuous_effects.remove(effect)
+                from .continuous import refresh
+                refresh(effect.target)
             waiting.remove((controller, effect))
 
 
 def attack_tax(game, defender):
-    return sum(rules(x).get('attack_tax', 0) for x in defender.battlefield)
+    from .cx_next_turn import attack_flag_tax
+    return sum(rules(x).get('attack_tax', 0) for x in defender.battlefield) + attack_flag_tax(game, defender)
 
 
 def cast_allowed(game, p, card):
     from .residual_templates import cast_locked
     if cast_locked(game, p, card):
+        return False
+    from .cx_next_turn import player_flag
+    if player_flag(game, p, 'no_cast'):
         return False
     from .cx_timing import window_ok
     if not window_ok(game, p, card):
