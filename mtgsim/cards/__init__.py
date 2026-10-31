@@ -157,3 +157,9 @@ _SUBS += _cx_effects.SUBS
 
 from .. import cx_ability_effects as _cx_ability_effects
 _EFFECT_PATTERNS += _cx_ability_effects.EFFECT_PATTERNS
+from .. import cx_lures as _cx_lures
+_EFFECT_PATTERNS += _cx_lures.EFFECT_PATTERNS
+from .. import cx_recolor as _cx_recolor
+_EFFECT_PATTERNS += _cx_recolor.EFFECT_PATTERNS
+from .. import cx_shields as _cx_shields
+_EFFECT_PATTERNS += _cx_shields.EFFECT_PATTERNS

@@ -34,6 +34,7 @@ the files it may edit. Stay in your lane; this file replaces a pile of issues. O
 | Backlog and docs | `BACKLOG.md`, `README.md`, `results/residual_batch/` | Claude |
 | Cards: shared condition library and linked results ("If <condition>,", "if you do", "this way") | `mtgsim/cx_condlib.py`, `mtgsim/cx_links.py`, `tests/test_cx_condlib.py`, `tests/test_cx_links.py` | Claude |
 | Cards: conditional statics and anthems, "for as long as" durations, alternative costs, ability cost parts and effects | `mtgsim/cx_statics.py`, `mtgsim/cx_altcost.py`, `mtgsim/cx_costs.py`, `mtgsim/cx_ability_effects.py`, `mtgsim/engine/kinds/cx_statics.py`, `tests/test_cx_statics.py`, `tests/test_cx_costs.py` | Claude |
+| Cards: blocking requirements (lures), colour and type changes, damage prevention and redirection | `mtgsim/cx_lures.py`, `mtgsim/cx_recolor.py`, `mtgsim/cx_shields.py`, `mtgsim/engine/kinds/cx_lures.py`, `mtgsim/engine/kinds/cx_recolor.py`, `mtgsim/engine/kinds/cx_shields.py`, `tests/test_cx_lures.py`, `tests/test_cx_recolor.py`, `tests/test_cx_shields.py` | Claude |
 
 Other lanes in andjalis/mtg-gauntlet (private, includes this repo as the `engine/` submodule):
 

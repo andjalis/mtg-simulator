@@ -771,7 +771,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if attacker.card.max_blocker_power and blocker.power >= attacker.card.max_blocker_power:
         return False
     from ..batch1_templates import block_restricted
-    return not block_restricted(blocker, attacker)
+    from ..cx_lures import pair_blocked
+    return not block_restricted(blocker, attacker) and not pair_blocked(blocker, attacker)
 
 
 
