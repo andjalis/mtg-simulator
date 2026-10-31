@@ -60,3 +60,9 @@ Claude (nightly cloud session, from 31 Oct): new modules `cx_night_*.py` and tes
 Claude (until-next-turn thread, from 31 Oct): `mtgsim/cx_next_turn.py`, `mtgsim/engine/kinds/cx_next_turn.py` and
 `tests/test_cx_next_turn.py` ("until your next turn" durations, player flags, "player or planeswalker" damage), with
 one-line hooks in `cards/parse.py`, `engine/resolve.py` and the engine checks that read the flags.
+
+Claude (trigger-event thread, from 31 Oct): `mtgsim/cx_events.py` and `tests/test_cx_events.py` (the "When(ever)
+<subject> <event>" grammar and its engine observer), with one-line hooks in `cards/parse.py` (trigger loop),
+`engine/stack.py` (`fire`), `engine/play.py` (land played, cast zone) and `engine/effects.py` (sacrificed).
+Later items from the same plan (choices, animate, replacement effects) go in new `cx_choices.py`,
+`cx_animate.py`, `cx_replace.py` modules.

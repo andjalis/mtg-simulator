@@ -43,6 +43,7 @@ class PlayMixin:
         p.lands_played += 1
         self.log(f"plays {face.name}", p)
         self.enter_battlefield(p, face, physical_card=card)
+        self.fire(p, "land_played", subject=card)      # "whenever a player plays a land" (cx_events)
         self.settle()
 
     def convoke_pool(self, p: Player) -> list:
@@ -217,6 +218,8 @@ class PlayMixin:
             base.generation += 1
             base.zone = item
         item.cast_from_hand = self._zone(p, kind) is p.hand and kind not in ("free", "channel", "gy_ability", "prepared")
+        item.cast_zone = ("hand" if item.cast_from_hand else "graveyard" if self._zone(p, kind) is p.graveyard
+                          else "exile" if self._zone(p, kind) is p.exile else "other")     # cx_events "cast from"
         from ..advanced_templates import payment_colors
         item.mana_colors = payment_colors(payment, dict(cost, generic=cost.get("generic", 0) + x))
         if kind == "grave_permission":
