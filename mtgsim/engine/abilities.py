@@ -180,6 +180,7 @@ class AbilitiesMixin:
 
     def force_blocks(self, me: Player, attackers: list, blocks: dict) -> dict:
         """Add the blocks "must be blocked if able" and "blocks this turn if able" demand to the AI's choice."""
+        from ..cx_lures import is_lure, forced_pairs
         blocks = {a: list(bl) for a, bl in blocks.items()}
         taken = {b for bl in blocks.values() for b in bl}
         for a in sorted(attackers, key=lambda x: -x.power):
@@ -191,12 +192,12 @@ class AbilitiesMixin:
                 blocks.setdefault(a, []).append(pick)
                 taken.add(pick)
         for a in attackers:             # Lure: all creatures able to block it do so
-            if a.card.lure:
+            if is_lure(a):
                 for b in me.creatures:
                     if b not in taken and can_block(b, a):
                         blocks.setdefault(a, []).append(b)
                         taken.add(b)
-        for b, a in list(getattr(self, "provoked", {}).items()):
+        for b, a in list(getattr(self, "provoked", {}).items()) + forced_pairs(self):
             if b in me.creatures and a in attackers and b not in taken and can_block(b, a):
                 blocks.setdefault(a, []).append(b)
                 taken.add(b)

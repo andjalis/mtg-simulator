@@ -171,6 +171,9 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return opp if opp.hand else None
     if k in ("connive", "attach_new_equipment"):    # the best creature of ours that can be chosen
         return max((x for x in mine if x.is_creature), key=perm_value, default=None)
+    side = eff.data.get("side") if eff.data else None
+    if side in ("mine", "theirs"):      # newer kinds say whose permanent they want
+        return max(mine if side == "mine" else theirs, key=perm_value, default=None)
     return None
 
 

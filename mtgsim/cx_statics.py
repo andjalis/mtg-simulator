@@ -149,6 +149,8 @@ def pt_bonus(perm):
 
 def grants(perm, kw: str) -> bool:
     for a in _attached(perm):
+        if kw in a.card.advanced_rules.get("host_kws", ()):      # cx_lures: "Enchanted creature can't block."
+            return True
         for code, _pp, _tt, kws, _ep, _et in a.card.advanced_rules.get("host_if", ()):
             if kw in kws and _holds(a, code, perm):
                 return True

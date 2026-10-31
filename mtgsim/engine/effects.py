@@ -23,7 +23,11 @@ class EffectsMixin:
         def has(keyword):
             return (source.has(keyword) if isinstance(source, Permanent)
                     else isinstance(source, CardDef) and keyword in source.keywords)
-        preventable = not self.no_prevention_turn     # "damage can't be prevented this turn" (Skullcrack)
+        from ..cx_shields import apply as cx_shields, unpreventable
+        preventable = not self.no_prevention_turn and not unpreventable(self, source)   # Skullcrack, Everlasting Torment
+        amount = cx_shields(self, target, amount, by, source, combat, preventable)     # prevention / redirection rules
+        if amount <= 0:
+            return
         fog = getattr(self, "fog", None)
         if preventable and combat and fog and fog[0] == self.turn and (fog[1] is None or getattr(source, "controller", None) is fog[1]):
             return

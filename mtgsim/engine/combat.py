@@ -4,20 +4,21 @@ from __future__ import annotations
 from .. import ring
 from ..cards import Effect
 from .state import Permanent, Player, can_block
+from ..cx_lures import extra_blocks as cx_extra_blocks, max_blockers as cx_max_blockers
 
 
 def extra_blocks(me, attackers, blocks):
     """Give a creature that can block more than one attacker the unblocked attackers it survives, biggest first."""
     blocks = {a: list(bl) for a, bl in blocks.items()}
     for b in me.creatures:
-        if not b.card.extra_blocks:
+        if not cx_extra_blocks(b):
             continue
         mine = [a for a, bl in blocks.items() if b in bl]
         if not mine:
             continue
         taken = sum(a.power for a in mine)
         for a in sorted((a for a in attackers if not blocks.get(a) and can_block(b, a)), key=lambda a: -a.power):
-            if len(mine) > b.card.extra_blocks or taken + a.power >= b.toughness - b.damage:
+            if len(mine) > cx_extra_blocks(b) or taken + a.power >= b.toughness - b.damage:
                 break
             blocks[a] = [b]
             mine.append(a)
@@ -132,7 +133,7 @@ class CombatMixin:
         legal = {}
         block_limit = combat_limit(self, 'block')
         for a in attackers:
-            bl = [b for b in blocks.get(a, []) if used.get(b, 0) <= b.card.extra_blocks and b in opp.battlefield
+            bl = [b for b in blocks.get(a, []) if used.get(b, 0) <= cx_extra_blocks(b) and b in opp.battlefield
                   and can_block(b, a)]
             if block_limit is not None:
                 available = max(0, block_limit - len(used))
@@ -147,8 +148,9 @@ class CombatMixin:
                 bl = []
             if a.card.min_blockers and len(bl) < a.card.min_blockers:
                 bl = []
-            if a.card.max_blockers and len(bl) > a.card.max_blockers:
-                bl = bl[:a.card.max_blockers]
+            limit = cx_max_blockers(a)
+            if limit and len(bl) > limit:
+                bl = bl[:limit]
             if bl:
                 legal[a] = bl
                 for b in bl:

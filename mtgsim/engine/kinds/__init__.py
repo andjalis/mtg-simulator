@@ -26,3 +26,6 @@ from . import phasing, ripple, manifest, demonstrate, amplify, mirrodin, prepare
 from . import cx_next_turn  # noqa: E402,F401
 from . import cx_links  # noqa: E402,F401  (registers the handlers)
 from . import cx_statics  # noqa: E402,F401
+from . import cx_lures  # noqa: E402,F401
+from . import cx_recolor  # noqa: E402,F401
+from . import cx_shields  # noqa: E402,F401
