@@ -113,6 +113,11 @@ def _face_special_lines(st, line):
         if line == "Start your engines!":
             extra["start_engines"] = True
             return None
+        blight = next((a for a in approximations if re.fullmatch(r"never paid: As an additional cost to cast ~, you may blight \d+\..*", a)), None)
+        if blight and re.search(r"If ~'s additional cost was paid, ", line):
+            # an optional "blight N" cost with a bonus: the same as "You may blight N. If you do, <bonus>"
+            line = re.sub(r"If ~'s additional cost was paid, ", f"You may blight {re.search(r'blight (\d+)', blight)[1]}. If you do, ", line)
+            approximations.remove(blight)
         if any(a.startswith("never paid: As an additional cost") for a in approximations):
             line = re.sub(r"\s*If ~'s additional cost was paid, [^.]+\.", "", line).strip()
             if not line:
@@ -420,7 +425,7 @@ def _face_land_and_mana_lines(st, line):
             return None
         if re.fullmatch(r"\{T\}, Pay 1 life: Add one mana of any color\.", line):
             produces |= set(COLORS)
-            approximations.append("the 1 life for coloured mana isn't paid")
+            extra["mana_pay_life"] = 1
             return None
         if re.fullmatch(r"~ enters tapped unless it's your first, second, or third turn of the game\.", line):
             extra["tapped_condition"] = "after_turn3"
@@ -612,6 +617,9 @@ def _face_cost_and_static_lines(st, line):
             return None
         if re.fullmatch(r"~ costs \{1\} less to cast for each instant and sorcery card in your graveyard\.", line):
             extra["cost_reduction"] = "instant_sorcery_gy"
+            return None
+        if re.fullmatch(r"~ costs \{1\} less to cast for each basic land type among lands you control\.", line):
+            extra["cost_reduction"] = "domain"
             return None
         if re.fullmatch(r"~ costs \{1\} less to cast for each creature in your party\.", line):
             extra["cost_reduction"] = "party"

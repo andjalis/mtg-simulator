@@ -462,7 +462,7 @@ def _xq(text: str):
         return ("tapped_any", tuple(_singular(k) for k in kinds))
     if tl == "the number of times ~ has mutated":
         return ("mutated",)
-    m = re.fullmatch(r"the number of ([\w+/ -]+?) counters on ~", t, re.I)
+    m = re.fullmatch(r"the number of ([\w+/ -]+?) counters? on (?:~|it)", t, re.I)
     if m:
         return ("counters", m[1])
     m = re.fullmatch(r"the number of ([\w -]+?) cards? in your graveyard", t, re.I)
