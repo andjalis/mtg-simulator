@@ -259,6 +259,11 @@ class CostsMixin:
             a = self.x_quantity(who, lhs, item, prev) if isinstance(lhs, tuple) else lhs
             b = self.x_quantity(who, rhs, item, prev) if isinstance(rhs, tuple) else rhs
             return max(0, a - b if op == "-" else a + b)
+        if kind == "selector":
+            # "the number of creatures you control with flying", "... attacking creatures": a battlefield noun phrase
+            # parsed by permanent_templates.selector and counted with the same matcher the group effects use.
+            from ..permanent_templates import matches
+            return sum(1 for pl in self.players for x in pl.battlefield if matches(self, x, spec[1], p, src))
         if kind == "gy":
             return counting.count(self, p, {"what": spec[1], "zone": "graveyard"}, src)
         return counting.count(self, p, {"what": spec[1], "zone": "battlefield"}, src)
