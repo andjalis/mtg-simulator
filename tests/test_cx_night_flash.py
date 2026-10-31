@@ -30,12 +30,26 @@ class Parsing(unittest.TestCase):
     def test_cards_fully_parse(self):
         from mtgsim.coverage import card_coverage
         for name in ("Rout", "Ghitu Fire", "Past in Flames", "Backdraft Hellkite", "Peat Bog", "Hickory Woodlot",
-                     "Saprazzan Skerry"):
+                     "Saprazzan Skerry", "Deep Analysis", "Acorn Harvest"):
             self.assertEqual(card_coverage(DB.get(name)).ignored, [], name)
 
     def test_flash_tax_cost(self):
         (alt,) = [a for a in DB.get("Rout").alt_costs if a.kind == "flash_tax"]
         self.assertEqual(alt.cost, {"generic": 2})
+
+
+class LifeFlashback(FlashFixture):
+    def test_pay_life_flashback_parses_and_costs_life(self):
+        deep = DB.get("Deep Analysis")
+        (fb,) = [a for a in deep.alt_costs if a.kind == "flashback"]
+        self.assertEqual((fb.cost, fb.life), ({"generic": 1, "U": 1}, 3))
+        for _ in range(2):
+            self.perm("Island")
+        self.a.graveyard = [deep]
+        flash = [c for c in self.game.spell_options(self.a) if c.name == "Deep Analysis (flashback)"]
+        self.assertEqual(len(flash), 1)
+        self.assertTrue(self.game.cast(self.a, flash[0]))
+        self.assertEqual(self.a.life, 17)
 
 
 class Behaviour(FlashFixture):
