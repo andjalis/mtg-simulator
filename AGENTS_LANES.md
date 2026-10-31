@@ -70,3 +70,5 @@ instead", draw replacements, two-player "choose an opponent"), with one-line hoo
 Round 3 adds `mtgsim/cx_effects.py`, `mtgsim/engine/kinds/cx_effects.py` and `tests/test_cx_effects.py` (disjunctive
 targets, opponent draws, graveyard-to-top, random graveyard returns, exile-this-turn, opponent hand counts), with
 one-line hooks in `engine/targets.py`, `engine/costs.py`, `cards/clauses.py` and `cx_night_quantity.py`.
+Round 4 adds win/lose the game, rest-of-game hand size and "put ~ on top" to `cx_effects.py`, a `forever`
+flag in `cx_next_turn._live`, and Alchemy "A-" self-names in `cards/parse.py`.

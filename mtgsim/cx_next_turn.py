@@ -136,6 +136,8 @@ def add_flag(game, controller, player, eff):
 
 
 def _live(game, f):
+    if f.data.get("forever"):
+        return True
     if f.next_turn:
         return any(e is f for _, e in getattr(game, "next_turn_modifiers", ()))
     return f.turn == game.turn

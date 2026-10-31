@@ -67,6 +67,35 @@ class Effects(unittest.TestCase):
         self.run_effects("You gain 1 life for each card in target opponent's hand.")
         self.assertEqual(self.a.life, 23)
 
+    def test_win_the_game(self):
+        self.run_effects("You win the game.")
+        self.assertTrue(self.b.lost and not self.a.lost)
+
+    def test_no_max_hand_for_the_rest_of_the_game(self):
+        from mtgsim.cx_next_turn import player_flag
+        self.run_effects("You have no maximum hand size for the rest of the game.")
+        self.game.turn += 3
+        self.assertTrue(player_flag(self.game, self.a, "no_max_hand"))
+
+    def test_put_self_on_top(self):
+        clique = card("Test Clique", "{1}{U}", "Creature — Faerie", "{U}: Put ~ on top of its owner's library.", 2, 1)
+        self.assertEqual(clique.unsupported, [])
+        perm = self.game.enter_battlefield(self.a, clique)
+        ab = clique.activated[0]
+        from mtgsim.engine import StackItem
+        for e in ab.effects:
+            self.game.resolve(self.a, e, None, StackItem(self.a, ab.effects, [], source=perm))
+        self.assertEqual(self.a.library[-1].name, clique.name)
+
+
+class AlchemyNames(unittest.TestCase):
+    def test_rebalanced_card_names_itself(self):
+        from mtgsim.cards import card_from_scryfall
+        c = card_from_scryfall({"name": "A-Test Cleric", "mana_cost": "{1}{W}", "type_line": "Creature — Human",
+                                "oracle_text": "When Test Cleric enters, you gain 2 life.", "power": "2",
+                                "toughness": "1"})
+        self.assertEqual(c.unsupported, [])
+
 
 if __name__ == "__main__":
     unittest.main()

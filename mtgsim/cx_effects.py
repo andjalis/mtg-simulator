@@ -9,12 +9,14 @@
 * "If a creature would die this turn, exile it instead." (every creature, for the rest of the turn) and
   "If it / that creature would die this turn, exile it instead." (the previous target).
 * "for each card in target opponent's hand" / "in each opponent's hand": the opponent's hand size.
+* "You win the game." / "You lose the game."; "You have no maximum hand size for the rest of the game.";
+  "Put ~ on top of its owner's library."
 """
 from __future__ import annotations
 
 import re
 
-KINDS = {"cx_gy_top", "cx_gy_random", "cx_exile_turn"}
+KINDS = {"cx_gy_top", "cx_gy_random", "cx_exile_turn", "cx_win"}
 _N = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5}
 
 
@@ -74,7 +76,19 @@ def _exile_prev(m):
     return Effect("exile_instead", target="prev")
 
 
+def _simple(kind, **kw):
+    def make(m):
+        from .cards import Effect
+        return Effect(kind, **kw)
+    return make
+
+
 EFFECT_PATTERNS = [
+    (r"you win the game", _simple("cx_win", data={"win": True})),
+    (r"you lose the game", _simple("cx_win", data={"win": False})),
+    (r"you have no maximum hand size for the rest of the game",
+     _simple("cx_player_flag", data={"flag": "no_max_hand", "who": "you", "forever": True})),
+    (r"put ~ on top of its owner's library", _simple("tuck_perm", target="self", data={"depth": 0})),
     (r"destroy target ([\w ,/-]+?)", _targeted("destroy")),
     (r"exile target ([\w ,/-]+?)", _targeted("exile_permanent")),
     (r"return target ([\w ,/-]+?) to its owner's hand", _targeted("bounce")),
@@ -138,3 +152,10 @@ def gy_random(game, p, eff):
 
 def exile_this_turn(game, perm) -> bool:
     return getattr(game, "cx_exile_turn", None) == game.turn and perm.is_creature
+
+
+def win(game, p, eff):
+    loser = [x for x in game.players if x is not p][0] if eff.data["win"] else p
+    if not loser.lost:
+        game.audit("loss", seat=game.players.index(loser), cause="a card's effect")
+        loser.lost = True

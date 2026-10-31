@@ -372,14 +372,16 @@ def _parse_face(data: dict) -> CardDef:
         return 'named TOKENNAME' + str(len(token_names) - 1) + ' with "'
     text = re.sub(r'named ([^.\n]+?) with "', protect_name, text)
     text = text.replace(name, "~")
+    nm = name[2:] if name.startswith("A-") else name    # Alchemy rebalances name the card without "A-"
+    text = text.replace(nm, "~")
     if "," in name and "Legendary" in type_line:
-        text = re.sub(rf"\b{re.escape(name.split(',')[0])}\b", "~", text)  # "Iymrith" for "Iymrith, Desert Doom"
-    elif "Legendary" in type_line and " " in name and " the " not in name and len(name.split()[0]) >= 4 and \
-            name.split()[0] not in ("The", "Lord", "Lady", "King", "Queen", "Sir") and \
-            re.search(rf"\b{re.escape(name.split()[0])}\b", text):
-        text = re.sub(rf"\b{re.escape(name.split()[0])}\b", "~", text)  # "Ajani" for "Ajani Resolute"
-    elif " the " in name and "Legendary" in type_line:
-        text = re.sub(rf"\b{re.escape(name.split(' the ')[0])}\b", "~", text)  # "Smaug the Magnificent"
+        text = re.sub(rf"\b{re.escape(nm.split(',')[0])}\b", "~", text)  # "Iymrith" for "Iymrith, Desert Doom"
+    elif "Legendary" in type_line and " " in nm and " the " not in nm and len(nm.split()[0]) >= 4 and \
+            nm.split()[0] not in ("The", "Lord", "Lady", "King", "Queen", "Sir") and \
+            re.search(rf"\b{re.escape(nm.split()[0])}\b", text):
+        text = re.sub(rf"\b{re.escape(nm.split()[0])}\b", "~", text)  # "Ajani" for "Ajani Resolute"
+    elif " the " in nm and "Legendary" in type_line:
+        text = re.sub(rf"\b{re.escape(nm.split(' the ')[0])}\b", "~", text)  # "Smaug the Magnificent"
     for index, token_name in enumerate(token_names):
         text = text.replace('TOKENNAME' + str(index), token_name)
     from .. import cx_replace
