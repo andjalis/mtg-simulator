@@ -717,7 +717,8 @@ class CostsMixin:
                         (a.kind == "mayhem" and c in p.discarded_cards):
                     out.append(self._variant(c, "blitz_gy" if a.kind == "blitz" else a.kind, a))
         from ..advanced_templates import permission_options
-        return out + permission_options(self, p)
+        from .. import cx_top      # "You may cast creature spells from the top of your library."
+        return out + permission_options(self, p) + cx_top.options(self, p)
 
     def impulse_cards(self, p: Player) -> list:
         """Exiled cards p may still play (drops the expired ones)."""
@@ -737,7 +738,7 @@ class CostsMixin:
                 "retrace": p.graveyard,
                 "escape": p.graveyard, "impulse": p.exile, "suspended": p.exile, "rebound": p.exile,
                 "cascade": p.exile, "cascade_adventure": p.exile,
-                "rebound_adventure": p.exile, "discover": p.exile}.get(kind, p.hand)
+                "rebound_adventure": p.exile, "discover": p.exile, "cx_top": p.library}.get(kind, p.hand)
 
     def _available(self, p: Player, card: CardDef) -> bool:
         base, kind, _ = self._origin(card)
@@ -749,6 +750,9 @@ class CostsMixin:
             return False
         if kind == "prepared":
             return any(x.front is base and x.prepared for x in p.battlefield)
+        if kind == "cx_top":
+            from .. import cx_top
+            return cx_top.spell_ok(p, base)
         return base in self._zone(p, kind)
 
     def can_cast_now(self, p: Player, card: CardDef, *, during_resolution=False) -> bool:

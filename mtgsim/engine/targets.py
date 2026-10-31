@@ -30,7 +30,7 @@ class TargetsMixin:
             source = self.target_source.source if isinstance(self.target_source, StackItem) else self.target_source
             if not permanent_templates.matches(self, perm, spec, by, source):
                 return False
-        if eff.data.get('cx_desc'):
+        if eff.data.get('cx_desc') or eff.data.get('cx_snow'):
             from ..cx_effects import passes
             if not passes(self, eff, perm, by):
                 return False

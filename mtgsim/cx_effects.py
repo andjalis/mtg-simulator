@@ -110,6 +110,8 @@ def _animate(m):
     from .cards import Effect
     from .animate_templates import _KEYWORDS
     desc = re.sub(r" you control$", "", m["desc"].strip())
+    snow = desc.startswith("snow ")
+    desc = desc[5:] if snow else desc
     desc = " ".join(w.title() if w in ("mountain", "forest", "plains", "island", "swamp", "cave", "desert") else w
                     for w in desc.split())
     if m["who"] == "t" and desc != "land" and not _desc_ok(desc):
@@ -120,6 +122,8 @@ def _animate(m):
     data = {"selector": {"controller": "mine", "types_all": ["land"]}, "keywords": kws, "permanent": m["perm"] == "1"}
     if m["who"] == "t" and desc != "land":
         data["cx_desc"] = desc
+    if snow:
+        data["cx_snow"] = True          # "target snow land" (Balduvian Conjurer)
     return Effect("animate_land", int(m["p"]), int(m["t"]), target="permanent" if m["who"] == "t" else "prev",
                   data=data)
 
@@ -134,8 +138,6 @@ _ANIM = re.compile(
 def _anim_sub(m):
     who = "p" if m["it"] else "t"
     desc = (m["desc"] or "").lower()
-    if desc.startswith("snow "):
-        return m[0]
     return f"CXANIM {who} {m['p']} {m['t']} {0 if m['eot'] else 1} {desc}|{m['kws'] or ''}"
 
 EFFECT_PATTERNS.append(
@@ -151,9 +153,11 @@ SUBS = [
 
 def passes(game, eff, perm, by) -> bool | None:
     """The cx_desc target check, or None when the effect has none."""
+    if eff.data.get("cx_snow") and not perm.card.snow:
+        return False
     desc = eff.data.get("cx_desc")
     if not desc:
-        return None
+        return True if eff.data.get("cx_snow") else None
     from .cx_events import _object_subject, _obj_match
     spec = _object_subject("a " + desc)
     if spec is None:

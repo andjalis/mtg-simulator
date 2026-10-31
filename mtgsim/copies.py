@@ -144,9 +144,10 @@ EFFECT_PATTERNS = [
      r"another creature)(?P<until> until end of turn)?(?:, except (?P<exc>.+?))?(?P<until2> until end of turn)?",
      lambda m: _become(m)),
     (r"the \"legend rule\" doesn't apply to permanents you control this turn", lambda m: None),
-    (r"copy target (?:activated or triggered|triggered|activated) ability you control(?P<creature> from a creature "
-     r"source)?(?: (?P<x>X) times)?",
-     lambda m: _effect("copy_ability", creature=bool(m["creature"]), n="x" if m["x"] else 1)),
+    (r"copy target (?:activated or triggered|triggered|activated) ability you control(?: from an? "
+     r"(?P<src>creature|artifact|enchantment|colorless) source)?(?: (?P<x>X) times| (?P<twice>twice))?",
+     lambda m: _effect("copy_ability", creature=m["src"] == "creature", source=m["src"] or "",
+                       n="x" if m["x"] else 2 if m["twice"] else 1)),
     (r"this ability can't be copied(?: and X can't be 0)?", lambda m: None),
     (r"copy the next spell you cast this turn when you cast it",
      lambda m: _effect("copy_next_spell", what="", max_cmc=99, n=1)),
@@ -324,7 +325,17 @@ def _abilities(game, p, eff, item=None) -> list:
     """The activated or triggered abilities on the stack that eff could copy."""
     return [i for i in game.stack if not i.is_spell and i.controller is p and i is not item
             and not any(e.kind == "copy_ability" for e in i.effects)
-            and (not eff.data.get("creature") or (i.source is not None and i.source.is_creature))]
+            and (not eff.data.get("creature") or (i.source is not None and i.source.is_creature))
+            and _source_fits(i.source, eff.data.get("source", ""))]
+
+
+def _source_fits(src, kind: str) -> bool:
+    """"from an artifact / enchantment / colorless source" (Tawnos, Weaver of Harmony, Abstruse Archaic)."""
+    if not kind or kind == "creature":
+        return True
+    if src is None:
+        return False
+    return not src.card.colors if kind == "colorless" else kind.title() in src.card.types
 
 
 def revert(perm):
