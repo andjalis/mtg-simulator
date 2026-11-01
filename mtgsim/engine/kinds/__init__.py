@@ -29,3 +29,4 @@ from . import cx_statics  # noqa: E402,F401
 from . import cx_lures  # noqa: E402,F401
 from . import cx_recolor  # noqa: E402,F401
 from . import cx_shields  # noqa: E402,F401
+from . import cx_night_suspect  # noqa: E402,F401
