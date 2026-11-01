@@ -163,6 +163,7 @@ from .. import cx_recolor as _cx_recolor
 _EFFECT_PATTERNS += _cx_recolor.EFFECT_PATTERNS
 from .. import cx_shields as _cx_shields
 _EFFECT_PATTERNS += _cx_shields.EFFECT_PATTERNS
+_SUBS += _cx_shields.SUBS
 from .. import cx_mixed as _cx_mixed
 _EFFECT_PATTERNS += _cx_mixed.EFFECT_PATTERNS
 _SUBS += _cx_mixed.SUBS

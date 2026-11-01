@@ -10,7 +10,10 @@ def cx_shield(game, p, eff, target, prev, item, **_):
     from ...cx_shields import add_rule
     source = getattr(item, "source", None) if item is not None else None
     source = source if isinstance(source, Permanent) else None
-    if add_rule(game, p, eff.data["rule"], source, target=target, prev=prev):
+    rule = eff.data["rule"]
+    if eff.data.get("pool_x"):
+        rule = dict(rule, budget=getattr(item, "x", 0) or 0)
+    if add_rule(game, p, rule, source, target=target, prev=prev):
         game.log("sets up a damage shield", p)
 
 

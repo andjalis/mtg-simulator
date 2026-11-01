@@ -75,3 +75,57 @@ class Mixed(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+TEMPER = card("Test Temper", "{X}{1}{W}", "Instant",
+              "Prevent the next X damage that would be dealt to target creature this turn. "
+              "For each 1 damage prevented this way, put a +1/+1 counter on that creature.")
+INKSHIELD = card("Test Inkshield", "{3}{W}{B}", "Instant",
+                 "Prevent all combat damage that would be dealt to you this turn. "
+                 "For each 1 damage prevented this way, create a 2/1 white and black Inkling creature token with flying.")
+JORAGA = card("Test Joraga", "{4}{G}{G}", "Sorcery",
+              "Each creature you control gets +3/+3 until end of turn and must be blocked this turn if able.")
+SCARHIDE = card("Test Scarhide", "{B}", "Enchantment Creature — Satyr",
+                "Bestow {1}{B}\nEnchanted creature gets +2/+1 and can't block.", 2, 1)
+
+
+class MoreMixed(unittest.TestCase):
+    def setUp(self):
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 10
+
+    def test_parse(self):
+        for c in (TEMPER, INKSHIELD, JORAGA, SCARHIDE):
+            self.assertEqual(c.unsupported, [], c.name)
+
+    def test_temper_pool_and_counters(self):
+        from mtgsim.engine.state import StackItem
+        bear = self.game.enter_battlefield(self.a, BEAR)
+        item = StackItem(self.a, TEMPER.spell_effects, [bear], card=TEMPER)
+        item.x = 2
+        for eff in TEMPER.spell_effects:
+            self.game.resolve(self.a, eff, bear, item=item)
+        self.game.deal_damage(bear, 3, self.b)
+        self.assertEqual((bear.damage, bear.counters.get("+1/+1")), (1, 2))
+
+    def test_inkshield_tokens(self):
+        attacker = self.game.enter_battlefield(self.b, BEAR)
+        for eff in INKSHIELD.spell_effects:
+            self.game.resolve(self.a, eff, None)
+        self.game.deal_damage(self.a, 2, self.b, source=attacker, combat=True)
+        self.assertEqual(self.a.life, 20)
+        self.assertEqual(len([x for x in self.a.battlefield if x.card.is_token]), 2)
+
+    def test_group_must_be_blocked(self):
+        bears = [self.game.enter_battlefield(self.a, BEAR) for _ in range(2)]
+        for eff in JORAGA.spell_effects:
+            self.game.resolve(self.a, eff, None)
+        self.assertTrue(all(b.has("must_be_blocked_now") and b.power == 5 for b in bears))
+
+    def test_bestow_restriction(self):
+        from mtgsim.batch1_templates import bestow_face
+        face = bestow_face(SCARHIDE, {"generic": 1, "B": 1})
+        self.assertIn("cant_block_now", face.equip_keywords)

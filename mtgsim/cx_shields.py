@@ -155,12 +155,24 @@ def _uses_one(eff):
     return eff
 
 
+def _each_rider(text: str):
+    m = re.fullmatch(r"For each 1 damage prevented this way, (.+)\.", text)
+    if not m:
+        return None
+    from .cards import _parse_effects
+    effs, bad = _parse_effects(m[1])
+    if bad or not effs or any(e.target not in ("none", "self") for e in effs):
+        return None
+    return ("each", tuple(effs))
+
+
 def parse_rider(sentence: str, effects: list) -> bool:
     """A "damage prevented this way" rider right after a cx_shield effect (cards/parse.py's rider hooks)."""
     if not effects or effects[-1].kind != "cx_shield":
         return False
     text = sentence.strip()
-    rider = _parse_rider(text[:1].upper() + text[1:].rstrip(".") + ".")
+    text = text[:1].upper() + text[1:].rstrip(".") + "."
+    rider = _parse_rider(text) or _each_rider(text)
     if rider is None:
         return False
     effects.append(_effect("cx_shield_rider", data={"rider": rider}))
@@ -184,6 +196,25 @@ def _parse_rider(text):
     return None
 
 
+_NEXT_TO = {"target creature": ("creature", ("target",)), "any target": ("any", ("target",)), "~": (None, ("self",)),
+            "you": (None, ("you",))}
+_NEXT = re.compile(r"prevent the next (\d+|X) damage that would be dealt to (target creature|any target|~|you) this turn\. "
+                   r"(?=For each 1 damage prevented this way|Put an? [^.]+ for each 1 damage prevented this way|"
+                   r"You gain life equal to the damage prevented this way)", re.I)
+SUBS = [(_NEXT, lambda m: f"CXNEXTSHIELD {m[1].upper()} {m[2].lower()}. ")]
+
+
+def _next_shield(m):
+    kind, to = _NEXT_TO[m["to"]]
+    rule = {"combat": None, "to": to, "by": ("any",)}
+    data = {"rule": rule, "side": "mine"}
+    if m["n"].upper() == "X":
+        data["pool_x"] = True
+    else:
+        rule["budget"] = int(m["n"])
+    return _effect("cx_shield", target=kind or "none", data=data)
+
+
 def _redirect(m):
     return _effect("cx_shield", target="creature_mine",
                    data={"rule": {"combat": None, "to": ("self",), "by": ("any",), "budget": int(m["n"]),
@@ -191,6 +222,7 @@ def _redirect(m):
 
 
 EFFECT_PATTERNS = [
+    (r"cxnextshield (?P<n>\d+|x) (?P<to>target creature|any target|~|you)", _next_shield),
     (r"prevent all combat damage that would be dealt to and dealt by (?P<w>~|it|that creature|target creature) "
      r"this turn", _to_and_by),
     (r"prevent all (?P<c>combat |noncombat )?damage that would be dealt (?P<rest>.+)", _prevent_all),
@@ -306,6 +338,10 @@ def _rider_fires(game, rule, target, source, by, n):
         if isinstance(perm, Permanent) and perm in perm.controller.battlefield:
             perm.counters[rider[1]] = perm.counters.get(rider[1], 0) + n
             game.log(f"puts {n} {rider[1]} counter(s) on {perm.card.name}", owner)
+    elif rider[0] == "each":            # "For each 1 damage prevented this way, create a 2/1 ... token."
+        for _ in range(n):
+            for eff in rider[1]:
+                game.resolve(owner, eff, None)
     elif rider[0] == "draw_src":
         who = source.controller if isinstance(source, Permanent) else by
         if who is not None:
@@ -412,6 +448,9 @@ def apply(game, target, amount: int, by, source, combat: bool, preventable: bool
         if rule.get("bind"):
             rule["bound"] = source
         stop = min(amount, rule["n"]) if rule.get("n") else amount
+        if "budget" in rule:                # "prevent the next N damage": a shield that runs out
+            stop = min(stop, rule["budget"])
+            rule["budget"] -= stop
         amount -= stop
         if "uses" in rule:
             rule["uses"] -= 1

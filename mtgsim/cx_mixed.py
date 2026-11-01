@@ -37,3 +37,33 @@ EFFECT_PATTERNS = [
     (r"(?P<w>~|it|that creature) can't block this turn",
      lambda m: _effect("grant", target="self" if m["w"] == "~" else "prev", data={"keyword": "cant_block_now"})),
 ]
+
+
+# ---------------------------------------------------------------------------
+# Group forms: "Each creature you control gets +3/+3 until end of turn and must be blocked this turn if able."
+# ---------------------------------------------------------------------------
+
+_GROUP = r"(?P<g>each creature you control|each creature you don't control|each creature your opponents control|creatures you control|creatures you don't control|creatures your opponents control)"
+_GROUP_KW = {"must be blocked this turn if able": "must_be_blocked_now", "attacks this turn if able": "must_attack_now",
+             "attack this turn if able": "must_attack_now", "can't be blocked this turn": "unblockable",
+             "can't block this turn": "cant_block_now"}
+_GROUP_SPLIT = re.compile(rf"(?<![\w]){_GROUP} gets? (?P<pt>[+-]\d+/[+-]\d+) until end of turn and "
+                          rf"(?P<c>{'|'.join(map(re.escape, _GROUP_KW))})(?=\.|$)", re.I)
+
+
+def _group_split(m):
+    return f"{m['g']} gets {m['pt']} until end of turn. {m['g']} {m['c']}"
+
+
+def _group_grant(m):
+    from .cards.model import NO_MATCH
+    scope = "opp" if "don't" in m["g"].lower() or "opponents" in m["g"].lower() else "mine"
+    kw = _GROUP_KW.get(m["c"].lower())
+    if kw is None:
+        return NO_MATCH
+    return _effect("permanent_group", data={"selector": {"controller": scope, "types_all": ["creature"]},
+                                            "effects": [_effect("grant", target="self", data={"keyword": kw})]})
+
+
+SUBS.append((_GROUP_SPLIT, _group_split))
+EFFECT_PATTERNS.append((rf"{_GROUP} (?P<c>{'|'.join(map(re.escape, _GROUP_KW))})", _group_grant))
