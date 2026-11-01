@@ -299,6 +299,8 @@ def update_static(game):
     from . import continuous, counter_mechanics
     board = [x for p in game.players for x in p.battlefield]
     moons = [x for x in board if rules(x).get('land_conversion')]
+    from .cx_landtypes import update as cx_landtypes
+    cx_landtypes(game, board)
     for perm in board:
         converting = bool(moons and perm.copiable_card.is_land and not perm.copiable_card.basic)
         if getattr(perm, '_mountain_conversion', False) != converting:

@@ -117,9 +117,12 @@ def parse_line(line: str, st) -> bool:
     for rx, kws in _HOST_LINES:
         m = rx.fullmatch(line)
         if m:
+            from .cx_statics import aura_parser_takes
+            if aura_parser_takes(line, st):
+                return False
             host = m["h"].lower()
             if (host == "enchanted") != bool(extra.get("aura")) or \
-                    host == "equipped" and "Equipment" not in extra.get("_subtypes", ()):
+                    host == "equipped" and "Equipment" not in st.type_line:
                 return False
             rules = extra.setdefault("advanced_rules", {})
             rules["host_kws"] = rules.get("host_kws", ()) + kws

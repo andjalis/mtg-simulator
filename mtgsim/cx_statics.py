@@ -20,16 +20,25 @@ import re
 
 from .cx_conditions import _KEYWORDS
 
-_KW = rf"(?:{_KEYWORDS}|can't be blocked|can't block)"
+_EXTRA = r"can't be blocked|can't block|can't attack|attacks each combat if able|blocks each combat if able"
+_KW = rf"(?:{_KEYWORDS}|{_EXTRA})"
 _KWS = rf"{_KW}(?:(?:, | and |, and ){_KW})*"
 _PT = r"([+-]\d+)/([+-]\d+)"
 _LABEL = r"(?:[A-Z][\w' ]* — )?"
-_HOST = re.compile(rf"{_LABEL}(Enchanted|Equipped) creature (?:gets (?:an additional )?{_PT}(?: and has ({_KWS}))?|"
-                   rf"has ({_KWS})) as long as (.+?)\.(?: Otherwise, it gets {_PT}\.)?")
+_HOST = re.compile(rf"{_LABEL}(Enchanted|Equipped) creature (?:gets (?:an additional )?{_PT}(?: and (?:has )?({_KWS}))?|"
+                   rf"(?:has )?({_KWS}))(?: as long as (.+?))?\.(?: Otherwise, it gets {_PT}\.)?")
 _ANTHEM = re.compile(rf"{_LABEL}(?:Each |All )?(?P<s>[\w ,-]+?) (?:get|gets) (?:an additional )?(?P<p>[+-]\d+)/"
                      rf"(?P<t>[+-]\d+)(?: and (?:have|has) (?P<k>{_KWS}))? as long as (?P<c>.+?)\.")
 _ANTHEM_KW = re.compile(rf"{_LABEL}(?:Each |All )?(?P<s>[\w ,-]+?) (?:have|has) (?P<k>{_KWS}) as long as (?P<c>.+?)\.")
-_ALIAS_KW = {"can't be blocked": "unblockable", "can't block": "cant_block_now"}
+_ALIAS_KW = {"can't be blocked": "unblockable", "can't block": "cant_block_now", "can't attack": "cant_attack_now",
+             "attacks each combat if able": "must_attack_now", "blocks each combat if able": "must_block_now"}
+
+
+def aura_parser_takes(line: str, st) -> bool:
+    """Whether the Aura / Equipment line parser (auras.py, run later) reads this line itself."""
+    from . import auras
+    scratch = dict(st.extra, _subtypes=st.type_line)
+    return bool(auras.parse_line(line, scratch, st.types))
 
 
 def _keywords(text) -> tuple:
@@ -67,9 +76,12 @@ def parse_line(line: str, st) -> bool:
     m = _HOST.fullmatch(line)
     if m:
         is_aura = bool(extra.get("aura"))
-        if (m[1] == "Enchanted") != is_aura or m[1] == "Equipped" and "Equipment" not in extra.get("_subtypes", ()):
+        if (m[1] == "Enchanted") != is_aura or m[1] == "Equipped" and "Equipment" not in st.type_line:
             return False
-        code = _cond(m[6])
+        restriction = any(k in _ALIAS_KW for k in re.split(r", and |, | and ", m[4] or m[5] or ""))
+        if m[6] is None and (m[7] or not restriction or aura_parser_takes(line, st)):
+            return False            # unconditional: only the forms the Aura / Equipment parser leaves (a P/T plus a restriction)
+        code = _cond(m[6]) if m[6] else ""
         if code is None:
             return False
         rules = extra.setdefault("advanced_rules", {})
@@ -98,6 +110,8 @@ _ACTIVE: set = set()      # (source, target) pairs being evaluated: a condition 
 
 
 def _holds(source, code, ref) -> bool:
+    if not code:
+        return True
     key = (id(source), id(ref))
     if key in _ACTIVE:
         return False

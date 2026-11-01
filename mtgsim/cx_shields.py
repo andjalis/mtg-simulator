@@ -51,9 +51,14 @@ def _subject(text: str, static: bool):
     elif low in ("it", "that creature"):
         return ("prev",), None, None
     elif low.startswith(("target ", "another target ")):
-        m = re.fullmatch(r"(another )?target (attacking |artifact )?(creature|player)( you control)?", low)
+        m = re.fullmatch(r"(another )?target ([\w-]+ )?(creature|player)( you control)?", low)
         if not m:
             return None
+        if m[2] and m[2] not in ("attacking ", "artifact "):
+            from .permanent_templates import selector as _sel
+            adj = _sel(m[2] + "creature")
+            if adj is None or m[3] == "player":
+                return None
         if m[3] == "player":
             return (("target",), "player", {}) if not (m[1] or m[2] or m[4]) else None
         data: dict = {}
@@ -62,6 +67,8 @@ def _subject(text: str, static: bool):
         kind = "creature_mine" if m[4] else "creature"
         if m[2] == "artifact ":
             data["selector"] = {"types_all": ["artifact", "creature"]}
+        elif m[2] and m[2] != "attacking ":
+            data["selector"] = adj
         return ("target",), kind, (data, "attacking" if m[2] == "attacking " else "")
     m = re.fullmatch(r"(.+?) sources", text)
     if m:
@@ -139,7 +146,42 @@ def _next_time(m):
         by = ("group", {"types_all": ["artifact"]})
     elif col:
         by = ("group", {"colors": [_COLORS[col]]})
-    return _effect("cx_shield", data={"rule": {"combat": None, "to": ("you",), "by": by, "uses": 1, "bind": True}})
+    to = ("you",) if m["you"] else ("any",)
+    return _effect("cx_shield", data={"rule": {"combat": None, "to": to, "by": by, "uses": 1, "bind": True}})
+
+
+def _uses_one(eff):
+    eff.data["rule"]["uses"] = 1
+    return eff
+
+
+def parse_rider(sentence: str, effects: list) -> bool:
+    """A "damage prevented this way" rider right after a cx_shield effect (cards/parse.py's rider hooks)."""
+    if not effects or effects[-1].kind != "cx_shield":
+        return False
+    text = sentence.strip()
+    rider = _parse_rider(text[:1].upper() + text[1:].rstrip(".") + ".")
+    if rider is None:
+        return False
+    effects.append(_effect("cx_shield_rider", data={"rider": rider}))
+    return True
+
+
+_RIDERS = [
+    (re.compile(r"You gain life equal to the damage prevented this way\."), lambda m: ("life",)),
+    (re.compile(r"(?:For each 1 damage prevented this way, put an? ([+-]\d/[+-]\d) counter on (that creature|~)|"
+                r"Put an? ([+-]\d/[+-]\d) counter on (that creature|~) for each 1 damage prevented this way)\."),
+     lambda m: ("counter", m[1] or m[3], "self" if (m[2] or m[4]) == "~" else "target")),
+    (re.compile(r"The source's controller draws cards equal to the damage prevented this way\."), lambda m: ("draw_src",)),
+]
+
+
+def _parse_rider(text):
+    for rx, make in _RIDERS:
+        m = rx.fullmatch(text)
+        if m:
+            return make(m)
+    return None
 
 
 def _redirect(m):
@@ -155,7 +197,9 @@ EFFECT_PATTERNS = [
     (r"prevent all (?P<c>combat )?damage (?P<by>~|it|that creature|target (?:attacking )?creature) would deal this turn",
      _would_deal),
     (r"the next time an? (?P<col>white |blue |black |red |green |artifact )?source of your choice would deal damage "
-     r"to you this turn, prevent that damage", _next_time),
+     r"(?P<you>to you )?this turn, prevent that damage", _next_time),
+    (r"the next time (?P<by>target creature|that creature|it) would deal damage this turn, prevent that damage",
+     lambda m: _rule_effect(None, None, m["by"]) and _uses_one(_rule_effect(None, None, m["by"]))),
     (r"prevent all damage (?:that )?a source of your choice would deal to you this turn",
      lambda m: _effect("cx_shield", data={"rule": {"combat": None, "to": ("you",), "by": ("any",), "bind": True}})),
     (r"the next (?P<n>\d+) damage that would be dealt to ~ this turn is dealt to target creature you control instead",
@@ -171,6 +215,8 @@ _STATIC = re.compile(r"Prevent all (?P<c>combat |noncombat )?damage that would b
                      r"(?: by (?P<by>.+?))?\.")
 _REDUCE = re.compile(r"If a source (?P<by>an opponent controls |you don't control )?would deal damage to "
                      r"(?P<to>you|~), prevent (?P<n>\d+) of that damage\.")
+_IF_PREVENT = re.compile(r"If (?:(?P<c>combat |noncombat )?damage would be dealt to|a source would deal damage to) "
+                         r"(?P<to>you|~|another creature you control|a creature you control), prevent that damage\.(?: (?P<r>.+))?")
 _REDIRECT = re.compile(r"All damage that would be dealt to you is dealt to (?P<d>~|enchanted creature) instead\.")
 _UNPREVENT = {"Damage can't be prevented.": "all", "Damage that would be dealt by ~ can't be prevented.": "self",
               "Combat damage that would be dealt by creatures you control can't be prevented.": "mine"}
@@ -188,6 +234,19 @@ def parse_line(line: str, st) -> bool:
     if m:
         by = ("any",) if not m["by"] else ("opp",)
         rules = ({"combat": None, "to": ("you",) if m["to"] == "you" else ("self",), "by": by, "n": int(m["n"])},)
+    m = None if rules else _IF_PREVENT.fullmatch(line)
+    if m:
+        to = {"you": ("you",), "~": ("self",)}.get(m["to"])
+        if to is None:
+            spec = {"types_all": ["creature"], "controller": "mine"}
+            to = ("group", dict(spec, other=True) if m["to"].startswith("another") else spec)
+        rule = {"combat": _COMBAT[m["c"]], "to": to, "by": ("any",)}
+        if m["r"]:
+            rider = _parse_rider(m["r"])
+            if rider is None:
+                return False
+            rule["rider"] = rider
+        rules = (rule,)
     m = None if rules else _REDIRECT.fullmatch(line)
     if m:
         rules = ({"combat": None, "to": ("you",), "by": ("any",), "dest": "self" if m["d"] == "~" else "host"},)
@@ -206,6 +265,7 @@ def parse_line(line: str, st) -> bool:
 # ---------------------------------------------------------------------------
 
 def add_rule(game, p, rule, source, target=None, prev=None):
+    game._cx_last_shield = None
     bound = dict(rule, owner=p, src=source, turn=game.turn)
     for key in ("to", "by"):
         kind = rule[key][0]
@@ -223,7 +283,34 @@ def add_rule(game, p, rule, source, target=None, prev=None):
     if not hasattr(game, "_cx_shields"):
         game._cx_shields = []
     game._cx_shields.append(bound)
+    game._cx_last_shield = bound
     return True
+
+
+def add_rider(game, p, rider):
+    rule = getattr(game, "_cx_last_shield", None)
+    if rule is not None and rule["owner"] is p and rule["turn"] == game.turn:
+        rule["rider"] = rider
+
+
+def _rider_fires(game, rule, target, source, by, n):
+    from .engine.state import Permanent
+    rider = rule.get("rider")
+    if not rider or n <= 0:
+        return
+    owner = rule["owner"]
+    if rider[0] == "life":
+        game.change_life(owner, n, "life gain")
+    elif rider[0] == "counter":
+        perm = rule["src"] if rider[2] == "self" else target
+        if isinstance(perm, Permanent) and perm in perm.controller.battlefield:
+            perm.counters[rider[1]] = perm.counters.get(rider[1], 0) + n
+            game.log(f"puts {n} {rider[1]} counter(s) on {perm.card.name}", owner)
+    elif rider[0] == "draw_src":
+        who = source.controller if isinstance(source, Permanent) else by
+        if who is not None:
+            for _ in range(n):
+                game.draw(who)
 
 
 def _hit(game, subject, obj, owner, src, by=None) -> bool:
@@ -329,6 +416,7 @@ def apply(game, target, amount: int, by, source, combat: bool, preventable: bool
         if "uses" in rule:
             rule["uses"] -= 1
         game.log(f"{stop} damage to {target} is prevented", rule["owner"])
+        _rider_fires(game, rule, target, source, by, stop)
     return amount
 
 
