@@ -79,6 +79,14 @@ Census before and after, full matches of 34,130 cards: 14,664 to 14,869 (+205, m
 about 19 more). Remaining single-sentence gaps are keyword and flavor lines (banding, double team, spellbooks,
 attractions), so the next gains need new mechanics or multi-gap frames, not wording entries.
 
+Second and third nights (2026-10-31 continuation, 2026-11-01): #105 (static maximum hand size modifiers), #106 (untap a
+counted number of lands), #127 (lands that enter tapped unless you control a legendary creature). Census on 2026-11-01
+after the daytime batches (`results/night_2026-11-01/`): 16,984 of 34,130 cards full, 385 simplified, 16,761 partial.
+The largest single-sentence gap is 11 cards ("if it shares a creature type with ~, you may reveal it"), then banding,
+attractions, spellbooks and double team at 8 to 10. The nightly lane now yields under 10 cards per PR; the remaining
+gain is in the daytime multi-gap frames, so this lane should pick specific mechanics (flashback-cost-equals-mana-cost,
+"cast as though it had flash if you pay {2} more", suspect) rather than wording sweeps.
+
 ## Measured remaining broad families
 
 These overlapping counts are upper bounds, not disjoint gain forecasts or wholly missing systems. Do not sum them.
