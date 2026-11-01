@@ -60,7 +60,8 @@ def _parse_effects(text: str, opts: bool = False):
             continue
         from ..batch1_templates import parse_rider as batch1_rider
         from ..emerge import parse_rider as emerge_rider
-        if batch1_rider(s, effects) or emerge_rider(s, effects):
+        from ..cx_shields import parse_rider as shield_rider
+        if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects):
             continue
         if re.fullmatch(r"(?:it|they|those creatures|the creatures?|a creature destroyed this way) can't be "
                        r"regenerated(?:, of course)?", s, re.I) and effects and \

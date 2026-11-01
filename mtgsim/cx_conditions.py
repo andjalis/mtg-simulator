@@ -41,7 +41,11 @@ _CONDS = [
 ]
 _COMPILED = [(re.compile(p), c) for p, c in _CONDS]
 _KWS = rf"(?:{_KEYWORDS})(?:(?:, | and |, and )(?:{_KEYWORDS}))*"
-_CLAUSE = rf"(?:gets ([+-]\d+)/([+-]\d+)(?: and has ({_KWS}))?|has ({_KWS}|can't be blocked))"
+_EXTRA = r"can't be blocked|can't block|can't attack|attacks each combat if able|blocks each combat if able"
+_KWX = rf"(?:{_KEYWORDS}|{_EXTRA})(?:(?:, | and |, and )(?:{_KEYWORDS}|{_EXTRA}))*"
+_CLAUSE = rf"(?:gets ([+-]\d+)/([+-]\d+)(?: and (?:has )?({_KWX}))?|(?:has )?({_KWX}))"
+_ALIAS = {"can't be blocked": "unblockable", "can't block": "cant_block_now", "can't attack": "cant_attack_now",
+          "attacks each combat if able": "must_attack_now", "blocks each combat if able": "must_block_now"}
 _LABEL = r"(?:[A-Z][\w' ]* — )?"
 _LINE = re.compile(rf"{_LABEL}~ {_CLAUSE} as long as (.+)\.")
 _LEADING = re.compile(rf"{_LABEL}As long as (.+?), (?:~|it) {_CLAUSE}\.")
@@ -74,8 +78,9 @@ def parse_line(line: str, st) -> bool:
             from .cx_altcost import parse_line as altcost_line, parse_discard_ability
             from .cx_lures import parse_line as lures_line
             from .cx_shields import parse_line as shields_line
+            from .cx_landtypes import parse_line as landtypes_line
             return statics_line(line, st) or altcost_line(line, st) or parse_discard_ability(line, st) or \
-                lures_line(line, st) or shields_line(line, st)
+                lures_line(line, st) or shields_line(line, st) or landtypes_line(line, st)
         cond, clause = m[1], m.groups()[1:5]
     code = _code(cond)
     if code is None:
@@ -83,7 +88,7 @@ def parse_line(line: str, st) -> bool:
     if clause[0] is not None:
         st.extra["pt_if"] = st.extra.get("pt_if", ()) + ((code, int(clause[0]), int(clause[1])),)
     for keyword in re.split(r", and |, | and ", clause[2] or clause[3] or ""):
-        keyword = "unblockable" if keyword == "can't be blocked" else keyword
+        keyword = _ALIAS.get(keyword, keyword)
         if keyword:
             st.extra["cond_keywords"] = st.extra.get("cond_keywords", ()) + ((keyword, code),)
     return True

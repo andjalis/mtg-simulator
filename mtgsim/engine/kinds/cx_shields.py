@@ -12,3 +12,9 @@ def cx_shield(game, p, eff, target, prev, item, **_):
     source = source if isinstance(source, Permanent) else None
     if add_rule(game, p, eff.data["rule"], source, target=target, prev=prev):
         game.log("sets up a damage shield", p)
+
+
+@kind("cx_shield_rider")
+def cx_shield_rider(game, p, eff, **_):
+    from ...cx_shields import add_rider
+    add_rider(game, p, eff.data["rider"])
