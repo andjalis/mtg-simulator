@@ -286,9 +286,13 @@ def parse_line(line, st):
         st.extra['mutate'] = parse_mana_cost(m[1])
         st.approximations.append("mutate: the merged creature takes the new card's characteristics and loses the host's abilities")
         return True
-    m = re.fullmatch(r"Enchanted creature gets ([+-])(\d+)/([+-])(\d+)(?: and has ([a-z ]+(?:, [a-z ]+)*(?:,? and [a-z ]+)?))?\.", line)
+    m = re.fullmatch(r"Enchanted creature gets ([+-])(\d+)/([+-])(\d+)(?: and has ([a-z ]+(?:, [a-z ]+)*(?:,? and [a-z ]+)?)|"
+                     r" and (can't block|can't be blocked|attacks each combat if able|blocks each combat if able))?\.", line)
     if m and 'bestow' in st.extra and not st.extra.get('aura'):
         kws = frozenset(k.strip() for k in re.split(r", and |, | and ", m[5])) if m[5] else frozenset()
+        if m[6]:            # a restriction the bestowed Aura gives (cx_statics' keyword names)
+            from .cx_statics import _ALIAS_KW
+            kws = frozenset({_ALIAS_KW[m[6]]})
         st.extra['bestow_bonus'] = ((1 if m[1] == '+' else -1) * int(m[2]), (1 if m[3] == '+' else -1) * int(m[4]), kws)
         return True
     if line == "Ravenous":
