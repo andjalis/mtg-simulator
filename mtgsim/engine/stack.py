@@ -389,6 +389,7 @@ class StackMixin:
             if getattr(item, "gifted", False) and item.card is not None:
                 self.give_gift(p, item.card.gift)
             # "that creature" in a trigger: the creature it triggered on (the blocker, the attacker, ...)
+            item.cx_start = self.effect_clock          # "them": permanents entering from here on (cx_delayed)
             prev = item.context if item.kind == "trigger" and isinstance(item.context, Permanent) else None
             done: list = []
             for i, (eff, tgt) in enumerate(zip(item.effects, item.targets)):   # "would die this turn" must precede the damage
