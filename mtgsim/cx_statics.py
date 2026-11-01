@@ -78,7 +78,8 @@ def parse_line(line: str, st) -> bool:
         is_aura = bool(extra.get("aura"))
         if (m[1] == "Enchanted") != is_aura or m[1] == "Equipped" and "Equipment" not in st.type_line:
             return False
-        if m[6] is None and (m[7] or not (m[4] or m[5]) or aura_parser_takes(line, st)):
+        restriction = any(k in _ALIAS_KW for k in re.split(r", and |, | and ", m[4] or m[5] or ""))
+        if m[6] is None and (m[7] or not restriction or aura_parser_takes(line, st)):
             return False            # unconditional: only the forms the Aura / Equipment parser leaves (a P/T plus a restriction)
         code = _cond(m[6]) if m[6] else ""
         if code is None:
