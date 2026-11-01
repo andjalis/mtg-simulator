@@ -125,6 +125,9 @@ class BattlefieldMixin:
             perm.tapped = sum(is_basic_land(x.card) for x in p.battlefield) < int(cond[15:])
         elif cond.startswith("unless_opp_lands>="):
             perm.tapped = sum(x.card.is_land for x in self.opponent(p).battlefield) < int(cond[18:])
+        elif cond.startswith("lib:"):     # "enters tapped unless <condition>" (cx_condlib)
+            from ..cx_condlib import check
+            perm.tapped = not check(self, p, cond, source=perm)
         elif cond == "unless_pw":
             perm.tapped = not p.planeswalkers
         elif cond.startswith("unless_player_life<="):
