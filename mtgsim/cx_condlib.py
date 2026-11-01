@@ -87,6 +87,8 @@ def _word_spec(word: str, spec: dict, plural: bool = True) -> bool:
         spec["token"] = False
     elif low == "modified":
         spec["modified"] = True
+    elif low == "suspected":
+        spec["kw"] = "suspected"
     elif low in ("snow", "historic"):
         spec[low] = True
     elif low in ("multicolored", "colorless", "monocolored"):
@@ -347,6 +349,12 @@ def _attached_n(m):
 @rule(r"(?:it|~) has (?P<k>flying|defender|first strike|trample|haste|vigilance|reach|lifelink|deathtouch|menace)")
 def _src_kw(m):
     return _code("src_kw", m["k"].lower(), *_ref(m))
+
+
+@rule(r"(?:it|~|that creature)(?:'s| is) (?P<neg>not )?suspected")
+def _suspected(m):
+    code = _code("src_kw", "suspected", *_ref(m))
+    return _code("not", code) if m["neg"] else code
 
 
 @rule(rf"there are (?P<n>{_NUM}) or more card types among cards in your graveyard")
@@ -738,6 +746,8 @@ def check(game, p, code: str, item=None, source=None, prev=None):
     kind, args = data[0], data[1:]
     if source is None:
         source = _source(item)
+    if kind == "not":
+        return not _eval_any(game, p, args[0], item, source, prev)
     if kind in ("or", "and"):
         results = [_eval_any(game, p, sub, item, source, prev) for sub in args]
         return any(results) if kind == "or" else all(results)

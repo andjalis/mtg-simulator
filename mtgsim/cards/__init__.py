@@ -169,3 +169,5 @@ _EFFECT_PATTERNS += _cx_mixed.EFFECT_PATTERNS
 _SUBS += _cx_mixed.SUBS
 from .. import cx_night_suspect as _cx_night_suspect
 _EFFECT_PATTERNS += _cx_night_suspect.EFFECT_PATTERNS
+from .. import cx_suspect as _cx_suspect
+_EFFECT_PATTERNS += _cx_suspect.EFFECT_PATTERNS

@@ -61,7 +61,9 @@ def _parse_effects(text: str, opts: bool = False):
         from ..batch1_templates import parse_rider as batch1_rider
         from ..emerge import parse_rider as emerge_rider
         from ..cx_shields import parse_rider as shield_rider
-        if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects):
+        from ..cx_delayed import parse_rider as delayed_rider
+        if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects) or \
+                delayed_rider(s, effects):
             continue
         if re.fullmatch(r"(?:it|they|those creatures|the creatures?|a creature destroyed this way) can't be "
                        r"regenerated(?:, of course)?", s, re.I) and effects and \
@@ -228,6 +230,9 @@ def _parse_effects(text: str, opts: bool = False):
                 for body in (mi[2], re.sub(r"^you ", "", mi[2])):
                     new, bad = _parse_effects(body[0].upper() + body[1:] + ".")
                     if new and not bad:
+                        if cond.startswith('lib:["src_') and re.match(r"(?:~|it) ", mi[1], re.I):
+                            new = [dataclasses.replace(e, target="self") if e.target == "prev" else e
+                                   for e in new]     # "If ~ is suspected, put a +1/+1 counter on it"
                         effects += [dataclasses.replace(e, cond=e.cond or cond) for e in new]
                         break
                 else:
@@ -261,9 +266,10 @@ def _parse_effects(text: str, opts: bool = False):
                 break
         else:
             parts = _split_compound(s)
+            from ..cx_suspect import parse_otherwise
             if parts:
                 effects += parts
-            else:
+            elif not parse_otherwise(s, effects):        # "Otherwise, ..." after a lib: condition
                 unmatched.append(sentence.strip())
         if paid:
             for eff in effects[first:]:
