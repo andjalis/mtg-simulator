@@ -15,7 +15,22 @@ _LINE = re.compile(rf'(Enchanted|Equipped) creature (?:gets ([+−-])(\d+)/([+�
 _SIGN = {"+": 1, "-": -1, "−": -1}
 
 
+def _enters_tapped_unless(line, st) -> bool:
+    """"~ enters tapped unless you control a legendary creature": the condition comes from the shared library."""
+    m = re.fullmatch(r"~ enters tapped unless (you control .+)\.", line)
+    if not m or st.extra.get("tapped_condition"):
+        return False
+    from .cx_condlib import parse
+    code = parse(m[1])
+    if not code.startswith("lib:") or '"types":["creature"]' not in code or '"sub"' in code or code.startswith('lib:["or"'):
+        return False        # creature checks only: land and planeswalker checks have older tapped_condition forms
+    st.extra["tapped_condition"] = code
+    return True
+
+
 def parse_line(line, st) -> bool:
+    if _enters_tapped_unless(line, st):
+        return True
     m = _LINE.fullmatch(line)
     if not m or not (m[2] or m[6]):
         return False
