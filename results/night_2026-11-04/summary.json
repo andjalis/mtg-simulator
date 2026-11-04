@@ -1,0 +1,326 @@
+{
+  "measured_on": "2026-11-04",
+  "total": 34130,
+  "counts": {
+    "full": 17113,
+    "simplified": 385,
+    "partial": 16632,
+    "parse_error": 0
+  },
+  "parse_errors": [],
+  "ranking_method": "Potential full matches have every ignored line in the gap and no recorded simplifications. Counts are upper bounds, overlap, and must not be summed.",
+  "unclassified": {
+    "gap": "unclassified",
+    "affected_cards": 7739,
+    "potential_full_matches": 5231,
+    "examples": [
+      "A Golden Opportunity",
+      "A-Armory Veteran",
+      "A-Cabaretti Charm"
+    ]
+  },
+  "families": [
+    {
+      "gap": "counters",
+      "affected_cards": 2278,
+      "potential_full_matches": 1617,
+      "examples": [
+        "A-Bretagard Stronghold",
+        "A-Dueling Coach",
+        "A-Iridescent Hornbeetle"
+      ]
+    },
+    {
+      "gap": "triggered (whenever/when)",
+      "affected_cards": 2264,
+      "potential_full_matches": 1476,
+      "examples": [
+        "A Display of My Dark Power",
+        "A Good Day to Die",
+        "A Good Day to Pie"
+      ]
+    },
+    {
+      "gap": "activated abilities",
+      "affected_cards": 1797,
+      "potential_full_matches": 1423,
+      "examples": [
+        "A-Baba Lysaga, Night Witch",
+        "A-Bretagard Stronghold",
+        "A-Carnelian Orb of Dragonkind"
+      ]
+    },
+    {
+      "gap": "graveyard",
+      "affected_cards": 2068,
+      "potential_full_matches": 1210,
+      "examples": [
+        "A Good Day to Pie",
+        "A-Cauldron Familiar",
+        "A-Dragon's Rage Channeler"
+      ]
+    },
+    {
+      "gap": "tokens",
+      "affected_cards": 1666,
+      "potential_full_matches": 1013,
+      "examples": [
+        "A-Alrund's Epiphany",
+        "A-Iridescent Hornbeetle",
+        "A-Ocelot Pride"
+      ]
+    },
+    {
+      "gap": "exile",
+      "affected_cards": 1700,
+      "potential_full_matches": 940,
+      "examples": [
+        "A-Fall of the Impostor",
+        "A-Glamorous Outlaw",
+        "A-Masked Bandits"
+      ]
+    },
+    {
+      "gap": "sacrifice",
+      "affected_cards": 1424,
+      "potential_full_matches": 903,
+      "examples": [
+        "A-Baba Lysaga, Night Witch",
+        "A-Baleful Beholder",
+        "A-Bretagard Stronghold"
+      ]
+    },
+    {
+      "gap": "auras/enchant",
+      "affected_cards": 750,
+      "potential_full_matches": 651,
+      "examples": [
+        "A-Mightstone's Animation",
+        "A-Precipitous Drop",
+        "A-Public Enemy"
+      ]
+    },
+    {
+      "gap": "X costs",
+      "affected_cards": 1041,
+      "potential_full_matches": 619,
+      "examples": [
+        "A-Earthquake Dragon",
+        "A-Maelstrom Muse",
+        "A-Pyre-Sledge Arsonist"
+      ]
+    },
+    {
+      "gap": "can't restrictions",
+      "affected_cards": 921,
+      "potential_full_matches": 566,
+      "examples": [
+        "A-Futurist Operative",
+        "A-Goma Fada Vanguard",
+        "Abyssal Persecutor"
+      ]
+    },
+    {
+      "gap": "equipment",
+      "affected_cards": 448,
+      "potential_full_matches": 351,
+      "examples": [
+        "A-Ancestral Katana",
+        "A-Bruenor Battlehammer",
+        "A-Goma Fada Vanguard"
+      ]
+    },
+    {
+      "gap": "copy effects",
+      "affected_cards": 594,
+      "potential_full_matches": 332,
+      "examples": [
+        "A-Leyline of Resonance",
+        "A-Mentor's Guidance",
+        "A-Ocelot Pride"
+      ]
+    },
+    {
+      "gap": "cost reduction",
+      "affected_cards": 345,
+      "potential_full_matches": 203,
+      "examples": [
+        "A-Cosmos Charger",
+        "A-Knockout Blow",
+        "A-Peerless Samurai"
+      ]
+    },
+    {
+      "gap": "library search",
+      "affected_cards": 376,
+      "potential_full_matches": 200,
+      "examples": [
+        "70,000 Light-Years from Home",
+        "A-Navigation Orb",
+        "A-Phantom Carriage"
+      ]
+    },
+    {
+      "gap": "+1/+1 static (anthems)",
+      "affected_cards": 187,
+      "potential_full_matches": 117,
+      "examples": [
+        "A-Narfi, Betrayer King",
+        "A-Saheeli, Filigree Master",
+        "Akoum Battlesinger"
+      ]
+    }
+  ],
+  "exact_wording": [
+    {
+      "gap": "if it shares a creature type with ~, you may reveal it.",
+      "affected_cards": 12,
+      "potential_full_matches": 11,
+      "examples": [
+        "Ink Dissolver",
+        "Kithkin Zephyrnaut",
+        "Mudbutton Clanger"
+      ]
+    },
+    {
+      "gap": "banding",
+      "affected_cards": 13,
+      "potential_full_matches": 10,
+      "examples": [
+        "Benalish Hero",
+        "Benalish Infantry",
+        "Icatian Phalanx"
+      ]
+    },
+    {
+      "gap": "open an attraction.",
+      "affected_cards": 18,
+      "potential_full_matches": 9,
+      "examples": [
+        "Coming Attraction",
+        "Deadbeat Attendant",
+        "Discourtesy Clerk"
+      ]
+    },
+    {
+      "gap": "draft a card from ~'s spellbook.",
+      "affected_cards": 15,
+      "potential_full_matches": 9,
+      "examples": [
+        "Boseiju Pathlighter",
+        "Cursebound Witch",
+        "Emmara, Voice of the Conclave"
+      ]
+    },
+    {
+      "gap": "double team",
+      "affected_cards": 18,
+      "potential_full_matches": 8,
+      "examples": [
+        "Amber-Plate Ainok",
+        "Giant Fire Beetles",
+        "Lizardfolk Librarians"
+      ]
+    },
+    {
+      "gap": "~ becomes prepared.",
+      "affected_cards": 12,
+      "potential_full_matches": 8,
+      "examples": [
+        "Abigale, Poet Laureate // Heroic Stanza",
+        "Bloodline Recollector // Ancestral Craving",
+        "Eiganjo Dynastorian"
+      ]
+    },
+    {
+      "gap": "return that card to the battlefield under your control.",
+      "affected_cards": 7,
+      "potential_full_matches": 6,
+      "examples": [
+        "False Demise",
+        "Fool's Demise",
+        "Minion's Return"
+      ]
+    },
+    {
+      "gap": "you get {tk}, then you may put a sticker on a nonland permanent you own.",
+      "affected_cards": 6,
+      "potential_full_matches": 6,
+      "examples": [
+        "Aerialephant",
+        "Carnival Carnivore",
+        "Chicken Troupe"
+      ]
+    },
+    {
+      "gap": "you may cast ~ as though it had flash. if you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step.",
+      "affected_cards": 10,
+      "potential_full_matches": 5,
+      "examples": [
+        "Lightning Reflexes",
+        "Mystic Veil",
+        "Parapet"
+      ]
+    },
+    {
+      "gap": "change the target of target spell with a single target.",
+      "affected_cards": 6,
+      "potential_full_matches": 5,
+      "examples": [
+        "Deflection",
+        "Imp's Mischief",
+        "Misdirection"
+      ]
+    },
+    {
+      "gap": "sacrifice it unless you return a non-lair land you control to its owner's hand.",
+      "affected_cards": 5,
+      "potential_full_matches": 5,
+      "examples": [
+        "Crosis's Catacombs",
+        "Darigaaz's Caldera",
+        "Dromar's Cavern"
+      ]
+    },
+    {
+      "gap": "when a creature with mana value 6 or greater enters, you may return ~ from your graveyard to the battlefield attached to that creature.",
+      "affected_cards": 5,
+      "potential_full_matches": 5,
+      "examples": [
+        "Dragon Breath",
+        "Dragon Fangs",
+        "Dragon Scales"
+      ]
+    },
+    {
+      "gap": "you may flip it.",
+      "affected_cards": 5,
+      "potential_full_matches": 5,
+      "examples": [
+        "Budoka Pupil // Ichiga, Who Topples Oaks",
+        "Callow Jushi // Jaraku the Interloper",
+        "Cunning Bandit // Azamuki, Treachery Incarnate"
+      ]
+    },
+    {
+      "gap": "copy it for each time you've cast your commander from the command zone this game.",
+      "affected_cards": 6,
+      "potential_full_matches": 4,
+      "examples": [
+        "Echo Storm",
+        "Empyrial Storm",
+        "Fury Storm"
+      ]
+    },
+    {
+      "gap": "if you control a commander, you may cast ~ without paying its mana cost.",
+      "affected_cards": 5,
+      "potential_full_matches": 4,
+      "examples": [
+        "Deadly Rollick",
+        "Fierce Guardianship",
+        "Flawless Maneuver"
+      ]
+    }
+  ]
+}
