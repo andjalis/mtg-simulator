@@ -32,3 +32,4 @@ from . import cx_shields  # noqa: E402,F401
 from . import cx_night_suspect  # noqa: E402,F401
 from . import cx_suspect  # noqa: E402,F401
 from . import cx_delayed  # noqa: E402,F401
+from . import cx_night_kinship  # noqa: E402,F401
