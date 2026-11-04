@@ -97,6 +97,10 @@ def craft(game, p, item, **_):
 
 @kind("counter", "bounce_spell")
 def counter(game, p, eff, target, item, **_):
+    if eff.data.get("redirect"):       # "Change the target of target spell with a single target" (cx_night_redirect)
+        from .cx_night_redirect import redirect_spell
+        redirect_spell(game, p, target)
+        return
     if eff.data.get("tw") and getattr(item, "teamwork", False):
         eff = dataclasses.replace(eff, amount=eff.data["tw"])
     game.counter(p, eff, target)
