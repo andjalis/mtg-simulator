@@ -87,6 +87,13 @@ attractions, spellbooks and double team at 8 to 10. The nightly lane now yields 
 gain is in the daytime multi-gap frames, so this lane should pick specific mechanics (flashback-cost-equals-mana-cost,
 "cast as though it had flash if you pay {2} more", suspect) rather than wording sweeps.
 
+Fourth night (2026-11-04): #130 (suspect), #133 (kinship), #134 (change the target of target spell with a single
+target), #135 (Lair lands: sacrifice unless you return a non-Lair land), #136 (draw-step "that player draws an
+additional card" and "return that card to the battlefield under your control" for dying and blinked creatures).
+Census on 2026-11-04 (`results/night_2026-11-04/`): 17,113 of 34,130 full. Left from that census: banding, attractions,
+spellbooks, double team, "you may flip it", commander free-cast, Divert-style "unless its controller pays {2}"
+counters, and Lim-Dul / Athreos style death triggers whose context is a player or a counter marker.
+
 ## Measured remaining broad families
 
 These overlapping counts are upper bounds, not disjoint gain forecasts or wholly missing systems. Do not sum them.
