@@ -146,8 +146,8 @@ def _face_special_lines(st, line):
         # Discard triggers fire once per card, so "that many" counters is one counter each time.
         line = re.sub(r"^(Whenever you discard one or more cards), put that many \+1/\+1 counters on ~\.$",
                       r"\1, put a +1/+1 counter on ~.", line)
-        from .. import cx_cda as _cx_cda, cx_conditions as _cx_conditions, cx_night_buffs as _cx_night_buffs, cx_timing as _cx_timing, cx_triggers as _cx_triggers, emerge as _emerge, that_much as _that_much, transmute as _transmute
-        if _transmute.parse_line(line, st) or _emerge.parse_line(line, st) or _that_much.parse_line(line, st) or _cx_triggers.parse_line(line, st) or _cx_timing.parse_line(line, st) or _cx_conditions.parse_line(line, st) or _cx_cda.parse_line(line, st) or _cx_night_buffs.parse_line(line, st):
+        from .. import cx_cda as _cx_cda, cx_conditions as _cx_conditions, cx_night_buffs as _cx_night_buffs, cx_night_kinship as _cx_night_kinship, cx_timing as _cx_timing, cx_triggers as _cx_triggers, emerge as _emerge, that_much as _that_much, transmute as _transmute
+        if _transmute.parse_line(line, st) or _emerge.parse_line(line, st) or _that_much.parse_line(line, st) or _cx_triggers.parse_line(line, st) or _cx_timing.parse_line(line, st) or _cx_conditions.parse_line(line, st) or _cx_cda.parse_line(line, st) or _cx_night_buffs.parse_line(line, st) or _cx_night_kinship.parse_line(line, st):
             return None
         from .. import counter_mechanics, permanent_templates, backlog_templates, advanced_templates, residual_templates, batch1_templates
         from .. import cx_replace, cx_top, cx_abilitycopy
