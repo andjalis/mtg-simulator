@@ -173,3 +173,5 @@ from .. import cx_suspect as _cx_suspect
 _EFFECT_PATTERNS += _cx_suspect.EFFECT_PATTERNS
 from .. import cx_night_redirect as _cx_night_redirect
 _EFFECT_PATTERNS += _cx_night_redirect.EFFECT_PATTERNS
+from .. import cx_night_lair as _cx_night_lair
+_EFFECT_PATTERNS += _cx_night_lair.EFFECT_PATTERNS
