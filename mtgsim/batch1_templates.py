@@ -318,6 +318,9 @@ def parse_line(line, st):
 
 def player_targetable(game, player, by):
     """"You have hexproof": the player can't be targeted by opponents' spells and abilities."""
+    from .residual_templates import sources as _sources
+    if any(x.controller is player for x in _sources(game, 'player_shroud')):    # "You have shroud": even your own
+        return False
     if player is by:
         return True
     from .cx_next_turn import player_flag
