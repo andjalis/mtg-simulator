@@ -1178,4 +1178,5 @@ def _face_ability_lines(st, line):
 
 
 from ..cx_night_flash import parse_line as _night_flash_line  # noqa: E402
-_FACE_LINE_PARSERS = (_night_flash_line, _face_special_lines, _face_mode_and_ward_lines, _face_land_and_mana_lines, _face_cost_and_static_lines, _face_keyword_ability_lines, _face_ability_lines)
+from ..cx_night_aura import parse_line as _night_aura_line  # noqa: E402
+_FACE_LINE_PARSERS = (_night_aura_line, _night_flash_line, _face_special_lines, _face_mode_and_ward_lines, _face_land_and_mana_lines, _face_cost_and_static_lines, _face_keyword_ability_lines, _face_ability_lines)
