@@ -94,6 +94,13 @@ Census on 2026-11-04 (`results/night_2026-11-04/`): 17,113 of 34,130 full. Left 
 spellbooks, double team, "you may flip it", commander free-cast, Divert-style "unless its controller pays {2}"
 counters, and Lim-Dul / Athreos style death triggers whose context is a player or a counter marker.
 
+Fifth night (2026-11-05): #140 (flip cards: "you may flip it"), #141 ("You control enchanted permanent" and goaded
+Auras read as "attacks each combat if able"), #142 ("You gain life equal to that card's mana value" for returned and
+revealed cards). Census on 2026-11-05 (`results/night_2026-11-05/`): 17,154 of 34,130 full, 385 simplified, 16,591
+partial. The largest single-sentence gaps are still banding (13 cards), attractions (18), spellbooks (15), double team
+(18) and prepared (12), each needing a new mechanic; "end the turn", "you have shroud" and the stand-alone "untap them"
+need engine support first.
+
 ## Measured remaining broad families
 
 These overlapping counts are upper bounds, not disjoint gain forecasts or wholly missing systems. Do not sum them.
