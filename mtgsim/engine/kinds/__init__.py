@@ -36,3 +36,4 @@ from . import cx_night_kinship  # noqa: E402,F401
 from . import cx_night_lair  # noqa: E402,F401
 from . import cx_night_draw  # noqa: E402,F401
 from . import cx_night_dead  # noqa: E402,F401
+from . import cx_night_flip  # noqa: E402,F401
