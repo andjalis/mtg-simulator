@@ -181,3 +181,5 @@ from .. import cx_night_dead as _cx_night_dead
 _EFFECT_PATTERNS += _cx_night_dead.EFFECT_PATTERNS
 from .. import cx_night_flip as _cx_night_flip
 _EFFECT_PATTERNS += _cx_night_flip.EFFECT_PATTERNS
+from .. import cx_night_lifemv as _cx_night_lifemv
+_EFFECT_PATTERNS += _cx_night_lifemv.EFFECT_PATTERNS

@@ -330,6 +330,8 @@ class CostsMixin:
         for owner, card in picked:
             owner.graveyard.remove(card)
         for owner, card in picked:
+            if item is not None:
+                item.moved_card = card       # "that card" (cx_night_lifemv)
             if d["dest"] == "hand":
                 p.hand.append(card)
                 self.log(f"returns {card.name} to hand", p)
