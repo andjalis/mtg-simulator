@@ -59,3 +59,30 @@ def cx_remove_counters(game, p, eff, target, **_):
         if take:
             target.counters[name] = have - take
             left -= take
+
+
+@kind("cx_move_src")
+def cx_move_src(game, **_):
+    """Names the first target of "move a counter from target X onto Y"; the move itself is cx_move_counters."""
+
+
+@kind("cx_move_counters")
+def cx_move_counters(game, p, eff, target, prev, item, **_):
+    source = item.source if eff.data.get("from") == "self" and item is not None else prev
+    dest = target
+    if eff.target == "self":                 # "... onto ~": the card is the destination
+        dest = item.source if item is not None else None
+    if (not isinstance(source, Permanent) or not isinstance(dest, Permanent) or source is dest
+            or source not in source.controller.battlefield or dest not in dest.controller.battlefield):
+        return
+    name = eff.data.get("counter", "")
+    names = [name] if name else [n for n, c in source.counters.items() if c > 0]
+    left = 10 ** 6 if eff.data.get("all") else eff.amount
+    for n in names:
+        take = min(source.counters.get(n, 0), left)
+        if take > 0:
+            source.counters[n] -= take
+            dest.counters[n] = dest.counters.get(n, 0) + take
+            left -= take
+        if left <= 0:
+            break

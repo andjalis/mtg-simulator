@@ -175,3 +175,24 @@ class Remove(MultiTarget):
         a.counters["shield"], b.counters["oil"] = 1, 4
         self.run_effects("Remove all counters from all creatures.")
         self.assertEqual((a.counters["shield"], b.counters["oil"]), (0, 0))
+
+
+class Move(MultiTarget):
+    def test_move_one_from_target_to_other(self):
+        a, b = self.put(self.a, 2)
+        a.counters["+1/+1"] = 3
+        effs = effects("Move a +1/+1 counter from target creature you control onto another target creature you control.")
+        self.assertEqual([e.kind for e in effs], ["cx_move_src", "cx_move_counters"])
+        from mtgsim.engine.state import StackItem
+        item = StackItem(self.a, effs, self.game.auto_targets(self.a, effs))
+        prev = None
+        for e, t in zip(item.effects, item.targets):
+            self.game.resolve(self.a, e, t, item, prev)
+            prev = t
+        self.assertEqual(a.counters["+1/+1"] + b.counters["+1/+1"], 3)
+        self.assertEqual(b.counters["+1/+1"], 1)
+
+    def test_move_from_self(self):
+        from tests.test_templates import card
+        c = card("Test Mover", "{1}", "Creature — Golem", "{T}: Move a +1/+1 counter from ~ onto target creature.", 1, 1)
+        self.assertEqual([e.kind for e in c.activated[0].effects], ["cx_move_counters"])

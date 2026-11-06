@@ -127,6 +127,11 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     if k in ('add_counter', 'cx_distribute'):
         pool = theirs if eff.data.get('counter') == '-1/-1' else mine
         return max(pool, key=perm_value, default=None)
+    if k == 'cx_move_src':
+        return max([x for x in mine if any(x.counters.values())] or theirs, key=perm_value, default=None)
+    if k == 'cx_move_counters':
+        taken = getattr(game, '_choosing_targets', [])
+        return max((x for x in mine if all(x is not t for t in taken)), key=perm_value, default=None)
     if k == 'cx_remove_counters':
         if eff.data.get('counter'):
             pool = theirs if eff.data['counter'] == '+1/+1' else mine

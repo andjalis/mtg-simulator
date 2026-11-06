@@ -167,3 +167,37 @@ def _remove(m):
 EFFECT_PATTERNS.append(
     (rf"(?:you may )?remove (a|an|one|two|three|four|five|up to (?:one|two|three|four|five)|\d+|all) "
      rf"(?:({_COUNTER}) )?(counters?)(?: of that kind)? from (it|~|target [^,]+|all [^,]+|each [^,]+)", _remove))
+
+
+def _move(m):
+    """"Move [a / N / all / any number of] <kind> counter(s) from <A> onto <B>": A or B is ~, or a target (the first
+    target is picked by ``cx_move_src``, which does nothing itself; ``cx_move_counters`` then moves them)."""
+    from .cards.model import NO_MATCH, Effect
+    from .permanent_templates import build
+    amount, kind, src = m[1].lower(), (m[2] or "").lower(), m[3]
+    dst = re.sub(r"^(?:a second|one other) ", "another ", m[4]) if m[4].startswith(("a second", "one other")) else m[4]
+    every = amount in ("all", "any number of")
+    n = 1 if every else _N.get(amount) or (int(amount) if amount.isdigit() else None)
+    if n is None or (src == "~" and dst == "~"):
+        return NO_MATCH
+    data = {"counter": kind if kind != "any" else "", "all": every, "from": "self" if src == "~" else "prev"}
+    out = []
+    if src != "~":
+        eff = build("cx_move_src", src, data={"distinct": True})
+        if eff is None or eff.target in ("group", "self", "prev"):
+            return NO_MATCH
+        out.append(eff)
+    if dst == "~":
+        out.append(Effect("cx_move_counters", n, target="self", data=data))
+    else:
+        eff = build("cx_move_counters", dst.replace("another target", "another target"), amount=n,
+                    data=dict(data, distinct=True))
+        if eff is None or eff.target in ("group", "self", "prev"):
+            return NO_MATCH
+        out.append(eff)
+    return out
+
+
+EFFECT_PATTERNS.append(
+    (rf"(?:you may )?move (a|an|one|two|three|all|any number of) (?:({_COUNTER}) )?counters?(?: of that kind)? "
+     rf"from (~|target [^,]+?) onto (~|(?:a second |another |one other )?target [^,]+)", _move))
