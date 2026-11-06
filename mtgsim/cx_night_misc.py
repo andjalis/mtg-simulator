@@ -16,7 +16,24 @@ def _destroy_theirs(m):
     return Effect("destroy", target="artifact_enchantment", filter="opp")
 
 
+_NUMS = {"one": 1, "two": 2, "three": 3, "four": 4}
+
+
+def _exile_gy(m):
+    from .cards.model import Effect
+    return Effect("exile_gy_n", _NUMS[m[1]], target="none")
+
+
+def _shuffle_gy(m):
+    from .cards.model import Effect
+    return Effect("shuffle_gy_n", _NUMS[m[1]], target="none")
+
+
 EFFECT_PATTERNS = [
+    (r"exile up to (one|two|three|four) target cards? from a single graveyard", _exile_gy),
+    # "Target player" is always the caster for the AI: shuffling your own graveyard back is the only useful use
+    (r"target player shuffles up to (one|two|three|four) target cards from their graveyard into their library",
+     _shuffle_gy),
     # Aberrant, Scion of Calamity, Sunder Shaman: "that player" is the player the creature just damaged, the opponent
     # in a two-player game, so this is the plain "destroy target artifact or enchantment" aimed at the opponent.
     (r"destroy target artifact or enchantment that player controls", _destroy_theirs),
