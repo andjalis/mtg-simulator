@@ -55,7 +55,7 @@ def _creature_with(p, perm, counter, n):
 
 def payable(game, p, perm, kind, n, spec) -> bool:
     if kind == "untap_self":
-        return perm in p.battlefield and perm.tapped
+        return perm in p.battlefield and perm.tapped and not (perm.is_creature and perm.sick)   # CR 302.6
     if kind == "remove_sac":
         return perm in p.battlefield and perm.counters.get(spec["counter"], 0) >= n
     if kind == "remove_creature_counter":

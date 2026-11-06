@@ -89,6 +89,9 @@ class CostPay(unittest.TestCase):
         u.sick = False
         self.assertFalse(self.game.can_activate(self.a, u, 0))
         u.tapped = True
+        u.sick = True                       # {Q} is blocked by summoning sickness like {T} (CR 302.6)
+        self.assertFalse(self.game.can_activate(self.a, u, 0))
+        u.sick = False
         self.assertTrue(self.game.activate_ability(self.a, u, 0))
         self.game.settle()
         self.assertFalse(u.tapped)
