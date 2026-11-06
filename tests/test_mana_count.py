@@ -74,5 +74,41 @@ class ManaCount(unittest.TestCase):
         self.assertEqual(len(bears), 3)
 
 
+class AuraMana(ManaCount):
+    def enchant(self, land, aura_name):
+        aura = self.game.enter_battlefield(self.a, self.db.get(aura_name))
+        aura.aura_host = land
+        land.auras.append(aura)
+        return aura
+
+    def test_parse_keeps_named_colours(self):
+        wg = self.db.get("Wild Growth")
+        self.assertEqual(wg.advanced_rules["aura_mana_colors"], (frozenset("G"),))
+        self.assertFalse(wg.approximations)
+
+    def test_wild_growth_adds_green_not_the_lands_colour(self):
+        from mtgsim.engine.mana import find_payment
+        land = self.put("Mountain")
+        self.assertIsNone(find_payment([land], {"G": 1, "R": 1}))
+        self.enchant(land, "Wild Growth")
+        self.assertIsNotNone(find_payment([land], {"G": 1, "R": 1}))      # {R} from the land, the extra {G}
+        self.assertIsNone(find_payment([land], {"R": 2}))                 # the extra mana is not red
+
+    def test_fertile_ground_adds_any_colour(self):
+        from mtgsim.engine.mana import find_payment
+        land = self.put("Mountain")
+        self.enchant(land, "Fertile Ground")
+        self.assertIsNotNone(find_payment([land], {"U": 1, "R": 1}))
+
+    def test_ai_pays_with_enchanted_land(self):
+        """A real turn: Mountain + Wild Growth alone pay {1}{G} for Grizzly Bears."""
+        land = self.put("Mountain")
+        self.enchant(land, "Wild Growth")
+        self.a.hand = [self.db.get("Grizzly Bears")]
+        self.a.library = [self.db.get("Giant Growth")] * 20
+        self.game.take_turn(self.a)
+        self.assertTrue(any(x.card.name == "Grizzly Bears" for x in self.a.battlefield))
+
+
 if __name__ == "__main__":
     unittest.main()

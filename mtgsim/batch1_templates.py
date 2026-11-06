@@ -143,8 +143,12 @@ def parse_line(line, st):
         return True
     m = re.fullmatch(r"Whenever enchanted land is tapped for mana, its controller adds an additional (one mana of any color|two mana in any combination of colors|\{[WUBRG]\}(?:\{[WUBRG]\})?)\.", line)
     if m:
-        st.extra.setdefault('advanced_rules', {})['aura_mana'] = {'one': 1, 'two': 2}.get(m[1][:3], m[1].count('{'))
-        st.approximations.append("extra mana from an enchanted land is the land's own colour")
+        n = {'one': 1, 'two': 2}.get(m[1][:3], m[1].count('{'))
+        rules = st.extra.setdefault('advanced_rules', {})
+        rules['aura_mana'] = n
+        # the extra mana's own colours: any colour, or the named ones ({G}{G})
+        rules['aura_mana_colors'] = ((frozenset("WUBRG"),) * n if m[1][0] != '{'
+                                     else tuple(frozenset(c) for c in re.findall(r"[WUBRG]", m[1])))
         return True
     if _curse_line(line, st):
         return True
