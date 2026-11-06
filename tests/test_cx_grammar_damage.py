@@ -87,7 +87,8 @@ class Resolving(Base):
         c = self.spell("~ deals 2 damage to any target and 1 damage to each nonartifact creature target opponent "
                        "controls.")
         self.assertEqual([e.kind for e in c.spell_effects], ["damage", "cx_group"])
-        self.cast(c, [self.b, None])
+        from mtgsim.engine.state import TARGETED
+        self.cast(c, [self.b if e.target in TARGETED else None for e in c.spell_effects])   # "target opponent": b
         self.assertNotIn(goblin, self.b.battlefield)        # 1/1: dies
         self.assertEqual(bear.damage, 1)
         self.assertIn(mine, self.a.battlefield)
