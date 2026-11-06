@@ -142,3 +142,38 @@ class ToughnessDamage(unittest.TestCase):
 
 
 ROCK = card("Test Rock", "{1}", "Creature", "", power=0, toughness=5)
+
+
+DRAKE = card("Test Drake", "{3}{U}", "Creature",
+             "When ~ enters, shuffle the cards from your hand into your library, then draw that many cards.", power=2, toughness=2)
+ARJUN = card("Test Arjun", "{3}{U}", "Creature",
+             "Whenever you cast a spell, put the cards in your hand on the bottom of your library in any order, then draw that many cards.",
+             power=2, toughness=2)
+HOT = card("Test Springs", "{1}{W}", "Enchantment — Aura", "Enchant land you control\nEnchanted land has \"{T}: Add {W}.\"")
+
+
+class HandCycle(unittest.TestCase):
+    def test_parse(self):
+        self.assertEqual((DRAKE.unsupported, ARJUN.unsupported, HOT.unsupported), ([], [], []))
+        self.assertEqual(HOT.aura, "land you control")
+
+    def test_hand_is_replaced_by_as_many_cards(self):
+        game, a, b = _game()
+        a.hand = [BEAR] * 3
+        n = len(a.library)
+        game.resolve(a, DRAKE.triggers[0].effects[0], None, None)
+        self.assertEqual((len(a.hand), len(a.library)), (3, n))
+
+    def test_bottom_variant(self):
+        game, a, b = _game()
+        a.hand = [MOUNTAIN, BEAR]
+        n = len(a.library)
+        game.resolve(a, ARJUN.triggers[0].effects[0], None, None)
+        self.assertEqual((len(a.hand), len(a.library)), (2, n))
+
+    def test_aura_goes_on_my_land_only(self):
+        from mtgsim import auras
+        game, a, b = _game()
+        game.enter_battlefield(a, MOUNTAIN)
+        game.enter_battlefield(b, MOUNTAIN)
+        self.assertEqual([x.controller for x in auras.hosts(game, a, HOT)], [a])

@@ -24,3 +24,23 @@ def shuffle_gy_n(game, p, eff, **_):
     if picks:
         p.library.shuffle(game.rng)
         game.log(f"shuffles {len(picks)} card(s) from the graveyard into the library", p)
+
+
+@kind("hand_cycle")
+def hand_cycle(game, p, eff, **_):
+    """Whirlpool Drake, Arjun: put the whole hand back into the library (shuffled in, or on the bottom), then draw as
+    many cards."""
+    cards = list(p.hand)
+    n = len(cards)
+    if not n:
+        return
+    for card in cards:
+        p.hand.remove(card)
+        if eff.data.get("bottom"):
+            p.library.insert(0, card)
+        else:
+            p.library.append(card)
+    if not eff.data.get("bottom"):
+        p.library.shuffle(game.rng)
+    game.draw(p, n)
+    game.log(f"puts {n} card(s) from hand into the library and draws {n}", p)
