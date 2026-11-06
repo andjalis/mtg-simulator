@@ -1361,7 +1361,7 @@ class HeuristicAI:
                 value, targets = card_value(card) + 0.5 * card.cmc, None   # flash artifact, unused this turn
             elif _is_trick(card) or any(e.target == "spell" for e in card.spell_effects):
                 continue
-            elif all(e.kind in ("draw", "dig", "scry", "surveil", "discard", "gain_life") or
+            elif all(e.kind in ("draw", "dig", "scry", "surveil", "discard", "gain_life", "lose_life") or
                      (e.kind == "token" and "power" not in (e.data or {})) for e in card.spell_effects):
                 # Cantrips and "draw two and create a Map" at the end step; judged as the sorcery
                 # they would be in our own main phase (keeping an additional sacrifice cost).

@@ -48,5 +48,29 @@ class TargetPlayerDraw(unittest.TestCase):
         self.assertIs(default_choose_target(self.game, self.a, self.card.spell_effects[0]), self.a)
 
 
+class AICasts(TargetPlayerDraw):
+    def opponents_turn(self, name, lands):
+        """A runs through the opponent's turn holding the spell: the default AI casts card draw at their end step."""
+        db = CardDB(offline=True)
+        spell = db.get(name)
+        for land in lands:
+            self.game.enter_battlefield(self.a, db.get(land)).sick = False
+        self.a.hand = [spell]
+        self.game.active_idx = 1
+        self.game.take_turn(self.b)
+        return spell
+
+    def test_ai_casts_ancestral_recall_on_itself(self):
+        spell = self.opponents_turn("Ancestral Recall", ["Island"])
+        self.assertIn(spell, self.a.graveyard)
+        self.assertEqual(len(self.a.hand), 3)
+
+    def test_ai_casts_blood_pact_on_itself(self):
+        spell = self.opponents_turn("Blood Pact", ["Swamp", "Swamp", "Swamp"])
+        self.assertIn(spell, self.a.graveyard)
+        self.assertEqual(len(self.a.hand), 2)
+        self.assertEqual((self.a.life, self.b.life), (20 - 2, 20))
+
+
 if __name__ == "__main__":
     unittest.main()
