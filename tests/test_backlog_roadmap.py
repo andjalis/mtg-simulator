@@ -659,8 +659,11 @@ class Roadmap(unittest.TestCase):
         self.put(ARBITER, self.b)
         creatures = [self.put() for _ in range(3)]
         self.a.ai.attack = creatures
+        seen = []
+        end_combat = self.g.end_combat
+        self.g.end_combat = lambda p: (seen.extend(self.g.attackers), end_combat(p))[1]   # cleared once combat ends
         self.g.combat(self.a, self.b)
-        self.assertEqual(len(self.g.attackers), 1)
+        self.assertEqual(len(seen), 1)
 
     def test_silent_arbiter_limits_blockers_across_all_attackers(self):
         source = self.put(ARBITER, self.b)
@@ -678,8 +681,11 @@ class Roadmap(unittest.TestCase):
         source.silenced_by = self.put()
         creatures = [self.put() for _ in range(3)]
         self.a.ai.attack = creatures
+        seen = []
+        end_combat = self.g.end_combat
+        self.g.end_combat = lambda p: (seen.extend(self.g.attackers), end_combat(p))[1]
         self.g.combat(self.a, self.b)
-        self.assertEqual(len(self.g.attackers), 3)
+        self.assertEqual(len(seen), 3)
 
     def test_zero_attack_limit_prevents_all_declarations(self):
         self.put(card('Peace', '', 'Creature', "Creatures can't attack.", 1, 1))

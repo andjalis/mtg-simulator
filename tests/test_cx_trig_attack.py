@@ -94,3 +94,27 @@ class AttackHeads(unittest.TestCase):
         k1, k2 = self.put(KING), self.put(QUEEN)
         self.attack([k1, k2])
         self.assertEqual(self.a.life, 22)
+
+
+@unittest.skipUnless(HAVE_DB, "card database not built")
+class AttackersCleared(unittest.TestCase):
+    def test_embercleave_costs_full_price_outside_combat(self):
+        a, b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        game = Game(a, b, random.Random(0), log=True)
+        game.turn, game.step = 2, "main1"
+        for p in (a, b):
+            p.library = [ISLAND] * 20
+            p.ai.attack, p.ai.block = (), {}
+        bears = []
+        for _ in range(3):
+            perm = game.enter_battlefield(a, card("Test Bear %d" % len(bears), "{1}{G}", "Creature — Bear", "", 2, 2))
+            perm.sick = False
+            bears.append(perm)
+        game.settle()
+        cleave = DB.get("Embercleave")
+        full = sum(game.cost_of(a, cleave).values())
+        a.ai.attack = list(bears)
+        game.combat(a, b)
+        game.settle()
+        self.assertEqual(game.attackers, [])
+        self.assertEqual(sum(game.cost_of(a, cleave).values()), full)       # main phase 2: nobody is attacking

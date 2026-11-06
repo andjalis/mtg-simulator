@@ -94,3 +94,34 @@ def player_ok(game, spec, actor, me, event, perm=None) -> bool:
     if kind == "dealt_combat":
         return bool(getattr(game, "event_combat", False))
     return True
+
+
+# ---------------------------------------------------------------------------
+# "At the beginning of the upkeep / end step of enchanted <permanent>'s controller, <effects>"
+# and "At the beginning of your combat step, <effects>"
+# ---------------------------------------------------------------------------
+
+TRIGGERS = [
+    (r"At the beginning of the upkeep of enchanted (?:creature|land|artifact|permanent|enchantment)'s controller, (.+)",
+     ("host_upkeep",)),
+    (r"At the beginning of the end step of enchanted (?:creature|land|artifact|permanent|enchantment)'s controller, (.+)",
+     ("host_end_step",)),
+    (r"At the beginning of your combat step, (.+)", ("begin_combat",)),
+]
+
+
+def host_phase(game, p, event) -> None:
+    """Queue the Auras' "of enchanted permanent's controller" triggers for the player whose step this is.
+
+    "That player" is p; "that creature / land / artifact" (parsed as the previous target) is the enchanted permanent."""
+    import dataclasses
+    want = "host_upkeep" if event == "upkeep" else "host_end_step"
+    for pl in game.players:
+        for aura in list(pl.battlefield):
+            host = getattr(aura, "attached_to", None)
+            if host is None or host.controller is not p:
+                continue
+            for trig in aura.card.triggers:
+                if trig.event == want:
+                    effects = [dataclasses.replace(e, target="host") if e.target == "prev" else e for e in trig.effects]
+                    game.queue_trigger(aura.controller, effects, aura, aura.card.name, context=p)

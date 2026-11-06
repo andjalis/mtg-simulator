@@ -103,6 +103,8 @@ _TRIGGERS += _demonstrate.TRIGGERS
 from .. import amplify as _amplify
 _EFFECT_PATTERNS += _amplify.EFFECT_PATTERNS
 _TRIGGERS += _amplify.TRIGGERS
+from .. import cx_trig_events as _cx_trig_events
+_TRIGGERS += _cx_trig_events.TRIGGERS
 
 from .. import prevent_templates as _prevent_templates
 _EFFECT_PATTERNS += _prevent_templates.EFFECT_PATTERNS

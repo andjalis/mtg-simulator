@@ -53,6 +53,7 @@ class CombatMixin:
             self.queue_trigger(controller, effects, source, f"{name}: at end of combat", context=subject)
         self.fire(p, "end_combat")
         self.run_priority(until_empty_stack=False)
+        self.attackers = []         # nothing is attacking after combat (Embercleave's cost, "attacking" targets)
 
     def _combat(self, p: Player, opp: Player):
         self.step = "declare_attackers"
