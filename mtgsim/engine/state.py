@@ -299,6 +299,7 @@ class Permanent:
                 bt += x.card.anthem_chosen[1]
             for sub, pp, tt, other in x.card.anthem_sub:
                 if creature and (sub in self.card.subtypes or (sub == "Token" and self.card.is_token)
+                                 or (sub == "Face-down" and self.hidden is not None)
                                  or sub.startswith("color:") and sub[6:] in self.card.colors
                                  or sub.startswith("type:") and sub[5:] in self.card.types) \
                         and not (other and x is self):
@@ -413,7 +414,8 @@ class Permanent:
         from ..cx_statics import grants as conditional_grant
         if conditional_grant(self, kw):
             return True
-        if any(sub in self.card.subtypes and k == kw and not (other and x is self)
+        if any((sub in self.card.subtypes or sub == "Face-down" and self.hidden is not None) and k == kw
+               and not (other and x is self)
                for x in self.controller.battlefield for sub, k, other in x.card.keyword_sub):
             return True
         # A chosen-type grant (Shimmer: "Each land of the chosen type has phasing") — the
