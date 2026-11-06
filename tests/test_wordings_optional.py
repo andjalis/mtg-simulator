@@ -51,11 +51,19 @@ class OptionalTarget(unittest.TestCase):
         """A real turn: HeuristicAI casts the up-to-one shrink spell and aims it at their creature."""
         c = spell("Put a -1/-1 counter on up to one target creature.")
         bear = self.game.enter_battlefield(self.b, BEAR)
+        mine = self.game.enter_battlefield(self.a, BEAR)
         for _ in range(2):
             self.game.enter_battlefield(self.a, FOREST).sick = False
         self.a.hand = [c]
         self.game.take_turn(self.a)
         self.assertEqual(bear.counters.get("-1/-1", 0), 1)
+        self.assertEqual(mine.counters.get("-1/-1", 0), 0)                # aimed at their side
+
+    def test_shrink_can_target_your_own_creature(self):
+        """Fixes #293: the wording has no opponent restriction."""
+        eff = spell("Put a -1/-1 counter on target creature.").spell_effects[0]
+        mine = self.game.enter_battlefield(self.a, BEAR)
+        self.assertIn(mine, self.game.legal_targets(self.a, eff))
 
 
 if __name__ == "__main__":

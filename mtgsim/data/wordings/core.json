@@ -457,7 +457,6 @@
     "effect": "shrink",
     "amount": "$1:num",
     "target": "creature",
-    "filter": "opp",
     "data": {"optional_target": true},
     "example": "Put a -1/-1 counter on up to one target creature",
     "cards": ["Banewhip Punisher"]
@@ -467,7 +466,6 @@
     "effect": "shrink",
     "amount": "$1:num",
     "target": "creature",
-    "filter": "opp",
     "example": "Put a -1/-1 counter on target creature",
     "cards": ["Banewhip Punisher"]
   },
