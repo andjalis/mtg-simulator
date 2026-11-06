@@ -998,7 +998,7 @@ class HeuristicAI:
         if combat_only and (not precombat or instant):
             return None             # combat effects go before our attack; instants wait for after_blocks / respond
         pressure = 2 * sum(combat_power(c) for c in opp.creatures) >= me.life
-        bar = 1.0 if combat_only else (2.0 if pressure else SWEEP_BAR)
+        bar = 1.0 if combat_only else (2.0 if pressure else 3.0)
         return (target, value) if value > bar else None
 
     def _players_plan(self, game: Game, me: Player, eff: Effect, card: CardDef, instant: bool):
