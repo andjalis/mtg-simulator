@@ -43,6 +43,7 @@ class Parsing(unittest.TestCase):
                   "~ deals 2 damage to target creature and 1 damage to any other target.",
                   "~ deals 2 damage to any target until end of turn.",
                   "Enchanted creature deals 1 damage to its controller.",       # "its" is the source here
+                  "It deals 2 damage to each other creature.",                  # "other" than ~, not than it
                   "Target creature deals 2 damage to any target."):              # bite: a later round
             self.assertIsNone(parse_sentence(s), s)
 
