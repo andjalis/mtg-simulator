@@ -45,3 +45,27 @@ class EndTurn(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+FORTUNE = card("Test Fortune", "{0}", "Sorcery",
+               "Take an extra turn after this one. At the beginning of that turn's end step, you lose the game.")
+
+
+class DoomedExtraTurn(unittest.TestCase):
+    def test_parses_into_one_effect(self):
+        self.assertEqual(FORTUNE.unsupported, [])
+        self.assertEqual([(e.kind, e.data) for e in FORTUNE.spell_effects], [("extra_turn", {"doomed": True})])
+
+    def test_the_caster_loses_after_the_extra_turn(self):
+        a = Player("a", [BEAR] * 40, HeuristicAI())
+        b = Player("b", [BEAR] * 40, HeuristicAI())
+        game = Game(a, b, random.Random(1), log=False)
+        game.max_turns = 12
+        game.turn = 0
+        game.resolve(a, FORTUNE.spell_effects[0], None, None)      # cast "before turn 1": turn 1 is the extra turn
+        self.assertEqual((game.extra_turns, game.doomed_extra), ([a], (a, 1)))
+        game.active_idx = 0
+        game.play()
+        self.assertTrue(a.lost)
+        self.assertIs(game.winner, b)
+        self.assertEqual(game.turn, 1)              # the game ended with that turn, not a turn later
