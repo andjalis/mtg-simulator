@@ -272,6 +272,18 @@ class Dealer(unittest.TestCase):
         c = card("Test Hybrid", "{1}{W/B}{W/B}", "Creature — Spirit", "", 2, 2)
         self.assertEqual((c.devotion_to("W"), c.devotion_to("B"), c.devotion_to("R")), (2, 2, 0))
 
+    def test_warstorm_surge_uses_the_entering_creatures_power(self):
+        """#261: 'it deals damage equal to its power' in a trigger about another creature is that creature."""
+        game, a, b = arena()
+        surge = card("Test Surge", "{3}{R}", "Enchantment", "Whenever a creature you control enters, it deals damage "
+                     "equal to its power to any target.")
+        game.enter_battlefield(a, surge)
+        game.settle()
+        b.life = 20
+        game.enter_battlefield(a, card("Test Wurm", "{4}", "Creature — Wurm", "", 6, 4))
+        game.settle()
+        self.assertEqual(b.life, 14)
+
 
 if __name__ == "__main__":
     unittest.main()
