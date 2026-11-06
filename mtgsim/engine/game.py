@@ -44,7 +44,8 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
         self.events: list[str] = []
         self.rule_events = rules_events.EventBus(capture=log)
         self.step = "main1"
-        self.stack: list[StackItem] = []
+        from ..cx_damage import Stack
+        self.stack: list[StackItem] = Stack(self)
         self.no_lifegain_turn: set[Player] = set()   # "players can't gain life this turn" (Skullcrack family)
         self.no_prevention_turn = False              # "damage can't be prevented this turn"
         self.pending: list[tuple] = []   # triggered abilities waiting to be put on the stack

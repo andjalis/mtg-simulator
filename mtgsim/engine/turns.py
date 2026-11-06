@@ -411,6 +411,7 @@ class TurnsMixin:
             perm.temp_kw.clear()
             perm.temp_triggers.clear()
             perm.temp_activated.clear()
+            perm.temp_min_blocker = 0
             perm.adapt_exceptions = 0
             perm.regeneration_shields = 0
             perm.prevent_next = 0
