@@ -327,6 +327,11 @@ class CardDef:
             return self.color_override
         return frozenset(c for c in COLORS if self.mana_cost.get(c) or any(c in pip for pip in self.hybrid))
 
+    def devotion_to(self, color: str) -> int:
+        """Mana symbols of this color in the cost (CR 700.5): a hybrid pip counts for each of its colors, and
+        mana_cost already holds it under its first color."""
+        return self.mana_cost.get(color, 0) + sum(1 for pip in self.hybrid if color in pip and pip[0] != color)
+
     @property
     def is_land(self): return "Land" in self.types
 

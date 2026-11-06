@@ -723,7 +723,7 @@ def bestow_face(card, cost):
     return dataclasses.replace(card, mana_cost=cost, types=frozenset({"Enchantment"}), subtypes=frozenset({"Aura"}),
                                power=None, toughness=None, aura="creature", equip_bonus=bonus[:2],
                                equip_keywords=bonus[2], aura_hostile=bonus[0] < 0 or bonus[1] < 0,
-                               triggers=[], activated=[], keywords=frozenset(),
+                               triggers=[], activated=list(card.activated), keywords=frozenset(),
                                advanced_rules=dict(card.advanced_rules, bestowed=True, bestow_base=card))
 
 

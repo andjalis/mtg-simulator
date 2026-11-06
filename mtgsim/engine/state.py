@@ -6,7 +6,7 @@ import re
 
 from .. import auras, counting
 from ..cards import BASIC_MANA, KEYWORDS, CardDef, Effect, Trigger
-from .. import continuous
+from .. import continuous, cx_static_combat
 from ..identity import CardInstance, CardZone, Graveyard, instance
 
 
@@ -52,6 +52,9 @@ class Counters(dict):
             from ..advanced_templates import counter_amount
             value = old + counter_amount(perm, key, value - old)
         super().__setitem__(key, value)
+        if key == "charge" and value != old:       # Spacecraft: a creature at its station threshold
+            from .. import continuous
+            continuous.refresh(perm)
         if key == "+1/+1" and value > old and perm in perm.controller.battlefield:
             game = getattr(perm.controller, "_game", None)
             if game is not None:
@@ -166,6 +169,7 @@ class Permanent:
         self.produces_now = None           # set by Game.mana_sources: the colours usable right now
         self.amount_now = None             # and how much mana it makes, when that differs from its card's
         self.temp_activated = []
+        self.temp_min_blocker = 0          # a backup-granted "can't be blocked by creatures with power N or less"
         self.temp_triggers = []
         self.regeneration_shields = 0
         self.regeneration_blocked = False
@@ -299,6 +303,7 @@ class Permanent:
                 bt += x.card.anthem_chosen[1]
             for sub, pp, tt, other in x.card.anthem_sub:
                 if creature and (sub in self.card.subtypes or (sub == "Token" and self.card.is_token)
+                                 or (sub == "Face-down" and self.hidden is not None)
                                  or sub.startswith("color:") and sub[6:] in self.card.colors
                                  or sub.startswith("type:") and sub[5:] in self.card.types) \
                         and not (other and x is self):
@@ -413,7 +418,8 @@ class Permanent:
         from ..cx_statics import grants as conditional_grant
         if conditional_grant(self, kw):
             return True
-        if any(sub in self.card.subtypes and k == kw and not (other and x is self)
+        if any((sub in self.card.subtypes or sub == "Face-down" and self.hidden is not None) and k == kw
+               and not (other and x is self)
                for x in self.controller.battlefield for sub, k, other in x.card.keyword_sub):
             return True
         # A chosen-type grant (Shimmer: "Each land of the chosen type has phasing") — the
@@ -542,7 +548,8 @@ class Permanent:
         return (self.is_creature and not self.tapped and self.detained_by is None and not (self.has("defender") and not self.has("attacks_despite_defender")) and not self.has("cant_attack_now") and not (self.card.cant_attack and not self.abilities_suppressed)
                 and not (self.auras and auras.stops_combat(self))
                 and not (self.auras and any("cant_attack" in a.card.aura_flags for a in self.auras))
-                and (not self.sick or self.has("haste")) and not self._combat_unless())
+                and (not self.sick or self.has("haste")) and not self._combat_unless()
+                and not cx_static_combat.forbidden(self, "attack"))
 
     def _combat_unless(self):
         if not self.card.advanced_rules.get("combat_unless") or self.abilities_suppressed:
@@ -735,6 +742,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
         return False
     if blocker.card.advanced_rules.get("combat_unless") and blocker._combat_unless():
         return False
+    if cx_static_combat.forbidden(blocker, "block"):
+        return False
     if (blocker.card.cant_block and not blocker.abilities_suppressed) or blocker.has("cant_block_now") or blocker.has("decayed") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
         return False
     if any(attacker.has(keyword) and any(x.card.is_land and subtype in x.card.subtypes
@@ -768,7 +777,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
         return False
     if attacker.card.blocker_power_rel and blocker.power < attacker.power:
         return False
-    if attacker.card.min_blocker_power and blocker.power < attacker.card.min_blocker_power:
+    need = max(attacker.card.min_blocker_power, attacker.temp_min_blocker)
+    if need and blocker.power < need:
         return False
     if attacker.card.max_blocker_power and blocker.power >= attacker.card.max_blocker_power:
         return False
