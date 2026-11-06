@@ -26,4 +26,4 @@ def becomes(m, clause):
     if cols is None or not cols and m[2] or clause.duration not in ("eot", ""):
         return None
     return [Part("cx_color", data={"colors": "".join(sorted(cols)), "op": "add_colors" if m[2] else "set_colors",
-                                   "eot": clause.duration == "eot", "side": "theirs"})]
+                                   "eot": clause.duration == "eot", "side": "auto"})]

@@ -370,6 +370,9 @@ _HELPS = ("pump", "grant", "gain_life", "draw", "cx_set_base")
 
 def side(effects) -> str:
     """Whose side a chosen player should be on: "mine" when the effects only help, else "theirs"."""
+    kinds = [e.kind for e in effects]
+    if kinds and kinds[0] == "draw" and set(kinds) <= {"draw", "discard", "discard_random"}:
+        return "mine"           # "draws two cards, then discards a card": card selection, wanted by its controller
     hurt = any(e.kind not in _HELPS or e.data.get("side") == "theirs" for e in effects)
     return "theirs" if hurt else "mine"
 
@@ -381,13 +384,17 @@ def assemble(subj: Subject, parts: list):
     if subj.kind == "group":
         inner = [_effect(p.kind, p.amount, p.amount2, target="self", data=p.data) for p in parts]
         data = dict(subj.data, group=subj.group, effects=inner)
+        flt = data.pop("filter", "")
         if subj.target == "player":         # "creatures target player controls": the AI picks the player by side
-            data["side"] = side(inner)
-        return [_effect("cx_group", target=subj.target, data=data)]
+            data["side"] = "theirs" if flt == "opp" else side(inner)
+        return [_effect("cx_group", target=subj.target, filter=flt, data=data)]
     if subj.kind == "player":
         inner = [_effect(p.kind, p.amount, p.amount2, target="that_controller", data=p.data) for p in parts]
+        if subj.who == "target" and subj.data.get("filter") == "opp":   # the only choice, whatever the verbs do
+            return [_effect("cx_players", target="player", filter="opp",
+                            data={"who": "target", "side": "theirs", "effects": inner})]
         if subj.who == "target":
-            if len({side([e]) for e in inner}) > 1:
+            if side(inner) == "theirs" and any(side([e]) == "mine" for e in inner):
                 return None         # helps and hurts: which player the controller wants isn't clear
             return [_effect("cx_players", target="player", filter=subj.data.get("filter", ""),
                             data={"who": "target", "side": side(inner), "effects": inner})]
@@ -423,13 +430,17 @@ def _place(p: Part, obj: Subject, subj: Subject):
     if obj.kind == "group":
         inner = [_effect(p.kind, p.amount, p.amount2, target="self", data=data)]
         gdata = dict(obj.data, group=obj.group, effects=inner)
+        flt = gdata.pop("filter", "")
         if obj.target == "player":
-            gdata["side"] = side(inner)
-        return [_effect("cx_group", target=obj.target, data=gdata)]
+            gdata["side"] = "theirs" if flt == "opp" else side(inner)
+        return [_effect("cx_group", target=obj.target, filter=flt, data=gdata)]
     if obj.kind == "player" and obj.who != "target":
         return [_effect(p.kind, p.amount, p.amount2, data=dict(data, who=obj.who))]
     if obj.kind == "host":
         return [_effect(p.kind, p.amount, p.amount2, target="host", data=data)]
+    if obj.kind == "player" and "side" not in data:     # a target player: the AI picks one by side
+        flt = obj.data.get("filter", "")
+        data["side"] = "theirs" if flt == "opp" else side([_effect(p.kind, data=data)])
     return [_effect(p.kind, p.amount, p.amount2, target=obj.target, filter=obj.data.get("filter", ""),
                     data=dict({k: v for k, v in obj.data.items() if k != "filter"}, **data))
             for _ in range(obj.copies)]
@@ -579,6 +590,44 @@ def players(game, p, who, item, prev, target=None):
             return [prev.controller if who == "controller" else prev.owner]
         return [prev] if who == "controller" and prev in game.players else []
     return []
+
+
+_HURTS = ("destroy", "exile_permanent", "bounce", "tap", "stun", "debuff_one", "debuff", "cx_lose_kw",
+          "cant_block_turn", "damage", "oring", "shrink")
+_HELPS_OBJ = ("pump", "grant", "untap_prev", "p1_counters", "regenerate", "cx_set_base", "unblockable")
+
+
+def auto_side(game, eff) -> str:
+    """The side for an effect whose own meaning is neutral (a colour change): read from the effects that follow
+    it on the same object ("becomes red and gains haste", "becomes blue. Untap that creature."). Hurting ->
+    "theirs", helping -> "mine", otherwise "theirs"."""
+    for effects in _effect_lists(getattr(game, "target_source", None)):
+        index = next((i for i, e in enumerate(effects) if e is eff), None)
+        if index is None:
+            continue
+        for later in effects[index + 1:]:
+            if later.target != "prev":
+                break
+            if later.kind in _HURTS or later.data.get("side") == "theirs":
+                return "theirs"
+            if later.kind in _HELPS_OBJ or later.data.get("side") == "mine":
+                return "mine"
+        break
+    return "theirs"
+
+
+def _effect_lists(source):
+    if isinstance(getattr(source, "effects", None), list):     # a StackItem
+        yield source.effects
+        return
+    card = getattr(source, "card", source)
+    if card is None:
+        return
+    yield getattr(card, "spell_effects", [])
+    for mode in getattr(card, "modes", None) or []:
+        yield mode
+    for holder in list(getattr(card, "activated", [])) + list(getattr(card, "triggers", [])):
+        yield holder.effects
 
 
 def group_members(game, p, data, source, player=None):

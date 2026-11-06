@@ -818,6 +818,13 @@ class HeuristicAI:
             return None  # nothing we know how to do with it
         targets, value, pending = [], 0.0, []
         for eff in card.spell_effects:
+            if eff.kind == "cx_players":
+                got = self._players_plan(game, me, eff, card, instant)
+                if got is None:
+                    return None
+                targets.append(got[0])
+                value += got[1]
+                continue
             if eff.kind == "pump" or eff.target == "spell" or _is_trick(card):
                 return None  # tricks go in after_blocks / respond, counters in respond
             if eff.kind == "damage" and eff.target in ("any", "player", "creature", "creature_pw"):
@@ -901,6 +908,42 @@ class HeuristicAI:
                 targets.append(None)
                 value += MINOR_EFFECTS.get(eff.kind, 0.0) * max(1, eff.amount)
         return (value - self._sac_cost(game, me, card), targets)
+
+    def _players_plan(self, game: Game, me: Player, eff: Effect, card: CardDef, instant: bool):
+        """(target, value) for a grammar player effect (cx_players): its life, draw, discard and mill verbs for each
+        player it names, ours counted for us and the opponent's against them (0 for players only known on
+        resolution). None only when a target player can't be chosen; whether to cast is the spell's total."""
+        opp = game.opponent(me)
+        who, target = eff.data["who"], None
+        if who == "target":
+            with game.targeting(card):
+                target = self.choose_target(game, me, eff, card)
+            if target is None:
+                return None
+            named = [target]
+        else:
+            named = {"you": [me], "each": [me, opp], "opponents": [opp], "defending": [opp]}.get(who)
+            if named is None:
+                return None, 0.0    # "that player", "its owner": a rider of another effect, valued by that one
+        value = 0.0
+        for pl in named:
+            sign = 1.0 if pl is me else -1.0
+            for e in eff.data["effects"]:
+                if e.kind == "draw":
+                    value += sign * 1.5 * e.amount
+                elif e.kind == "gain_life":
+                    value += sign * (life_value(pl.life + e.amount) - life_value(pl.life))
+                elif e.kind == "lose_life":
+                    if pl is opp and e.amount >= opp.life:
+                        return target, LETHAL
+                    value -= sign * (life_value(pl.life) - life_value(pl.life - e.amount))
+                elif e.kind == "discard":
+                    value -= sign * (0.8 if pl is me else 1.0) * min(e.amount, len(pl.hand))
+                elif e.kind == "mill":
+                    value -= sign * 0.1 * e.amount
+        if instant and value < LETHAL and all(e.kind == "cx_players" for e in card.spell_effects):
+            return None             # an instant that only does this waits for the opponent's end step
+        return target, value
 
     def _sac_cost(self, game: Game, me: Player, card: CardDef) -> float:
         """What the additional cost "sacrifice an artifact or creature" gives up (cheapest candidate)."""
