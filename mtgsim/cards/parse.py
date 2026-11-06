@@ -166,6 +166,12 @@ def _parse_effects(text: str, opts: bool = False):
             effects += linked
             gated = True
             continue
+        from ..cx_trig_reflex import parse_reflex
+        linked = parse_reflex(s, sentences[index + 1] if index + 1 < len(sentences) else "")
+        if linked is not None:
+            effects += linked
+            gated = True
+            continue
         from ..cx_links import parse_ref
         linked = parse_ref(s, effects, sentences[index + 1] if index + 1 < len(sentences) else "")
         if linked is not None:
