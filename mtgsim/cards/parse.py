@@ -550,6 +550,8 @@ def _parse_face(data: dict) -> CardDef:
     triggers = [t for t in triggers if t.effects or t.modes]
     approximations += [note for rx, note in _SUB_NOTES if rx.search(oracle)]
 
+    if data.get("mana_cost") == "" and "Land" not in types:     # no mana cost at all (not {0}): CR 118.6
+        extra.setdefault("advanced_rules", {})["no_mana_cost"] = True
     return CardDef(
         name=name, mana_cost=cost, cmc=int(data.get("cmc", 0) or 0), types=types,
         subtypes=frozenset(type_line.split("—")[1].split()) if "—" in type_line else frozenset(),

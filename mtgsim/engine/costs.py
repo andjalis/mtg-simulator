@@ -639,7 +639,7 @@ class CostsMixin:
         if cols:
             out += [self._variant(c, f"spent_{col}", AltCost("spent", self._hybrid_cost(c.mana_cost, c.hybrid, col)))
                     for col in cols]
-        else:
+        elif not c.advanced_rules.get("no_mana_cost"):     # no printed cost can't be paid: alt costs only
             out.append(c)
         full = any(self.spell_payable(p, v) for v in out)
         for a in c.alt_costs:
