@@ -214,6 +214,24 @@ class Dealer(unittest.TestCase):
         game.settle()
         self.assertNotIn(victim, b.battlefield)                # 4 damage from the Ogre; Halana's 3 would not kill it
 
+    def test_it_in_a_trigger_about_the_card_is_the_card(self):
+        """Goblin Javelineer: when it becomes blocked, *it* (Javelineer) deals the damage, not the blocker."""
+        game, a, b = arena()
+        game.step = "declare_blockers"
+        jav = game.enter_battlefield(a, card("Test Javelineer", "{1}", "Creature — Goblin",
+                                             "Whenever this creature becomes blocked, it deals 1 damage to target creature "
+                                             "blocking it.", 1, 3))
+        elf = game.enter_battlefield(b, card("Test Elves", "{1}", "Creature — Elf", "", 1, 1))
+        self.assertEqual(jav.card.unsupported, [])
+        seen = []
+        real = game.deal_damage
+        game.deal_damage = lambda tgt, amount, **kw: (seen.append((tgt, amount, kw.get("source"))), real(tgt, amount, **kw))[1]
+        game.attackers = [jav]
+        game.blocks = {jav: [elf]}
+        game.fire(a, "becomes_blocked", jav, context=elf)
+        game.settle()
+        self.assertEqual([(t, n, s) for t, n, s in seen if n == 1], [(elf, 1, jav)])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -97,6 +97,8 @@ def _simple(m):
     extra = dict(amount[1]) if amount is not None else {}
     if _it(m):
         extra["src_prev"] = True            # the damage comes from the earlier target / triggering creature, not the card
+        if m["s"].lower() == "that creature":
+            extra["src_ctx"] = True         # only "that creature" may mean the creature a trigger fired for ("it" is ~)
     if amount is not None and m["t"] == "any target":
         return _effect("damage", amount[0], target="any", data=extra)
     target = _target(m["t"], _it(m))
@@ -173,16 +175,16 @@ def scaled(game, me, eff):
     if eff.data.get("src_prev"):
         earlier = [t for t in getattr(game, "_choosing_targets", ()) if hasattr(t, "counters")]
         ctx = getattr(game, "trigger_context", None) or getattr(game.target_source, "context", None)   # the trigger's creature
-        src = earlier[0] if earlier else ctx if hasattr(ctx, "counters") else src
+        src = earlier[0] if earlier else ctx if hasattr(ctx, "counters") and eff.data.get("src_ctx") else src
     if eff.data.get("source_power") and src is not None and hasattr(src, "power"):
         return dataclasses.replace(eff, amount=max(0, src.power))
     return eff
 
 
-def damage_source(game, item, src, target=None):
+def damage_source(game, item, src, target=None, eff=None):
     """Who deals the damage when the sentence says "it" / "that creature": the first permanent an earlier effect of the
-    same spell or ability targeted (Deadshot, Brokers Charm), else the creature that triggered the ability
-    (Electropotence, Halana), else the ability's own source."""
+    same spell or ability targeted (Deadshot, Brokers Charm); for "that creature" else the creature that triggered the
+    ability (Electropotence, Halana); else the ability's own source ("it" in a trigger about ~ is ~)."""
     from .engine.state import Permanent
     if item is not None:
         slot = next((i for i, (e, t) in enumerate(zip(item.effects, item.targets))
@@ -190,6 +192,6 @@ def damage_source(game, item, src, target=None):
         for t in (item.targets[:slot] if slot is not None else ()):
             if isinstance(t, Permanent):
                 return t
-        if isinstance(item.context, Permanent):
+        if isinstance(item.context, Permanent) and eff is not None and eff.data.get("src_ctx"):
             return item.context
     return src

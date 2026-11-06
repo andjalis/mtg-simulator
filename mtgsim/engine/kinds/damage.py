@@ -12,7 +12,7 @@ def damage(game, p, eff, target, item, opp, cause, **_):
     src = (item.source if item.source is not None else item.card) if item is not None else None
     if eff.data.get("src_prev"):         # "it deals damage equal to its power ..." (cx_abil_damage)
         from ...cx_abil_damage import damage_source
-        src = damage_source(game, item, src, target)
+        src = damage_source(game, item, src, target, eff)
     victims = _damage(game, p, eff, target, item, opp, cause, src)
     if eff.data.get("exile_dying") or (isinstance(src, Permanent) and src.card.exile_damaged):
         from ...batch1_templates import mark_exile_dying
