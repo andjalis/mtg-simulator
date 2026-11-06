@@ -174,7 +174,7 @@ class TurnsMixin:
             if self.over or card not in p.graveyard:
                 continue
             for idx in range(len(card.gy_activated)):
-                if self.activate_graveyard(p, card, idx):
+                if graveyard.worth(self, p, card, idx) and self.activate_graveyard(p, card, idx):
                     break
             if card not in p.graveyard:
                 continue
@@ -393,6 +393,8 @@ class TurnsMixin:
                 and not player_flag(self, p, 'no_max_hand'):
             card = p.ai.choose_discard(self, p)
             self.discard_card(p, card)
+        if self.pending:
+            self.settle()           # triggers from the cleanup discard (madness) get priority before the turn ends
         for perm in p.battlefield + opp.battlefield:
             perm.damage = 0
             perm.deathtouched = False

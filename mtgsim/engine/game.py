@@ -51,6 +51,7 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
         self.pending: list[tuple] = []   # triggered abilities waiting to be put on the stack
         self.delayed_upkeep: list[tuple] = []  # (controller, amount, source, name, scope)
         self.delayed_end_step: list[tuple] = []
+        self.cx_watchers: list[tuple] = []   # (turn, permanent, controller, effects, source): cx_trig_watch
         self.extra_combats = 0
         self.rebound_upkeep: list[tuple] = []  # (controller, exiled card, zone version)
         self.extra_turns: list = []                # players who take an extra turn after this one
