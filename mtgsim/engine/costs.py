@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from .. import alt_casts, emerge, auras, copies, counting, discounts, returns, costs, storage
+from .. import alt_casts, emerge, auras, copies, counting, discounts, returns, costs, storage, cx_static_cost
 from .. import cx_static_cond
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
@@ -535,6 +535,7 @@ class CostsMixin:
         cost["generic"] = max(0, cost.get("generic", 0) - n)
         from ..batch1_templates import spell_tax
         cost["generic"] += spell_tax(self, p, card)
+        cost = cx_static_cost.adjust(self, p, card, cost)
         if card.extra_discard and card.discard_or_pay and self.spare_cards(p, card) < 1:
             cost["generic"] += card.discard_or_pay
         if card.behold_or_pay:
