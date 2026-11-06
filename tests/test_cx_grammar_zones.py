@@ -189,5 +189,37 @@ class DefaultAI(Base):
         self.assertIn(spell, self.a.hand)
 
 
+class QualifiedRemovalWordings(Base):
+    """Qualifiers the old core.json removal entries swallowed ("nonblack", "tapped", "an opponent controls") are
+    now read, and "exile" no longer destroys."""
+    def legal(self, text, perm):
+        spell = self.spell(text)
+        return self.game.legal_target(self.a, spell.spell_effects[0], perm)
+
+    def test_nonblack(self):
+        black = self.perm(card("Test Black", "{B}", "Creature — Zombie", "", 2, 2), self.b)
+        self.assertFalse(self.legal("Destroy target nonblack creature.", black))
+        self.assertTrue(self.legal("Destroy target nonblack creature.", self.perm(BEAR, self.b)))
+
+    def test_controller_and_tapped(self):
+        mine, theirs, untapped = self.perm(BEAR, self.a), self.perm(BEAR, self.b), self.perm(BEAR, self.b)
+        mine.tapped = theirs.tapped = True
+        text = "Destroy target tapped creature an opponent controls."
+        self.assertEqual([self.legal(text, x) for x in (mine, theirs, untapped)], [False, True, False])
+        self.assertFalse(self.legal("Exile target creature an opponent controls.", mine))
+        self.assertFalse(self.legal("~ deals 2 damage to target tapped creature an opponent controls.", mine))
+
+    def test_exile_does_not_destroy(self):
+        bear = self.perm(BEAR, self.b)
+        self.game.attackers.append(bear)
+        self.cast(self.spell("Exile target attacking or blocking creature."), [bear])
+        self.assertEqual([c.name for c in self.b.exile], [BEAR.name])
+        self.assertEqual(self.b.graveyard, [])
+
+    def test_artifact_or_enchantment_can_be_your_own(self):
+        rock = self.perm(ROCK, self.a)
+        self.assertTrue(self.legal("Destroy target artifact or enchantment.", rock))
+
+
 if __name__ == "__main__":
     unittest.main()
