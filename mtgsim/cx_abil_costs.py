@@ -108,3 +108,16 @@ def pay_one(game, p, perm, kind, n, spec) -> bool:
             return False
         game.move_card(c, p.graveyard, p.exile, reason="cost")
     return True
+
+
+def ai_cost_ok(game, me, perm, costs) -> bool:
+    """Whether the AI should pay these cost parts for an ability (policy.ability_worth): it sacrifices only
+    near-worthless permanents and doesn't exile its library down to nothing."""
+    from .engine.policy import perm_value
+    for kind, n, spec in costs.get("cx_costs", ()):
+        if kind == "sacrifice_n":
+            if any(not v.card.is_token and perm_value(v) > 1 for v in _sac_pool(game, me, perm, spec)[:n]):
+                return False
+        elif kind == "exile_top_library" and len(me.library) < n + 10:
+            return False
+    return True
