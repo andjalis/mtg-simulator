@@ -20,6 +20,10 @@ class Parsing(unittest.TestCase):
                          ["damage", "cx_damage"])
         self.assertEqual(self.kinds("It deals 1 damage to each creature without flying."), ["cx_group"])
         self.assertEqual(self.kinds("~ deals 2 damage to it."), ["damage"])
+        self.assertEqual(self.kinds("~ deals 3 damage to that land's controller."), ["cx_damage"])
+        self.assertEqual(self.kinds("~ deals 1 damage to each creature and each player."), ["cx_group", "cx_damage"])
+        self.assertEqual([(e.kind, e.target) for e in parse_sentence(
+            "~ deals 2 damage to any target and 2 damage to itself.")], [("damage", "any"), ("damage", "self")])
 
     def test_targets_and_sides(self):
         effs = parse_sentence("~ deals 2 damage to any target and 1 damage to any other target.")
@@ -38,6 +42,7 @@ class Parsing(unittest.TestCase):
                   "~ deals X damage to each creature.",                          # X inside a group
                   "~ deals 2 damage to target creature and 1 damage to any other target.",
                   "~ deals 2 damage to any target until end of turn.",
+                  "Enchanted creature deals 1 damage to its controller.",       # "its" is the source here
                   "Target creature deals 2 damage to any target."):              # bite: a later round
             self.assertIsNone(parse_sentence(s), s)
 
@@ -87,6 +92,13 @@ class Resolving(Base):
                                          kind="trigger", context=attacker, name="Caltrops"))
         self.game.resolve_top()
         self.assertNotIn(attacker, self.b.battlefield)
+
+    def test_each_creature_and_each_player(self):
+        bear, mine = self.perm(BEAR, self.b), self.perm(BEAR, self.a)
+        self.cast(self.spell("~ deals 2 damage to each creature and each player.", "Sorcery"))
+        self.assertNotIn(bear, self.b.battlefield)
+        self.assertNotIn(mine, self.a.battlefield)
+        self.assertEqual((self.a.life, self.b.life), (18, 18))
 
     def test_player_recipient_is_real_damage(self):
         """Damage to "that creature's controller" is damage (prevention applies), not life loss."""
