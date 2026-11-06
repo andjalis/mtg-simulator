@@ -167,6 +167,8 @@ class CombatMixin:
             for b in bl:
                 self.fire(opp, "blocks", b, context=a)
             self.fire(p, "becomes_blocked", a, context=bl[0])
+            for b in bl:
+                self.fire(p, "blocked_by", a, context=b)     # "becomes blocked by a creature": once per blocker
             ring.blocked(self, p, a, bl)
         for a in attackers:
             if a not in blocks:

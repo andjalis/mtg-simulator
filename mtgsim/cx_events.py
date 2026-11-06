@@ -418,9 +418,10 @@ _OBJ_VERBS = [
     (r"blocks? or becomes? blocked", ("blocks", "becomes_blocked"), ""),
     (r"blocks?", ("blocks",), ""),
     (r"becomes? blocked", ("becomes_blocked",), ""),
-    (r"becomes? blocked by (?:an?|one or more) [\w/ -]+?(?: creatures?)?", ("becomes_blocked",), "by"),
-    (r"blocks? or becomes? blocked by (?:an?|one or more) [\w/ -]+?(?: creatures?)?", ("blocks", "becomes_blocked"),
-     "by"),
+    (r"becomes? blocked by (?:an?) [\w/ -]+?(?: creatures?)?", ("blocked_by",), "by"),      # once per blocker
+    (r"becomes? blocked by one or more [\w/ -]+?(?: creatures?)?", ("becomes_blocked",), "by"),
+    (r"blocks? or becomes? blocked by (?:an?) [\w/ -]+?(?: creatures?)?", ("blocks", "blocked_by"), "by"),
+    (r"blocks? or becomes? blocked by one or more [\w/ -]+?(?: creatures?)?", ("blocks", "becomes_blocked"), "by"),
     (r"dies|die", ("dies",), ""),
     (r"enters?(?: the battlefield)?", ("etb",), ""),
     (r"enters?(?: the battlefield)? under your control", ("etb",), "etb_mine"),
@@ -442,6 +443,7 @@ _OBJ_VERBS = [
     (r"becomes? the target of a spell or ability", ("targeted",), ""),
     (r"becomes? the target of a spell an opponent controls", ("targeted_by_spell",), ""),
     (r"is turned face up|are turned face up", ("turned_face_up",), ""),
+    (r"explores?", ("explores",), ""),
     (r"(?:is|are) put into (?:a|your|an opponent's) graveyard from the battlefield", ("perm_to_gy",), "gy"),
 ]
 _VERB_RE = "|".join(f"(?:{v[0]})" for v in _OBJ_VERBS)
@@ -590,7 +592,7 @@ _OBSERVED = {"attacks", "blocks", "becomes_blocked", "dies", "etb", "leaves", "b
              "combat_damage_player", "combat_damage_creature", "damages_player", "deals_damage", "dealt_damage",
              "targeted", "targeted_opp", "targeted_mine", "targeted_by_spell", "turned_face_up", "perm_to_gy",
              "any_cast", "you_draw", "gain_life", "opp_loses_life", "you_discard", "you_cycle", "sacrificed",
-             "land_played", "you_attack", "you_scry", "spell_copied"}
+             "land_played", "you_attack", "you_scry", "spell_copied", "blocked_by"}
 
 
 def _has_ev(perm) -> bool:
@@ -689,6 +691,8 @@ def _match(game, spec, event, perm, p, source, context, subject, wants_player=Fa
             card = actor.discarded_cards[-1] if getattr(actor, "discarded_cards", None) else None
             if card is None or not card_matches(card, spec["card"]):
                 return False
+        if not cx_trig_events.player_ok(game, spec, actor, me, event):
+            return False
         if kind == "gain_first" and actor.life_gained_turn != (getattr(game, "event_amount", None) or 0):
             return False
         if kind == "sacrifice":
@@ -726,3 +730,6 @@ def _match(game, spec, event, perm, p, source, context, subject, wants_player=Fa
     if obj is perm and context is not None:
         return context      # "~ blocks ..., destroy that creature": the other creature, as the base dispatch does
     return obj
+
+
+from . import cx_trig_events  # noqa: E402  (extends the player-verb table above)
