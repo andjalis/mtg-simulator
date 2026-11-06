@@ -71,6 +71,8 @@ class CombatMixin:
                      and (not a.card.attack_needs or any(a.card.attack_needs in x.card.subtypes for x in opp.battlefield))]
         from ..batch1_templates import curses_on
         cursed_to_attack = any(c.card.advanced_rules.get('curse_must_attack') for c in curses_on(self, p))
+        from ..cx_night_aura import forced_to_attack
+        cursed_to_attack = cursed_to_attack or forced_to_attack(self, p)
         attackers += [a for a in p.creatures if (a.card.must_attack or a.has("must_attack_now") or cursed_to_attack)
                       and a.can_attack() and a not in attackers]
         from ..backlog_templates import combat_limit
