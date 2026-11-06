@@ -96,7 +96,8 @@ class CostsMixin:
             perm.produces_now = produces
             out.append(perm)
         for mana in p.pool:
-            if not mana.tapped and mana is not exclude:
+            if not mana.tapped and mana is not exclude and \
+                    (not mana.card.mana_restriction or self.mana_allowed(mana, spell)):
                 mana.produces_now = mana.card.produces
                 out.append(mana)
         stored = storage.stored_sources(p, exclude, lambda r: self.mana_allowed(None, spell, r),
@@ -110,9 +111,12 @@ class CostsMixin:
         """Whether perm's restricted mana (or this restriction) may pay for spell (see mana_sources)."""
         if spell is None:
             return True
+        r = restriction or perm.card.mana_restriction
+        if r.startswith("pred:"):         # "Spend this mana only to cast <spells> or activate abilities of <sources>"
+            from ..cx_abil_mana import allowed
+            return allowed(r, spell)
         if not isinstance(spell, CardDef):
             return False
-        r = restriction or perm.card.mana_restriction
         if r == "creature":
             return spell.is_creature
         if r == "artifact":

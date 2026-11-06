@@ -390,7 +390,9 @@ class AbilitiesMixin:
         targets = self.auto_targets(p, preview, perm) if targets is None else list(targets)
         if not self.valid_action_targets(p, act.effects, targets, perm):
             return False
-        if plan is None or self.pay(p, plan.cost, exclude_many=plan.exclude, reserved_counters=plan.counter_payments) is None:
+        from ..cx_abil_mana import AbilityPayment
+        if plan is None or self.pay(p, plan.cost, spell=AbilityPayment(perm), exclude_many=plan.exclude,
+                                    reserved_counters=plan.counter_payments) is None:
             return False
         p.counters["energy"] = p.counters.get("energy", 0) - c.get("energy", 0)
         perm.ability_turns[idx] = self.turn
