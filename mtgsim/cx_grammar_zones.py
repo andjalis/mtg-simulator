@@ -100,3 +100,33 @@ def sacrifice(m, clause):
     if obj is None or obj.kind != "group":
         return None
     return [Part("cx_edict", n, data={"noun": obj.group, "scales": True})]
+
+
+# ---------------------------------------------------------------- what the default AI thinks these are worth
+
+def _signed(me, perm, v: float) -> float:
+    return v if perm.controller is not me else -v
+
+
+def _removal_value(game, me, eff, obj):
+    from .engine.policy import perm_value
+    from .engine.state import Permanent
+    if not isinstance(obj, Permanent):
+        return 0.0
+    if eff.kind == "destroy" and obj.has("indestructible"):
+        return 0.0
+    if eff.kind == "bounce" and not obj.card.is_token:
+        return _signed(me, obj, 0.5 * obj.card.cmc + 0.5)        # they can cast it again
+    return _signed(me, obj, perm_value(obj))
+
+
+def _edict_value(game, me, eff, obj):
+    """The permanents that player would sacrifice (cx_edict picks the least valuable), signed by who loses them."""
+    from .cx_grammar import group_members
+    from .engine.policy import perm_value
+    from .engine.state import Player
+    if not isinstance(obj, Player):
+        return 0.0
+    pool = group_members(game, obj, {"group": eff.data["noun"]}, None, obj)
+    lost = sum(sorted((0.3 if x.card.is_token else perm_value(x)) for x in pool)[:max(1, eff.amount)])
+    return lost if obj is not me else -lost
