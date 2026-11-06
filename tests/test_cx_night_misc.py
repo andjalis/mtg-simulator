@@ -87,3 +87,25 @@ class DiscardAtRandom(unittest.TestCase):
         self.assertTrue(game.cast(a, BURST, [b]))
         self.assertEqual(len(a.hand), before - 2)       # the spell and one random card left the hand
         self.assertGreaterEqual(len(a.graveyard), 1)
+
+
+DECOMPOSE = card("Test Decompose", "{B}", "Sorcery", "Exile up to three target cards from a single graveyard.")
+DWELL = card("Test Dwell", "{U}", "Sorcery", "Target player shuffles up to four target cards from their graveyard into their library.")
+
+
+class GraveyardPicks(unittest.TestCase):
+    def test_parse(self):
+        self.assertEqual((DECOMPOSE.unsupported, DWELL.unsupported), ([], []))
+
+    def test_exile_up_to_three_prefers_creatures(self):
+        game, a, b = _game()
+        b.graveyard = [MOUNTAIN, MOUNTAIN, BEAR, BEAR, MOUNTAIN]
+        game.resolve(a, DECOMPOSE.spell_effects[0], None, None)
+        self.assertEqual(([c.name for c in b.exile].count(BEAR.name), len(b.exile), len(b.graveyard)), (2, 3, 2))
+
+    def test_shuffle_up_to_four_into_library(self):
+        game, a, b = _game()
+        a.graveyard = [BEAR] * 6
+        n = len(a.library)
+        game.resolve(a, DWELL.spell_effects[0], a, None)
+        self.assertEqual((len(a.graveyard), len(a.library)), (2, n + 4))
