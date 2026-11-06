@@ -93,7 +93,7 @@ def bounce(m, clause):
 _WHERE = {"on top of": "top", "on the bottom of": "bottom"}
 
 
-@verb(r"put (.+?) (on top of|on the bottom of) (?:its|their) owners?'? librar(?:y|ies)", heads=("put",),
+@verb(r"put (.+?) (on top of|on the bottom of) (?:its|their) owner(?:'s|s') librar(?:y|ies)", heads=("put",),
       subjects=("imperative",))
 def put_library(m, clause):
     """"Put target creature on top of its owner's library", "Put all creatures on the bottom of their owners'
@@ -109,7 +109,8 @@ def put_library(m, clause):
     return parts
 
 
-@verb(r"shuffles? (.+?) into (?:its|their) owners?'? librar(?:y|ies)", heads=("shuffle",), subjects=("imperative",))
+@verb(r"shuffles? (.+?) into (?:its|their) owner(?:'s|s') librar(?:y|ies)", heads=("shuffle",),
+      subjects=("imperative",))
 def shuffle_library(m, clause):
     if clause.duration:
         return None

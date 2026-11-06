@@ -190,5 +190,77 @@ class DefaultAI(Base):
         self.assertIn(spell, self.a.hand)
 
 
+DIER = card("Test Dier", "{1}{B}", "Creature — Zombie", "When this creature dies, you gain 3 life.", 2, 2)
+ARTIST = card("Test Artist", "{1}{B}", "Creature — Vampire", "Whenever another creature dies, you gain 1 life.", 0, 1)
+
+
+class Library(Base):
+    """Putting a permanent into its owner's library never passes through the graveyard."""
+    def setUp(self):
+        super().setUp()
+        self.perm(ARTIST, self.a)
+        self.life = (self.a.life, self.b.life)
+
+    def tuck(self, text, victim):
+        self.cast(self.spell(text), [victim])
+        self.game.flush_triggers()
+        while self.game.stack:
+            self.game.resolve_top()
+
+    def assert_no_death(self):
+        self.assertEqual((self.a.life, self.b.life), self.life)
+        self.assertEqual(self.b.graveyard, [])
+
+    def test_top_fires_no_dies_triggers(self):
+        dier = self.perm(DIER, self.b)
+        self.tuck("Put target creature on top of its owner's library.", dier)          # the old tuck_top kind
+        self.assertIs(self.b.library[-1], dier.front)
+        self.assert_no_death()
+
+    def test_grammar_top_bottom_and_shuffle(self):
+        land, dier, other = self.perm(HILL, self.b), self.perm(DIER, self.b), self.perm(DIER, self.b)
+        self.tuck("Put target land on top of its owner's library.", land)
+        self.assertIs(self.b.library[-1], land.front)
+        self.tuck("Put target nonland permanent on the bottom of its owner's library.", dier)
+        self.assertIs(self.b.library[0], dier.front)
+        self.tuck("Shuffle target creature into its owner's library.", other)
+        self.assertIn(other.front, self.b.library)
+        self.assertEqual(len(self.b.library), 23)
+        self.assert_no_death()
+
+    def test_stolen_permanent_goes_to_its_owners_library(self):
+        dier = self.perm(DIER, self.b)
+        self.b.battlefield.remove(dier)
+        dier.controller = self.a
+        self.a.battlefield.append(dier)
+        self.tuck("Put target creature on top of its owner's library.", dier)
+        self.assertIs(self.b.library[-1], dier.front)
+        self.assertNotIn(dier.front, self.a.library)
+
+    def test_token_ceases_to_exist(self):
+        token = self.perm(dataclasses.replace(DIER, is_token=True), self.b)
+        self.tuck("Put target nonland permanent on the bottom of its owner's library.", token)
+        self.assertNotIn(token, self.b.battlefield)
+        self.assertEqual(len(self.b.library), 20)
+        self.assert_no_death()
+
+    def test_group_to_the_bottom(self):
+        mine, theirs = self.perm(BEAR, self.a), self.perm(DIER, self.b)
+        self.cast(self.spell("Put all creatures on the bottom of their owners' libraries.", "Sorcery"))
+        self.assertEqual((self.a.library[0].name, self.b.library[0].name), (BEAR.name, DIER.name))
+        self.assertNotIn(mine, self.a.battlefield)
+        self.assertNotIn(theirs, self.b.battlefield)
+
+    def test_ai_tucks_the_opponents_permanent(self):
+        mine, theirs = self.perm(BEAR, self.a), self.perm(BEAR, self.b)
+        spell = card("Test Spell", "{U}", "Sorcery", "Put target nonland permanent on the bottom of its owner's library.")
+        self.perm(ISLAND, self.a)
+        self.a.hand = [spell]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertNotIn(spell, self.a.hand)
+        self.assertIn(mine, self.a.battlefield)
+        self.assertNotIn(theirs, self.b.battlefield)
+
+
 if __name__ == "__main__":
     unittest.main()
