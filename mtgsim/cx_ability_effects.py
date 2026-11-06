@@ -32,8 +32,10 @@ EFFECT_PATTERNS = [
     (r"target creature doesn't untap during its controller's next untap step",
      lambda m: _effect("skip_untap", target="creature")),
     (r"add (?P<n>two|three|four|five) mana of any one color", _any_one_color),
-    (r"(?:~|it) deals damage equal to its power to target creature",
+    (r"~ deals damage equal to its power to target creature",
      lambda m: _effect("damage", target="creature", data={"source_power": True})),
+    (r"it deals damage equal to its power to target creature",     # "it": the trigger's permanent, else ~
+     lambda m: _effect("damage", target="creature", data={"source_power": True, "source": "prev"})),
     (r"put ~ on top of its owner's library", lambda m: _effect("tuck_top", target="self")),
     (r"exile enchanted creature", lambda m: _effect("exile_permanent", target="host")),
     (r"exile target creature card from a graveyard", lambda m: _effect("exile_gy", 1)),

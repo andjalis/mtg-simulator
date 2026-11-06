@@ -67,7 +67,11 @@ def _part(n, data, obj, source, first_targeted):
     if obj.kind == "group" and data.get("x"):
         return None         # a group's X would need the wrapper's amount (not on this branch's core)
     if _targeted(obj):
-        return None     # another source would need cx_damage, which the default AI can't aim yet
+        if source != "prev":
+            return None     # an enchanted / equipped source would need cx_damage, which the AI can't aim yet
+        # "it deals 2 damage to target creature": the damage kind reads "it" as the trigger's permanent, else an
+        # earlier object, else ~ itself ("Sacrifice ~: It deals ..."), and the AI aims it as usual.
+        return Part("damage", n, 0, data, obj=obj)
     if source == "prev" and first_targeted:
         return None     # "it" would read the first recipient once that one is chosen
     if source != "self" and obj.kind == "group" and (obj.group or {}).get("other", (obj.group or {}).get(

@@ -8,9 +8,9 @@ from . import kind
 
 
 @kind("damage")
-def damage(game, p, eff, target, item, opp, cause, **_):
-    src = (item.source if item.source is not None else item.card) if item is not None else None
-    victims = _damage(game, p, eff, target, item, opp, cause)
+def damage(game, p, eff, target, item, opp, cause, prev=None, **_):
+    src = _source(eff, item, prev, target)
+    victims = _damage(game, p, eff, target, item, opp, cause, prev)
     if eff.data.get("exile_dying") or (isinstance(src, Permanent) and src.card.exile_damaged):
         from ...batch1_templates import mark_exile_dying
         for v in victims:
@@ -18,9 +18,21 @@ def damage(game, p, eff, target, item, opp, cause, **_):
                 mark_exile_dying(game, v)
 
 
-def _damage(game, p, eff, target, item, opp, cause):
+def _source(eff, item, prev=None, target=None):
+    """The damage source: the resolving spell or permanent, or for data["source"] == "prev" ("it deals ..." in a
+    trigger about another permanent) that permanent, else an earlier object the sentence refers to. A targeted
+    effect's own target is already in ``prev`` when it resolves, so it never counts."""
+    if eff.data.get("source") == "prev" and item is not None:
+        if item.kind == "trigger" and isinstance(item.context, Permanent):
+            return item.context
+        if isinstance(prev, Permanent) and prev is not target:
+            return prev
+    return (item.source if item.source is not None else item.card) if item is not None else None
+
+
+def _damage(game, p, eff, target, item, opp, cause, prev=None):
     """Deal the effect's damage; return the permanents and players it was dealt to."""
-    src = (item.source if item.source is not None else item.card) if item is not None else None
+    src = _source(eff, item, prev, target)
     victims = []
     if eff.data.get("source_power"):
         eff = dataclasses.replace(eff, amount=max(0, src.power) if isinstance(src, Permanent) else 0)

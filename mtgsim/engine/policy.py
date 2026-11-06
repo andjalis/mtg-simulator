@@ -73,7 +73,9 @@ def damage_amount(game: Game, eff: Effect, source=None) -> int:
     if not (eff.data or {}).get("source_power"):
         return eff.amount
     src = source if source is not None else game.target_source
-    src = getattr(src, "source", src) if isinstance(src, StackItem) else src
+    if isinstance(src, StackItem):
+        context = src.context if src.kind == "trigger" else None
+        src = context if eff.data.get("source") == "prev" and isinstance(context, Permanent) else src.source
     return max(0, src.power) if isinstance(src, Permanent) else 0
 
 
