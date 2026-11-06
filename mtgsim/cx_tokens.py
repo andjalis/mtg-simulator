@@ -41,7 +41,7 @@ _PREDEFINED = {
 }
 
 _SUBJECTS = {
-    "": "you", "you": "you", "target opponent": "opp", "each opponent": "opp", "each player": "each",
+    "": "you", "you": "you", "each opponent": "opp", "each player": "each",
     "its controller": "that_controller", "that creature's controller": "that_controller",
     "that permanent's controller": "that_controller", "that spell's controller": "that_controller",
     "its owner": "that_controller",
@@ -248,7 +248,7 @@ def reparse(sentence: str, effects: list) -> list:
     return effects if new is NO_MATCH else new
 
 
-_CREATE = (r"(?:(you|target opponent|each opponent|each player|its controller|its owner|that creature's controller|"
+_CREATE = (r"(?:(you|each opponent|each player|its controller|its owner|that creature's controller|"
            r"that permanent's controller|that spell's controller) )?creates? (.+)")
 
 EFFECT_PATTERNS = [
