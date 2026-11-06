@@ -58,7 +58,7 @@ def parse_part(part: str, extra: dict) -> bool:
 
 def _cards(p, card_list, spec, source=None):
     from .cx_condlib import _card_ok
-    return [c for c in card_list if not spec or _card_ok(c, spec)]
+    return [c for c in card_list if c is not source and (not spec or _card_ok(c, spec))]
 
 
 def _candidates(game, p, perm, kind, spec):
@@ -71,7 +71,7 @@ def _candidates(game, p, perm, kind, spec):
     if kind in ("discard", "discard_random"):
         return _cards(p, p.hand, spec)
     if kind == "exile_gy":
-        return _cards(p, p.graveyard, spec)
+        return _cards(p, p.graveyard, spec, source=perm)       # a graveyard ability never exiles its own card
     return []
 
 
