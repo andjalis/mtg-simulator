@@ -474,6 +474,8 @@ def _face_land_and_mana_lines(st, line):
         m = re.fullmatch(r"\{T\}: Add ([^.]+)\.(?: ~ deals 1 damage to you\.)?", line)
         if m:
             cols, amount = _parse_mana_ability(m[1])
+            if not cols and "chosen color" not in m[1]:    # "two mana of any one color": no colour read, no mana made
+                return line
             produces |= cols
             extra["mana_amount"] = max(amount, extra.get("mana_amount", 1))
             if "equal to" in m[1] or " for each " in m[1]:
