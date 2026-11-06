@@ -27,12 +27,12 @@ def color(game, target, eff, **_):
 
 
 @kind("cx_players")
-def players(game, p, item, eff, prev=None, **_):
+def players(game, p, item, eff, prev=None, target=None, **_):
     """Each inner player effect, applied to the players the subject names ("each player", "defending player",
     "that creature's controller", ...)."""
     from ...cx_grammar import players as named
     from . import HANDLERS
-    named_players = named(game, p, eff.data["who"], item, prev)
+    named_players = named(game, p, eff.data["who"], item, prev, target)
     for inner in _scaled(game, p, eff, item, prev):          # "each player discards a card, then draws a card": all, verb by verb
         for who in named_players:
             HANDLERS[inner.kind](game, p=p, eff=inner, target=who, item=item, opp=game.opponent(p), prev=prev,

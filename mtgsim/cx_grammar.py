@@ -171,7 +171,7 @@ def verb(text: str, timed: bool):
         if cols is None or not cols and m[2]:
             return None
         op = "add_colors" if m[2] else "set_colors"
-        return [("cx_color", 0, 0, {"colors": "".join(sorted(cols)), "op": op, "eot": timed, "side": "theirs"})]
+        return [("cx_color", 0, 0, {"colors": "".join(sorted(cols)), "op": op, "eot": timed, "side": "auto"})]
     m = re.fullmatch(r"(?:has|have) base power and toughness (\d+)/(\d+)", t)
     if m and timed:
         return [("cx_set_base", int(m[1]), int(m[2]), {})]
@@ -226,6 +226,8 @@ def parse_sentence(s: str):
         built += effs
     if group is not None:
         inner = [_effect(k, a, b, target="self", data=d) for k, a, b, d in built]
+        if target == "player":      # "creatures target player controls": the AI picks the player by side
+            data = dict(data, side=_side(inner))
         return [_effect("cx_group", target=target, data=dict(data, group=group, effects=inner))]
     out = []
     for _ in range(copies):
@@ -305,23 +307,41 @@ def _player_verb(text: str):
     return None
 
 
+_HELPS = ("pump", "grant", "gain_life", "draw")
+
+
+def _side(effects) -> str:
+    """Whose side a target player should be on: "mine" when the effects only help, else "theirs"."""
+    hurt = any(e.kind not in _HELPS or e.data.get("side") == "theirs" for e in effects)
+    return "theirs" if hurt else "mine"
+
+
 def parse_players(s: str):
     """[cx_players effect] for "<player> loses 2 life and draws a card", or None (target players are left to the
     templates: the AI chooses a target player by effect kind)."""
-    m = re.fullmatch(rf"({'|'.join(re.escape(k) for k in _PLAYERS)}) ({_PLAYER_VERB}\b.*)", s, re.I)
+    m = re.fullmatch(rf"({'|'.join(re.escape(k) for k in _PLAYERS)}|target player|target opponent) "
+                     rf"({_PLAYER_VERB}\b.*)", s, re.I)
     if m is None:
         return None
     verbs = [_player_verb(v) for v in _PLAYER_SPLIT.split(m[2])]
     if not verbs or None in verbs:
         return None
     inner = [_effect(k, n, target="that_controller") for k, n in verbs]
-    return [_effect("cx_players", data={"who": _PLAYERS[m[1].lower()], "effects": inner})]
+    who = m[1].lower()
+    if who.startswith("target "):
+        if len({_side([e]) for e in inner}) > 1:
+            return None         # helps and hurts: which player the controller wants isn't clear
+        return [_effect("cx_players", target="player", filter="opp" if who.endswith("opponent") else "",
+                        data={"who": "target", "side": _side(inner), "effects": inner})]
+    return [_effect("cx_players", data={"who": _PLAYERS[who], "effects": inner})]
 
 
-def players(game, p, who, item, prev):
+def players(game, p, who, item, prev, target=None):
     """The players a cx_players subject names as it resolves (a two-player game: the defending player is the
     opponent)."""
     opp = game.opponent(p)
+    if who == "target":
+        return [target] if target in game.players else []
     if who == "you":
         return [p]
     if who == "each":
@@ -337,6 +357,44 @@ def players(game, p, who, item, prev):
             return [prev.controller if who == "controller" else prev.owner]
         return [prev] if who == "controller" and prev in game.players else []
     return []
+
+
+_HURTS = ("destroy", "exile_permanent", "bounce", "tap", "stun", "debuff_one", "debuff", "cx_lose_kw",
+          "cant_block_turn", "damage", "oring", "shrink")
+_HELPS_OBJ = ("pump", "grant", "untap_prev", "p1_counters", "regenerate", "cx_set_base", "unblockable")
+
+
+def auto_side(game, eff) -> str:
+    """The side for an effect whose own meaning is neutral (a colour change): read from the effects that follow
+    it on the same object ("becomes red and gains haste", "becomes blue. Untap that creature."). Hurting ->
+    "theirs", helping -> "mine", otherwise "theirs"."""
+    for effects in _effect_lists(getattr(game, "target_source", None)):
+        index = next((i for i, e in enumerate(effects) if e is eff), None)
+        if index is None:
+            continue
+        for later in effects[index + 1:]:
+            if later.target != "prev":
+                break
+            if later.kind in _HURTS or later.data.get("side") == "theirs":
+                return "theirs"
+            if later.kind in _HELPS_OBJ or later.data.get("side") == "mine":
+                return "mine"
+        break
+    return "theirs"
+
+
+def _effect_lists(source):
+    if isinstance(getattr(source, "effects", None), list):     # a StackItem
+        yield source.effects
+        return
+    card = getattr(source, "card", source)
+    if card is None:
+        return
+    yield getattr(card, "spell_effects", [])
+    for mode in getattr(card, "modes", None) or []:
+        yield mode
+    for holder in list(getattr(card, "activated", [])) + list(getattr(card, "triggers", [])):
+        yield holder.effects
 
 
 def group_members(game, p, data, source, player=None):
