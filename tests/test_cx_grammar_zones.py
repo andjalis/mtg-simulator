@@ -28,6 +28,7 @@ class Parsing(unittest.TestCase):
         self.assertEqual(self.kinds("Destroy all creatures you don't control and all planeswalkers you don't control."),
                          ["cx_group"] * 2)
         self.assertEqual(self.kinds("Return all nonblue creatures to their owners' hands."), ["cx_group"])
+        self.assertEqual(self.kinds("Return target creature an opponent controls to its owner's hand."), ["bounce"])
         effs = parse_sentence("Destroy target creature and target land.")
         self.assertEqual([e.target for e in effs], ["permanent", "permanent"])
 

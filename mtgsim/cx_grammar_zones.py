@@ -83,7 +83,7 @@ def destroy_exile(m, clause):
     return _parts(_KINDS[m[1]], m[2])
 
 
-@verb(r"return (.+?) to (?:its|their) owners?'? hands?", heads=("return",), subjects=("imperative",))
+@verb(r"return (.+?) to (?:its|their) owner(?:'s|s') hands?", heads=("return",), subjects=("imperative",))
 def bounce(m, clause):
     if clause.duration:
         return None
