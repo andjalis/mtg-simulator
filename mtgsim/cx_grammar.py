@@ -170,7 +170,7 @@ def verb(text: str, timed: bool):
         if cols is None or not cols and m[2]:
             return None
         op = "add_colors" if m[2] else "set_colors"
-        return [("cx_color", 0, 0, {"colors": "".join(sorted(cols)), "op": op, "eot": timed, "side": "theirs"})]
+        return [("cx_color", 0, 0, {"colors": "".join(sorted(cols)), "op": op, "eot": timed, "side": "auto"})]
     m = re.fullmatch(r"(?:has|have) base power and toughness (\d+)/(\d+)", t)
     if m and timed:
         return [("cx_set_base", int(m[1]), int(m[2]), {})]
@@ -311,6 +311,44 @@ def players(game, p, who, item, prev, target=None):
             return [prev.controller if who == "controller" else prev.owner]
         return [prev] if who == "controller" and prev in game.players else []
     return []
+
+
+_HURTS = ("destroy", "exile_permanent", "bounce", "tap", "stun", "debuff_one", "debuff", "cx_lose_kw",
+          "cant_block_turn", "damage", "oring", "shrink")
+_HELPS_OBJ = ("pump", "grant", "untap_prev", "p1_counters", "regenerate", "cx_set_base", "unblockable")
+
+
+def auto_side(game, eff) -> str:
+    """The side for an effect whose own meaning is neutral (a colour change): read from the effects that follow
+    it on the same object ("becomes red and gains haste", "becomes blue. Untap that creature."). Hurting ->
+    "theirs", helping -> "mine", otherwise "theirs"."""
+    for effects in _effect_lists(getattr(game, "target_source", None)):
+        index = next((i for i, e in enumerate(effects) if e is eff), None)
+        if index is None:
+            continue
+        for later in effects[index + 1:]:
+            if later.target != "prev":
+                break
+            if later.kind in _HURTS or later.data.get("side") == "theirs":
+                return "theirs"
+            if later.kind in _HELPS_OBJ or later.data.get("side") == "mine":
+                return "mine"
+        break
+    return "theirs"
+
+
+def _effect_lists(source):
+    if isinstance(getattr(source, "effects", None), list):     # a StackItem
+        yield source.effects
+        return
+    card = getattr(source, "card", source)
+    if card is None:
+        return
+    yield getattr(card, "spell_effects", [])
+    for mode in getattr(card, "modes", None) or []:
+        yield mode
+    for holder in list(getattr(card, "activated", [])) + list(getattr(card, "triggers", [])):
+        yield holder.effects
 
 
 def group_members(game, p, data, source, player=None):

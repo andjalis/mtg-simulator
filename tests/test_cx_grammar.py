@@ -291,3 +291,17 @@ class TargetPlayers(Base):
         effs = parse_sentence("Target opponent discards a card.")
         self.assertEqual((effs[0].target, effs[0].filter, effs[0].data["side"]), ("player", "opp", "theirs"))
         self.assertIsNone(parse_sentence("Target player draws a card and loses 1 life."))
+
+
+class ColorSide(Base):
+    def target_for(self, text):
+        spell = self.spell(text)
+        with self.game.targeting(spell):
+            return self.a.ai.choose_target(self.game, self.a, spell.spell_effects[0], spell)
+
+    def test_colour_change_follows_the_effects_after_it(self):
+        mine, theirs = self.perm(BEAR, self.a), self.perm(WOLF, self.b)
+        self.assertIs(self.target_for("Target creature becomes red and gains haste until end of turn."), mine)
+        self.assertIs(self.target_for("Target creature becomes blue until end of turn. Untap that creature."), mine)
+        self.assertIs(self.target_for("Target creature becomes white until end of turn. Tap that creature."), theirs)
+        self.assertIs(self.target_for("Target creature becomes black until end of turn."), theirs)
