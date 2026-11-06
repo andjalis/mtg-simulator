@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .. import discounts, graveyard, modal
-from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, storage as _storage
+from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, storage as _storage, cx_static_cost as _cx_static_cost
 from .model import Activated, AltCost, COLORS, Effect, KEYWORDS, NUMBERS, Trigger, _num, parse_mana_cost
 from .patterns import _parse_mana_ability
 from .parse import _apply_speed_gate, _mana_restriction, _parse_ability, _parse_effects, _parse_trigger
@@ -531,7 +531,7 @@ def _face_land_and_mana_lines(st, line):
             extra["exile_damaged"] = True
             return None
         if line in ("Daybound", "Nightbound"):
-            approximations.append("day/night isn't tracked: it stays on its front face")
+            extra[line.lower()] = True       # see day_night.py
             return None
         if re.fullmatch(r"Casualty \d+", line):
             approximations.append(f"never paid: {line}")
@@ -1179,6 +1179,8 @@ def _face_ability_lines(st, line):
                 if t.event == "etb":
                     etb += t.effects
             unsupported += bad
+            return None
+        if _cx_static_cost.parse_line(line, st):
             return None
         if not types.isdisjoint({"Instant", "Sorcery"}):
             head = modal.parse_header(line)

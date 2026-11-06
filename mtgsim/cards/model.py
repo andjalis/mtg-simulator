@@ -164,6 +164,8 @@ class CardDef:
     anthem: tuple = ()                                  # (power, toughness) for creatures you control
     crew: int = 0
     convoke: bool = False                               # creatures can be tapped to help pay the generic cost
+    daybound: bool = False                              # day/night: transforms to its back face at night
+    nightbound: bool = False
     prepared: bool = False                              # enters prepared: may cast a copy of its spell (card.back) once
     changeling: bool = False                            # is every creature type
     cycling: dict | None = None                         # {"cost": mana, "land": "" | basic | any | Plains...}
