@@ -62,8 +62,9 @@ def _parse_effects(text: str, opts: bool = False):
         from ..emerge import parse_rider as emerge_rider
         from ..cx_shields import parse_rider as shield_rider
         from ..cx_delayed import parse_rider as delayed_rider
+        from ..cx_trig_watch import parse_rider as watch_rider
         if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects) or \
-                delayed_rider(s, effects):
+                delayed_rider(s, effects) or watch_rider(s, effects):
             continue
         if re.fullmatch(r"(?:it|they|those creatures|the creatures?|a creature destroyed this way) can't be "
                        r"regenerated(?:, of course)?", s, re.I) and effects and \
@@ -273,9 +274,10 @@ def _parse_effects(text: str, opts: bool = False):
         else:
             parts = _split_compound(s)
             from ..cx_suspect import parse_otherwise
+            from .. import cx_grammar
             if parts:
                 effects += parts
-            elif not parse_otherwise(s, effects):        # "Otherwise, ..." after a lib: condition
+            elif not parse_otherwise(s, effects) and not cx_grammar.parse_fallback(s, effects):   # "Otherwise, ..."; grammar
                 unmatched.append(sentence.strip())
         if paid:
             for eff in effects[first:]:
@@ -331,8 +333,6 @@ def card_from_scryfall(data: dict) -> CardDef:
                 card.adventure = _parse_face(back)
             elif "Land" in back_types and not card.is_land:
                 card.land_face = _parse_face(back)   # modal double-faced: may be played as this land
-            elif re.search(r"Daybound|Nightbound", card.oracle):
-                pass  # day/night isn't tracked; the day side stays
             elif data.get("layout") == "split" and _split_halves(card, _parse_face(back)):
                 pass
             else:
