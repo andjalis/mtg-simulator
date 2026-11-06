@@ -120,19 +120,26 @@ def _first_cond(text: str) -> str:
     return parse(f"you haven't cast {art} {noun} spell this turn")
 
 
+def _sane(spec):
+    """Drop a counters quantity whose counter name is really a longer phrase the count table misread."""
+    if spec is not None and spec[0] == "counters" and not re.fullmatch(r"[+-]?\w+(?:/[+-]\d+)?", spec[1]):
+        return None
+    return spec
+
+
 def _count(text: str):
     from .cx_night_quantity import _quantity
-    spec = _quantity("the number of " + text, plural=False)
+    spec = _sane(_quantity("the number of " + text, plural=False))
     if spec is None:
         plural = re.sub(r"^(\w+?)(y)?\b", lambda m: m[1] + ("ies" if m[2] else "s"), text, count=1)
-        spec = _quantity("the number of " + plural)
+        spec = _sane(_quantity("the number of " + plural))
     return spec
 
 
 def parse_line(line: str, st) -> bool:
     m = _LINE.fullmatch(line)
-    if not m:
-        return False
+    if not m or st.level_marks:
+        return False        # a Class level's ability applies only from that level on
     from .cx_condlib import as_static, parse
     amount = _amount(m["amt"])
     rule: dict = {"sign": -1 if m["dir"] == "less" else 1, "amount": amount, "cond": "", "turn": None, "per": None}
@@ -165,7 +172,7 @@ def parse_line(line: str, st) -> bool:
             return False
     t = re.fullmatch(r", where X is (.+)", tail)
     if t:
-        rule["per"] = _quantity(t[1])
+        rule["per"] = _sane(_quantity(t[1]))
         if rule["per"] is None or amount != {"X": 1}:
             return False
         rule["amount"] = {"generic": 1}
@@ -176,7 +183,7 @@ def parse_line(line: str, st) -> bool:
     rule["cond"] = conds[0] if conds else ""
     rules = st.extra.setdefault("advanced_rules", {})
     if m["subj"] == "~":
-        if rule["per"] is not None and rule["per"][0] == "stat":
+        if rule["per"] is not None and rule["per"][0] in ("stat", "counters"):
             return False        # the spell isn't a permanent yet
         rules["self_cost"] = rules.get("self_cost", ()) + (rule,)
         return True

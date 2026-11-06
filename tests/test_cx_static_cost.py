@@ -122,6 +122,17 @@ class CostModifiers(unittest.TestCase):
         self.game.enter_battlefield(self.a, BEAR)
         self.assertEqual(self.cost(prot)["generic"], base - 3)
 
+    def test_per_counter_on_source(self):
+        herald = self.put("Herald of War")       # Angel spells and Human spells: {1} less per +1/+1 counter on it
+        herald.counters["+1/+1"] = 2
+        self.assertEqual(self.cost(KNIGHT)["generic"], 0)
+        self.assertEqual(self.cost(ZOMBIE)["generic"], 3)
+
+    def test_left_alone(self):
+        # a Class level's static only applies from that level on; a count the table misreads stays ignored
+        self.assertTrue(any("cost {R}{G} less" in u for u in self.db.get("Bard Class").unsupported))
+        self.assertEqual(len(self.db.get("Hamza, Guardian of Arashin").unsupported), 2)
+
     def cast_on_stack(self, spell, land, lands):
         for _ in range(lands):
             self.game.enter_battlefield(self.a, land)
