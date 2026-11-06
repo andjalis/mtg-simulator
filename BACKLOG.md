@@ -105,6 +105,14 @@ Sixth night (2026-11-06): #144 ("You have shroud" as a player rule that also blo
 the turn": exiles the rest of the stack, skips the remaining phases, 7 cards). Recorded simplification: Glorious End's
 "at the beginning of your next end step, you lose the game" reuses the existing next-end-step delay, so it fires at the
 next end step of either player, one turn early when cast on your own turn.
+Also that night: #147 (Divert: redirect unless the spell's controller pays {N}), #148 ("Creatures you control ... Untap
+them." rewritten to untap all your creatures; a global "untap them" wording was rejected because it changed nine cards,
+including Great Oak Guardian and Leo's Guidance, where "them" means other creatures), #149 (counterspell taxes: nonartifact
+and creature-or-planeswalker spell filters, and "{1} for each card in your graveyard / card in your hand / creature you
+control / artifact you control" counted at resolution; 10 cards) and #150 (Gustcloak "untap it and remove it from combat"
+and "you may have it deal N damage to any target"; 9 cards). Recorded simplification: Jund Sojourners' "When you cycle ~
+or it dies" keeps only its "dies" half. Still open from the census: the same tax with other counts ("for each basic land
+type", "for each blue permanent", "{X}, where X is its mana value"), and "can't attack unless you pay ..." costs.
 
 ## Measured remaining broad families
 
