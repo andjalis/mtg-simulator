@@ -42,3 +42,11 @@ def damage_target_hand(game, p, target, item, cause, **_):
     if isinstance(target, Player):
         src = (item.source if item.source is not None else item.card) if item is not None else None
         game.deal_damage(target, len(target.hand), by=p, cause=cause, source=src)
+
+
+@kind("gain_dealt")
+def gain_dealt(game, p, **_):
+    n = getattr(game, "last_dealt", 0)
+    if n > 0:
+        game.change_life(p, n, "damage dealt this way")
+        game.log(f"gains {n} life from the damage dealt", p)

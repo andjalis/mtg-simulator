@@ -27,7 +27,14 @@ def _hand_damage(m):
     return Effect("damage_target_hand", target="player")
 
 
+def _gain_dealt(m):
+    from .cards.model import Effect
+    return Effect("gain_dealt", target="none")
+
+
 EFFECT_PATTERNS = [
+    # Corrupt, Rite of Consumption, Creeping Bloodsucker: the damage the preceding effect actually dealt
+    (r"you gain life equal to the damage dealt this way", _gain_dealt),
     # Gaze of Adamaro, Storm Seeker, Sudden Impact
     (r"~ deals damage to target player equal to the number of cards in that player's hand", _hand_damage),
     # Heartfire Hero, Flaming Tyrannosaurus: "When ~ dies, it deals damage equal to its power to each opponent."

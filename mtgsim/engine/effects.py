@@ -17,6 +17,7 @@ class EffectsMixin:
         """Damage with source abilities; infect changes its results rather than its amount."""
         if amount <= 0:
             return
+        self.last_dealt = 0          # for "You gain life equal to the damage dealt this way"
         amount = that_much.damage_amount(self, target, amount, by, source, combat)
         if amount <= 0:
             return
@@ -101,6 +102,7 @@ class EffectsMixin:
                 target.damaged_by.append(source)       # "a creature dealt damage by ~ this turn dies"
         else:
             return
+        self.last_dealt = amount
         from ..batch1_templates import soul_link
         soul_link(self, source, target, amount)
         cx_triggers.on_damage(self, source, target, amount, combat)
