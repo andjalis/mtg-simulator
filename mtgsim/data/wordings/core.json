@@ -428,12 +428,13 @@
     "match": "target player draws (a|two|three) cards?",
     "effect": "draw",
     "amount": "$1:num",
+    "target": "player",
     "example": "Target player draws three cards",
     "cards": ["Ancestral Recall"]
   },
   {
     "match": "target player draws (a|two|three) cards? and loses (\\d+) life",
-    "effects": [{"effect": "draw", "amount": "$1:num"}, {"effect": "lose_life", "amount": "$2:int"}],
+    "effects": [{"effect": "draw", "amount": "$1:num", "target": "player"}, {"effect": "lose_life", "amount": "$2:int", "target": "prev"}],
     "example": "Target player draws two cards and loses 2 life",
     "cards": ["Blood Pact"]
   },
@@ -576,6 +577,7 @@
     "match": "target player gains (\\d+) life",
     "effect": "gain_life",
     "amount": "$1:int",
+    "target": "player",
     "example": "Target player gains 4 life",
     "cards": ["Blessed Alliance"]
   },

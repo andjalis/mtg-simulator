@@ -73,6 +73,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     k = eff.kind
+    if eff.target == "player" and k in ("draw", "gain_life"):
+        return me if me in legal else None      # "target player draws/gains": the beneficiary is the caster
     if k == 'linked_exile':
         enemies = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
         if enemies:
