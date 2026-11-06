@@ -44,3 +44,28 @@ def hand_cycle(game, p, eff, **_):
         p.library.shuffle(game.rng)
     game.draw(p, n)
     game.log(f"puts {n} card(s) from hand into the library and draws {n}", p)
+
+
+@kind("edict_each_nontoken")
+def edict_each_nontoken(game, p, opp, **_):
+    """Accursed Marauder: each player sacrifices a nontoken creature of their choice (their cheapest)."""
+    from ..policy import perm_value
+    from ... import counter_mechanics
+    for pl in (p, opp):
+        victims = sorted((c for c in pl.creatures if not c.card.is_token), key=perm_value)[:1]
+        sources = counter_mechanics.death_sources(game)
+        for v in victims:
+            game.sacrifice(v, counter_sources=sources)
+
+
+@kind("opp_hand_to_top")
+def opp_hand_to_top(game, p, opp, **_):
+    """Chimney Imp: the opponent puts a card from their hand on top of their library: their least useful one (an
+    extra land if they hold any, else the cheapest card)."""
+    if not opp.hand:
+        return
+    lands = [c for c in opp.hand if c.is_land]
+    card = lands[-1] if lands else min(opp.hand, key=lambda c: c.cmc)
+    opp.hand.remove(card)
+    opp.library.append(card)
+    game.log("puts a card from hand on top of the library", opp)
