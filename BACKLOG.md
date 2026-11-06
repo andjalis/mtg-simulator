@@ -111,8 +111,13 @@ including Great Oak Guardian and Leo's Guidance, where "them" means other creatu
 and creature-or-planeswalker spell filters, and "{1} for each card in your graveyard / card in your hand / creature you
 control / artifact you control" counted at resolution; 10 cards) and #150 (Gustcloak "untap it and remove it from combat"
 and "you may have it deal N damage to any target"; 9 cards). Recorded simplification: Jund Sojourners' "When you cycle ~
-or it dies" keeps only its "dies" half. Still open from the census: the same tax with other counts ("for each basic land
-type", "for each blue permanent", "{X}, where X is its mana value"), and "can't attack unless you pay ..." costs.
+or it dies" keeps only its "dies" half. Later the same night: #152 ("If ..., you may draw a card. If you do, discard a card." as
+one conditional `loot`; the unconditional wording was left on the pay gate after a first version changed 26 cards),
+#153 (static "You may cast sorcery spells as though they had flash"; 4 cards) and #154 (more tax counts: mana value,
+"for each Wizard on the battlefield", "plus an additional {1} for each Faerie you control", blue permanents). #154 also
+fixed a rules error in #149: a "for each" tax that totals zero means the controller pays nothing and keeps the spell,
+not that it is countered. Still open from the census: counter taxes by devotion, basic land types and party size, and
+"can't attack unless you pay ..." costs.
 
 ## Measured remaining broad families
 
