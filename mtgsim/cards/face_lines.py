@@ -165,7 +165,7 @@ def _face_special_lines(st, line):
             level_marks.append((n, len(triggers)))
             return None
         line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration|Heroic) — (?=When|At|If)", "", line)
-        line = re.sub(r"^(?:Domain|Vivid) — ", "", line)    # ability words with no rules meaning of their own
+        line = re.sub(r"^(?:Domain|Vivid|Converge) — ", "", line)    # ability words with no rules meaning of their own
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
         # Any ability word ("Phalanx Commander —", "Life Drain —") before a When/At/If line; "Survival — "
         # keeps its prefix: it names a distinct engine event.
@@ -1194,6 +1194,8 @@ def _face_ability_lines(st, line):
             spell += effs
             unsupported += bad
             return None
+        if cx_grammar.parse_static(line, st):
+            return None
         unsupported.append(line)
         return line
     finally:
@@ -1206,6 +1208,7 @@ def _face_ability_lines(st, line):
         st.unsupported = unsupported
 
 
+from .. import cx_grammar  # noqa: E402
 from ..cx_night_flash import parse_line as _night_flash_line  # noqa: E402
 from ..cx_night_aura import parse_line as _night_aura_line  # noqa: E402
 _FACE_LINE_PARSERS = (_night_aura_line, _night_flash_line, _face_special_lines, _face_mode_and_ward_lines, _face_land_and_mana_lines, _face_cost_and_static_lines, _face_keyword_ability_lines, _face_ability_lines)
