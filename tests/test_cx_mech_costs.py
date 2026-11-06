@@ -80,6 +80,15 @@ class Costs(unittest.TestCase):
         self.assertIn(card, self.a.hand)
         self.assertEqual(len(self.a.graveyard), 2)
 
+    def test_buyback_discard_two_needs_two_other_cards(self):
+        card = self.db.get("Demonic Collusion")
+        self.a.hand = [card, ISLAND]
+        self.lands("Swamp", "Swamp", "Swamp", "Swamp", "Swamp")
+        (v,) = self.options(card, "Demonic Collusion (buyback)")
+        self.assertFalse(self.game.can_cast_now(self.a, v))
+        self.a.hand.append(ISLAND)
+        self.assertTrue(self.game.can_cast_now(self.a, v))
+
 
 if __name__ == "__main__":
     unittest.main()
