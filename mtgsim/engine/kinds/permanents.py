@@ -119,12 +119,8 @@ def flicker(game, p, eff, target, **_):
 @kind("tuck_top")
 def tuck_top(game, p, target, **_):
     """Put target creature on top of its owner's library (a token just leaves)."""
-    if isinstance(target, Permanent) and game.leave_battlefield(target, "graveyard") and not target.front.is_token:
-        owner = target.owner
-        if target.front in owner.graveyard:
-            owner.graveyard.remove(target.front)
-            owner.library.append(target.front)
-            game.log(f"{target.card.name} goes on top of its owner's library", p)
+    if isinstance(target, Permanent) and game.put_in_library(target) and not target.front.is_token:
+        game.log(f"{target.card.name} goes on top of its owner's library", p)
 
 
 @kind("regenerate")

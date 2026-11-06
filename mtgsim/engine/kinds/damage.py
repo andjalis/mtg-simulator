@@ -10,7 +10,7 @@ from . import kind
 @kind("damage")
 def damage(game, p, eff, target, item, opp, cause, **_):
     src = (item.source if item.source is not None else item.card) if item is not None else None
-    if eff.data.get("src_prev"):         # "it deals damage equal to its power ..." (cx_abil_damage)
+    if eff.data.get("src_prev") or eff.data.get("it_ctx"):         # "it deals damage equal to its power ..." (cx_abil_damage)
         from ...cx_abil_damage import damage_source
         src = damage_source(game, item, src, target, eff)
     victims = _damage(game, p, eff, target, item, opp, cause, src)
@@ -54,7 +54,7 @@ def _damage(game, p, eff, target, item, opp, cause, src=None):
 
 @kind("gain_life")
 def gain_life(game, p, eff, target, cause, **_):
-    who = target if eff.target == "that_controller" and isinstance(target, Player) else p
+    who = target if eff.target in ("that_controller", "player") and isinstance(target, Player) else p
     game.change_life(who, eff.amount, cause)
 
 
@@ -67,7 +67,7 @@ def drain(game, p, eff, opp, cause, **_):
 
 @kind("lose_life")
 def lose_life(game, p, eff, target, cause, **_):
-    who = target if eff.target in ("that_player", "that_controller") and isinstance(target, Player) else p
+    who = target if eff.target in ("that_player", "that_controller", "prev") and isinstance(target, Player) else p
     game.change_life(who, -eff.amount, cause)
 
 
@@ -87,7 +87,7 @@ def lose_each(game, eff, cause, **_):
 @kind("drain_devotion")
 def drain_devotion(game, p, eff, opp, cause, **_):
     color = eff.data["color"]
-    n = sum(x.card.mana_cost.get(color, 0) for x in p.battlefield)
+    n = sum(x.card.devotion_to(color) for x in p.battlefield)
     game.change_life(opp, -n, cause)
     game.change_life(p, n, cause)
     game.log(f"drains {n} (devotion)", p)
@@ -101,7 +101,7 @@ def prevent_shield(game, p, eff, target, item, **_):
     source), where the le-batch5 event finds it with event_amount set to the prevented total."""
     n = eff.amount
     if eff.data.get("devotion"):
-        n = sum(x.card.mana_cost.get(eff.data["devotion"], 0) for x in p.battlefield)
+        n = sum(x.card.devotion_to(eff.data["devotion"]) for x in p.battlefield)
     who = p if eff.target in ("none", "youperms") else target
     if not isinstance(who, (Permanent, Player)):
         return

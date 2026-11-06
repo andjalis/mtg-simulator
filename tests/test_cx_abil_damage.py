@@ -232,6 +232,58 @@ class Dealer(unittest.TestCase):
         game.settle()
         self.assertEqual([(t, n, s) for t, n, s in seen if n == 1], [(elf, 1, jav)])
 
+    def test_mandatory_damage_trigger_targets_even_when_nothing_dies(self):
+        """#295: Javelineer blocked by a 1/2 still has to deal its 1 damage to it."""
+        game, a, b = arena()
+        game.step = "declare_blockers"
+        jav = game.enter_battlefield(a, card("Test Javelineer", "{1}", "Creature — Goblin",
+                                             "Whenever this creature becomes blocked, it deals 1 damage to target creature "
+                                             "blocking it.", 1, 3))
+        wall = game.enter_battlefield(b, card("Test Wall", "{1}", "Creature — Wall", "", 1, 2))
+        game.attackers = [jav]
+        game.blocks = {jav: [wall]}
+        game.fire(a, "becomes_blocked", jav, context=wall)
+        game.settle()
+        self.assertEqual(wall.damage, 1)
+
+    def test_becomes_blocked_by_a_creature_triggers_per_blocker(self):
+        """#245: one trigger per blocking creature; plain 'becomes blocked' stays once."""
+        game, a, b = arena()
+        game.step = "declare_blockers"
+        per = game.enter_battlefield(a, card("Test Champion", "{1}", "Creature — Giant",
+                                             "Whenever this creature becomes blocked by a creature, it deals 1 damage "
+                                             "to that creature.", 0, 9))
+        once = game.enter_battlefield(a, card("Test Once", "{1}", "Creature — Giant",
+                                              "Whenever this creature becomes blocked, it deals 1 damage to target "
+                                              "creature blocking it.", 0, 9))
+        w1 = game.enter_battlefield(b, card("Test W1", "{1}", "Creature — Wall", "", 0, 5))
+        w2 = game.enter_battlefield(b, card("Test W2", "{1}", "Creature — Wall", "", 0, 5))
+        w3 = game.enter_battlefield(b, card("Test W3", "{1}", "Creature — Wall", "", 0, 5))
+        per.sick = once.sick = False
+        a.ai.attack = [per, once]
+        b.ai.block = {per: [w1, w2], once: [w3]}
+        game.combat(a, b)
+        game.settle()
+        self.assertEqual((w1.damage, w2.damage), (1, 1))
+        self.assertEqual(w3.damage, 1)
+
+    def test_devotion_counts_hybrid_pips_for_both_colors(self):
+        """#269: {W/B}{W/B} adds 2 to devotion to white and 2 to devotion to black."""
+        c = card("Test Hybrid", "{1}{W/B}{W/B}", "Creature — Spirit", "", 2, 2)
+        self.assertEqual((c.devotion_to("W"), c.devotion_to("B"), c.devotion_to("R")), (2, 2, 0))
+
+    def test_warstorm_surge_uses_the_entering_creatures_power(self):
+        """#261: 'it deals damage equal to its power' in a trigger about another creature is that creature."""
+        game, a, b = arena()
+        surge = card("Test Surge", "{3}{R}", "Enchantment", "Whenever a creature you control enters, it deals damage "
+                     "equal to its power to any target.")
+        game.enter_battlefield(a, surge)
+        game.settle()
+        b.life = 20
+        game.enter_battlefield(a, card("Test Wurm", "{4}", "Creature — Wurm", "", 6, 4))
+        game.settle()
+        self.assertEqual(b.life, 14)
+
 
 if __name__ == "__main__":
     unittest.main()
