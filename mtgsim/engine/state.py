@@ -166,6 +166,7 @@ class Permanent:
         self.produces_now = None           # set by Game.mana_sources: the colours usable right now
         self.amount_now = None             # and how much mana it makes, when that differs from its card's
         self.temp_activated = []
+        self.temp_min_blocker = 0          # a backup-granted "can't be blocked by creatures with power N or less"
         self.temp_triggers = []
         self.regeneration_shields = 0
         self.regeneration_blocked = False
@@ -768,7 +769,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
         return False
     if attacker.card.blocker_power_rel and blocker.power < attacker.power:
         return False
-    if attacker.card.min_blocker_power and blocker.power < attacker.card.min_blocker_power:
+    need = max(attacker.card.min_blocker_power, attacker.temp_min_blocker)
+    if need and blocker.power < need:
         return False
     if attacker.card.max_blocker_power and blocker.power >= attacker.card.max_blocker_power:
         return False

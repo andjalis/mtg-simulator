@@ -423,7 +423,7 @@ def unblocked_damage(attackers, blockers, chump=True) -> int:
     total = 0
     for power, flying, menace, perm in left:
         pick = None
-        need = getattr(perm.card, "min_blocker_power", 0) if perm is not None else 0
+        need = max(getattr(perm.card, "min_blocker_power", 0), perm.temp_min_blocker) if perm is not None else 0
         for b in free:
             if flying and not (b[1] or b[2]):
                 continue
