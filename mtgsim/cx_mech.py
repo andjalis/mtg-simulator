@@ -16,10 +16,7 @@ from __future__ import annotations
 
 import re
 
-from .cards.model import KEYWORDS
-
 HEXPROOF_FROM = ("white", "blue", "black", "red", "green", "monocolored")
-KEYWORDS.update(f"hexproof from {w}" for w in HEXPROOF_FROM)
 
 
 def parse_line(line: str, st) -> bool:
