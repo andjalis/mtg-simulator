@@ -201,6 +201,9 @@ def exile_this_turn(game, perm) -> bool:
 
 def win(game, p, eff):
     loser = [x for x in game.players if x is not p][0] if eff.data["win"] else p
+    from .cx_night_aura import cant_lose
+    if cant_lose(game, loser):
+        return
     if not loser.lost:
         game.audit("loss", seat=game.players.index(loser), cause="a card's effect")
         loser.lost = True

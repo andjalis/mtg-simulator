@@ -27,6 +27,9 @@ def parse_line(st, line: str):
     if line.startswith("You may cast sorcery spells as though they had flash."):     # Gandalf, Hypersonic Dragon
         st.extra.setdefault("advanced_rules", {})["sorcery_flash"] = True
         return None
+    if line == "You can't lose the game and your opponents can't win the game.":      # Platinum Angel
+        st.extra.setdefault("advanced_rules", {})["cant_lose"] = True
+        return None
     if line == "You control enchanted permanent.":
         st.extra.setdefault("advanced_rules", {})["aura_control"] = True
         return None
@@ -37,3 +40,9 @@ def parse_line(st, line: str):
         head = re.sub(r", has ", " and has ", m[1], count=1)
         return f"{head} and attacks each combat if able."
     return line
+
+
+def cant_lose(game, player) -> bool:
+    """True while a permanent says its controller can't lose the game (Platinum Angel)."""
+    from .residual_templates import sources
+    return any(x.controller is player for x in sources(game, "cant_lose"))

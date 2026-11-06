@@ -518,7 +518,10 @@ class EffectsMixin:
                 if perm in perm.controller.battlefield:
                     self.dies(perm, counter_sources=counter_sources)
                     changed = True
+        from ..cx_night_aura import cant_lose
         for p in self.players:
+            if cant_lose(self, p):
+                continue
             if p.counters.get("poison", 0) >= 10:
                 if not p.lost:
                     self.audit("loss", seat=self.players.index(p), cause="ten or more poison counters")
