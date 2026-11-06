@@ -50,12 +50,10 @@ def _source(text: str):
     elif text in ("source", "spell"):
         spec["spell"] = text == "spell"
         return spec
-    words = [w for w in re.split(r", or |, | or ", text) if w]
-    alt: dict = {}
-    for word in words:
-        # "red instant or sorcery": one color qualifies a type list
-        parts = word.split()
-        for part in parts:
+    alts = []
+    for word in (w for w in re.split(r", or |, | or ", text) if w):
+        alt: dict = {}
+        for part in word.split():
             low = part.lower()
             if low in _COLORS:
                 alt.setdefault("colors", []).append(_COLORS[low])
@@ -65,7 +63,11 @@ def _source(text: str):
                 alt.setdefault("subs", []).append(part)
             else:
                 return None
-    spec["alts"] = [alt]
+        alts.append(alt)
+    # "red instant or sorcery": the colour of the first alternative qualifies the bare types after it
+    if alts[0].get("colors") and alts[0].get("types") and all(set(a) == {"types"} for a in alts[1:]):
+        alts = [dict(a, colors=alts[0]["colors"]) for a in alts]
+    spec["alts"] = alts
     return spec
 
 
