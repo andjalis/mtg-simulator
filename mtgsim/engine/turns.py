@@ -301,6 +301,8 @@ class TurnsMixin:
         from ..advanced_templates import begin_turn
         begin_turn(self, p)
         self.step = "untap"
+        from ..day_night import begin_turn as day_night_turn
+        day_night_turn(self, p)
         for pl in self.players:
             for x in pl.battlefield:
                 if x.detained_by is p:
@@ -400,6 +402,7 @@ class TurnsMixin:
             perm.temp_kw.clear()
             perm.temp_triggers.clear()
             perm.temp_activated.clear()
+            perm.temp_min_blocker = 0
             perm.adapt_exceptions = 0
             perm.regeneration_shields = 0
             perm.prevent_next = 0

@@ -248,7 +248,8 @@ class EffectsMixin:
         return True
 
     def leave_battlefield(self, perm: Permanent, to: str):
-        """Move a permanent off the battlefield (to graveyard / hand / exile). Tokens vanish."""
+        """Move a permanent off the battlefield (to graveyard / hand / exile / library_top / library_bottom, the
+        owner's zone). Tokens vanish."""
         if perm not in perm.controller.battlefield:
             return False
         intent = rules_events.zone_destination(self, perm, to)
@@ -303,7 +304,11 @@ class EffectsMixin:
         if perm in self.attackers:
             self.attackers.remove(perm)
         if not perm.front.is_token:
-            {"graveyard": owner.graveyard, "hand": owner.hand, "exile": owner.exile}[to].append(perm.front)
+            if to == "library_bottom":
+                owner.library.insert(0, perm.front)
+            else:
+                {"graveyard": owner.graveyard, "hand": owner.hand, "exile": owner.exile,
+                 "library_top": owner.library}[to].append(perm.front)
         if perm.front.is_token:
             self.rule_events.emit(rules_events.RulesEvent("zone_change", controller, source=perm,
                 before=before, destination=to, reason="leave_battlefield", replacements=intent.applied,
@@ -312,6 +317,23 @@ class EffectsMixin:
         if to == "graveyard":
             self.fire(owner, "perm_to_gy", subject=perm)
             self.fire(owner, "perm_to_gy", perm, subject=perm)
+        return True
+
+    def put_in_library(self, perm: Permanent, where="top") -> bool:
+        """Put perm into its owner's library without passing through the graveyard (no dies or put-into-graveyard
+        triggers): where is "top", "bottom", N (Nth from the top, 1 = top), "shuffle" or "random". A token ceases
+        to exist. True if it left the battlefield."""
+        if not self.leave_battlefield(perm, "library_bottom" if where == "bottom" else "library_top"):
+            return False
+        library, card = perm.owner.library, perm.front
+        if perm.last_destination not in ("library_top", "library_bottom") or card.is_token or card not in library:
+            return True
+        if where == "shuffle":
+            library.shuffle(self.rng)
+        elif where == "random" or isinstance(where, int) and where > 1:
+            list.remove(library, card)              # a move inside the library: no zone change
+            index = self.rng.randrange(len(library) + 1) if where == "random" else max(0, len(library) - where + 1)
+            list.insert(library, index, card)
         return True
 
     def extra_sac_candidates(self, p: Player, card: CardDef) -> list:
