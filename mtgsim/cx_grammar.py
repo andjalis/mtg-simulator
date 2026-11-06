@@ -517,9 +517,9 @@ def parse_static(line: str, st) -> bool:
     restriction, recorded where the engine reads them: advanced_rules["anthems"] and static_keyword_grants for a
     group, equip_bonus / equip_keywords for the host. Returns True when the line is consumed."""
     s = line.strip()
-    if not s.endswith(".") or re.search(r'[:"]|\b(?:until|this turn|as long as|during|if(?! able)|for each|where|except)\b',
-                                        s, re.I):
-        return False
+    if not s.endswith(".") or re.search(r'[:"]|\b(?:until|this turn|as long as|if(?! able)|for each|where|except)\b',
+                                        s, re.I) or re.search(r"(?:^|, |— )during\b", s, re.I):
+        return False            # conditions and durations ("During your turn, ...") are other lanes' statics
     s = re.sub(r"^[A-Z][\w' ,-]* — ", "", s[:-1])        # an ability word
     split = _split(s)
     if split is None:
