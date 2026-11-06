@@ -227,6 +227,14 @@ def parse_create(subject: str, body: str):
         masked, amount_q, per_each = m[1], _quantity(m[2]), True
         if amount_q is None:
             return NO_MATCH
+    choice = re.fullmatch(r"(an? [^\x00]+? token) or (an? [^\x00]+? token)", masked, re.I)
+    if choice and amount_q is None:
+        specs = [describe(_unmask(part.split(" ", 1)[1], quoted)) for part in (choice[1], choice[2])]
+        if None in specs:
+            return NO_MATCH
+        return [Effect("cx_token", 1, target={"that_controller": "that_controller", "they": "that_controller",
+                                              "owner": "prev"}.get(who, "none"),
+                       data={"choice": specs, "who": who, "tapped": False, "attacking": False})]
     parts = _split_descs(masked)
     effects = []
     for part in parts:
@@ -287,7 +295,7 @@ def reparse(sentence: str, effects: list) -> list:
     return effects if new is NO_MATCH else new
 
 
-_CREATE = (r"(?:(you|each opponent|each player|its controller|its owner|that creature's controller|"
+_CREATE = (r"(?:(you|they|that player|each opponent|each player|its controller|its owner|that creature's controller|"
            r"that permanent's controller|that spell's controller) )?creates? (.+)")
 
 EFFECT_PATTERNS = [
