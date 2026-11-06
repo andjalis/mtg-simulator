@@ -5,11 +5,10 @@ import dataclasses
 import re
 from typing import TYPE_CHECKING
 
-from .. import auras, copies, creature_keywords, proliferate
+from .. import auras, copies, creature_keywords, cx_static_choice, proliferate
 from ..cards import Activated, CardDef, Effect, make_token
 from .. import rules_events
 from ..identity import CardInstance, instance
-from .policy import choose_color
 from .state import Permanent, StackItem, is_basic_land
 
 if TYPE_CHECKING:
@@ -166,8 +165,8 @@ class BattlefieldMixin:
                         for t in c.subtypes:
                             counts[t] = counts.get(t, 0) + 1
             perm.chosen_type = max(counts, key=counts.get, default="Island")
-        elif card.choose_type == "basic_land":
-            perm.card = dataclasses.replace(card, produces=frozenset({choose_color(self, p)}))
+        elif card.choose_type == "basic_land" or card.choose_type.startswith("color_other:"):
+            cx_static_choice.choose(self, p, perm, card)
         if card.loyalty:
             perm.counters["loyalty"] = card.loyalty
         if card.advanced_rules.get("sunburst"):

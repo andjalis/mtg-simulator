@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .. import discounts, graveyard, modal
-from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, storage as _storage, cx_static_cost as _cx_static_cost
+from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, storage as _storage, cx_static_cost as _cx_static_cost, cx_static_choice as _cx_static_choice
 from .model import Activated, AltCost, COLORS, Effect, KEYWORDS, NUMBERS, Trigger, _num, parse_mana_cost
 from .patterns import _parse_mana_ability
 from .parse import _apply_speed_gate, _mana_restriction, _parse_ability, _parse_effects, _parse_trigger
@@ -833,6 +833,9 @@ def _face_cost_and_static_lines(st, line):
             produces |= set(COLORS)
             if line.startswith("~ enters"):
                 enters_tapped = True
+            return None
+        if _cx_static_choice.parse_line(line, st):     # "choose a color other than C", chosen-colour statics
+            enters_tapped = enters_tapped or st.enters_tapped
             return None
         m = re.fullmatch(r"Activated abilities of artifact tokens you control cost \{(\d+)\} less to activate\.", line)
         if m:
