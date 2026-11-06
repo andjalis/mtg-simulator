@@ -194,4 +194,7 @@ def damage_source(game, item, src, target=None, eff=None):
                 return t
         if isinstance(item.context, Permanent) and eff is not None and eff.data.get("src_ctx"):
             return item.context
+        if (isinstance(item.context, Permanent) and eff is not None and eff.data.get("it_ctx")
+                and item.context is not src and item.context.controller is item.controller):
+            return item.context       # "Whenever a creature you control enters, it deals ...": that creature (#261)
     return src

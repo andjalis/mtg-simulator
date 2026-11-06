@@ -62,6 +62,10 @@ def _face_special_lines(st, line):
         if tm and extra.get("station"):
             kws = [k.strip().lower() for k in re.split(r",| and ", tm[2])]
             if kws and all(k in KEYWORDS for k in kws) or re.match(r"(When|Whenever|At the beginning)\b", tm[2]):
+                rules = extra.setdefault("advanced_rules", {})
+                if rules.get("station_creature") not in (None, int(tm[1])):
+                    approximations.append("Spacecraft become creatures at the highest station tier (P/T box tier assumed)")
+                rules["station_creature"] = max(rules.get("station_creature", 0), int(tm[1]))
                 st.tier = (int(tm[1]), len(triggers), len(activated), dict(extra))
                 line = tm[2]
             if kws and all(k in KEYWORDS for k in kws):
@@ -482,9 +486,24 @@ def _face_land_and_mana_lines(st, line):
         m = re.fullmatch(r"\{T\}: Add ([^.]+)\.(?: ~ deals 1 damage to you\.)?", line)
         if m:
             cols, amount = _parse_mana_ability(m[1])
+            if not cols and "chosen color" not in m[1]:
+                # No colour in the wording: "N mana in any combination of colors" is exactly N mana of any colours;
+                # "N mana of any one color" / "of different colors" are played as that too (recorded below). Anything
+                # else makes no mana we can model, so the line stays unparsed (the card stays partial).
+                fixed = re.fullmatch(r"(one|two|three|four|five|six) mana (of any one color|in any combination of "
+                                     r"colors|of different colors)", m[1])
+                if fixed is None:
+                    return line
+                cols, amount = set(COLORS), _num(fixed[1])
+                if fixed[2] != "in any combination of colors":
+                    approximations.append(f"\"Add {m[1]}\" may make any combination of colors")
             produces |= cols
             extra["mana_amount"] = max(amount, extra.get("mana_amount", 1))
-            if "equal to" in m[1] or " for each " in m[1]:
+            from ..mana_count import parse_dynamic
+            dyn = parse_dynamic(m[1])
+            if dyn:
+                extra["mana_dyn"] = dyn         # counted when the mana is made (engine/mana.py _amount)
+            elif "equal to" in m[1] or " for each " in m[1]:
                 # "Add an amount of {G} equal to this creature's power" / "Add {C} for each charge
                 # counter on this artifact": mana_amount is a fixed number, so a dynamic amount is
                 # simplified to 1 (the engine has no stat- or counter-based mana amount).
@@ -507,6 +526,9 @@ def _face_land_and_mana_lines(st, line):
         m = re.fullmatch(r"~ enters with (a|one|two|three|four|five) (\w+) counters? on it\.", line)
         if m:
             extra["etb_named_counters"] = (m[2].lower(), _num(m[1]))
+            return None
+        from ..cx_counters import entry_x_counters
+        if entry_x_counters(line, extra):
             return None
         m = re.fullmatch(r"Craft with artifact (\{[^ (]+\})(?: \(.*\))?", line)
         if m:
