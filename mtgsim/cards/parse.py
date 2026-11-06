@@ -5,7 +5,7 @@ import dataclasses
 import re
 
 from .. import cx_activation, milling, modal, returns, permanent_templates
-from .. import auras as _auras, storage as _storage
+from .. import auras as _auras, cx_tokens as _cx_tokens, storage as _storage
 from .model import (
     Activated, AltCost, BASIC_MANA, CardDef, Effect, NO_MATCH, Trigger, _num, add_mana, parse_mana_cost,
 )
@@ -62,6 +62,8 @@ def _parse_effects(text: str, opts: bool = False):
         from ..emerge import parse_rider as emerge_rider
         from ..cx_shields import parse_rider as shield_rider
         from ..cx_delayed import parse_rider as delayed_rider
+        if _cx_tokens.parse_rider(s, effects):
+            continue
         if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects) or \
                 delayed_rider(s, effects):
             continue
@@ -278,6 +280,7 @@ def _parse_effects(text: str, opts: bool = False):
                 effects += parts
             elif not parse_otherwise(s, effects) and not cx_grammar.parse_fallback(s, effects):   # "Otherwise, ..."; grammar
                 unmatched.append(sentence.strip())
+        effects[first:] = _cx_tokens.reparse(s, effects[first:])
         if paid:
             for eff in effects[first:]:
                 eff.cond = eff.cond or "paid"

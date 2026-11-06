@@ -330,9 +330,9 @@ class CostsTypesTriggers(unittest.TestCase):
 
     def test_unknown_token_keywords_and_copy_restrictions_stay_visible(self):
         dragon = self.real('Dragon Broodmother')
-        self.assertTrue(any('devour 2' in s.lower() for s in dragon.unsupported))
-        token_effect = dragon.triggers[0].effects[0]
-        self.assertEqual(token_effect.data['name'], 'Dragon')
-        self.assertIn('flying', token_effect.data['keywords'])
+        self.assertFalse(any('devour' in s.lower() for s in dragon.unsupported))   # devour works on tokens now
+        token = dragon.triggers[0].effects[0].data['card']
+        self.assertEqual((token.subtypes, token.devour), ({'Dragon'}, 2))
+        self.assertIn('flying', token.keywords)
         octomancer = self.real('Octomancer')
         self.assertTrue(any('entered' in s.lower() for s in octomancer.unsupported))
