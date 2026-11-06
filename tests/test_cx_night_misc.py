@@ -52,3 +52,16 @@ class Misc(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+SHAMAN = card("Test Shaman", "{2}{R}", "Creature",
+              "Whenever ~ deals combat damage to a player, destroy target artifact or enchantment that player controls.",
+              power=3, toughness=2)
+
+
+class DestroyThatPlayers(unittest.TestCase):
+    def test_parses_into_a_combat_damage_trigger(self):
+        self.assertEqual(SHAMAN.unsupported, [])
+        effect = SHAMAN.triggers[0].effects[0]
+        self.assertEqual((SHAMAN.triggers[0].event, effect.kind, effect.target, effect.filter),
+                         ("combat_damage_player", "destroy", "artifact_enchantment", "opp"))
