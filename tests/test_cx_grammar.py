@@ -385,3 +385,39 @@ class PlayersCast(Base):
         self.a.hand = [ambition]
         self.a.ai.main_phase(self.game, self.a)
         self.assertNotIn(ambition, self.a.hand)
+
+
+class PlayersAsRiders(Base):
+    """A cx_players rider must not stop the spell it rides on from being cast."""
+    def cast_on_board(self, text):
+        from tests.test_templates import SWAMP
+        spell = card("Test Spell", "{B}", "Sorcery", text)
+        self.assertEqual(spell.unsupported, [], text)
+        angel = self.perm(card("Test Angel", "{5}", "Creature — Angel", "Flying", 4, 4), self.b)
+        self.perm(SWAMP, self.a)
+        self.a.hand = [spell]
+        self.a.ai.main_phase(self.game, self.a)
+        return spell not in self.a.hand, angel
+
+    def test_destroy_then_each_player_gains_life(self):
+        cast, angel = self.cast_on_board("Destroy target creature. Each player gains 3 life.")
+        self.assertTrue(cast)
+        self.assertNotIn(angel, self.b.battlefield)
+
+    def test_destroy_then_its_owner_gains_life(self):
+        cast, angel = self.cast_on_board("Destroy target creature. Its owner gains 4 life.")
+        self.assertTrue(cast)
+        self.assertEqual(self.b.life, 24)
+
+    @unittest.skipUnless(DB_FILE.exists(), "card database not built")
+    def test_path_of_peace(self):
+        from mtgsim.carddb import CardDB
+        from tests.test_templates import PLAINS
+        path = CardDB().get("Path of Peace")
+        angel = self.perm(card("Test Angel", "{5}", "Creature — Angel", "Flying", 4, 4), self.b)
+        for _ in range(4):
+            self.perm(PLAINS, self.a)
+        self.a.hand = [path]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertNotIn(path, self.a.hand)
+        self.assertNotIn(angel, self.b.battlefield)
