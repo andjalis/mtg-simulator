@@ -47,6 +47,13 @@ def _each_of_up_to(m):
     return out
 
 
+# A legendary card's own pronoun: "put a +1/+1 counter on him / her" is "on ~" (never when another object is named).
+SUBS = [
+    (re.compile(r"(\bput (?:(?:a|an|one|two|three|four|five|x|\d+|that many) )?[^.,]*?counters? on) (?:him|her)\b(?!self)", re.I),
+     lambda m: m[1] + " ~" if not re.search(r"target|that |enchanted|equipped|each ", m[1][4:], re.I) else m[0]),
+]
+
+
 def _poison(m):
     from .cards.model import Effect
     who = m[1].lower()

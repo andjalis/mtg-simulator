@@ -200,3 +200,4 @@ _EFFECT_PATTERNS += _cx_night_misc.EFFECT_PATTERNS
 _SUBS += _cx_night_endturn.SUBS
 from .. import cx_counters as _cx_counters
 _EFFECT_PATTERNS += _cx_counters.EFFECT_PATTERNS
+_SUBS += _cx_counters.SUBS

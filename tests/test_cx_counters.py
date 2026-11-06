@@ -144,3 +144,14 @@ class Distribute(MultiTarget):
         for e, t in zip(item.effects, item.targets):
             self.game.resolve(self.a, e, t, item)
         self.assertEqual(bears[0].counters.get("+1/+1", 0), 3)
+
+
+class Pronoun(unittest.TestCase):
+    def test_him_means_self(self):
+        from tests.test_templates import card
+        c = card("Test Hero", "{1}", "Legendary Creature — Human",
+                 "At the beginning of your upkeep, put a +1/+1 counter on him.", 1, 1)
+        eff = c.triggers[0].effects[0]
+        self.assertEqual((eff.kind, eff.target), ("p1_counters", "self"))
+        c2 = card("Test Hero", "{1}", "Legendary Creature — Human", "{T}: Put a +1/+1 counter on target creature.", 1, 1)
+        self.assertNotEqual(c2.activated[0].effects[0].target, "self")
