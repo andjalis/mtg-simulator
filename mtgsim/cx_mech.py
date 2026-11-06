@@ -51,7 +51,7 @@ def variants(game, p, card) -> list:
     from .cards import AltCost, add_mana
     out = _cost_variants(game, p, card)
     if "Room" in card.subtypes and card.back is not None:
-        out.append(game._variant(card, "room_right"))
+        out += [game._variant(card, "room_left"), game._variant(card, "room_right")]
     if "Arcane" not in card.subtypes or card.is_permanent:
         return out
     for other in p.hand:

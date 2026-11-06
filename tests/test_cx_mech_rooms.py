@@ -42,7 +42,10 @@ class Rooms(unittest.TestCase):
         self.game.settle()
         self.a.hand = [card]
         self.lands(1)
-        self.assertTrue(self.game.cast(self.a, card))
+        (left,) = [x for x in self.game.spell_options(self.a) if x.name.endswith("(Bottomless Pool)")]
+        self.assertEqual(left.cmc, 1)                   # the spell has its half's mana value
+        self.assertEqual([x.name for x in self.game.spell_options(self.a)].count(card.name), 0)
+        self.assertTrue(self.game.cast(self.a, left))
         self.game.settle()
         self.assertEqual(self.room().card.name, card.name)
         self.assertEqual(self.room().card.cmc, 1)       # one door unlocked: {U}; both halves in hand: 6
@@ -54,6 +57,7 @@ class Rooms(unittest.TestCase):
         self.a.hand = [card]
         self.lands(5)
         (v,) = [x for x in self.game.spell_options(self.a) if x.name.endswith("(Locker Room)")]
+        self.assertEqual(v.cmc, 5)
         self.assertTrue(self.game.cast(self.a, v))
         self.game.settle()
         room = self.room()
@@ -66,6 +70,7 @@ class Rooms(unittest.TestCase):
         self.a.hand = [card]
         self.lands(8)
         (v,) = [x for x in self.game.spell_options(self.a) if x.name.endswith("(Promising Stairs)")]
+        self.assertEqual(v.cmc, 3)
         self.assertTrue(self.game.cast(self.a, v))
         self.game.settle()
         room = self.room()
