@@ -911,7 +911,8 @@ class HeuristicAI:
 
     def _players_plan(self, game: Game, me: Player, eff: Effect, card: CardDef, instant: bool):
         """(target, value) for a grammar player effect (cx_players): its life, draw, discard and mill verbs for each
-        player it names, ours counted for us and the opponent's against them; None when it can't be valued here."""
+        player it names, ours counted for us and the opponent's against them (0 for players only known on
+        resolution). None only when a target player can't be chosen; whether to cast is the spell's total."""
         opp = game.opponent(me)
         who, target = eff.data["who"], None
         if who == "target":
@@ -923,7 +924,7 @@ class HeuristicAI:
         else:
             named = {"you": [me], "each": [me, opp], "opponents": [opp], "defending": [opp]}.get(who)
             if named is None:
-                return None         # "that player", "its controller": only in triggers, decided there
+                return None, 0.0    # "that player", "its owner": a rider of another effect, valued by that one
         value = 0.0
         for pl in named:
             sign = 1.0 if pl is me else -1.0
@@ -940,9 +941,9 @@ class HeuristicAI:
                     value -= sign * (0.8 if pl is me else 1.0) * min(e.amount, len(pl.hand))
                 elif e.kind == "mill":
                     value -= sign * 0.1 * e.amount
-        if instant and value < LETHAL:
-            return None             # instant-speed card advantage waits for the opponent's end step
-        return (target, value) if value > 0 else None
+        if instant and value < LETHAL and all(e.kind == "cx_players" for e in card.spell_effects):
+            return None             # an instant that only does this waits for the opponent's end step
+        return target, value
 
     def _sac_cost(self, game: Game, me: Player, card: CardDef) -> float:
         """What the additional cost "sacrifice an artifact or creature" gives up (cheapest candidate)."""
