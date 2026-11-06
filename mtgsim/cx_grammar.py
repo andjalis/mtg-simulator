@@ -189,6 +189,9 @@ def parse_sentence(s: str):
     """Effects for one whole sentence, or None."""
     s = s.strip().rstrip(".").strip()
     s = re.sub(r"^(?:then |you may have |have )", "", s, flags=re.I)
+    players = parse_players(s)
+    if players is not None:
+        return players
     timed = False
     m = re.fullmatch(rf"{_EOT}, (.+)", s, re.I)
     if m:
@@ -228,6 +231,66 @@ def parse_sentence(s: str):
             else:
                 out.append(_effect(k, a, b, target="prev" if target == "permanent" else target, data=d))
     return out
+
+
+# ---------------------------------------------------------------- player subjects
+
+_PLAYERS = {"you": "you", "each player": "each", "each opponent": "opponents", "that player": "that_player",
+            "defending player": "defending", "that creature's controller": "controller",
+            "that permanent's controller": "controller", "its controller": "controller", "its owner": "owner",
+            "that creature's owner": "owner"}
+_PLAYER_VERB = r"(?:gain|lose|draw|discard|mill)s?"
+_PLAYER_SPLIT = re.compile(rf"(?:,? and |, (?:and )?|,? then )(?={_PLAYER_VERB}\b)", re.I)
+
+
+def _count(word: str):
+    from .cards.model import NUMBERS
+    return NUMBERS.get(word.lower()) or (int(word) if word.isdigit() else None)
+
+
+def _player_verb(text: str):
+    """(kind, amount) for one player verb phrase, or None."""
+    m = re.fullmatch(r"(gain|lose)s? (\w+) life", text, re.I)
+    if m and _count(m[2]):
+        return ("gain_life" if m[1].lower() == "gain" else "lose_life", _count(m[2]))
+    m = re.fullmatch(r"(draw|discard|mill)s? (a|an|one|two|three|four|five|six|seven|\d+) cards?", text, re.I)
+    if m and _count(m[2]) and (m[2].lower() in ("a", "an", "one", "1")) == text.lower().endswith(" card"):
+        return (m[1].lower(), _count(m[2]))
+    return None
+
+
+def parse_players(s: str):
+    """[cx_players effect] for "<player> loses 2 life and draws a card", or None (target players are left to the
+    templates: the AI chooses a target player by effect kind)."""
+    m = re.fullmatch(rf"({'|'.join(re.escape(k) for k in _PLAYERS)}) ({_PLAYER_VERB}\b.*)", s, re.I)
+    if m is None:
+        return None
+    verbs = [_player_verb(v) for v in _PLAYER_SPLIT.split(m[2])]
+    if not verbs or None in verbs:
+        return None
+    inner = [_effect(k, n, target="that_controller") for k, n in verbs]
+    return [_effect("cx_players", data={"who": _PLAYERS[m[1].lower()], "effects": inner})]
+
+
+def players(game, p, who, item, prev):
+    """The players a cx_players subject names as it resolves (a two-player game: the defending player is the
+    opponent)."""
+    opp = game.opponent(p)
+    if who == "you":
+        return [p]
+    if who == "each":
+        return list(game.players)
+    if who in ("opponents", "defending"):
+        return [opp]
+    if who == "that_player":
+        context = item.context if item is not None else None
+        return [context] if context in game.players else []
+    if who in ("controller", "owner"):
+        from .engine.state import Permanent
+        if isinstance(prev, Permanent):
+            return [prev.controller if who == "controller" else prev.owner]
+        return [prev] if who == "controller" and prev in game.players else []
+    return []
 
 
 def group_members(game, p, data, source, player=None):

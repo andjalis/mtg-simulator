@@ -230,3 +230,27 @@ class StaticGrants(Base):
     def test_not_on_a_non_equipment(self):
         c = card("Test Thing", "{1}", "Artifact", "Equipped creature gets +2/-1.")
         self.assertEqual(c.unsupported, ["Equipped creature gets +2/-1."])
+
+
+class PlayerSubjects(Base):
+    def test_each_player_verb_by_verb(self):
+        self.a.hand, self.b.hand = [BEAR], [BEAR]
+        self.cast(self.spell("Each player discards a card, then draws a card."))
+        self.assertEqual((len(self.a.hand), len(self.b.hand)), (1, 1))
+        self.assertEqual((len(self.a.graveyard), len(self.b.graveyard)), (2, 1))      # a: the spell too
+
+    def test_defending_player_and_you(self):
+        life = (self.a.life, self.b.life)
+        self.cast(self.spell("Defending player loses 2 life. You draw two cards and lose 1 life."))
+        self.assertEqual((self.a.life, self.b.life), (life[0] - 1, life[1] - 2))
+        self.assertEqual(len(self.a.hand), 2)
+
+    def test_that_creatures_controller(self):
+        bear = self.perm(BEAR, self.b)
+        spell = self.spell("Tap target creature. That creature's controller loses 3 life.")
+        self.cast(spell, [bear, None])
+        self.assertEqual(self.b.life, 20 - 3)
+
+    def test_target_players_are_left_to_templates(self):
+        self.assertIsNone(parse_sentence("Target player gains 2 life and draws a card."))
+        self.assertIsNone(parse_sentence("Each player gains 2 life and sacrifices a creature."))

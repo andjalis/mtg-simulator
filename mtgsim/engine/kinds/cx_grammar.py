@@ -23,3 +23,16 @@ def color(game, target, eff, **_):
     if isinstance(target, Permanent) and target in target.controller.battlefield:
         game.add_continuous_effect(target, eff.data["op"], colors=frozenset(eff.data["colors"]),
                                    until_eot=eff.data["eot"])
+
+
+@kind("cx_players")
+def players(game, p, item, eff, prev=None, **_):
+    """Each inner player effect, applied to the players the subject names ("each player", "defending player",
+    "that creature's controller", ...)."""
+    from ...cx_grammar import players as named
+    from . import HANDLERS
+    named_players = named(game, p, eff.data["who"], item, prev)
+    for inner in eff.data["effects"]:          # "each player discards a card, then draws a card": all, verb by verb
+        for who in named_players:
+            HANDLERS[inner.kind](game, p=p, eff=inner, target=who, item=item, opp=game.opponent(p), prev=prev,
+                                 cause=f"cx_players: {inner.kind}")
