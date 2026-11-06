@@ -187,3 +187,5 @@ from .. import cx_night_endturn as _cx_night_endturn
 _EFFECT_PATTERNS += _cx_night_endturn.EFFECT_PATTERNS
 from .. import cx_night_counter as _cx_night_counter
 _EFFECT_PATTERNS += _cx_night_counter.EFFECT_PATTERNS
+from .. import cx_night_combat as _cx_night_combat
+_EFFECT_PATTERNS += _cx_night_combat.EFFECT_PATTERNS
