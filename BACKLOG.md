@@ -101,6 +101,11 @@ partial. The largest single-sentence gaps are still banding (13 cards), attracti
 (18) and prepared (12), each needing a new mechanic; "end the turn", "you have shroud" and the stand-alone "untap them"
 need engine support first.
 
+Sixth night (2026-11-06): #144 ("You have shroud" as a player rule that also blocks your own targeting) and #145 ("End
+the turn": exiles the rest of the stack, skips the remaining phases, 7 cards). Recorded simplification: Glorious End's
+"at the beginning of your next end step, you lose the game" reuses the existing next-end-step delay, so it fires at the
+next end step of either player, one turn early when cast on your own turn.
+
 ## Measured remaining broad families
 
 These overlapping counts are upper bounds, not disjoint gain forecasts or wholly missing systems. Do not sum them.
