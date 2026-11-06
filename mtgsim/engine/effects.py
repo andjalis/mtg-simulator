@@ -1,7 +1,7 @@
 """Game methods for game events that effects and rules cause: damage, destroy, sacrifice, dying, state-based actions."""
 from __future__ import annotations
 
-from .. import continuous, counter_mechanics, cx_triggers, that_much
+from .. import continuous, counter_mechanics, cx_static_damage, cx_triggers, that_much
 
 from .. import auras
 from ..cards import AltCost, CardDef, Effect
@@ -19,6 +19,7 @@ class EffectsMixin:
             return
         self.last_dealt = 0          # for "You gain life equal to the damage dealt this way"
         amount = that_much.damage_amount(self, target, amount, by, source, combat)
+        amount = cx_static_damage.modify(self, target, amount, by, source, combat)   # double / triple / half
         if amount <= 0:
             return
         def has(keyword):
