@@ -70,6 +70,9 @@ def _part(n, data, obj, source, first_targeted):
         return None     # another source would need cx_damage, which the default AI can't aim yet
     if source == "prev" and first_targeted:
         return None     # "it" would read the first recipient once that one is chosen
+    if source != "self" and obj.kind == "group" and (obj.group or {}).get("other", (obj.group or {}).get(
+            "selector", {}).get("other")):
+        return None     # "each other creature": a group's "other" is the resolving object, not this source
     return Part("cx_damage", n, 0, dict(data, source=source, side="theirs"), obj=obj)
 
 
@@ -104,6 +107,18 @@ def deals(m, clause):
             for p in parts:
                 p.data = dict(p.data, distinct=True)
     return None if any(p is None for p in parts) else parts
+
+
+@verb(r"deals? damage equal to its power to (.+)", heads=("deal", "deals"), subjects=("permanent", "host"))
+def deals_power(m, clause):
+    """"~ deals damage equal to its power to target creature", "That creature deals damage equal to its power to ~":
+    "its" is the source's power when the damage is dealt."""
+    source = _source(clause)
+    if clause.duration or source is None or re.search(r"\b(?:divided|each of|unless|instead|and \w+ damage)\b",
+                                                      m[1]):
+        return None
+    part = _part(0, {"source_power": True}, _object(m[1], source), source, False)
+    return None if part is None else [part]
 
 
 @ai_value("cx_damage", "damage")
