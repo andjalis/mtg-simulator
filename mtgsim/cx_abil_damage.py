@@ -172,7 +172,7 @@ def scaled(game, me, eff):
         return dataclasses.replace(eff, amount=eff.amount * game.x_quantity(me, eff.data["xq"], stub, None))
     if eff.data.get("src_prev"):
         earlier = [t for t in getattr(game, "_choosing_targets", ()) if hasattr(t, "counters")]
-        ctx = getattr(game.target_source, "context", None)            # the creature a trigger fired for
+        ctx = getattr(game, "trigger_context", None) or getattr(game.target_source, "context", None)   # the trigger's creature
         src = earlier[0] if earlier else ctx if hasattr(ctx, "counters") else src
     if eff.data.get("source_power") and src is not None and hasattr(src, "power"):
         return dataclasses.replace(eff, amount=max(0, src.power))
