@@ -971,4 +971,5 @@ def holds_for(source, code: str, ref=None) -> bool:
     return bool(_eval_any(game, p, code, _Src, source, ref or source))
 
 
-from . import cx_static_cond  # noqa: E402,F401  (registers its condition rules)
+from .cx_static_cond import RULES as _STATIC_RULES  # noqa: E402  (devotion, most common color)
+_RULES.extend((re.compile(pattern, re.I), build) for pattern, build in _STATIC_RULES)

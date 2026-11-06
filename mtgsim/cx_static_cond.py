@@ -4,7 +4,7 @@
     As long as your devotion to white and black is less than seven, ~ isn't a creature. (Athreos, God of Passage)
     ~ gets -2/-2 as long as black is the most common color among all permanents or is tied for most common.
 
-The conditions are registered as ``cx_condlib`` rules, so every "as long as" / "if" reader of the library gets them;
+The conditions are ``RULES`` that ``cx_condlib`` appends to its phrase rules, so every "as long as" / "if" reader of the library gets them;
 ``check`` evaluates their codes (called from ``cx_condlib.check`` for kinds it doesn't own). Devotion counts the
 colored mana symbols among the mana costs of permanents you control: a hybrid symbol counts once toward each of its
 colors, and once in all toward "devotion to A and B".
@@ -15,27 +15,37 @@ from __future__ import annotations
 
 import re
 
-from .cx_condlib import _COLORS, _NUM, _code, _cmp, _n, rule
+_COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
+_NUM = r"(?:\d+|a|an|one|two|three|four|five|six|seven|eight|nine|ten|twenty)"    # cx_condlib's number words
 
 _COLOR = r"(?:white|blue|black|red|green)"
 
 
-@rule(rf"your devotion to (?P<a>{_COLOR})(?: and (?P<b>{_COLOR}))? is (?P<op>less than|greater than|at least) "
-      rf"(?P<n>{_NUM})")
 def _devotion_cmp(m):
+    from .cx_condlib import _code, _n
     op = {"less than": "<", "greater than": ">", "at least": ">="}[m["op"].lower()]
     return _code("devotion", sorted(_COLORS[c.lower()] for c in (m["a"], m["b"]) if c), op, _n(m["n"]))
 
 
-@rule(rf"your devotion to (?P<a>{_COLOR})(?: and (?P<b>{_COLOR}))? is (?P<n>{_NUM}) or (?P<op>greater|more|less)")
 def _devotion_or(m):
+    from .cx_condlib import _code, _n
     op = "<=" if m["op"].lower() == "less" else ">="
     return _code("devotion", sorted(_COLORS[c.lower()] for c in (m["a"], m["b"]) if c), op, _n(m["n"]))
 
 
-@rule(rf"(?P<c>{_COLOR}) is the most common color among all permanents(?P<tie> or is tied for most common)?")
 def _common_color(m):
+    from .cx_condlib import _code
     return _code("common_color", _COLORS[m["c"].lower()], bool(m["tie"]))
+
+
+RULES = [   # (pattern, builder): appended to cx_condlib's phrase rules
+    (rf"your devotion to (?P<a>{_COLOR})(?: and (?P<b>{_COLOR}))? is (?P<op>less than|greater than|at least) "
+     rf"(?P<n>{_NUM})", _devotion_cmp),
+    (rf"your devotion to (?P<a>{_COLOR})(?: and (?P<b>{_COLOR}))? is (?P<n>{_NUM}) or (?P<op>greater|more|less)",
+     _devotion_or),
+    (rf"(?P<c>{_COLOR}) is the most common color among all permanents(?P<tie> or is tied for most common)?",
+     _common_color),
+]
 
 
 def devotion_spec(text: str):
@@ -69,6 +79,7 @@ def _common(game, color, tie) -> bool:
 
 def check(game, p, kind, args, item=None, source=None):
     """cx_condlib.check for the kinds registered here; False for any other kind."""
+    from .cx_condlib import _cmp
     if kind == "devotion":
         colors, op, n = args
         return _cmp(devotion(p, colors), op, n)
