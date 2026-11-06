@@ -5,7 +5,7 @@ import unittest
 
 from mtgsim.engine import Game, Player
 from tests.test_combat_triggers import Scripted
-from tests.test_templates import BEAR, FOREST, ISLAND, MOUNTAIN, PLAINS, card
+from tests.test_templates import BEAR, FOREST, ISLAND, MOUNTAIN, PLAINS, SWAMP, card
 
 MIST = card("Test Mist", "{2}{G}", "Creature — Elemental",
             "At the beginning of your upkeep, sacrifice ~ unless you pay {G}{G}.", 6, 2)
@@ -152,13 +152,24 @@ class UpkeepKeywords(unittest.TestCase):
         self.assertIn(STINGER, self.a.exile)
         self.assertNotIn(STINGER, self.a.graveyard)
 
-    def test_madness_after_discard(self):
+    def test_madness_exiles_then_casts(self):
         self.game.active_idx = 0
-        self.put(self.a, PLAINS, 1)
+        self.put(self.a, SWAMP, 1)
         self.a.hand.append(HUNTER)
-        self.assertFalse(any(self.game._origin(o)[1] == "mayhem" for o in self.game.spell_options(self.a)))
         self.game.discard_card(self.a, HUNTER)
-        self.assertTrue(any(self.game._origin(o)[1] == "mayhem" for o in self.game.spell_options(self.a)))
+        self.assertIn(HUNTER, self.a.exile)
+        self.assertNotIn(HUNTER, self.a.graveyard)
+        self.game.settle()                       # the madness trigger: cast it for {B}
+        self.assertNotIn(HUNTER, self.a.exile)
+        self.assertIn(HUNTER.name, [x.card.name for x in self.a.battlefield])
+
+    def test_madness_unpaid_goes_to_graveyard(self):
+        self.game.active_idx = 0
+        self.a.hand.append(HUNTER)
+        self.game.discard_card(self.a, HUNTER)
+        self.game.settle()                       # no mana: not cast
+        self.assertIn(HUNTER, self.a.graveyard)
+        self.assertNotIn(HUNTER, self.a.exile)
 
     def test_prevention_shield(self):
         archer = self.put(self.a, ARCHER)
