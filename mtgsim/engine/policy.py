@@ -66,6 +66,19 @@ def _threat(game: Game, me: Player, item: StackItem) -> float:
     return score
 
 
+def damage_amount(game: Game, eff: Effect, source=None) -> int:
+    """The damage an effect would deal if it resolved now: "damage equal to its power" (data["source_power"]) reads
+    the source permanent's current power (``source``, else the spell or ability whose targets are being chosen);
+    any other amount is eff.amount."""
+    if not (eff.data or {}).get("source_power"):
+        return eff.amount
+    src = source if source is not None else game.target_source
+    if isinstance(src, StackItem):
+        context = src.context if src.kind == "trigger" else None
+        src = context if eff.data.get("source") == "prev" and isinstance(context, Permanent) else src.source
+    return max(0, src.power) if isinstance(src, Permanent) else 0
+
+
 def default_choose_target(game: Game, me: Player, eff: Effect):
     """A reasonable target for eff, respecting hexproof and targeting restrictions."""
     opp = game.opponent(me)
@@ -80,13 +93,14 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         cards = [x for x in legal if isinstance(x, CardDef)]
         return max(cards, key=lambda c: c.cmc, default=None)
     if k == "damage":
-        if eff.target == "player" and not (eff.data.get("or_pw") and eff.amount < opp.life):
+        amount = damage_amount(game, eff)
+        if eff.target == "player" and not (eff.data.get("or_pw") and amount < opp.life):
             return opp
-        if eff.target == "any" and eff.amount >= opp.life:
+        if eff.target == "any" and amount >= opp.life:
             return opp
-        killable = [x for x in theirs if (x.is_creature and eff.target != "player" and x.toughness - x.damage <= eff.amount and
+        killable = [x for x in theirs if (x.is_creature and eff.target != "player" and x.toughness - x.damage <= amount and
                                           not x.has("indestructible")) or (x.is_planeswalker and not x.is_creature
-                                                                           and x.loyalty <= eff.amount)]
+                                                                           and x.loyalty <= amount)]
         if killable:
             return max(killable, key=perm_value)
         return opp if eff.target in ("any", "player") else None
@@ -172,6 +186,11 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     if k in ("connive", "attach_new_equipment"):    # the best creature of ours that can be chosen
         return max((x for x in mine if x.is_creature), key=perm_value, default=None)
     side = eff.data.get("side") if eff.data else None
+    if side == "auto":                  # neutral effects (a colour change) take the side of what follows them
+        from ..cx_grammar import auto_side
+        side = auto_side(game, eff)
+    if side in ("mine", "theirs") and eff.target == "player":   # ... or which player (cx_grammar target players)
+        return next((x for x in legal if x is (me if side == "mine" else opp)), None)
     if side in ("mine", "theirs"):      # newer kinds say whose permanent they want
         return max(mine if side == "mine" else theirs, key=perm_value, default=None)
     return None
@@ -273,7 +292,7 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
             elif k == "wrath_pw":
                 total += sum(map(perm_value, opp.planeswalkers)) - sum(map(perm_value, me.planeswalkers))
             elif k == "damage":
-                total += perm_value(tgt) if isinstance(tgt, Permanent) else (100 if e.amount >= opp.life else 1)
+                total += perm_value(tgt) if isinstance(tgt, Permanent) else (100 if damage_amount(game, e) >= opp.life else 1)
             elif k in ("discard", "discard_choice", "hand_exile"):
                 total += 2 if opp.hand else 0
             elif k == "regrow":

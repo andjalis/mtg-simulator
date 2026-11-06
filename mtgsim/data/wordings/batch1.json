@@ -113,12 +113,21 @@
     "cards": ["Aragorn, King of Gondor"]
   },
   {
-    "match": "(?:it|~) deals damage equal to its power to any target",
+    "match": "~ deals damage equal to its power to any target",
     "effect": "damage",
     "amount": 1,
     "target": "any",
     "data": {"source_power": true},
+    "example": "~ deals damage equal to its power to any target",
+    "cards": ["Spikeshot Goblin"]
+  },
+  {
+    "match": "it deals damage equal to its power to any target",
+    "effect": "damage",
+    "amount": 1,
+    "target": "any",
+    "data": {"source_power": true, "source": "prev"},
     "example": "it deals damage equal to its power to any target",
-    "cards": ["Balduvian Berserker"]
+    "cards": ["Balduvian Berserker", "Warstorm Surge"]
   }
 ]
