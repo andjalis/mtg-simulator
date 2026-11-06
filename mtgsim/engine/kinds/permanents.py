@@ -431,6 +431,8 @@ def edict(game, p, eff, opp, **_):
         if eff.data.get("exile"):
             game.leave_battlefield(v, "exile")
             game.log(f"{opp} exiles {v.card.name}", p)
+        elif eff.data.get("destroy"):
+            game.destroy(v)
         else:
             game.sacrifice(v, counter_sources=sources)
 
