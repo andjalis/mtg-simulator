@@ -92,6 +92,8 @@ are rare (22k distinct, top 1,000 complete about 2,100 cards), so each lane pref
 | Activated-ability effects and cost parts | `mtgsim/cx_abil*.py`, `mtgsim/engine/kinds/cx_abil.py`, `tests/test_cx_abil*.py`; one-line hook in `cards/parse.py` `_parse_ability_cost` | Claude Sonnet (`claude/abil-*`) |
 | Trigger heads | `mtgsim/cx_trig*.py`, `mtgsim/engine/kinds/cx_trig.py`, `tests/test_cx_trig*.py`; additions to `cx_events.py` | Claude Sonnet (`claude/trig-*`) |
 | Named mechanics (Contraptions, Attractions, Sieges, Rooms, splice, spellbooks, prepared, banding, ...) | `mtgsim/cx_mech*.py`, `mtgsim/engine/kinds/cx_mech.py`, `tests/test_cx_mech*.py` | Claude Sonnet (`claude/mech-*`) |
+| Statics, cost modifiers, replacement and prevention, conditional self-statics, entering rules | `mtgsim/cx_static*.py`, `mtgsim/engine/kinds/cx_static.py`, `tests/test_cx_static*.py` | Claude Opus (`claude/static-*`) |
+| Simplified cards to full (madness, unearth, day/night, mutate, ...): real rules for recorded simplifications | existing modules where each simplification is recorded, tight diffs | Claude Sonnet (`claude/simplify-*`) |
 | Coverage tooling, census, BACKLOG.md, merges | `mtgsim/blocking_units.py`, `results/database_coverage_*`, `results/blocking_units_*`, `BACKLOG.md` | Claude Opus lead |
 
 One PR per coherent rule or mechanic. Each PR body states the units it targets and the census or `parse_diff` delta.
