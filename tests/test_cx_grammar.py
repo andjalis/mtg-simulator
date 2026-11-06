@@ -182,3 +182,51 @@ class Resolving(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StaticGrants(Base):
+    def lord(self, text, types="Creature — Elf", p=2, t=2):
+        c = card("Test Lord", "{2}", types, text, p, t)
+        self.assertEqual(c.unsupported, [], text)
+        return c
+
+    def test_lord_pt_and_keyword_for_every_player(self):
+        lord = self.perm(self.lord("Other Goblin creatures get +1/+1 and have haste."), self.a)
+        mine, theirs, bear = self.perm(GOBLIN, self.a), self.perm(GOBLIN, self.b), self.perm(BEAR, self.a)
+        self.assertEqual((mine.power, theirs.power, bear.power), (2, 2, BEAR.power))
+        self.assertTrue(mine.has("haste") and theirs.has("haste"))
+        self.assertEqual(lord.power, 2)               # "other"
+        self.game.leave_battlefield(lord, "graveyard")
+        self.assertEqual(mine.power, 1)
+
+    def test_richer_noun_phrase(self):
+        self.perm(self.lord("Nonblack creatures get -1/-1."), self.a)
+        red = self.perm(RED, self.b)
+        self.assertEqual(red.toughness, 1)
+
+    def test_restriction_grant(self):
+        self.perm(self.lord("Creatures without flying can't attack."), self.a)
+        bear, flier = self.perm(BEAR, self.b), self.perm(FLIER, self.b)
+        self.assertTrue(bear.has("cant_attack_now"))
+        self.assertFalse(flier.has("cant_attack_now"))
+
+    def test_no_self_referential_keyword_grant(self):
+        c = card("Test Lord", "{2}", "Creature — Elf", "Creatures with flying have vigilance.", 2, 2)
+        self.assertEqual(c.unsupported, ["Creatures with flying have vigilance."])
+
+    def test_no_power_conditioned_anthem(self):
+        c = card("Test Lord", "{2}", "Creature — Elf", "Creatures with power 2 or less get +1/+1.", 2, 2)
+        self.assertEqual(c.unsupported, ["Creatures with power 2 or less get +1/+1."])
+
+    def test_equipment_with_a_negative_bonus(self):
+        gear = card("Test Gear", "{1}", "Artifact — Equipment", "Equipped creature gets +2/-1 and has menace.\nEquip {1}")
+        self.assertEqual(gear.unsupported, [])
+        bear = self.perm(BEAR, self.a)
+        g = self.perm(gear, self.a)
+        g.attached_to = bear
+        self.assertEqual((bear.power, bear.toughness), (BEAR.power + 2, BEAR.toughness - 1))
+        self.assertTrue(bear.has("menace"))
+
+    def test_not_on_a_non_equipment(self):
+        c = card("Test Thing", "{1}", "Artifact", "Equipped creature gets +2/-1.")
+        self.assertEqual(c.unsupported, ["Equipped creature gets +2/-1."])

@@ -239,11 +239,8 @@ def group_members(game, p, data, source, player=None):
         return [x for x in pool if matches(game, x, group["selector"], p, source)]
     from .cx_events import _obj_match
     spec = _desc(group["cx_desc"], group["plural"])
-
-    class _Viewer:              # _obj_match reads "you control" from the viewer's controller
-        controller = p
-        power = getattr(source, "power", 0)
-    return [x for x in pool if not (group.get("other") and x is source) and _obj_match(game, spec, _Viewer, x)]
+    viewer = _Viewer(p, source)
+    return [x for x in pool if not (group.get("other") and x is source) and _obj_match(game, spec, viewer, x)]
 
 
 def parse_fallback(s: str, effects: list) -> bool:
@@ -253,3 +250,125 @@ def parse_fallback(s: str, effects: list) -> bool:
         return False
     effects += new
     return True
+
+
+# ---------------------------------------------------------------- static grants
+
+_STATIC_KW = {"can't block": "cant_block_now", "can't attack": "cant_attack_now", "can't be blocked": "unblockable",
+              "attack each combat if able": "must_attack_now", "attacks each combat if able": "must_attack_now",
+              "block each combat if able": "must_block_now", "blocks each combat if able": "must_block_now"}
+
+
+def _static_verb(text: str):
+    """("pt", p, t) / ("kw", keywords) for one static verb phrase, or None."""
+    t = text.strip()
+    m = re.fullmatch(r"gets? ([+-]\d+)/([+-]\d+)", t, re.I)
+    if m:
+        return ("pt", int(m[1]), int(m[2]))
+    m = re.fullmatch(r"(?:has|have) (.+)", t, re.I)
+    if m:
+        kws = _keyword_list(m[1])
+        return ("kw", tuple(kws)) if kws else None
+    low = t.lower()
+    if low == "can't attack or block":
+        return ("kw", ("cant_attack_now", "cant_block_now"))
+    if low in _STATIC_KW:
+        return ("kw", (_STATIC_KW[low],))
+    return None
+
+
+def parse_static(line: str, st) -> bool:
+    """A static ability granting a group P/T, keywords or a combat restriction, recorded where the engine reads
+    anthems (advanced_rules["anthems"]) and static keyword grants. Returns True when the line is consumed."""
+    s = line.strip()
+    if not s.endswith(".") or re.search(r'[:"]|\b(?:until|this turn|as long as|during|if(?! able)|for each|where|except)\b', s, re.I):
+        return False
+    s = re.sub(r"^[A-Z][\w' ,-]* — ", "", s[:-1])        # an ability word
+    head = re.match(rf"(.+?) ({_VERB}\b.*)", s, re.I)
+    if head is None:
+        return False
+    host = re.fullmatch(r"(equipped|enchanted) creature", head[1], re.I)
+    if host:
+        return _host_static(host[1].lower(), head[2], st)
+    subj = subject(head[1])
+    if subj is None or subj[3] is None or subj[0] != "none":
+        return False
+    group = subj[3]
+    spec = group["selector"] if "selector" in group else dict(group, cx_desc=group["cx_desc"])
+    parts = [_static_verb(p) for p in _SPLIT.split(head[2])]
+    if not parts or None in parts or sum(p[0] == "pt" for p in parts) > 1:
+        return False
+    kws = tuple(k for p in parts if p[0] == "kw" for k in p[1])
+    if _stat_conditioned(spec):
+        return False    # "creatures with power 2 or less get +1/+1" would read its own result
+    from .cards.model import KEYWORDS
+    if _condition_keywords(spec) and any(k in KEYWORDS for k in kws):
+        return False    # "creatures with flying have shroud" and a "with shroud ... flying" grant would read each other
+    extra = st.extra
+    for p in parts:
+        if p[0] == "pt":
+            extra.setdefault("advanced_rules", {}).setdefault("anthems", []).append((spec, p[1], p[2]))
+    if kws:
+        extra["static_keyword_grants"] = extra.get("static_keyword_grants", ()) + ((spec, kws),)
+    return True
+
+
+def _host_static(host: str, verbs: str, st) -> bool:
+    """"Equipped creature gets -1/+2 and has flying" on an Equipment, "Enchanted creature has defender" on an
+    Aura: added to the attachment's bonus and keywords (Permanent._pt_bonus / has read them)."""
+    extra = st.extra
+    if host == "equipped" and "Equipment" not in st.type_line or host == "enchanted" and not extra.get("aura"):
+        return False
+    parts = [_static_verb(p) for p in _SPLIT.split(verbs)]
+    if not parts or None in parts or sum(p[0] == "pt" for p in parts) > 1:
+        return False
+    for p in parts:
+        if p[0] == "pt":
+            bp, bt = extra.get("equip_bonus", (0, 0))
+            extra["equip_bonus"] = (bp + p[1], bt + p[2])
+        else:
+            extra["equip_keywords"] = frozenset(extra.get("equip_keywords", frozenset())) | set(p[1])
+    return True
+
+
+def _stat_conditioned(spec) -> bool:
+    if "stat" in spec and spec["stat"][0] != "mana value" or "base_pt" in spec:
+        return True
+    if "cx_desc" in spec:
+        desc = _desc(spec["cx_desc"], spec["plural"])
+        return desc is None or any(w[0] in ("power>=", "power<=", "tough>=", "power>self", "power=tough")
+                                   for w in desc["with"])
+    return False
+
+
+def _condition_keywords(spec) -> set:
+    """The keywords a group's membership depends on ("creatures with flying")."""
+    if "keyword" in spec:
+        return {spec["keyword"][0]}
+    if "cx_desc" in spec:
+        desc = _desc(spec["cx_desc"], spec["plural"])
+        return {w[1] for w in desc["with"] if w[0] in ("kw", "nokw")} if desc else set()
+    return set()
+
+
+def desc_matches(game, permanent, spec, controller, source) -> bool:
+    """permanent_templates.matches for a selector carrying a cx_desc noun phrase (the static grants above)."""
+    if spec.get("other") and permanent is source:
+        return False
+    desc = _desc(spec["cx_desc"], spec["plural"])
+    if desc is None:
+        return False
+    from .cx_events import _obj_match
+
+    return _obj_match(game, desc, _Viewer(controller, source), permanent)
+
+
+class _Viewer:
+    """Who reads a noun phrase: "you control" is its controller, "greater power than ~" the source's power
+    (read only when asked: a static's own P/T may depend on the phrase)."""
+    def __init__(self, controller, source):
+        self.controller, self._source = controller, source
+
+    @property
+    def power(self):
+        return getattr(self._source, "power", 0)
