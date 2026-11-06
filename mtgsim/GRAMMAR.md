@@ -66,15 +66,47 @@ returns `None` lets the next one try the phrase.
 | `group` | "creatures you control", "each Goblin", "other attacking creatures", "creatures target player controls" | one `cx_group` Effect: inner Parts applied to each member, the set fixed on resolution |
 | `player` | "you", "each player", "each opponent", "that player", "defending player", "that creature's controller", "its owner" (`subject.who`) | one `cx_players` Effect: inner Parts applied verb by verb to each named player, with target `that_controller` (handlers read the player from `target`) |
 | `host` | "enchanted creature", "equipped creature" | target `host` (one-shot), or the attachment's bonus and keywords (static) |
+| `imperative` | a sentence that starts with a verb registered with `subjects=(..., "imperative")`: "Destroy target creature." (`who` "you") | every Part must carry its own `obj` (below) |
+
+Players have `who` "target" for "target player" / "target opponent" (target `player`, `data["filter"] = "opp"`
+for an opponent). They are assembled as `cx_players` with `data["side"]`, and the default AI picks that player by
+side (`engine/policy.default_choose_target`). A `cx_group` over "creatures target player controls" gets a side too.
+
+### Objects: `Part(..., obj=Subject)`
+
+When the verb names its own object ("~ deals 3 damage to **any target**", "**Destroy** up to two target
+artifacts"), read the object with `cx_grammar.object_phrase(text)`. It reads what `subject()` reads, plus "any
+target", "target creature or planeswalker" and "target player or planeswalker", and returns a Subject or None. Then
+return `Part(kind, ..., obj=that_subject)`. `assemble()` places the Part by its object:
+
+- `permanent`: target `obj.target`, the object's data merged, repeated `obj.copies` times with `distinct`;
+- `group`: a `cx_group` with this Part as its inner effect;
+- a target player: target `player` (filter `opp` for an opponent);
+- an untargeted player: target `none` with `data["who"]`, which your kind resolves with
+  `cx_grammar.players(game, p, who, item, prev, target)`.
+
+The clause subject (`self` / `prev` / `host` / `permanent`) goes in `data["source"]`. Parts without an object
+belong to the subject: "~ deals 2 damage to any target and gets +1/+0 until end of turn" pumps ~. A group or
+player subject can't have Parts with objects (the sentence is rejected).
+
+### Riders: `@rider(pattern)`
+
+A rider wraps a whole sentence ("B unless that player pays {2}", "B if C"). Its pattern is fullmatched against
+the sentence (no final period) **before** the subject is split off, and riders are tried before verbs. It is
+called as `parse(match, inner)`, where `inner(text)` parses a sub-sentence with the whole grammar and returns
+Effects or None. Return Effects (for example the inner ones with a `cond` added), or None.
+
+### Parts
 
 A `Part(kind, amount=0, amount2=0, data={})` is one Effect without its target. The grammar adds targets, and
 `data` is merged into the Effect's data. Use **existing kinds** wherever one fits (see `engine/kinds/`). Inside
 groups and player subjects, inner handlers are called directly with `target=` the member, so a kind must read
 its object from `target`.
 
-For "for each <thing>" and ", where X is …", the core sets `data["xq"]`. Amounts of the kinds in `_SCALED`, and
-every inner amount of a `cx_group` / `cx_players`, are multiplied by X. If your amount-bearing kind should scale
-inside "for each", ask for it to be added to `_SCALED`.
+For "for each <thing>" and ", where X is …", the core sets `data["xq"]`. `Game.resolve` multiplies the Effect's
+`amount` (and `amount2` for pumps), and `cx_group` / `cx_players` multiply their inner amounts. A "for each"
+sentence is accepted only if some Effect's kind is in `_SCALED` or carries `data["scales"] = True`. Set
+`scales` on Parts whose amount is a count.
 
 **Static lines** (`duration == "static"`): only three Part kinds mean something. `pump` becomes an anthem (group)
 or the attachment's bonus (host). `grant` with `data["keyword"]`, and `cx_temp_kw` with `data["keywords"]`, become

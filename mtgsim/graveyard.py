@@ -4,6 +4,10 @@ from __future__ import annotations
 import re
 
 
+# cx_costs kinds a graveyard ability can pay (the card itself is never one of the cards it exiles or taps)
+_GY_COSTS = ("discard", "discard_random", "mill", "tap", "exile_gy")
+
+
 def is_return_ability(line):
     return re.search(r": Return (?:this card|~) from your graveyard to the battlefield", line) is not None
 
@@ -25,8 +29,14 @@ def parse_ability(line, approximations):
     text = text.replace("Return this card from your graveyard", "Return ~ from your graveyard")
     approx = []
     act = _parse_ability(text, approx)
+    desc = act.extra_costs.pop("exile_gy_card", None) if act is not None else None
+    if desc is not None:             # "Exile another creature card from your graveyard": paid by cx_costs, never the card itself
+        from .cx_costs import parse_part
+        if not parse_part("Exile another " + desc + " from your graveyard", act.extra_costs):
+            return None
     if act is None or act.once or act.once_game or act.modes or \
-            set(act.extra_costs) - {"discard", "life"} or \
+            set(act.extra_costs) - {"discard", "life", "cx_costs"} or \
+            any(k not in _GY_COSTS for k, _n, _s in act.extra_costs.get("cx_costs", ())) or \
             any(e.target in ("self", "prev") for e in act.effects) or \
             not any(e.kind == "return_self_gy" for e in act.effects):
         return None
@@ -50,6 +60,10 @@ def can_activate(game, p, card, idx):
     costs = act.extra_costs
     if len(p.hand) < costs.get("discard", 0) or p.life < costs.get("life", 0):
         return False
+    if costs.get("cx_costs"):
+        from .cx_costs import payable as parts_payable
+        if not parts_payable(game, p, p.graveyard.get(card), costs["cx_costs"]):
+            return False
     return payable(game.mana_sources(p, spell="ability"), act.cost)
 
 
@@ -61,6 +75,10 @@ def activate(game, p, card, idx):
     act = card.gy_activated[idx]
     if game.pay(p, act.cost) is None:
         return False
+    if act.extra_costs.get("cx_costs"):
+        from .cx_costs import pay as pay_parts
+        if not pay_parts(game, p, card, act.extra_costs["cx_costs"]):
+            return False
     if act.extra_costs.get("life"):
         game.change_life(p, -act.extra_costs["life"], f"{card.name}: graveyard ability cost")
     for _ in range(act.extra_costs.get("discard", 0)):
