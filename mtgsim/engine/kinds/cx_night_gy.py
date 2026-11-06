@@ -100,3 +100,11 @@ def sac_unless_discard_kind(game, p, eff, item, **_):
         game.sacrifice(src)
     else:
         game.discard_card(p, card)
+
+
+@kind("next_spell_discount")
+def next_spell_discount(game, p, eff, **_):
+    """Peerless Samurai: the next spell p casts this turn costs {N} less (read in `cost_of`, spent when a spell is cast)."""
+    table = game.__dict__.setdefault("next_discount", {})
+    turn, n = table.get(p.name, (game.turn, 0))
+    table[p.name] = (game.turn, (n if turn == game.turn else 0) + eff.amount)

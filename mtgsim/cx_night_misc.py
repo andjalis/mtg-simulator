@@ -51,7 +51,13 @@ def _sac_discard(m):
     return Effect("sac_unless_discard_kind", data={"mode": "land" if m[1] else "random"})
 
 
+def _next_discount(m):
+    from .cards.model import Effect
+    return Effect("next_spell_discount", amount=int(m[1]))
+
+
 EFFECT_PATTERNS = [
+    (r"the next spell you cast this turn costs \{(\d+)\} less to cast", _next_discount),
     (r"sacrifice (?:~|it) unless you discard (?:(a land card)|a card at random)", _sac_discard),
     (r"target creature an opponent controls doesn't untap during its controller's next untap step", _freeze_theirs),
     (r"target player sacrifices an attacking creature", _simple("edict_attacking", "player")),

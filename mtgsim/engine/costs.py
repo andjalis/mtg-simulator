@@ -526,6 +526,9 @@ class CostsMixin:
                 n += k
         for key, k in card.per_discount:
             n += k * discounts.count(self, p, key)
+        pending = getattr(self, "next_discount", {}).get(p.name)
+        if pending and pending[0] == self.turn:
+            n += pending[1]             # "the next spell you cast this turn costs {N} less" (Peerless Samurai)
         cost["generic"] = max(0, cost.get("generic", 0) - n)
         from ..batch1_templates import spell_tax
         cost["generic"] += spell_tax(self, p, card)
