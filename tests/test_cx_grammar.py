@@ -278,3 +278,25 @@ class Quantities(Base):
     def test_unknown_quantity_is_rejected(self):
         self.assertIsNone(parse_sentence("Creatures you control get +1/+1 until end of turn for each creature blocking it."))
         self.assertIsNone(parse_sentence("Target creature gains flying until end of turn for each card in your hand."))
+
+
+class Registry(unittest.TestCase):
+    def test_a_registered_verb_family_plugs_in(self):
+        from mtgsim import cx_grammar as G
+
+        @G.verb(r"zaps? (\d+) widgets?", heads=("zap", "zaps"), subjects=("permanent", "group"))
+        def zap(m, clause):
+            return [G.Part("pump", int(m[1]), 0)] if clause.duration == "eot" else None
+        try:
+            effs = parse_sentence("Target creature zaps 2 widgets and gains flying until end of turn.")
+            self.assertEqual([(e.kind, e.amount) for e in effs], [("pump", 2), ("grant", 0)])
+            self.assertIsNone(parse_sentence("Target creature zaps 2 widgets."))     # the parser rejected it
+        finally:
+            G.VERBS[:] = [v for v in G.VERBS if v.parse is not zap]
+            G._HEADS.clear()
+
+    def test_families_are_discovered(self):
+        from mtgsim import cx_grammar as G
+        G._load()
+        self.assertTrue({"mtgsim.cx_grammar_stats", "mtgsim.cx_grammar_keywords", "mtgsim.cx_grammar_color",
+                         "mtgsim.cx_grammar_players"} <= {v.module for v in G.VERBS})

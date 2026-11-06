@@ -48,3 +48,16 @@ def _scaled(game, p, eff, item, prev):
         return inners
     n = game.x_quantity(p, eff.data["xq"], item, prev)
     return [dataclasses.replace(e, amount=e.amount * n, amount2=e.amount2 * n) for e in inners]
+
+
+def _load_families():
+    """Import every engine/kinds/cx_grammar_<family>.py module (they register their kinds)."""
+    import importlib
+    import pkgutil
+    from . import __path__ as package
+    for info in sorted(pkgutil.iter_modules(package), key=lambda i: i.name):
+        if info.name.startswith("cx_grammar_"):
+            importlib.import_module(f"{__package__}.{info.name}")
+
+
+_load_families()
