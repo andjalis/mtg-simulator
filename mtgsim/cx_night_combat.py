@@ -17,7 +17,15 @@ def _damage(m):
     return Effect("damage", int(m[1]), target="any")
 
 
+def _power_to_opponents(m):
+    from .cards.model import Effect
+    return Effect("damage_power_opp", target="none")
+
+
 EFFECT_PATTERNS = [
+    # Heartfire Hero, Flaming Tyrannosaurus: "When ~ dies, it deals damage equal to its power to each opponent."
+    (r"(?:it|~) deals damage equal to its power to each opponent", _power_to_opponents),
+    (r"(?:it|~) deals damage to each opponent equal to its power", _power_to_opponents),
     (r"you may untap it and remove it from combat", _remove),
     (r"you may have it deal (\d+) damage to any target", _damage),
 ]

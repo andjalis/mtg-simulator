@@ -24,3 +24,13 @@ def remove_from_combat(game, p, item, **_):
         if src in blockers:
             blockers.remove(src)
     game.log(f"untaps {src.card.name} and removes it from combat", p)
+
+
+@kind("damage_power_opp")
+def damage_power_opp(game, p, item, opp, cause, **_):
+    """"It deals damage equal to its power to each opponent". "It" is the creature the trigger is about: its context
+    (the Elemental that entered for Champion of the Path), else the source itself (a creature that dies)."""
+    ctx = getattr(item, "context", None)
+    subject = ctx if isinstance(ctx, Permanent) else (item.source if item is not None else None)
+    if isinstance(subject, Permanent):
+        game.deal_damage(opp, max(0, subject.power), by=p, cause=cause, source=subject)
