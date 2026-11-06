@@ -87,7 +87,7 @@ def lose_each(game, eff, cause, **_):
 @kind("drain_devotion")
 def drain_devotion(game, p, eff, opp, cause, **_):
     color = eff.data["color"]
-    n = sum(x.card.mana_cost.get(color, 0) for x in p.battlefield)
+    n = sum(x.card.devotion_to(color) for x in p.battlefield)
     game.change_life(opp, -n, cause)
     game.change_life(p, n, cause)
     game.log(f"drains {n} (devotion)", p)
@@ -101,7 +101,7 @@ def prevent_shield(game, p, eff, target, item, **_):
     source), where the le-batch5 event finds it with event_amount set to the prevented total."""
     n = eff.amount
     if eff.data.get("devotion"):
-        n = sum(x.card.mana_cost.get(eff.data["devotion"], 0) for x in p.battlefield)
+        n = sum(x.card.devotion_to(eff.data["devotion"]) for x in p.battlefield)
     who = p if eff.target in ("none", "youperms") else target
     if not isinstance(who, (Permanent, Player)):
         return

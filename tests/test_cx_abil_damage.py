@@ -267,6 +267,11 @@ class Dealer(unittest.TestCase):
         self.assertEqual((w1.damage, w2.damage), (1, 1))
         self.assertEqual(w3.damage, 1)
 
+    def test_devotion_counts_hybrid_pips_for_both_colors(self):
+        """#269: {W/B}{W/B} adds 2 to devotion to white and 2 to devotion to black."""
+        c = card("Test Hybrid", "{1}{W/B}{W/B}", "Creature — Spirit", "", 2, 2)
+        self.assertEqual((c.devotion_to("W"), c.devotion_to("B"), c.devotion_to("R")), (2, 2, 0))
+
 
 if __name__ == "__main__":
     unittest.main()
