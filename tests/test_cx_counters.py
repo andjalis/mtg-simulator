@@ -56,3 +56,30 @@ class MultiTarget(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Poison(MultiTarget):
+    def test_you_get_poison(self):
+        self.run_effects("You get two poison counters.")
+        self.assertEqual(self.a.counters.get("poison", 0), 2)
+
+    def test_that_player_gets_poison_in_trigger(self):
+        from mtgsim.engine.state import StackItem
+        eff = effects("That player gets a poison counter.")[0]
+        self.assertEqual((eff.kind, eff.target), ("cx_poison", "that_player"))
+        item = StackItem(self.a, [eff], [None], context=self.b)
+        self.game.resolve(self.a, eff, None, item)
+        self.assertEqual(self.b.counters.get("poison", 0), 1)
+
+
+class EntersWithX(unittest.TestCase):
+    def test_parse_and_enter(self):
+        from tests.test_templates import card
+        c = card("Test Gem", "{X}{2}", "Artifact", "~ enters with X gem counters on it.")
+        c2 = card("Test Hydra", "{X}{G}", "Creature — Hydra", "~ enters with X +1/+1 counters on it.", 0, 0)
+        self.assertEqual(c.etb_named_counters, ("gem", -1))
+        self.assertEqual(c2.etb_counters, -1)
+        a, b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        game = Game(a, b, random.Random(0), log=True)
+        game.enter_battlefield(a, c, x=3)
+        self.assertEqual(a.battlefield[-1].counters["gem"], 3)
