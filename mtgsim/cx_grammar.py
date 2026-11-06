@@ -222,6 +222,8 @@ def parse_sentence(s: str):
         built += effs
     if group is not None:
         inner = [_effect(k, a, b, target="self", data=d) for k, a, b, d in built]
+        if target == "player":      # "creatures target player controls": the AI picks the player by side
+            data = dict(data, side=_side(inner))
         return [_effect("cx_group", target=target, data=dict(data, group=group, effects=inner))]
     out = []
     for _ in range(copies):
@@ -259,23 +261,41 @@ def _player_verb(text: str):
     return None
 
 
+_HELPS = ("pump", "grant", "gain_life", "draw")
+
+
+def _side(effects) -> str:
+    """Whose side a target player should be on: "mine" when the effects only help, else "theirs"."""
+    hurt = any(e.kind not in _HELPS or e.data.get("side") == "theirs" for e in effects)
+    return "theirs" if hurt else "mine"
+
+
 def parse_players(s: str):
     """[cx_players effect] for "<player> loses 2 life and draws a card", or None (target players are left to the
     templates: the AI chooses a target player by effect kind)."""
-    m = re.fullmatch(rf"({'|'.join(re.escape(k) for k in _PLAYERS)}) ({_PLAYER_VERB}\b.*)", s, re.I)
+    m = re.fullmatch(rf"({'|'.join(re.escape(k) for k in _PLAYERS)}|target player|target opponent) "
+                     rf"({_PLAYER_VERB}\b.*)", s, re.I)
     if m is None:
         return None
     verbs = [_player_verb(v) for v in _PLAYER_SPLIT.split(m[2])]
     if not verbs or None in verbs:
         return None
     inner = [_effect(k, n, target="that_controller") for k, n in verbs]
-    return [_effect("cx_players", data={"who": _PLAYERS[m[1].lower()], "effects": inner})]
+    who = m[1].lower()
+    if who.startswith("target "):
+        if len({_side([e]) for e in inner}) > 1:
+            return None         # helps and hurts: which player the controller wants isn't clear
+        return [_effect("cx_players", target="player", filter="opp" if who.endswith("opponent") else "",
+                        data={"who": "target", "side": _side(inner), "effects": inner})]
+    return [_effect("cx_players", data={"who": _PLAYERS[who], "effects": inner})]
 
 
-def players(game, p, who, item, prev):
+def players(game, p, who, item, prev, target=None):
     """The players a cx_players subject names as it resolves (a two-player game: the defending player is the
     opponent)."""
     opp = game.opponent(p)
+    if who == "target":
+        return [target] if target in game.players else []
     if who == "you":
         return [p]
     if who == "each":

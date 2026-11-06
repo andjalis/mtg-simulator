@@ -251,6 +251,43 @@ class PlayerSubjects(Base):
         self.cast(spell, [bear, None])
         self.assertEqual(self.b.life, 20 - 3)
 
-    def test_target_players_are_left_to_templates(self):
-        self.assertIsNone(parse_sentence("Target player gains 2 life and draws a card."))
+    def test_unknown_player_verbs_are_rejected(self):
         self.assertIsNone(parse_sentence("Each player gains 2 life and sacrifices a creature."))
+
+
+class TargetPlayers(Base):
+    def main_phase(self, text, types="Sorcery"):
+        spell = card("Test Spell", "{U}", types, text)
+        self.assertEqual(spell.unsupported, [], text)
+        self.perm(ISLAND, self.a)
+        self.a.hand = [spell]
+        self.a.ai.main_phase(self.game, self.a)
+        return spell
+
+    def test_ai_casts_a_group_debuff_at_the_opponent(self):
+        bear, mine = self.perm(BEAR, self.b), self.perm(BEAR, self.a)
+        spell = self.main_phase("Creatures target player controls get -1/-1 until end of turn.")
+        self.assertNotIn(spell, self.a.hand)
+        self.assertEqual((bear.power, mine.power), (BEAR.power - 1, BEAR.power))
+
+    def test_ai_casts_a_group_pump_at_itself(self):
+        bear, theirs = self.perm(BEAR, self.a), self.perm(BEAR, self.b)
+        self.game.step = "main1"
+        spell = card("Test Spell", "{U}", "Instant", "Creatures target player controls get +1/+1 until end of turn.")
+        with self.game.targeting(spell):
+            tgt = self.a.ai.choose_target(self.game, self.a, spell.spell_effects[0], spell)
+        self.assertIs(tgt, self.a)
+        self.cast(spell, [self.a])
+        self.assertEqual((bear.power, theirs.power), (BEAR.power + 1, BEAR.power))
+
+    def test_ai_casts_target_player_loses_life_at_the_opponent(self):
+        life = (self.a.life, self.b.life)
+        spell = self.main_phase("Target player mills two cards and loses 2 life.")
+        self.assertNotIn(spell, self.a.hand)
+        self.assertEqual((self.a.life, self.b.life), (life[0], life[1] - 2))
+        self.assertEqual(len(self.b.graveyard), 2)
+
+    def test_target_opponent_and_mixed_effects(self):
+        effs = parse_sentence("Target opponent discards a card.")
+        self.assertEqual((effs[0].target, effs[0].filter, effs[0].data["side"]), ("player", "opp", "theirs"))
+        self.assertIsNone(parse_sentence("Target player draws a card and loses 1 life."))
