@@ -591,7 +591,8 @@ def _mana_restriction(text: str):
         word = m[1].rstrip("s").lower()
         return word if word in ("artifact", "creature") else "subtype:" + word.capitalize()
     m = re.fullmatch(r"to cast an? (\w+) spell(?: or an? (\w+) spell)?", text)
-    if m:
+    if m and not {*m.groups()} & {"multicolored", "monocolored", "colorless", "colored", "white", "blue", "black",
+                                  "red", "green"}:      # colour words go to the predicate parser (cx_abil_mana)
         return "subtype:" + "|".join(t.capitalize() for t in m.groups() if t)
     from ..cx_abil_mana import parse as general_restriction
     return general_restriction(text)

@@ -45,6 +45,10 @@ def _atoms(phrase: str):
             return None
         if w == "legendary":
             out.append("legendary")
+        elif w in ("multicolored", "monocolored", "colorless", "colored"):
+            out.append("k:" + w)
+        elif w in _COLOR_LETTER:
+            out.append("c:" + _COLOR_LETTER[w])
         elif w.startswith("non") and w[3:] in _TYPES:
             out.append("n:" + w[3:])
         elif w in _TYPES:
@@ -96,6 +100,12 @@ def _match(atoms, card, perm=None) -> bool:
             return True
         if kind == "s" and v in subtypes:
             return True
+        if kind == "c" and v in card.colors:
+            return True
+        if kind == "k":
+            n = len(card.colors)
+            if {"multicolored": n >= 2, "monocolored": n == 1, "colorless": n == 0, "colored": n >= 1}[v]:
+                return True
     return False
 
 

@@ -151,9 +151,6 @@ class ManaEffects(unittest.TestCase):
         self.assertEqual(len(set(self.pool())), 1)              # all one colour
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class BoostAI(unittest.TestCase):
     """HeuristicAI activates a mana-adding ability when it brings a spell in hand within reach, and not otherwise."""
@@ -189,3 +186,41 @@ class BoostAI(unittest.TestCase):
         self.assertTrue(self.a.hand)
         self.assertFalse(fount.tapped if hasattr(fount, "tapped") else False)
         self.assertEqual(self.a.pool, [])
+
+
+PILLAR = card("Test Pillar", "", "Land", "{T}: Add one mana of any color. Spend this mana only to cast a multicolored spell.")
+CHARM = card("Test Charm", "{W}{U}", "Instant", "You gain 3 life.")
+MONO = card("Test Mono", "{W}", "Instant", "You gain 2 life.")
+
+
+class Multicolored(unittest.TestCase):
+    def test_parse(self):
+        self.assertEqual(PILLAR.unsupported, [])
+        self.assertTrue(PILLAR.mana_restriction.startswith("pred:"))
+        self.assertFalse(PILLAR.mana_restriction.startswith("subtype:"))
+
+    def test_pays_multicolored_spells_only(self):
+        a, b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        game = Game(a, b, random.Random(0), log=True)
+        pillar = game.enter_battlefield(a, PILLAR)
+        pillar.sick = False
+        self.assertTrue(game.mana_allowed(pillar, CHARM))
+        self.assertFalse(game.mana_allowed(pillar, MONO))
+        self.assertFalse(game.mana_allowed(pillar, BEAR))
+        self.assertFalse(game.mana_allowed(pillar, M.AbilityPayment(pillar)))
+
+    def test_heuristic_ai_casts_the_charm_with_the_pillar(self):
+        from mtgsim.ai import HeuristicAI
+        a, b = Player("a", [], HeuristicAI()), Player("b", [], HeuristicAI())
+        game = Game(a, b, random.Random(0), log=True)
+        game.turn, game.step = 2, "main2"
+        a.library = b.library = [ISLAND] * 10
+        game.enter_battlefield(a, PILLAR).sick = False
+        game.enter_battlefield(a, card("Test Plains", types="Basic Land — Plains", text="({T}: Add {W}.)")).sick = False
+        a.hand = [CHARM]
+        a.ai.main_phase(game, a)
+        self.assertIn(CHARM, a.graveyard)                       # {W} from the Plains, {U} from the Pillar
+
+
+if __name__ == "__main__":
+    unittest.main()
