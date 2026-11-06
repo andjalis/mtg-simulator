@@ -30,7 +30,8 @@ class Parsing(unittest.TestCase):
     def test_rejections(self):
         for s in ("Draw a cards.", "Draw two card.", "Each player discards your hand.", "Discard their hand.",
                   "Target player draws X cards.", "Draw two cards until end of turn.",
-                  "Discard two cards at random this turn."):
+                  "Discard two cards at random this turn.",
+                  "Discards a card at random.", "Discards your hand."):        # "discards" needs a player subject
             self.assertIsNone(parse_sentence(s), s)
 
 
@@ -60,6 +61,15 @@ class Resolving(Base):
         self.game.stack.append(item)
         self.game.resolve_top()
         self.assertEqual((len(self.b.hand), len(self.b.graveyard)), (2, 3))
+
+    def test_burning_inquiry_every_player_discards(self):
+        """"Each player draws three cards, then discards three cards at random": one chain, every player discards."""
+        self.a.hand, self.b.hand = [], [BEAR] * 2
+        spell = self.spell("Each player draws three cards, then discards three cards at random.", "Sorcery")
+        self.assertEqual([e.kind for e in spell.spell_effects], ["cx_players"])
+        self.cast(spell)
+        self.assertEqual((len(self.a.hand), len(self.b.hand)), (0, 2))
+        self.assertEqual(len(self.b.graveyard), 3)
 
     def test_each_player_discards_their_hand(self):
         self.a.hand, self.b.hand = [BEAR] * 2, [BEAR] * 4
