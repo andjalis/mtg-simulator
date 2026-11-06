@@ -499,6 +499,10 @@ def _count_spec(desc: str):
 
 def parse_fallback(s: str, effects: list) -> bool:
     """The _parse_effects hook: append the sentence's effects and return True, or return False."""
+    if re.fullmatch(r"(?:it's|it is) still an? (land|planeswalker)\.?", s.strip(), re.I) and effects \
+            and effects[-1].kind == "cx_animate" and not effects[-1].data.get("addition"):
+        effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, still=s.split()[-1].rstrip(".").capitalize()))
+        return True         # "~ becomes a 2/2 artifact creature until end of turn. It's still a land."
     new = parse_sentence(s)
     if not new:
         return False
