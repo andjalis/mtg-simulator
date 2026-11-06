@@ -481,6 +481,8 @@ class CostsMixin:
     def cost_of(self, p: Player, card: CardDef, *, assist=True) -> dict:
         """The mana cost after cost reductions (Tolarian Terror, Ghalta)."""
         cost = dict(card.mana_cost)
+        if card.is_ability:
+            return cost          # an activated ability (channel, unearth, ...): spell cost modifiers don't apply
         n = 0
         if card.cost_reduction == "instant_sorcery_gy":
             n = sum(c.is_instant or c.is_sorcery for c in p.graveyard)
@@ -768,20 +770,21 @@ class CostsMixin:
 
     def can_cast_now(self, p: Player, card: CardDef, *, during_resolution=False) -> bool:
         """Timing, mana, zone and (for counterspells) a spell to target."""
-        if self.nonmana_locked(p) and (card.is_instant or card.is_sorcery):
+        spell = not card.is_ability          # abilities (channel, unearth, ...) are not subject to spell restrictions
+        if spell and self.nonmana_locked(p) and (card.is_instant or card.is_sorcery):
             return False
         from ..advanced_templates import cast_allowed
-        if not cast_allowed(self, p, card):
+        if spell and not cast_allowed(self, p, card):
             return False
-        if self.named_cast_banned(card):    # "Spells with the chosen name can't be cast" (Meddling Mage)
+        if spell and self.named_cast_banned(card):    # "Spells with the chosen name can't be cast" (Meddling Mage)
             return False
         if card.is_land or not self._available(p, card):
             return False
         from ..batch1_templates import spell_limited
-        if spell_limited(self, p):
+        if spell and spell_limited(self, p):
             return False
         from ..batch1_templates import spell_kind_ok
-        if any(not x.abilities_suppressed and x.card.advanced_rules.get("no_cast") and
+        if spell and any(not x.abilities_suppressed and x.card.advanced_rules.get("no_cast") and
                any(spell_kind_ok(card, kind) for kind in x.card.advanced_rules["no_cast"])
                for pl in self.players for x in pl.battlefield):
             return False          # "Creature spells can't be cast" (Aether Storm): the ban applies to everyone
@@ -799,7 +802,7 @@ class CostsMixin:
             return False
         if card.extra_discard and not card.discard_or_pay and self.spare_cards(p, card) < card.extra_discard:
             return False
-        if self.active is not p and any(x.card.opp_no_cast for x in self.opponent(p).battlefield):
+        if spell and self.active is not p and any(x.card.opp_no_cast for x in self.opponent(p).battlefield):
             return False
         if card.extra_sacrifice and not card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
             return False

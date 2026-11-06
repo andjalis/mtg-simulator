@@ -139,6 +139,15 @@ class UpkeepKeywords(unittest.TestCase):
         self.assertIn(CUTTER, self.a.hand)
         self.assertFalse(any(x.card.name == CUTTER.name for x in self.a.battlefield))
 
+    def test_unearth_ignores_spell_cost_modifiers(self):
+        from mtgsim.carddb import CardDB
+        db = CardDB(offline=True)
+        zombie, thalia = db.get("Dregscape Zombie"), db.get("Thalia, Guardian of Thraben")
+        self.game.enter_battlefield(self.b, thalia)
+        self.a.graveyard.append(zombie)
+        option = next(o for o in self.game.spell_options(self.a) if self.game._origin(o)[1] == "unearth")
+        self.assertEqual(self.game.cost_of(self.a, option), {"generic": 0, "B": 1})      # unearth {B}: not a spell, no Thalia tax
+
     def test_unearth_from_graveyard_then_exile(self):
         self.game.active_idx = 0
         self.put(self.a, MOUNTAIN, 2)
