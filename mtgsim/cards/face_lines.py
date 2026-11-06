@@ -482,6 +482,17 @@ def _face_land_and_mana_lines(st, line):
         m = re.fullmatch(r"\{T\}: Add ([^.]+)\.(?: ~ deals 1 damage to you\.)?", line)
         if m:
             cols, amount = _parse_mana_ability(m[1])
+            if not cols and "chosen color" not in m[1]:
+                # No colour in the wording: "N mana in any combination of colors" is exactly N mana of any colours;
+                # "N mana of any one color" / "of different colors" are played as that too (recorded below). Anything
+                # else makes no mana we can model, so the line stays unparsed (the card stays partial).
+                fixed = re.fullmatch(r"(one|two|three|four|five|six) mana (of any one color|in any combination of "
+                                     r"colors|of different colors)", m[1])
+                if fixed is None:
+                    return line
+                cols, amount = set(COLORS), _num(fixed[1])
+                if fixed[2] != "in any combination of colors":
+                    approximations.append(f"\"Add {m[1]}\" may make any combination of colors")
             produces |= cols
             extra["mana_amount"] = max(amount, extra.get("mana_amount", 1))
             if "equal to" in m[1] or " for each " in m[1]:
