@@ -327,6 +327,13 @@ class HeuristicAIGames(unittest.TestCase):
         self.assertEqual(self.b.life, 16)
         self.assertFalse(any(x.card.is_token for x in self.a.battlefield))
 
+    def test_each_player_creates_a_food(self):
+        self.setup("Elephant-Mandrill", "Forest", "main1", 0)
+        self.game.main_phase(self.a)
+        self.game.settle()
+        self.assertIn("Elephant-Mandrill", [x.card.name for x in self.a.battlefield])
+        for p in (self.a, self.b):
+            self.assertEqual(sum(x.card.token_kind == "food" for x in p.battlefield), 1, p.name)
     def test_they_create_a_treasure_after_vraska_destroys_their_permanent(self):
         self.setup("Vraska, the Cutting Glare", "Forest", "main1", 0)
         for land in ("Swamp", "Swamp", "Forest"):          # seven lands: {B}{B}{G}, and six for the trigger
@@ -337,15 +344,6 @@ class HeuristicAIGames(unittest.TestCase):
         self.assertIn("Vraska, the Cutting Glare", [x.card.name for x in self.a.battlefield])
         self.assertEqual(sum(x.card.token_kind == "treasure" for x in self.b.battlefield), 1)
         self.assertFalse(any(x.card.token_kind == "treasure" for x in self.a.battlefield))
-
-    def test_each_player_creates_a_food(self):
-        self.setup("Elephant-Mandrill", "Forest", "main1", 0)
-        self.game.main_phase(self.a)
-        self.game.settle()
-        self.assertIn("Elephant-Mandrill", [x.card.name for x in self.a.battlefield])
-        for p in (self.a, self.b):
-            self.assertEqual(sum(x.card.token_kind == "food" for x in p.battlefield), 1, p.name)
-
 
 if __name__ == "__main__":
     unittest.main()
