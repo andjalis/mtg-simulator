@@ -111,3 +111,75 @@ def resolve_instead(effects: list) -> list:
             effects[i + n] = dataclasses.replace(g, target=target, data=data)
         i = j
     return bad
+
+
+# ---------------------------------------------------------------- "B unless ..."
+
+_PAYERS = {"you": "you", "they": "they", "that player": "they", "its controller": "controller",
+           "their controller": "controller", "that creature's controller": "controller",
+           "that permanent's controller": "controller", "that spell's controller": "controller"}
+
+
+def _cost(text: str):
+    """The cost of "pay(s) {2}{U}", "pay(s) 3 life", "sacrifice(s) a|another <filter>" or "discard(s) a [<filter>]
+    card", else None."""
+    from .cards.model import parse_mana_cost
+    m = re.fullmatch(r"pays? ((?:\{[\dWUBRGC]\})+)", text, re.I)
+    if m:
+        return {"mana": parse_mana_cost(m[1].upper())}
+    m = re.fullmatch(r"pays? (\d+) life", text, re.I)
+    if m:
+        return {"life": int(m[1])}
+    from .cx_condlib import _filter
+    m = re.fullmatch(r"sacrifices? (a|an|another) ([\w -]+)", text, re.I)
+    if m:
+        spec = _filter(m[2], plural=False)
+        return {"sacrifice": spec, "other": m[1].lower() == "another"} if spec else None
+    m = re.fullmatch(r"discards? (?:a|an) (?:([\w -]+) )?card", text, re.I)
+    if m:
+        spec = _filter(m[1], plural=False) if m[1] else {}
+        return {"discard": spec} if spec is not None else None
+    return None
+
+
+def _who_pays(payer: str, first):
+    """The cx_unless payer code for the payer words and B's first effect, or None when the words have no fixed
+    referent there: "they" is the player B names, "its controller" the controller of the object B names."""
+    from .engine.state import TARGETED
+    if payer == "you":
+        return "you"
+    if first.kind == "cx_players":
+        who = first.data.get("who")
+        return {"controller": "prev_controller", "that_player": "context", "opponents": "opponent"}.get(who) \
+            if payer == "they" else None
+    if payer == "they":
+        return {"player": "target", "each_opponent": "opponent", "that_player": "context"}.get(first.target)
+    if first.target == "prev":
+        return "prev_controller"
+    return "controller" if first.target in TARGETED and first.target != "player" else None
+
+
+@rider(r"(?P<body>.+?) unless (?P<rest>.+)")
+def unless(m, inner):
+    """"B unless C": B when C doesn't hold. "B unless <payer> pays <cost>": the payer may pay as B would resolve;
+    B happens only if they don't (a cx_unless Effect just before B records the choice)."""
+    from .cards.clauses import _if_cond
+    from .cards.model import Effect
+    from .cx_condlib import _code
+    effects = _body(m["body"])
+    if not effects or any(e.target == _SAME for e in effects):
+        return None
+    rest = m["rest"].strip()
+    payer = next((v for k, v in _PAYERS.items() if rest.lower().startswith(k + " ")), None)
+    if payer is None:
+        cond = _if_cond(rest)
+        return [dataclasses.replace(e, cond=_both(e.cond, _negate(cond))) for e in effects] if cond else None
+    cost = _cost(rest[len(next(k for k, v in _PAYERS.items() if rest.lower().startswith(k + " "))) + 1:])
+    if cost is None:
+        return None
+    who = _who_pays(payer, effects[0])
+    if who is None:
+        return None
+    gate = Effect("cx_unless", data=dict(cost, payer=who))
+    unpaid = _code("unless_unpaid")
+    return [gate] + [dataclasses.replace(e, cond=_both(e.cond, unpaid)) for e in effects]

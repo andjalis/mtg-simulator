@@ -175,3 +175,76 @@ class ThatLand(Base):
             return before - (self.b.life - sum(x.damage for x in self.b.battlefield if x in self.b.battlefield))
         self.assertEqual(dealt(MOUNTAIN), 2)
         self.assertEqual(dealt(FOREST), 1)
+
+
+class Unless(Base):
+    def setUp(self):
+        super().setUp()
+        from tests.test_templates import ISLAND
+        self.island = ISLAND
+
+    def parse(self, text):
+        from mtgsim.cards import parse as P
+        return P._parse_effects(text)
+
+    def test_payers_and_costs(self):
+        cases = {"Destroy target creature unless its controller pays {3}.": "controller",
+                 "Destroy that creature unless its controller pays {2}.": "prev_controller",
+                 "That player loses 2 life unless they pay {2}.": "context",
+                 "Each opponent loses 2 life unless they pay {2}.": "opponent",
+                 "Target player mills three cards unless they pay 3 life.": "target",
+                 "That player loses 2 life unless they sacrifice a creature.": "context"}
+        for text, payer in cases.items():
+            effects, bad = self.parse(text)
+            self.assertEqual(bad, [], text)
+            self.assertEqual((effects[0].kind, effects[0].data["payer"]), ("cx_unless", payer), text)
+            self.assertTrue(all(e.cond == 'lib:["unless_unpaid"]' for e in effects[1:]), text)
+
+    def test_rejects(self):
+        for text in ("You gain 3 life unless any player pays {1}.",            # any player: not modelled
+                     "Draw a card unless they pay {2}.",                       # "they": no player named
+                     "Target player loses 2 life unless its controller pays {1}.",
+                     "Destroy target creature unless its controller pays {X}."):
+            effects, bad = self.parse(text)
+            self.assertTrue(bad, text)
+
+    def test_condition_form(self):
+        effects, bad = self.parse("Draw two cards unless there are seven or more cards in your graveyard.")
+        self.assertEqual(bad, [])
+        self.assertTrue(effects[0].cond.startswith('lib:["not"'))
+
+    def test_opponent_pays_when_able_else_the_effect_happens(self):
+        spell = self.spell("Destroy target creature unless its controller pays {1}.", "Sorcery")
+        bear = self.perm(BEAR, self.b)
+        land = self.perm(self.island, self.b)
+        self.cast(spell, targets=[None, bear])
+        self.assertIn(bear, self.b.battlefield)               # paid with the Island
+        self.assertTrue(land.tapped)
+        self.cast(spell, targets=[None, bear])
+        self.assertNotIn(bear, self.b.battlefield)            # no untapped mana left: destroyed
+
+    def test_life_and_sacrifice_costs(self):
+        spell = self.spell("Target player mills two cards unless they pay 3 life.", "Sorcery")
+        self.cast(spell, targets=[None, self.b])
+        self.assertEqual((self.b.life, len(self.b.graveyard)), (17, 0))
+        self.b.life = 5                                       # 5 - 3 would leave 2: they don't pay
+        self.cast(spell, targets=[None, self.b])
+        self.assertEqual((self.b.life, len(self.b.graveyard)), (5, 2))
+        spell = self.spell("Each opponent loses 2 life unless they sacrifice a creature.", "Sorcery")
+        bear = self.perm(BEAR, self.b)
+        self.cast(spell)
+        self.assertNotIn(bear, self.b.battlefield)
+        self.assertEqual(self.b.life, 5)
+        self.cast(spell)
+        self.assertEqual(self.b.life, 3)
+
+    def test_ai_casts_it_at_the_opponent(self):
+        theirs, mine = self.perm(BEAR, self.b), self.perm(BEAR, self.a)
+        spell = card("Test Spell", "{U}", "Sorcery", "Destroy target creature unless its controller pays {2}.")
+        self.assertEqual(spell.unsupported, [])
+        self.perm(self.island, self.a)
+        self.a.hand = [spell]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertNotIn(spell, self.a.hand)
+        self.assertNotIn(theirs, self.b.battlefield)          # aimed at the opponent's creature, who can't pay
+        self.assertIn(mine, self.a.battlefield)

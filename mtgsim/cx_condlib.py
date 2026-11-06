@@ -878,6 +878,8 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         if kind == "cast_zone":
             return getattr(spell if spell is not None else source, "cast_zone", None) == args[0]
         return args[0] in getattr(spell if spell is not None else source, "mana_colors", ())
+    if kind == "unless_unpaid":          # "B unless <payer> pays ...": the cx_unless just before B wasn't paid
+        return not getattr(item, "cx_unless_paid", False)
     if kind == "ref_is":
         from .engine.state import Permanent
         noun, spec = args
