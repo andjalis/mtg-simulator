@@ -33,8 +33,30 @@ def _face_special_lines(st, line):
         if gate is not None:
             _apply_speed_gate(gate, triggers, activated)
             gate = None
+        tier = getattr(st, "tier", None)
+        if tier is not None:      # what the lines under an "N+ | ..." Station tier added is gated on its charge counters
+            for t in triggers[tier[1]:]:
+                for eff in t.effects:
+                    eff.cond = eff.cond or f"charge>={tier[0]}"
+            for a in activated[tier[2]:]:
+                a.min_charge = max(a.min_charge, tier[0])
+            if extra != tier[3]:      # a static or other line the gate can't cover: don't count it as fully played
+                approximations.append(f"tier {tier[0]}+ effect applies without needing {tier[0]} charge counters")
+            st.tier = (tier[0], len(triggers), len(activated), dict(extra))
         if not line:
+            st.tier = None
             return None
+        tm = re.fullmatch(r"(\d+)\+ \| (.*)", line)
+        if tm and extra.get("station"):
+            kws = [k.strip().lower() for k in re.split(r",| and ", tm[2])]
+            if kws and all(k in KEYWORDS for k in kws) or re.match(r"(When|Whenever|At the beginning)\b", tm[2]):
+                st.tier = (int(tm[1]), len(triggers), len(activated), dict(extra))
+                line = tm[2]
+            if kws and all(k in KEYWORDS for k in kws):
+                for k in kws:
+                    extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((k, f"cx:charge>={tm[1]}"),)
+                st.tier = st.tier[:3] + (dict(extra),)
+                return None
         gm = re.fullmatch(r"Max speed — (.+)", line)
         if gm:
             gate = len(triggers), len(activated)
