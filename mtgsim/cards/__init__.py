@@ -189,3 +189,6 @@ from .. import cx_night_counter as _cx_night_counter
 _EFFECT_PATTERNS += _cx_night_counter.EFFECT_PATTERNS
 from .. import cx_night_combat as _cx_night_combat
 _EFFECT_PATTERNS += _cx_night_combat.EFFECT_PATTERNS
+from .. import cx_night_loot as _cx_night_loot
+_SUBS += _cx_night_loot.SUBS
+_EFFECT_PATTERNS += _cx_night_loot.EFFECT_PATTERNS
