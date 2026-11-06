@@ -152,7 +152,7 @@ class EffectsMixin:
             if target.kind == "spell":
                 base, kind, _ = self._origin(target.card)
                 owner = getattr(base, "owner", None) or target.controller
-                (owner.exile if kind in ("aftermath", "flashback", "jump_start") else owner.hand).append(base)
+                (owner.exile if kind in ("aftermath", "flashback", "jump_start", "beam") else owner.hand).append(base)
             self.log(f"{target} is returned to its owner's hand", p)
             return
         if target.is_spell and not self.counterable(target):
@@ -181,7 +181,7 @@ class EffectsMixin:
         self.stack.remove(target)
         if target.kind == "spell":
             base, kind, _ = self._origin(target.card)
-            exiled = kind in ("flashback", "jump_start", "grave_permission", "aftermath") or eff.data.get("exile")    # "exile it instead of putting it into ... graveyard"
+            exiled = kind in ("flashback", "jump_start", "grave_permission", "aftermath", "beam") or eff.data.get("exile")    # "exile it instead of putting it into ... graveyard"
             owner = getattr(base, "owner", None) or target.controller
             (owner.exile if exiled else owner.graveyard).append(base)
         self.log(f"{target} is countered", p)

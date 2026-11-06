@@ -19,6 +19,8 @@ import re
 
 def parse_line(line: str, st) -> bool:
     from .cards.model import AltCost, parse_mana_cost
+    if parse_alt_line(line, st):
+        return True
     m = re.fullmatch(r"Splice onto Arcane ((?:\{[^}]+\})+)(?: \(.*\))?", line)
     if m:
         st.alt_costs.append(AltCost("splice", parse_mana_cost(m[1])))
@@ -70,3 +72,86 @@ def _cost_variants(game, p, card) -> list:
             out.append(game._variant(card, "buyback", AltCost("buyback", dict(card.mana_cost), sacrifice=a.sacrifice,
                                                               discard=a.discard)))
     return out
+
+
+# ---------------------------------------------------------------------------
+# Conditional and extra-cost alternative casts
+#
+#   Freerunning {3}{B}   cast for it if you dealt combat damage to a player this turn with an Assassin or commander
+#   Prowl {2}{B}         ... with a creature that shares a creature type with the card
+#   Web-slinging {2}{W}  cast for it if you also return a tapped creature you control to its owner's hand
+#   Beam me up {3}{G}    cast it from your graveyard for it if you also return a creature you control to its
+#                        owner's hand; the spell is exiled as it resolves (``beam`` variant, graveyard zone)
+#   Reinforce 2—{1}{G}   {1}{G}, discard this card: put two +1/+1 counters on target creature (channel-style)
+#
+# Freerunning / prowl / web-slinging become ``cond_alt_N`` costs of cx_altcost (condition code + parts), so the
+# hand variants, payment and the AI's "only when the normal cost isn't payable" rule are shared with it.
+# ---------------------------------------------------------------------------
+
+
+def note_hit(game, src) -> None:
+    """Record the creature types of a creature that dealt combat damage to a player (freerunning, prowl)."""
+    p = src.controller
+    hits = getattr(p, "mech_hits", None)
+    if hits is None or hits[0] != game.turn:
+        hits = p.mech_hits = (game.turn, [])
+    hits[1].append(frozenset(src.card.subtypes))
+
+
+def check(game, p, code: str) -> bool:
+    """``mech:hit:<Type>|<Type>``: you dealt combat damage to a player this turn with one of those types."""
+    hits = getattr(p, "mech_hits", None)
+    if hits is None or hits[0] != game.turn:
+        return False
+    types = set(code[9:].split("|"))
+    return any(types & h for h in hits[1])
+
+
+def pay_beam(game, p) -> bool:
+    """Return a creature you control to its owner's hand (the cheapest first)."""
+    mine = sorted((x for x in p.battlefield if x.is_creature), key=lambda x: x.card.cmc)
+    if not mine:
+        return False
+    game.leave_battlefield(mine[0], "hand")
+    return True
+
+
+def parse_alt_line(line: str, st) -> bool:
+    from .cards.model import AltCost, parse_mana_cost
+    m = re.fullmatch(r"(Freerunning|Prowl|Web-slinging|Beam me up) ((?:\{[^}]+\})+)(?: \((.*)\))?", line)
+    if m:
+        cost = parse_mana_cost(m[2])
+        kind = m[1]
+        if kind == "Beam me up":
+            st.alt_costs.append(AltCost("beam", cost, zone="graveyard"))
+            return True
+        parts, code = (), ""
+        if kind == "Web-slinging":
+            parts = (("bounce", 1, {"tapped": True, "types": ["creature"]}),)
+        elif kind == "Freerunning":
+            code = "mech:hit:Assassin"      # or a commander: no commanders in this simulator
+        else:
+            types = st.type_line.split("—")[1].split() if "—" in st.type_line else []
+            if not types:
+                return False
+            code = "mech:hit:" + "|".join(types)     # prowl: a creature that shares a type with the card
+        index = len(st.extra.setdefault("advanced_rules", {}).get("alt_if", ()))
+        st.extra["advanced_rules"]["alt_if"] = st.extra["advanced_rules"].get("alt_if", ()) + ((code, parts),)
+        st.alt_costs.append(AltCost(f"cond_alt_{index}", cost))
+        return True
+    m = re.fullmatch(r"Reinforce (\d+)—((?:\{[^}]+\})+)(?: \(.*\))?", line)
+    if m:
+        from .cards import _parse_effects
+        effs, bad = _parse_effects(f"Put {m[1]} +1/+1 counters on target creature.")
+        if bad:
+            return False
+        st.alt_costs.append(AltCost("channel", parse_mana_cost(m[2]), effects=effs))
+        return True
+    return False
+
+
+def beam_variants(game, p, card) -> list:
+    """Beam me up casts of a graveyard card: needs a creature to return."""
+    if not any(x.is_creature for x in p.battlefield):
+        return []
+    return [game._variant(card, "beam", a) for a in card.alt_costs if a.kind == "beam"]

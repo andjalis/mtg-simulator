@@ -436,7 +436,7 @@ class StackMixin:
             return
         if kind in ("adventure", "cascade_adventure", "rebound_adventure"):
             owner.on_adventure.append(base)
-        elif kind in ("flashback", "jump_start", "grave_permission", "aftermath"):
+        elif kind in ("flashback", "jump_start", "grave_permission", "aftermath", "beam"):
             if getattr(item, "flip_gy", False) and item.card.back is not None:
                 self.enter_battlefield(owner, item.card.back, counters={"finality": 1}, physical_card=base)
                 self.log(f"{item.card.name} returns transformed", owner)
@@ -489,6 +489,9 @@ class StackMixin:
         turn_condition = turn_conditions.check(self, p, c, item)
         if turn_condition is not None:
             return turn_condition
+        if c.startswith("mech:"):
+            from ..cx_mech import check
+            return check(self, p, c)
         if c.startswith("lib:"):
             return cx_condlib.check(self, p, c, item, prev=prev)
         if c == "city_blessing":
