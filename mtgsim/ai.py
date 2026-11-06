@@ -444,9 +444,9 @@ def _sized_inner(game: Game, me: Player, eff: Effect) -> list:
     """A grammar wrapper's inner effects with the amounts they will resolve with: X paid (the wrapper's amount,
     as plan_spell sized it) and "for each" / "where X is" counts, as cx_group / cx_players apply them."""
     inner = eff.data["effects"]
-    if eff.data.get("x"):
-        inner = [dataclasses.replace(e, amount=eff.amount, amount2=eff.amount if e.data.get("x2") else e.amount2)
-                 if e.data.get("x") else e for e in inner]
+    # keyed on the inner Part: _sized puts X in the wrapper's amount and clears the wrapper's own x flag
+    inner = [dataclasses.replace(e, amount=eff.amount, amount2=eff.amount if e.data.get("x2") else e.amount2)
+             if e.data.get("x") else e for e in inner]
     if eff.data.get("xq"):
         n = game.x_quantity(me, eff.data["xq"], None, None)
         inner = [dataclasses.replace(e, amount=e.amount * n, amount2=e.amount2 * n) for e in inner]

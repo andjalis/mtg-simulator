@@ -97,3 +97,5 @@ class SpellBar(Base):
         inner = G._effect("lose_life", 0, target="that_controller", data={"x": True})
         wrapper = G._effect("cx_players", 3, data={"who": "opponents", "x": True, "effects": [inner]})
         self.assertEqual([e.amount for e in _sized_inner(self.game, self.a, wrapper)], [3])
+        sized = G._effect("cx_players", 3, data={"who": "opponents", "x": False, "effects": [inner]})   # after _sized
+        self.assertEqual([e.amount for e in _sized_inner(self.game, self.a, sized)], [3])
