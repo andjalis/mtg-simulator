@@ -802,7 +802,8 @@ class CostsMixin:
         if not during_resolution and not card.instant_speed and not (p is self.active and self.step in ("main1", "main2")
                                            and not self.stack):
             from ..cx_next_turn import player_flag
-            if not (card.is_sorcery and player_flag(self, p, "sorcery_flash")):
+            if not (card.is_sorcery and (player_flag(self, p, "sorcery_flash") or any(
+                    x.card.advanced_rules.get("sorcery_flash") and not x.abilities_suppressed for x in p.battlefield))):
                 return False
         if any(e.target == "spell" for e in card.spell_effects):
             if not any(self.can_counter(e, item, p) for e in card.spell_effects if e.kind == "counter"
