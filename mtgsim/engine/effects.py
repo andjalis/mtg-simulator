@@ -366,8 +366,10 @@ class EffectsMixin:
         self.dies(perm, counter_sources=counter_sources) if perm.is_creature else self.leave_battlefield(perm, "graveyard")
 
     def discard_card(self, p: Player, card: CardDef):
-        card = self.move_card(card, p.hand, p.graveyard, reason="discard")
+        from ..madness import after_discard, discard_destination
+        card = self.move_card(card, p.hand, discard_destination(self, p, card), reason="discard")
         p.discarded_cards.append(card)
+        after_discard(self, p, card)
         self.fire(p, "you_discard")
         # The subject lets typed listeners ("whenever an opponent discards a creature/land card",
         # Waste Not) filter on the discarded card's types.

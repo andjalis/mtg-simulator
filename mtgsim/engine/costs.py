@@ -742,7 +742,7 @@ class CostsMixin:
             return getattr(self, "foreign_zones", {}).get((id(p), kind), p.exile)
         return {"grave_permission": p.graveyard, "aftermath": p.graveyard, "from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile, "airbent": p.airbent,
-                "mayhem": p.graveyard, "unearth": p.graveyard, "disturb": p.graveyard, "jump_start": p.graveyard,
+                "mayhem": p.graveyard, "madness": p.exile, "unearth": p.graveyard, "disturb": p.graveyard, "jump_start": p.graveyard,
                 "retrace": p.graveyard,
                 "escape": p.graveyard, "impulse": p.exile, "suspended": p.exile, "rebound": p.exile,
                 "cascade": p.exile, "cascade_adventure": p.exile,
