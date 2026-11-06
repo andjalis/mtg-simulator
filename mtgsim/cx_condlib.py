@@ -578,10 +578,13 @@ def _src_is(m):
     return _code("src_is", f) if f else ""
 
 
-@rule(r"(?:that land|that artifact|that enchantment) is (?P<q>a|an) (?P<f>[\w ,/-]+?)")
-def _prev_is_kind(m):
-    """"Put a land onto the battlefield. If that land is a Mountain, ...": the previous effect's object."""
-    return _prev_is(m)
+@rule(r"that (?P<n>land|artifact|enchantment) is (?P<q>a|an) (?P<f>[\w ,/-]+?)")
+def _ref_is(m):
+    """"Untap target land. If that land is a Mountain, ..." / "Whenever a land you control enters, ~ deals 1 damage
+    to any target. If that land is a Mountain, ...": the latest land named, the previous effect's object when it
+    is one, else the object the trigger is about."""
+    f = _filter(m["f"].replace(",", ""), plural=False)
+    return _code("ref_is", m["n"].lower(), f) if f else ""
 
 
 @rule(r"(?:it's|it is|that card is) (?P<q>a|an) (?P<f>[\w ,/-]+?) card")
@@ -875,6 +878,13 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         if kind == "cast_zone":
             return getattr(spell if spell is not None else source, "cast_zone", None) == args[0]
         return args[0] in getattr(spell if spell is not None else source, "mana_colors", ())
+    if kind == "ref_is":
+        from .engine.state import Permanent
+        noun, spec = args
+        for obj in (prev, getattr(item, "context", None)):
+            if isinstance(obj, Permanent) and noun.capitalize() in obj.card.types:
+                return _card_ok(obj.card, spec, obj)
+        return False
     if kind == "src_is":
         from .engine.state import Permanent
         return isinstance(source, Permanent) and _card_ok(source.card, args[0], source)

@@ -284,6 +284,8 @@ def _parse_effects(text: str, opts: bool = False):
         for eff in effects[first:]:
             if eff.data.get("unparsed_token_keywords"):
                 unmatched.append("Unsupported token keywords: " + ", ".join(eff.data["unparsed_token_keywords"]))
+    from ..cx_grammar_cond import resolve_instead
+    unmatched += resolve_instead(effects)      # "If C, B instead": the effects B replaces get "not C"
     mark(effects, pending)
     return effects, unmatched
 
