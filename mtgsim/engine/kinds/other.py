@@ -111,7 +111,11 @@ def counter(game, p, eff, target, item, **_):
         return
     if eff.data.get("per"):             # "unless its controller pays {1} for each ..." (cx_night_counter)
         from ...cx_night_counter import count_per
-        eff = dataclasses.replace(eff, amount=count_per(game, p, eff.data["per"]))
+        owed = eff.data.get("base", 0) + eff.data.get("mult", 1) * count_per(game, p, eff.data["per"], target)
+        if owed <= 0:                   # "unless its controller pays {0}": they pay nothing and keep the spell
+            game.log(f"{target} costs nothing to keep", p)
+            return
+        eff = dataclasses.replace(eff, amount=owed)
     if eff.data.get("tw") and getattr(item, "teamwork", False):
         eff = dataclasses.replace(eff, amount=eff.data["tw"])
     game.counter(p, eff, target)

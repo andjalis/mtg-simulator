@@ -21,7 +21,7 @@ class CounterTaxes(unittest.TestCase):
         self.assertEqual((REJECT.unsupported, REJECT.spell_effects[0].filter),
                          ([], "types:Creature,Planeswalker"))
         self.assertEqual(WINDS.unsupported, [])
-        self.assertEqual(WINDS.spell_effects[0].data, {"per": "graveyard"})
+        self.assertEqual(WINDS.spell_effects[0].data, {"per": "graveyard", "mult": 1, "base": 0})
 
     def _game(self):
         a = Player("a", [BEAR] * 10, HeuristicAI())
@@ -40,12 +40,34 @@ class CounterTaxes(unittest.TestCase):
         self.assertTrue(game.can_counter(REJECT.spell_effects[0], bear, by=a))
         self.assertFalse(game.can_counter(REJECT.spell_effects[0], rock, by=a))
 
-    def test_for_each_tax_counts_at_resolution(self):
+    def test_a_zero_tax_keeps_the_spell(self):
         game, a, b = self._game()
         spell = StackItem(card=BEAR, controller=b, effects=[], targets=[])
         game.stack.append(spell)
-        counter(game, a, WINDS.spell_effects[0], spell, None)        # empty graveyard: nothing to pay, countered
-        self.assertNotIn(spell, game.stack)
+        counter(game, a, WINDS.spell_effects[0], spell, None)        # empty graveyard: they pay {0} and keep the spell
+        self.assertIn(spell, game.stack)
+
+    def test_more_counts_parse(self):
+        for text, per, mult, base in (
+                ("Counter target spell unless its controller pays {X}, where X is its mana value.", "mv", 1, 0),
+                ("Counter target spell unless its controller pays {2} for each Wizard on the battlefield.",
+                 "all:Wizard", 2, 0),
+                ("Counter target spell unless its controller pays {2} plus an additional {1} for each Faerie you control.",
+                 "mine:Faerie", 1, 2),
+                ("Counter target spell unless its controller pays {1} for each blue permanent you control.",
+                 "color:U", 1, 0)):
+            c = card("Test Tax", "{U}", "Instant", text)
+            self.assertEqual((c.unsupported, c.spell_effects[0].data), ([], {"per": per, "mult": mult, "base": base}), text)
+
+    def test_count_per_new_kinds(self):
+        from mtgsim.cx_night_counter import count_per
+        game, a, b = self._game()
+        wiz = card("Test Wizard", "{U}", "Creature — Human Wizard", "", power="1", toughness="1")
+        a.battlefield.extend([Permanent(wiz, a), Permanent(wiz, a)])
+        b.battlefield.append(Permanent(wiz, b))
+        spell = StackItem(card=card("Test Five", "{4}{U}", "Sorcery", ""), controller=b, effects=[], targets=[])
+        self.assertEqual((count_per(game, a, "all:Wizard"), count_per(game, a, "mine:Wizard"),
+                          count_per(game, a, "color:U"), count_per(game, a, "mv", spell)), (3, 2, 2, 5))
 
     def test_count_per(self):
         from mtgsim.cx_night_counter import count_per
