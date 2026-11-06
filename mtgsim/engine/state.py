@@ -181,6 +181,7 @@ class Permanent:
         self.damaged_by: list = []                      # permanents that dealt it damage this turn
         self.prevent_next = 0                           # "prevent the next N damage ... this turn"
         self.detained_by = None                         # Player who detained it: no attack, block or activation until their turn
+        self.untap_locks: list = []                     # (source, duration, controller): "doesn't untap for as long as ..."
         self.skip_untap = 0                             # untap steps it skips ("doesn't untap during ... next untap step")
         self.spent_color = ""              # "if {U}{U} was spent to cast it"
         self.exiled_cards: list = []       # (card, owner) exiled until this leaves the battlefield
