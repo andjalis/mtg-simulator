@@ -17,6 +17,7 @@ KEYWORDS = {
     "protection from white", "protection from blue", "protection from black", "protection from red",
     "protection from green", "protection from multicolored", "protection from artifacts",
 }
+KEYWORDS.update(f"hexproof from {w}" for w in ("white", "blue", "black", "red", "green", "monocolored"))
 BASIC_MANA = {"Plains": "W", "Island": "U", "Swamp": "B", "Mountain": "R", "Forest": "G"}
 NUMBERS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
            "eight": 8, "nine": 9, "ten": 10}
