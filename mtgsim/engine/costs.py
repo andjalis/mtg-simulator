@@ -589,6 +589,8 @@ class CostsMixin:
         if key not in self._variants:
             if kind == "adventure":
                 v = dataclasses.replace(card.adventure)
+            elif kind == "room_right":
+                v = dataclasses.replace(card.back, name=f"{card.name} ({card.back.name})")
             elif kind == "prepared":
                 v = dataclasses.replace(card.back, name=f"{card.name} (prepared)")
             elif kind in ("split", "aftermath"):
