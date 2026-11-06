@@ -47,7 +47,7 @@ _SUBJECTS = {
     "": "you", "you": "you", "each opponent": "opp", "each player": "each",
     "its controller": "that_controller", "that creature's controller": "that_controller",
     "that permanent's controller": "that_controller", "that spell's controller": "that_controller",
-    "its owner": "that_controller",
+    "its owner": "owner",
 }
 
 
@@ -248,7 +248,7 @@ def parse_create(subject: str, body: str):
             data["per_opponent"] = True
         elif amount_q is not None:
             data["xq"] = amount_q
-        effects.append(Effect("cx_token", n, target="that_controller" if who == "that_controller" else "none",
+        effects.append(Effect("cx_token", n, target={"that_controller": "that_controller", "owner": "prev"}.get(who, "none"),
                               data=data))
     return effects or NO_MATCH
 

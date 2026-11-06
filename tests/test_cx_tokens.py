@@ -9,6 +9,7 @@ from mtgsim.cx_tokens import describe, parse_create
 from mtgsim.cards.model import NO_MATCH
 from mtgsim.cards.parse import _parse_effects
 from mtgsim.engine import Game, Player
+from mtgsim.engine.state import StackItem
 from tests.test_combat_triggers import Scripted
 from tests.test_templates import BEAR, ISLAND
 
@@ -86,6 +87,27 @@ class RealCards(unittest.TestCase):
         self.assertEqual(len(beasts), 1)
         self.assertEqual((beasts[0].power, beasts[0].toughness), (3, 3))
         self.assertFalse(any("Beast" in x.card.subtypes for x in self.a.battlefield))
+
+    def test_owner_of_the_exiled_card_gets_the_token(self):
+        for name in ("Funeral Pyre",):
+            self.assertEqual(card_coverage(self.db.get(name)).ignored, [], name)
+        pyre = self.db.get("Funeral Pyre")
+        self.b.graveyard = [BEAR]
+        self.game.stack.append(StackItem(self.a, list(pyre.spell_effects), [None] * len(pyre.spell_effects), card=pyre))
+        self.game.resolve_top()
+        self.assertEqual(self.b.exile, [BEAR])
+        spirits = [x for x in self.b.battlefield if "Spirit" in x.card.subtypes]
+        self.assertEqual([(x.power, x.has("flying")) for x in spirits], [(1, True)])
+        self.assertFalse(any(x.card.is_token for x in self.a.battlefield))
+
+    def test_owner_of_the_source(self):
+        eff = parse_create("its owner", "a 1/1 white Soldier creature token")[0]
+        mine = self.game.enter_battlefield(self.a, BEAR)
+        self.b.battlefield.append(mine)          # the opponent controls it; a still owns it
+        self.a.battlefield.remove(mine)
+        mine.controller = self.b
+        self.game.resolve(self.a, eff, None, StackItem(self.b, [eff], [None], card=BEAR, source=mine))
+        self.assertTrue(any("Soldier" in x.card.subtypes for x in self.a.battlefield))
 
     def test_mite_planet_and_gold(self):
         mite = token_effects(self.db.get("Crawling Chorus"))[0]
