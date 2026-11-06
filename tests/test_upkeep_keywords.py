@@ -165,6 +165,8 @@ class UpkeepKeywords(unittest.TestCase):
 
     def test_ai_hand_size_discard_triggers_madness(self):
         """HeuristicAI discards its madness card to hand size at cleanup; the trigger casts it for {B}."""
+        from mtgsim.ai import HeuristicAI
+        self.a.ai = HeuristicAI()
         self.game.active_idx = 0
         self.put(self.a, SWAMP, 1)
         mad = card("Test Madness Imp", "{4}{B}", "Creature — Imp", "Madness {B}", 1, 1)
