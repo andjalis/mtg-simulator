@@ -410,3 +410,45 @@ class LootSide(unittest.TestCase):
         effs = parse_sentence("Target player draws two cards, then discards a card.")
         self.assertEqual((effs[0].target, effs[0].data["side"]), ("player", "mine"))
         self.assertIsNone(parse_sentence("Target player discards a card, then draws a card."))   # helps and hurts
+
+
+class TargetOpponent(Base):
+    def test_ai_targets_the_opponent_even_when_the_verb_helps(self):
+        spell = self.spell("Target opponent gains 3 life and draws a card.")
+        with self.game.targeting(spell):
+            self.assertIs(self.a.ai.choose_target(self.game, self.a, spell.spell_effects[0], spell), self.b)
+        eff = parse_sentence("Creatures target opponent controls get +1/+1 until end of turn.")[0]    # the grammar's reading
+        self.assertEqual((eff.filter, eff.data["side"]), ("opp", "theirs"))
+        with self.game.targeting(spell):
+            self.assertEqual(self.game.legal_targets(self.a, eff), [self.b])
+            self.assertIs(self.a.ai.choose_target(self.game, self.a, eff, spell), self.b)
+
+    @unittest.skipUnless(DB_FILE.exists(), "card database not built")
+    def test_armistice(self):
+        from mtgsim.carddb import CardDB
+        armistice = CardDB().get("Armistice")
+        eff = next(e for e in armistice.activated[0].effects if e.target == "player")
+        with self.game.targeting(armistice):
+            self.assertIs(self.a.ai.choose_target(self.game, self.a, eff, armistice), self.b)
+
+
+class MassDiminish(Base):
+    def test_ai_casts_it_at_the_opponent(self):
+        theirs, mine = self.perm(WOLF, self.b), self.perm(WOLF, self.a)
+        spell = card("Test Diminish", "{U}", "Sorcery",
+                     "Until your next turn, creatures target player controls have base power and toughness 1/1.")
+        self.assertEqual(spell.unsupported, [])
+        self.perm(ISLAND, self.a)
+        self.a.hand = [spell]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertNotIn(spell, self.a.hand)
+        self.assertEqual((theirs.power, mine.power), (1, 2))
+
+    @unittest.skipUnless(DB_FILE.exists(), "card database not built")
+    def test_real_card(self):
+        from mtgsim.carddb import CardDB
+        card_ = CardDB().get("Mass Diminish")
+        eff = next(e for e in card_.spell_effects if e.target == "player")
+        self.perm(BEAR, self.b)
+        with self.game.targeting(card_):
+            self.assertIs(self.a.ai.choose_target(self.game, self.a, eff, card_), self.b)

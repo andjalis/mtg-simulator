@@ -384,11 +384,15 @@ def assemble(subj: Subject, parts: list):
     if subj.kind == "group":
         inner = [_effect(p.kind, p.amount, p.amount2, target="self", data=p.data) for p in parts]
         data = dict(subj.data, group=subj.group, effects=inner)
+        flt = data.pop("filter", "")
         if subj.target == "player":         # "creatures target player controls": the AI picks the player by side
-            data["side"] = side(inner)
-        return [_effect("cx_group", target=subj.target, data=data)]
+            data["side"] = "theirs" if flt == "opp" else side(inner)
+        return [_effect("cx_group", target=subj.target, filter=flt, data=data)]
     if subj.kind == "player":
         inner = [_effect(p.kind, p.amount, p.amount2, target="that_controller", data=p.data) for p in parts]
+        if subj.who == "target" and subj.data.get("filter") == "opp":   # the only choice, whatever the verbs do
+            return [_effect("cx_players", target="player", filter="opp",
+                            data={"who": "target", "side": "theirs", "effects": inner})]
         if subj.who == "target":
             if side(inner) == "theirs" and any(side([e]) == "mine" for e in inner):
                 return None         # helps and hurts: which player the controller wants isn't clear
@@ -426,13 +430,17 @@ def _place(p: Part, obj: Subject, subj: Subject):
     if obj.kind == "group":
         inner = [_effect(p.kind, p.amount, p.amount2, target="self", data=data)]
         gdata = dict(obj.data, group=obj.group, effects=inner)
+        flt = gdata.pop("filter", "")
         if obj.target == "player":
-            gdata["side"] = side(inner)
-        return [_effect("cx_group", target=obj.target, data=gdata)]
+            gdata["side"] = "theirs" if flt == "opp" else side(inner)
+        return [_effect("cx_group", target=obj.target, filter=flt, data=gdata)]
     if obj.kind == "player" and obj.who != "target":
         return [_effect(p.kind, p.amount, p.amount2, data=dict(data, who=obj.who))]
     if obj.kind == "host":
         return [_effect(p.kind, p.amount, p.amount2, target="host", data=data)]
+    if obj.kind == "player" and "side" not in data:     # a target player: the AI picks one by side
+        flt = obj.data.get("filter", "")
+        data["side"] = "theirs" if flt == "opp" else side([_effect(p.kind, data=data)])
     return [_effect(p.kind, p.amount, p.amount2, target=obj.target, filter=obj.data.get("filter", ""),
                     data=dict({k: v for k, v in obj.data.items() if k != "filter"}, **data))
             for _ in range(obj.copies)]
