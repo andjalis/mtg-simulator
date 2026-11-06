@@ -52,6 +52,9 @@ class Counters(dict):
             from ..advanced_templates import counter_amount
             value = old + counter_amount(perm, key, value - old)
         super().__setitem__(key, value)
+        if key == "charge" and value != old:       # Spacecraft: a creature at its station threshold
+            from .. import continuous
+            continuous.refresh(perm)
         if key == "+1/+1" and value > old and perm in perm.controller.battlefield:
             game = getattr(perm.controller, "_game", None)
             if game is not None:
