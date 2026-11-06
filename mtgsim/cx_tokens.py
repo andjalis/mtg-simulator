@@ -178,7 +178,12 @@ def describe(desc: str):
     return {"card": card, **state_out}
 
 
+_OPPONENTS = ("opponents",)                 # a count resolved by the cx_token handler, not by Game.x_quantity
+
+
 def _quantity(text: str):
+    if re.fullmatch(r"(?:the number of opponents|opponent) you have", text.strip(), re.I):
+        return _OPPONENTS
     if re.search(r"\b(?:it|its|that creature|that permanent|that card)\b", text, re.I):
         return None                         # the triggering object, which the counts don't read
     from .cx_night_quantity import _quantity as quantity, _PLURAL_ZONES
@@ -233,7 +238,9 @@ def parse_create(subject: str, body: str):
             return NO_MATCH
         n = 1 if count == "x" else int(count) if count.isdigit() else _NUMBERS[count]
         data = dict(spec, who=who)
-        if amount_q is not None:
+        if amount_q == _OPPONENTS:
+            data["per_opponent"] = True
+        elif amount_q is not None:
             data["xq"] = amount_q
         effects.append(Effect("cx_token", n, target="that_controller" if who == "that_controller" else "none",
                               data=data))
@@ -260,24 +267,98 @@ EFFECT_PATTERNS = [
 
 
 def create(game, who, eff_data: dict, n: int):
-    """Put n tokens of the description onto the battlefield under who's control."""
+    """Put n tokens of the description onto the battlefield under who's control, then apply the riders."""
     from .cards.model import Effect
     if n <= 0:
         return
+    before = set(map(id, who.battlefield))
     if "kind" in eff_data:
         game.create_token(who, Effect("token", n, data={"kind": eff_data["kind"], "tapped": eff_data["tapped"],
                                                         "attacking": eff_data["attacking"]}))
-        return
-    from .backlog_templates import entry_batch
-    card = eff_data["card"]
-    if eff_data.get("xq_size"):             # "an X/X ... token, where X is ...": resolve put X in power/toughness
-        card = dataclasses.replace(card, power=eff_data["power"], toughness=eff_data["toughness"])
-    count = n * 2 ** sum(bool(x.card.token_double) for x in who.battlefield if not x.abilities_suppressed)
-    attacking = eff_data["attacking"] and game.step in ("declare_attackers", "declare_blockers")
-    with entry_batch(game):
-        for _ in range(count):
-            perm = game.enter_battlefield(who, dataclasses.replace(card), tapped_attacking=attacking)
-            if eff_data["tapped"]:
-                perm.tapped = True
-    game.log(f"creates {count} {card.name}" + ("" if card.name.endswith("token") else " token") + "(s)", who)
+    else:
+        from .backlog_templates import entry_batch
+        card = eff_data["card"]
+        if eff_data.get("xq_size"):         # "an X/X ... token, where X is ...": resolve put X in power/toughness
+            card = dataclasses.replace(card, power=eff_data["power"], toughness=eff_data["toughness"])
+        count = n * 2 ** sum(bool(x.card.token_double) for x in who.battlefield if not x.abilities_suppressed)
+        attacking = eff_data["attacking"] and game.step in ("declare_attackers", "declare_blockers")
+        with entry_batch(game):
+            for _ in range(count):
+                perm = game.enter_battlefield(who, dataclasses.replace(card), tapped_attacking=attacking)
+                if eff_data["tapped"]:
+                    perm.tapped = True
+        game.log(f"creates {count} {card.name}" + ("" if card.name.endswith("token") else " token") + "(s)", who)
+    made = [x for x in who.battlefield if id(x) not in before and x.card.is_token]
+    for perm in made:
+        for keyword in eff_data.get("eot_keywords", ()):
+            game.add_continuous_effect(perm, "grant", keyword=keyword, until_eot=True)
+        when, how = eff_data.get("leave", (None, None))
+        if when == "end_step":
+            game.end_cleanup.append((perm, how))
+        elif when == "end_combat":
+            game.end_combat_effects.append((who, [Effect("cx_token_leave", target="self", data={"how": how})],
+                                            perm, None))
 
+
+_THEM = r"(?:it|them|that token|those tokens|the tokens?)"
+_RIDERS = [
+    (re.compile(r"(?:it|they|that token|those tokens|the tokens?) gains? ([a-z ,]+?) until end of turn", re.I),
+     lambda m: {"eot_keywords": tuple(_split_list(m[1].lower()))}),
+    (re.compile(rf"(sacrifice|exile) {_THEM} at end of combat", re.I),
+     lambda m: {"leave": ("end_combat", m[1].lower())}),
+    (re.compile(rf"(sacrifice|exile) {_THEM} at the beginning of the next end step", re.I),
+     lambda m: {"leave": ("end_step", m[1].lower())}),
+]
+
+
+_PLAIN_TOKEN = {"name", "power", "toughness", "keywords", "attacking", "triggers", "artifact", "pt_per", "colors",
+                "tapped", "kind"}
+
+
+def _from_token(eff):
+    """The cx_token effect equal to a plain "token" effect of the older templates (built by the same make_token
+    that Game.create_token uses), or None when it carries anything else (counts, riders, abilities)."""
+    if eff.kind != "token" or not set(eff.data) <= _PLAIN_TOKEN or eff.target not in ("none", "that_controller"):
+        return None
+    from .cards.model import Effect
+    d = eff.data
+    who = "that_controller" if eff.target == "that_controller" else "you"
+    state = {"tapped": bool(d.get("tapped")), "attacking": bool(d.get("attacking")), "who": who}
+    if d.get("kind"):
+        return Effect("cx_token", eff.amount, target=eff.target, cond=eff.cond, data={"kind": d["kind"], **state})
+    from .cards.tokens import make_token
+    card = make_token(d.get("name", ""), d.get("power", 0), d.get("toughness", 0), d.get("keywords", ()),
+                      d.get("triggers"), "", d.get("artifact", False), d.get("pt_per", ""), colors=d.get("colors", ()))
+    return Effect("cx_token", eff.amount, target=eff.target, cond=eff.cond, data={"card": card, **state})
+
+
+def parse_rider(sentence: str, effects: list) -> bool:
+    """Hook for cards/parse.py: a sentence about the tokens the previous sentence created ("Exile that token at end
+    of combat.", "They gain haste until end of turn."), folded into those token effects. A plain "token" effect
+    of the older templates is turned into the same cx_token first."""
+    if not effects or effects[-1].kind not in ("cx_token", "token"):
+        return False
+    s = sentence.strip().rstrip(".")
+    for rx, build in _RIDERS:
+        m = rx.fullmatch(s)
+        if m is None:
+            continue
+        if effects[-1].kind == "token":
+            converted = _from_token(effects[-1])
+            if converted is None:
+                return False
+            effects[-1] = converted
+        extra = build(m)
+        from .cards.model import KEYWORDS
+        if not set(extra.get("eot_keywords", ())) <= KEYWORDS:
+            return False
+        run = len(effects)
+        while run and effects[run - 1].kind == "cx_token":
+            run -= 1
+        targets = effects[run:]
+        if any(key in e.data for e in targets for key in extra):
+            return False
+        for i, e in enumerate(targets, run):
+            effects[i] = dataclasses.replace(e, data=dict(e.data, **extra))
+        return True
+    return False
