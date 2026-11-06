@@ -301,6 +301,8 @@ class TurnsMixin:
         from ..advanced_templates import begin_turn
         begin_turn(self, p)
         self.step = "untap"
+        from ..day_night import begin_turn as day_night_turn
+        day_night_turn(self, p)
         for pl in self.players:
             for x in pl.battlefield:
                 if x.detained_by is p:
