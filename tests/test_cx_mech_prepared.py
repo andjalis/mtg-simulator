@@ -54,6 +54,22 @@ class HexproofFrom(unittest.TestCase):
         multi = self.db.get("Terminate")
         self.assertTrue(self.game.targetable(general, self.b, multi))
 
+    def test_ai_removal_avoids_the_creature_with_hexproof_from_its_colour(self):
+        """Control: HeuristicAI's Reave Soul kills a plain Knight, but leaves the hexproof-from-black one alone."""
+        from mtgsim.ai import HeuristicAI
+        for name, dies in (("Knight of Meadowgrain", True), ("Knight of Grace", False)):
+            self.setUp()
+            self.a.ai = HeuristicAI()
+            knight = self.game.enter_battlefield(self.b, self.db.get(name))
+            for _ in range(3):
+                self.game.enter_battlefield(self.a, self.db.get("Swamp"))
+            self.game.settle()
+            spell = self.db.get("Reave Soul")
+            self.a.hand = [spell]
+            self.game.main_phase(self.a)
+            self.assertEqual(knight not in self.b.battlefield, dies, name)
+            self.assertEqual(spell not in self.a.hand, dies, name)
+
 
 if __name__ == "__main__":
     unittest.main()
