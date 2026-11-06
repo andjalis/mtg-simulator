@@ -127,6 +127,16 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     if k in ('add_counter', 'cx_distribute'):
         pool = theirs if eff.data.get('counter') == '-1/-1' else mine
         return max(pool, key=perm_value, default=None)
+    if k == 'cx_remove_counters':
+        if eff.data.get('counter'):
+            pool = theirs if eff.data['counter'] == '+1/+1' else mine
+            pool = [x for x in pool if x.counters.get(eff.data['counter'], 0)]
+            if eff.data['counter'] in ('-1/-1', 'stun'):
+                pool = [x for x in mine if x.counters.get(eff.data['counter'], 0)]
+        else:
+            pool = [x for x in theirs if any(x.counters.values())] or [x for x in mine if any(
+                x.counters.get(n, 0) for n in ('-1/-1', 'stun'))]
+        return max(pool, key=perm_value, default=None)
     if k == 'return_grave_target':
         return max(legal, key=lambda c: c.cmc, default=None)
     if k == 'quantity_stats':

@@ -155,3 +155,23 @@ class Pronoun(unittest.TestCase):
         self.assertEqual((eff.kind, eff.target), ("p1_counters", "self"))
         c2 = card("Test Hero", "{1}", "Legendary Creature — Human", "{T}: Put a +1/+1 counter on target creature.", 1, 1)
         self.assertNotEqual(c2.activated[0].effects[0].target, "self")
+
+
+class Remove(MultiTarget):
+    def test_remove_all_kind_from_target(self):
+        bear = self.put(self.b, 1)[0]
+        bear.counters.update({"+1/+1": 3, "time": 2})
+        self.run_effects("Remove all +1/+1 counters from target creature.")
+        self.assertEqual((bear.counters["+1/+1"], bear.counters["time"]), (0, 2))
+
+    def test_remove_a_counter_any_kind_from_opponent(self):
+        bear = self.put(self.b, 1)[0]
+        bear.counters.update({"+1/+1": 2})
+        self.run_effects("Remove a counter from target permanent.")
+        self.assertEqual(bear.counters["+1/+1"], 1)
+
+    def test_remove_all_counters_from_all_creatures(self):
+        a, b = self.put(self.a, 1)[0], self.put(self.b, 1)[0]
+        a.counters["shield"], b.counters["oil"] = 1, 4
+        self.run_effects("Remove all counters from all creatures.")
+        self.assertEqual((a.counters["shield"], b.counters["oil"]), (0, 0))

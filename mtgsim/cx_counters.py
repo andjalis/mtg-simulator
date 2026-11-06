@@ -143,3 +143,27 @@ EFFECT_PATTERNS.append(
     (rf"distribute (a|an|one|two|three|four|five) ({_COUNTER}) counters? among (?:up to )?((?:any number of)|"
      rf"(?:(?:one|two|three|four|five)(?:,? (?:or |and )?(?:one|two|three|four|five))*)) (other )?target (.+)",
      _distribute))
+
+
+def _remove(m):
+    """"Remove [a counter / up to N counters / N <kind> counters / all [<kind>] counters] from <permanent(s)>"."""
+    from .cards.model import NO_MATCH
+    from .permanent_templates import build
+    amount, kind = (m[1] or "").lower(), (m[2] or "").lower()
+    if m[3] is None and kind in ("", "all"):
+        return NO_MATCH
+    data = {"counter": kind if kind and kind != "any" else ""}
+    if amount == "all":
+        data["all"] = True
+    n = 1 if amount in ("a", "an", "one", "all", "") else _N.get(amount.replace("up to ", ""), None)
+    if n is None:
+        n = int(amount.replace("up to ", "")) if amount.replace("up to ", "").isdigit() else None
+    if n is None:
+        return NO_MATCH
+    eff = build("cx_remove_counters", m[4], amount=n, data=data)
+    return eff if eff is not None else NO_MATCH
+
+
+EFFECT_PATTERNS.append(
+    (rf"(?:you may )?remove (a|an|one|two|three|four|five|up to (?:one|two|three|four|five)|\d+|all) "
+     rf"(?:({_COUNTER}) )?(counters?)(?: of that kind)? from (it|~|target [^,]+|all [^,]+|each [^,]+)", _remove))

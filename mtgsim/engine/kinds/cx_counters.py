@@ -32,3 +32,30 @@ def cx_distribute(game, p, eff, item, **_):
     each, extra = divmod(eff.amount, len(chosen))
     for i, t in enumerate(chosen):
         t.counters[eff.data["counter"]] = t.counters.get(eff.data["counter"], 0) + each + (1 if i < extra else 0)
+
+
+_BAD = ("-1/-1", "stun", "doom", "poison")
+
+
+@kind("cx_remove_counters")
+def cx_remove_counters(game, p, eff, target, **_):
+    """Remove counters of one kind (or "a counter" of any kind) from a permanent; "all" empties the kind or the card.
+    Without a kind the controller's own permanent loses its worst counters first, an opponent's its best."""
+    if not isinstance(target, Permanent):
+        return
+    kind_name = eff.data.get("counter", "")
+    if kind_name:
+        names = [kind_name]
+    else:
+        mine = target.controller is p
+        names = sorted((n for n, c in target.counters.items() if c > 0),
+                       key=lambda n: (n not in _BAD) if mine else (n in _BAD))
+    left = 10 ** 6 if eff.data.get("all") else eff.amount
+    for name in names:
+        if left <= 0:
+            break
+        have = target.counters.get(name, 0)
+        take = min(have, left)
+        if take:
+            target.counters[name] = have - take
+            left -= take
