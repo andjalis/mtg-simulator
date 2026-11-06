@@ -247,6 +247,48 @@ class Subjects(GameCase):
 
 
 @unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class Counts(GameCase):
+    """Devotion, the previous object's stats, leading "for each", and tokens whose P/T a quoted ability defines."""
+    def test_full(self):
+        for name in ("Master of Waves", "Evangel of Heliod", "Artifact Mutation", "Brass's Bounty", "Bladewing, Deathless Tyrant",
+                     "Vernal Sovereign", "Kalonian Twingrove", "Jacked Rabbit", "Termagant Swarm"):
+            self.assertEqual(card_coverage(self.db.get(name)).ignored, [], name)
+
+    def test_devotion(self):
+        eff = token_effects(self.db.get("Master of Waves"))[0]
+        self.game.enter_battlefield(self.a, self.db.get("Master of Waves"))       # {3}{U}: devotion 1
+        self.game.enter_battlefield(self.a, self.db.get("Delver of Secrets"))                 # {U}: devotion 2
+        self.game.resolve(self.a, eff, None)
+        self.assertEqual(sum("Elemental" in x.card.subtypes and x.card.is_token for x in self.a.battlefield), 2)
+
+    def test_previous_objects_mana_value(self):
+        destroy, make = self.db.get("Artifact Mutation").spell_effects
+        rock = self.game.enter_battlefield(self.b, self.db.get("Mind Stone"))
+        self.game.resolve(self.a, destroy, rock)
+        self.game.resolve(self.a, make, None, prev=rock)
+        self.assertEqual(sum(x.card.is_token for x in self.a.battlefield), 2)
+
+    def test_count_written_first(self):
+        eff = token_effects(self.db.get("Brass's Bounty"))[0]
+        for _ in range(3):
+            self.game.enter_battlefield(self.a, self.db.get("Island"))
+        self.game.resolve(self.a, eff, None)
+        self.assertEqual(sum(x.card.token_kind == "treasure" for x in self.a.battlefield), 3)
+
+    def test_defining_ability_token(self):
+        eff = token_effects(self.db.get("Vernal Sovereign"))[0]
+        for _ in range(2):
+            self.game.enter_battlefield(self.a, BEAR)
+        self.game.resolve(self.a, eff, None)
+        elemental = next(x for x in self.a.battlefield if x.card.is_token)
+        self.assertEqual((elemental.power, elemental.toughness), (3, 3))     # two Bears and itself
+
+    def test_parent_name_in_a_quoted_ability_is_refused(self):
+        self.assertIsNone(describe('green Ooze creature token with "~\'s power and toughness are each equal to the '
+                                   'number of slime counters on ~."'))
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
 class CopyTokens(GameCase):
     """"Create a token that's a copy of that creature / it": the object the previous effect or the trigger acted on."""
     def test_full(self):

@@ -71,13 +71,21 @@ def _split_list(text: str) -> list:
     return [x.strip() for x in re.split(r",\s*(?:and\s+)?|\s+and\s+", text) if x.strip()]
 
 
+# Where "~" in a quoted token ability stands for "this creature / this token": the parent card's own name is also
+# written "~", so any other "~" ("slime counters on ~", "~'s power" mid-sentence) could be the parent card.
+_SELF_TILDE = re.compile(r"^~|(?<=[.:] )~|\b(?:when|whenever|sacrifice|exile|tap|untap|and) ~(?!\w)", re.I)
+
+
 def _with_lines(text: str, quoted: list):
     """The rules lines of a "with ..." list: keywords ("flying", "toxic 1", "crew 2") and quoted abilities."""
     lines = []
     for item in _split_list(text):
         q = re.fullmatch(r"\x00(\d+)\x00", item)
         if q:
-            lines.append(quoted[int(q[1])].strip())
+            line = quoted[int(q[1])].strip()
+            if "~" in _SELF_TILDE.sub("", line):
+                return None
+            lines.append(line)
         elif "\x00" in item or not re.fullmatch(r"[a-z][\w\- ]*(?:\{[^}]+\})*", item):
             return None
         else:
@@ -167,9 +175,10 @@ def describe(desc: str):
         types, sub = type_line.split(" — ")
         card = _token_card(subtypes[0], None, None, colors, (), [types.lower()], [sub], text.split("\n"), True)
         return {"card": card, **state_out} if card is not None else None
-    if ("creature" in types) != bool(m[2]) and not (m[2] and "Vehicle" in subtypes):
+    cda = "creature" in types and not m[2] and lines           # P/T from a quoted defining ability
+    if ("creature" in types) != bool(m[2]) and not (m[2] and "Vehicle" in subtypes) and not cda:
         return None
-    power = toughness = None
+    power = toughness = "*" if cda else None
     if m[2]:
         if not (m[2].isdigit() and m[3].isdigit()):
             if not (m[2] == m[3] == "*" and lines):          # "*/*" with a defining ability in quotes
@@ -179,7 +188,7 @@ def describe(desc: str):
         return None
     card_name = name or " ".join(subtypes) + " token"
     card = _token_card(card_name, power, toughness, colors, supertypes, types, subtypes, lines, colorless)
-    if card is None:
+    if card is None or power == "*" and not (card.pt_cda or card.pt_per):
         return None
     return {"card": card, **state_out}
 
@@ -188,12 +197,20 @@ _OPPONENTS = ("opponents",)                 # a count resolved by the cx_token h
 
 
 def _quantity(text: str):
-    if re.fullmatch(r"(?:the number of opponents|opponent) you have", text.strip(), re.I):
+    text = text.strip()
+    if re.fullmatch(r"(?:the number of opponents|opponent) you have", text, re.I):
         return _OPPONENTS
+    m = re.fullmatch(r"your devotion to (white|blue|black|red|green)(?: and (white|blue|black|red|green))?", text, re.I)
+    if m:
+        return ("devotion", tuple(_COLOR_LETTERS[c.lower()] for c in m.groups() if c))
+    m = re.fullmatch(r"that (?:creature|artifact|enchantment|permanent)'s (power|toughness|mana value)", text, re.I)
+    if m:                                   # the previous effect's object
+        return ("stat", "prev", m[1].lower())
     if re.search(r"\b(?:it|its|that creature|that permanent|that card)\b", text, re.I):
         return None                         # the triggering object, which the counts don't read
     from .cx_night_quantity import _quantity as quantity, _PLURAL_ZONES
-    return quantity(text) if text.startswith("the number of") or text.startswith("your ") else \
+    spec = quantity(text)
+    return spec if spec is not None or text.startswith("the number of") else \
         quantity("the number of " + _PLURAL_ZONES.get(text, text), plural=False)
 
 
@@ -255,6 +272,8 @@ def parse_create(subject: str, body: str):
         data = dict(spec, who=who)
         if amount_q == _OPPONENTS:
             data["per_opponent"] = True
+        elif amount_q[0] == "devotion" if amount_q else False:
+            data["devotion"] = amount_q[1]
         elif amount_q is not None:
             data["xq"] = amount_q
         effects.append(Effect("cx_token", n, target=_TARGETS.get(who, "none"),
@@ -301,6 +320,8 @@ _CREATE = (r"(?:(you|they|that player|each opponent|each player|its controller|i
 
 EFFECT_PATTERNS = [
     (_CREATE, lambda m: parse_create(m[1] or "", m[2])),
+    # "For each land you control, create a Treasure token": the count written first.
+    (r"for each ([^,]+), create (.+)", lambda m: parse_create("", f"{m[2]} for each {m[1]}")),
 ]
 
 
