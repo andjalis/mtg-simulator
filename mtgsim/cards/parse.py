@@ -166,6 +166,12 @@ def _parse_effects(text: str, opts: bool = False):
             effects += linked
             gated = True
             continue
+        from ..cx_trig_reflex import parse_reflex
+        linked = parse_reflex(s, sentences[index + 1] if index + 1 < len(sentences) else "")
+        if linked is not None:
+            effects += linked
+            gated = True
+            continue
         from ..cx_links import parse_ref
         linked = parse_ref(s, effects, sentences[index + 1] if index + 1 < len(sentences) else "")
         if linked is not None:
@@ -267,9 +273,10 @@ def _parse_effects(text: str, opts: bool = False):
         else:
             parts = _split_compound(s)
             from ..cx_suspect import parse_otherwise
+            from .. import cx_grammar
             if parts:
                 effects += parts
-            elif not parse_otherwise(s, effects):        # "Otherwise, ..." after a lib: condition
+            elif not parse_otherwise(s, effects) and not cx_grammar.parse_fallback(s, effects):   # "Otherwise, ..."; grammar
                 unmatched.append(sentence.strip())
         if paid:
             for eff in effects[first:]:
