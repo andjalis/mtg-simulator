@@ -55,12 +55,48 @@ def _poison(m):
                   data={"who": "you"} if who == "you" else {})
 
 
+def _per_counters(kind, **kw):
+    def build(m):
+        from .cards.model import Effect
+        return Effect(kind, kw.get("amount", 1), target=kw.get("target", "none"),
+                      data={"per": {"what": "ctr:" + m["kind"], "zone": "battlefield"}})
+    return build
+
+
+_ON = r"(?:~|it|this [a-z]+)"
+_K = r"(?P<kind>[a-z]+(?:-[a-z]+)?)"
 EFFECT_PATTERNS = [
+    (rf"draw a card for each {_K} counter on {_ON}", _per_counters("draw")),
+    (rf"you gain (\d+) life for each {_K} counter on {_ON}", lambda m: _per_counters("gain_life", amount=int(m[1]))(m)),
+    (rf"(?:~|it) deals damage equal to the number of {_K} counters on {_ON} to "
+     rf"(?P<t>any target|target creature|target player|target opponent)",
+     lambda m: _per_counters("damage", target={"target creature": "creature", "any target": "any"}.get(
+         m["t"], "player"))(m)),
+    (rf"draw x cards and gain x life, where x is the number of {_K} counters on {_ON}",
+     lambda m: [_per_counters("draw")(m), _per_counters("gain_life")(m)]),
     (r"(that player|that opponent|its controller|you) gets? (a|an|one|two|three|four|five|\d+) poison counters?",
      _poison),
     (rf"put (a|an|one|two|three|four|five) ({_COUNTER}) counters? on each of up to (two|three|four|five) "
      rf"(other )?target (.+)", _each_of_up_to),
 ]
+
+
+def parse_line(line, extra, type_line=""):
+    return entry_x_counters(line, extra) or counter_pt(line, extra, type_line)
+
+
+def counter_pt(line, extra, type_line=""):
+    """"~ / Equipped creature / Enchanted creature gets +N/+N for each <kind> counter on it / ~."."""
+    m = re.fullmatch(r"(~|Equipped creature|Enchanted creature) gets ([+-]\d+)/([+-]\d+) for each "
+                     r"([a-z]+(?:-[a-z]+)?) counter on (?:it|~|this [a-z]+)\.", line)
+    if m is None or extra.get("pt_per"):
+        return False
+    if (m[1] == "Equipped creature" and "Equipment" not in type_line) or (
+            m[1] == "Enchanted creature" and "Aura" not in type_line):
+        return False
+    extra["pt_per"] = "ctr:" + m[4]
+    extra["pt_scale"] = (int(m[2]), int(m[3]))
+    return True
 
 
 def entry_x_counters(line, extra):

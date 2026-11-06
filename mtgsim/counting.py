@@ -78,6 +78,8 @@ def _scaled(eff, n):
 def count(game, p, per: dict, source=None) -> int:
     from .copies import fits
     what = per["what"]
+    if what.startswith("ctr:"):     # counters of one kind on the source ("for each charge counter on ~")
+        return source.counters.get(what[4:], 0) if source is not None and hasattr(source, "counters") else 0
     other = what.startswith("other ")
     what = what[6:] if other else what
     if per["zone"] == "graveyard":

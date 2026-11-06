@@ -500,8 +500,8 @@ def _face_land_and_mana_lines(st, line):
         if m:
             extra["etb_named_counters"] = (m[2].lower(), _num(m[1]))
             return None
-        from ..cx_counters import entry_x_counters
-        if entry_x_counters(line, extra):
+        from ..cx_counters import parse_line as counters_line
+        if counters_line(line, extra, st.type_line):
             return None
         m = re.fullmatch(r"Craft with artifact (\{[^ (]+\})(?: \(.*\))?", line)
         if m:

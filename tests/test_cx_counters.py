@@ -83,3 +83,43 @@ class EntersWithX(unittest.TestCase):
         game = Game(a, b, random.Random(0), log=True)
         game.enter_battlefield(a, c, x=3)
         self.assertEqual(a.battlefield[-1].counters["gem"], 3)
+
+
+class PerCounter(unittest.TestCase):
+    def setUp(self):
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        self.a.library = [ISLAND] * 10
+
+    def test_self_pump_per_counter(self):
+        from tests.test_templates import card
+        c = card("Test Oil", "{1}", "Creature — Golem", "This creature gets +2/+2 for each oil counter on it.", 0, 0)
+        self.assertEqual((c.pt_per, c.pt_scale), ("ctr:oil", (2, 2)))
+        perm = Permanent(c, self.a)
+        self.a.battlefield.append(perm)
+        perm.counters["oil"] = 2
+        self.assertEqual((perm.power, perm.toughness), (4, 4))
+
+    def test_equipment_per_counter(self):
+        from tests.test_templates import card
+        eq = card("Test Charger", "{2}", "Artifact — Equipment", "Equipped creature gets +1/+1 for each charge counter on this Equipment.\nEquip {2}")
+        self.assertEqual(eq.pt_per, "ctr:charge")
+        e, bear = Permanent(eq, self.a), Permanent(BEAR, self.a)
+        self.a.battlefield += [e, bear]
+        e.counters["charge"] = 3
+        e.attached_to = bear
+        bear.equipment.append(e) if e not in bear.equipment else None
+        self.assertEqual(bear.power, 5)
+
+    def test_draw_per_counter(self):
+        from tests.test_templates import card
+        c = card("Test Pile", "{1}", "Artifact", "{T}: Draw a card for each charge counter on this artifact.")
+        perm = Permanent(c, self.a)
+        self.a.battlefield.append(perm)
+        perm.counters["charge"] = 2
+        eff = c.activated[0].effects[0]
+        item = type("I", (), {"source": perm, "card": None, "context": None})()
+        before = len(self.a.hand)
+        self.game.resolve(self.a, eff, None, item)
+        self.assertEqual(len(self.a.hand) - before, 2)
