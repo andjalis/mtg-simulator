@@ -845,7 +845,7 @@ def use_abilities(game: Game, me: Player):
             game.cast(me, c, None)
     if game.step == "main2":
         for st in [x for x in me.battlefield if x.card.station]:
-            need = max((a.min_charge for a in st.activated), default=0)
+            need = max([a.min_charge for a in st.activated] + [st.card.advanced_rules.get("station_creature", 0)])
             ready = sorted((c for c in me.creatures if c is not st and not c.tapped and c.power > 0),
                            key=lambda c: c.power)
             if need and st.counters.get("charge", 0) < need and len(ready) > 1:

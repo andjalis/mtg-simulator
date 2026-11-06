@@ -62,6 +62,10 @@ def _face_special_lines(st, line):
         if tm and extra.get("station"):
             kws = [k.strip().lower() for k in re.split(r",| and ", tm[2])]
             if kws and all(k in KEYWORDS for k in kws) or re.match(r"(When|Whenever|At the beginning)\b", tm[2]):
+                rules = extra.setdefault("advanced_rules", {})
+                if rules.get("station_creature") not in (None, int(tm[1])):
+                    approximations.append("Spacecraft become creatures at the highest station tier (P/T box tier assumed)")
+                rules["station_creature"] = max(rules.get("station_creature", 0), int(tm[1]))
                 st.tier = (int(tm[1]), len(triggers), len(activated), dict(extra))
                 line = tm[2]
             if kws and all(k in KEYWORDS for k in kws):
