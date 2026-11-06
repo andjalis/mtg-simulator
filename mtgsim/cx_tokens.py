@@ -23,7 +23,6 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .cards.model import COLORS, Effect, NO_MATCH
 
 _NUMBERS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
             "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "twenty": 20}
@@ -180,6 +179,8 @@ def describe(desc: str):
 
 
 def _quantity(text: str):
+    if re.search(r"\b(?:it|its|that creature|that permanent|that card)\b", text, re.I):
+        return None                         # the triggering object, which the counts don't read
     from .cx_night_quantity import _quantity as quantity, _PLURAL_ZONES
     return quantity(text) if text.startswith("the number of") or text.startswith("your ") else \
         quantity("the number of " + _PLURAL_ZONES.get(text, text), plural=False)
@@ -194,6 +195,7 @@ def _split_descs(masked: str) -> list:
 
 def parse_create(subject: str, body: str):
     """Effects for "<subject> create(s) <body>", or NO_MATCH."""
+    from .cards.model import Effect, NO_MATCH
     who = _SUBJECTS.get(subject.lower().strip())
     if who is None:
         return NO_MATCH
@@ -243,6 +245,7 @@ def reparse(sentence: str, effects: list) -> list:
     ("changeling", "firebending 1") is rebuilt here when the whole sentence parses."""
     if not any(e.data.get("unparsed_token_keywords") for e in effects):
         return effects
+    from .cards.model import NO_MATCH
     m = re.fullmatch(_CREATE, sentence.strip().rstrip("."), re.I)
     new = parse_create(m[1] or "", m[2]) if m else NO_MATCH
     return effects if new is NO_MATCH else new
@@ -258,6 +261,7 @@ EFFECT_PATTERNS = [
 
 def create(game, who, eff_data: dict, n: int):
     """Put n tokens of the description onto the battlefield under who's control."""
+    from .cards.model import Effect
     if n <= 0:
         return
     if "kind" in eff_data:
@@ -266,6 +270,8 @@ def create(game, who, eff_data: dict, n: int):
         return
     from .backlog_templates import entry_batch
     card = eff_data["card"]
+    if eff_data.get("xq_size"):             # "an X/X ... token, where X is ...": resolve put X in power/toughness
+        card = dataclasses.replace(card, power=eff_data["power"], toughness=eff_data["toughness"])
     count = n * 2 ** sum(bool(x.card.token_double) for x in who.battlefield if not x.abilities_suppressed)
     attacking = eff_data["attacking"] and game.step in ("declare_attackers", "declare_blockers")
     with entry_batch(game):
@@ -275,5 +281,3 @@ def create(game, who, eff_data: dict, n: int):
                 perm.tapped = True
     game.log(f"creates {count} {card.name}" + ("" if card.name.endswith("token") else " token") + "(s)", who)
 
-
-assert set(_COLOR_LETTERS.values()) == set(COLORS)

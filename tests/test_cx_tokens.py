@@ -114,6 +114,23 @@ class RealCards(unittest.TestCase):
         self.game.resolve(self.a, eff, None)
         self.assertEqual(sum("Soldier" in x.card.subtypes for x in self.a.battlefield), 2)
 
+    def test_x_sized_token(self):
+        eff = token_effects(self.db.get("Formless Genesis"))[0]
+        self.a.graveyard = [self.db.get("Forest")] * 3
+        self.game.resolve(self.a, eff, None)
+        tok = next(x for x in self.a.battlefield if x.card.is_token)
+        self.assertEqual((tok.power, tok.toughness, tok.card.changeling), (3, 3, True))
+
+    def test_dies_count_uses_last_counters(self):
+        mouser = self.game.enter_battlefield(self.a, self.db.get("Big Mother Mouser"))
+        self.game.destroy(mouser)
+        self.game.settle()
+        self.assertEqual(sum(x.card.name == "Robot token" for x in self.a.battlefield), 2)
+
+    def test_counts_of_the_triggering_object_are_left_alone(self):
+        self.assertIs(parse_create("", "a Mutagen token for each +1/+1 counter on it"), NO_MATCH)
+        self.assertFalse(token_effects(self.db.get("The Ooze")))
+
 
 if __name__ == "__main__":
     unittest.main()
