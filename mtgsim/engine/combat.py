@@ -195,12 +195,13 @@ class CombatMixin:
                            lambda c: not first or c.has("double strike") or not c.has("first strike"))
 
     def combat_damage(self, p, opp, attackers, blocks, deals_now):
+        from ..cx_night_aura import dmg_stat   # "assigns combat damage equal to its toughness"
         hits = []  # (source, target, amount)
         budget = {}   # a blocker blocking several attackers divides its damage: lethal to each in turn
         for a in attackers:
             for b in blocks.get(a, ()):
                 budget[b] = budget.get(b, 0) + 1
-        budget = {b: b.power for b, n in budget.items() if n > 1}
+        budget = {b: dmg_stat(self, b) for b, n in budget.items() if n > 1}
         for a in attackers:
             if a not in p.battlefield:
                 continue
@@ -209,11 +210,11 @@ class CombatMixin:
                 target = None   # its planeswalker is gone: no damage
             if a in blocks:
                 alive = [b for b in blocks[a] if b in opp.battlefield]
-                if deals_now(a) and a.power > 0 and target is not None and a.card.advanced_rules.get('assign_unblocked') \
-                        and not a.abilities_suppressed and sum(max(0, b.toughness - b.damage) for b in alive) > a.power:
-                    hits.append((a, target, a.power))     # can't kill its blockers: hit the defender instead
-                elif deals_now(a) and a.power > 0:
-                    remaining = a.power
+                if deals_now(a) and dmg_stat(self, a) > 0 and target is not None and a.card.advanced_rules.get('assign_unblocked') \
+                        and not a.abilities_suppressed and sum(max(0, b.toughness - b.damage) for b in alive) > dmg_stat(self, a):
+                    hits.append((a, target, dmg_stat(self, a)))     # can't kill its blockers: hit the defender instead
+                elif deals_now(a) and dmg_stat(self, a) > 0:
+                    remaining = dmg_stat(self, a)
                     for i, b in enumerate(alive):
                         lethal = 1 if a.has("deathtouch") else max(0, b.toughness - b.damage)
                         last = i == len(alive) - 1
@@ -224,16 +225,16 @@ class CombatMixin:
                     if remaining > 0 and a.has("trample") and target is not None:
                         hits.append((a, target, remaining))
                 for b in alive:
-                    if deals_now(b) and b.power > 0:
+                    if deals_now(b) and dmg_stat(self, b) > 0:
                         if b in budget:
                             amt = min(budget[b], 1 if b.has("deathtouch") else max(0, a.toughness - a.damage))
                             budget[b] -= amt
                         else:
-                            amt = b.power
+                            amt = dmg_stat(self, b)
                         if amt:
                             hits.append((b, a, amt))
-            elif deals_now(a) and a.power > 0 and target is not None:
-                hits.append((a, target, a.power))
+            elif deals_now(a) and dmg_stat(self, a) > 0 and target is not None:
+                hits.append((a, target, dmg_stat(self, a)))
         if any(isinstance(tgt, Player) for _, tgt, _ in hits):
             self.fire(p, "allies_hit_player")
         for src, tgt, amt in hits:

@@ -43,6 +43,12 @@ def parse_line(st, line: str):
         st.extra["extra_discard"] = 1
         st.extra.setdefault("advanced_rules", {})["discard_random"] = True
         return None
+    if line == "Each creature you control assigns combat damage equal to its toughness rather than its power.":
+        st.extra.setdefault("advanced_rules", {})["toughness_damage"] = True       # Doran's cycle, Brontodon
+        return None
+    if line == "Each creature assigns combat damage equal to its toughness rather than its power.":
+        st.extra.setdefault("advanced_rules", {})["toughness_damage_all"] = True   # Doran, the Siege Tower
+        return None
     if line == "You control enchanted permanent.":
         st.extra.setdefault("advanced_rules", {})["aura_control"] = True
         return None
@@ -67,3 +73,12 @@ def forced_to_attack(game, player) -> bool:
     if sources(game, "all_must_attack"):
         return True
     return any(x.controller is not player for x in sources(game, "opp_must_attack"))
+
+
+def dmg_stat(game, perm) -> int:
+    """The number a creature assigns as combat damage: its toughness under Doran-style rules, else its power."""
+    from .residual_templates import sources
+    if sources(game, "toughness_damage_all") or any(x.controller is perm.controller
+                                                    for x in sources(game, "toughness_damage")):
+        return perm.toughness
+    return perm.power
