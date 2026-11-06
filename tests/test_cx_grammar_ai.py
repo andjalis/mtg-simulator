@@ -99,3 +99,20 @@ class SpellBar(Base):
         self.assertEqual([e.amount for e in _sized_inner(self.game, self.a, wrapper)], [3])
         sized = G._effect("cx_players", 3, data={"who": "opponents", "x": False, "effects": [inner]})   # after _sized
         self.assertEqual([e.amount for e in _sized_inner(self.game, self.a, sized)], [3])
+
+
+class TargetPlayerGroups(Base):
+    def test_each_noun_target_opponent_controls_is_targeted(self):
+        effs = parse_sentence("Each nonartifact creature target opponent controls gets -1/-1 until end of turn.")
+        self.assertEqual((effs[0].kind, effs[0].target, effs[0].filter), ("cx_group", "player", "opp"))
+        g = self.perm(GOBLIN, self.b)
+        self.game.resolve(self.a, effs[0], self.b)
+        self.game.state_based_actions()
+        self.assertNotIn(g, self.b.battlefield)
+
+    def test_inner_handlers_get_cause(self):
+        effs = parse_sentence("Creatures target player controls get -1/-1 until end of turn.")
+        effs[0].data["effects"][0].kind = "damage"          # a kind that needs cause=
+        effs[0].data["effects"][0].amount = 1
+        self.perm(GOBLIN, self.b)
+        self.game.resolve(self.a, effs[0], self.b)          # no TypeError
