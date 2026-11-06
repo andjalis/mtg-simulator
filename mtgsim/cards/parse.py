@@ -325,8 +325,6 @@ def card_from_scryfall(data: dict) -> CardDef:
                 card.adventure = _parse_face(back)
             elif "Land" in back_types and not card.is_land:
                 card.land_face = _parse_face(back)   # modal double-faced: may be played as this land
-            elif re.search(r"Daybound|Nightbound", card.oracle):
-                pass  # day/night isn't tracked; the day side stays
             elif data.get("layout") == "split" and _split_halves(card, _parse_face(back)):
                 pass
             else:
