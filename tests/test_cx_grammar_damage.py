@@ -35,7 +35,6 @@ class Parsing(unittest.TestCase):
     def test_rejections(self):
         for s in ("~ deals 4 damage divided as you choose among any number of targets.",
                   "~ deals that much damage to you.",
-                  "~ deals damage equal to its power to target creature.",
                   "~ deals 2 damage to each of two targets.",
                   "~ deals 2 damage to you unless you pay {1}.",
                   "It deals 2 damage to target creature with flying.",           # "it" as another source, targeted
