@@ -958,8 +958,8 @@ class HeuristicAI:
 
     def _group_plan(self, game: Game, me: Player, eff: Effect, card: CardDef, precombat: bool, instant: bool):
         """(target, value) for a grammar group effect (cx_group, or cx_set_base on a target player's creatures):
-        what it does to each member, ours counted for us and theirs against them, or None when not worth it now."""
-        from .cx_grammar import group_members
+        what each inner effect does to each member (cx_grammar.member_value), or None when not worth it now."""
+        from .cx_grammar import group_members, member_value
         opp = game.opponent(me)
         target = None
         if eff.target == "player":
@@ -968,33 +968,16 @@ class HeuristicAI:
             if target is None:
                 return None
         if eff.kind == "cx_set_base":
-            members = list(target.creatures) if target is not None else []
-            inner = [dataclasses.replace(eff, kind="cx_set_base")]
+            members, inner = list(target.creatures) if target is not None else [], [eff]
         else:
-            members = group_members(game, me, eff.data, None, target)
-            inner = eff.data["effects"]
+            members, inner = group_members(game, me, eff.data, None, target), eff.data["effects"]
         x = game.x_quantity(me, eff.data["xq"], None, None) if eff.data.get("xq") else 1
         value, combat_only = 0.0, False
         for m in members:
-            if not m.is_creature:
-                continue
-            sign = 1.0 if m.controller is me else -1.0
             for e in inner:
-                a, b = e.amount * x, e.amount2 * x
-                if e.kind == "debuff_one" and m.toughness - m.damage <= b and not m.has("indestructible"):
-                    value -= sign * (perm_value(m) + 1)                      # it dies
-                elif e.kind == "debuff_one":
-                    value -= sign * 0.3 * a
-                elif e.kind == "cx_set_base":
-                    value += sign * 0.5 * ((a - m.power) + (b - m.toughness))
-                elif e.kind in ("pump", "grant") or e.kind == "cx_temp_kw" and e.data.get("side") == "mine":
-                    combat_only = True
-                    if m.controller is me and m.can_attack():
-                        value += 0.5 * (a + (1 if e.kind != "pump" else 0))
-                elif e.kind in ("cx_lose_kw", "cx_temp_kw"):
-                    combat_only = True
-                    if m.controller is opp:
-                        value += 0.4
+                v, combat = member_value(game, me, dataclasses.replace(e, amount=e.amount * x, amount2=e.amount2 * x), m)
+                value += v
+                combat_only = combat_only or combat
         if combat_only and (not precombat or instant):
             return None             # combat effects go before our attack; instants wait for after_blocks / respond
         pressure = 2 * sum(combat_power(c) for c in opp.creatures) >= me.life
@@ -1002,8 +985,9 @@ class HeuristicAI:
         return (target, value) if value > bar else None
 
     def _players_plan(self, game: Game, me: Player, eff: Effect, card: CardDef, instant: bool):
-        """(target, value) for a grammar player effect (cx_players): its life, draw, discard and mill verbs for each
-        player it names, ours counted for us and the opponent's against them; None when it can't be valued here."""
+        """(target, value) for a grammar player effect (cx_players): each inner effect for each player it names
+        (cx_grammar.member_value); None when it can't be valued here."""
+        from .cx_grammar import member_value
         opp = game.opponent(me)
         who, target = eff.data["who"], None
         if who == "target":
@@ -1016,22 +1000,13 @@ class HeuristicAI:
             named = {"you": [me], "each": [me, opp], "opponents": [opp], "defending": [opp]}.get(who)
             if named is None:
                 return None         # "that player", "its controller": only in triggers, decided there
+        x = game.x_quantity(me, eff.data["xq"], None, None) if eff.data.get("xq") else 1
         value = 0.0
         for pl in named:
-            sign = 1.0 if pl is me else -1.0
             for e in eff.data["effects"]:
-                if e.kind == "draw":
-                    value += sign * 1.5 * e.amount
-                elif e.kind == "gain_life":
-                    value += sign * (life_value(pl.life + e.amount) - life_value(pl.life))
-                elif e.kind == "lose_life":
-                    if pl is opp and e.amount >= opp.life:
-                        return target, LETHAL
-                    value -= sign * (life_value(pl.life) - life_value(pl.life - e.amount))
-                elif e.kind == "discard":
-                    value -= sign * (0.8 if pl is me else 1.0) * min(e.amount, len(pl.hand))
-                elif e.kind == "mill":
-                    value -= sign * 0.1 * e.amount
+                if e.kind == "lose_life" and pl is opp and e.amount * x >= opp.life:
+                    return target, LETHAL
+                value += member_value(game, me, dataclasses.replace(e, amount=e.amount * x), pl)[0]
         if instant and value < LETHAL:
             return None             # instant-speed card advantage waits for the opponent's end step
         return (target, value) if value > 0 else None
