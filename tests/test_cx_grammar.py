@@ -252,7 +252,7 @@ class PlayerSubjects(Base):
         self.assertEqual(self.b.life, 20 - 3)
 
     def test_unknown_player_verbs_are_rejected(self):
-        self.assertIsNone(parse_sentence("Each player gains 2 life and sacrifices a creature."))
+        self.assertIsNone(parse_sentence("Each player gains 2 life and explores."))
 
 
 class Quantities(Base):
@@ -312,9 +312,11 @@ class TargetPlayers(Base):
 
     def test_ai_casts_a_group_debuff_at_the_opponent(self):
         bear, mine = self.perm(BEAR, self.b), self.perm(BEAR, self.a)
+        goblins = [self.perm(GOBLIN, self.b) for _ in range(2)]
         spell = self.main_phase("Creatures target player controls get -1/-1 until end of turn.")
         self.assertNotIn(spell, self.a.hand)
         self.assertEqual((bear.power, mine.power), (BEAR.power - 1, BEAR.power))
+        self.assertTrue(all(g not in self.b.battlefield for g in goblins))
 
     def test_ai_casts_a_group_pump_at_itself(self):
         bear, theirs = self.perm(BEAR, self.a), self.perm(BEAR, self.b)
@@ -389,3 +391,106 @@ class Interface(unittest.TestCase):
             return body + body if body else None
         effs = parse_sentence("Target creature gains flying until end of turn twice.")
         self.assertEqual([e.kind for e in effs], ["grant", "grant"])
+
+
+class ColorSide(Base):
+    def target_for(self, text):
+        spell = self.spell(text)
+        with self.game.targeting(spell):
+            return self.a.ai.choose_target(self.game, self.a, spell.spell_effects[0], spell)
+
+    def test_colour_change_follows_the_effects_after_it(self):
+        mine, theirs = self.perm(BEAR, self.a), self.perm(WOLF, self.b)
+        self.assertIs(self.target_for("Target creature becomes red and gains haste until end of turn."), mine)
+        self.assertIs(self.target_for("Target creature becomes blue until end of turn. Untap that creature."), mine)
+        self.assertIs(self.target_for("Target creature becomes white until end of turn. Tap that creature."), theirs)
+        self.assertIs(self.target_for("Target creature becomes black until end of turn."), theirs)
+
+
+class LootSide(unittest.TestCase):
+    def test_draw_then_discard_is_for_its_controller(self):
+        effs = parse_sentence("Target player draws two cards, then discards a card.")
+        self.assertEqual((effs[0].target, effs[0].data["side"]), ("player", "mine"))
+        self.assertIsNone(parse_sentence("Target player discards a card, then draws a card."))   # helps and hurts
+
+
+class TargetOpponent(Base):
+    def test_ai_targets_the_opponent_even_when_the_verb_helps(self):
+        spell = self.spell("Target opponent gains 3 life and draws a card.")
+        with self.game.targeting(spell):
+            self.assertIs(self.a.ai.choose_target(self.game, self.a, spell.spell_effects[0], spell), self.b)
+        eff = parse_sentence("Creatures target opponent controls get +1/+1 until end of turn.")[0]    # the grammar's reading
+        self.assertEqual((eff.filter, eff.data["side"]), ("opp", "theirs"))
+        with self.game.targeting(spell):
+            self.assertEqual(self.game.legal_targets(self.a, eff), [self.b])
+            self.assertIs(self.a.ai.choose_target(self.game, self.a, eff, spell), self.b)
+
+    @unittest.skipUnless(DB_FILE.exists(), "card database not built")
+    def test_armistice(self):
+        from mtgsim.carddb import CardDB
+        armistice = CardDB().get("Armistice")
+        eff = next(e for e in armistice.activated[0].effects if e.target == "player")
+        with self.game.targeting(armistice):
+            self.assertIs(self.a.ai.choose_target(self.game, self.a, eff, armistice), self.b)
+
+
+class MassDiminish(Base):
+    def test_ai_casts_it_at_the_opponent(self):
+        theirs, mine = self.perm(WOLF, self.b), self.perm(WOLF, self.a)
+        for _ in range(3):
+            self.perm(WOLF, self.b)
+        spell = card("Test Diminish", "{U}", "Sorcery",
+                     "Until your next turn, creatures target player controls have base power and toughness 1/1.")
+        self.assertEqual(spell.unsupported, [])
+        self.perm(ISLAND, self.a)
+        self.a.hand = [spell]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertNotIn(spell, self.a.hand)
+        self.assertEqual((theirs.power, mine.power), (1, 2))
+
+    @unittest.skipUnless(DB_FILE.exists(), "card database not built")
+    def test_real_card(self):
+        from mtgsim.carddb import CardDB
+        card_ = CardDB().get("Mass Diminish")
+        eff = next(e for e in card_.spell_effects if e.target == "player")
+        self.perm(BEAR, self.b)
+        with self.game.targeting(card_):
+            self.assertIs(self.a.ai.choose_target(self.game, self.a, eff, card_), self.b)
+
+
+class PlayersCast(Base):
+    def main_phase(self, text):
+        spell = card("Test Spell", "{U}", "Sorcery", text)
+        self.assertEqual(spell.unsupported, [], text)
+        self.perm(ISLAND, self.a)
+        self.a.hand = [spell]
+        self.a.ai.main_phase(self.game, self.a)
+        return spell
+
+    def test_ai_casts_you_draw_and_lose_life(self):
+        life = self.a.life
+        spell = self.main_phase("You draw three cards and lose 3 life.")
+        self.assertNotIn(spell, self.a.hand)
+        self.assertEqual((self.a.life, len(self.a.hand)), (life - 3, 3))
+
+    def test_ai_casts_each_opponent_discards(self):
+        self.b.hand = [BEAR, BEAR]
+        life = self.b.life
+        spell = self.main_phase("Each opponent discards a card and loses 2 life.")
+        self.assertNotIn(spell, self.a.hand)
+        self.assertEqual((len(self.b.hand), self.b.life), (1, life - 2))
+
+    def test_ai_keeps_a_symmetric_wash(self):
+        spell = self.main_phase("Each player loses 2 life.")
+        self.assertIn(spell, self.a.hand)
+
+    @unittest.skipUnless(DB_FILE.exists(), "card database not built")
+    def test_ambitions_cost(self):
+        from mtgsim.carddb import CardDB
+        ambition = CardDB().get("Ambition's Cost")
+        from tests.test_templates import SWAMP
+        for _ in range(4):
+            self.perm(SWAMP, self.a)
+        self.a.hand = [ambition]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertNotIn(ambition, self.a.hand)
