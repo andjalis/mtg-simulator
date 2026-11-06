@@ -226,9 +226,10 @@ def parse_sentence(s: str):
         built += effs
     if group is not None:
         inner = [_effect(k, a, b, target="self", data=d) for k, a, b, d in built]
+        flt = data.pop("filter", "") if target == "player" else ""
         if target == "player":      # "creatures target player controls": the AI picks the player by side
-            data = dict(data, side=_side(inner))
-        return [_effect("cx_group", target=target, data=dict(data, group=group, effects=inner))]
+            data = dict(data, side="theirs" if flt == "opp" else _side(inner))
+        return [_effect("cx_group", target=target, filter=flt, data=dict(data, group=group, effects=inner))]
     out = []
     for _ in range(copies):
         for i, (k, a, b, d) in enumerate(built):
@@ -328,11 +329,13 @@ def parse_players(s: str):
         return None
     inner = [_effect(k, n, target="that_controller") for k, n in verbs]
     who = m[1].lower()
-    if who.startswith("target "):
+    if who == "target opponent":     # the opponent is the only choice, whatever the verbs do
+        return [_effect("cx_players", target="player", filter="opp",
+                        data={"who": "target", "side": "theirs", "effects": inner})]
+    if who == "target player":
         if len({_side([e]) for e in inner}) > 1:
             return None         # helps and hurts: which player the controller wants isn't clear
-        return [_effect("cx_players", target="player", filter="opp" if who.endswith("opponent") else "",
-                        data={"who": "target", "side": _side(inner), "effects": inner})]
+        return [_effect("cx_players", target="player", data={"who": "target", "side": _side(inner), "effects": inner})]
     return [_effect("cx_players", data={"who": _PLAYERS[who], "effects": inner})]
 
 
