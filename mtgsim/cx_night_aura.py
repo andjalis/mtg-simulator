@@ -11,6 +11,10 @@ import re
 
 _GOADED = re.compile(r"((?:Enchanted|Equipped) creature (?:gets [+-]\d+/[+-]\d+.*?)),? and is goaded\.")
 
+# "Creatures you control get +1/+1 until end of turn. Untap them." (Rallying Roar): "them" is those creatures. Only that
+# shape is rewritten; Great Oak Guardian and Leo's Guidance use "them" for other creatures.
+_UNTAP_THEM = re.compile(r"((?:^|[.,] )[Cc]reatures you control [^.]*?)\. Untap them\.")
+
 
 def parse_line(st, line: str):
     """Face-line handler: returns None once the line is handled, else the (possibly rewritten) line."""
@@ -20,6 +24,8 @@ def parse_line(st, line: str):
     if line == "You control enchanted permanent.":
         st.extra.setdefault("advanced_rules", {})["aura_control"] = True
         return None
+    if "Untap them." in line:        # "Creatures you control get +1/+1 until end of turn. Untap them."
+        line = _UNTAP_THEM.sub(lambda m: f"{m[1]}. Untap all creatures you control.", line)
     m = _GOADED.fullmatch(line)
     if m:
         head = re.sub(r", has ", " and has ", m[1], count=1)
