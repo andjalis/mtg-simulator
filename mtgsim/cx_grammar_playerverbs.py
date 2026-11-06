@@ -28,6 +28,12 @@ def _amount(word: str, clause, own_x=False):
     return (n, {}) if n else None
 
 
+def _form_fits(m, clause) -> bool:
+    """An imperative takes the bare verb ("Discard a card at random."); "discards" needs a player subject, so a
+    "..., then discards ..." piece split off a player sentence isn't read as "you"."""
+    return clause.subject.kind != "imperative" or not clause.verb.startswith("discards")
+
+
 def _obj(clause):
     return {"obj": _you()} if clause.subject.kind == "imperative" else {}
 
@@ -51,14 +57,15 @@ def life(m, clause):
 @verb(rf"discards? {_N} cards? at random", heads=("discard", "discards"), subjects=("imperative", "player"))
 def at_random(m, clause):
     got = _amount(m[1], clause, own_x=True)
-    if got is None or clause.duration or (m[1] in ("a", "an", "one")) != clause.verb.endswith(" card at random"):
+    if got is None or not _form_fits(m, clause) or clause.duration or (m[1] in ("a", "an", "one")) != clause.verb.endswith(" card at random"):
         return None
     return [Part("cx_discard_random", got[0], 0, got[1], **_obj(clause))]
 
 
 @verb(r"discards? (your|their) hand", heads=("discard", "discards"), subjects=("imperative", "player"))
 def hand(m, clause):
-    if clause.duration or (m[1] == "your") != (clause.subject.kind == "imperative" or clause.subject.who == "you"):
+    if clause.duration or not _form_fits(m, clause) \
+            or (m[1] == "your") != (clause.subject.kind == "imperative" or clause.subject.who == "you"):
         return None
     return [Part("cx_discard_hand", **_obj(clause))]
 
