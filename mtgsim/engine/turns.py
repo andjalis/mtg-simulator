@@ -71,6 +71,9 @@ class TurnsMixin:
                 self.draw(p, more + 1, _replaced=_replaced + ("cx_draw",))
                 continue
             if not p.library:
+                from ..cx_night_aura import cant_lose
+                if cant_lose(self, p):
+                    return
                 if not p.lost:
                     self.audit("loss", seat=self.players.index(p), cause="drew from empty library")
                 p.lost = True
