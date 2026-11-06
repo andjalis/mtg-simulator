@@ -310,9 +310,18 @@ def reparse(sentence: str, effects: list) -> list:
     if not any(e.data.get("unparsed_token_keywords") for e in effects):
         return effects
     from .cards.model import NO_MATCH
-    m = re.fullmatch(_CREATE, sentence.strip().rstrip("."), re.I)
+    text = sentence.strip().rstrip(".")
+    tail = []
+    then = re.fullmatch(r"(.+?), then ([a-z][^\"]+)", text)       # "..., then populate": the rest on its own
+    if then:
+        from .cards.parse import _parse_effects
+        tail, bad = _parse_effects(then[2][0].upper() + then[2][1:] + ".")
+        if bad or not tail:
+            return effects
+        text = then[1]
+    m = re.fullmatch(_CREATE, text, re.I)
     new = parse_create(m[1] or "", m[2]) if m else NO_MATCH
-    return effects if new is NO_MATCH else new
+    return effects if new is NO_MATCH else new + tail
 
 
 _CREATE = (r"(?:(you|they|that player|each opponent|each player|its controller|its owner|that creature's controller|"
@@ -421,3 +430,15 @@ def parse_rider(sentence: str, effects: list) -> bool:
             effects[i] = dataclasses.replace(e, data=dict(e.data, **extra))
         return True
     return False
+
+
+_OLD_DOUBLING = re.compile(r"If an effect would create one or more tokens under your control, it creates twice that many "
+                           r"of those tokens instead\.")
+
+
+def face_line(st, line):
+    """Face-line parser (put first in cards/parse.py's list by cards/__init__.py): the older Oracle wording of the
+    token-doubling replacement becomes the current one, which the static parser knows (token_double)."""
+    if _OLD_DOUBLING.fullmatch(line):
+        return "If one or more tokens would be created under your control, twice that many of those tokens are created instead."
+    return line

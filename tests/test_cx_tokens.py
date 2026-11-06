@@ -283,6 +283,19 @@ class Counts(GameCase):
         elemental = next(x for x in self.a.battlefield if x.card.is_token)
         self.assertEqual((elemental.power, elemental.toughness), (3, 3))     # two Bears and itself
 
+    def test_devotion_counts_hybrid_pips_for_each_colour(self):
+        from mtgsim.engine.kinds.cx_tokens import devotion
+        finks = self.db.get("Kitchen Finks")                       # {1}{G/W}{G/W}
+        self.assertEqual((devotion(finks, ("W",)), devotion(finks, ("G",)), devotion(finks, ("G", "W"))), (2, 2, 2))
+        self.assertEqual(devotion(self.db.get("Spectral Procession"), ("W",)), 3)    # {2/W}{2/W}{2/W}
+        self.assertEqual(devotion(self.db.get("Master of Waves"), ("U",)), 1)
+
+    def test_old_doubling_wording_and_populate_tail(self):
+        for name in ("Anointed Procession", "Parallel Lives", "Eyes in the Skies", "Horncaller's Chant"):
+            self.assertEqual(card_coverage(self.db.get(name)).ignored, [], name)
+        self.assertTrue(self.db.get("Anointed Procession").token_double)
+        self.assertEqual([e.kind for e in self.db.get("Eyes in the Skies").spell_effects], ["cx_token", "populate"])
+
     def test_parent_name_in_a_quoted_ability_is_refused(self):
         self.assertIsNone(describe('green Ooze creature token with "~\'s power and toughness are each equal to the '
                                    'number of slime counters on ~."'))
@@ -368,6 +381,17 @@ class HeuristicAIGames(unittest.TestCase):
         self.assertEqual(tokens_at_end_of_combat, [["Robot token"]])    # paid {2}; the Robot attacked
         self.assertEqual(self.b.life, 16)
         self.assertFalse(any(x.card.is_token for x in self.a.battlefield))
+
+    def test_populate_and_doubling(self):
+        self.setup("Horncaller's Chant", "Forest", "main1", 0)
+        for _ in range(4):
+            self.game.enter_battlefield(self.a, self.db.get("Forest")).sick = False
+        self.game.enter_battlefield(self.a, self.db.get("Parallel Lives"))
+        self.game.main_phase(self.a)
+        self.game.settle()
+        rhinos = [x for x in self.a.battlefield if x.card.is_token]
+        self.assertEqual(len(rhinos), 4)          # two Rhinos, then the populated copy twice
+        self.assertTrue(all(x.has("trample") and x.power == 4 for x in rhinos))
 
     def test_each_player_creates_a_food(self):
         self.setup("Elephant-Mandrill", "Forest", "main1", 0)
