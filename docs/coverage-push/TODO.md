@@ -7,6 +7,9 @@ that isn't an issue.
 ## 1. Resume the team (after a pause, a reboot or a new lead session)
 
 1. `cd ~/mtg-simulator && git checkout main && git pull --ff-only`; check that the nightly run on main is green.
+   The briefs, plans and handoff notes in this folder are the source of truth (not the local copy): replace
+   `~/mtg-worktrees/briefs` with a link to `~/mtg-simulator/docs/coverage-push` (keep `lists/` local; it is
+   regenerated), and have the lead commit brief and status changes back here in small docs PRs.
 2. Restart the local gate workers (see README "Tools") and check `~/mtg-worktrees/gate.log`.
 3. List open PRs (`gh pr list`) and issues; approved PRs carry `lead-approved`. Run
    `~/mtg-worktrees/bin/merge_batch.sh` for a batch (it runs a census after merging).
