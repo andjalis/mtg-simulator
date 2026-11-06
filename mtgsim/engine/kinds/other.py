@@ -109,6 +109,9 @@ def counter(game, p, eff, target, item, **_):
                 return
         redirect_spell(game, p, target)
         return
+    if eff.data.get("per"):             # "unless its controller pays {1} for each ..." (cx_night_counter)
+        from ...cx_night_counter import count_per
+        eff = dataclasses.replace(eff, amount=count_per(game, p, eff.data["per"]))
     if eff.data.get("tw") and getattr(item, "teamwork", False):
         eff = dataclasses.replace(eff, amount=eff.data["tw"])
     game.counter(p, eff, target)
