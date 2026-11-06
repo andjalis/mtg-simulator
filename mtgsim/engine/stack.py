@@ -334,6 +334,7 @@ class StackMixin:
                 perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
             self._aura_host = None
             self._entry_cast = None
+            perm.cast_zone = getattr(item, "cast_zone", None)       # "if it was cast from exile" (cx_condlib)
             if base.aura == "player":
                 perm.curse_target = self.opponent(p)
             self._entry_mana_colors = set()
