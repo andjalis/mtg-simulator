@@ -36,6 +36,9 @@ def parse_line(st, line: str):
     if line == "Creatures your opponents control attack each combat if able.":       # Angler Turtle
         st.extra.setdefault("advanced_rules", {})["opp_must_attack"] = True
         return None
+    if line == "Damage that would reduce your life total to less than 1 reduces it to 1 instead.":   # Ali from Cairo
+        st.extra.setdefault("advanced_rules", {})["life_floor"] = True
+        return None
     if line == "You control enchanted permanent.":
         st.extra.setdefault("advanced_rules", {})["aura_control"] = True
         return None

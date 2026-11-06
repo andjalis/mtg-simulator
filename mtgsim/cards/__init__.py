@@ -195,3 +195,5 @@ _EFFECT_PATTERNS += _cx_night_loot.EFFECT_PATTERNS
 from .. import cx_night_edict as _cx_night_edict
 _SUBS += _cx_night_edict.SUBS
 _EFFECT_PATTERNS += _cx_night_edict.EFFECT_PATTERNS
+from .. import cx_night_misc as _cx_night_misc
+_EFFECT_PATTERNS += _cx_night_misc.EFFECT_PATTERNS
