@@ -41,7 +41,14 @@ def _simple(kind, target="none"):
     return build
 
 
+def _freeze_theirs(m):
+    from .cards.model import Effect
+    return Effect("skip_untap", target="creature", data={"side": "theirs"})
+
+
 EFFECT_PATTERNS = [
+    (r"target creature an opponent controls doesn't untap during its controller's next untap step", _freeze_theirs),
+    (r"target player sacrifices an attacking creature", _simple("edict_attacking", "player")),
     (r"each player sacrifices a nontoken creature", _simple("edict_each_nontoken")),
     (r"target opponent puts a card from their hand on top of their library", _simple("opp_hand_to_top", "player")),
     # Whirlpool Drake: shuffle the hand into the library; Arjun: put it on the bottom. Either way draw that many.

@@ -185,6 +185,10 @@ IMP = card("Test Imp", "{2}{B}", "Creature", "Flying\nWhen ~ dies, target oppone
            power=1, toughness=1)
 
 
+MANEUVER = card("Test Maneuver", "{1}{W}", "Instant", "Target player sacrifices an attacking creature.")
+FOGWALKER = card("Test Fogwalker", "{1}{U}", "Creature", "Whenever ~ attacks, target creature an opponent controls doesn't untap during its controller's next untap step.", power=1, toughness=1)
+
+
 class SmallEdicts(unittest.TestCase):
     def test_parse(self):
         self.assertEqual((MARAUDER.unsupported, IMP.unsupported), ([], []))
@@ -203,3 +207,28 @@ class SmallEdicts(unittest.TestCase):
         game.resolve(a, IMP.triggers[0].effects[0], b, None)
         self.assertEqual((len(b.hand), len(b.library)), (1, n + 1))
         self.assertEqual(b.library[-1].name, MOUNTAIN.name)
+
+
+class AttackingEdictAndFreeze(unittest.TestCase):
+    def test_parse(self):
+        self.assertEqual((MANEUVER.unsupported, FOGWALKER.unsupported), ([], []))
+
+    def test_sacrifices_an_attacker(self):
+        game, a, b = _game()
+        c = game.enter_battlefield(b, BEAR)
+        game.attackers = [c]
+        game.resolve(a, MANEUVER.spell_effects[0], b, None)
+        self.assertEqual(len(b.creatures), 0)
+
+    def test_untouched_when_not_attacking(self):
+        game, a, b = _game()
+        game.enter_battlefield(b, BEAR)
+        game.attackers = []
+        game.resolve(a, MANEUVER.spell_effects[0], b, None)
+        self.assertEqual(len(b.creatures), 1)
+
+    def test_freeze(self):
+        game, a, b = _game()
+        c = game.enter_battlefield(b, BEAR)
+        game.resolve(a, FOGWALKER.triggers[0].effects[0], c, None)
+        self.assertEqual(c.skip_untap, 1)
