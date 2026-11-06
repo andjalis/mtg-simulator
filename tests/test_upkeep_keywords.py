@@ -163,6 +163,18 @@ class UpkeepKeywords(unittest.TestCase):
         self.assertNotIn(HUNTER, self.a.exile)
         self.assertIn(HUNTER.name, [x.card.name for x in self.a.battlefield])
 
+    def test_ai_hand_size_discard_triggers_madness(self):
+        """HeuristicAI discards its madness card to hand size at cleanup; the trigger casts it for {B}."""
+        self.game.active_idx = 0
+        self.put(self.a, SWAMP, 1)
+        mad = card("Test Madness Imp", "{4}{B}", "Creature — Imp", "Madness {B}", 1, 1)
+        self.a.hand = [mad] + [card(f"Bolt {i}", "{R}", "Instant", "~ deals 3 damage to any target.") for i in range(7)]
+        self.a.library = [ISLAND] * 20
+        self.game.take_turn(self.a)
+        self.assertEqual(len(self.a.hand), 7)
+        self.assertIn("Test Madness Imp", [x.card.name for x in self.a.battlefield])
+        self.assertNotIn(mad, self.a.graveyard)
+
     def test_madness_unpaid_goes_to_graveyard(self):
         self.game.active_idx = 0
         self.a.hand.append(HUNTER)
