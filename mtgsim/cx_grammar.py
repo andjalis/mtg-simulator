@@ -204,7 +204,8 @@ def count(word: str):
 
 # ---------------------------------------------------------------- subjects
 
-_PLAYERS = {"you": "you", "each player": "each", "each opponent": "opponents", "that player": "that_player",
+_PLAYERS = {"you": "you", "each player": "each", "players": "each", "each opponent": "opponents",
+            "your opponents": "opponents", "that player": "that_player",
             "defending player": "defending", "that creature's controller": "controller",
             "that permanent's controller": "controller", "its controller": "controller", "its owner": "owner",
             "that creature's owner": "owner"}
@@ -528,6 +529,15 @@ def parse_static(line: str, st) -> bool:
     if split is None:
         return False
     subj = subject(split[0])
+    if subj is not None and subj.kind == "player" and subj.who in ("you", "opponents", "each"):
+        parts = _clauses(split[1], subj, "static")       # "Your opponents can't cast creature spells."
+        if not parts or any(p.kind != "cx_static" for p in parts):
+            return False
+        rules = st.extra.setdefault("advanced_rules", {})
+        for p in parts:
+            key = p.data["rule"] + "@players"
+            rules[key] = tuple(rules.get(key, ())) + ((subj.who, p.data["value"]),)
+        return True
     if subj is None or subj.kind not in ("group", "host", "permanent") or subj.target != "none" and subj.kind == "group" \
             or subj.kind == "permanent" and subj.target != "self":
         return False
@@ -681,6 +691,22 @@ def static_rules(game, perm, rule: str) -> list:
                     if not x.abilities_suppressed and matches(game, perm, spec, x.controller, x):
                         out.append(value)
         out += [v for turn, r, v in getattr(perm, "cx_rules_turn", ()) if r == rule and turn == game.turn]
+    return out
+
+
+def player_rules(game, player, rule: str) -> list:
+    """Every value of a family rule that applies to a player now: statics on permanents naming them ("you",
+    "your opponents", "players", relative to the permanent's controller) and this turn's (cx_player_rule)."""
+    out = []
+    for pl in game.players:
+        for x in pl.battlefield:
+            if x.abilities_suppressed:
+                continue
+            for who, value in x.card.advanced_rules.get(rule + "@players", ()):
+                if who == "each" or (who == "you") == (player is x.controller):
+                    out.append(value)
+    out += [v for turn, r, v, who in getattr(game, "cx_player_rules", ()) if r == rule and who is player
+            and turn == game.turn]
     return out
 
 
