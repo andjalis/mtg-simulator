@@ -177,3 +177,29 @@ class HandCycle(unittest.TestCase):
         game.enter_battlefield(a, MOUNTAIN)
         game.enter_battlefield(b, MOUNTAIN)
         self.assertEqual([x.controller for x in auras.hosts(game, a, HOT)], [a])
+
+
+MARAUDER = card("Test Marauder", "{2}{B}", "Creature", "When ~ enters, each player sacrifices a nontoken creature.",
+                power=3, toughness=2)
+IMP = card("Test Imp", "{2}{B}", "Creature", "Flying\nWhen ~ dies, target opponent puts a card from their hand on top of their library.",
+           power=1, toughness=1)
+
+
+class SmallEdicts(unittest.TestCase):
+    def test_parse(self):
+        self.assertEqual((MARAUDER.unsupported, IMP.unsupported), ([], []))
+
+    def test_each_player_sacrifices_a_nontoken(self):
+        game, a, b = _game()
+        game.enter_battlefield(a, BEAR)
+        game.enter_battlefield(b, BEAR)
+        game.resolve(a, MARAUDER.triggers[0].effects[0], None, None)
+        self.assertEqual((len(a.creatures), len(b.creatures)), (0, 0))
+
+    def test_opponent_returns_a_card_to_the_top(self):
+        game, a, b = _game()
+        b.hand = [MOUNTAIN, BEAR]
+        n = len(b.library)
+        game.resolve(a, IMP.triggers[0].effects[0], b, None)
+        self.assertEqual((len(b.hand), len(b.library)), (1, n + 1))
+        self.assertEqual(b.library[-1].name, MOUNTAIN.name)

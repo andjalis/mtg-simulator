@@ -34,7 +34,16 @@ def _hand_cycle(m):
     return Effect("hand_cycle", target="none", data={"bottom": "bottom" in m[0]})
 
 
+def _simple(kind, target="none"):
+    def build(m):
+        from .cards.model import Effect
+        return Effect(kind, target=target)
+    return build
+
+
 EFFECT_PATTERNS = [
+    (r"each player sacrifices a nontoken creature", _simple("edict_each_nontoken")),
+    (r"target opponent puts a card from their hand on top of their library", _simple("opp_hand_to_top", "player")),
     # Whirlpool Drake: shuffle the hand into the library; Arjun: put it on the bottom. Either way draw that many.
     (r"shuffle the cards from your hand into your library, then draw that many cards", _hand_cycle),
     (r"put the cards in your hand on the bottom of your library in any order, then draw that many cards", _hand_cycle),
