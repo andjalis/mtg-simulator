@@ -1,0 +1,84 @@
+"""Aura and equipment statics: "You control enchanted permanent." and "... and is goaded.", plus "You have shroud." and "You may cast sorcery spells as though they had flash."
+
+* "You control enchanted permanent." (Confiscate, Lay Claim, Take Possession): the same ``aura_control`` rule the
+  creature version uses; the engine's control machinery already works for any host.
+* "Enchanted/Equipped creature gets +N/+M[, has KW,] and is goaded." (the Impetus Auras, Bloodthirsty Blade): goad is
+  read as "attacks each combat if able", since the rider "attacks a player other than you if able" only matters in
+  games with three or more players, which this simulator does not play. The line is rewritten and handed on."""
+from __future__ import annotations
+
+import re
+
+_GOADED = re.compile(r"((?:Enchanted|Equipped) creature (?:gets [+-]\d+/[+-]\d+.*?)),? and is goaded\.")
+
+# "Creatures you control get +1/+1 until end of turn. Untap them." (Rallying Roar): "them" is those creatures. Only that
+# shape is rewritten; Great Oak Guardian and Leo's Guidance use "them" for other creatures.
+_UNTAP_THEM = re.compile(r"((?:^|[.,] )[Cc]reatures you control [^.]*?)\. Untap them\.")
+
+
+def parse_line(st, line: str):
+    """Face-line handler: returns None once the line is handled, else the (possibly rewritten) line."""
+    if line == "You have shroud.":                  # Ivory Mask, True Believer: nothing can target you, even you
+        st.extra.setdefault("advanced_rules", {})["player_shroud"] = True
+        return None
+    if line.startswith("You may cast spells as though they had flash."):          # Vedalken Orrery, Leyline of Anticipation
+        st.extra.setdefault("advanced_rules", {})["spells_flash"] = True
+        return None
+    if line.startswith("You may cast sorcery spells as though they had flash."):     # Gandalf, Hypersonic Dragon
+        st.extra.setdefault("advanced_rules", {})["sorcery_flash"] = True
+        return None
+    if line == "You can't lose the game and your opponents can't win the game.":      # Platinum Angel
+        st.extra.setdefault("advanced_rules", {})["cant_lose"] = True
+        return None
+    if line == "All creatures attack each combat if able.":                        # Grand Melee, Warmonger Hellkite
+        st.extra.setdefault("advanced_rules", {})["all_must_attack"] = True
+        return None
+    if line == "Creatures your opponents control attack each combat if able.":       # Angler Turtle
+        st.extra.setdefault("advanced_rules", {})["opp_must_attack"] = True
+        return None
+    if line == "Damage that would reduce your life total to less than 1 reduces it to 1 instead.":   # Ali from Cairo
+        st.extra.setdefault("advanced_rules", {})["life_floor"] = True
+        return None
+    if line == "As an additional cost to cast ~, discard a card at random.":       # Sonic Burst, Acceptable Losses
+        st.extra["extra_discard"] = 1
+        st.extra.setdefault("advanced_rules", {})["discard_random"] = True
+        return None
+    if line == "Each creature you control assigns combat damage equal to its toughness rather than its power.":
+        st.extra.setdefault("advanced_rules", {})["toughness_damage"] = True       # Doran's cycle, Brontodon
+        return None
+    if line == "Each creature assigns combat damage equal to its toughness rather than its power.":
+        st.extra.setdefault("advanced_rules", {})["toughness_damage_all"] = True   # Doran, the Siege Tower
+        return None
+    if line == "You control enchanted permanent.":
+        st.extra.setdefault("advanced_rules", {})["aura_control"] = True
+        return None
+    if "Untap them." in line:        # "Creatures you control get +1/+1 until end of turn. Untap them."
+        line = _UNTAP_THEM.sub(lambda m: f"{m[1]}. Untap all creatures you control.", line)
+    m = _GOADED.fullmatch(line)
+    if m:
+        head = re.sub(r", has ", " and has ", m[1], count=1)
+        return f"{head} and attacks each combat if able."
+    return line
+
+
+def cant_lose(game, player) -> bool:
+    """True while a permanent says its controller can't lose the game (Platinum Angel)."""
+    from .residual_templates import sources
+    return any(x.controller is player for x in sources(game, "cant_lose"))
+
+
+def forced_to_attack(game, player) -> bool:
+    """True while a permanent makes every creature (or the opponents' creatures) attack each combat."""
+    from .residual_templates import sources
+    if sources(game, "all_must_attack"):
+        return True
+    return any(x.controller is not player for x in sources(game, "opp_must_attack"))
+
+
+def dmg_stat(game, perm) -> int:
+    """The number a creature assigns as combat damage: its toughness under Doran-style rules, else its power."""
+    from .residual_templates import sources
+    if sources(game, "toughness_damage_all") or any(x.controller is perm.controller
+                                                    for x in sources(game, "toughness_damage")):
+        return perm.toughness
+    return perm.power

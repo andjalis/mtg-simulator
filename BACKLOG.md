@@ -6,6 +6,14 @@ See the [completion report](results/residual_batch/README.md), [closed tasks](re
 
 Only exact residual ignored text on partial cards appears below. Fully matched cards, matched effects and simplification-only cards are excluded. `~` denotes the source card.
 
+## Coverage push from 2026-11-06 (active)
+
+A team of Claude agents is working through the remaining cards with a compositional effect grammar and lane
+specialists. Process, team, tools and lessons: [docs/coverage-push/README.md](docs/coverage-push/README.md).
+Open work: [docs/coverage-push/TODO.md](docs/coverage-push/TODO.md) and GitHub issues labelled
+`counted-full-but-wrong` / `follow-up` / `parked`. Census: 17,612 full (baseline) -> 18,128 (2026-11-06 20:25 UTC).
+The sections below predate the push.
+
 ## Current findings
 
 The full offline census (2026-10-30 Scryfall DB, [results/database_coverage_2026-10-30-morning](results/database_coverage_2026-10-30-morning/README.md)) covers 35,225 entries: **13,848 full** (39.31%), 327 with recorded simplifications, 21,050 partial and zero parser errors. That census predates the last chonk merge rounds of 2026-10-30 (see below), which promoted several hundred more cards; the next census will re-baseline.
@@ -33,10 +41,119 @@ discard, Crabomination, detain, "Cast this spell only ..." windows and "only if"
 resolution), two-target damage, graveyard-cast riders and non-targeting casts, Ring-bearer conditions, Tiered, attach
 Equipment (picked on resolution), counter-an-ability spells and Land Cap-style depletion lands.
 
-Still open from that work: the Peat Bog depletion lands (two-mana tap that sacrifices at zero counters), "until your next
+Still open from that work: "until your next
 turn" effects (about 120 cards, no common shape; needs a duration that ends at its controller's next turn), planeswalker
 targets for "player or planeswalker" damage, Trickbind's "can't activate this turn" rider, and "cast only if an opponent cast
 a creature spell this turn".
+
+## Until-next-turn thread 2026-10-31 (cx_next_turn)
+
+Landed in `mtgsim/cx_next_turn.py` (about 65 cards newly fully matched, about 230 change parse): "until your next
+turn" durations (the end-of-turn reading, extended to the controller's next turn on resolution), can't
+attack/block/activate locks, filtered group keyword grants, base P/T, player flags (hexproof, protection from
+everything, life lock, damage prevention, can't be attacked, attack tax, no maximum hand size, spell tax, sorcery
+flash), and real planeswalker targets for "target player/opponent or planeswalker" damage.
+
+Still open from that work: copy effects until your next turn (Shapesharer, Volrath, Taskmaster), "whenever ..." delayed
+triggers bounded by the duration (Don't Move, Vraska the Unseen, Jace), name locks (Reflector Mage), animations that last
+until your next turn, "the player or planeswalker it's attacking" damage, and Archenemy schemes.
+
+## 2026-10-31: ladder-pool cleanup, domain quantities, play weighting
+
+Verge and Bastion/Lair lands now gate their second colour on a matching land type (or a basic / entering this turn);
+"counter target spell with mana value N or greater/less"; "return target spell or permanent/creature to its owner's
+hand"; "Domain —/Vivid —" prefixes; quantities for basic land types, colours among permanents/lands and differently
+named lands. Census after: 15,038 full of 34,130 (44.06%). `mtgsim/play_weights.py` builds weights from MTGJSON
+(`edhrecRank`, MIT licence; the host is blocked in cloud sessions, so download `AtomicCards.json.gz` locally) or from
+the rank-pool decks, and `database_coverage --weights FILE...` ranks gaps by the play weight they unlock.
+
+## Nightly cloud session 2026-10-31 (cx_night_* modules)
+
+Landed in `mtgsim/cx_night_quantity.py`, `cx_night_buffs.py`, `cx_night_multi.py` and one selector tweak in
+`permanent_templates.py` (PRs #94 to #99; about 215 cards change parse):
+"... equal to <quantity>" damage, life, draw and mill; "<fixed effect> for each <thing>" for pump, damage, life,
+draw and mill; Aura/Equipment "gets +A/+B and has <keywords / activated ability / granted host trigger>"; "each
+opponent controls" and "target opponent controls" group scopes; "each of two target creatures" and "destroy
+two target ..." (one copy per target, flagged `distinct`).
+
+Still open from that work: counts with filters the quantity table does not know ("with flying", "attacking",
+"blocking it", "defending player controls"); granted upkeep triggers on Auras; compound target nouns ("creatures
+and/or planeswalkers") for multi-target spells; "up to N" is played as N. Per-wording gaps are now long-tail
+(the largest single unmatched sentence affects 10 cards), so rounds add cards in tens, not hundreds.
+
+Later PRs the same night: #100 (docs), #101 (damage to a group with "and each", "it deals N damage to each"), #102
+(selector-counted quantities such as "the number of attacking creatures"), #103 (player effects sized by X).
+Census before and after, full matches of 34,130 cards: 14,664 to 14,869 (+205, measured after #102; #103 adds
+about 19 more). Remaining single-sentence gaps are keyword and flavor lines (banding, double team, spellbooks,
+attractions), so the next gains need new mechanics or multi-gap frames, not wording entries.
+
+Second and third nights (2026-10-31 continuation, 2026-11-01): #105 (static maximum hand size modifiers), #106 (untap a
+counted number of lands), #127 (lands that enter tapped unless you control a legendary creature). Census on 2026-11-01
+after the daytime batches (`results/night_2026-11-01/`): 16,984 of 34,130 cards full, 385 simplified, 16,761 partial.
+The largest single-sentence gap is 11 cards ("if it shares a creature type with ~, you may reveal it"), then banding,
+attractions, spellbooks and double team at 8 to 10. The nightly lane now yields under 10 cards per PR; the remaining
+gain is in the daytime multi-gap frames, so this lane should pick specific mechanics (flashback-cost-equals-mana-cost,
+"cast as though it had flash if you pay {2} more", suspect) rather than wording sweeps.
+
+Fourth night (2026-11-04): #130 (suspect), #133 (kinship), #134 (change the target of target spell with a single
+target), #135 (Lair lands: sacrifice unless you return a non-Lair land), #136 (draw-step "that player draws an
+additional card" and "return that card to the battlefield under your control" for dying and blinked creatures).
+Census on 2026-11-04 (`results/night_2026-11-04/`): 17,113 of 34,130 full. Left from that census: banding, attractions,
+spellbooks, double team, "you may flip it", commander free-cast, Divert-style "unless its controller pays {2}"
+counters, and Lim-Dul / Athreos style death triggers whose context is a player or a counter marker.
+
+Fifth night (2026-11-05): #140 (flip cards: "you may flip it"), #141 ("You control enchanted permanent" and goaded
+Auras read as "attacks each combat if able"), #142 ("You gain life equal to that card's mana value" for returned and
+revealed cards). Census on 2026-11-05 (`results/night_2026-11-05/`): 17,154 of 34,130 full, 385 simplified, 16,591
+partial. The largest single-sentence gaps are still banding (13 cards), attractions (18), spellbooks (15), double team
+(18) and prepared (12), each needing a new mechanic; "end the turn", "you have shroud" and the stand-alone "untap them"
+need engine support first.
+
+Sixth night (2026-11-06): #144 ("You have shroud" as a player rule that also blocks your own targeting) and #145 ("End
+the turn": exiles the rest of the stack, skips the remaining phases, 7 cards). Recorded simplification: Glorious End's
+"at the beginning of your next end step, you lose the game" reuses the existing next-end-step delay, so it fires at the
+next end step of either player, one turn early when cast on your own turn.
+Also that night: #147 (Divert: redirect unless the spell's controller pays {N}), #148 ("Creatures you control ... Untap
+them." rewritten to untap all your creatures; a global "untap them" wording was rejected because it changed nine cards,
+including Great Oak Guardian and Leo's Guidance, where "them" means other creatures), #149 (counterspell taxes: nonartifact
+and creature-or-planeswalker spell filters, and "{1} for each card in your graveyard / card in your hand / creature you
+control / artifact you control" counted at resolution; 10 cards) and #150 (Gustcloak "untap it and remove it from combat"
+and "you may have it deal N damage to any target"; 9 cards). Recorded simplification: Jund Sojourners' "When you cycle ~
+or it dies" keeps only its "dies" half. Later the same night: #152 ("If ..., you may draw a card. If you do, discard a card." as
+one conditional `loot`; the unconditional wording was left on the pay gate after a first version changed 26 cards),
+#153 (static "You may cast sorcery spells as though they had flash"; 4 cards) and #154 (more tax counts: mana value,
+"for each Wizard on the battlefield", "plus an additional {1} for each Faerie you control", blue permanents). #154 also
+fixed a rules error in #149: a "for each" tax that totals zero means the controller pays nothing and keeps the spell,
+not that it is countered. Then #156 ("deals damage equal to its power to each opponent"; "it" is the trigger's creature),
+#157 (static "You may cast spells as though they had flash") and #158 ("deals damage to target player equal to the number
+of cards in that player's hand"; 5 cards, Runeflare Trap's alternative cost and Toil // Trouble's Fuse stay unsupported).
+Then #160 (choose-then-destroy edicts, 2 cards), #161 ("You can't lose the game and your opponents can't win the game"
+as a `cant_lose` flag checked at the life/poison check, the empty-library draw and "you lose the game" effects; 3 cards)
+and #162 ("All creatures attack each combat if able" and the opponents-only wording; 5 cards). Abyssal Persecutor ("you
+can't win ... opponents can't lose") was left alone: with no way for the AI to get rid of it the game would stall.
+Then #164 ("You gain life equal to the damage dealt this way": `deal_damage` records `game.last_dealt`, reset at every
+stack resolution; Syphon Soul and Brightflame match the sentence but keep their damage clause unsupported), #165
+("Counter target spell that targets a permanent you control", a `targets_mine` counter filter) and #166 ("Each player
+may discard their hand and draw seven cards" as `wheel_all`, always taking the "may"; Ali from Cairo's "damage can't
+reduce your life below 1" as a `life_floor` flag). Then #168 ("destroy target artifact or enchantment that player controls", 4 cards), #169 ("discard a card at random" as an
+additional cost, 3 cards), #170 ("exile up to N target cards from a single graveyard" and "shuffle up to N target cards
+from their graveyard into their library": two new kinds, `exile_gy_n` and `shuffle_gy_n`; 16 cards) and the doomed extra
+turn ("Take an extra turn after this one. At the beginning of that turn's end step, you lose the game": `extra_turn`
+with `doomed`, the loss is checked just after that turn instead of at its end step trigger; 4 cards).
+Later: #172 ("Each creature you control assigns combat damage equal to its toughness rather than its power", flags
+`toughness_damage` / `toughness_damage_all`, read through `dmg_stat` in `combat_damage`; the AI's attack and block
+evaluation still looks at power; 9 cards) and a batch of one-sentence cards: "Enchant land you control", hand-cycling
+("shuffle the cards from your hand into your library, then draw that many cards" and the "on the bottom" wording; the new
+`hand_cycle` kind). Then #174 ("Each player sacrifices a nontoken creature", "target opponent puts a card from their
+hand on top of their library"), #175 ("target player sacrifices an attacking creature", Fogwalker's "target creature an
+opponent controls doesn't untap during its controller's next untap step" on the existing `skip_untap`), #176 ("sacrifice
+it unless you discard a land card / a card at random"; 6 cards) and "put a permanent card from your hand onto the
+battlefield". Sparkmage's Gambit and Wrap in Flames need a multi-target damage clause first ("each of up to N target
+creatures") before "those creatures can't block this turn" can follow.
+Still open: "Spells your opponents cast that target ~ cost {2} more"
+(needs a cost step after targets are chosen).
+Still open from the census: counter taxes by devotion, basic land types and party size, and
+"can't attack unless you pay ..." costs.
 
 ## Measured remaining broad families
 
@@ -99,3 +216,15 @@ The order below is an engineering suggestion. The [machine-readable backlog](res
 ## Other work classes
 
 Recorded simplifications remain in the census, outside the parser backlog. Verified behavioral defects belong in a separate record with a reproducible scenario. The source-exclusion anthem bug exposed by this batch is fixed and recorded in its completion report.
+
+## Flash and flashback batch 2026-10-31 (`cx_night_flash.py`)
+
+Landed: "gains flashback until end of turn" for every instant and sorcery in the graveyard (Past in Flames, Backdraft Hellkite), "cast as though it had flash if you pay {N} more" (14 cards), and Peat Bog-style depletion lands (five lands, two mana per tap, sacrificed at zero counters).
+
+Still open: conditional flash ("if you control a Faerie"), "next spell can be cast as though it had flash", non-mana flashback costs ("Flashback—Pay 3 life"), static "has flashback" grants (Lier, Otaria).
+
+## Flashback costs batch 2026-10-31 (`cx_night_flash.py`)
+
+Landed: flashback with a single sacrifice (Lava Dart, Cabal Therapy's cost), Lier's static flashback grant, and the Tainted Adversary token wording (colour before size). The round was small (4 cards change parse).
+
+Still open: flashback costs that tap or sacrifice several creatures (Dread Return, Battle Screech, Group Project), "Discard X cards" / "Sacrifice X Mountains", Otaria (any graveyard), Iroh's Lesson flashback, "Spells can't be countered" (Lier), Cabal Therapy's name choice.

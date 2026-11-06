@@ -22,4 +22,24 @@ def kind(*names):
 
 
 from . import batch1, batch2, residual, advanced, roadmap, cards, counters, damage, dungeon, graveyard, mechanics, other, permanents, stats  # noqa: E402,F401  (registers the handlers)
-from . import phasing, ripple, manifest, demonstrate, amplify, mirrodin, prepare, cx_damage, cx_triggers  # noqa: E402,F401  (registers the handlers)
+from . import phasing, ripple, manifest, demonstrate, amplify, mirrodin, prepare, cx_damage, cx_triggers, cx_effects  # noqa: E402,F401  (registers the handlers)
+from . import cx_next_turn  # noqa: E402,F401
+from . import cx_links  # noqa: E402,F401  (registers the handlers)
+from . import cx_statics  # noqa: E402,F401
+from . import cx_lures  # noqa: E402,F401
+from . import cx_recolor  # noqa: E402,F401
+from . import cx_shields  # noqa: E402,F401
+from . import cx_night_suspect  # noqa: E402,F401
+from . import cx_suspect  # noqa: E402,F401
+from . import cx_delayed  # noqa: E402,F401
+from . import cx_night_kinship  # noqa: E402,F401
+from . import cx_night_lair  # noqa: E402,F401
+from . import cx_night_draw  # noqa: E402,F401
+from . import cx_night_dead  # noqa: E402,F401
+from . import cx_night_flip  # noqa: E402,F401
+from . import cx_night_lifemv  # noqa: E402,F401
+from . import cx_night_endturn  # noqa: E402,F401
+from . import cx_night_combat  # noqa: E402,F401
+from . import cx_night_loot  # noqa: E402,F401
+from . import cx_night_gy  # noqa: E402,F401
+from . import cx_grammar  # noqa: E402,F401

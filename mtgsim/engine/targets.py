@@ -30,6 +30,14 @@ class TargetsMixin:
             source = self.target_source.source if isinstance(self.target_source, StackItem) else self.target_source
             if not permanent_templates.matches(self, perm, spec, by, source):
                 return False
+        if eff.data.get('cx_desc') or eff.data.get('cx_snow'):
+            from ..cx_effects import passes
+            if not passes(self, eff, perm, by):
+                return False
+        if eff.data.get('cx_rel'):         # "target creature blocking it" (cx_abil_damage)
+            from ..cx_abil_damage import rel_ok
+            if not rel_ok(self, eff, perm):
+                return False
         f = eff.filter
         if eff.data.get('attached_aura') and (not perm.card.aura or perm.aura_host is None):
             return False
@@ -131,9 +139,14 @@ class TargetsMixin:
         if t == "any":
             return creatures + [x for x in everything if x.is_planeswalker] + [x for x in self.players if player_targetable(self, x, p)]
         if t == "player":
-            return [x for x in ([self.opponent(p)] if eff.filter == "opp" else list(self.players)) if player_targetable(self, x, p)]
+            walkers = [x for x in everything if x.is_planeswalker] if eff.data.get("or_pw") else []   # "player or planeswalker"
+            return [x for x in ([self.opponent(p)] if eff.filter == "opp" else list(self.players)) if player_targetable(self, x, p)] + walkers
         if t == "spell":
             return [i for i in self.stack if self.can_counter(eff, i, p)]
+        if t in ("spell_or_permanent", "spell_or_creature"):
+            spells = [i for i in self.stack if self.can_counter(eff, i, p)]
+            return spells + [x for x in (creatures if t == "spell_or_creature" else everything)
+                             if self.passes_filter(eff, x, p)]
         return []
 
     def legal_target(self, p: Player, eff: Effect, tgt) -> bool:
@@ -155,6 +168,11 @@ class TargetsMixin:
             return False
         if eff.filter == "noncreature" and card.is_creature:
             return False
+        if eff.filter == "nonartifact" and card.is_artifact:
+            return False
+        if eff.filter == "targets_mine" and not any(
+                isinstance(t, Permanent) and t.controller is by for t in item.targets):
+            return False
         if eff.filter == "artifact_ench" and not (card.is_artifact or "Enchantment" in card.types):
             return False
         if eff.filter == "creature_ench" and not (card.is_creature or "Enchantment" in card.types):
@@ -166,6 +184,10 @@ class TargetsMixin:
         if eff.filter.startswith("types:") and not set(eff.filter[6:].split(",")) & card.types:
             return False
         if eff.filter.startswith("cmc:") and card.cmc != int(eff.filter[4:]):
+            return False
+        if eff.filter.startswith("min_cmc:") and card.cmc < int(eff.filter[8:]):
+            return False
+        if eff.filter.startswith("max_cmc:") and card.cmc > int(eff.filter[8:]):
             return False
         if eff.filter.startswith("colors:") and not card.colors & set(eff.filter[7:]):
             return False

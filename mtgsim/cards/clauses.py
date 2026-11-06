@@ -436,10 +436,11 @@ def _xq(text: str):
     tl = t.lower()
     from ..counting import _singular
     if tl in ("your life total", "your speed", "the amount of life you gained this turn",
-             "the number of cards in your hand"):
+             "the number of cards in your hand", "the number of cards in an opponent's hand"):
         return ({"your life total": ("life",), "your speed": ("speed",),
                  "the amount of life you gained this turn": ("gained",),
-                 "the number of cards in your hand": ("hand",)}[tl])
+                 "the number of cards in your hand": ("hand",),
+                 "the number of cards in an opponent's hand": ("opp_hand",)}[tl])
     m = re.fullmatch(r"(~|its|that creature|that spell)'s? (power|toughness|mana value)", t, re.I) or \
         re.fullmatch(r"(its) (power|toughness)", t, re.I)
     if m:
@@ -462,7 +463,7 @@ def _xq(text: str):
         return ("tapped_any", tuple(_singular(k) for k in kinds))
     if tl == "the number of times ~ has mutated":
         return ("mutated",)
-    m = re.fullmatch(r"the number of ([\w+/ -]+?) counters on ~", t, re.I)
+    m = re.fullmatch(r"the number of ([\w+/ -]+?) counters? on (?:~|it)", t, re.I)
     if m:
         return ("counters", m[1])
     m = re.fullmatch(r"the number of ([\w -]+?) cards? in your graveyard", t, re.I)
@@ -470,6 +471,11 @@ def _xq(text: str):
         return ("gy", _singular(m[1]))
     if tl == "the number of cards in your graveyard":
         return ("gy", "")
+    if tl in ("the number of basic land types among lands you control", "the number of colors among permanents you control",
+              "the number of differently named lands you control", "the number of colors among lands you control"):
+        return ({"basic land types among lands": ("domain",), "colors among permanents": ("colors_among",),
+                 "colors among lands": ("colors_among_lands",), "differently named lands": ("named_lands",)}
+                [tl[len("the number of "):-len(" you control")]])
     m = re.fullmatch(r"the number of ([\w -]+?) you control", t, re.I)
     if m and " with " not in m[1] and " that " not in m[1]:
         return ("count", _singular(m[1]))
@@ -534,4 +540,5 @@ def _if_cond(phrase: str) -> str:
         if "tapped" in rx:
             return f"tapped_creatures>={_N_WORDS.get(m[1].lower(), 2)}"
         return f"power_ge:{m[1]}"
-    return ""
+    from .. import cx_condlib
+    return cx_condlib.parse(phrase)

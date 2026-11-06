@@ -106,6 +106,10 @@ def characteristics(permanent, base):
         base = CardDef(base.name, base.mana_cost, base.cmc, base.types, subtypes=frozenset({"Mountain"}),
             power=base.power, toughness=base.toughness, produces=frozenset({BASIC_MANA["Mountain"]}),
             color_override=base.colors, basic=base.basic, legendary=base.legendary, is_token=base.is_token)
+    mods = getattr(permanent, "_cx_landtype", None)
+    if mods:
+        from .cx_landtypes import apply
+        base = apply(base, mods)
     if not effects:
         return base
     key = (id(base), tuple((e.id, e.timestamp) for e in effects))

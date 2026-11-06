@@ -269,29 +269,36 @@ def gy_move(game, p, eff, item, **_):
 
 
 @kind("grant_flashback")
-def grant_flashback(game, p, **_):
+def grant_flashback(game, p, eff, **_):
     cands = [c for c in p.graveyard if (c.is_instant or c.is_sorcery) and c.alt_costs is not None]
-    if cands:
+    if cands and eff.data.get("all"):
+        p.granted_fb += [c for c in cands if c not in p.granted_fb]
+        game.log(f"{len(cands)} graveyard spells gain flashback", p)
+    elif cands:
         best = max(cands, key=lambda c: c.cmc)
         p.granted_fb.append(best)
         game.log(f"{best.name} gains flashback", p)
 
 
 @kind("regrow_any")
-def regrow_any(game, p, **_):
+def regrow_any(game, p, item=None, **_):
     if p.graveyard:
         card = max(p.graveyard, key=lambda c: c.cmc)
         p.graveyard.remove(card)
         p.hand.append(card)
+        if item is not None:
+            item.moved_card = card           # "that card" (cx_night_lifemv)
 
 
 @kind("exile_gy")
-def exile_gy(game, eff, opp, **_):
+def exile_gy(game, eff, opp, item=None, **_):
     if eff.amount:
         if opp.graveyard:
-            card = max(opp.graveyard, key=lambda c: c.cmc)
+            card = max(opp.graveyard, key=lambda c: (c.is_creature, c.cmc))
             opp.graveyard.remove(card)
             opp.exile.append(card)
+            if item is not None:
+                item.exiled_card = card      # "If it was a creature card, ..." (cx_condlib prev_is)
     else:
         for card in list(opp.graveyard):
             game.move_card(card, opp.graveyard, opp.exile, reason="exile_graveyard")

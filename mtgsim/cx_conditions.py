@@ -9,13 +9,18 @@ import re
 
 _N = r"(\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
 _COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
-_KEYWORDS = "flying|first strike|double strike|trample|haste|lifelink|vigilance|menace|deathtouch|reach|indestructible|hexproof|flash|defender"
+_KEYWORDS = ("flying|first strike|double strike|trample|haste|lifelink|vigilance|menace|deathtouch|reach|indestructible|"
+             "hexproof|flash|defender|shroud|shadow|fear|intimidate|wither|persist|undying|infect|skulk|horsemanship|banding|"
+             "protection from (?:white|blue|black|red|green)|cascade")
 
 # (pattern, code template); groups are substituted into the template.
 _CONDS = [
     (rf"there are {_N} or more card types among cards in your graveyard", "cx:gy_types>={0}"),
     (rf"you have {_N} or more life", "cx:life>={0}"),
     (r"you have no cards in hand", "cx:hand=0"),
+    (r"you have one or fewer cards in hand", "cx:hand<=1"),
+    (r"a creature died under your control this turn", "cx:creature_died"),
+    (r"a player has no cards in hand", "cx:any_empty_hand"),
     (r"you have the city's blessing", "cx:blessing"),
     (r"it's untapped", "cx:untapped"),
     (r"it's enchanted", "cx:enchanted"),
@@ -36,9 +41,14 @@ _CONDS = [
 ]
 _COMPILED = [(re.compile(p), c) for p, c in _CONDS]
 _KWS = rf"(?:{_KEYWORDS})(?:(?:, | and |, and )(?:{_KEYWORDS}))*"
-_CLAUSE = rf"(?:gets ([+-]\d+)/([+-]\d+)(?: and has ({_KWS}))?|has ({_KWS}))"
-_LINE = re.compile(rf"(?:\w+ — )?~ {_CLAUSE} as long as (.+)\.")
-_LEADING = re.compile(rf"(?:\w+ — )?As long as (.+?), (?:~|it) {_CLAUSE}\.")
+_EXTRA = r"can't be blocked|can't block|can't attack|attacks each combat if able|blocks each combat if able"
+_KWX = rf"(?:{_KEYWORDS}|{_EXTRA})(?:(?:, | and |, and )(?:{_KEYWORDS}|{_EXTRA}))*"
+_CLAUSE = rf"(?:gets ([+-]\d+)/([+-]\d+)(?: and (?:has )?({_KWX}))?|(?:has )?({_KWX}))"
+_ALIAS = {"can't be blocked": "unblockable", "can't block": "cant_block_now", "can't attack": "cant_attack_now",
+          "attacks each combat if able": "must_attack_now", "blocks each combat if able": "must_block_now"}
+_LABEL = r"(?:[A-Z][\w' ]* — )?"
+_LINE = re.compile(rf"{_LABEL}~ {_CLAUSE} as long as (.+)\.")
+_LEADING = re.compile(rf"{_LABEL}As long as (.+?), (?:~|it) {_CLAUSE}\.")
 
 
 def _code(text: str):
@@ -47,20 +57,30 @@ def _code(text: str):
         m = pat.fullmatch(text)
         if m:
             return code.format(*[str(_num(g)) if g and g.lower() in _NUMS else (g or "") for g in m.groups()])
-    return None
+    from .cx_condlib import as_static
+    return as_static(text) or None
 
 
 _NUMS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
 
 
 def parse_line(line: str, st) -> bool:
+    if parse_restriction(line, st):
+        return True
+    line = re.sub(r"(~|, ~|, it) can't be blocked( as long as|\.$)", r"\1 has can't be blocked\2", line)
     m = _LINE.fullmatch(line)
     if m is not None:
         cond, clause = m[5], m.groups()[:4]
     else:
         m = _LEADING.fullmatch(line)
         if m is None:
-            return False
+            from .cx_statics import parse_line as statics_line
+            from .cx_altcost import parse_line as altcost_line, parse_discard_ability
+            from .cx_lures import parse_line as lures_line
+            from .cx_shields import parse_line as shields_line
+            from .cx_landtypes import parse_line as landtypes_line
+            return statics_line(line, st) or altcost_line(line, st) or parse_discard_ability(line, st) or \
+                lures_line(line, st) or shields_line(line, st) or landtypes_line(line, st)
         cond, clause = m[1], m.groups()[1:5]
     code = _code(cond)
     if code is None:
@@ -68,6 +88,7 @@ def parse_line(line: str, st) -> bool:
     if clause[0] is not None:
         st.extra["pt_if"] = st.extra.get("pt_if", ()) + ((code, int(clause[0]), int(clause[1])),)
     for keyword in re.split(r", and |, | and ", clause[2] or clause[3] or ""):
+        keyword = _ALIAS.get(keyword, keyword)
         if keyword:
             st.extra["cond_keywords"] = st.extra.get("cond_keywords", ()) + ((keyword, code),)
     return True
@@ -78,8 +99,17 @@ def holds(perm, cond: str) -> bool:
     name, _, rest = cond[3:].partition(":")
     if name.startswith("gy_types>="):
         return len({t for card in c.graveyard for t in card.types}) >= int(name[10:])
+    if name.startswith("charge>="):
+        return perm.counters.get("charge", 0) >= int(name[8:])
     if name.startswith("life>="):
         return c.life >= int(name[6:])
+    if name == "hand<=1":
+        return len(c.hand) <= 1
+    if name == "creature_died":
+        return bool(getattr(c, "creature_died_turn", False))
+    if name == "any_empty_hand":
+        game = getattr(c, "_game", None)
+        return game is not None and any(not pl.hand for pl in game.players)
     if name == "hand=0":
         return not c.hand
     if name == "blessing":
@@ -124,3 +154,22 @@ def holds(perm, cond: str) -> bool:
         game = getattr(c, "_game", None)
         return game is not None and any(rest in x.card.subtypes for x in game.opponent(c).battlefield)
     return False
+
+
+_UNLESS = re.compile(r"~ can't attack or block unless (.+)\.")
+
+
+def parse_restriction(line: str, st) -> bool:
+    """"~ can't attack or block unless COND." (Bast, Kefnet the Mindful): stored as ``advanced_rules['combat_unless']``."""
+    m = _UNLESS.fullmatch(line)
+    code = _code(m[1]) if m else None
+    if code is None:
+        return False
+    st.extra.setdefault("advanced_rules", {})["combat_unless"] = code
+    return True
+
+
+def combat_blocked(perm) -> bool:
+    """True when ~'s "can't attack or block unless" condition isn't met."""
+    code = perm.card.advanced_rules.get("combat_unless")
+    return bool(code) and not perm.condition(code)

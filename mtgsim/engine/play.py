@@ -27,7 +27,7 @@ SPELL_KINDS = {   # "Whenever you cast a multicolored / historic / blue ... spel
 class PlayMixin:
     def play_land(self, p: Player, card: CardDef, back: bool = False):
         """Play a land from hand; with back=True, a modal double-faced card's land face."""
-        for zone in (p.hand, p.exile, p.graveyard):
+        for zone in (p.hand, p.exile, p.graveyard, p.library):
             if card in zone:
                 card = zone.get(card)
                 break
@@ -37,12 +37,17 @@ class PlayMixin:
             p.hand.remove(card)
         elif card in p.exile and card in self.impulse_cards(p):
             p.exile.remove(card)
+        elif card in p.library:     # "You may play lands from the top of your library." (cx_top)
+            from .. import cx_top
+            assert cx_top.land_ok(p, card)
+            p.library.remove(card)
         else:   # "You may play lands from your graveyard."
             assert any(x.card.lands_from_gy for x in p.battlefield)
             p.graveyard.remove(card)
         p.lands_played += 1
         self.log(f"plays {face.name}", p)
         self.enter_battlefield(p, face, physical_card=card)
+        self.fire(p, "land_played", subject=card)      # "whenever a player plays a land" (cx_events)
         self.settle()
 
     def convoke_pool(self, p: Player) -> list:
@@ -171,6 +176,10 @@ class PlayMixin:
                 p.exile.append(gy)
             self.log(f"exiles {[gy.name for gy in picks]} from their graveyard for {card.name}", p)
             exiled_gy = picks[0]
+        if kind.startswith("cond_alt_"):
+            from ..cx_altcost import pay as pay_alternative
+            if not pay_alternative(self, p, base, kind):
+                return False
         if kind == "prepared":
             next(x for x in p.battlefield if x.front is base and x.prepared).prepared = False
         elif kind in ("rebound", "cascade", "cascade_adventure", "rebound_adventure"):
@@ -181,9 +190,18 @@ class PlayMixin:
             return False
         if kind == "escape":
             alt_casts.pay_escape(self, p, base, alt)
+        for _ in range(card.extra_discard - 1):     # "discard two cards" (Buyback—Discard two cards)
+            if not p.hand:
+                return False
+            pitched = p.ai.choose_discard(self, p)
+            self.discard_card(p, pitched)
+            self.log(f"discards {pitched.name} for {card.name}", p)
         if card.extra_discard and p.hand:
             lands = [c for c in p.hand if c.is_land]
-            pitched = (lands[-1] if lands else None) if kind == "retrace" else p.ai.choose_discard(self, p)
+            if card.advanced_rules.get("discard_random"):       # "discard a card at random" as the additional cost
+                pitched = self.rng.choice(p.hand)
+            else:
+                pitched = (lands[-1] if lands else None) if kind == "retrace" else p.ai.choose_discard(self, p)
             if pitched not in p.hand:
                 return False
             self.discard_card(p, pitched)
@@ -200,6 +218,11 @@ class PlayMixin:
         if card.modes:
             if kind == "entwine":       # all of the modes: a plain list, without the printed "choose one" spec
                 mode_effects = modal.pick(self, p, list(card.modes), n=len(card.modes), flags=flags)
+            elif kind.startswith("escalate_"):     # one mode plus the extra modes paid for
+                k = int(kind[9:]) + 1
+                mode_effects = modal.pick(self, p, list(card.modes), n=k, flags=flags)
+            elif card.advanced_rules.get("escalate"):
+                mode_effects = modal.pick(self, p, list(card.modes), n=1, flags=flags)
             else:
                 mode_effects = modal.pick(self, p, card.modes, n=card.modes_choose, flags=flags)
             effects = mode_effects + effects
@@ -217,6 +240,8 @@ class PlayMixin:
             base.generation += 1
             base.zone = item
         item.cast_from_hand = self._zone(p, kind) is p.hand and kind not in ("free", "channel", "gy_ability", "prepared")
+        item.cast_zone = ("hand" if item.cast_from_hand else "graveyard" if self._zone(p, kind) is p.graveyard
+                          else "exile" if self._zone(p, kind) is p.exile else "other")     # cx_events "cast from"
         from ..advanced_templates import payment_colors
         item.mana_colors = payment_colors(payment, dict(cost, generic=cost.get("generic", 0) + x))
         if kind == "grave_permission":
@@ -278,6 +303,7 @@ class PlayMixin:
                             (trig.event == "cast_instant_sorcery" and (card.is_instant or card.is_sorcery))):
                         self.queue_trigger(p, trig.effects, perm, perm.card.name, modes=trig.modes,
                                            context=item)
+            getattr(self, "next_discount", {}).pop(p.name, None)
             from ..residual_templates import on_spell_cast
             on_spell_cast(self, p, item)
             copies.on_cast(self, p, item)

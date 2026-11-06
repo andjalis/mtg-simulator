@@ -14,7 +14,7 @@ _COLORS = {'white': 'W', 'blue': 'U', 'black': 'B', 'red': 'R', 'green': 'G'}
 
 # Subtype vocabulary from the local Oracle snapshot; no runtime database dependency.
 _CREATURE_SUBTYPES = frozenset((
-    'advisor aenar aetherborn alien ally andorian android angel antelope ape archer archon armadillo armored '
+    'advisor aenar aetherborn alien ally andorian android angel antelope ape archer archon armadillo armored army '
     'artificer assassin assembly-worker astartes atog aurochs avatar azra badger barbarian bard basilisk bat '
     'bear beast beaver beeble beholder berserker bird bison boar borg brainiac bringer brushwagg caitian camel '
     'capybara carrier cat centaur chef child chimera citizen clamfolk cleric clown cockatrice construct cow '
@@ -195,7 +195,8 @@ def selector(text, *, plural=False):
         result['other'] = True
         text = text.split(' ', 1)[1]
     text = re.sub(r'^(?:a|an) ', '', text, flags=re.I)
-    for scope, label in ((" you control", 'mine'), (" an opponent controls", 'opp'), (" you don't control", 'opp'), (" your opponents control", 'opp')):
+    for scope, label in ((" you control", 'mine'), (" an opponent controls", 'opp'), (" you don't control", 'opp'), (" your opponents control", 'opp'),
+                         (" each opponent controls", 'opp'), (" target opponent controls", 'opp')):
         if scope in text.lower():
             if 'controller' in result or text.lower().count(scope) != 1:
                 return None
@@ -246,7 +247,8 @@ def selector(text, *, plural=False):
             if low in _TYPES:
                 types.append(low)
             elif low in ('tapped', 'untapped', 'attacking', 'blocking', 'legendary', 'nonlegendary', 'token', 'nontoken',
-                         'nonland', 'noncreature', 'nonartifact', 'colorless', 'multicolored', 'monocolored'):
+                         'nonland', 'noncreature', 'nonartifact', 'colorless', 'multicolored', 'monocolored',
+                         'suspected'):
                 result.setdefault('traits', []).append(low)
             elif low in _COLORS:
                 result.setdefault('colors', []).append(_COLORS[low])
@@ -266,6 +268,9 @@ def selector(text, *, plural=False):
 
 
 def matches(game, permanent, spec, controller, source=None):
+    if 'cx_desc' in spec:            # a richer noun phrase (mtgsim.cx_grammar)
+        from .cx_grammar import desc_matches
+        return desc_matches(game, permanent, spec, controller, source)
     if 'base_pt' in spec:
         from .continuous import base_pt
         if tuple(spec['base_pt']) != base_pt(permanent):
@@ -302,6 +307,8 @@ def matches(game, permanent, spec, controller, source=None):
         if trait == 'attacking' and permanent not in game.attackers:
             return False
         if trait == 'blocking' and not any(permanent in group for group in game.blocks.values()):
+            return False
+        if trait == 'suspected' and not permanent.has('suspected'):
             return False
     if 'counter' in spec:
         name, positive = spec['counter']

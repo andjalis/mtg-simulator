@@ -161,12 +161,13 @@ def expire_source_control(game, *, cleanup=False):
     effects = game.control_effects
     if not effects:
         return
+    from .cx_statics import control_lasts
     targets = {entry[0] for entry in effects}
     game.control_effects = [entry for entry in effects if entry[0] in entry[0].controller.battlefield
                            and (entry[2] is None or entry[2] in entry[2].controller.battlefield and
                                 (not entry[2].card.advanced_rules.get("aura_control") or
                                  entry[2].aura_host is entry[0] and not entry[2].abilities_suppressed))
-                           and not (cleanup and entry[3])]
+                           and not (cleanup and entry[3]) and control_lasts(game, entry[0], entry[2])]
     for target in targets:
         active = [entry for entry in game.control_effects if entry[0] is target]
         if target in target.controller.battlefield:

@@ -83,7 +83,16 @@
     "cards": ["Branching Bolt"]
   },
   {
-    "match": "(?:~|it|he|she) deals (\\d+) damage to (?:up to one )?target (?:creature or planeswalker|creature)(?: an opponent controls| you don't control)?",
+    "match": "(?:~|it|he|she) deals (\\d+) damage to (?:up to one )?target (?:creature or planeswalker|creature) (?:an opponent controls|you don't control)",
+    "effect": "damage",
+    "amount": "$1:int",
+    "target": "creature",
+    "filter": "opp",
+    "example": "~ deals 3 damage to target creature an opponent controls",
+    "cards": ["Abrade"]
+  },
+  {
+    "match": "(?:~|it|he|she) deals (\\d+) damage to (?:up to one )?target (?:creature or planeswalker|creature)",
     "effect": "damage",
     "amount": "$1:int",
     "target": "creature",
@@ -201,6 +210,14 @@
     "target": "creature_pw",
     "example": "Destroy target creature or planeswalker",
     "cards": ["Annihilating Glare"]
+  },
+  {
+    "match": "(?:destroy|exile) target (?:[\\w-]+,? )*?creature (?:an opponent controls|you don't control)",
+    "effect": "destroy",
+    "target": "creature",
+    "filter": "opp",
+    "example": "Destroy target creature an opponent controls",
+    "cards": ["Afterlife"]
   },
   {
     "match": "(?:destroy|exile) target (?:[\\w-]+,? )*?creature(?: an opponent controls| you don't control)?",
@@ -453,11 +470,19 @@
     "cards": ["Additive Evolution"]
   },
   {
-    "match": "put (a|one|two|three|four) -1/-1 counters? on (?:up to one )?target creature",
+    "match": "put (a|one|two|three|four) -1/-1 counters? on up to one target creature",
     "effect": "shrink",
     "amount": "$1:num",
     "target": "creature",
-    "filter": "opp",
+    "data": {"optional_target": true},
+    "example": "Put a -1/-1 counter on up to one target creature",
+    "cards": ["Banewhip Punisher"]
+  },
+  {
+    "match": "put (a|one|two|three|four) -1/-1 counters? on target creature",
+    "effect": "shrink",
+    "amount": "$1:num",
+    "target": "creature",
     "example": "Put a -1/-1 counter on target creature",
     "cards": ["Banewhip Punisher"]
   },
@@ -635,10 +660,18 @@
     "cards": ["Cutthroat Negotiator"]
   },
   {
-    "match": "target creature(?: an opponent controls)? can't block this turn",
+    "match": "target creature an opponent controls can't block this turn",
     "effect": "cant_block_turn",
     "target": "creature",
+    "filter": "opp",
     "example": "target creature an opponent controls can't block this turn",
+    "cards": ["A-Sizzling Soloist"]
+  },
+  {
+    "match": "target creature can't block this turn",
+    "effect": "cant_block_turn",
+    "target": "creature",
+    "example": "target creature can't block this turn",
     "cards": ["A-Sizzling Soloist"]
   },
   {
@@ -734,6 +767,20 @@
     "cards": ["A-Hullbreaker Horror"]
   },
   {
+    "match": "return target spell or (permanent|creature) to its owner's hand",
+    "effect": "bounce_spell",
+    "target": {"$map": "$1:lower", "values": {"permanent": "spell_or_permanent", "creature": "spell_or_creature"}},
+    "example": "Return target spell or permanent to its owner's hand",
+    "cards": ["Jeskai Revelation", "Fatehold Charm"]
+  },
+  {
+    "match": "return target spell to its owner's hand",
+    "effect": "bounce_spell",
+    "target": "spell",
+    "example": "Return target spell to its owner's hand",
+    "cards": ["Bilbo's Gambit"]
+  },
+  {
     "match": "you lose (\\d+) life",
     "effect": "lose_life",
     "amount": "$1:int",
@@ -826,7 +873,15 @@
     "cards": ["Blessing of Leeches"]
   },
   {
-    "match": "return (?:up to one )?(?:other )?target (?:nonland permanent|creature|artifact, creature, enchantment, or planeswalker)(?: an opponent controls| you don't control)? to its owner's hand",
+    "match": "return (?:up to one )?(?:other )?target (?:nonland permanent|creature|artifact, creature, enchantment, or planeswalker) (?:an opponent controls|you don't control) to its owner's hand",
+    "effect": "bounce",
+    "target": "nonland_perm",
+    "filter": "opp",
+    "example": "Return target nonland permanent an opponent controls to its owner's hand",
+    "cards": ["A-Hullbreaker Horror"]
+  },
+  {
+    "match": "return (?:up to one )?(?:other )?target (?:nonland permanent|creature|artifact, creature, enchantment, or planeswalker) to its owner's hand",
     "effect": "bounce",
     "target": "nonland_perm",
     "example": "Return target nonland permanent to its owner's hand",
@@ -993,11 +1048,37 @@
     "cards": ["Boareskyr Tollkeeper"]
   },
   {
-    "match": "tap (?:up to one )?target (?:creature|nonland permanent)(?: an opponent controls| you don't control)?",
+    "match": "tap (?:up to one )?target creature (?:an opponent controls|you don't control)",
+    "effect": "tap",
+    "amount": 1,
+    "target": "creature",
+    "filter": "opp",
+    "example": "Tap target creature an opponent controls",
+    "cards": ["A-Dreamshackle Geist"]
+  },
+  {
+    "match": "tap (?:up to one )?target creature",
     "effect": "tap",
     "amount": 1,
     "target": "creature",
     "example": "Tap target creature",
+    "cards": ["A-Dreamshackle Geist"]
+  },
+  {
+    "match": "tap (?:up to one )?target nonland permanent (?:an opponent controls|you don't control)",
+    "effect": "tap",
+    "amount": 1,
+    "target": "nonland_perm",
+    "filter": "opp",
+    "example": "Tap target nonland permanent an opponent controls",
+    "cards": ["A-Dreamshackle Geist"]
+  },
+  {
+    "match": "tap (?:up to one )?target nonland permanent",
+    "effect": "tap",
+    "amount": 1,
+    "target": "nonland_perm",
+    "example": "Tap target nonland permanent",
     "cards": ["A-Dreamshackle Geist"]
   },
   {
@@ -1009,9 +1090,15 @@
     "cards": ["A Good Day to Pie"]
   },
   {
-    "match": "tap target creature(?: an opponent controls)? and put (a|two|three) stun counters? on it",
-    "effects": [{"effect": "tap", "amount": 1, "target": "creature"}, {"effect": "stun", "amount": "$1:num", "target": "prev"}],
+    "match": "tap target creature an opponent controls and put (a|two|three) stun counters? on it",
+    "effects": [{"effect": "tap", "amount": 1, "target": "creature", "filter": "opp"}, {"effect": "stun", "amount": "$1:num", "target": "prev"}],
     "example": "tap target creature an opponent controls and put a stun counter on it",
+    "cards": ["Alchemax Slayer-Bots"]
+  },
+  {
+    "match": "tap target creature and put (a|two|three) stun counters? on it",
+    "effects": [{"effect": "tap", "amount": 1, "target": "creature"}, {"effect": "stun", "amount": "$1:num", "target": "prev"}],
+    "example": "tap target creature and put a stun counter on it",
     "cards": ["Alchemax Slayer-Bots"]
   },
   {
@@ -1032,7 +1119,15 @@
     "cards": ["Cryogen Relic"]
   },
   {
-    "match": "(?:up to one )?target creature you control can't be blocked this turn",
+    "match": "up to one target creature you control can't be blocked this turn",
+    "effect": "unblockable",
+    "target": "creature_mine",
+    "data": {"optional_target": true},
+    "example": "up to one target creature you control can't be blocked this turn",
+    "cards": ["Bria, Riptide Rogue"]
+  },
+  {
+    "match": "target creature you control can't be blocked this turn",
     "effect": "unblockable",
     "target": "creature_mine",
     "example": "target creature you control can't be blocked this turn",
@@ -1166,7 +1261,15 @@
     "cards": ["A-Psionic Snoop"]
   },
   {
-    "match": "(?:up to one )?target creature you control connives",
+    "match": "up to one target creature you control connives",
+    "effect": "connive",
+    "target": "creature_mine",
+    "data": {"optional_target": true},
+    "example": "up to one target creature you control connives",
+    "cards": ["Leader, Super-Genius"]
+  },
+  {
+    "match": "target creature you control connives",
     "effect": "connive",
     "target": "creature_mine",
     "example": "target creature you control connives",
@@ -1584,7 +1687,15 @@
     "cards": ["Pinnacle Starcage"]
   },
   {
-    "match": "(?:destroy|exile) target nonland permanent(?: an opponent controls| you don't control)?",
+    "match": "(?:destroy|exile) target nonland permanent (?:an opponent controls|you don't control)",
+    "effect": "destroy",
+    "target": "nonland_perm",
+    "filter": "opp",
+    "example": "Destroy target nonland permanent an opponent controls",
+    "cards": ["Angelic Rocket"]
+  },
+  {
+    "match": "(?:destroy|exile) target nonland permanent",
     "effect": "destroy",
     "target": "nonland_perm",
     "example": "Destroy target nonland permanent",
@@ -1621,11 +1732,20 @@
     "cards": ["Caretaker's Talent"]
   },
   {
-    "match": "put (a|one|two|three) \\+1/\\+1 counters? on (?:up to one )?target creature(?: or Vehicle)?(?: you control)?",
+    "match": "put (a|one|two|three) \\+1/\\+1 counters? on up to one target creature(?: or Vehicle)?(?: you control)?",
     "effect": "p1_counters",
     "amount": "$1:num",
     "target": "creature_mine",
+    "data": {"optional_target": true},
     "example": "Put a +1/+1 counter on up to one target creature",
+    "cards": ["A-Fall of the Impostor"]
+  },
+  {
+    "match": "put (a|one|two|three) \\+1/\\+1 counters? on target creature(?: or Vehicle)?(?: you control)?",
+    "effect": "p1_counters",
+    "amount": "$1:num",
+    "target": "creature_mine",
+    "example": "Put a +1/+1 counter on target creature",
     "cards": ["A-Fall of the Impostor"]
   },
   {

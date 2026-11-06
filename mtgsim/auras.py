@@ -30,7 +30,7 @@ _KW = ("flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|
        "menace|reach|fear|intimidate|infect|wither|skulk|shadow|horsemanship|phasing|"
        "swampwalk|forestwalk|mountainwalk|islandwalk|plainswalk|protection from (?:white|blue|black|red|green|creatures)")
 _ENCHANT = re.compile(r"Enchant (creature|creature you control|creature or Vehicle|artifact or creature|"
-                      r"artifact creature|land|permanent|nonland permanent|artifact|creature an opponent controls|player)")
+                      r"artifact creature|land you control|land|permanent|nonland permanent|artifact|creature an opponent controls|player)")
 _SIGN = {"+": 1, "-": -1, "−": -1}
 
 
@@ -168,10 +168,10 @@ def can_attach(game, p, card, host, *, source=None, targeting=True):
     ok = (host.is_creature if "creature" in kinds and "artifact" not in kinds and "Vehicle" not in kinds
           else host.is_creature or host.card.is_artifact if kinds == 'artifact or creature'
           else host.is_creature or 'Vehicle' in host.card.subtypes if kinds == 'creature or Vehicle'
-          else host.card.is_land if kinds == 'land'
+          else host.card.is_land if kinds in ('land', 'land you control')
           else host.card.is_artifact if kinds == 'artifact'
           else not host.card.is_land if kinds == 'nonland permanent' else bool(kinds))
-    if kinds == 'creature you control' and host.controller is not p:
+    if kinds in ('creature you control', 'land you control') and host.controller is not p:
         ok = False
     if kinds == 'creature an opponent controls' and host.controller is p:
         ok = False
@@ -193,10 +193,10 @@ def hosts(game, p, card) -> list:
         ok = (x.is_creature if "creature" in kinds and "artifact" not in kinds and "Vehicle" not in kinds
               else x.is_creature or c.is_artifact if kinds == "artifact or creature"
               else x.is_creature or "Vehicle" in c.subtypes if kinds == "creature or Vehicle"
-              else c.is_land if kinds == "land"
+              else c.is_land if kinds in ("land", "land you control")
               else c.is_artifact if kinds == "artifact"
               else not c.is_land if kinds == "nonland permanent" else True)
-        if kinds in ("creature you control",) and x.controller is not p:
+        if kinds in ("creature you control", "land you control") and x.controller is not p:
             ok = False
         if kinds == "creature an opponent controls" and x.controller is not opp:
             ok = False

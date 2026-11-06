@@ -199,5 +199,6 @@ class FearHorsemanshipDelayed(unittest.TestCase):
         self.assertEqual((len(self.a.hand), len(self.b.hand)), (1, 1))
 
     def test_unimplemented_delayed_actions_stay_visible(self):
-        c = card('Other delay', types='Instant', text='Draw a card at the beginning of the next end step.')
+        # "Draw a card at the beginning of the next end step" is supported now (cx_delayed).
+        c = card('Other delay', types='Instant', text='At the beginning of the next cleanup step, draw a card.')
         self.assertTrue(c.unsupported)

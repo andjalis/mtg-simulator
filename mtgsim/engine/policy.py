@@ -80,16 +80,18 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         cards = [x for x in legal if isinstance(x, CardDef)]
         return max(cards, key=lambda c: c.cmc, default=None)
     if k == "damage":
-        if eff.target == "player":
+        from ..cx_abil_damage import scaled
+        eff = scaled(game, me, eff)
+        if eff.target == "player" and not (eff.data.get("or_pw") and eff.amount < opp.life):
             return opp
         if eff.target == "any" and eff.amount >= opp.life:
             return opp
-        killable = [x for x in theirs if (x.is_creature and x.toughness - x.damage <= eff.amount and
+        killable = [x for x in theirs if (x.is_creature and eff.target != "player" and x.toughness - x.damage <= eff.amount and
                                           not x.has("indestructible")) or (x.is_planeswalker and not x.is_creature
                                                                            and x.loyalty <= eff.amount)]
         if killable:
             return max(killable, key=perm_value)
-        return opp if eff.target == "any" else None
+        return opp if eff.target in ("any", "player") else None
     if k in removal.KINDS:
         return removal.choose(game, me, eff)
     if k in ('graveyard_exile_all', 'graveyard_exile_choice'):
@@ -108,6 +110,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return max(theirs, key=perm_value, default=None)
     if k == 'untap_prev':
         return max((x for x in mine if x.tapped), key=perm_value, default=None)
+    if k == 'animate_land':     # one of my lands that isn't a creature yet, untapped first
+        return min((x for x in mine if not x.is_creature), key=lambda x: (x.tapped, perm_value(x)), default=None)
     if k == 'move_counter_self':
         source = getattr(game.target_source, 'source', game.target_source)
         return max((x for x in mine if x is not source and x.p1), key=lambda x: (x.p1, perm_value(x)), default=None)
@@ -169,6 +173,17 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return opp if opp.hand else None
     if k in ("connive", "attach_new_equipment"):    # the best creature of ours that can be chosen
         return max((x for x in mine if x.is_creature), key=perm_value, default=None)
+    side = eff.data.get("side") if eff.data else None
+    if side == "auto":                  # neutral effects (a colour change) take the side of what follows them
+        from ..cx_grammar import auto_side
+        side = auto_side(game, eff)
+    if eff.target == "graveyard_card" and side in ("mine", "theirs", "any"):   # cx_grammar_zones: whose graveyard
+        pool = [c for c in legal if side == "any" or any(c is x for x in (me if side == "mine" else opp).graveyard)]
+        return max(pool, key=lambda c: c.cmc, default=None)
+    if side in ("mine", "theirs") and eff.target == "player":   # ... or which player (cx_grammar target players)
+        return next((x for x in legal if x is (me if side == "mine" else opp)), None)
+    if side in ("mine", "theirs"):      # newer kinds say whose permanent they want
+        return max(mine if side == "mine" else theirs, key=perm_value, default=None)
     return None
 
 

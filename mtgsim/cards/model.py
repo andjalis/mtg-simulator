@@ -86,6 +86,8 @@ class AltCost:
     hybrid: tuple = ()               # hybrid pips in cost, e.g. ("UB", "UB") for {U/B}{U/B}
     counters: int = 0                # impending: time counters it enters with; suspend: time counters
     pt: tuple = ()                   # prototype: (power, toughness)
+    sacrifice: str = ""              # flashback: "a Mountain" sacrificed as the (additional) cost
+    discard: int = 0                 # flashback: cards discarded as the (additional) cost
 
 
 @dataclass
@@ -162,6 +164,8 @@ class CardDef:
     anthem: tuple = ()                                  # (power, toughness) for creatures you control
     crew: int = 0
     convoke: bool = False                               # creatures can be tapped to help pay the generic cost
+    daybound: bool = False                              # day/night: transforms to its back face at night
+    nightbound: bool = False
     prepared: bool = False                              # enters prepared: may cast a copy of its spell (card.back) once
     changeling: bool = False                            # is every creature type
     cycling: dict | None = None                         # {"cost": mana, "land": "" | basic | any | Plains...}
@@ -225,6 +229,8 @@ class CardDef:
     blocker_power_rel: bool = False                     # "Creatures with power less than ~'s power can't block it."
     max_blocker_power: int = 0                          # "can't be blocked by creatures with power N or greater"
     no_max_hand: bool = False                           # "You have no maximum hand size."
+    hand_size_mod: int = 0                              # "Your maximum hand size is increased/reduced by N."
+    opp_hand_size_mod: int = 0                          # "Each opponent's maximum hand size is reduced by N."
     must_attack: bool = False                           # "~ attacks each combat if able."
     gy_needs_speed: bool = False
     start_engines: bool = False                         # "Start your engines!": speed starts at 1 when it enters or is cast
@@ -278,8 +284,12 @@ class CardDef:
     mana_filter: str = ""                               # "tap": {1},{T}: add any colour; "once": {1}: add .... once each turn
     mana_tap_other: str = ""                            # "creature"/"permanent": also tap an untapped one as a cost
     mana_sac_only: bool = False                         # "Sacrifice ~: Add {C}.": no tap, so sick or tapped is fine
+    gy_flashback: bool = False                          # Lier: instants and sorceries in your graveyard have flashback
+    mana_depletion: bool = False                        # Peat Bog: each tap removes a depletion counter; sacrificed at none
     mana_sac: bool = False                              # "{T}, Sacrifice ~: Add one mana of any color."
+    mana_pay_life: int = 0                              # "{T}, Pay 1 life: Add one mana of any color": life paid when a colour is used
     mana_cond: str = ""                                 # "Dragon": only while you control one
+    mana_gate: tuple = ()                               # ((colours, land types), ...): colours need one of the types; () types = entered this turn or a basic
     pt_scale: tuple = (1, 1)                            # (power, toughness) gained per counted permanent
     pt_per: str = ""                                    # "~ gets +1/+1 for each artifact you control": "artifact"
     extra_sacrifice: str = ""                           # "As an additional cost to cast ~, sacrifice an artifact or creature"
@@ -363,6 +373,8 @@ def parse_mana_cost(cost: str) -> dict:
             out["generic"] += int(sym)
         elif sym == "X":
             out["X"] = out.get("X", 0) + 1
+        elif sym == "S":       # snow: one mana from a snow source (engine/mana.py)
+            out["S"] = out.get("S", 0) + 1
         else:
             # Hybrid / Phyrexian: pay with the first coloured half (simplification).
             parts = [p for p in sym.split("/") if p in COLORS or p == "C"]

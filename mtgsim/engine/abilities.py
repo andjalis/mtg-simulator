@@ -40,6 +40,8 @@ class AbilitiesMixin:
                          kind="loyalty")
         self.stack.append(item)
         self.log(f"activates {item}" + (f" -> {targets}" if any(targets) else ""), p)
+        from .. import cx_abilitycopy
+        cx_abilitycopy.on_activate(self, p, item)
         if self.commits_crime(p, targets):
             self.fire(p, "crime")
         self.check_ward(item)
@@ -180,6 +182,7 @@ class AbilitiesMixin:
 
     def force_blocks(self, me: Player, attackers: list, blocks: dict) -> dict:
         """Add the blocks "must be blocked if able" and "blocks this turn if able" demand to the AI's choice."""
+        from ..cx_lures import is_lure, forced_pairs
         blocks = {a: list(bl) for a, bl in blocks.items()}
         taken = {b for bl in blocks.values() for b in bl}
         for a in sorted(attackers, key=lambda x: -x.power):
@@ -191,12 +194,12 @@ class AbilitiesMixin:
                 blocks.setdefault(a, []).append(pick)
                 taken.add(pick)
         for a in attackers:             # Lure: all creatures able to block it do so
-            if a.card.lure:
+            if is_lure(a):
                 for b in me.creatures:
                     if b not in taken and can_block(b, a):
                         blocks.setdefault(a, []).append(b)
                         taken.add(b)
-        for b, a in list(getattr(self, "provoked", {}).items()):
+        for b, a in list(getattr(self, "provoked", {}).items()) + forced_pairs(self):
             if b in me.creatures and a in attackers and b not in taken and can_block(b, a):
                 blocks.setdefault(a, []).append(b)
                 taken.add(b)
@@ -240,7 +243,8 @@ class AbilitiesMixin:
         """Whether perm's activated ability idx (kind "ability") can be activated now, by p.
         "Any player may activate" abilities may be used by players who don't control perm."""
         acts = perm.activated
-        if idx < 0 or idx >= len(acts) or acts[idx].kind != "ability" or perm.detained_by is not None:
+        if idx < 0 or idx >= len(acts) or acts[idx].kind != "ability" or perm.detained_by is not None \
+                or perm.has("cant_activate_now"):
             return False
         act = acts[idx]
         if perm not in p.battlefield and not any_player_ability(act):
@@ -307,6 +311,10 @@ class AbilitiesMixin:
             return False
         if c.get("tap_other") and not self.tap_other_candidates(p, perm, c["tap_other"]):
             return False
+        if c.get("cx_costs"):
+            from ..cx_costs import payable
+            if not payable(self, p, perm, c["cx_costs"]):
+                return False
         if act.needs_max_speed and p.speed < 4:
             return False
         if act.min_charge and perm.counters.get("charge", 0) < act.min_charge:
@@ -353,8 +361,12 @@ class AbilitiesMixin:
             previous = getattr(self, '_choosing_targets', [])
             self._choosing_targets = targets
             try:
-                return all(e.target not in TARGETED or (i < len(targets) and
-                           self.legal_target(p, e, targets[i])) for i, e in enumerate(effects))
+                if not all(e.target not in TARGETED or (i < len(targets) and
+                           self.legal_target(p, e, targets[i])) for i, e in enumerate(effects)):
+                    return False
+                chosen = [(e.kind, id(targets[i])) for i, e in enumerate(effects)       # "two target creatures":
+                          if e.data.get("distinct") and i < len(targets) and targets[i] is not None]   # different ones
+                return len(chosen) == len(set(chosen))
             finally:
                 self._choosing_targets = previous
 
@@ -404,6 +416,10 @@ class AbilitiesMixin:
             self.log(f"taps {donor.card.name}", p)
         if c.get("life"):
             self.change_life(p, -c["life"], f"{perm.card.name}: ability cost")
+        if c.get("cx_costs"):
+            from ..cx_costs import pay as pay_parts
+            if not pay_parts(self, p, perm, c["cx_costs"]):
+                return False
         for _ in range(c.get("discard", 0)):
             card = p.ai.choose_discard(self, p)
             if card not in p.hand:
@@ -476,6 +492,8 @@ class AbilitiesMixin:
             item.x = x
         self.stack.append(item)
         self.log(f"activates {item}" + (f" -> {targets}" if any(targets) else ""), p)
+        from .. import cx_abilitycopy     # "Whenever you activate an ability, ... copy that ability."
+        cx_abilitycopy.on_activate(self, p, item)
         self.check_ward(item)
         self.settle()
         return True

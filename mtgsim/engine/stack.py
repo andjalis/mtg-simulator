@@ -4,9 +4,9 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import alt_casts, auras, copies, milling
+from .. import alt_casts, auras, copies, cx_events, milling
 from ..cards import CardDef, Effect
-from .. import modal, rules_events, phase_conditions, turn_conditions, counter_mechanics
+from .. import modal, rules_events, phase_conditions, turn_conditions, counter_mechanics, cx_condlib
 from ..identity import CardInstance, CardZone
 from ..actions import perform, can_perform
 from .state import Permanent, Player, StackItem, TARGETED, TrackedZone, _gy_desc, card_matches
@@ -86,6 +86,8 @@ class StackMixin:
         self.rule_events.emit(rules_events.RulesEvent(event, p, source, context, subject, before,
                                                       amount=amount if amount is not None else 0))
         self._dispatch_trigger_event(p, event, source, context, subject)
+        cx_events.observe(self, p, event, source, context, subject)
+        cx_condlib.record(self, p, event, source, context, subject)
         if source is None and event in ("upkeep", "end_step"):
             for controller in self.players:
                 self.fire(controller, "each_upkeep" if event == "upkeep" else "each_end_step", context=p)
@@ -252,7 +254,11 @@ class StackMixin:
                 if not effects:
                     continue
             if targets is None:
-                targets = self.auto_targets(controller, effects, source)
+                self.trigger_context = context        # "that creature deals damage ...": cx_abil_damage reads it
+                try:
+                    targets = self.auto_targets(controller, effects, source)
+                finally:
+                    self.trigger_context = None
             effects = counter_mechanics.protect_graveyard_targets(self, effects, targets)
             item = StackItem(controller, effects, targets, source=source, name=name, context=context, kind=kind)
             item.intervening_if = intervening_if
@@ -296,6 +302,7 @@ class StackMixin:
     def resolve_top(self):
         item = self.stack.pop()
         p = item.controller
+        self.last_dealt = 0          # "the damage dealt this way" only counts damage from this resolution
         if item.intervening_if and not self.check_cond(p, Effect("condition", cond=item.intervening_if), item, None):
             self.log(f"{item} does not resolve (intervening condition is false)", p)
             self.state_based_actions()
@@ -323,11 +330,14 @@ class StackMixin:
                     p.graveyard.append(base)
                     return
             self._entry_mana_colors = getattr(item, "mana_colors", set())
+            self._entry_cast = (kind == "kicker" or getattr(item, "kicks", 0) > 0,
+                                bool(getattr(item, "cast_from_hand", False)), getattr(item, "mana_spent", 0))
             if kind == "disturb":                   # cast transformed: its back face enters
                 perm = self.enter_battlefield(p, base.back, x=getattr(item, "x", 0), physical_card=base)
             else:
                 perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
             self._aura_host = None
+            self._entry_cast = None
             if base.aura == "player":
                 perm.curse_target = self.opponent(p)
             self._entry_mana_colors = set()
@@ -384,6 +394,7 @@ class StackMixin:
             if getattr(item, "gifted", False) and item.card is not None:
                 self.give_gift(p, item.card.gift)
             # "that creature" in a trigger: the creature it triggered on (the blocker, the attacker, ...)
+            item.cx_start = self.effect_clock          # "them": permanents entering from here on (cx_delayed)
             prev = item.context if item.kind == "trigger" and isinstance(item.context, Permanent) else None
             done: list = []
             for i, (eff, tgt) in enumerate(zip(item.effects, item.targets)):   # "would die this turn" must precede the damage
@@ -482,6 +493,8 @@ class StackMixin:
         turn_condition = turn_conditions.check(self, p, c, item)
         if turn_condition is not None:
             return turn_condition
+        if c.startswith("lib:"):
+            return cx_condlib.check(self, p, c, item, prev=prev)
         if c == "city_blessing":
             from ..batch1_templates import has_blessing
             return has_blessing(self, p, item)
@@ -502,6 +515,9 @@ class StackMixin:
             return item.source is not None and item.source.toughness <= 3
         if c == "max_speed":
             return p.speed >= 4
+        if c.startswith("charge>="):               # "N+ | ..." Station tier of the source
+            return item is not None and isinstance(item.source, Permanent) and \
+                item.source.counters.get("charge", 0) >= int(c[8:])
         if c == "paid":
             return bool(getattr(item, "gate_paid", False))
         if c == "harnessed":

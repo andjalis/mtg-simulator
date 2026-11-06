@@ -370,15 +370,13 @@ class RealCards(unittest.TestCase):
         prize = self.card("Coveted Prize")
         self.assertEqual(prize.cost_reduction, "party")
         self.assertTrue(any("full party" in u for u in prize.unsupported))
-        # Psychatog's "Exile two cards from your graveyard" needs multi-exile engine support
-        tog = self.card("Psychatog")
-        self.assertTrue(any("Exile two cards" in u for u in tog.unsupported))
-        # the tap-another-creature ability cost has no engine half yet
-        for name, needle in (("Ranger's Hawk", "Tap another untapped creature"),
+        # "Exile two cards from your graveyard" and the tap-another-creature costs are paid by cx_costs now
+        for name, needle in (("Psychatog", "Exile two cards"),
+                             ("Ranger's Hawk", "Tap another untapped creature"),
                              ("Dungeon Descent", "Tap an untapped legendary creature"),
                              ("Chicken à la King", "Tap an untapped Bird")):
             with self.subTest(card=name):
-                self.assertTrue(any(needle in u for u in self.card(name).unsupported))
+                self.assertFalse(any(needle in u for u in self.card(name).unsupported))
         # Acererak's completed-dungeon gate now parses to "!dungeon_complete" (any-dungeon
         # narrowing recorded as an approximation note); the per-opponent Zombie attack
         # line is the remaining gap.
