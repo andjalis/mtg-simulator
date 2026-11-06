@@ -136,9 +136,7 @@ class RealCards(unittest.TestCase):
         self.assertFalse(token_effects(self.db.get("The Ooze")))
 
 
-@unittest.skipUnless(DB_FILE.exists(), "card database not built")
-class Riders(unittest.TestCase):
-    """Sentences about the tokens just created: end-of-combat and end-step removal, haste until end of turn."""
+class GameCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.db = CardDB()
@@ -154,6 +152,11 @@ class Riders(unittest.TestCase):
         effects, bad = _parse_effects(text)
         self.assertEqual(bad, [], text)
         return effects
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class Riders(GameCase):
+    """Sentences about the tokens just created: end-of-combat and end-step removal, haste until end of turn."""
 
     def test_full(self):
         for name in ("Kavaron Harrier", "Geist of Saint Traft", "Gluttonous Troll"):
@@ -190,6 +193,41 @@ class Riders(unittest.TestCase):
     def test_rider_without_a_token_stays_unmatched(self):
         _, bad = _parse_effects("Draw a card. Sacrifice that token at end of combat.")
         self.assertEqual(len(bad), 1)
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class CopyTokens(GameCase):
+    """"Create a token that's a copy of that creature / it": the object the previous effect or the trigger acted on."""
+    def test_full(self):
+        for name in ("Necroduality", "Supplant Form", "Mirrorworks", "Riku of Two Reflections", "Impostor Syndrome",
+                     "Replication Specialist"):
+            self.assertEqual(card_coverage(self.db.get(name)).ignored, [], name)
+
+    def test_trigger_subject(self):
+        self.game.enter_battlefield(self.a, self.db.get("Necroduality"))
+        self.game.enter_battlefield(self.a, self.db.get("Gravecrawler"))
+        self.game.settle()
+        copies = [x for x in self.a.battlefield if x.card.name == "Gravecrawler" and x.card.is_token]
+        self.assertEqual(len(copies), 1)
+
+    def test_previous_target_after_it_left(self):
+        bounce, make = self.db.get("Supplant Form").spell_effects
+        bear = self.game.enter_battlefield(self.b, BEAR)
+        self.game.resolve(self.a, bounce, bear)
+        self.game.resolve(self.a, make, bear, prev=bear)
+        self.assertIn(BEAR, self.b.hand)
+        token = next(x for x in self.a.battlefield if x.card.is_token)
+        self.assertEqual((token.card.name, token.power), ("Grizzly Bears", 2))
+
+    def test_except_and_riders(self):
+        make, = self.effects("Create a token that's a copy of it, except it's a 1/1 Spirit in addition to its other "
+                             "types. Exile it at the beginning of the next end step.")
+        self.assertEqual(make.target, "prev")
+        bear = self.game.enter_battlefield(self.a, BEAR)
+        self.game.resolve(self.a, make, bear, prev=bear)
+        token = next(x for x in self.a.battlefield if x.card.is_token)
+        self.assertEqual((token.power, "Spirit" in token.card.subtypes), (1, True))
+        self.assertEqual([how for _, how in self.game.end_cleanup], ["exile"])
 
 
 if __name__ == "__main__":

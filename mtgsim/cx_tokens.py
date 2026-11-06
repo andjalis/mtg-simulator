@@ -208,6 +208,8 @@ def parse_create(subject: str, body: str):
     who = _SUBJECTS.get(subject.lower().strip())
     if who is None:
         return NO_MATCH
+    if re.search(r"\bcop(?:y|ies) of\b", body, re.I):
+        return parse_copy(who, body)
     masked, quoted = _mask(body.strip())
     amount_q, per_each = None, False
     m = re.fullmatch(r"a number of (.+?) equal to (.+)", masked, re.I)
@@ -249,6 +251,29 @@ def parse_create(subject: str, body: str):
         effects.append(Effect("cx_token", n, target="that_controller" if who == "that_controller" else "none",
                               data=data))
     return effects or NO_MATCH
+
+
+_COPY = re.compile(r"(?P<n>an?|one|two|three|four|five|x) (?P<tapped>tapped )?(?:token that's a copy|tokens that are copies) "
+                   r"of (?P<what>that creature|that artifact|that permanent|that enchantment|that land|it|~)"
+                   r"(?:,? that(?:'s| are) (?P<state>tapped and attacking|tapped|attacking))?(?:, except (?P<exc>.+))?",
+                   re.I)
+
+
+def parse_copy(who: str, body: str):
+    """"create a token that's a copy of that creature / it [, except ...]": a copy of the object the previous
+    effect acted on (or the trigger's subject), as a cx_token effect whose card is made when it resolves."""
+    from .cards.model import Effect, NO_MATCH
+    from .copies import parse_except
+    m = _COPY.fullmatch(body.strip())
+    if m is None or who != "you" or m["n"].lower() == "x":
+        return NO_MATCH
+    mods = parse_except(m["exc"]) if m["exc"] else {}
+    if mods is None:
+        return NO_MATCH
+    state = m["state"] or ""
+    return [Effect("cx_token", _NUMBERS[m["n"].lower()], target="self" if m["what"] == "~" else "prev",
+                   data={"copy": mods, "tapped": bool(m["tapped"]) or "tapped" in state,
+                         "attacking": "attacking" in state, "who": "you"})]
 
 
 def reparse(sentence: str, effects: list) -> list:

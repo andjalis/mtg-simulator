@@ -2,12 +2,20 @@
 from __future__ import annotations
 
 from ...cx_tokens import create
-from ..state import Player
+from ..state import Permanent, Player
 from . import kind
 
 
 @kind("cx_token")
 def cx_token(game, p, eff, target, opp, **_):
+    if "copy" in eff.data:                  # "a token that's a copy of that creature / it"
+        from ...cards import CardDef
+        from ...copies import make_copy
+        card = target.copiable_card if isinstance(target, Permanent) else target if isinstance(target, CardDef) \
+            else None
+        if card is not None:
+            create(game, p, dict(eff.data, card=make_copy(card, eff.data["copy"])), eff.amount)
+        return
     who = eff.data["who"]
     if who == "that_controller":
         players = [target] if isinstance(target, Player) else []
