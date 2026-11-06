@@ -141,7 +141,7 @@ def _count(text: str):
 
 def parse_line(line: str, st) -> bool:
     m = _LINE.fullmatch(line)
-    if not m or st.level_marks:
+    if not m or st.level_marks or st.extra.get("_lvl_blocks"):
         return False        # a Class level's ability applies only from that level on
     from .cx_condlib import as_static, parse
     amount = _amount(m["amt"])
