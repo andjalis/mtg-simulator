@@ -47,7 +47,6 @@ class Parsing(unittest.TestCase):
                   "Destroy target creature unless its controller pays {2}.",       # condition (gcond)
                   "Destroy all lands or all creatures.",                           # a choice
                   "Destroy target creature that dealt damage this turn.",          # history
-                  "Exile target card from a graveyard.",                           # another zone
                   "Exile that creature.",                                          # back-reference round
                   "Destroy all creatures of the creature type of your choice.",
                   "Return target creature to its owner's hand until end of turn."):
@@ -189,6 +188,79 @@ class DefaultAI(Base):
         self.a.ai.main_phase(self.game, self.a)
         self.assertIn(spell, self.a.hand)
 
+
+class GraveyardCards(Base):
+    """Cards moved out of an exact graveyard by a card noun phrase."""
+    def test_parsing(self):
+        effs = parse_sentence("Return up to two target creature cards with power 2 or less from your graveyard to "
+                              "the battlefield.")
+        self.assertEqual([(e.kind, e.target) for e in effs], [("cx_card_move", "graveyard_card")] * 2)
+        self.assertTrue(effs[0].data["optional_target"] and effs[0].data["distinct"])
+        for s in ("Return target creature card with infect from your graveyard to your hand.",     # unknown words
+                  "Return target creature card with lesser mana value from your graveyard to the battlefield.",
+                  "Return target creature card from a graveyard to the battlefield.",   # under whose control?
+                  "Return target card from an opponent's graveyard to your hand.",
+                  "Put two target cards from a graveyard on top of their owners' libraries.",
+                  "Exile target card from that player's graveyard."):
+            self.assertIsNone(parse_sentence(s), s)
+
+    def test_zone_is_exact(self):
+        mine, theirs = self.a.graveyard, self.b.graveyard
+        mine.append(BEAR)
+        theirs.append(GREEN)
+        spell = self.spell("Return target card from an opponent's graveyard to their hand.")
+        self.assertEqual(self.game.legal_targets(self.a, spell.spell_effects[0]), [theirs[0]])
+        self.cast(spell, [theirs[0]])
+        self.assertEqual([c.name for c in self.b.hand], [GREEN.name])
+
+    def test_card_noun_is_checked(self):
+        self.a.graveyard.extend([BEAR, ROCK])
+        spell = self.spell("Return target creature card with power 2 or less from your graveyard to the battlefield.")
+        self.assertEqual([c.name for c in self.game.legal_targets(self.a, spell.spell_effects[0])], [BEAR.name])
+        self.cast(spell, [self.a.graveyard[0]])
+        self.assertEqual([x.card.name for x in self.a.battlefield], [BEAR.name])
+
+    def test_to_owners_hand_from_any_graveyard(self):
+        self.b.graveyard.append(ROCK)
+        self.cast(self.spell("Return target artifact or enchantment card from a graveyard to its owner's hand."),
+                  [self.b.graveyard[0]])
+        self.assertEqual(([c.name for c in self.b.hand], self.a.hand), ([ROCK.name], []))
+
+    def test_onto_the_battlefield_under_your_control(self):
+        self.b.graveyard.append(GREEN)
+        self.cast(self.spell("Put target creature card from a graveyard onto the battlefield under your control.",
+                             "Sorcery"), [self.b.graveyard[0]])
+        self.assertEqual([x.card.name for x in self.a.battlefield], [GREEN.name])
+        self.assertEqual(self.a.battlefield[0].owner, self.b)
+
+    def test_exile_and_bottom_of_library(self):
+        self.b.graveyard.extend([ROCK, GREEN])
+        self.cast(self.spell("Exile target artifact card from a graveyard."), [self.b.graveyard[0]])
+        self.assertEqual([c.name for c in self.b.exile], [ROCK.name])
+        self.cast(self.spell("Put target card from a graveyard on the bottom of its owner's library."),
+                  [self.b.graveyard[0]])
+        self.assertEqual((self.b.library[0].name, self.b.graveyard), (GREEN.name, []))
+
+    def test_ai_casts_a_reanimation(self):
+        self.a.graveyard.append(BEAR)
+        self.b.graveyard.append(GREEN)
+        spell = card("Test Spell", "{U}", "Sorcery",
+                     "Return target creature card with power 2 or less from your graveyard to the battlefield.")
+        self.perm(ISLAND, self.a)
+        self.a.hand = [spell]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertNotIn(spell, self.a.hand)
+        self.assertIn(BEAR.name, [x.card.name for x in self.a.battlefield])
+        self.assertEqual(len(self.b.graveyard), 1)
+
+    def test_ai_aims_by_side(self):
+        self.a.graveyard.append(BEAR)
+        self.b.graveyard.append(GREEN)
+        for text, owner in (("Return target creature card from a graveyard to its owner's hand.", self.a),
+                            ("Exile target creature card from a graveyard.", self.b)):
+            eff = parse_sentence(text)[0]
+            tgt = self.a.ai.choose_target(self.game, self.a, eff, self.spell(text))
+            self.assertTrue(any(c is tgt for c in owner.graveyard), text)
 
 if __name__ == "__main__":
     unittest.main()

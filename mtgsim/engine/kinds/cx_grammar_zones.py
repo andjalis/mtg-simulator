@@ -21,3 +21,26 @@ def edict(game, p, eff, target, item, **_):
         if isinstance(v, Permanent) and v in target.battlefield:
             game.log(f"sacrifices {v.card.name}", target)
             game.sacrifice(v, counter_sources=sources)
+
+
+@kind("cx_card_move")
+def card_move(game, p, eff, target, **_):
+    """Move a targeted card out of a graveyard: to its owner's hand, exile or library (top / bottom), or onto the
+    battlefield under your control or its owner's."""
+    owner = next((pl for pl in game.players if any(c is target for c in pl.graveyard)), None)
+    if owner is None:
+        return
+    to = eff.data["to"]
+    if to == "battlefield":
+        owner.graveyard.remove(target)
+        controller = p if eff.data.get("under", "you") == "you" else owner
+        game.enter_battlefield(controller, target, tapped=bool(eff.data.get("tapped")))
+    elif to in ("library_top", "library_bottom"):
+        owner.graveyard.remove(target)
+        if to == "library_top":
+            owner.library.append(target)
+        else:
+            owner.library.insert(0, target)
+    else:
+        game.move_card(target, owner.graveyard, owner.hand if to == "hand" else owner.exile, reason="cx_card_move")
+    game.log(f"{target.name} goes from {owner}'s graveyard to {to}", p)
