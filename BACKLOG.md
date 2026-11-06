@@ -123,6 +123,12 @@ Then #160 (choose-then-destroy edicts, 2 cards), #161 ("You can't lose the game 
 as a `cant_lose` flag checked at the life/poison check, the empty-library draw and "you lose the game" effects; 3 cards)
 and #162 ("All creatures attack each combat if able" and the opponents-only wording; 5 cards). Abyssal Persecutor ("you
 can't win ... opponents can't lose") was left alone: with no way for the AI to get rid of it the game would stall.
+Then #164 ("You gain life equal to the damage dealt this way": `deal_damage` records `game.last_dealt`, reset at every
+stack resolution; Syphon Soul and Brightflame match the sentence but keep their damage clause unsupported), #165
+("Counter target spell that targets a permanent you control", a `targets_mine` counter filter) and #166 ("Each player
+may discard their hand and draw seven cards" as `wheel_all`, always taking the "may"; Ali from Cairo's "damage can't
+reduce your life below 1" as a `life_floor` flag). Still open: "Spells your opponents cast that target ~ cost {2} more"
+(needs a cost step after targets are chosen).
 Still open from the census: counter taxes by devotion, basic land types and party size, and
 "can't attack unless you pay ..." costs.
 
