@@ -862,7 +862,11 @@ class HeuristicAI:
             if eff.kind == "pump" or eff.target == "spell" or _is_trick(card):
                 return None  # tricks go in after_blocks / respond, counters in respond
             if eff.kind == "damage" and eff.target in ("any", "player", "creature", "creature_pw"):
-                tgt, v = self.best_damage_target(game, me, eff, card, precombat or instant)
+                if eff.data.get("src_prev") or eff.data.get("cx_rel") == "not_prev":      # "it deals damage equal to its power"
+                    from .cx_abil_damage import plan_damage
+                    tgt, v = plan_damage(self, game, me, eff, card, precombat or instant, targets)
+                else:
+                    tgt, v = self.best_damage_target(game, me, eff, card, precombat or instant)
                 if tgt is None:
                     return None
                 if instant and tgt is not opp and v < LETHAL and not self._clears_blocker(game, me, tgt, precombat):
