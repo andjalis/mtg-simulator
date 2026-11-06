@@ -189,6 +189,10 @@ MANEUVER = card("Test Maneuver", "{1}{W}", "Instant", "Target player sacrifices 
 FOGWALKER = card("Test Fogwalker", "{1}{U}", "Creature", "Whenever ~ attacks, target creature an opponent controls doesn't untap during its controller's next untap step.", power=1, toughness=1)
 
 
+WURM = card("Test Wurm", "{3}{R}", "Creature", "When ~ enters, sacrifice it unless you discard a land card.", power=6, toughness=4)
+HORDE = card("Test Horde", "{2}{R}", "Creature", "At the beginning of your upkeep, sacrifice ~ unless you discard a card at random.", power=3, toughness=3)
+
+
 class SmallEdicts(unittest.TestCase):
     def test_parse(self):
         self.assertEqual((MARAUDER.unsupported, IMP.unsupported), ([], []))
@@ -232,3 +236,36 @@ class AttackingEdictAndFreeze(unittest.TestCase):
         c = game.enter_battlefield(b, BEAR)
         game.resolve(a, FOGWALKER.triggers[0].effects[0], c, None)
         self.assertEqual(c.skip_untap, 1)
+
+
+class SacUnlessDiscard(unittest.TestCase):
+    def test_parse(self):
+        self.assertEqual((WURM.unsupported, HORDE.unsupported), ([], []))
+
+    def _run(self, cardd, hand):
+        game, a, b = _game()
+        perm = game.enter_battlefield(a, cardd)
+        a.hand = list(hand)
+        from mtgsim.engine.state import StackItem
+        item = StackItem(a, [], [], source=perm, name="trigger")
+        game.resolve(a, cardd.triggers[0].effects[0], None, item)
+        return a, perm
+
+    def test_land_discarded_keeps_wurm(self):
+        a, perm = self._run(WURM, [MOUNTAIN, BEAR])
+        self.assertIn(perm, a.battlefield)
+        self.assertEqual([c.name for c in a.hand], [BEAR.name])
+
+    def test_no_land_sacrifices_wurm(self):
+        a, perm = self._run(WURM, [BEAR])
+        self.assertNotIn(perm, a.battlefield)
+        self.assertEqual(len(a.hand), 1)
+
+    def test_random_discard_keeps_horde(self):
+        a, perm = self._run(HORDE, [BEAR, MOUNTAIN])
+        self.assertIn(perm, a.battlefield)
+        self.assertEqual(len(a.hand), 1)
+
+    def test_empty_hand_sacrifices_horde(self):
+        a, perm = self._run(HORDE, [])
+        self.assertNotIn(perm, a.battlefield)

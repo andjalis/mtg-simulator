@@ -81,3 +81,22 @@ def edict_attacking(game, p, target, opp, **_):
     mine = [c for c in game.attackers if c.controller is victim_owner]
     for v in sorted(mine, key=perm_value)[:1]:
         game.sacrifice(v, counter_sources=counter_mechanics.death_sources(game))
+
+
+@kind("sac_unless_discard_kind")
+def sac_unless_discard_kind(game, p, eff, item, **_):
+    """Fallow Wurm ("a land card") and Balduvian Horde ("a card at random"): keep the source by paying the discard when
+    able, else sacrifice it."""
+    from ..state import Permanent
+    src = item.source if item is not None else None
+    if not isinstance(src, Permanent) or src not in p.battlefield:
+        return
+    if eff.data["mode"] == "land":
+        lands = [c for c in p.hand if c.is_land]
+        card = lands[0] if lands else None
+    else:
+        card = game.rng.choice(list(p.hand)) if p.hand else None
+    if card is None:
+        game.sacrifice(src)
+    else:
+        game.discard_card(p, card)

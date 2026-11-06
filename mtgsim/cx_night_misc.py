@@ -46,7 +46,13 @@ def _freeze_theirs(m):
     return Effect("skip_untap", target="creature", data={"side": "theirs"})
 
 
+def _sac_discard(m):
+    from .cards.model import Effect
+    return Effect("sac_unless_discard_kind", data={"mode": "land" if m[1] else "random"})
+
+
 EFFECT_PATTERNS = [
+    (r"sacrifice (?:~|it) unless you discard (?:(a land card)|a card at random)", _sac_discard),
     (r"target creature an opponent controls doesn't untap during its controller's next untap step", _freeze_theirs),
     (r"target player sacrifices an attacking creature", _simple("edict_attacking", "player")),
     (r"each player sacrifices a nontoken creature", _simple("edict_each_nontoken")),
