@@ -78,3 +78,24 @@ class CounterNames(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SpellBar(Base):
+    def test_an_empty_second_group_doesnt_stop_the_sweep(self):
+        spell = card("Test Sweep", "{U}", "Sorcery", "Goblins your opponents control get -1/-1 until end of turn. "
+                                                     "Elves your opponents control get -1/-1 until end of turn.")
+        self.assertEqual(spell.unsupported, [])
+        for _ in range(3):
+            self.perm(GOBLIN, self.b)
+        self.perm(ISLAND, self.a)
+        self.a.hand = [spell]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertNotIn(spell, self.a.hand)
+
+    def test_wrapper_x_is_handed_to_inner_parts_when_planning(self):
+        from mtgsim.ai import _sized_inner
+        inner = G._effect("lose_life", 0, target="that_controller", data={"x": True})
+        wrapper = G._effect("cx_players", 3, data={"who": "opponents", "x": True, "effects": [inner]})
+        self.assertEqual([e.amount for e in _sized_inner(self.game, self.a, wrapper)], [3])
+        sized = G._effect("cx_players", 3, data={"who": "opponents", "x": False, "effects": [inner]})   # after _sized
+        self.assertEqual([e.amount for e in _sized_inner(self.game, self.a, sized)], [3])
