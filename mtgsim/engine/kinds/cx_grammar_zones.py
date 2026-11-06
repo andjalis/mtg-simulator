@@ -23,6 +23,16 @@ def edict(game, p, eff, target, item, **_):
             game.sacrifice(v, counter_sources=sources)
 
 
+@kind("cx_tuck")
+def tuck(game, p, eff, target, **_):
+    """Put a permanent on top of / on the bottom of / shuffled into its owner's library, never through the
+    graveyard (Game.put_in_library); a token ceases to exist."""
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        name = target.card.name
+        if game.put_in_library(target, eff.data["where"]):
+            game.log(f"{name} goes into its owner's library ({eff.data['where']})", p)
+
+
 @kind("cx_card_move")
 def card_move(game, p, eff, target, **_):
     """Move a targeted card out of a graveyard: to its owner's hand, exile or library (top / bottom), or onto the
