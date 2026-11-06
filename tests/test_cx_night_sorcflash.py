@@ -32,6 +32,17 @@ class SorceryFlash(unittest.TestCase):
         a.battlefield.append(Permanent(DRAGON, a))
         self.assertTrue(game.can_cast_now(a, RITUAL))
 
+    def test_all_spells_flash_covers_creatures_too(self):
+        game, a = self._game()
+        orrery = card("Test Orrery", "{4}", "Artifact", "You may cast spells as though they had flash.")
+        self.assertEqual((orrery.unsupported, orrery.advanced_rules.get("spells_flash")), ([], True))
+        golem = card("Test Golem", "{1}", "Artifact Creature — Golem", "", power="1", toughness="1")
+        a.hand.append(golem)
+        self.assertFalse(game.can_cast_now(a, golem))
+        a.battlefield.append(Permanent(orrery, a))
+        self.assertTrue(game.can_cast_now(a, golem))
+        self.assertTrue(game.can_cast_now(a, RITUAL))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -21,6 +21,9 @@ def parse_line(st, line: str):
     if line == "You have shroud.":                  # Ivory Mask, True Believer: nothing can target you, even you
         st.extra.setdefault("advanced_rules", {})["player_shroud"] = True
         return None
+    if line.startswith("You may cast spells as though they had flash."):          # Vedalken Orrery, Leyline of Anticipation
+        st.extra.setdefault("advanced_rules", {})["spells_flash"] = True
+        return None
     if line.startswith("You may cast sorcery spells as though they had flash."):     # Gandalf, Hypersonic Dragon
         st.extra.setdefault("advanced_rules", {})["sorcery_flash"] = True
         return None
