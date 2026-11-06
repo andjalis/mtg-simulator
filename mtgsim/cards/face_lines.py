@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 
 from .. import discounts, graveyard, modal
+from .. import cx_static_anthem as _cx_static_anthem
 from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, storage as _storage, cx_static_cost as _cx_static_cost
 from .model import Activated, AltCost, COLORS, Effect, KEYWORDS, NUMBERS, Trigger, _num, parse_mana_cost
 from .patterns import _parse_mana_ability
@@ -757,33 +758,32 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["anthem_sub"] = extra.get("anthem_sub", ()) + (("Token", int(m[1]), int(m[2]), False),)
             return None
-        m = re.fullmatch(r"(Other )?([A-Z][a-z]+?)s? you control get \+(\d+)/\+(\d+) and have (menace|trample|flying|"
+        m = re.fullmatch(r"(Other )?([A-Z][a-z]+) you control get \+(\d+)/\+(\d+) and have (menace|trample|flying|"
                          r"vigilance|haste|lifelink|first strike|deathtouch|reach)\.", line)
-        if m and m[2] != "Creature":
-            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
-            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((m[2], m[5], bool(m[1])),)
+        sub = _cx_static_anthem.tag(m[2], plural=True, subtype_only=True) if m and m[2] != "Creatures" else None
+        if sub:
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((sub, int(m[3]), int(m[4]), bool(m[1])),)
+            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((sub, m[5], bool(m[1])),)
             return None
-        m = re.fullmatch(r"(Other )?(Merfolk|[A-Z][a-z]+?)s? you control get \+(\d+)/\+(\d+)\.", line)
-        if m and m[2] != "Creature":
-            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
+        m = re.fullmatch(r"(Other )?([A-Z][a-z]+) you control get \+(\d+)/\+(\d+)\.", line)
+        sub = _cx_static_anthem.tag(m[2], plural=True, subtype_only=True) if m and m[2] != "Creatures" else None
+        if sub:
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((sub, int(m[3]), int(m[4]), bool(m[1])),)
             return None
-        m = re.fullmatch(r"(Other )?([A-Z][a-z]+?)s you control have (menace|trample|flying|vigilance|haste|lifelink|"
+        m = re.fullmatch(r"(Other )?([A-Z][a-z]+) you control have (menace|trample|flying|vigilance|haste|lifelink|"
                          r"first strike|double strike|deathtouch|reach|indestructible)\.", line)
-        if m and m[2] != "Creature":
-            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((m[2], m[3], bool(m[1])),)
+        sub = _cx_static_anthem.tag(m[2], plural=True, subtype_only=True) if m and m[2] != "Creatures" else None
+        if sub:
+            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((sub, m[3], bool(m[1])),)
             return None
         m = re.fullmatch(r"~ costs \{(\d+)\} less to cast if you control an? ([A-Z]\w+)\.", line)
         if m:
             extra["discount_if"] = extra.get("discount_if", ()) + ((m[2], int(m[1])),)
             return None
-        m = re.fullmatch(r"(Other )?(white|blue|black|red|green|artifact) creatures you control get \+(\d+)/\+(\d+)\.", line)
-        if m:
-            tag = "type:Artifact" if m[2] == "artifact" else "color:" + {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}[m[2]]
-            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((tag, int(m[3]), int(m[4]), bool(m[1])),)
-            return None
-        m = re.fullmatch(r"(Other )?(?!Enchanted)([A-Z][\w-]+) creatures you control get \+(\d+)/\+(\d+)\.", line)
-        if m:
-            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
+        m = re.fullmatch(r"(Other )?(?!Enchanted )([A-Za-z][\w-]+) creatures you control get \+(\d+)/\+(\d+)\.", line)
+        sub = _cx_static_anthem.tag(m[2]) if m else None
+        if sub:
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((sub, int(m[3]), int(m[4]), bool(m[1])),)
             return None
         m = re.fullmatch(r"Creatures you control with \+1/\+1 counters on them have (trample|flying|vigilance|haste|lifelink|"
                          r"first strike|deathtouch|menace|reach|indestructible)\.", line)

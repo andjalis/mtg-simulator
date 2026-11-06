@@ -6,7 +6,7 @@ import re
 
 from .. import auras, counting
 from ..cards import BASIC_MANA, KEYWORDS, CardDef, Effect, Trigger
-from .. import continuous
+from .. import continuous, cx_static_anthem
 from ..identity import CardInstance, CardZone, Graveyard, instance
 
 
@@ -298,10 +298,7 @@ class Permanent:
                 bp += x.card.anthem_chosen[0]
                 bt += x.card.anthem_chosen[1]
             for sub, pp, tt, other in x.card.anthem_sub:
-                if creature and (sub in self.card.subtypes or (sub == "Token" and self.card.is_token)
-                                 or sub.startswith("color:") and sub[6:] in self.card.colors
-                                 or sub.startswith("type:") and sub[5:] in self.card.types) \
-                        and not (other and x is self):
+                if creature and cx_static_anthem.fits(self, sub) and not (other and x is self):
                     bp += pp
                     bt += tt
         for sub, pp, tt in self.controller.emblems:
