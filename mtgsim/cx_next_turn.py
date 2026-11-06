@@ -228,7 +228,7 @@ def _base(m):
 
 def _base_player(m):
     from .cards.model import Effect
-    return Effect("cx_set_base", int(m["p"]), int(m["t"]), target="player", data={"group": True})
+    return Effect("cx_set_base", int(m["p"]), int(m["t"]), target="player", data={"group": True, "side": "theirs"})
 
 
 def _flag(flag, who="you", amount=0, **data):
