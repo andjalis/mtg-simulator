@@ -218,6 +218,35 @@ class Riders(GameCase):
 
 
 @unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class Subjects(GameCase):
+    """"they / that player creates" and "a Food token or a Treasure token"."""
+    def test_full(self):
+        for name in ("Pain Distributor", "Ant-Man's Army", "Tireless Provisioner", "Vraska, the Cutting Glare"):
+            self.assertEqual(card_coverage(self.db.get(name)).ignored, [], name)
+
+    def test_trigger_player(self):
+        eff = token_effects(self.db.get("Pain Distributor"))[0]
+        self.game.resolve(self.a, eff, None, StackItem(self.a, [eff], [None], context=self.b))
+        self.assertEqual([x.card.token_kind for x in self.b.battlefield], ["treasure"])
+        self.assertFalse(self.a.battlefield)
+
+    def test_previous_targets_controller(self):
+        destroy, treasure = self.db.get("Vraska, the Cutting Glare").triggers[0].effects
+        bear = self.game.enter_battlefield(self.b, BEAR)
+        self.game.resolve(self.a, destroy, bear)
+        self.game.resolve(self.a, treasure, bear.controller, prev=bear)
+        self.assertEqual([x.card.token_kind for x in self.b.battlefield], ["treasure"])
+
+    def test_choice(self):
+        eff = token_effects(self.db.get("Ant-Man's Army"))[0]
+        self.a.hand = [self.db.get("Wurmcoil Engine")]          # a spell the lands can't pay for: Treasure
+        self.game.resolve(self.a, eff, None)
+        self.a.hand = []
+        self.game.resolve(self.a, eff, None)
+        self.assertEqual(sorted(x.card.token_kind for x in self.a.battlefield), ["food", "treasure"])
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
 class CopyTokens(GameCase):
     """"Create a token that's a copy of that creature / it": the object the previous effect or the trigger acted on."""
     def test_full(self):

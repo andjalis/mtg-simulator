@@ -49,6 +49,8 @@ _SUBJECTS = {
     "that permanent's controller": "that_controller", "that spell's controller": "that_controller",
     "its owner": "owner", "they": "they", "that player": "they",
 }
+# The effect target each subject needs: the previous object (its controller, or itself for "its owner").
+_TARGETS = {"that_controller": "that_controller", "they": "that_controller", "owner": "prev"}
 
 
 def _mask(text: str):
@@ -232,8 +234,7 @@ def parse_create(subject: str, body: str):
         specs = [describe(_unmask(part.split(" ", 1)[1], quoted)) for part in (choice[1], choice[2])]
         if None in specs:
             return NO_MATCH
-        return [Effect("cx_token", 1, target={"that_controller": "that_controller", "they": "that_controller",
-                                              "owner": "prev"}.get(who, "none"),
+        return [Effect("cx_token", 1, target=_TARGETS.get(who, "none"),
                        data={"choice": specs, "who": who, "tapped": False, "attacking": False})]
     parts = _split_descs(masked)
     effects = []
@@ -256,7 +257,7 @@ def parse_create(subject: str, body: str):
             data["per_opponent"] = True
         elif amount_q is not None:
             data["xq"] = amount_q
-        effects.append(Effect("cx_token", n, target={"that_controller": "that_controller", "they": "that_controller", "owner": "prev"}.get(who, "none"),
+        effects.append(Effect("cx_token", n, target=_TARGETS.get(who, "none"),
                               data=data))
     return effects or NO_MATCH
 
