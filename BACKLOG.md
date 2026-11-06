@@ -136,7 +136,12 @@ Later: #172 ("Each creature you control assigns combat damage equal to its tough
 `toughness_damage` / `toughness_damage_all`, read through `dmg_stat` in `combat_damage`; the AI's attack and block
 evaluation still looks at power; 9 cards) and a batch of one-sentence cards: "Enchant land you control", hand-cycling
 ("shuffle the cards from your hand into your library, then draw that many cards" and the "on the bottom" wording; the new
-`hand_cycle` kind).
+`hand_cycle` kind). Then #174 ("Each player sacrifices a nontoken creature", "target opponent puts a card from their
+hand on top of their library"), #175 ("target player sacrifices an attacking creature", Fogwalker's "target creature an
+opponent controls doesn't untap during its controller's next untap step" on the existing `skip_untap`), #176 ("sacrifice
+it unless you discard a land card / a card at random"; 6 cards) and "put a permanent card from your hand onto the
+battlefield". Sparkmage's Gambit and Wrap in Flames need a multi-target damage clause first ("each of up to N target
+creatures") before "those creatures can't block this turn" can follow.
 Still open: "Spells your opponents cast that target ~ cost {2} more"
 (needs a cost step after targets are chosen).
 Still open from the census: counter taxes by devotion, basic land types and party size, and

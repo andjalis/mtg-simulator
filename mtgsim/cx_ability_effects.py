@@ -43,7 +43,7 @@ EFFECT_PATTERNS = [
     (r"(?P<who>target|that) creature attacks this turn if able",
      lambda m: _effect("grant", target="creature" if m["who"].lower() == "target" else "prev",
                        data={"keyword": "must_attack_now"})),
-    (r"(?:you may )?put an? (?P<f>creature|artifact|enchantment|artifact or creature|[A-Z]\w+ creature) card "
+    (r"(?:you may )?put an? (?P<f>creature|artifact|enchantment|permanent|artifact or creature|[A-Z]\w+ creature) card "
      r"from your hand onto the battlefield", _hand_to_battlefield),
     # "Defender" stays; Permanent.can_attack lets the creature attack while it has this keyword.
     (r"~ can attack this turn as though it didn't have defender",

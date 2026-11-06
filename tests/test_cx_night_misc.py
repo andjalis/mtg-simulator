@@ -193,6 +193,9 @@ WURM = card("Test Wurm", "{3}{R}", "Creature", "When ~ enters, sacrifice it unle
 HORDE = card("Test Horde", "{2}{R}", "Creature", "At the beginning of your upkeep, sacrifice ~ unless you discard a card at random.", power=3, toughness=3)
 
 
+KONA = card("Test Kona", "{3}{G}", "Creature", "Whenever ~ attacks, you may put a permanent card from your hand onto the battlefield.", power=3, toughness=3)
+
+
 class SmallEdicts(unittest.TestCase):
     def test_parse(self):
         self.assertEqual((MARAUDER.unsupported, IMP.unsupported), ([], []))
@@ -269,3 +272,13 @@ class SacUnlessDiscard(unittest.TestCase):
     def test_empty_hand_sacrifices_horde(self):
         a, perm = self._run(HORDE, [])
         self.assertNotIn(perm, a.battlefield)
+
+
+class PermanentFromHand(unittest.TestCase):
+    def test_parse_and_put(self):
+        self.assertEqual(KONA.unsupported, [])
+        game, a, b = _game()
+        a.hand = [MOUNTAIN, BEAR]
+        game.resolve(a, KONA.triggers[0].effects[1], None, None)
+        self.assertEqual(len(a.hand), 1)
+        self.assertEqual(len(a.battlefield), 1)
