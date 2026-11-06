@@ -80,6 +80,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         cards = [x for x in legal if isinstance(x, CardDef)]
         return max(cards, key=lambda c: c.cmc, default=None)
     if k == "damage":
+        from ..cx_abil_damage import scaled
+        eff = scaled(game, me, eff)
         if eff.target == "player" and not (eff.data.get("or_pw") and eff.amount < opp.life):
             return opp
         if eff.target == "any" and eff.amount >= opp.life:
