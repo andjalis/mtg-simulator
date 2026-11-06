@@ -312,9 +312,11 @@ class TargetPlayers(Base):
 
     def test_ai_casts_a_group_debuff_at_the_opponent(self):
         bear, mine = self.perm(BEAR, self.b), self.perm(BEAR, self.a)
+        goblins = [self.perm(GOBLIN, self.b) for _ in range(2)]
         spell = self.main_phase("Creatures target player controls get -1/-1 until end of turn.")
         self.assertNotIn(spell, self.a.hand)
         self.assertEqual((bear.power, mine.power), (BEAR.power - 1, BEAR.power))
+        self.assertTrue(all(g not in self.b.battlefield for g in goblins))
 
     def test_ai_casts_a_group_pump_at_itself(self):
         bear, theirs = self.perm(BEAR, self.a), self.perm(BEAR, self.b)
@@ -435,6 +437,8 @@ class TargetOpponent(Base):
 class MassDiminish(Base):
     def test_ai_casts_it_at_the_opponent(self):
         theirs, mine = self.perm(WOLF, self.b), self.perm(WOLF, self.a)
+        for _ in range(3):
+            self.perm(WOLF, self.b)
         spell = card("Test Diminish", "{U}", "Sorcery",
                      "Until your next turn, creatures target player controls have base power and toughness 1/1.")
         self.assertEqual(spell.unsupported, [])
@@ -452,3 +456,41 @@ class MassDiminish(Base):
         self.perm(BEAR, self.b)
         with self.game.targeting(card_):
             self.assertIs(self.a.ai.choose_target(self.game, self.a, eff, card_), self.b)
+
+
+class PlayersCast(Base):
+    def main_phase(self, text):
+        spell = card("Test Spell", "{U}", "Sorcery", text)
+        self.assertEqual(spell.unsupported, [], text)
+        self.perm(ISLAND, self.a)
+        self.a.hand = [spell]
+        self.a.ai.main_phase(self.game, self.a)
+        return spell
+
+    def test_ai_casts_you_draw_and_lose_life(self):
+        life = self.a.life
+        spell = self.main_phase("You draw three cards and lose 3 life.")
+        self.assertNotIn(spell, self.a.hand)
+        self.assertEqual((self.a.life, len(self.a.hand)), (life - 3, 3))
+
+    def test_ai_casts_each_opponent_discards(self):
+        self.b.hand = [BEAR, BEAR]
+        life = self.b.life
+        spell = self.main_phase("Each opponent discards a card and loses 2 life.")
+        self.assertNotIn(spell, self.a.hand)
+        self.assertEqual((len(self.b.hand), self.b.life), (1, life - 2))
+
+    def test_ai_keeps_a_symmetric_wash(self):
+        spell = self.main_phase("Each player loses 2 life.")
+        self.assertIn(spell, self.a.hand)
+
+    @unittest.skipUnless(DB_FILE.exists(), "card database not built")
+    def test_ambitions_cost(self):
+        from mtgsim.carddb import CardDB
+        ambition = CardDB().get("Ambition's Cost")
+        from tests.test_templates import SWAMP
+        for _ in range(4):
+            self.perm(SWAMP, self.a)
+        self.a.hand = [ambition]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertNotIn(ambition, self.a.hand)
