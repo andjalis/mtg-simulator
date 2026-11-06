@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 
-from .cx_grammar import Part, count, object_phrase, verb
+from .cx_grammar import Part, ai_value, count, object_phrase, verb
 
 _KINDS = {"destroy": "destroy", "exile": "exile_permanent", "return": "bounce"}
 # Words that turn a zone change into something these kinds don't do: linked exile, a rider, a choice, a
@@ -61,6 +61,11 @@ def objects(text: str):
         if obj is None or obj.kind != "group":
             return None
         out.append(obj)
+    types = [o.group.get("selector", {}).get("types_all") for o in out]
+    if all(t and len(t) == 1 and o.group["selector"] == {"types_all": t} for o, t in zip(out, types)):
+        # Plain types ("artifacts, creatures, and lands"): one group, every member moved at once.
+        out[0].group = {"selector": {"types_any": [t[0] for t in types]}}
+        return out[:1]
     return out
 
 
@@ -108,6 +113,7 @@ def _signed(me, perm, v: float) -> float:
     return v if perm.controller is not me else -v
 
 
+@ai_value("destroy", "exile_permanent", "bounce")
 def _removal_value(game, me, eff, obj):
     from .engine.policy import perm_value
     from .engine.state import Permanent
@@ -120,6 +126,7 @@ def _removal_value(game, me, eff, obj):
     return _signed(me, obj, perm_value(obj))
 
 
+@ai_value("cx_edict")
 def _edict_value(game, me, eff, obj):
     """The permanents that player would sacrifice (cx_edict picks the least valuable), signed by who loses them."""
     from .cx_grammar import group_members

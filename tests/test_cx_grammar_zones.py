@@ -24,7 +24,9 @@ class Parsing(unittest.TestCase):
         self.assertEqual(self.kinds("Exile target creature or planeswalker that's black or red."),
                          ["exile_permanent"])
         self.assertEqual(self.kinds("Destroy target creature and target land."), ["destroy", "destroy"])
-        self.assertEqual(self.kinds("Destroy all artifacts, creatures, and lands."), ["cx_group"] * 3)
+        self.assertEqual(self.kinds("Destroy all artifacts, creatures, and lands."), ["cx_group"])
+        self.assertEqual(self.kinds("Destroy all creatures you don't control and all planeswalkers you don't control."),
+                         ["cx_group"] * 2)
         self.assertEqual(self.kinds("Return all nonblue creatures to their owners' hands."), ["cx_group"])
         effs = parse_sentence("Destroy target creature and target land.")
         self.assertEqual([e.target for e in effs], ["permanent", "permanent"])
@@ -170,6 +172,21 @@ class DefaultAI(Base):
         self.main_phase("Target opponent sacrifices a nontoken creature.")
         self.assertIn(mine, self.a.battlefield)
         self.assertNotIn(theirs, self.b.battlefield)
+
+    def test_casts_a_sweeper_that_favours_it(self):
+        theirs = [self.perm(BEAR, self.b) for _ in range(3)]
+        self.main_phase("Destroy all creatures and planeswalkers.")
+        self.assertFalse(any(x in self.b.battlefield for x in theirs))
+
+    def test_holds_a_sweeper_that_hurts_it(self):
+        for _ in range(3):
+            self.perm(BEAR, self.a)
+        self.perm(BEAR, self.b)
+        spell = card("Test Spell", "{U}", "Sorcery", "Return all nonblue creatures to their owners' hands.")
+        self.perm(ISLAND, self.a)
+        self.a.hand = [spell]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertIn(spell, self.a.hand)
 
 
 if __name__ == "__main__":

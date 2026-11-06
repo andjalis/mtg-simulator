@@ -361,8 +361,12 @@ class AbilitiesMixin:
             previous = getattr(self, '_choosing_targets', [])
             self._choosing_targets = targets
             try:
-                return all(e.target not in TARGETED or (i < len(targets) and
-                           self.legal_target(p, e, targets[i])) for i, e in enumerate(effects))
+                if not all(e.target not in TARGETED or (i < len(targets) and
+                           self.legal_target(p, e, targets[i])) for i, e in enumerate(effects)):
+                    return False
+                chosen = [(e.kind, id(targets[i])) for i, e in enumerate(effects)       # "two target creatures":
+                          if e.data.get("distinct") and i < len(targets) and targets[i] is not None]   # different ones
+                return len(chosen) == len(set(chosen))
             finally:
                 self._choosing_targets = previous
 
