@@ -18,6 +18,14 @@ class _FaceState:
         self.__dict__.update(values)
 
 
+def _sub(word):
+    """A subtype from the plural stem the line regexes capture: "Armie" (Armies) is Army, "Zombie" stays."""
+    from ..permanent_templates import _CREATURE_SUBTYPES
+    if word.lower() not in _CREATURE_SUBTYPES and word.endswith("ie") and (word[:-2] + "y").lower() in _CREATURE_SUBTYPES:
+        return word[:-2] + "y"
+    return word
+
+
 def _face_special_lines(st, line):
     """Speed gates, graveyard abilities, one-off statics, kicker and ability-word prefixes, keyword lines. Returns the line to keep parsing, or None once it is handled."""
     activated = st.activated
@@ -760,17 +768,17 @@ def _face_cost_and_static_lines(st, line):
         m = re.fullmatch(r"(Other )?([A-Z][a-z]+?)s? you control get \+(\d+)/\+(\d+) and have (menace|trample|flying|"
                          r"vigilance|haste|lifelink|first strike|deathtouch|reach)\.", line)
         if m and m[2] != "Creature":
-            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
-            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((m[2], m[5], bool(m[1])),)
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((_sub(m[2]), int(m[3]), int(m[4]), bool(m[1])),)
+            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((_sub(m[2]), m[5], bool(m[1])),)
             return None
         m = re.fullmatch(r"(Other )?(Merfolk|[A-Z][a-z]+?)s? you control get \+(\d+)/\+(\d+)\.", line)
         if m and m[2] != "Creature":
-            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((_sub(m[2]), int(m[3]), int(m[4]), bool(m[1])),)
             return None
         m = re.fullmatch(r"(Other )?([A-Z][a-z]+?)s you control have (menace|trample|flying|vigilance|haste|lifelink|"
                          r"first strike|double strike|deathtouch|reach|indestructible)\.", line)
         if m and m[2] != "Creature":
-            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((m[2], m[3], bool(m[1])),)
+            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((_sub(m[2]), m[3], bool(m[1])),)
             return None
         m = re.fullmatch(r"~ costs \{(\d+)\} less to cast if you control an? ([A-Z]\w+)\.", line)
         if m:
