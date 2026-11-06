@@ -41,6 +41,21 @@ class DamageEqualToPower(unittest.TestCase):
                                                  context=entered), opp=b, cause="test")
         self.assertEqual(before - b.life, 5)
 
+    def test_damage_equal_to_the_targets_hand(self):
+        from mtgsim.engine import StackItem
+        from mtgsim.engine.kinds.cx_night_combat import damage_target_hand
+        gaze = card("Test Gaze", "{2}{R}", "Instant",
+                    "Test Gaze deals damage to target player equal to the number of cards in that player's hand.")
+        self.assertEqual((gaze.unsupported, gaze.spell_effects[0].kind), ([], "damage_target_hand"))
+        a = Player("a", [HERO] * 10, HeuristicAI())
+        b = Player("b", [HERO] * 10, HeuristicAI())
+        game = Game(a, b, random.Random(0), log=False)
+        b.hand = [HERO] * 4
+        before = b.life
+        damage_target_hand(game, a, target=b, item=StackItem(card=gaze, controller=a, effects=[], targets=[]),
+                           cause="test")
+        self.assertEqual(before - b.life, 4)
+
 
 if __name__ == "__main__":
     unittest.main()

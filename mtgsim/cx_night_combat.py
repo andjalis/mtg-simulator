@@ -1,4 +1,4 @@
-"""Self-referential combat riders: "you may untap it and remove it from combat" and "you may have it deal N damage to
+"""Self-referential combat riders and small damage riders: "you may untap it and remove it from combat" and "you may have it deal N damage to
 any target" (Gustcloak Harrier / Runner / Sentinel, Goblin Arsonist, Jund Sojourners, Karplusan Wolverine).
 
 Both are optional in the text and always taken here: removing a blocked creature from combat is a free dodge, and the
@@ -22,7 +22,14 @@ def _power_to_opponents(m):
     return Effect("damage_power_opp", target="none")
 
 
+def _hand_damage(m):
+    from .cards.model import Effect
+    return Effect("damage_target_hand", target="player")
+
+
 EFFECT_PATTERNS = [
+    # Gaze of Adamaro, Storm Seeker, Sudden Impact
+    (r"~ deals damage to target player equal to the number of cards in that player's hand", _hand_damage),
     # Heartfire Hero, Flaming Tyrannosaurus: "When ~ dies, it deals damage equal to its power to each opponent."
     (r"(?:it|~) deals damage equal to its power to each opponent", _power_to_opponents),
     (r"(?:it|~) deals damage to each opponent equal to its power", _power_to_opponents),
