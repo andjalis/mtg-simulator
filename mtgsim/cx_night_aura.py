@@ -30,6 +30,12 @@ def parse_line(st, line: str):
     if line == "You can't lose the game and your opponents can't win the game.":      # Platinum Angel
         st.extra.setdefault("advanced_rules", {})["cant_lose"] = True
         return None
+    if line == "All creatures attack each combat if able.":                        # Grand Melee, Warmonger Hellkite
+        st.extra.setdefault("advanced_rules", {})["all_must_attack"] = True
+        return None
+    if line == "Creatures your opponents control attack each combat if able.":       # Angler Turtle
+        st.extra.setdefault("advanced_rules", {})["opp_must_attack"] = True
+        return None
     if line == "You control enchanted permanent.":
         st.extra.setdefault("advanced_rules", {})["aura_control"] = True
         return None
@@ -46,3 +52,11 @@ def cant_lose(game, player) -> bool:
     """True while a permanent says its controller can't lose the game (Platinum Angel)."""
     from .residual_templates import sources
     return any(x.controller is player for x in sources(game, "cant_lose"))
+
+
+def forced_to_attack(game, player) -> bool:
+    """True while a permanent makes every creature (or the opponents' creatures) attack each combat."""
+    from .residual_templates import sources
+    if sources(game, "all_must_attack"):
+        return True
+    return any(x.controller is not player for x in sources(game, "opp_must_attack"))
