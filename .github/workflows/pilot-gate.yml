@@ -1,0 +1,79 @@
+name: Pilot gate
+
+# Runs scripts/pilot_gate.py on every pull request against the PR's base commit, so agents don't run it locally.
+# The checkout is the PR merged into its base, so cards merged since the branch point don't show as regressions.
+# Posts (and updates) one PR comment with verdict.md. Newer pushes cancel an older run of the same PR.
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: pilot-gate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pilot-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Cache key
+        id: week
+        run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache card database
+        id: carddb
+        uses: actions/cache@v6
+        with:
+          path: mtgsim/data/cards.sqlite3
+          key: carddb-${{ hashFiles('mtgsim/build_carddb.py') }}-${{ steps.week.outputs.week }}
+
+      - name: Build card database
+        if: steps.carddb.outputs.cache-hit != 'true'
+        run: python3 -m mtgsim.build_carddb
+
+      # The base census is cached by commit plus code/data fingerprints inside pilot_gate; keep it across runs.
+      - name: Cache base coverage
+        uses: actions/cache@v6
+        with:
+          path: results/pilot_gate/cache
+          key: pilot-base-${{ github.event.pull_request.base.sha || github.sha }}-${{ steps.week.outputs.week }}
+          restore-keys: pilot-base-
+
+      - name: Install pyflakes
+        run: python3 -m pip install pyflakes==4.0.3
+
+      - name: Pilot gate
+        id: gate
+        run: |
+          base="${{ github.event.pull_request.base.sha || 'origin/main' }}"
+          python3 scripts/pilot_gate.py --base "$base" --fast
+          
+      - name: Comment the verdict on the PR
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          v=$(ls -t results/pilot_gate/*/verdict.md 2>/dev/null | head -n 1)
+          [ -n "$v" ] || exit 0
+          { echo "<!-- pilot-gate -->"; cat "$v"; } > ../gate.md
+          head -c 60000 ../gate.md > ../gate-short.md
+          id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+               --jq '.[] | select(.body | startswith("<!-- pilot-gate -->")) | .id' | tail -n 1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F body=@../gate-short.md > /dev/null
+          else
+            gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file ../gate-short.md
+          fi
