@@ -70,3 +70,18 @@ def _cost_variants(game, p, card) -> list:
             out.append(game._variant(card, "buyback", AltCost("buyback", dict(card.mana_cost), sacrifice=a.sacrifice,
                                                               discard=a.discard)))
     return out
+
+
+# "~ becomes prepared" / "if ~ isn't prepared, it becomes prepared" / "it becomes prepared": the effect kind and the
+# prepared-spell cast are prepare.py's; these are the self and "it" targets (the second wording is idempotent).
+EFFECT_PATTERNS = [
+    (r"(?:if ~ isn't prepared, it|~) becomes prepared",
+     lambda m: _prep("self")),
+    (r"it becomes prepared", lambda m: _prep("prev")),
+]
+SUBS: list = []
+
+
+def _prep(target):
+    from .cards import Effect
+    return Effect("prepare", 1, target=target, data={"prepared": True})
