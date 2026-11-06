@@ -499,7 +499,11 @@ def _face_land_and_mana_lines(st, line):
                     approximations.append(f"\"Add {m[1]}\" may make any combination of colors")
             produces |= cols
             extra["mana_amount"] = max(amount, extra.get("mana_amount", 1))
-            if "equal to" in m[1] or " for each " in m[1]:
+            from ..mana_count import parse_dynamic
+            dyn = parse_dynamic(m[1])
+            if dyn:
+                extra["mana_dyn"] = dyn         # counted when the mana is made (engine/mana.py _amount)
+            elif "equal to" in m[1] or " for each " in m[1]:
                 # "Add an amount of {G} equal to this creature's power" / "Add {C} for each charge
                 # counter on this artifact": mana_amount is a fixed number, so a dynamic amount is
                 # simplified to 1 (the engine has no stat- or counter-based mana amount).
