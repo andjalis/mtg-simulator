@@ -5,7 +5,7 @@ import unittest
 
 from mtgsim.engine import Game, Player
 from tests.test_combat_triggers import Scripted
-from tests.test_templates import BEAR, FOREST, ISLAND, MOUNTAIN, PLAINS, SWAMP, card
+from tests.test_templates import BEAR, FOREST, ISLAND, MOUNTAIN, SWAMP, card
 
 MIST = card("Test Mist", "{2}{G}", "Creature — Elemental",
             "At the beginning of your upkeep, sacrifice ~ unless you pay {G}{G}.", 6, 2)
