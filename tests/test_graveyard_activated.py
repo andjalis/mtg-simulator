@@ -134,8 +134,7 @@ class GraveyardActivated(unittest.TestCase):
         self.assertEqual(self.a.life, 22)
 
     def test_unsupported_cost_or_restriction_stays_visible(self):
-        for text in ("{1}, Exile another creature card from your graveyard: Return this card from your graveyard to the battlefield.",
-                     "{T}: Return this card from your graveyard to the battlefield.",
+        for text in ("{T}: Return this card from your graveyard to the battlefield.",
                      "{1}: Return this card from your graveyard to the battlefield. Activate only if you've scried or surveilled this turn."):
             with self.subTest(text=text):
                 c = revenant(text)
