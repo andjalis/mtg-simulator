@@ -10,7 +10,7 @@ paid itself; any other X inside a player subject is rejected.
 """
 from __future__ import annotations
 
-from .cx_grammar import Part, count, object_phrase, verb
+from .cx_grammar import Part, ai_value, count, object_phrase, verb
 
 _N = r"(a|an|one|two|three|four|five|six|seven|eight|nine|ten|x|\d+)"
 
@@ -61,3 +61,11 @@ def hand(m, clause):
     if clause.duration or (m[1] == "your") != (clause.subject.kind == "imperative" or clause.subject.who == "you"):
         return None
     return [Part("cx_discard_hand", **_obj(clause))]
+
+
+@ai_value("cx_discard_random", "cx_discard_hand")
+def _discard_value(game, me, eff, obj):
+    """Cards out of a player's hand, valued like the core's discard: worse for me than good against them."""
+    hand = len(getattr(obj, "hand", ()))
+    n = hand if eff.kind == "cx_discard_hand" else min(eff.amount, hand)
+    return -(0.8 if obj is me else -1.0) * n

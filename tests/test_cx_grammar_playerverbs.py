@@ -61,11 +61,12 @@ class Resolving(Base):
         self.game.resolve_top()
         self.assertEqual((len(self.b.hand), len(self.b.graveyard)), (2, 3))
 
-    def test_wheel(self):
+    def test_each_player_discards_their_hand(self):
         self.a.hand, self.b.hand = [BEAR] * 2, [BEAR] * 4
-        self.cast(self.spell("Each player discards their hand, then draws seven cards.", "Sorcery"))
-        self.assertEqual((len(self.a.hand), len(self.b.hand)), (7, 7))
-        self.assertEqual(len(self.b.graveyard), 4)
+        spell = self.spell("Each player discards their hand.", "Sorcery")
+        self.assertEqual(spell.spell_effects[0].kind, "cx_players")
+        self.cast(spell)
+        self.assertEqual((len(self.a.hand), len(self.b.hand), len(self.b.graveyard)), (0, 0, 4))
 
     def test_discard_your_hand_is_only_yours(self):
         self.a.hand, self.b.hand = [BEAR] * 3, [BEAR] * 3
@@ -96,6 +97,10 @@ class DefaultAI(Base):
 
     def test_target_player_discards_their_hand(self):
         self.main_phase("Target player discards their hand.")
+        self.assertEqual(len(self.b.hand), 0)
+
+    def test_each_opponent_discards_their_hand(self):
+        self.main_phase("Each opponent discards their hand.")
         self.assertEqual(len(self.b.hand), 0)
 
     def test_draw_then_discard_at_random_for_itself(self):
