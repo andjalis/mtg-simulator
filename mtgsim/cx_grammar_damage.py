@@ -41,6 +41,19 @@ def _source(clause):
     return None
 
 
+def _object(text: str, source: str):
+    """The recipient Subject, or None. "itself" is the source; "that land's controller" is the controller of the
+    permanent the sentence refers to. "Its controller" / "its owner" are rejected: "its" names the source here, while
+    the grammar's "controller" reads the previous object."""
+    low = text.strip().lower()
+    if low.startswith("its "):
+        return None
+    if low == "itself":
+        return object_phrase({"self": "~", "prev": "it"}[source]) if source in ("self", "prev") else None
+    low = re.sub(r"^that (?:land|artifact|enchantment|planeswalker)'s (controller|owner)$", r"that permanent's \1", low)
+    return object_phrase(low)
+
+
 def _targeted(obj) -> bool:
     return obj is not None and obj.target not in ("none", "self", "prev", "host")
 
@@ -72,16 +85,20 @@ def deals(m, clause):
     if first is None or re.search(r"\b(?:divided|each of|where|equal|that much|instead|unless|for each)\b",
                                   clause.verb):
         return None
-    obj1 = object_phrase(m[2])
+    m2, m3, m4 = m[2], m[3], m[4]
+    both = re.fullmatch(r"(each [\w ]+?) and (each [\w ]+)", m2)
+    if both and not m3 and _object(m2, source) is None:
+        m2, m3, m4 = both[1], m[1], both[2]         # "each creature and each player": the same amount to both
+    obj1 = _object(m2, source)
     parts = [_part(first[0], first[1], obj1, source, False)]
-    if m[3]:
-        second = _amount(m[3])
+    if m3:
+        second = _amount(m3)
         if second is None:
             return None
-        distinct = re.fullmatch(r"any other target", m[4])
-        if distinct and not re.fullmatch(r"any target", m[2]):
+        distinct = re.fullmatch(r"any other target", m4)
+        if distinct and not re.fullmatch(r"any target", m2):
             return None
-        obj2 = object_phrase("any target" if distinct else m[4])
+        obj2 = _object("any target" if distinct else m4, source)
         parts.append(_part(second[0], second[1], obj2, source, _targeted(obj1)))
         if distinct and all(parts):         # "any other target": not the first one (the source may be either)
             for p in parts:

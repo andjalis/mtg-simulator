@@ -26,7 +26,7 @@ class Parsing(unittest.TestCase):
         self.assertEqual([e.target for e in effs], ["any", "any"])
         self.assertTrue(all(e.data.get("distinct") for e in effs))
         self.assertFalse(any(e.data.get("other") for e in effs))
-        self.assertEqual(parse_sentence("~ deals 1 damage to target creature you control.")[0].target, "creature")
+        self.assertEqual(parse_sentence("~ deals 1 damage to target creature you control.")[0].target, "permanent")
 
     def test_rejections(self):
         for s in ("~ deals 4 damage divided as you choose among any number of targets.",
