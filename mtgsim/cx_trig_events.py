@@ -118,7 +118,7 @@ def host_phase(game, p, event) -> None:
     want = "host_upkeep" if event == "upkeep" else "host_end_step"
     for pl in game.players:
         for aura in list(pl.battlefield):
-            host = getattr(aura, "attached_to", None)
+            host = getattr(aura, "aura_host", None) or getattr(aura, "attached_to", None)
             if host is None or host.controller is not p:
                 continue
             for trig in aura.card.triggers:
