@@ -137,6 +137,7 @@ class CardDef:
     approximations: list = field(default_factory=list)  # text the engine plays in a simplified way
     oracle: str = ""
     triggers: list = field(default_factory=list)       # Trigger, including the ETB one
+    mana_dyn: tuple = ()                                # a counted mana amount: ("count", what, zone) | ("counters", kind) | ("power",)
     mana_amount: int = 1                                # Sol Ring makes 2
     gy_to_exile: bool = False                           # "If ~ would be put into a graveyard from anywhere, exile it instead."
     restricted_amount: int = 1                          # Tablet of Discovery: its restricted ability makes {R}{R}

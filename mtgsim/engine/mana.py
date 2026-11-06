@@ -19,6 +19,9 @@ def _amount(s) -> int:
     """How much mana s makes right now (Tablet of Discovery's restricted {R}{R} is 2, its {R} is 1)."""
     now = getattr(s, "amount_now", None)
     base = getattr(s.card, "mana_amount", 1) if now is None else now
+    if s.card.mana_dyn:
+        from ..mana_count import dynamic_amount
+        base = dynamic_amount(s)
     if s.card.is_land:
         base += sum(a.card.advanced_rules.get('aura_mana', 0) for a in s.auras if not a.abilities_suppressed)
         return base * 2 if _doubled(s) else base
@@ -68,7 +71,7 @@ def _find_payment(sources: list[Permanent], cost: dict):
     pips = [c for c in COLORS + ("C", "S") for _ in range(cost.get(c, 0))]
     generic = cost.get("generic", 0)
     # A source that makes several mana (Sol Ring) fills several slots.
-    slots = [s for s in sources for _ in range(max(1, _amount(s)))]
+    slots = [s for s in sources for _ in range(_amount(s) if s.card.mana_dyn else max(1, _amount(s)))]
     if len(pips) + generic > len(slots):
         return None
     # Mana that can only be spent on some spells goes first when it is allowed at all.
