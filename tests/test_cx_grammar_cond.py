@@ -200,6 +200,15 @@ class Unless(Base):
             self.assertEqual((effects[0].kind, effects[0].data["payer"]), ("cx_unless", payer), text)
             self.assertTrue(all(e.cond == 'lib:["unless_unpaid"]' for e in effects[1:]), text)
 
+    def test_alternative_costs(self):
+        effects, _ = self.parse("That player loses 2 life unless they pay {1} or 1 life.")
+        self.assertEqual(effects[0].data["costs"], [{"mana": {"generic": 1}}, {"life": 1}])
+        effects, _ = self.parse("That player loses 2 life unless they sacrifice a nonland permanent or discard a card.")
+        self.assertEqual([list(c) for c in effects[0].data["costs"]], [["sacrifice", "other"], ["discard"]])
+        spell = self.spell("Each opponent loses 3 life unless they pay {1} or 1 life.", "Sorcery")
+        self.cast(spell)
+        self.assertEqual(self.b.life, 19)                     # no mana: the 1 life instead
+
     def test_rejects(self):
         for text in ("You gain 3 life unless any player pays {1}.",            # any player: not modelled
                      "Draw a card unless they pay {2}.",                       # "they": no player named

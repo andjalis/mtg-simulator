@@ -120,6 +120,21 @@ _PAYERS = {"you": "you", "they": "they", "that player": "they", "its controller"
            "that permanent's controller": "controller", "that spell's controller": "controller"}
 
 
+def _costs(text: str):
+    """A list of alternative costs: "pays {1} or 1 life", "sacrifices a nonland permanent or discards a card"."""
+    one = _cost(text)
+    if one is not None:
+        return [one]
+    m = re.fullmatch(r"(\w+) (.+?) or (?:(\w+) )?(.+)", text, re.I)
+    if m is None:
+        return None
+    verb = m[1]
+    second = f"{m[3]} {m[4]}" if m[3] and m[3].lower().rstrip("s") in ("pay", "sacrifice", "discard") \
+        else f"{verb} {(m[3] + ' ') if m[3] else ''}{m[4]}"
+    a, b = _cost(f"{verb} {m[2]}"), _cost(second)
+    return [a, b] if a and b else None
+
+
 def _cost(text: str):
     """The cost of "pay(s) {2}{U}", "pay(s) 3 life", "sacrifice(s) a|another <filter>" or "discard(s) a [<filter>]
     card", else None."""
@@ -174,12 +189,12 @@ def unless(m, inner):
     if payer is None:
         cond = _if_cond(rest)
         return [dataclasses.replace(e, cond=_both(e.cond, _negate(cond))) for e in effects] if cond else None
-    cost = _cost(rest[len(next(k for k, v in _PAYERS.items() if rest.lower().startswith(k + " "))) + 1:])
-    if cost is None:
+    costs = _costs(rest[len(next(k for k, v in _PAYERS.items() if rest.lower().startswith(k + " "))) + 1:])
+    if costs is None:
         return None
     who = _who_pays(payer, effects[0])
     if who is None:
         return None
-    gate = Effect("cx_unless", data=dict(cost, payer=who))
+    gate = Effect("cx_unless", data={"costs": costs, "payer": who})
     unpaid = _code("unless_unpaid")
     return [gate] + [dataclasses.replace(e, cond=_both(e.cond, unpaid)) for e in effects]

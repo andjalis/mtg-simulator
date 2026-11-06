@@ -32,7 +32,7 @@ def unless(game, p, eff, item, prev=None, **_):
     payer = _payer(game, p, eff.data["payer"], eff, item, prev)
     paid = False
     if payer is not None and game.hook(payer, "pay_unless")(game, payer, 0, item):
-        paid = _pay(game, payer, eff.data, item)
+        paid = any(_pay(game, payer, cost, item) for cost in eff.data["costs"])     # the first one they can pay
     if item is not None:
         item.cx_unless_paid = paid
 
