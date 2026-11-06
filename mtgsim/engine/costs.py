@@ -618,7 +618,7 @@ class CostsMixin:
                         v.extra_discard = alt.discard
                     v.spell_effects = list(alt.effects if alt.effects is not None else card.spell_effects) + \
                         list(alt.extra)
-                    v.cost_reduction = ""
+                    # the card's own cost reduction still applies to an alternative cost (CR 601.2f)
             v.origin = (card, kind, alt)
             v.origin_generation = getattr(card, "generation", None)
             self._variants[key] = v
