@@ -123,3 +123,24 @@ class PerCounter(unittest.TestCase):
         before = len(self.a.hand)
         self.game.resolve(self.a, eff, None, item)
         self.assertEqual(len(self.a.hand) - before, 2)
+
+
+class Distribute(MultiTarget):
+    def test_distribute_over_chosen_targets(self):
+        bears = self.put(self.a, 3)
+        effs = effects("Distribute three +1/+1 counters among one, two, or three target creatures you control.")
+        self.assertEqual(len(effs), 3)
+        from mtgsim.engine.state import StackItem
+        item = StackItem(self.a, effs, self.game.auto_targets(self.a, effs))
+        for e, t in zip(item.effects, item.targets):
+            self.game.resolve(self.a, e, t, item)
+        self.assertEqual(sum(b.counters.get("+1/+1", 0) for b in bears), 3)
+
+    def test_single_target_gets_all(self):
+        bears = self.put(self.a, 1)
+        effs = effects("Distribute three +1/+1 counters among up to two target creatures you control.")
+        from mtgsim.engine.state import StackItem
+        item = StackItem(self.a, effs, self.game.auto_targets(self.a, effs))
+        for e, t in zip(item.effects, item.targets):
+            self.game.resolve(self.a, e, t, item)
+        self.assertEqual(bears[0].counters.get("+1/+1", 0), 3)

@@ -124,7 +124,7 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         if eff.data.get('counter') == '-1/-1':
             pool = mine if eff.data['operation'] == 'remove' else theirs
         return max(pool, key=perm_value, default=None)
-    if k == 'add_counter':
+    if k in ('add_counter', 'cx_distribute'):
         pool = theirs if eff.data.get('counter') == '-1/-1' else mine
         return max(pool, key=perm_value, default=None)
     if k == 'return_grave_target':

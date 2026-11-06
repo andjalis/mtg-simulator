@@ -13,3 +13,22 @@ def cx_poison(game, p, eff, target, prev, **_):
     if isinstance(who, Player):
         who.counters["poison"] = who.counters.get("poison", 0) + eff.amount
         game.log(f"gets {eff.amount} poison counter(s)", who)
+
+
+@kind("cx_distribute")
+def cx_distribute(game, p, eff, item, **_):
+    """The slot-0 effect splits ``amount`` counters over every target chosen for the group (see cx_counters)."""
+    if eff.data.get("slot") or item is None:
+        return
+    group = [t for e, t in zip(item.effects, item.targets)
+             if e.kind == "cx_distribute" and e.data.get("counter") == eff.data["counter"] and isinstance(t, Permanent)
+             and t in t.controller.battlefield]
+    chosen = []
+    for t in group:
+        if all(t is not c for c in chosen):
+            chosen.append(t)
+    if not chosen:
+        return
+    each, extra = divmod(eff.amount, len(chosen))
+    for i, t in enumerate(chosen):
+        t.counters[eff.data["counter"]] = t.counters.get(eff.data["counter"], 0) + each + (1 if i < extra else 0)

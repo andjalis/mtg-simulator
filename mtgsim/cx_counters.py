@@ -108,3 +108,31 @@ def entry_x_counters(line, extra):
     else:
         extra["etb_named_counters"] = (m[1].lower(), -1)
     return True
+
+
+_W = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5}
+
+
+def _distribute(m):
+    """"Distribute N <kind> counters among one, two, or three target creatures": one optional distinct target per
+    possible recipient; the first effect splits the N counters over the targets actually chosen (each gets at least
+    one, the first ones get the remainder), the rest do nothing."""
+    from .cards.model import NO_MATCH
+    from .permanent_templates import build
+    total = _num(m[1])
+    nums = [_W[w] for w in re.findall(r"one|two|three|four|five", m[3])]
+    slots = min(total, total if "any number" in m[3] else max(nums))
+    out = []
+    for i in range(slots):
+        eff = build("cx_distribute", "up to one " + ("other " if m[4] else "") + "target " + _singular(m[5]),
+                    amount=total, data={"counter": m[2], "distinct": True, "slot": i})
+        if eff is None or eff.target == "group":
+            return NO_MATCH
+        out.append(eff)
+    return out
+
+
+EFFECT_PATTERNS.append(
+    (rf"distribute (a|an|one|two|three|four|five) ({_COUNTER}) counters? among (?:up to )?((?:any number of)|"
+     rf"(?:(?:one|two|three|four|five)(?:,? (?:or |and )?(?:one|two|three|four|five))*)) (other )?target (.+)",
+     _distribute))
