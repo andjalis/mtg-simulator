@@ -301,6 +301,8 @@ class TurnsMixin:
         from ..advanced_templates import begin_turn
         begin_turn(self, p)
         self.step = "untap"
+        from ..day_night import begin_turn as day_night_turn
+        day_night_turn(self, p)
         for pl in self.players:
             for x in pl.battlefield:
                 if x.detained_by is p:
@@ -391,6 +393,8 @@ class TurnsMixin:
                 and not player_flag(self, p, 'no_max_hand'):
             card = p.ai.choose_discard(self, p)
             self.discard_card(p, card)
+        if self.pending:
+            self.settle()           # triggers from the cleanup discard (madness) get priority before the turn ends
         for perm in p.battlefield + opp.battlefield:
             perm.damage = 0
             perm.deathtouched = False
@@ -398,6 +402,7 @@ class TurnsMixin:
             perm.temp_kw.clear()
             perm.temp_triggers.clear()
             perm.temp_activated.clear()
+            perm.temp_min_blocker = 0
             perm.adapt_exceptions = 0
             perm.regeneration_shields = 0
             perm.prevent_next = 0

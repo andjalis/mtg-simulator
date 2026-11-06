@@ -157,6 +157,8 @@ _SUBS += _cx_effects.SUBS
 
 from .. import cx_ability_effects as _cx_ability_effects
 _EFFECT_PATTERNS += _cx_ability_effects.EFFECT_PATTERNS
+from .. import cx_abil_damage as _cx_abil_damage
+_EFFECT_PATTERNS += _cx_abil_damage.EFFECT_PATTERNS
 from .. import cx_lures as _cx_lures
 _EFFECT_PATTERNS += _cx_lures.EFFECT_PATTERNS
 from .. import cx_recolor as _cx_recolor
@@ -198,3 +200,5 @@ _EFFECT_PATTERNS += _cx_night_edict.EFFECT_PATTERNS
 from .. import cx_night_misc as _cx_night_misc
 _EFFECT_PATTERNS += _cx_night_misc.EFFECT_PATTERNS
 _SUBS += _cx_night_endturn.SUBS
+from .. import cx_counters as _cx_counters
+_EFFECT_PATTERNS += _cx_counters.EFFECT_PATTERNS

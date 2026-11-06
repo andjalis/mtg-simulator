@@ -62,8 +62,9 @@ def _parse_effects(text: str, opts: bool = False):
         from ..emerge import parse_rider as emerge_rider
         from ..cx_shields import parse_rider as shield_rider
         from ..cx_delayed import parse_rider as delayed_rider
+        from ..cx_trig_watch import parse_rider as watch_rider
         if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects) or \
-                delayed_rider(s, effects):
+                delayed_rider(s, effects) or watch_rider(s, effects):
             continue
         if re.fullmatch(r"(?:it|they|those creatures|the creatures?|a creature destroyed this way) can't be "
                        r"regenerated(?:, of course)?", s, re.I) and effects and \
@@ -332,8 +333,6 @@ def card_from_scryfall(data: dict) -> CardDef:
                 card.adventure = _parse_face(back)
             elif "Land" in back_types and not card.is_land:
                 card.land_face = _parse_face(back)   # modal double-faced: may be played as this land
-            elif re.search(r"Daybound|Nightbound", card.oracle):
-                pass  # day/night isn't tracked; the day side stays
             elif data.get("layout") == "split" and _split_halves(card, _parse_face(back)):
                 pass
             else:
@@ -557,6 +556,8 @@ def _parse_face(data: dict) -> CardDef:
     triggers = [t for t in triggers if t.effects or t.modes]
     approximations += [note for rx, note in _SUB_NOTES if rx.search(oracle)]
 
+    if data.get("mana_cost") == "" and "Land" not in types:     # no mana cost at all (not {0}): CR 118.6
+        extra.setdefault("advanced_rules", {})["no_mana_cost"] = True
     return CardDef(
         name=name, mana_cost=cost, cmc=int(data.get("cmc", 0) or 0), types=types,
         subtypes=frozenset(type_line.split("—")[1].split()) if "—" in type_line else frozenset(),
