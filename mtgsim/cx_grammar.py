@@ -46,6 +46,9 @@ class Subject:
             "player"     ``who`` names untargeted players: you, each, opponents, that_player, defending,
                          controller (of the previous target), owner
             "host"       enchanted / equipped creature
+            "imperative" a sentence that starts with its verb ("Destroy target creature."): who "you"; the verb's
+                         object (Part.obj) carries the target
+    Players: who "target" (target "player", data filter "opp" for "target opponent") or an untargeted name.
     """
     kind: str
     target: str = "none"
@@ -81,6 +84,7 @@ class Part:
     amount: int = 0
     amount2: int = 0
     data: dict = field(default_factory=dict)
+    obj: "Subject | None" = None     # the verb's own object ("deals 3 damage to any target"): placed like a subject
 
 
 @dataclass(frozen=True)
@@ -93,6 +97,7 @@ class _Verb:
 
 
 VERBS: list = []
+RIDERS: list = []
 _LOADED = []
 
 
@@ -112,6 +117,18 @@ def verb(pattern: str, *, heads, subjects=("permanent", "group")):
     return register
 
 
+def rider(pattern: str):
+    """Register a sentence rider: ``@rider(r"(?P<body>.+) unless (?P<who>.+) pays? (?P<cost>{.+})")``.
+
+    pattern is fullmatched (case-insensitive) against the whole sentence (no final period) before the subject is
+    split off. The parser is called as ``parse(match, inner)``; ``inner(text)`` parses a sub-sentence with the
+    whole grammar (riders included) and returns its Effects or None. Return Effects, or None to reject."""
+    def register(fn):
+        RIDERS.append((re.compile(pattern, re.I), fn, fn.__module__))
+        return fn
+    return register
+
+
 def _load():
     """Import every mtgsim/cx_grammar_<family>.py module once (they register their verbs)."""
     if _LOADED:
@@ -127,11 +144,14 @@ _HEADS: list = []
 
 
 def _heads():
+    """[head finder, chain splitter, imperative start]."""
     if not _HEADS:
         words = sorted({h for v in VERBS for h in v.heads}, key=len, reverse=True)
         alt = "|".join(re.escape(w) for w in words)
         _HEADS.append(re.compile(rf"(?:also )?(?:{alt})\b", re.I))
         _HEADS.append(re.compile(rf"(?:,? and |, (?:and )?|,? then )(?=(?:also )?(?:{alt})\b)", re.I))
+        bare = sorted({h for v in VERBS if "imperative" in v.subjects for h in v.heads}, key=len, reverse=True)
+        _HEADS.append(re.compile(rf"(?:{'|'.join(re.escape(w) for w in bare)})\b", re.I) if bare else None)
     return _HEADS
 
 
@@ -235,6 +255,9 @@ def subject(text: str):
     low = text.lower()
     if low in _PLAYERS:
         return Subject("player", who=_PLAYERS[low], text=text)
+    if low in ("target player", "target opponent"):
+        return Subject("player", target="player", who="target", text=text,
+                       data={"filter": "opp"} if low.endswith("opponent") else {})
     if low in ("enchanted creature", "equipped creature"):
         return Subject("host", target="host", text=text)
     if low in ("~", "this creature", "this permanent"):
@@ -271,6 +294,21 @@ def subject(text: str):
     return Subject("group", group=noun, text=text)
 
 
+_TARGETS = {"any target": "any", "target creature or planeswalker": "creature_pw",
+            "target creature or player": "any", "target player or planeswalker": "player"}
+
+
+def object_phrase(text: str):
+    """The Subject a verb's object names ("any target", "target creature or planeswalker", "target player",
+    "each creature you control", "that creature's controller", ...), or None. Read like subject()."""
+    low = text.strip().lower()
+    if low in _TARGETS:
+        data = {"or_pw": True} if low == "target player or planeswalker" else {}
+        return Subject("player" if _TARGETS[low] == "player" else "permanent", target=_TARGETS[low], data=data,
+                       who="target" if _TARGETS[low] == "player" else "", text=text)
+    return subject(text)
+
+
 # ---------------------------------------------------------------- one-shot sentences
 
 def _effect(*args, **kwargs):
@@ -291,6 +329,13 @@ def parse_sentence(s: str):
     """Effects for one whole sentence, or None."""
     s = s.strip().rstrip(".").strip()
     s = re.sub(r"^(?:then |you may have |have )", "", s, flags=re.I)
+    _load()
+    for rx, fn, _ in RIDERS:
+        m = rx.fullmatch(s)
+        if m:
+            effects = fn(m, parse_sentence)
+            if effects:
+                return effects
     m = re.fullmatch(r"(.+?) for each (.+?)( until end of turn)?", s, re.I)
     if m and not re.search(r"\bfor each\b", m[2], re.I):
         return _for_each(m[1] + (m[3] or ""), m[2])
@@ -306,33 +351,88 @@ def parse_sentence(s: str):
     m = re.fullmatch(r"(.+?) this (turn|combat)", s, re.I)
     if m and not duration:
         s, duration = m[1], m[2].lower()
-    split = _split(s)
-    if split is None:
-        return None
-    subj = subject(split[0])
+    bare = _heads()[2]
+    if bare is not None and bare.match(s):
+        subj, chain = Subject("imperative", who="you", text=""), s
+    else:
+        split = _split(s)
+        if split is None:
+            return None
+        subj, chain = subject(split[0]), split[1]
     if subj is None:
         return None
-    parts = _clauses(split[1], subj, duration)
+    parts = _clauses(chain, subj, duration)
     return None if parts is None else assemble(subj, parts)
 
 
+_HELPS = ("pump", "grant", "gain_life", "draw", "cx_set_base")
+
+
+def side(effects) -> str:
+    """Whose side a chosen player should be on: "mine" when the effects only help, else "theirs"."""
+    hurt = any(e.kind not in _HELPS or e.data.get("side") == "theirs" for e in effects)
+    return "theirs" if hurt else "mine"
+
+
 def assemble(subj: Subject, parts: list):
-    """Effects for a one-shot subject and its Parts."""
+    """Effects for a one-shot subject and its Parts, or None."""
+    if subj.kind in ("group", "player") and any(p.obj is not None for p in parts):
+        return None
     if subj.kind == "group":
         inner = [_effect(p.kind, p.amount, p.amount2, target="self", data=p.data) for p in parts]
-        return [_effect("cx_group", target=subj.target, data=dict(subj.data, group=subj.group, effects=inner))]
+        data = dict(subj.data, group=subj.group, effects=inner)
+        if subj.target == "player":         # "creatures target player controls": the AI picks the player by side
+            data["side"] = side(inner)
+        return [_effect("cx_group", target=subj.target, data=data)]
     if subj.kind == "player":
         inner = [_effect(p.kind, p.amount, p.amount2, target="that_controller", data=p.data) for p in parts]
+        if subj.who == "target":
+            if len({side([e]) for e in inner}) > 1:
+                return None         # helps and hurts: which player the controller wants isn't clear
+            return [_effect("cx_players", target="player", filter=subj.data.get("filter", ""),
+                            data={"who": "target", "side": side(inner), "effects": inner})]
         return [_effect("cx_players", data={"who": subj.who, "effects": inner})]
+    if subj.kind == "imperative" and any(p.obj is None for p in parts):
+        return None             # an imperative verb names its own object
     out = []
     for _ in range(subj.copies):
-        for i, p in enumerate(parts):
-            if i == 0:
+        placed = obj_since = False
+        for p in parts:
+            if p.obj is not None:
+                effects = _place(p, p.obj, subj)
+                if effects is None:
+                    return None
+                out += effects
+                obj_since = True
+            elif not placed:
                 out.append(_effect(p.kind, p.amount, p.amount2, target=subj.target, data=dict(subj.data, **p.data)))
+                placed, obj_since = True, False
+            elif subj.target == "permanent" and obj_since:
+                return None     # "prev" would now mean the object's target, not the subject
             else:
                 out.append(_effect(p.kind, p.amount, p.amount2, target="prev" if subj.target == "permanent"
                                    else subj.target, data=p.data))
     return out
+
+
+def _place(p: Part, obj: Subject, subj: Subject):
+    """Effects for a Part with its own object; the clause subject (if any) goes in data["source"]."""
+    data = dict(p.data)
+    if subj.kind != "imperative":
+        data["source"] = subj.target
+    if obj.kind == "group":
+        inner = [_effect(p.kind, p.amount, p.amount2, target="self", data=data)]
+        gdata = dict(obj.data, group=obj.group, effects=inner)
+        if obj.target == "player":
+            gdata["side"] = side(inner)
+        return [_effect("cx_group", target=obj.target, data=gdata)]
+    if obj.kind == "player" and obj.who != "target":
+        return [_effect(p.kind, p.amount, p.amount2, data=dict(data, who=obj.who))]
+    if obj.kind == "host":
+        return [_effect(p.kind, p.amount, p.amount2, target="host", data=data)]
+    return [_effect(p.kind, p.amount, p.amount2, target=obj.target, filter=obj.data.get("filter", ""),
+                    data=dict({k: v for k, v in obj.data.items() if k != "filter"}, **data))
+            for _ in range(obj.copies)]
 
 
 _SCALED = ("pump", "debuff_one", "gain_life", "lose_life", "draw", "discard", "mill")
@@ -347,7 +447,8 @@ def _for_each(rest: str, desc: str):
     effects = parse_sentence(rest)
     if not effects:
         return None
-    scaled = [e for e in effects for e in ([e] + list(e.data.get("effects", ()))) if e.kind in _SCALED]
+    scaled = [e for e in effects for e in ([e] + list(e.data.get("effects", ())))
+              if e.kind in _SCALED or e.data.get("scales")]
     if not scaled:
         return None
     return [dataclasses.replace(e, data=dict(e.data, xq=spec)) for e in effects]
@@ -457,10 +558,12 @@ def _condition_keywords(spec) -> set:
 
 # ---------------------------------------------------------------- engine side: who a subject names
 
-def players(game, p, who, item, prev):
+def players(game, p, who, item, prev, target=None):
     """The players a cx_players subject names as it resolves (a two-player game: the defending player is the
-    opponent)."""
+    opponent). who "target": the chosen player (target)."""
     opp = game.opponent(p)
+    if who == "target":
+        return [target] if target in game.players else []
     if who == "you":
         return [p]
     if who == "each":
