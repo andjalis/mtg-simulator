@@ -252,7 +252,7 @@ class PlayerSubjects(Base):
         self.assertEqual(self.b.life, 20 - 3)
 
     def test_unknown_player_verbs_are_rejected(self):
-        self.assertIsNone(parse_sentence("Each player gains 2 life and sacrifices a creature."))
+        self.assertIsNone(parse_sentence("Each player gains 2 life and explores."))
 
 
 class Quantities(Base):
@@ -389,3 +389,24 @@ class Interface(unittest.TestCase):
             return body + body if body else None
         effs = parse_sentence("Target creature gains flying until end of turn twice.")
         self.assertEqual([e.kind for e in effs], ["grant", "grant"])
+
+
+class ColorSide(Base):
+    def target_for(self, text):
+        spell = self.spell(text)
+        with self.game.targeting(spell):
+            return self.a.ai.choose_target(self.game, self.a, spell.spell_effects[0], spell)
+
+    def test_colour_change_follows_the_effects_after_it(self):
+        mine, theirs = self.perm(BEAR, self.a), self.perm(WOLF, self.b)
+        self.assertIs(self.target_for("Target creature becomes red and gains haste until end of turn."), mine)
+        self.assertIs(self.target_for("Target creature becomes blue until end of turn. Untap that creature."), mine)
+        self.assertIs(self.target_for("Target creature becomes white until end of turn. Tap that creature."), theirs)
+        self.assertIs(self.target_for("Target creature becomes black until end of turn."), theirs)
+
+
+class LootSide(unittest.TestCase):
+    def test_draw_then_discard_is_for_its_controller(self):
+        effs = parse_sentence("Target player draws two cards, then discards a card.")
+        self.assertEqual((effs[0].target, effs[0].data["side"]), ("player", "mine"))
+        self.assertIsNone(parse_sentence("Target player discards a card, then draws a card."))   # helps and hurts

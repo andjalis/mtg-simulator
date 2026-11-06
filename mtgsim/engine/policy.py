@@ -172,6 +172,9 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     if k in ("connive", "attach_new_equipment"):    # the best creature of ours that can be chosen
         return max((x for x in mine if x.is_creature), key=perm_value, default=None)
     side = eff.data.get("side") if eff.data else None
+    if side == "auto":                  # neutral effects (a colour change) take the side of what follows them
+        from ..cx_grammar import auto_side
+        side = auto_side(game, eff)
     if side in ("mine", "theirs") and eff.target == "player":   # ... or which player (cx_grammar target players)
         return next((x for x in legal if x is (me if side == "mine" else opp)), None)
     if side in ("mine", "theirs"):      # newer kinds say whose permanent they want
