@@ -444,6 +444,8 @@ class Permanent:
             return any(kind in x.card.subtypes for x in self.controller.battlefield if x is not self)
         if cond == "max_speed":
             return self.controller.speed >= 4
+        if cond.startswith("charge>="):
+            return self.counters.get("charge", 0) >= int(cond[8:])
         if cond == "your_turn":
             return self.controller.my_turn
         if cond == "delirium":

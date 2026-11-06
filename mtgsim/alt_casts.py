@@ -34,6 +34,9 @@ _N = {"a": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "s
 
 def parse_line(line: str, st) -> bool:
     from .cards.model import AltCost, parse_mana_cost
+    from .cx_mech import parse_line as mech_line
+    if mech_line(line, st):
+        return True
     if line in ("Jump-start", "Retrace"):
         st.alt_costs.append(AltCost(line.lower().replace("-", "_"), {}, zone="graveyard"))
         return True
@@ -100,6 +103,8 @@ def variants(game, p, card) -> list:
                 out.append(game._variant(card, f"replicate_{k}", AltCost(f"replicate_{k}", add_mana(card.mana_cost, extra))))
         elif a.kind == "entwine" and card.modes:      # Game.cast chooses all the modes of this variant
             out.append(game._variant(card, "entwine", AltCost("entwine", add_mana(card.mana_cost, a.cost))))
+    from .cx_mech import variants as splice_variants
+    out += splice_variants(game, p, card)
     from .cx_altcost import variants as conditional_alts    # "[If ...,] you may ... rather than pay ~'s mana cost"
     return out + conditional_alts(game, p, card)
 
