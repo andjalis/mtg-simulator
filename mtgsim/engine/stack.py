@@ -103,6 +103,7 @@ class StackMixin:
         if event == "attacks" and source is not None:
             previous_turn, count = getattr(source, 'attack_count', (None, 0))
             source.attack_count = (self.turn, count + 1 if previous_turn == self.turn else 1)
+        context = (source if event == "etb" else subject) if event in ("etb", "land_enters") and context is None else context   # the entered one
         perms = [source] if source is not None else list(p.battlefield)
         for perm in perms:
             triggers = getattr(perm, 'last_triggers', None) if source is not None else None
@@ -334,6 +335,7 @@ class StackMixin:
                 perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
             self._aura_host = None
             self._entry_cast = None
+            perm.cast_zone = getattr(item, "cast_zone", None)       # "if it was cast from exile" (cx_condlib)
             if base.aura == "player":
                 perm.curse_target = self.opponent(p)
             self._entry_mana_colors = set()
