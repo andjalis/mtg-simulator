@@ -78,3 +78,21 @@ Round 5 adds target-land animations ("It's still a land", lasting or until end o
 `animate_land` target choice in `engine/policy.py`, and "look at the top card any time" in `cx_replace.py`.
 Round 6 adds Awaken to `alt_casts.py` (an alternative cost whose extra effects reuse the round 5 land animation).
 Round 7 adds `mtgsim/cx_top.py` (play lands / cast spells from the top of your library; hooks in `engine/costs.py`, `engine/play.py`, `ai.py`), `mtgsim/cx_abilitycopy.py` ("whenever you activate an ability ... copy that ability", hooked in `engine/abilities.py`), copy-ability source filters in `copies.py`, and snow-land animation targets in `cx_effects.py`.
+
+## Coverage push from 2026-11-06 (lead: Claude/Opus integrator)
+
+Census baseline: [results/database_coverage_2026-11-06](results/database_coverage_2026-11-06/README.md), 17,612 of
+35,277 full. Work lists come from `python3 -m mtgsim.blocking_units` ([results/blocking_units_2026-11-06](results/blocking_units_2026-11-06/README.md)),
+which splits each ignored line into the part the parser rejects and ranks those parts by cards completed. Most parts
+are rare (22k distinct, top 1,000 complete about 2,100 cards), so each lane prefers one general rule over many wordings.
+
+| Lane | Owns | Owner |
+| --- | --- | --- |
+| Effect grammar: compositional subject / verb / object / duration parsing for sentences no template matches | `mtgsim/cx_grammar*.py`, `mtgsim/engine/kinds/cx_grammar.py`, `tests/test_cx_grammar*.py`; one-line fallback hook in `cards/parse.py` `_parse_effects` | Codex (`codex/grammar-*`) |
+| Activated-ability effects and cost parts | `mtgsim/cx_abil*.py`, `mtgsim/engine/kinds/cx_abil.py`, `tests/test_cx_abil*.py`; one-line hook in `cards/parse.py` `_parse_ability_cost` | Claude Sonnet (`claude/abil-*`) |
+| Trigger heads | `mtgsim/cx_trig*.py`, `mtgsim/engine/kinds/cx_trig.py`, `tests/test_cx_trig*.py`; additions to `cx_events.py` | Claude Sonnet (`claude/trig-*`) |
+| Named mechanics (Contraptions, Attractions, Sieges, Rooms, splice, spellbooks, prepared, banding, ...) | `mtgsim/cx_mech*.py`, `mtgsim/engine/kinds/cx_mech.py`, `tests/test_cx_mech*.py` | Claude Sonnet (`claude/mech-*`) |
+| Coverage tooling, census, BACKLOG.md, merges | `mtgsim/blocking_units.py`, `results/database_coverage_*`, `results/blocking_units_*`, `BACKLOG.md` | Claude Opus lead |
+
+One PR per coherent rule or mechanic. Each PR body states the units it targets and the census or `parse_diff` delta.
+The lead reviews, merges (squash) and re-runs the census; developers do not merge or push to `main`.

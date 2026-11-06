@@ -116,7 +116,8 @@ def _face_special_lines(st, line):
         blight = next((a for a in approximations if re.fullmatch(r"never paid: As an additional cost to cast ~, you may blight \d+\..*", a)), None)
         if blight and re.search(r"If ~'s additional cost was paid, ", line):
             # an optional "blight N" cost with a bonus: the same as "You may blight N. If you do, <bonus>"
-            line = re.sub(r"If ~'s additional cost was paid, ", f"You may blight {re.search(r'blight (\d+)', blight)[1]}. If you do, ", line)
+            n = re.search(r"blight (\d+)", blight)[1]
+            line = re.sub(r"If ~'s additional cost was paid, ", f"You may blight {n}. If you do, ", line)
             approximations.remove(blight)
         if any(a.startswith("never paid: As an additional cost") for a in approximations):
             line = re.sub(r"\s*If ~'s additional cost was paid, [^.]+\.", "", line).strip()
