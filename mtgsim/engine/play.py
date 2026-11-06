@@ -192,7 +192,10 @@ class PlayMixin:
             alt_casts.pay_escape(self, p, base, alt)
         if card.extra_discard and p.hand:
             lands = [c for c in p.hand if c.is_land]
-            pitched = (lands[-1] if lands else None) if kind == "retrace" else p.ai.choose_discard(self, p)
+            if card.advanced_rules.get("discard_random"):       # "discard a card at random" as the additional cost
+                pitched = self.rng.choice(p.hand)
+            else:
+                pitched = (lands[-1] if lands else None) if kind == "retrace" else p.ai.choose_discard(self, p)
             if pitched not in p.hand:
                 return False
             self.discard_card(p, pitched)
