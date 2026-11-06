@@ -508,6 +508,9 @@ def _face_land_and_mana_lines(st, line):
         if m:
             extra["etb_named_counters"] = (m[2].lower(), _num(m[1]))
             return None
+        from ..cx_counters import entry_x_counters
+        if entry_x_counters(line, extra):
+            return None
         m = re.fullmatch(r"Craft with artifact (\{[^ (]+\})(?: \(.*\))?", line)
         if m:
             activated.append(Activated("ability", parse_mana_cost(m[1]), effects=[Effect("craft")],
