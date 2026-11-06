@@ -263,7 +263,8 @@ def subject(text: str):
         return Subject("host", target="host", text=text)
     if low in ("~", "this creature", "this permanent"):
         return Subject("permanent", target="self", text=text)
-    if low in ("it", "that creature", "that permanent"):
+    if low in ("it", "that creature", "that permanent", "that land", "that artifact", "that enchantment",
+               "that planeswalker"):
         return Subject("permanent", target="prev", text=text)
     m = re.fullmatch(r"(?:(each|all) )?(.+) target (player|opponent) controls", text, re.I)
     if m:           # "creatures target player controls", "each nonartifact creature target opponent controls"
@@ -272,6 +273,13 @@ def subject(text: str):
             return None
         return Subject("group", target="player", data={"filter": "opp"} if m[3].lower() == "opponent" else {},
                        group=noun, text=text)
+    m = re.fullmatch(r"target (.+) other than ~", text, re.I)
+    if m:           # "target creature other than ~"
+        found = subject("target " + m[1])
+        if found is None or found.kind != "permanent" or found.copies != 1:
+            return None
+        found.data["other"] = True
+        return found
     m = re.fullmatch(r"(?:(up to) )?(?:(a|one|two|three|four|five) )?(other |another )?target (.+?)( each)?", text, re.I)
     if m and not (m[1] and not m[2]):
         n = _NUMBER[m[2].lower()] if m[2] else 1
@@ -507,7 +515,21 @@ def parse_fallback(s: str, effects: list) -> bool:
             and effects[-1].kind == "cx_animate" and not effects[-1].data.get("addition"):
         effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, still=s.split()[-1].rstrip(".").capitalize()))
         return True         # "~ becomes a 2/2 artifact creature until end of turn. It's still a land."
+    those = re.fullmatch(r"(?:those creatures|they|those permanents) (.+)", s.strip().rstrip("."), re.I)
+    if those and effects and effects[-1].kind in ("cx_group", "permanent_group"):
+        # "Creatures your opponents control get -1/-1 until end of turn. Those creatures can't block this turn.":
+        # the same members (fixed when the group resolves), so the new verbs join the group's inner effects.
+        new = parse_sentence("Creatures " + those[1])
+        if new and len(new) == 1 and new[0].kind == "cx_group" and new[0].target == "none":
+            last = effects[-1]
+            inner = list(last.data.get("effects") or [last.data["effect"]])
+            effects[-1] = dataclasses.replace(last, data=dict({k: v for k, v in last.data.items() if k != "effect"},
+                                                              effects=inner + list(new[0].data["effects"])))
+            return True
     new = parse_sentence(s)
+    rest = s.strip()[4:]
+    if not new and re.match(r"you ", s.strip(), re.I) and _heads()[2] is not None and _heads()[2].match(rest):
+        new = parse_sentence(rest)          # "You gain control of target creature": the imperative
     if not new:
         return False
     effects += new
@@ -547,9 +569,6 @@ def parse_static(line: str, st) -> bool:
         return False
     if subj.kind == "permanent" and any(p.kind != "cx_static" for p in parts):
         return False            # "~ gets +1/+1" and "~ has flying" are other parsers' lines
-    if subj.kind == "group" and any(p.kind == "cx_static" for p in parts) and _stat_conditioned(
-            subj.group["selector"] if "selector" in subj.group else subj.group):
-        return False
     rules = st.extra.setdefault("advanced_rules", {})
     for p in [p for p in parts if p.kind == "cx_static"]:       # a rule a family reads with static_rules()
         key = p.data["rule"] + {"permanent": "", "host": "@host", "group": "@group"}[subj.kind]
