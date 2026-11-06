@@ -154,5 +154,43 @@ class RealCards(unittest.TestCase):
         self.assertFalse(token_effects(self.db.get("The Ooze")))
 
 
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class HeuristicAIGames(unittest.TestCase):
+    """The default AI casts the cards itself and the tokens land on the right side."""
+    @classmethod
+    def setUpClass(cls):
+        cls.db = CardDB()
+
+    def setup(self, spell, land, step, active):
+        from mtgsim.ai import HeuristicAI
+        self.a, self.b = Player("a", [], HeuristicAI()), Player("b", [], HeuristicAI())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step, self.game.active_idx = 3, step, active
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 20
+        for _ in range(4):
+            self.game.enter_battlefield(self.a, self.db.get(land)).sick = False
+        self.a.hand = [self.db.get(spell)]
+
+    def test_beast_within_at_the_opponents_end_step(self):
+        self.setup("Beast Within", "Forest", "end_step", 1)
+        self.game.enter_battlefield(self.b, self.db.get("Wurmcoil Engine"))
+        play = self.a.ai.respond(self.game, self.a)
+        self.assertEqual(play[0].name, "Beast Within")
+        self.assertTrue(self.game.cast(self.a, *play))
+        self.game.settle()
+        self.assertEqual(sorted(x.card.name for x in self.b.battlefield),
+                         ["Beast token", "Phyrexian Wurm token", "Phyrexian Wurm token"])
+        self.assertFalse(any(x.card.is_token for x in self.a.battlefield))
+
+    def test_each_player_creates_a_food(self):
+        self.setup("Elephant-Mandrill", "Forest", "main1", 0)
+        self.game.main_phase(self.a)
+        self.game.settle()
+        self.assertIn("Elephant-Mandrill", [x.card.name for x in self.a.battlefield])
+        for p in (self.a, self.b):
+            self.assertEqual(sum(x.card.token_kind == "food" for x in p.battlefield), 1, p.name)
+
+
 if __name__ == "__main__":
     unittest.main()
