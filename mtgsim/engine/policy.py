@@ -823,6 +823,11 @@ def use_abilities(game: Game, me: Player):
                 if act.kind == "ability" and act.effects and act.effects[0].kind == "unblockable" and \
                         perm in me.battlefield and ability_worth(game, me, perm, i):
                     game.activate(me, perm, f"ability:{i}")
+                elif act.kind == "ability" and act.effects and act.effects[0].kind == "cx_animate" and \
+                        act.effects[0].target == "self" and act.effects[0].data.get("eot") and \
+                        not perm.is_creature and not perm.sick and not perm.tapped and not act.extra_costs.get("tap") \
+                        and perm in me.battlefield and ability_worth(game, me, perm, i):
+                    game.activate(me, perm, f"ability:{i}")     # "~ becomes a 2/2 ... creature until end of turn": attack
     # Spells from other zones or with alternative costs the AI may not look at.
     for c in game.spell_options(me):
         if (c in me.hand and not c.modes) or c.instant_speed or not game.can_cast_now(me, c):

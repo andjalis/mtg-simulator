@@ -88,3 +88,30 @@ class RealCards(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AIUse(Base):
+    def test_ai_animates_its_artifact_and_attacks(self):
+        from tests.test_templates import ISLAND
+        rune = card("Test Rune", "{2}", "Artifact", "{1}: Until end of turn, ~ becomes a 3/3 blue and black Horror "
+                                                     "artifact creature.")
+        self.assertEqual(rune.unsupported, [])
+        r = self.perm(rune, self.a)
+        r.sick = False
+        for _ in range(2):
+            self.perm(ISLAND, self.a)
+        self.game.turn = 3
+        life = self.b.life
+        self.game.take_turn(self.a)
+        self.assertEqual(self.b.life, life - 3)
+        self.assertFalse(r.is_creature)                 # back to an artifact after the turn
+
+    def test_ai_casts_animation_on_its_own_artifact(self):
+        relic = self.perm(RELIC, self.a)
+        relic.sick = False
+        theirs = self.perm(RELIC, self.b)
+        spell = self.spell("Until end of turn, target noncreature artifact becomes a 4/4 artifact creature.")
+        plan = self.a.ai.plan_spell(self.game, self.a, spell, precombat=True)
+        self.assertIsNotNone(plan)
+        self.assertIs(plan[1][0], relic)
+        self.assertIsNot(plan[1][0], theirs)
