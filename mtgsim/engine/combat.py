@@ -28,6 +28,8 @@ def extra_blocks(me, attackers, blocks):
 
 class CombatMixin:
     def combat(self, p: Player, opp: Player):
+        if getattr(self, "turn_ended", False):      # "End the turn" (cx_night_endturn)
+            return
         self._combat(p, opp)
         if not self.over:
             self.end_combat(p)

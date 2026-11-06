@@ -140,6 +140,8 @@ class TurnsMixin:
         return self.winner
 
     def main_phase(self, p: Player):
+        if getattr(self, "turn_ended", False):      # "End the turn" (cx_night_endturn): straight on to cleanup
+            return
         p.ai.main_phase(self, p)
         if not self.over:
             self.hook(p, "use_abilities")(self, p)
@@ -399,6 +401,7 @@ class TurnsMixin:
             perm.saddled = False
         p.next_creature_counters = 0
         p.action_lock_turn = opp.action_lock_turn = None
+        self.turn_ended = False
         p.prevent_next = opp.prevent_next = 0
         self.no_prevention_turn = False                # "this turn" spell riders expire in cleanup
         self.no_lifegain_turn = set()
@@ -408,6 +411,8 @@ class TurnsMixin:
         self.state_based_actions()
 
     def begin_end_step(self, p: Player):
+        if getattr(self, "turn_ended", False):
+            return
         self.step = 'end_step'
         waiting, self.delayed_end_step = self.delayed_end_step, []
         for controller, effects, source, context in waiting:
