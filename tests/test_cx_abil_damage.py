@@ -246,6 +246,27 @@ class Dealer(unittest.TestCase):
         game.settle()
         self.assertEqual(wall.damage, 1)
 
+    def test_becomes_blocked_by_a_creature_triggers_per_blocker(self):
+        """#245: one trigger per blocking creature; plain 'becomes blocked' stays once."""
+        game, a, b = arena()
+        game.step = "declare_blockers"
+        per = game.enter_battlefield(a, card("Test Champion", "{1}", "Creature — Giant",
+                                             "Whenever this creature becomes blocked by a creature, it deals 1 damage "
+                                             "to that creature.", 0, 9))
+        once = game.enter_battlefield(a, card("Test Once", "{1}", "Creature — Giant",
+                                              "Whenever this creature becomes blocked, it deals 1 damage to target "
+                                              "creature blocking it.", 0, 9))
+        w1 = game.enter_battlefield(b, card("Test W1", "{1}", "Creature — Wall", "", 0, 5))
+        w2 = game.enter_battlefield(b, card("Test W2", "{1}", "Creature — Wall", "", 0, 5))
+        w3 = game.enter_battlefield(b, card("Test W3", "{1}", "Creature — Wall", "", 0, 5))
+        per.sick = once.sick = False
+        a.ai.attack = [per, once]
+        b.ai.block = {per: [w1, w2], once: [w3]}
+        game.combat(a, b)
+        game.settle()
+        self.assertEqual((w1.damage, w2.damage), (1, 1))
+        self.assertEqual(w3.damage, 1)
+
 
 if __name__ == "__main__":
     unittest.main()
