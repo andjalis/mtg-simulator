@@ -8,10 +8,10 @@
 
 The subject is the damage source: "~" (the resolving spell or the permanent), "it" / "that creature" (the trigger's
 permanent, else the object itself) or the enchanted / equipped creature. The recipient is read by
-``cx_grammar.object_phrase`` and carried as the Part's own object. With "~" as the source, a recipient goes to the
+``cx_grammar.object_phrase`` and carried as the Part's own object. With "~" as the source, a single recipient goes to the
 engine's ``damage`` kind (its AI target choice, lifelink, infect, prevention and "exile if it would die" all apply);
-another source, or recipients that are a set of players, go to ``cx_damage``, which deals the same real damage
-from that source. Amounts are a number or X (the X paid). "Divided as you choose" stays with cx_damage.py; "that
+another source, a group ("each creature without flying") or a set of players go to ``cx_damage``, which deals the
+same real damage from that source. Amounts are a number or X (the X paid). "Divided as you choose" stays with cx_damage.py; "that
 much", "equal to ..." and "where X is ..." amounts are not read here. See mtgsim/GRAMMAR.md.
 """
 from __future__ import annotations
@@ -62,10 +62,10 @@ def _part(n, data, obj, source, first_targeted):
     """One damage Part, or None. ``first_targeted``: an earlier recipient of the sentence was a target."""
     if obj is None:
         return None
-    if source == "self" and (_targeted(obj) or obj.kind != "player"):
-        if data.get("x") and obj.kind == "group":
-            return None     # inner effects of a group skip Game.resolve, where X is read
+    if source == "self" and (_targeted(obj) or obj.kind not in ("player", "group")):
         return Part("damage", n, 0, data, obj=obj)
+    if obj.kind == "group" and data.get("x"):
+        return None         # a group's X would need the wrapper's amount (not on this branch's core)
     if _targeted(obj):
         return None     # another source would need cx_damage, which the default AI can't aim yet
     if source == "prev" and first_targeted:

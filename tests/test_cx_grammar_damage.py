@@ -4,7 +4,7 @@ import unittest
 from mtgsim.cx_grammar import parse_sentence
 from mtgsim.engine import Permanent, StackItem
 
-from tests.test_cx_grammar import BEAR, DB_FILE, FLIER, ISLAND, Base, card
+from tests.test_cx_grammar import BEAR, DB_FILE, FLIER, GOBLIN, ISLAND, Base, card
 
 
 class Parsing(unittest.TestCase):
@@ -80,6 +80,18 @@ class Resolving(Base):
         self.assertNotIn(bear, self.b.battlefield)
         self.assertNotIn(mine, self.a.battlefield)
         self.assertIn(flier, self.b.battlefield)
+
+    def test_grammar_group_resolves(self):
+        """A group only the grammar reads (cx_group around cx_damage), resolved through the stack: Seismic Wave."""
+        goblin, bear, mine = self.perm(GOBLIN, self.b), self.perm(BEAR, self.b), self.perm(GOBLIN, self.a)
+        c = self.spell("~ deals 2 damage to any target and 1 damage to each nonartifact creature target opponent "
+                       "controls.")
+        self.assertEqual([e.kind for e in c.spell_effects], ["damage", "cx_group"])
+        self.cast(c, [self.b, None])
+        self.assertNotIn(goblin, self.b.battlefield)        # 1/1: dies
+        self.assertEqual(bear.damage, 1)
+        self.assertIn(mine, self.a.battlefield)
+        self.assertEqual(self.b.life, 18)
 
     def test_it_in_a_trigger_is_the_triggering_permanent(self):
         """"~ deals 1 damage to it" hits the attacker; "it deals" from that attacker comes from it."""
