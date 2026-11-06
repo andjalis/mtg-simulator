@@ -232,6 +232,20 @@ class Dealer(unittest.TestCase):
         game.settle()
         self.assertEqual([(t, n, s) for t, n, s in seen if n == 1], [(elf, 1, jav)])
 
+    def test_mandatory_damage_trigger_targets_even_when_nothing_dies(self):
+        """#295: Javelineer blocked by a 1/2 still has to deal its 1 damage to it."""
+        game, a, b = arena()
+        game.step = "declare_blockers"
+        jav = game.enter_battlefield(a, card("Test Javelineer", "{1}", "Creature — Goblin",
+                                             "Whenever this creature becomes blocked, it deals 1 damage to target creature "
+                                             "blocking it.", 1, 3))
+        wall = game.enter_battlefield(b, card("Test Wall", "{1}", "Creature — Wall", "", 1, 2))
+        game.attackers = [jav]
+        game.blocks = {jav: [wall]}
+        game.fire(a, "becomes_blocked", jav, context=wall)
+        game.settle()
+        self.assertEqual(wall.damage, 1)
+
 
 if __name__ == "__main__":
     unittest.main()
