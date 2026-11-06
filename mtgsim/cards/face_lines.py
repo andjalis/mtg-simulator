@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .. import discounts, graveyard, modal
-from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, storage as _storage, cx_static_cost as _cx_static_cost
+from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, storage as _storage, cx_static_cost as _cx_static_cost, cx_static_combat as _cx_static_combat
 from .model import Activated, AltCost, COLORS, Effect, KEYWORDS, NUMBERS, Trigger, _num, parse_mana_cost
 from .patterns import _parse_mana_ability
 from .parse import _apply_speed_gate, _mana_restriction, _parse_ability, _parse_effects, _parse_trigger
@@ -1180,7 +1180,7 @@ def _face_ability_lines(st, line):
                     etb += t.effects
             unsupported += bad
             return None
-        if _cx_static_cost.parse_line(line, st):
+        if _cx_static_cost.parse_line(line, st) or _cx_static_combat.parse_line(line, st):
             return None
         if not types.isdisjoint({"Instant", "Sorcery"}):
             head = modal.parse_header(line)

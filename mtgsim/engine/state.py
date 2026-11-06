@@ -6,7 +6,7 @@ import re
 
 from .. import auras, counting
 from ..cards import BASIC_MANA, KEYWORDS, CardDef, Effect, Trigger
-from .. import continuous
+from .. import continuous, cx_static_combat
 from ..identity import CardInstance, CardZone, Graveyard, instance
 
 
@@ -542,7 +542,8 @@ class Permanent:
         return (self.is_creature and not self.tapped and self.detained_by is None and not (self.has("defender") and not self.has("attacks_despite_defender")) and not self.has("cant_attack_now") and not (self.card.cant_attack and not self.abilities_suppressed)
                 and not (self.auras and auras.stops_combat(self))
                 and not (self.auras and any("cant_attack" in a.card.aura_flags for a in self.auras))
-                and (not self.sick or self.has("haste")) and not self._combat_unless())
+                and (not self.sick or self.has("haste")) and not self._combat_unless()
+                and not cx_static_combat.forbidden(self, "attack"))
 
     def _combat_unless(self):
         if not self.card.advanced_rules.get("combat_unless") or self.abilities_suppressed:
@@ -734,6 +735,8 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if blocker.card.unleash and blocker.p1 > 0:
         return False
     if blocker.card.advanced_rules.get("combat_unless") and blocker._combat_unless():
+        return False
+    if cx_static_combat.forbidden(blocker, "block"):
         return False
     if (blocker.card.cant_block and not blocker.abilities_suppressed) or blocker.has("cant_block_now") or blocker.has("decayed") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
         return False
