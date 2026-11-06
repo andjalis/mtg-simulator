@@ -4,7 +4,7 @@ import unittest
 from mtgsim.cx_grammar import parse_sentence
 from mtgsim.engine import Permanent, StackItem
 
-from tests.test_cx_grammar import BEAR, DB_FILE, FLIER, Base, card
+from tests.test_cx_grammar import BEAR, DB_FILE, FLIER, ISLAND, Base, card
 
 
 class Parsing(unittest.TestCase):
@@ -108,6 +108,44 @@ class Resolving(Base):
         self.cast(c, [bear, None])
         self.assertEqual(self.b.life, 20)
         self.assertIsInstance(bear, Permanent)
+
+
+class DefaultAI(Base):
+    """The default AI casts the new shapes and aims them at the opponent."""
+    def main_phase(self, text, types="Sorcery"):
+        spell = card("Test Spell", "{U}", types, text)
+        self.assertEqual(spell.unsupported, [], text)
+        self.perm(ISLAND, self.a)
+        self.a.hand = [spell]
+        self.game.step = "main2"            # after combat: the AI holds face burn before its attack
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertNotIn(spell, self.a.hand, "the AI didn't cast it")
+        return spell
+
+    def test_damage_to_each_opponent(self):
+        self.main_phase("~ deals 2 damage to each opponent.")
+        self.assertEqual((self.a.life, self.b.life), (20, 18))
+
+    def test_creature_and_its_controller(self):
+        mine, theirs = self.perm(BEAR, self.a), self.perm(BEAR, self.b)
+        self.main_phase("~ deals 2 damage to target creature and 2 damage to that creature's controller.")
+        self.assertNotIn(theirs, self.b.battlefield)
+        self.assertIn(mine, self.a.battlefield)
+        self.assertEqual((self.a.life, self.b.life), (20, 18))
+
+    def test_group_sweep_at_their_side(self):
+        theirs = [self.perm(BEAR, self.b) for _ in range(3)]
+        flier = self.perm(FLIER, self.a)
+        self.main_phase("~ deals 2 damage to each creature without flying.")
+        self.assertFalse(any(x in self.b.battlefield for x in theirs))
+        self.assertIn(flier, self.a.battlefield)
+
+    def test_two_distinct_targets(self):
+        """Arc Trail on a 2/2 and a 1/1: one each (the default AI holds 1 damage to the face as too little)."""
+        bear, flier = self.perm(BEAR, self.b), self.perm(FLIER, self.b)
+        self.main_phase("~ deals 2 damage to any target and 1 damage to any other target.")
+        self.assertNotIn(bear, self.b.battlefield)
+        self.assertNotIn(flier, self.b.battlefield)
 
 
 if __name__ == "__main__":
