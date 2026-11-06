@@ -85,7 +85,10 @@ class EffectsMixin:
             if infect:
                 target.counters["poison"] = target.counters.get("poison", 0) + amount
             else:
-                self.change_life(target, -amount, cause)
+                from ..cx_night_misc import damage_floor
+                amount = damage_floor(self, target, amount)
+                if amount > 0:
+                    self.change_life(target, -amount, cause)
         elif isinstance(target, Permanent) and target in target.controller.battlefield:
             if target.is_planeswalker:
                 target.counters["loyalty"] = target.loyalty - amount
