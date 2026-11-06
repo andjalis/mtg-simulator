@@ -10,6 +10,8 @@
     Jump-start              (cast it from the graveyard, discarding a card as well; then exile it)
     Retrace                 (cast it from the graveyard, discarding a land card as well; it goes back there)
     Replicate {1}{R}        (pay it any number of times on top of the mana cost: a copy for each)
+    Awaken 2—{4}{W}         (cast it for that cost: it also puts two +1/+1 counters on target land you control,
+                             which becomes a 0/0 Elemental creature with haste that's still a land)
     Dredge 2                (instead of a draw, mill two cards and return this card from the graveyard to your hand)
     Escape—{R}{R}, Exile N other cards from your graveyard.     ~ escapes with a +1/+1 counter on it.
     Embalm {3}{W}{W} / Eternalize {5}{G}{G} / Scavenge {1}{B}{G}   (sorcery-speed graveyard actions: a token
@@ -32,6 +34,9 @@ _N = {"a": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "s
 
 def parse_line(line: str, st) -> bool:
     from .cards.model import AltCost, parse_mana_cost
+    from .cx_mech import parse_line as mech_line
+    if mech_line(line, st):
+        return True
     if line in ("Jump-start", "Retrace"):
         st.alt_costs.append(AltCost(line.lower().replace("-", "_"), {}, zone="graveyard"))
         return True
@@ -50,6 +55,15 @@ def parse_line(line: str, st) -> bool:
     m = re.fullmatch(r"(Disturb) ((?:\{[^}]+\})+)", line)
     if m:
         st.alt_costs.append(AltCost("disturb", parse_mana_cost(m[2]), zone="graveyard"))
+        return True
+    m = re.fullmatch(r"Awaken (\d+) ?— ?((?:\{[^}]+\})+)", line)
+    if m:
+        from .cards import _parse_effects
+        effs, bad = _parse_effects(f"Put {m[1]} +1/+1 counters on target land you control. It becomes a 0/0 "
+                                   "Elemental creature with haste. It's still a land.")
+        if bad or len(effs) != 2:
+            return False
+        st.alt_costs.append(AltCost("awaken", parse_mana_cost(m[2]), extra=effs))
         return True
     m = re.fullmatch(r"Dredge (\d+)", line)
     if m:
@@ -81,13 +95,18 @@ def variants(game, p, card) -> list:
             out.append(game._variant(card, "surge", a))
         elif a.kind == "prototype":
             out.append(game._variant(card, "prototype", a))
+        elif a.kind == "awaken" and any(x.card.is_land and not x.is_creature for x in p.battlefield):
+            out.append(game._variant(card, "awaken", a))
         elif a.kind == "replicate":
             for k in (1, 2, 3):
                 extra = {c: n * k for c, n in a.cost.items()}
                 out.append(game._variant(card, f"replicate_{k}", AltCost(f"replicate_{k}", add_mana(card.mana_cost, extra))))
         elif a.kind == "entwine" and card.modes:      # Game.cast chooses all the modes of this variant
             out.append(game._variant(card, "entwine", AltCost("entwine", add_mana(card.mana_cost, a.cost))))
-    return out
+    from .cx_mech import variants as splice_variants
+    out += splice_variants(game, p, card)
+    from .cx_altcost import variants as conditional_alts    # "[If ...,] you may ... rather than pay ~'s mana cost"
+    return out + conditional_alts(game, p, card)
 
 
 def graveyard_variants(game, p, card) -> list:

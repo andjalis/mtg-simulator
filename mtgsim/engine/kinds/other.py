@@ -97,6 +97,25 @@ def craft(game, p, item, **_):
 
 @kind("counter", "bounce_spell")
 def counter(game, p, eff, target, item, **_):
+    if eff.data.get("redirect"):       # "Change the target of target spell with a single target" (cx_night_redirect)
+        from .cx_night_redirect import redirect_spell
+        if eff.amount and isinstance(target, StackItem):       # Divert: "... unless that spell's controller pays {N}"
+            from ..mana import find_payment
+            payer = target.controller
+            if find_payment(game.mana_sources(payer, spell="ability"), {"generic": eff.amount}) is not None \
+                    and game.hook(payer, "pay_unless")(game, payer, eff.amount, target):
+                game.pay(payer, {"generic": eff.amount})
+                game.log(f"pays {eff.amount} for {target}", payer)
+                return
+        redirect_spell(game, p, target)
+        return
+    if eff.data.get("per"):             # "unless its controller pays {1} for each ..." (cx_night_counter)
+        from ...cx_night_counter import count_per
+        owed = eff.data.get("base", 0) + eff.data.get("mult", 1) * count_per(game, p, eff.data["per"], target)
+        if owed <= 0:                   # "unless its controller pays {0}": they pay nothing and keep the spell
+            game.log(f"{target} costs nothing to keep", p)
+            return
+        eff = dataclasses.replace(eff, amount=owed)
     if eff.data.get("tw") and getattr(item, "teamwork", False):
         eff = dataclasses.replace(eff, amount=eff.data["tw"])
     game.counter(p, eff, target)
@@ -198,8 +217,10 @@ def extra_land(game, p, **_):
 
 
 @kind("extra_turn")
-def extra_turn(game, p, **_):
+def extra_turn(game, p, eff=None, **_):
     game.extra_turns.append(p)
+    if eff is not None and eff.data.get("doomed"):       # Final Fortune: "you lose the game" at the end of that turn
+        game.doomed_extra = (p, game.turn + 1)
     game.log("will take an extra turn", p)
 
 

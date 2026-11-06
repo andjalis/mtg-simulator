@@ -38,10 +38,16 @@ def _parse_effects(text: str, opts: bool = False):
         text = rx.sub(rep, text)
     gated = False
     from ..permanent_templates import split_sentences
-    for sentence in split_sentences(text.strip()):
+    from ..cx_next_turn import mark, rewrite
+    pending = None
+    sentences = list(split_sentences(text.strip()))
+    for index, sentence in enumerate(sentences):
         s = sentence.strip().rstrip(".").strip()
         if not s:
             continue
+        mark(effects, pending)       # "until your next turn" / "player or planeswalker" (cx_next_turn)
+        s, kind = rewrite(s)
+        pending = (len(effects), kind) if kind else None
         from ..residual_templates import parse_effect as residual_effect
         residual = residual_effect(s)
         if residual is not None:
@@ -54,7 +60,10 @@ def _parse_effects(text: str, opts: bool = False):
             continue
         from ..batch1_templates import parse_rider as batch1_rider
         from ..emerge import parse_rider as emerge_rider
-        if batch1_rider(s, effects) or emerge_rider(s, effects):
+        from ..cx_shields import parse_rider as shield_rider
+        from ..cx_delayed import parse_rider as delayed_rider
+        if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects) or \
+                delayed_rider(s, effects):
             continue
         if re.fullmatch(r"(?:it|they|those creatures|the creatures?|a creature destroyed this way) can't be "
                        r"regenerated(?:, of course)?", s, re.I) and effects and \
@@ -151,6 +160,23 @@ def _parse_effects(text: str, opts: bool = False):
             effects.append(Effect("pay_gate", data={"gate": ("life", ml[1])}))
             gated = True
             continue
+        from ..cx_links import parse_may_link
+        linked = parse_may_link(s, sentences[index + 1] if index + 1 < len(sentences) else "")
+        if linked is not None:
+            effects += linked
+            gated = True
+            continue
+        from ..cx_trig_reflex import parse_reflex
+        linked = parse_reflex(s, sentences[index + 1] if index + 1 < len(sentences) else "")
+        if linked is not None:
+            effects += linked
+            gated = True
+            continue
+        from ..cx_links import parse_ref
+        linked = parse_ref(s, effects, sentences[index + 1] if index + 1 < len(sentences) else "")
+        if linked is not None:
+            effects += linked
+            continue
         mm = re.fullmatch(r"you may (.+)", s, re.I)
         if mm:
             new, bad = _parse_effects(mm[1][0].upper() + mm[1][1:] + ".")
@@ -210,6 +236,9 @@ def _parse_effects(text: str, opts: bool = False):
                 for body in (mi[2], re.sub(r"^you ", "", mi[2])):
                     new, bad = _parse_effects(body[0].upper() + body[1:] + ".")
                     if new and not bad:
+                        if cond.startswith('lib:["src_') and re.match(r"(?:~|it) ", mi[1], re.I):
+                            new = [dataclasses.replace(e, target="self") if e.target == "prev" else e
+                                   for e in new]     # "If ~ is suspected, put a +1/+1 counter on it"
                         effects += [dataclasses.replace(e, cond=e.cond or cond) for e in new]
                         break
                 else:
@@ -243,9 +272,11 @@ def _parse_effects(text: str, opts: bool = False):
                 break
         else:
             parts = _split_compound(s)
+            from ..cx_suspect import parse_otherwise
+            from .. import cx_grammar
             if parts:
                 effects += parts
-            else:
+            elif not parse_otherwise(s, effects) and not cx_grammar.parse_fallback(s, effects):   # "Otherwise, ..."; grammar
                 unmatched.append(sentence.strip())
         if paid:
             for eff in effects[first:]:
@@ -253,6 +284,7 @@ def _parse_effects(text: str, opts: bool = False):
         for eff in effects[first:]:
             if eff.data.get("unparsed_token_keywords"):
                 unmatched.append("Unsupported token keywords: " + ", ".join(eff.data["unparsed_token_keywords"]))
+    mark(effects, pending)
     return effects, unmatched
 
 
@@ -300,8 +332,6 @@ def card_from_scryfall(data: dict) -> CardDef:
                 card.adventure = _parse_face(back)
             elif "Land" in back_types and not card.is_land:
                 card.land_face = _parse_face(back)   # modal double-faced: may be played as this land
-            elif re.search(r"Daybound|Nightbound", card.oracle):
-                pass  # day/night isn't tracked; the day side stays
             elif data.get("layout") == "split" and _split_halves(card, _parse_face(back)):
                 pass
             else:
@@ -354,17 +384,21 @@ def _parse_face(data: dict) -> CardDef:
         return 'named TOKENNAME' + str(len(token_names) - 1) + ' with "'
     text = re.sub(r'named ([^.\n]+?) with "', protect_name, text)
     text = text.replace(name, "~")
+    nm = name[2:] if name.startswith("A-") else name    # Alchemy rebalances name the card without "A-"
+    text = text.replace(nm, "~")
     if "," in name and "Legendary" in type_line:
-        text = re.sub(rf"\b{re.escape(name.split(',')[0])}\b", "~", text)  # "Iymrith" for "Iymrith, Desert Doom"
-    elif "Legendary" in type_line and " " in name and " the " not in name and len(name.split()[0]) >= 4 and \
-            name.split()[0] not in ("The", "Lord", "Lady", "King", "Queen", "Sir") and \
-            re.search(rf"\b{re.escape(name.split()[0])}\b", text):
-        text = re.sub(rf"\b{re.escape(name.split()[0])}\b", "~", text)  # "Ajani" for "Ajani Resolute"
-    elif " the " in name and "Legendary" in type_line:
-        text = re.sub(rf"\b{re.escape(name.split(' the ')[0])}\b", "~", text)  # "Smaug the Magnificent"
+        text = re.sub(rf"\b{re.escape(nm.split(',')[0])}\b", "~", text)  # "Iymrith" for "Iymrith, Desert Doom"
+    elif "Legendary" in type_line and " " in nm and " the " not in nm and len(nm.split()[0]) >= 4 and \
+            nm.split()[0] not in ("The", "Lord", "Lady", "King", "Queen", "Sir") and \
+            re.search(rf"\b{re.escape(nm.split()[0])}\b", text):
+        text = re.sub(rf"\b{re.escape(nm.split()[0])}\b", "~", text)  # "Ajani" for "Ajani Resolute"
+    elif " the " in nm and "Legendary" in type_line:
+        text = re.sub(rf"\b{re.escape(nm.split(' the ')[0])}\b", "~", text)  # "Smaug the Magnificent"
     for index, token_name in enumerate(token_names):
         text = text.replace('TOKENNAME' + str(index), token_name)
-    text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment|class)\b", "~",
+    from .. import cx_replace
+    text = cx_replace.two_player_text(text)
+    text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment|class|spacecraft|battle)\b", "~",
                   text, flags=re.I)
     text = re.sub(r"\b(protection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
                   r"\1 and protection from \2", text)
@@ -575,7 +609,7 @@ def _parse_ability_cost(text: str):
         m = None
         if part == "{T}":
             extra["tap"] = True
-        elif re.fullmatch(r"(\{[0-9WUBRGCX/P]+\})+", part):        # Phyrexian {B/P} is paid as {B}, as in spell costs
+        elif re.fullmatch(r"(\{[0-9WUBRGCSX/P]+\})+", part):        # Phyrexian {B/P} is paid as {B}, as in spell costs
             mana = add_mana(mana, parse_mana_cost(part))
         elif part == "Sacrifice ~":
             extra["sac_self"] = True
@@ -630,7 +664,9 @@ def _parse_ability_cost(text: str):
             extra["sacrifice"] = m[2].lower()
             extra["sac_n"] = _num(m[1])
         else:
-            return None
+            from ..cx_costs import parse_part      # tap / discard / return / mill / exert ... cost parts
+            if not parse_part(part, extra):
+                return None
     return mana, extra
 
 
@@ -644,7 +680,8 @@ def _parse_ability(line: str, approximations: list):
     if aw is not None:
         line = aw[1]
     m = re.fullmatch(r"([^:\"•]+?): (.+)", line)
-    if not m or not (m[1].startswith("{") or m[1].split()[0] in ("Sacrifice", "Discard", "Pay", "Remove", "Exile")):
+    if not m or not (m[1].startswith("{") or m[1].split()[0] in ("Sacrifice", "Discard", "Pay", "Remove", "Exile", "Tap",
+                                                                    "Return", "Mill", "Put", "Exert")):
         return None
     cost = _parse_ability_cost(m[1])
     if cost is None:
@@ -715,6 +752,13 @@ def _parse_trigger_line(line: str):
             continue
         flt = ""
         rest = m[m.lastindex]
+        if events == ("ev",):      # the trigger-event library (cx_events.py): subject + event grammar
+            from .. import cx_events
+            got = cx_events.split_head(line)
+            if got is None:
+                continue
+            events, flt, rest = got
+            rest = rest if rest.startswith("~") else rest[0].upper() + rest[1:]
         # Cross-event compounds carry a different filter per event (clauses.py: "cast X or Y enters",
         # "enters or dies").
         flt_map = {("cast_spell", "permanent_enters"): lambda: {"cast_spell": "spell:" + m[1].lower(),

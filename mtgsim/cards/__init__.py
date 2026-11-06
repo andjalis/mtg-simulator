@@ -130,3 +130,73 @@ from .. import cx_damage as _cx_damage
 _EFFECT_PATTERNS += _cx_damage.EFFECT_PATTERNS
 from .. import cx_event_triggers as _cx_event_triggers
 _TRIGGERS += _cx_event_triggers.TRIGGERS
+from .. import cx_night_quantity as _cx_night_quantity
+_EFFECT_PATTERNS += _cx_night_quantity.EFFECT_PATTERNS
+from .. import cx_night_groups as _cx_night_groups
+_EFFECT_PATTERNS += _cx_night_groups.EFFECT_PATTERNS
+from .. import cx_night_multi as _cx_night_multi
+_EFFECT_PATTERNS += _cx_night_multi.EFFECT_PATTERNS
+from .. import cx_night_xplayer as _cx_night_xplayer
+_EFFECT_PATTERNS += _cx_night_xplayer.EFFECT_PATTERNS
+from .. import cx_night_untap as _cx_night_untap
+_EFFECT_PATTERNS += _cx_night_untap.EFFECT_PATTERNS
+from .. import cx_night_flash as _cx_night_flash
+_EFFECT_PATTERNS += _cx_night_flash.EFFECT_PATTERNS
+from .. import cx_next_turn as _cx_next_turn
+_EFFECT_PATTERNS += _cx_next_turn.EFFECT_PATTERNS
+from .. import cx_links as _cx_links
+_EFFECT_PATTERNS += _cx_links.EFFECT_PATTERNS
+from .. import cx_events as _cx_events
+_TRIGGERS += _cx_events.TRIGGERS
+_TRIGGERS += _cx_links.TRIGGERS
+from .. import cx_statics as _cx_statics
+_EFFECT_PATTERNS += _cx_statics.EFFECT_PATTERNS
+from .. import cx_effects as _cx_effects
+_EFFECT_PATTERNS += _cx_effects.EFFECT_PATTERNS
+_SUBS += _cx_effects.SUBS
+
+from .. import cx_ability_effects as _cx_ability_effects
+_EFFECT_PATTERNS += _cx_ability_effects.EFFECT_PATTERNS
+from .. import cx_abil_damage as _cx_abil_damage
+_EFFECT_PATTERNS += _cx_abil_damage.EFFECT_PATTERNS
+from .. import cx_lures as _cx_lures
+_EFFECT_PATTERNS += _cx_lures.EFFECT_PATTERNS
+from .. import cx_recolor as _cx_recolor
+_EFFECT_PATTERNS += _cx_recolor.EFFECT_PATTERNS
+from .. import cx_shields as _cx_shields
+_EFFECT_PATTERNS += _cx_shields.EFFECT_PATTERNS
+_SUBS += _cx_shields.SUBS
+from .. import cx_mixed as _cx_mixed
+_EFFECT_PATTERNS += _cx_mixed.EFFECT_PATTERNS
+_SUBS += _cx_mixed.SUBS
+from .. import cx_night_suspect as _cx_night_suspect
+_EFFECT_PATTERNS += _cx_night_suspect.EFFECT_PATTERNS
+from .. import cx_suspect as _cx_suspect
+_EFFECT_PATTERNS += _cx_suspect.EFFECT_PATTERNS
+from .. import cx_night_redirect as _cx_night_redirect
+_EFFECT_PATTERNS += _cx_night_redirect.EFFECT_PATTERNS
+from .. import cx_night_lair as _cx_night_lair
+_EFFECT_PATTERNS += _cx_night_lair.EFFECT_PATTERNS
+from .. import cx_night_draw as _cx_night_draw
+_EFFECT_PATTERNS += _cx_night_draw.EFFECT_PATTERNS
+from .. import cx_night_dead as _cx_night_dead
+_EFFECT_PATTERNS += _cx_night_dead.EFFECT_PATTERNS
+from .. import cx_night_flip as _cx_night_flip
+_EFFECT_PATTERNS += _cx_night_flip.EFFECT_PATTERNS
+from .. import cx_night_lifemv as _cx_night_lifemv
+_EFFECT_PATTERNS += _cx_night_lifemv.EFFECT_PATTERNS
+from .. import cx_night_endturn as _cx_night_endturn
+_EFFECT_PATTERNS += _cx_night_endturn.EFFECT_PATTERNS
+from .. import cx_night_counter as _cx_night_counter
+_EFFECT_PATTERNS += _cx_night_counter.EFFECT_PATTERNS
+from .. import cx_night_combat as _cx_night_combat
+_EFFECT_PATTERNS += _cx_night_combat.EFFECT_PATTERNS
+from .. import cx_night_loot as _cx_night_loot
+_SUBS += _cx_night_loot.SUBS
+_EFFECT_PATTERNS += _cx_night_loot.EFFECT_PATTERNS
+from .. import cx_night_edict as _cx_night_edict
+_SUBS += _cx_night_edict.SUBS
+_EFFECT_PATTERNS += _cx_night_edict.EFFECT_PATTERNS
+from .. import cx_night_misc as _cx_night_misc
+_EFFECT_PATTERNS += _cx_night_misc.EFFECT_PATTERNS
+_SUBS += _cx_night_endturn.SUBS

@@ -65,7 +65,15 @@ class TurnsMixin:
             if recipient is not p:
                 self.draw(recipient, _replaced=_replaced + (replacement,))
                 continue
+            from ..cx_replace import extra_draws
+            more = extra_draws(self, p, _replaced)
+            if more:        # "If you would draw a card, draw two cards instead."
+                self.draw(p, more + 1, _replaced=_replaced + ("cx_draw",))
+                continue
             if not p.library:
+                from ..cx_night_aura import cant_lose
+                if cant_lose(self, p):
+                    return
                 if not p.lost:
                     self.audit("loss", seat=self.players.index(p), cause="drew from empty library")
                 p.lost = True
@@ -121,6 +129,12 @@ class TurnsMixin:
                 if counts.get("turn") == self.turn else {}       # werewolves: spells cast in the turn that ends
             self.turn += 1
             self.take_turn(self.players[self.active_idx])
+            doomed = getattr(self, "doomed_extra", None)
+            from ..cx_night_aura import cant_lose
+            if doomed and doomed[1] == self.turn and not doomed[0].lost and not cant_lose(self, doomed[0]):
+                self.audit("loss", seat=self.players.index(doomed[0]), cause="lost at the end of its extra turn")
+                doomed[0].lost = True
+                self.log("loses the game at the end of the extra turn", doomed[0])
             if self.players[self.active_idx] in self.extra_turns:   # "take an extra turn after this one"
                 self.extra_turns.remove(self.players[self.active_idx])
             else:
@@ -135,6 +149,8 @@ class TurnsMixin:
         return self.winner
 
     def main_phase(self, p: Player):
+        if getattr(self, "turn_ended", False):      # "End the turn" (cx_night_endturn): straight on to cleanup
+            return
         p.ai.main_phase(self, p)
         if not self.over:
             self.hook(p, "use_abilities")(self, p)
@@ -285,6 +301,8 @@ class TurnsMixin:
         from ..advanced_templates import begin_turn
         begin_turn(self, p)
         self.step = "untap"
+        from ..day_night import begin_turn as day_night_turn
+        day_night_turn(self, p)
         for pl in self.players:
             for x in pl.battlefield:
                 if x.detained_by is p:
@@ -369,7 +387,10 @@ class TurnsMixin:
             return
         self.step = "cleanup"
         counter_mechanics.expire_source_control(self, cleanup=True)
-        while len(p.hand) > 7 and not any(x.card.no_max_hand for x in p.battlefield):
+        max_hand = 7 + sum(x.card.hand_size_mod for x in p.battlefield) + sum(x.card.opp_hand_size_mod for x in opp.battlefield)
+        from ..cx_next_turn import player_flag
+        while len(p.hand) > max(max_hand, 0) and not any(x.card.no_max_hand for x in p.battlefield) \
+                and not player_flag(self, p, 'no_max_hand'):
             card = p.ai.choose_discard(self, p)
             self.discard_card(p, card)
         for perm in p.battlefield + opp.battlefield:
@@ -379,6 +400,7 @@ class TurnsMixin:
             perm.temp_kw.clear()
             perm.temp_triggers.clear()
             perm.temp_activated.clear()
+            perm.temp_min_blocker = 0
             perm.adapt_exceptions = 0
             perm.regeneration_shields = 0
             perm.prevent_next = 0
@@ -391,6 +413,7 @@ class TurnsMixin:
             perm.saddled = False
         p.next_creature_counters = 0
         p.action_lock_turn = opp.action_lock_turn = None
+        self.turn_ended = False
         p.prevent_next = opp.prevent_next = 0
         self.no_prevention_turn = False                # "this turn" spell riders expire in cleanup
         self.no_lifegain_turn = set()
@@ -400,6 +423,8 @@ class TurnsMixin:
         self.state_based_actions()
 
     def begin_end_step(self, p: Player):
+        if getattr(self, "turn_ended", False):
+            return
         self.step = 'end_step'
         waiting, self.delayed_end_step = self.delayed_end_step, []
         for controller, effects, source, context in waiting:

@@ -86,6 +86,12 @@ class BattlefieldMixin:
         perm.entered_x = x
         perm.prepared = bool(card.prepared and card.back is not None)
         perm.spent_color = getattr(self, "_spent", "")
+        cast = getattr(self, "_entry_cast", None)       # the spell this permanent resolved from (cx_condlib)
+        if cast is not None:
+            self._entry_cast = None
+            perm.kicked = cast[0]
+            perm.cast_from_hand = cast[1]
+            perm.mana_spent = cast[2]
         others = sum(x.card.is_land for x in p.battlefield)
         cond = card.tapped_condition
         if cond.startswith("other_subtype:"):
@@ -108,12 +114,20 @@ class BattlefieldMixin:
         elif cond.startswith("behold:"):
             kind = cond.split(":", 1)[1]
             perm.tapped = not any(kind in c.subtypes for c in [x.card for x in p.battlefield] + p.hand)
+        elif cond.startswith("reveal:"):     # "you may reveal a Giant card from your hand. If you don't, ... tapped"
+            import json
+            from ..cx_condlib import _card_ok
+            specs = json.loads(cond[7:])
+            perm.tapped = not any(_card_ok(c, spec) for c in p.hand for spec in specs)
         elif cond == "always":
             perm.tapped = True
         elif cond.startswith("unless_basics>="):
             perm.tapped = sum(is_basic_land(x.card) for x in p.battlefield) < int(cond[15:])
         elif cond.startswith("unless_opp_lands>="):
             perm.tapped = sum(x.card.is_land for x in self.opponent(p).battlefield) < int(cond[18:])
+        elif cond.startswith("lib:"):     # "enters tapped unless <condition>" (cx_condlib)
+            from ..cx_condlib import check
+            perm.tapped = not check(self, p, cond, source=perm)
         elif cond == "unless_pw":
             perm.tapped = not p.planeswalkers
         elif cond.startswith("unless_player_life<="):
@@ -165,6 +179,9 @@ class BattlefieldMixin:
                 perm.counters["+1/+1"] = n
         if card.etb_counters_if and self._etb_cond(p, card.etb_counters_if[0]):
             perm.counters["+1/+1"] = perm.p1 + card.etb_counters_if[1]
+        if card.advanced_rules.get("cx_etb_if"):
+            from .. import cx_replace
+            cx_replace.entry_counters(self, p, perm)
         if card.entry_counter_quantity:
             from ..backlog_templates import amount
             kind, spec = card.entry_counter_quantity
@@ -237,6 +254,9 @@ class BattlefieldMixin:
                 self.fire(pl, "permanent_enters", subject=perm)
         if card.is_land:
             self.fire(p, "land_enters", subject=perm)
+        if card.daybound or card.nightbound:
+            from ..day_night import on_enter as day_night_enter
+            day_night_enter(self, perm)
         if getattr(self, '_entry_batch', None) is None:
             self.state_based_actions()
         return perm

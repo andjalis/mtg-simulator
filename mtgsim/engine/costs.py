@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import dataclasses
 
-from .. import alt_casts, emerge, auras, copies, counting, discounts, returns, costs, storage
+from .. import alt_casts, emerge, auras, copies, counting, discounts, returns, costs, storage, cx_static_cost
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
-from .state import COLOR_WORDS, Permanent, Player, TARGETED, _gy_desc, card_matches
+from .state import COLOR_WORDS, Permanent, Player, TARGETED, _gy_desc, card_matches, is_basic_land
 
 FACE_DOWN = ("disguise", "morph", "megamorph")   # cast face down for {3} as a 2/2, turned face up for this cost
 
@@ -73,6 +73,15 @@ class CostsMixin:
                 continue
             if c.mana_cond and not any(c.mana_cond in x.card.subtypes for x in p.battlefield):
                 continue
+            for gate_colors, gate_types in c.mana_gate:
+                if gate_types:
+                    open_ = any(t in x.card.subtypes for x in p.battlefield for t in gate_types)
+                else:
+                    open_ = perm.entered_turn == self.turn or any(is_basic_land(x.card) for x in p.battlefield)
+                if not open_:
+                    produces = produces - set(gate_colors)
+            if c.mana_pay_life and p.life <= c.mana_pay_life:
+                produces = produces & {"C"} if "C" in produces else produces & set()
             if c.mana_tap_other and not any(x is not perm and not x.tapped and (x.is_creature or c.mana_tap_other == "permanent")
                                             for x in p.battlefield):
                 continue
@@ -161,12 +170,18 @@ class CostsMixin:
                 continue
             if s.card.color_skips_untap and self._needed_color(p, s, payment, cost):
                 s.skip_untap = max(s.skip_untap, 1)   # its colored mana was spent: it skips its next untap
+            if s.card.mana_pay_life and self._needed_color(p, s, payment, cost):
+                self.change_life(p, -s.card.mana_pay_life, "paid life")
             if s.card.mana_filter == "once":
                 s.ability_turns["filter"] = self.turn
             else:
                 s.tapped = True
             if s.card.token_kind == "treasure" or s.card.mana_sac or s.card.mana_sac_only:
                 self.sacrifice(s)
+            if s.card.mana_depletion:
+                s.counters["depletion"] = s.counters.get("depletion", 0) - 1
+                if s.counters["depletion"] <= 0:
+                    self.sacrifice(s)
             if s.card.mana_tap_other:
                 spare = [x for x in p.battlefield if x is not s and not x.tapped and x not in payment
                          and x not in exclude_many
@@ -192,6 +207,8 @@ class CostsMixin:
             return p.life_gained_turn
         if kind == "hand":
             return len(p.hand)
+        if kind == "opp_hand":
+            return len(self.opponent(p).hand)
         if kind == "stat":
             who = prev if spec[1] == "prev" else src
             if spec[2] == "mana value":
@@ -259,6 +276,20 @@ class CostsMixin:
             a = self.x_quantity(who, lhs, item, prev) if isinstance(lhs, tuple) else lhs
             b = self.x_quantity(who, rhs, item, prev) if isinstance(rhs, tuple) else rhs
             return max(0, a - b if op == "-" else a + b)
+        if kind == "domain":     # "the number of basic land types among lands you control"
+            return len({t for x in p.battlefield if x.card.is_land
+                        for t in x.card.subtypes & {"Plains", "Island", "Swamp", "Mountain", "Forest"}})
+        if kind == "colors_among":   # "the number of colors among permanents you control"
+            return len({c for x in p.battlefield for c in x.card.colors})
+        if kind == "colors_among_lands":
+            return len({c for x in p.battlefield if x.card.is_land for c in x.card.colors})
+        if kind == "named_lands":    # "the number of differently named lands you control"
+            return len({x.card.name for x in p.battlefield if x.card.is_land})
+        if kind == "selector":
+            # "the number of creatures you control with flying", "... attacking creatures": a battlefield noun phrase
+            # parsed by permanent_templates.selector and counted with the same matcher the group effects use.
+            from ..permanent_templates import matches
+            return sum(1 for pl in self.players for x in pl.battlefield if matches(self, x, spec[1], p, src))
         if kind == "gy":
             return counting.count(self, p, {"what": spec[1], "zone": "graveyard"}, src)
         return counting.count(self, p, {"what": spec[1], "zone": "battlefield"}, src)
@@ -299,6 +330,8 @@ class CostsMixin:
         for owner, card in picked:
             owner.graveyard.remove(card)
         for owner, card in picked:
+            if item is not None:
+                item.moved_card = card       # "that card" (cx_night_lifemv)
             if d["dest"] == "hand":
                 p.hand.append(card)
                 self.log(f"returns {card.name} to hand", p)
@@ -461,6 +494,10 @@ class CostsMixin:
             n = sum(copies.fits(c, _gy_desc(card.cost_reduction[3:])) for c in p.graveyard)
         elif card.cost_reduction.startswith("affinity:"):
             n = sum(card_matches(x.card, "a " + card.cost_reduction[9:]) for x in p.battlefield)
+        elif card.cost_reduction == "domain":    # "costs {1} less for each basic land type among lands you control"
+            n = self.x_quantity(p, ("domain",), None, None)
+        elif card.cost_reduction == "undaunted":      # {1} less for each opponent
+            n = len(self.players) - 1
         elif card.cost_reduction == "party":
             # "This spell costs {1} less to cast for each creature in your party" (Coveted Prize)
             n = self.party_size(p)
@@ -491,21 +528,25 @@ class CostsMixin:
                 n += k
         for key, k in card.per_discount:
             n += k * discounts.count(self, p, key)
-        cost["generic"] = max(0, cost.get("generic", 0) - n)
+        pending = getattr(self, "next_discount", {}).get(p.name)
+        if pending and pending[0] == self.turn:
+            n += pending[1]             # "the next spell you cast this turn costs {N} less" (Peerless Samurai)
         from ..batch1_templates import spell_tax
-        cost["generic"] += spell_tax(self, p, card)
+        more = spell_tax(self, p, card)             # increases: taxes and "or pay {N}" additional costs
         if card.extra_discard and card.discard_or_pay and self.spare_cards(p, card) < 1:
-            cost["generic"] += card.discard_or_pay
+            more += card.discard_or_pay
         if card.behold_or_pay:
             sub, tax = card.behold_or_pay
             if not (any(sub in x.card.subtypes for x in p.battlefield) or
                     any(sub in c.subtypes for c in p.hand if c is not card)):
-                cost["generic"] += tax
+                more += tax
+        if card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
+            more += card.extra_sac_or_pay
+        # 601.2f: the total cost is the mana cost plus every increase, then every reduction
+        cost = cx_static_cost.adjust(self, p, card, cost, increase=more, reduction=n)
         if card.convoke:
             self._convoke_k = min(len(self.convoke_pool(p)), cost.get("generic", 0))
             cost["generic"] -= self._convoke_k
-        if card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
-            cost["generic"] += card.extra_sac_or_pay
         if assist and (card.improvise or card.delve):
             cost = self.assist_payment(p, card, cost)[0]
         if getattr(card, "spell_copy", False):
@@ -566,11 +607,18 @@ class CostsMixin:
                             types=frozenset({"Instant"}), spell_effects=list(alt.effects), is_ability=True)
             else:
                 v = dataclasses.replace(card, name=f"{card.name} ({kind})")
-                if alt is not None:
+                if kind == "flash_tax":
+                    v.mana_cost = add_mana(card.mana_cost, alt.cost)
+                    v.keywords = card.keywords | {"flash"}
+                elif alt is not None:
                     v.mana_cost = alt.cost
+                    if alt.sacrifice:
+                        v.extra_sacrifice = alt.sacrifice
+                    if alt.discard:
+                        v.extra_discard = alt.discard
                     v.spell_effects = list(alt.effects if alt.effects is not None else card.spell_effects) + \
                         list(alt.extra)
-                    v.cost_reduction = ""
+                    # the card's own cost reduction still applies to an alternative cost (CR 601.2f)
             v.origin = (card, kind, alt)
             v.origin_generation = getattr(card, "generation", None)
             self._variants[key] = v
@@ -644,6 +692,9 @@ class CostsMixin:
             if c.adventure:
                 out.append(self._variant(c, "adventure"))
             for a in c.alt_costs:
+                if a.kind == "flash_tax" and not c.instant_speed and not (
+                        p is self.active and self.step in ("main1", "main2") and not self.stack):
+                    out.append(self._variant(c, "flash_tax", a))      # at sorcery speed the plain cast is cheaper
                 if (a.kind == "mutate" and _mutate_hosts(self, p, c)) or a.kind in ("alt", "kicker", "bestow") or (a.kind == "spectacle" and opp.lost_life_turn) or \
                         (a.kind in ("blitz", "dash") and "hand" in a.zone):
                     out.append(self._variant(c, a.kind, a))
@@ -662,6 +713,10 @@ class CostsMixin:
         for c in p.granted_fb:
             if c in p.graveyard:
                 out.append(self._variant(c, "flashback", AltCost("flashback", dict(c.mana_cost))))
+        if any(x.card.gy_flashback and not x.abilities_suppressed for x in p.battlefield):
+            for c in p.graveyard:      # Lier: every instant and sorcery has flashback for its own mana cost
+                if (c.is_instant or c.is_sorcery) and c not in p.granted_fb:
+                    out.append(self._variant(c, "flashback", AltCost("flashback", dict(c.mana_cost))))
         for c in p.graveyard:
             out += alt_casts.graveyard_variants(self, p, c)
             for a in c.alt_costs:
@@ -670,7 +725,8 @@ class CostsMixin:
                         (a.kind == "mayhem" and c in p.discarded_cards):
                     out.append(self._variant(c, "blitz_gy" if a.kind == "blitz" else a.kind, a))
         from ..advanced_templates import permission_options
-        return out + permission_options(self, p)
+        from .. import cx_top      # "You may cast creature spells from the top of your library."
+        return out + permission_options(self, p) + cx_top.options(self, p)
 
     def impulse_cards(self, p: Player) -> list:
         """Exiled cards p may still play (drops the expired ones)."""
@@ -690,7 +746,7 @@ class CostsMixin:
                 "retrace": p.graveyard,
                 "escape": p.graveyard, "impulse": p.exile, "suspended": p.exile, "rebound": p.exile,
                 "cascade": p.exile, "cascade_adventure": p.exile,
-                "rebound_adventure": p.exile, "discover": p.exile}.get(kind, p.hand)
+                "rebound_adventure": p.exile, "discover": p.exile, "cx_top": p.library}.get(kind, p.hand)
 
     def _available(self, p: Player, card: CardDef) -> bool:
         base, kind, _ = self._origin(card)
@@ -702,6 +758,9 @@ class CostsMixin:
             return False
         if kind == "prepared":
             return any(x.front is base and x.prepared for x in p.battlefield)
+        if kind == "cx_top":
+            from .. import cx_top
+            return cx_top.spell_ok(p, base)
         return base in self._zone(p, kind)
 
     def can_cast_now(self, p: Player, card: CardDef, *, during_resolution=False) -> bool:
@@ -735,7 +794,7 @@ class CostsMixin:
             return False
         if card.extra_life_cost and p.life <= card.extra_life_cost:
             return False
-        if card.extra_discard and not card.discard_or_pay and self.spare_cards(p, card) < 1:
+        if card.extra_discard and not card.discard_or_pay and self.spare_cards(p, card) < card.extra_discard:
             return False
         if self.active is not p and any(x.card.opp_no_cast for x in self.opponent(p).battlefield):
             return False
@@ -748,7 +807,12 @@ class CostsMixin:
             return False
         if not during_resolution and not card.instant_speed and not (p is self.active and self.step in ("main1", "main2")
                                            and not self.stack):
-            return False
+            from ..cx_next_turn import player_flag
+            if not any(x.card.advanced_rules.get("spells_flash") and not x.abilities_suppressed for x in p.battlefield) \
+                    and not (card.is_sorcery and (player_flag(self, p, "sorcery_flash") or any(
+                        x.card.advanced_rules.get("sorcery_flash") and not x.abilities_suppressed
+                        for x in p.battlefield))):
+                return False
         if any(e.target == "spell" for e in card.spell_effects):
             if not any(self.can_counter(e, item, p) for e in card.spell_effects if e.kind == "counter"
                        for item in self.stack):

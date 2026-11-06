@@ -6,7 +6,7 @@ import re
 
 from .. import auras, counting
 from ..cards import BASIC_MANA, KEYWORDS, CardDef, Effect, Trigger
-from .. import continuous
+from .. import continuous, cx_static_combat
 from ..identity import CardInstance, CardZone, Graveyard, instance
 
 
@@ -166,12 +166,16 @@ class Permanent:
         self.produces_now = None           # set by Game.mana_sources: the colours usable right now
         self.amount_now = None             # and how much mana it makes, when that differs from its card's
         self.temp_activated = []
+        self.temp_min_blocker = 0          # a backup-granted "can't be blocked by creatures with power N or less"
         self.temp_triggers = []
         self.regeneration_shields = 0
         self.regeneration_blocked = False
         self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
         self.auras: list["Permanent"] = []   # Auras on this permanent (they sit on their caster's battlefield)
         self.kicks = 0                                 # times a multikicker / squad cost was paid
+        self.kicked = False                            # cast with a kicker cost ("if it was kicked")
+        self.cast_from_hand = False                    # "if you cast it from your hand"
+        self.mana_spent = 0                            # "if at least N mana was spent to cast it"
         self.curse_target = None                       # a Curse: the player it enchants
         self.aura_host: "Permanent | None" = None      # the permanent this Aura enchants
         self.attached_to: "Permanent | None" = None    # Equipment: the creature it is attached to
@@ -296,6 +300,7 @@ class Permanent:
                 bt += x.card.anthem_chosen[1]
             for sub, pp, tt, other in x.card.anthem_sub:
                 if creature and (sub in self.card.subtypes or (sub == "Token" and self.card.is_token)
+                                 or (sub == "Face-down" and self.hidden is not None)
                                  or sub.startswith("color:") and sub[6:] in self.card.colors
                                  or sub.startswith("type:") and sub[5:] in self.card.types) \
                         and not (other and x is self):
@@ -328,7 +333,9 @@ class Permanent:
                     n = sum("Enchantment" in y.card.types for y in self.controller.battlefield)
                     bp += n
                     bt += n
-        return bp, bt
+        from ..cx_statics import pt_bonus as conditional_bonus     # "as long as" Aura / Equipment bonuses, anthems
+        cp, ct = conditional_bonus(self)
+        return bp + cp, bt + ct
 
     @property
     def power(self):
@@ -405,7 +412,11 @@ class Permanent:
         for k, cond in self.card.cond_keywords:
             if k == kw and self.condition(cond):
                 return True
-        if any(sub in self.card.subtypes and k == kw and not (other and x is self)
+        from ..cx_statics import grants as conditional_grant
+        if conditional_grant(self, kw):
+            return True
+        if any((sub in self.card.subtypes or sub == "Face-down" and self.hidden is not None) and k == kw
+               and not (other and x is self)
                for x in self.controller.battlefield for sub, k, other in x.card.keyword_sub):
             return True
         # A chosen-type grant (Shimmer: "Each land of the chosen type has phasing") — the
@@ -436,6 +447,8 @@ class Permanent:
             return any(kind in x.card.subtypes for x in self.controller.battlefield if x is not self)
         if cond == "max_speed":
             return self.controller.speed >= 4
+        if cond.startswith("charge>="):
+            return self.counters.get("charge", 0) >= int(cond[8:])
         if cond == "your_turn":
             return self.controller.my_turn
         if cond == "delirium":
@@ -460,6 +473,9 @@ class Permanent:
         if cond.startswith("cx:"):
             from ..cx_conditions import holds
             return holds(self, cond)
+        if cond.startswith("lib:"):
+            from ..cx_condlib import holds as lib_holds
+            return lib_holds(self, cond)
         return False
 
     @property
@@ -526,10 +542,17 @@ class Permanent:
                    [a.card.equip_ward for a in self.auras])
 
     def can_attack(self):
-        return (self.is_creature and not self.tapped and self.detained_by is None and not self.has("defender") and not (self.card.cant_attack and not self.abilities_suppressed)
+        return (self.is_creature and not self.tapped and self.detained_by is None and not (self.has("defender") and not self.has("attacks_despite_defender")) and not self.has("cant_attack_now") and not (self.card.cant_attack and not self.abilities_suppressed)
                 and not (self.auras and auras.stops_combat(self))
                 and not (self.auras and any("cant_attack" in a.card.aura_flags for a in self.auras))
-                and (not self.sick or self.has("haste")))
+                and (not self.sick or self.has("haste")) and not self._combat_unless()
+                and not cx_static_combat.forbidden(self, "attack"))
+
+    def _combat_unless(self):
+        if not self.card.advanced_rules.get("combat_unless") or self.abilities_suppressed:
+            return False
+        from ..cx_conditions import combat_blocked
+        return combat_blocked(self)
 
     @property
     def activated(self):
@@ -714,6 +737,10 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
         return False
     if blocker.card.unleash and blocker.p1 > 0:
         return False
+    if blocker.card.advanced_rules.get("combat_unless") and blocker._combat_unless():
+        return False
+    if cx_static_combat.forbidden(blocker, "block"):
+        return False
     if (blocker.card.cant_block and not blocker.abilities_suppressed) or blocker.has("cant_block_now") or blocker.has("decayed") or attacker.has("unblockable") or (blocker.auras and auras.stops_combat(blocker)):
         return False
     if any(attacker.has(keyword) and any(x.card.is_land and subtype in x.card.subtypes
@@ -747,12 +774,14 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
         return False
     if attacker.card.blocker_power_rel and blocker.power < attacker.power:
         return False
-    if attacker.card.min_blocker_power and blocker.power < attacker.card.min_blocker_power:
+    need = max(attacker.card.min_blocker_power, attacker.temp_min_blocker)
+    if need and blocker.power < need:
         return False
     if attacker.card.max_blocker_power and blocker.power >= attacker.card.max_blocker_power:
         return False
     from ..batch1_templates import block_restricted
-    return not block_restricted(blocker, attacker)
+    from ..cx_lures import pair_blocked
+    return not block_restricted(blocker, attacker) and not pair_blocked(blocker, attacker)
 
 
 

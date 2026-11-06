@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .. import discounts, graveyard, modal
-from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, storage as _storage
+from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, storage as _storage, cx_static_cost as _cx_static_cost, cx_static_combat as _cx_static_combat
 from .model import Activated, AltCost, COLORS, Effect, KEYWORDS, NUMBERS, Trigger, _num, parse_mana_cost
 from .patterns import _parse_mana_ability
 from .parse import _apply_speed_gate, _mana_restriction, _parse_ability, _parse_effects, _parse_trigger
@@ -16,6 +16,14 @@ class _FaceState:
 
     def __init__(self, **values):
         self.__dict__.update(values)
+
+
+def _sub(word):
+    """A subtype from the plural stem the line regexes capture: "Armie" (Armies) is Army, "Zombie" stays."""
+    from ..permanent_templates import _CREATURE_SUBTYPES
+    if word.lower() not in _CREATURE_SUBTYPES and word.endswith("ie") and (word[:-2] + "y").lower() in _CREATURE_SUBTYPES:
+        return word[:-2] + "y"
+    return word
 
 
 def _face_special_lines(st, line):
@@ -33,8 +41,34 @@ def _face_special_lines(st, line):
         if gate is not None:
             _apply_speed_gate(gate, triggers, activated)
             gate = None
+        tier = getattr(st, "tier", None)
+        if tier is not None:      # what the lines under an "N+ | ..." Station tier added is gated on its charge counters
+            for t in triggers[tier[1]:]:
+                if getattr(t, "modes", None) and not t.effects:    # the gate can't reach modal trigger effects
+                    approximations.append(f"tier {tier[0]}+ modal trigger applies without needing {tier[0]} charge counters")
+                for eff in t.effects:
+                    if eff.cond and eff.cond != f"charge>={tier[0]}":    # one cond slot: don't drop the other condition
+                        approximations.append(f"tier {tier[0]}+ trigger applies without needing {tier[0]} charge counters")
+                    eff.cond = eff.cond or f"charge>={tier[0]}"
+            for a in activated[tier[2]:]:
+                a.min_charge = max(a.min_charge, tier[0])
+            if extra != tier[3]:      # a static or other line the gate can't cover: don't count it as fully played
+                approximations.append(f"tier {tier[0]}+ effect applies without needing {tier[0]} charge counters")
+            st.tier = (tier[0], len(triggers), len(activated), dict(extra))
         if not line:
+            st.tier = None
             return None
+        tm = re.fullmatch(r"(\d+)\+ \| (.*)", line)
+        if tm and extra.get("station"):
+            kws = [k.strip().lower() for k in re.split(r",| and ", tm[2])]
+            if kws and all(k in KEYWORDS for k in kws) or re.match(r"(When|Whenever|At the beginning)\b", tm[2]):
+                st.tier = (int(tm[1]), len(triggers), len(activated), dict(extra))
+                line = tm[2]
+            if kws and all(k in KEYWORDS for k in kws):
+                for k in kws:
+                    extra["cond_keywords"] = extra.get("cond_keywords", ()) + ((k, f"cx:charge>={tm[1]}"),)
+                st.tier = st.tier[:3] + (dict(extra),)
+                return None
         gm = re.fullmatch(r"Max speed — (.+)", line)
         if gm:
             gate = len(triggers), len(activated)
@@ -95,6 +129,11 @@ def _face_special_lines(st, line):
         if line == "You have no maximum hand size.":
             extra["no_max_hand"] = True
             return None
+        m = re.fullmatch(r"(Your|Each opponent's) maximum hand size is (increased|reduced) by (\w+)\.", line)
+        if m and m[3].lower() in NUMBERS:
+            n = NUMBERS[m[3].lower()] * (1 if m[2] == "increased" else -1)
+            extra["hand_size_mod" if m[1] == "Your" else "opp_hand_size_mod"] = n
+            return None
         if line == "~ attacks each combat if able.":
             extra["must_attack"] = True
             return None
@@ -108,6 +147,12 @@ def _face_special_lines(st, line):
         if line == "Start your engines!":
             extra["start_engines"] = True
             return None
+        blight = next((a for a in approximations if re.fullmatch(r"never paid: As an additional cost to cast ~, you may blight \d+\..*", a)), None)
+        if blight and re.search(r"If ~'s additional cost was paid, ", line):
+            # an optional "blight N" cost with a bonus: the same as "You may blight N. If you do, <bonus>"
+            n = re.search(r"blight (\d+)", blight)[1]
+            line = re.sub(r"If ~'s additional cost was paid, ", f"You may blight {n}. If you do, ", line)
+            approximations.remove(blight)
         if any(a.startswith("never paid: As an additional cost") for a in approximations):
             line = re.sub(r"\s*If ~'s additional cost was paid, [^.]+\.", "", line).strip()
             if not line:
@@ -128,6 +173,7 @@ def _face_special_lines(st, line):
             level_marks.append((n, len(triggers)))
             return None
         line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration|Heroic) — (?=When|At|If)", "", line)
+        line = re.sub(r"^(?:Domain|Vivid) — ", "", line)    # ability words with no rules meaning of their own
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
         # Any ability word ("Phalanx Commander —", "Life Drain —") before a When/At/If line; "Survival — "
         # keeps its prefix: it names a distinct engine event.
@@ -135,11 +181,12 @@ def _face_special_lines(st, line):
         # Discard triggers fire once per card, so "that many" counters is one counter each time.
         line = re.sub(r"^(Whenever you discard one or more cards), put that many \+1/\+1 counters on ~\.$",
                       r"\1, put a +1/+1 counter on ~.", line)
-        from .. import cx_cda as _cx_cda, cx_conditions as _cx_conditions, cx_timing as _cx_timing, cx_triggers as _cx_triggers, emerge as _emerge, that_much as _that_much, transmute as _transmute
-        if _transmute.parse_line(line, st) or _emerge.parse_line(line, st) or _that_much.parse_line(line, st) or _cx_triggers.parse_line(line, st) or _cx_timing.parse_line(line, st) or _cx_conditions.parse_line(line, st) or _cx_cda.parse_line(line, st):
+        from .. import cx_cda as _cx_cda, cx_conditions as _cx_conditions, cx_night_buffs as _cx_night_buffs, cx_night_kinship as _cx_night_kinship, cx_timing as _cx_timing, cx_triggers as _cx_triggers, emerge as _emerge, that_much as _that_much, transmute as _transmute
+        if _transmute.parse_line(line, st) or _emerge.parse_line(line, st) or _that_much.parse_line(line, st) or _cx_triggers.parse_line(line, st) or _cx_timing.parse_line(line, st) or _cx_conditions.parse_line(line, st) or _cx_cda.parse_line(line, st) or _cx_night_buffs.parse_line(line, st) or _cx_night_kinship.parse_line(line, st):
             return None
         from .. import counter_mechanics, permanent_templates, backlog_templates, advanced_templates, residual_templates, batch1_templates
-        if residual_templates.parse_line(line, st) or batch1_templates.parse_line(line, st) or advanced_templates.parse_line(line, st) or backlog_templates.parse_line(line, st) or permanent_templates.parse_line(line, st) or counter_mechanics.parse_line(line, st) or _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st):
+        from .. import cx_replace, cx_top, cx_abilitycopy
+        if cx_replace.parse_line(line, st) or cx_top.parse_line(line, st) or cx_abilitycopy.parse_line(line, st) or residual_templates.parse_line(line, st) or batch1_templates.parse_line(line, st) or advanced_templates.parse_line(line, st) or backlog_templates.parse_line(line, st) or permanent_templates.parse_line(line, st) or counter_mechanics.parse_line(line, st) or _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st):
             return None
         parts = [p.strip().lower() for p in re.split(r",(?: and)? | and |,", line)]
         if all(p in KEYWORDS or re.fullmatch(r"(?:ward \{\d+\}|toxic \d+|bushido \d+)", p) for p in parts):
@@ -274,6 +321,16 @@ def _face_land_and_mana_lines(st, line):
         if m:
             extra["tapped_condition"] = f"behold:{m[1]}"
             return None
+        m = re.fullmatch(r"As ~ enters(?: the battlefield)?, you may reveal an? ([\w ,/-]+?) card from your hand\. If you "
+                         r"don't, ~ enters (?:the battlefield )?tapped\.", line)
+        if m:
+            from ..cx_condlib import _filter
+            parts = [w.strip() for w in re.split(r",? or |, ", m[1]) if w.strip()]
+            specs = [_filter(w + " card", plural=False) for w in parts]
+            if all(specs):
+                import json
+                extra["tapped_condition"] = "reveal:" + json.dumps(specs, separators=(",", ":"))
+                return None
         if line == "~ must be blocked if able.":
             extra["must_be_blocked"] = True
             return None
@@ -394,6 +451,19 @@ def _face_land_and_mana_lines(st, line):
             produces |= set(COLORS)
             extra["mana_cond"] = m[1]
             return None
+        m = re.fullmatch(r"\{T\}: Add (\{[WUBRG]\}(?: or \{[WUBRG]\})?)\. Activate only if you control an? (Plains|Island|Swamp|Mountain|Forest)"
+                         r"(?: or an? (Plains|Island|Swamp|Mountain|Forest))?\.", line)
+        if m:
+            colors = "".join(re.findall(r"[WUBRG]", m[1]))
+            produces |= set(colors)
+            extra["mana_gate"] = extra.get("mana_gate", ()) + ((colors, tuple(t for t in (m[2], m[3]) if t)),)
+            return None
+        m = re.fullmatch(r"\{T\}: Add (\{[WUBRG]\}(?: or \{[WUBRG]\})?)\. Activate only if ~ entered this turn or if your control a basic land\.", line)
+        if m:
+            colors = "".join(re.findall(r"[WUBRG]", m[1]))
+            produces |= set(colors)
+            extra["mana_gate"] = extra.get("mana_gate", ()) + ((colors, ()),)
+            return None
         m = re.fullmatch(r"\{T\}: Add (\{[WUBRG]\}(?: or \{[WUBRG]\})?)\. (Activate only if [^.]+\.)", line)
         if m:
             produces |= set(re.findall(r"[WUBRG]", m[1]))
@@ -401,7 +471,7 @@ def _face_land_and_mana_lines(st, line):
             return None
         if re.fullmatch(r"\{T\}, Pay 1 life: Add one mana of any color\.", line):
             produces |= set(COLORS)
-            approximations.append("the 1 life for coloured mana isn't paid")
+            extra["mana_pay_life"] = 1
             return None
         if re.fullmatch(r"~ enters tapped unless it's your first, second, or third turn of the game\.", line):
             extra["tapped_condition"] = "after_turn3"
@@ -469,7 +539,7 @@ def _face_land_and_mana_lines(st, line):
             extra["exile_damaged"] = True
             return None
         if line in ("Daybound", "Nightbound"):
-            approximations.append("day/night isn't tracked: it stays on its front face")
+            extra[line.lower()] = True       # see day_night.py
             return None
         if re.fullmatch(r"Casualty \d+", line):
             approximations.append(f"never paid: {line}")
@@ -594,6 +664,9 @@ def _face_cost_and_static_lines(st, line):
         if re.fullmatch(r"~ costs \{1\} less to cast for each instant and sorcery card in your graveyard\.", line):
             extra["cost_reduction"] = "instant_sorcery_gy"
             return None
+        if re.fullmatch(r"~ costs \{1\} less to cast for each basic land type among lands you control\.", line):
+            extra["cost_reduction"] = "domain"
+            return None
         if re.fullmatch(r"~ costs \{1\} less to cast for each creature in your party\.", line):
             extra["cost_reduction"] = "party"
             return None
@@ -695,17 +768,17 @@ def _face_cost_and_static_lines(st, line):
         m = re.fullmatch(r"(Other )?([A-Z][a-z]+?)s? you control get \+(\d+)/\+(\d+) and have (menace|trample|flying|"
                          r"vigilance|haste|lifelink|first strike|deathtouch|reach)\.", line)
         if m and m[2] != "Creature":
-            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
-            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((m[2], m[5], bool(m[1])),)
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((_sub(m[2]), int(m[3]), int(m[4]), bool(m[1])),)
+            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((_sub(m[2]), m[5], bool(m[1])),)
             return None
         m = re.fullmatch(r"(Other )?(Merfolk|[A-Z][a-z]+?)s? you control get \+(\d+)/\+(\d+)\.", line)
         if m and m[2] != "Creature":
-            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((_sub(m[2]), int(m[3]), int(m[4]), bool(m[1])),)
             return None
         m = re.fullmatch(r"(Other )?([A-Z][a-z]+?)s you control have (menace|trample|flying|vigilance|haste|lifelink|"
                          r"first strike|double strike|deathtouch|reach|indestructible)\.", line)
         if m and m[2] != "Creature":
-            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((m[2], m[3], bool(m[1])),)
+            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((_sub(m[2]), m[3], bool(m[1])),)
             return None
         m = re.fullmatch(r"~ costs \{(\d+)\} less to cast if you control an? ([A-Z]\w+)\.", line)
         if m:
@@ -1020,7 +1093,7 @@ def _face_keyword_ability_lines(st, line):
                 chapters[idx] += effs
             unsupported += [f"{m[1]} — {b}" for b in bad]
             return None
-        m = re.fullmatch(r"(\{[^:]+\}): Until end of turn, ~ becomes an? (\d+)/(\d+) [\w ]*? creature"
+        m = re.fullmatch(r"(\{[^:]+\}): Until end of turn, ~ becomes an? (\d+)/(\d+)(?: [\w '-]+?)? creature"
                          r"(?: with (ward \{\d+\}|[\w ,]+|\"[^\"]+\"))?\.? It's still a land\.", line)
         if m:
             act = Activated("animate", parse_mana_cost(m[1]), int(m[2]), int(m[3]))
@@ -1062,8 +1135,8 @@ def _face_ability_lines(st, line):
             activated.append(Activated("animate", parse_mana_cost(m[1]), int(m[2]), int(m[3]),
                                        keywords=frozenset({m[4].lower()}) & KEYWORDS, text="permanent"))
             return None
-        m = re.fullmatch(r"(\{[^:]+\}): ~ becomes an? (\d+)/(\d+) [\w ]*? creature(?: with ([\w ,]+))? until end of "
-                         r"turn\. It's still a land\.", line)
+        m = re.fullmatch(r"(\{[^:]+\}): ~ becomes an? (\d+)/(\d+)(?: [\w '-]+?)? creature(?: with ([\w ,]+))? until end of "
+                         r"turn\.(?: It's still a land\.)?", line)     # manlands, and artifacts that animate
         if m:
             kws = frozenset(k.strip().lower() for k in re.split(r",| and ", m[4] or "") if k.strip().lower() in KEYWORDS)
             activated.append(Activated("animate", parse_mana_cost(m[1]), int(m[2]), int(m[3]), keywords=kws))
@@ -1115,6 +1188,8 @@ def _face_ability_lines(st, line):
                     etb += t.effects
             unsupported += bad
             return None
+        if _cx_static_cost.parse_line(line, st) or _cx_static_combat.parse_line(line, st):
+            return None
         if not types.isdisjoint({"Instant", "Sorcery"}):
             head = modal.parse_header(line)
             if head is not None and not modes:
@@ -1126,6 +1201,8 @@ def _face_ability_lines(st, line):
             effs, bad = _parse_effects(line, opts=bool(extra.get("bargain") or extra.get("gift")))
             spell += effs
             unsupported += bad
+            return None
+        if cx_grammar.parse_static(line, st):
             return None
         unsupported.append(line)
         return line
@@ -1139,4 +1216,7 @@ def _face_ability_lines(st, line):
         st.unsupported = unsupported
 
 
-_FACE_LINE_PARSERS = (_face_special_lines, _face_mode_and_ward_lines, _face_land_and_mana_lines, _face_cost_and_static_lines, _face_keyword_ability_lines, _face_ability_lines)
+from .. import cx_grammar  # noqa: E402
+from ..cx_night_flash import parse_line as _night_flash_line  # noqa: E402
+from ..cx_night_aura import parse_line as _night_aura_line  # noqa: E402
+_FACE_LINE_PARSERS = (_night_aura_line, _night_flash_line, _face_special_lines, _face_mode_and_ward_lines, _face_land_and_mana_lines, _face_cost_and_static_lines, _face_keyword_ability_lines, _face_ability_lines)

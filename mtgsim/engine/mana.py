@@ -34,6 +34,11 @@ def _doubled(land) -> bool:
     return any(x.controller is land.controller or x.card.advanced_rules['land_double'] == 'all' for x in sources(game, 'land_double'))
 
 
+def _fits(pip: str, s) -> bool:
+    """Whether source s can pay this pip: {S} is any mana from a snow source."""
+    return bool(getattr(s.card, "snow", False)) if pip == "S" else pip in _mana_of(s)
+
+
 def find_payment(sources: list[Permanent], cost: dict):
     """Pick which mana sources to tap for a cost, or None if it can't be paid. Filter lands ("{1}, {T}: Add one mana
     of any color") add no mana of their own: each one that is used recolours one other source's mana."""
@@ -60,7 +65,7 @@ def find_payment(sources: list[Permanent], cost: dict):
 
 
 def _find_payment(sources: list[Permanent], cost: dict):
-    pips = [c for c in COLORS + ("C",) for _ in range(cost.get(c, 0))]
+    pips = [c for c in COLORS + ("C", "S") for _ in range(cost.get(c, 0))]
     generic = cost.get("generic", 0)
     # A source that makes several mana (Sol Ring) fills several slots.
     slots = [s for s in sources for _ in range(max(1, _amount(s)))]
@@ -69,14 +74,14 @@ def _find_payment(sources: list[Permanent], cost: dict):
     # Mana that can only be spent on some spells goes first when it is allowed at all.
     slots = sorted(slots, key=lambda s: (not s.card.mana_restriction, s.card.token_kind == "treasure" or s.card.mana_sac_only,
                                          len(_mana_of(s)), s.is_creature, -_amount(s)))
-    pips.sort(key=lambda c: sum(c in _mana_of(s) for s in slots))
+    pips.sort(key=lambda c: sum(_fits(c, s) for s in slots))
     used = [False] * len(slots)
 
     def assign(i):
         if i == len(pips):
             return True
         for j, s in enumerate(slots):
-            if not used[j] and pips[i] in _mana_of(s):
+            if not used[j] and _fits(pips[i], s):
                 used[j] = True
                 if assign(i + 1):
                     return True
@@ -104,21 +109,21 @@ def payable(sources: list[Permanent], cost: dict) -> bool:
     to tap: coloured pips need a matching, and generic mana any slots left over."""
     if any(s.card.mana_filter for s in sources):
         return find_payment(sources, cost) is not None
-    pips = [c for c in COLORS + ("C",) for _ in range(cost.get(c, 0))]
+    pips = [c for c in COLORS + ("C", "S") for _ in range(cost.get(c, 0))]
     generic = cost.get("generic", 0)
-    slots = [_mana_of(s) for s in sources for _ in range(max(1, _amount(s)))]
+    slots = [s for s in sources for _ in range(max(1, _amount(s)))]
     if len(pips) + generic > len(slots):
         return False
     if not pips:
         return True
-    pips.sort(key=lambda c: sum(c in m for m in slots))
+    pips.sort(key=lambda c: sum(_fits(c, m) for m in slots))
     used = [False] * len(slots)
 
     def assign(i):
         if i == len(pips):
             return True
         for j, m in enumerate(slots):
-            if not used[j] and pips[i] in m:
+            if not used[j] and _fits(pips[i], m):
                 used[j] = True
                 if assign(i + 1):
                     return True

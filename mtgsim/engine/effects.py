@@ -17,16 +17,25 @@ class EffectsMixin:
         """Damage with source abilities; infect changes its results rather than its amount."""
         if amount <= 0:
             return
+        self.last_dealt = 0          # for "You gain life equal to the damage dealt this way"
         amount = that_much.damage_amount(self, target, amount, by, source, combat)
         if amount <= 0:
             return
         def has(keyword):
             return (source.has(keyword) if isinstance(source, Permanent)
                     else isinstance(source, CardDef) and keyword in source.keywords)
-        preventable = not self.no_prevention_turn     # "damage can't be prevented this turn" (Skullcrack)
+        from ..cx_shields import apply as cx_shields, unpreventable
+        preventable = not self.no_prevention_turn and not unpreventable(self, source)   # Skullcrack, Everlasting Torment
+        amount = cx_shields(self, target, amount, by, source, combat, preventable)     # prevention / redirection rules
+        if amount <= 0:
+            return
         fog = getattr(self, "fog", None)
         if preventable and combat and fog and fog[0] == self.turn and (fog[1] is None or getattr(source, "controller", None) is fog[1]):
             return
+        if preventable and isinstance(target, Player):
+            from ..cx_next_turn import player_flag
+            if player_flag(self, target, 'protection') or player_flag(self, target, 'prevent_damage'):
+                return
         if protected_from(target, source) and preventable:
             self.log(f"{target.card.name}'s protection prevents {amount} damage", target.controller)
             return
@@ -76,7 +85,10 @@ class EffectsMixin:
             if infect:
                 target.counters["poison"] = target.counters.get("poison", 0) + amount
             else:
-                self.change_life(target, -amount, cause)
+                from ..cx_night_misc import damage_floor
+                amount = damage_floor(self, target, amount)
+                if amount > 0:
+                    self.change_life(target, -amount, cause)
         elif isinstance(target, Permanent) and target in target.controller.battlefield:
             if target.is_planeswalker:
                 target.counters["loyalty"] = target.loyalty - amount
@@ -93,6 +105,7 @@ class EffectsMixin:
                 target.damaged_by.append(source)       # "a creature dealt damage by ~ this turn dies"
         else:
             return
+        self.last_dealt = amount
         from ..batch1_templates import soul_link
         soul_link(self, source, target, amount)
         cx_triggers.on_damage(self, source, target, amount, combat)
@@ -127,6 +140,11 @@ class EffectsMixin:
             self.check_ward(copy)
 
     def counter(self, p: Player, eff: Effect, target):
+        if eff.kind == "bounce_spell" and isinstance(target, Permanent):   # "target spell or permanent"
+            if target in target.controller.battlefield:
+                self.log(f"{target.card.name} returns to hand", p)
+                self.leave_battlefield(target, "hand")
+            return
         if not isinstance(target, StackItem) or target not in self.stack:
             return
         if eff.kind == "bounce_spell":
@@ -230,7 +248,8 @@ class EffectsMixin:
         return True
 
     def leave_battlefield(self, perm: Permanent, to: str):
-        """Move a permanent off the battlefield (to graveyard / hand / exile). Tokens vanish."""
+        """Move a permanent off the battlefield (to graveyard / hand / exile / library_top / library_bottom, the
+        owner's zone). Tokens vanish."""
         if perm not in perm.controller.battlefield:
             return False
         intent = rules_events.zone_destination(self, perm, to)
@@ -285,7 +304,11 @@ class EffectsMixin:
         if perm in self.attackers:
             self.attackers.remove(perm)
         if not perm.front.is_token:
-            {"graveyard": owner.graveyard, "hand": owner.hand, "exile": owner.exile}[to].append(perm.front)
+            if to == "library_bottom":
+                owner.library.insert(0, perm.front)
+            else:
+                {"graveyard": owner.graveyard, "hand": owner.hand, "exile": owner.exile,
+                 "library_top": owner.library}[to].append(perm.front)
         if perm.front.is_token:
             self.rule_events.emit(rules_events.RulesEvent("zone_change", controller, source=perm,
                 before=before, destination=to, reason="leave_battlefield", replacements=intent.applied,
@@ -294,6 +317,23 @@ class EffectsMixin:
         if to == "graveyard":
             self.fire(owner, "perm_to_gy", subject=perm)
             self.fire(owner, "perm_to_gy", perm, subject=perm)
+        return True
+
+    def put_in_library(self, perm: Permanent, where="top") -> bool:
+        """Put perm into its owner's library without passing through the graveyard (no dies or put-into-graveyard
+        triggers): where is "top", "bottom", N (Nth from the top, 1 = top), "shuffle" or "random". A token ceases
+        to exist. True if it left the battlefield."""
+        if not self.leave_battlefield(perm, "library_bottom" if where == "bottom" else "library_top"):
+            return False
+        library, card = perm.owner.library, perm.front
+        if perm.last_destination not in ("library_top", "library_bottom") or card.is_token or card not in library:
+            return True
+        if where == "shuffle":
+            library.shuffle(self.rng)
+        elif where == "random" or isinstance(where, int) and where > 1:
+            list.remove(library, card)              # a move inside the library: no zone change
+            index = self.rng.randrange(len(library) + 1) if where == "random" else max(0, len(library) - where + 1)
+            list.insert(library, index, card)
         return True
 
     def extra_sac_candidates(self, p: Player, card: CardDef) -> list:
@@ -322,6 +362,7 @@ class EffectsMixin:
                 if trig.event == "sacrifice" and (card_matches(perm.card, trig.filter) if not trig.filter.startswith("another ") else
                                                   other is not perm and card_matches(perm.card, "a " + trig.filter[8:])):
                     self.queue_trigger(p, trig.effects, other, other.card.name)
+        self.fire(p, "sacrificed", perm)     # "whenever a player sacrifices a <desc>" (cx_events)
         self.dies(perm, counter_sources=counter_sources) if perm.is_creature else self.leave_battlefield(perm, "graveyard")
 
     def discard_card(self, p: Player, card: CardDef):
@@ -504,7 +545,10 @@ class EffectsMixin:
                 if perm in perm.controller.battlefield:
                     self.dies(perm, counter_sources=counter_sources)
                     changed = True
+        from ..cx_night_aura import cant_lose
         for p in self.players:
+            if cant_lose(self, p):
+                continue
             if p.counters.get("poison", 0) >= 10:
                 if not p.lost:
                     self.audit("loss", seat=self.players.index(p), cause="ten or more poison counters")

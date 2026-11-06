@@ -66,7 +66,9 @@ class ResolveMixin:
         if handler is not None:
             from ..backlog_templates import entry_batch
             batch = entry_batch(self) if k in ('copy_perm', 'gy_move', 'reanimate_total', 'last_gift') else nullcontext()
-            with batch:
+            from ..cx_next_turn import lasting
+            lasts = lasting(self, p) if eff.data.get("until_next_turn") else nullcontext()
+            with batch, lasts:
                 previous_item = getattr(self, "resolving_item", None)
                 self.resolving_item = item
                 try:

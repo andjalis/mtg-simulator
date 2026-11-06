@@ -113,6 +113,9 @@ def parse_effect(text, previous):
 
 
 def grave_targets(game, p, eff):
+    if 'cx_card' in eff.data:                 # grammar zones family: a card noun phrase and an exact graveyard
+        from .cx_grammar_zones import grave_cards
+        return grave_cards(game, p, eff)
     types = eff.data['grave_type'].split(' or ')
     cards = [c for c in p.graveyard if ('cmc_exact' not in eff.data or c.cmc == eff.data['cmc_exact']) and
              any(c.is_permanent if t == 'permanent' else t.title() in c.types for t in types)]
@@ -176,16 +179,22 @@ def begin_turn(game, p):
         if controller is p:
             if effect in game.continuous_effects:
                 game.continuous_effects.remove(effect)
+                from .continuous import refresh
+                refresh(effect.target)
             waiting.remove((controller, effect))
 
 
 def attack_tax(game, defender):
-    return sum(rules(x).get('attack_tax', 0) for x in defender.battlefield)
+    from .cx_next_turn import attack_flag_tax
+    return sum(rules(x).get('attack_tax', 0) for x in defender.battlefield) + attack_flag_tax(game, defender)
 
 
 def cast_allowed(game, p, card):
     from .residual_templates import cast_locked
     if cast_locked(game, p, card):
+        return False
+    from .cx_next_turn import player_flag
+    if player_flag(game, p, 'no_cast'):
         return False
     from .cx_timing import window_ok
     if not window_ok(game, p, card):
@@ -293,6 +302,8 @@ def update_static(game):
     from . import continuous, counter_mechanics
     board = [x for p in game.players for x in p.battlefield]
     moons = [x for x in board if rules(x).get('land_conversion')]
+    from .cx_landtypes import update as cx_landtypes
+    cx_landtypes(game, board)
     for perm in board:
         converting = bool(moons and perm.copiable_card.is_land and not perm.copiable_card.basic)
         if getattr(perm, '_mountain_conversion', False) != converting:

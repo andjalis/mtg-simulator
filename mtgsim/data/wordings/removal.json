@@ -21,7 +21,16 @@
     "cards": ["Furnace Brood"]
   },
   {
-    "match": "(?:it|that creature|he|she) deals damage equal to its power to (?:up to one )?target creature (?:an opponent controls|you don't control)",
+    "match": "(?:it|that creature|he|she) deals damage equal to its power to up to one target creature (?:an opponent controls|you don't control)",
+    "effect": "bite",
+    "target": "creature",
+    "filter": "opp",
+    "data": {"optional_target": true},
+    "example": "It deals damage equal to its power to up to one target creature an opponent controls",
+    "cards": ["Ambuscade"]
+  },
+  {
+    "match": "(?:it|that creature|he|she) deals damage equal to its power to target creature (?:an opponent controls|you don't control)",
     "effect": "bite",
     "target": "creature",
     "filter": "opp",
@@ -29,11 +38,20 @@
     "cards": ["Ambuscade"]
   },
   {
-    "match": "(?:it|that creature|he|she) fights (?:up to one )?target creature (?:an opponent controls|you don't control)",
+    "match": "(?:it|that creature|he|she) fights up to one target creature (?:an opponent controls|you don't control)",
     "effect": "fight",
     "target": "creature",
     "filter": "opp",
+    "data": {"optional_target": true},
     "example": "He fights up to one target creature an opponent controls",
+    "cards": ["Abomination, Terrifying Titan"]
+  },
+  {
+    "match": "(?:it|that creature|he|she) fights target creature (?:an opponent controls|you don't control)",
+    "effect": "fight",
+    "target": "creature",
+    "filter": "opp",
+    "example": "He fights target creature an opponent controls",
     "cards": ["Abomination, Terrifying Titan"]
   },
   {

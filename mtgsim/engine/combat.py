@@ -4,20 +4,21 @@ from __future__ import annotations
 from .. import ring
 from ..cards import Effect
 from .state import Permanent, Player, can_block
+from ..cx_lures import extra_blocks as cx_extra_blocks, max_blockers as cx_max_blockers
 
 
 def extra_blocks(me, attackers, blocks):
     """Give a creature that can block more than one attacker the unblocked attackers it survives, biggest first."""
     blocks = {a: list(bl) for a, bl in blocks.items()}
     for b in me.creatures:
-        if not b.card.extra_blocks:
+        if not cx_extra_blocks(b):
             continue
         mine = [a for a, bl in blocks.items() if b in bl]
         if not mine:
             continue
         taken = sum(a.power for a in mine)
         for a in sorted((a for a in attackers if not blocks.get(a) and can_block(b, a)), key=lambda a: -a.power):
-            if len(mine) > b.card.extra_blocks or taken + a.power >= b.toughness - b.damage:
+            if len(mine) > cx_extra_blocks(b) or taken + a.power >= b.toughness - b.damage:
                 break
             blocks[a] = [b]
             mine.append(a)
@@ -27,6 +28,8 @@ def extra_blocks(me, attackers, blocks):
 
 class CombatMixin:
     def combat(self, p: Player, opp: Player):
+        if getattr(self, "turn_ended", False):      # "End the turn" (cx_night_endturn)
+            return
         self._combat(p, opp)
         if not self.over:
             self.end_combat(p)
@@ -50,6 +53,8 @@ class CombatMixin:
             self.queue_trigger(controller, effects, source, f"{name}: at end of combat", context=subject)
         self.fire(p, "end_combat")
         self.run_priority(until_empty_stack=False)
+        self.last_attackers = self.attackers
+        self.attackers = []   # nobody is attacking after combat (#244); blocks stay for inspection
 
     def _combat(self, p: Player, opp: Player):
         self.step = "declare_attackers"
@@ -68,6 +73,8 @@ class CombatMixin:
                      and (not a.card.attack_needs or any(a.card.attack_needs in x.card.subtypes for x in opp.battlefield))]
         from ..batch1_templates import curses_on
         cursed_to_attack = any(c.card.advanced_rules.get('curse_must_attack') for c in curses_on(self, p))
+        from ..cx_night_aura import forced_to_attack
+        cursed_to_attack = cursed_to_attack or forced_to_attack(self, p)
         attackers += [a for a in p.creatures if (a.card.must_attack or a.has("must_attack_now") or cursed_to_attack)
                       and a.can_attack() and a not in attackers]
         from ..backlog_templates import combat_limit
@@ -132,7 +139,7 @@ class CombatMixin:
         legal = {}
         block_limit = combat_limit(self, 'block')
         for a in attackers:
-            bl = [b for b in blocks.get(a, []) if used.get(b, 0) <= b.card.extra_blocks and b in opp.battlefield
+            bl = [b for b in blocks.get(a, []) if used.get(b, 0) <= cx_extra_blocks(b) and b in opp.battlefield
                   and can_block(b, a)]
             if block_limit is not None:
                 available = max(0, block_limit - len(used))
@@ -147,8 +154,9 @@ class CombatMixin:
                 bl = []
             if a.card.min_blockers and len(bl) < a.card.min_blockers:
                 bl = []
-            if a.card.max_blockers and len(bl) > a.card.max_blockers:
-                bl = bl[:a.card.max_blockers]
+            limit = cx_max_blockers(a)
+            if limit and len(bl) > limit:
+                bl = bl[:limit]
             if bl:
                 legal[a] = bl
                 for b in bl:
@@ -189,12 +197,13 @@ class CombatMixin:
                            lambda c: not first or c.has("double strike") or not c.has("first strike"))
 
     def combat_damage(self, p, opp, attackers, blocks, deals_now):
+        from ..cx_night_aura import dmg_stat   # "assigns combat damage equal to its toughness"
         hits = []  # (source, target, amount)
         budget = {}   # a blocker blocking several attackers divides its damage: lethal to each in turn
         for a in attackers:
             for b in blocks.get(a, ()):
                 budget[b] = budget.get(b, 0) + 1
-        budget = {b: b.power for b, n in budget.items() if n > 1}
+        budget = {b: dmg_stat(self, b) for b, n in budget.items() if n > 1}
         for a in attackers:
             if a not in p.battlefield:
                 continue
@@ -203,11 +212,11 @@ class CombatMixin:
                 target = None   # its planeswalker is gone: no damage
             if a in blocks:
                 alive = [b for b in blocks[a] if b in opp.battlefield]
-                if deals_now(a) and a.power > 0 and target is not None and a.card.advanced_rules.get('assign_unblocked') \
-                        and not a.abilities_suppressed and sum(max(0, b.toughness - b.damage) for b in alive) > a.power:
-                    hits.append((a, target, a.power))     # can't kill its blockers: hit the defender instead
-                elif deals_now(a) and a.power > 0:
-                    remaining = a.power
+                if deals_now(a) and dmg_stat(self, a) > 0 and target is not None and a.card.advanced_rules.get('assign_unblocked') \
+                        and not a.abilities_suppressed and sum(max(0, b.toughness - b.damage) for b in alive) > dmg_stat(self, a):
+                    hits.append((a, target, dmg_stat(self, a)))     # can't kill its blockers: hit the defender instead
+                elif deals_now(a) and dmg_stat(self, a) > 0:
+                    remaining = dmg_stat(self, a)
                     for i, b in enumerate(alive):
                         lethal = 1 if a.has("deathtouch") else max(0, b.toughness - b.damage)
                         last = i == len(alive) - 1
@@ -218,16 +227,16 @@ class CombatMixin:
                     if remaining > 0 and a.has("trample") and target is not None:
                         hits.append((a, target, remaining))
                 for b in alive:
-                    if deals_now(b) and b.power > 0:
+                    if deals_now(b) and dmg_stat(self, b) > 0:
                         if b in budget:
                             amt = min(budget[b], 1 if b.has("deathtouch") else max(0, a.toughness - a.damage))
                             budget[b] -= amt
                         else:
-                            amt = b.power
+                            amt = dmg_stat(self, b)
                         if amt:
                             hits.append((b, a, amt))
-            elif deals_now(a) and a.power > 0 and target is not None:
-                hits.append((a, target, a.power))
+            elif deals_now(a) and dmg_stat(self, a) > 0 and target is not None:
+                hits.append((a, target, dmg_stat(self, a)))
         if any(isinstance(tgt, Player) for _, tgt, _ in hits):
             self.fire(p, "allies_hit_player")
         for src, tgt, amt in hits:

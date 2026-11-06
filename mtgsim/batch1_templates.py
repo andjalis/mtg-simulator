@@ -286,9 +286,13 @@ def parse_line(line, st):
         st.extra['mutate'] = parse_mana_cost(m[1])
         st.approximations.append("mutate: the merged creature takes the new card's characteristics and loses the host's abilities")
         return True
-    m = re.fullmatch(r"Enchanted creature gets ([+-])(\d+)/([+-])(\d+)(?: and has ([a-z ]+(?:, [a-z ]+)*(?:,? and [a-z ]+)?))?\.", line)
+    m = re.fullmatch(r"Enchanted creature gets ([+-])(\d+)/([+-])(\d+)(?: and has ([a-z ]+(?:, [a-z ]+)*(?:,? and [a-z ]+)?)|"
+                     r" and (can't block|can't be blocked|attacks each combat if able|blocks each combat if able))?\.", line)
     if m and 'bestow' in st.extra and not st.extra.get('aura'):
         kws = frozenset(k.strip() for k in re.split(r", and |, | and ", m[5])) if m[5] else frozenset()
+        if m[6]:            # a restriction the bestowed Aura gives (cx_statics' keyword names)
+            from .cx_statics import _ALIAS_KW
+            kws = frozenset({_ALIAS_KW[m[6]]})
         st.extra['bestow_bonus'] = ((1 if m[1] == '+' else -1) * int(m[2]), (1 if m[3] == '+' else -1) * int(m[4]), kws)
         return True
     if line == "Ravenous":
@@ -314,8 +318,14 @@ def parse_line(line, st):
 
 def player_targetable(game, player, by):
     """"You have hexproof": the player can't be targeted by opponents' spells and abilities."""
+    from .residual_templates import sources as _sources
+    if any(x.controller is player for x in _sources(game, 'player_shroud')):    # "You have shroud": even your own
+        return False
     if player is by:
         return True
+    from .cx_next_turn import player_flag
+    if player_flag(game, player, 'hexproof') or player_flag(game, player, 'protection'):
+        return False
     from .residual_templates import sources
     return not any(x.controller is player for x in sources(game, 'player_hexproof'))
 
@@ -709,7 +719,7 @@ def bestow_face(card, cost):
     return dataclasses.replace(card, mana_cost=cost, types=frozenset({"Enchantment"}), subtypes=frozenset({"Aura"}),
                                power=None, toughness=None, aura="creature", equip_bonus=bonus[:2],
                                equip_keywords=bonus[2], aura_hostile=bonus[0] < 0 or bonus[1] < 0,
-                               triggers=[], activated=[], keywords=frozenset(),
+                               triggers=[], activated=list(card.activated), keywords=frozenset(),
                                advanced_rules=dict(card.advanced_rules, bestowed=True, bestow_base=card))
 
 
@@ -748,6 +758,8 @@ def spell_tax(game, player, card):
             if not flt or (flt == 'noncreature' and not card.is_creature) or (flt == 'instant and sorcery' and (card.is_instant or card.is_sorcery)) \
                     or flt in ('creature', 'artifact', 'enchantment', 'instant', 'sorcery') and flt.capitalize() in card.types:
                 total += n
+    from .cx_next_turn import flag_tax
+    total += flag_tax(game, player, card)
     return total
 
 
