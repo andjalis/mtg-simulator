@@ -16,6 +16,11 @@ from __future__ import annotations
 
 import re
 
+from .cards.model import KEYWORDS
+
+HEXPROOF_FROM = ("white", "blue", "black", "red", "green", "monocolored")
+KEYWORDS.update(f"hexproof from {w}" for w in HEXPROOF_FROM)
+
 
 def parse_line(line: str, st) -> bool:
     from .cards.model import AltCost, parse_mana_cost
@@ -85,3 +90,20 @@ SUBS: list = []
 def _prep(target):
     from .cards import Effect
     return Effect("prepare", 1, target=target, data={"prepared": True})
+
+
+def hexproof_from(perm, by, source) -> bool:
+    """Hexproof from <color / monocolored>: whether ``by`` can't target perm with a source of that quality."""
+    from .cards.model import CardDef
+    from .engine.state import Permanent, StackItem
+    if perm.controller is by or not isinstance(perm, Permanent):
+        return False
+    if isinstance(source, StackItem):
+        source = source.card or source.source
+    card = source.card if isinstance(source, Permanent) else source
+    if not isinstance(card, CardDef):
+        return False
+    from .engine.state import COLOR_WORDS
+    if len(card.colors) == 1 and perm.has("hexproof from monocolored"):
+        return True
+    return any(perm.has(f"hexproof from {w}") for w, c in COLOR_WORDS.items() if c in card.colors)

@@ -34,5 +34,26 @@ class Prepared(unittest.TestCase):
         self.assertTrue([v for v in self.game.spell_options(self.a) if "prepared" in v.name])
 
 
+class HexproofFrom(unittest.TestCase):
+    def setUp(self):
+        Prepared.setUp(self)
+
+    def test_hexproof_from_black_blocks_only_black_sources(self):
+        knight = self.game.enter_battlefield(self.a, self.db.get("Knight of Grace"))
+        self.game.settle()
+        black, red = self.db.get("Doom Blade"), self.db.get("Lightning Bolt")
+        self.assertTrue(self.game.targetable(knight, self.a, black))     # its controller may
+        self.assertFalse(self.game.targetable(knight, self.b, black))
+        self.assertTrue(self.game.targetable(knight, self.b, red))
+
+    def test_hexproof_from_monocolored(self):
+        general = self.game.enter_battlefield(self.a, self.db.get("General Ferrous Rokiric"))
+        self.game.settle()
+        self.assertEqual(self.db.get("General Ferrous Rokiric").unsupported, [])
+        self.assertFalse(self.game.targetable(general, self.b, self.db.get("Lightning Bolt")))
+        multi = self.db.get("Terminate")
+        self.assertTrue(self.game.targetable(general, self.b, multi))
+
+
 if __name__ == "__main__":
     unittest.main()
