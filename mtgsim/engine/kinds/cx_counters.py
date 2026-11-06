@@ -69,6 +69,8 @@ def cx_move_src(game, **_):
 @kind("cx_move_counters")
 def cx_move_counters(game, p, eff, target, prev, item, **_):
     source = item.source if eff.data.get("from") == "self" and item is not None else prev
+    if eff.data.get("from") == "prev" and item is not None:    # the stack's prev is already this effect's own target
+        source = next((t for e, t in zip(item.effects, item.targets) if e.kind == "cx_move_src"), prev)
     dest = target
     if eff.target == "self":                 # "... onto ~": the card is the destination
         dest = item.source if item is not None else None

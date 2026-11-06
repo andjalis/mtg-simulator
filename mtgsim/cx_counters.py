@@ -183,7 +183,7 @@ def _move(m):
     data = {"counter": kind if kind != "any" else "", "all": every, "from": "self" if src == "~" else "prev"}
     out = []
     if src != "~":
-        eff = build("cx_move_src", src, data={"distinct": True})
+        eff = build("cx_move_src", src, data={"distinct": True, "group": "cx_move"})
         if eff is None or eff.target in ("group", "self", "prev"):
             return NO_MATCH
         out.append(eff)
@@ -191,7 +191,7 @@ def _move(m):
         out.append(Effect("cx_move_counters", n, target="self", data=data))
     else:
         eff = build("cx_move_counters", dst.replace("another target", "another target"), amount=n,
-                    data=dict(data, distinct=True))
+                    data=dict(data, distinct=True, group="cx_move"))
         if eff is None or eff.target in ("group", "self", "prev"):
             return NO_MATCH
         out.append(eff)

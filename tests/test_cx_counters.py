@@ -39,7 +39,7 @@ class MultiTarget(unittest.TestCase):
         return targets
 
     def test_each_of_up_to_two_stun(self):
-        bears = self.put(self.a, 3)
+        bears = self.put(self.b, 3)     # stun counters are aimed at the opponent's creatures
         self.run_effects("Put a stun counter on each of up to two target creatures.")
         self.assertEqual(sorted(b.counters.get("stun", 0) for b in bears), [0, 1, 1])
 

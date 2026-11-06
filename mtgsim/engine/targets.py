@@ -219,9 +219,12 @@ class TargetsMixin:
                 tgt = self.hook(p, "choose_target")(self, p, e)
                 if tgt is None or not self.legal_target(p, e, tgt):
                     tgt = default_choose_target(self, p, e)
+                group = e.data.get("group", e.kind)
                 if tgt is not None and e.data.get("distinct") and any(
-                        t is tgt for e2, t in zip(effects, out) if e2.kind == e.kind and e2.data.get("distinct")):
-                    taken = [t for e2, t in zip(effects, out) if e2.kind == e.kind and e2.data.get("distinct")]
+                        t is tgt for e2, t in zip(effects, out)
+                        if e2.data.get("group", e2.kind) == group and e2.data.get("distinct")):
+                    taken = [t for e2, t in zip(effects, out)
+                             if e2.data.get("group", e2.kind) == group and e2.data.get("distinct")]
                     tgt = max((x for x in self.legal_targets(p, e) if all(x is not t for t in taken)
                                and (x.controller is not p) == (tgt.controller is not p)), key=perm_value, default=None) \
                         if isinstance(tgt, Permanent) else None
