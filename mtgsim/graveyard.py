@@ -59,6 +59,32 @@ def _sac_ok(game, p, card, costs):
     return not what or len(game.sacrifice_candidates(p, card, what)) >= costs.get("sac_n", 1)
 
 
+def worth(game, p, card, idx) -> bool:
+    """Whether the AI should pay this graveyard ability's costs now: it doesn't sacrifice permanents worth more than
+    the card it gets back, discard its last cards, pay life at 10 or less, or mill itself near an empty library."""
+    from .engine.policy import perm_value
+    act = card.gy_activated[idx]
+    costs = act.extra_costs
+    pt = [int(x) if str(x).isdigit() else 0 for x in (card.power, card.toughness)]
+    value = card.cmc + sum(pt) / 2
+    victims = []
+    if costs.get("sacrifice"):
+        victims = game.sacrifice_candidates(p, card, costs["sacrifice"])[:costs.get("sac_n", 1)]
+    for kind, n, spec in costs.get("cx_costs", ()):
+        if kind == "sacrifice_n":
+            from .cx_abil_costs import _sac_pool
+            victims += _sac_pool(game, p, card, spec)[:n]
+        elif kind in ("discard", "discard_random") and len(p.hand) <= n:
+            return False
+        elif kind == "mill" and len(p.library) < n + 10:
+            return False
+    if costs.get("discard") and len(p.hand) <= costs["discard"]:
+        return False
+    if costs.get("life") and p.life <= 10:
+        return False
+    return all(v.card.is_token or perm_value(v) < value for v in victims)
+
+
 def can_activate(game, p, card, idx):
     from . import modal
     from .engine import payable

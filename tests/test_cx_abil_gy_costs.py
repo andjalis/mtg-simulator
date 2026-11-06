@@ -80,4 +80,38 @@ class GyMore(base.GraveyardActivated):
         self.assertIn(c, self.a.hand)
 
 
+class GyAI(base.GraveyardActivated):
+    """HeuristicAI's end-of-turn graveyard pass (Game.graveyard_abilities) pays the new costs sensibly."""
+
+    def run_ai(self, text, mana=3, **kw):
+        c = self.prepare(text, mana=mana)
+        self.game.graveyard_abilities(self.a)
+        return c
+
+    def test_ai_sacrifices_tokens_but_not_good_creatures(self):
+        text = "{1}, Sacrifice two creatures: Return ~ from your graveyard to the battlefield."
+        c = self.prepare(text, mana=1)
+        for _ in range(2):
+            self.game.enter_battlefield(self.a, card("Test Big", "{4}", "Creature — Giant", "", 5, 5))
+        self.game.graveyard_abilities(self.a)
+        self.assertIn(c, self.a.graveyard)                                  # two 5/5s are worth more than a 2/2
+
+    def test_ai_sacrifices_cheap_permanents(self):
+        c = self.prepare("{1}, Sacrifice two creatures: Return ~ from your graveyard to the battlefield.", mana=1)
+        token = card("Test Token", "{0}", "Creature — Goblin", "", 1, 1)
+        for _ in range(2):
+            self.game.enter_battlefield(self.a, token)
+        self.game.graveyard_abilities(self.a)
+        self.assertEqual([x.card for x in self.a.creatures if x.card is c], [c])
+
+    def test_ai_keeps_its_last_cards(self):
+        c = self.prepare("{1}, Discard two cards: Return this card from your graveyard to the battlefield tapped.", mana=1)
+        self.a.hand = [BEAR, BEAR]
+        self.game.graveyard_abilities(self.a)
+        self.assertIn(c, self.a.graveyard)
+        self.a.hand = [BEAR, BEAR, ISLAND]
+        self.game.graveyard_abilities(self.a)
+        self.assertNotIn(c, self.a.graveyard)
+
+
 del base
