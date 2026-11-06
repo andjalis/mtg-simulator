@@ -581,6 +581,44 @@ def players(game, p, who, item, prev, target=None):
     return []
 
 
+_HURTS = ("destroy", "exile_permanent", "bounce", "tap", "stun", "debuff_one", "debuff", "cx_lose_kw",
+          "cant_block_turn", "damage", "oring", "shrink")
+_HELPS_OBJ = ("pump", "grant", "untap_prev", "p1_counters", "regenerate", "cx_set_base", "unblockable")
+
+
+def auto_side(game, eff) -> str:
+    """The side for an effect whose own meaning is neutral (a colour change): read from the effects that follow
+    it on the same object ("becomes red and gains haste", "becomes blue. Untap that creature."). Hurting ->
+    "theirs", helping -> "mine", otherwise "theirs"."""
+    for effects in _effect_lists(getattr(game, "target_source", None)):
+        index = next((i for i, e in enumerate(effects) if e is eff), None)
+        if index is None:
+            continue
+        for later in effects[index + 1:]:
+            if later.target != "prev":
+                break
+            if later.kind in _HURTS or later.data.get("side") == "theirs":
+                return "theirs"
+            if later.kind in _HELPS_OBJ or later.data.get("side") == "mine":
+                return "mine"
+        break
+    return "theirs"
+
+
+def _effect_lists(source):
+    if isinstance(getattr(source, "effects", None), list):     # a StackItem
+        yield source.effects
+        return
+    card = getattr(source, "card", source)
+    if card is None:
+        return
+    yield getattr(card, "spell_effects", [])
+    for mode in getattr(card, "modes", None) or []:
+        yield mode
+    for holder in list(getattr(card, "activated", [])) + list(getattr(card, "triggers", [])):
+        yield holder.effects
+
+
 def group_members(game, p, data, source, player=None):
     """The permanents a cx_group names, fixed as the effect resolves (CR 611.2c)."""
     from .permanent_templates import matches
