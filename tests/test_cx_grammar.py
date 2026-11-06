@@ -251,9 +251,8 @@ class PlayerSubjects(Base):
         self.cast(spell, [bear, None])
         self.assertEqual(self.b.life, 20 - 3)
 
-    def test_target_players_are_left_to_templates(self):
-        self.assertIsNone(parse_sentence("Target player gains 2 life and draws a card."))
-        self.assertIsNone(parse_sentence("Each player gains 2 life and sacrifices a creature."))
+    def test_unknown_player_verbs_are_rejected(self):
+        self.assertIsNone(parse_sentence("Each player gains 2 life and explores."))
 
 
 class Quantities(Base):
@@ -300,3 +299,107 @@ class Registry(unittest.TestCase):
         G._load()
         self.assertTrue({"mtgsim.cx_grammar_stats", "mtgsim.cx_grammar_keywords", "mtgsim.cx_grammar_color",
                          "mtgsim.cx_grammar_players"} <= {v.module for v in G.VERBS})
+
+
+class TargetPlayers(Base):
+    def main_phase(self, text, types="Sorcery"):
+        spell = card("Test Spell", "{U}", types, text)
+        self.assertEqual(spell.unsupported, [], text)
+        self.perm(ISLAND, self.a)
+        self.a.hand = [spell]
+        self.a.ai.main_phase(self.game, self.a)
+        return spell
+
+    def test_ai_casts_a_group_debuff_at_the_opponent(self):
+        bear, mine = self.perm(BEAR, self.b), self.perm(BEAR, self.a)
+        spell = self.main_phase("Creatures target player controls get -1/-1 until end of turn.")
+        self.assertNotIn(spell, self.a.hand)
+        self.assertEqual((bear.power, mine.power), (BEAR.power - 1, BEAR.power))
+
+    def test_ai_casts_a_group_pump_at_itself(self):
+        bear, theirs = self.perm(BEAR, self.a), self.perm(BEAR, self.b)
+        self.game.step = "main1"
+        spell = card("Test Spell", "{U}", "Instant", "Creatures target player controls get +1/+1 until end of turn.")
+        with self.game.targeting(spell):
+            tgt = self.a.ai.choose_target(self.game, self.a, spell.spell_effects[0], spell)
+        self.assertIs(tgt, self.a)
+        self.cast(spell, [self.a])
+        self.assertEqual((bear.power, theirs.power), (BEAR.power + 1, BEAR.power))
+
+    def test_ai_casts_target_player_loses_life_at_the_opponent(self):
+        life = (self.a.life, self.b.life)
+        spell = self.main_phase("Target player mills two cards and loses 2 life.")
+        self.assertNotIn(spell, self.a.hand)
+        self.assertEqual((self.a.life, self.b.life), (life[0], life[1] - 2))
+        self.assertEqual(len(self.b.graveyard), 2)
+
+    def test_target_opponent_and_mixed_effects(self):
+        effs = parse_sentence("Target opponent discards a card.")
+        self.assertEqual((effs[0].target, effs[0].filter, effs[0].data["side"]), ("player", "opp", "theirs"))
+        self.assertIsNone(parse_sentence("Target player draws a card and loses 1 life."))
+
+
+class Interface(unittest.TestCase):
+    def setUp(self):
+        from mtgsim import cx_grammar as G
+        self.G = G
+        G._load()
+        self.verbs, self.riders = list(G.VERBS), list(G.RIDERS)
+
+    def tearDown(self):
+        self.G.VERBS[:], self.G.RIDERS[:] = self.verbs, self.riders
+        self.G._HEADS.clear()
+
+    def test_imperative_with_an_object(self):
+        G = self.G
+
+        @G.verb(r"zorch (.+)", heads=("zorch",), subjects=("imperative",))
+        def zorch(m, clause):
+            obj = G.object_phrase(m[1])
+            return [G.Part("destroy", obj=obj)] if obj is not None else None
+        effs = parse_sentence("Zorch up to two target artifacts.")
+        self.assertEqual([(e.kind, e.target, e.data.get("distinct")) for e in effs],
+                         [("destroy", "permanent", True)] * 2)
+        effs = parse_sentence("Zorch each creature you control.")
+        self.assertEqual((effs[0].kind, effs[0].data["effects"][0].kind), ("cx_group", "destroy"))
+        self.assertIsNone(parse_sentence("Zorch the moon."))
+
+    def test_object_overrides_the_target_and_records_the_source(self):
+        G = self.G
+
+        @G.verb(r"blasts? (\d+) at (.+)", heads=("blast", "blasts"), subjects=("permanent",))
+        def blast(m, clause):
+            obj = G.object_phrase(m[2])
+            return [G.Part("damage", int(m[1]), obj=obj)] if obj is not None else None
+        effs = parse_sentence("~ blasts 3 at any target and gets +1/+0 until end of turn.")
+        self.assertEqual([(e.kind, e.target) for e in effs], [("damage", "any"), ("pump", "self")])   # verbs of ~
+        effs = parse_sentence("~ blasts 3 at any target.")
+        self.assertEqual((effs[0].kind, effs[0].target, effs[0].data["source"]), ("damage", "any", "self"))
+        effs = parse_sentence("~ blasts 2 at that creature's controller.")
+        self.assertEqual((effs[0].target, effs[0].data["who"]), ("none", "controller"))
+        effs = parse_sentence("~ blasts 2 at target opponent.")
+        self.assertEqual((effs[0].target, effs[0].filter), ("player", "opp"))
+
+    def test_rider_wraps_any_sentence(self):
+        G = self.G
+
+        @G.rider(r"(?P<body>.+) twice")
+        def twice(m, inner):
+            body = inner(m["body"])
+            return body + body if body else None
+        effs = parse_sentence("Target creature gains flying until end of turn twice.")
+        self.assertEqual([e.kind for e in effs], ["grant", "grant"])
+
+
+class ColorSide(Base):
+    def target_for(self, text):
+        spell = self.spell(text)
+        with self.game.targeting(spell):
+            return self.a.ai.choose_target(self.game, self.a, spell.spell_effects[0], spell)
+
+    def test_colour_change_follows_the_effects_after_it(self):
+        mine, theirs = self.perm(BEAR, self.a), self.perm(WOLF, self.b)
+        self.assertIs(self.target_for("Target creature becomes red and gains haste until end of turn."), mine)
+        self.assertIs(self.target_for("Target creature becomes blue until end of turn. Untap that creature."), mine)
+        self.assertIs(self.target_for("Target creature becomes white until end of turn. Tap that creature."), theirs)
+        self.assertIs(self.target_for("Target creature becomes black until end of turn."), theirs)
