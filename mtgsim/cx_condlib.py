@@ -914,7 +914,8 @@ def check(game, p, code: str, item=None, source=None, prev=None):
     if kind == "counters":
         name, op, n = args
         return source is not None and _cmp(source.counters.get(name, 0), op, n)
-    return False
+    from .cx_static_cond import check as static_check      # kinds registered by cx_static_cond
+    return static_check(game, p, kind, args, item, source)
 
 
 def _eval_any(game, p, code, item, source, prev=None):
