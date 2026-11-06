@@ -6,33 +6,25 @@ work in the code.
 
 ## What it is
 
-A Magic: The Gathering simulator in pure Python. `mtgsim` plays AI-vs-AI games between decklists
-and reports win rates with 95% CIs, split by play/draw. It also runs a rank ladder (Bronze to
-Grandmaster, MMR), and deck assessment. The built-in engine is the default;
-`--engine forge` drives the external Forge rules engine for real tournament decks.
+See [README.md](README.md) for what the simulator does and how to run it: AI-vs-AI games between
+decklists with win rates and 95% CIs split by play/draw, a rank ladder (Bronze to Grandmaster, MMR),
+deck assessment, and an optional Forge engine (`--engine forge`).
 
 ## Setup and commands
+
+See the README's quick start for the `python3 -m mtgsim ...` commands; the agent-specific ones:
 
 ```
 python3 -m mtgsim.build_carddb                 # once per clone; builds mtgsim/data/cards.sqlite3 (~13 s)
 python3 scripts/fast_check.py                  # what a PR must pass: lint, sampled card parse, games, fast tests (~2 min on 4 cores)
 python3 -m unittest discover -s tests -t .     # full suite (900+ tests, about five minutes; runs nightly in CI)
-python3 -m mtgsim A.txt B.txt -n 1000          # matchup
-python3 -m mtgsim A.txt --gauntlet B.txt C.txt # one deck vs several
-python3 -m mtgsim A.txt B.txt -n 1 --log       # play-by-play of one game
-python3 -m mtgsim A.txt --coverage             # which cards the engine can't fully play
-python3 -m mtgsim.database_coverage --save results/database_coverage  # all cards and ranked gaps
-python3 -m mtgsim A.txt --ladder -n 200        # rank ladder, built-in engine
-python3 -m mtgsim.assess DECK.txt              # four graded criteria
 ```
 
-Python 3.10+ only, standard library only. Do not add dependencies. CI (`.github/workflows/tests.yml`)
-runs `scripts/fast_check.py` on every push and pull request; the full suite on Python 3.10, 3.13 and 3.14
-runs nightly (`nightly.yml`) and on demand, so keep code compatible with all three. The fast check includes pyflakes
-(`python3 scripts/lint.py`, after `pip install pyflakes`; findings fail the build). Pull requests also run,
-`scripts/parse_diff.py`, which lists every card whose parse changed against the base branch (in the job
-summary and a PR comment) and fails if a card starts raising. Run `python3 scripts/parse_diff.py local --show 5`
-before pushing a parser change to see the same list for your working tree. Card-database tests are
+Python 3.10+ only, standard library only. Do not add dependencies. CI and the checks every PR must
+pass are described in [CONTRIBUTING.md](CONTRIBUTING.md): `scripts/fast_check.py` on every push and pull
+request, the full suite on Python 3.10, 3.13 and 3.14 nightly (`nightly.yml`) and on demand, pyflakes
+via `scripts/lint.py`, and `scripts/parse_diff.py` on pull requests (run `python3 scripts/parse_diff.py local --show 5`
+before pushing a parser change to see the same list for your working tree). Card-database tests are
 skipped when `cards.sqlite3` is missing, so build it before trusting a green run. The Forge tests use
 a fake Forge directory and don't need a real install; a real Forge run needs Java 17+, Maven and
 `scripts/install_forge.sh` (about 1.5 GB).
@@ -41,27 +33,14 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how pull requests are opened and merg
 
 ## Layout
 
+The file-by-file layout table is in [README.md](README.md#layout). Additions for agents:
+
 | Path | Role |
 | --- | --- |
-| `mtgsim/engine/` | Rules engine package: `state.py` (Permanent, Player, StackItem), `mana.py`, `game.py` (`Game` = the mixins below), `costs.py`, `targets.py`, `turns.py`, `stack.py`, `play.py` (lands, casting), `abilities.py` (activated abilities, equip), `battlefield.py` (entering, tokens, sagas, transform), `resolve.py` (shared amount rules, then dispatch), `kinds/` (one handler per effect kind), `effects.py` (damage, destroy, dies, SBA), `combat.py`, `policy.py` (default decisions) |
-| `mtgsim/ai.py` | `HeuristicAI` (default) and `BaselineAI` (old player, kept for comparison) |
-| `mtgsim/cards/`, `carddb.py` | Card package: `model.py` (CardDef, Effect, ...), `patterns.py` (effect templates), `clauses.py` (substitutions, trigger templates, clause helpers), `parse.py` (oracle text to CardDef), `face_lines.py` (the per-line parsers of a face), `tokens.py`; `carddb.py` is lookup order and Scryfall fallback |
-| `mtgsim/identity.py`, `rules_events.py`, `continuous.py`, `actions.py` | Rules foundation: physical card identities and zones, shared rules events, scoped continuous effects, transactional actions |
-| `mtgsim/removal.py`, `copies.py`, `auras.py`, `search.py`, ... | Template modules: one mechanic family each (patterns plus engine helpers) |
+| `mtgsim/engine/` | Rules engine package (`Game` = the mixins in this package; one handler per effect kind in `kinds/`) |
 | `mtgsim/behavior_coverage.py`, `rules/` | Behavior evidence: capability catalog, scenario map, evidence ledgers |
-| `mtgsim/build_carddb.py` | Builds the card DB from Scryfall bulk data or Forge scripts |
-| `mtgsim/decklist.py` | Decklist parsing |
-| `mtgsim/runner.py` | Match loop and statistics |
-| `mtgsim/ranks.py`, `tiers.py` | Rank ladder over `decks/ranks/`; `tiers.py` is the old name |
-| `mtgsim/rating.py`, `ladder_report.py` | MMR, `LadderTracker`, live terminal line and HTML report |
-| `mtgsim/assess.py` | Deck assessment (meta, mana, speed, consistency) |
-| `mtgsim/coverage.py` | `--coverage` reporting |
-| `mtgsim/forge.py`, `crosscheck.py` | Forge mode; engine vs Forge cross-check |
-| `mtgsim/data/` | `builtin_cards.json`, `metagame.json`, and the generated `cards.sqlite3` (gitignored) |
-| `decks/` | Sample lists; `decks/ranks/` has the rank pools (see `decks/ranks/README.md`) |
-| `results/` | Saved runs; `results/ladder/` is gitignored (live ladder output) |
+| `mtgsim/data/` | `builtin_cards.json`, `metagame.json`, the wordings JSON, and the generated `cards.sqlite3` (gitignored) |
 | `tests/` | `unittest` files, one per area |
-| `AI_RESULTS.md` | Measured AI-vs-baseline results |
 
 ## Working rules
 
