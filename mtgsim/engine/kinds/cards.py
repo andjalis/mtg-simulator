@@ -536,13 +536,13 @@ def fetch_basic(game, p, eff, target, item, **_):
 
 @kind("explore")
 def explore(game, p, target, **_):
-    if isinstance(target, Permanent) and target in target.controller.battlefield and p.library:
-        top = p.library[-1]
-        if top.is_land:
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        top = p.library[-1] if p.library else None
+        if top is not None and top.is_land:
             p.hand.append(p.library.pop())
-        else:
+        else:                      # no land revealed (including an empty library): +1/+1 counter, maybe the card to the graveyard
             target.counters["+1/+1"] = target.p1 + 1
-            if game.hook(p, "scry")(game, p, [top]):
+            if top is not None and game.hook(p, "scry")(game, p, [top]):
                 p.graveyard.append(p.library.pop())
         game.log(f"{target.card.name} explores", p)
 
