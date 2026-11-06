@@ -33,10 +33,11 @@ _SUB_NOTES = [
      "the may-play riders are played as the impulse draw, so the free cast is never granted"),
     # Tap-lock riders ("... doesn't untap during its controller's untap step for as long as ~
     # remains tapped / you control ~ / ~ remains on the battlefield"): the parser records the
-    # duration on the tap effect (data["lock"]) for the engine's link recording; until that lands,
-    # the lock is played as a single skipped untap step (the freeze subset).
-    (re.compile(r"doesn't untap during (?:its controller's|their controllers') untap steps? for as long as", re.I),
-     "the tap-lock is played as a single skipped untap step (the persistent link isn't recorded yet)"),
+    # duration on the tap effect (data["lock"]) and the engine keeps the link (turns.untap_locked); a duration
+    # it doesn't record ("for as long as it has a counter") is played as a single skipped untap step.
+    (re.compile(r"doesn't untap during (?:its controller's|their controllers') untap steps? for as long as "
+                r"(?!(?:this \w+|it) remains (?:tapped|on the battlefield)|you control )", re.I),
+     "the tap-lock's duration is not one the engine records, so it is played as a single skipped untap step"),
 ]
 
 _SUBS = [
@@ -235,11 +236,13 @@ _TRIGGERS = [
     (r"When(?:ever)? ~ enters?(?: the battlefield)?, (.+)", ("etb",)),
     (r"Whenever ~ attacks while (?!saddled)(.+)", ("attacks",)),
     (r"When(?:ever)? ~ attacks, (.+)", ("attacks",)),
-    (r"When(?:ever)? ~ (?:blocks or becomes blocked|becomes blocked or blocks)(?: by a creature)?, (.+)", ("blocks", "becomes_blocked")),
+    (r"When(?:ever)? ~ (?:blocks or becomes blocked|becomes blocked or blocks) by a creature, (.+)", ("blocks", "becomes_blocked", "becomes_blocked_more")),
+    (r"When(?:ever)? ~ (?:blocks or becomes blocked|becomes blocked or blocks), (.+)", ("blocks", "becomes_blocked")),
     (r"When(?:ever)? ~ attacks or blocks, (.+)", ("attacks", "blocks")),
     (r"When(?:ever)? ~ blocks, (.+)", ("blocks",)),
     (r"Whenever ~ blocks a creature with flying, (.+)", ("blocks",)),
-    (r"When(?:ever)? ~ becomes blocked(?: by a creature)?, (.+)", ("becomes_blocked",)),
+    (r"When(?:ever)? ~ becomes blocked by a creature, (.+)", ("becomes_blocked", "becomes_blocked_more")),   # once per blocker (#245)
+    (r"When(?:ever)? ~ becomes blocked, (.+)", ("becomes_blocked",)),
     (r"Whenever ~ attacks and isn't blocked, (.+)", ("unblocked",)),
     (r"Whenever ~ blocks a creature, (.+)", ("blocks",)),
     (r"Whenever ~ is dealt damage, (.+)", ("dealt_damage",)),
