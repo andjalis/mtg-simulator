@@ -37,7 +37,10 @@ class Grammar(unittest.TestCase):
     def test_rejects(self):
         self.assertIsNone(describe("2/2 green Bear creature token with frobnicate"))     # unknown keyword
         self.assertIsNone(describe('1/1 Spirit creature token with "Zorb the glorb."'))  # ability the parser ignores
-        self.assertIsNone(describe("Vibranium token"))                                    # unknown predefined token
+        self.assertIsNone(describe("Frobnium token"))                                     # unknown predefined token
+        self.assertIsNone(describe("Vibranium token"))       # its mana restriction isn't parsed yet
+        heartwood = describe("Heartwood token")["card"]
+        self.assertEqual((heartwood.produces, heartwood.color_override), ({"R", "G"}, {"R", "G"}))
         self.assertIs(parse_create("", "that many 1/1 green Saproling creature tokens"), NO_MATCH)
         self.assertIs(parse_create("target creature", "a Food token"), NO_MATCH)
 

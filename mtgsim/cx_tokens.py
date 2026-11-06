@@ -32,11 +32,15 @@ _CARD_TYPES = ("artifact", "creature", "enchantment", "land", "planeswalker", "b
 _SUPERTYPES = ("legendary", "snow")
 # Kinds make_token already builds (with their abilities and the engine's kind checks).
 _KINDS = ("treasure", "clue", "blood", "map", "lander", "food", "mutagen", "junk")
-# Other predefined tokens, as card text for the card parser.
+# Other predefined tokens, as card text for the card parser (the cards' reminder text), and their colours. Powerstone
+# and Vibranium wait on the parser's "can't be spent to cast a nonartifact spell" mana restriction.
 _PREDEFINED = {
-    "gold": ("Artifact — Gold", "Sacrifice this artifact: Add one mana of any color."),
-    "powerstone": ("Artifact — Powerstone", "{T}: Add {C}. This mana can't be spent to cast a nonartifact spell."),
-    "shard": ("Enchantment — Shard", "{2}, Sacrifice this enchantment: Scry 1, then draw a card."),
+    "gold": ("Artifact — Gold", "Sacrifice this artifact: Add one mana of any color.", ()),
+    "powerstone": ("Artifact — Powerstone", "{T}: Add {C}. This mana can't be spent to cast a nonartifact spell.", ()),
+    "shard": ("Enchantment — Shard", "{2}, Sacrifice this enchantment: Scry 1, then draw a card.", ()),
+    "vibranium": ("Artifact — Vibranium",
+                  "Indestructible\n{T}: Add {C}. This mana can't be spent to cast a nonartifact spell.", ()),
+    "heartwood": ("Artifact — Heartwood", "{T}: Add {R} or {G}.", ("R", "G")),
 }
 
 _SUBJECTS = {
@@ -157,9 +161,9 @@ def describe(desc: str):
             return {"kind": kind, **state_out}
         if kind not in _PREDEFINED:
             return None
-        type_line, text = _PREDEFINED[kind]
+        type_line, text, colors = _PREDEFINED[kind]
         types, sub = type_line.split(" — ")
-        card = _token_card(subtypes[0], None, None, (), (), [types.lower()], [sub], text.split("\n"), True)
+        card = _token_card(subtypes[0], None, None, colors, (), [types.lower()], [sub], text.split("\n"), True)
         return {"card": card, **state_out} if card is not None else None
     if ("creature" in types) != bool(m[2]) and not (m[2] and "Vehicle" in subtypes):
         return None
