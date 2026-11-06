@@ -59,6 +59,9 @@ def update(game, board):
                          if (r[0] == "all" or r[0] == "mine" and x.controller is perm.controller or
                              r[0] == "host" and x.aura_host is perm)
                          and (not r[1] or r[1] in perm.copiable_card.subtypes))
+        if perm.copiable_card.is_land and getattr(perm, "cx_landtype_extra", None):
+            from .cx_grammar_landtype import extra      # one-shot changes ("becomes an Island until end of turn")
+            mods = mods + extra(perm)
         if getattr(perm, "_cx_landtype", ()) != mods:
             perm._cx_landtype = mods
             continuous.refresh(perm)

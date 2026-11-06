@@ -107,7 +107,10 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     if k == 'source_control':
         return max(theirs, key=perm_value, default=None)
     if k == 'untap_prev':
-        return max((x for x in mine if x.tapped), key=perm_value, default=None)
+        own = max((x for x in mine if x.tapped), key=perm_value, default=None)
+        if own is None and not mine and theirs:      # "untap target creature you don't control" (Provoke)
+            return max(theirs, key=perm_value)
+        return own
     if k == 'animate_land':     # one of my lands that isn't a creature yet, untapped first
         return min((x for x in mine if not x.is_creature), key=lambda x: (x.tapped, perm_value(x)), default=None)
     if k == 'move_counter_self':
@@ -160,7 +163,11 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return max(mine, key=perm_value, default=None)
     if k == "oring":
         return max(theirs, key=perm_value, default=None)
-    if k in ("stun", "shuffle_away", "cant_block_turn", "force_block"):
+    if k in ("cx_set_base", "set_base_pt") and eff.target != "player":      # "target creature has base P/T 1/1": shrink theirs
+        small = eff.amount <= 2 and eff.amount2 <= 2
+        pool = [x for x in (theirs if small else mine) if x.is_creature]
+        return max(pool, key=perm_value, default=None)
+    if k in ("stun", "shuffle_away", "cant_block_turn", "force_block", "skip_untap"):
         return max(theirs, key=perm_value, default=None)
     if k == "unblockable":
         ready = [x for x in mine if x.can_attack() and x.power > 0]
@@ -172,6 +179,11 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     if k in ("connive", "attach_new_equipment"):    # the best creature of ours that can be chosen
         return max((x for x in mine if x.is_creature), key=perm_value, default=None)
     side = eff.data.get("side") if eff.data else None
+    if side == "auto":                  # neutral effects (a colour change) take the side of what follows them
+        from ..cx_grammar import auto_side
+        side = auto_side(game, eff)
+    if side in ("mine", "theirs") and eff.target == "player":   # ... or which player (cx_grammar target players)
+        return next((x for x in legal if x is (me if side == "mine" else opp)), None)
     if side in ("mine", "theirs"):      # newer kinds say whose permanent they want
         return max(mine if side == "mine" else theirs, key=perm_value, default=None)
     return None
@@ -818,6 +830,11 @@ def use_abilities(game: Game, me: Player):
                 if act.kind == "ability" and act.effects and act.effects[0].kind == "unblockable" and \
                         perm in me.battlefield and ability_worth(game, me, perm, i):
                     game.activate(me, perm, f"ability:{i}")
+                elif act.kind == "ability" and act.effects and act.effects[0].kind == "cx_animate" and \
+                        act.effects[0].target == "self" and act.effects[0].data.get("eot") and \
+                        not perm.is_creature and not perm.sick and not perm.tapped and not act.extra_costs.get("tap") \
+                        and perm in me.battlefield and ability_worth(game, me, perm, i):
+                    game.activate(me, perm, f"ability:{i}")     # "~ becomes a 2/2 ... creature until end of turn": attack
     # Spells from other zones or with alternative costs the AI may not look at.
     for c in game.spell_options(me):
         if (c in me.hand and not c.modes) or c.instant_speed or not game.can_cast_now(me, c):

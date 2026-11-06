@@ -250,6 +250,7 @@ class TurnsMixin:
         stunned, block their own untap, or whose controller recorded a "choose not to untap"
         choice (perm.stay_tapped)."""
         from ..phasing import phasing_untap
+        from .. import cx_grammar
         phasing_untap(self, p)
         for perm in self.opponent(p).battlefield:
             if perm.card.untap_each_untap and perm.tapped:
@@ -272,6 +273,8 @@ class TurnsMixin:
                 pass
             elif perm.tapped and perm.card.no_untap:
                 pass                        # "~ doesn't untap during your untap step."
+            elif perm.tapped and cx_grammar.static_rules(self, perm, "cx_no_untap"):
+                pass                        # "Islands don't untap during their controllers' untap steps." (grammar)
             elif perm.tapped and storage.keeps_tapped(self, p, perm):
                 pass                        # a storage land kept tapped to bank a counter
             else:
