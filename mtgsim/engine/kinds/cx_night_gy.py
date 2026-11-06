@@ -69,3 +69,15 @@ def opp_hand_to_top(game, p, opp, **_):
     opp.hand.remove(card)
     opp.library.append(card)
     game.log("puts a card from hand on top of the library", opp)
+
+
+@kind("edict_attacking")
+def edict_attacking(game, p, target, opp, **_):
+    """Entrapment Maneuver, Wing Shards: the player sacrifices an attacking creature of their choice (their cheapest)."""
+    from ..policy import perm_value
+    from ..state import Permanent
+    from ... import counter_mechanics
+    victim_owner = target if target is not None and not isinstance(target, Permanent) else opp
+    mine = [c for c in game.attackers if c.controller is victim_owner]
+    for v in sorted(mine, key=perm_value)[:1]:
+        game.sacrifice(v, counter_sources=counter_mechanics.death_sources(game))
