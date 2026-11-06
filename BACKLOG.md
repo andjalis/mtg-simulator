@@ -119,6 +119,10 @@ fixed a rules error in #149: a "for each" tax that totals zero means the control
 not that it is countered. Then #156 ("deals damage equal to its power to each opponent"; "it" is the trigger's creature),
 #157 (static "You may cast spells as though they had flash") and #158 ("deals damage to target player equal to the number
 of cards in that player's hand"; 5 cards, Runeflare Trap's alternative cost and Toil // Trouble's Fuse stay unsupported).
+Then #160 (choose-then-destroy edicts, 2 cards), #161 ("You can't lose the game and your opponents can't win the game"
+as a `cant_lose` flag checked at the life/poison check, the empty-library draw and "you lose the game" effects; 3 cards)
+and #162 ("All creatures attack each combat if able" and the opponents-only wording; 5 cards). Abyssal Persecutor ("you
+can't win ... opponents can't lose") was left alone: with no way for the AI to get rid of it the game would stall.
 Still open from the census: counter taxes by devotion, basic land types and party size, and
 "can't attack unless you pay ..." costs.
 
