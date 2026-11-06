@@ -39,6 +39,10 @@ def parse_line(st, line: str):
     if line == "Damage that would reduce your life total to less than 1 reduces it to 1 instead.":   # Ali from Cairo
         st.extra.setdefault("advanced_rules", {})["life_floor"] = True
         return None
+    if line == "As an additional cost to cast ~, discard a card at random.":       # Sonic Burst, Acceptable Losses
+        st.extra["extra_discard"] = 1
+        st.extra.setdefault("advanced_rules", {})["discard_random"] = True
+        return None
     if line == "You control enchanted permanent.":
         st.extra.setdefault("advanced_rules", {})["aura_control"] = True
         return None

@@ -4,7 +4,7 @@ import unittest
 
 from mtgsim.ai import HeuristicAI
 from mtgsim.engine import Game, Player
-from tests.test_templates import BEAR, card
+from tests.test_templates import BEAR, MOUNTAIN, card
 
 TECHNIQUE = card("Test Technique", "{2}{R}", "Sorcery", "Each player may discard their hand and draw seven cards.")
 ALI = card("Test Ali", "{4}", "Artifact Creature", "Damage that would reduce your life total to less than 1 reduces it to 1 instead.",
@@ -65,3 +65,25 @@ class DestroyThatPlayers(unittest.TestCase):
         effect = SHAMAN.triggers[0].effects[0]
         self.assertEqual((SHAMAN.triggers[0].event, effect.kind, effect.target, effect.filter),
                          ("combat_damage_player", "destroy", "artifact_enchantment", "opp"))
+
+
+BURST = card("Test Burst", "{1}{R}", "Instant",
+             "As an additional cost to cast this spell, discard a card at random.\n~ deals 4 damage to any target.")
+
+
+class DiscardAtRandom(unittest.TestCase):
+    def test_parse_and_cast(self):
+        self.assertEqual(BURST.unsupported, [])
+        self.assertEqual(BURST.extra_discard, 1)
+        self.assertTrue(BURST.advanced_rules.get("discard_random"))
+
+    def test_casting_discards_one_card_from_hand(self):
+        game, a, b = _game()
+        game.turn, game.step = 1, "main1"
+        for _ in range(2):
+            game.enter_battlefield(a, MOUNTAIN)
+        a.hand = [BURST, BEAR, BEAR]
+        before = len(a.hand)
+        self.assertTrue(game.cast(a, BURST, [b]))
+        self.assertEqual(len(a.hand), before - 2)       # the spell and one random card left the hand
+        self.assertGreaterEqual(len(a.graveyard), 1)
