@@ -47,22 +47,26 @@ def parse_line(line: str, st) -> bool:
 
 
 def variants(game, p, card) -> list:
-    """Splice variants of the hand card (an Arcane spell) with each other spliceable card in hand."""
+    """Splice variants of the hand card (an Arcane spell): each set of up to three other spliceable cards in hand."""
     from .cards import AltCost, add_mana
     out = _cost_variants(game, p, card)
     if "Room" in card.subtypes and card.back is not None:
         out += [game._variant(card, "room_left"), game._variant(card, "room_right")]
     if "Arcane" not in card.subtypes or card.is_permanent:
         return out
-    for other in p.hand:
-        splice = next((a for a in other.alt_costs if a.kind == "splice"), None)
-        if other is card or splice is None or not other.spell_effects:
-            continue
-        alt = AltCost(f"splice_{getattr(other, 'physical_id', id(other))}", add_mana(card.mana_cost, splice.cost),
-                      extra=list(other.spell_effects))
-        v = game._variant(card, alt.kind, alt)
-        v.spliced = other
-        out.append(v)
+    from itertools import combinations
+    pool = [(o, next(a for a in o.alt_costs if a.kind == "splice")) for o in p.hand
+            if o is not card and o.spell_effects and any(a.kind == "splice" for a in o.alt_costs)]
+    for size in range(1, min(3, len(pool)) + 1):      # one, two or three spliced cards (up to three offered)
+        for combo in combinations(pool, size):
+            cost = card.mana_cost
+            for _, splice in combo:
+                cost = add_mana(cost, splice.cost)
+            kind = "splice_" + "_".join(str(getattr(o, "physical_id", id(o))) for o, _ in combo)
+            alt = AltCost(kind, cost, extra=[e for o, _ in combo for e in o.spell_effects])
+            v = game._variant(card, kind, alt)
+            v.spliced = [o for o, _ in combo]
+            out.append(v)
     return out
 
 
