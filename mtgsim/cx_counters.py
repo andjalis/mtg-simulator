@@ -69,7 +69,7 @@ EFFECT_PATTERNS = [
     (rf"draw a card for each {_K} counter on {_ON}", _per_counters("draw")),
     (rf"you gain (\d+) life for each {_K} counter on {_ON}", lambda m: _per_counters("gain_life", amount=int(m[1]))(m)),
     (rf"(?:~|it) deals damage equal to the number of {_K} counters on {_ON} to "
-     rf"(?P<t>any target|target creature|target player|target opponent)",
+     rf"(?P<t>any target|target creature|target player)",
      lambda m: _per_counters("damage", target={"target creature": "creature", "any target": "any"}.get(
          m["t"], "player"))(m)),
     (rf"draw x cards and gain x life, where x is the number of {_K} counters on {_ON}",
