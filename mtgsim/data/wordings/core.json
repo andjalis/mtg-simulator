@@ -428,12 +428,15 @@
     "match": "target player draws (a|two|three) cards?",
     "effect": "draw",
     "amount": "$1:num",
+    "target": "player",
+    "data": {"side": "mine"},
     "example": "Target player draws three cards",
     "cards": ["Ancestral Recall"]
   },
   {
     "match": "target player draws (a|two|three) cards? and loses (\\d+) life",
-    "effects": [{"effect": "draw", "amount": "$1:num"}, {"effect": "lose_life", "amount": "$2:int"}],
+    "effects": [{"effect": "draw", "amount": "$1:num", "target": "player", "data": {"side": "mine"}},
+                {"effect": "lose_life", "amount": "$2:int", "target": "that_controller"}],
     "example": "Target player draws two cards and loses 2 life",
     "cards": ["Blood Pact"]
   },

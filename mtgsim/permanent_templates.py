@@ -268,6 +268,9 @@ def selector(text, *, plural=False):
 
 
 def matches(game, permanent, spec, controller, source=None):
+    if 'cx_desc' in spec:            # a richer noun phrase (mtgsim.cx_grammar)
+        from .cx_grammar import desc_matches
+        return desc_matches(game, permanent, spec, controller, source)
     if 'base_pt' in spec:
         from .continuous import base_pt
         if tuple(spec['base_pt']) != base_pt(permanent):
