@@ -5,7 +5,7 @@ import unittest
 from mtgsim.cx_grammar import parse_sentence
 from mtgsim.engine import StackItem
 
-from tests.test_cx_grammar import BEAR, DB_FILE, Base
+from tests.test_cx_grammar import BEAR, DB_FILE, ISLAND, Base, card
 
 
 class Parsing(unittest.TestCase):
@@ -71,6 +71,36 @@ class Resolving(Base):
         self.a.hand, self.b.hand = [BEAR] * 3, [BEAR] * 3
         self.cast(self.spell("Discard your hand."))
         self.assertEqual((len(self.a.hand), len(self.b.hand)), (0, 3))
+
+
+class DefaultAI(Base):
+    """The default AI casts the new shapes and aims them at the right player."""
+    def main_phase(self, text, cost="{U}", lands=1):
+        spell = card("Test Spell", cost, "Sorcery", text)
+        self.assertEqual(spell.unsupported, [], text)
+        for _ in range(lands):
+            self.perm(ISLAND, self.a)
+        self.a.hand = [spell]
+        self.b.hand = [BEAR] * 4
+        self.game.step = "main2"
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertNotIn(spell, self.a.hand, "the AI didn't cast it")
+
+    def test_random_discard_at_the_opponent(self):
+        self.main_phase("Target player discards two cards at random.")
+        self.assertEqual((len(self.a.hand), len(self.b.hand)), (0, 2))
+
+    def test_x_random_discard_pays_x(self):
+        self.main_phase("Target player discards X cards at random.", cost="{X}{U}", lands=4)
+        self.assertEqual(len(self.b.hand), 1)
+
+    def test_target_player_discards_their_hand(self):
+        self.main_phase("Target player discards their hand.")
+        self.assertEqual(len(self.b.hand), 0)
+
+    def test_draw_then_discard_at_random_for_itself(self):
+        self.main_phase("Draw four cards, then discard three cards at random.")
+        self.assertEqual((len(self.a.hand), len(self.b.hand)), (1, 4))
 
 
 if __name__ == "__main__":
