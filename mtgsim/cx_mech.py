@@ -118,6 +118,18 @@ def _doors(perm):
     return left, right, "right" if card.name == right.name else "both"
 
 
+def _mv(cost: dict) -> int:
+    return sum(v for k, v in cost.items() if k != "X")
+
+
+def room_entered(perm) -> None:
+    """On the battlefield a Room's mana value is that of its unlocked doors (in hand and elsewhere it's both)."""
+    import dataclasses
+    doors = _doors(perm)
+    if doors:
+        perm.card = dataclasses.replace(perm.card, cmc=_mv(perm.card.mana_cost))
+
+
 def can_unlock(game, p, perm) -> bool:
     doors = _doors(perm) if perm in p.battlefield else None
     return bool(doors and doors[2] != "both" and p is game.active and game.step in ("main1", "main2")
@@ -134,6 +146,8 @@ def unlock(game, p, perm) -> bool:
     if not payable(game.mana_sources(p), locked.mana_cost) or game.pay(p, locked.mana_cost, spell="ability") is None:
         return False
     perm.card = _merge(left, right)
+    import dataclasses
+    perm.card = dataclasses.replace(perm.card, cmc=_mv(left.mana_cost) + _mv(right.mana_cost))
     game.log(f"unlocks {locked.name}", p)
     if locked.etb_effects:
         game.queue_trigger(p, locked.etb_effects, perm, f"{locked.name}: unlock")

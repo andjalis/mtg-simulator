@@ -334,6 +334,9 @@ class StackMixin:
                 perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
             self._aura_host = None
             self._entry_cast = None
+            if "Room" in base.subtypes and base.back is not None:
+                from ..cx_mech import room_entered
+                room_entered(perm)
             if base.aura == "player":
                 perm.curse_target = self.opponent(p)
             self._entry_mana_colors = set()

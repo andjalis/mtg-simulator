@@ -45,6 +45,8 @@ class Rooms(unittest.TestCase):
         self.assertTrue(self.game.cast(self.a, card))
         self.game.settle()
         self.assertEqual(self.room().card.name, card.name)
+        self.assertEqual(self.room().card.cmc, 1)       # one door unlocked: {U}; both halves in hand: 6
+        self.assertEqual(card.cmc, 6)
         self.assertNotIn(victim, self.b.battlefield)
 
     def test_cast_right_half_has_only_that_door(self):
@@ -56,6 +58,7 @@ class Rooms(unittest.TestCase):
         self.game.settle()
         room = self.room()
         self.assertEqual(cx_mech._doors(room)[2], "right")
+        self.assertEqual(room.card.cmc, 5)             # {4}{U}
         self.assertFalse(any(e.kind == "bounce" for e in room.card.etb_effects))
 
     def test_unlock_the_other_door_for_its_cost_runs_its_effects(self):
@@ -70,6 +73,7 @@ class Rooms(unittest.TestCase):
         self.assertTrue(cx_mech.unlock(self.game, self.a, room))
         self.game.settle()
         self.assertEqual(cx_mech._doors(room)[2], "both")
+        self.assertEqual(room.card.cmc, 7)             # {3}{U} + {2}{U}: both doors
         self.assertFalse(cx_mech.can_unlock(self.game, self.a, room))      # nothing left to unlock
         self.assertIn("Whenever", "Whenever")                                # merged abilities stay
 
