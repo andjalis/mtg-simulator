@@ -74,7 +74,6 @@
     "match": "target player draws (four|five|six|seven|\\d+) cards?",
     "effect": "draw",
     "amount": "$1:num",
-    "target": "player",
     "example": "Target player draws four cards",
     "cards": ["Careful Consideration"]
   },

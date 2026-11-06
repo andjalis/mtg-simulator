@@ -187,9 +187,7 @@ class BattlefieldMixin:
             kind, spec = card.entry_counter_quantity
             perm.counters[kind] = perm.counters.get(kind, 0) + amount(self, p, spec)
         if card.etb_named_counters:
-            n = x if card.etb_named_counters[1] == -1 else card.etb_named_counters[1]    # -1: "enters with X ..."
-            if n:
-                perm.counters[card.etb_named_counters[0]] = n
+            perm.counters[card.etb_named_counters[0]] = card.etb_named_counters[1]
         roll = as_enters_roll(card, perm.entered_x)
         if roll is not None:
             sides, n, kind = roll
@@ -234,10 +232,6 @@ class BattlefieldMixin:
             perm.tapped = True
             self.attackers.append(perm)
             self.attack_targets[perm] = self.opponent(p)
-        if card.daybound or card.nightbound:     # before the enters triggers: a daybound card enters transformed at night
-            from ..day_night import on_enter as day_night_enter
-            day_night_enter(self, perm)
-        card = perm.card
         from ..residual_templates import suppressed
         if card.etb_effects and not any(t.event == "etb" for t in card.triggers):
             if not (perm.is_creature and suppressed(self, "entry")):

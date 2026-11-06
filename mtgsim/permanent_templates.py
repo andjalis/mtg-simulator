@@ -14,7 +14,7 @@ _COLORS = {'white': 'W', 'blue': 'U', 'black': 'B', 'red': 'R', 'green': 'G'}
 
 # Subtype vocabulary from the local Oracle snapshot; no runtime database dependency.
 _CREATURE_SUBTYPES = frozenset((
-    'advisor aenar aetherborn alien ally andorian android angel antelope ape archer archon armadillo armored army '
+    'advisor aenar aetherborn alien ally andorian android angel antelope ape archer archon armadillo armored '
     'artificer assassin assembly-worker astartes atog aurochs avatar azra badger barbarian bard basilisk bat '
     'bear beast beaver beeble beholder berserker bird bison boar borg brainiac bringer brushwagg caitian camel '
     'capybara carrier cat centaur chef child chimera citizen clamfolk cleric clown cockatrice construct cow '

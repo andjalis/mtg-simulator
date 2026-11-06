@@ -133,23 +133,6 @@ class CostModifiers(unittest.TestCase):
         self.assertTrue(any("cost {R}{G} less" in u for u in self.db.get("Bard Class").unsupported))
         self.assertEqual(len(self.db.get("Hamza, Guardian of Arashin").unsupported), 2)
 
-    def test_increases_before_reductions(self):
-        # 601.2f: Thoughtcast {4}{U} with five artifacts (affinity) under Thalia's {1} tax: 4 + 1 - 5 = 0
-        self.put("Thalia, Guardian of Thraben", self.b)
-        cast = self.get("Thoughtcast")
-        for _ in range(5):
-            self.game.enter_battlefield(self.a, RELIC)
-        self.assertEqual(self.cost(cast), {"generic": 0, "U": 1})
-        self.a.battlefield.pop()                    # four artifacts: 4 + 1 - 4 = 1
-        self.assertEqual(self.cost(cast), {"generic": 1, "U": 1})
-
-    def test_tax_and_new_reduction_share_one_step(self):
-        self.put("Bontu's Monument")                # black creature spells {1} less
-        self.put("Thalia, Guardian of Thraben", self.b)
-        self.assertEqual(self.cost(CLERIC), {"generic": 0, "B": 1})          # a creature: no tax
-        self.put("Aura of Silence", self.b)         # your artifacts cost {2} more
-        self.assertEqual(self.cost(RELIC)["generic"], 3 + 2 + 1)
-
     def cast_on_stack(self, spell, land, lands):
         for _ in range(lands):
             self.game.enter_battlefield(self.a, land)

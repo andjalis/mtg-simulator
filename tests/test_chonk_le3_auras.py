@@ -107,7 +107,7 @@ class AuraRestrictionTests(unittest.TestCase):
         self.cast_on(aura, theirs)
         self.assertTrue(theirs.has("must_attack_now"))
         self.game.take_turn(self.b)
-        self.assertIn(theirs, self.game.last_attackers)     # forced into combat
+        self.assertIn(theirs, self.game.attackers)     # forced into combat
 
     def test_cant_attack_plays_as_defender(self):
         theirs = self.perm(DRAGON3, self.b)

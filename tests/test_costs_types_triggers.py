@@ -258,9 +258,9 @@ class CostsTypesTriggers(unittest.TestCase):
         self.assertEqual((angel.power, angel.toughness, angel.card.colors), (4, 4, {'W'}))
         self.assertTrue(angel.has('flying'))
 
-    def test_asylum_visitor_context_condition_and_madness(self):
+    def test_asylum_visitor_context_condition_and_madness_approximation(self):
         definition = self.real('Asylum Visitor')
-        self.assertFalse(definition.approximations)
+        self.assertTrue(any('madness' in text for text in definition.approximations))
         self.g.enter_battlefield(self.a, definition)
         self.a.library = [ISLAND, ISLAND]
         self.b.hand = [BEAR]
@@ -330,9 +330,9 @@ class CostsTypesTriggers(unittest.TestCase):
 
     def test_unknown_token_keywords_and_copy_restrictions_stay_visible(self):
         dragon = self.real('Dragon Broodmother')
-        self.assertFalse(any('devour' in s.lower() for s in dragon.unsupported))   # devour works on tokens now
-        token = dragon.triggers[0].effects[0].data['card']
-        self.assertEqual((token.subtypes, token.devour), ({'Dragon'}, 2))
-        self.assertIn('flying', token.keywords)
+        self.assertTrue(any('devour 2' in s.lower() for s in dragon.unsupported))
+        token_effect = dragon.triggers[0].effects[0]
+        self.assertEqual(token_effect.data['name'], 'Dragon')
+        self.assertIn('flying', token_effect.data['keywords'])
         octomancer = self.real('Octomancer')
         self.assertTrue(any('entered' in s.lower() for s in octomancer.unsupported))

@@ -69,8 +69,8 @@ class XSizedToken(unittest.TestCase):
     def test_parse(self):
         self.assertEqual(ABZAN.unsupported, [])
         eff = ABZAN.activated[0].effects[0]
-        self.assertEqual(eff.kind, "cx_token")             # the token grammar (cx_tokens.py)
-        self.assertEqual(eff.data["card"].subtypes, {"Spirit"})
+        self.assertEqual(eff.kind, "token")
+        self.assertEqual(eff.data["name"], "Spirit")
         self.assertEqual(eff.data["xq"], ("greatest", "toughness"))
         self.assertTrue(eff.data["xq_size"])
 

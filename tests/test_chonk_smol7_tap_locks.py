@@ -92,14 +92,9 @@ class TapLockRider(unittest.TestCase):
         self.assertEqual([e.data.get("lock") for ch in TIME_OF_ICE.chapters[:2] for e in ch],
                          ["controlled", "controlled"])
 
-    def test_recorded_durations_have_no_approximation_note(self):
-        self.assertFalse([a for a in AMBER.approximations if "tap-lock" in a])
-        self.assertFalse([a for a in GEISTS.approximations if "tap-lock" in a])
-
-    def test_unrecorded_duration_keeps_the_note(self):
-        from mtgsim.carddb import CardDB
-        wight = CardDB(offline=True).get("Dread Wight")          # "for as long as it has a paralyzation counter"
-        self.assertTrue(any("single skipped untap step" in a for a in wight.approximations))
+    def test_approximation_note(self):
+        self.assertTrue(any("single skipped untap step" in a for a in AMBER.approximations))
+        self.assertTrue(any("single skipped untap step" in a for a in GEISTS.approximations))
 
 
 if __name__ == "__main__":

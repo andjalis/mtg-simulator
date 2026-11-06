@@ -6,14 +6,6 @@ See the [completion report](results/residual_batch/README.md), [closed tasks](re
 
 Only exact residual ignored text on partial cards appears below. Fully matched cards, matched effects and simplification-only cards are excluded. `~` denotes the source card.
 
-## Coverage push from 2026-11-06 (active)
-
-A team of Claude agents is working through the remaining cards with a compositional effect grammar and lane
-specialists. Process, team, tools and lessons: [docs/coverage-push/README.md](docs/coverage-push/README.md).
-Open work: [docs/coverage-push/TODO.md](docs/coverage-push/TODO.md) and GitHub issues labelled
-`counted-full-but-wrong` / `follow-up` / `parked`. Census: 17,612 full (baseline) -> 18,128 (2026-11-06 20:25 UTC).
-The sections below predate the push.
-
 ## Current findings
 
 The full offline census (2026-10-30 Scryfall DB, [results/database_coverage_2026-10-30-morning](results/database_coverage_2026-10-30-morning/README.md)) covers 35,225 entries: **13,848 full** (39.31%), 327 with recorded simplifications, 21,050 partial and zero parser errors. That census predates the last chonk merge rounds of 2026-10-30 (see below), which promoted several hundred more cards; the next census will re-baseline.

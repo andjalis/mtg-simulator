@@ -101,9 +101,6 @@ def characteristics(permanent, base):
         became = animation.subtypes if animation is not None and animation.subtypes else None
         effects.append(ContinuousEffect(-100, permanent, 'add_types', stamp, types=frozenset({'Creature'}),
                                         subtypes=None if became is None else base.subtypes | became))
-    need = base.advanced_rules.get("station_creature") if base.advanced_rules else None
-    if need and base.power is not None and permanent.counters.get("charge", 0) >= need:
-        effects.append(ContinuousEffect(-100, permanent, 'add_types', 0, types=frozenset({'Creature'})))
     if getattr(permanent, "_mountain_conversion", False):
         from .cards import BASIC_MANA
         base = CardDef(base.name, base.mana_cost, base.cmc, base.types, subtypes=frozenset({"Mountain"}),

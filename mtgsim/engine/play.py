@@ -190,12 +190,6 @@ class PlayMixin:
             return False
         if kind == "escape":
             alt_casts.pay_escape(self, p, base, alt)
-        for _ in range(card.extra_discard - 1):     # "discard two cards" (Buyback—Discard two cards)
-            if not p.hand:
-                return False
-            pitched = p.ai.choose_discard(self, p)
-            self.discard_card(p, pitched)
-            self.log(f"discards {pitched.name} for {card.name}", p)
         if card.extra_discard and p.hand:
             lands = [c for c in p.hand if c.is_land]
             if card.advanced_rules.get("discard_random"):       # "discard a card at random" as the additional cost
@@ -218,11 +212,6 @@ class PlayMixin:
         if card.modes:
             if kind == "entwine":       # all of the modes: a plain list, without the printed "choose one" spec
                 mode_effects = modal.pick(self, p, list(card.modes), n=len(card.modes), flags=flags)
-            elif kind.startswith("escalate_"):     # one mode plus the extra modes paid for
-                k = int(kind[9:]) + 1
-                mode_effects = modal.pick(self, p, list(card.modes), n=k, flags=flags)
-            elif card.advanced_rules.get("escalate"):
-                mode_effects = modal.pick(self, p, list(card.modes), n=1, flags=flags)
             else:
                 mode_effects = modal.pick(self, p, card.modes, n=card.modes_choose, flags=flags)
             effects = mode_effects + effects

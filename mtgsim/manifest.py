@@ -162,7 +162,11 @@ def shuffle_enchanted(game, p, eff, item):
     host = getattr(src, "aura_host", None)
     if not isinstance(host, Permanent) or host not in host.controller.battlefield:
         return
-    if game.put_in_library(host, "random") and not host.front.is_token:
+    owner = host.owner
+    if game.leave_battlefield(host, "graveyard") and not host.front.is_token \
+            and host.front in owner.graveyard:
+        owner.graveyard.remove(host.front)
+        owner.library.insert(game.rng.randrange(len(owner.library) + 1), host.front)
         game.log(f"shuffles {host.card.name} into its owner's library", p)
 
 

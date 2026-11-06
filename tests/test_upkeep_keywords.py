@@ -5,7 +5,7 @@ import unittest
 
 from mtgsim.engine import Game, Player
 from tests.test_combat_triggers import Scripted
-from tests.test_templates import BEAR, FOREST, ISLAND, MOUNTAIN, SWAMP, card
+from tests.test_templates import BEAR, FOREST, ISLAND, MOUNTAIN, PLAINS, card
 
 MIST = card("Test Mist", "{2}{G}", "Creature — Elemental",
             "At the beginning of your upkeep, sacrifice ~ unless you pay {G}{G}.", 6, 2)
@@ -152,38 +152,13 @@ class UpkeepKeywords(unittest.TestCase):
         self.assertIn(STINGER, self.a.exile)
         self.assertNotIn(STINGER, self.a.graveyard)
 
-    def test_madness_exiles_then_casts(self):
+    def test_madness_after_discard(self):
         self.game.active_idx = 0
-        self.put(self.a, SWAMP, 1)
+        self.put(self.a, PLAINS, 1)
         self.a.hand.append(HUNTER)
+        self.assertFalse(any(self.game._origin(o)[1] == "mayhem" for o in self.game.spell_options(self.a)))
         self.game.discard_card(self.a, HUNTER)
-        self.assertIn(HUNTER, self.a.exile)
-        self.assertNotIn(HUNTER, self.a.graveyard)
-        self.game.settle()                       # the madness trigger: cast it for {B}
-        self.assertNotIn(HUNTER, self.a.exile)
-        self.assertIn(HUNTER.name, [x.card.name for x in self.a.battlefield])
-
-    def test_ai_hand_size_discard_triggers_madness(self):
-        """HeuristicAI discards its madness card to hand size at cleanup; the trigger casts it for {B}."""
-        from mtgsim.ai import HeuristicAI
-        self.a.ai = HeuristicAI()
-        self.game.active_idx = 0
-        self.put(self.a, SWAMP, 1)
-        mad = card("Test Madness Imp", "{4}{B}", "Creature — Imp", "Madness {B}", 1, 1)
-        self.a.hand = [mad] + [card(f"Bolt {i}", "{R}", "Instant", "~ deals 3 damage to any target.") for i in range(7)]
-        self.a.library = [ISLAND] * 20
-        self.game.take_turn(self.a)
-        self.assertEqual(len(self.a.hand), 7)
-        self.assertIn("Test Madness Imp", [x.card.name for x in self.a.battlefield])
-        self.assertNotIn(mad, self.a.graveyard)
-
-    def test_madness_unpaid_goes_to_graveyard(self):
-        self.game.active_idx = 0
-        self.a.hand.append(HUNTER)
-        self.game.discard_card(self.a, HUNTER)
-        self.game.settle()                       # no mana: not cast
-        self.assertIn(HUNTER, self.a.graveyard)
-        self.assertNotIn(HUNTER, self.a.exile)
+        self.assertTrue(any(self.game._origin(o)[1] == "mayhem" for o in self.game.spell_options(self.a)))
 
     def test_prevention_shield(self):
         archer = self.put(self.a, ARCHER)

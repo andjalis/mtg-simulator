@@ -76,11 +76,6 @@ class CombatTriggers(unittest.TestCase):
         self.game.combat(self.a, self.b)
         self.game.settle()
 
-    def test_attackers_cleared_after_combat(self):
-        bear = self.put(self.a, BEAR)
-        self.fight([bear])
-        self.assertEqual(self.game.attackers, [])        # #244
-
     def test_templates(self):
         for c in (SAMURAI, LANCER, RAPTOR, STINGER, FREEZER, COLOSSUS, WEREWOLF, ILLUSION, DRONE, CHANCERY, SHARK,
                   FOG, FEN, SPRINGS, ELDER, INSIGHT):

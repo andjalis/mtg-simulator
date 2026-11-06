@@ -113,21 +113,12 @@
     "cards": ["Aragorn, King of Gondor"]
   },
   {
-    "match": "it deals damage equal to its power to any target",
-    "effect": "damage",
-    "amount": 1,
-    "target": "any",
-    "data": {"source_power": true, "it_ctx": true},
-    "example": "it deals damage equal to its power to any target",
-    "cards": ["Warstorm Surge"]
-  },
-  {
-    "match": "~ deals damage equal to its power to any target",
+    "match": "(?:it|~) deals damage equal to its power to any target",
     "effect": "damage",
     "amount": 1,
     "target": "any",
     "data": {"source_power": true},
-    "example": "~ deals damage equal to its power to any target",
+    "example": "it deals damage equal to its power to any target",
     "cards": ["Balduvian Berserker"]
   }
 ]

@@ -111,10 +111,10 @@ class Smol2Batch3(unittest.TestCase):
         self.assertEqual(bare[0][0].data["what"], "instant or sorcery")
         self.assertEqual(_parse_effects("Copy target spell.")[0][0].data["what"], "")
 
-    def test_clearcutter_mana_amount_is_its_power(self):
+    def test_clearcutter_records_mana_amount_approximation(self):
         self.assertEqual(CLEARCUTTER.unsupported, [])
-        self.assertEqual(CLEARCUTTER.approximations, [])
-        self.assertEqual(CLEARCUTTER.mana_dyn, ("power",))
+        self.assertEqual(CLEARCUTTER.approximations,
+                         ['mana amount fixed at 1: "Add an amount of {G} equal to ~\'s power"'])
         self.assertEqual(CLEARCUTTER.produces, frozenset({"G"}))
         self.assertEqual(CLEARCUTTER.mana_amount, 1)
 

@@ -25,11 +25,11 @@ def perm(card, owner, tapped=False):
 
 class CoverageReportTests(unittest.TestCase):
     def test_statuses_and_summary(self):
-        rows = deck_coverage(DB, {"Lightning Bolt": 4, "Old-Growth Troll": 2, "Abhorrent Oculus": 3,
+        rows = deck_coverage(DB, {"Lightning Bolt": 4, "Old-Growth Troll": 2, "Graveyard Trespasser": 3,
                                   "Not A Real Card Name": 1})
         status = {r.name: r.status for r in rows}
         self.assertEqual(status, {"Lightning Bolt": FULL, "Old-Growth Troll": PARTIAL,
-                                  "Abhorrent Oculus": SIMPLIFIED, "Not A Real Card Name": UNKNOWN})
+                                  "Graveyard Trespasser": SIMPLIFIED, "Not A Real Card Name": UNKNOWN})
         self.assertEqual([r.status for r in rows], [UNKNOWN, PARTIAL, SIMPLIFIED, FULL])
         self.assertEqual(summary(rows), {FULL: 4, SIMPLIFIED: 3, PARTIAL: 2, UNKNOWN: 1, "total": 10})
         text = format_coverage("test", rows)

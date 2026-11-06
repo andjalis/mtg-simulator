@@ -133,8 +133,8 @@ class TokensPhaseConditions(unittest.TestCase):
         token = self.a.creatures[0]
         self.assertTrue(all(token.has(k) for k in ('flying', 'vigilance', 'haste')))
         self.assertEqual(token.card.subtypes, {'Bird'})
-        unknown = card('Unknown token', types='Sorcery', text='Create a 2/2 green Dragon creature token with flying, vigilance, and frobnicate 2.')
-        self.assertTrue(any('frobnicate 2' in text for text in unknown.unsupported))
+        unknown = card('Unknown token', types='Sorcery', text='Create a 2/2 green Dragon creature token with flying, vigilance, and devour 2.')
+        self.assertTrue(any('devour 2' in text for text in unknown.unsupported))
 
     def test_empty_hand_gates_all_effects_at_resolution(self):
         self.watcher('you have no cards in hand', 'draw a card. You gain 3 life')

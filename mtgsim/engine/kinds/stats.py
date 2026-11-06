@@ -316,15 +316,9 @@ def tap(game, p, eff, target, item=None, **_):
         target.tapped = True
         if eff.data.get("stun_each"):
             target.counters["stun"] = target.counters.get("stun", 0) + 1
-        src = item.source if item is not None else None
-        if eff.data.get("lock") and isinstance(src, Permanent):
-            # "It doesn't untap during its controller's untap step for as long as ~ remains tapped / you control ~ /
-            # ~ remains on the battlefield": a persistent link, checked in every untap step (turns.untap_step).
-            target.untap_locks.append((src, eff.data["lock"], src.controller))
-            if eff.data["lock"] == "tapped":
-                target.locked_by = src        # the AI keeps the source tapped while it holds a lock (choose_stay_tapped)
-        elif eff.data.get("freeze"):
+        if eff.data.get("freeze"):
             target.skip_untap = max(target.skip_untap, 1)
+        src = item.source if item is not None else None
         if eff.data.get("silence") and isinstance(src, Permanent):
             target.silenced_by = src      # loses all abilities while the source stays out
         if eff.data.get("net"):

@@ -8,8 +8,12 @@ from ... import copies, counter_mechanics
 @kind("tuck_perm")
 def tuck_perm(game, p, eff, target, **_):
     """Put a permanent on top of (or one card below the top of) its owner's library; a token just leaves."""
-    if isinstance(target, Permanent) and game.put_in_library(target, eff.data.get("depth", 0) + 1) \
-            and not target.front.is_token:
+    if not (isinstance(target, Permanent) and game.leave_battlefield(target, "graveyard")) or target.front.is_token:
+        return
+    owner = target.owner
+    if target.front in owner.graveyard:
+        owner.graveyard.remove(target.front)
+        owner.library.insert(max(0, len(owner.library) - eff.data.get("depth", 0)), target.front)
         game.log(f"{target.card.name} goes into its owner's library", p)
 
 

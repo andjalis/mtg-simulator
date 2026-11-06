@@ -660,7 +660,7 @@ class Roadmap(unittest.TestCase):
         creatures = [self.put() for _ in range(3)]
         self.a.ai.attack = creatures
         self.g.combat(self.a, self.b)
-        self.assertEqual(len(self.g.last_attackers), 1)
+        self.assertEqual(len(self.g.attackers), 1)
 
     def test_silent_arbiter_limits_blockers_across_all_attackers(self):
         source = self.put(ARBITER, self.b)
@@ -679,7 +679,7 @@ class Roadmap(unittest.TestCase):
         creatures = [self.put() for _ in range(3)]
         self.a.ai.attack = creatures
         self.g.combat(self.a, self.b)
-        self.assertEqual(len(self.g.last_attackers), 3)
+        self.assertEqual(len(self.g.attackers), 3)
 
     def test_zero_attack_limit_prevents_all_declarations(self):
         self.put(card('Peace', '', 'Creature', "Creatures can't attack.", 1, 1))

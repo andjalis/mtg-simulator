@@ -227,7 +227,7 @@ class PermanentTemplates(unittest.TestCase):
                 self.setUp()
                 self.a.ai = pilot()
                 target = self.put(card('Rock', '{2}', 'Artifact', 'Indestructible'), self.b)
-                spell = card('Removal', '{0}', 'Sorcery', 'Exile target artifact with mana value 3 or less.')
+                spell = card('Removal', '', 'Sorcery', 'Exile target artifact with mana value 3 or less.')
                 self.assertFalse(spell.unsupported)
                 self.a.hand.append(spell)
                 self.g.main_phase(self.a)

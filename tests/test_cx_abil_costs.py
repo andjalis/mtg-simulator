@@ -98,41 +98,5 @@ class CostPay(unittest.TestCase):
         self.assertEqual(self.a.life, 21)
 
 
-class CostsAI(unittest.TestCase):
-    """HeuristicAI activates abilities with the new cost parts, but doesn't pay with its good permanents."""
-
-    def setUp(self):
-        from mtgsim.ai import HeuristicAI
-        self.a, self.b = Player("a", [], HeuristicAI()), Player("b", [], HeuristicAI())
-        self.game = Game(self.a, self.b, random.Random(0), log=True)
-        self.game.turn, self.game.step = 2, "main2"
-        for p in (self.a, self.b):
-            p.library = [ISLAND] * 30
-
-    def activate_pass(self):
-        from mtgsim.engine.policy import choose_ability
-        ability = choose_ability(self.game, self.a, instant=False)
-        return ability is not None and self.game.do_action(self.a, ability)
-
-    def test_sacrifice_two_elves(self):
-        rite = card("Test Rite", "{1}", "Artifact", "Sacrifice two Elves: You gain 3 life.")
-        self.game.enter_battlefield(self.a, rite)
-        cheap = card("Test Elf", "{0}", "Creature — Elf", "", 1, 1)
-        for _ in range(2):
-            self.game.enter_battlefield(self.a, cheap)
-        self.assertTrue(self.activate_pass())
-        self.game.settle()
-        self.assertEqual((self.a.life, len(self.a.creatures)), (23, 0))
-
-    def test_ai_keeps_good_elves(self):
-        rite = card("Test Rite", "{1}", "Artifact", "Sacrifice two Elves: You gain 3 life.")
-        self.game.enter_battlefield(self.a, rite)
-        big = card("Test Elf", "{4}", "Creature — Elf", "", 5, 5)
-        for _ in range(2):
-            self.game.enter_battlefield(self.a, big)
-        self.assertFalse(self.activate_pass())
-        self.assertEqual(len(self.a.creatures), 2)
-
-
 if __name__ == "__main__":
     unittest.main()
