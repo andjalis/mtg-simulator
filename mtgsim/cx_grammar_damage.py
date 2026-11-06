@@ -70,6 +70,9 @@ def _part(n, data, obj, source, first_targeted):
         return None     # another source would need cx_damage, which the default AI can't aim yet
     if source == "prev" and first_targeted:
         return None     # "it" would read the first recipient once that one is chosen
+    if source != "self" and obj.kind == "group" and (obj.group or {}).get("other", (obj.group or {}).get(
+            "selector", {}).get("other")):
+        return None     # "each other creature": a group's "other" is the resolving object, not this source
     return Part("cx_damage", n, 0, dict(data, source=source, side="theirs"), obj=obj)
 
 
