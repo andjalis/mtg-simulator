@@ -10,4 +10,13 @@ def _redirect(m):
     return [Effect("counter", target="spell", data={"redirect": True})]
 
 
-EFFECT_PATTERNS = [(r"change the target of target spell with a single target", _redirect)]
+def _redirect_unless(m):
+    from .cards.model import Effect
+    return [Effect("counter", amount=int(m[1]), target="spell", data={"redirect": True})]
+
+
+EFFECT_PATTERNS = [
+    (r"change the target of target spell with a single target unless that spell's controller pays \{(\d+)\}",
+     _redirect_unless),
+    (r"change the target of target spell with a single target", _redirect),
+]

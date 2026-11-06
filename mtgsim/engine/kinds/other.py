@@ -99,6 +99,14 @@ def craft(game, p, item, **_):
 def counter(game, p, eff, target, item, **_):
     if eff.data.get("redirect"):       # "Change the target of target spell with a single target" (cx_night_redirect)
         from .cx_night_redirect import redirect_spell
+        if eff.amount and isinstance(target, StackItem):       # Divert: "... unless that spell's controller pays {N}"
+            from ..mana import find_payment
+            payer = target.controller
+            if find_payment(game.mana_sources(payer, spell="ability"), {"generic": eff.amount}) is not None \
+                    and game.hook(payer, "pay_unless")(game, payer, eff.amount, target):
+                game.pay(payer, {"generic": eff.amount})
+                game.log(f"pays {eff.amount} for {target}", payer)
+                return
         redirect_spell(game, p, target)
         return
     if eff.data.get("tw") and getattr(item, "teamwork", False):
