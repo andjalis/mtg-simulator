@@ -89,7 +89,22 @@ EFFECT_PATTERNS = [
 
 
 def parse_line(line, extra, type_line=""):
-    return entry_x_counters(line, extra) or counter_pt(line, extra, type_line)
+    return entry_x_counters(line, extra) or counter_pt(line, extra, type_line) or entry_quantity(line, extra)
+
+
+def entry_quantity(line, extra):
+    """"~ enters with a number of <kind> counters on it equal to <quantity>." / "... with X <kind> counters on it,
+    where X is <quantity>.": the quantity is one cards._xq knows, read as the permanent enters."""
+    m = re.fullmatch(r"~ enters with (?:a number of|x) ([a-z]+(?:-[a-z]+)?|[+-]\d+/[+-]\d+) counters"
+                     r"(?: on (?:it|him|her))?(?: equal to|, where x is) (.+?)\.", line, re.I)
+    if m is None or extra.get("entry_counter_quantity") or extra.get("etb_named_counters"):
+        return False
+    from .cx_night_quantity import _quantity
+    spec = _quantity(m[2])
+    if spec is None:
+        return False
+    extra["entry_counter_quantity"] = (m[1].lower(), spec)
+    return True
 
 
 def counter_pt(line, extra, type_line=""):

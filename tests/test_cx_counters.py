@@ -196,3 +196,22 @@ class Move(MultiTarget):
         from tests.test_templates import card
         c = card("Test Mover", "{1}", "Creature — Golem", "{T}: Move a +1/+1 counter from ~ onto target creature.", 1, 1)
         self.assertEqual([e.kind for e in c.activated[0].effects], ["cx_move_counters"])
+
+
+class EntryQuantity(MultiTarget):
+    def test_enters_with_counters_equal_to_creatures(self):
+        from tests.test_templates import card
+        c = card("Test Hydra", "{3}{G}", "Creature — Hydra",
+                 "Test Hydra enters with a number of +1/+1 counters on it equal to the number of creatures you control.", 0, 0)
+        self.put(self.a, 2)
+        self.game.enter_battlefield(self.a, c)     # counted before it enters: itself isn't one of them
+        self.assertEqual(self.a.battlefield[-1].counters["+1/+1"], 2)
+
+    def test_where_x_is_other_creatures(self):
+        from tests.test_templates import card
+        c = card("Test Hydra", "{3}{G}", "Creature — Hydra",
+                 "Test Hydra enters with X +1/+1 counters on it, where X is the number of other creatures on the battlefield.", 0, 0)
+        self.put(self.a, 1)
+        self.put(self.b, 2)
+        self.game.enter_battlefield(self.a, c)
+        self.assertEqual(self.a.battlefield[-1].counters["+1/+1"], 3)

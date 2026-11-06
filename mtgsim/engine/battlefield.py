@@ -185,7 +185,12 @@ class BattlefieldMixin:
         if card.entry_counter_quantity:
             from ..backlog_templates import amount
             kind, spec = card.entry_counter_quantity
-            perm.counters[kind] = perm.counters.get(kind, 0) + amount(self, p, spec)
+            if isinstance(spec, tuple):      # a cards._xq quantity ("equal to the number of creatures you control")
+                from types import SimpleNamespace
+                n = self.x_quantity(p, spec, SimpleNamespace(source=perm, card=card, context=None), None)
+            else:
+                n = amount(self, p, spec)
+            perm.counters[kind] = perm.counters.get(kind, 0) + n
         if card.etb_named_counters:
             n = x if card.etb_named_counters[1] == -1 else card.etb_named_counters[1]    # -1: "enters with X ..."
             if n:
