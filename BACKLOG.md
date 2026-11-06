@@ -132,6 +132,11 @@ additional cost, 3 cards), #170 ("exile up to N target cards from a single grave
 from their graveyard into their library": two new kinds, `exile_gy_n` and `shuffle_gy_n`; 16 cards) and the doomed extra
 turn ("Take an extra turn after this one. At the beginning of that turn's end step, you lose the game": `extra_turn`
 with `doomed`, the loss is checked just after that turn instead of at its end step trigger; 4 cards).
+Later: #172 ("Each creature you control assigns combat damage equal to its toughness rather than its power", flags
+`toughness_damage` / `toughness_damage_all`, read through `dmg_stat` in `combat_damage`; the AI's attack and block
+evaluation still looks at power; 9 cards) and a batch of one-sentence cards: "Enchant land you control", hand-cycling
+("shuffle the cards from your hand into your library, then draw that many cards" and the "on the bottom" wording; the new
+`hand_cycle` kind).
 Still open: "Spells your opponents cast that target ~ cost {2} more"
 (needs a cost step after targets are chosen).
 Still open from the census: counter taxes by devotion, basic land types and party size, and

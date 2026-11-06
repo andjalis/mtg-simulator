@@ -29,7 +29,15 @@ def _shuffle_gy(m):
     return Effect("shuffle_gy_n", _NUMS[m[1]], target="none")
 
 
+def _hand_cycle(m):
+    from .cards.model import Effect
+    return Effect("hand_cycle", target="none", data={"bottom": "bottom" in m[0]})
+
+
 EFFECT_PATTERNS = [
+    # Whirlpool Drake: shuffle the hand into the library; Arjun: put it on the bottom. Either way draw that many.
+    (r"shuffle the cards from your hand into your library, then draw that many cards", _hand_cycle),
+    (r"put the cards in your hand on the bottom of your library in any order, then draw that many cards", _hand_cycle),
     (r"exile up to (one|two|three|four) target cards? from a single graveyard", _exile_gy),
     # "Target player" is always the caster for the AI: shuffling your own graveyard back is the only useful use
     (r"target player shuffles up to (one|two|three|four) target cards from their graveyard into their library",
