@@ -1,6 +1,6 @@
-"""Untap the source and take it out of combat."""
+"""Combat and damage helpers for the night riders: leave combat, damage equal to a power or a hand size."""
 from . import kind
-from ..state import Permanent
+from ..state import Permanent, Player
 
 
 @kind("remove_from_combat")
@@ -34,3 +34,11 @@ def damage_power_opp(game, p, item, opp, cause, **_):
     subject = ctx if isinstance(ctx, Permanent) else (item.source if item is not None else None)
     if isinstance(subject, Permanent):
         game.deal_damage(opp, max(0, subject.power), by=p, cause=cause, source=subject)
+
+
+@kind("damage_target_hand")
+def damage_target_hand(game, p, target, item, cause, **_):
+    """"~ deals damage to target player equal to the number of cards in that player's hand": counted when it resolves."""
+    if isinstance(target, Player):
+        src = (item.source if item.source is not None else item.card) if item is not None else None
+        game.deal_damage(target, len(target.hand), by=p, cause=cause, source=src)
