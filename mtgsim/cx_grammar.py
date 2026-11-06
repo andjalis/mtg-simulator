@@ -525,12 +525,30 @@ def parse_static(line: str, st) -> bool:
     if split is None:
         return False
     subj = subject(split[0])
-    if subj is None or subj.kind not in ("group", "host") or subj.target != "none" and subj.kind == "group":
+    if subj is None or subj.kind not in ("group", "host", "permanent") or subj.target != "none" and subj.kind == "group" \
+            or subj.kind == "permanent" and subj.target != "self":
         return False
     parts = _clauses(split[1], subj, "static")
-    if parts is None or any(p.kind not in ("pump", "grant", "cx_temp_kw") for p in parts) \
+    if parts is None or any(p.kind not in ("pump", "grant", "cx_temp_kw", "cx_static") for p in parts) \
             or sum(p.kind == "pump" for p in parts) > 1:
         return False
+    if subj.kind == "permanent" and any(p.kind != "cx_static" for p in parts):
+        return False            # "~ gets +1/+1" and "~ has flying" are other parsers' lines
+    if subj.kind == "group" and any(p.kind == "cx_static" for p in parts) and _stat_conditioned(
+            subj.group["selector"] if "selector" in subj.group else subj.group):
+        return False
+    rules = st.extra.setdefault("advanced_rules", {})
+    for p in [p for p in parts if p.kind == "cx_static"]:       # a rule a family reads with static_rules()
+        key = p.data["rule"] + {"permanent": "", "host": "@host", "group": "@group"}[subj.kind]
+        if subj.kind == "host" and (subj.text.lower().startswith("equipped") and "Equipment" not in st.type_line
+                                    or subj.text.lower().startswith("enchanted") and not st.extra.get("aura")):
+            return False
+        value = (dict(subj.group["selector"]) if "selector" in subj.group else dict(subj.group), p.data["value"]) \
+            if subj.kind == "group" else p.data["value"]
+        rules[key] = tuple(rules.get(key, ())) + (value,)
+    parts = [p for p in parts if p.kind != "cx_static"]
+    if not parts:
+        return True
     kws = tuple(k for p in parts if p.kind != "pump"
                 for k in ([p.data["keyword"]] if p.kind == "grant" else sorted(p.data["keywords"])))
     pt = next(((p.amount, p.amount2) for p in parts if p.kind == "pump"), None)
@@ -639,6 +657,28 @@ def member_value(game, me, eff, obj):
     if eff.kind == "mill":
         return -sign * 0.1 * a, False
     return 0.0, False
+
+
+# ---------------------------------------------------------------- static rules (cx_static / cx_rule_turn Parts)
+
+def static_rules(game, perm, rule: str) -> list:
+    """Every value of a family rule that applies to perm now: its own static (Part("cx_static", data={"rule": r,
+    "value": v}) on "~"), its Aura's or Equipment's ("enchanted / equipped creature ..."), a group static whose
+    group it is in, and this turn's one-shots (Part("cx_rule_turn", ...))."""
+    from .permanent_templates import matches
+    out = []
+    if not getattr(perm, "abilities_suppressed", False):
+        out += list(perm.card.advanced_rules.get(rule, ()))
+    for x in list(getattr(perm, "auras", ())) + list(getattr(perm, "equipment", ())):
+        out += list(x.card.advanced_rules.get(rule + "@host", ()))
+    if game is not None:
+        for pl in game.players:
+            for x in pl.battlefield:
+                for spec, value in x.card.advanced_rules.get(rule + "@group", ()):
+                    if not x.abilities_suppressed and matches(game, perm, spec, x.controller, x):
+                        out.append(value)
+        out += [v for turn, r, v in getattr(perm, "cx_rules_turn", ()) if r == rule and turn == game.turn]
+    return out
 
 
 # ---------------------------------------------------------------- engine side: who a subject names

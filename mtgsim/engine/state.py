@@ -774,7 +774,9 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
         return False
     from ..batch1_templates import block_restricted
     from ..cx_lures import pair_blocked
-    return not block_restricted(blocker, attacker) and not pair_blocked(blocker, attacker)
+    from ..cx_grammar_evasion import block_forbidden
+    return not block_restricted(blocker, attacker) and not pair_blocked(blocker, attacker) \
+        and not block_forbidden(blocker, attacker)
 
 
 
