@@ -61,7 +61,7 @@ class UpkeepKeywords(unittest.TestCase):
         for c in (MIST, REMORA, RIFT, DERM, WORKER, SPIRIT, CRUSHER, GIANT, CUTTER, ARCHER, QUAKE):
             self.assertEqual(c.unsupported, [], c.name)
         self.assertEqual(STINGER.unsupported, [])
-        self.assertTrue(STINGER.approximations)
+        self.assertFalse(STINGER.approximations)
 
     def test_pay_or_sacrifice(self):
         mist = self.put(self.a, MIST)
@@ -144,6 +144,7 @@ class UpkeepKeywords(unittest.TestCase):
         self.put(self.a, MOUNTAIN, 2)
         self.a.graveyard.append(STINGER)
         option = next(o for o in self.game.spell_options(self.a) if self.game._origin(o)[1] == "unearth")
+        self.assertTrue(option.is_ability)                   # an activated ability, not a spell
         self.assertTrue(self.game.cast(self.a, option))
         self.game.settle()
         perm = next(x for x in self.a.battlefield if x.card.name == STINGER.name)

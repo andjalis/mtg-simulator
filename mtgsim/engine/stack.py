@@ -346,7 +346,7 @@ class StackMixin:
             if kind in ("blitz", "blitz_gy"):
                 perm.blitz = True
             alt_casts.entered(perm, kind, item.card.origin[2] if getattr(item.card, "origin", None) else None)
-            if kind in ("dash", "unearth"):
+            if kind == "dash":
                 setattr(perm, kind + "ed", True)     # haste; back to hand / exiled at the next end step
             if kind == "warp":
                 perm.warped = True

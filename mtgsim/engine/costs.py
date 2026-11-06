@@ -599,6 +599,9 @@ class CostsMixin:
             elif kind == "mutate":
                 v = dataclasses.replace(card, name=f"{card.name} (mutate)", mana_cost=alt.cost,
                                         advanced_rules=dict(card.advanced_rules, mutating=True, mutate_base=card))
+            elif kind == "unearth":      # an activated ability, sorcery speed: not a spell, so no cast triggers or counterspells
+                v = CardDef(name=f"{card.name} (unearth)", mana_cost=alt.cost, cmc=card.cmc, types=frozenset({"Sorcery"}),
+                            spell_effects=[Effect("unearth_return", data={"card": card})], is_ability=True)
             elif kind in ("channel", "gy_ability"):
                 v = CardDef(name=f"{card.name} ({kind})", mana_cost=alt.cost, cmc=card.cmc,
                             types=frozenset({"Instant"}), spell_effects=list(alt.effects), is_ability=True)
