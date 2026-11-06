@@ -104,5 +104,66 @@ class AltCasts(unittest.TestCase):
             self.assertNotIn(card, self.a.graveyard)
 
 
+class AiUse(unittest.TestCase):
+    """The default AI (HeuristicAI) finds and uses each new cast option on its own."""
+
+    def setUp(self):
+        from mtgsim.ai import HeuristicAI
+        self.db = CardDB()
+        self.a, self.b = Player("a", [], HeuristicAI()), Player("b", [], HeuristicAI())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 10
+
+    def put(self, who, name):
+        perm = self.game.enter_battlefield(who, name if not isinstance(name, str) else self.db.get(name))
+        perm.sick = False
+        self.game.settle()
+        return perm
+
+    def test_ai_casts_a_prowl_card_for_its_prowl_cost_after_a_hit(self):
+        card = self.db.get("Enigma Thief")        # prowl {3}{U}; {5}{U}{U} to cast normally
+        self.a.hand = [card]
+        for _ in range(4):
+            self.put(self.a, "Island")
+        self.game.main_phase(self.a)
+        self.assertFalse(any(x.card.name == "Enigma Thief" for x in self.a.battlefield))   # no hit yet
+        cx_mech.note_hit(self.game, self.put(self.a, "Thieves' Guild Enforcer"))
+        self.game.main_phase(self.a)
+        self.assertTrue(any(x.card.name == "Enigma Thief" for x in self.a.battlefield))
+
+    def test_ai_casts_beam_me_up_from_the_graveyard(self):
+        card = self.db.get("Adversary by Algorithm")
+        self.a.graveyard = [card]
+        for _ in range(4):
+            self.put(self.a, "Forest")
+        self.put(self.a, BEAR)
+        self.game.main_phase(self.a)
+        self.assertIn(card, self.a.exile)
+        self.assertTrue(any(x.card.is_token for x in self.a.battlefield))
+
+    def test_ai_player_recovers_a_card_when_its_creature_dies(self):
+        card = self.db.get("Grim Harvest")
+        self.a.graveyard = [card]
+        for _ in range(3):
+            self.put(self.a, "Swamp")
+        victim = self.put(self.a, BEAR)
+        self.game.dies(victim)
+        self.game.settle()
+        self.assertIn(card, self.a.hand)
+
+    def test_ai_uses_reinforce_from_hand(self):
+        card = self.db.get("Bannerhide Krushok")
+        self.a.hand = [card]
+        for _ in range(2):
+            self.put(self.a, "Forest")
+        bear = self.put(self.a, BEAR)
+        self.game.step = "main2"
+        self.game.main_phase(self.a)
+        self.assertEqual(bear.counters.get("+1/+1"), 2)
+        self.assertIn(card, self.a.graveyard)
+
+
 if __name__ == "__main__":
     unittest.main()
