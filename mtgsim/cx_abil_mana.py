@@ -179,3 +179,50 @@ def add_special(game, p, eff) -> bool:
     p.pool.extend(p.last_added_mana)
     game.log(f"adds {''.join(colors)}", p)
     return True
+
+
+# ---- the AI -------------------------------------------------------------------------------------------------------
+
+def _mana_abilities(game, me):
+    """(permanent, index, mana it adds, restriction code or "") for activated abilities that only add mana."""
+    from .cx_abil_costs import ai_cost_ok
+    from .engine.policy import perm_value
+    out = []
+    for perm in me.battlefield:
+        for i, act in enumerate(perm.activated):
+            kinds = {e.kind for e in act.effects}
+            if act.kind != "ability" or "add_mana" not in kinds or not kinds <= {"add_mana", "mana_restrict"}:
+                continue
+            c = act.extra_costs
+            if c.get("sacrifice") or c.get("discard") or c.get("life") or c.get("energy") or \
+                    ((c.get("sac_self") or c.get("exile_self")) and perm_value(perm) > 1) or \
+                    not ai_cost_ok(game, me, perm, c) or not game.can_activate(me, perm, i):
+                continue
+            adds = sum(max(1, e.amount) * max(1, len(e.data.get("colors", []))) if not e.data.get("cx_mana")
+                       and not e.data.get("xq") else max(1, e.amount) for e in act.effects if e.kind == "add_mana")
+            code = next((e.data["code"] for e in act.effects if e.kind == "mana_restrict"), "")
+            out.append((perm, i, adds, code))
+    return out
+
+
+def _supply(game, me) -> int:
+    return sum(getattr(s, "amount_now", None) or max(1, s.card.mana_amount) for s in game.mana_sources(me))
+
+
+def boost(ai, game, me, precombat=True):
+    """Before casting spells: activate a mana-adding ability (Gilded-Lotus-style rocks with a cost other than {T} alone,
+    restricted mana) when it makes a spell in hand castable that isn't castable now. The mana floats until the step
+    ends, so only do it when a spell it can pay for is within reach."""
+    supply = _supply(game, me)
+    for _ in range(4):
+        wanted = [c for c in me.hand if not c.is_land and not ai._can_cast(game, me, c) and c.cmc > supply]
+        if not wanted:
+            return
+        for perm, i, adds, code in _mana_abilities(game, me):
+            reach = [c for c in wanted if c.cmc <= supply + adds and (not code or allowed(code, c))]
+            if reach and game.activate_ability(me, perm, i):
+                game.settle()
+                supply = _supply(game, me)
+                break
+        else:
+            return

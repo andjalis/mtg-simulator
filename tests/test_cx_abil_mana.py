@@ -153,3 +153,39 @@ class ManaEffects(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BoostAI(unittest.TestCase):
+    """HeuristicAI activates a mana-adding ability when it brings a spell in hand within reach, and not otherwise."""
+
+    def setUp(self):
+        from mtgsim.ai import HeuristicAI
+        self.a, self.b = Player("a", [], HeuristicAI()), Player("b", [], HeuristicAI())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 10
+        self.island = self.game.enter_battlefield(self.a, ISLAND)
+        self.island.sick = False
+
+    def test_casts_a_creature_with_restricted_pool_mana(self):
+        fount = card("Test Fount", "{2}", "Artifact", "{1}, {T}: Add three mana in any combination of colors. "
+                     "Spend this mana only to cast creature spells.")
+        self.assertEqual(fount.unsupported, [])
+        self.game.enter_battlefield(self.a, fount).sick = False
+        self.game.enter_battlefield(self.a, ISLAND).sick = False
+        big = card("Test Titan", "{3}{U}", "Creature — Giant", "", 4, 4)
+        self.a.hand = [big]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertIn(big, [x.card for x in self.a.creatures])
+
+    def test_does_not_waste_restricted_mana_on_the_wrong_spell(self):
+        fount = card("Test Fount", "{2}", "Artifact", "{1}, {T}: Add three mana in any combination of colors. "
+                     "Spend this mana only to cast creature spells.")
+        self.game.enter_battlefield(self.a, fount).sick = False
+        self.game.enter_battlefield(self.a, ISLAND).sick = False
+        self.a.hand = [card("Test Divination", "{3}{U}", "Sorcery", "Draw two cards.")]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertTrue(self.a.hand)
+        self.assertFalse(fount.tapped if hasattr(fount, "tapped") else False)
+        self.assertEqual(self.a.pool, [])
