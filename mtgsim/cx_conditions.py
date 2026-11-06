@@ -99,6 +99,8 @@ def holds(perm, cond: str) -> bool:
     name, _, rest = cond[3:].partition(":")
     if name.startswith("gy_types>="):
         return len({t for card in c.graveyard for t in card.types}) >= int(name[10:])
+    if name.startswith("charge>="):
+        return perm.counters.get("charge", 0) >= int(name[8:])
     if name.startswith("life>="):
         return c.life >= int(name[6:])
     if name == "hand<=1":

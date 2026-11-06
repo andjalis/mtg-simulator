@@ -511,6 +511,9 @@ class StackMixin:
             return item.source is not None and item.source.toughness <= 3
         if c == "max_speed":
             return p.speed >= 4
+        if c.startswith("charge>="):               # "N+ | ..." Station tier of the source
+            return item is not None and isinstance(item.source, Permanent) and \
+                item.source.counters.get("charge", 0) >= int(c[8:])
         if c == "paid":
             return bool(getattr(item, "gate_paid", False))
         if c == "harnessed":

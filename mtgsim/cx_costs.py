@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import re
 
+from . import cx_abil_costs as abil_costs
+
 _Q = r"(?P<q>a|an|one|two|three|four|five|six|seven|another)"
 _QN = {"a": 1, "an": 1, "one": 1, "another": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7}
 _RULES = [
@@ -50,7 +52,8 @@ def parse_part(part: str, extra: dict) -> bool:
             spec = dict(spec, other=True)
         extra["cx_costs"] = extra.get("cx_costs", ()) + ((kind, n, spec),)
         return True
-    return False
+    from .cx_abil_costs import parse_part as abil_part
+    return abil_part(part, extra)
 
 
 def _cards(p, card_list, spec, source=None):
@@ -75,7 +78,10 @@ def _candidates(game, p, perm, kind, spec):
 def payable(game, p, perm, costs) -> bool:
     used: set = set()
     for kind, n, spec in costs:
-        if kind in ("tap", "bounce", "discard", "discard_random", "exile_gy"):
+        if kind in abil_costs.KINDS:
+            if not abil_costs.payable(game, p, perm, kind, n, spec):
+                return False
+        elif kind in ("tap", "bounce", "discard", "discard_random", "exile_gy"):
             pool = [c for c in _candidates(game, p, perm, kind, spec) if id(c) not in used]
             if len(pool) < n:
                 return False
@@ -108,7 +114,10 @@ def pay(game, p, perm, costs) -> bool:
     if not payable(game, p, perm, costs):
         return False
     for kind, n, spec in costs:
-        if kind == "tap":
+        if kind in abil_costs.KINDS:
+            if not abil_costs.pay_one(game, p, perm, kind, n, spec):
+                return False
+        elif kind == "tap":
             for x in _cheap(_candidates(game, p, perm, kind, spec))[:n]:
                 x.tapped = True
                 game.fire(p, "becomes_tapped", x)
