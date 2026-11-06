@@ -10,6 +10,7 @@ from .. import modal, rules_events, phase_conditions, turn_conditions, counter_m
 from ..identity import CardInstance, CardZone
 from ..actions import perform, can_perform
 from .state import Permanent, Player, StackItem, TARGETED, TrackedZone, _gy_desc, card_matches
+from .policy import perm_value
 
 
 class StackMixin:
@@ -259,6 +260,7 @@ class StackMixin:
                     targets = self.auto_targets(controller, effects, source)
                 finally:
                     self.trigger_context = None
+                targets = self.force_damage_targets(controller, effects, targets, source)
             effects = counter_mechanics.protect_graveyard_targets(self, effects, targets)
             item = StackItem(controller, effects, targets, source=source, name=name, context=context, kind=kind)
             item.intervening_if = intervening_if
@@ -267,6 +269,20 @@ class StackMixin:
             self.log(f"{item} goes on the stack" + (f" -> {targets}" if any(targets) else ""), controller)
             self.check_ward(item)
         return True
+
+    def force_damage_targets(self, controller, effects, targets, source):
+        """A mandatory trigger must target when a legal creature exists, killable or not (#295)."""
+        targets = list(targets)
+        for i, e in enumerate(effects):
+            if e.kind != "damage" or e.target != "creature" or e.data.get("optional") or i >= len(targets) \
+                    or targets[i] is not None:
+                continue
+            with self.targeting(source):
+                legal = [x for x in self.legal_targets(controller, e) if isinstance(x, Permanent)]
+            enemies = [x for x in legal if x.controller is not controller] or legal
+            if enemies:
+                targets[i] = max(enemies, key=perm_value)
+        return targets
 
     def check_ward(self, item: StackItem):
         item.effects = counter_mechanics.protect_graveyard_targets(self, item.effects, item.targets)
