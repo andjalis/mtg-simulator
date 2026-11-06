@@ -1,0 +1,119 @@
+"""Token descriptions as a sub-grammar (mtgsim/cx_tokens.py): real cards parse fully and their tokens enter."""
+import random
+import unittest
+from pathlib import Path
+
+from mtgsim.carddb import CardDB
+from mtgsim.coverage import card_coverage
+from mtgsim.cx_tokens import describe, parse_create
+from mtgsim.cards.model import NO_MATCH
+from mtgsim.engine import Game, Player
+from tests.test_combat_triggers import Scripted
+from tests.test_templates import BEAR, ISLAND
+
+DB_FILE = Path(__file__).resolve().parent.parent / "mtgsim" / "data" / "cards.sqlite3"
+
+
+def token_effects(card):
+    effects = list(card.spell_effects) + list(card.etb_effects)
+    effects += [e for t in card.triggers for e in t.effects] + [e for a in card.activated for e in a.effects]
+    return [e for e in effects if e.kind == "cx_token"]
+
+
+class Grammar(unittest.TestCase):
+    def test_parts(self):
+        spec = describe('1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and "~ can\'t block."')
+        card = spec["card"]
+        self.assertEqual((card.power, card.toughness, card.toxic, card.cant_block), (1, 1, 1, True))
+        self.assertEqual(card.types, frozenset({"Artifact", "Creature"}))
+        self.assertTrue(card.is_token)
+        spec = describe("4/4 red and white Dragon creature token with flying named Big One that's tapped and attacking")
+        self.assertEqual(spec["card"].name, "Big One")
+        self.assertEqual(spec["card"].color_override, frozenset({"R", "W"}))
+        self.assertTrue(spec["tapped"] and spec["attacking"])
+        self.assertEqual(describe("tapped Treasure token"), {"kind": "treasure", "tapped": True, "attacking": False})
+
+    def test_rejects(self):
+        self.assertIsNone(describe("2/2 green Bear creature token with frobnicate"))     # unknown keyword
+        self.assertIsNone(describe('1/1 Spirit creature token with "Zorb the glorb."'))  # ability the parser ignores
+        self.assertIsNone(describe("Vibranium token"))                                    # unknown predefined token
+        self.assertIs(parse_create("", "that many 1/1 green Saproling creature tokens"), NO_MATCH)
+        self.assertIs(parse_create("target creature", "a Food token"), NO_MATCH)
+
+    def test_lists_and_counts(self):
+        effs = parse_create("", "a 3/3 colorless Wurm artifact creature token with deathtouch and a 3/3 colorless "
+                                "Wurm artifact creature token with lifelink")
+        self.assertEqual([sorted(e.data["card"].keywords) for e in effs], [["deathtouch"], ["lifelink"]])
+        effs = parse_create("", "a number of Food tokens equal to the number of creatures you control")
+        self.assertEqual((len(effs), effs[0].data["kind"]), (1, "food"))
+        self.assertIn("xq", effs[0].data)
+        effs = parse_create("", "a 2/2 black Zombie creature token for each creature card in your graveyard")
+        self.assertIn("xq", effs[0].data)
+        self.assertEqual(parse_create("each player", "a Food token")[0].data["who"], "each")
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class RealCards(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.db = CardDB()
+
+    def setUp(self):
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 10
+
+    def test_full(self):
+        for name in ("Beast Within", "Pongify", "Wurmcoil Engine", "Crawling Chorus", "Gaseous Anomaly", "Belonging",
+                     "Elephant-Mandrill", "Curse of Opulence", "Fire Navy Trebuchet", "Pinnacle Emissary",
+                     "Generous Gift", "Rapid Hybridization"):
+            cov = card_coverage(self.db.get(name))
+            self.assertEqual(cov.ignored, [], name)
+
+    def test_beast_within_gives_the_token_to_the_controller(self):
+        card = self.db.get("Beast Within")
+        bear = self.game.enter_battlefield(self.b, BEAR)
+        destroy, make = card.spell_effects
+        self.game.resolve(self.a, destroy, bear)
+        self.game.resolve(self.a, make, None, prev=bear)
+        beasts = [x for x in self.b.battlefield if "Beast" in x.card.subtypes]
+        self.assertEqual(len(beasts), 1)
+        self.assertEqual((beasts[0].power, beasts[0].toughness), (3, 3))
+        self.assertFalse(any("Beast" in x.card.subtypes for x in self.a.battlefield))
+
+    def test_mite_planet_and_gold(self):
+        mite = token_effects(self.db.get("Crawling Chorus"))[0]
+        self.game.resolve(self.a, mite, None)
+        tok = next(x for x in self.a.battlefield if x.card.is_token)
+        self.assertEqual(tok.card.toxic, 1)
+        self.assertTrue(tok.card.cant_block)
+        planet = token_effects(self.db.get("Gaseous Anomaly"))[0]
+        self.game.resolve(self.a, planet, None)
+        land = next(x for x in self.a.battlefield if x.card.name == "New Planet")
+        self.assertTrue(land.tapped and land.card.is_land and len(land.card.produces) == 5)
+        gold = token_effects(self.db.get("Curse of Opulence"))[0]
+        self.game.resolve(self.a, gold, None)
+        self.assertTrue(any(x.card.name == "Gold" and x.card.is_artifact for x in self.a.battlefield))
+
+    def test_each_player_food_and_changeling(self):
+        food = token_effects(self.db.get("Elephant-Mandrill"))[0]
+        self.game.resolve(self.a, food, None)
+        for p in (self.a, self.b):
+            self.assertEqual(sum(x.card.token_kind == "food" for x in p.battlefield), 1)
+        shapes = token_effects(self.db.get("Belonging"))[0]
+        self.game.resolve(self.a, shapes, None)
+        changelings = [x for x in self.a.battlefield if x.card.changeling]
+        self.assertEqual(len(changelings), shapes.amount)
+
+    def test_for_each_count(self):
+        eff = parse_create("", "a 1/1 white Soldier creature token for each creature you control")[0]
+        for _ in range(2):
+            self.game.enter_battlefield(self.a, BEAR)
+        self.game.resolve(self.a, eff, None)
+        self.assertEqual(sum("Soldier" in x.card.subtypes for x in self.a.battlefield), 2)
+
+
+if __name__ == "__main__":
+    unittest.main()

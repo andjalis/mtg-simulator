@@ -198,3 +198,5 @@ _EFFECT_PATTERNS += _cx_night_edict.EFFECT_PATTERNS
 from .. import cx_night_misc as _cx_night_misc
 _EFFECT_PATTERNS += _cx_night_misc.EFFECT_PATTERNS
 _SUBS += _cx_night_endturn.SUBS
+from .. import cx_tokens as _cx_tokens
+_EFFECT_PATTERNS += _cx_tokens.EFFECT_PATTERNS

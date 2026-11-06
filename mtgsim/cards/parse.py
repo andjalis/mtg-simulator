@@ -5,7 +5,7 @@ import dataclasses
 import re
 
 from .. import cx_activation, milling, modal, returns, permanent_templates
-from .. import auras as _auras, storage as _storage
+from .. import auras as _auras, cx_tokens as _cx_tokens, storage as _storage
 from .model import (
     Activated, AltCost, BASIC_MANA, CardDef, Effect, NO_MATCH, Trigger, _num, add_mana, parse_mana_cost,
 )
@@ -271,6 +271,7 @@ def _parse_effects(text: str, opts: bool = False):
                 effects += parts
             elif not parse_otherwise(s, effects):        # "Otherwise, ..." after a lib: condition
                 unmatched.append(sentence.strip())
+        effects[first:] = _cx_tokens.reparse(s, effects[first:])
         if paid:
             for eff in effects[first:]:
                 eff.cond = eff.cond or "paid"
