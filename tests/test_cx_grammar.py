@@ -252,7 +252,7 @@ class PlayerSubjects(Base):
         self.assertEqual(self.b.life, 20 - 3)
 
     def test_unknown_player_verbs_are_rejected(self):
-        self.assertIsNone(parse_sentence("Each player gains 2 life and sacrifices a creature."))
+        self.assertIsNone(parse_sentence("Each player gains 2 life and explores."))
 
 
 class Quantities(Base):
