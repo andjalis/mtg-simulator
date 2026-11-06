@@ -139,6 +139,21 @@ class UpkeepKeywords(unittest.TestCase):
         self.assertIn(CUTTER, self.a.hand)
         self.assertFalse(any(x.card.name == CUTTER.name for x in self.a.battlefield))
 
+    def test_ai_unearths_and_attacks_with_haste(self):
+        """HeuristicAI unearths a creature from its graveyard in its main phase and attacks with it that turn."""
+        from mtgsim.carddb import CardDB
+        from mtgsim.ai import HeuristicAI
+        zombie = CardDB(offline=True).get("Dregscape Zombie")           # unearth {B}, 2/1
+        self.a.ai, self.b.ai = HeuristicAI(), HeuristicAI()             # the fixture's scripted AI never attacks
+        self.game.active_idx = 0
+        self.put(self.a, SWAMP, 1)
+        self.a.graveyard.append(zombie)
+        self.a.library = [ISLAND] * 20
+        life = self.b.life
+        self.game.take_turn(self.a)
+        self.assertEqual(self.b.life, life - zombie.power)               # it had haste
+        self.assertIn(zombie, self.a.exile)                              # exiled at the end step
+
     def test_unearth_ignores_spell_cost_modifiers(self):
         from mtgsim.carddb import CardDB
         db = CardDB(offline=True)
