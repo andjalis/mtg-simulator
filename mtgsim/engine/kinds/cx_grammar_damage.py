@@ -29,4 +29,4 @@ def cx_damage(game, p, eff, target, item, prev=None, cause=None, **_):
     by = src.controller if isinstance(src, Permanent) else p
     for victim in victims:
         if isinstance(victim, Player) or isinstance(victim, Permanent) and victim in victim.controller.battlefield:
-            game.deal_damage(victim, n, by=by, cause=cause, source=src)
+            game.deal_damage(victim, n, by=by, cause=cause or "noncombat damage", source=src)
