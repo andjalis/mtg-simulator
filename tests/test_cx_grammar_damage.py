@@ -163,3 +163,46 @@ class DefaultAI(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class PowerDamageAI(Base):
+    """"Damage equal to its power": the default AI reads the source's power (policy.damage_amount), so it fires the
+    ability at a creature it kills and not at one it can't."""
+    def setUp(self):
+        super().setUp()
+        from mtgsim.carddb import CardDB
+        self.db = CardDB()
+
+    def ready(self, name, lands=0):
+        src = self.perm(self.db.get(name), self.a)
+        src.sick = False
+        self.game.step = "main2"            # general abilities: the AI's second main phase
+        for _ in range(lands):
+            self.perm(self.db.get("Mountain"), self.a)
+        return src
+
+    def test_new_card_kills_what_it_can(self):
+        """Karplusan Yeti (3/3): "{T}: deals damage equal to its power to target creature. That creature deals
+        damage equal to its power to ~." The 2/2 dies, the Yeti survives its 2."""
+        yeti, bear = self.ready("Karplusan Yeti"), self.perm(BEAR, self.b)
+        self.a.ai.use_abilities(self.game, self.a)
+        self.assertNotIn(bear, self.b.battlefield)
+        self.assertTrue(yeti.tapped)
+        self.assertEqual(yeti.damage, 2)
+
+    def test_new_card_holds_against_a_bigger_creature(self):
+        yeti = self.ready("Karplusan Yeti")
+        big = self.perm(card("Test Giant", "{4}", "Creature — Giant", "", 5, 5), self.b)
+        self.a.ai.use_abilities(self.game, self.a)
+        self.assertFalse(yeti.tapped)
+        self.assertEqual(big.damage, 0)
+
+    def test_existing_source_power_card(self):
+        """Spikeshot Goblin (1/2, already full): "{R}, {T}: deals damage equal to its power to any target"."""
+        goblin = self.ready("Spikeshot Goblin", lands=1)
+        elf, bear = self.perm(GOBLIN, self.b), self.perm(BEAR, self.b)
+        self.a.ai.use_abilities(self.game, self.a)
+        self.assertTrue(goblin.tapped)
+        self.assertNotIn(elf, self.b.battlefield)          # the 1/1 it can kill
+        self.assertEqual(bear.damage, 0)                   # not the 2/2 it can't
