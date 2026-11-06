@@ -292,6 +292,7 @@ class PlayMixin:
                             (trig.event == "cast_instant_sorcery" and (card.is_instant or card.is_sorcery))):
                         self.queue_trigger(p, trig.effects, perm, perm.card.name, modes=trig.modes,
                                            context=item)
+            getattr(self, "next_discount", {}).pop(p.name, None)
             from ..residual_templates import on_spell_cast
             on_spell_cast(self, p, item)
             copies.on_cast(self, p, item)

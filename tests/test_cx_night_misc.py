@@ -196,6 +196,9 @@ HORDE = card("Test Horde", "{2}{R}", "Creature", "At the beginning of your upkee
 KONA = card("Test Kona", "{3}{G}", "Creature", "Whenever ~ attacks, you may put a permanent card from your hand onto the battlefield.", power=3, toughness=3)
 
 
+SAMURAI = card("Test Samurai", "{1}{G}", "Creature", "Whenever ~ attacks, the next spell you cast this turn costs {1} less to cast.", power=2, toughness=2)
+
+
 class SmallEdicts(unittest.TestCase):
     def test_parse(self):
         self.assertEqual((MARAUDER.unsupported, IMP.unsupported), ([], []))
@@ -282,3 +285,23 @@ class PermanentFromHand(unittest.TestCase):
         game.resolve(a, KONA.triggers[0].effects[1], None, None)
         self.assertEqual(len(a.hand), 1)
         self.assertEqual(len(a.battlefield), 1)
+
+
+class NextSpellDiscount(unittest.TestCase):
+    def test_discount_applies_once(self):
+        self.assertEqual(SAMURAI.unsupported, [])
+        game, a, b = _game()
+        game.turn = 3
+        self.assertEqual(game.cost_of(a, BEAR)["generic"], BEAR.mana_cost.get("generic", 0))
+        base = BEAR.mana_cost.get("generic", 0)
+        game.resolve(a, SAMURAI.triggers[0].effects[0], None, None)
+        self.assertEqual(game.cost_of(a, BEAR).get("generic", 0), max(0, base - 1))
+        game.next_discount.pop(a.name)
+        self.assertEqual(game.cost_of(a, BEAR).get("generic", 0), base)
+
+    def test_expires_next_turn(self):
+        game, a, b = _game()
+        game.turn = 3
+        game.resolve(a, SAMURAI.triggers[0].effects[0], None, None)
+        game.turn = 4
+        self.assertEqual(game.cost_of(a, BEAR).get("generic", 0), BEAR.mana_cost.get("generic", 0))
