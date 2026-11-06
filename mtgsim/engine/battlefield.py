@@ -92,6 +92,7 @@ class BattlefieldMixin:
             perm.kicked = cast[0]
             perm.cast_from_hand = cast[1]
             perm.mana_spent = cast[2]
+            perm.mana_colors = frozenset(getattr(self, "_entry_mana_colors", ()))     # converge
         others = sum(x.card.is_land for x in p.battlefield)
         cond = card.tapped_condition
         if cond.startswith("other_subtype:"):

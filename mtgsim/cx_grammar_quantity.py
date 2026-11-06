@@ -16,6 +16,7 @@ None. ``value(game, p, spec, item, prev)`` evaluates it when the effect resolves
     the greatest mana value among artifacts you control
     the total power of creatures you control
     the number of opponents you have
+    the number of colors of mana spent to cast ~ (converge)
     twice <Q> / half <Q>, rounded up|down
 
 Only quantities whose referent is fixed by the words are read here. "its power", "that card's mana value" and
@@ -75,6 +76,8 @@ def quantity(text: str):
         return ("cxq", "devotion", "".join(_COLORS[c] for c in m.groups() if c))
     if low == "the number of opponents you have":
         return ("cxq", "opponents")
+    if low in ("the number of colors of mana spent to cast ~", "the number of colors of mana spent to cast this spell"):
+        return ("cxq", "converge")
     if low == "the number of cards you've drawn this turn":
         return ("cxq", "drawn")
     if low == "the number of cards you've discarded this turn":
@@ -152,12 +155,13 @@ def _source_name(item) -> str:
 
 def _devotion(p, colors: str) -> int:
     """Mana symbols among the mana costs of permanents p controls that are any of the colours (CR 700.5): a hybrid
-    symbol counts once."""
+    symbol counts once. ``mana_cost`` books a two-colour hybrid pip under its first colour; ``hybrid`` lists it."""
     n = 0
     for x in p.battlefield:
         card = x.card
-        n += sum(card.mana_cost.get(c, 0) for c in colors)
-        n += sum(1 for pip in getattr(card, "hybrid", ()) if any(c in pip for c in colors))
+        hybrid = getattr(card, "hybrid", ())
+        n += sum(card.mana_cost.get(c, 0) for c in colors) - sum(1 for pip in hybrid if pip[0] in colors)
+        n += sum(1 for pip in hybrid if any(c in pip for c in colors))
     return n
 
 
@@ -178,6 +182,11 @@ def value(game, p, spec, item, prev) -> int:
         return _devotion(p, spec[2])
     if kind == "opponents":
         return sum(1 for pl in game.players if pl is not p and not pl.lost)
+    if kind == "converge":
+        # a spell's own payment, or the spell a permanent resolved from (recorded as it entered)
+        if item is not None and getattr(item, "is_spell", False):
+            return len(getattr(item, "mana_colors", ()))
+        return len(getattr(_source(item), "mana_colors", ()))
     if kind == "drawn":
         drawn = getattr(p, "drawn_turn", (None, 0))
         return drawn[1] if drawn[0] == game.turn else 0
