@@ -1,0 +1,695 @@
+............................................................................................................................................./Users/andjalis/mtg-worktrees/trig/mtgsim/actions.py:30: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d4220>
+  values = list(obj.values()) if isinstance(obj, dict) else list(obj)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/actions.py:30: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d47c0>
+  values = list(obj.values()) if isinstance(obj, dict) else list(obj)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/actions.py:30: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d4040>
+  values = list(obj.values()) if isinstance(obj, dict) else list(obj)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.../Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/dataclasses.py:1372: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d4c70>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+..../Users/andjalis/mtg-worktrees/trig/mtgsim/actions.py:49: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d4220>
+  if key not in skip:
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.............................................................................................................................................................................................................................................................................................................................................../Users/andjalis/mtg-worktrees/trig/mtgsim/engine/state.py:361: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108a48040>
+  @property
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+..................Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmpxq4o8csu/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+.Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmpb32dq_v6/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Fingerprinting code, decks, card data and selected runtime resources…
+....Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/forge: 2 games
+Failed a-vs-b/forge: incomplete
+incomplete: /tmp/claude-501/tmpyeolwd7o/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/forge: 2 games
+Failed a-vs-b/forge: incomplete
+.incomplete: /tmp/claude-501/tmpyeolwd7o/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108a48040>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d5e40>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d5b70>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d5c60>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/unittest/mock.py:2253: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d5d50>
+  def __init__(self, name, parent):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+invalid: /tmp/claude-501/tmp17bd485w/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+....Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmpt706p6qz/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+.complete: /tmp/claude-501/tmpt706p6qz/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmpc2uqj618/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Reuse a-vs-b/builtin
+complete: /tmp/claude-501/tmpc2uqj618/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+./Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/re/_parser.py:260: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d5d50>
+  def get(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/re/_parser.py:260: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d5c60>
+  def get(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/re/_parser.py:260: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108b548b0>
+  def get(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/re/_parser.py:260: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d5b70>
+  def get(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/re/_parser.py:260: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d5e40>
+  def get(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+..................................../Users/andjalis/mtg-worktrees/trig/mtgsim/cx_statics.py:171: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc16c0>
+  return any(kw in rule[6] and _applies(source, rule, perm) for source, rule in _anthems(perm)) or \
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+......................../Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/dataclasses.py:1372: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108b54b80>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+............................................................................................................................................................................................................................................................................................................................................................................................................................................/Users/andjalis/mtg-worktrees/trig/mtgsim/cx_statics.py:133: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc34c0>
+  if rules and "anthem_if" in rules:
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+........................................................................................................................................../Users/andjalis/mtg-worktrees/trig/mtgsim/cx_statics.py:171: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc34c0>
+  return any(kw in rule[6] and _applies(source, rule, perm) for source, rule in _anthems(perm)) or \
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+..................................................................................................................................................................................................................................................................................../Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/dataclasses.py:1372: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc3d30>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.................../Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc3f10>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc3a60>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+................................................................................................................................................................................................................................................................................................./Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94220>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+................................................................................................................................................../Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:17: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94220>
+  sizes = tuple(len(p.battlefield) for p in game.players)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+................................................................................................................................../Users/andjalis/mtg-worktrees/trig/mtgsim/actions.py:46: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94220>
+  state = dict(obj.__dict__)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+......................................................................................................................................../Users/andjalis/mtg-worktrees/trig/mtgsim/identity.py:149: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95120>
+  for card in list(cards):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+...................................................................../Users/andjalis/mtg-worktrees/trig/mtgsim/identity.py:63: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95300>
+  def __init__(self, cards=(), *, owner=None, name=""):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.................................................................................................................................................................................................................................................................../Users/andjalis/mtg-worktrees/trig/mtgsim/actions.py:45: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e956c0>
+  def capture_dict(self, obj, skip=frozenset()):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+....................................................................................................................................../Users/andjalis/mtg-worktrees/trig/mtgsim/actions.py:46: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95b70>
+  state = dict(obj.__dict__)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+............................................................................................................................................................................................................./Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/dataclasses.py:1372: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e96020>
+  return tuple(f for f in fields.values() if f._field_type is _FIELD)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.........................................................................................................................................................................................................................................................................................................................................../Users/andjalis/mtg-worktrees/trig/mtgsim/actions.py:30: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e96890>
+  values = list(obj.values()) if isinstance(obj, dict) else list(obj)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................../Users/andjalis/mtg-worktrees/trig/mtgsim/cx_timing.py:122: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e97c40>
+  def window_ok(game, p, card) -> bool:
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+................................................................./Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e97c40>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e97b50>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e97970>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e97790>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e975b0>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e974c0>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e973d0>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e971f0>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e97100>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e972e0>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e97010>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e96f20>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e96d40>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e96c50>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e96b60>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e96a70>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e965c0>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e96890>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e967a0>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e96020>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e96200>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e963e0>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95f30>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95d50>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95b70>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95a80>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e956c0>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e958a0>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e955d0>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e954e0>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95300>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e953f0>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95210>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95120>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95030>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94e50>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94d60>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e949a0>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94c70>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94310>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94400>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94130>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94040>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/residual_templates.py:177: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc3880>
+  creature = next((x for x in (subject, context, source) if getattr(x, 'is_creature', False)), None)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+................................................................................................................................................................................................................................../Users/andjalis/mtg-worktrees/trig/mtgsim/identity.py:148: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x118c09f30>
+  def extend(self, cards):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/identity.py:148: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x118c09c60>
+  def extend(self, cards):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+................/Users/andjalis/mtg-worktrees/trig/mtgsim/cx_statics.py:133: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1209927a0>
+  if rules and "anthem_if" in rules:
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+................................................................................................................................................................................................................................................................................................................/Users/andjalis/mtg-worktrees/trig/mtgsim/permanent_templates.py:281: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120c90310>
+  if not all(has_type(kind) for kind in spec.get('types_all', [])):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/permanent_templates.py:281: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120993f10>
+  if not all(has_type(kind) for kind in spec.get('types_all', [])):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+........................................./Users/andjalis/mtg-worktrees/trig/mtgsim/identity.py:63: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120c90400>
+  def __init__(self, cards=(), *, owner=None, name=""):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+...........................................................................................F............................................................................................F.F......................................s.............................................................................................../Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/threading.py:291: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120ef93f0>
+  if hasattr(lock, '_release_save'):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/threading.py:291: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120c93e20>
+  if hasattr(lock, '_release_save'):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/threading.py:291: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e955d0>
+  if hasattr(lock, '_release_save'):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/threading.py:291: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e949a0>
+  if hasattr(lock, '_release_save'):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/threading.py:291: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e967a0>
+  if hasattr(lock, '_release_save'):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/threading.py:291: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e96890>
+  if hasattr(lock, '_release_save'):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/threading.py:291: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94220>
+  if hasattr(lock, '_release_save'):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/threading.py:291: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e963e0>
+  if hasattr(lock, '_release_save'):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/threading.py:291: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95a80>
+  if hasattr(lock, '_release_save'):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/threading.py:291: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95300>
+  if hasattr(lock, '_release_save'):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+........./Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95030>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94310>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e97100>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e971f0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e974c0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e975b0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e97790>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e97970>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e97010>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e972e0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e97b50>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e973d0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e97c40>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc3a60>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94c70>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e955d0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e949a0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95120>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95210>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e953f0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e967a0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95300>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95d50>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e96020>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94d60>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e965c0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120c93e20>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc3970>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc3f10>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc3d30>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc3790>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc2d40>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94e50>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e96c50>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108b547c0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d4c70>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d56c0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d5c60>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d62f0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d63e0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d64d0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d65c0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108b54b80>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc15d0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc34c0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc3c40>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc16c0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc1e40>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc2200>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc22f0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc24d0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc25c0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc2980>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc35b0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc2e30>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc36a0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc3e20>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108cc3880>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120ef9120>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120ef8310>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120ef93f0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120c934c0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120c933d0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94400>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e95a80>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e94220>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e96d40>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/stack.py:271: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e956c0>
+  if not any(tgt is previous for previous in unique_targets):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+............................/Users/andjalis/mtg-worktrees/trig/mtgsim/actions.py:33: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108e958a0>
+  if hasattr(obj, '__dict__'):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.............................................................................................................................................................................................................................................................................................................complete: /tmp/claude-501/tmpc2uqj618/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmphyq69ndz/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/json/decoder.py:361: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x121108400>
+  obj, end = self.scan_once(s, idx)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/json/decoder.py:361: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120efb790>
+  obj, end = self.scan_once(s, idx)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmphyq69ndz/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmphyq69ndz/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmphyq69ndz/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+.complete: /tmp/claude-501/tmphyq69ndz/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmp5zea48qm/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmp5zea48qm/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/json/encoder.py:355: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x121108400>
+  items = sorted(dct.items())
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/json/encoder.py:355: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120efb790>
+  items = sorted(dct.items())
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/json/encoder.py:355: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120efbf10>
+  items = sorted(dct.items())
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/json/encoder.py:355: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120efbb50>
+  items = sorted(dct.items())
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/json/encoder.py:355: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120efbd30>
+  items = sorted(dct.items())
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/json/encoder.py:355: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120ef93f0>
+  items = sorted(dct.items())
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmp3d743kgq/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmp3d743kgq/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmpc408e1zm/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmpc408e1zm/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmp9n4qhb1i/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmp9n4qhb1i/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+/Users/andjalis/.local/share/uv/python/cpython-3.13.15-macos-aarch64-none/lib/python3.13/json/encoder.py:355: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120efb880>
+  items = sorted(dct.items())
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+Run a-vs-b/builtin: 2 games
+complete: /tmp/claude-501/tmp1isfzjc1/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Run a-vs-b/builtin: 2 games
+.complete: /tmp/claude-501/tmp1isfzjc1/out/report.md
+Fingerprinting code, decks, card data and selected runtime resources…
+Fingerprinting code, decks, card data and selected runtime resources…
+Fingerprinting code, decks, card data and selected runtime resources…
+........<string>:130: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120efbf10>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<string>:130: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x121108400>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/mana.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x121108130>
+  base += sum(a.card.advanced_rules.get('aura_mana', 0) for a in s.auras if not a.abilities_suppressed)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/mana.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120ef9c60>
+  base += sum(a.card.advanced_rules.get('aura_mana', 0) for a in s.auras if not a.abilities_suppressed)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/engine/mana.py:23: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120efb790>
+  base += sum(a.card.advanced_rules.get('aura_mana', 0) for a in s.auras if not a.abilities_suppressed)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+
+Grading the deck (meta, mana, speed, consistency)...
+  meta: orzhov_midrange vs Izzet Spellementals (27% of the field)...
+  meta: orzhov_midrange vs Jund Sacrifice (18% of the field)...
+  meta: orzhov_midrange vs Dimir Midrange (21% of the field)...
+  meta: orzhov_midrange vs Mono-Green Landfall (18% of the field)...
+  meta: orzhov_midrange vs Boros Dragons (17% of the field)...
+  mana base...
+  goldfish...
+  consistency...
+............../Users/andjalis/mtg-worktrees/trig/mtgsim/actions.py:30: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x121108130>
+  values = list(obj.values()) if isinstance(obj, dict) else list(obj)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Users/andjalis/mtg-worktrees/trig/mtgsim/actions.py:30: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x121108400>
+  values = list(obj.values()) if isinstance(obj, dict) else list(obj)
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+........................................................................................................................................................................................................................................................................................................../Users/andjalis/mtg-worktrees/trig/mtgsim/actions.py:49: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1211094e0>
+  if key not in skip:
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.................<string>:131: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d4130>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<string>:131: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d4310>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<string>:131: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1214d4a90>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<string>:131: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108a48040>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<string>:131: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120c917b0>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<string>:131: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120ef9120>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<string>:131: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x120efb790>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<string>:131: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1211496c0>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<string>:131: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x121148a90>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<string>:131: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x121149300>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+<string>:131: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x1211086d0>
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+....../Users/andjalis/mtg-worktrees/trig/mtgsim/cx_statics.py:133: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x108a48040>
+  if rules and "anthem_if" in rules:
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+..............................................................................................................................................................................................................................
+======================================================================
+FAIL: test_cards_fully_parse (tests.test_cx_trig_reflex.ReflexParse.test_cards_fully_parse)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/andjalis/mtg-worktrees/trig/tests/test_cx_trig_reflex.py", line 23, in test_cards_fully_parse
+    self.assertEqual(real(n).unsupported, [], n)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Lists differ: ['you may exile a creature card from your [95 chars]nd.'] != []
+
+First list contains 2 additional elements.
+First extra element 0:
+'you may exile a creature card from your graveyard.'
+
++ []
+- ['you may exile a creature card from your graveyard.',
+-  'When you do, return target instant or sorcery card from your graveyard to '
+-  'your hand.'] : Kishla Trawlers
+
+======================================================================
+FAIL: test_equipment_token_attached_and_double_strike (tests.test_esper_boros.EsperBoros.test_equipment_token_attached_and_double_strike)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/andjalis/mtg-worktrees/trig/tests/test_esper_boros.py", line 87, in test_equipment_token_attached_and_double_strike
+    self.assertIs(axe.attached_to, dain)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: None is not Test Dain(3/3)
+
+======================================================================
+FAIL: test_hone_counters (tests.test_esper_boros.EsperBoros.test_hone_counters)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/andjalis/mtg-worktrees/trig/tests/test_esper_boros.py", line 115, in test_hone_counters
+    self.assertEqual(dain.power, 5)                             # 3 + Axe's 1 + a hone counter
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: 3 != 5
+
+----------------------------------------------------------------------
+Ran 5877 tests in 401.012s
+
+FAILED (failures=3, skipped=1)

@@ -1,0 +1,629 @@
+{
+  "base": "4a4b9c885a3eaaed36711114d3ad66ec5354bc7c",
+  "head": "6f537ac80001cd6bbca9fd6490790bc97d875b6e",
+  "worktree": "/Users/andjalis/mtg-worktrees/trig",
+  "fast": true,
+  "dirty": "M mtgsim/cards/parse.py",
+  "checks": {
+    "lint": {
+      "command": [
+        "/Users/andjalis/mtg-worktrees/trig/.venv/bin/python",
+        "scripts/lint.py"
+      ],
+      "returncode": 1,
+      "timeout": false,
+      "seconds": 1.801,
+      "log": "lint.log"
+    },
+    "tests": {
+      "command": [
+        "/Users/andjalis/mtg-worktrees/trig/.venv/bin/python",
+        "/Users/andjalis/mtg-worktrees/trig/scripts/pilot_gate.py",
+        "_worker",
+        "/Users/andjalis/mtg-worktrees/trig",
+        "tests",
+        "discover",
+        "-s",
+        "tests",
+        "-t",
+        "."
+      ],
+      "returncode": 1,
+      "timeout": false,
+      "seconds": 404.442,
+      "log": "tests.log"
+    },
+    "coverage_base": {
+      "command": [
+        "/Users/andjalis/mtg-worktrees/trig/.venv/bin/python",
+        "/Users/andjalis/mtg-worktrees/trig/scripts/pilot_gate.py",
+        "_worker",
+        "/tmp/claude-501/pilot-gate-x2_an3ha/base",
+        "census",
+        "/tmp/claude-501/pilot-gate-x2_an3ha/standard",
+        "/Users/andjalis/mtg-worktrees/trig/results/pilot_gate/claude-trig-1-20261106T191228340175Z/coverage_base.json"
+      ],
+      "returncode": 0,
+      "timeout": false,
+      "seconds": 25.534,
+      "log": "coverage_base.log"
+    },
+    "coverage_head": {
+      "command": [
+        "/Users/andjalis/mtg-worktrees/trig/.venv/bin/python",
+        "/Users/andjalis/mtg-worktrees/trig/scripts/pilot_gate.py",
+        "_worker",
+        "/Users/andjalis/mtg-worktrees/trig",
+        "census",
+        "/tmp/claude-501/pilot-gate-x2_an3ha/standard",
+        "/Users/andjalis/mtg-worktrees/trig/results/pilot_gate/claude-trig-1-20261106T191228340175Z/coverage_head.json"
+      ],
+      "returncode": 0,
+      "timeout": false,
+      "seconds": 24.892,
+      "log": "coverage_head.log"
+    },
+    "parse_base": {
+      "command": [
+        "/Users/andjalis/mtg-worktrees/trig/.venv/bin/python",
+        "/Users/andjalis/mtg-worktrees/trig/scripts/pilot_gate.py",
+        "_worker",
+        "/tmp/claude-501/pilot-gate-x2_an3ha/base",
+        "dump",
+        "/tmp/claude-501/pilot-gate-x2_an3ha/scripts/parse_diff.py",
+        "/Users/andjalis/mtg-worktrees/trig/results/pilot_gate/claude-trig-1-20261106T191228340175Z/base.tsv"
+      ],
+      "returncode": 0,
+      "timeout": false,
+      "seconds": 25.963,
+      "log": "parse_base.log"
+    },
+    "parse_head": {
+      "command": [
+        "/Users/andjalis/mtg-worktrees/trig/.venv/bin/python",
+        "/Users/andjalis/mtg-worktrees/trig/scripts/pilot_gate.py",
+        "_worker",
+        "/Users/andjalis/mtg-worktrees/trig",
+        "dump",
+        "/tmp/claude-501/pilot-gate-x2_an3ha/scripts/parse_diff.py",
+        "/Users/andjalis/mtg-worktrees/trig/results/pilot_gate/claude-trig-1-20261106T191228340175Z/head.tsv"
+      ],
+      "returncode": 0,
+      "timeout": false,
+      "seconds": 26.542,
+      "log": "parse_head.log"
+    },
+    "parse_diff": {
+      "command": [
+        "/Users/andjalis/mtg-worktrees/trig/.venv/bin/python",
+        "/tmp/claude-501/pilot-gate-x2_an3ha/scripts/parse_diff.py",
+        "compare",
+        "/Users/andjalis/mtg-worktrees/trig/results/pilot_gate/claude-trig-1-20261106T191228340175Z/base.tsv",
+        "/Users/andjalis/mtg-worktrees/trig/results/pilot_gate/claude-trig-1-20261106T191228340175Z/head.tsv",
+        "--report",
+        "/Users/andjalis/mtg-worktrees/trig/results/pilot_gate/claude-trig-1-20261106T191228340175Z/parse_diff.md"
+      ],
+      "returncode": 0,
+      "timeout": false,
+      "seconds": 0.18,
+      "log": "parse_diff.log"
+    },
+    "sample": {
+      "command": [
+        "/Users/andjalis/mtg-worktrees/trig/.venv/bin/python",
+        "/Users/andjalis/mtg-worktrees/trig/scripts/pilot_gate.py",
+        "_worker",
+        "/Users/andjalis/mtg-worktrees/trig",
+        "sample",
+        "/Users/andjalis/mtg-worktrees/trig/results/pilot_gate/claude-trig-1-20261106T191228340175Z/sample_names.json",
+        "/Users/andjalis/mtg-worktrees/trig/results/pilot_gate/claude-trig-1-20261106T191228340175Z/samples.json"
+      ],
+      "returncode": 0,
+      "timeout": false,
+      "seconds": 0.387,
+      "log": "sample.log"
+    },
+    "decks": {
+      "command": [
+        "/Users/andjalis/mtg-worktrees/trig/.venv/bin/python",
+        "/Users/andjalis/mtg-worktrees/trig/scripts/pilot_gate.py",
+        "_worker",
+        "/Users/andjalis/mtg-worktrees/trig",
+        "decks",
+        "/Users/andjalis/mtg-worktrees/trig/results/pilot_gate/claude-trig-1-20261106T191228340175Z/sample_all_names.json",
+        "/Users/andjalis/mtg-worktrees/trig/results/pilot_gate/claude-trig-1-20261106T191228340175Z/decks.json"
+      ],
+      "returncode": 0,
+      "timeout": false,
+      "seconds": 0.132,
+      "log": "decks.log"
+    },
+    "exercise": {
+      "command": [
+        "/Users/andjalis/mtg-worktrees/trig/.venv/bin/python",
+        "/Users/andjalis/mtg-worktrees/trig/scripts/pilot_gate.py",
+        "_worker",
+        "/Users/andjalis/mtg-worktrees/trig",
+        "exercise",
+        "/Users/andjalis/mtg-worktrees/trig/results/pilot_gate/claude-trig-1-20261106T191228340175Z/sample_all_names.json",
+        "/Users/andjalis/mtg-worktrees/trig/results/pilot_gate/claude-trig-1-20261106T191228340175Z/exercise.json"
+      ],
+      "returncode": 0,
+      "timeout": false,
+      "seconds": 0.453,
+      "log": "exercise.log"
+    }
+  },
+  "samples": [
+    {
+      "name": "Eastfarthing Farmer",
+      "oracle": "When this creature enters, create a Food token. When you do, target creature you control gets +1/+1 until end of turn for each Food you control. (A Food token is an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")",
+      "parsed": "CardDef(name='Eastfarthing Farmer', mana_cost={'generic': 2, 'W': 1}, cmc=3, types={'Creature'}, subtypes={'Halfling', 'Peasant'}, power=2, toughness=3, etb_effects=[Effect(kind='link_start', data={'kinds': ('token'), 'forced': True}), Effect(kind='token', amount=1, cond='lib:[\"link_taken\"]', data={'kind': 'food'}), Effect(kind='link_check'), Effect(kind='pump', amount=1, amount2=1, target='creature', cond='paid', data={'xq': ('count', 'Food')})], oracle='When this creature enters, create a Food token. When you do, target creature you control gets +1/+1 until end of turn for each Food you control. (A Food token is an artifact with \"{2}, {T}, Sacrifice this token: You gain 3 life.\")', triggers=[Trigger(event='etb', effects=[Effect(kind='link_start', data={'kinds': ('token'), 'forced': True}), Effect(kind='token', amount=1, cond='lib:[\"link_taken\"]', data={'kind': 'food'}), Effect(kind='link_check'), Effect(kind='pump', amount=1, amount2=1, target='creature', cond='paid', data={'xq': ('count', 'Food')})])], color_override={'W'})",
+      "flags": [
+        "parse.etb_effects[0].target='none'",
+        "parse.etb_effects[1].target='none'",
+        "parse.etb_effects[2].target='none'"
+      ]
+    },
+    {
+      "name": "Primal Witchstalker",
+      "oracle": "Menace (This creature can't be blocked except by two or more creatures.)\nWhen this creature enters, mill four cards. When you do, return target land card from your graveyard to the battlefield tapped. (To mill four cards, put the top four cards of your library into your graveyard.)",
+      "parsed": "CardDef(name='Primal Witchstalker', mana_cost={'generic': 1, 'B': 1, 'G': 1}, cmc=3, types={'Creature'}, subtypes={'Wolf'}, power=2, toughness=1, keywords={'menace'}, etb_effects=[Effect(kind='link_start', data={'kinds': ('mill'), 'forced': True}), Effect(kind='mill', amount=4, cond='lib:[\"link_taken\"]'), Effect(kind='link_check'), Effect(kind='gy_move', amount=1, cond='paid', data={'what': 'land', 'dest': 'bf', 'tapped': True, 'zone': 'mine', 'x_n': False, 'cmc': None})], oracle=\"Menace (This creature can't be blocked except by two or more creatures.)\\nWhen this creature enters, mill four cards. When you do, return target land card from your graveyard to the battlefield tapped. (To mill four cards, put the top four cards of your library into your graveyard.)\", triggers=[Trigger(event='etb', effects=[Effect(kind='link_start', data={'kinds': ('mill'), 'forced': True}), Effect(kind='mill', amount=4, cond='lib:[\"link_taken\"]'), Effect(kind='link_check'), Effect(kind='gy_move', amount=1, cond='paid', data={'what': 'land', 'dest': 'bf', 'tapped': True, 'zone': 'mine', 'x_n': False, 'cmc': None})])], color_override={'B', 'G'})",
+      "flags": [
+        "parse.etb_effects[0].target='none'",
+        "parse.etb_effects[1].target='none'",
+        "parse.etb_effects[2].target='none'",
+        "parse.etb_effects[3].target='none'"
+      ]
+    },
+    {
+      "name": "Rubble Rouser",
+      "oracle": "When this creature enters, you may discard a card. If you do, draw a card.\n{T}, Exile a card from your graveyard: Add {R}. When you do, this creature deals 1 damage to each opponent.",
+      "parsed": "CardDef(name='Rubble Rouser', mana_cost={'generic': 2, 'R': 1}, cmc=3, types={'Creature'}, subtypes={'Dwarf', 'Sorcerer'}, power=1, toughness=4, etb_effects=[Effect(kind='opt_cost_draw', amount=1, data={'cost': 'discard'})], oracle='When this creature enters, you may discard a card. If you do, draw a card.\\n{T}, Exile a card from your graveyard: Add {R}. When you do, this creature deals 1 damage to each opponent.', triggers=[Trigger(event='etb', effects=[Effect(kind='opt_cost_draw', amount=1, data={'cost': 'discard'})])], activated=[Activated(kind='ability', cost={'generic': 0}, effects=[Effect(kind='link_start', data={'kinds': ('add_mana'), 'forced': True}), Effect(kind='add_mana', cond='lib:[\"link_taken\"]', data={'colors': ['R']}), Effect(kind='link_check'), Effect(kind='damage', amount=1, target='player', cond='paid')], extra_costs={'tap': True, 'cx_costs': (('exile_gy', 1, {}))}, text='{T}, Exile a card from your graveyard: Add {R}. When you do, ~ deals 1 damage to each opponent.')], color_override={'R'})",
+      "flags": [
+        "parse.etb_effects[0].target='none'",
+        "parse.activated[0].effects[0].target='none'",
+        "parse.activated[0].effects[1].target='none'",
+        "parse.activated[0].effects[2].target='none'"
+      ]
+    },
+    {
+      "name": "The Royal Scions",
+      "oracle": "+1: Draw a card, then discard a card.\n+1: Target creature gets +2/+0 and gains first strike and trample until end of turn.\n−8: Draw four cards. When you do, The Royal Scions deals damage to any target equal to the number of cards in your hand.",
+      "parsed": "CardDef(name='The Royal Scions', mana_cost={'generic': 1, 'U': 1, 'R': 1}, cmc=3, types={'Planeswalker'}, subtypes={'Rowan', 'Will'}, oracle='+1: Draw a card, then discard a card.\\n+1: Target creature gets +2/+0 and gains first strike and trample until end of turn.\\n−8: Draw four cards. When you do, The Royal Scions deals damage to any target equal to the number of cards in your hand.', loyalty=5, loyalty_abilities=[(1, [Effect(kind='draw', amount=1), Effect(kind='discard', amount=1)]), (1, [Effect(kind='pump', amount=2, target='permanent', data={'selector': {'types_all': ['creature']}}), Effect(kind='grant', target='prev', data={'keyword': 'first strike'}), Effect(kind='grant', target='prev', data={'keyword': 'trample'})]), (-8, [Effect(kind='link_start', data={'kinds': ('draw'), 'forced': True}), Effect(kind='draw', amount=4, cond='lib:[\"link_taken\"]'), Effect(kind='link_check'), Effect(kind='damage', amount=1, target='any', cond='paid', data={'xq': ('hand')})])], color_override={'R', 'U'}, legendary=True)",
+      "flags": [
+        "parse.loyalty_abilities[0][1][0].target='none'",
+        "parse.loyalty_abilities[0][1][1].target='none'",
+        "parse.loyalty_abilities[2][1][0].target='none'",
+        "parse.loyalty_abilities[2][1][1].target='none'",
+        "parse.loyalty_abilities[2][1][2].target='none'"
+      ]
+    },
+    {
+      "name": "Faebloom Trick",
+      "oracle": "Create two 1/1 blue Faerie creature tokens with flying. When you do, tap target creature an opponent controls.",
+      "parsed": "CardDef(name='Faebloom Trick', mana_cost={'generic': 2, 'U': 1}, cmc=3, types={'Instant'}, spell_effects=[Effect(kind='link_start', data={'kinds': ('token'), 'forced': True}), Effect(kind='token', amount=2, cond='lib:[\"link_taken\"]', data={'name': 'Faerie', 'power': 1, 'toughness': 1, 'keywords': {'flying'}, 'attacking': False, 'triggers': [], 'artifact': False, 'pt_per': '', 'colors': {'U'}}), Effect(kind='link_check'), Effect(kind='tap', amount=1, target='creature', cond='paid')], oracle='Create two 1/1 blue Faerie creature tokens with flying. When you do, tap target creature an opponent controls.', color_override={'U'})",
+      "flags": [
+        "parse.spell_effects[0].target='none'",
+        "parse.spell_effects[1].target='none'",
+        "parse.spell_effects[2].target='none'"
+      ]
+    },
+    {
+      "name": "Lithobraking",
+      "oracle": "Create a Lander token. Then you may sacrifice an artifact. When you do, Lithobraking deals 2 damage to each creature. (A Lander token is an artifact with \"{2}, {T}, Sacrifice this token: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\")",
+      "parsed": "CardDef(name='Lithobraking', mana_cost={'generic': 2, 'R': 1}, cmc=3, types={'Instant'}, spell_effects=[Effect(kind='token', amount=1, data={'kind': 'lander'}), Effect(kind='link_start', data={'kinds': ('sac_filtered'), 'forced': False}), Effect(kind='sac_filtered', cond='lib:[\"link_taken\"]', data={'spec': {'types': ['artifact']}}), Effect(kind='link_check'), Effect(kind='damage', amount=2, target='each_creature', cond='paid')], oracle='Create a Lander token. Then you may sacrifice an artifact. When you do, Lithobraking deals 2 damage to each creature. (A Lander token is an artifact with \"{2}, {T}, Sacrifice this token: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle.\")', color_override={'R'})",
+      "flags": [
+        "parse.spell_effects[0].target='none'",
+        "parse.spell_effects[1].target='none'",
+        "parse.spell_effects[2].target='none'",
+        "parse.spell_effects[3].target='none'"
+      ]
+    },
+    {
+      "name": "Yathan Roadwatcher",
+      "oracle": "When this creature enters, if you cast it, mill four cards. When you do, return target creature card with mana value 3 or less from your graveyard to the battlefield.",
+      "parsed": "CardDef(name='Yathan Roadwatcher', mana_cost={'generic': 1, 'W': 1, 'B': 1, 'G': 1}, cmc=4, types={'Creature'}, subtypes={'Human', 'Scout'}, power=3, toughness=3, etb_effects=[Effect(kind='link_start', cond='cast', data={'kinds': ('mill'), 'forced': True}), Effect(kind='mill', amount=4, cond='cast'), Effect(kind='link_check', cond='cast'), Effect(kind='gy_move', amount=1, cond='cast', data={'what': 'creature', 'dest': 'bf', 'tapped': False, 'zone': 'mine', 'x_n': False, 'cmc': (3, 'less')})], oracle='When this creature enters, if you cast it, mill four cards. When you do, return target creature card with mana value 3 or less from your graveyard to the battlefield.', triggers=[Trigger(event='etb', effects=[Effect(kind='link_start', cond='cast', data={'kinds': ('mill'), 'forced': True}), Effect(kind='mill', amount=4, cond='cast'), Effect(kind='link_check', cond='cast'), Effect(kind='gy_move', amount=1, cond='cast', data={'what': 'creature', 'dest': 'bf', 'tapped': False, 'zone': 'mine', 'x_n': False, 'cmc': (3, 'less')})], intervening_if='cast')], color_override={'B', 'G', 'W'})",
+      "flags": [
+        "parse.etb_effects[0].target='none'",
+        "parse.etb_effects[1].target='none'",
+        "parse.etb_effects[2].target='none'",
+        "parse.etb_effects[3].target='none'"
+      ]
+    },
+    {
+      "name": "Sigil of Myrkul",
+      "oracle": "At the beginning of combat on your turn, mill a card. When you do, if there are four or more creature cards in your graveyard, put a +1/+1 counter on target creature you control and it gains deathtouch until end of turn. (To mill a card, put the top card of your library into your graveyard.)",
+      "parsed": "CardDef(name='Sigil of Myrkul', mana_cost={'generic': 2, 'B': 1}, cmc=3, types={'Enchantment'}, oracle='At the beginning of combat on your turn, mill a card. When you do, if there are four or more creature cards in your graveyard, put a +1/+1 counter on target creature you control and it gains deathtouch until end of turn. (To mill a card, put the top card of your library into your graveyard.)', triggers=[Trigger(event='begin_combat', effects=[Effect(kind='link_start', data={'kinds': ('mill'), 'forced': True}), Effect(kind='mill', amount=1, cond='lib:[\"link_taken\"]'), Effect(kind='link_check'), Effect(kind='p1_counters', amount=1, target='creature_mine', cond='lib:[\"gy\",\"you\",{\"types\":[\"creature\",\"card\"]},\">=\",4]'), Effect(kind='grant', target='prev', cond='paid', data={'keyword': 'deathtouch'})])], color_override={'B'})",
+      "flags": [
+        "parse.triggers[0].effects[0].target='none'",
+        "parse.triggers[0].effects[1].target='none'",
+        "parse.triggers[0].effects[2].target='none'",
+        "parse.triggers[0].effects[3].cond: unknown placeholder 'lib:[\"gy\",\"you\",{\"types\":[\"creature\",\"card\"]},\">=\",4]'"
+      ]
+    }
+  ],
+  "exercise": [
+    {
+      "name": "Eastfarthing Farmer",
+      "ok": true
+    },
+    {
+      "name": "Faebloom Trick",
+      "ok": true
+    },
+    {
+      "name": "Lithobraking",
+      "ok": true
+    },
+    {
+      "name": "Primal Witchstalker",
+      "ok": true
+    },
+    {
+      "name": "Rubble Rouser",
+      "ok": true
+    },
+    {
+      "name": "Sigil of Myrkul",
+      "ok": true
+    },
+    {
+      "name": "The Royal Scions",
+      "ok": true
+    },
+    {
+      "name": "Yathan Roadwatcher",
+      "ok": true
+    }
+  ],
+  "smoke": {
+    "completed": 50,
+    "failures": [],
+    "pairs": [
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ],
+      [
+        "decks/green_stompy.txt",
+        "decks/mono_red_aggro.txt"
+      ],
+      [
+        "decks/mono_red_aggro.txt",
+        "decks/green_stompy.txt"
+      ]
+    ],
+    "newly_full_in_decks": [],
+    "selection": "repository fallback (no newly-full cards in decks)"
+  },
+  "inputs": {
+    "schema": 1,
+    "base": "4a4b9c885a3eaaed36711114d3ad66ec5354bc7c",
+    "worker": "822ecfe7a49b626c8368aafa468d07f90a93fec564009ec4edb4d09135999bd5",
+    "database": "b733d2134695da6e4dbf1b72efe5595767d611533db0429e7f8712ed4273f69a",
+    "cache": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "python": "3.13.15 (main, Sep  1 2026, 14:05:45) [Clang 22.1.3 ]",
+    "standard": [
+      [
+        "editions/BIG.txt",
+        "8e951c399d19032a0de07b2763035b68142e690f3b48f06f3e78fd9de9ac1824"
+      ],
+      [
+        "editions/BLB.txt",
+        "89c90f78cf0200bda2017f832e38639a10003b6981eba56fca5359421c34237e"
+      ],
+      [
+        "editions/DFT.txt",
+        "6e8e3715cbae1b929b31471ddf2ed924336b760954c460f6585933f68c610e71"
+      ],
+      [
+        "editions/DSK.txt",
+        "85b60ac6228143c4eacade7d807a8196b93d0d6b6e76825292a3625e9b7b39b2"
+      ],
+      [
+        "editions/ECL.txt",
+        "82163910985c97006948df0a55e08da8ca0f8cfe967789316e6f24da55e7282f"
+      ],
+      [
+        "editions/EOE.txt",
+        "3890c6278560ae95802632049a1ecad15804c87a6957d2e99bc8b375bfe9c2fe"
+      ],
+      [
+        "editions/FDN.txt",
+        "f12b3dbf9c8d01cb3ee4ce3f12d0c29dfc05decf2037f470f50bc8a06a83dfa0"
+      ],
+      [
+        "editions/FIN.txt",
+        "639172fd010fae018ce1572c36f9ebfaf40a76590b2d8940dc17747787a198f1"
+      ],
+      [
+        "editions/FRA.txt",
+        "d174f31e3be7377e54e91a761dc7536562443b396f991a64b1ebdcba3f9f898a"
+      ],
+      [
+        "editions/HOB.txt",
+        "45c116eed16991d60217d97ee4881cbf76cb49a6cf8e72505c17fc0aef70062c"
+      ],
+      [
+        "editions/LCI.txt",
+        "c2821945c9903477e0970a8d0787a7ca937eceea193542d0a7b2528a94e8c4e5"
+      ],
+      [
+        "editions/MKM.txt",
+        "142d7a748b91ed029c640e898ad65986d6365e3fc824a7fae1d1a96f1fa86a42"
+      ],
+      [
+        "editions/MSH.txt",
+        "f3b44a110f8eb22a6c90e063300d18d5ad5b39fb6c3066cae158254290a72dbe"
+      ],
+      [
+        "editions/OTJ.txt",
+        "81e89b245073b5b1207cece12ffb0e0b2846911ddce932fb9cddba222e921e2c"
+      ],
+      [
+        "editions/SOS.txt",
+        "1a20f40c6ca5566fd8126024168818a4207791279fa9e7572bbe77d79ceb2f40"
+      ],
+      [
+        "editions/SPM.txt",
+        "90382aa38bc545d724fce8e371ea0dabac110df7c8f1d7035f12b8de5da6a862"
+      ],
+      [
+        "editions/TDM.txt",
+        "bcfee2dcf7a36e5f8972627d60ea24f1a57c7720aec3c53c2626629e46edd75b"
+      ],
+      [
+        "editions/TLA.txt",
+        "b030e91ff5be292195cc5669db88083cd3f2b438b05009fa29aea23aa68c8087"
+      ],
+      [
+        "editions/TMT.txt",
+        "6b3287e74290983f0668b99123b08a12fdd07c589ec51c349dbdff4d29abe8de"
+      ],
+      [
+        "editions/WOE.txt",
+        "9cf0736b924bea16469f8c1b24fc456f5739a0c5f94485be2ac8915c293df13e"
+      ],
+      [
+        "formats/Standard.txt",
+        "8cf9347c7dc11a03bc9d3839b514d630836aa76ccf6f0396ff861a383d444aaa"
+      ]
+    ]
+  },
+  "tests": [
+    "discover",
+    "-s",
+    "tests",
+    "-t",
+    "."
+  ],
+  "base_cache_hit": false,
+  "comparison": {
+    "regressions": [
+      "Ancient Bronze Dragon"
+    ],
+    "newly_full": [
+      "Eastfarthing Farmer",
+      "Faebloom Trick",
+      "Lithobraking",
+      "Primal Witchstalker",
+      "Rubble Rouser",
+      "Sigil of Myrkul",
+      "The Royal Scions",
+      "Yathan Roadwatcher"
+    ],
+    "newly_raising": [],
+    "removed": [],
+    "deltas": {
+      "all": {
+        "full": 7,
+        "partial": -7,
+        "simplified": 0,
+        "total": 0
+      },
+      "standard": {
+        "full": 5,
+        "partial": -5,
+        "simplified": 0,
+        "total": 0
+      }
+    }
+  },
+  "verdict": "FAIL",
+  "reasons": [
+    "lint failed",
+    "tests failed",
+    "1 full-match regressions",
+    "Suspicious sampled parses: Sigil of Myrkul"
+  ],
+  "seconds": 566.745
+}
