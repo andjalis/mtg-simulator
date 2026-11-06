@@ -254,7 +254,7 @@ class BattlefieldMixin:
                 self.fire(pl, "permanent_enters", subject=perm)
         if card.is_land:
             self.fire(p, "land_enters", subject=perm)
-        if card.daybound or card.nightbound:
+        if card.daybound or card.nightbound or card.advanced_rules.get("starts_day"):
             from ..day_night import on_enter as day_night_enter
             day_night_enter(self, perm)
         if getattr(self, '_entry_batch', None) is None:

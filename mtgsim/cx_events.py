@@ -499,7 +499,7 @@ def compile_head(head: str):
                 if spell is None:
                     return None
                 spec["spell"] = spell
-            elif kind in ("attack_with", "attack_power"):
+            elif kind in ("attack_with", "attack_power", "roll_exact"):
                 if not cx_trig_events.extend_spec(kind, vm, spec):
                     return None
             elif kind == "draw_nth":
@@ -587,6 +587,8 @@ def split_head(line: str):
         if got[1].get("kind") in ("attack_with", "attack_power") and not cx_trig_events.attack_rest_ok(rest):
             continue
         effs, bad = _parse_effects(rest[0].upper() + rest[1:] if not rest.startswith("~") else rest)
+        if (bad or not effs) and rest.startswith("you "):
+            effs, bad = _parse_effects(rest[4].upper() + rest[5:])       # "you draw that many cards"
         if bad or not effs:
             return None
         return tuple("ev:" + r for r in got[0]), head, rest

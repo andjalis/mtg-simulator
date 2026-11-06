@@ -97,6 +97,8 @@ class StackMixin:
                 self.fire(controller, "each_upkeep" if event == "upkeep" else "each_end_step", context=p)
                 if event == "upkeep" and controller is not p:
                     self.fire(controller, "opp_upkeep", context=p)
+                if event == "end_step" and controller is not p:
+                    self.fire(controller, "opp_end_step", context=p)
 
     def _dispatch_trigger_event(self, p, event, source=None, context=None, subject=None):
         from ..residual_templates import trigger_suppressed

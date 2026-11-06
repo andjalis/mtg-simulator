@@ -5,6 +5,7 @@ daybound / nightbound permanent with it."""
 
 def set_state(game, state):
     """Make it day or night and transform the permanents that face the wrong way."""
+    changed = getattr(game, "day_night", None) not in (None, state)
     game.day_night = state
     for pl in game.players:
         for perm in list(pl.battlefield):
@@ -14,13 +15,16 @@ def set_state(game, state):
             elif state == "day" and c.nightbound and getattr(perm, "front_face", None) is not None:
                 game.transform(perm)
     game.log(f"it becomes {state}")
+    if changed:
+        for pl in game.players:
+            game.fire(pl, "day_night_change")        # "whenever day becomes night or night becomes day"
 
 
 def on_enter(game, perm):
     """A daybound or nightbound permanent entering: it becomes day if neither; a daybound one entering at
     night enters transformed."""
     c = perm.card
-    if not (c.daybound or c.nightbound):
+    if not (c.daybound or c.nightbound or c.advanced_rules.get("starts_day")):
         return
     if getattr(game, "day_night", None) is None:
         set_state(game, "day")

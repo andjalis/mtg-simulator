@@ -26,22 +26,33 @@ _VERBS = [
     (r"(?:is|are) dealt combat damage", "dealt_combat"),
     (rf"attacks? with (?P<q>one or more|{_COUNT} or more|exactly {_COUNT}) (?P<d>.+)", "attack_with"),
     (r"attacks? while creatures you control have total power (?P<p>\d+) or greater", "attack_power"),
+    (r"rolls? a die", "roll"),
+    (r"rolls? a (?P<n>\d+)", "roll_exact"),
+    (r"exerts? a creature", "exert"),
+    (r"plays? a land or casts? a spell", "land_or_cast"),
+    (r"deals? noncombat damage to an opponent", "src_noncombat"),
 ]
 _RAW = {"surveil": ("you_surveil",), "win_flip": ("you_win_flip",), "lose_turn": ("opp_loses_life",),
         "lose_first": ("opp_loses_life",), "gain_lose_turn": ("gain_life", "opp_loses_life"),
         "dealt": ("player_damaged",), "dealt_noncombat": ("player_damaged",), "dealt_combat": ("player_damaged",),
-        "attack_with": ("you_attack",), "attack_power": ("you_attack",)}
+        "attack_with": ("you_attack",), "attack_power": ("you_attack",),
+        "roll": ("you_roll",), "roll_exact": ("you_roll",), "exert": ("exerted",),
+        "land_or_cast": ("land_played", "any_cast"), "src_noncombat": ("player_damaged",)}
+cx_events._PLAYER_SUBJ["a source you control"] = "src_you"
 
 # the fixed verbs go first: "loses life during your turn" must not be read as a longer match of "loses life"
 cx_events._PLAYER_VERBS[0:0] = _VERBS
 cx_events._PLAYER_RAW.update(_RAW)
-cx_events._OBSERVED.update({"you_surveil", "you_win_flip", "player_damaged", "explores"})
+cx_events._OBSERVED.update({"you_surveil", "you_win_flip", "player_damaged", "explores", "exerted", "you_roll"})
 
 
 def extend_spec(kind, vm, spec) -> bool:
     """Parse the extra parts of the attack verbs into ``spec``; False when the wording isn't understood."""
     if kind == "attack_power":
         spec["power"] = int(vm["p"])
+        return True
+    if kind == "roll_exact":
+        spec["n"] = int(vm["n"])
         return True
     if kind != "attack_with":
         return True
@@ -77,6 +88,11 @@ def attack_rest_ok(rest: str) -> bool:
 
 def player_ok(game, spec, actor, me, event, perm=None) -> bool:
     kind = spec["kind"]
+    if kind == "roll_exact":
+        return (getattr(game, "event_amount", None) or 0) == spec["n"]
+    if kind == "src_noncombat":
+        return spec["player"] == "src_you" and actor is not me and not getattr(game, "event_combat", False) \
+            and getattr(game, "event_dmg_by", None) is me
     if kind == "attack_power":
         return sum(c.power for c in me.creatures) >= spec["power"]
     if kind == "attack_with":
@@ -107,6 +123,10 @@ TRIGGERS = [
     (r"At the beginning of the end step of enchanted (?:creature|land|artifact|permanent|enchantment)'s controller, (.+)",
      ("host_end_step",)),
     (r"At the beginning of your combat step, (.+)", ("begin_combat",)),
+    (r"Whenever day becomes night or night becomes day, (.+)", ("day_night_change",)),
+    (r"At the beginning of each opponent's end step, (.+)", ("opp_end_step",)),
+    (r"At the beginning of each of your postcombat main phases, (.+)", ("main2_begin",)),
+    (r"At the beginning of combat on each opponent's turn, (.+)", ("opp_begin_combat",)),
 ]
 
 
