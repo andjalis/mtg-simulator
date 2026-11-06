@@ -216,3 +216,30 @@ def _move(m):
 EFFECT_PATTERNS.append(
     (rf"(?:you may )?move (a|an|one|two|three|all|any number of) (?:({_COUNTER}) )?counters?(?: of that kind)? "
      rf"from (~|target [^,]+?) onto (~|(?:a second |another |one other )?target [^,]+)", _move))
+
+
+def _scaled_counters(m):
+    """"Put a number of <kind> counters on <obj> equal to <quantity>" / "Put X <kind> counters on <obj>, where X is
+    <quantity>" / "Put N <kind> counters on <obj> for each <thing>": the add_counter amount scaled by a known quantity
+    (the same ``xq`` the other scaled effects use)."""
+    from .cards.model import NO_MATCH
+    from .cx_night_quantity import _PLURAL_ZONES, _quantity
+    from .permanent_templates import build
+    if m.groupdict().get("n"):       # "for each"
+        n, spec = _num(m["n"]), _quantity("the number of " + _PLURAL_ZONES.get(m["each"], m["each"]), plural=False)
+    else:
+        n, spec = 1, _quantity(m["q"])
+        if re.search(r"\bthe result\b|\bthose\b", m["q"]):
+            return NO_MATCH
+    if spec is None:
+        return NO_MATCH
+    eff = build("add_counter", m["obj"], amount=n, data={"counter": m["kind"], "xq": spec})
+    return NO_MATCH if eff is None or eff.target == "group" else eff
+
+
+_OBJ = r"(?P<obj>it|~|target [^,]+?|that creature)"
+EFFECT_PATTERNS += [
+    (rf"put (?:a number of|x) (?P<kind>{_COUNTER}) counters on {_OBJ}(?: equal to |, where x is )(?P<q>.+)",
+     _scaled_counters),
+    (rf"put (?P<n>a|an|one|two|three) (?P<kind>{_COUNTER}) counters? on {_OBJ} for each (?P<each>.+)", _scaled_counters),
+]
