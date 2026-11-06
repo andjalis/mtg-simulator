@@ -472,11 +472,19 @@
     "cards": ["Additive Evolution"]
   },
   {
-    "match": "put (a|one|two|three|four) -1/-1 counters? on (?:up to one )?target creature",
+    "match": "put (a|one|two|three|four) -1/-1 counters? on up to one target creature",
     "effect": "shrink",
     "amount": "$1:num",
     "target": "creature",
-    "filter": "opp",
+    "data": {"optional_target": true},
+    "example": "Put a -1/-1 counter on up to one target creature",
+    "cards": ["Banewhip Punisher"]
+  },
+  {
+    "match": "put (a|one|two|three|four) -1/-1 counters? on target creature",
+    "effect": "shrink",
+    "amount": "$1:num",
+    "target": "creature",
     "example": "Put a -1/-1 counter on target creature",
     "cards": ["Banewhip Punisher"]
   },
@@ -1081,7 +1089,15 @@
     "cards": ["Cryogen Relic"]
   },
   {
-    "match": "(?:up to one )?target creature you control can't be blocked this turn",
+    "match": "up to one target creature you control can't be blocked this turn",
+    "effect": "unblockable",
+    "target": "creature_mine",
+    "data": {"optional_target": true},
+    "example": "up to one target creature you control can't be blocked this turn",
+    "cards": ["Bria, Riptide Rogue"]
+  },
+  {
+    "match": "target creature you control can't be blocked this turn",
     "effect": "unblockable",
     "target": "creature_mine",
     "example": "target creature you control can't be blocked this turn",
@@ -1215,7 +1231,15 @@
     "cards": ["A-Psionic Snoop"]
   },
   {
-    "match": "(?:up to one )?target creature you control connives",
+    "match": "up to one target creature you control connives",
+    "effect": "connive",
+    "target": "creature_mine",
+    "data": {"optional_target": true},
+    "example": "up to one target creature you control connives",
+    "cards": ["Leader, Super-Genius"]
+  },
+  {
+    "match": "target creature you control connives",
     "effect": "connive",
     "target": "creature_mine",
     "example": "target creature you control connives",
@@ -1670,11 +1694,20 @@
     "cards": ["Caretaker's Talent"]
   },
   {
-    "match": "put (a|one|two|three) \\+1/\\+1 counters? on (?:up to one )?target creature(?: or Vehicle)?(?: you control)?",
+    "match": "put (a|one|two|three) \\+1/\\+1 counters? on up to one target creature(?: or Vehicle)?(?: you control)?",
     "effect": "p1_counters",
     "amount": "$1:num",
     "target": "creature_mine",
+    "data": {"optional_target": true},
     "example": "Put a +1/+1 counter on up to one target creature",
+    "cards": ["A-Fall of the Impostor"]
+  },
+  {
+    "match": "put (a|one|two|three) \\+1/\\+1 counters? on target creature(?: or Vehicle)?(?: you control)?",
+    "effect": "p1_counters",
+    "amount": "$1:num",
+    "target": "creature_mine",
+    "example": "Put a +1/+1 counter on target creature",
     "cards": ["A-Fall of the Impostor"]
   },
   {

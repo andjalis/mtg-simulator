@@ -254,7 +254,11 @@ class StackMixin:
                 if not effects:
                     continue
             if targets is None:
-                targets = self.auto_targets(controller, effects, source)
+                self.trigger_context = context        # "that creature deals damage ...": cx_abil_damage reads it
+                try:
+                    targets = self.auto_targets(controller, effects, source)
+                finally:
+                    self.trigger_context = None
             effects = counter_mechanics.protect_graveyard_targets(self, effects, targets)
             item = StackItem(controller, effects, targets, source=source, name=name, context=context, kind=kind)
             item.intervening_if = intervening_if

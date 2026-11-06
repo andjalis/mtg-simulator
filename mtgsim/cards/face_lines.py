@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 
 from .. import discounts, graveyard, modal
-from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, storage as _storage, cx_static_cost as _cx_static_cost
+from .. import alt_casts as _alt_casts, auras as _auras, copies as _copies, counting as _counting, creature_keywords as _creature_keywords, storage as _storage, cx_static_cost as _cx_static_cost, cx_static_combat as _cx_static_combat
 from .model import Activated, AltCost, COLORS, Effect, KEYWORDS, NUMBERS, Trigger, _num, parse_mana_cost
 from .patterns import _parse_mana_ability
 from .parse import _apply_speed_gate, _mana_restriction, _parse_ability, _parse_effects, _parse_trigger
@@ -16,6 +16,14 @@ class _FaceState:
 
     def __init__(self, **values):
         self.__dict__.update(values)
+
+
+def _sub(word):
+    """A subtype from the plural stem the line regexes capture: "Armie" (Armies) is Army, "Zombie" stays."""
+    from ..permanent_templates import _CREATURE_SUBTYPES
+    if word.lower() not in _CREATURE_SUBTYPES and word.endswith("ie") and (word[:-2] + "y").lower() in _CREATURE_SUBTYPES:
+        return word[:-2] + "y"
+    return word
 
 
 def _face_special_lines(st, line):
@@ -531,7 +539,7 @@ def _face_land_and_mana_lines(st, line):
             extra["exile_damaged"] = True
             return None
         if line in ("Daybound", "Nightbound"):
-            approximations.append("day/night isn't tracked: it stays on its front face")
+            extra[line.lower()] = True       # see day_night.py
             return None
         if re.fullmatch(r"Casualty \d+", line):
             approximations.append(f"never paid: {line}")
@@ -760,17 +768,17 @@ def _face_cost_and_static_lines(st, line):
         m = re.fullmatch(r"(Other )?([A-Z][a-z]+?)s? you control get \+(\d+)/\+(\d+) and have (menace|trample|flying|"
                          r"vigilance|haste|lifelink|first strike|deathtouch|reach)\.", line)
         if m and m[2] != "Creature":
-            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
-            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((m[2], m[5], bool(m[1])),)
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((_sub(m[2]), int(m[3]), int(m[4]), bool(m[1])),)
+            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((_sub(m[2]), m[5], bool(m[1])),)
             return None
         m = re.fullmatch(r"(Other )?(Merfolk|[A-Z][a-z]+?)s? you control get \+(\d+)/\+(\d+)\.", line)
         if m and m[2] != "Creature":
-            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((m[2], int(m[3]), int(m[4]), bool(m[1])),)
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + ((_sub(m[2]), int(m[3]), int(m[4]), bool(m[1])),)
             return None
         m = re.fullmatch(r"(Other )?([A-Z][a-z]+?)s you control have (menace|trample|flying|vigilance|haste|lifelink|"
                          r"first strike|double strike|deathtouch|reach|indestructible)\.", line)
         if m and m[2] != "Creature":
-            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((m[2], m[3], bool(m[1])),)
+            extra["keyword_sub"] = extra.get("keyword_sub", ()) + ((_sub(m[2]), m[3], bool(m[1])),)
             return None
         m = re.fullmatch(r"~ costs \{(\d+)\} less to cast if you control an? ([A-Z]\w+)\.", line)
         if m:
@@ -1180,7 +1188,7 @@ def _face_ability_lines(st, line):
                     etb += t.effects
             unsupported += bad
             return None
-        if _cx_static_cost.parse_line(line, st):
+        if _cx_static_cost.parse_line(line, st) or _cx_static_combat.parse_line(line, st):
             return None
         if not types.isdisjoint({"Instant", "Sorcery"}):
             head = modal.parse_header(line)

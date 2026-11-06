@@ -47,7 +47,6 @@ class Parsing(unittest.TestCase):
                   "Destroy target creature unless its controller pays {2}.",       # condition (gcond)
                   "Destroy all lands or all creatures.",                           # a choice
                   "Destroy target creature that dealt damage this turn.",          # history
-                  "Exile target card from a graveyard.",                           # another zone
                   "Exile that creature.",                                          # back-reference round
                   "Destroy all creatures of the creature type of your choice.",
                   "Return target creature to its owner's hand until end of turn."):
@@ -221,6 +220,150 @@ class QualifiedRemovalWordings(Base):
         rock = self.perm(ROCK, self.a)
         self.assertTrue(self.legal("Destroy target artifact or enchantment.", rock))
 
+DIER = card("Test Dier", "{1}{B}", "Creature — Zombie", "When this creature dies, you gain 3 life.", 2, 2)
+ARTIST = card("Test Artist", "{1}{B}", "Creature — Vampire", "Whenever another creature dies, you gain 1 life.", 0, 1)
+
+
+class Library(Base):
+    """Putting a permanent into its owner's library never passes through the graveyard."""
+    def setUp(self):
+        super().setUp()
+        self.perm(ARTIST, self.a)
+        self.life = (self.a.life, self.b.life)
+
+    def tuck(self, text, victim):
+        self.cast(self.spell(text), [victim])
+        self.game.flush_triggers()
+        while self.game.stack:
+            self.game.resolve_top()
+
+    def assert_no_death(self):
+        self.assertEqual((self.a.life, self.b.life), self.life)
+        self.assertEqual(self.b.graveyard, [])
+
+    def test_top_fires_no_dies_triggers(self):
+        dier = self.perm(DIER, self.b)
+        self.tuck("Put target creature on top of its owner's library.", dier)          # the old tuck_top kind
+        self.assertIs(self.b.library[-1], dier.front)
+        self.assert_no_death()
+
+    def test_grammar_top_bottom_and_shuffle(self):
+        land, dier, other = self.perm(HILL, self.b), self.perm(DIER, self.b), self.perm(DIER, self.b)
+        self.tuck("Put target land on top of its owner's library.", land)
+        self.assertIs(self.b.library[-1], land.front)
+        self.tuck("Put target nonland permanent on the bottom of its owner's library.", dier)
+        self.assertIs(self.b.library[0], dier.front)
+        self.tuck("Shuffle target creature into its owner's library.", other)
+        self.assertIn(other.front, self.b.library)
+        self.assertEqual(len(self.b.library), 23)
+        self.assert_no_death()
+
+    def test_stolen_permanent_goes_to_its_owners_library(self):
+        dier = self.perm(DIER, self.b)
+        self.b.battlefield.remove(dier)
+        dier.controller = self.a
+        self.a.battlefield.append(dier)
+        self.tuck("Put target creature on top of its owner's library.", dier)
+        self.assertIs(self.b.library[-1], dier.front)
+        self.assertNotIn(dier.front, self.a.library)
+
+    def test_token_ceases_to_exist(self):
+        token = self.perm(dataclasses.replace(DIER, is_token=True), self.b)
+        self.tuck("Put target nonland permanent on the bottom of its owner's library.", token)
+        self.assertNotIn(token, self.b.battlefield)
+        self.assertEqual(len(self.b.library), 20)
+        self.assert_no_death()
+
+    def test_group_to_the_bottom(self):
+        mine, theirs = self.perm(BEAR, self.a), self.perm(DIER, self.b)
+        self.cast(self.spell("Put all creatures on the bottom of their owners' libraries.", "Sorcery"))
+        self.assertEqual((self.a.library[0].name, self.b.library[0].name), (BEAR.name, DIER.name))
+        self.assertNotIn(mine, self.a.battlefield)
+        self.assertNotIn(theirs, self.b.battlefield)
+
+    def test_ai_tucks_the_opponents_permanent(self):
+        mine, theirs = self.perm(BEAR, self.a), self.perm(BEAR, self.b)
+        spell = card("Test Spell", "{U}", "Sorcery", "Put target nonland permanent on the bottom of its owner's library.")
+        self.perm(ISLAND, self.a)
+        self.a.hand = [spell]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertNotIn(spell, self.a.hand)
+        self.assertIn(mine, self.a.battlefield)
+        self.assertNotIn(theirs, self.b.battlefield)
+
+
+class GraveyardCards(Base):
+    """Cards moved out of an exact graveyard by a card noun phrase."""
+    def test_parsing(self):
+        effs = parse_sentence("Return up to two target creature cards with power 2 or less from your graveyard to "
+                              "the battlefield.")
+        self.assertEqual([(e.kind, e.target) for e in effs], [("cx_card_move", "graveyard_card")] * 2)
+        self.assertTrue(effs[0].data["optional_target"] and effs[0].data["distinct"])
+        for s in ("Return target creature card with infect from your graveyard to your hand.",     # unknown words
+                  "Return target creature card with lesser mana value from your graveyard to the battlefield.",
+                  "Return target creature card from a graveyard to the battlefield.",   # under whose control?
+                  "Return target card from an opponent's graveyard to your hand.",
+                  "Put two target cards from a graveyard on top of their owners' libraries.",
+                  "Exile target card from that player's graveyard."):
+            self.assertIsNone(parse_sentence(s), s)
+
+    def test_zone_is_exact(self):
+        mine, theirs = self.a.graveyard, self.b.graveyard
+        mine.append(BEAR)
+        theirs.append(GREEN)
+        spell = self.spell("Return target card from an opponent's graveyard to their hand.")
+        self.assertEqual(self.game.legal_targets(self.a, spell.spell_effects[0]), [theirs[0]])
+        self.cast(spell, [theirs[0]])
+        self.assertEqual([c.name for c in self.b.hand], [GREEN.name])
+
+    def test_card_noun_is_checked(self):
+        self.a.graveyard.extend([BEAR, ROCK])
+        spell = self.spell("Return target creature card with power 2 or less from your graveyard to the battlefield.")
+        self.assertEqual([c.name for c in self.game.legal_targets(self.a, spell.spell_effects[0])], [BEAR.name])
+        self.cast(spell, [self.a.graveyard[0]])
+        self.assertEqual([x.card.name for x in self.a.battlefield], [BEAR.name])
+
+    def test_to_owners_hand_from_any_graveyard(self):
+        self.b.graveyard.append(ROCK)
+        self.cast(self.spell("Return target artifact or enchantment card from a graveyard to its owner's hand."),
+                  [self.b.graveyard[0]])
+        self.assertEqual(([c.name for c in self.b.hand], self.a.hand), ([ROCK.name], []))
+
+    def test_onto_the_battlefield_under_your_control(self):
+        self.b.graveyard.append(GREEN)
+        self.cast(self.spell("Put target creature card from a graveyard onto the battlefield under your control.",
+                             "Sorcery"), [self.b.graveyard[0]])
+        self.assertEqual([x.card.name for x in self.a.battlefield], [GREEN.name])
+        self.assertEqual(self.a.battlefield[0].owner, self.b)
+
+    def test_exile_and_bottom_of_library(self):
+        self.b.graveyard.extend([ROCK, GREEN])
+        self.cast(self.spell("Exile target artifact card from a graveyard."), [self.b.graveyard[0]])
+        self.assertEqual([c.name for c in self.b.exile], [ROCK.name])
+        self.cast(self.spell("Put target card from a graveyard on the bottom of its owner's library."),
+                  [self.b.graveyard[0]])
+        self.assertEqual((self.b.library[0].name, self.b.graveyard), (GREEN.name, []))
+
+    def test_ai_casts_a_reanimation(self):
+        self.a.graveyard.append(BEAR)
+        self.b.graveyard.append(GREEN)
+        spell = card("Test Spell", "{U}", "Sorcery",
+                     "Return target creature card with power 2 or less from your graveyard to the battlefield.")
+        self.perm(ISLAND, self.a)
+        self.a.hand = [spell]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertNotIn(spell, self.a.hand)
+        self.assertIn(BEAR.name, [x.card.name for x in self.a.battlefield])
+        self.assertEqual(len(self.b.graveyard), 1)
+
+    def test_ai_aims_by_side(self):
+        self.a.graveyard.append(BEAR)
+        self.b.graveyard.append(GREEN)
+        for text, owner in (("Return target creature card from a graveyard to its owner's hand.", self.a),
+                            ("Exile target creature card from a graveyard.", self.b)):
+            eff = parse_sentence(text)[0]
+            tgt = self.a.ai.choose_target(self.game, self.a, eff, self.spell(text))
+            self.assertTrue(any(c is tgt for c in owner.graveyard), text)
 
 if __name__ == "__main__":
     unittest.main()

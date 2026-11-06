@@ -423,7 +423,7 @@ def unblocked_damage(attackers, blockers, chump=True) -> int:
     total = 0
     for power, flying, menace, perm in left:
         pick = None
-        need = getattr(perm.card, "min_blocker_power", 0) if perm is not None else 0
+        need = max(getattr(perm.card, "min_blocker_power", 0), perm.temp_min_blocker) if perm is not None else 0
         for b in free:
             if flying and not (b[1] or b[2]):
                 continue
@@ -862,7 +862,11 @@ class HeuristicAI:
             if eff.kind == "pump" or eff.target == "spell" or _is_trick(card):
                 return None  # tricks go in after_blocks / respond, counters in respond
             if eff.kind == "damage" and eff.target in ("any", "player", "creature", "creature_pw"):
-                tgt, v = self.best_damage_target(game, me, eff, card, precombat or instant)
+                if eff.data.get("src_prev") or eff.data.get("cx_rel") == "not_prev":      # "it deals damage equal to its power"
+                    from .cx_abil_damage import plan_damage
+                    tgt, v = plan_damage(self, game, me, eff, card, precombat or instant, targets)
+                else:
+                    tgt, v = self.best_damage_target(game, me, eff, card, precombat or instant)
                 if tgt is None:
                     return None
                 if instant and tgt is not opp and v < LETHAL and not self._clears_blocker(game, me, tgt, precombat):
