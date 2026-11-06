@@ -42,6 +42,27 @@ class Splice(unittest.TestCase):
         self.a.hand = [shock, self.db.get("Consuming Vortex")]
         self.assertFalse([v for v in self.game.spell_options(self.a) if "splice" in v.name])
 
+    def test_several_cards_can_be_spliced_onto_one_spell(self):
+        arcane = self.db.get("Ethereal Haze")
+        vortex, breath = self.db.get("Consuming Vortex"), self.db.get("Blessed Breath")
+        self.a.hand = [arcane, vortex, breath]
+        victim = self.game.enter_battlefield(self.b, BEAR)
+        mine = self.game.enter_battlefield(self.a, BEAR)
+        self.game.settle()
+        for land in ["Plains", "Plains"] + ["Island"] * 4:
+            self.game.enter_battlefield(self.a, self.db.get(land))
+        self.game.settle()
+        opts = [v for v in self.game.spell_options(self.a) if v.name.startswith("Ethereal Haze (splice")]
+        self.assertEqual(len(opts), 3)                  # Vortex, Breath, and both
+        both = max(opts, key=lambda v: len(v.spliced))
+        self.assertEqual(len(both.spliced), 2)
+        self.assertTrue(self.game.cast(self.a, both))
+        self.game.settle()
+        self.assertNotIn(victim, self.b.battlefield)    # Consuming Vortex's effect
+        self.assertTrue(any(k.startswith("protection from") for k in mine.temp_kw))   # Blessed Breath's
+        self.assertIn(vortex, self.a.hand)
+        self.assertIn(breath, self.a.hand)
+
 
 if __name__ == "__main__":
     unittest.main()
