@@ -90,6 +90,34 @@ def bounce(m, clause):
     return _parts("bounce", m[1])
 
 
+_WHERE = {"on top of": "top", "on the bottom of": "bottom"}
+
+
+@verb(r"put (.+?) (on top of|on the bottom of) (?:its|their) owners?'? librar(?:y|ies)", heads=("put",),
+      subjects=("imperative",))
+def put_library(m, clause):
+    """"Put target creature on top of its owner's library", "Put all creatures on the bottom of their owners'
+    libraries": cx_tuck. (Several cards on top at once would need an order: only one target or a group of one.)"""
+    if clause.duration:
+        return None
+    parts = _parts("cx_tuck", m[1])
+    if parts is None or m[2] == "on top of" and (len(parts) > 1 or parts[0].obj.kind == "group"
+                                                  or parts[0].obj.copies > 1):
+        return None
+    for part in parts:
+        part.data = {"where": _WHERE[m[2]], "side": "theirs"}
+    return parts
+
+
+@verb(r"shuffles? (.+?) into (?:its|their) owners?'? librar(?:y|ies)", heads=("shuffle",), subjects=("imperative",))
+def shuffle_library(m, clause):
+    if clause.duration:
+        return None
+    parts = _parts("cx_tuck", m[1])
+    for part in parts or ():
+        part.data = {"where": "shuffle", "side": "theirs"}
+    return parts
+
 @verb(r"sacrifices? (a|an|one|two|three|four|five|\d+) (.+)", heads=("sacrifice", "sacrifices"),
       subjects=("player",))
 def sacrifice(m, clause):
@@ -113,7 +141,7 @@ def _signed(me, perm, v: float) -> float:
     return v if perm.controller is not me else -v
 
 
-@ai_value("destroy", "exile_permanent", "bounce")
+@ai_value("destroy", "exile_permanent", "bounce", "cx_tuck")
 def _removal_value(game, me, eff, obj):
     from .engine.policy import perm_value
     from .engine.state import Permanent
