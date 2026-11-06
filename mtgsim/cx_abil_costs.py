@@ -13,7 +13,7 @@ import re
 _N = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
       "nine": 9, "ten": 10}
 _NUM = r"(a|an|one|two|three|four|five|six|seven|eight|nine|ten|\d+)"
-KINDS = ("untap_self", "remove_sac", "remove_creature_counter", "exile_top_library", "exile_top_gy")
+KINDS = ("sacrifice_n", "untap_self", "remove_sac", "remove_creature_counter", "exile_top_library", "exile_top_gy")
 
 
 def _n(word: str) -> int:
@@ -33,6 +33,12 @@ def parse_part(part: str, extra: dict) -> bool:
         spec = ("exile_top_library", 1 if m[1] == "card" else _n(m[1]), {})
     elif (m := re.fullmatch(r"Exile the top (?:(creature|land|artifact|instant|sorcery) )?card of your graveyard", part)):
         spec = ("exile_top_gy", 1, {"type": m[1]} if m[1] else {})
+    elif (m := re.fullmatch(rf"Sacrifice {_NUM} (.+)", part)):
+        from .permanent_templates import selector
+        n = _n(m[1])
+        sel = selector(m[2], plural=n > 1)
+        if sel is not None and n >= 1 and "controller" not in sel:
+            spec = ("sacrifice_n", n, dict(sel))
     if spec is None or spec[1] < 1:
         return False
     extra["cx_costs"] = extra.get("cx_costs", ()) + (spec,)
@@ -53,7 +59,15 @@ def _creature_with(p, perm, counter, n):
     return _cheap([x for x in p.battlefield if x.is_creature and x.counters.get(counter, 0) >= n])
 
 
+def _sac_pool(game, p, perm, spec):
+    from .permanent_templates import matches
+    from .engine.policy import perm_value
+    return sorted((x for x in p.battlefield if x is not perm and matches(game, x, spec, p, perm)), key=perm_value)
+
+
 def payable(game, p, perm, kind, n, spec) -> bool:
+    if kind == "sacrifice_n":
+        return len(_sac_pool(game, p, perm, spec)) >= n
     if kind == "untap_self":
         return perm in p.battlefield and perm.tapped and not (perm.is_creature and perm.sick)   # CR 302.6
     if kind == "remove_sac":
@@ -68,6 +82,13 @@ def payable(game, p, perm, kind, n, spec) -> bool:
 
 
 def pay_one(game, p, perm, kind, n, spec) -> bool:
+    if kind == "sacrifice_n":
+        pool = _sac_pool(game, p, perm, spec)
+        if len(pool) < n:
+            return False
+        for x in pool[:n]:
+            game.sacrifice(x)
+        return True
     if kind == "untap_self":
         perm.tapped = False
     elif kind == "remove_sac":
