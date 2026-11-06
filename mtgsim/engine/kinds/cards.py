@@ -12,7 +12,7 @@ from . import NO_SBA, kind
 
 @kind("draw")
 def draw(game, p, eff, opp, item=None, target=None, **_):
-    who = opp if eff.target == "each_opponent" else target if eff.target == "that_controller" and \
+    who = opp if eff.target == "each_opponent" else target if eff.target in ("that_controller", "player") and \
         isinstance(target, Player) else p
     n = eff.amount
     if eff.data.get("x_half"):

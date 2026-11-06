@@ -54,7 +54,7 @@ def _damage(game, p, eff, target, item, opp, cause, src=None):
 
 @kind("gain_life")
 def gain_life(game, p, eff, target, cause, **_):
-    who = target if eff.target == "that_controller" and isinstance(target, Player) else p
+    who = target if eff.target in ("that_controller", "player") and isinstance(target, Player) else p
     game.change_life(who, eff.amount, cause)
 
 
@@ -67,7 +67,7 @@ def drain(game, p, eff, opp, cause, **_):
 
 @kind("lose_life")
 def lose_life(game, p, eff, target, cause, **_):
-    who = target if eff.target in ("that_player", "that_controller") and isinstance(target, Player) else p
+    who = target if eff.target in ("that_player", "that_controller", "prev") and isinstance(target, Player) else p
     game.change_life(who, -eff.amount, cause)
 
 
