@@ -63,7 +63,7 @@ def _alt(text: str):
     specs = []
     for part in parts:
         spec = _filter(part, plural=False)
-        if spec is None or spec.get("other") or "tapped" in spec or "counter" in spec or "modified" in spec:
+        if spec is None or len(spec.get("sub", ())) > 1 or spec.get("other") or "tapped" in spec or "counter" in spec or "modified" in spec:
             return None
         if kw:
             spec = dict(spec, card_kw=kw)
@@ -124,6 +124,9 @@ def _sane(spec):
     """Drop a counters quantity whose counter name is really a longer phrase the count table misread."""
     if spec is not None and spec[0] == "counters" and not re.fullmatch(r"[+-]?\w+(?:/[+-]\d+)?", spec[1]):
         return None
+    from .cx_night_quantity import _known_words
+    if spec is not None and spec[0] == "gy" and not _known_words(spec[1]):
+        return None         # "different mana value among instant and sorcery" isn't a card count
     return spec
 
 
