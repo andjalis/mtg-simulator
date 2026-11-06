@@ -88,7 +88,7 @@ are rare (22k distinct, top 1,000 complete about 2,100 cards), so each lane pref
 
 | Lane | Owns | Owner |
 | --- | --- | --- |
-| Effect grammar: compositional subject / verb / object / duration parsing for sentences no template matches | `mtgsim/cx_grammar*.py`, `mtgsim/engine/kinds/cx_grammar.py`, `tests/test_cx_grammar*.py`; one-line fallback hook in `cards/parse.py` `_parse_effects` | Codex (`codex/grammar-*`) |
+| Effect grammar: compositional subject / verb / object / duration parsing for sentences no template matches | `mtgsim/cx_grammar*.py`, `mtgsim/engine/kinds/cx_grammar.py`, `tests/test_cx_grammar*.py`; one-line fallback hook in `cards/parse.py` `_parse_effects` | Claude Opus (`claude/grammar-*`) |
 | Activated-ability effects and cost parts | `mtgsim/cx_abil*.py`, `mtgsim/engine/kinds/cx_abil.py`, `tests/test_cx_abil*.py`; one-line hook in `cards/parse.py` `_parse_ability_cost` | Claude Sonnet (`claude/abil-*`) |
 | Trigger heads | `mtgsim/cx_trig*.py`, `mtgsim/engine/kinds/cx_trig.py`, `tests/test_cx_trig*.py`; additions to `cx_events.py` | Claude Sonnet (`claude/trig-*`) |
 | Named mechanics (Contraptions, Attractions, Sieges, Rooms, splice, spellbooks, prepared, banding, ...) | `mtgsim/cx_mech*.py`, `mtgsim/engine/kinds/cx_mech.py`, `tests/test_cx_mech*.py` | Claude Sonnet (`claude/mech-*`) |
