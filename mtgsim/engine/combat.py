@@ -117,6 +117,7 @@ class CombatMixin:
         if len(attackers) == 1:
             self.fire(p, "attacks_alone", context=attackers[0])
         self.fire(p, "you_attack")
+        self.event_amount = None           # "that many" set by the attack-with heads (cx_trig_events)
         if len(attackers) >= 2:
             self.fire(p, "attack_two_plus")
         if len(attackers) >= 3:
