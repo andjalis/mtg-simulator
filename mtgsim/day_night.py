@@ -23,7 +23,7 @@ def on_enter(game, perm):
     if not (c.daybound or c.nightbound):
         return
     if getattr(game, "day_night", None) is None:
-        set_state(game, "day")
+        set_state(game, "night" if c.nightbound and not c.daybound else "day")    # CR 726.2
     elif game.day_night == "night" and c.daybound and c.back is not None and c.back.nightbound:
         game.transform(perm)
     elif game.day_night == "day" and c.nightbound and getattr(perm, "front_face", None) is not None:
@@ -33,10 +33,11 @@ def on_enter(game, perm):
 def begin_turn(game, p):
     """At the start of p's untap step: day turns to night if the previous player cast no spells, night to day
     if they cast two or more."""
+    previous = getattr(game, "dn_previous", None) or game.opponent(p)    # whose turn just ended (extra turns)
+    game.dn_previous = p
     state = getattr(game, "day_night", None)
     if state is None:
         return
-    previous = game.opponent(p)
     cast = getattr(game, "last_turn_spells", {}).get(previous.name, 0)
     if state == "day" and cast == 0:
         set_state(game, "night")

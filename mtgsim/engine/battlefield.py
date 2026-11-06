@@ -232,6 +232,10 @@ class BattlefieldMixin:
             perm.tapped = True
             self.attackers.append(perm)
             self.attack_targets[perm] = self.opponent(p)
+        if card.daybound or card.nightbound:     # before the enters triggers: a daybound card enters transformed at night
+            from ..day_night import on_enter as day_night_enter
+            day_night_enter(self, perm)
+        card = perm.card
         from ..residual_templates import suppressed
         if card.etb_effects and not any(t.event == "etb" for t in card.triggers):
             if not (perm.is_creature and suppressed(self, "entry")):
@@ -254,9 +258,6 @@ class BattlefieldMixin:
                 self.fire(pl, "permanent_enters", subject=perm)
         if card.is_land:
             self.fire(p, "land_enters", subject=perm)
-        if card.daybound or card.nightbound:
-            from ..day_night import on_enter as day_night_enter
-            day_night_enter(self, perm)
         if getattr(self, '_entry_batch', None) is None:
             self.state_based_actions()
         return perm
