@@ -109,3 +109,36 @@ class GraveyardPicks(unittest.TestCase):
         n = len(a.library)
         game.resolve(a, DWELL.spell_effects[0], a, None)
         self.assertEqual((len(a.graveyard), len(a.library)), (2, n + 4))
+
+
+DORAN = card("Test Doran", "{1}{G}", "Enchantment",
+             "Each creature you control assigns combat damage equal to its toughness rather than its power.")
+WALL = card("Test Wall", "{1}", "Creature", "Defender", power=0, toughness=5)
+
+
+class ToughnessDamage(unittest.TestCase):
+    def test_parse(self):
+        self.assertEqual(DORAN.unsupported, [])
+
+    def test_only_my_creatures_assign_toughness(self):
+        from mtgsim.cx_night_aura import dmg_stat
+        game, a, b = _game()
+        game.enter_battlefield(a, DORAN)
+        game.enter_battlefield(a, WALL)
+        game.enter_battlefield(b, WALL)
+        mine = next(x for x in a.battlefield if x.card.name == WALL.name)
+        theirs = b.battlefield[-1]
+        self.assertEqual((dmg_stat(game, mine), dmg_stat(game, theirs)), (5, 0))
+
+    def test_combat_damage_uses_toughness(self):
+        game, a, b = _game()
+        game.enter_battlefield(a, DORAN)
+        game.enter_battlefield(a, ROCK)
+        rock = a.battlefield[-1]
+        b.life = 20
+        game.attack_targets = {rock: b}
+        game.combat_damage(a, b, [rock], {}, lambda c: True)
+        self.assertEqual(b.life, 15)
+
+
+ROCK = card("Test Rock", "{1}", "Creature", "", power=0, toughness=5)
