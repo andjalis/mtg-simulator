@@ -526,3 +526,12 @@ class PlayersAsRiders(Base):
         self.a.ai.main_phase(self.game, self.a)
         self.assertNotIn(path, self.a.hand)
         self.assertNotIn(angel, self.b.battlefield)
+
+
+class YouMayHave(unittest.TestCase):
+    def test_the_choice_stays_with_the_outer_parser(self):
+        from mtgsim.cards import parse as P
+        self.assertIsNone(parse_sentence("You may have target creature gain flying until end of turn."))
+        effects, bad = P._parse_effects("You may have target creature gain flying until end of turn.")
+        self.assertEqual(bad, [])
+        self.assertEqual(effects[0].kind, "pay_gate")           # the optional "you may" gate, not a mandatory grant
