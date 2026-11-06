@@ -499,6 +499,8 @@ class CostsMixin:
             n = sum(card_matches(x.card, "a " + card.cost_reduction[9:]) for x in p.battlefield)
         elif card.cost_reduction == "domain":    # "costs {1} less for each basic land type among lands you control"
             n = self.x_quantity(p, ("domain",), None, None)
+        elif card.cost_reduction == "undaunted":      # {1} less for each opponent
+            n = len(self.players) - 1
         elif card.cost_reduction == "party":
             # "This spell costs {1} less to cast for each creature in your party" (Coveted Prize)
             n = self.party_size(p)
@@ -795,7 +797,7 @@ class CostsMixin:
             return False
         if card.extra_life_cost and p.life <= card.extra_life_cost:
             return False
-        if card.extra_discard and not card.discard_or_pay and self.spare_cards(p, card) < 1:
+        if card.extra_discard and not card.discard_or_pay and self.spare_cards(p, card) < card.extra_discard:
             return False
         if self.active is not p and any(x.card.opp_no_cast for x in self.opponent(p).battlefield):
             return False

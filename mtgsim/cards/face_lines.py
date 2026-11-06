@@ -534,7 +534,7 @@ def _face_land_and_mana_lines(st, line):
             extra["exile_damaged"] = True
             return None
         if line in ("Daybound", "Nightbound"):
-            approximations.append("day/night isn't tracked: it stays on its front face")
+            extra[line.lower()] = True       # see day_night.py
             return None
         if re.fullmatch(r"Casualty \d+", line):
             approximations.append(f"never paid: {line}")
