@@ -57,6 +57,7 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
         self.end_combat_effects: list[tuple] = []  # (controller, effects, source, that creature): "at end of combat"
         self.delayed_end_combat: list[tuple] = []  # (trigger controller, exact permanent to sacrifice)
         self.attackers: list[Permanent] = []
+        self.last_attackers: list[Permanent] = []     # attackers of the combat that just ended (game.attackers is cleared)
         self.attack_targets: dict = {}   # attacker -> Player or planeswalker Permanent
         self.blocks: dict = {}
         self._priority_depth = 0
