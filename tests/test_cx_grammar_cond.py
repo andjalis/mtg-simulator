@@ -80,20 +80,32 @@ class RealCards(Base):
             row = card_coverage(self.db.get(name))
             self.assertEqual(row.status, "full", (name, row.ignored))
 
-    def scrapper(self, colors):
-        scrapper = self.db.get("Gruul Scrapper")
-        self.game.stack.append(StackItem(self.a, [], [], card=scrapper, name=scrapper.name))
-        self.game.stack[-1].mana_colors = colors
+    def enter(self, name, colors=(), kicks=0):
+        """Cast a creature (its payment recorded as given), resolve it and its ETB trigger; the new permanent."""
+        c = self.db.get(name)
+        item = StackItem(self.a, [], [], card=c, name=c.name)
+        item.mana_colors, item.kicks = set(colors), kicks
+        self.game.stack.append(item)
         self.game.resolve_top()
+        perm = self.a.battlefield[-1]
         while self.game.flush_triggers() or self.game.stack:
             self.game.resolve_top()
-        return next(x for x in self.a.battlefield if x.card.name == "Gruul Scrapper")
+        return perm
 
     def test_gruul_scrapper_needs_red_spent(self):
-        perm = self.scrapper({"R", "G"})
+        perm = self.enter("Gruul Scrapper", "RG")
         self.assertEqual(perm.mana_colors, frozenset({"R", "G"}))
         self.assertTrue(perm.has("haste"))
-        self.assertFalse(self.scrapper({"G"}).has("haste"))
+        self.assertFalse(self.enter("Gruul Scrapper", "G").has("haste"))
+
+    def test_it_in_a_self_etb_trigger_is_the_permanent(self):
+        """"When ~ enters, if it was kicked, it gains haste": "it" is the creature that entered (the etb trigger's
+        context), not nothing."""
+        self.assertTrue(self.enter("Scorch Rider", kicks=1).has("haste"))
+        self.assertFalse(self.enter("Scorch Rider").has("haste"))
+        iconoclast = self.enter("Yavimaya Iconoclast", kicks=1)
+        self.assertTrue(iconoclast.has("haste"))
+        self.assertEqual(iconoclast.power, 4)
 
     def test_sphinxs_insight_main_phase(self):
         self.game.active_idx = 0
