@@ -531,22 +531,22 @@ class CostsMixin:
         pending = getattr(self, "next_discount", {}).get(p.name)
         if pending and pending[0] == self.turn:
             n += pending[1]             # "the next spell you cast this turn costs {N} less" (Peerless Samurai)
-        cost["generic"] = max(0, cost.get("generic", 0) - n)
         from ..batch1_templates import spell_tax
-        cost["generic"] += spell_tax(self, p, card)
-        cost = cx_static_cost.adjust(self, p, card, cost)
+        more = spell_tax(self, p, card)             # increases: taxes and "or pay {N}" additional costs
         if card.extra_discard and card.discard_or_pay and self.spare_cards(p, card) < 1:
-            cost["generic"] += card.discard_or_pay
+            more += card.discard_or_pay
         if card.behold_or_pay:
             sub, tax = card.behold_or_pay
             if not (any(sub in x.card.subtypes for x in p.battlefield) or
                     any(sub in c.subtypes for c in p.hand if c is not card)):
-                cost["generic"] += tax
+                more += tax
+        if card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
+            more += card.extra_sac_or_pay
+        # 601.2f: the total cost is the mana cost plus every increase, then every reduction
+        cost = cx_static_cost.adjust(self, p, card, cost, increase=more, reduction=n)
         if card.convoke:
             self._convoke_k = min(len(self.convoke_pool(p)), cost.get("generic", 0))
             cost["generic"] -= self._convoke_k
-        if card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
-            cost["generic"] += card.extra_sac_or_pay
         if assist and (card.improvise or card.delve):
             cost = self.assist_payment(p, card, cost)[0]
         if getattr(card, "spell_copy", False):
@@ -618,7 +618,7 @@ class CostsMixin:
                         v.extra_discard = alt.discard
                     v.spell_effects = list(alt.effects if alt.effects is not None else card.spell_effects) + \
                         list(alt.extra)
-                    v.cost_reduction = ""
+                    # the card's own cost reduction still applies to an alternative cost (CR 601.2f)
             v.origin = (card, kind, alt)
             v.origin_generation = getattr(card, "generation", None)
             self._variants[key] = v
@@ -642,7 +642,7 @@ class CostsMixin:
         if cols:
             out += [self._variant(c, f"spent_{col}", AltCost("spent", self._hybrid_cost(c.mana_cost, c.hybrid, col)))
                     for col in cols]
-        else:
+        elif not c.advanced_rules.get("no_mana_cost"):     # no printed cost can't be paid: alt costs only
             out.append(c)
         full = any(self.spell_payable(p, v) for v in out)
         for a in c.alt_costs:
@@ -742,7 +742,7 @@ class CostsMixin:
             return getattr(self, "foreign_zones", {}).get((id(p), kind), p.exile)
         return {"grave_permission": p.graveyard, "aftermath": p.graveyard, "from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile, "airbent": p.airbent,
-                "mayhem": p.graveyard, "unearth": p.graveyard, "disturb": p.graveyard, "jump_start": p.graveyard,
+                "mayhem": p.graveyard, "madness": p.exile, "unearth": p.graveyard, "disturb": p.graveyard, "jump_start": p.graveyard,
                 "retrace": p.graveyard,
                 "escape": p.graveyard, "impulse": p.exile, "suspended": p.exile, "rebound": p.exile,
                 "cascade": p.exile, "cascade_adventure": p.exile,

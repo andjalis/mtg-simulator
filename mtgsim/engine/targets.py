@@ -36,6 +36,10 @@ class TargetsMixin:
             from ..cx_effects import passes
             if not passes(self, eff, perm, by):
                 return False
+        if eff.data.get('cx_rel'):         # "target creature blocking it" (cx_abil_damage)
+            from ..cx_abil_damage import rel_ok
+            if not rel_ok(self, eff, perm):
+                return False
         f = eff.filter
         if eff.data.get('attached_aura') and (not perm.card.aura or perm.aura_host is None):
             return False
