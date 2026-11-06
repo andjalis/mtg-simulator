@@ -40,3 +40,4 @@ from . import cx_night_flip  # noqa: E402,F401
 from . import cx_night_lifemv  # noqa: E402,F401
 from . import cx_night_endturn  # noqa: E402,F401
 from . import cx_night_combat  # noqa: E402,F401
+from . import cx_night_loot  # noqa: E402,F401
