@@ -157,5 +157,63 @@ class AI(unittest.TestCase):
         game.settle()
         self.assertNotIn(big, b.battlefield)
 
+class Dealer(unittest.TestCase):
+    """"It" / "that creature" is the creature an earlier effect targeted (or that triggered the ability), not the card."""
+
+    DEADSHOT = "Tap target creature. It deals damage equal to its power to another target creature."
+
+    def test_parse_marks_the_dealer(self):
+        spell = card("Test Deadshot", "{2}{R}", "Sorcery", self.DEADSHOT)
+        self.assertEqual(spell.unsupported, [])
+        damage = spell.spell_effects[-1]
+        self.assertTrue(damage.data.get("src_prev"))
+        self.assertTrue(damage.data.get("source_power"))
+
+    def test_deadshot_the_tapped_creature_deals_the_damage(self):
+        game, a, b = arena(HeuristicAI)
+        game.step = "main1"
+        for _ in range(3):
+            game.enter_battlefield(a, card("Mountain", types="Basic Land — Mountain", text="({T}: Add {R}.)")).sick = False
+        spell = card("Test Deadshot", "{2}{R}", "Sorcery", self.DEADSHOT)
+        big = game.enter_battlefield(b, card("Test Colossus", "{6}", "Creature — Giant", "", 6, 6))
+        small = game.enter_battlefield(b, card("Test Elf", "{1}", "Creature — Elf", "", 1, 2))     # power 1: its own damage can't kill it
+        a.hand = [spell]
+        a.ai.main_phase(game, a)
+        game.settle()
+        self.assertTrue(big.tapped)                                      # the first target
+        self.assertNotIn(small, b.battlefield)                           # killed by the tapped creature's 6 power
+        self.assertEqual(big.damage, 0)                                  # "another target": not itself
+        self.assertIn(spell, a.graveyard)
+
+    def test_trigger_subject_deals_the_damage(self):
+        game, a, b = arena()
+        watcher = card("Test Watcher", "{2}", "Enchantment",
+                       "Whenever a creature you control enters, that creature deals damage equal to its power to any target.")
+        self.assertEqual(watcher.unsupported, [])
+        game.enter_battlefield(a, watcher)
+        game.enter_battlefield(a, card("Test Ogre", "{4}", "Creature — Ogre", "", 5, 5))
+        game.settle()
+        self.assertEqual(b.life, 15)                           # 5 power from the entering creature, not 0 from the card
+
+    def test_real_cards_parse(self):
+        from mtgsim.carddb import CardDB
+        db = CardDB(offline=True)
+        for name in ("Deadshot", "Electropotence", "Halana, Kessig Ranger", "Brokers Charm"):
+            with self.subTest(name=name):
+                self.assertEqual(db.get(name).unsupported, [])
+
+    def test_gated_trigger_halana(self):
+        """Halana: the entering creature (power 4), not Halana (power 3) and not the target, deals the damage."""
+        from mtgsim.carddb import CardDB
+        game, a, b = arena(HeuristicAI)
+        game.enter_battlefield(a, CardDB(offline=True).get("Halana, Kessig Ranger"))
+        for _ in range(2):
+            game.enter_battlefield(a, ISLAND).sick = False
+        victim = game.enter_battlefield(b, card("Test Victim", "{4}", "Creature — Giant", "", 1, 4))
+        game.enter_battlefield(a, card("Test Ogre", "{4}", "Creature — Ogre", "", 4, 4))
+        game.settle()
+        self.assertNotIn(victim, b.battlefield)                # 4 damage from the Ogre; Halana's 3 would not kill it
+
+
 if __name__ == "__main__":
     unittest.main()
