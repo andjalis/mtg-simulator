@@ -78,3 +78,50 @@ class RealCards(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AISides(Base):
+    def choose(self, eff, spell):
+        with self.game.targeting(spell):
+            return self.a.ai.choose_target(self.game, self.a, eff, spell)
+
+    def test_skip_untap_aims_at_the_opponent(self):
+        self.perm(BEAR, self.a)
+        wolf = self.perm(WOLF, self.b)
+        spell = self.spell("Target creature doesn't untap during its controller's next untap step.")
+        self.assertEqual(spell.spell_effects[0].kind, "skip_untap")
+        self.assertIs(self.choose(spell.spell_effects[0], spell), wolf)
+
+    def test_untap_target_creature_you_dont_control(self):
+        self.perm(BEAR, self.a).tapped = True
+        wolf = self.perm(WOLF, self.b)
+        wolf.tapped = True
+        spell = self.spell("Untap target creature you don't control. That creature blocks this turn if able.")
+        self.assertIs(self.choose(spell.spell_effects[0], spell), wolf)
+
+    def test_single_target_base_pt(self):
+        mine = self.perm(BEAR, self.a)
+        giant = self.perm(card("Test Giant", "{4}", "Creature — Giant", "", 5, 5), self.b)
+        spell = self.spell("Target creature has base power and toughness 1/1 until end of turn.")
+        self.assertIn(spell.spell_effects[0].kind, ("cx_set_base", "set_base_pt"))
+        self.assertIs(self.choose(spell.spell_effects[0], spell), giant)
+        big = self.spell("Target creature has base power and toughness 4/4 until end of turn.")
+        self.assertIs(self.choose(big.spell_effects[0], big), mine)
+
+    @unittest.skipUnless(DB_FILE.exists(), "card database not built")
+    def test_hostile_takeover(self):
+        from mtgsim.carddb import CardDB
+        takeover = CardDB().get("Hostile Takeover")
+        mine = self.perm(BEAR, self.a)
+        giant = self.perm(card("Test Giant", "{4}", "Creature — Giant", "", 5, 5), self.b)
+        shrink, grow = takeover.spell_effects[0], takeover.spell_effects[1]
+        self.assertIs(self.choose(shrink, takeover), giant)
+        self.assertIs(self.choose(grow, takeover), mine)
+
+    @unittest.skipUnless(DB_FILE.exists(), "card database not built")
+    def test_provoke_is_cast_at_their_creature(self):
+        from mtgsim.carddb import CardDB
+        provoke = CardDB().get("Provoke")
+        wolf = self.perm(WOLF, self.b)
+        wolf.tapped = True
+        self.assertIs(self.choose(provoke.spell_effects[0], provoke), wolf)
