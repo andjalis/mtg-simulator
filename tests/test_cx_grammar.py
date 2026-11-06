@@ -254,3 +254,27 @@ class PlayerSubjects(Base):
     def test_target_players_are_left_to_templates(self):
         self.assertIsNone(parse_sentence("Target player gains 2 life and draws a card."))
         self.assertIsNone(parse_sentence("Each player gains 2 life and sacrifices a creature."))
+
+
+class Quantities(Base):
+    def test_group_for_each(self):
+        elf = card("Test Elf", "{G}", "Creature — Elf", "", 1, 1)
+        x, y = self.perm(elf, self.a), self.perm(elf, self.a)
+        self.cast(self.spell("Creatures you control get +1/+0 until end of turn for each Elf you control."))
+        self.assertEqual((x.power, y.power, x.toughness), (3, 3, 1))
+
+    def test_group_where_x(self):
+        g = self.perm(GOBLIN, self.a)
+        self.a.hand = [BEAR, BEAR, BEAR]
+        self.cast(self.spell("Goblins you control get +X/+X until end of turn, where X is the number of cards in your hand."))
+        self.assertEqual((g.power, g.toughness), (4, 4))
+
+    def test_players_for_each(self):
+        self.perm(BEAR, self.a), self.perm(BEAR, self.a)
+        life = self.b.life
+        self.cast(self.spell("Each opponent loses 1 life for each creature you control."))
+        self.assertEqual(self.b.life, life - 2)
+
+    def test_unknown_quantity_is_rejected(self):
+        self.assertIsNone(parse_sentence("Creatures you control get +1/+1 until end of turn for each creature blocking it."))
+        self.assertIsNone(parse_sentence("Target creature gains flying until end of turn for each card in your hand."))

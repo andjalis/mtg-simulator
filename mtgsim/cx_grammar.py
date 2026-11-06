@@ -22,6 +22,7 @@ Every word must be understood: anything else returns None, so the sentence stays
 """
 from __future__ import annotations
 
+import dataclasses
 import re
 
 from .permanent_templates import _SUBTYPE_TYPES, keywords, selector
@@ -189,6 +190,9 @@ def parse_sentence(s: str):
     """Effects for one whole sentence, or None."""
     s = s.strip().rstrip(".").strip()
     s = re.sub(r"^(?:then |you may have |have )", "", s, flags=re.I)
+    m = re.fullmatch(r"(.+?) for each (.+?)( until end of turn)?", s, re.I)
+    if m and not re.search(r"\bfor each\b", m[2], re.I):
+        return _for_each(m[1] + (m[3] or ""), m[2])
     players = parse_players(s)
     if players is not None:
         return players
@@ -231,6 +235,48 @@ def parse_sentence(s: str):
             else:
                 out.append(_effect(k, a, b, target="prev" if target == "permanent" else target, data=d))
     return out
+
+
+_SCALED = ("pump", "debuff_one", "gain_life", "lose_life", "draw", "discard", "mill")
+
+
+def _for_each(rest: str, desc: str):
+    """"<sentence> for each <thing>": the sentence with its amounts multiplied by the count, read through the
+    ", where X is the number of ..." quantities (cards.clauses._xq)."""
+    spec = _count_spec(desc)
+    if spec is None:
+        return None
+    effects = parse_sentence(rest)
+    if not effects:
+        return None
+    scaled = [e for e in effects for e in ([e] + list(e.data.get("effects", ()))) if e.kind in _SCALED]
+    if not scaled:
+        return None
+    return [dataclasses.replace(e, data=dict(e.data, xq=spec)) for e in effects]
+
+
+def _count_spec(desc: str):
+    """The X-quantity spec for "the number of <desc, made plural>", or None."""
+    from .cards.clauses import _xq
+    from .cx_events import _IRREGULAR
+    plural = {v.lower(): k.lower() for k, v in _IRREGULAR.items()}
+    words = desc.split()
+    for i, w in enumerate(words):
+        low = w.lower()
+        many = plural.get(low) or (low[:-1] + "ies" if low.endswith("y") and low[-2:-1] not in "aeiou"
+                                   else low + "es" if low.endswith(("s", "x", "ch", "sh")) else low + "s")
+        if w[:1].isupper():
+            many = many.capitalize()
+        spec = _xq("the number of " + " ".join(words[:i] + [many] + words[i + 1:]))
+        if spec is None:
+            continue
+        if spec[0] == "count" and isinstance(spec[1], str):
+            # _xq singularises with a plain trailing "s" ("Elves" -> "Elve"): name the thing as written instead.
+            head = " ".join(words[:i + 1])
+            if re.sub(r"^other ", "", spec[1]) != re.sub(r"^other ", "", head):
+                spec = (spec[0], head) + tuple(spec[2:])
+        return spec
+    return None
 
 
 # ---------------------------------------------------------------- player subjects
