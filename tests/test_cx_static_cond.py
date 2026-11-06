@@ -110,5 +110,29 @@ class StaticConditions(unittest.TestCase):
             self.game.resolve(self.a, eff, None, None)
         self.assertEqual((len(self.a.hand) - hand, life - self.a.life), (1, 1))
 
+    def rebuff(self, devotion, lands):
+        """Thassa's Rebuff over the opponent's Grizzly Bears spell: counter unless they pay {X}, X = devotion to blue."""
+        rebuff = self.db.get("Thassa's Rebuff")
+        self.assertEqual(rebuff.unsupported, [])
+        forest = card("Forest", types="Basic Land — Forest", text="({T}: Add {G}.)")
+        for _ in range(lands):
+            self.put(forest, self.b)
+        for _ in range(devotion // 2):
+            self.put(MERFOLK)                                   # {U}{U}
+        from mtgsim.engine.state import StackItem
+        spell = StackItem(self.b, list(BEAR.spell_effects), [], card=BEAR, name=BEAR.name, kind="spell")
+        self.game.stack.append(spell)
+        self.game.resolve(self.a, rebuff.spell_effects[0], spell, None)
+        return spell in self.game.stack
+
+    def test_rebuff_devotion_zero_keeps_spell(self):
+        self.assertTrue(self.rebuff(0, 2))                     # pays {0}: the spell stays
+
+    def test_rebuff_counters_when_they_cannot_pay(self):
+        self.assertFalse(self.rebuff(4, 2))                    # owes {4} with two lands
+
+    def test_rebuff_they_pay(self):
+        self.assertTrue(self.rebuff(2, 4))                     # owes {2}, two lands left over
+
 if __name__ == "__main__":
     unittest.main()
