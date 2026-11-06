@@ -439,6 +439,8 @@ class EffectsMixin:
                 for trig in x.card.host_triggers:
                     if trig.event == "dies":
                         self.queue_trigger(x.controller, trig.effects, x, x.card.name, context=perm)
+            from ..cx_mech import queue_recover
+            queue_recover(self, perm)
             self.fire(perm.controller, "ally_dies", subject=perm)
             self.fire(perm.controller, "ally_dies", perm, subject=perm)
             if perm.blitz:

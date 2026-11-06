@@ -89,6 +89,20 @@ class AltCasts(unittest.TestCase):
         self.assertEqual(bear.counters.get("+1/+1"), 2)
         self.assertIn(card, self.a.graveyard)
 
+    def test_recover_pays_to_return_or_exiles(self):
+        for paid in (True, False):
+            self.setUp()
+            card = self.db.get("Grim Harvest")
+            self.a.graveyard = [card]
+            if paid:
+                for land in ("Swamp",) * 3:
+                    self.put(self.a, land)
+            victim = self.put(self.a, BEAR)
+            self.game.dies(victim)
+            self.game.settle()
+            self.assertIn(card, self.a.hand if paid else self.a.exile, paid)
+            self.assertNotIn(card, self.a.graveyard)
+
 
 if __name__ == "__main__":
     unittest.main()

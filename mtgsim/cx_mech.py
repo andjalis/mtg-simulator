@@ -21,6 +21,10 @@ def parse_line(line: str, st) -> bool:
     from .cards.model import AltCost, parse_mana_cost
     if parse_alt_line(line, st):
         return True
+    m = re.fullmatch(r"Recover ((?:\{[^}]+\})+)(?: \(.*\))?", line)
+    if m:
+        st.alt_costs.append(AltCost("recover", parse_mana_cost(m[1]), zone="graveyard"))
+        return True
     m = re.fullmatch(r"Splice onto Arcane ((?:\{[^}]+\})+)(?: \(.*\))?", line)
     if m:
         st.alt_costs.append(AltCost("splice", parse_mana_cost(m[1])))
@@ -155,3 +159,30 @@ def beam_variants(game, p, card) -> list:
     if not any(x.is_creature for x in p.battlefield):
         return []
     return [game._variant(card, "beam", a) for a in card.alt_costs if a.kind == "beam"]
+
+
+def queue_recover(game, perm) -> None:
+    """A creature was put into its owner's graveyard: each Recover card there gets its trigger."""
+    from .cards.model import Effect
+    owner = perm.owner
+    for card in list(owner.graveyard):
+        if any(a.kind == "recover" for a in card.alt_costs):
+            version = owner.graveyard.version(card) if hasattr(owner.graveyard, "version") else None
+            game.queue_trigger(owner, [Effect("cx_recover")], None, f"{card.name}: recover",
+                               context=(owner, card, version))
+
+
+def resolve_recover(game, item) -> None:
+    """Pay the recover cost to return the card to hand; otherwise exile it."""
+    from .engine.mana import payable
+    owner, card, version = item.context
+    grave = owner.graveyard
+    if card not in grave or (version is not None and hasattr(grave, "version") and grave.version(card) != version):
+        return
+    cost = next(a.cost for a in card.alt_costs if a.kind == "recover")
+    if payable(game.mana_sources(owner), cost) and game.pay(owner, cost, spell="ability") is not None:
+        game.move_card(card, grave, owner.hand, reason="recover")
+        game.log(f"recovers {card.name}", owner)
+    else:
+        game.move_card(card, grave, owner.exile, reason="recover")
+        game.log(f"{card.name} is exiled (recover not paid)", owner)
