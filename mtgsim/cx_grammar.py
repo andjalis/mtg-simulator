@@ -264,10 +264,13 @@ def subject(text: str):
         return Subject("permanent", target="self", text=text)
     if low in ("it", "that creature", "that permanent"):
         return Subject("permanent", target="prev", text=text)
-    m = re.fullmatch(r"creatures target (player|opponent) controls", low)
-    if m:
-        return Subject("group", target="player", data={"filter": "opp"} if m[1] == "opponent" else {},
-                       group={"selector": {"types_all": ["creature"]}}, text=text)
+    m = re.fullmatch(r"(?:(each|all) )?(.+) target (player|opponent) controls", text, re.I)
+    if m:           # "creatures target player controls", "each nonartifact creature target opponent controls"
+        noun = _noun(m[2], plural=not (m[1] and m[1].lower() == "each"))
+        if noun is None or "controller" in noun.get("selector", {}) or "you control" in m[2].lower():
+            return None
+        return Subject("group", target="player", data={"filter": "opp"} if m[3].lower() == "opponent" else {},
+                       group=noun, text=text)
     m = re.fullmatch(r"(?:(up to) )?(?:(a|one|two|three|four|five) )?(other |another )?target (.+?)( each)?", text, re.I)
     if m and not (m[1] and not m[2]):
         n = _NUMBER[m[2].lower()] if m[2] else 1
