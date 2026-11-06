@@ -403,3 +403,10 @@ class ColorSide(Base):
         self.assertIs(self.target_for("Target creature becomes blue until end of turn. Untap that creature."), mine)
         self.assertIs(self.target_for("Target creature becomes white until end of turn. Tap that creature."), theirs)
         self.assertIs(self.target_for("Target creature becomes black until end of turn."), theirs)
+
+
+class LootSide(unittest.TestCase):
+    def test_draw_then_discard_is_for_its_controller(self):
+        effs = parse_sentence("Target player draws two cards, then discards a card.")
+        self.assertEqual((effs[0].target, effs[0].data["side"]), ("player", "mine"))
+        self.assertIsNone(parse_sentence("Target player discards a card, then draws a card."))   # helps and hurts

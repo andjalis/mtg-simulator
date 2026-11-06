@@ -370,6 +370,9 @@ _HELPS = ("pump", "grant", "gain_life", "draw", "cx_set_base")
 
 def side(effects) -> str:
     """Whose side a chosen player should be on: "mine" when the effects only help, else "theirs"."""
+    kinds = [e.kind for e in effects]
+    if kinds and kinds[0] == "draw" and set(kinds) <= {"draw", "discard", "discard_random"}:
+        return "mine"           # "draws two cards, then discards a card": card selection, wanted by its controller
     hurt = any(e.kind not in _HELPS or e.data.get("side") == "theirs" for e in effects)
     return "theirs" if hurt else "mine"
 
@@ -387,7 +390,7 @@ def assemble(subj: Subject, parts: list):
     if subj.kind == "player":
         inner = [_effect(p.kind, p.amount, p.amount2, target="that_controller", data=p.data) for p in parts]
         if subj.who == "target":
-            if len({side([e]) for e in inner}) > 1:
+            if side(inner) == "theirs" and any(side([e]) == "mine" for e in inner):
                 return None         # helps and hurts: which player the controller wants isn't clear
             return [_effect("cx_players", target="player", filter=subj.data.get("filter", ""),
                             data={"who": "target", "side": side(inner), "effects": inner})]
