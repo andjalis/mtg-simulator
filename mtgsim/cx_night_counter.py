@@ -46,8 +46,15 @@ def _plus_each(m):
     return _scaled("mine:" + m[2].title(), 1, int(m[1]))
 
 
+def _targets_mine(m):
+    from .cards.model import Effect
+    return Effect("counter", 0, target="spell", filter="targets_mine")
+
+
 _PAY = r"counter target spell unless its controller pays "
 EFFECT_PATTERNS = [
+    # Keep Safe, Rebuff the Wicked, Turn Aside: the spell must target a permanent controlled by the counterspell's caster
+    (r"counter target spell that targets a permanent you control", _targets_mine),
     (r"counter target (nonartifact|creature or planeswalker|creature or battle) spell unless its controller pays \{(\d+)\}",
      _typed_spell),
     (_PAY + r"\{1\} for each (card in your graveyard|card in your hand|creature you control|artifact you control|"

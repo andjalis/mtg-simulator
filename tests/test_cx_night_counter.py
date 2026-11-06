@@ -81,3 +81,25 @@ class CounterTaxes(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+TURN_ASIDE = card("Test Aside", "{U}", "Instant", "Counter target spell that targets a permanent you control.")
+
+
+class TargetsMine(unittest.TestCase):
+    def test_only_spells_aimed_at_my_permanents(self):
+        a = Player("a", [BEAR] * 10, HeuristicAI())
+        b = Player("b", [BEAR] * 10, HeuristicAI())
+        game = Game(a, b, random.Random(0), log=False)
+        game.turn, game.step = 1, "main1"
+        self.assertEqual(TURN_ASIDE.unsupported, [])
+        game.enter_battlefield(a, BEAR)
+        game.enter_battlefield(b, BEAR)
+        mine, theirs = a.battlefield[-1], b.battlefield[-1]
+        aimed = StackItem(card=BEAR, controller=b, effects=[], targets=[mine])
+        elsewhere = StackItem(card=BEAR, controller=b, effects=[], targets=[theirs])
+        untargeted = StackItem(card=BEAR, controller=b, effects=[], targets=[])
+        game.stack.extend([aimed, elsewhere, untargeted])
+        eff = TURN_ASIDE.spell_effects[0]
+        self.assertEqual([game.can_counter(eff, i, by=a) for i in (aimed, elsewhere, untargeted)],
+                         [True, False, False])

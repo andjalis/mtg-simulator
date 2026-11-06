@@ -166,6 +166,9 @@ class TargetsMixin:
             return False
         if eff.filter == "nonartifact" and card.is_artifact:
             return False
+        if eff.filter == "targets_mine" and not any(
+                isinstance(t, Permanent) and t.controller is by for t in item.targets):
+            return False
         if eff.filter == "artifact_ench" and not (card.is_artifact or "Enchantment" in card.types):
             return False
         if eff.filter == "creature_ench" and not (card.is_creature or "Enchantment" in card.types):
