@@ -174,7 +174,7 @@ class TurnsMixin:
             if self.over or card not in p.graveyard:
                 continue
             for idx in range(len(card.gy_activated)):
-                if self.activate_graveyard(p, card, idx):
+                if graveyard.worth(self, p, card, idx) and self.activate_graveyard(p, card, idx):
                     break
             if card not in p.graveyard:
                 continue

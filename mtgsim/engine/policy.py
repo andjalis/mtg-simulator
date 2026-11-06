@@ -554,6 +554,10 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
         for victim in game.sacrifice_candidates(me, perm, c["sacrifice"])[:c.get("sac_n", 1)]:
             if not victim.card.is_token and perm_value(victim) > 1:
                 return False
+    if c.get("cx_costs"):
+        from ..cx_abil_costs import ai_cost_ok
+        if not ai_cost_ok(game, me, perm, c):
+            return False
     if c.get("discard") and not choose_rummage(game, me, 1) and len(me.hand) <= 4:
         return False
     if c.get("life") and me.life <= 10:
