@@ -1,2 +1,0 @@
-pyflakes: 1 finding(s)
-/Users/andjalis/mtg-worktrees/trig/tests/test_cx_trig_reflex.py:9:1: 'tests.test_templates.card' imported but unused
