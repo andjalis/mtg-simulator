@@ -127,7 +127,12 @@ Then #164 ("You gain life equal to the damage dealt this way": `deal_damage` rec
 stack resolution; Syphon Soul and Brightflame match the sentence but keep their damage clause unsupported), #165
 ("Counter target spell that targets a permanent you control", a `targets_mine` counter filter) and #166 ("Each player
 may discard their hand and draw seven cards" as `wheel_all`, always taking the "may"; Ali from Cairo's "damage can't
-reduce your life below 1" as a `life_floor` flag). Still open: "Spells your opponents cast that target ~ cost {2} more"
+reduce your life below 1" as a `life_floor` flag). Then #168 ("destroy target artifact or enchantment that player controls", 4 cards), #169 ("discard a card at random" as an
+additional cost, 3 cards), #170 ("exile up to N target cards from a single graveyard" and "shuffle up to N target cards
+from their graveyard into their library": two new kinds, `exile_gy_n` and `shuffle_gy_n`; 16 cards) and the doomed extra
+turn ("Take an extra turn after this one. At the beginning of that turn's end step, you lose the game": `extra_turn`
+with `doomed`, the loss is checked just after that turn instead of at its end step trigger; 4 cards).
+Still open: "Spells your opponents cast that target ~ cost {2} more"
 (needs a cost step after targets are chosen).
 Still open from the census: counter taxes by devotion, basic land types and party size, and
 "can't attack unless you pay ..." costs.

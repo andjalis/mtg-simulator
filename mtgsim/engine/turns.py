@@ -129,6 +129,12 @@ class TurnsMixin:
                 if counts.get("turn") == self.turn else {}       # werewolves: spells cast in the turn that ends
             self.turn += 1
             self.take_turn(self.players[self.active_idx])
+            doomed = getattr(self, "doomed_extra", None)
+            from ..cx_night_aura import cant_lose
+            if doomed and doomed[1] == self.turn and not doomed[0].lost and not cant_lose(self, doomed[0]):
+                self.audit("loss", seat=self.players.index(doomed[0]), cause="lost at the end of its extra turn")
+                doomed[0].lost = True
+                self.log("loses the game at the end of the extra turn", doomed[0])
             if self.players[self.active_idx] in self.extra_turns:   # "take an extra turn after this one"
                 self.extra_turns.remove(self.players[self.active_idx])
             else:

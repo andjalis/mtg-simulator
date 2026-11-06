@@ -217,8 +217,10 @@ def extra_land(game, p, **_):
 
 
 @kind("extra_turn")
-def extra_turn(game, p, **_):
+def extra_turn(game, p, eff=None, **_):
     game.extra_turns.append(p)
+    if eff is not None and eff.data.get("doomed"):       # Final Fortune: "you lose the game" at the end of that turn
+        game.doomed_extra = (p, game.turn + 1)
     game.log("will take an extra turn", p)
 
 
