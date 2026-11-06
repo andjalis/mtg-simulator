@@ -112,3 +112,9 @@ class EventTests(unittest.TestCase):
 
     def test_blocks_or_becomes_blocked_by_a_creature(self):
         self.assertEqual(self._combat("Whenever ~ blocks or becomes blocked by a creature, you gain 1 life."), 2)
+
+    def test_dealt_damage_that_many(self):
+        hound = self.put("Blood Hound")
+        self.game.deal_damage(self.a, 3, cause="x")
+        self.game.settle()
+        self.assertEqual(hound.p1, 3)

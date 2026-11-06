@@ -431,6 +431,7 @@ _OBJ_VERBS = [
     (r"becomes? untapped", ("becomes_untapped",), ""),
     (r"deals? combat damage to (?:a player|an opponent|a player or planeswalker|a player or battle|one or more players)",
      ("combat_damage_player",), ""),
+    (r"deals? combat damage to you", ("combat_damage_player",), "dmg_me"),
     (r"deals? combat damage to a creature", ("combat_damage_creature",), ""),
     (r"deals? combat damage", ("combat_damage_player", "combat_damage_creature"), ""),
     (r"deals? damage to (?:a player|an opponent)", ("damages_player",), ""),
@@ -482,7 +483,7 @@ def compile_head(head: str):
     if not m or re.search(r"\b(?:this turn|this combat|while|commander|chosen|named|each combat)\b", m[1]) or \
             re.match(r"(?:it|that|they|this) ", m[1]):
         return None
-    body = m[1]
+    body = m[1].replace("you're ", "you are ", 1) if m[1].startswith("you're ") else m[1]
     for subj, who in _PLAYER_SUBJ.items():
         if not body.startswith(subj + " "):
             continue
