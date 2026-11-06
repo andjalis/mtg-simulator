@@ -13,7 +13,7 @@ import re
 _WHEN_DO = re.compile(r"\s*when you do\b", re.I)
 # A payoff about "it" / "that creature" needs the action's object remembered; the engine doesn't carry that
 # across the link, so those stay unsupported instead of acting on the wrong object.
-_BACKREF = re.compile(r"\s*when you do, (?:attach\b|it|they|he|she|that [\w ]+?|those [\w ]+?|~ deals that much)\b", re.I)
+_BACKREF = re.compile(r"\s*when you do, (?:attach\b|if\b|it|they|he|she|that [\w ]+?|those [\w ]+?|~ deals that much)\b", re.I)
 
 
 def parse_reflex(s: str, following: str):
