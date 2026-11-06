@@ -198,4 +198,3 @@ _EFFECT_PATTERNS += _cx_night_edict.EFFECT_PATTERNS
 from .. import cx_night_misc as _cx_night_misc
 _EFFECT_PATTERNS += _cx_night_misc.EFFECT_PATTERNS
 _SUBS += _cx_night_endturn.SUBS
-from .. import cx_static_cond as _cx_static_cond  # noqa: E402,F401  (registers its cx_condlib rules)

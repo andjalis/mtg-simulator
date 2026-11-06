@@ -969,3 +969,6 @@ def holds_for(source, code: str, ref=None) -> bool:
         pass
     _Src.source, _Src.context = source, ref
     return bool(_eval_any(game, p, code, _Src, source, ref or source))
+
+
+from . import cx_static_cond  # noqa: E402,F401  (registers its condition rules)
