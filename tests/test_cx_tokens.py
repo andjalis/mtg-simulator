@@ -158,44 +158,6 @@ class RealCards(unittest.TestCase):
         self.assertFalse(token_effects(self.db.get("The Ooze")))
 
 
-@unittest.skipUnless(DB_FILE.exists(), "card database not built")
-class HeuristicAIGames(unittest.TestCase):
-    """The default AI casts the cards itself and the tokens land on the right side."""
-    @classmethod
-    def setUpClass(cls):
-        cls.db = CardDB()
-
-    def setup(self, spell, land, step, active):
-        from mtgsim.ai import HeuristicAI
-        self.a, self.b = Player("a", [], HeuristicAI()), Player("b", [], HeuristicAI())
-        self.game = Game(self.a, self.b, random.Random(0), log=True)
-        self.game.turn, self.game.step, self.game.active_idx = 3, step, active
-        for p in (self.a, self.b):
-            p.library = [ISLAND] * 20
-        for _ in range(4):
-            self.game.enter_battlefield(self.a, self.db.get(land)).sick = False
-        self.a.hand = [self.db.get(spell)]
-
-    def test_beast_within_at_the_opponents_end_step(self):
-        self.setup("Beast Within", "Forest", "end_step", 1)
-        self.game.enter_battlefield(self.b, self.db.get("Wurmcoil Engine"))
-        play = self.a.ai.respond(self.game, self.a)
-        self.assertEqual(play[0].name, "Beast Within")
-        self.assertTrue(self.game.cast(self.a, *play))
-        self.game.settle()
-        self.assertEqual(sorted(x.card.name for x in self.b.battlefield),
-                         ["Beast token", "Phyrexian Wurm token", "Phyrexian Wurm token"])
-        self.assertFalse(any(x.card.is_token for x in self.a.battlefield))
-
-    def test_each_player_creates_a_food(self):
-        self.setup("Elephant-Mandrill", "Forest", "main1", 0)
-        self.game.main_phase(self.a)
-        self.game.settle()
-        self.assertIn("Elephant-Mandrill", [x.card.name for x in self.a.battlefield])
-        for p in (self.a, self.b):
-            self.assertEqual(sum(x.card.token_kind == "food" for x in p.battlefield), 1, p.name)
-
-
 class GameCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -256,6 +218,35 @@ class Riders(GameCase):
 
 
 @unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class Subjects(GameCase):
+    """"they / that player creates" and "a Food token or a Treasure token"."""
+    def test_full(self):
+        for name in ("Pain Distributor", "Ant-Man's Army", "Tireless Provisioner", "Vraska, the Cutting Glare"):
+            self.assertEqual(card_coverage(self.db.get(name)).ignored, [], name)
+
+    def test_trigger_player(self):
+        eff = token_effects(self.db.get("Pain Distributor"))[0]
+        self.game.resolve(self.a, eff, None, StackItem(self.a, [eff], [None], context=self.b))
+        self.assertEqual([x.card.token_kind for x in self.b.battlefield], ["treasure"])
+        self.assertFalse(self.a.battlefield)
+
+    def test_previous_targets_controller(self):
+        destroy, treasure = self.db.get("Vraska, the Cutting Glare").triggers[0].effects
+        bear = self.game.enter_battlefield(self.b, BEAR)
+        self.game.resolve(self.a, destroy, bear)
+        self.game.resolve(self.a, treasure, bear.controller, prev=bear)
+        self.assertEqual([x.card.token_kind for x in self.b.battlefield], ["treasure"])
+
+    def test_choice(self):
+        eff = token_effects(self.db.get("Ant-Man's Army"))[0]
+        self.a.hand = [self.db.get("Wurmcoil Engine")]          # a spell the lands can't pay for: Treasure
+        self.game.resolve(self.a, eff, None)
+        self.a.hand = []
+        self.game.resolve(self.a, eff, None)
+        self.assertEqual(sorted(x.card.token_kind for x in self.a.battlefield), ["food", "treasure"])
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
 class CopyTokens(GameCase):
     """"Create a token that's a copy of that creature / it": the object the previous effect or the trigger acted on."""
     def test_full(self):
@@ -289,6 +280,70 @@ class CopyTokens(GameCase):
         self.assertEqual((token.power, "Spirit" in token.card.subtypes), (1, True))
         self.assertEqual([how for _, how in self.game.end_cleanup], ["exile"])
 
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class HeuristicAIGames(unittest.TestCase):
+    """The default AI casts the cards itself and the tokens land on the right side."""
+    @classmethod
+    def setUpClass(cls):
+        cls.db = CardDB()
+
+    def setup(self, spell, land, step, active):
+        from mtgsim.ai import HeuristicAI
+        self.a, self.b = Player("a", [], HeuristicAI()), Player("b", [], HeuristicAI())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step, self.game.active_idx = 3, step, active
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 20
+        for _ in range(4):
+            self.game.enter_battlefield(self.a, self.db.get(land)).sick = False
+        self.a.hand = [self.db.get(spell)]
+
+    def test_beast_within_at_the_opponents_end_step(self):
+        self.setup("Beast Within", "Forest", "end_step", 1)
+        self.game.enter_battlefield(self.b, self.db.get("Wurmcoil Engine"))
+        play = self.a.ai.respond(self.game, self.a)
+        self.assertEqual(play[0].name, "Beast Within")
+        self.assertTrue(self.game.cast(self.a, *play))
+        self.game.settle()
+        self.assertEqual(sorted(x.card.name for x in self.b.battlefield),
+                         ["Beast token", "Phyrexian Wurm token", "Phyrexian Wurm token"])
+        self.assertFalse(any(x.card.is_token for x in self.a.battlefield))
+
+    def test_attacking_token_is_sacrificed_at_end_of_combat(self):
+        self.setup("Kavaron Harrier", "Plains", "main1", 0)
+        self.a.hand = []
+        self.game.enter_battlefield(self.a, self.db.get("Kavaron Harrier")).sick = False
+        tokens_at_end_of_combat = []
+        end_combat = self.game.end_combat
+
+        def watch(p):
+            tokens_at_end_of_combat.append([x.card.name for x in self.a.battlefield if x.card.is_token])
+            end_combat(p)
+        self.game.end_combat = watch
+        self.game.combat(self.a, self.b)
+        self.assertEqual(tokens_at_end_of_combat, [["Robot token"]])    # paid {2}; the Robot attacked
+        self.assertEqual(self.b.life, 16)
+        self.assertFalse(any(x.card.is_token for x in self.a.battlefield))
+
+    def test_each_player_creates_a_food(self):
+        self.setup("Elephant-Mandrill", "Forest", "main1", 0)
+        self.game.main_phase(self.a)
+        self.game.settle()
+        self.assertIn("Elephant-Mandrill", [x.card.name for x in self.a.battlefield])
+        for p in (self.a, self.b):
+            self.assertEqual(sum(x.card.token_kind == "food" for x in p.battlefield), 1, p.name)
+    def test_they_create_a_treasure_after_vraska_destroys_their_permanent(self):
+        self.setup("Vraska, the Cutting Glare", "Forest", "main1", 0)
+        for land in ("Swamp", "Swamp", "Forest"):          # seven lands: {B}{B}{G}, and six for the trigger
+            self.game.enter_battlefield(self.a, self.db.get(land)).sick = False
+        self.game.enter_battlefield(self.b, self.db.get("Wurmcoil Engine"))
+        self.game.main_phase(self.a)
+        self.game.settle()
+        self.assertIn("Vraska, the Cutting Glare", [x.card.name for x in self.a.battlefield])
+        self.assertEqual(sum(x.card.token_kind == "treasure" for x in self.b.battlefield), 1)
+        self.assertFalse(any(x.card.token_kind == "treasure" for x in self.a.battlefield))
 
 if __name__ == "__main__":
     unittest.main()

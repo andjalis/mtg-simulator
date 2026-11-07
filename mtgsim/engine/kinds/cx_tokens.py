@@ -34,11 +34,23 @@ def cx_token(game, p, eff, target, opp, item=None, **_):
         players = [found] if found is not None else []
     elif who == "that_controller":
         players = [target] if isinstance(target, Player) else []
+    elif who == "they":                     # the previous object's controller, else the trigger's player
+        context = getattr(item, "context", None)
+        players = [target] if isinstance(target, Player) else [context] if isinstance(context, Player) else []
     else:
         players = list(game.players) if who == "each" else [opp] if who == "opp" else [p]
     n = eff.amount * (len(game.players) - 1 if eff.data.get("per_opponent") else 1)
     for pl in players:
-        create(game, pl, eff.data, n)
+        create(game, pl, choose(game, pl, eff.data["choice"]) if "choice" in eff.data else eff.data, n)
+
+
+def choose(game, p, specs):
+    """"a Food token or a Treasure token": Treasure when the hand has a spell the lands can't pay for yet, else
+    the first token of the list that isn't Treasure."""
+    lands = sum(x.card.is_land for x in p.battlefield)
+    wants_mana = any(not c.is_land and c.cmc > lands for c in p.hand)
+    ranked = sorted(specs, key=lambda s: (s.get("kind") == "treasure") != wants_mana)
+    return ranked[0]
 
 
 @kind("cx_token_leave")
