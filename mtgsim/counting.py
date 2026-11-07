@@ -84,4 +84,6 @@ def count(game, p, per: dict, source=None) -> int:
     what = what[6:] if other else what
     if per["zone"] == "graveyard":
         return sum(fits(c, what) for c in p.graveyard)
+    if per["zone"] == "all":          # "on the battlefield": every player's permanents
+        return sum(1 for pl in game.players for x in pl.battlefield if fits(x.card, what, x))
     return sum(1 for x in p.battlefield if not (other and x is source) and fits(x.card, what, x))

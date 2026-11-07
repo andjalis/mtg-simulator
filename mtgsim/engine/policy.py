@@ -73,6 +73,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     k = eff.kind
+    if eff.target == "player" and k in ("draw", "gain_life"):
+        return me if me in legal else None      # "target player draws/gains": the beneficiary is the caster
     if k == 'linked_exile':
         enemies = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
         if enemies:
@@ -80,6 +82,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         cards = [x for x in legal if isinstance(x, CardDef)]
         return max(cards, key=lambda c: c.cmc, default=None)
     if k == "damage":
+        from ..cx_abil_damage import scaled
+        eff = scaled(game, me, eff)
         if eff.target == "player" and not (eff.data.get("or_pw") and eff.amount < opp.life):
             return opp
         if eff.target == "any" and eff.amount >= opp.life:
@@ -172,6 +176,14 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     if k in ("connive", "attach_new_equipment"):    # the best creature of ours that can be chosen
         return max((x for x in mine if x.is_creature), key=perm_value, default=None)
     side = eff.data.get("side") if eff.data else None
+    if side == "auto":                  # neutral effects (a colour change) take the side of what follows them
+        from ..cx_grammar import auto_side
+        side = auto_side(game, eff)
+    if eff.target == "graveyard_card" and side in ("mine", "theirs", "any"):   # cx_grammar_zones: whose graveyard
+        pool = [c for c in legal if side == "any" or any(c is x for x in (me if side == "mine" else opp).graveyard)]
+        return max(pool, key=lambda c: c.cmc, default=None)
+    if side in ("mine", "theirs") and eff.target == "player":   # ... or which player (cx_grammar target players)
+        return next((x for x in legal if x is (me if side == "mine" else opp)), None)
     if side in ("mine", "theirs"):      # newer kinds say whose permanent they want
         return max(mine if side == "mine" else theirs, key=perm_value, default=None)
     return None
@@ -542,6 +554,10 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
         for victim in game.sacrifice_candidates(me, perm, c["sacrifice"])[:c.get("sac_n", 1)]:
             if not victim.card.is_token and perm_value(victim) > 1:
                 return False
+    if c.get("cx_costs"):
+        from ..cx_abil_costs import ai_cost_ok
+        if not ai_cost_ok(game, me, perm, c):
+            return False
     if c.get("discard") and not choose_rummage(game, me, 1) and len(me.hand) <= 4:
         return False
     if c.get("life") and me.life <= 10:
@@ -829,11 +845,13 @@ def use_abilities(game: Game, me: Player):
             game.cast(me, c, None)
     if game.step == "main2":
         for st in [x for x in me.battlefield if x.card.station]:
-            need = max((a.min_charge for a in st.activated), default=0)
+            need = max([a.min_charge for a in st.activated] + [st.card.advanced_rules.get("station_creature", 0)])
             ready = sorted((c for c in me.creatures if c is not st and not c.tapped and c.power > 0),
                            key=lambda c: c.power)
             if need and st.counters.get("charge", 0) < need and len(ready) > 1:
                 game.station(me, st, ready[-1])
+        from ..cx_mech import ai_unlock
+        ai_unlock(game, me)
         for _ in range(10):     # general activated abilities, a few at most
             ability = choose_ability(game, me, instant=False)
             if ability is None or not game.do_action(me, ability):
