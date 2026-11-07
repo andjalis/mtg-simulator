@@ -312,9 +312,11 @@ class TargetPlayers(Base):
 
     def test_ai_casts_a_group_debuff_at_the_opponent(self):
         bear, mine = self.perm(BEAR, self.b), self.perm(BEAR, self.a)
+        goblins = [self.perm(GOBLIN, self.b) for _ in range(2)]
         spell = self.main_phase("Creatures target player controls get -1/-1 until end of turn.")
         self.assertNotIn(spell, self.a.hand)
         self.assertEqual((bear.power, mine.power), (BEAR.power - 1, BEAR.power))
+        self.assertTrue(all(g not in self.b.battlefield for g in goblins))
 
     def test_ai_casts_a_group_pump_at_itself(self):
         bear, theirs = self.perm(BEAR, self.a), self.perm(BEAR, self.b)
@@ -435,6 +437,8 @@ class TargetOpponent(Base):
 class MassDiminish(Base):
     def test_ai_casts_it_at_the_opponent(self):
         theirs, mine = self.perm(WOLF, self.b), self.perm(WOLF, self.a)
+        for _ in range(3):
+            self.perm(WOLF, self.b)
         spell = card("Test Diminish", "{U}", "Sorcery",
                      "Until your next turn, creatures target player controls have base power and toughness 1/1.")
         self.assertEqual(spell.unsupported, [])
@@ -526,3 +530,12 @@ class PlayersAsRiders(Base):
         self.a.ai.main_phase(self.game, self.a)
         self.assertNotIn(path, self.a.hand)
         self.assertNotIn(angel, self.b.battlefield)
+
+
+class YouMayHave(unittest.TestCase):
+    def test_the_choice_stays_with_the_outer_parser(self):
+        from mtgsim.cards import parse as P
+        self.assertIsNone(parse_sentence("You may have target creature gain flying until end of turn."))
+        effects, bad = P._parse_effects("You may have target creature gain flying until end of turn.")
+        self.assertEqual(bad, [])
+        self.assertEqual(effects[0].kind, "pay_gate")           # the optional "you may" gate, not a mandatory grant

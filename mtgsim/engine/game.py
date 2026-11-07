@@ -44,18 +44,21 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
         self.events: list[str] = []
         self.rule_events = rules_events.EventBus(capture=log)
         self.step = "main1"
-        self.stack: list[StackItem] = []
+        from ..cx_damage import Stack
+        self.stack: list[StackItem] = Stack(self)
         self.no_lifegain_turn: set[Player] = set()   # "players can't gain life this turn" (Skullcrack family)
         self.no_prevention_turn = False              # "damage can't be prevented this turn"
         self.pending: list[tuple] = []   # triggered abilities waiting to be put on the stack
         self.delayed_upkeep: list[tuple] = []  # (controller, amount, source, name, scope)
         self.delayed_end_step: list[tuple] = []
+        self.cx_watchers: list[tuple] = []   # (turn, permanent, controller, effects, source): cx_trig_watch
         self.extra_combats = 0
         self.rebound_upkeep: list[tuple] = []  # (controller, exiled card, zone version)
         self.extra_turns: list = []                # players who take an extra turn after this one
         self.end_combat_effects: list[tuple] = []  # (controller, effects, source, that creature): "at end of combat"
         self.delayed_end_combat: list[tuple] = []  # (trigger controller, exact permanent to sacrifice)
         self.attackers: list[Permanent] = []
+        self.last_attackers: list[Permanent] = []     # attackers of the combat that just ended (game.attackers is cleared)
         self.attack_targets: dict = {}   # attacker -> Player or planeswalker Permanent
         self.blocks: dict = {}
         self._priority_depth = 0
