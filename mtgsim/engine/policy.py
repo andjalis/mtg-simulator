@@ -850,6 +850,8 @@ def use_abilities(game: Game, me: Player):
                            key=lambda c: c.power)
             if need and st.counters.get("charge", 0) < need and len(ready) > 1:
                 game.station(me, st, ready[-1])
+        from ..cx_mech import ai_unlock
+        ai_unlock(game, me)
         for _ in range(10):     # general activated abilities, a few at most
             ability = choose_ability(game, me, instant=False)
             if ability is None or not game.do_action(me, ability):
