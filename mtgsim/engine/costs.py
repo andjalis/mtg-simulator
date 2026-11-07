@@ -4,6 +4,7 @@ from __future__ import annotations
 import dataclasses
 
 from .. import alt_casts, emerge, auras, copies, counting, discounts, returns, costs, storage, cx_static_cost
+from .. import cx_static_cond
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
@@ -96,7 +97,8 @@ class CostsMixin:
             perm.produces_now = produces
             out.append(perm)
         for mana in p.pool:
-            if not mana.tapped and mana is not exclude:
+            if not mana.tapped and mana is not exclude and \
+                    (not mana.card.mana_restriction or self.mana_allowed(mana, spell)):
                 mana.produces_now = mana.card.produces
                 out.append(mana)
         stored = storage.stored_sources(p, exclude, lambda r: self.mana_allowed(None, spell, r),
@@ -110,9 +112,12 @@ class CostsMixin:
         """Whether perm's restricted mana (or this restriction) may pay for spell (see mana_sources)."""
         if spell is None:
             return True
+        r = restriction or perm.card.mana_restriction
+        if r.startswith("pred:"):         # "Spend this mana only to cast <spells> or activate abilities of <sources>"
+            from ..cx_abil_mana import allowed
+            return allowed(r, spell)
         if not isinstance(spell, CardDef):
             return False
-        r = restriction or perm.card.mana_restriction
         if r == "creature":
             return spell.is_creature
         if r == "artifact":
@@ -199,6 +204,8 @@ class CostsMixin:
         """The value of X in ", where X is ..." (see cards._xq)."""
         kind = spec[0]
         src = item.source if item is not None and isinstance(item.source, Permanent) else None
+        if kind == "devotion":
+            return cx_static_cond.devotion(p, spec[1])
         if kind == "life":
             return max(0, p.life)
         if kind == "speed":
@@ -484,6 +491,8 @@ class CostsMixin:
     def cost_of(self, p: Player, card: CardDef, *, assist=True) -> dict:
         """The mana cost after cost reductions (Tolarian Terror, Ghalta)."""
         cost = dict(card.mana_cost)
+        if card.is_ability:
+            return cost          # an activated ability (channel, unearth, ...): spell cost modifiers don't apply
         n = 0
         if card.cost_reduction == "instant_sorcery_gy":
             n = sum(c.is_instant or c.is_sorcery for c in p.graveyard)
@@ -499,6 +508,8 @@ class CostsMixin:
             n = sum(card_matches(x.card, "a " + card.cost_reduction[9:]) for x in p.battlefield)
         elif card.cost_reduction == "domain":    # "costs {1} less for each basic land type among lands you control"
             n = self.x_quantity(p, ("domain",), None, None)
+        elif card.cost_reduction == "undaunted":      # {1} less for each opponent
+            n = len(self.players) - 1
         elif card.cost_reduction == "party":
             # "This spell costs {1} less to cast for each creature in your party" (Coveted Prize)
             n = self.party_size(p)
@@ -532,22 +543,22 @@ class CostsMixin:
         pending = getattr(self, "next_discount", {}).get(p.name)
         if pending and pending[0] == self.turn:
             n += pending[1]             # "the next spell you cast this turn costs {N} less" (Peerless Samurai)
-        cost["generic"] = max(0, cost.get("generic", 0) - n)
         from ..batch1_templates import spell_tax
-        cost["generic"] += spell_tax(self, p, card)
-        cost = cx_static_cost.adjust(self, p, card, cost)
+        more = spell_tax(self, p, card)             # increases: taxes and "or pay {N}" additional costs
         if card.extra_discard and card.discard_or_pay and self.spare_cards(p, card) < 1:
-            cost["generic"] += card.discard_or_pay
+            more += card.discard_or_pay
         if card.behold_or_pay:
             sub, tax = card.behold_or_pay
             if not (any(sub in x.card.subtypes for x in p.battlefield) or
                     any(sub in c.subtypes for c in p.hand if c is not card)):
-                cost["generic"] += tax
+                more += tax
+        if card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
+            more += card.extra_sac_or_pay
+        # 601.2f: the total cost is the mana cost plus every increase, then every reduction
+        cost = cx_static_cost.adjust(self, p, card, cost, increase=more, reduction=n)
         if card.convoke:
             self._convoke_k = min(len(self.convoke_pool(p)), cost.get("generic", 0))
             cost["generic"] -= self._convoke_k
-        if card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
-            cost["generic"] += card.extra_sac_or_pay
         if assist and (card.improvise or card.delve):
             cost = self.assist_payment(p, card, cost)[0]
         if getattr(card, "spell_copy", False):
@@ -590,6 +601,12 @@ class CostsMixin:
         if key not in self._variants:
             if kind == "adventure":
                 v = dataclasses.replace(card.adventure)
+            elif kind == "room_right":      # a Room spell has the mana value of the half it was cast as
+                v = dataclasses.replace(card.back, name=f"{card.name} ({card.back.name})",
+                                        cmc=sum(n for k, n in card.back.mana_cost.items() if k != "X"))
+            elif kind == "room_left":
+                v = dataclasses.replace(card, name=f"{card.name} ({card.name.split(' // ')[0]})",
+                                        cmc=sum(n for k, n in card.mana_cost.items() if k != "X"))
             elif kind == "prepared":
                 v = dataclasses.replace(card.back, name=f"{card.name} (prepared)")
             elif kind in ("split", "aftermath"):
@@ -603,6 +620,9 @@ class CostsMixin:
             elif kind == "mutate":
                 v = dataclasses.replace(card, name=f"{card.name} (mutate)", mana_cost=alt.cost,
                                         advanced_rules=dict(card.advanced_rules, mutating=True, mutate_base=card))
+            elif kind == "unearth":      # an activated ability, sorcery speed: not a spell, so no cast triggers or counterspells
+                v = CardDef(name=f"{card.name} (unearth)", mana_cost=alt.cost, cmc=card.cmc, types=frozenset({"Sorcery"}),
+                            spell_effects=[Effect("unearth_return", data={"card": card})], is_ability=True)
             elif kind in ("channel", "gy_ability"):
                 v = CardDef(name=f"{card.name} ({kind})", mana_cost=alt.cost, cmc=card.cmc,
                             types=frozenset({"Instant"}), spell_effects=list(alt.effects), is_ability=True)
@@ -619,7 +639,7 @@ class CostsMixin:
                         v.extra_discard = alt.discard
                     v.spell_effects = list(alt.effects if alt.effects is not None else card.spell_effects) + \
                         list(alt.extra)
-                    v.cost_reduction = ""
+                    # the card's own cost reduction still applies to an alternative cost (CR 601.2f)
             v.origin = (card, kind, alt)
             v.origin_generation = getattr(card, "generation", None)
             self._variants[key] = v
@@ -643,7 +663,7 @@ class CostsMixin:
         if cols:
             out += [self._variant(c, f"spent_{col}", AltCost("spent", self._hybrid_cost(c.mana_cost, c.hybrid, col)))
                     for col in cols]
-        else:
+        elif not (c.back is not None and "Room" in c.subtypes) and not c.advanced_rules.get("no_mana_cost"):    # a Room is cast as one of its halves; no printed cost can't be paid: alt costs only
             out.append(c)
         full = any(self.spell_payable(p, v) for v in out)
         for a in c.alt_costs:
@@ -743,8 +763,8 @@ class CostsMixin:
             return getattr(self, "foreign_zones", {}).get((id(p), kind), p.exile)
         return {"grave_permission": p.graveyard, "aftermath": p.graveyard, "from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile, "airbent": p.airbent,
-                "mayhem": p.graveyard, "unearth": p.graveyard, "disturb": p.graveyard, "jump_start": p.graveyard,
-                "retrace": p.graveyard,
+                "mayhem": p.graveyard, "madness": p.exile, "unearth": p.graveyard, "disturb": p.graveyard, "jump_start": p.graveyard,
+                "retrace": p.graveyard, "beam": p.graveyard,
                 "escape": p.graveyard, "impulse": p.exile, "suspended": p.exile, "rebound": p.exile,
                 "cascade": p.exile, "cascade_adventure": p.exile,
                 "rebound_adventure": p.exile, "discover": p.exile, "cx_top": p.library}.get(kind, p.hand)
@@ -766,20 +786,21 @@ class CostsMixin:
 
     def can_cast_now(self, p: Player, card: CardDef, *, during_resolution=False) -> bool:
         """Timing, mana, zone and (for counterspells) a spell to target."""
-        if self.nonmana_locked(p) and (card.is_instant or card.is_sorcery):
+        spell = not card.is_ability          # abilities (channel, unearth, ...) are not subject to spell restrictions
+        if spell and self.nonmana_locked(p) and (card.is_instant or card.is_sorcery):
             return False
         from ..advanced_templates import cast_allowed
-        if not cast_allowed(self, p, card):
+        if spell and not cast_allowed(self, p, card):
             return False
-        if self.named_cast_banned(card):    # "Spells with the chosen name can't be cast" (Meddling Mage)
+        if spell and self.named_cast_banned(card):    # "Spells with the chosen name can't be cast" (Meddling Mage)
             return False
         if card.is_land or not self._available(p, card):
             return False
         from ..batch1_templates import spell_limited
-        if spell_limited(self, p):
+        if spell and spell_limited(self, p):
             return False
         from ..batch1_templates import spell_kind_ok
-        if any(not x.abilities_suppressed and x.card.advanced_rules.get("no_cast") and
+        if spell and any(not x.abilities_suppressed and x.card.advanced_rules.get("no_cast") and
                any(spell_kind_ok(card, kind) for kind in x.card.advanced_rules["no_cast"])
                for pl in self.players for x in pl.battlefield):
             return False          # "Creature spells can't be cast" (Aether Storm): the ban applies to everyone
@@ -795,9 +816,9 @@ class CostsMixin:
             return False
         if card.extra_life_cost and p.life <= card.extra_life_cost:
             return False
-        if card.extra_discard and not card.discard_or_pay and self.spare_cards(p, card) < 1:
+        if card.extra_discard and not card.discard_or_pay and self.spare_cards(p, card) < card.extra_discard:
             return False
-        if self.active is not p and any(x.card.opp_no_cast for x in self.opponent(p).battlefield):
+        if spell and self.active is not p and any(x.card.opp_no_cast for x in self.opponent(p).battlefield):
             return False
         if card.extra_sacrifice and not card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
             return False

@@ -5,11 +5,10 @@ import dataclasses
 import re
 from typing import TYPE_CHECKING
 
-from .. import auras, copies, creature_keywords, proliferate
+from .. import auras, copies, creature_keywords, cx_static_choice, proliferate
 from ..cards import Activated, CardDef, Effect, make_token
 from .. import rules_events
 from ..identity import CardInstance, instance
-from .policy import choose_color
 from .state import Permanent, StackItem, is_basic_land
 
 if TYPE_CHECKING:
@@ -167,8 +166,8 @@ class BattlefieldMixin:
                         for t in c.subtypes:
                             counts[t] = counts.get(t, 0) + 1
             perm.chosen_type = max(counts, key=counts.get, default="Island")
-        elif card.choose_type == "basic_land":
-            perm.card = dataclasses.replace(card, produces=frozenset({choose_color(self, p)}))
+        elif card.choose_type == "basic_land" or card.choose_type.startswith("color_other:"):
+            cx_static_choice.choose(self, p, perm, card)
         if card.loyalty:
             perm.counters["loyalty"] = card.loyalty
         if card.advanced_rules.get("sunburst"):
@@ -188,7 +187,9 @@ class BattlefieldMixin:
             kind, spec = card.entry_counter_quantity
             perm.counters[kind] = perm.counters.get(kind, 0) + amount(self, p, spec)
         if card.etb_named_counters:
-            perm.counters[card.etb_named_counters[0]] = card.etb_named_counters[1]
+            n = x if card.etb_named_counters[1] == -1 else card.etb_named_counters[1]    # -1: "enters with X ..."
+            if n:
+                perm.counters[card.etb_named_counters[0]] = n
         roll = as_enters_roll(card, perm.entered_x)
         if roll is not None:
             sides, n, kind = roll
@@ -233,6 +234,10 @@ class BattlefieldMixin:
             perm.tapped = True
             self.attackers.append(perm)
             self.attack_targets[perm] = self.opponent(p)
+        if card.daybound or card.nightbound:     # before the enters triggers: a daybound card enters transformed at night
+            from ..day_night import on_enter as day_night_enter
+            day_night_enter(self, perm)
+        card = perm.card
         from ..residual_templates import suppressed
         if card.etb_effects and not any(t.event == "etb" for t in card.triggers):
             if not (perm.is_creature and suppressed(self, "entry")):

@@ -44,6 +44,9 @@ def _scaled(game, p, eff, item, prev):
     Inner handlers are called directly, so the shared amount rules in Game.resolve don't reach them."""
     import dataclasses
     inners = eff.data["effects"]
+    if eff.data.get("x"):           # X paid: Game.resolve put it in the wrapper's amount
+        inners = [dataclasses.replace(e, amount=eff.amount, amount2=eff.amount if e.data.get("x2") else e.amount2)
+                  if e.data.get("x") else e for e in inners]
     if not eff.data.get("xq"):
         return inners
     n = game.x_quantity(p, eff.data["xq"], item, prev)
