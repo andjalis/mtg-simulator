@@ -121,7 +121,8 @@ def ability_plan(game, player, permanent, ability, cost, *, x=None, counter_choi
     costs = ability.extra_costs
     if x is not None and (not isinstance(x, int) or isinstance(x, bool) or x < 0):
         return None
-    if not game.can_pay(player, cost):
+    from .cx_abil_mana import AbilityPayment
+    if not game.can_pay(player, cost, spell=AbilityPayment(permanent)):
         return None
     victims = game.sacrifice_candidates(player, permanent, costs['sacrifice']) if costs.get('sacrifice') else []
     materials = game.craft_materials(player, permanent) if costs.get('craft') else [None]
@@ -149,7 +150,7 @@ def ability_plan(game, player, permanent, ability, cost, *, x=None, counter_choi
         own = ((permanent, costs['remove_counter'], costs.get('remove_counter_count', 1)),) if costs.get('remove_counter') else ()
         if own and consumed_for_mana(permanent):
             excluded.append(permanent)
-        result = plan(game, player, cost, sacrifices=choices, materials=materials,
+        result = plan(game, player, cost, spell=AbilityPayment(permanent), sacrifices=choices, materials=materials,
                       consumed=consumed, exclude=excluded, reserved_counters=counters + own)
         if result is not None:
             result = replace(result, counter_payments=counters, tap_other=tap_other)
