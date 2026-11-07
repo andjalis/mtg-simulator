@@ -88,7 +88,8 @@ class Resolving(Base):
         c = self.spell("~ deals 2 damage to any target and 1 damage to each nonartifact creature target opponent "
                        "controls.")
         self.assertEqual([e.kind for e in c.spell_effects], ["damage", "cx_group"])
-        self.cast(c, [self.b, None])
+        self.assertEqual(c.spell_effects[1].target, "player")     # "target opponent controls": the opponent is a target
+        self.cast(c, [self.b, self.b])
         self.assertNotIn(goblin, self.b.battlefield)        # 1/1: dies
         self.assertEqual(bear.damage, 1)
         self.assertIn(mine, self.a.battlefield)
