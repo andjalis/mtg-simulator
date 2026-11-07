@@ -13,3 +13,78 @@ def cx_poison(game, p, eff, target, prev, **_):
     if isinstance(who, Player):
         who.counters["poison"] = who.counters.get("poison", 0) + eff.amount
         game.log(f"gets {eff.amount} poison counter(s)", who)
+
+
+@kind("cx_distribute")
+def cx_distribute(game, p, eff, item, **_):
+    """The slot-0 effect splits ``amount`` counters over every target chosen for the group (see cx_counters)."""
+    if eff.data.get("slot") or item is None:
+        return
+    group = [t for e, t in zip(item.effects, item.targets)
+             if e.kind == "cx_distribute" and e.data.get("counter") == eff.data["counter"] and isinstance(t, Permanent)
+             and t in t.controller.battlefield]
+    chosen = []
+    for t in group:
+        if all(t is not c for c in chosen):
+            chosen.append(t)
+    if not chosen:
+        return
+    each, extra = divmod(eff.amount, len(chosen))
+    for i, t in enumerate(chosen):
+        t.counters[eff.data["counter"]] = t.counters.get(eff.data["counter"], 0) + each + (1 if i < extra else 0)
+
+
+_BAD = ("-1/-1", "stun", "doom", "poison")
+
+
+@kind("cx_remove_counters")
+def cx_remove_counters(game, p, eff, target, **_):
+    """Remove counters of one kind (or "a counter" of any kind) from a permanent; "all" empties the kind or the card.
+    Without a kind the controller's own permanent loses its worst counters first, an opponent's its best."""
+    if not isinstance(target, Permanent):
+        return
+    kind_name = eff.data.get("counter", "")
+    if kind_name:
+        names = [kind_name]
+    else:
+        mine = target.controller is p
+        names = sorted((n for n, c in target.counters.items() if c > 0),
+                       key=lambda n: (n not in _BAD) if mine else (n in _BAD))
+    left = 10 ** 6 if eff.data.get("all") else eff.amount
+    for name in names:
+        if left <= 0:
+            break
+        have = target.counters.get(name, 0)
+        take = min(have, left)
+        if take:
+            target.counters[name] = have - take
+            left -= take
+
+
+@kind("cx_move_src")
+def cx_move_src(game, **_):
+    """Names the first target of "move a counter from target X onto Y"; the move itself is cx_move_counters."""
+
+
+@kind("cx_move_counters")
+def cx_move_counters(game, p, eff, target, prev, item, **_):
+    source = item.source if eff.data.get("from") == "self" and item is not None else prev
+    if eff.data.get("from") == "prev" and item is not None:    # the stack's prev is already this effect's own target
+        source = next((t for e, t in zip(item.effects, item.targets) if e.kind == "cx_move_src"), prev)
+    dest = target
+    if eff.target == "self":                 # "... onto ~": the card is the destination
+        dest = item.source if item is not None else None
+    if (not isinstance(source, Permanent) or not isinstance(dest, Permanent) or source is dest
+            or source not in source.controller.battlefield or dest not in dest.controller.battlefield):
+        return
+    name = eff.data.get("counter", "")
+    names = [name] if name else [n for n, c in source.counters.items() if c > 0]
+    left = 10 ** 6 if eff.data.get("all") else eff.amount
+    for n in names:
+        take = min(source.counters.get(n, 0), left)
+        if take > 0:
+            source.counters[n] -= take
+            dest.counters[n] = dest.counters.get(n, 0) + take
+            left -= take
+        if left <= 0:
+            break

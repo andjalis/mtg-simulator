@@ -209,3 +209,4 @@ from .. import cx_tokens as _cx_tokens
 _EFFECT_PATTERNS += _cx_tokens.EFFECT_PATTERNS
 from .. import cx_counters as _cx_counters
 _EFFECT_PATTERNS += _cx_counters.EFFECT_PATTERNS
+_SUBS += _cx_counters.SUBS

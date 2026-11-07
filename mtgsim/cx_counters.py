@@ -47,6 +47,13 @@ def _each_of_up_to(m):
     return out
 
 
+# A legendary card's own pronoun: "put a +1/+1 counter on him / her" is "on ~" (never when another object is named).
+SUBS = [
+    (re.compile(r"(\bput (?:(?:a|an|one|two|three|four|five|x|\d+|that many) )?[^.,]*?counters? on) (?:him|her)\b(?!self)", re.I),
+     lambda m: m[1] + " ~" if not re.search(r"target|that |enchanted|equipped|each ", m[1][4:], re.I) else m[0]),
+]
+
+
 def _poison(m):
     from .cards.model import Effect
     who = m[1].lower()
@@ -69,7 +76,7 @@ EFFECT_PATTERNS = [
     (rf"draw a card for each {_K} counter on {_ON}", _per_counters("draw")),
     (rf"you gain (\d+) life for each {_K} counter on {_ON}", lambda m: _per_counters("gain_life", amount=int(m[1]))(m)),
     (rf"(?:~|it) deals damage equal to the number of {_K} counters on {_ON} to "
-     rf"(?P<t>any target|target creature|target player)",
+     rf"(?P<t>any target|target creature|target player|target opponent)",
      lambda m: _per_counters("damage", target={"target creature": "creature", "any target": "any"}.get(
          m["t"], "player"))(m)),
     (rf"draw x cards and gain x life, where x is the number of {_K} counters on {_ON}",
@@ -108,3 +115,89 @@ def entry_x_counters(line, extra):
     else:
         extra["etb_named_counters"] = (m[1].lower(), -1)
     return True
+
+
+_W = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5}
+
+
+def _distribute(m):
+    """"Distribute N <kind> counters among one, two, or three target creatures": one optional distinct target per
+    possible recipient; the first effect splits the N counters over the targets actually chosen (each gets at least
+    one, the first ones get the remainder), the rest do nothing."""
+    from .cards.model import NO_MATCH
+    from .permanent_templates import build
+    total = _num(m[1])
+    nums = [_W[w] for w in re.findall(r"one|two|three|four|five", m[3])]
+    slots = min(total, total if "any number" in m[3] else max(nums))
+    out = []
+    for i in range(slots):
+        eff = build("cx_distribute", "up to one " + ("other " if m[4] else "") + "target " + _singular(m[5]),
+                    amount=total, data={"counter": m[2], "distinct": True, "slot": i})
+        if eff is None or eff.target == "group":
+            return NO_MATCH
+        out.append(eff)
+    return out
+
+
+EFFECT_PATTERNS.append(
+    (rf"distribute (a|an|one|two|three|four|five) ({_COUNTER}) counters? among (?:up to )?((?:any number of)|"
+     rf"(?:(?:one|two|three|four|five)(?:,? (?:or |and )?(?:one|two|three|four|five))*)) (other )?target (.+)",
+     _distribute))
+
+
+def _remove(m):
+    """"Remove [a counter / up to N counters / N <kind> counters / all [<kind>] counters] from <permanent(s)>"."""
+    from .cards.model import NO_MATCH
+    from .permanent_templates import build
+    amount, kind = (m[1] or "").lower(), (m[2] or "").lower()
+    if m[3] is None and kind in ("", "all"):
+        return NO_MATCH
+    data = {"counter": kind if kind and kind != "any" else ""}
+    if amount == "all":
+        data["all"] = True
+    n = 1 if amount in ("a", "an", "one", "all", "") else _N.get(amount.replace("up to ", ""), None)
+    if n is None:
+        n = int(amount.replace("up to ", "")) if amount.replace("up to ", "").isdigit() else None
+    if n is None:
+        return NO_MATCH
+    eff = build("cx_remove_counters", m[4], amount=n, data=data)
+    return eff if eff is not None else NO_MATCH
+
+
+EFFECT_PATTERNS.append(
+    (rf"(?:you may )?remove (a|an|one|two|three|four|five|up to (?:one|two|three|four|five)|\d+|all) "
+     rf"(?:({_COUNTER}) )?(counters?)(?: of that kind)? from (it|~|target [^,]+|all [^,]+|each [^,]+)", _remove))
+
+
+def _move(m):
+    """"Move [a / N / all / any number of] <kind> counter(s) from <A> onto <B>": A or B is ~, or a target (the first
+    target is picked by ``cx_move_src``, which does nothing itself; ``cx_move_counters`` then moves them)."""
+    from .cards.model import NO_MATCH, Effect
+    from .permanent_templates import build
+    amount, kind, src = m[1].lower(), (m[2] or "").lower(), m[3]
+    dst = re.sub(r"^(?:a second|one other) ", "another ", m[4]) if m[4].startswith(("a second", "one other")) else m[4]
+    every = amount in ("all", "any number of")
+    n = 1 if every else _N.get(amount) or (int(amount) if amount.isdigit() else None)
+    if n is None or (src == "~" and dst == "~"):
+        return NO_MATCH
+    data = {"counter": kind if kind != "any" else "", "all": every, "from": "self" if src == "~" else "prev"}
+    out = []
+    if src != "~":
+        eff = build("cx_move_src", src, data={"distinct": True, "group": "cx_move"})
+        if eff is None or eff.target in ("group", "self", "prev"):
+            return NO_MATCH
+        out.append(eff)
+    if dst == "~":
+        out.append(Effect("cx_move_counters", n, target="self", data=data))
+    else:
+        eff = build("cx_move_counters", dst.replace("another target", "another target"), amount=n,
+                    data=dict(data, distinct=True, group="cx_move"))
+        if eff is None or eff.target in ("group", "self", "prev"):
+            return NO_MATCH
+        out.append(eff)
+    return out
+
+
+EFFECT_PATTERNS.append(
+    (rf"(?:you may )?move (a|an|one|two|three|all|any number of) (?:({_COUNTER}) )?counters?(?: of that kind)? "
+     rf"from (~|target [^,]+?) onto (~|(?:a second |another |one other )?target [^,]+)", _move))
