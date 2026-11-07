@@ -19,10 +19,40 @@ def _amount(s) -> int:
     """How much mana s makes right now (Tablet of Discovery's restricted {R}{R} is 2, its {R} is 1)."""
     now = getattr(s, "amount_now", None)
     base = getattr(s.card, "mana_amount", 1) if now is None else now
+    if s.card.mana_dyn:
+        from ..mana_count import dynamic_amount
+        base = dynamic_amount(s)
     if s.card.is_land:
         base += sum(a.card.advanced_rules.get('aura_mana', 0) for a in s.auras if not a.abilities_suppressed)
         return base * 2 if _doubled(s) else base
     return base
+
+
+class _Extra:
+    """One extra mana a source makes in colours of its own (an Aura on a land: "adds an additional {G}"): it stands for
+    the source in a payment but can only make `colors`."""
+
+    def __init__(self, src, colors):
+        self.src, self.produces_now = src, frozenset(colors)
+
+    def __getattr__(self, name):
+        return getattr(self.src, name)
+
+
+def _extras(s) -> list:
+    """The extra-mana slots of land s from Auras that name their colours (see batch1_templates)."""
+    if not s.card.is_land:
+        return []
+    out = [_Extra(s, cols) for a in s.auras if not a.abilities_suppressed
+           for cols in a.card.advanced_rules.get("aura_mana_colors", ())]
+    return out * 2 if out and _doubled(s) else out
+
+
+def _slots_of(s) -> list:
+    """The payment slots of source s: its own mana, then the extras that have their own colours."""
+    n = _amount(s) - sum(len(a.card.advanced_rules.get("aura_mana_colors", ())) for a in s.auras
+                         if s.card.is_land and not a.abilities_suppressed) * (2 if s.card.is_land and _doubled(s) else 1)
+    return [s] * (n if s.card.mana_dyn else max(1, n)) + _extras(s)
 
 
 def _doubled(land) -> bool:
@@ -68,7 +98,7 @@ def _find_payment(sources: list[Permanent], cost: dict):
     pips = [c for c in COLORS + ("C", "S") for _ in range(cost.get(c, 0))]
     generic = cost.get("generic", 0)
     # A source that makes several mana (Sol Ring) fills several slots.
-    slots = [s for s in sources for _ in range(max(1, _amount(s)))]
+    slots = [m for s in sources for m in _slots_of(s)]
     if len(pips) + generic > len(slots):
         return None
     # Mana that can only be spent on some spells goes first when it is allowed at all.
@@ -99,6 +129,7 @@ def _find_payment(sources: list[Permanent], cost: dict):
         return None
     out = []
     for s in chosen + rest[:generic]:
+        s = getattr(s, "src", s)
         if s not in out:
             out.append(s)
     return out
@@ -111,7 +142,7 @@ def payable(sources: list[Permanent], cost: dict) -> bool:
         return find_payment(sources, cost) is not None
     pips = [c for c in COLORS + ("C", "S") for _ in range(cost.get(c, 0))]
     generic = cost.get("generic", 0)
-    slots = [s for s in sources for _ in range(max(1, _amount(s)))]
+    slots = [m for s in sources for m in _slots_of(s)]
     if len(pips) + generic > len(slots):
         return False
     if not pips:

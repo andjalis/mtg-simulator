@@ -17,6 +17,7 @@ KEYWORDS = {
     "protection from white", "protection from blue", "protection from black", "protection from red",
     "protection from green", "protection from multicolored", "protection from artifacts",
 }
+KEYWORDS.update(f"hexproof from {w}" for w in ("white", "blue", "black", "red", "green", "monocolored"))
 BASIC_MANA = {"Plains": "W", "Island": "U", "Swamp": "B", "Mountain": "R", "Forest": "G"}
 NUMBERS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
            "eight": 8, "nine": 9, "ten": 10}
@@ -137,6 +138,7 @@ class CardDef:
     approximations: list = field(default_factory=list)  # text the engine plays in a simplified way
     oracle: str = ""
     triggers: list = field(default_factory=list)       # Trigger, including the ETB one
+    mana_dyn: tuple = ()                                # a counted mana amount: ("count", what, zone) | ("counters", kind) | ("power",)
     mana_amount: int = 1                                # Sol Ring makes 2
     gy_to_exile: bool = False                           # "If ~ would be put into a graveyard from anywhere, exile it instead."
     restricted_amount: int = 1                          # Tablet of Discovery: its restricted ability makes {R}{R}
@@ -164,6 +166,8 @@ class CardDef:
     anthem: tuple = ()                                  # (power, toughness) for creatures you control
     crew: int = 0
     convoke: bool = False                               # creatures can be tapped to help pay the generic cost
+    daybound: bool = False                              # day/night: transforms to its back face at night
+    nightbound: bool = False
     prepared: bool = False                              # enters prepared: may cast a copy of its spell (card.back) once
     changeling: bool = False                            # is every creature type
     cycling: dict | None = None                         # {"cost": mana, "land": "" | basic | any | Plains...}
@@ -323,6 +327,11 @@ class CardDef:
         if self.color_override is not None:
             return self.color_override
         return frozenset(c for c in COLORS if self.mana_cost.get(c) or any(c in pip for pip in self.hybrid))
+
+    def devotion_to(self, color: str) -> int:
+        """Mana symbols of this color in the cost (CR 700.5): a hybrid pip counts for each of its colors, and
+        mana_cost already holds it under its first color."""
+        return self.mana_cost.get(color, 0) + sum(1 for pip in self.hybrid if color in pip and pip[0] != color)
 
     @property
     def is_land(self): return "Land" in self.types
