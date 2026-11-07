@@ -423,7 +423,7 @@ def unblocked_damage(attackers, blockers, chump=True) -> int:
     total = 0
     for power, flying, menace, perm in left:
         pick = None
-        need = getattr(perm.card, "min_blocker_power", 0) if perm is not None else 0
+        need = max(getattr(perm.card, "min_blocker_power", 0), perm.temp_min_blocker) if perm is not None else 0
         for b in free:
             if flying and not (b[1] or b[2]):
                 continue
@@ -438,6 +438,19 @@ def unblocked_damage(attackers, blockers, chump=True) -> int:
         else:
             total += power
     return total
+
+
+def _sized_inner(game: Game, me: Player, eff: Effect) -> list:
+    """A grammar wrapper's inner effects with the amounts they will resolve with: X paid (the wrapper's amount,
+    as plan_spell sized it) and "for each" / "where X is" counts, as cx_group / cx_players apply them."""
+    inner = eff.data["effects"]
+    # keyed on the inner Part: _sized puts X in the wrapper's amount and clears the wrapper's own x flag
+    inner = [dataclasses.replace(e, amount=eff.amount, amount2=eff.amount if e.data.get("x2") else e.amount2)
+             if e.data.get("x") else e for e in inner]
+    if eff.data.get("xq"):
+        n = game.x_quantity(me, eff.data["xq"], None, None)
+        inner = [dataclasses.replace(e, amount=e.amount * n, amount2=e.amount2 * n) for e in inner]
+    return inner
 
 
 class HeuristicAI:
@@ -502,6 +515,8 @@ class HeuristicAI:
     def main_phase(self, game: Game, me: Player):
         precombat = getattr(game, "step", "main1") != "main2"
         self.play_land(game, me)
+        from .cx_abil_mana import boost
+        boost(self, game, me, precombat)      # mana-adding abilities that bring a spell in hand within reach
         cast_any = precombat and self.lethal_setup(game, me)
         while not game.over:
             choice = self.choose_spell(game, me, precombat, reserve=self._reserve(game, me))
@@ -776,6 +791,10 @@ class HeuristicAI:
     def plan_spell(self, game: Game, me: Player, card: CardDef, precombat: bool = False):
         """Return (value, targets) if the AI wants to cast card in its main phase, else None."""
         opp = game.opponent(me)
+        if card.is_ability and any(e.kind == "unearth_return" for e in card.spell_effects):
+            # Unearth: a hasty attacker for one turn; worth casting before combat when it can attack
+            base = card.spell_effects[0].data["card"]
+            return (card_value(base) / 2 + 1, None) if base.is_creature and opp.life > 0 else None
         if not card.is_permanent and any((e.data or {}).get("x") for e in card.spell_effects):
             sized = self._sized(game, me, card)
             return None if sized is None else self.plan_spell(game, me, sized, precombat)
@@ -817,7 +836,28 @@ class HeuristicAI:
         if not card.spell_effects:
             return None  # nothing we know how to do with it
         targets, value, pending = [], 0.0, []
+        stolen, group_value, group_combat = False, None, False
         for eff in card.spell_effects:
+            if stolen and eff.target == "prev":
+                targets.append(None)        # "untap that creature", "it gets +2/+0 and gains haste": the steal's riders
+                continue
+            if eff.kind == "threaten":
+                tgt = self._steal_target(game, me, eff, card, precombat and not instant)
+                if tgt is None:
+                    return None
+                targets.append(tgt)
+                value += 1.0 + combat_power(tgt)
+                stolen = True
+                continue
+            if eff.kind in ("cx_group", "cx_set_base") and (eff.kind == "cx_group" or eff.data.get("group")):
+                got = self._group_plan(game, me, eff, card, precombat, instant)
+                if got is None:
+                    return None
+                targets.append(got[0])
+                value += got[1]
+                group_value = (group_value or 0.0) + got[1]
+                group_combat = group_combat or got[2]
+                continue
             if eff.kind == "cx_players":
                 got = self._players_plan(game, me, eff, card, instant)
                 if got is None:
@@ -828,7 +868,11 @@ class HeuristicAI:
             if eff.kind == "pump" or eff.target == "spell" or _is_trick(card):
                 return None  # tricks go in after_blocks / respond, counters in respond
             if eff.kind == "damage" and eff.target in ("any", "player", "creature", "creature_pw"):
-                tgt, v = self.best_damage_target(game, me, eff, card, precombat or instant)
+                if eff.data.get("src_prev") or eff.data.get("cx_rel") == "not_prev":      # "it deals damage equal to its power"
+                    from .cx_abil_damage import plan_damage
+                    tgt, v = plan_damage(self, game, me, eff, card, precombat or instant, targets)
+                else:
+                    tgt, v = self.best_damage_target(game, me, eff, card, precombat or instant)
                 if tgt is None:
                     return None
                 if instant and tgt is not opp and v < LETHAL and not self._clears_blocker(game, me, tgt, precombat):
@@ -907,12 +951,70 @@ class HeuristicAI:
             else:
                 targets.append(None)
                 value += MINOR_EFFECTS.get(eff.kind, 0.0) * max(1, eff.amount)
+        if group_value is not None:     # one sweep bar for all of the spell's group effects
+            pressure = 2 * sum(combat_power(c) for c in opp.creatures) >= me.life
+            if group_value <= (1.0 if group_combat else 2.0 if pressure else 3.0):
+                return None
+        if any(e.data.get("distinct") for e in card.spell_effects):
+            targets = self._distinct_targets(game, me, card, targets)
+            if targets is None:
+                return None
         return (value - self._sac_cost(game, me, card), targets)
 
+    def _distinct_targets(self, game: Game, me: Player, card: CardDef, targets: list):
+        """"Two target creatures each ...": the effects marked distinct get different objects (game.auto_targets
+        picks them so); None when a required one is left without a target."""
+        with game.targeting(card):
+            auto = game.auto_targets(me, card.spell_effects)
+        out = list(targets)
+        for i, e in enumerate(card.spell_effects):
+            if e.data.get("distinct") and i < len(out):
+                out[i] = auto[i] if i < len(auto) else None
+                if out[i] is None and not e.data.get("optional_target"):
+                    return None
+        return out
+
+    def _steal_target(self, game: Game, me: Player, eff: Effect, card: CardDef, precombat: bool):
+        """Threaten ("gain control of target creature until end of turn", untapped and hasty): worth it only before
+        combat, on the opponent's best attacker that our attack then gets past their other blockers."""
+        if not precombat:
+            return None
+        opp = game.opponent(me)
+        with game.targeting(card):
+            legal = [c for c in game.legal_targets(me, eff) if c.controller is opp and c.is_creature]
+        return max(legal, key=lambda c: (combat_power(c), perm_value(c)), default=None) \
+            if legal and max(combat_power(c) for c in legal) > 0 else None
+
+    def _group_plan(self, game: Game, me: Player, eff: Effect, card: CardDef, precombat: bool, instant: bool):
+        """(target, value, combat_only) for a grammar group effect (cx_group, or cx_set_base on a target player's
+        creatures): what each inner effect does to each member (cx_grammar.member_value); None when it can't be
+        used now. plan_spell compares the spell's total group value with the sweep bar once."""
+        from .cx_grammar import group_members, member_value
+        target = None
+        if eff.target == "player":
+            with game.targeting(card):
+                target = self.choose_target(game, me, eff, card)
+            if target is None:
+                return None
+        if eff.kind == "cx_set_base":
+            members, inner = list(target.creatures) if target is not None else [], [eff]
+        else:
+            members, inner = group_members(game, me, eff.data, None, target), eff.data["effects"]
+        inner = _sized_inner(game, me, dataclasses.replace(eff, data=dict(eff.data, effects=inner)))
+        value, combat_only = 0.0, False
+        for m in members:
+            for e in inner:
+                v, combat = member_value(game, me, e, m)
+                value += v
+                combat_only = combat_only or combat
+        if combat_only and (not precombat or instant):
+            return None             # combat effects go before our attack; instants wait for after_blocks / respond
+        return target, value, combat_only
+
     def _players_plan(self, game: Game, me: Player, eff: Effect, card: CardDef, instant: bool):
-        """(target, value) for a grammar player effect (cx_players): its life, draw, discard and mill verbs for each
-        player it names, ours counted for us and the opponent's against them (0 for players only known on
-        resolution). None only when a target player can't be chosen; whether to cast is the spell's total."""
+        """(target, value) for a grammar player effect (cx_players): each inner effect for each player it names
+        (cx_grammar.member_value); None when it can't be valued here."""
+        from .cx_grammar import member_value
         opp = game.opponent(me)
         who, target = eff.data["who"], None
         if who == "target":
@@ -927,20 +1029,10 @@ class HeuristicAI:
                 return None, 0.0    # "that player", "its owner": a rider of another effect, valued by that one
         value = 0.0
         for pl in named:
-            sign = 1.0 if pl is me else -1.0
-            for e in eff.data["effects"]:
-                if e.kind == "draw":
-                    value += sign * 1.5 * e.amount
-                elif e.kind == "gain_life":
-                    value += sign * (life_value(pl.life + e.amount) - life_value(pl.life))
-                elif e.kind == "lose_life":
-                    if pl is opp and e.amount >= opp.life:
-                        return target, LETHAL
-                    value -= sign * (life_value(pl.life) - life_value(pl.life - e.amount))
-                elif e.kind == "discard":
-                    value -= sign * (0.8 if pl is me else 1.0) * min(e.amount, len(pl.hand))
-                elif e.kind == "mill":
-                    value -= sign * 0.1 * e.amount
+            for e in _sized_inner(game, me, eff):
+                if e.kind == "lose_life" and pl is opp and e.amount >= opp.life:
+                    return target, LETHAL
+                value += member_value(game, me, e, pl)[0]
         if instant and value < LETHAL and all(e.kind == "cx_players" for e in card.spell_effects):
             return None             # an instant that only does this waits for the opponent's end step
         return target, value
@@ -1404,7 +1496,7 @@ class HeuristicAI:
                 value, targets = card_value(card) + 0.5 * card.cmc, None   # flash artifact, unused this turn
             elif _is_trick(card) or any(e.target == "spell" for e in card.spell_effects):
                 continue
-            elif all(e.kind in ("draw", "dig", "scry", "surveil", "discard", "gain_life") or
+            elif all(e.kind in ("draw", "dig", "scry", "surveil", "discard", "gain_life", "lose_life") or
                      (e.kind == "token" and "power" not in (e.data or {})) for e in card.spell_effects):
                 # Cantrips and "draw two and create a Map" at the end step; judged as the sorcery
                 # they would be in our own main phase (keeping an additional sacrifice cost).
