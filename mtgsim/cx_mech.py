@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import re
 
+HEXPROOF_FROM = ("white", "blue", "black", "red", "green", "monocolored")
+
 
 def parse_line(line: str, st) -> bool:
     from .cards.model import AltCost, parse_mana_cost
@@ -39,20 +41,24 @@ def parse_line(line: str, st) -> bool:
 
 
 def variants(game, p, card) -> list:
-    """Splice variants of the hand card (an Arcane spell) with each other spliceable card in hand."""
+    """Splice variants of the hand card (an Arcane spell): each set of up to three other spliceable cards in hand."""
     from .cards import AltCost, add_mana
     out = _cost_variants(game, p, card)
     if "Arcane" not in card.subtypes or card.is_permanent:
         return out
-    for other in p.hand:
-        splice = next((a for a in other.alt_costs if a.kind == "splice"), None)
-        if other is card or splice is None or not other.spell_effects:
-            continue
-        alt = AltCost(f"splice_{getattr(other, 'physical_id', id(other))}", add_mana(card.mana_cost, splice.cost),
-                      extra=list(other.spell_effects))
-        v = game._variant(card, alt.kind, alt)
-        v.spliced = other
-        out.append(v)
+    from itertools import combinations
+    pool = [(o, next(a for a in o.alt_costs if a.kind == "splice")) for o in p.hand
+            if o is not card and o.spell_effects and any(a.kind == "splice" for a in o.alt_costs)]
+    for size in range(1, min(3, len(pool)) + 1):      # one, two or three spliced cards (up to three offered)
+        for combo in combinations(pool, size):
+            cost = card.mana_cost
+            for _, splice in combo:
+                cost = add_mana(cost, splice.cost)
+            kind = "splice_" + "_".join(str(getattr(o, "physical_id", id(o))) for o, _ in combo)
+            alt = AltCost(kind, cost, extra=[e for o, _ in combo for e in o.spell_effects])
+            v = game._variant(card, kind, alt)
+            v.spliced = [o for o, _ in combo]
+            out.append(v)
     return out
 
 
@@ -70,3 +76,35 @@ def _cost_variants(game, p, card) -> list:
             out.append(game._variant(card, "buyback", AltCost("buyback", dict(card.mana_cost), sacrifice=a.sacrifice,
                                                               discard=a.discard)))
     return out
+
+
+# "~ becomes prepared" / "if ~ isn't prepared, it becomes prepared" / "it becomes prepared": the effect kind and the
+# prepared-spell cast are prepare.py's; these are the self and "it" targets (the second wording is idempotent).
+EFFECT_PATTERNS = [
+    (r"(?:if ~ isn't prepared, it|~) becomes prepared",
+     lambda m: _prep("self")),
+    (r"it becomes prepared", lambda m: _prep("prev")),
+]
+SUBS: list = []
+
+
+def _prep(target):
+    from .cards import Effect
+    return Effect("prepare", 1, target=target, data={"prepared": True})
+
+
+def hexproof_from(perm, by, source) -> bool:
+    """Hexproof from <color / monocolored>: whether ``by`` can't target perm with a source of that quality."""
+    from .cards.model import CardDef
+    from .engine.state import Permanent, StackItem
+    if perm.controller is by or not isinstance(perm, Permanent):
+        return False
+    if isinstance(source, StackItem):
+        source = source.card or source.source
+    card = source.card if isinstance(source, Permanent) else source
+    if not isinstance(card, CardDef):
+        return False
+    from .engine.state import COLOR_WORDS
+    if len(card.colors) == 1 and perm.has("hexproof from monocolored"):
+        return True
+    return any(perm.has(f"hexproof from {w}") for w, c in COLOR_WORDS.items() if c in card.colors)
