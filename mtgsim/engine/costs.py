@@ -97,7 +97,8 @@ class CostsMixin:
             perm.produces_now = produces
             out.append(perm)
         for mana in p.pool:
-            if not mana.tapped and mana is not exclude:
+            if not mana.tapped and mana is not exclude and \
+                    (not mana.card.mana_restriction or self.mana_allowed(mana, spell)):
                 mana.produces_now = mana.card.produces
                 out.append(mana)
         stored = storage.stored_sources(p, exclude, lambda r: self.mana_allowed(None, spell, r),
@@ -111,9 +112,12 @@ class CostsMixin:
         """Whether perm's restricted mana (or this restriction) may pay for spell (see mana_sources)."""
         if spell is None:
             return True
+        r = restriction or perm.card.mana_restriction
+        if r.startswith("pred:"):         # "Spend this mana only to cast <spells> or activate abilities of <sources>"
+            from ..cx_abil_mana import allowed
+            return allowed(r, spell)
         if not isinstance(spell, CardDef):
             return False
-        r = restriction or perm.card.mana_restriction
         if r == "creature":
             return spell.is_creature
         if r == "artifact":
@@ -592,6 +596,12 @@ class CostsMixin:
         if key not in self._variants:
             if kind == "adventure":
                 v = dataclasses.replace(card.adventure)
+            elif kind == "room_right":      # a Room spell has the mana value of the half it was cast as
+                v = dataclasses.replace(card.back, name=f"{card.name} ({card.back.name})",
+                                        cmc=sum(n for k, n in card.back.mana_cost.items() if k != "X"))
+            elif kind == "room_left":
+                v = dataclasses.replace(card, name=f"{card.name} ({card.name.split(' // ')[0]})",
+                                        cmc=sum(n for k, n in card.mana_cost.items() if k != "X"))
             elif kind == "prepared":
                 v = dataclasses.replace(card.back, name=f"{card.name} (prepared)")
             elif kind in ("split", "aftermath"):
@@ -645,7 +655,7 @@ class CostsMixin:
         if cols:
             out += [self._variant(c, f"spent_{col}", AltCost("spent", self._hybrid_cost(c.mana_cost, c.hybrid, col)))
                     for col in cols]
-        elif not c.advanced_rules.get("no_mana_cost"):     # no printed cost can't be paid: alt costs only
+        elif not (c.back is not None and "Room" in c.subtypes) and not c.advanced_rules.get("no_mana_cost"):    # a Room is cast as one of its halves; no printed cost can't be paid: alt costs only
             out.append(c)
         full = any(self.spell_payable(p, v) for v in out)
         for a in c.alt_costs:

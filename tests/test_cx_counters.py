@@ -39,7 +39,7 @@ class MultiTarget(unittest.TestCase):
         return targets
 
     def test_each_of_up_to_two_stun(self):
-        bears = self.put(self.a, 3)
+        bears = self.put(self.b, 3)     # stun counters are aimed at the opponent's creatures
         self.run_effects("Put a stun counter on each of up to two target creatures.")
         self.assertEqual(sorted(b.counters.get("stun", 0) for b in bears), [0, 1, 1])
 
@@ -83,3 +83,116 @@ class EntersWithX(unittest.TestCase):
         game = Game(a, b, random.Random(0), log=True)
         game.enter_battlefield(a, c, x=3)
         self.assertEqual(a.battlefield[-1].counters["gem"], 3)
+
+
+class PerCounter(unittest.TestCase):
+    def setUp(self):
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        self.a.library = [ISLAND] * 10
+
+    def test_self_pump_per_counter(self):
+        from tests.test_templates import card
+        c = card("Test Oil", "{1}", "Creature — Golem", "This creature gets +2/+2 for each oil counter on it.", 0, 0)
+        self.assertEqual((c.pt_per, c.pt_scale), ("ctr:oil", (2, 2)))
+        perm = Permanent(c, self.a)
+        self.a.battlefield.append(perm)
+        perm.counters["oil"] = 2
+        self.assertEqual((perm.power, perm.toughness), (4, 4))
+
+    def test_equipment_per_counter(self):
+        from tests.test_templates import card
+        eq = card("Test Charger", "{2}", "Artifact — Equipment", "Equipped creature gets +1/+1 for each charge counter on this Equipment.\nEquip {2}")
+        self.assertEqual(eq.pt_per, "ctr:charge")
+        e, bear = Permanent(eq, self.a), Permanent(BEAR, self.a)
+        self.a.battlefield += [e, bear]
+        e.counters["charge"] = 3
+        e.attached_to = bear
+        bear.equipment.append(e) if e not in bear.equipment else None
+        self.assertEqual(bear.power, 5)
+
+    def test_draw_per_counter(self):
+        from tests.test_templates import card
+        c = card("Test Pile", "{1}", "Artifact", "{T}: Draw a card for each charge counter on this artifact.")
+        perm = Permanent(c, self.a)
+        self.a.battlefield.append(perm)
+        perm.counters["charge"] = 2
+        eff = c.activated[0].effects[0]
+        item = type("I", (), {"source": perm, "card": None, "context": None})()
+        before = len(self.a.hand)
+        self.game.resolve(self.a, eff, None, item)
+        self.assertEqual(len(self.a.hand) - before, 2)
+
+
+class Distribute(MultiTarget):
+    def test_distribute_over_chosen_targets(self):
+        bears = self.put(self.a, 3)
+        effs = effects("Distribute three +1/+1 counters among one, two, or three target creatures you control.")
+        self.assertEqual(len(effs), 3)
+        from mtgsim.engine.state import StackItem
+        item = StackItem(self.a, effs, self.game.auto_targets(self.a, effs))
+        for e, t in zip(item.effects, item.targets):
+            self.game.resolve(self.a, e, t, item)
+        self.assertEqual(sum(b.counters.get("+1/+1", 0) for b in bears), 3)
+
+    def test_single_target_gets_all(self):
+        bears = self.put(self.a, 1)
+        effs = effects("Distribute three +1/+1 counters among up to two target creatures you control.")
+        from mtgsim.engine.state import StackItem
+        item = StackItem(self.a, effs, self.game.auto_targets(self.a, effs))
+        for e, t in zip(item.effects, item.targets):
+            self.game.resolve(self.a, e, t, item)
+        self.assertEqual(bears[0].counters.get("+1/+1", 0), 3)
+
+
+class Pronoun(unittest.TestCase):
+    def test_him_means_self(self):
+        from tests.test_templates import card
+        c = card("Test Hero", "{1}", "Legendary Creature — Human",
+                 "At the beginning of your upkeep, put a +1/+1 counter on him.", 1, 1)
+        eff = c.triggers[0].effects[0]
+        self.assertEqual((eff.kind, eff.target), ("p1_counters", "self"))
+        c2 = card("Test Hero", "{1}", "Legendary Creature — Human", "{T}: Put a +1/+1 counter on target creature.", 1, 1)
+        self.assertNotEqual(c2.activated[0].effects[0].target, "self")
+
+
+class Remove(MultiTarget):
+    def test_remove_all_kind_from_target(self):
+        bear = self.put(self.b, 1)[0]
+        bear.counters.update({"+1/+1": 3, "time": 2})
+        self.run_effects("Remove all +1/+1 counters from target creature.")
+        self.assertEqual((bear.counters["+1/+1"], bear.counters["time"]), (0, 2))
+
+    def test_remove_a_counter_any_kind_from_opponent(self):
+        bear = self.put(self.b, 1)[0]
+        bear.counters.update({"+1/+1": 2})
+        self.run_effects("Remove a counter from target permanent.")
+        self.assertEqual(bear.counters["+1/+1"], 1)
+
+    def test_remove_all_counters_from_all_creatures(self):
+        a, b = self.put(self.a, 1)[0], self.put(self.b, 1)[0]
+        a.counters["shield"], b.counters["oil"] = 1, 4
+        self.run_effects("Remove all counters from all creatures.")
+        self.assertEqual((a.counters["shield"], b.counters["oil"]), (0, 0))
+
+
+class Move(MultiTarget):
+    def test_move_one_from_target_to_other(self):
+        a, b = self.put(self.a, 2)
+        a.counters["+1/+1"] = 3
+        effs = effects("Move a +1/+1 counter from target creature you control onto another target creature you control.")
+        self.assertEqual([e.kind for e in effs], ["cx_move_src", "cx_move_counters"])
+        from mtgsim.engine.state import StackItem
+        item = StackItem(self.a, effs, self.game.auto_targets(self.a, effs))
+        prev = None
+        for e, t in zip(item.effects, item.targets):
+            self.game.resolve(self.a, e, t, item, prev)
+            prev = t
+        self.assertEqual(a.counters["+1/+1"] + b.counters["+1/+1"], 3)
+        self.assertEqual(b.counters["+1/+1"], 1)
+
+    def test_move_from_self(self):
+        from tests.test_templates import card
+        c = card("Test Mover", "{1}", "Creature — Golem", "{T}: Move a +1/+1 counter from ~ onto target creature.", 1, 1)
+        self.assertEqual([e.kind for e in c.activated[0].effects], ["cx_move_counters"])

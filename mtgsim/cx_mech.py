@@ -21,6 +21,14 @@ HEXPROOF_FROM = ("white", "blue", "black", "red", "green", "monocolored")
 
 def parse_line(line: str, st) -> bool:
     from .cards.model import AltCost, parse_mana_cost
+    m = re.fullmatch(r"When you unlock this door, (.+)", line)
+    if m:
+        from .cards import _parse_effects
+        effs, bad = _parse_effects(m[1].replace("this Room", "~"))
+        if bad or not effs:
+            return False
+        st.etb += effs          # the door's unlock effects: they run as the Room enters through this half
+        return True
     m = re.fullmatch(r"Splice onto Arcane ((?:\{[^}]+\})+)(?: \(.*\))?", line)
     if m:
         st.alt_costs.append(AltCost("splice", parse_mana_cost(m[1])))
@@ -44,6 +52,8 @@ def variants(game, p, card) -> list:
     """Splice variants of the hand card (an Arcane spell): each set of up to three other spliceable cards in hand."""
     from .cards import AltCost, add_mana
     out = _cost_variants(game, p, card)
+    if "Room" in card.subtypes and card.back is not None:
+        out += [game._variant(card, "room_left"), game._variant(card, "room_right")]
     if "Arcane" not in card.subtypes or card.is_permanent:
         return out
     from itertools import combinations
@@ -76,6 +86,86 @@ def _cost_variants(game, p, card) -> list:
             out.append(game._variant(card, "buyback", AltCost("buyback", dict(card.mana_cost), sacrifice=a.sacrifice,
                                                               discard=a.discard)))
     return out
+
+
+# ---------------------------------------------------------------------------
+# Rooms: cast either half; its door is unlocked as it enters ("When you unlock this door" is an enter effect of
+# that half); as a sorcery, pay the other half's mana cost to unlock the other door. A Room permanent's card is its
+# unlocked doors: one half, or both halves merged (lists joined, dicts combined, sets unioned).
+# ---------------------------------------------------------------------------
+
+
+def _merge(left, right):
+    import dataclasses
+    changes = {"name": f"{left.name} // {right.name}"}
+    for f in dataclasses.fields(left):
+        lv, rv = getattr(left, f.name), getattr(right, f.name)
+        if f.name in ("name", "mana_cost", "cmc", "back", "origin", "origin_generation"):
+            continue
+        if isinstance(lv, list) and isinstance(rv, list):
+            changes[f.name] = lv + rv
+        elif isinstance(lv, dict) and isinstance(rv, dict):
+            changes[f.name] = {**rv, **lv}
+        elif isinstance(lv, (set, frozenset)) and isinstance(rv, (set, frozenset)):
+            changes[f.name] = lv | rv
+        elif isinstance(lv, tuple) and isinstance(rv, tuple):
+            changes[f.name] = lv + rv
+    return dataclasses.replace(left, **changes)
+
+
+def _doors(perm):
+    """(left def, right def, which door the permanent's card is: "left", "right" or "both")."""
+    card, base = perm.card, perm.front
+    if base.back is None or "Room" not in base.subtypes:
+        return None
+    left, right = base, base.back
+    if card.name == left.name:
+        return left, right, "left"
+    return left, right, "right" if card.name == right.name else "both"
+
+
+def _mv(cost: dict) -> int:
+    return sum(v for k, v in cost.items() if k != "X")
+
+
+def room_entered(perm) -> None:
+    """On the battlefield a Room's mana value is that of its unlocked doors (in hand and elsewhere it's both)."""
+    import dataclasses
+    doors = _doors(perm)
+    if doors:
+        perm.card = dataclasses.replace(perm.card, cmc=_mv(perm.card.mana_cost))
+
+
+def can_unlock(game, p, perm) -> bool:
+    doors = _doors(perm) if perm in p.battlefield else None
+    return bool(doors and doors[2] != "both" and p is game.active and game.step in ("main1", "main2")
+                and not game.stack)
+
+
+def unlock(game, p, perm) -> bool:
+    """Pay the locked door's mana cost (a sorcery): the permanent gains that half; its unlock effects run."""
+    from .engine.mana import payable
+    if not can_unlock(game, p, perm):
+        return False
+    left, right, state = _doors(perm)
+    locked = right if state == "left" else left
+    if not payable(game.mana_sources(p), locked.mana_cost) or game.pay(p, locked.mana_cost, spell="ability") is None:
+        return False
+    perm.card = _merge(left, right)
+    import dataclasses
+    perm.card = dataclasses.replace(perm.card, cmc=_mv(left.mana_cost) + _mv(right.mana_cost))
+    game.log(f"unlocks {locked.name}", p)
+    if locked.etb_effects:
+        game.queue_trigger(p, locked.etb_effects, perm, f"{locked.name}: unlock")
+    game.settle()
+    return True
+
+
+def ai_unlock(game, p) -> None:
+    """The AI unlocks a locked door whenever it can pay for it."""
+    for perm in list(p.battlefield):
+        if can_unlock(game, p, perm):
+            unlock(game, p, perm)
 
 
 # "~ becomes prepared" / "if ~ isn't prepared, it becomes prepared" / "it becomes prepared": the effect kind and the

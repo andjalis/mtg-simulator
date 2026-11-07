@@ -589,13 +589,15 @@ def _mana_restriction(text: str):
     if m:
         return "x_cost" if m[1] == "x" else "c_cost"
     m = re.fullmatch(r"to cast (?:colorless )?(\w+) spells or activate abilities of (?:colorless )?(\w+)", text)
-    if m and m[2].rstrip("s") == m[1].rstrip("s"):         # Eldrazi Temple: spells only, its abilities are not paid
+    if m and m[2].rstrip("s") == m[1].rstrip("s") and "colorless" in text:   # Eldrazi Temple: spells only, its abilities are not paid
         word = m[1].rstrip("s").lower()
         return word if word in ("artifact", "creature") else "subtype:" + word.capitalize()
     m = re.fullmatch(r"to cast an? (\w+) spell(?: or an? (\w+) spell)?", text)
-    if m:
+    if m and not {*m.groups()} & {"multicolored", "monocolored", "colorless", "colored", "white", "blue", "black",
+                                  "red", "green"}:      # colour words go to the predicate parser (cx_abil_mana)
         return "subtype:" + "|".join(t.capitalize() for t in m.groups() if t)
-    return None
+    from ..cx_abil_mana import parse as general_restriction
+    return general_restriction(text)
 
 
 _SACRIFICE_KINDS = {"token", "artifact", "creature", "creature or artifact", "artifact or creature", "treasure",

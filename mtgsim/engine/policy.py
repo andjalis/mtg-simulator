@@ -128,8 +128,23 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         if eff.data.get('counter') == '-1/-1':
             pool = mine if eff.data['operation'] == 'remove' else theirs
         return max(pool, key=perm_value, default=None)
-    if k == 'add_counter':
-        pool = theirs if eff.data.get('counter') == '-1/-1' else mine
+    if k in ('add_counter', 'cx_distribute'):
+        pool = theirs if eff.data.get('counter') in ('-1/-1', 'stun') else mine
+        return max(pool, key=perm_value, default=None)
+    if k == 'cx_move_src':
+        return max([x for x in mine if any(x.counters.values())] or theirs, key=perm_value, default=None)
+    if k == 'cx_move_counters':
+        taken = getattr(game, '_choosing_targets', [])
+        return max((x for x in mine if all(x is not t for t in taken)), key=perm_value, default=None)
+    if k == 'cx_remove_counters':
+        if eff.data.get('counter'):
+            pool = theirs if eff.data['counter'] == '+1/+1' else mine
+            pool = [x for x in pool if x.counters.get(eff.data['counter'], 0)]
+            if eff.data['counter'] in ('-1/-1', 'stun'):
+                pool = [x for x in mine if x.counters.get(eff.data['counter'], 0)]
+        else:
+            pool = [x for x in theirs if any(x.counters.values())] or [x for x in mine if any(
+                x.counters.get(n, 0) for n in ('-1/-1', 'stun'))]
         return max(pool, key=perm_value, default=None)
     if k == 'return_grave_target':
         return max(legal, key=lambda c: c.cmc, default=None)
@@ -850,6 +865,8 @@ def use_abilities(game: Game, me: Player):
                            key=lambda c: c.power)
             if need and st.counters.get("charge", 0) < need and len(ready) > 1:
                 game.station(me, st, ready[-1])
+        from ..cx_mech import ai_unlock
+        ai_unlock(game, me)
         for _ in range(10):     # general activated abilities, a few at most
             ability = choose_ability(game, me, instant=False)
             if ability is None or not game.do_action(me, ability):

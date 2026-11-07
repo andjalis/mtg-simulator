@@ -126,6 +126,9 @@ def counter(game, p, eff, target, item, **_):
 
 @kind("add_mana")
 def add_mana(game, p, eff, **_):
+    from ...cx_abil_mana import add_special
+    if add_special(game, p, eff):
+        return
     colors = list(eff.data["colors"])
     if eff.data.get("choice"):                 # "{U} or {R}", "one mana of any color": what the hand needs most
         need = {c: sum(card.mana_cost.get(c, 0) for card in p.hand) for c in eff.data["choice"]}
@@ -133,8 +136,8 @@ def add_mana(game, p, eff, **_):
     # "Add {R}" carries no amount (the Effect default is 0): one of each color. "Add an amount
     # of {R} equal to X" carries X as its amount, and 0 there means no mana at all.
     n = eff.amount if eff.data.get("xq") is not None else max(1, eff.amount)
-    for color in colors * n:
-        p.pool.append(Permanent(pool_mana(color), p))
+    p.last_added_mana = [Permanent(pool_mana(color), p) for color in colors * n]     # "Spend this mana only ..." reads these
+    p.pool.extend(p.last_added_mana)
     game.log(f"adds {''.join(colors * n)}", p)
 
 
