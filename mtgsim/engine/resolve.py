@@ -51,7 +51,7 @@ class ResolveMixin:
             if eff.data.get("xq_size"):
                 eff = dataclasses.replace(eff, data=dict(eff.data, power=n, toughness=n))
             else:
-                eff = dataclasses.replace(eff, amount=eff.amount * n,
+                eff = dataclasses.replace(eff, amount=eff.amount * n, data=dict(eff.data, xq_base=eff.amount),
                                           amount2=eff.amount2 * n if k in ("pump", "debuff", "debuff_one", "pump_all") else eff.amount2)
         if eff.data.get("x"):      # X is the X paid for the spell
             n = getattr(item, "x", 0)
