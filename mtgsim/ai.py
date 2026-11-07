@@ -515,6 +515,8 @@ class HeuristicAI:
     def main_phase(self, game: Game, me: Player):
         precombat = getattr(game, "step", "main1") != "main2"
         self.play_land(game, me)
+        from .cx_abil_mana import boost
+        boost(self, game, me, precombat)      # mana-adding abilities that bring a spell in hand within reach
         cast_any = precombat and self.lethal_setup(game, me)
         while not game.over:
             choice = self.choose_spell(game, me, precombat, reserve=self._reserve(game, me))
