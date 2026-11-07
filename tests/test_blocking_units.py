@@ -13,8 +13,8 @@ class BlockingUnitsTest(unittest.TestCase):
         self.assertEqual(units("Banding"), [("mechanic", "banding")])
 
     def test_activated_ability_blames_only_the_unknown_effect(self):
-        got = units("{T}: Target land becomes an Island until end of turn.")
-        self.assertEqual(got, [("ability", "target land becomes an island until end of turn")])
+        got = units("{T}: Target creature phases in and does a little dance.")     # an effect no template reads
+        self.assertEqual(got, [("ability", "target creature phases in and does a little dance")])
 
     def test_trigger_with_known_effect_blames_the_head(self):
         got = units("Whenever you surveil, you gain 1 life.")
