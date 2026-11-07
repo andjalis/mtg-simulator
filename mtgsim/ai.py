@@ -791,6 +791,10 @@ class HeuristicAI:
     def plan_spell(self, game: Game, me: Player, card: CardDef, precombat: bool = False):
         """Return (value, targets) if the AI wants to cast card in its main phase, else None."""
         opp = game.opponent(me)
+        if card.is_ability and any(e.kind == "unearth_return" for e in card.spell_effects):
+            # Unearth: a hasty attacker for one turn; worth casting before combat when it can attack
+            base = card.spell_effects[0].data["card"]
+            return (card_value(base) / 2 + 1, None) if base.is_creature and opp.life > 0 else None
         if not card.is_permanent and any((e.data or {}).get("x") for e in card.spell_effects):
             sized = self._sized(game, me, card)
             return None if sized is None else self.plan_spell(game, me, sized, precombat)

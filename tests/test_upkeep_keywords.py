@@ -61,7 +61,7 @@ class UpkeepKeywords(unittest.TestCase):
         for c in (MIST, REMORA, RIFT, DERM, WORKER, SPIRIT, CRUSHER, GIANT, CUTTER, ARCHER, QUAKE):
             self.assertEqual(c.unsupported, [], c.name)
         self.assertEqual(STINGER.unsupported, [])
-        self.assertTrue(STINGER.approximations)
+        self.assertFalse(STINGER.approximations)
 
     def test_pay_or_sacrifice(self):
         mist = self.put(self.a, MIST)
@@ -139,11 +139,36 @@ class UpkeepKeywords(unittest.TestCase):
         self.assertIn(CUTTER, self.a.hand)
         self.assertFalse(any(x.card.name == CUTTER.name for x in self.a.battlefield))
 
+    def test_ai_unearths_and_attacks_with_haste(self):
+        """HeuristicAI unearths a creature from its graveyard in its main phase and attacks with it that turn."""
+        from mtgsim.carddb import CardDB
+        from mtgsim.ai import HeuristicAI
+        zombie = CardDB(offline=True).get("Dregscape Zombie")           # unearth {B}, 2/1
+        self.a.ai, self.b.ai = HeuristicAI(), HeuristicAI()             # the fixture's scripted AI never attacks
+        self.game.active_idx = 0
+        self.put(self.a, SWAMP, 1)
+        self.a.graveyard.append(zombie)
+        self.a.library = [ISLAND] * 20
+        life = self.b.life
+        self.game.take_turn(self.a)
+        self.assertEqual(self.b.life, life - zombie.power)               # it had haste
+        self.assertIn(zombie, self.a.exile)                              # exiled at the end step
+
+    def test_unearth_ignores_spell_cost_modifiers(self):
+        from mtgsim.carddb import CardDB
+        db = CardDB(offline=True)
+        zombie, thalia = db.get("Dregscape Zombie"), db.get("Thalia, Guardian of Thraben")
+        self.game.enter_battlefield(self.b, thalia)
+        self.a.graveyard.append(zombie)
+        option = next(o for o in self.game.spell_options(self.a) if self.game._origin(o)[1] == "unearth")
+        self.assertEqual(self.game.cost_of(self.a, option), {"generic": 0, "B": 1})      # unearth {B}: not a spell, no Thalia tax
+
     def test_unearth_from_graveyard_then_exile(self):
         self.game.active_idx = 0
         self.put(self.a, MOUNTAIN, 2)
         self.a.graveyard.append(STINGER)
         option = next(o for o in self.game.spell_options(self.a) if self.game._origin(o)[1] == "unearth")
+        self.assertTrue(option.is_ability)                   # an activated ability, not a spell
         self.assertTrue(self.game.cast(self.a, option))
         self.game.settle()
         perm = next(x for x in self.a.battlefield if x.card.name == STINGER.name)

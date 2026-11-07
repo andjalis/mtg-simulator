@@ -56,8 +56,6 @@ def parse_line(line: str, st) -> bool:
         st.alt_costs.append(
             AltCost(kind, parse_mana_cost(m[2]),
                     zone="hand" if kind == "dash" else "exile" if kind == "madness" else "graveyard"))
-        if kind == "unearth":
-            st.approximations.append("unearth is cast like a spell")
         return True
     m = re.fullmatch(r"Afflict (\d+)", line)
     if m:

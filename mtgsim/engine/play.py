@@ -212,7 +212,7 @@ class PlayMixin:
                 return False
             self.discard_card(p, pitched)
             self.log(f"discards {pitched.name} for {card.name}", p)
-        if kind == "channel":
+        if kind in ("channel", "unearth"):
             p.graveyard.append(base)
         elif kind == "gy_ability":
             p.exile.append(base)
@@ -239,7 +239,7 @@ class PlayMixin:
         item = StackItem(p, effects, targets, card=card, kind="spell")
         # Prepared spells are copies; channel/graveyard abilities leave their
         # physical source in its actual zone rather than moving it onto the stack.
-        item.physical_card = base if kind not in ("prepared", "channel", "gy_ability") else None
+        item.physical_card = base if kind not in ("prepared", "channel", "gy_ability", "unearth") else None
         if item.physical_card is not None:
             item.move_origin = base.pending_move
             base.pending_move = None
