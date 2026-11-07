@@ -45,5 +45,6 @@ from . import cx_night_loot  # noqa: E402,F401
 from . import cx_night_gy  # noqa: E402,F401
 from . import cx_counters  # noqa: E402,F401
 from . import cx_abil  # noqa: E402,F401
+from . import cx_mech  # noqa: E402,F401
 from . import cx_grammar  # noqa: E402,F401
 from . import cx_tokens  # noqa: E402,F401

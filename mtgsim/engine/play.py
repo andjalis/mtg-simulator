@@ -182,6 +182,10 @@ class PlayMixin:
                 p.exile.append(gy)
             self.log(f"exiles {[gy.name for gy in picks]} from their graveyard for {card.name}", p)
             exiled_gy = picks[0]
+        if kind == "beam":
+            from ..cx_mech import pay_beam
+            if not pay_beam(self, p):
+                return False
         if kind.startswith("cond_alt_"):
             from ..cx_altcost import pay as pay_alternative
             if not pay_alternative(self, p, base, kind):

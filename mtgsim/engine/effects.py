@@ -157,7 +157,7 @@ class EffectsMixin:
             if target.kind == "spell":
                 base, kind, _ = self._origin(target.card)
                 owner = getattr(base, "owner", None) or target.controller
-                (owner.exile if kind in ("aftermath", "flashback", "jump_start") else owner.hand).append(base)
+                (owner.exile if kind in ("aftermath", "flashback", "jump_start", "beam") else owner.hand).append(base)
             self.log(f"{target} is returned to its owner's hand", p)
             return
         if target.is_spell and not self.counterable(target):
@@ -186,7 +186,7 @@ class EffectsMixin:
         self.stack.remove(target)
         if target.kind == "spell":
             base, kind, _ = self._origin(target.card)
-            exiled = kind in ("flashback", "jump_start", "grave_permission", "aftermath") or eff.data.get("exile")    # "exile it instead of putting it into ... graveyard"
+            exiled = kind in ("flashback", "jump_start", "grave_permission", "aftermath", "beam") or eff.data.get("exile")    # "exile it instead of putting it into ... graveyard"
             owner = getattr(base, "owner", None) or target.controller
             (owner.exile if exiled else owner.graveyard).append(base)
         self.log(f"{target} is countered", p)
@@ -468,6 +468,8 @@ class EffectsMixin:
                 for trig in x.card.host_triggers:
                     if trig.event == "dies":
                         self.queue_trigger(x.controller, trig.effects, x, x.card.name, context=perm)
+            from ..cx_mech import queue_recover
+            queue_recover(self, perm)
             self.fire(perm.controller, "ally_dies", subject=perm)
             self.fire(perm.controller, "ally_dies", perm, subject=perm)
             if perm.blitz:
