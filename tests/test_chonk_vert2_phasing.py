@@ -61,8 +61,7 @@ class ParsePhasing(unittest.TestCase):
     def test_dream_fighter_blocks_trigger(self):
         self.assertEqual([(t.event, [e.kind for e in t.effects]) for t in FIGHTER.triggers],
                          [("blocks", ["phase_out", "phase_out"]),
-                          ("becomes_blocked", ["phase_out", "phase_out"]),
-                          ("becomes_blocked_more", ["phase_out", "phase_out"])])
+                          ("blocked_by", ["phase_out", "phase_out"])])
 
     def test_time_and_tide_spell(self):
         self.assertEqual([(e.kind, e.data) for e in TIDE.spell_effects],

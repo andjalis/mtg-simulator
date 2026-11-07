@@ -52,6 +52,7 @@ def scry(game, p, eff, **_):
 def surveil(game, p, eff, **_):
     game.scry(p, eff.amount, to_graveyard=True)
     game.fire(p, "scry_surveil")
+    game.fire(p, "you_surveil")
 
 
 @kind("dig")
@@ -545,6 +546,7 @@ def explore(game, p, target, **_):
             if top is not None and game.hook(p, "scry")(game, p, [top]):
                 p.graveyard.append(p.library.pop())
         game.log(f"{target.card.name} explores", p)
+        game.fire(p, "explores", target)
 
 
 @kind("clash")
@@ -573,3 +575,5 @@ def flip_coin(game, p, eff, item, **_):
     if item is not None:
         item.gate_paid = won != bool(eff.data.get("on_lose"))
     game.log(f"flips a coin and {'wins' if won else 'loses'}", p)
+    if won:
+        game.fire(p, "you_win_flip")

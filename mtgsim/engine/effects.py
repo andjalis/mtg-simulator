@@ -79,6 +79,10 @@ class EffectsMixin:
             self.fire(target.controller, "dealt_damage", target, context=source)
             if combat:
                 self.fire(target.controller, "dealt_combat_damage", target, context=source)
+        if isinstance(target, Player):
+            self.event_combat = bool(combat)
+            self.fire(target, "player_damaged", source if isinstance(source, Permanent) else None, context=source)
+            self.event_combat = False
         self.event_amount = None
         if isinstance(target, Player):
             if combat and isinstance(source, Permanent) and source.card.toxic:
