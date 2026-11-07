@@ -73,6 +73,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     k = eff.kind
+    if eff.target == "player" and k in ("draw", "gain_life"):
+        return me if me in legal else None      # "target player draws/gains": the beneficiary is the caster
     if k == 'linked_exile':
         enemies = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
         if enemies:
@@ -552,6 +554,10 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
         for victim in game.sacrifice_candidates(me, perm, c["sacrifice"])[:c.get("sac_n", 1)]:
             if not victim.card.is_token and perm_value(victim) > 1:
                 return False
+    if c.get("cx_costs"):
+        from ..cx_abil_costs import ai_cost_ok
+        if not ai_cost_ok(game, me, perm, c):
+            return False
     if c.get("discard") and not choose_rummage(game, me, 1) and len(me.hand) <= 4:
         return False
     if c.get("life") and me.life <= 10:
@@ -839,7 +845,7 @@ def use_abilities(game: Game, me: Player):
             game.cast(me, c, None)
     if game.step == "main2":
         for st in [x for x in me.battlefield if x.card.station]:
-            need = max((a.min_charge for a in st.activated), default=0)
+            need = max([a.min_charge for a in st.activated] + [st.card.advanced_rules.get("station_creature", 0)])
             ready = sorted((c for c in me.creatures if c is not st and not c.tapped and c.power > 0),
                            key=lambda c: c.power)
             if need and st.counters.get("charge", 0) < need and len(ready) > 1:

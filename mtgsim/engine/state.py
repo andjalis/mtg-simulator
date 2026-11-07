@@ -52,6 +52,9 @@ class Counters(dict):
             from ..advanced_templates import counter_amount
             value = old + counter_amount(perm, key, value - old)
         super().__setitem__(key, value)
+        if key == "charge" and value != old:       # Spacecraft: a creature at its station threshold
+            from .. import continuous
+            continuous.refresh(perm)
         if key == "+1/+1" and value > old and perm in perm.controller.battlefield:
             game = getattr(perm.controller, "_game", None)
             if game is not None:
@@ -182,6 +185,7 @@ class Permanent:
         self.damaged_by: list = []                      # permanents that dealt it damage this turn
         self.prevent_next = 0                           # "prevent the next N damage ... this turn"
         self.detained_by = None                         # Player who detained it: no attack, block or activation until their turn
+        self.untap_locks: list = []                     # (source, duration, controller): "doesn't untap for as long as ..."
         self.skip_untap = 0                             # untap steps it skips ("doesn't untap during ... next untap step")
         self.spent_color = ""              # "if {U}{U} was spent to cast it"
         self.exiled_cards: list = []       # (card, owner) exiled until this leaves the battlefield
