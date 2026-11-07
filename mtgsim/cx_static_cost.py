@@ -19,7 +19,8 @@ condition a ``cx_condlib`` code, the count a ``where X is`` quantity (``cx_night
     cost_mod:  rules of a permanent, applied to the spells they describe while it is on the battlefield
     self_cost: rules of the card itself, applied while it is cast
 
-``adjust`` is called from ``Game.cost_of``: increases first, then reductions (rule 601.2f). A colored reduction
+``adjust`` is called from ``Game.cost_of`` with the older paths' generic increases and reductions too: every
+increase first, then every reduction (rule 601.2f). A colored reduction
 lowers that colored part, and what it can't lower comes off the generic part (rule 118.7d) unless the card says it
 reduces only colored mana.
 """
@@ -141,7 +142,7 @@ def _count(text: str):
 
 def parse_line(line: str, st) -> bool:
     m = _LINE.fullmatch(line)
-    if not m or st.level_marks:
+    if not m or st.level_marks or st.extra.get("_lvl_blocks"):
         return False        # a Class level's ability applies only from that level on
     from .cx_condlib import as_static, parse
     amount = _amount(m["amt"])
@@ -281,13 +282,14 @@ def _applying(game, p, card):
                 yield rule["sign"], rule["amount"], rule.get("colored_only", False), n
 
 
-def adjust(game, p, card, cost: dict) -> dict:
-    if card.is_land or not (card.advanced_rules.get("self_cost") or _any_sources(game)):
-        return cost
-    mods = list(_applying(game, p, card))
-    if not mods:
-        return cost
+def adjust(game, p, card, cost: dict, increase: int = 0, reduction: int = 0) -> dict:
+    """The cost after every increase, then every reduction (601.2f). increase / reduction: generic amounts from
+    Game.cost_of's older paths (taxes and "or pay {N}" costs; Affinity, "costs {1} less for each ...")."""
+    mods = []
+    if not card.is_land and (card.advanced_rules.get("self_cost") or _any_sources(game)):
+        mods = list(_applying(game, p, card))
     cost = dict(cost)
+    cost["generic"] = cost.get("generic", 0) + increase
     for sign, amount, _only, n in mods:
         if sign > 0:
             for key, k in amount.items():
@@ -305,6 +307,7 @@ def adjust(game, p, card, cost: dict) -> dict:
                         del cost[key]
                 k = 0 if only else k - took
             cost["generic"] = max(0, cost.get("generic", 0) - k)
+    cost["generic"] = max(0, cost["generic"] - reduction)
     return cost
 
 
