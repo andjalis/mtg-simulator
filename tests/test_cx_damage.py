@@ -52,6 +52,28 @@ class DividedDamage(unittest.TestCase):
         self.assertEqual(big.damage, 3)
 
 
+class DivisionAtCast(DividedDamage):
+    def test_division_fixed_when_put_on_stack(self):
+        self.assertEqual(BOLT.approximations, [])
+        bear = self.perm(BEAR, self.b)
+        item = StackItem(self.a, list(BOLT.spell_effects), [None], card=BOLT, name=BOLT.name)
+        self.game.stack.append(item)
+        planned = item.divided[id(item.effects[0])]
+        self.assertEqual([(v, n) for v, n in planned], [(bear, 2)])     # chosen now, not on resolution
+        self.perm(DRAGON3, self.b)                                      # a better target appears afterwards
+        self.game.resolve_top()
+        self.assertNotIn(bear, self.b.battlefield)
+
+    def test_illegal_target_share_is_lost(self):
+        bear = self.perm(BEAR, self.b)
+        item = StackItem(self.a, list(BOLT.spell_effects), [None], card=BOLT, name=BOLT.name)
+        self.game.stack.append(item)
+        life = self.b.life
+        self.b.battlefield.remove(bear)                                 # the target is gone before resolution
+        self.game.resolve_top()
+        self.assertEqual(self.b.life, life)
+
+
 STRIKE = card("Test Strike", "{1}{R}", "Instant", "Test Strike deals 2 damage to target creature and 2 damage to target "
               "player or planeswalker.\nDraw a card.")
 

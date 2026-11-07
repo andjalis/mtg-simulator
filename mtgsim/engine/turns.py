@@ -174,7 +174,7 @@ class TurnsMixin:
             if self.over or card not in p.graveyard:
                 continue
             for idx in range(len(card.gy_activated)):
-                if self.activate_graveyard(p, card, idx):
+                if graveyard.worth(self, p, card, idx) and self.activate_graveyard(p, card, idx):
                     break
             if card not in p.graveyard:
                 continue
@@ -245,6 +245,15 @@ class TurnsMixin:
                 self.draw(p)
             self.settle()
 
+    @staticmethod
+    def untap_locked(perm) -> bool:
+        """Whether a recorded tap-lock still holds on perm; locks whose condition ended are dropped."""
+        live = [(src, dur, ctrl) for src, dur, ctrl in perm.untap_locks
+                if src in src.controller.battlefield and
+                (dur != "tapped" or src.tapped) and (dur != "controlled" or src.controller is ctrl)]
+        perm.untap_locks = live
+        return bool(live)
+
     def untap_step(self, p: Player):
         """The controller's untap step: untap everything except permanents that skip it, are
         stunned, block their own untap, or whose controller recorded a "choose not to untap"
@@ -268,6 +277,8 @@ class TurnsMixin:
                 # "You may choose not to untap ~ during your untap step" (~40 cards, e.g. Amber
                 # Prison): the recorded choice (perm.stay_tapped) is consumed by this untap step.
                 perm.stay_tapped = False
+            elif perm.tapped and perm.untap_locks and self.untap_locked(perm):
+                pass                        # a tap-lock whose condition still holds (Amber Prison, Icefall Regent, ...)
             elif perm.tapped and perm.auras and auras.blocks_untap(perm):
                 pass
             elif perm.tapped and perm.card.no_untap:
@@ -393,6 +404,8 @@ class TurnsMixin:
                 and not player_flag(self, p, 'no_max_hand'):
             card = p.ai.choose_discard(self, p)
             self.discard_card(p, card)
+        if self.pending:
+            self.settle()           # triggers from the cleanup discard (madness) get priority before the turn ends
         for perm in p.battlefield + opp.battlefield:
             perm.damage = 0
             perm.deathtouched = False
@@ -400,6 +413,7 @@ class TurnsMixin:
             perm.temp_kw.clear()
             perm.temp_triggers.clear()
             perm.temp_activated.clear()
+            perm.temp_min_blocker = 0
             perm.adapt_exceptions = 0
             perm.regeneration_shields = 0
             perm.prevent_next = 0

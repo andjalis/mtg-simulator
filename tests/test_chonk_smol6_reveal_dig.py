@@ -125,13 +125,14 @@ class TypedRevealDiscard(Chonk6RevealDig):
         self.assertEqual(self.b.graveyard, [])
 
     def test_may_choose_discard_is_always_taken(self):
-        """The second mode ("sacrifices an enchantment of their choice") has no template
-        yet, so only the reveal-discard mode parses and the card stays partial."""
+        """The second mode ("target opponent sacrifices an enchantment of their choice") is the
+        grammar zones family's edict (cx_edict on the target opponent), so the card is full."""
         modes = TRUTH.modes
         self.assertEqual([e.kind for e in modes[0]], ["discard_choice"])
         self.assertEqual(modes[0][0].filter, "creature, enchantment, or planeswalker")
-        self.assertTrue(any("sacrifices an enchantment" in l for l in TRUTH.unsupported),
-                        TRUTH.unsupported)
+        self.assertEqual([(e.kind, e.data["who"]) for e in modes[1]], [("cx_players", "target")])
+        self.assertEqual(modes[1][0].data["effects"][0].kind, "cx_edict")
+        self.assertEqual(TRUTH.unsupported, [])
 
     def test_discard_respects_the_filter(self):
         self.b.hand = [ISLAND, GIANT]

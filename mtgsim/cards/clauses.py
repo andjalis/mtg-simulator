@@ -33,10 +33,11 @@ _SUB_NOTES = [
      "the may-play riders are played as the impulse draw, so the free cast is never granted"),
     # Tap-lock riders ("... doesn't untap during its controller's untap step for as long as ~
     # remains tapped / you control ~ / ~ remains on the battlefield"): the parser records the
-    # duration on the tap effect (data["lock"]) for the engine's link recording; until that lands,
-    # the lock is played as a single skipped untap step (the freeze subset).
-    (re.compile(r"doesn't untap during (?:its controller's|their controllers') untap steps? for as long as", re.I),
-     "the tap-lock is played as a single skipped untap step (the persistent link isn't recorded yet)"),
+    # duration on the tap effect (data["lock"]) and the engine keeps the link (turns.untap_locked); a duration
+    # it doesn't record ("for as long as it has a counter") is played as a single skipped untap step.
+    (re.compile(r"doesn't untap during (?:its controller's|their controllers') untap steps? for as long as "
+                r"(?!(?:this \w+|it) remains (?:tapped|on the battlefield)|you control )", re.I),
+     "the tap-lock's duration is not one the engine records, so it is played as a single skipped untap step"),
 ]
 
 _SUBS = [
@@ -437,6 +438,9 @@ def _xq(text: str):
     t = text.strip().rstrip(".")
     tl = t.lower()
     from ..counting import _singular
+    if tl.startswith("your devotion to "):
+        from ..cx_static_cond import devotion_spec
+        return devotion_spec(tl)
     if tl in ("your life total", "your speed", "the amount of life you gained this turn",
              "the number of cards in your hand", "the number of cards in an opponent's hand"):
         return ({"your life total": ("life",), "your speed": ("speed",),
@@ -497,7 +501,8 @@ def _xq(text: str):
         lhs, rhs = side(m[1]), side(m[3])
         if lhs is not None and rhs is not None:
             return ("arith", lhs, "-" if m[2].lower() == "minus" else "+", rhs)
-    return None
+    from ..cx_grammar_quantity import quantity      # devotion, noun-phrase counts, turn history, greatest / total
+    return quantity(t)
 
 
 _IF_CONDS = [

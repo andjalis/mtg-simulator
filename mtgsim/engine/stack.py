@@ -10,6 +10,7 @@ from .. import modal, rules_events, phase_conditions, turn_conditions, counter_m
 from ..identity import CardInstance, CardZone
 from ..actions import perform, can_perform
 from .state import Permanent, Player, StackItem, TARGETED, TrackedZone, _gy_desc, card_matches
+from .policy import perm_value
 
 
 class StackMixin:
@@ -260,7 +261,12 @@ class StackMixin:
                 if not effects:
                     continue
             if targets is None:
-                targets = self.auto_targets(controller, effects, source)
+                self.trigger_context = context        # "that creature deals damage ...": cx_abil_damage reads it
+                try:
+                    targets = self.auto_targets(controller, effects, source)
+                finally:
+                    self.trigger_context = None
+                targets = self.force_damage_targets(controller, effects, targets, source)
             effects = counter_mechanics.protect_graveyard_targets(self, effects, targets)
             item = StackItem(controller, effects, targets, source=source, name=name, context=context, kind=kind)
             item.intervening_if = intervening_if
@@ -269,6 +275,20 @@ class StackMixin:
             self.log(f"{item} goes on the stack" + (f" -> {targets}" if any(targets) else ""), controller)
             self.check_ward(item)
         return True
+
+    def force_damage_targets(self, controller, effects, targets, source):
+        """A mandatory trigger must target when a legal creature exists, killable or not (#295)."""
+        targets = list(targets)
+        for i, e in enumerate(effects):
+            if e.kind != "damage" or e.target != "creature" or e.data.get("optional") or i >= len(targets) \
+                    or targets[i] is not None:
+                continue
+            with self.targeting(source):
+                legal = [x for x in self.legal_targets(controller, e) if isinstance(x, Permanent)]
+            enemies = [x for x in legal if x.controller is not controller] or legal
+            if enemies:
+                targets[i] = max(enemies, key=perm_value)
+        return targets
 
     def check_ward(self, item: StackItem):
         item.effects = counter_mechanics.protect_graveyard_targets(self, item.effects, item.targets)
@@ -334,12 +354,15 @@ class StackMixin:
             self._entry_mana_colors = getattr(item, "mana_colors", set())
             self._entry_cast = (kind == "kicker" or getattr(item, "kicks", 0) > 0,
                                 bool(getattr(item, "cast_from_hand", False)), getattr(item, "mana_spent", 0))
-            if kind == "disturb":                   # cast transformed: its back face enters
+            if kind in ("disturb", "room_right"):   # cast transformed: its back face enters (a Room's right door)
                 perm = self.enter_battlefield(p, base.back, x=getattr(item, "x", 0), physical_card=base)
             else:
                 perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
             self._aura_host = None
             self._entry_cast = None
+            if "Room" in base.subtypes and base.back is not None:
+                from ..cx_mech import room_entered
+                room_entered(perm)
             if base.aura == "player":
                 perm.curse_target = self.opponent(p)
             self._entry_mana_colors = set()
@@ -352,7 +375,7 @@ class StackMixin:
             if kind in ("blitz", "blitz_gy"):
                 perm.blitz = True
             alt_casts.entered(perm, kind, item.card.origin[2] if getattr(item.card, "origin", None) else None)
-            if kind in ("dash", "unearth"):
+            if kind == "dash":
                 setattr(perm, kind + "ed", True)     # haste; back to hand / exiled at the next end step
             if kind == "warp":
                 perm.warped = True
@@ -442,7 +465,7 @@ class StackMixin:
             return
         if kind in ("adventure", "cascade_adventure", "rebound_adventure"):
             owner.on_adventure.append(base)
-        elif kind in ("flashback", "jump_start", "grave_permission", "aftermath"):
+        elif kind in ("flashback", "jump_start", "grave_permission", "aftermath", "beam"):
             if getattr(item, "flip_gy", False) and item.card.back is not None:
                 self.enter_battlefield(owner, item.card.back, counters={"finality": 1}, physical_card=base)
                 self.log(f"{item.card.name} returns transformed", owner)
@@ -495,6 +518,9 @@ class StackMixin:
         turn_condition = turn_conditions.check(self, p, c, item)
         if turn_condition is not None:
             return turn_condition
+        if c.startswith("mech:"):
+            from ..cx_mech import check
+            return check(self, p, c)
         if c.startswith("lib:"):
             return cx_condlib.check(self, p, c, item, prev=prev)
         if c == "city_blessing":

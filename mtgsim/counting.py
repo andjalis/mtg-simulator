@@ -78,8 +78,12 @@ def _scaled(eff, n):
 def count(game, p, per: dict, source=None) -> int:
     from .copies import fits
     what = per["what"]
+    if what.startswith("ctr:"):     # counters of one kind on the source ("for each charge counter on ~")
+        return source.counters.get(what[4:], 0) if source is not None and hasattr(source, "counters") else 0
     other = what.startswith("other ")
     what = what[6:] if other else what
     if per["zone"] == "graveyard":
         return sum(fits(c, what) for c in p.graveyard)
+    if per["zone"] == "all":          # "on the battlefield": every player's permanents
+        return sum(1 for pl in game.players for x in pl.battlefield if fits(x.card, what, x))
     return sum(1 for x in p.battlefield if not (other and x is source) and fits(x.card, what, x))

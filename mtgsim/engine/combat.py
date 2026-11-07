@@ -53,7 +53,8 @@ class CombatMixin:
             self.queue_trigger(controller, effects, source, f"{name}: at end of combat", context=subject)
         self.fire(p, "end_combat")
         self.run_priority(until_empty_stack=False)
-        self.attackers = []         # nothing is attacking after combat (Embercleave's cost, "attacking" targets)
+        self.last_attackers = self.attackers
+        self.attackers = []   # nobody is attacking after combat (#244); blocks stay for inspection
 
     def _combat(self, p: Player, opp: Player):
         self.step = "declare_attackers"
@@ -120,7 +121,6 @@ class CombatMixin:
         if len(attackers) == 1:
             self.fire(p, "attacks_alone", context=attackers[0])
         self.fire(p, "you_attack")
-        self.event_amount = None           # "that many" set by the attack-with heads (cx_trig_events)
         if len(attackers) >= 2:
             self.fire(p, "attack_two_plus")
         if len(attackers) >= 3:
@@ -248,6 +248,8 @@ class CombatMixin:
             if isinstance(tgt, Player):
                 from ..batch1_templates import combat_hit
                 combat_hit(self, src, tgt)
+                from ..cx_mech import note_hit
+                note_hit(self, src)
                 from ..dungeon_mechanics import initiative_combat
                 initiative_combat(self, src, tgt)
                 self.fire(src.controller, "combat_damage_player", src, context=tgt)
