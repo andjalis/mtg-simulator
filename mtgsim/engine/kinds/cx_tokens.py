@@ -20,6 +20,14 @@ def owner(game, item, target):
 
 @kind("cx_token")
 def cx_token(game, p, eff, target, opp, item=None, **_):
+    if "copy" in eff.data:                  # "a token that's a copy of that creature / it"
+        from ...cards import CardDef
+        from ...copies import make_copy
+        card = target.copiable_card if isinstance(target, Permanent) else target if isinstance(target, CardDef) \
+            else None
+        if card is not None:
+            create(game, p, dict(eff.data, card=make_copy(card, eff.data["copy"])), eff.amount)
+        return
     who = eff.data["who"]
     if who == "owner":
         found = owner(game, item, target)
