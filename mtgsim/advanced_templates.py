@@ -113,6 +113,9 @@ def parse_effect(text, previous):
 
 
 def grave_targets(game, p, eff):
+    if 'cx_card' in eff.data:                 # grammar zones family: a card noun phrase and an exact graveyard
+        from .cx_grammar_zones import grave_cards
+        return grave_cards(game, p, eff)
     types = eff.data['grave_type'].split(' or ')
     cards = [c for c in p.graveyard if ('cmc_exact' not in eff.data or c.cmc == eff.data['cmc_exact']) and
              any(c.is_permanent if t == 'permanent' else t.title() in c.types for t in types)]

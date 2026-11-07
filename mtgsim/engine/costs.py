@@ -4,6 +4,7 @@ from __future__ import annotations
 import dataclasses
 
 from .. import alt_casts, emerge, auras, copies, counting, discounts, returns, costs, storage, cx_static_cost
+from .. import cx_static_cond
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
@@ -96,7 +97,8 @@ class CostsMixin:
             perm.produces_now = produces
             out.append(perm)
         for mana in p.pool:
-            if not mana.tapped and mana is not exclude:
+            if not mana.tapped and mana is not exclude and \
+                    (not mana.card.mana_restriction or self.mana_allowed(mana, spell)):
                 mana.produces_now = mana.card.produces
                 out.append(mana)
         stored = storage.stored_sources(p, exclude, lambda r: self.mana_allowed(None, spell, r),
@@ -110,9 +112,12 @@ class CostsMixin:
         """Whether perm's restricted mana (or this restriction) may pay for spell (see mana_sources)."""
         if spell is None:
             return True
+        r = restriction or perm.card.mana_restriction
+        if r.startswith("pred:"):         # "Spend this mana only to cast <spells> or activate abilities of <sources>"
+            from ..cx_abil_mana import allowed
+            return allowed(r, spell)
         if not isinstance(spell, CardDef):
             return False
-        r = restriction or perm.card.mana_restriction
         if r == "creature":
             return spell.is_creature
         if r == "artifact":
@@ -199,6 +204,8 @@ class CostsMixin:
         """The value of X in ", where X is ..." (see cards._xq)."""
         kind = spec[0]
         src = item.source if item is not None and isinstance(item.source, Permanent) else None
+        if kind == "devotion":
+            return cx_static_cond.devotion(p, spec[1])
         if kind == "life":
             return max(0, p.life)
         if kind == "speed":
@@ -533,22 +540,22 @@ class CostsMixin:
         pending = getattr(self, "next_discount", {}).get(p.name)
         if pending and pending[0] == self.turn:
             n += pending[1]             # "the next spell you cast this turn costs {N} less" (Peerless Samurai)
-        cost["generic"] = max(0, cost.get("generic", 0) - n)
         from ..batch1_templates import spell_tax
-        cost["generic"] += spell_tax(self, p, card)
-        cost = cx_static_cost.adjust(self, p, card, cost)
+        more = spell_tax(self, p, card)             # increases: taxes and "or pay {N}" additional costs
         if card.extra_discard and card.discard_or_pay and self.spare_cards(p, card) < 1:
-            cost["generic"] += card.discard_or_pay
+            more += card.discard_or_pay
         if card.behold_or_pay:
             sub, tax = card.behold_or_pay
             if not (any(sub in x.card.subtypes for x in p.battlefield) or
                     any(sub in c.subtypes for c in p.hand if c is not card)):
-                cost["generic"] += tax
+                more += tax
+        if card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
+            more += card.extra_sac_or_pay
+        # 601.2f: the total cost is the mana cost plus every increase, then every reduction
+        cost = cx_static_cost.adjust(self, p, card, cost, increase=more, reduction=n)
         if card.convoke:
             self._convoke_k = min(len(self.convoke_pool(p)), cost.get("generic", 0))
             cost["generic"] -= self._convoke_k
-        if card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
-            cost["generic"] += card.extra_sac_or_pay
         if assist and (card.improvise or card.delve):
             cost = self.assist_payment(p, card, cost)[0]
         if getattr(card, "spell_copy", False):
@@ -591,6 +598,12 @@ class CostsMixin:
         if key not in self._variants:
             if kind == "adventure":
                 v = dataclasses.replace(card.adventure)
+            elif kind == "room_right":      # a Room spell has the mana value of the half it was cast as
+                v = dataclasses.replace(card.back, name=f"{card.name} ({card.back.name})",
+                                        cmc=sum(n for k, n in card.back.mana_cost.items() if k != "X"))
+            elif kind == "room_left":
+                v = dataclasses.replace(card, name=f"{card.name} ({card.name.split(' // ')[0]})",
+                                        cmc=sum(n for k, n in card.mana_cost.items() if k != "X"))
             elif kind == "prepared":
                 v = dataclasses.replace(card.back, name=f"{card.name} (prepared)")
             elif kind in ("split", "aftermath"):
@@ -623,7 +636,7 @@ class CostsMixin:
                         v.extra_discard = alt.discard
                     v.spell_effects = list(alt.effects if alt.effects is not None else card.spell_effects) + \
                         list(alt.extra)
-                    v.cost_reduction = ""
+                    # the card's own cost reduction still applies to an alternative cost (CR 601.2f)
             v.origin = (card, kind, alt)
             v.origin_generation = getattr(card, "generation", None)
             self._variants[key] = v
@@ -647,7 +660,7 @@ class CostsMixin:
         if cols:
             out += [self._variant(c, f"spent_{col}", AltCost("spent", self._hybrid_cost(c.mana_cost, c.hybrid, col)))
                     for col in cols]
-        else:
+        elif not (c.back is not None and "Room" in c.subtypes) and not c.advanced_rules.get("no_mana_cost"):    # a Room is cast as one of its halves; no printed cost can't be paid: alt costs only
             out.append(c)
         full = any(self.spell_payable(p, v) for v in out)
         for a in c.alt_costs:

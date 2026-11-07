@@ -79,7 +79,6 @@ def parse_line(line: str, st) -> bool:
             triggers.append(_trigger("becomes_blocked", [_effect("rampage", n)]))
         elif m[1] == "Backup":
             triggers.append(_trigger("etb", [_effect("backup", n)]))
-            st.approximations.append("backup grants only keyword abilities")
         elif m[1] == "Renown":
             triggers.append(_trigger("combat_damage_player", [_effect("renown", n)]))
         elif m[1] == "Fabricate":
@@ -243,8 +242,11 @@ def resolve(game, p, eff, target, item):
         others = [x for x in p.creatures if x is not src]
         pick = max(others, key=perm_value) if others else src
         pick.counters["+1/+1"] = pick.p1 + eff.amount
-        if pick is not src:
+        if pick is not src:        # the target gains every ability listed below backup until end of turn
             pick.temp_kw |= set(src.card.keywords)
+            pick.temp_triggers += [t for t in src.card.triggers if not any(e.kind == "backup" for e in t.effects)]
+            pick.temp_activated += list(src.card.activated)
+            pick.temp_min_blocker = max(pick.temp_min_blocker, src.card.min_blocker_power)
     elif k == "evolve":
         new = item.context
         if isinstance(new, Permanent) and (new.power > src.power or new.toughness > src.toughness):

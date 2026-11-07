@@ -94,6 +94,12 @@ class PlayMixin:
         effects = [] if card.is_permanent else list(card.spell_effects)
         targets = list(targets or [])
         targets += [None] * (len(effects) - len(targets))
+        for i, e in enumerate(effects):     # "each of up to two target ...": a repeated pick is re-chosen below
+            if targets[i] is not None and e.data.get("distinct") and any(
+                    targets[j] is targets[i] and effects[j].data.get("distinct")
+                    and effects[j].data.get("group", effects[j].kind) == e.data.get("group", e.kind)
+                    for j in range(i)):
+                targets[i] = None
         if card.tapped_discount and not card.is_permanent:
             tapped = self.tapped_targets(p, card)
             idx = next((i for i, e in enumerate(effects) if e.target in TARGETED), None)

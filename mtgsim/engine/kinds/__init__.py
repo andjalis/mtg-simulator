@@ -32,6 +32,7 @@ from . import cx_shields  # noqa: E402,F401
 from . import cx_night_suspect  # noqa: E402,F401
 from . import cx_suspect  # noqa: E402,F401
 from . import cx_delayed  # noqa: E402,F401
+from . import cx_trig  # noqa: E402,F401
 from . import cx_night_kinship  # noqa: E402,F401
 from . import cx_night_lair  # noqa: E402,F401
 from . import cx_night_draw  # noqa: E402,F401
@@ -42,4 +43,7 @@ from . import cx_night_endturn  # noqa: E402,F401
 from . import cx_night_combat  # noqa: E402,F401
 from . import cx_night_loot  # noqa: E402,F401
 from . import cx_night_gy  # noqa: E402,F401
+from . import cx_counters  # noqa: E402,F401
+from . import cx_abil  # noqa: E402,F401
 from . import cx_grammar  # noqa: E402,F401
+from . import cx_tokens  # noqa: E402,F401
