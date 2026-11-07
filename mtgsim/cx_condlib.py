@@ -914,7 +914,8 @@ def check(game, p, code: str, item=None, source=None, prev=None):
     if kind == "counters":
         name, op, n = args
         return source is not None and _cmp(source.counters.get(name, 0), op, n)
-    return False
+    from .cx_static_cond import check as static_check      # kinds registered by cx_static_cond
+    return static_check(game, p, kind, args, item, source)
 
 
 def _eval_any(game, p, code, item, source, prev=None):
@@ -968,3 +969,7 @@ def holds_for(source, code: str, ref=None) -> bool:
         pass
     _Src.source, _Src.context = source, ref
     return bool(_eval_any(game, p, code, _Src, source, ref or source))
+
+
+from .cx_static_cond import RULES as _STATIC_RULES  # noqa: E402  (devotion, most common color)
+_RULES.extend((re.compile(pattern, re.I), build) for pattern, build in _STATIC_RULES)
