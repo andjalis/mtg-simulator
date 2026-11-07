@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+"""Run a CPU-heavy check through a machine-wide queue shared by every mtg-simulator agent.
+
+    ~/mtg-worktrees/bin/heavy .venv/bin/python scripts/fast_check.py
+    ~/mtg-worktrees/bin/heavy .venv/bin/python scripts/pilot_gate.py --base origin/main --worktree . --fast
+
+At most SLOTS heavy jobs run at once (others wait their turn); each runs at low priority (nice 10), and
+fast_check gets --jobs JOBS unless you pass --jobs yourself. Tune with MTG_HEAVY_SLOTS / MTG_HEAVY_JOBS."""
+import fcntl, os, subprocess, sys, time
+from pathlib import Path
+
+JOBS = os.environ.get("MTG_HEAVY_JOBS", "4")
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from heavy_lock import SLOTS, acquire  # noqa: E402
+
+
+def main():
+    cmd = sys.argv[1:]
+    if not cmd:
+        sys.exit(__doc__)
+    if any(a.endswith("fast_check.py") for a in cmd) and "--jobs" not in cmd:
+        cmd += ["--jobs", JOBS]
+    lock = acquire(" ".join(cmd)[:200])          # released when this process exits
+    start = time.time()
+    code = subprocess.call(["nice", "-n", "10", *cmd])
+    print(f"heavy: done in {time.time() - start:.0f}s (exit {code})", file=sys.stderr)
+    lock.close()
+    sys.exit(code)
+
+
+if __name__ == "__main__":
+    main()
