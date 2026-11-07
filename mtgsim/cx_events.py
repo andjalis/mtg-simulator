@@ -480,7 +480,8 @@ _PLAYER_RAW = {"cast": ("any_cast",), "cast_copy": ("any_cast", "spell_copied"),
 def compile_head(head: str):
     """The head ("Whenever a Goblin you control attacks") -> (raw events, matcher spec), or None."""
     m = re.fullmatch(r"When(?:ever)? (.+)", head)
-    if not m or re.search(r"\b(?:this turn|this combat|while|commander|chosen|named|each combat)\b", m[1]) or \
+    if not m or re.search(r"\b(?:this turn|this combat|while|commander|chosen|named|each combat)\b",
+                          m[1].replace("attack while creatures you control have total power", "attack")) or \
             re.match(r"(?:it|that|they|this) ", m[1]):
         return None
     body = m[1].replace("you're ", "you are ", 1) if m[1].startswith("you're ") else m[1]
@@ -498,6 +499,9 @@ def compile_head(head: str):
                 if spell is None:
                     return None
                 spec["spell"] = spell
+            elif kind in ("attack_with", "attack_power", "roll_exact"):
+                if not cx_trig_events.extend_spec(kind, vm, spec):
+                    return None
             elif kind == "draw_nth":
                 spec["nth"] = {"second": 2, "third": 3}[vm[1]]
             elif kind == "discard":
@@ -580,7 +584,11 @@ def split_head(line: str):
         if got is None or _selector_owns(head):
             continue
         rest = ", ".join(parts[i:])
+        if got[1].get("kind") in ("attack_with", "attack_power") and not cx_trig_events.attack_rest_ok(rest):
+            continue
         effs, bad = _parse_effects(rest[0].upper() + rest[1:] if not rest.startswith("~") else rest)
+        if (bad or not effs) and rest.startswith("you "):
+            effs, bad = _parse_effects(rest[4].upper() + rest[5:])       # "you draw that many cards"
         if bad or not effs:
             return None
         return tuple("ev:" + r for r in got[0]), head, rest
@@ -692,7 +700,7 @@ def _match(game, spec, event, perm, p, source, context, subject, wants_player=Fa
             card = actor.discarded_cards[-1] if getattr(actor, "discarded_cards", None) else None
             if card is None or not card_matches(card, spec["card"]):
                 return False
-        if not cx_trig_events.player_ok(game, spec, actor, me, event):
+        if not cx_trig_events.player_ok(game, spec, actor, me, event, perm):
             return False
         if kind == "gain_first" and actor.life_gained_turn != (getattr(game, "event_amount", None) or 0):
             return False

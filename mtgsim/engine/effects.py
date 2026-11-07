@@ -81,6 +81,7 @@ class EffectsMixin:
                 self.fire(target.controller, "dealt_combat_damage", target, context=source)
         if isinstance(target, Player):
             self.event_combat = bool(combat)
+            self.event_dmg_by = by if isinstance(by, Player) else (source.controller if isinstance(source, Permanent) else None)
             self.fire(target, "player_damaged", source if isinstance(source, Permanent) else None, context=source)
             self.event_combat = False
         self.event_amount = None

@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import alt_casts, auras, copies, cx_events, milling
+from .. import alt_casts, auras, copies, cx_events, cx_trig_events, milling
 from ..cards import CardDef, Effect
 from .. import modal, rules_events, phase_conditions, turn_conditions, counter_mechanics, cx_condlib
 from ..identity import CardInstance, CardZone
@@ -93,10 +93,13 @@ class StackMixin:
             cx_trig_watch.observe(self, p, event, source)
         cx_condlib.record(self, p, event, source, context, subject)
         if source is None and event in ("upkeep", "end_step"):
+            cx_trig_events.host_phase(self, p, event)
             for controller in self.players:
                 self.fire(controller, "each_upkeep" if event == "upkeep" else "each_end_step", context=p)
                 if event == "upkeep" and controller is not p:
                     self.fire(controller, "opp_upkeep", context=p)
+                if event == "end_step" and controller is not p:
+                    self.fire(controller, "opp_end_step", context=p)
 
     def _dispatch_trigger_event(self, p, event, source=None, context=None, subject=None):
         from ..residual_templates import trigger_suppressed

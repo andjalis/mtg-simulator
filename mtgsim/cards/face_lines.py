@@ -559,6 +559,9 @@ def _face_land_and_mana_lines(st, line):
         if line in ("Daybound", "Nightbound"):
             extra[line.lower()] = True       # see day_night.py
             return None
+        if line == "If it's neither day nor night, it becomes day as ~ enters.":
+            extra.setdefault("advanced_rules", {})["starts_day"] = True      # day_night.on_enter
+            return None
         if re.fullmatch(r"Casualty \d+", line):
             approximations.append(f"never paid: {line}")
             return None

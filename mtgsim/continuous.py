@@ -179,6 +179,11 @@ def pt(permanent):
         t += effect.toughness
     counters = permanent.counters.get('+1/+1', 0) - permanent.counters.get('-1/-1', 0)
     p, t = p + counters, t + counters
+    for name, n in permanent.counters.items():      # other P/T counters: -0/-1, +2/+2, -2/-1 ...
+        if name not in ('+1/+1', '-1/-1') and n and name[1:2].isdigit() and '/' in name:
+            dp, _, dt = name.partition('/')
+            if dp[0] in '+-' and dt[0] in '+-' and dp[1:].isdigit() and dt[1:].isdigit():
+                p, t = p + int(dp) * n, t + int(dt) * n
     for effect in ordered([e for e in effects if e.operation == 'switch']):
         p, t = t, p
     return p, t

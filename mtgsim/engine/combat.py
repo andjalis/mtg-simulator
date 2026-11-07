@@ -63,6 +63,8 @@ class CombatMixin:
         self.fire(p, "begin_combat")
         for pl in self.players:
             self.fire(pl, "each_begin_combat")
+            if pl is not p:
+                self.fire(pl, "opp_begin_combat", context=p)
         self.settle()
         if self.over:
             return

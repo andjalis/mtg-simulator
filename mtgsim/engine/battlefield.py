@@ -239,7 +239,7 @@ class BattlefieldMixin:
             perm.tapped = True
             self.attackers.append(perm)
             self.attack_targets[perm] = self.opponent(p)
-        if card.daybound or card.nightbound:     # before the enters triggers: a daybound card enters transformed at night
+        if card.daybound or card.nightbound or card.advanced_rules.get("starts_day"):     # before the enters triggers: a daybound card enters transformed at night
             from ..day_night import on_enter as day_night_enter
             day_night_enter(self, perm)
         card = perm.card
