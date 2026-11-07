@@ -94,6 +94,12 @@ class PlayMixin:
         effects = [] if card.is_permanent else list(card.spell_effects)
         targets = list(targets or [])
         targets += [None] * (len(effects) - len(targets))
+        for i, e in enumerate(effects):     # "each of up to two target ...": a repeated pick is re-chosen below
+            if targets[i] is not None and e.data.get("distinct") and any(
+                    targets[j] is targets[i] and effects[j].data.get("distinct")
+                    and effects[j].data.get("group", effects[j].kind) == e.data.get("group", e.kind)
+                    for j in range(i)):
+                targets[i] = None
         if card.tapped_discount and not card.is_permanent:
             tapped = self.tapped_targets(p, card)
             idx = next((i for i, e in enumerate(effects) if e.target in TARGETED), None)
@@ -210,7 +216,7 @@ class PlayMixin:
                 return False
             self.discard_card(p, pitched)
             self.log(f"discards {pitched.name} for {card.name}", p)
-        if kind == "channel":
+        if kind in ("channel", "unearth"):
             p.graveyard.append(base)
         elif kind == "gy_ability":
             p.exile.append(base)
@@ -237,7 +243,7 @@ class PlayMixin:
         item = StackItem(p, effects, targets, card=card, kind="spell")
         # Prepared spells are copies; channel/graveyard abilities leave their
         # physical source in its actual zone rather than moving it onto the stack.
-        item.physical_card = base if kind not in ("prepared", "channel", "gy_ability") else None
+        item.physical_card = base if kind not in ("prepared", "channel", "gy_ability", "unearth") else None
         if item.physical_card is not None:
             item.move_origin = base.pending_move
             base.pending_move = None
