@@ -79,7 +79,9 @@ class AnthemGroups(unittest.TestCase):
         self.assertEqual(self.pt(bear), (2, 2))
 
     def test_unknown_words_stay_unparsed(self):
-        self.assertIn("Face-down creatures you control get +0/+1.", self.db.get("Secret Plans").unsupported)
+        from mtgsim.cx_static_anthem import tag
+        self.assertIsNone(tag("Purple"))                  # no such colour, type, state or subtype
+        self.assertEqual(self.db.get("Secret Plans").anthem_sub, (("Face-down", 0, 1, False),))   # #248
 
 
 if __name__ == "__main__":

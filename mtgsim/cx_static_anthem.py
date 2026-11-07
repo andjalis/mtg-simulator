@@ -2,7 +2,7 @@
 +1/+1", "Attacking creatures you control get +1/+0", "Artifact creatures you control get +1/+1"), as an
 ``anthem_sub`` / ``keyword_sub`` tag:
 
-    a creature subtype ("Elf", from "Elves")   "color:G"   "type:Artifact"   "Token"
+    a creature subtype ("Elf", from "Elves")   "color:G"   "type:Artifact"   "Token"   "Face-down"
     "is:attacking", "is:untapped", "is:equipped", "is:legendary", "is:nonlegendary", "is:multicolored", "is:colorless"
 
 ``tag`` returns None for a word that is none of these, so the line stays unparsed instead of naming a subtype that
@@ -44,6 +44,8 @@ def tag(word: str, plural: bool = False, subtype_only: bool = False):
             return "type:" + _TYPES[low]
         if low in _STATES:
             return "is:" + low
+        if low == "face-down":
+            return "Face-down"        # face-down permanents (manifest, morph): fits reads Permanent.hidden
     return _subtype(word, plural)
 
 
@@ -51,6 +53,8 @@ def fits(perm, sub: str) -> bool:
     card = perm.card
     if sub == "Token":
         return bool(card.is_token)
+    if sub == "Face-down":
+        return getattr(perm, "hidden", None) is not None
     if sub.startswith("color:"):
         return sub[6:] in card.colors
     if sub.startswith("type:"):

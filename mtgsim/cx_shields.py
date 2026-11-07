@@ -23,6 +23,8 @@ from __future__ import annotations
 
 import re
 
+from . import cx_static_prevent
+
 _COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 
 
@@ -407,6 +409,8 @@ def _applies(game, rule, target, source, by, combat) -> bool:
     if rule.get("bound") is not None and rule["bound"] is not source:
         return False
     owner, src = rule["owner"], rule["src"]
+    if ("cond" in rule or "during" in rule) and not cx_static_prevent.gate_ok(game, rule):
+        return False
     if rule.get("both"):
         return _hit(game, rule["to"], target, owner, src) or _hit(game, rule["to"], source, owner, src)
     return _hit(game, rule["to"], target, owner, src) and _hit(game, rule["by"], source, owner, src, by)

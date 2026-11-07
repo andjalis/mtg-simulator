@@ -53,6 +53,8 @@ class CombatMixin:
             self.queue_trigger(controller, effects, source, f"{name}: at end of combat", context=subject)
         self.fire(p, "end_combat")
         self.run_priority(until_empty_stack=False)
+        self.last_attackers = self.attackers
+        self.attackers = []   # nobody is attacking after combat (#244); blocks stay for inspection
 
     def _combat(self, p: Player, opp: Player):
         self.step = "declare_attackers"
@@ -167,6 +169,8 @@ class CombatMixin:
             for b in bl:
                 self.fire(opp, "blocks", b, context=a)
             self.fire(p, "becomes_blocked", a, context=bl[0])
+            for b in bl:
+                self.fire(p, "blocked_by", a, context=b)     # "becomes blocked by a creature": once per blocker
             ring.blocked(self, p, a, bl)
         for a in attackers:
             if a not in blocks:
@@ -242,6 +246,8 @@ class CombatMixin:
             if isinstance(tgt, Player):
                 from ..batch1_templates import combat_hit
                 combat_hit(self, src, tgt)
+                from ..cx_mech import note_hit
+                note_hit(self, src)
                 from ..dungeon_mechanics import initiative_combat
                 initiative_combat(self, src, tgt)
                 self.fire(src.controller, "combat_damage_player", src, context=tgt)
