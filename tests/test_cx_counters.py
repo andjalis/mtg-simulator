@@ -196,3 +196,42 @@ class Move(MultiTarget):
         from tests.test_templates import card
         c = card("Test Mover", "{1}", "Creature — Golem", "{T}: Move a +1/+1 counter from ~ onto target creature.", 1, 1)
         self.assertEqual([e.kind for e in c.activated[0].effects], ["cx_move_counters"])
+
+
+class EntryQuantity(MultiTarget):
+    def test_enters_with_counters_equal_to_creatures(self):
+        from tests.test_templates import card
+        c = card("Test Hydra", "{3}{G}", "Creature — Hydra",
+                 "Test Hydra enters with a number of +1/+1 counters on it equal to the number of creatures you control.", 0, 0)
+        self.put(self.a, 2)
+        self.game.enter_battlefield(self.a, c)     # counted before it enters: itself isn't one of them
+        self.assertEqual(self.a.battlefield[-1].counters["+1/+1"], 2)
+
+    def test_where_x_is_other_creatures(self):
+        from tests.test_templates import card
+        c = card("Test Hydra", "{3}{G}", "Creature — Hydra",
+                 "Test Hydra enters with X +1/+1 counters on it, where X is the number of other creatures on the battlefield.", 0, 0)
+        self.put(self.a, 1)
+        self.put(self.b, 2)
+        self.game.enter_battlefield(self.a, c)
+        self.assertEqual(self.a.battlefield[-1].counters["+1/+1"], 3)
+
+
+class ScaledCounters(MultiTarget):
+    def test_put_for_each(self):
+        bears = self.put(self.a, 3)
+        self.run_effects("Put a +1/+1 counter on target creature you control for each creature you control.")
+        self.assertEqual(sum(b.counters.get("+1/+1", 0) for b in bears), 3)
+
+    def test_put_number_equal_to(self):
+        from tests.test_templates import card
+        c = card("Test Tower", "{1}", "Creature — Wall",
+                 "When ~ enters, put a number of oil counters on it equal to the number of creatures you control.", 0, 4)
+        self.assertTrue(c.etb_effects or c.triggers)
+        perm = Permanent(c, self.a)
+        self.a.battlefield.append(perm)
+        self.put(self.a, 2)
+        eff = (c.triggers[0].effects if c.triggers else c.etb_effects)[0]
+        from types import SimpleNamespace
+        self.game.resolve(self.a, eff, perm, SimpleNamespace(source=perm, card=c, context=None, x=0))
+        self.assertEqual(perm.counters["oil"], 3)
