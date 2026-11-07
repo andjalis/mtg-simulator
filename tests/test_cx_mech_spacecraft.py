@@ -50,7 +50,10 @@ class Spacecraft(unittest.TestCase):
         self.game.step = "main2"
         self.game.main_phase(self.a)
         self.assertGreater(perm.counters.get("charge", 0), 0)
-        self.assertTrue(any(b.tapped for b in bears))
+        # it taps one of its creatures: a bear, or a Borg token once "Artifact creatures you control get +1/+1"
+        # (an anthem the station tier doesn't gate yet) makes the Borgs 2/2 as well
+        self.assertTrue(any(x.tapped for x in self.a.battlefield if x is not perm and x.is_creature))
+        self.assertEqual(len(bears), 2)
 
     def test_multi_tier_creature_threshold_is_recorded_as_simplified(self):
         card = self.db.get("D-7 Battle Cruiser")
