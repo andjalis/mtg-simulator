@@ -111,7 +111,10 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     if k == 'source_control':
         return max(theirs, key=perm_value, default=None)
     if k == 'untap_prev':
-        return max((x for x in mine if x.tapped), key=perm_value, default=None)
+        own = max((x for x in mine if x.tapped), key=perm_value, default=None)
+        if own is None and not mine and theirs:      # "untap target creature you don't control" (Provoke)
+            return max(theirs, key=perm_value)
+        return own
     if k == 'animate_land':     # one of my lands that isn't a creature yet, untapped first
         return min((x for x in mine if not x.is_creature), key=lambda x: (x.tapped, perm_value(x)), default=None)
     if k == 'move_counter_self':
@@ -179,7 +182,11 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return max(mine, key=perm_value, default=None)
     if k == "oring":
         return max(theirs, key=perm_value, default=None)
-    if k in ("stun", "shuffle_away", "cant_block_turn", "force_block"):
+    if k in ("cx_set_base", "set_base_pt") and eff.target != "player":      # "target creature has base P/T 1/1": shrink theirs
+        small = eff.amount <= 2 and eff.amount2 <= 2
+        pool = [x for x in (theirs if small else mine) if x.is_creature]
+        return max(pool, key=perm_value, default=None)
+    if k in ("stun", "shuffle_away", "cant_block_turn", "force_block", "skip_untap"):
         return max(theirs, key=perm_value, default=None)
     if k == "unblockable":
         ready = [x for x in mine if x.can_attack() and x.power > 0]

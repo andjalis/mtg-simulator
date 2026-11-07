@@ -841,7 +841,15 @@ class HeuristicAI:
             if stolen and eff.target == "prev":
                 targets.append(None)        # "untap that creature", "it gets +2/+0 and gains haste": the steal's riders
                 continue
-            if eff.kind == "threaten":
+            if eff.kind == "cx_control" and not eff.data.get("eot"):      # for good: the best permanent of theirs
+                with game.targeting(card):
+                    tgt = self.choose_target(game, me, eff, card)
+                if tgt is None:
+                    return None
+                targets.append(tgt)
+                value += 2 * perm_value(tgt)
+                continue
+            if eff.kind == "threaten" or eff.kind == "cx_control":
                 tgt = self._steal_target(game, me, eff, card, precombat and not instant)
                 if tgt is None:
                     return None
