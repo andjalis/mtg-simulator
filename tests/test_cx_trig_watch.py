@@ -65,3 +65,48 @@ class WatchTests(unittest.TestCase):
         self.game.destroy(bear)
         self.game.settle()
         self.assertTrue(any(x.card.is_token and "Spirit" in x.card.name for x in self.a.battlefield))
+
+
+@unittest.skipUnless(HAVE_DB, "card database not built")
+class WatchAI(unittest.TestCase):
+    """The default AI really casts the spell, aims it at its own creature, and the payoff follows."""
+
+    def run_turn(self, name):
+        from mtgsim.ai import HeuristicAI
+        from tests.test_templates import PLAINS, SWAMP
+        db = CardDB()
+        a, b = Player("a", [], HeuristicAI()), Player("b", [], HeuristicAI())
+        game = Game(a, b, random.Random(0), log=True)
+        game.turn, game.step = 2, "main1"
+        game.active_idx = 0
+        for p in (a, b):
+            p.library = [ISLAND] * 20
+        card = db.get(name)
+        a.hand = [card]
+        for land_card in (PLAINS, PLAINS, SWAMP, SWAMP):
+            land = game.enter_battlefield(a, land_card)
+            land.tapped = False
+        bear = game.enter_battlefield(a, BEAR)
+        bear.sick = False
+        game.settle()
+        return game, a, b, bear, card
+
+    def test_ai_casts_the_trick_on_its_attacker_and_the_payoff_follows(self):
+        from tests.test_templates import card
+        for name in ("A Good Day to Die", "Blessed Defiance"):
+            with self.subTest(card=name):
+                game, a, b, bear, spell = self.run_turn(name)
+                wall = game.enter_battlefield(b, card("Test Wall", "{2}", "Creature — Wall", "", 1, 4))
+                game.settle()
+                game.step = "declare_blockers"
+                a.ai.after_blocks(game, a, [bear], {bear: [wall]})            # HeuristicAI picks the spell and the target
+                game.settle()
+                self.assertNotIn(spell, a.hand)                                # it cast the trick
+                self.assertEqual([w[1] for w in game.cx_watchers], [bear])     # aimed at its own attacker
+                hand, tokens = len(a.hand), sum(1 for x in a.battlefield if x.card.is_token)
+                game.destroy(bear)
+                game.settle()
+                if name == "A Good Day to Die":
+                    self.assertEqual(len(a.hand), hand + 1)
+                else:
+                    self.assertEqual(sum(1 for x in a.battlefield if x.card.is_token), tokens + 1)

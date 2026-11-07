@@ -53,6 +53,8 @@ class CombatMixin:
             self.queue_trigger(controller, effects, source, f"{name}: at end of combat", context=subject)
         self.fire(p, "end_combat")
         self.run_priority(until_empty_stack=False)
+        self.last_attackers = self.attackers
+        self.attackers = []   # nobody is attacking after combat (#244); blocks stay for inspection
 
     def _combat(self, p: Player, opp: Player):
         self.step = "declare_attackers"

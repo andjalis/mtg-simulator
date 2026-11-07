@@ -12,7 +12,7 @@ from . import NO_SBA, kind
 
 @kind("draw")
 def draw(game, p, eff, opp, item=None, target=None, **_):
-    who = opp if eff.target == "each_opponent" else target if eff.target == "that_controller" and \
+    who = opp if eff.target == "each_opponent" else target if eff.target in ("that_controller", "player") and \
         isinstance(target, Player) else p
     n = eff.amount
     if eff.data.get("x_half"):
@@ -32,10 +32,8 @@ def draw_delayed(game, p, eff, item, source, **_):
 @kind("tuck_self")
 def tuck_self(game, p, eff, item, **_):
     src = item.source if item else None
-    if src is not None and src in p.battlefield and game.leave_battlefield(src, "graveyard"):
-        if not src.front.is_token:
-            p.graveyard.remove(src.front)
-            p.library.insert(max(0, len(p.library) - (eff.amount - 1)), src.front)
+    if src is not None and src in p.battlefield:
+        game.put_in_library(src, max(1, eff.amount))
 
 
 @kind("draw_up_to")
@@ -390,11 +388,7 @@ def shuffle_away(game, p, target, item, **_):
         if not isinstance(perm, Permanent):
             continue
         if perm in perm.controller.battlefield:
-            owner = perm.controller
-            if game.leave_battlefield(perm, "graveyard") and not perm.front.is_token:
-                owner.graveyard.remove(perm.front)
-                owner.library.append(perm.front)
-                owner.library.shuffle(game.rng)
+            game.put_in_library(perm, "shuffle")
             game.log(f"shuffles {perm.card.name} into its owner's library", p)
         elif not perm.front.is_token and any(c is perm.front for c in perm.owner.graveyard):
             # Already dead (a dies/put-into-graveyard trigger): take the card out of
@@ -543,13 +537,13 @@ def fetch_basic(game, p, eff, target, item, **_):
 
 @kind("explore")
 def explore(game, p, target, **_):
-    if isinstance(target, Permanent) and target in target.controller.battlefield and p.library:
-        top = p.library[-1]
-        if top.is_land:
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        top = p.library[-1] if p.library else None
+        if top is not None and top.is_land:
             p.hand.append(p.library.pop())
-        else:
+        else:                      # no land revealed (including an empty library): +1/+1 counter, maybe the card to the graveyard
             target.counters["+1/+1"] = target.p1 + 1
-            if game.hook(p, "scry")(game, p, [top]):
+            if top is not None and game.hook(p, "scry")(game, p, [top]):
                 p.graveyard.append(p.library.pop())
         game.log(f"{target.card.name} explores", p)
         game.fire(p, "explores", target)
