@@ -7,6 +7,7 @@ from mtgsim.carddb import CardDB
 from mtgsim.coverage import card_coverage
 from mtgsim.cx_tokens import describe, parse_create
 from mtgsim.cards.model import NO_MATCH
+from mtgsim.cards.parse import _parse_effects
 from mtgsim.engine import Game, Player
 from mtgsim.engine.state import StackItem
 from tests.test_combat_triggers import Scripted
@@ -37,7 +38,10 @@ class Grammar(unittest.TestCase):
     def test_rejects(self):
         self.assertIsNone(describe("2/2 green Bear creature token with frobnicate"))     # unknown keyword
         self.assertIsNone(describe('1/1 Spirit creature token with "Zorb the glorb."'))  # ability the parser ignores
-        self.assertIsNone(describe("Vibranium token"))                                    # unknown predefined token
+        self.assertIsNone(describe("Frobnium token"))                                     # unknown predefined token
+        self.assertIsNone(describe("Vibranium token"))       # its mana restriction isn't parsed yet
+        heartwood = describe("Heartwood token")["card"]
+        self.assertEqual((heartwood.produces, heartwood.color_override), ({"R", "G"}, {"R", "G"}))
         self.assertIs(parse_create("", "that many 1/1 green Saproling creature tokens"), NO_MATCH)
         self.assertIs(parse_create("target creature", "a Food token"), NO_MATCH)
 
@@ -190,6 +194,62 @@ class HeuristicAIGames(unittest.TestCase):
         self.assertIn("Elephant-Mandrill", [x.card.name for x in self.a.battlefield])
         for p in (self.a, self.b):
             self.assertEqual(sum(x.card.token_kind == "food" for x in p.battlefield), 1, p.name)
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class Riders(unittest.TestCase):
+    """Sentences about the tokens just created: end-of-combat and end-step removal, haste until end of turn."""
+    @classmethod
+    def setUpClass(cls):
+        cls.db = CardDB()
+
+    def setUp(self):
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 10
+
+    def effects(self, text):
+        effects, bad = _parse_effects(text)
+        self.assertEqual(bad, [], text)
+        return effects
+
+    def test_full(self):
+        for name in ("Kavaron Harrier", "Geist of Saint Traft", "Gluttonous Troll"):
+            self.assertEqual(card_coverage(self.db.get(name)).ignored, [], name)
+
+    def test_sacrifice_at_end_of_combat(self):
+        eff = token_effects(self.db.get("Kavaron Harrier"))[0]
+        self.assertEqual(eff.data["leave"], ("end_combat", "sacrifice"))
+        self.game.resolve(self.a, eff, None)
+        robot = next(x for x in self.a.battlefield if x.card.is_token)
+        self.game.end_combat(self.a)
+        self.assertNotIn(robot, self.a.battlefield)
+
+    def test_exile_at_next_end_step(self):
+        eff, = self.effects("Create two 1/1 red Goblin creature tokens. Exile them at the beginning of the next end step.")
+        self.game.resolve(self.a, eff, None)
+        goblins = [x for x in self.a.battlefield if x.card.is_token]
+        self.assertEqual(len(goblins), 2)
+        self.assertEqual([how for _, how in self.game.end_cleanup], ["exile", "exile"])
+
+    def test_haste_until_end_of_turn(self):
+        eff, = self.effects("Create a 4/4 red Dragon creature token with flying. It gains haste until end of turn.")
+        self.game.resolve(self.a, eff, None)
+        dragon = next(x for x in self.a.battlefield if x.card.is_token)
+        self.assertTrue(dragon.has("haste") and dragon.has("flying"))
+        self.game.expire_continuous_effects()
+        self.assertFalse(dragon.has("haste"))
+
+    def test_one_token_per_opponent(self):
+        eff = token_effects(self.db.get("Gluttonous Troll"))[0]
+        self.game.resolve(self.a, eff, None)
+        self.assertEqual(sum(x.card.token_kind == "food" for x in self.a.battlefield), 1)
+
+    def test_rider_without_a_token_stays_unmatched(self):
+        _, bad = _parse_effects("Draw a card. Sacrifice that token at end of combat.")
+        self.assertEqual(len(bad), 1)
 
 
 if __name__ == "__main__":

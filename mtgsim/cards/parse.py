@@ -63,6 +63,8 @@ def _parse_effects(text: str, opts: bool = False):
         from ..cx_shields import parse_rider as shield_rider
         from ..cx_delayed import parse_rider as delayed_rider
         from ..cx_trig_watch import parse_rider as watch_rider
+        if _cx_tokens.parse_rider(s, effects):
+            continue
         if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects) or \
                 delayed_rider(s, effects) or watch_rider(s, effects):
             continue
