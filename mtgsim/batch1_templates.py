@@ -58,7 +58,7 @@ def parse_line(line, st):
         st.enters_tapped = True
         st.extra['etb_named_counters'] = (m[2].lower(), _num(m[1]))
         return True
-    if re.fullmatch(r"Converge — ~ enters with a \+1/\+1 counter on it for each color of mana spent to cast it\.", line):
+    if re.fullmatch(r"(?:Converge — )?~ enters with a \+1/\+1 counter on it for each color of mana spent to cast it\.", line):
         st.extra.setdefault('advanced_rules', {})['sunburst'] = True
         return True
     if re.fullmatch(r"You may have ~ assign its combat damage as though it weren't blocked\.", line):

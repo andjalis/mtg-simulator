@@ -501,7 +501,8 @@ def _xq(text: str):
         lhs, rhs = side(m[1]), side(m[3])
         if lhs is not None and rhs is not None:
             return ("arith", lhs, "-" if m[2].lower() == "minus" else "+", rhs)
-    return None
+    from ..cx_grammar_quantity import quantity      # devotion, noun-phrase counts, turn history, greatest / total
+    return quantity(t)
 
 
 _IF_CONDS = [

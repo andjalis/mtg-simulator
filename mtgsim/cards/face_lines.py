@@ -177,7 +177,7 @@ def _face_special_lines(st, line):
             level_marks.append((n, len(triggers)))
             return None
         line = re.sub(r"^(?:Landfall|Revolt|Raid|Morbid|Eerie|Opus|Repartee|Valiant|Alliance|Void|Delirium|Hellbent|Metalcraft|Threshold|Ferocious|Flurry|Disappear|Celebration|Heroic) — (?=When|At|If)", "", line)
-        line = re.sub(r"^(?:Domain|Vivid) — ", "", line)    # ability words with no rules meaning of their own
+        line = re.sub(r"^(?:Domain|Vivid|Converge) — ", "", line)    # ability words with no rules meaning of their own
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
         # Any ability word ("Phalanx Commander —", "Life Drain —") before a When/At/If line; "Survival — "
         # keeps its prefix: it names a distinct engine event.

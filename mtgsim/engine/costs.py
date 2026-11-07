@@ -297,6 +297,9 @@ class CostsMixin:
             # parsed by permanent_templates.selector and counted with the same matcher the group effects use.
             from ..permanent_templates import matches
             return sum(1 for pl in self.players for x in pl.battlefield if matches(self, x, spec[1], p, src))
+        if kind == "cxq":         # cx_grammar_quantity: devotion, noun-phrase counts, turn history, ...
+            from ..cx_grammar_quantity import value
+            return value(self, p, spec, item, prev)
         if kind == "gy":
             return counting.count(self, p, {"what": spec[1], "zone": "graveyard"}, src)
         return counting.count(self, p, {"what": spec[1], "zone": "battlefield"}, src)
