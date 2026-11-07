@@ -94,6 +94,12 @@ class PlayMixin:
         effects = [] if card.is_permanent else list(card.spell_effects)
         targets = list(targets or [])
         targets += [None] * (len(effects) - len(targets))
+        for i, e in enumerate(effects):     # "each of up to two target ...": a repeated pick is re-chosen below
+            if targets[i] is not None and e.data.get("distinct") and any(
+                    targets[j] is targets[i] and effects[j].data.get("distinct")
+                    and effects[j].data.get("group", effects[j].kind) == e.data.get("group", e.kind)
+                    for j in range(i)):
+                targets[i] = None
         if card.tapped_discount and not card.is_permanent:
             tapped = self.tapped_targets(p, card)
             idx = next((i for i, e in enumerate(effects) if e.target in TARGETED), None)
@@ -176,6 +182,10 @@ class PlayMixin:
                 p.exile.append(gy)
             self.log(f"exiles {[gy.name for gy in picks]} from their graveyard for {card.name}", p)
             exiled_gy = picks[0]
+        if kind == "beam":
+            from ..cx_mech import pay_beam
+            if not pay_beam(self, p):
+                return False
         if kind.startswith("cond_alt_"):
             from ..cx_altcost import pay as pay_alternative
             if not pay_alternative(self, p, base, kind):
@@ -190,6 +200,12 @@ class PlayMixin:
             return False
         if kind == "escape":
             alt_casts.pay_escape(self, p, base, alt)
+        for _ in range(card.extra_discard - 1):     # "discard two cards" (Buyback—Discard two cards)
+            if not p.hand:
+                return False
+            pitched = p.ai.choose_discard(self, p)
+            self.discard_card(p, pitched)
+            self.log(f"discards {pitched.name} for {card.name}", p)
         if card.extra_discard and p.hand:
             lands = [c for c in p.hand if c.is_land]
             if card.advanced_rules.get("discard_random"):       # "discard a card at random" as the additional cost
@@ -200,7 +216,7 @@ class PlayMixin:
                 return False
             self.discard_card(p, pitched)
             self.log(f"discards {pitched.name} for {card.name}", p)
-        if kind == "channel":
+        if kind in ("channel", "unearth"):
             p.graveyard.append(base)
         elif kind == "gy_ability":
             p.exile.append(base)
@@ -212,6 +228,11 @@ class PlayMixin:
         if card.modes:
             if kind == "entwine":       # all of the modes: a plain list, without the printed "choose one" spec
                 mode_effects = modal.pick(self, p, list(card.modes), n=len(card.modes), flags=flags)
+            elif kind.startswith("escalate_"):     # one mode plus the extra modes paid for
+                k = int(kind[9:]) + 1
+                mode_effects = modal.pick(self, p, list(card.modes), n=k, flags=flags)
+            elif card.advanced_rules.get("escalate"):
+                mode_effects = modal.pick(self, p, list(card.modes), n=1, flags=flags)
             else:
                 mode_effects = modal.pick(self, p, card.modes, n=card.modes_choose, flags=flags)
             effects = mode_effects + effects
@@ -222,7 +243,7 @@ class PlayMixin:
         item = StackItem(p, effects, targets, card=card, kind="spell")
         # Prepared spells are copies; channel/graveyard abilities leave their
         # physical source in its actual zone rather than moving it onto the stack.
-        item.physical_card = base if kind not in ("prepared", "channel", "gy_ability") else None
+        item.physical_card = base if kind not in ("prepared", "channel", "gy_ability", "unearth") else None
         if item.physical_card is not None:
             item.move_origin = base.pending_move
             base.pending_move = None
