@@ -76,7 +76,7 @@ EFFECT_PATTERNS = [
     (rf"draw a card for each {_K} counter on {_ON}", _per_counters("draw")),
     (rf"you gain (\d+) life for each {_K} counter on {_ON}", lambda m: _per_counters("gain_life", amount=int(m[1]))(m)),
     (rf"(?:~|it) deals damage equal to the number of {_K} counters on {_ON} to "
-     rf"(?P<t>any target|target creature|target player)",
+     rf"(?P<t>any target|target creature|target player|target opponent)",
      lambda m: _per_counters("damage", target={"target creature": "creature", "any target": "any"}.get(
          m["t"], "player"))(m)),
     (rf"draw x cards and gain x life, where x is the number of {_K} counters on {_ON}",
@@ -198,7 +198,7 @@ def _move(m):
     data = {"counter": kind if kind != "any" else "", "all": every, "from": "self" if src == "~" else "prev"}
     out = []
     if src != "~":
-        eff = build("cx_move_src", src, data={"distinct": True})
+        eff = build("cx_move_src", src, data={"distinct": True, "group": "cx_move"})
         if eff is None or eff.target in ("group", "self", "prev"):
             return NO_MATCH
         out.append(eff)
@@ -206,7 +206,7 @@ def _move(m):
         out.append(Effect("cx_move_counters", n, target="self", data=data))
     else:
         eff = build("cx_move_counters", dst.replace("another target", "another target"), amount=n,
-                    data=dict(data, distinct=True))
+                    data=dict(data, distinct=True, group="cx_move"))
         if eff is None or eff.target in ("group", "self", "prev"):
             return NO_MATCH
         out.append(eff)
