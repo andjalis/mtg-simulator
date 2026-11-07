@@ -40,6 +40,8 @@ def cx_token(game, p, eff, target, opp, item=None, **_):
     else:
         players = list(game.players) if who == "each" else [opp] if who == "opp" else [p]
     n = eff.amount * (len(game.players) - 1 if eff.data.get("per_opponent") else 1)
+    if eff.data.get("devotion"):            # "equal to your devotion to <colours>": mana symbols of yours
+        n *= sum(x.card.mana_cost.get(c, 0) for x in p.battlefield for c in eff.data["devotion"])
     for pl in players:
         create(game, pl, choose(game, pl, eff.data["choice"]) if "choice" in eff.data else eff.data, n)
 
