@@ -15,7 +15,8 @@ def group(game, p, item, eff, target, prev=None, **_):
     inners = _scaled(game, p, eff, item, prev)
     for victim in group_members(game, p, eff.data, source, target if eff.target == "player" else None):
         for inner in inners:
-            HANDLERS[inner.kind](game, p=p, eff=inner, target=victim, item=item, opp=game.opponent(p))
+            HANDLERS[inner.kind](game, p=p, eff=inner, target=victim, item=item, opp=game.opponent(p), prev=prev,
+                                 cause=f"cx_group: {inner.kind}", k=inner.kind, source=source)
 
 
 @kind("cx_color")
