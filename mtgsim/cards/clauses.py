@@ -438,6 +438,9 @@ def _xq(text: str):
     t = text.strip().rstrip(".")
     tl = t.lower()
     from ..counting import _singular
+    if tl.startswith("your devotion to "):
+        from ..cx_static_cond import devotion_spec
+        return devotion_spec(tl)
     if tl in ("your life total", "your speed", "the amount of life you gained this turn",
              "the number of cards in your hand", "the number of cards in an opponent's hand"):
         return ({"your life total": ("life",), "your speed": ("speed",),

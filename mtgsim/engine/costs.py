@@ -4,6 +4,7 @@ from __future__ import annotations
 import dataclasses
 
 from .. import alt_casts, emerge, auras, copies, counting, discounts, returns, costs, storage, cx_static_cost
+from .. import cx_static_cond
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
@@ -203,6 +204,8 @@ class CostsMixin:
         """The value of X in ", where X is ..." (see cards._xq)."""
         kind = spec[0]
         src = item.source if item is not None and isinstance(item.source, Permanent) else None
+        if kind == "devotion":
+            return cx_static_cond.devotion(p, spec[1])
         if kind == "life":
             return max(0, p.life)
         if kind == "speed":

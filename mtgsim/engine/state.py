@@ -6,7 +6,7 @@ import re
 
 from .. import auras, counting
 from ..cards import BASIC_MANA, KEYWORDS, CardDef, Effect, Trigger
-from .. import continuous, cx_static_combat
+from .. import continuous, cx_static_combat, cx_static_cond
 from ..identity import CardInstance, CardZone, Graveyard, instance
 
 
@@ -487,6 +487,8 @@ class Permanent:
         if self.impending and self.counters.get("time"):
             return False
         if self.card.reconfigure and self.attached_to is not None:
+            return False
+        if "not_creature_if" in self.card.advanced_rules and cx_static_cond.not_creature(self):
             return False
         return "Creature" in self.card.types
 

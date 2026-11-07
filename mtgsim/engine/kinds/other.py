@@ -116,6 +116,9 @@ def counter(game, p, eff, target, item, **_):
             game.log(f"{target} costs nothing to keep", p)
             return
         eff = dataclasses.replace(eff, amount=owed)
+    if eff.data.get("xq_base") and eff.amount <= 0:   # "unless its controller pays {X}" with X = 0: pays {0}, keeps it
+        game.log(f"{target} costs nothing to keep", p)
+        return
     if eff.data.get("tw") and getattr(item, "teamwork", False):
         eff = dataclasses.replace(eff, amount=eff.data["tw"])
     game.counter(p, eff, target)
