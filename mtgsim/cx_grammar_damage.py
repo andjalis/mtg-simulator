@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import re
 
-from .cx_grammar import Part, count, object_phrase, verb
+from .cx_grammar import Part, ai_value, count, object_phrase, verb
 
 _AMOUNT = r"(\w+)"
 
@@ -107,3 +107,21 @@ def deals(m, clause):
             for p in parts:
                 p.data = dict(p.data, distinct=True)
     return None if any(p is None for p in parts) else parts
+
+
+@ai_value("cx_damage", "damage")
+def _damage_value(game, me, eff, obj):
+    """One recipient of grammar damage (a group member or a named player): a creature it kills is worth the creature,
+    a player is worth the life; positive when it is the opponent's."""
+    from .ai import life_value, perm_value
+    from .engine.state import Permanent
+    mine = getattr(obj, "controller", obj) is me
+    sign = -1.0 if mine else 1.0
+    if isinstance(obj, Permanent):
+        if not (obj.is_creature or obj.is_planeswalker):
+            return 0.0
+        left = obj.loyalty if obj.is_planeswalker and not obj.is_creature else obj.toughness - obj.damage
+        if left <= eff.amount and not obj.has("indestructible"):
+            return sign * (perm_value(obj) + 1)
+        return sign * 0.3 * eff.amount
+    return sign * (life_value(obj.life) - life_value(obj.life - eff.amount))
