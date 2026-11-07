@@ -361,8 +361,12 @@ class AbilitiesMixin:
             previous = getattr(self, '_choosing_targets', [])
             self._choosing_targets = targets
             try:
-                return all(e.target not in TARGETED or (i < len(targets) and
-                           self.legal_target(p, e, targets[i])) for i, e in enumerate(effects))
+                if not all(e.target not in TARGETED or (i < len(targets) and
+                           self.legal_target(p, e, targets[i])) for i, e in enumerate(effects)):
+                    return False
+                chosen = [(e.kind, id(targets[i])) for i, e in enumerate(effects)       # "two target creatures":
+                          if e.data.get("distinct") and i < len(targets) and targets[i] is not None]   # different ones
+                return len(chosen) == len(set(chosen))
             finally:
                 self._choosing_targets = previous
 
@@ -390,7 +394,9 @@ class AbilitiesMixin:
         targets = self.auto_targets(p, preview, perm) if targets is None else list(targets)
         if not self.valid_action_targets(p, act.effects, targets, perm):
             return False
-        if plan is None or self.pay(p, plan.cost, exclude_many=plan.exclude, reserved_counters=plan.counter_payments) is None:
+        from ..cx_abil_mana import AbilityPayment
+        if plan is None or self.pay(p, plan.cost, spell=AbilityPayment(perm), exclude_many=plan.exclude,
+                                    reserved_counters=plan.counter_payments) is None:
             return False
         p.counters["energy"] = p.counters.get("energy", 0) - c.get("energy", 0)
         perm.ability_turns[idx] = self.turn
