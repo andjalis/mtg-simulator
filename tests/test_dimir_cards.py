@@ -144,14 +144,14 @@ class EndStepTokens(Dimir):
     def test_tokens_leave_at_end_step(self):
         self.assertEqual(RAIDER.unsupported, [])
         eff = RAIDER.spell_effects[0]
-        self.assertEqual(eff.data.get("end"), "sacrifice")
-        self.game.create_token(self.a, eff)
+        self.assertEqual(eff.data.get("leave"), ("end_step", "sacrifice"))     # the token rider (cx_tokens.py)
+        self.game.resolve(self.a, eff, None)
         self.assertEqual(len(self.a.creatures), 2)
         self.assertEqual(len(self.game.end_cleanup), 2)
 
     def test_end_of_turn_cleanup_runs(self):
         eff = RAIDER.spell_effects[0]
-        self.game.main_phase = lambda p: self.game.create_token(p, eff) if p is self.a and not self.a.creatures else None
+        self.game.main_phase = lambda p: self.game.resolve(p, eff, None) if p is self.a and not self.a.creatures else None
         self.game.take_turn(self.a)
         self.assertEqual(len(self.a.creatures), 0)
         self.assertEqual(self.game.end_cleanup, [])
@@ -246,7 +246,7 @@ class TurnConditions(Dimir):
         self.a.battlefield.append(perm)
         item = type("Item", (), {"source": perm, "context": None})()
         self.assertFalse(self.game.check_cond(self.a, trig.effects[0], item, None))
-        self.game.create_token(self.a, RAIDER.spell_effects[0])
+        self.game.resolve(self.a, RAIDER.spell_effects[0], None)
         self.assertTrue(self.game.check_cond(self.a, trig.effects[0], item, None))
 
     def test_celebration_counts_nonland_entries(self):

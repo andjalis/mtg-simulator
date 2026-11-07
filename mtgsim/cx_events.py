@@ -418,9 +418,10 @@ _OBJ_VERBS = [
     (r"blocks? or becomes? blocked", ("blocks", "becomes_blocked"), ""),
     (r"blocks?", ("blocks",), ""),
     (r"becomes? blocked", ("becomes_blocked",), ""),
-    (r"becomes? blocked by (?:an?|one or more) [\w/ -]+?(?: creatures?)?", ("becomes_blocked",), "by"),
-    (r"blocks? or becomes? blocked by (?:an?|one or more) [\w/ -]+?(?: creatures?)?", ("blocks", "becomes_blocked"),
-     "by"),
+    (r"becomes? blocked by (?:an?) [\w/ -]+?(?: creatures?)?", ("blocked_by",), "by"),      # once per blocker
+    (r"becomes? blocked by one or more [\w/ -]+?(?: creatures?)?", ("becomes_blocked",), "by"),
+    (r"blocks? or becomes? blocked by (?:an?) [\w/ -]+?(?: creatures?)?", ("blocks", "blocked_by"), "by"),
+    (r"blocks? or becomes? blocked by one or more [\w/ -]+?(?: creatures?)?", ("blocks", "becomes_blocked"), "by"),
     (r"dies|die", ("dies",), ""),
     (r"enters?(?: the battlefield)?", ("etb",), ""),
     (r"enters?(?: the battlefield)? under your control", ("etb",), "etb_mine"),
@@ -430,6 +431,7 @@ _OBJ_VERBS = [
     (r"becomes? untapped", ("becomes_untapped",), ""),
     (r"deals? combat damage to (?:a player|an opponent|a player or planeswalker|a player or battle|one or more players)",
      ("combat_damage_player",), ""),
+    (r"deals? combat damage to you", ("combat_damage_player",), "dmg_me"),
     (r"deals? combat damage to a creature", ("combat_damage_creature",), ""),
     (r"deals? combat damage", ("combat_damage_player", "combat_damage_creature"), ""),
     (r"deals? damage to (?:a player|an opponent)", ("damages_player",), ""),
@@ -442,6 +444,7 @@ _OBJ_VERBS = [
     (r"becomes? the target of a spell or ability", ("targeted",), ""),
     (r"becomes? the target of a spell an opponent controls", ("targeted_by_spell",), ""),
     (r"is turned face up|are turned face up", ("turned_face_up",), ""),
+    (r"explores?", ("explores",), ""),
     (r"(?:is|are) put into (?:a|your|an opponent's) graveyard from the battlefield", ("perm_to_gy",), "gy"),
 ]
 _VERB_RE = "|".join(f"(?:{v[0]})" for v in _OBJ_VERBS)
@@ -477,10 +480,11 @@ _PLAYER_RAW = {"cast": ("any_cast",), "cast_copy": ("any_cast", "spell_copied"),
 def compile_head(head: str):
     """The head ("Whenever a Goblin you control attacks") -> (raw events, matcher spec), or None."""
     m = re.fullmatch(r"When(?:ever)? (.+)", head)
-    if not m or re.search(r"\b(?:this turn|this combat|while|commander|chosen|named|each combat)\b", m[1]) or \
+    if not m or re.search(r"\b(?:this turn|this combat|while|commander|chosen|named|each combat)\b",
+                          m[1].replace("attack while creatures you control have total power", "attack")) or \
             re.match(r"(?:it|that|they|this) ", m[1]):
         return None
-    body = m[1]
+    body = m[1].replace("you're ", "you are ", 1) if m[1].startswith("you're ") else m[1]
     for subj, who in _PLAYER_SUBJ.items():
         if not body.startswith(subj + " "):
             continue
@@ -495,6 +499,9 @@ def compile_head(head: str):
                 if spell is None:
                     return None
                 spec["spell"] = spell
+            elif kind in ("attack_with", "attack_power", "roll_exact"):
+                if not cx_trig_events.extend_spec(kind, vm, spec):
+                    return None
             elif kind == "draw_nth":
                 spec["nth"] = {"second": 2, "third": 3}[vm[1]]
             elif kind == "discard":
@@ -577,7 +584,11 @@ def split_head(line: str):
         if got is None or _selector_owns(head):
             continue
         rest = ", ".join(parts[i:])
+        if got[1].get("kind") in ("attack_with", "attack_power") and not cx_trig_events.attack_rest_ok(rest):
+            continue
         effs, bad = _parse_effects(rest[0].upper() + rest[1:] if not rest.startswith("~") else rest)
+        if (bad or not effs) and rest.startswith("you "):
+            effs, bad = _parse_effects(rest[4].upper() + rest[5:])       # "you draw that many cards"
         if bad or not effs:
             return None
         return tuple("ev:" + r for r in got[0]), head, rest
@@ -590,7 +601,7 @@ _OBSERVED = {"attacks", "blocks", "becomes_blocked", "dies", "etb", "leaves", "b
              "combat_damage_player", "combat_damage_creature", "damages_player", "deals_damage", "dealt_damage",
              "targeted", "targeted_opp", "targeted_mine", "targeted_by_spell", "turned_face_up", "perm_to_gy",
              "any_cast", "you_draw", "gain_life", "opp_loses_life", "you_discard", "you_cycle", "sacrificed",
-             "land_played", "you_attack", "you_scry", "spell_copied"}
+             "land_played", "you_attack", "you_scry", "spell_copied", "blocked_by"}
 
 
 def _has_ev(perm) -> bool:
@@ -689,6 +700,8 @@ def _match(game, spec, event, perm, p, source, context, subject, wants_player=Fa
             card = actor.discarded_cards[-1] if getattr(actor, "discarded_cards", None) else None
             if card is None or not card_matches(card, spec["card"]):
                 return False
+        if not cx_trig_events.player_ok(game, spec, actor, me, event, perm):
+            return False
         if kind == "gain_first" and actor.life_gained_turn != (getattr(game, "event_amount", None) or 0):
             return False
         if kind == "sacrifice":
@@ -726,3 +739,6 @@ def _match(game, spec, event, perm, p, source, context, subject, wants_player=Fa
     if obj is perm and context is not None:
         return context      # "~ blocks ..., destroy that creature": the other creature, as the base dispatch does
     return obj
+
+
+from . import cx_trig_events  # noqa: E402  (extends the player-verb table above)

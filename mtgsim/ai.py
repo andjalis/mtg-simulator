@@ -423,7 +423,7 @@ def unblocked_damage(attackers, blockers, chump=True) -> int:
     total = 0
     for power, flying, menace, perm in left:
         pick = None
-        need = getattr(perm.card, "min_blocker_power", 0) if perm is not None else 0
+        need = max(getattr(perm.card, "min_blocker_power", 0), perm.temp_min_blocker) if perm is not None else 0
         for b in free:
             if flying and not (b[1] or b[2]):
                 continue
@@ -515,6 +515,8 @@ class HeuristicAI:
     def main_phase(self, game: Game, me: Player):
         precombat = getattr(game, "step", "main1") != "main2"
         self.play_land(game, me)
+        from .cx_abil_mana import boost
+        boost(self, game, me, precombat)      # mana-adding abilities that bring a spell in hand within reach
         cast_any = precombat and self.lethal_setup(game, me)
         while not game.over:
             choice = self.choose_spell(game, me, precombat, reserve=self._reserve(game, me))
@@ -789,6 +791,10 @@ class HeuristicAI:
     def plan_spell(self, game: Game, me: Player, card: CardDef, precombat: bool = False):
         """Return (value, targets) if the AI wants to cast card in its main phase, else None."""
         opp = game.opponent(me)
+        if card.is_ability and any(e.kind == "unearth_return" for e in card.spell_effects):
+            # Unearth: a hasty attacker for one turn; worth casting before combat when it can attack
+            base = card.spell_effects[0].data["card"]
+            return (card_value(base) / 2 + 1, None) if base.is_creature and opp.life > 0 else None
         if not card.is_permanent and any((e.data or {}).get("x") for e in card.spell_effects):
             sized = self._sized(game, me, card)
             return None if sized is None else self.plan_spell(game, me, sized, precombat)
@@ -870,7 +876,11 @@ class HeuristicAI:
             if eff.kind == "pump" or eff.target == "spell" or _is_trick(card):
                 return None  # tricks go in after_blocks / respond, counters in respond
             if eff.kind == "damage" and eff.target in ("any", "player", "creature", "creature_pw"):
-                tgt, v = self.best_damage_target(game, me, eff, card, precombat or instant)
+                if eff.data.get("src_prev") or eff.data.get("cx_rel") == "not_prev":      # "it deals damage equal to its power"
+                    from .cx_abil_damage import plan_damage
+                    tgt, v = plan_damage(self, game, me, eff, card, precombat or instant, targets)
+                else:
+                    tgt, v = self.best_damage_target(game, me, eff, card, precombat or instant)
                 if tgt is None:
                     return None
                 if instant and tgt is not opp and v < LETHAL and not self._clears_blocker(game, me, tgt, precombat):
@@ -1494,7 +1504,7 @@ class HeuristicAI:
                 value, targets = card_value(card) + 0.5 * card.cmc, None   # flash artifact, unused this turn
             elif _is_trick(card) or any(e.target == "spell" for e in card.spell_effects):
                 continue
-            elif all(e.kind in ("draw", "dig", "scry", "surveil", "discard", "gain_life") or
+            elif all(e.kind in ("draw", "dig", "scry", "surveil", "discard", "gain_life", "lose_life") or
                      (e.kind == "token" and "power" not in (e.data or {})) for e in card.spell_effects):
                 # Cantrips and "draw two and create a Map" at the end step; judged as the sorcery
                 # they would be in our own main phase (keeping an additional sacrifice cost).
