@@ -1,0 +1,96 @@
+"""Optional ("you may") effects and the AI declining them: issues #257, #268, #265."""
+import random
+import unittest
+
+from mtgsim.cards import _parse_effects
+from mtgsim.engine import Game, Player
+from mtgsim.engine.state import Permanent, StackItem
+from tests.test_combat_triggers import Scripted
+from tests.test_templates import BEAR, ISLAND
+
+
+def effects(text):
+    effs, bad = _parse_effects(text)
+    assert not bad, bad
+    return effs
+
+
+class Base(unittest.TestCase):
+    def setUp(self):
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 10
+
+    def put(self, p):
+        perm = Permanent(BEAR, p)
+        p.battlefield.append(perm)
+        return perm
+
+    def trigger(self, text):
+        from tests.test_templates import card
+        return card("T", "{1}", "Creature — Golem", "At the beginning of combat on your turn, " + text, 1, 1).triggers[0].effects
+
+    def go(self, effs, source, *targets):
+        item = StackItem(self.a, effs, list(targets), source=source)
+        prev = None
+        for e, t in zip(item.effects, item.targets):
+            self.game.resolve(self.a, e, t, item, prev)
+            prev = t
+
+
+class OptionalCounters(Base):
+    def test_marked_optional(self):
+        self.assertTrue(self.trigger("you may remove all counters from this creature.")[0].data.get("optional"))
+        self.assertTrue(self.trigger("you may move a +1/+1 counter from this creature onto target creature.")[0]
+                        .data.get("optional"))
+
+    def test_mandatory_not_marked(self):
+        self.assertFalse(self.trigger("remove all counters from this creature.")[0].data.get("optional"))
+
+    def test_remove_declined_on_own_good_counters(self):
+        mine = self.put(self.a)
+        mine.counters["+1/+1"] = 2
+        self.go(self.trigger("you may remove all counters from this creature."), mine, mine)
+        self.assertEqual(mine.counters["+1/+1"], 2)
+
+    def test_remove_mandatory_still_happens(self):
+        mine = self.put(self.a)
+        mine.counters["+1/+1"] = 2
+        self.go(self.trigger("remove all counters from this creature."), mine, mine)
+        self.assertEqual(mine.counters["+1/+1"], 0)
+
+    def test_remove_taken_from_opponent_good_counter(self):
+        mine, theirs = self.put(self.a), self.put(self.b)
+        theirs.counters["+1/+1"] = 2
+        self.go(self.trigger("you may remove all +1/+1 counters from target creature."), mine, theirs)
+        self.assertEqual(theirs.counters["+1/+1"], 0)
+
+    def test_remove_taken_for_own_bad_counter(self):
+        mine = self.put(self.a)
+        mine.counters["-1/-1"] = 2
+        self.go(self.trigger("you may remove all counters from this creature."), mine, mine)
+        self.assertEqual(mine.counters["-1/-1"], 0)
+
+    def test_move_between_own_creatures_happens(self):
+        x, y = self.put(self.a), self.put(self.a)
+        x.counters["+1/+1"] = 3
+        self.go(self.trigger("you may move a +1/+1 counter from this creature onto target creature."), x, y)
+        self.assertEqual((x.counters["+1/+1"], y.counters["+1/+1"]), (2, 1))
+
+    def test_move_good_counter_to_opponent_declined(self):
+        x, y = self.put(self.a), self.put(self.b)
+        x.counters["+1/+1"] = 3
+        self.go(self.trigger("you may move a +1/+1 counter from this creature onto target creature."), x, y)
+        self.assertEqual((x.counters["+1/+1"], y.counters.get("+1/+1", 0)), (3, 0))
+
+    def test_mandatory_move_to_opponent_still_happens(self):
+        x, y = self.put(self.a), self.put(self.b)
+        x.counters["+1/+1"] = 3
+        self.go(self.trigger("move a +1/+1 counter from this creature onto target creature."), x, y)
+        self.assertEqual((x.counters["+1/+1"], y.counters["+1/+1"]), (2, 1))
+
+
+if __name__ == "__main__":
+    unittest.main()
