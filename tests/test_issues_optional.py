@@ -163,7 +163,6 @@ class Mech(Base):
 
     def test_reinforce_is_a_discard(self):
         rein = tcard("Test Reinforce", "{G}", "Instant", "Reinforce 2—{1}{G}")
-        mad = []
         target = self.put(self.a)
         self.give_mana(self.a, 2)
         self.a.hand.append(rein)
