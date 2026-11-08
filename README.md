@@ -686,3 +686,16 @@ format, lists, first-player distribution and game conditions apply. The loader c
 and exact deck hashes; it cannot verify a source's truth or a curator's applicability judgment.
 Never enter inferred BO3-to-game conversions or invented rates. Leave `human_evidence` empty
 and explain the missing data when applicable sources are unavailable.
+
+## Other command-line tools
+
+```
+python3 -m mtgsim.database_coverage --save DIR   # coverage census of every card in the database
+python3 -m mtgsim.standard_coverage              # coverage across Standard's saved set lists (offline)
+python3 -m mtgsim.behavior_coverage --run        # bounded rules-evidence run over rules/scenarios.json
+python3 -m mtgsim.calibrate                      # fit Bradley-Terry ratings for the rank pools
+python3 -m mtgsim.forge_script --forge ~/forge   # translate Forge card scripts into engine effect objects
+python3 -m mtgsim.rules_compare --builtin B.json --forge-log F.log   # compare builtin/Forge probe assertions
+```
+
+Each module's docstring documents its full option set.

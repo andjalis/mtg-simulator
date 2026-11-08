@@ -340,7 +340,7 @@ def _split(s: str):
 def parse_sentence(s: str):
     """Effects for one whole sentence, or None."""
     s = s.strip().rstrip(".").strip()
-    s = re.sub(r"^(?:then |you may have |have )", "", s, flags=re.I)
+    s = re.sub(r"^(?:then |have )", "", s, flags=re.I)     # "have": the outer "you may" recursion keeps the choice
     _load()
     for rx, fn, _ in RIDERS:
         m = rx.fullmatch(s)

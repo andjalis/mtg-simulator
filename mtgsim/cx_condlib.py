@@ -552,6 +552,48 @@ def _prev_power(m):
     return _code("prev_is", {m["w"].lower(): [">=" if m["d"] != "less" else "<=", _n(m["n"])]})
 
 
+@rule(r"(?:you cast (?:~|it|this spell)|(?:~|this spell) was cast) during your main phase")
+def _main_cast(m):
+    """Addendum: a spell resolves in the step it was cast in, so the step at resolution tells."""
+    return _code("main_cast")
+
+
+@rule(r"(?:you cast (?:~|it|this spell) from|(?:~|it|this spell) was cast from) (?P<z>a graveyard|your graveyard|exile)")
+def _cast_from(m):
+    return _code("cast_zone", "exile" if m["z"].lower() == "exile" else "graveyard")
+
+
+@rule(r"\{(?P<c>[WUBRG])\} was spent to cast (?:~|it|this spell)")
+def _spent_color(m):
+    """"If {G} was spent to cast it": a mana of that colour paid the spell (the colours the payment recorded)."""
+    return _code("spent_color", m["c"].upper())
+
+
+@rule(r"~ is (?:a|an) (?P<f>[\w ,/-]+?)")
+def _src_is(m):
+    """"If ~ is an enchantment" (Theros gods' and Enduring creatures' own type now)."""
+    if re.search(r"\b(?:card|spell|token|turn|phase|step)\b", m["f"], re.I):
+        return ""
+    f = _filter(m["f"].replace(",", ""), plural=False)
+    return _code("src_is", f) if f else ""
+
+
+@rule(r"that (?P<n>land|artifact|enchantment) is (?P<q>a|an) (?P<f>[\w ,/-]+?)")
+def _ref_is(m):
+    """"Untap target land. If that land is a Mountain, ..." / "Whenever a land you control enters, ~ deals 1 damage
+    to any target. If that land is a Mountain, ...": the latest land named, the previous effect's object when it
+    is one, else the object the trigger is about."""
+    f = _filter(m["f"].replace(",", ""), plural=False)
+    return _code("ref_is", m["n"].lower(), f) if f else ""
+
+
+@rule(r"(?:it's|it is|that card is) (?P<q>a|an) (?P<f>[\w ,/-]+?) card")
+def _prev_card_is(m):
+    """"Reveal the top card. If it's a Zombie card, ...": a card's printed characteristics."""
+    f = _filter(m["f"].replace(",", ""), plural=False)
+    return _code("prev_is", f) if f else ""
+
+
 @rule(r"this is the (?P<n>second|third|fourth|fifth) time this ability has resolved this turn")
 def _nth_resolution(m):
     return _code("nth_resolve", {"second": 2, "third": 3, "fourth": 4, "fifth": 5}[m["n"].lower()])
@@ -687,6 +729,9 @@ def _plain(phrase: str) -> str:
 
 def parse(phrase: str) -> str:
     """The condition code for a phrase, or ""; tries "A or B" and "A and B" when the whole doesn't parse."""
+    had = re.fullmatch(r"you had (an?) (.+?) enter(?: the battlefield)? under your control this turn", phrase.strip(), re.I)
+    if had:     # "you had a land enter the battlefield under your control this turn"
+        phrase = f"{had[1]} {had[2]} entered the battlefield under your control this turn"
     code = _plain(phrase) or _history(phrase)
     if code:
         return code
@@ -825,6 +870,26 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         if state == "enchanted":
             return bool(obj.auras)
         return _card_ok(obj.card, spec, obj)
+    if kind in ("main_cast", "cast_zone", "spent_color"):
+        # facts of the casting: the resolving spell's own, or those of the spell a permanent resolved from
+        spell = item if getattr(item, "is_spell", False) else None
+        if kind == "main_cast":
+            return spell is not None and game.active is p and game.step in ("main1", "main2")
+        if kind == "cast_zone":
+            return getattr(spell if spell is not None else source, "cast_zone", None) == args[0]
+        return args[0] in getattr(spell if spell is not None else source, "mana_colors", ())
+    if kind == "unless_unpaid":          # "B unless <payer> pays ...": the cx_unless just before B wasn't paid
+        return not getattr(item, "cx_unless_paid", False)
+    if kind == "ref_is":
+        from .engine.state import Permanent
+        noun, spec = args
+        for obj in (prev, getattr(item, "context", None)):
+            if isinstance(obj, Permanent) and noun.capitalize() in obj.card.types:
+                return _card_ok(obj.card, spec, obj)
+        return False
+    if kind == "src_is":
+        from .engine.state import Permanent
+        return isinstance(source, Permanent) and _card_ok(source.card, args[0], source)
     if kind == "event":
         hist = getattr(game, "_condlib_hist", None)
         return hist is not None and hist[0] == game.turn and hist[1].get(("@" + args[0], p.name), 0) > 0
@@ -914,7 +979,8 @@ def check(game, p, code: str, item=None, source=None, prev=None):
     if kind == "counters":
         name, op, n = args
         return source is not None and _cmp(source.counters.get(name, 0), op, n)
-    return False
+    from .cx_static_cond import check as static_check      # kinds registered by cx_static_cond
+    return static_check(game, p, kind, args, item, source)
 
 
 def _eval_any(game, p, code, item, source, prev=None):
@@ -968,3 +1034,7 @@ def holds_for(source, code: str, ref=None) -> bool:
         pass
     _Src.source, _Src.context = source, ref
     return bool(_eval_any(game, p, code, _Src, source, ref or source))
+
+
+from .cx_static_cond import RULES as _STATIC_RULES  # noqa: E402  (devotion, most common color)
+_RULES.extend((re.compile(pattern, re.I), build) for pattern, build in _STATIC_RULES)

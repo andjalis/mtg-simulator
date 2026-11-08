@@ -66,6 +66,18 @@ def _threat(game: Game, me: Player, item: StackItem) -> float:
     return score
 
 
+def damage_amount(game: Game, eff: Effect, source=None) -> int:
+    """The damage an effect would deal if it resolved now: "damage equal to its power" (data["source_power"]) reads
+    the source permanent's current power (``source``, else the spell or ability whose targets are being chosen);
+    any other amount is eff.amount."""
+    data = eff.data or {}
+    if not data.get("source_power") or data.get("src_prev"):    # src_prev: the power of an earlier target (cx_abil_damage.scaled)
+        return eff.amount
+    src = source if source is not None else game.target_source
+    src = getattr(src, "source", src) if isinstance(src, StackItem) else src
+    return max(0, src.power) if isinstance(src, Permanent) else 0
+
+
 def default_choose_target(game: Game, me: Player, eff: Effect):
     """A reasonable target for eff, respecting hexproof and targeting restrictions."""
     opp = game.opponent(me)
@@ -73,6 +85,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     k = eff.kind
+    if eff.target == "player" and k in ("draw", "gain_life"):
+        return me if me in legal else None      # "target player draws/gains": the beneficiary is the caster
     if k == 'linked_exile':
         enemies = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
         if enemies:
@@ -80,13 +94,16 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         cards = [x for x in legal if isinstance(x, CardDef)]
         return max(cards, key=lambda c: c.cmc, default=None)
     if k == "damage":
-        if eff.target == "player" and not (eff.data.get("or_pw") and eff.amount < opp.life):
+        from ..cx_abil_damage import scaled
+        eff = scaled(game, me, eff)
+        amount = damage_amount(game, eff)
+        if eff.target == "player" and not (eff.data.get("or_pw") and amount < opp.life):
             return opp
-        if eff.target == "any" and eff.amount >= opp.life:
+        if eff.target == "any" and amount >= opp.life:
             return opp
-        killable = [x for x in theirs if (x.is_creature and eff.target != "player" and x.toughness - x.damage <= eff.amount and
+        killable = [x for x in theirs if (x.is_creature and eff.target != "player" and x.toughness - x.damage <= amount and
                                           not x.has("indestructible")) or (x.is_planeswalker and not x.is_creature
-                                                                           and x.loyalty <= eff.amount)]
+                                                                           and x.loyalty <= amount)]
         if killable:
             return max(killable, key=perm_value)
         return opp if eff.target in ("any", "player") else None
@@ -127,8 +144,23 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         if eff.data.get('counter') == '-1/-1':
             pool = mine if eff.data['operation'] == 'remove' else theirs
         return max(pool, key=perm_value, default=None)
-    if k == 'add_counter':
-        pool = theirs if eff.data.get('counter') == '-1/-1' else mine
+    if k in ('add_counter', 'cx_distribute'):
+        pool = theirs if eff.data.get('counter') in ('-1/-1', 'stun') else mine
+        return max(pool, key=perm_value, default=None)
+    if k == 'cx_move_src':
+        return max([x for x in mine if any(x.counters.values())] or theirs, key=perm_value, default=None)
+    if k == 'cx_move_counters':
+        taken = getattr(game, '_choosing_targets', [])
+        return max((x for x in mine if all(x is not t for t in taken)), key=perm_value, default=None)
+    if k == 'cx_remove_counters':
+        if eff.data.get('counter'):
+            pool = theirs if eff.data['counter'] == '+1/+1' else mine
+            pool = [x for x in pool if x.counters.get(eff.data['counter'], 0)]
+            if eff.data['counter'] in ('-1/-1', 'stun'):
+                pool = [x for x in mine if x.counters.get(eff.data['counter'], 0)]
+        else:
+            pool = [x for x in theirs if any(x.counters.values())] or [x for x in mine if any(
+                x.counters.get(n, 0) for n in ('-1/-1', 'stun'))]
         return max(pool, key=perm_value, default=None)
     if k == 'return_grave_target':
         return max(legal, key=lambda c: c.cmc, default=None)
@@ -182,6 +214,9 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     if side == "auto":                  # neutral effects (a colour change) take the side of what follows them
         from ..cx_grammar import auto_side
         side = auto_side(game, eff)
+    if eff.target == "graveyard_card" and side in ("mine", "theirs", "any"):   # cx_grammar_zones: whose graveyard
+        pool = [c for c in legal if side == "any" or any(c is x for x in (me if side == "mine" else opp).graveyard)]
+        return max(pool, key=lambda c: c.cmc, default=None)
     if side in ("mine", "theirs") and eff.target == "player":   # ... or which player (cx_grammar target players)
         return next((x for x in legal if x is (me if side == "mine" else opp)), None)
     if side in ("mine", "theirs"):      # newer kinds say whose permanent they want
@@ -285,7 +320,7 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
             elif k == "wrath_pw":
                 total += sum(map(perm_value, opp.planeswalkers)) - sum(map(perm_value, me.planeswalkers))
             elif k == "damage":
-                total += perm_value(tgt) if isinstance(tgt, Permanent) else (100 if e.amount >= opp.life else 1)
+                total += perm_value(tgt) if isinstance(tgt, Permanent) else (100 if damage_amount(game, e) >= opp.life else 1)
             elif k in ("discard", "discard_choice", "hand_exile"):
                 total += 2 if opp.hand else 0
             elif k == "regrow":
@@ -554,6 +589,10 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
         for victim in game.sacrifice_candidates(me, perm, c["sacrifice"])[:c.get("sac_n", 1)]:
             if not victim.card.is_token and perm_value(victim) > 1:
                 return False
+    if c.get("cx_costs"):
+        from ..cx_abil_costs import ai_cost_ok
+        if not ai_cost_ok(game, me, perm, c):
+            return False
     if c.get("discard") and not choose_rummage(game, me, 1) and len(me.hand) <= 4:
         return False
     if c.get("life") and me.life <= 10:
@@ -846,11 +885,13 @@ def use_abilities(game: Game, me: Player):
             game.cast(me, c, None)
     if game.step == "main2":
         for st in [x for x in me.battlefield if x.card.station]:
-            need = max((a.min_charge for a in st.activated), default=0)
+            need = max([a.min_charge for a in st.activated] + [st.card.advanced_rules.get("station_creature", 0)])
             ready = sorted((c for c in me.creatures if c is not st and not c.tapped and c.power > 0),
                            key=lambda c: c.power)
             if need and st.counters.get("charge", 0) < need and len(ready) > 1:
                 game.station(me, st, ready[-1])
+        from ..cx_mech import ai_unlock
+        ai_unlock(game, me)
         for _ in range(10):     # general activated abilities, a few at most
             ability = choose_ability(game, me, instant=False)
             if ability is None or not game.do_action(me, ability):
