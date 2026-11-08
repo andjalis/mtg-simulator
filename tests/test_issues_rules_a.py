@@ -5,7 +5,7 @@ import unittest
 
 from mtgsim import continuous
 from mtgsim.carddb import CardDB
-from mtgsim.engine import Game, Permanent, Player, StackItem
+from mtgsim.engine import Game, Player, StackItem
 from tests.test_combat_triggers import Scripted
 from tests.test_templates import BEAR, ISLAND, card
 
