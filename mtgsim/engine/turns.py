@@ -407,8 +407,6 @@ class TurnsMixin:
                 and not player_flag(self, p, 'no_max_hand'):
             card = p.ai.choose_discard(self, p)
             self.discard_card(p, card)
-        if self.pending:
-            self.settle()           # triggers from the cleanup discard (madness) get priority before the turn ends
         for perm in p.battlefield + opp.battlefield:
             perm.damage = 0
             perm.deathtouched = False
@@ -436,6 +434,8 @@ class TurnsMixin:
         self.expire_continuous_effects()
         for pl in self.players:
             pl.granted_fb = []
+        if self.pending:
+            self.settle()           # CR 514.3a: damage is gone first; then triggers from the cleanup discard (madness) go
         self.state_based_actions()
 
     def begin_end_step(self, p: Player):

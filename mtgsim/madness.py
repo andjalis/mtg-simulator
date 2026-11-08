@@ -20,12 +20,21 @@ def after_discard(game, p, card):
                            f"{card.name}: madness")
 
 
+_GRAVEYARD_VALUE = ("flashback", "escape", "unearth", "jump_start", "retrace", "aftermath", "recover", "embalm",
+                    "eternalize", "disturb")
+
+
+def declines(card):
+    """Madness is optional ("you may cast it"): the AI keeps a card that is worth more in the graveyard there."""
+    return any(a.kind in _GRAVEYARD_VALUE for a in card.alt_costs)
+
+
 def resolve(game, p, eff):
     """The madness trigger: cast the exiled card for its madness cost, or put it into the graveyard."""
     card, alt = eff.data["card"], eff.data["alt"]
     if card not in p.exile:
         return
-    if game.cast(p, game._variant(card, "madness", alt)):
+    if not declines(card) and game.cast(p, game._variant(card, "madness", alt)):
         return
     if card in p.exile:
         game.log(f"puts {card.name} into the graveyard (madness not cast)", p)

@@ -191,6 +191,49 @@ class Mech(Base):
         self.game.cast(self.a, option, [target])
         self.assertIn("Test Both", [c.name for c in self.a.exile] + [c.name for c in self.a.graveyard])
 
+    def test_madness_declined_for_flashback_card(self):
+        card = tcard("Test Flash", "{3}{B}", "Sorcery", "Madness {B}\nFlashback {4}{B}")
+        self.give_mana(self.a, 2, __import__("tests.test_templates", fromlist=["SWAMP"]).SWAMP)
+        self.a.hand.append(card)
+        self.game.discard_card(self.a, card)
+        self.game.settle()
+        self.assertIn(card, self.a.graveyard)
+
+    def test_madness_still_cast_by_default(self):
+        from tests.test_templates import SWAMP
+        card = tcard("Test Mad", "{4}{B}", "Creature — Vampire", "Madness {B}", 5, 3)
+        self.give_mana(self.a, 1, SWAMP)
+        self.a.hand.append(card)
+        self.game.discard_card(self.a, card)
+        self.game.settle()
+        self.assertIn("Test Mad", [x.card.name for x in self.a.battlefield])
+
+    def test_cleanup_removes_damage_before_madness_trigger(self):
+        from tests.test_templates import SWAMP
+        from mtgsim.ai import HeuristicAI
+        import mtgsim.madness as madness
+        seen = []
+        orig = madness.resolve
+
+        def spy(game, p, eff):
+            seen.append([x.damage for x in game.players[0].battlefield + game.players[1].battlefield])
+            return orig(game, p, eff)
+        madness.resolve = spy
+        self.addCleanup(setattr, madness, "resolve", orig)
+        from mtgsim.engine.kinds import madness as kind_mod
+        kind_mod.madness.resolve = spy
+        bear = self.put(self.a)
+        self.a.ai = HeuristicAI()
+        mad = tcard("Test Mad", "{4}{B}", "Creature — Vampire", "Madness {B}", 1, 1)
+        self.a.hand = [mad] + [tcard(f"Bolt {i}", "{R}", "Instant", "~ deals 3 damage to any target.") for i in range(7)]
+        self.give_mana(self.a, 1, SWAMP)
+        self.game.active_idx = 0
+        bear.damage = 1
+        bear.card = bear.card          # damage 1 on a surviving creature, carried into cleanup
+        self.game.take_turn(self.a)
+        self.assertEqual(len(seen), 1)
+        self.assertTrue(all(d == 0 for d in seen[0]), seen)
+
 
 if __name__ == "__main__":
     unittest.main()
