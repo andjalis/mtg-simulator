@@ -36,13 +36,8 @@ def _face_special_lines(st, line):
             gate = None
         tier = getattr(st, "tier", None)
         if tier is not None:      # what the lines under an "N+ | ..." Station tier added is gated on its charge counters
-            for t in triggers[tier[1]:]:
-                if getattr(t, "modes", None) and not t.effects:    # the gate can't reach modal trigger effects
-                    approximations.append(f"tier {tier[0]}+ modal trigger applies without needing {tier[0]} charge counters")
-                for eff in t.effects:
-                    if eff.cond and eff.cond != f"charge>={tier[0]}":    # one cond slot: don't drop the other condition
-                        approximations.append(f"tier {tier[0]}+ trigger applies without needing {tier[0]} charge counters")
-                    eff.cond = eff.cond or f"charge>={tier[0]}"
+            for t in triggers[tier[1]:]:       # the tier is met when the ability triggers; not rechecked on resolution
+                t.data["trigger_gate"] = f"charge>={tier[0]}"
             for a in activated[tier[2]:]:
                 a.min_charge = max(a.min_charge, tier[0])
             if extra != tier[3]:      # a static or other line the gate can't cover: don't count it as fully played
