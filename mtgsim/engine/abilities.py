@@ -272,8 +272,7 @@ class AbilitiesMixin:
         from ..residual_templates import activation_blocked, mana_ability, life_locked
         if activation_blocked(self, perm, mana=mana_ability(act)) or c.get("life") and life_locked(p):
             return False
-        if perm.card.is_land and any(x.card.chosen_land_lock and x.chosen_land == perm.card.name
-                                     for pl in self.players for x in pl.battlefield):
+        if self.named_activation_banned(perm.card.name) and not mana_ability(act):
             return False
         if self.activations_stopped() and (perm.card.is_artifact or perm.is_creature or perm.is_planeswalker):
             return False
