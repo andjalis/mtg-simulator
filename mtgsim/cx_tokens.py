@@ -48,9 +48,13 @@ _SUBJECTS = {
     "its controller": "that_controller", "that creature's controller": "that_controller",
     "that permanent's controller": "that_controller", "that spell's controller": "that_controller",
     "its owner": "owner", "they": "they", "that player": "they",
+    "target player": "target", "target opponent": "target_opp",
 }
 # The effect target each subject needs: the previous object (its controller, or itself for "its owner").
 _TARGETS = {"that_controller": "that_controller", "they": "that_controller", "owner": "prev"}
+# "Target player / opponent creates ...": the effect targets a player (an opponent for the second), and the handler
+# reads the chosen player like "that_controller"; the AI gives the token to itself, or to the opponent when it must.
+_PLAYER_TARGET = {"target": "mine", "target_opp": "theirs"}
 
 
 def _mask(text: str):
@@ -228,7 +232,7 @@ def parse_create(subject: str, body: str):
     if who is None:
         return NO_MATCH
     if re.search(r"\bcop(?:y|ies) of\b", body, re.I):
-        return parse_copy(who, body)
+        return NO_MATCH if who in _PLAYER_TARGET else parse_copy(who, body)
     masked, quoted = _mask(body.strip())
     amount_q, per_each = None, False
     m = re.fullmatch(r"a number of (.+?) equal to (.+)", masked, re.I)
@@ -278,6 +282,11 @@ def parse_create(subject: str, body: str):
             data["xq"] = amount_q
         effects.append(Effect("cx_token", n, target=_TARGETS.get(who, "none"),
                               data=data))
+    if who in _PLAYER_TARGET and effects:
+        extra = {"filter": "opp"} if who == "target_opp" else {}
+        effects = [dataclasses.replace(e, target="player", **extra, data=dict(e.data, who="that_controller",
+                                                                             side=_PLAYER_TARGET[who]))
+                   for e in effects]
     return effects or NO_MATCH
 
 
@@ -315,7 +324,8 @@ def reparse(sentence: str, effects: list) -> list:
     return effects if new is NO_MATCH else new
 
 
-_CREATE = (r"(?:(you|they|that player|each opponent|each player|its controller|its owner|that creature's controller|"
+_CREATE = (r"(?:(you|they|that player|target player|target opponent|each opponent|each player|its controller|its owner|"
+           r"that creature's controller|"
            r"that permanent's controller|that spell's controller) )?creates? (.+)")
 
 EFFECT_PATTERNS = [
