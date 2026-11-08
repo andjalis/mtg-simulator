@@ -246,11 +246,15 @@ class TurnsMixin:
             self.settle()
 
     @staticmethod
-    def untap_locked(perm) -> bool:
-        """Whether a recorded tap-lock still holds on perm; locks whose condition ended are dropped."""
+    def untap_locked(perm, tapped_at_start=None) -> bool:
+        """Whether a recorded tap-lock still holds on perm; locks whose condition ended are dropped.
+        ``tapped_at_start`` maps id(permanent) -> tapped before the untap step began, so a lock whose
+        source untaps in the same step still holds (CR 502.3: everything untaps simultaneously)."""
+        def tapped(src):
+            return src.tapped if tapped_at_start is None else tapped_at_start.get(id(src), src.tapped)
         live = [(src, dur, ctrl) for src, dur, ctrl in perm.untap_locks
                 if src in src.controller.battlefield and
-                (dur != "tapped" or src.tapped) and (dur != "controlled" or src.controller is ctrl)]
+                (dur != "tapped" or tapped(src)) and (dur != "controlled" or src.controller is ctrl)]
         perm.untap_locks = live
         return bool(live)
 
@@ -269,6 +273,7 @@ class TurnsMixin:
         choose_stay = getattr(p.ai, "choose_stay_tapped", None)
         if choose_stay is not None:              # HeuristicAI: "You may choose not to untap ~"
             choose_stay(self, p)
+        tapped_at_start = {id(x): x.tapped for pl in self.players for x in pl.battlefield}
         for perm in p.battlefield:
             if perm.skip_untap:
                 perm.skip_untap -= 1        # "doesn't untap during its controller's next untap step"
@@ -278,7 +283,7 @@ class TurnsMixin:
                 # "You may choose not to untap ~ during your untap step" (~40 cards, e.g. Amber
                 # Prison): the recorded choice (perm.stay_tapped) is consumed by this untap step.
                 perm.stay_tapped = False
-            elif perm.tapped and perm.untap_locks and self.untap_locked(perm):
+            elif perm.tapped and perm.untap_locks and self.untap_locked(perm, tapped_at_start):
                 pass                        # a tap-lock whose condition still holds (Amber Prison, Icefall Regent, ...)
             elif perm.tapped and perm.auras and auras.blocks_untap(perm):
                 pass

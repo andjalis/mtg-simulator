@@ -151,5 +151,42 @@ class HexproofFromRecoloured(unittest.TestCase):
         self.assertFalse(self.g.targetable(self.knight, self.b, self.src))
 
 
+class UntapLockSimultaneous(unittest.TestCase):
+    def setUp(self):
+        self.g, self.a, self.b = new_game()
+
+    def run_step(self, src_first):
+        src = self.g.enter_battlefield(self.a, BEAR)
+        locked = self.g.enter_battlefield(self.a, BEAR)
+        if not src_first:
+            self.a.battlefield.reverse()
+        src.tapped = locked.tapped = True
+        locked.untap_locks.append((src, "tapped", self.a))
+        self.g.untap_step(self.a)
+        return src, locked
+
+    def test_lock_holds_in_either_order(self):
+        for first in (True, False):
+            g, a, b = new_game()
+            self.g, self.a, self.b = g, a, b
+            src, locked = self.run_step(first)
+            self.assertFalse(src.tapped, first)
+            self.assertTrue(locked.tapped, first)
+
+    def test_lock_released_when_source_was_untapped(self):
+        src = self.g.enter_battlefield(self.a, BEAR)
+        locked = self.g.enter_battlefield(self.a, BEAR)
+        locked.tapped = True
+        locked.untap_locks.append((src, "tapped", self.a))
+        self.g.untap_step(self.a)
+        self.assertFalse(locked.tapped)
+        self.assertEqual(locked.untap_locks, [])
+
+    def test_next_untap_step_releases(self):
+        src, locked = self.run_step(True)
+        self.g.untap_step(self.a)
+        self.assertFalse(locked.tapped)
+
+
 if __name__ == "__main__":
     unittest.main()
