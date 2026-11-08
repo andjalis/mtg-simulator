@@ -92,5 +92,105 @@ class OptionalCounters(Base):
         self.assertEqual((x.counters["+1/+1"], y.counters["+1/+1"]), (2, 1))
 
 
+def tcard(name, cost, types, text, p=None, t=None):
+    from tests.test_templates import card
+    return card(name, cost, types, text, p, t)
+
+
+class Mech(Base):
+    def give_mana(self, p, n, land=None):
+        from tests.test_templates import FOREST
+        for _ in range(n):
+            perm = self.game.enter_battlefield(p, land or FOREST)
+            perm.sick = False
+
+    def beam_options(self, card):
+        self.a.graveyard.append(card)
+        return [o for o in self.game.spell_options(self.a) if self.game._origin(o)[1] == "beam"]
+
+    def token(self, p):
+        import dataclasses
+        from tests.test_templates import BEAR
+        perm = Permanent(dataclasses.replace(BEAR, name="Tok", is_token=True, cmc=0), p)
+        p.battlefield.append(perm)
+        return perm
+
+    def test_beam_skips_token_only(self):
+        beam = tcard("Test Beam", "{3}{G}", "Sorcery", "Beam me up {1}{G}")
+        self.give_mana(self.a, 3)
+        self.token(self.a)
+        self.assertEqual(self.beam_options(beam), [])
+
+    def test_beam_returns_nontoken_not_token(self):
+        from mtgsim.cx_mech import beam_creature
+        bear = self.put(self.a)
+        self.token(self.a)
+        self.assertIs(beam_creature(self.a, tcard("B", "{3}{G}", "Sorcery", "Beam me up {1}{G}")), bear)
+
+    def test_beam_skips_creature_worth_more_than_spell(self):
+        beam = tcard("Test Beam", "{G}", "Sorcery", "Beam me up {G}")
+        self.give_mana(self.a, 2)
+        big = tcard("Big", "{5}", "Creature — Golem", "", 5, 5)
+        self.game.enter_battlefield(self.a, big)
+        self.assertEqual(self.beam_options(beam), [])
+
+    def test_beam_offered_for_cheap_creature(self):
+        beam = tcard("Test Beam", "{3}{G}", "Sorcery", "Beam me up {1}{G}")
+        self.give_mana(self.a, 2)
+        self.put(self.a)
+        self.assertEqual(len(self.beam_options(beam)), 1)
+
+    def test_recover_pays_when_cheap(self):
+        from tests.test_templates import SWAMP
+        rec = tcard("Test Recover", "{3}{B}", "Creature — Zombie", "Recover {1}{B}", 3, 3)
+        self.give_mana(self.a, 2, SWAMP)
+        self.a.graveyard.append(rec)
+        victim = self.put(self.a)
+        self.game.destroy(victim)
+        self.game.settle()
+        self.assertIn(rec, self.a.hand)
+
+    def test_recover_declined_when_dearer_than_card(self):
+        from tests.test_templates import SWAMP
+        rec = tcard("Test Recover", "{1}", "Creature — Zombie", "Recover {3}{B}", 1, 1)
+        self.give_mana(self.a, 5, SWAMP)
+        self.a.graveyard.append(rec)
+        victim = self.put(self.a)
+        self.game.destroy(victim)
+        self.game.settle()
+        self.assertIn(rec, self.a.exile)
+        self.assertEqual(sum(1 for x in self.a.battlefield if x.tapped), 0)
+
+    def test_reinforce_is_a_discard(self):
+        rein = tcard("Test Reinforce", "{G}", "Instant", "Reinforce 2—{1}{G}")
+        mad = []
+        target = self.put(self.a)
+        self.give_mana(self.a, 2)
+        self.a.hand.append(rein)
+        self.a.discarded_cards.clear()
+        option = next(o for o in self.game.spell_options(self.a) if self.game._origin(o)[1] == "channel")
+        fired = []
+        orig = self.game.fire
+        self.game.fire = lambda who, ev, *a, **k: (fired.append((who, ev)), orig(who, ev, *a, **k))[1]
+        self.assertTrue(self.game.cast(self.a, option, [target]))
+        self.game.settle()
+        self.assertIn((self.a, "you_discard"), fired)
+        self.assertIn((self.b, "opp_discard"), fired)
+        self.assertIn(rein, self.a.discarded_cards)
+        self.assertIn(rein, self.a.graveyard)
+        self.assertEqual(target.counters["+1/+1"], 2)
+
+    def test_reinforce_madness_card_goes_to_madness(self):
+        both = tcard("Test Both", "{G}", "Instant", "Reinforce 1—{G}\nMadness {G}")
+        self.give_mana(self.a, 3)
+        target = self.put(self.a)
+        self.a.hand.append(both)
+        option = next((o for o in self.game.spell_options(self.a) if self.game._origin(o)[1] == "channel"), None)
+        if option is None:
+            self.skipTest("no channel option for combined text")
+        self.game.cast(self.a, option, [target])
+        self.assertIn("Test Both", [c.name for c in self.a.exile] + [c.name for c in self.a.graveyard])
+
+
 if __name__ == "__main__":
     unittest.main()

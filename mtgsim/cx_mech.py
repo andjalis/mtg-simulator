@@ -127,12 +127,19 @@ def check(game, p, code: str) -> bool:
     return any(types & h for h in hits[1])
 
 
-def pay_beam(game, p) -> bool:
-    """Return a creature you control to its owner's hand (the cheapest first)."""
-    mine = sorted((x for x in p.battlefield if x.is_creature), key=lambda x: x.card.cmc)
-    if not mine:
+def beam_creature(p, card):
+    """The creature the AI would return for Beam me up: the cheapest nontoken creature (a token would cease to
+    exist), and only one that is not worth more than the spell being recast; None when nothing is worth returning."""
+    mine = sorted((x for x in p.battlefield if x.is_creature and not x.card.is_token), key=lambda x: x.card.cmc)
+    return mine[0] if mine and (card is None or mine[0].card.cmc <= max(card.cmc, 1)) else None
+
+
+def pay_beam(game, p, card=None) -> bool:
+    """Return a creature you control to its owner's hand (see ``beam_creature``)."""
+    pick = beam_creature(p, card)
+    if pick is None:
         return False
-    game.leave_battlefield(mine[0], "hand")
+    game.leave_battlefield(pick, "hand")
     return True
 
 
@@ -171,8 +178,9 @@ def parse_alt_line(line: str, st) -> bool:
 
 
 def beam_variants(game, p, card) -> list:
-    """Beam me up casts of a graveyard card: needs a creature to return."""
-    if not any(x.is_creature for x in p.battlefield):
+    """Beam me up casts of a graveyard card: needs a creature worth returning (optional, so the AI skips it
+    when only tokens or creatures costing more than the spell are available)."""
+    if beam_creature(p, card) is None:
         return []
     return [game._variant(card, "beam", a) for a in card.alt_costs if a.kind == "beam"]
 
@@ -196,7 +204,8 @@ def resolve_recover(game, item) -> None:
     if card not in grave or (version is not None and hasattr(grave, "version") and grave.version(card) != version):
         return
     cost = next(a.cost for a in card.alt_costs if a.kind == "recover")
-    if payable(game.mana_sources(owner), cost) and game.pay(owner, cost, spell="ability") is not None:
+    # "You may pay": the AI declines (the card is exiled) when recovering costs more than the card did.
+    if sum(cost.values()) <= max(card.cmc, 1) and payable(game.mana_sources(owner), cost) and game.pay(owner, cost, spell="ability") is not None:
         game.move_card(card, grave, owner.hand, reason="recover")
         game.log(f"recovers {card.name}", owner)
     else:

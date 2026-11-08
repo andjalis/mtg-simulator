@@ -184,7 +184,7 @@ class PlayMixin:
             exiled_gy = picks[0]
         if kind == "beam":
             from ..cx_mech import pay_beam
-            if not pay_beam(self, p):
+            if not pay_beam(self, p, base):
                 return False
         if kind.startswith("cond_alt_"):
             from ..cx_altcost import pay as pay_alternative
@@ -216,7 +216,14 @@ class PlayMixin:
                 return False
             self.discard_card(p, pitched)
             self.log(f"discards {pitched.name} for {card.name}", p)
-        if kind in ("channel", "unearth"):
+        if kind == "channel":      # channel / reinforce: "discard this card" is a real discard (madness, "whenever you discard")
+            from ..madness import after_discard, discard_destination
+            discard_destination(self, p, base).append(base)
+            p.discarded_cards.append(base)
+            after_discard(self, p, base)
+            self.fire(p, "you_discard")
+            self.fire(self.opponent(p), "opp_discard", subject=base)
+        elif kind == "unearth":
             p.graveyard.append(base)
         elif kind == "gy_ability":
             p.exile.append(base)
