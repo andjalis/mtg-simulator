@@ -337,7 +337,11 @@ class BattlefieldMixin:
                     self.end_cleanup.append((perm, d["end"]))
         self.log(f"creates {n if n is not None else eff.amount} {d.get('kind') or d.get('name')} token(s)", p)
 
-    def transform(self, perm: Permanent):
+    def transform(self, perm: Permanent, via_day_night: bool = False):
+        # CR 702.145f/g: daybound and nightbound permanents transform only through day/night
+        if not via_day_night and (perm.card.daybound or perm.card.nightbound):
+            self.log(f"{perm.card.name} can't transform except as day and night change", perm.controller)
+            return
         front = getattr(perm, "front_face", None)
         flip_back = front is not None and front.back is perm.card   # a transformed permanent turns face up again
         back = front if flip_back else perm.card.back

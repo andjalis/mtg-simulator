@@ -11,9 +11,9 @@ def set_state(game, state):
         for perm in list(pl.battlefield):
             c = perm.card
             if state == "night" and c.daybound and c.back is not None and c.back.nightbound:
-                game.transform(perm)
+                game.transform(perm, via_day_night=True)
             elif state == "day" and c.nightbound and getattr(perm, "front_face", None) is not None:
-                game.transform(perm)
+                game.transform(perm, via_day_night=True)
     game.log(f"it becomes {state}")
     if changed:
         for pl in game.players:
@@ -29,9 +29,9 @@ def on_enter(game, perm):
     if getattr(game, "day_night", None) is None:
         set_state(game, "night" if c.nightbound and not c.daybound else "day")    # CR 726.2
     elif game.day_night == "night" and c.daybound and c.back is not None and c.back.nightbound:
-        game.transform(perm)
+        game.transform(perm, via_day_night=True)
     elif game.day_night == "day" and c.nightbound and getattr(perm, "front_face", None) is not None:
-        game.transform(perm)
+        game.transform(perm, via_day_night=True)
 
 
 def begin_turn(game, p):
