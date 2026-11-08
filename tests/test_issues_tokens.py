@@ -44,10 +44,13 @@ class Cards(unittest.TestCase):
     def put(self, name, who=None):
         return self.game.enter_battlefield(who or self.a, self.db.get(name))
 
-
     def test_cards_lose_the_token_clause(self):
         for name in ("Atlantis Attacks", "Baffling End"):
             self.assertEqual([u for u in self.db.get(name).unsupported if "creates" in u], [], name)
+        for name in ("Hall of Triumph", "Heraldic Banner"):
+            self.assertEqual(card_coverage(self.db.get(name)).ignored, [], name)
+        for name in ("Caged Sun", "Gauntlet of Power"):          # the mana-doubling line is still unsupported
+            self.assertEqual(len(self.db.get(name).unsupported), 1, name)
 
     def test_target_opponent_creates_for_the_opponent(self):
         eff = self.db.get("Baffling End").triggers[-1].effects[-1]
@@ -78,9 +81,36 @@ class Cards(unittest.TestCase):
         self.assertEqual([(x.power, x.toughness) for x in tokens], [(6, 5)])
         self.assertFalse(self.b.battlefield)
 
+    def test_anthem_chosen_colour_is_the_decks_main_creature_colour(self):
+        banner = self.put("Hall of Triumph")
+        self.assertEqual(banner.chosen_color, "U")
+        sphinx = self.game.enter_battlefield(self.a, SPHINX)
+        goblin = self.game.enter_battlefield(self.a, GOBLIN)
+        enemy = self.game.enter_battlefield(self.b, SPHINX)
+        self.assertEqual((sphinx.power, sphinx.toughness), (5, 5))
+        self.assertEqual((goblin.power, goblin.toughness), (3, 1))     # wrong colour
+        self.assertEqual((enemy.power, enemy.toughness), (4, 4))       # not ours
 
+    def test_heraldic_banner_power_only(self):
+        self.put("Heraldic Banner")
+        sphinx = self.game.enter_battlefield(self.a, SPHINX)
+        self.assertEqual((sphinx.power, sphinx.toughness), (5, 4))
 
+    def test_anthem_leaves_with_the_source(self):
+        hall = self.put("Hall of Triumph")
+        sphinx = self.game.enter_battlefield(self.a, SPHINX)
+        self.a.battlefield.remove(hall)
+        self.assertEqual(sphinx.power, 4)
 
+    def test_both_sides_variant_via_card_data(self):
+        import dataclasses
+        base = self.db.get("Hall of Triumph")
+        gauntlet = dataclasses.replace(base, anthem_sub=(("chosen_color:all", 1, 1, False),))
+        self.game.enter_battlefield(self.a, gauntlet)
+        mine = self.game.enter_battlefield(self.a, SPHINX)
+        theirs = self.game.enter_battlefield(self.b, SPHINX)
+        red = self.game.enter_battlefield(self.b, GOBLIN)
+        self.assertEqual((mine.power, theirs.power, red.power), (5, 5, 3))
 
 
 if __name__ == "__main__":

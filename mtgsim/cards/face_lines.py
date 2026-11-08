@@ -782,6 +782,11 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["anthem_kw"] = extra.get("anthem_kw", ()) + ((m[1], int(m[2]), int(m[3])),)
             return None
+        m = re.fullmatch(r"Creatures (you control )?of the chosen color get \+(\d+)/\+(\d+)\.", line)
+        if m and extra.get("choose_type") == "basic_land":      # the colour choice line came first (cx_static_choice)
+            extra["anthem_sub"] = extra.get("anthem_sub", ()) + (
+                ("chosen_color" if m[1] else "chosen_color:all", int(m[2]), int(m[3]), False),)
+            return None
         m = re.fullmatch(r"Creature tokens you control get \+(\d+)/\+(\d+)\.", line)
         if m:
             extra["anthem_sub"] = extra.get("anthem_sub", ()) + (("Token", int(m[1]), int(m[2]), False),)

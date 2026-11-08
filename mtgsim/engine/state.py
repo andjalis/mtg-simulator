@@ -303,9 +303,15 @@ class Permanent:
                 bp += x.card.anthem_chosen[0]
                 bt += x.card.anthem_chosen[1]
             for sub, pp, tt, other in x.card.anthem_sub:
-                if creature and cx_static_anthem.fits(self, sub) and not (other and x is self):
+                if creature and cx_static_anthem.fits(self, sub, x) and not (other and x is self):
                     bp += pp
                     bt += tt
+        if creature and self.controller.foe is not None:        # "Creatures of the chosen color get +1/+1" (both sides)
+            for x in self.controller.foe.battlefield:
+                for sub, pp, tt, _ in x.card.anthem_sub:
+                    if sub == "chosen_color:all" and cx_static_anthem.fits(self, sub, x):
+                        bp += pp
+                        bt += tt
         for sub, pp, tt in self.controller.emblems:
             if creature and sub in self.card.subtypes:
                 bp += pp
