@@ -41,9 +41,17 @@ def cx_token(game, p, eff, target, opp, item=None, **_):
         players = list(game.players) if who == "each" else [opp] if who == "opp" else [p]
     n = eff.amount * (len(game.players) - 1 if eff.data.get("per_opponent") else 1)
     if eff.data.get("devotion"):            # "equal to your devotion to <colours>": mana symbols of yours
-        n *= sum(x.card.mana_cost.get(c, 0) for x in p.battlefield for c in eff.data["devotion"])
+        n *= sum(devotion(x.card, eff.data["devotion"]) for x in p.battlefield)
     for pl in players:
         create(game, pl, choose(game, pl, eff.data["choice"]) if "choice" in eff.data else eff.data, n)
+
+
+def devotion(card, colors) -> int:
+    """The mana symbols of card's cost that are any of colors. A hybrid pip counts once if it has one of them;
+    the cost parser folds each hybrid pip into its first colour, so those are taken back out first."""
+    hybrid = getattr(card, "hybrid", ()) or ()
+    plain = sum(card.mana_cost.get(c, 0) - sum(pip[0] == c for pip in hybrid) for c in colors)
+    return plain + sum(any(c in pip for c in colors) for pip in hybrid)
 
 
 def choose(game, p, specs):
