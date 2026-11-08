@@ -305,12 +305,19 @@ def _parse_effects(text: str, opts: bool = False):
     return effects, unmatched
 
 
+_OTHER_SUBJECT = re.compile(r"(?:target (?:player|opponent)|that (?:player|opponent)|each (?:opponent|player)|"
+                            r"defending player|an opponent|the (?:chosen|defending) player)\b", re.I)
+_VERB_S = re.compile(r"(?!(?:its|this|is|has|was)\b)[a-z]+s\b", re.I)      # "mills ...": third person, no subject of its own
+
+
 def _split_compound(s: str):
     """Effects for "A, then B" / "A and B" when every part matches a template, else None."""
     for sep in (r",? then ", r" and "):
         pieces = re.split(sep, s, maxsplit=1, flags=re.I)
         if len(pieces) != 2:
             continue
+        if sep == r" and " and _OTHER_SUBJECT.match(pieces[0]) and _VERB_S.match(pieces[1]):
+            continue    # "Target player loses 2 life and mills two cards": the second verb is that player's too
         out = []
         for piece in pieces:
             effs, bad = _parse_effects(piece[0].upper() + piece[1:] + ".")
