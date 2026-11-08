@@ -94,15 +94,25 @@ def plan(game, p, eff):
             chosen.append([perm, need])
             left -= need
     if left > 0:
-        if scope == "any" and game.targetable(opp, p) and (len(chosen) < limit or not chosen):
+        if scope == "any" and _legal(game, p, opp) and (len(chosen) < limit or not chosen):
             chosen.append([opp, left])
         elif chosen:
             chosen[0][1] += left
         elif pool and limit:
             chosen.append([pool[0], left])
-        elif scope == "any":
+        elif scope == "any" and _legal(game, p, opp):
             chosen.append([opp, left])
     return chosen
+
+
+def _legal(game, p, victim) -> bool:
+    """Whether p may still target victim: a permanent must be on the battlefield and targetable, a
+    player must not have hexproof or shroud (CR 608.2b)."""
+    from .engine.state import Permanent
+    if isinstance(victim, Permanent):
+        return victim in victim.controller.battlefield and game.targetable(victim, p)
+    from .batch1_templates import player_targetable
+    return player_targetable(game, victim, p)
 
 
 def resolve(game, p, eff, target, item):
@@ -110,10 +120,8 @@ def resolve(game, p, eff, target, item):
     chosen = getattr(item, "divided", {}).get(id(eff)) if item is not None else None
     if chosen is None:
         chosen = plan(game, p, eff)          # not put on the stack through game.stack: choose now
-    from .engine.state import Permanent
     for victim, amount in chosen:
-        if isinstance(victim, Permanent) and (victim not in victim.controller.battlefield or
-                                               not game.targetable(victim, p)):
-            continue                          # an illegal target: its share is not dealt
+        if not _legal(game, p, victim):
+            continue                          # an illegal target (a player with new hexproof too): its share is not dealt
         game.deal_damage(victim, amount, by=p, cause=f"{getattr(src, 'name', None) or src.card.name}: damage",
                          source=src)

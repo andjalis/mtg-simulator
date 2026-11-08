@@ -90,5 +90,38 @@ class NamedActivationBan(unittest.TestCase):
         self.assertFalse(self.castable_abilities())
 
 
+class DividedDamageHexproof(unittest.TestCase):
+    def setUp(self):
+        self.g, self.a, self.b = new_game()
+
+    def cast_resolve(self, hexproof_after_cast):
+        item = StackItem(self.a, list(BOLT.spell_effects), [None], card=BOLT, name=BOLT.name)
+        self.g.stack.append(item)
+        if hexproof_after_cast:
+            self.g.enter_battlefield(self.b, AEGIS)
+        self.g.resolve_top()
+
+    def test_player_loses_nothing_after_gaining_hexproof(self):
+        self.cast_resolve(True)
+        self.assertEqual(self.b.life, 20)
+
+    def test_player_takes_share_without_hexproof(self):
+        self.cast_resolve(False)
+        self.assertEqual(self.b.life, 18)
+
+    def test_not_planned_against_hexproof_player(self):
+        self.g.enter_battlefield(self.b, AEGIS)
+        self.cast_resolve(False)
+        self.assertEqual(self.b.life, 20)
+
+    def test_permanent_share_still_lost_when_illegal(self):
+        bear = self.g.enter_battlefield(self.b, BEAR)
+        item = StackItem(self.a, list(BOLT.spell_effects), [None], card=BOLT, name=BOLT.name)
+        self.g.stack.append(item)
+        self.b.battlefield.remove(bear)
+        self.g.resolve_top()
+        self.assertEqual(bear.damage, 0)
+
+
 if __name__ == "__main__":
     unittest.main()
