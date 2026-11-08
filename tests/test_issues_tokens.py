@@ -8,7 +8,6 @@ from mtgsim.carddb import ALL_CARDS, CardDB
 from mtgsim.coverage import card_coverage
 from mtgsim.cx_tokens import parse_create
 from mtgsim.engine import Game, Player
-from mtgsim.engine.state import StackItem
 from tests.test_templates import card
 
 GOBLIN = card("Test Goblin", "{R}", "Creature — Goblin", "", 3, 1)
