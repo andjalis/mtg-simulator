@@ -123,5 +123,33 @@ class DividedDamageHexproof(unittest.TestCase):
         self.assertEqual(bear.damage, 0)
 
 
+class HexproofFromRecoloured(unittest.TestCase):
+    def setUp(self):
+        self.db = CardDB()
+        self.g, self.a, self.b = new_game()
+        self.knight = self.g.enter_battlefield(self.a, self.db.get("Knight of Grace"))   # hexproof from black
+        self.src = self.g.enter_battlefield(self.b, BEAR)
+        self.g.settle()
+
+    def test_green_source_may_target(self):
+        self.assertTrue(self.g.targetable(self.knight, self.b, self.src))
+
+    def test_layer5_black_source_may_not(self):
+        continuous.add(self.g, self.src, "set_colors", colors={"B"})
+        self.assertFalse(self.g.targetable(self.knight, self.b, self.src))
+        self.assertFalse(self.g.targetable(self.knight, self.b, StackItem(self.b, [], [], source=self.src)))
+
+    def test_black_source_turned_green_may(self):
+        black = self.g.enter_battlefield(self.b, self.db.get("Gray Merchant of Asphodel"))
+        self.assertFalse(self.g.targetable(self.knight, self.b, black))
+        continuous.add(self.g, black, "set_colors", colors={"G"})
+        self.assertTrue(self.g.targetable(self.knight, self.b, black))
+
+    def test_recolour_effect_via_color_override(self):
+        import dataclasses
+        self.src.card = dataclasses.replace(self.src.card, color_override=frozenset({"B"}))
+        self.assertFalse(self.g.targetable(self.knight, self.b, self.src))
+
+
 if __name__ == "__main__":
     unittest.main()
