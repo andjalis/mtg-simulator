@@ -44,13 +44,19 @@ class Parsing(unittest.TestCase):
 
     def test_rejects_what_it_cannot_execute(self):
         for s in ("Exile target creature until ~ leaves the battlefield.",         # linked exile
-                  "Destroy target creature unless its controller pays {2}.",       # condition (gcond)
                   "Destroy all lands or all creatures.",                           # a choice
                   "Destroy target creature that dealt damage this turn.",          # history
                   "Exile that creature.",                                          # back-reference round
                   "Destroy all creatures of the creature type of your choice.",
                   "Return target creature to its owner's hand until end of turn."):
             self.assertIsNone(parse_sentence(s), s)
+
+    def test_unless_riders_are_conditions(self):
+        for s, kind in (("Destroy target creature unless its controller pays {2}.", "destroy"),
+                        ("~ deals 2 damage to you unless you pay {1}.", "lose_life")):
+            effects = parse_sentence(s)
+            self.assertEqual([e.kind for e in effects], ["cx_unless", kind], s)
+            self.assertEqual(effects[1].cond, 'lib:["unless_unpaid"]', s)
 
 
 @unittest.skipUnless(DB_FILE.exists(), "card database not built")

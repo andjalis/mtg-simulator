@@ -37,7 +37,6 @@ class Parsing(unittest.TestCase):
                   "~ deals that much damage to you.",
                   "~ deals damage equal to its power to target creature.",
                   "~ deals 2 damage to each of two targets.",
-                  "~ deals 2 damage to you unless you pay {1}.",
                   "It deals 2 damage to target creature with flying.",           # "it" as another source, targeted
                   "~ deals X damage to each creature.",                          # X inside a group
                   "~ deals 2 damage to target creature and 1 damage to any other target.",
