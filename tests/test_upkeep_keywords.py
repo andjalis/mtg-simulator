@@ -5,7 +5,7 @@ import unittest
 
 from mtgsim.engine import Game, Player
 from tests.test_combat_triggers import Scripted
-from tests.test_templates import BEAR, FOREST, ISLAND, MOUNTAIN, PLAINS, card
+from tests.test_templates import BEAR, FOREST, ISLAND, MOUNTAIN, SWAMP, card
 
 MIST = card("Test Mist", "{2}{G}", "Creature — Elemental",
             "At the beginning of your upkeep, sacrifice ~ unless you pay {G}{G}.", 6, 2)
@@ -61,7 +61,7 @@ class UpkeepKeywords(unittest.TestCase):
         for c in (MIST, REMORA, RIFT, DERM, WORKER, SPIRIT, CRUSHER, GIANT, CUTTER, ARCHER, QUAKE):
             self.assertEqual(c.unsupported, [], c.name)
         self.assertEqual(STINGER.unsupported, [])
-        self.assertTrue(STINGER.approximations)
+        self.assertFalse(STINGER.approximations)
 
     def test_pay_or_sacrifice(self):
         mist = self.put(self.a, MIST)
@@ -139,11 +139,36 @@ class UpkeepKeywords(unittest.TestCase):
         self.assertIn(CUTTER, self.a.hand)
         self.assertFalse(any(x.card.name == CUTTER.name for x in self.a.battlefield))
 
+    def test_ai_unearths_and_attacks_with_haste(self):
+        """HeuristicAI unearths a creature from its graveyard in its main phase and attacks with it that turn."""
+        from mtgsim.carddb import CardDB
+        from mtgsim.ai import HeuristicAI
+        zombie = CardDB(offline=True).get("Dregscape Zombie")           # unearth {B}, 2/1
+        self.a.ai, self.b.ai = HeuristicAI(), HeuristicAI()             # the fixture's scripted AI never attacks
+        self.game.active_idx = 0
+        self.put(self.a, SWAMP, 1)
+        self.a.graveyard.append(zombie)
+        self.a.library = [ISLAND] * 20
+        life = self.b.life
+        self.game.take_turn(self.a)
+        self.assertEqual(self.b.life, life - zombie.power)               # it had haste
+        self.assertIn(zombie, self.a.exile)                              # exiled at the end step
+
+    def test_unearth_ignores_spell_cost_modifiers(self):
+        from mtgsim.carddb import CardDB
+        db = CardDB(offline=True)
+        zombie, thalia = db.get("Dregscape Zombie"), db.get("Thalia, Guardian of Thraben")
+        self.game.enter_battlefield(self.b, thalia)
+        self.a.graveyard.append(zombie)
+        option = next(o for o in self.game.spell_options(self.a) if self.game._origin(o)[1] == "unearth")
+        self.assertEqual(self.game.cost_of(self.a, option), {"generic": 0, "B": 1})      # unearth {B}: not a spell, no Thalia tax
+
     def test_unearth_from_graveyard_then_exile(self):
         self.game.active_idx = 0
         self.put(self.a, MOUNTAIN, 2)
         self.a.graveyard.append(STINGER)
         option = next(o for o in self.game.spell_options(self.a) if self.game._origin(o)[1] == "unearth")
+        self.assertTrue(option.is_ability)                   # an activated ability, not a spell
         self.assertTrue(self.game.cast(self.a, option))
         self.game.settle()
         perm = next(x for x in self.a.battlefield if x.card.name == STINGER.name)
@@ -152,13 +177,38 @@ class UpkeepKeywords(unittest.TestCase):
         self.assertIn(STINGER, self.a.exile)
         self.assertNotIn(STINGER, self.a.graveyard)
 
-    def test_madness_after_discard(self):
+    def test_madness_exiles_then_casts(self):
         self.game.active_idx = 0
-        self.put(self.a, PLAINS, 1)
+        self.put(self.a, SWAMP, 1)
         self.a.hand.append(HUNTER)
-        self.assertFalse(any(self.game._origin(o)[1] == "mayhem" for o in self.game.spell_options(self.a)))
         self.game.discard_card(self.a, HUNTER)
-        self.assertTrue(any(self.game._origin(o)[1] == "mayhem" for o in self.game.spell_options(self.a)))
+        self.assertIn(HUNTER, self.a.exile)
+        self.assertNotIn(HUNTER, self.a.graveyard)
+        self.game.settle()                       # the madness trigger: cast it for {B}
+        self.assertNotIn(HUNTER, self.a.exile)
+        self.assertIn(HUNTER.name, [x.card.name for x in self.a.battlefield])
+
+    def test_ai_hand_size_discard_triggers_madness(self):
+        """HeuristicAI discards its madness card to hand size at cleanup; the trigger casts it for {B}."""
+        from mtgsim.ai import HeuristicAI
+        self.a.ai = HeuristicAI()
+        self.game.active_idx = 0
+        self.put(self.a, SWAMP, 1)
+        mad = card("Test Madness Imp", "{4}{B}", "Creature — Imp", "Madness {B}", 1, 1)
+        self.a.hand = [mad] + [card(f"Bolt {i}", "{R}", "Instant", "~ deals 3 damage to any target.") for i in range(7)]
+        self.a.library = [ISLAND] * 20
+        self.game.take_turn(self.a)
+        self.assertEqual(len(self.a.hand), 7)
+        self.assertIn("Test Madness Imp", [x.card.name for x in self.a.battlefield])
+        self.assertNotIn(mad, self.a.graveyard)
+
+    def test_madness_unpaid_goes_to_graveyard(self):
+        self.game.active_idx = 0
+        self.a.hand.append(HUNTER)
+        self.game.discard_card(self.a, HUNTER)
+        self.game.settle()                       # no mana: not cast
+        self.assertIn(HUNTER, self.a.graveyard)
+        self.assertNotIn(HUNTER, self.a.exile)
 
     def test_prevention_shield(self):
         archer = self.put(self.a, ARCHER)

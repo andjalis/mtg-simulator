@@ -141,7 +141,7 @@ def activation_blocked(game, perm, *, mana=False):
 
 
 def mana_ability(act):
-    return bool(act.effects) and all(e.kind == 'add_mana' and e.target == 'none' for e in act.effects)
+    return bool(act.effects) and all(e.kind in ('add_mana', 'mana_restrict') and e.target == 'none' for e in act.effects)
 
 
 def life_locked(player):

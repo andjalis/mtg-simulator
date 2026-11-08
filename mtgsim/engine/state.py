@@ -6,7 +6,7 @@ import re
 
 from .. import auras, counting
 from ..cards import BASIC_MANA, KEYWORDS, CardDef, Effect, Trigger
-from .. import continuous, cx_static_combat
+from .. import continuous, cx_static_anthem, cx_static_combat, cx_static_cond
 from ..identity import CardInstance, CardZone, Graveyard, instance
 
 
@@ -52,6 +52,9 @@ class Counters(dict):
             from ..advanced_templates import counter_amount
             value = old + counter_amount(perm, key, value - old)
         super().__setitem__(key, value)
+        if key == "charge" and value != old:       # Spacecraft: a creature at its station threshold
+            from .. import continuous
+            continuous.refresh(perm)
         if key == "+1/+1" and value > old and perm in perm.controller.battlefield:
             game = getattr(perm.controller, "_game", None)
             if game is not None:
@@ -182,6 +185,7 @@ class Permanent:
         self.damaged_by: list = []                      # permanents that dealt it damage this turn
         self.prevent_next = 0                           # "prevent the next N damage ... this turn"
         self.detained_by = None                         # Player who detained it: no attack, block or activation until their turn
+        self.untap_locks: list = []                     # (source, duration, controller): "doesn't untap for as long as ..."
         self.skip_untap = 0                             # untap steps it skips ("doesn't untap during ... next untap step")
         self.spent_color = ""              # "if {U}{U} was spent to cast it"
         self.exiled_cards: list = []       # (card, owner) exiled until this leaves the battlefield
@@ -299,11 +303,7 @@ class Permanent:
                 bp += x.card.anthem_chosen[0]
                 bt += x.card.anthem_chosen[1]
             for sub, pp, tt, other in x.card.anthem_sub:
-                if creature and (sub in self.card.subtypes or (sub == "Token" and self.card.is_token)
-                                 or (sub == "Face-down" and self.hidden is not None)
-                                 or sub.startswith("color:") and sub[6:] in self.card.colors
-                                 or sub.startswith("type:") and sub[5:] in self.card.types) \
-                        and not (other and x is self):
+                if creature and cx_static_anthem.fits(self, sub) and not (other and x is self):
                     bp += pp
                     bt += tt
         for sub, pp, tt in self.controller.emblems:
@@ -483,6 +483,8 @@ class Permanent:
         if self.impending and self.counters.get("time"):
             return False
         if self.card.reconfigure and self.attached_to is not None:
+            return False
+        if "not_creature_if" in self.card.advanced_rules and cx_static_cond.not_creature(self):
             return False
         return "Creature" in self.card.types
 
@@ -781,7 +783,9 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
         return False
     from ..batch1_templates import block_restricted
     from ..cx_lures import pair_blocked
-    return not block_restricted(blocker, attacker) and not pair_blocked(blocker, attacker)
+    from ..cx_grammar_evasion import block_forbidden
+    return not block_restricted(blocker, attacker) and not pair_blocked(blocker, attacker) \
+        and not block_forbidden(blocker, attacker)
 
 
 

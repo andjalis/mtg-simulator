@@ -15,7 +15,8 @@ def group(game, p, item, eff, target, prev=None, **_):
     inners = _scaled(game, p, eff, item, prev)
     for victim in group_members(game, p, eff.data, source, target if eff.target == "player" else None):
         for inner in inners:
-            HANDLERS[inner.kind](game, p=p, eff=inner, target=victim, item=item, opp=game.opponent(p))
+            HANDLERS[inner.kind](game, p=p, eff=inner, target=victim, item=item, opp=game.opponent(p), prev=prev,
+                                 cause=f"cx_group: {inner.kind}", k=inner.kind, source=source)
 
 
 @kind("cx_color")
@@ -51,6 +52,14 @@ def _scaled(game, p, eff, item, prev):
         return inners
     n = game.x_quantity(p, eff.data["xq"], item, prev)
     return [dataclasses.replace(e, amount=e.amount * n, amount2=e.amount2 * n) for e in inners]
+
+
+@kind("cx_rule_turn")
+def rule_turn(game, eff, target, **_):
+    """A family rule on the target for this turn ("~ can't be blocked by Walls this turn"): cx_grammar.static_rules."""
+    if isinstance(target, Permanent) and target in target.controller.battlefield:
+        target.cx_rules_turn = [r for r in getattr(target, "cx_rules_turn", []) if r[0] == game.turn] + \
+            [(game.turn, eff.data["rule"], eff.data["value"])]
 
 
 def _load_families():

@@ -62,10 +62,11 @@ def _parse_effects(text: str, opts: bool = False):
         from ..emerge import parse_rider as emerge_rider
         from ..cx_shields import parse_rider as shield_rider
         from ..cx_delayed import parse_rider as delayed_rider
+        from ..cx_trig_watch import parse_rider as watch_rider
         if _cx_tokens.parse_rider(s, effects):
             continue
         if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects) or \
-                delayed_rider(s, effects):
+                delayed_rider(s, effects) or watch_rider(s, effects):
             continue
         if re.fullmatch(r"(?:it|they|those creatures|the creatures?|a creature destroyed this way) can't be "
                        r"regenerated(?:, of course)?", s, re.I) and effects and \
@@ -558,6 +559,8 @@ def _parse_face(data: dict) -> CardDef:
     triggers = [t for t in triggers if t.effects or t.modes]
     approximations += [note for rx, note in _SUB_NOTES if rx.search(oracle)]
 
+    if data.get("mana_cost") == "" and "Land" not in types:     # no mana cost at all (not {0}): CR 118.6
+        extra.setdefault("advanced_rules", {})["no_mana_cost"] = True
     return CardDef(
         name=name, mana_cost=cost, cmc=int(data.get("cmc", 0) or 0), types=types,
         subtypes=frozenset(type_line.split("—")[1].split()) if "—" in type_line else frozenset(),
@@ -588,13 +591,15 @@ def _mana_restriction(text: str):
     if m:
         return "x_cost" if m[1] == "x" else "c_cost"
     m = re.fullmatch(r"to cast (?:colorless )?(\w+) spells or activate abilities of (?:colorless )?(\w+)", text)
-    if m and m[2].rstrip("s") == m[1].rstrip("s"):         # Eldrazi Temple: spells only, its abilities are not paid
+    if m and m[2].rstrip("s") == m[1].rstrip("s") and "colorless" in text:   # Eldrazi Temple: spells only, its abilities are not paid
         word = m[1].rstrip("s").lower()
         return word if word in ("artifact", "creature") else "subtype:" + word.capitalize()
     m = re.fullmatch(r"to cast an? (\w+) spell(?: or an? (\w+) spell)?", text)
-    if m:
+    if m and not {*m.groups()} & {"multicolored", "monocolored", "colorless", "colored", "white", "blue", "black",
+                                  "red", "green"}:      # colour words go to the predicate parser (cx_abil_mana)
         return "subtype:" + "|".join(t.capitalize() for t in m.groups() if t)
-    return None
+    from ..cx_abil_mana import parse as general_restriction
+    return general_restriction(text)
 
 
 _SACRIFICE_KINDS = {"token", "artifact", "creature", "creature or artifact", "artifact or creature", "treasure",

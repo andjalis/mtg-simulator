@@ -113,6 +113,8 @@ def graveyard_variants(game, p, card) -> list:
     """Jump-start and escape casts of a graveyard card."""
     from .cards import AltCost
     out = []
+    from .cx_mech import beam_variants
+    out += beam_variants(game, p, card)
     for a in card.alt_costs:
         if a.kind == "jump_start" and len(p.hand) > 0:
             v = game._variant(card, "jump_start", AltCost("jump_start", dict(card.mana_cost)))

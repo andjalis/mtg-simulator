@@ -189,6 +189,109 @@ class DefaultAI(Base):
         self.assertIn(spell, self.a.hand)
 
 
+class QualifiedRemovalWordings(Base):
+    """Qualifiers the old core.json removal entries swallowed ("nonblack", "tapped", "an opponent controls") are
+    now read, and "exile" no longer destroys."""
+    def legal(self, text, perm):
+        spell = self.spell(text)
+        return self.game.legal_target(self.a, spell.spell_effects[0], perm)
+
+    def test_nonblack(self):
+        black = self.perm(card("Test Black", "{B}", "Creature — Zombie", "", 2, 2), self.b)
+        self.assertFalse(self.legal("Destroy target nonblack creature.", black))
+        self.assertTrue(self.legal("Destroy target nonblack creature.", self.perm(BEAR, self.b)))
+
+    def test_controller_and_tapped(self):
+        mine, theirs, untapped = self.perm(BEAR, self.a), self.perm(BEAR, self.b), self.perm(BEAR, self.b)
+        mine.tapped = theirs.tapped = True
+        text = "Destroy target tapped creature an opponent controls."
+        self.assertEqual([self.legal(text, x) for x in (mine, theirs, untapped)], [False, True, False])
+        self.assertFalse(self.legal("Exile target creature an opponent controls.", mine))
+        self.assertFalse(self.legal("~ deals 2 damage to target tapped creature an opponent controls.", mine))
+
+    def test_exile_does_not_destroy(self):
+        bear = self.perm(BEAR, self.b)
+        self.game.attackers.append(bear)
+        self.cast(self.spell("Exile target attacking or blocking creature."), [bear])
+        self.assertEqual([c.name for c in self.b.exile], [BEAR.name])
+        self.assertEqual(self.b.graveyard, [])
+
+    def test_artifact_or_enchantment_can_be_your_own(self):
+        rock = self.perm(ROCK, self.a)
+        self.assertTrue(self.legal("Destroy target artifact or enchantment.", rock))
+
+DIER = card("Test Dier", "{1}{B}", "Creature — Zombie", "When this creature dies, you gain 3 life.", 2, 2)
+ARTIST = card("Test Artist", "{1}{B}", "Creature — Vampire", "Whenever another creature dies, you gain 1 life.", 0, 1)
+
+
+class Library(Base):
+    """Putting a permanent into its owner's library never passes through the graveyard."""
+    def setUp(self):
+        super().setUp()
+        self.perm(ARTIST, self.a)
+        self.life = (self.a.life, self.b.life)
+
+    def tuck(self, text, victim):
+        self.cast(self.spell(text), [victim])
+        self.game.flush_triggers()
+        while self.game.stack:
+            self.game.resolve_top()
+
+    def assert_no_death(self):
+        self.assertEqual((self.a.life, self.b.life), self.life)
+        self.assertEqual(self.b.graveyard, [])
+
+    def test_top_fires_no_dies_triggers(self):
+        dier = self.perm(DIER, self.b)
+        self.tuck("Put target creature on top of its owner's library.", dier)          # the old tuck_top kind
+        self.assertIs(self.b.library[-1], dier.front)
+        self.assert_no_death()
+
+    def test_grammar_top_bottom_and_shuffle(self):
+        land, dier, other = self.perm(HILL, self.b), self.perm(DIER, self.b), self.perm(DIER, self.b)
+        self.tuck("Put target land on top of its owner's library.", land)
+        self.assertIs(self.b.library[-1], land.front)
+        self.tuck("Put target nonland permanent on the bottom of its owner's library.", dier)
+        self.assertIs(self.b.library[0], dier.front)
+        self.tuck("Shuffle target creature into its owner's library.", other)
+        self.assertIn(other.front, self.b.library)
+        self.assertEqual(len(self.b.library), 23)
+        self.assert_no_death()
+
+    def test_stolen_permanent_goes_to_its_owners_library(self):
+        dier = self.perm(DIER, self.b)
+        self.b.battlefield.remove(dier)
+        dier.controller = self.a
+        self.a.battlefield.append(dier)
+        self.tuck("Put target creature on top of its owner's library.", dier)
+        self.assertIs(self.b.library[-1], dier.front)
+        self.assertNotIn(dier.front, self.a.library)
+
+    def test_token_ceases_to_exist(self):
+        token = self.perm(dataclasses.replace(DIER, is_token=True), self.b)
+        self.tuck("Put target nonland permanent on the bottom of its owner's library.", token)
+        self.assertNotIn(token, self.b.battlefield)
+        self.assertEqual(len(self.b.library), 20)
+        self.assert_no_death()
+
+    def test_group_to_the_bottom(self):
+        mine, theirs = self.perm(BEAR, self.a), self.perm(DIER, self.b)
+        self.cast(self.spell("Put all creatures on the bottom of their owners' libraries.", "Sorcery"))
+        self.assertEqual((self.a.library[0].name, self.b.library[0].name), (BEAR.name, DIER.name))
+        self.assertNotIn(mine, self.a.battlefield)
+        self.assertNotIn(theirs, self.b.battlefield)
+
+    def test_ai_tucks_the_opponents_permanent(self):
+        mine, theirs = self.perm(BEAR, self.a), self.perm(BEAR, self.b)
+        spell = card("Test Spell", "{U}", "Sorcery", "Put target nonland permanent on the bottom of its owner's library.")
+        self.perm(ISLAND, self.a)
+        self.a.hand = [spell]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertNotIn(spell, self.a.hand)
+        self.assertIn(mine, self.a.battlefield)
+        self.assertNotIn(theirs, self.b.battlefield)
+
+
 class GraveyardCards(Base):
     """Cards moved out of an exact graveyard by a card noun phrase."""
     def test_parsing(self):

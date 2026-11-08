@@ -54,11 +54,8 @@ def parse_line(line: str, st) -> bool:
         from .cards.model import AltCost
         kind = m[1].lower()
         st.alt_costs.append(
-            AltCost("mayhem" if kind == "madness" else kind, parse_mana_cost(m[2]),
-                    zone="hand" if kind == "dash" else "graveyard"))
-        if kind != "dash":
-            st.approximations.append(
-                "unearth is cast like a spell" if kind == "unearth" else "madness: cast from the graveyard this turn")
+            AltCost(kind, parse_mana_cost(m[2]),
+                    zone="hand" if kind == "dash" else "exile" if kind == "madness" else "graveyard"))
         return True
     m = re.fullmatch(r"Afflict (\d+)", line)
     if m:
