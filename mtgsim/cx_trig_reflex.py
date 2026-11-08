@@ -36,3 +36,13 @@ def parse_reflex(s: str, following: str):
         return None         # dice and mana abilities have their own handling (dungeon_mechanics, mana abilities)
     return ([Effect("link_start", data={"kinds": kinds, "forced": forced})]
             + [dataclasses.replace(e, cond=TAKEN) for e in new] + [Effect("link_check")])
+
+
+def late_target(eff):
+    """A reflexive payoff that targets ("When you do, tap target creature") is a new trigger: its target is chosen
+    when the action is done, so the effect is wrapped, untargeted at cast, and picks its target at resolution."""
+    from .cards import Effect
+    from .engine.state import TARGETED
+    if eff.target not in TARGETED:
+        return eff
+    return Effect("reflex_late", target="none", cond=eff.cond, data={"inner": dataclasses.replace(eff, cond="")})

@@ -42,5 +42,38 @@ class DayNightTransformOnly(unittest.TestCase):
         self.assertEqual(perm.card.name, "B")
 
 
+class ReflexiveTargetAfterAction(unittest.TestCase):
+    """#250: a reflexive "When you do" payoff picks its target after the action, not at cast."""
+
+    def setUp(self):
+        from tests.test_combat_triggers import Scripted
+        self.card = CardDB().get("Faebloom Trick")
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 10
+
+    def test_payoff_is_untargeted_at_cast(self):
+        from mtgsim.engine import TARGETED
+        self.assertEqual(self.card.unsupported, [])
+        self.assertFalse([e for e in self.card.spell_effects if e.target in TARGETED])
+        self.assertTrue(any(e.kind == "reflex_late" for e in self.card.spell_effects))
+
+    def test_target_chosen_after_the_action(self):
+        victim = self.game.enter_battlefield(self.b, BEAR)
+        victim.tapped = False
+        self.game.cast_free(self.a, self.card)
+        self.game.settle()
+        self.assertTrue(victim.tapped)
+        self.assertEqual(sum(1 for x in self.a.battlefield if x.card.is_token), 2)
+
+    def test_no_legal_target_still_does_the_action(self):
+        self.game.cast_free(self.a, self.card)               # no creature to tap: the payoff just does nothing
+        self.game.settle()
+        self.assertEqual(sum(1 for x in self.a.battlefield if x.card.is_token), 2)
+
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -248,10 +248,11 @@ def _parse_effects(text: str, opts: bool = False):
                     unmatched.append(sentence.strip())
                 continue
         first = len(effects)
-        paid = False
+        paid = reflexive = False
         if gated:
             g = re.fullmatch(r"(?:if you do|when you do), (.+)", s, re.I)
             if g:
+                reflexive = s.lower().startswith("when you do")
                 s, paid = g[1], True
             g = re.fullmatch(r"if you don't, (.+)", s, re.I)
             if g:      # the "you may" above is always taken (Game.pay_gate_cost), so !paid never fires
@@ -285,6 +286,9 @@ def _parse_effects(text: str, opts: bool = False):
         if paid:
             for eff in effects[first:]:
                 eff.cond = eff.cond or "paid"
+            if reflexive:        # "When you do, <target ...>": the payoff's target is chosen after the action
+                from ..cx_trig_reflex import late_target
+                effects[first:] = [late_target(e) for e in effects[first:]]
         for eff in effects[first:]:
             if eff.data.get("unparsed_token_keywords"):
                 unmatched.append("Unsupported token keywords: " + ", ".join(eff.data["unparsed_token_keywords"]))
