@@ -108,7 +108,15 @@ For "for each <thing>" and ", where X is …", the core sets `data["xq"]`. `Game
 sentence is accepted only if some Effect's kind is in `_SCALED` or carries `data["scales"] = True`. Set
 `scales` on Parts whose amount is a count.
 
-**Static lines** (`duration == "static"`): only three Part kinds mean something. `pump` becomes an anthem (group)
+**Family rules** (any meaning the engine reads at a check, such as who can block whom): return
+`Part("cx_static", data={"rule": name, "value": v})` for a static line. The core records it on the card, as
+`advanced_rules[name]` for "~ …", `[name + "@host"]` for "enchanted / equipped creature …", or
+`[name + "@group"]` as `(group spec, v)` for a group. For "this turn", return `Part("cx_rule_turn", data={"rule":
+name, "value": v})`, which is kept on the target for the turn. Your engine check then reads every value that
+applies to a permanent with `cx_grammar.static_rules(game, perm, name)` (see `cx_grammar_evasion.block_forbidden`,
+which `engine/state.can_block` asks).
+
+**Static lines** (`duration == "static"`): apart from `cx_static`, only three Part kinds mean something. `pump` becomes an anthem (group)
 or the attachment's bonus (host). `grant` with `data["keyword"]`, and `cx_temp_kw` with `data["keywords"]`, become
 a static keyword grant. Any other kind makes the line unsupported. A static verb must accept
 `clause.duration == "static"` explicitly.

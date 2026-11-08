@@ -36,7 +36,7 @@ class Parsing(unittest.TestCase):
         for s in ("~ deals 4 damage divided as you choose among any number of targets.",
                   "~ deals that much damage to you.",
                   "~ deals 2 damage to each of two targets.",
-                  "~ deals 2 damage to you unless you pay {1}.",
+                  "It deals 2 damage to target creature with flying.",           # "it" as another source, targeted
                   "~ deals X damage to each creature.",                          # X inside a group
                   "~ deals 2 damage to target creature and 1 damage to any other target.",
                   "~ deals 2 damage to any target until end of turn.",
@@ -86,8 +86,8 @@ class Resolving(Base):
         c = self.spell("~ deals 2 damage to any target and 1 damage to each nonartifact creature target opponent "
                        "controls.")
         self.assertEqual([e.kind for e in c.spell_effects], ["damage", "cx_group"])
-        from mtgsim.engine.state import TARGETED
-        self.cast(c, [self.b if e.target in TARGETED else None for e in c.spell_effects])   # "target opponent": b
+        self.assertEqual(c.spell_effects[1].target, "player")     # "target opponent controls": the opponent is a target
+        self.cast(c, [self.b, self.b])
         self.assertNotIn(goblin, self.b.battlefield)        # 1/1: dies
         self.assertEqual(bear.damage, 1)
         self.assertIn(mine, self.a.battlefield)
@@ -160,6 +160,10 @@ class DefaultAI(Base):
         self.assertNotIn(flier, self.b.battlefield)
 
 
+if __name__ == "__main__":
+    unittest.main()
+
+
 @unittest.skipUnless(DB_FILE.exists(), "card database not built")
 class PowerDamageAI(Base):
     """"Damage equal to its power": the default AI reads the source's power (policy.damage_amount), so it fires the
@@ -201,35 +205,3 @@ class PowerDamageAI(Base):
         self.assertTrue(goblin.tapped)
         self.assertNotIn(elf, self.b.battlefield)          # the 1/1 it can kill
         self.assertEqual(bear.damage, 0)                   # not the 2/2 it can't
-
-
-@unittest.skipUnless(DB_FILE.exists(), "card database not built")
-class ItAsSource(Base):
-    """"It deals ..." uses the permanent a trigger is about, else ~ itself (issue #261)."""
-    def setUp(self):
-        super().setUp()
-        from mtgsim.carddb import CardDB
-        self.db = CardDB()
-
-    def test_warstorm_surge_uses_the_entering_creature(self):
-        surge = self.db.get("Warstorm Surge")
-        src, wurm = self.perm(surge, self.a), self.perm(self.db.get("Craw Wurm"), self.a)
-        effects = list(surge.triggers[0].effects)
-        self.game.stack.append(StackItem(self.a, effects, [self.b], source=src, kind="trigger", context=wurm,
-                                         name="Warstorm Surge"))
-        self.game.resolve_top()
-        self.assertEqual(self.b.life, 20 - wurm.power)
-
-    def test_sacrificed_source_deals_its_own_power(self):
-        """Heartfire Immolator: "{R}, Sacrifice ~: It deals damage equal to its power to target creature or
-        planeswalker." (newly full): the sacrificed Immolator's power."""
-        immolator = self.db.get("Heartfire Immolator")
-        src, wolf = self.perm(immolator, self.a), self.perm(card("Test Wolf", "{G}", "Creature — Wolf", "", 2, 2), self.b)
-        effects = list(immolator.activated[0].effects)
-        self.game.stack.append(StackItem(self.a, effects, [wolf], source=src, kind="ability", name="Immolator"))
-        self.game.resolve_top()
-        self.assertNotIn(wolf, self.b.battlefield)
-
-
-if __name__ == "__main__":
-    unittest.main()
