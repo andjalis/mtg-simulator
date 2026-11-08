@@ -109,6 +109,18 @@ def deals(m, clause):
     return None if any(p is None for p in parts) else parts
 
 
+@verb(r"deals? damage equal to its power to (.+)", heads=("deal", "deals"), subjects=("permanent", "host"))
+def deals_power(m, clause):
+    """"~ deals damage equal to its power to target creature", "That creature deals damage equal to its power to ~":
+    "its" is the source's power when the damage is dealt."""
+    source = _source(clause)
+    if clause.duration or source is None or re.search(r"\b(?:divided|each of|unless|instead|and \w+ damage)\b",
+                                                      m[1]):
+        return None
+    part = _part(0, {"source_power": True}, _object(m[1], source), source, False)
+    return None if part is None else [part]
+
+
 @ai_value("cx_damage", "damage")
 def _damage_value(game, me, eff, obj):
     """One recipient of grammar damage (a group member or a named player): a creature it kills is worth the creature,

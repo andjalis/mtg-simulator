@@ -1208,22 +1208,23 @@ class HeuristicAI:
     def best_damage_target(self, game: Game, me: Player, eff: Effect, card: CardDef, precombat: bool):
         """(target, value) for a damage effect, or (None, 0) to hold the spell."""
         opp = game.opponent(me)
+        amount = engine.damage_amount(game, eff)
         face = None
         if eff.target in ("any", "player"):
-            face = self.face_value(game, me, eff.amount, extra_reach=face_burn(card))
+            face = self.face_value(game, me, amount, extra_reach=face_burn(card))
             if face >= LETHAL:
                 return opp, face
         best_kill, kill_val = None, 0.0
         if eff.target in CREATURE_TARGETS:
             for c in opp.creatures:
-                if c.toughness - c.damage <= eff.amount and _legal(game, me, eff, c, card) \
+                if c.toughness - c.damage <= amount and _legal(game, me, eff, c, card) \
                         and not c.has("indestructible"):
                     v = perm_value(c) + 0.5
                     if v > kill_val:
                         best_kill, kill_val = c, v
         if eff.target in ("any", "creature_pw") or eff.data.get("or_pw"):
             for pw in getattr(opp, "planeswalkers", []):
-                if not pw.is_creature and pw.loyalty <= eff.amount and _legal(game, me, eff, pw, card):
+                if not pw.is_creature and pw.loyalty <= amount and _legal(game, me, eff, pw, card):
                     v = perm_value(pw) + 0.5
                     if v > kill_val:
                         best_kill, kill_val = pw, v
@@ -1575,7 +1576,7 @@ class HeuristicAI:
         for e in effects:
             if e.kind in ("destroy", "exile_permanent", "bounce", "damage", "debuff_one") and e.target in engine.TARGETED:
                 tgt = engine.default_choose_target(game, me, e)
-                if isinstance(tgt, Permanent) and (e.kind != "damage" or tgt.toughness - tgt.damage <= e.amount):
+                if isinstance(tgt, Permanent) and (e.kind != "damage" or tgt.toughness - tgt.damage <= engine.damage_amount(game, e)):
                     gone.add(tgt)
             elif e.kind == "wrath":
                 gone |= set(opp.creatures)
