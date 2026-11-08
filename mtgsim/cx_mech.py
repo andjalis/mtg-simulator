@@ -204,8 +204,8 @@ def resolve_recover(game, item) -> None:
     if card not in grave or (version is not None and hasattr(grave, "version") and grave.version(card) != version):
         return
     cost = next(a.cost for a in card.alt_costs if a.kind == "recover")
-    # "You may pay": the AI declines (the card is exiled) when recovering costs more than the card did.
-    if sum(cost.values()) <= max(card.cmc, 1) and payable(game.mana_sources(owner), cost) and game.pay(owner, cost, spell="ability") is not None:
+    # "You may pay": the AI declines (the card is exiled) when recovering costs more than twice the card plus one.
+    if sum(cost.values()) <= 2 * max(card.cmc, 1) + 1 and payable(game.mana_sources(owner), cost) and game.pay(owner, cost, spell="ability") is not None:
         game.move_card(card, grave, owner.hand, reason="recover")
         game.log(f"recovers {card.name}", owner)
     else:
