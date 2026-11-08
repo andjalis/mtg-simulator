@@ -174,7 +174,7 @@ class TurnsMixin:
             if self.over or card not in p.graveyard:
                 continue
             for idx in range(len(card.gy_activated)):
-                if self.activate_graveyard(p, card, idx):
+                if graveyard.worth(self, p, card, idx) and self.activate_graveyard(p, card, idx):
                     break
             if card not in p.graveyard:
                 continue
@@ -245,11 +245,21 @@ class TurnsMixin:
                 self.draw(p)
             self.settle()
 
+    @staticmethod
+    def untap_locked(perm) -> bool:
+        """Whether a recorded tap-lock still holds on perm; locks whose condition ended are dropped."""
+        live = [(src, dur, ctrl) for src, dur, ctrl in perm.untap_locks
+                if src in src.controller.battlefield and
+                (dur != "tapped" or src.tapped) and (dur != "controlled" or src.controller is ctrl)]
+        perm.untap_locks = live
+        return bool(live)
+
     def untap_step(self, p: Player):
         """The controller's untap step: untap everything except permanents that skip it, are
         stunned, block their own untap, or whose controller recorded a "choose not to untap"
         choice (perm.stay_tapped)."""
         from ..phasing import phasing_untap
+        from .. import cx_grammar
         phasing_untap(self, p)
         for perm in self.opponent(p).battlefield:
             if perm.card.untap_each_untap and perm.tapped:
@@ -268,10 +278,14 @@ class TurnsMixin:
                 # "You may choose not to untap ~ during your untap step" (~40 cards, e.g. Amber
                 # Prison): the recorded choice (perm.stay_tapped) is consumed by this untap step.
                 perm.stay_tapped = False
+            elif perm.tapped and perm.untap_locks and self.untap_locked(perm):
+                pass                        # a tap-lock whose condition still holds (Amber Prison, Icefall Regent, ...)
             elif perm.tapped and perm.auras and auras.blocks_untap(perm):
                 pass
             elif perm.tapped and perm.card.no_untap:
                 pass                        # "~ doesn't untap during your untap step."
+            elif perm.tapped and cx_grammar.static_rules(self, perm, "cx_no_untap"):
+                pass                        # "Islands don't untap during their controllers' untap steps." (grammar)
             elif perm.tapped and storage.keeps_tapped(self, p, perm):
                 pass                        # a storage land kept tapped to bank a counter
             else:
@@ -301,6 +315,8 @@ class TurnsMixin:
         from ..advanced_templates import begin_turn
         begin_turn(self, p)
         self.step = "untap"
+        from ..day_night import begin_turn as day_night_turn
+        day_night_turn(self, p)
         for pl in self.players:
             for x in pl.battlefield:
                 if x.detained_by is p:
@@ -391,6 +407,8 @@ class TurnsMixin:
                 and not player_flag(self, p, 'no_max_hand'):
             card = p.ai.choose_discard(self, p)
             self.discard_card(p, card)
+        if self.pending:
+            self.settle()           # triggers from the cleanup discard (madness) get priority before the turn ends
         for perm in p.battlefield + opp.battlefield:
             perm.damage = 0
             perm.deathtouched = False
@@ -398,6 +416,7 @@ class TurnsMixin:
             perm.temp_kw.clear()
             perm.temp_triggers.clear()
             perm.temp_activated.clear()
+            perm.temp_min_blocker = 0
             perm.adapt_exceptions = 0
             perm.regeneration_shields = 0
             perm.prevent_next = 0

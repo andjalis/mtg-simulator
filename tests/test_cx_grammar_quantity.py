@@ -14,7 +14,8 @@ TRINKET = card("Test Trinket", "{1}", "Artifact", "", cmc=1)
 
 class Parsing(unittest.TestCase):
     def test_specs(self):
-        self.assertEqual(_xq("your devotion to white and black"), ("cxq", "devotion", "WB"))
+        # devotion is read by the fixed _xq table on main (cx_static_cond's devotion quantity) before this fallback
+        self.assertEqual(_xq("your devotion to white and black"), ("devotion", ("B", "W")))
         self.assertEqual(_xq("the number of creatures that died this turn"), ("cxq", "hist", "a creature dies"))
         self.assertEqual(_xq("the number of cards named ~ in all graveyards"), ("cxq", "cards", "all_gy", None))
         self.assertEqual(_xq("half your life total, rounded up"), ("cxq", "half", ("life",), True))

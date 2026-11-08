@@ -264,10 +264,13 @@ def subject(text: str):
         return Subject("permanent", target="self", text=text)
     if low in ("it", "that creature", "that permanent"):
         return Subject("permanent", target="prev", text=text)
-    m = re.fullmatch(r"creatures target (player|opponent) controls", low)
-    if m:
-        return Subject("group", target="player", data={"filter": "opp"} if m[1] == "opponent" else {},
-                       group={"selector": {"types_all": ["creature"]}}, text=text)
+    m = re.fullmatch(r"(?:(each|all) )?(.+) target (player|opponent) controls", text, re.I)
+    if m:           # "creatures target player controls", "each nonartifact creature target opponent controls"
+        noun = _noun(m[2], plural=not (m[1] and m[1].lower() == "each"))
+        if noun is None or "controller" in noun.get("selector", {}) or "you control" in m[2].lower():
+            return None
+        return Subject("group", target="player", data={"filter": "opp"} if m[3].lower() == "opponent" else {},
+                       group=noun, text=text)
     m = re.fullmatch(r"(?:(up to) )?(?:(a|one|two|three|four|five) )?(other |another )?target (.+?)( each)?", text, re.I)
     if m and not (m[1] and not m[2]):
         n = _NUMBER[m[2].lower()] if m[2] else 1
@@ -328,7 +331,7 @@ def _split(s: str):
 def parse_sentence(s: str):
     """Effects for one whole sentence, or None."""
     s = s.strip().rstrip(".").strip()
-    s = re.sub(r"^(?:then |you may have |have )", "", s, flags=re.I)
+    s = re.sub(r"^(?:then |have )", "", s, flags=re.I)     # "have": the outer "you may" recursion keeps the choice
     _load()
     for rx, fn, _ in RIDERS:
         m = rx.fullmatch(s)
@@ -370,6 +373,9 @@ _HELPS = ("pump", "grant", "gain_life", "draw", "cx_set_base")
 
 def side(effects) -> str:
     """Whose side a chosen player should be on: "mine" when the effects only help, else "theirs"."""
+    kinds = [e.kind for e in effects]
+    if kinds and kinds[0] == "draw" and set(kinds) <= {"draw", "discard", "discard_random"}:
+        return "mine"           # "draws two cards, then discards a card": card selection, wanted by its controller
     hurt = any(e.kind not in _HELPS or e.data.get("side") == "theirs" for e in effects)
     return "theirs" if hurt else "mine"
 
@@ -380,18 +386,22 @@ def assemble(subj: Subject, parts: list):
         return None
     if subj.kind == "group":
         inner = [_effect(p.kind, p.amount, p.amount2, target="self", data=p.data) for p in parts]
-        data = dict(subj.data, group=subj.group, effects=inner)
+        data = dict(subj.data, group=subj.group, effects=inner, **_x_flag(parts))
+        flt = data.pop("filter", "")
         if subj.target == "player":         # "creatures target player controls": the AI picks the player by side
-            data["side"] = side(inner)
-        return [_effect("cx_group", target=subj.target, data=data)]
+            data["side"] = "theirs" if flt == "opp" else side(inner)
+        return [_effect("cx_group", target=subj.target, filter=flt, data=data)]
     if subj.kind == "player":
         inner = [_effect(p.kind, p.amount, p.amount2, target="that_controller", data=p.data) for p in parts]
+        if subj.who == "target" and subj.data.get("filter") == "opp":   # the only choice, whatever the verbs do
+            return [_effect("cx_players", target="player", filter="opp",
+                            data={"who": "target", "side": "theirs", "effects": inner, **_x_flag(parts)})]
         if subj.who == "target":
-            if len({side([e]) for e in inner}) > 1:
+            if side(inner) == "theirs" and any(side([e]) == "mine" for e in inner):
                 return None         # helps and hurts: which player the controller wants isn't clear
             return [_effect("cx_players", target="player", filter=subj.data.get("filter", ""),
-                            data={"who": "target", "side": side(inner), "effects": inner})]
-        return [_effect("cx_players", data={"who": subj.who, "effects": inner})]
+                            data={"who": "target", "side": side(inner), "effects": inner, **_x_flag(parts)})]
+        return [_effect("cx_players", data={"who": subj.who, "effects": inner, **_x_flag(parts)})]
     if subj.kind == "imperative" and any(p.obj is None for p in parts):
         return None             # an imperative verb names its own object
     out = []
@@ -415,6 +425,12 @@ def assemble(subj: Subject, parts: list):
     return out
 
 
+def _x_flag(parts) -> dict:
+    """{"x": True} when an inner Part's amount is the X paid: the wrapper then carries it, so the AI sizes X and
+    Game.resolve puts X in the wrapper's amount, which cx_group / cx_players hand to those Parts."""
+    return {"x": True} if any(p.data.get("x") for p in parts) else {}
+
+
 def _place(p: Part, obj: Subject, subj: Subject):
     """Effects for a Part with its own object; the clause subject (if any) goes in data["source"]."""
     data = dict(p.data)
@@ -423,13 +439,17 @@ def _place(p: Part, obj: Subject, subj: Subject):
     if obj.kind == "group":
         inner = [_effect(p.kind, p.amount, p.amount2, target="self", data=data)]
         gdata = dict(obj.data, group=obj.group, effects=inner)
+        flt = gdata.pop("filter", "")
         if obj.target == "player":
-            gdata["side"] = side(inner)
-        return [_effect("cx_group", target=obj.target, data=gdata)]
+            gdata["side"] = "theirs" if flt == "opp" else side(inner)
+        return [_effect("cx_group", target=obj.target, filter=flt, data=gdata)]
     if obj.kind == "player" and obj.who != "target":
         return [_effect(p.kind, p.amount, p.amount2, data=dict(data, who=obj.who))]
     if obj.kind == "host":
         return [_effect(p.kind, p.amount, p.amount2, target="host", data=data)]
+    if obj.kind == "player" and "side" not in data:     # a target player: the AI picks one by side
+        flt = obj.data.get("filter", "")
+        data["side"] = "theirs" if flt == "opp" else side([_effect(p.kind, data=data)])
     return [_effect(p.kind, p.amount, p.amount2, target=obj.target, filter=obj.data.get("filter", ""),
                     data=dict({k: v for k, v in obj.data.items() if k != "filter"}, **data))
             for _ in range(obj.copies)]
@@ -469,6 +489,8 @@ def _count_spec(desc: str):
         spec = _xq("the number of " + " ".join(words[:i] + [many] + words[i + 1:]))
         if spec is None:
             continue
+        # the plural we made up names a thing: use the word as written ("soot counter": counters are stored "soot")
+        spec = tuple(w.lower() if isinstance(v, str) and v.lower() == many.lower() else v for v in spec)
         if spec[0] == "count" and isinstance(spec[1], str):
             # _xq singularises with a plain trailing "s" ("Elves" -> "Elve"): name the thing as written instead.
             head = " ".join(words[:i + 1])
@@ -480,6 +502,10 @@ def _count_spec(desc: str):
 
 def parse_fallback(s: str, effects: list) -> bool:
     """The _parse_effects hook: append the sentence's effects and return True, or return False."""
+    if re.fullmatch(r"(?:it's|it is) still an? (land|planeswalker)\.?", s.strip(), re.I) and effects \
+            and effects[-1].kind == "cx_animate" and not effects[-1].data.get("addition"):
+        effects[-1] = dataclasses.replace(effects[-1], data=dict(effects[-1].data, still=s.split()[-1].rstrip(".").capitalize()))
+        return True         # "~ becomes a 2/2 artifact creature until end of turn. It's still a land."
     new = parse_sentence(s)
     if not new:
         return False
@@ -494,20 +520,38 @@ def parse_static(line: str, st) -> bool:
     restriction, recorded where the engine reads them: advanced_rules["anthems"] and static_keyword_grants for a
     group, equip_bonus / equip_keywords for the host. Returns True when the line is consumed."""
     s = line.strip()
-    if not s.endswith(".") or re.search(r'[:"]|\b(?:until|this turn|as long as|during|if(?! able)|for each|where|except)\b',
-                                        s, re.I):
-        return False
+    if not s.endswith(".") or re.search(r'[:"]|\b(?:until|this turn|as long as|if(?! able)|for each|where|except)\b',
+                                        s, re.I) or re.search(r"(?:^|, |— )during\b", s, re.I):
+        return False            # conditions and durations ("During your turn, ...") are other lanes' statics
     s = re.sub(r"^[A-Z][\w' ,-]* — ", "", s[:-1])        # an ability word
     split = _split(s)
     if split is None:
         return False
     subj = subject(split[0])
-    if subj is None or subj.kind not in ("group", "host") or subj.target != "none" and subj.kind == "group":
+    if subj is None or subj.kind not in ("group", "host", "permanent") or subj.target != "none" and subj.kind == "group" \
+            or subj.kind == "permanent" and subj.target != "self":
         return False
     parts = _clauses(split[1], subj, "static")
-    if parts is None or any(p.kind not in ("pump", "grant", "cx_temp_kw") for p in parts) \
+    if parts is None or any(p.kind not in ("pump", "grant", "cx_temp_kw", "cx_static") for p in parts) \
             or sum(p.kind == "pump" for p in parts) > 1:
         return False
+    if subj.kind == "permanent" and any(p.kind != "cx_static" for p in parts):
+        return False            # "~ gets +1/+1" and "~ has flying" are other parsers' lines
+    if subj.kind == "group" and any(p.kind == "cx_static" for p in parts) and _stat_conditioned(
+            subj.group["selector"] if "selector" in subj.group else subj.group):
+        return False
+    rules = st.extra.setdefault("advanced_rules", {})
+    for p in [p for p in parts if p.kind == "cx_static"]:       # a rule a family reads with static_rules()
+        key = p.data["rule"] + {"permanent": "", "host": "@host", "group": "@group"}[subj.kind]
+        if subj.kind == "host" and (subj.text.lower().startswith("equipped") and "Equipment" not in st.type_line
+                                    or subj.text.lower().startswith("enchanted") and not st.extra.get("aura")):
+            return False
+        value = (dict(subj.group["selector"]) if "selector" in subj.group else dict(subj.group), p.data["value"]) \
+            if subj.kind == "group" else p.data["value"]
+        rules[key] = tuple(rules.get(key, ())) + (value,)
+    parts = [p for p in parts if p.kind != "cx_static"]
+    if not parts:
+        return True
     kws = tuple(k for p in parts if p.kind != "pump"
                 for k in ([p.data["keyword"]] if p.kind == "grant" else sorted(p.data["keywords"])))
     pt = next(((p.amount, p.amount2) for p in parts if p.kind == "pump"), None)
@@ -554,6 +598,90 @@ def _condition_keywords(spec) -> set:
         desc = _desc(spec["cx_desc"], spec["plural"])
         return {w[1] for w in desc["with"] if w[0] in ("kw", "nokw")} if desc else set()
     return set()
+
+
+# ---------------------------------------------------------------- AI values
+
+AI_VALUES: dict = {}
+
+
+def ai_value(*kinds):
+    """Register how good one inner effect of a grammar group / player effect is for the AI:
+    ``@ai_value("destroy")`` on ``fn(game, me, eff, obj) -> float``. obj is a group member (Permanent) or a named
+    player (Player); return the value for ``me`` (positive good, signed by whose obj is). HeuristicAI sums it over
+    a cx_group's members or a cx_players's players and casts above a sweep bar."""
+    def register(fn):
+        for k in kinds:
+            AI_VALUES[k] = fn
+        return fn
+    return register
+
+
+_COMBAT = ("pump", "grant", "cx_lose_kw", "cx_temp_kw")
+
+
+def member_value(game, me, eff, obj):
+    """(value for me, combat_only) of one inner effect on one member or player: a registered ai_value, else the
+    built-in values for the core families."""
+    from .ai import life_value, perm_value
+    from .engine.state import Permanent
+    _load()
+    fn = AI_VALUES.get(eff.kind)
+    if fn is not None:
+        return fn(game, me, eff, obj), False
+    mine = getattr(obj, "controller", obj) is me
+    sign = 1.0 if mine else -1.0
+    a, b = eff.amount, eff.amount2
+    if isinstance(obj, Permanent):
+        if not obj.is_creature:
+            return 0.0, False
+        if eff.kind == "debuff_one":
+            if obj.toughness - obj.damage <= b and not obj.has("indestructible"):
+                return -sign * (perm_value(obj) + 1), False            # it dies
+            return -sign * 0.3 * a, False
+        if eff.kind == "cx_set_base":
+            return sign * 0.5 * ((a - obj.power) + (b - obj.toughness)), False
+        if eff.kind in _COMBAT:
+            helps = eff.kind in ("pump", "grant") or eff.data.get("side") == "mine"
+            if helps and mine and obj.can_attack():
+                return 0.5 * (a + (1 if eff.kind != "pump" else 0)), True
+            if not helps and not mine:
+                return 0.4, True
+            return 0.0, True
+        return 0.0, False
+    if eff.kind == "draw":
+        return sign * 1.5 * a, False
+    if eff.kind == "gain_life":
+        return sign * (life_value(obj.life + a) - life_value(obj.life)), False
+    if eff.kind == "lose_life":
+        return -sign * (life_value(obj.life) - life_value(obj.life - a)), False
+    if eff.kind == "discard":
+        return -sign * (0.8 if mine else 1.0) * min(a, len(obj.hand)), False
+    if eff.kind == "mill":
+        return -sign * 0.1 * a, False
+    return 0.0, False
+
+
+# ---------------------------------------------------------------- static rules (cx_static / cx_rule_turn Parts)
+
+def static_rules(game, perm, rule: str) -> list:
+    """Every value of a family rule that applies to perm now: its own static (Part("cx_static", data={"rule": r,
+    "value": v}) on "~"), its Aura's or Equipment's ("enchanted / equipped creature ..."), a group static whose
+    group it is in, and this turn's one-shots (Part("cx_rule_turn", ...))."""
+    from .permanent_templates import matches
+    out = []
+    if not getattr(perm, "abilities_suppressed", False):
+        out += list(perm.card.advanced_rules.get(rule, ()))
+    for x in list(getattr(perm, "auras", ())) + list(getattr(perm, "equipment", ())):
+        out += list(x.card.advanced_rules.get(rule + "@host", ()))
+    if game is not None:
+        for pl in game.players:
+            for x in pl.battlefield:
+                for spec, value in x.card.advanced_rules.get(rule + "@group", ()):
+                    if not x.abilities_suppressed and matches(game, perm, spec, x.controller, x):
+                        out.append(value)
+        out += [v for turn, r, v in getattr(perm, "cx_rules_turn", ()) if r == rule and turn == game.turn]
+    return out
 
 
 # ---------------------------------------------------------------- engine side: who a subject names
