@@ -24,9 +24,15 @@ Bugs, follow-ups and parked items live as GitHub issues in andjalis/mtg-simulato
   --title "..." --label "<priority>,lane:<owner>" --body "<what, which cards, evidence, probable cause>"`.
 - Coverage work lists stay in the CSV lists, not in issues.
 
+## Team since 2026-11-09 (smaller, fresh context)
+Developers: sim-grammar (Opus), sim-gcond (Opus), sim-static (Opus), sim-fixes (Sonnet). Review: sim-review (Opus,
+all lanes). Audit: sim-audit (Opus). Lead: sim-lead. Briefs live in the repo (`docs/coverage-push/`); the local
+folder `~/mtg-worktrees/briefs` is a link to the lead's checkout of main. Keep your handoff note in
+`~/mtg-worktrees/briefs/status/sim-<you>.md`; the lead commits status changes to the repo.
+
 ## Read first
 `AGENTS.md`, `CONTRIBUTING.md`, and the "Coverage push from 2026-11-06" section at the end of `AGENTS_LANES.md`.
-Your worklist is `results/blocking_units_2026-11-06/units.csv` filtered to your lane (column `lane`).
+Your worklist is `~/mtg-worktrees/lists/units-latest.csv` (refreshed after every census) filtered to your lane (column `lane`).
 `sole` = cards completed if that unit alone is fixed; `affected_cards` = cards containing it. See
 `mtgsim/blocking_units.py` for how units are cut (numbers -> N, mana -> {M}, colours -> COLOR).
 
@@ -80,9 +86,7 @@ rerun the heavy checks after every small edit: GitHub CI runs fast check and par
    targeted in the PR body. End the PR body with: 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 Commit messages end with a Co-Authored-By line for your model.
 4. `git push -u origin <branch>` and `gh pr create --base main`. Never push to main, never force-push, never merge.
-5. Tell your reviewer: grammar-team lanes (sim-grammar, sim-static, sim-gzones, sim-gplayers, sim-gcond) message
-   `sim-review2`; all other lanes message `sim-review`:
-   `herdr agent prompt <reviewer> "<lane>: PR #<n> open — <one line: rule, full-card delta>"`.
+5. Tell the reviewer: `herdr agent prompt sim-review "<lane>: PR #<n> open — <one line: rule, full-card delta>"`.
    sim-review reviews first and sends change requests to you; the lead does the final check and merges in batches
    every ~25 minutes, so don't wait for the merge.
 6. Start the next round right away. Assume your open PRs will merge; never wait for a merge:
