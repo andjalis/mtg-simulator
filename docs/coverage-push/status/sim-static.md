@@ -1,14 +1,17 @@
-# sim-static handoff (updated 2026-11-06, before shutdown)
-Worktree ~/mtg-worktrees/static, clean, checked out on claude/static-7 (= pushed #294). No WIP or local-only commits. All branches are from main, none stacked.
-Open PRs (all reviewer sim-review2; copy the lead's `<!-- pilot-gate -->` delta into each body when it lands):
-- #195 claude/static-2: devotion / most-common-colour conditions, devotion quantity, Gods' "isn't a creature". Fix round pushed (Thassa's Rebuff X=0, lead-approved counter hook). Waiting on re-review + gate.
-- #213 claude/static-3: static damage prevention (cx_static_prevent, on the cx_shields engine). Waiting.
-- #220 claude/static-anthem-fix: priority fix for anthem group words. Gate done (full +4; 2 intended "regressions" explained in the body, see issue #248). Waiting.
-- #224 claude/static-4: damage modifiers (double / triple / +N / half). Waiting.
-- #230 claude/static-5: chosen colour on entering (Gates, Thriving lands, protection), plus the fix that stops choose-a-colour cards without a mana ability making mana. Waiting.
-- #238 claude/static-6: "~ can't attack/block unless <cond>". Waiting.
-- #294 claude/static-7: cost_of applies every increase before every reduction (Fixes #258, #263). Waiting.
-Next step: run `gh issue list -R andjalis/mtg-simulator --label lane:static --state open`. Open follow-up: #259 chosen-colour anthems (needs #220 and #230 merged). Then attack/block taxes ("unless you pay {N}").
-Notes: heavy queue and gh need the sandbox off; make branches with `git switch --no-track -c`; my local `results/pilot_gate/` dirs stay uncommitted.
-Parked from review: #296 (chosen-colour protection defaults to white on an empty board; take it with #259).
-Open questions: none. Nothing was in progress at shutdown.
+# sim-static handoff (updated 2026-11-09, stop for the day)
+Worktree ~/mtg-worktrees/static, clean, on claude/static-8 (new, = origin/main 52b84d4, no commits yet, not pushed). No WIP.
+Open PRs: none. All earlier PRs (#186, #195, #213, #220, #224, #230, #238, #294) are merged.
+Open lane issues: #259 chosen-colour anthems (Caged Sun, Hall of Triumph, Heraldic Banner, Gauntlet of Power), #296 (parked: protection-from-chosen-colour AI picks white on an empty board).
+
+Findings this session:
+- lists/units-latest.csv is stale for my lane: devotion Gods and Sphere of Duty/Grace/Law show as blockers but are full on main.
+  Still partial on main (checked): Ardenvale Paladin ("if at least N COLOR mana was spent to cast ~, ~ enters with a +1/+1 counter"),
+  Auriok Champion ("Protection from black and from red"), Caged Sun (chosen-colour anthem + extra mana trigger).
+- I started a fresh census (database_coverage via heavy) into my scratchpad and stopped it at shutdown; nothing saved.
+
+Next step:
+1. Get a fresh census (lead's, or `heavy .venv/bin/python -m mtgsim.database_coverage --save <dir>` then blocking_units) and re-rank static shapes.
+2. claude/static-8: #259 chosen-colour anthems (anthem_sub tag "chosen_color", fits() reads the source's chosen_color; AI picks its own most common creature colour), bundled with #296 if cheap.
+3. Then candidate bundles: "protection from COLOR and from COLOR"; "if at least N COLOR mana was spent to cast ~" entering rules (needs mana-spent tracking per colour); attack/block taxes ("can't attack unless its controller pays {N}"); "spells your opponents cast that target ~ cost {M} more"; "~ costs {M} less if it targets a COLOR permanent".
+Notes: heavy queue and gh need the sandbox off; make branches with `git switch --no-track -c`; a CardDB check script needs PYTHONPATH=. when run from $TMPDIR.
+Open questions: none.

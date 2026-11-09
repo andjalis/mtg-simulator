@@ -1,12 +1,18 @@
-# sim-review handoff (final state before shutdown, 2026-11-06)
-Role: first-pass reviewer for the non-grammar lanes (abil, counters, mech, simplify, tokens, trig). Grammar/static/gzones/gplayers/gcond go to sim-review2.
-Local state: worktree ~/mtg-worktrees/review is clean and detached on origin/main (a26de6e); no local branches, no WIP, nothing to push (reviewers never push). The gate watcher is stopped.
-In the middle of: nothing. Every PR below is fully reviewed; none has a half-done review.
-Code-approved (plus a HeuristicAI test where required), waiting only for the lead's local gate on the CURRENT head; a PASS goes to sim-lead as ready, a FAIL goes back to the author:
-  #192 #194 #196 #198 #199 #200 #203 #204 #205 #209 #210 #211 #212 #214 #216 #218 #219 #223 #227 #234 #235 #240 #242 #262 #283 #284 #292
-  Stacked: #217 (gate PASS) is ready only after #192/#194; #291 only after #211.
-  Blocked: #201 and #221 track .venv as a symlink; waiting for sim-trig's `git rm --cached .venv`. Verify with `git ls-tree` (don't check them out). #221 and #284 edit the same day/night hook line in engine/battlefield.py, so whichever merges second keeps both.
-Changes requested: none open.
-Issues filed by me: #263-#272, #274, #276, #278, #280, #293 (#293 fixed in #292).
-Next step on restart: re-arm the gate watcher (match "Local gate (lead's Mac) for head <sha>" against each PR's headRefOid), report PASSes, send FAILs back, review new PRs in my lanes. Before any checkout: `git ls-tree pr-N .venv`. If .venv is missing, recreate it with python3.14 -m venv.
-Open questions: none.
+# sim-review handoff (stopped 2026-11-09, end of day)
+Role (since 2026-11-09): the only PR reviewer, all lanes. For grammar PRs (sim-grammar, sim-gcond, sim-static) also sample 10-15 newly full cards against Oracle text.
+Local state: worktree ~/mtg-worktrees/review is clean, detached on origin/main (52b84d4). No WIP, nothing to push (reviewers never push). Local branches pr-92/pr-237 were deleted (git printed a config-lock warning; if `git branch` still lists them, delete them).
+Note: inside the sandbox `gh` fails (TLS/x509 error), so gh/herdr calls need to run unsandboxed.
+
+Open PRs without lead-approved at stop (oldest first): #92, #237, #305, #306, #307, #308, #309, #310.
+
+Done today:
+- #237 (grammar-12, prohibitions; #236 is already merged so the whole diff vs main is the PR): CHANGES NEEDED, comment posted, sim-grammar told.
+  Bug: Render Silent counts full but "Its controller can't cast spells this turn" bans no one. cx_grammar.players() (mtgsim/cx_grammar.py:749-753) gets the countered StackItem as prev and returns []. Fix: handle a StackItem prev (prev.controller) and add a test with the real card.
+  Checked OK: ~25 cards (static/this-turn bans, "other than ~" targets, "those creatures" group extension, "you <imperative>", animate-prev, power-conditioned untap). Gate PASS +34.
+  Next: when sim-grammar reports back, re-review only the delta and read the new gate comment.
+- #92 (docs, the user's own AGENTS.md de-duplication, not from a lane): diff read, merges cleanly, the removed content exists in README/CONTRIBUTING (except an `assess.py` row). NO COMMENT POSTED YET.
+  One risk to state: AGENTS.md is auto-loaded into every agent's context and README is not, so agents lose the layout table. The owner should decide; send it to the lead with that note.
+
+Not started: #305-#310 (issue-fix PRs from 2026-11-08). #305 has pilot-gate FAILURE: read its gate comment first; a FAIL goes back to the author.
+Next step on restart: post the #92 note and ping the lead; then review #305 -> #310 in order; re-review #237 when it's fixed.
+Issues filed today: none.
