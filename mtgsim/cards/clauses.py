@@ -484,6 +484,10 @@ def _xq(text: str):
                 [tl[len("the number of "):-len(" you control")]])
     m = re.fullmatch(r"the number of ([\w -]+?) you control", t, re.I)
     if m and " with " not in m[1] and " that " not in m[1]:
+        head, _, last = m[1].rpartition(" ")
+        if last[:1].isupper():      # a subtype: "Zombies" -> "Zombie" (the "ies" -> "y" rule is for "Sorceries")
+            from ..cx_events import _singular as subtype
+            return ("count", (head + " " if head else "") + subtype(last))
         return ("count", _singular(m[1]))
     if tl == "the number of creatures in your party":
         return ("party",)

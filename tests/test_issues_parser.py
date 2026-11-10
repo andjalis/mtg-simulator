@@ -38,6 +38,23 @@ class CompoundSubject(Base):
         self.assertEqual(self.a.life, life_a)
         self.assertEqual(len(self.a.library), 5)
 
+    def test_game_where_x_is_zombies_you_control(self):
+        """Lich Lord of Unx: both effects hit the chosen player and scale with the caster's Zombies."""
+        c = self.spell("Target player loses X life and mills X cards, where X is the number of Zombies you control.",
+                       "Sorcery")
+        zombie = card("Zed", "{1}{B}", "Creature — Zombie", "", 1, 1)
+        self.perm(zombie, self.a)
+        self.perm(zombie, self.a)
+        self.perm(BEAR, self.a)
+        self.a.library = [c] * 5
+        self.b.library = [c] * 5
+        life_a, life_b = self.a.life, self.b.life
+        self.cast(c, targets=[self.b])
+        self.assertEqual(self.b.life, life_b - 2)
+        self.assertEqual(len(self.b.library), 3)
+        self.assertEqual(self.a.life, life_a)
+        self.assertEqual(len(self.a.library), 5)
+
 
 class OptionalTargets(Base):
     """#282: "up to one target ..." stays optional."""

@@ -215,12 +215,13 @@ def _parse_effects(text: str, opts: bool = False):
                 body = re.sub(r"\bX\b", one, mx[1])
                 if one != "1":
                     body = re.sub(r"\b(creature |artifact )?tokens\b", r"\1token", body)
+                body = re.sub(rf"\b{one} (cards|life)\b", lambda m: f"{one} {m[1][:-1] if m[1] == 'cards' else m[1]}", body)
                 new, bad = _parse_effects(body + ".")
                 if new and not bad:
                     break
             if new and not bad:
                 for e in new:
-                    e.data["xq"] = spec
+                    e.data["xq"] = spec     # a grammar wrapper (cx_players) scales its inner effects by it
                     e.data["xq_size"] = bool(re.search(r"\bX/X\b", mx[1]))
                 effects += new
                 continue
