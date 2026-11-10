@@ -145,3 +145,16 @@ class QualifierCombos(Base):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class FalseFullXQuantities(unittest.TestCase):
+    """Player clauses whose X the engine can't read yet stay unmatched instead of counting the wrong thing."""
+
+    def test_named_card_count_not_full(self):
+        _, bad = P._parse_effects("Target player discards X cards, where X is one plus the number of cards "
+                                  "named Mind Burst in all graveyards.")
+        self.assertTrue(bad)
+
+    def test_that_spells_mana_value_not_full(self):
+        _, bad = P._parse_effects("You may have target player mill X cards, where X is that spell's mana value.")
+        self.assertTrue(bad)
