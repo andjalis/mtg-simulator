@@ -5,6 +5,9 @@
     a creature subtype ("Elf", from "Elves")   "color:G"   "type:Artifact"   "Token"   "Face-down"
     "is:attacking", "is:untapped", "is:equipped", "is:legendary", "is:nonlegendary", "is:multicolored", "is:colorless"
 
+"chosen_color" is the colour the source permanent chose as it entered ("Creatures you control of the chosen color get
++1/+1"; "chosen_color:all" also applies to the other player's creatures); ``fits`` reads ``source.chosen_color``.
+
 ``tag`` returns None for a word that is none of these, so the line stays unparsed instead of naming a subtype that
 doesn't exist. ``fits`` is the engine side (``Permanent._pt_bonus``).
 """
@@ -49,8 +52,10 @@ def tag(word: str, plural: bool = False, subtype_only: bool = False):
     return _subtype(word, plural)
 
 
-def fits(perm, sub: str) -> bool:
+def fits(perm, sub: str, source=None) -> bool:
     card = perm.card
+    if sub.startswith("chosen_color"):
+        return bool(source is not None and getattr(source, "chosen_color", None) in card.colors)
     if sub == "Token":
         return bool(card.is_token)
     if sub == "Face-down":

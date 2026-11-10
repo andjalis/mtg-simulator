@@ -8,7 +8,8 @@ The choice is made by ``choose`` (from ``Game.enter_battlefield``) and kept as `
 permanent then makes mana only through its own mana lines: the colours its "Add {C}" text names plus the chosen
 colour when a line says "mana of the chosen color" (before this, a choose-a-colour card such as Iona tapped for
 the chosen colour). "Protection from the chosen color" becomes that keyword on the permanent's card. The AI
-picks the opponent's main colour for protection and the colour its own cards need most otherwise.
+picks the opponent's main colour for protection, its most common creature colour for an anthem, and the colour
+its own cards need most otherwise.
 """
 from __future__ import annotations
 
@@ -43,6 +44,16 @@ def _own_need(game, p, exclude=""):
     return max(need, key=need.get)
 
 
+def _creature_color(game, p, card):
+    """The colour of most of our creatures (deck) for an anthem. (Gauntlet of Power also helps the
+    opponent's creatures of that colour; the AI doesn't weigh that.)"""
+    count = {col: 0 for col in _NAMES}
+    for c in [c for c in p.deck if c.is_creature]:
+        for col in c.colors:
+            count[col] = count.get(col, 0) + 1
+    return max(count, key=count.get) if any(count.values()) else _own_need(game, p)
+
+
 def _theirs(game, p):
     from .protection import choose_color
     return _COLORS[choose_color(game, p, None).rsplit(" ", 1)[1]]
@@ -53,7 +64,8 @@ def choose(game, p, perm, card):
     kind = card.choose_type
     exclude = kind.partition(":")[2] if kind.startswith("color_other:") else ""
     protect = card.advanced_rules.get("chosen_protection")
-    color = _theirs(game, p) if protect else _own_need(game, p, exclude)
+    anthem = any(t[0].startswith("chosen_color") for t in card.anthem_sub)
+    color = _theirs(game, p) if protect else _creature_color(game, p, card) if anthem else _own_need(game, p, exclude)
     perm.chosen_color = color
     oracle = card.oracle or ""
     produces = set(re.findall(r"Add \{([WUBRGC])\}", oracle))
