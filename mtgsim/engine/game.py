@@ -116,6 +116,14 @@ class Game(CostsMixin, TargetsMixin, TurnsMixin, StackMixin, PlayMixin, Abilitie
         return bool(name) and any(x.chosen_name == name for pl in self.players for x in pl.battlefield
                                  if not x.abilities_suppressed)
 
+    def named_activation_banned(self, name: str) -> bool:
+        """"Activated abilities of sources with the chosen name can't be activated" (Pithing Needle,
+        Petrified Hamlet): whether a permanent with that lock chose this card name. Applies to every
+        source of that name, including a card's channel / graveyard abilities and unearth."""
+        return bool(name) and any(
+            x.card.chosen_land_lock and name in (x.chosen_land, x.chosen_name) and not x.abilities_suppressed
+            for pl in self.players for x in pl.battlefield)
+
     @property
     def active(self) -> Player: return self.players[self.active_idx]
 

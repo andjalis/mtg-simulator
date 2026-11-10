@@ -807,6 +807,8 @@ class CostsMixin:
         base, kind, alt = self._origin(card)
         if self.nonmana_locked(p) and kind in ('channel', 'gy_ability', 'unearth'):
             return False
+        if card.is_ability and kind in ('channel', 'gy_ability', 'unearth') and self.named_activation_banned(base.name):
+            return False                  # Pithing Needle / Petrified Hamlet name the card: its abilities can't be activated
         if kind == "spectacle" and not self.opponent(p).lost_life_turn:
             return False
         from ..residual_templates import life_locked
