@@ -164,10 +164,12 @@ def _remove(m):
     """"Remove [a counter / up to N counters / N <kind> counters / all [<kind>] counters] from <permanent(s)>"."""
     from .cards.model import NO_MATCH
     from .permanent_templates import build
-    amount, kind = (m[1] or "").lower(), (m[2] or "").lower()
-    if m[3] is None and kind in ("", "all"):
+    amount, kind = (m[2] or "").lower(), (m[3] or "").lower()
+    if m[4] is None and kind in ("", "all"):
         return NO_MATCH
     data = {"counter": kind if kind and kind != "any" else ""}
+    if m[1]:
+        data["optional"] = True
     if amount == "all":
         data["all"] = True
     n = 1 if amount in ("a", "an", "one", "all", "") else _N.get(amount.replace("up to ", ""), None)
@@ -175,12 +177,12 @@ def _remove(m):
         n = int(amount.replace("up to ", "")) if amount.replace("up to ", "").isdigit() else None
     if n is None:
         return NO_MATCH
-    eff = build("cx_remove_counters", m[4], amount=n, data=data)
+    eff = build("cx_remove_counters", m[5], amount=n, data=data)
     return eff if eff is not None else NO_MATCH
 
 
 EFFECT_PATTERNS.append(
-    (rf"(?:you may )?remove (a|an|one|two|three|four|five|up to (?:one|two|three|four|five)|\d+|all) "
+    (rf"(you may )?remove (a|an|one|two|three|four|five|up to (?:one|two|three|four|five)|\d+|all) "
      rf"(?:({_COUNTER}) )?(counters?)(?: of that kind)? from (it|~|target [^,]+|all [^,]+|each [^,]+)", _remove))
 
 
@@ -189,13 +191,15 @@ def _move(m):
     target is picked by ``cx_move_src``, which does nothing itself; ``cx_move_counters`` then moves them)."""
     from .cards.model import NO_MATCH, Effect
     from .permanent_templates import build
-    amount, kind, src = m[1].lower(), (m[2] or "").lower(), m[3]
-    dst = re.sub(r"^(?:a second|one other) ", "another ", m[4]) if m[4].startswith(("a second", "one other")) else m[4]
+    amount, kind, src = m[2].lower(), (m[3] or "").lower(), m[4]
+    dst = re.sub(r"^(?:a second|one other) ", "another ", m[5]) if m[5].startswith(("a second", "one other")) else m[5]
     every = amount in ("all", "any number of")
     n = 1 if every else _N.get(amount) or (int(amount) if amount.isdigit() else None)
     if n is None or (src == "~" and dst == "~"):
         return NO_MATCH
     data = {"counter": kind if kind != "any" else "", "all": every, "from": "self" if src == "~" else "prev"}
+    if m[1]:
+        data["optional"] = True
     out = []
     if src != "~":
         eff = build("cx_move_src", src, data={"distinct": True, "group": "cx_move"})
@@ -214,7 +218,7 @@ def _move(m):
 
 
 EFFECT_PATTERNS.append(
-    (rf"(?:you may )?move (a|an|one|two|three|all|any number of) (?:({_COUNTER}) )?counters?(?: of that kind)? "
+    (rf"(you may )?move (a|an|one|two|three|all|any number of) (?:({_COUNTER}) )?counters?(?: of that kind)? "
      rf"from (~|target [^,]+?) onto (~|(?:a second |another |one other )?target [^,]+)", _move))
 
 

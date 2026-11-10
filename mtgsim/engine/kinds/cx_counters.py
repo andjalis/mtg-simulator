@@ -37,6 +37,12 @@ def cx_distribute(game, p, eff, item, **_):
 _BAD = ("-1/-1", "stun", "doom", "poison")
 
 
+def _removal_helps(p, counter, owner):
+    """Removing ``counter`` from a permanent of ``owner`` helps ``p`` when it is a bad counter on p's own permanent
+    or a good counter on an opponent's."""
+    return (counter in _BAD) == (owner is p)
+
+
 @kind("cx_remove_counters")
 def cx_remove_counters(game, p, eff, target, **_):
     """Remove counters of one kind (or "a counter" of any kind) from a permanent; "all" empties the kind or the card.
@@ -50,6 +56,8 @@ def cx_remove_counters(game, p, eff, target, **_):
         mine = target.controller is p
         names = sorted((n for n, c in target.counters.items() if c > 0),
                        key=lambda n: (n not in _BAD) if mine else (n in _BAD))
+    if eff.data.get("optional"):               # "you may remove": the AI declines unless removal helps it
+        names = [n for n in names if _removal_helps(p, n, target.controller)]
     left = 10 ** 6 if eff.data.get("all") else eff.amount
     for name in names:
         if left <= 0:
@@ -79,6 +87,9 @@ def cx_move_counters(game, p, eff, target, prev, item, **_):
         return
     name = eff.data.get("counter", "")
     names = [name] if name else [n for n, c in source.counters.items() if c > 0]
+    if eff.data.get("optional"):               # "you may move": the AI declines a move that leaves it worse off
+        names = [n for n in names if _removal_helps(p, n, source.controller) or
+                 not _removal_helps(p, n, dest.controller)]
     left = 10 ** 6 if eff.data.get("all") else eff.amount
     for n in names:
         take = min(source.counters.get(n, 0), left)
