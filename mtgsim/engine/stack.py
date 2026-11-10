@@ -128,6 +128,10 @@ class StackMixin:
                         Effect("condition", cond=trig.intervening_if),
                         StackItem(perm.controller, [], [], source=perm, context=context), None):
                     continue
+                if trig.data.get("trigger_gate") and not self.check_cond(perm.controller,
+                        Effect("condition", cond=trig.data["trigger_gate"]),
+                        StackItem(perm.controller, [], [], source=perm, context=context), None):
+                    continue     # a Station tier: met when it triggers, not rechecked on resolution
                 if event == "permanent_enters":
                     me_ok, other, desc = trig.filter.split("|", 2)
                     if subject.controller is not p and not trig.data.get("any_controller"):

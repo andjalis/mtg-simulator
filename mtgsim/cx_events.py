@@ -648,6 +648,12 @@ def observe(game, p, event, source=None, context=None, subject=None):
                 if perm.ability_turns.get(key) == stamp:
                     continue
                 perm.ability_turns[key] = stamp
+            if trig.data.get("trigger_gate"):     # a Station tier: met when it triggers only
+                from .cards import Effect
+                from .engine.state import StackItem
+                if not game.check_cond(perm.controller, Effect("condition", cond=trig.data["trigger_gate"]),
+                                       StackItem(perm.controller, [], [], source=perm, context=ctx), None):
+                    continue
             if trig.intervening_if:
                 from .cards import Effect
                 from .engine.state import StackItem

@@ -22,6 +22,24 @@ def link_check(game, p, item, **_):
     item.gate_paid = bool(getattr(item, "link_taken", False)) and snapshot(game) != item.link_snapshot
 
 
+@kind("reflex_late")
+def reflex_late(game, p, eff, item, prev=None, **_):
+    """A reflexive "When you do" payoff: choose its target now, after the action, and skip it if nothing is legal."""
+    inner = eff.data["inner"]
+    source = item.source if item.source is not None else item.card
+    game.trigger_context = item.context            # the same target choice a trigger makes when it goes on the stack
+    try:
+        with game.targeting(item):
+            tgt = game.auto_targets(p, [inner], source)[0]
+    finally:
+        game.trigger_context = None
+    tgt = game.force_damage_targets(p, [inner], [tgt], source)[0]
+    with game.targeting(item):
+        if tgt is None or not game.legal_target(p, inner, tgt):
+            return
+    game.resolve(p, inner, tgt, item, prev)
+
+
 def _matching(game, p, spec, source):
     from ...cx_condlib import _card_ok
     return [x for x in p.battlefield if not (spec.get("other") and x is source) and _card_ok(x.card, spec, x)]

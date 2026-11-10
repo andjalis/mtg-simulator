@@ -37,9 +37,8 @@ class StationTiers(unittest.TestCase):
     def test_trigger_tier_is_gated(self):
         card = self.db.get("D-7 Battle Cruiser")
         self.assertEqual(card.unsupported, [])
-        cond = [e.cond for t in card.triggers for e in t.effects]
-        self.assertEqual(cond, ["charge>=3"])
-        self.assertTrue(cond)
+        self.assertEqual([t.data.get("trigger_gate") for t in card.triggers], ["charge>=3"])
+        self.assertFalse([a for a in card.approximations if "trigger" in a])
 
     def test_trigger_fires_only_with_enough_counters(self):
         for charge, tokens in ((2, 0), (3, 1)):
@@ -49,6 +48,19 @@ class StationTiers(unittest.TestCase):
             self.game.settle()
             made = [x for x in self.a.battlefield if x.card.is_token]
             self.assertEqual(len(made), tokens, charge)
+
+    def test_tier_is_checked_when_it_triggers_not_only_on_resolution(self):
+        """Fixes #252: charge counters removed in response don't matter once the tier was met; below the tier it never triggers."""
+        perm = self.put("D-7 Battle Cruiser", 3)
+        self.game.fire(self.a, "begin_combat")
+        self.assertEqual(len(self.game.pending), 1)        # triggered
+        perm.counters["charge"] = 0                          # removed in response
+        self.game.settle()
+        self.assertEqual(len([x for x in self.a.battlefield if x.card.is_token]), 1)
+        self.setUp()
+        self.put("D-7 Battle Cruiser", 2)
+        self.game.fire(self.a, "begin_combat")
+        self.assertEqual(len(self.game.pending), 0)        # never triggers
 
 
 if __name__ == "__main__":
