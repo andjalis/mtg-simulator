@@ -56,6 +56,14 @@ Claude agents (Opus for grammar-heavy lanes, Sonnet otherwise), each in its own 
 
 The grammar agents' surveys and plans are in [plans/](plans/). Lane ownership of files is in `AGENTS_LANES.md`.
 
+### Team since 2026-11-09
+
+Reduced to six with fresh context: sim-grammar (Opus; also owns the retired zone and player verb lanes), sim-gcond
+(Opus), sim-static (Opus), sim-fixes (Sonnet; only `counted-full-but-wrong` and retired lanes' follow-ups,
+[fixes](briefs/fixes.md)), sim-review (Opus, all lanes) and sim-audit (Opus). Retired: sim-abil, sim-trig,
+sim-mech, sim-tokens, sim-counters, sim-simplify, sim-gzones, sim-gplayers, sim-review2; their briefs and handoff
+notes stay here for reference.
+
 ## Flow of one change
 
 1. A developer works round after round, one coherent rule per PR (aim for 30+ newly full cards; bundle small

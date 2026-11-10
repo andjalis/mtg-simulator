@@ -1,13 +1,28 @@
-# sim-grammar status (updated 2026-11-06)
+# sim-grammar status (updated 2026-11-09, stopped for the day)
 
-**Open PRs, in stacked order** (each one's branch is merged into the next): #193 grammar-3 → #202 grammar-4 → #207 grammar-5 (registry; gzones/gplayers/gcond build on it, ADD-ONLY) → #222 grammar-7 (AI) → #226 grammar-6 (animation) → #229 grammar-8 (evasion + cx_static) → #231 grammar-9 (tap) → #233 grammar-10 (control + AI sides) → #236 grammar-11 (land types) → #237 grammar-12 (can't cast + near-misses).
-- Approved, waiting on the gate: #193, #202, #207, #222. The rest are unreviewed. No pilot-gate deltas posted yet; copy them into the PR bodies when they come.
-- Issues: #247 → #193, #246/#275/#277 → #222, #273 → #202, #280 → #207 (fixed in 5014cda on grammar-5, not yet merged up into grammar-7..12). Parked: #297 ("defending player" = the controller's opponent; wrong only in edge cases such as Spiteful Returned bestowed on an opponent's creature).
+**Open PRs:** only #237 claude/grammar-12 (prohibition family + near-misses). Everything below it (#193..#236) and all
+inherited gzones/gplayers PRs are merged/closed. Branch is current with main (remote merge 099bd30; local == origin).
+Pilot gate PASS: all +34 full, Standard +4, 0 regressions; delta is now in the PR body.
 
-**Shutdown check:** clean. Nothing uncommitted, no WIP, and every grammar-3..12 branch matches origin (all pushed). No work was in progress.
+**Review request on #237 (NOT started, do this first):** sim-review: Render Silent counts full but "its controller
+can't cast spells this turn" bans no one, because `cx_grammar.players()` ignores a StackItem `prev` (the countered
+spell's controller). Details in the PR comment. Fix on claude/grammar-12: make `players(..., who="controller")`
+resolve a StackItem prev to its controller (or reject the sentence after a spell target), add a test that resolves
+Render Silent and checks the ban, then check other "its controller" users after counterspells.
 
-**Local state:** nothing uncommitted. Worktrees: main /Users/andjalis/mtg-worktrees/grammar (on grammar-12). Scratch worktrees r5 (grammar-5) and r2 (grammar-2, obsolete; round 2 lives inside #193) are under this session's scratchpad.
+**Shutdown check:** clean. Nothing uncommitted, no WIP commit, nothing unpushed.
 
-**Next:** answer sim-review2 change requests first; merge grammar-5 up the stack when the next branch is touched (no mass pushes). Per the lead, no new stacking while ~8+ are unreviewed. Candidate next rounds: "can't play lands [this turn]" (needs a single land-play legality check), equipped/enchanted creature "loses <keyword>" statics via cx_static, "one or more / any number of target creatures".
+**Issues:** #297 parked ("defending player" = controller's opponent edge case). No other lane:grammar issues;
+none open for lane:gzones / lane:gplayers.
+
+**Next round (not started):** lists/units-latest.csv is stale against main (many listed damage/"it deals" units
+already parse, e.g. Ankh of Mishra, Aether Flash, Arc Trail are full). First run a fresh census on grammar-12
+(`~/mtg-worktrees/bin/heavy .venv/bin/python -m mtgsim.database_coverage --save <dir>`, must run outside the
+sandbox because of the lock dir; it was stopped mid-run today), then rank. Candidates seen in probes that still fail:
+damage sentences with back-refs/riders ("~ deals that much damage to you", "to them", "to each of two targets",
+"to any other target", "it deals N to any target and N to you", "each creature blocking it", "target creature
+defending player controls", "damage equal to the number of ...") and "you may have it deal / fight ..." (base-form
+verbs after "you may have it"). Also from older list: "can't play lands [this turn]", blink (exile then return), "N or more
+target creatures".
 
 **Open questions:** none.

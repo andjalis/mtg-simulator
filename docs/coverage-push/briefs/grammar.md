@@ -27,3 +27,10 @@ Update from lead: a new lane `sim-static` owns cost modifiers, replacement/preve
 
 Update 2 from lead: two more lanes started: sim-tokens (token descriptions and create/populate verbs) and
 sim-counters (put/remove/move/double counters, counter quantities and conditions). Leave those shapes to them.
+
+
+Update 2026-11-09 (team reduced): you now also own the verb families of the retired sim-gzones and sim-gplayers lanes
+(zone changes: destroy/exile/return/sacrifice/tuck/blink, graveyard card moves, back-references; player effects:
+damage, life, draw, discard, mill, reveal). Their briefs (gzones.md, gplayers.md), plans (plans/sim-gzones.md,
+plans/sim-gplayers.md) and handoff notes (status/sim-gzones.md, status/sim-gplayers.md) list what is done and next.
+Rank all of it together by cards per code with the fresh work list.

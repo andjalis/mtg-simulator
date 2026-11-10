@@ -33,3 +33,8 @@ approximations worth tracking) becomes a GitHub issue in andjalis/mtg-simulator 
 (`counted-full-but-wrong` / `follow-up` / `parked`) and the owning `lane:<name>` label, then tell the owner as
 before with the issue number. Don't send the lead findings that only need an owner: label them; message the lead only
 when the owner is unclear or it needs a decision. Check for a duplicate first (`gh issue list --search`).
+
+
+Update 2026-11-09: first job after the restart: a post-merge audit of the PRs merged since 2026-11-06 21:50 UTC
+without the lead's final check (`gh pr list --state merged --search "merged:>=2026-11-06T21:50:00Z" --limit 100`).
+Sample about 40 newly full cards across them, weighted toward the big ones; file findings as issues as usual.
