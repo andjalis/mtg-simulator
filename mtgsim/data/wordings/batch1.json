@@ -1,11 +1,19 @@
 [
   {
-    "match": "you gain life equal to its (power|toughness|mana value)",
+    "match": "you (gain|lose) life equal to (?:its|that creature's (?=power|toughness)|that permanent's (?=mana value)) ?(power|toughness|mana value)",
     "effect": "gain_prev_stat",
     "amount": 1,
-    "data": {"stat": "$1:lower"},
-    "example": "you gain life equal to its toughness",
-    "cards": ["Angelic Chorus"]
+    "data": {"stat": "$2:lower", "lose": {"$map": "$1:lower", "values": {"gain": false, "lose": true}}},
+    "example": "you gain life equal to that creature's toughness",
+    "cards": ["Angelic Chorus", "Abattoir Ghoul", "Devour in Shadow"]
+  },
+  {
+    "match": "(?:its|that (?:creature|permanent)'s) controller (gains|loses) life equal to its (power|toughness)",
+    "effect": "gain_prev_stat",
+    "amount": 1,
+    "data": {"stat": "$2:lower", "who": "controller", "lose": {"$map": "$1:lower", "values": {"gains": false, "loses": true}}},
+    "example": "that creature's controller loses life equal to its toughness",
+    "cards": ["Banewasp Affliction", "Ajani Unyielding", "Avenger en-Dal"]
   },
   {
     "match": "(?:that|defending) player sacrifices a creature",

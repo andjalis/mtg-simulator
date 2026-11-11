@@ -26,10 +26,15 @@ def edict_each(game, p, eff, opp, **_):
 
 @kind("gain_prev_stat")
 def gain_prev_stat(game, p, eff, prev, cause, **_):
+    """"You gain / lose life equal to its power / that creature's toughness / that card's mana value", also "its
+    controller gains life equal to its power" (data["who"] == "controller"). The referent's last-known power and
+    toughness are used once it has left the battlefield (Permanent.power / .toughness fall back to last_pt)."""
     if isinstance(prev, Permanent):
         value = {"power": lambda: prev.power, "toughness": lambda: prev.toughness,
                  "mana value": lambda: prev.card.cmc}[eff.data["stat"]]()
-        game.change_life(p, max(0, value), cause)
+        who = prev.controller if eff.data.get("who") == "controller" else p
+        sign = -1 if eff.data.get("lose") else 1
+        game.change_life(who, sign * max(0, value), cause)
 
 
 @kind("powerstone")

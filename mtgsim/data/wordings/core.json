@@ -590,12 +590,6 @@
     "cards": ["Azusa's Many Journeys // Likeness of the Seeker"]
   },
   {
-    "match": "you gain life equal to that creature's toughness",
-    "effect": "gain_prev_toughness",
-    "example": "you gain life equal to that creature's toughness",
-    "cards": ["Abattoir Ghoul"]
-  },
-  {
     "match": "~ deals (\\d+) damage to that creature's controller",
     "effect": "damage",
     "amount": "$1:int",
