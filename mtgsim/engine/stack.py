@@ -432,6 +432,7 @@ class StackMixin:
             item.cx_start = self.effect_clock          # "them": permanents entering from here on (cx_delayed)
             prev = item.context if item.kind == "trigger" and isinstance(item.context, Permanent) else None
             done: list = []
+            instead_choices = {}
             for i, (eff, tgt) in enumerate(zip(item.effects, item.targets)):   # "would die this turn" must precede the damage
                 if eff.kind == "exile_instead" and i and isinstance(item.targets[i - 1], Permanent):
                     item.targets[i - 1].exile_turn = self.turn
@@ -454,6 +455,14 @@ class StackMixin:
                 done.append(eff)
                 condition = (dataclasses.replace(eff, cond="")
                              if item.intervening_if and eff.cond == item.intervening_if else eff)
+                gate = eff.data.get("instead_gate")
+                if gate is not None:
+                    key = id(gate)
+                    if key not in instead_choices:
+                        instead_choices[key] = self.check_cond(p, Effect("condition", cond=gate["cond"]), item, prev)
+                    if instead_choices[key] != eff.data["instead_branch"]:
+                        continue
+                    condition = dataclasses.replace(condition, cond=eff.data.get("instead_base_cond", ""))
                 if not self.check_cond(p, condition, item, prev):
                     continue
                 if eff.data.get("may_hostile") and not self.hostile_target(p, tgt):

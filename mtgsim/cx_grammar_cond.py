@@ -25,14 +25,27 @@ _SAME = "cx_same"      # placeholder target: the object of the effect this one r
 def _body(text: str):
     """Effects for the body of an "instead" sentence, or None."""
     from .cards import _parse_effects
+    from .cards.model import Effect, _num
     text = text.strip()
+    m = re.fullmatch(r"(?:~|it|this creature) deals (\d+) damage", text, re.I)
+    if m:
+        return [Effect("damage", int(m[1]), target=_SAME)]
+    m = re.fullmatch(r"create (a|an|one|two|three|four|five|six|seven|eight|nine|ten|X|\d+) of those tokens"
+                     r"(?:, where X is (.+))?", text, re.I)
+    if m:
+        from .cards.clauses import _xq
+        spec = _xq(m[2]) if m[2] else None
+        if m[1].lower() == "x":
+            return [Effect("token", 1, target=_SAME, data={"xq": spec})] if spec else None
+        n = _num(m[1])
+        return [Effect("token", n, target=_SAME)] if n and not m[2] else None
+    if re.fullmatch(r"(?:~|it|this spell) deals twice X damage to that (?:permanent|creature|player)", text, re.I):
+        return [Effect("damage", target=_SAME, data={"x": True, "instead_multiplier": 2})]
+    if re.fullmatch(r"that player mills twice that many cards", text, re.I):
+        return [Effect("mill", target=_SAME, data={"instead_amount": True, "instead_multiplier": 2})]
     new, bad = _parse_effects(text[0].upper() + text[1:] + ".")
     if new and not bad:
         return new
-    m = re.fullmatch(r"(?:~|it|this creature) deals (\d+) damage", text, re.I)
-    if m:
-        from .cards.model import Effect
-        return [Effect("damage", int(m[1]), target=_SAME)]
     return None
 
 
@@ -50,6 +63,12 @@ def instead_if(m, inner):
 
 @rider(r"(?P<body>.+?) instead")
 def instead(m, inner):
+    effects = _body(m["body"])
+    return _mark(effects) if effects else None
+
+
+@rider(r"instead,? (?P<body>.+)")
+def instead_prefix(m, inner):
     effects = _body(m["body"])
     return _mark(effects) if effects else None
 
@@ -78,6 +97,7 @@ def resolve_instead(effects: list) -> list:
     """Give the effects an "instead" group replaces the opposite condition, in place. Returns the sentences that
     could not be tied to what they replace (for the unmatched list)."""
     from .engine.state import TARGETED
+    referents = set(TARGETED) | {"self", "prev"}
     bad = []
     i = 0
     while i < len(effects):
@@ -91,23 +111,62 @@ def resolve_instead(effects: list) -> list:
         k = j - i
         old = effects[i - k:i] if i >= k else []
         group = effects[i:j]
+        if (i and len(group) == 1 and effects[i - 1].kind == "copy_next_spell" and
+                group[0].kind == "copy_spell" and group[0].data.get("of") == "that"):
+            # "Copy that spell twice instead" changes the number of future
+            # copies, preserving the delayed instruction's kind and MV limit.
+            group = [dataclasses.replace(group[0], kind="copy_next_spell",
+                     data=dict(effects[i - 1].data, **group[0].data))]
+            effects[i:j] = group
+        if any(g.target == _SAME and (not old or g.kind != old[min(n, len(old) - 1)].kind)
+               for n, g in enumerate(group)) and old:
+            bad.append('An "instead" effect without a matching referent.')
+            del effects[i:j]
+            continue
+        # A replacement may add effects around the single effect it replaces ("instead scry 3, then
+        # draw three cards" for "draw three cards"), or change that effect's kind while referring
+        # to its target (damage -> destroy).
+        if i and (not old or [o.kind for o in old] != [g.kind for g in group]):
+            candidate = effects[i - 1]
+            if not candidate.cond and any(g.kind == candidate.kind or
+                                           g.target == "prev" and candidate.target in referents
+                                           for g in group):
+                old, k = [candidate], 1
         if not old and _nested():
             i = j               # the body of "If C, B instead" parsed on its own: the outer sentence list resolves it
             continue
-        if not cond or not old or any(o.data.get("cx_instead") for o in old) or \
-                [o.kind for o in old] != [g.kind for g in group]:
+        matches = [o.kind for o in old] == [g.kind for g in group]
+        if len(old) == 1:
+            matches |= any(g.kind == old[0].kind or
+                           g.target == "prev" and old[0].target in referents for g in group)
+        if not cond or not old or any(o.data.get("cx_instead") for o in old) or not matches:
             bad.append("An \"instead\" effect without the effect it replaces.")
             del effects[i:j]
             continue
+        gate = {"cond": cond}       # shared identity: evaluate once before either branch changes the board
         for n, o in enumerate(old):
-            effects[i - k + n] = dataclasses.replace(o, cond=_both(o.cond, _negate(cond)))
+            effects[i - k + n] = dataclasses.replace(o, cond=_both(o.cond, _negate(cond)),
+                                                    data=dict(o.data, instead_gate=gate, instead_branch=False,
+                                                              instead_base_cond=o.cond))
         for n, g in enumerate(group):
             data = {key: v for key, v in g.data.items() if key != "cx_instead"}
+            data.update(instead_gate=gate, instead_branch=True)
             target = g.target
+            if g.kind == "cx_players" and g.data.get("who") == "that_player" and old[0].target == "player":
+                target = "prev"
+                data["who"] = "target"
             if target == _SAME:
                 # "it deals 7 damage instead": the replaced effect's object, the very same target
-                target = "prev" if old[n].target in TARGETED else old[n].target
-                data = dict(old[n].data, **data)
+                prior = old[min(n, len(old) - 1)]
+                target = "prev" if prior.target in TARGETED else prior.target
+                inherited = {key: value for key, value in prior.data.items()
+                             if key not in ("x", "x2", "xq", "xq_size", "per", "per_kick")}
+                data = dict(inherited, **data)
+                if data.pop("instead_amount", False):
+                    g = dataclasses.replace(g, amount=prior.amount, amount2=prior.amount2)
+                    for key in ("x", "x2", "xq", "xq_size", "per", "per_kick"):
+                        if key in prior.data:
+                            data[key] = prior.data[key]
             effects[i + n] = dataclasses.replace(g, target=target, data=data)
         i = j
     return bad

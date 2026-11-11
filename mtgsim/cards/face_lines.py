@@ -149,6 +149,10 @@ def _face_special_lines(st, line):
             line = re.sub(r"\s*If ~'s additional cost was paid, [^.]+\.", "", line).strip()
             if not line:
                 return None
+        if re.match(r"(?:When|Whenever|At)\b", line) and "copy the next " in line.lower():
+            # This rider upgrades a delayed copy instruction inside the trigger,
+            # rather than adding a spell effect to the creature's kicked face.
+            line = re.sub(r"If ~ was kicked, (?=copy that spell)", "If it was kicked, ", line)
         kicked += re.findall(r"If ~ was kicked, (.+?\.)", line)
         m = re.search(r"\s*If ~ was cast from a graveyard, draw (\w+) cards instead\.", line)
         if m and _num(m[1]):                      # Plunder the Trollshaws: the graveyard casts draw more

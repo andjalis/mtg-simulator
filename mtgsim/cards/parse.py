@@ -75,6 +75,12 @@ def _parse_effects(text: str, opts: bool = False):
         if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects) or \
                 delayed_rider(s, effects) or watch_rider(s, effects):
             continue
+        if re.fullmatch(r"creatures destroyed this way can't be regenerated", s, re.I):
+            last = next((n for n in range(len(effects) - 1, -1, -1)
+                         if effects[n].kind in ("destroy", "wrath", "wrath_pw")), None)
+            if last is not None:
+                effects[last] = dataclasses.replace(effects[last], data=dict(effects[last].data, no_regen=True))
+                continue
         if re.fullmatch(r"(?:it|they|those creatures|the creatures?|a creature destroyed this way) can't be "
                        r"regenerated(?:, of course)?", s, re.I) and effects and \
                 effects[-1].kind in ("destroy", "wrath", "wrath_pw", "selected_mass_move", "group_remove",
@@ -299,7 +305,9 @@ def _parse_effects(text: str, opts: bool = False):
                     effects.append(eff)
                 break
         else:
-            parts = _split_compound(s)
+            # Bind the whole replacement before splitting its body into effects.
+            # Otherwise "instead A, then B" can leave B running beside the base.
+            parts = None if re.search(r"\binstead\b", s, re.I) else _split_compound(s)
             from ..cx_suspect import parse_otherwise
             from .. import cx_grammar
             if parts:
@@ -405,6 +413,42 @@ def _cost_line(m):
     return parse_mana_cost(m)
 
 
+
+def _kicker_instead(base: list, text: str) -> bool:
+    """Apply "If ~ was kicked, B instead.": B replaces the base effects it stands in for (those of its kinds, or the
+    only base effect), never runs next to them. Edits ``base`` in place; False (nothing changed) when the replaced
+    effects can't be told apart."""
+    body = re.sub(r"^instead,?\s+|\s+instead(?=\.$)", "", text.strip()).rstrip(".")
+    if re.search(r"\binstead\b", body) or not body:
+        return False
+    new, bad = _parse_effects(body[0].upper() + body[1:] + ".")
+    if bad or not new:
+        return False
+    if any("prev" in str(e.data) for e in new):
+        # leans on the base effect's target ("each creature target player controls phases out instead": the
+        # target creature's controller): keep the base effect as that carrier. Only safe where running the base
+        # first changes nothing the replacement doesn't also do, which holds for the phase-out and tap family.
+        if not all(e.kind in ("phase_out", "tap", "untap_target") for e in new + base):
+            return False
+        base += new
+        return True
+    kinds = {e.kind for e in new}
+    hit = [i for i, e in enumerate(base) if e.kind in kinds]
+    if not hit and len(base) == 1:
+        hit = [0]
+    if not hit or any(sum(base[i].kind == k for i in hit) > sum(e.kind == k for e in new) for k in kinds):
+        return False
+    old = base[hit[0]]
+    first = new[0]
+    if first.target == "prev":
+        if first.kind != old.kind:
+            return False
+        new[0] = dataclasses.replace(first, target=old.target, data=dict(old.data, **first.data))
+    elif any(e.target == "prev" for e in new):
+        return False
+    base[:] = base[:hit[0]] + new + [e for i, e in enumerate(base) if i > hit[0] and i not in hit]
+    return True
+
 def _parse_face(data: dict) -> CardDef:
     name = data["name"].split(" // ")[0]
     type_line = data.get("type_line", "").split(" // ")[0]
@@ -419,6 +463,11 @@ def _parse_face(data: dict) -> CardDef:
 
     oracle = data.get("oracle_text", "") or ""
     text = re.sub(r"\([^)]*\)", "", oracle)
+    if not types.isdisjoint({"Instant", "Sorcery"}):
+        # Ability words (Threshold, Morbid, Hellbent, Delirium, ...) carry no rules; their
+        # "— ... instead" paragraphs replace the preceding spell instruction and must be
+        # parsed with it, rather than in isolation.
+        text = re.sub(r"\n[A-Z][^\n—]{0,40}? — (?=[^\n]*\binstead\b)", " ", text)
     token_names = []
     def protect_name(match):
         token_names.append(match[1])
@@ -530,6 +579,10 @@ def _parse_face(data: dict) -> CardDef:
             m = re.fullmatch(r"it enters with (a|an|one|two|three|four|five) \+1/\+1 counters? on it\.", k)
             if m:
                 extra.setdefault("advanced_rules", {})["kick_counters"] = _num(m[1])
+                continue
+            if re.search(r"\binstead\b", k):
+                if not _kicker_instead(kicked_effects, k):
+                    unsupported.append(f"if kicked: {k}")
                 continue
             effs, bad = _parse_effects(k)
             kicked_effects += effs
