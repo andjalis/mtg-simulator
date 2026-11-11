@@ -150,9 +150,13 @@ def grant_combat_destroy(game, target, **_):
 
 
 @kind('exile_permanent')
-def exile_permanent(game, target, **_):
+def exile_permanent(game, target, eff=None, **_):
     if isinstance(target, Permanent):
         game.leave_battlefield(target, 'exile')
+        grant = eff.data.get('owner_cast_exiled') if eff is not None else None
+        if grant:
+            from ...exile_permissions import grant as exile_grant
+            exile_grant(target, grant['free'])
 
 
 @kind('grant_triggers')

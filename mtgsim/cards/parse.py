@@ -67,6 +67,9 @@ def _parse_effects(text: str, opts: bool = False):
         from ..cx_statics import counter_rider
         if counter_rider(s, effects):
             continue
+        from ..exile_permissions import parse_rider as exile_rider
+        if exile_rider(s, effects):
+            continue
         if _cx_tokens.parse_rider(s, effects):
             continue
         if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects) or \
