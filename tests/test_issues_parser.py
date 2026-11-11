@@ -158,3 +158,86 @@ class FalseFullXQuantities(unittest.TestCase):
     def test_that_spells_mana_value_not_full(self):
         _, bad = P._parse_effects("You may have target player mill X cards, where X is that spell's mana value.")
         self.assertTrue(bad)
+
+
+class OneOrTwoTargets(Base):
+    """#312: "one or two target <np>" = a required target plus an optional second one."""
+
+    def test_parse_flags(self):
+        effs, bad = P._parse_effects("One or two target creatures each gain haste until end of turn.")
+        self.assertEqual(bad, [])
+        self.assertEqual(len(effs), 2)
+        self.assertFalse(effs[0].data.get("optional_target"))
+        self.assertTrue(effs[1].data.get("optional_target"))
+
+    def test_up_to_one_or_two_stays_unmatched(self):
+        _, bad = P._parse_effects("Up to one or two target creatures each gain haste until end of turn.")
+        self.assertTrue(bad)
+
+    def test_game_second_target_omitted(self):
+        c = self.spell("One or two target creatures each gain haste until end of turn.")
+        mine = self.perm(BEAR, self.a)
+        self.assertFalse(self.game.legal_target(self.a, c.spell_effects[0], None))
+        self.assertTrue(self.game.legal_target(self.a, c.spell_effects[1], None))
+        self.cast(c, targets=[mine, None])
+        self.assertTrue(mine.has("haste"))
+
+    def test_object_position(self):
+        effs, bad = P._parse_effects("Return one or two target attacking creatures to their owner's hand.")
+        self.assertEqual(bad, [])
+        self.assertEqual([bool(e.data.get("optional_target")) for e in effs], [False, True])
+
+
+class DamageToEachOfTargets(Base):
+    """#320: "deals N damage to each of two targets" and "... each of up to two other targets"."""
+
+    def test_two_targets_deal_damage(self):
+        c = self.spell("~ deals 2 damage to each of two targets.")
+        x, y = self.perm(BEAR, self.b), self.perm(BEAR, self.b)
+        life = self.b.life
+        self.cast(c, targets=[x, y])
+        self.assertEqual((x.damage, y.damage, self.b.life), (2, 2, life))
+
+    def test_same_target_twice_is_rejected(self):
+        c = self.spell("~ deals 2 damage to each of two targets.")
+        x = self.perm(BEAR, self.b)
+        self.cast(c, targets=[x, x])
+        self.assertEqual(x.damage, 2)               # only one of the two hits lands
+
+    def test_any_target_then_other_targets(self):
+        c = self.spell("~ deals 4 damage to any target and 3 damage to each of up to two other targets.")
+        self.assertEqual(len(c.spell_effects), 3)
+        self.assertEqual([bool(e.data.get("optional_target")) for e in c.spell_effects], [False, True, True])
+        x = self.perm(BEAR, self.b)
+        life = self.b.life
+        self.cast(c, targets=[self.b, x, None])
+        self.assertEqual((self.b.life, x.damage), (life - 4, 3))
+
+    def test_other_without_first_target_unmatched(self):
+        _, bad = P._parse_effects("~ deals 2 damage to each of two other targets.")
+        self.assertTrue(bad)
+
+    def test_variable_count_unmatched(self):
+        _, bad = P._parse_effects("~ deals 4 damage to each of X targets.")
+        self.assertTrue(bad)
+
+
+class MayHaveItDeal(Base):
+    """#319: "you may have it deal ... / fight ..." (base-form verb after "have")."""
+
+    def test_parses(self):
+        for text in ("You may have ~ deal 2 damage to target creature.",
+                     "You may have it deal 3 damage to target creature.",
+                     "You may have it deal damage equal to its power to target creature.",
+                     "You may have it fight target creature you don't control."):
+            effs, bad = P._parse_effects(text)
+            self.assertEqual(bad, [], text)
+            self.assertTrue(effs, text)
+
+    def test_still_optional(self):
+        effs, _ = P._parse_effects("You may have it deal 3 damage to target creature.")
+        self.assertTrue(any(e.kind == "pay_gate" or e.data.get("may_hostile") for e in effs))
+
+    def test_other_verbs_unmatched(self):
+        _, bad = P._parse_effects("You may have it explode violently.")
+        self.assertTrue(bad)

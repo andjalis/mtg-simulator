@@ -37,8 +37,13 @@ def _damage(m):
     who = m[1]
     if who == "each player":
         return Effect("damage_each_player", 0, data={"that_much": True})
-    target = "any" if who == "any target" else "creature" if who == "target creature" else "player"
-    return Effect("damage", 0, target=target, data={"that_much": True})
+    if who == "you":            # damage to the controller, dealt by the source, so prevention and lifelink apply
+        return Effect("cx_damage", 0, data={"that_much": True, "source": "self", "side": "theirs", "who": "you"})
+    target = "any" if who in ("any target", "any other target") else "creature" if who == "target creature" else "player"
+    data = {"that_much": True}
+    if who == "any other target":
+        data["other"] = True
+    return Effect("damage", 0, target=target, data=data)
 
 
 EFFECT_PATTERNS = [
@@ -47,7 +52,7 @@ EFFECT_PATTERNS = [
     (r"draw that many cards", _that_much("draw")),
     (r"discard that many cards", _that_much("discard")),
     (r"(?:target|each) opponent loses that much life", _that_much("drain", target="each_opponent")),
-    (_SRC + r" deals that much damage to (any target|target opponent|target player|each opponent|each player|target creature)", _damage),
+    (_SRC + r" deals that much damage to (any target|any other target|you|target opponent|target player|each opponent|each player|target creature)", _damage),
 ]
 
 TRIGGERS = [

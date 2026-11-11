@@ -12,8 +12,9 @@
     Hellbent — As long as you have no cards in hand, if a source you control would deal damage ..., it deals ...
 
 A rule is ``advanced_rules["cx_damage"]``: ``src`` (who controls the source, ``other``, and color / type / subtype /
-spell-only alternatives), ``to`` ("any", "opp_side", "opp", "players"), ``op`` (("mul", k), ("add", n) or
-("half", rounding)), ``cond`` (a ``cx_condlib`` code read from the static's source) and ``combat`` (None or False).
+spell-only alternatives), ``to`` ("any", "opp_side", "opp", "players"), ``op`` (("mul", k), ("add", n),
+("add_quantity", quantity) or ("half", rounding)), ``cond`` (a ``cx_condlib`` code read from the static's source)
+and ``combat`` (None or False). A dynamic addition reads counters or a stat of the replacement's holder each time.
 ``modify`` runs from ``Game.deal_damage`` right after the older "plus N" statics (``that_much.damage_amount``).
 When several apply, the player being dealt damage (or the controller of the permanent) picks the order (rule
 616.1); the order dealing the least damage is used.
@@ -30,6 +31,7 @@ _TO = {None: "any", "a permanent or player": "any", "an opponent or a permanent 
 _LINE = re.compile(
     r"(?:[A-Z][\w' ]* — )?(?:As long as (?P<al>.+?), i|I)f (?P<src>.+?) would deal (?P<nc>noncombat )?damage"
     r"(?: to (?P<to>.+?))?, it deals (?P<op>double that damage|triple that damage|that much damage plus (?P<n>\d+)|"
+    r"that much damage plus an amount of damage equal to (?P<quantity>.+?)|"
     r"half that damage, rounded (?P<round>down|up))(?: to that (?:permanent or player|player|creature))? instead\.")
 
 
@@ -72,6 +74,11 @@ def _source(text: str):
 
 
 def parse_line(line: str, st) -> bool:
+    # "instead it deals ... plus X, where X is ~'s power" binds X to the replacement's holder.
+    dynamic = re.fullmatch(r"(.+?), instead it deals that much damage plus X, where X is (.+)\.", line)
+    if dynamic:
+        line = (dynamic[1] + ", it deals that much damage plus an amount of damage equal to "
+                + dynamic[2] + " instead.")
     m = _LINE.fullmatch(line)
     if not m or not st.types or "Instant" in st.types or "Sorcery" in st.types:
         return False
@@ -85,6 +92,13 @@ def parse_line(line: str, st) -> bool:
         op = ("mul", 3)
     elif m["n"]:
         op = ("add", int(m["n"]))
+    elif m["quantity"]:
+        from .cards.clauses import _xq
+        quantity = _xq(m["quantity"])
+        if not quantity or not (quantity[0] == "counters" or
+                                quantity[0] == "stat" and quantity[1] == "self"):
+            return False       # a previous target / event has no meaning in a battlefield static
+        op = ("add_quantity", quantity)
     else:
         op = ("half", m["round"])
     cond = ""
@@ -173,7 +187,12 @@ def modify(game, target, amount: int, by, source, combat: bool) -> int:
                     from .cx_condlib import holds_for
                     if not holds_for(x, rule["cond"]):
                         continue
-                ops.append(rule["op"])
+                op, value = rule["op"]
+                if op == "add_quantity":
+                    from .engine.state import StackItem
+                    value = game.x_quantity(pl, value, StackItem(pl, [], [], source=x), None)
+                    op = "add"
+                ops.append((op, value))
     if not ops:
         return amount
     if len(ops) == 1 or len(ops) > 5:

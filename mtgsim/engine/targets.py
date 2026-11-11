@@ -231,8 +231,10 @@ class TargetsMixin:
                         if e2.data.get("group", e2.kind) == group and e2.data.get("distinct")):
                     taken = [t for e2, t in zip(effects, out)
                              if e2.data.get("group", e2.kind) == group and e2.data.get("distinct")]
+                    # "any target" also lists players; a player stands for its own controller here
                     tgt = max((x for x in self.legal_targets(p, e) if all(x is not t for t in taken)
-                               and (x.controller is not p) == (tgt.controller is not p)), key=perm_value, default=None) \
+                               and (getattr(x, "controller", x) is not p) == (tgt.controller is not p)),
+                              key=lambda x: perm_value(x) if isinstance(x, Permanent) else -1.0, default=None) \
                         if isinstance(tgt, Permanent) else None
                 out.append(tgt)
             return out

@@ -31,6 +31,8 @@ TALENT = card("Test Talent", "{2}{R}", "Enchantment", "If a source you control w
 RED_BEAR = card("Test Red Bear", "{1}{R}", "Creature — Bear", "", 2, 2)
 SWINE = card("Test Swine", "{4}{R}", "Creature — Boar", "Whenever ~ is dealt damage, ~ deals that much damage to each "
              "player.", 4, 4)
+GATEKEEPER = card("Test Gatekeeper", "{3}{R}", "Creature — Giant", "Whenever ~ is dealt damage, it deals that much "
+                  "damage to you.", 4, 4)
 
 
 class ThatMuch(unittest.TestCase):
@@ -54,6 +56,14 @@ class ThatMuch(unittest.TestCase):
         for c in (RECKONER, CALIPH, WARRIOR, CONQUEROR, BOND, REFLECTION, HERON, BLOODLETTER, HELLION, UNICORN, BARRIER,
                   TALENT, SWINE):
             self.assertEqual(c.unsupported, [], c.name)
+
+    def test_gatekeeper_hurts_its_controller(self):
+        self.assertEqual(GATEKEEPER.unsupported, [])
+        g = self.put(GATEKEEPER)
+        life = self.a.life
+        self.game.deal_damage(g, 3, by=self.b, source=None)
+        self.game.settle()
+        self.assertEqual((self.a.life, self.b.life), (life - 3, 20))
 
     def test_reckoner_deals_back_what_it_took(self):
         r = self.put(RECKONER)

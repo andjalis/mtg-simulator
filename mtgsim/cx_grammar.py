@@ -271,9 +271,10 @@ def subject(text: str):
             return None
         return Subject("group", target="player", data={"filter": "opp"} if m[3].lower() == "opponent" else {},
                        group=noun, text=text)
-    m = re.fullmatch(r"(?:(up to) )?(?:(a|one|two|three|four|five) )?(other |another )?target (.+?)( each)?", text, re.I)
-    if m and not (m[1] and not m[2]):
-        n = _NUMBER[m[2].lower()] if m[2] else 1
+    m = re.fullmatch(r"(?:(up to) )?(?:(a|one or two|one|two|three|four|five) )?(other |another )?target (.+?)( each)?",
+                     text, re.I)
+    if m and not (m[1] and not m[2]) and not (m[1] and m[2].lower() == "one or two"):
+        n = 2 if m[2] and m[2].lower() == "one or two" else _NUMBER[m[2].lower()] if m[2] else 1
         if n == 1 and m[5]:
             return None
         noun = _noun(_singular(m[4]) if n > 1 else m[4], plural=False)
@@ -286,6 +287,8 @@ def subject(text: str):
             data["optional_target"] = True
         if n > 1:
             data["distinct"] = True
+        if m[2] and m[2].lower() == "one or two":
+            data["optional_from"] = 1       # the first target is required, the second optional
         return Subject("permanent", target="permanent", data=data, copies=n, text=text)
     m = re.fullmatch(r"(each|all) (.+)", text, re.I)
     words = m[2] if m else text
@@ -405,17 +408,20 @@ def assemble(subj: Subject, parts: list):
     if subj.kind == "imperative" and any(p.obj is None for p in parts):
         return None             # an imperative verb names its own object
     out = []
-    for _ in range(subj.copies):
+    for i in range(subj.copies):
         placed = obj_since = False
+        subj_i = subj
+        if i >= subj.data.get("optional_from", subj.copies):
+            subj_i = dataclasses.replace(subj, data=dict(subj.data, optional_target=True))
         for p in parts:
             if p.obj is not None:
-                effects = _place(p, p.obj, subj)
+                effects = _place(p, p.obj, subj_i)
                 if effects is None:
                     return None
                 out += effects
                 obj_since = True
             elif not placed:
-                out.append(_effect(p.kind, p.amount, p.amount2, target=subj.target, data=dict(subj.data, **p.data)))
+                out.append(_effect(p.kind, p.amount, p.amount2, target=subj.target, data=dict(subj_i.data, **p.data)))
                 placed, obj_since = True, False
             elif subj.target == "permanent" and obj_since:
                 return None     # "prev" would now mean the object's target, not the subject
@@ -450,9 +456,11 @@ def _place(p: Part, obj: Subject, subj: Subject):
     if obj.kind == "player" and "side" not in data:     # a target player: the AI picks one by side
         flt = obj.data.get("filter", "")
         data["side"] = "theirs" if flt == "opp" else side([_effect(p.kind, data=data)])
+    first_optional = obj.data.get("optional_from", obj.copies)
     return [_effect(p.kind, p.amount, p.amount2, target=obj.target, filter=obj.data.get("filter", ""),
-                    data=dict({k: v for k, v in obj.data.items() if k != "filter"}, **data))
-            for _ in range(obj.copies)]
+                    data=dict({k: v for k, v in obj.data.items() if k != "filter"},
+                              **data, **({"optional_target": True} if i >= first_optional else {})))
+            for i in range(obj.copies)]
 
 
 _SCALED = ("pump", "debuff_one", "gain_life", "lose_life", "draw", "discard", "mill")
@@ -509,6 +517,10 @@ def parse_fallback(s: str, effects: list) -> bool:
     new = parse_sentence(s)
     if not new:
         return False
+    if any(e.kind == "damage" and e.target == "any" and e.data.get("other") for e in new):
+        from .engine.state import TARGETED
+        if any(e.target in TARGETED for e in effects):
+            return False    # "any other target" can refer to an earlier target (Bond of Passion), not the source
     effects += new
     return True
 
