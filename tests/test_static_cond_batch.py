@@ -201,5 +201,110 @@ class CantPlayLands(unittest.TestCase):
         self.assertFalse(self.b.land_played)
 
 
+RESEARCH = card("Test Research", "{1}{G}", "Enchantment",
+                "At the beginning of your end step, if a card left your graveyard this turn, draw a card.")
+
+
+class GraveyardDeparture(unittest.TestCase):
+    def setUp(self):
+        self.a = Player("a", [ISLAND] * 10, HeuristicAI())
+        self.b = Player("b", [ISLAND] * 10, HeuristicAI())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 1, "main1"
+        self.a.library = [ISLAND] * 5
+        self.a.battlefield.append(Permanent(RESEARCH, self.a))
+        self.a.graveyard.append(ISLAND)
+
+    def end_step_draw(self):
+        before = len(self.a.hand)
+        self.game.fire(self.a, "end_step")
+        self.game.flush_triggers()
+        while self.game.stack:
+            self.game.resolve_top()
+        return len(self.a.hand) - before
+
+    def test_template(self):
+        self.assertEqual(RESEARCH.unsupported, [])
+
+    def test_no_departure_no_draw(self):
+        self.assertEqual(self.end_step_draw(), 0)
+
+    def test_departure_draws(self):
+        self.a.graveyard.remove(ISLAND)
+        self.assertEqual(self.end_step_draw(), 1)
+
+    def test_counter_resets_on_a_new_turn(self):
+        self.a.graveyard.remove(ISLAND)
+        self.a.graveyard.left_turn = 0          # what turn start does
+        self.assertEqual(self.end_step_draw(), 0)
+
+
+WHELP = card("Test Whelp", "{2}{R}{R}", "Creature — Dragon",
+             "Flying\n{R}: ~ gets +1/+0 until end of turn. If this ability has been activated four or more times this turn, "
+             "sacrifice ~ at the beginning of the next end step.", 2, 3)
+
+
+class ActivatedManyTimes(unittest.TestCase):
+    def run_whelp(self, times):
+        a = Player("a", [ISLAND] * 10, HeuristicAI())
+        b = Player("b", [ISLAND] * 10, HeuristicAI())
+        game = Game(a, b, random.Random(0), log=True)
+        game.turn, game.step = 1, "main1"
+        for _ in range(4):
+            a.battlefield.append(Permanent(MOUNTAIN, a))
+        whelp = Permanent(WHELP, a)
+        whelp.sick = False
+        a.battlefield.append(whelp)
+        for _ in range(times):
+            self.assertTrue(game.activate_ability(a, whelp, 0))
+            game.settle()
+        game.begin_end_step(a)
+        game.flush_triggers()
+        while game.stack:
+            game.resolve_top()
+        return a, whelp
+
+    def test_template(self):
+        self.assertEqual(WHELP.unsupported, [])
+
+    def test_three_activations_survive(self):
+        a, whelp = self.run_whelp(3)
+        self.assertIn(whelp, a.battlefield)
+        self.assertEqual(whelp.power, 5)
+
+    def test_four_activations_sacrifice_at_end_step(self):
+        a, whelp = self.run_whelp(4)
+        self.assertNotIn(whelp, a.battlefield)
+
+
+VERDICT = card("Test Verdict", "{2}{R}{R}", "Sorcery", "Flip a coin. If you win the flip, destroy all creatures with power 2 or less. "
+               "If you lose the flip, destroy all creatures with power 3 or greater.")
+OGRE = card("Test Ogre", "{3}", "Creature — Ogre", "", 3, 3)
+
+
+class CoinSpellBothSides(unittest.TestCase):
+    def cast(self, win):
+        a = Player("a", [ISLAND] * 10, HeuristicAI())
+        b = Player("b", [ISLAND] * 10, HeuristicAI())
+        game = Game(a, b, random.Random(0), log=True)
+        game.turn, game.step = 1, "main1"
+        game.rng = _Coin(win)
+        for _ in range(4):
+            a.battlefield.append(Permanent(MOUNTAIN, a))
+        small = Permanent(BEAR, b)
+        big = Permanent(OGRE, b)
+        b.battlefield.extend([small, big])
+        a.hand[:] = [VERDICT]
+        self.assertTrue(game.cast(a, VERDICT, []))
+        game.settle()
+        return small in b.battlefield, big in b.battlefield
+
+    def test_win_destroys_small(self):
+        self.assertEqual(self.cast(True), (False, True))
+
+    def test_lose_destroys_big(self):
+        self.assertEqual(self.cast(False), (True, False))
+
+
 if __name__ == "__main__":
     unittest.main()

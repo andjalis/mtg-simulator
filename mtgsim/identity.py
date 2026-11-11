@@ -64,6 +64,7 @@ class CardZone(list):
         super().__init__()
         self.owner, self.name = owner, name
         self.left = []
+        self.left_turn = 0          # cards that left this zone this turn ("a card left your graveyard this turn")
         self.versions = {}
         self.initializing = True
         self.extend(cards)
@@ -144,6 +145,7 @@ class CardZone(list):
         self.versions[card.physical_id] = card.generation
         if self.track_departures:
             self.left.append(card)
+            self.left_turn += 1
 
     def extend(self, cards):
         for card in list(cards):

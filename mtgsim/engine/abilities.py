@@ -399,9 +399,8 @@ class AbilitiesMixin:
             return False
         p.counters["energy"] = p.counters.get("energy", 0) - c.get("energy", 0)
         perm.ability_turns[idx] = self.turn
-        if act.max_per_turn:
-            seen = perm.ability_turns.get(("count", idx), (None, 0))
-            perm.ability_turns[("count", idx)] = (self.turn, seen[1] + 1 if seen[0] == self.turn else 1)
+        seen = perm.ability_turns.get(("count", idx), (None, 0))       # activations this turn: max_per_turn, "activated N or more times"
+        perm.ability_turns[("count", idx)] = (self.turn, seen[1] + 1 if seen[0] == self.turn else 1)
         if act.once_game:
             perm.ability_turns[("game", idx)] = self.turn
         if c.get("tap"):
@@ -486,6 +485,7 @@ class AbilitiesMixin:
                 return False
         item = StackItem(p, effects, list(targets), source=perm, name=f"{perm.card.name} ability",
                          kind="ability")
+        item.ability_idx = idx
         item.counter_x = sum(n for _, _, n in plan.counter_payments)
         if c.get("remove_creature_counters") in ("x", "positive"):
             item.x = item.counter_x

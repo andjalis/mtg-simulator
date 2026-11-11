@@ -316,6 +316,7 @@ class TurnsMixin:
             pl.creature_died_turn = False
             if isinstance(pl.graveyard, Graveyard):
                 pl.graveyard.descents = 0
+            pl.graveyard.left_turn = 0
         self.creature_died_turn = False
         from ..advanced_templates import begin_turn
         begin_turn(self, p)
