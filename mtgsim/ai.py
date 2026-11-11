@@ -1032,7 +1032,23 @@ class HeuristicAI:
                 return None
             named = [target]
         else:
-            named = {"you": [me], "each": [me, opp], "opponents": [opp], "defending": [opp]}.get(who)
+            named = {"you": [me], "each": [me, opp], "opponents": [opp]}.get(who)
+            if who == "defending":
+                # Mirror cx_grammar's #297 rule without requiring the unmerged helper.
+                # The attacker may be the trigger's source or its event context.
+                item = getattr(game, "target_source", None)
+                if not hasattr(item, "effects"):
+                    item = getattr(game, "resolving_item", None)
+                defender = None
+                for creature in (getattr(item, "source", None), getattr(item, "context", None)):
+                    attacked = game.attack_targets.get(creature) if isinstance(creature, Permanent) else None
+                    if isinstance(attacked, Permanent):
+                        defender = attacked.controller
+                    elif attacked in game.players:
+                        defender = attacked
+                    if defender is not None:
+                        break
+                named = [defender or opp]
             if named is None:
                 return None, 0.0    # "that player", "its owner": a rider of another effect, valued by that one
         value = 0.0
