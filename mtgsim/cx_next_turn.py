@@ -244,6 +244,16 @@ def _target_flag(flag):
     return Effect("cx_player_flag", target="player", data={"flag": flag, "who": "target"})
 
 
+def _conditional_land_and_creature_lock(m):
+    from .cx_condlib import parse
+    first = _target_flag('no_lands')
+    first.cond = parse('{' + m['land_color'] + '} was spent to cast ~')
+    second = _target_flag('no_creature_cast')
+    second.target = 'prev'
+    second.cond = parse('{' + m['creature_color'] + '} was spent to cast ~')
+    return [first, second]
+
+
 def _both(*builders):
     def build(m):
         return [b(m) for b in builders]
@@ -295,6 +305,9 @@ EFFECT_PATTERNS = [
     (rf"you have no maximum hand size{_UNTIL}", _flag("no_max_hand")),
     (rf"you can't cast spells{_UNTIL}", _flag("no_cast")),
     (rf"target player can't play lands{_UNTIL}", lambda m: _target_flag("no_lands")),
+    (r"target player can't play lands this turn if \{(?P<land_color>[WUBRG])\} was spent to cast ~ and "
+     r"can't cast creature spells this turn if \{(?P<creature_color>[WUBRG])\} was spent to cast ~",
+     _conditional_land_and_creature_lock),
     (rf"(?:spells your opponents cast cost|(?P<nc>noncreature) spells your opponents cast cost) \{{(?P<n>\d+)\}} more to cast{_UNTIL}",
      lambda m: _flag("tax", filter="noncreature" if m["nc"] else "")(m)),
 ]

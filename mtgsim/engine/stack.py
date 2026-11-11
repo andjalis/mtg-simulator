@@ -388,6 +388,7 @@ class StackMixin:
             if kind == "warp":
                 perm.warped = True
             perm.was_cast = True
+            perm.cast_turn = getattr(item, "cast_turn", None)
             perm.kicks = getattr(item, "kicks", 0)
             perm.emerged_toughness = getattr(item, "emerged_toughness", None)
             if perm.kicks and base.advanced_rules.get("kick_counters_each"):

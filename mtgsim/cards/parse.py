@@ -579,6 +579,9 @@ def _parse_face(data: dict) -> CardDef:
     triggers = [t for t in triggers if t not in extra["gy_triggers"]]
     extra["spent_colors"] = frozenset(t.effects[0].cond[6:] for t in triggers
                                       if t.effects and t.effects[0].cond.startswith("spent:"))
+    # Payment-dependent spell effects also need the hybrid payment variants.
+    extra["spent_colors"] |= frozenset(m[1] for e in spell
+        if (m := re.fullmatch(r'lib:\["spent_color","([WUBRG])"\]', e.cond)))
     if "prowess" in keywords:
         triggers.append(Trigger("cast_noncreature", [Effect("pump", 1, 1, target="self")]))
     # Triggers with "choose up to one" get their bullet modes; drop ones that ended up empty.

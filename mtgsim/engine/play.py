@@ -248,6 +248,7 @@ class PlayMixin:
                 return False
             targets = mode_targets + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")
+        item.cast_turn = self.turn
         # Prepared spells are copies; channel/graveyard abilities leave their
         # physical source in its actual zone rather than moving it onto the stack.
         item.physical_card = base if kind not in ("prepared", "channel", "gy_ability", "unearth") else None
