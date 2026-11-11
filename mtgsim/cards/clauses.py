@@ -46,7 +46,7 @@ _SUBS = [
                 r"until ~ leaves the battlefield\.", re.I), lambda m: f"HANDEXILE {m[1].lower()}."),
     (re.compile(r"^(~ gains [a-z]+ until end of turn)\. tap it\.", re.I), r"\1. Tap ~."),
     # The AI never aims its removal at its own creature, so "another" target is any target.
-    (re.compile(r"(destroy|exile) another target (creature or planeswalker|creature|nonland permanent)", re.I),
+    (re.compile(r"(destroy|exile) another target (creature or planeswalker|creature|nonland permanent)(?! you own)", re.I),
      r"\1 target \2"),
     # Activated and triggered abilities can't be countered in the engine: these counter spells only.
     (re.compile(r"counter target spell, activated ability, or triggered ability", re.I), "counter target spell"),

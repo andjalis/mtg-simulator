@@ -441,6 +441,8 @@ def _parse_face(data: dict) -> CardDef:
     text = re.sub(r"\b(protection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
                   r"\1 and protection from \2", text)
     text = re.sub(r"(becomes the target of (?:a spell or ability|a spell)), sacrifice it\.", r"\1, sacrifice ~.", text)
+    from ..blink import prepare_linked
+    text = prepare_linked(text)
     # The two-sentence O-ring wording ("... exile X. When ~ leaves the battlefield, return the exiled
     # card(s) to the battlefield ...") is the single-sentence "exile X until ~ leaves the battlefield"
     # the oring templates already implement (the engine returns the card when the source leaves).
