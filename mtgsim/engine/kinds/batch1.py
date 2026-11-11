@@ -5,16 +5,20 @@ from . import kind
 from ... import counter_mechanics
 
 
-def _edict(game, p, victim_owner):
+def _edict(game, p, victim_owner, item=None):
+    if item is not None:
+        item.sacrificed_permanent = None
     victims = sorted(victim_owner.creatures, key=perm_value)[:1]
     sources = counter_mechanics.death_sources(game)
     for v in victims:
         game.sacrifice(v, counter_sources=sources)
+        if item is not None:
+            item.sacrificed_permanent = v
 
 
 @kind("edict_player")
-def edict_player(game, p, target, opp, **_):
-    _edict(game, p, target if target is not None and not isinstance(target, Permanent) else opp)
+def edict_player(game, p, target, opp, item=None, **_):
+    _edict(game, p, target if target is not None and not isinstance(target, Permanent) else opp, item)
 
 
 @kind("edict_each")
@@ -26,10 +30,15 @@ def edict_each(game, p, eff, opp, **_):
 
 @kind("gain_prev_stat")
 def gain_prev_stat(game, p, eff, prev, cause, **_):
+    """"You gain / lose life equal to its power / that creature's toughness / that card's mana value", also "its
+    controller gains life equal to its power" (data["who"] == "controller"). The referent's last-known power and
+    toughness are used once it has left the battlefield (Permanent.power / .toughness fall back to last_pt)."""
     if isinstance(prev, Permanent):
         value = {"power": lambda: prev.power, "toughness": lambda: prev.toughness,
                  "mana value": lambda: prev.card.cmc}[eff.data["stat"]]()
-        game.change_life(p, max(0, value), cause)
+        who = prev.controller if eff.data.get("who") == "controller" else p
+        sign = -1 if eff.data.get("lose") else 1
+        game.change_life(who, sign * max(0, value), cause)
 
 
 @kind("powerstone")

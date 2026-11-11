@@ -19,8 +19,8 @@ class ContinuousEffect:
     target: object
     operation: str
     timestamp: int
-    power: int = 0
-    toughness: int = 0
+    power: int | None = 0
+    toughness: int | None = 0
     keyword: str = ''
     depends_on: tuple = ()
     source: object = None
@@ -157,7 +157,9 @@ def base_effects(permanent):
 def base_pt(permanent):
     p, t = permanent.card.power or 0, permanent.card.toughness or 0
     for effect in ordered(base_effects(permanent) + [e for e in active(permanent) if e.operation == "set_base"]):
-        p, t = effect.power, effect.toughness
+        # A set-base effect may set only one characteristic (Belligerent Yearling).
+        p = effect.power if effect.power is not None else p
+        t = effect.toughness if effect.toughness is not None else t
     return p, t
 
 
@@ -170,7 +172,8 @@ def pt(permanent):
             p, t = block[0]
     effects = active(permanent)
     for effect in ordered(base_effects(permanent) + [e for e in effects if e.operation == 'set_base']):
-        p, t = effect.power, effect.toughness
+        p = effect.power if effect.power is not None else p
+        t = effect.toughness if effect.toughness is not None else t
     bp, bt = permanent._pt_bonus()
     p += bp + permanent.pump_p
     t += bt + permanent.pump_t

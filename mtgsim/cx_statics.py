@@ -218,7 +218,34 @@ def _pump(m):
                         "kws": list(_keywords(m["k"] or m["k2"]))})
 
 
+_RESTRICT = {"attack or block": ("cant_attack_now", "cant_block_now"), "attack": ("cant_attack_now",),
+             "block": ("cant_block_now",)}
+
+
+def restrict_rider(s, effects) -> bool:
+    """"That creature can't attack or block for as long as you control ~" right after a linked control effect (the
+    stolen creature is the referent); after any other effect the referent isn't tracked, so it stays unmatched."""
+    m = re.fullmatch(r"(?:that|the chosen) creature can't (?P<what>attack or block|attack|block) "
+                     r"for as long as (?P<d>you control ~)", s, re.I)
+    if not m or not effects or effects[-1].kind != "control_linked" or effects[-1].data["duration"] != "controlled":
+        return False
+    effects.append(_restrict(dict(m.groupdict(), who=True, what=m["what"].lower(), d=m["d"].lower())))
+    return True
+
+
+def _restrict(m):
+    """"That creature can't attack or block for as long as you control ~": the restriction is a linked grant, so it
+    ends as soon as the source leaves the battlefield or changes controller."""
+    from .cards.model import Effect
+    g = m if isinstance(m, dict) else m.groupdict()
+    return Effect("linked_restrict", target="prev" if g.get("who") else "creature",
+                  data={"duration": _mode(g["d"]), "kws": list(_RESTRICT[g["what"]]),
+                        "optional_target": bool(g.get("up"))})
+
+
 EFFECT_PATTERNS = [
+    (r"(?P<up>up to one )?target creature can't (?P<what>attack or block|attack|block) "
+     r"for as long as (?P<d>you control ~)", lambda m: _restrict(dict(m.groupdict(), who=None))),
     (rf"(?:you may )?gain control of (?P<up>up to one )?target (?P<f>[\w ,'~-]+?) {_DUR}", _control),
     (rf"(?P<other>another )?target (?P<f>[\w ,'~-]+?) {_PT_KWS} {_DUR}", _pump),
 ]

@@ -157,9 +157,13 @@ def animate_land(game, p, eff, target, prev, **_):
 
 
 @kind("token")
-def token(game, p, eff, target, item, **_):
+def token(game, p, eff, target, item, prev=None, **_):
     who = target if eff.target == "that_controller" and isinstance(target, Player) else p
     n = None
+    if eff.data.get("referent_pt"):
+        if not isinstance(prev, Permanent):
+            return
+        eff = dataclasses.replace(eff, data=dict(eff.data, power=prev.power, toughness=prev.toughness))
     if eff.data.get("x"):
         n = (getattr(item.source, "entered_x", 0) if item.source is not None else getattr(item, "x", 0)) \
             if item is not None else 0
@@ -420,17 +424,22 @@ def amass(game, p, eff, **_):
 
 
 @kind("edict")
-def edict(game, p, eff, opp, **_):
-    victims = sorted(opp.creatures, key=perm_value)[:eff.amount]
+def edict(game, p, eff, opp, target=None, item=None, **_):
+    victim_player = target if eff.target == "player" and isinstance(target, Player) else opp
+    if item is not None:
+        item.sacrificed_permanent = None
+    victims = sorted(victim_player.creatures, key=perm_value)[:eff.amount]
     sources = counter_mechanics.death_sources(game)
     for v in victims:
         if eff.data.get("exile"):
             game.leave_battlefield(v, "exile")
-            game.log(f"{opp} exiles {v.card.name}", p)
+            game.log(f"{victim_player} exiles {v.card.name}", p)
         elif eff.data.get("destroy"):
             game.destroy(v)
         else:
             game.sacrifice(v, counter_sources=sources)
+            if item is not None:
+                item.sacrificed_permanent = v
 
 
 @kind("endure")

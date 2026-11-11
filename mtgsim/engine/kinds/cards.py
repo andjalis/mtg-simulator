@@ -321,10 +321,17 @@ def mill(game, p, eff, target, item, opp, **_):
 
 
 @kind("exile_top")
-def exile_top(game, p, eff, **_):
+def exile_top(game, p, eff, target=None, item=None, **_):
+    from ...referent import remember_card
+    remember_card(item, None)
+    if eff.target == "that_player":
+        if not isinstance(target, Player):
+            return
+        p = target
     p.impulse_new = []
     for _ in range(min(eff.amount, len(p.library))):
         c = p.library.pop()
+        remember_card(item, c)
         p.exile.append(c)
         p.impulse_new.append(c)
     game.log(f"exiles the top {len(p.impulse_new)} card(s) of their library", p)
