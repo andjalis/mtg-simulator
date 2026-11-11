@@ -517,6 +517,10 @@ def parse_fallback(s: str, effects: list) -> bool:
     new = parse_sentence(s)
     if not new:
         return False
+    if any(e.kind == "damage" and e.target == "any" and e.data.get("other") for e in new):
+        from .engine.state import TARGETED
+        if any(e.target in TARGETED for e in effects):
+            return False    # "any other target" can refer to an earlier target (Bond of Passion), not the source
     effects += new
     return True
 

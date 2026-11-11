@@ -415,7 +415,8 @@ class StackMixin:
                 perm.counters["+1/+1"] = perm.p1 + p.next_creature_counters
                 p.next_creature_counters = 0
             return
-        targeted = [(e, t) for e, t in zip(item.effects, item.targets) if e.target in TARGETED]
+        targeted = [(e, t) for e, t in zip(item.effects, item.targets)
+                    if e.target in TARGETED and not (t is None and e.data.get("optional_target"))]
         with self.targeting(item):
             item.resolved = not (targeted and all(not self.legal_target(p, e, t) for e, t in targeted))
         if not item.resolved:
@@ -433,6 +434,8 @@ class StackMixin:
                     item.targets[i - 1].exile_turn = self.turn
             for eff, tgt in zip(item.effects, item.targets):
                 if eff.target in TARGETED:
+                    if tgt is None and eff.data.get("optional_target"):
+                        continue    # no target was chosen for this slot; it cannot deal damage or keep the spell legal
                     with self.targeting(item):
                         legal = self.legal_target(p, eff, tgt)
                     if not legal:
