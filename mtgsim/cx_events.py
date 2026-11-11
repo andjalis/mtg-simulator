@@ -588,9 +588,11 @@ def split_head(line: str):
         rest = ", ".join(parts[i:])
         if got[1].get("kind") in ("attack_with", "attack_power") and not cx_trig_events.attack_rest_ok(rest):
             continue
-        effs, bad = _parse_effects(rest[0].upper() + rest[1:] if not rest.startswith("~") else rest)
-        if (bad or not effs) and rest.startswith("you "):
-            effs, bad = _parse_effects(rest[4].upper() + rest[5:])       # "you draw that many cards"
+        from . import cx_tokens as _cx_tokens
+        with _cx_tokens.event_amount_ctx(got[0]):
+            effs, bad = _parse_effects(rest[0].upper() + rest[1:] if not rest.startswith("~") else rest)
+            if (bad or not effs) and rest.startswith("you "):
+                effs, bad = _parse_effects(rest[4].upper() + rest[5:])       # "you draw that many cards"
         if bad or not effs:
             return None
         return tuple("ev:" + r for r in got[0]), head, rest
@@ -675,6 +677,16 @@ def observe(game, p, event, source=None, context=None, subject=None):
             if amount is not None and any(e.data.get("that_much") for e in effects):
                 import dataclasses
                 effects = [dataclasses.replace(e, amount=amount) if e.data.get("that_much") else e for e in effects]
+            if any(e.data.get("xq", ("",))[0] == "subj_counters" for e in effects):
+                # "for each +1/+1 counter on it" where "it" is the event's object, not the trigger's owner:
+                # snapshot its counters as LKI when the trigger queues
+                import dataclasses
+                from .engine.state import Permanent as _Perm
+                ref = subject if isinstance(subject, _Perm) else source if isinstance(source, _Perm) else perm
+                if isinstance(ref, _Perm):
+                    effects = [dataclasses.replace(
+                        e, data=dict(e.data, xq=("subj_counters", e.data["xq"][1], dict(ref.counters))))
+                        if e.data.get("xq", ("",))[0] == "subj_counters" else e for e in effects]
             # "counter that spell" on a cast trigger: the spell just cast is the referent
             tgts = None
             cast_item = getattr(game, "casting_item", None)

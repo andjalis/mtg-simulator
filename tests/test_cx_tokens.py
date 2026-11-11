@@ -7,7 +7,7 @@ from mtgsim.carddb import CardDB
 from mtgsim.coverage import card_coverage
 from mtgsim.cx_tokens import describe, parse_create
 from mtgsim.cards.model import NO_MATCH
-from mtgsim.cards.parse import _parse_effects
+from mtgsim.cards.parse import _parse_effects, _parse_trigger_line
 from mtgsim.engine import Game, Player
 from mtgsim.engine.state import StackItem
 from tests.test_combat_triggers import Scripted
@@ -154,8 +154,12 @@ class RealCards(unittest.TestCase):
         self.assertEqual(sum(x.card.name == "Robot token" for x in self.a.battlefield), 2)
 
     def test_counts_of_the_triggering_object_are_left_alone(self):
-        self.assertIs(parse_create("", "a Mutagen token for each +1/+1 counter on it"), NO_MATCH)
-        self.assertFalse(token_effects(self.db.get("The Ooze")))
+        # "on that creature" names a different object than the counts can bind: still refused
+        self.assertIs(parse_create("", "a Mutagen token for each +1/+1 counter on that creature"), NO_MATCH)
+        # "on it" binds the trigger's object (read as an LKI snapshot when it queued)
+        eff = parse_create("", "a Mutagen token for each +1/+1 counter on it")[0]
+        self.assertEqual(eff.data["xq"], ("subj_counters", "+1/+1"))
+        self.assertIsNotNone(token_effects(self.db.get("The Ooze"))[0])
 
 
 class GameCase(unittest.TestCase):
@@ -302,6 +306,100 @@ class Counts(GameCase):
 
 
 @unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class FilteredCounts(GameCase):
+    """#329: counts from a zone set union, counters on the bound object, nontoken death history and the
+    triggering event's amount ("that many")."""
+
+    def test_full(self):
+        for name in ("Aatchik, Emerald Radian", "Asmira, Holy Avenger", "Boss's Chauffeur", "Broodhatch Nantuko",
+                     "Caller of the Claw", "Darien, King of Kjeldor", "Druid's Call", "Eumidian Hatchery",
+                     "Fresh Meat", "Hornet Nest", "Lulu, Inspiring Hollyphant", "Olivia's Attendants",
+                     "Rise from the Nether", "Saber Ants", "The Ooze", "Urborg Justice"):
+            self.assertEqual(card_coverage(self.db.get(name)).ignored, [], name)
+
+    def test_andor_zone_counts_each_card_once(self):
+        # an artifact, a creature and an artifact creature (counted once), plus a land that counts nothing
+        self.a.graveyard = [self.db.get("Mind Stone"), BEAR, self.db.get("Ornithopter"), self.db.get("Forest")]
+        eff = token_effects(self.db.get("Aatchik, Emerald Radian"))[0]
+        self.game.resolve(self.a, eff, None)
+        self.assertEqual(sum("Insect" in x.card.subtypes for x in self.a.battlefield), 3)
+        self.a.graveyard = []                       # count 0: no tokens
+        self.game.resolve(self.a, eff, None)
+        self.assertEqual(sum("Insect" in x.card.subtypes for x in self.a.battlefield), 3)
+
+    def test_token_doubling_still_applies_to_a_counted_creation(self):
+        self.a.graveyard = [self.db.get("Mind Stone"), BEAR]
+        self.game.enter_battlefield(self.a, self.db.get("Parallel Lives"))
+        eff = token_effects(self.db.get("Aatchik, Emerald Radian"))[0]
+        self.game.resolve(self.a, eff, None)
+        self.assertEqual(sum("Insect" in x.card.subtypes for x in self.a.battlefield), 4)
+
+    def test_counters_on_the_dying_creature_read_lki(self):
+        chauffeur = self.game.enter_battlefield(self.a, self.db.get("Boss's Chauffeur"))
+        chauffeur.counters["+1/+1"] = 3
+        self.game.destroy(chauffeur)
+        self.game.settle()
+        citizens = [x for x in self.a.battlefield if "Citizen" in x.card.subtypes and x.card.is_token]
+        self.assertEqual([(x.power, x.toughness) for x in citizens], [(1, 1)] * 3)
+
+    def test_counters_on_the_leaving_creature(self):
+        self.game.enter_battlefield(self.a, self.db.get("The Ooze"))
+        bear = self.game.enter_battlefield(self.a, BEAR)
+        bear.counters["+1/+1"] = 2
+        self.game.leave_battlefield(bear, "hand")
+        self.game.settle()
+        self.assertEqual(sum(x.card.token_kind == "mutagen" for x in self.a.battlefield), 2)
+
+    def test_that_many_from_the_damage_actually_dealt(self):
+        ants = self.game.enter_battlefield(self.a, self.db.get("Saber Ants"))        # 2/3: survives two hits
+        self.game.deal_damage(ants, 2, by=self.b)
+        self.game.settle()
+        insects = [x for x in self.a.battlefield if x.card.is_token]
+        self.assertEqual(len(insects), 2)
+        self.assertTrue(all((x.power, x.toughness) == (1, 1) for x in insects))
+        ants.prevent_next = 1                       # 1 damage gets through: one more ("you may" is taken)
+        self.game.deal_damage(ants, 2, by=self.b)
+        self.game.settle()
+        self.assertEqual(sum(x.card.is_token for x in self.a.battlefield), 3)
+        ants.prevent_next = 9                       # fully prevented: the trigger doesn't fire at all
+        self.game.deal_damage(ants, 2, by=self.b)
+        self.game.settle()
+        self.assertEqual(sum(x.card.is_token for x in self.a.battlefield), 3)
+
+    def test_that_many_outside_an_amount_event_stays_unmatched(self):
+        self.assertIs(parse_create("", "that many 1/1 green Insect creature tokens"), NO_MATCH)
+        _, bad = _parse_effects("Each player discards all the cards in their hand, then creates that many 2/2 black "
+                                "Zombie creature tokens.")
+        self.assertEqual(len(bad), 1)               # a discard carries no event amount
+        triggers, bad, _ = _parse_trigger_line("Whenever a creature you control dies, create that many Treasure tokens.")
+        self.assertEqual((triggers, bad), ([], ["create that many Treasure tokens."]))
+
+    def test_that_many_token_abilities_run(self):
+        nest = self.game.enter_battlefield(self.a, self.db.get("Hornet Nest"))       # 0/2: one hit is survivable
+        self.game.deal_damage(nest, 1, by=self.b)
+        self.game.settle()
+        bug = next(x for x in self.a.battlefield if x.card.is_token)
+        self.assertTrue(bug.has("flying") and bug.has("deathtouch"))
+
+    def test_nontoken_death_history(self):
+        for _ in range(2):
+            self.game.destroy(self.game.enter_battlefield(self.a, BEAR))
+        bug = parse_create("", "a 1/1 green Insect creature token")[0]
+        self.game.resolve(self.a, bug, None)        # a token dying must not count
+        self.game.destroy(next(x for x in self.a.battlefield if x.card.is_token))
+        self.game.settle()
+        self.game.enter_battlefield(self.a, self.db.get("Caller of the Claw"))
+        self.game.settle()
+        bears = [x for x in self.a.battlefield if "Bear" in x.card.subtypes and x.card.is_token]
+        self.assertEqual([(x.power, x.toughness) for x in bears], [(2, 2)] * 2)
+
+    def test_nontoken_death_history_zero(self):
+        self.game.enter_battlefield(self.a, self.db.get("Caller of the Claw"))
+        self.game.settle()
+        self.assertFalse(any(x.card.is_token for x in self.a.battlefield))
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
 class CopyTokens(GameCase):
     """"Create a token that's a copy of that creature / it": the object the previous effect or the trigger acted on."""
     def test_full(self):
@@ -410,6 +508,30 @@ class HeuristicAIGames(unittest.TestCase):
         self.assertIn("Vraska, the Cutting Glare", [x.card.name for x in self.a.battlefield])
         self.assertEqual(sum(x.card.token_kind == "treasure" for x in self.b.battlefield), 1)
         self.assertFalse(any(x.card.token_kind == "treasure" for x in self.a.battlefield))
+
+    def test_broodhatch_damage_trigger_makes_that_many_insects(self):
+        self.setup("Broodhatch Nantuko", "Forest", "main1", 0)
+        self.game.main_phase(self.a)                # the AI casts the newly playable creature itself
+        self.game.settle()
+        brood = next(x for x in self.a.battlefield if x.card.name == "Broodhatch Nantuko")
+        self.game.deal_damage(brood, 3, by=self.b)
+        self.game.settle()
+        self.assertEqual(sum(x.card.is_token for x in self.a.battlefield), 3)
+
+    def test_broodhatch_blocks_and_creates_insects_for_combat_damage(self):
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 20
+        brood = self.game.enter_battlefield(self.a, self.db.get("Broodhatch Nantuko"))
+        bear = self.game.enter_battlefield(self.b, BEAR)
+        bear.sick = False
+        self.b.ai.attack = (bear,)
+        self.a.ai.block = {bear: [brood]}
+        self.game.combat(self.b, self.a)
+        self.game.settle()
+        self.assertEqual(sum(x.card.is_token for x in self.a.battlefield), 2)     # the Bear's 2 damage
 
 if __name__ == "__main__":
     unittest.main()
