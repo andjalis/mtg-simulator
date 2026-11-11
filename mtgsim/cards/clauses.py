@@ -370,24 +370,19 @@ _OPT_RIDER = re.compile(r"(?:then )?if (?:~|it|the spell) was bargained, (.+)|(?
 
 
 def _opt_rider(s: str, effects: list):
-    """"If ~ was bargained / the gift was promised, X [instead]": X's effects carry cond bargained / gifted (or !gifted).
-    With "instead" the earlier effect of the same kind (else every unconditional one) only happens otherwise.
-    Returns the new effects, or None when X doesn't parse."""
+    """Additive Bargain/Gift riders. Replacement riders use cx_grammar_cond instead."""
     from .parse import _parse_effects  # deferred: parse imports this module
     m = _OPT_RIDER.fullmatch(s)
     if m is None:
         return None
     cond = "bargained" if m[1] else ("gifted" if m[2].lower() == "was" else "!gifted")
     rest = (m[1] or m[3]).strip()
-    instead = bool(re.search(r"\binstead$", rest, re.I)) or re.match(r"instead,? ", rest, re.I) is not None
+    if re.search(r"\binstead\b", rest, re.I):
+        return None             # the shared replacement grammar binds and gates both branches
     rest = re.sub(r",? instead$|^instead,? ", "", rest, flags=re.I)
     new, bad = _parse_effects(rest[0].upper() + rest[1:] + ".")
     if bad or not new:
         return None
-    if instead:
-        same = [e for e in effects if not e.cond and e.kind == new[0].kind]
-        for e in same or [e for e in effects if not e.cond]:
-            e.cond = "!" + cond
     for e in new:
         e.cond = e.cond or cond
     return new

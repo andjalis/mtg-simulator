@@ -151,6 +151,9 @@ EFFECT_PATTERNS = [
     (r"this ability can't be copied(?: and X can't be 0)?", lambda m: None),
     (r"copy the next spell you cast this turn when you cast it",
      lambda m: _effect("copy_next_spell", what="", max_cmc=99, n=1)),
+    (r"copy the next (?P<what>instant or sorcery|instant|sorcery|creature) spell(?: with mana value "
+     r"(?P<cmc>\d+) or less)? you cast this turn when you cast it",
+     lambda m: _effect("copy_next_spell", what=m["what"], max_cmc=int(m["cmc"] or 99), n=1)),
 ]
 
 

@@ -69,6 +69,12 @@ def _parse_effects(text: str, opts: bool = False):
         if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects) or \
                 delayed_rider(s, effects) or watch_rider(s, effects):
             continue
+        if re.fullmatch(r"creatures destroyed this way can't be regenerated", s, re.I):
+            last = next((n for n in range(len(effects) - 1, -1, -1)
+                         if effects[n].kind in ("destroy", "wrath", "wrath_pw")), None)
+            if last is not None:
+                effects[last] = dataclasses.replace(effects[last], data=dict(effects[last].data, no_regen=True))
+                continue
         if re.fullmatch(r"(?:it|they|those creatures|the creatures?|a creature destroyed this way) can't be "
                        r"regenerated(?:, of course)?", s, re.I) and effects and \
                 effects[-1].kind in ("destroy", "wrath", "wrath_pw", "selected_mass_move", "group_remove",
@@ -288,7 +294,9 @@ def _parse_effects(text: str, opts: bool = False):
                     effects.append(eff)
                 break
         else:
-            parts = _split_compound(s)
+            # Bind the whole replacement before splitting its body into effects.
+            # Otherwise "instead A, then B" can leave B running beside the base.
+            parts = None if re.search(r"\binstead\b", s, re.I) else _split_compound(s)
             from ..cx_suspect import parse_otherwise
             from .. import cx_grammar
             if parts:
@@ -444,6 +452,11 @@ def _parse_face(data: dict) -> CardDef:
 
     oracle = data.get("oracle_text", "") or ""
     text = re.sub(r"\([^)]*\)", "", oracle)
+    if not types.isdisjoint({"Instant", "Sorcery"}):
+        # Ability words (Threshold, Morbid, Hellbent, Delirium, ...) carry no rules; their
+        # "— ... instead" paragraphs replace the preceding spell instruction and must be
+        # parsed with it, rather than in isolation.
+        text = re.sub(r"\n[A-Z][^\n—]{0,40}? — (?=[^\n]*\binstead\b)", " ", text)
     token_names = []
     def protect_name(match):
         token_names.append(match[1])

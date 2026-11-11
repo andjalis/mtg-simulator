@@ -62,6 +62,8 @@ class ResolveMixin:
                     if what == "artifacts" else x.is_creature if what == "creatures" else x.card.is_land
                     for x in p.battlefield)
             eff = dataclasses.replace(eff, amount=n)
+        if eff.data.get("instead_multiplier"):
+            eff = dataclasses.replace(eff, amount=eff.amount * eff.data["instead_multiplier"])
         handler = HANDLERS.get(k)
         if handler is not None:
             from ..backlog_templates import entry_batch
