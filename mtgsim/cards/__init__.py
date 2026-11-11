@@ -213,7 +213,7 @@ _SUBS += _cx_night_endturn.SUBS
 from .. import cx_tokens as _cx_tokens
 _EFFECT_PATTERNS += _cx_tokens.EFFECT_PATTERNS
 from . import parse as _parse_module
-_parse_module._FACE_LINE_PARSERS = (_cx_tokens.face_line,) + _parse_module._FACE_LINE_PARSERS
+_parse_module._FACE_LINE_PARSERS = (_chance_templates.face_line, _cx_tokens.face_line) + _parse_module._FACE_LINE_PARSERS
 from .. import cx_counters as _cx_counters
 _EFFECT_PATTERNS += _cx_counters.EFFECT_PATTERNS
 _SUBS += _cx_counters.SUBS

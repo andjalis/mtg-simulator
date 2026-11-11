@@ -578,12 +578,22 @@ def clash(game, p, eff, item, opp, **_):
 def flip_coin(game, p, eff, item, **_):
     """\"Flip a coin. If you win/lose the flip, <X>\" (chance_templates.py): a fair coin
     decides; the rider (cond \"paid\") runs on the named side of the flip."""
-    won = game.rng.random() < 0.5
+    from ...chance_templates import toss
+    n = getattr(item, "x", 0) if eff.data.get("count_x") else eff.amount if eff.data.get("count") else 1
+    wins = losses = 0
+    while eff.data.get("until_lose") or wins + losses < n:
+        won = toss(game, p)
+        wins += int(won)
+        losses += int(not won)
+        if item is not None:
+            item.gate_paid = won != bool(eff.data.get("on_lose"))
+        game.log(f"flips a coin and {'wins' if won else 'loses'}", p)
+        if won:
+            game.fire(p, "you_win_flip")
+        if eff.data.get("until_lose") and not won:
+            break
     if item is not None:
-        item.gate_paid = won != bool(eff.data.get("on_lose"))
-    game.log(f"flips a coin and {'wins' if won else 'loses'}", p)
-    if won:
-        game.fire(p, "you_win_flip")
+        item.flips_won, item.flips_lost = wins, losses
 
 
 _CONJURE_DB = []

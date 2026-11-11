@@ -616,8 +616,8 @@ def observe(game, p, event, source=None, context=None, subject=None):
         return
     if event == "perm_to_gy" and source is not None:
         return      # fired twice (with and without a source); listen once
-    if event == "any_cast" and context is not p:
-        return      # fired once per player; listen to the caster's copy
+    if event == "any_cast" and getattr(context, "controller", context) is not p:
+        return      # fired once per player; listen to the caster's copy (context: the cast spell)
     from .residual_templates import trigger_suppressed
     if trigger_suppressed(game, event, source, context, subject):
         return      # Torpor Orb and friends

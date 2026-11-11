@@ -368,6 +368,8 @@ def create(game, who, eff_data: dict, n: int):
         game.log(f"creates {count} {card.name}" + ("" if card.name.endswith("token") else " token") + "(s)", who)
     made = [x for x in who.battlefield if id(x) not in before and x.card.is_token]
     for perm in made:
+        for keyword in eff_data.get("granted_keywords", ()):
+            game.add_continuous_effect(perm, "grant", keyword=keyword)
         for keyword in eff_data.get("eot_keywords", ()):
             game.add_continuous_effect(perm, "grant", keyword=keyword, until_eot=True)
         when, how = eff_data.get("leave", (None, None))
@@ -382,6 +384,8 @@ _THEM = r"(?:it|them|that token|those tokens|the tokens?)"
 _RIDERS = [
     (re.compile(r"(?:it|they|that token|those tokens|the tokens?) gains? ([a-z ,]+?) until end of turn", re.I),
      lambda m: {"eot_keywords": tuple(_split_list(m[1].lower()))}),
+    (re.compile(r"(?:it|they|that token|those tokens|the tokens?) gains? ([a-z ,]+)", re.I),
+     lambda m: {"granted_keywords": tuple(_split_list(m[1].lower()))}),
     (re.compile(rf"(sacrifice|exile) {_THEM} at end of combat", re.I),
      lambda m: {"leave": ("end_combat", m[1].lower())}),
     (re.compile(rf"(sacrifice|exile) {_THEM} at the beginning of the next end step", re.I),
@@ -428,7 +432,7 @@ def parse_rider(sentence: str, effects: list) -> bool:
             effects[-1] = converted
         extra = build(m)
         from .cards.model import KEYWORDS
-        if not set(extra.get("eot_keywords", ())) <= KEYWORDS:
+        if not set(extra.get("eot_keywords", ()) + extra.get("granted_keywords", ())) <= KEYWORDS:
             return False
         run = len(effects)
         while run and effects[run - 1].kind == "cx_token":

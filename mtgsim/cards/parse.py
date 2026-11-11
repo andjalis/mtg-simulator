@@ -71,6 +71,9 @@ def _parse_effects(text: str, opts: bool = False):
         if exile_rider(s, effects):
             continue
         from ..that_spell import parse_rider as spell_rider
+        from ..chance_templates import parse_rider as chance_rider
+        if chance_rider(s, effects):
+            continue
         if _cx_tokens.parse_rider(s, effects):
             continue
         if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects) or \
@@ -893,7 +896,9 @@ def _parse_trigger_line(line: str):
                    ("permanent_enters", "ally_dies"): lambda: {"permanent_enters": f"noself|other|{m[1]}",
                                                                "ally_dies": f"other||{m[1]}"}}.get(events, lambda: None)()
         intervening = rest.startswith("if ")
-        if events == ("any_cast",) and "mana value" in pat:      # only the "with mana value N or less" head
+        # only the "casts a spell with mana value N or less" pattern has the number in m[1];
+        # the plain "casts a spell, <rider>" one carries the rider there and must keep flt clean
+        if events == ("any_cast",) and m.lastindex == 2 and str(m[1]).isdigit():
             flt = f"cmc<={m[1]}"
         if "while saddled" in pat or events[-1] == "becomes_tapped":
             rest = re.sub(r"^it (gets|gains|deals)\b", r"~ \1", re.sub(r"\b(on|untap|to) it\b", r"\1 ~", rest))

@@ -175,7 +175,9 @@ class StackMixin:
                     continue
                 if trig.filter == "nontoken" and isinstance(subject, Permanent) and subject.card.is_token:
                     continue
-                if event in ("any_cast", "damages_player") and trig.filter == "opp" and context is perm.controller:
+                # any_cast's context is the cast spell; its controller is the caster
+                if event in ("any_cast", "damages_player") and trig.filter == "opp" and \
+                        (getattr(context, "controller", context) if event == "any_cast" else context) is perm.controller:
                     continue
                 if trig.filter == "evolve":
                     if subject is perm or subject is None or subject.controller is not perm.controller or not (
@@ -207,7 +209,7 @@ class StackMixin:
                 if event == "any_cast" and ":" in trig.filter:
                     who, kinds = trig.filter.split(":", 1)
                     from ..batch1_templates import spell_kind_ok
-                    if (who == "opp" and context is perm.controller) or \
+                    if (who == "opp" and getattr(context, "controller", context) is perm.controller) or \
                             not any(spell_kind_ok(subject, kind) for kind in kinds.split("|")):
                         continue
                 if trig.filter.startswith("with:") and \

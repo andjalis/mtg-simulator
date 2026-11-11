@@ -712,6 +712,12 @@ def _defending_player(game, item):
     return None
 
 
+def event_spell(context) -> bool:
+    """An any_cast trigger's context is the cast spell (a StackItem); "that player" is its caster."""
+    from .engine.state import StackItem
+    return isinstance(context, StackItem)
+
+
 def players(game, p, who, item, prev, target=None):
     """The players a cx_players subject names as it resolves (the defending player is the one the attacker
     attacks; the opponent when no attacker is in play). who "target": the chosen player (target)."""

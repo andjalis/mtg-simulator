@@ -336,7 +336,9 @@ class PlayMixin:
             self.casting_item = item          # "that spell" for the any_cast triggers below
             try:
                 for pl in self.players:
-                    self.fire(pl, "any_cast", context=p, subject=card)
+                    # context is the cast spell itself (its controller is the caster): "if no mana was
+                    # spent to cast it, counter that spell" riders read it off the trigger
+                    self.fire(pl, "any_cast", context=item, subject=card)
             finally:
                 self.casting_item = None
         self.check_ward(item)
