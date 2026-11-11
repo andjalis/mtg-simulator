@@ -237,3 +237,5 @@ _EFFECT_PATTERNS += _cx_grammar_counters.EFFECT_PATTERNS
 from .. import hand_put as _hand_put
 _EFFECT_PATTERNS += _hand_put.EFFECT_PATTERNS
 _SUBS += _hand_put.SUBS
+from .. import cx_exchange as _cx_exchange
+_EFFECT_PATTERNS += _cx_exchange.EFFECT_PATTERNS

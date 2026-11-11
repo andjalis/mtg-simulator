@@ -114,6 +114,9 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return opp if eff.target in ("any", "player") else None
     if k in removal.KINDS:
         return removal.choose(game, me, eff)
+    if k in ("cx_exchange_mark", "cx_exchange"):
+        from ..cx_exchange import choose
+        return choose(game, me, eff)
     if k in ('graveyard_exile_all', 'graveyard_exile_choice'):
         return opp
     if k == 'adapt_exception':
@@ -297,6 +300,13 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
                 tgt = None
             chosen.append(tgt)
             k = e.kind
+            if k in ("cx_exchange_mark", "cx_exchange"):
+                from ..cx_exchange import mode_value
+                v = mode_value(game, me, e, tgt, chosen)
+                if v < 0 and k == "cx_exchange" and not e.data.get("optional"):
+                    return -1
+                total += max(v, 0.0)
+                continue
             from ..residual_templates import effect_value
             residual_value = effect_value(game, me, e, tgt)
             if residual_value is None:

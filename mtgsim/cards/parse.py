@@ -16,7 +16,7 @@ from .patterns import _EFFECT_PATTERNS
 # "You may <effect>" is always taken, so only for effects that cost the player nothing.
 _MAY_DECLINED = {"sacrifice", "sacrifice_self", "discard", "discard_choice", "lose_life", "mill", "pay_gate",
                  "damage", "drain", "destroy", "exile", "exile_permanent", "wrath", "bounce"}
-_MAY_COUNTERS = {"cx_remove_counters", "cx_move_counters"}
+_MAY_COUNTERS = {"cx_remove_counters", "cx_move_counters", "cx_exchange_mark", "cx_exchange"}   # the AI may decline
 
 
 def hostile_may(text, new):
@@ -216,7 +216,7 @@ def _parse_effects(text: str, opts: bool = False):
                 effects += new      # "you may destroy target ...": skipped at resolution unless the target is the opponent's
                 continue
             if new and not bad and any(e.kind in _MAY_COUNTERS for e in new):
-                for e in new:       # optional counter removal / moves: the handler lets the AI decline (cx_counters)
+                for e in new:       # optional counter removal / moves / exchanges: the AI may decline (cx_counters, cx_exchange)
                     if e.kind in _MAY_COUNTERS:
                         e.data["optional"] = True
                 effects += new
