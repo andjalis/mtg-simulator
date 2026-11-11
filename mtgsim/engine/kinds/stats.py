@@ -51,7 +51,18 @@ def pump(game, eff, target, **_):
 
 @kind("prevent_next")
 def prevent_next(game, p, eff, target, **_):
-    """A damage shield until end of turn; "you" (target none) shields the controller."""
+    """A damage shield until end of turn; "you" (target none) shields the controller, and the "each ..."
+    recipients (prevent_next_templates.py) shield every matching creature or player."""
+    if eff.target == "each_player":
+        for pl in game.players:
+            pl.prevent_next += eff.amount
+        return
+    if eff.target == "each_creature":
+        for pl in game.players:
+            for perm in pl.battlefield:
+                if perm.is_creature and game.passes_filter(eff, perm, p):
+                    perm.prevent_next += eff.amount
+        return
     who = p if eff.target == "none" else target
     if isinstance(who, (Permanent, Player)):
         who.prevent_next += eff.amount
