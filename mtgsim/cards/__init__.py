@@ -228,3 +228,5 @@ _EFFECT_PATTERNS += _that_spell.EFFECT_PATTERNS
 _SUBS += _that_spell.SUBS
 from .. import conjure as _conjure_templates
 _EFFECT_PATTERNS += _conjure_templates.EFFECT_PATTERNS
+from .. import cx_exchange as _cx_exchange
+_EFFECT_PATTERNS += _cx_exchange.EFFECT_PATTERNS

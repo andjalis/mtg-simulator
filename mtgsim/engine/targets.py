@@ -36,6 +36,10 @@ class TargetsMixin:
             from ..cx_effects import passes
             if not passes(self, eff, perm, by):
                 return False
+        if eff.data.get('cx_pair'):        # an exchange's second object keeps its relation to the first (cx_exchange)
+            from ..cx_exchange import pair_target_ok
+            if not pair_target_ok(self, eff, perm):
+                return False
         if eff.data.get('cx_rel'):         # "target creature blocking it" (cx_abil_damage)
             from ..cx_abil_damage import rel_ok
             if not rel_ok(self, eff, perm):
