@@ -145,5 +145,71 @@
     "target": "that_player",
     "example": "exile the top card of that player's library",
     "cards": ["Daxos of Meletis"]
+  },
+  {
+    "match": "(?:you )?mill cards equal to its power",
+    "effect": "mill",
+    "amount": 1,
+    "data": {
+      "xq": [
+        "stat",
+        "referent",
+        "power"
+      ]
+    },
+    "example": "mill cards equal to its power",
+    "cards": [
+      "Avatar Destiny"
+    ]
+  },
+  {
+    "match": "(?:it|that creature) deals damage equal to its power to each other creature( and each opponent)?",
+    "effect": "damage_referent_board",
+    "data": {
+      "opponents": "$1:bool"
+    },
+    "example": "it deals damage equal to its power to each other creature",
+    "cards": [
+      "Nibelheim Aflame",
+      "Nova Flame"
+    ]
+  },
+  {
+    "match": "target creature you control deals damage equal to its power to each other creature and each opponent",
+    "effects": [
+      {
+        "effect": "fight_mark",
+        "target": "creature_mine"
+      },
+      {
+        "effect": "damage_referent_board",
+        "data": {
+          "opponents": true
+        }
+      }
+    ],
+    "example": "target creature you control deals damage equal to its power to each other creature and each opponent",
+    "cards": [
+      "Chandra's Ignition"
+    ]
+  },
+  {
+    "match": "target creature you control deals damage equal to its power to each other creature",
+    "effects": [
+      {
+        "effect": "fight_mark",
+        "target": "creature_mine"
+      },
+      {
+        "effect": "damage_referent_board",
+        "data": {
+          "opponents": false
+        }
+      }
+    ],
+    "example": "target creature you control deals damage equal to its power to each other creature",
+    "cards": [
+      "Waltz of Rage"
+    ]
   }
 ]

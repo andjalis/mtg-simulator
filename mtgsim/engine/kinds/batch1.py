@@ -5,16 +5,20 @@ from . import kind
 from ... import counter_mechanics
 
 
-def _edict(game, p, victim_owner):
+def _edict(game, p, victim_owner, item=None):
+    if item is not None:
+        item.sacrificed_permanent = None
     victims = sorted(victim_owner.creatures, key=perm_value)[:1]
     sources = counter_mechanics.death_sources(game)
     for v in victims:
         game.sacrifice(v, counter_sources=sources)
+        if item is not None:
+            item.sacrificed_permanent = v
 
 
 @kind("edict_player")
-def edict_player(game, p, target, opp, **_):
-    _edict(game, p, target if target is not None and not isinstance(target, Permanent) else opp)
+def edict_player(game, p, target, opp, item=None, **_):
+    _edict(game, p, target if target is not None and not isinstance(target, Permanent) else opp, item)
 
 
 @kind("edict_each")

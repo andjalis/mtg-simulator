@@ -7,6 +7,21 @@ from ..state import Permanent, Player
 from . import kind
 
 
+@kind("damage_referent_board")
+def damage_referent_board(game, p, eff, item, prev, cause, **_):
+    """A creature deals its power to each other creature, optionally also each opponent."""
+    from ...referent import permanent
+    src = permanent(item, prev, game)
+    if src is None:
+        return
+    amount = max(0, src.power)
+    victims = [c for pl in game.players for c in pl.creatures if c is not src]
+    if eff.data.get("opponents"):
+        victims += [pl for pl in game.players if pl is not src.controller]
+    for victim in victims:
+        game.deal_damage(victim, amount, by=src.controller, cause=cause, source=src)
+
+
 @kind("damage")
 def damage(game, p, eff, target, item, opp, cause, **_):
     src = (item.source if item.source is not None else item.card) if item is not None else None

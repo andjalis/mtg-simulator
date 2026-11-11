@@ -3,7 +3,7 @@ import random
 import unittest
 
 from mtgsim.carddb import CardDB
-from mtgsim.cards import _parse_effects
+from mtgsim.cards import Effect, _parse_effects
 from mtgsim.engine import Game, Player, StackItem
 from tests.test_combat_triggers import Scripted
 from tests.test_templates import ISLAND, card
@@ -106,3 +106,198 @@ class ReferentStats(unittest.TestCase):
         self.a.graveyard.append(ELF)
         self.resolve(effects)
         self.assertEqual(self.a.life, 20)  # the revealed land, not the four-mana Elf
+
+    def test_twisted_justice_draws_last_known_power_of_sacrificed_creature(self):
+        justice = self.db.get("Twisted Justice")
+        self.assertFalse(justice.unsupported)
+        victim = self.g.enter_battlefield(self.b, ELF)
+        victim.pump_p = 3
+        victim.counters["+1/+1"] = 2
+        self.resolve(justice.spell_effects, [self.b, None])
+        self.assertNotIn(victim, self.b.battlefield)
+        self.assertEqual(len(self.a.hand), 9)
+
+    def test_twisted_justice_can_target_its_caster(self):
+        victim = self.g.enter_battlefield(self.a, ELF)
+        self.resolve(self.db.get("Twisted Justice").spell_effects, [self.a, None])
+        self.assertNotIn(victim, self.a.battlefield)
+        self.assertEqual(len(self.a.hand), 4)
+
+    def test_twisted_justice_no_sacrifice_draws_nothing(self):
+        self.resolve(self.db.get("Twisted Justice").spell_effects, [self.b, None])
+        self.assertFalse(self.a.hand)
+
+    def test_twisted_justice_negative_power_draws_nothing(self):
+        victim = self.g.enter_battlefield(self.b, ELF)
+        victim.pump_p = -10
+        self.resolve(self.db.get("Twisted Justice").spell_effects, [self.b, None])
+        self.assertFalse(self.a.hand)
+
+    def test_avatar_destiny_mills_hosts_last_known_power(self):
+        avatar = self.db.get("Avatar Destiny")
+        self.assertEqual(len(avatar.unsupported), 2)
+        host = self.g.enter_battlefield(self.a, ELF)
+        aura = self.g.enter_battlefield(self.a, avatar)
+        from mtgsim.auras import attach
+        attach(self.g, aura, host)
+        host.pump_p = 3
+        host.counters["+1/+1"] = 2
+        before = len(self.a.library)
+        self.g.sacrifice(host)
+        self.g.settle()
+        self.assertEqual(len(self.a.library), before - 9)
+
+    def test_ignition_excludes_source_and_uses_real_damage(self):
+        ignition = self.db.get("Chandra's Ignition")
+        self.assertFalse(ignition.unsupported)
+        source = self.g.enter_battlefield(self.a, ELF)
+        source.temp_kw.add("lifelink")
+        mine = self.g.enter_battlefield(self.a, ELF)
+        theirs = self.g.enter_battlefield(self.b, ELF)
+        source.pump_p = 1
+        self.resolve(ignition.spell_effects, [source, None])
+        self.assertEqual(source.damage, 0)
+        self.assertEqual((mine.damage, theirs.damage), (5, 5))
+        self.assertEqual(self.b.life, 15)
+        self.assertEqual(self.a.life, 35)
+
+    def test_nibelheim_aflame_uses_chosen_creature_not_spell(self):
+        aflame = self.db.get("Nibelheim Aflame")
+        self.assertFalse(aflame.unsupported)
+        source = self.g.enter_battlefield(self.a, ELF)
+        other = self.g.enter_battlefield(self.b, ELF)
+        self.resolve(aflame.spell_effects, [source, None, None, None])
+        self.assertEqual(source.damage, 0)
+        self.assertEqual(other.damage, 4)
+        self.assertEqual(self.b.life, 20)
+
+    def test_ignition_lost_target_fizzles(self):
+        source = self.g.enter_battlefield(self.a, ELF)
+        self.g.sacrifice(source)
+        self.resolve(self.db.get("Chandra's Ignition").spell_effects, [source, None])
+        self.assertEqual(self.b.life, 20)
+
+    def test_mill_defaults_to_trigger_source_without_subject(self):
+        source = self.g.enter_battlefield(self.a, ELF)
+        effects, bad = _parse_effects("Mill cards equal to its power.")
+        self.assertFalse(bad)
+        self.resolve(effects, source=source)
+        self.assertEqual(len(self.a.library), 26)
+
+    def test_board_damage_uses_departed_creatures_last_known_power(self):
+        source = self.g.enter_battlefield(self.a, ELF)
+        source.pump_p = 1
+        other = self.g.enter_battlefield(self.b, ELF)
+        effects, bad = _parse_effects("Destroy target creature. It deals damage equal to its power to each other creature.")
+        self.assertFalse(bad)
+        self.resolve(effects, [source, None])
+        self.assertEqual(other.damage, 5)
+
+    def test_broken_visage_token_keeps_last_known_stats_and_dies_at_end_step(self):
+        visage = self.db.get("Broken Visage")
+        self.assertFalse(visage.unsupported)
+        victim = self.g.enter_battlefield(self.b, ELF)
+        victim.attacking = True
+        self.g.attackers.append(victim)
+        victim.pump_p, victim.pump_t = 3, 1
+        victim.counters["+1/+1"] = 2
+        victim.regeneration_shields = 1     # "can't be regenerated" still destroys
+        self.resolve(visage.spell_effects, [victim, None])
+        self.assertNotIn(victim, self.b.battlefield)
+        spirit = self.a.creatures[-1]
+        self.assertTrue(spirit.card.is_token)
+        self.assertEqual(spirit.card.colors, frozenset({"B"}))
+        self.assertEqual((spirit.power, spirit.toughness), (9, 9))
+        self.assertIn((spirit, "sacrifice"), self.g.end_cleanup)
+
+    def test_token_stats_still_read_surviving_indestructible_creature(self):
+        victim = self.g.enter_battlefield(self.b, ELF)
+        victim.temp_kw.add("indestructible")
+        victim.attacking = True
+        self.g.attackers.append(victim)
+        self.resolve(self.db.get("Broken Visage").spell_effects, [victim, None])
+        self.assertIn(victim, self.b.battlefield)
+        token = self.a.creatures[-1]
+        self.assertEqual((token.power, token.toughness), (4, 6))
+
+    def test_yearling_sets_only_base_power_and_preserves_counters_and_pump(self):
+        yearling = self.g.enter_battlefield(self.a, self.db.get("Belligerent Yearling"))
+        self.g.add_continuous_effect(yearling, "set_base", power=1, toughness=8)
+        yearling.counters["+1/+1"] = 2
+        yearling.pump_p, yearling.pump_t = 1, 3
+        dinosaur = card("Referent Dinosaur", "{4}{G}", "Creature — Dinosaur", "", 5, 7)
+        subject = self.g.enter_battlefield(self.a, dinosaur)
+        self.g.settle()
+        self.assertEqual((yearling.power, yearling.toughness), (8, 13))
+        subject.pump_p = 10
+        self.assertEqual(yearling.power, 8)  # frozen on resolution
+        self.g.add_continuous_effect(yearling, "set_base", power=None, toughness=4, until_eot=True)
+        self.assertEqual((yearling.power, yearling.toughness), (8, 9))
+        self.g.expire_continuous_effects()
+        self.assertEqual((yearling.power, yearling.toughness), (4, 13))
+
+    def test_yearling_reads_departed_trigger_subjects_last_known_power(self):
+        yearling = self.g.enter_battlefield(self.a, self.db.get("Belligerent Yearling"))
+        subject = self.g.enter_battlefield(self.a, ELF)
+        subject.pump_p = 3
+        self.g.sacrifice(subject)
+        self.resolve(yearling.card.triggers[0].effects, source=yearling, context=subject)
+        self.assertEqual((yearling.power, yearling.toughness), (7, 2))
+
+    def test_yearling_effect_does_not_apply_to_reentered_source(self):
+        definition = self.db.get("Belligerent Yearling")
+        yearling = self.g.enter_battlefield(self.a, definition)
+        subject = self.g.enter_battlefield(self.a, ELF)
+        self.resolve(definition.triggers[0].effects, source=yearling, context=subject)
+        self.g.leave_battlefield(yearling, "hand")
+        self.a.hand.remove(yearling.front)
+        new = self.g.enter_battlefield(self.a, yearling.front)
+        self.assertEqual((new.power, new.toughness), (3, 2))
+
+    def test_shape_stealer_copies_both_stats_on_actual_block_event(self):
+        shape = self.g.enter_battlefield(self.a, self.db.get("Shape Stealer"))
+        other = self.g.enter_battlefield(self.b, ELF)
+        shape.counters["+1/+1"] = 1
+        self.g.fire(self.a, "blocks", shape, context=other)
+        self.g.settle()
+        self.assertEqual((shape.power, shape.toughness), (5, 7))
+
+    def test_kalitas_death_condition_is_still_unmatched(self):
+        kalitas = self.db.get("Kalitas, Bloodchief of Ghet")
+        self.assertTrue(kalitas.unsupported)
+        self.assertFalse(kalitas.activated)
+
+    def test_set_base_without_referent_does_nothing(self):
+        source = self.g.enter_battlefield(self.a, ELF)
+        self.resolve([Effect("set_base_referent", target="self", data={"stat": "power"})], source=source)
+        self.assertEqual((source.power, source.toughness), (4, 6))
+
+    def test_too_greedily_damages_with_the_reanimated_creature(self):
+        too = self.db.get("Too Greedily, Too Deep")
+        self.assertFalse(too.unsupported)
+        self.a.graveyard.append(ELF)
+        mine = self.g.enter_battlefield(self.a, ELF)
+        other = self.g.enter_battlefield(self.b, ELF)
+        self.resolve(too.spell_effects)
+        reanimated = self.a.creatures[-1]
+        self.assertEqual(reanimated.damage, 0)      # the source excludes itself
+        self.assertEqual((mine.damage, other.damage), (4, 4))
+
+    def test_waltz_of_rage_hits_creatures_but_not_opponents(self):
+        waltz = self.db.get("Waltz of Rage")
+        self.assertEqual(len(waltz.unsupported), 1)    # the "whenever ... dies" clause stays unmatched
+        source = self.g.enter_battlefield(self.a, ELF)
+        mine = self.g.enter_battlefield(self.a, ELF)
+        theirs = self.g.enter_battlefield(self.b, ELF)
+        source.pump_p = 2                            # power 6
+        self.resolve(waltz.spell_effects, [source, None, None])
+        self.assertEqual(source.damage, 0)
+        self.assertEqual((mine.damage, theirs.damage), (6, 6))
+        self.assertEqual(self.b.life, 20)            # no "and each opponent" rider
+
+    def test_nova_flame_without_resolved_referent_deals_nothing(self):
+        nova = self.db.get("Nova Flame")
+        self.assertEqual(len(nova.unsupported), 1)    # the X-counters sentence stays unmatched
+        other = self.g.enter_battlefield(self.b, ELF)
+        self.resolve(nova.spell_effects)
+        self.assertEqual(other.damage, 0)

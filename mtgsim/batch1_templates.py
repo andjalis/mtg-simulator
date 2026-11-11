@@ -33,6 +33,10 @@ def parse_rider(s, effects):
     if not effects:
         return False
     last = effects[-1]
+    draw_stat = re.fullmatch(r"(?:you )?draw cards equal to (?:its|that creature's) (power|toughness)", s, re.I)
+    if draw_stat and last.kind in ("edict", "edict_player") and last.amount == 1 and not last.data:
+        effects.append(_e("draw", data={"xq": ("stat", "sacrificed", draw_stat[1].lower())}))
+        return True
     card_life = re.fullmatch(r"you (gain|lose) life equal to that card's (power|toughness|mana value)", s, re.I)
     if card_life and (card_life[1].lower() == "lose" or card_life[2].lower() != "mana value") and (
                       last.kind in ("regrow_any", "cx_card_move") or

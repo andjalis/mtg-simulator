@@ -217,7 +217,13 @@ class CostsMixin:
         if kind == "opp_hand":
             return len(self.opponent(p).hand)
         if kind == "stat":
-            who = prev if spec[1] == "prev" else src
+            if spec[1] == "sacrificed":
+                who = getattr(item, "sacrificed_permanent", None)
+            elif spec[1] == "referent":
+                from ..referent import permanent
+                who = permanent(item, prev, self)
+            else:
+                who = prev if spec[1] == "prev" else src
             if spec[2] == "mana value":
                 if spec[1] == "self" and item is not None and item.card:
                     return item.card.cmc
