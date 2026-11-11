@@ -214,3 +214,6 @@ _parse_module._FACE_LINE_PARSERS = (_cx_tokens.face_line,) + _parse_module._FACE
 from .. import cx_counters as _cx_counters
 _EFFECT_PATTERNS += _cx_counters.EFFECT_PATTERNS
 _SUBS += _cx_counters.SUBS
+from .. import blink as _blink
+_EFFECT_PATTERNS += _blink.EFFECT_PATTERNS
+_SUBS += _blink.SUBS

@@ -116,6 +116,25 @@ def flicker(game, p, eff, target, **_):
         game.log(f"{card.name} returns to the battlefield", p)
 
 
+@kind("blink")
+def blink(game, p, eff, target, item=None, **_):
+    """Exile a permanent, then return it as a new object (at once, or at the next end step); a token is gone."""
+    if not isinstance(target, Permanent) or target not in target.controller.battlefield:
+        return
+    owner, card = target.owner, target.front
+    if not game.leave_battlefield(target, "exile") or card.is_token or card not in owner.exile:
+        return
+    back = p if eff.data.get("yours") else owner
+    if eff.data.get("delayed"):
+        game.delayed_end_step.append((back, [Effect("return_exile_ref", data=dict(eff.data))],
+                                      item.source if item else None, (owner.exile, owner.exile.reference(card))))
+        return
+    owner.exile.remove(card)
+    game.enter_battlefield(back, card, tapped=bool(eff.data.get("tapped")),
+                           counters={"+1/+1": 1} if eff.data.get("counter") else None)
+    game.log(f"{card.name} returns to the battlefield", p)
+
+
 @kind("tuck_top")
 def tuck_top(game, p, target, **_):
     """Put target creature on top of its owner's library (a token just leaves)."""

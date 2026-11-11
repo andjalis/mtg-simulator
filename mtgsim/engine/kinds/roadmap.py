@@ -43,12 +43,15 @@ def blink_next_end(game, target, item, **_):
 
 
 @kind('return_exile_ref')
-def return_exile_ref(game, item, **_):
+def return_exile_ref(game, item, eff=None, **_):
     zone, ref = item.context
     card = ref.find(zone)
     if card is not None:
         zone.remove(card)
-        game.enter_battlefield(card.owner, card)
+        data = eff.data if eff is not None else {}
+        game.enter_battlefield(item.controller if data.get('yours') else card.owner, card,
+                               tapped=bool(data.get('tapped')),
+                               counters={'+1/+1': 1} if data.get('counter') else None)
 
 
 @kind('relationship_mark')
