@@ -308,6 +308,7 @@ class TurnsMixin:
         for pl in self.players:
             pl.lost_life_turn = pl.perm_left_turn = False
             pl.life_lost_amount = 0
+            pl.last_damage_turn = None
             pl.entered_nonland_turn = 0
             pl.my_turn = pl is p
             pl.discarded_cards = []

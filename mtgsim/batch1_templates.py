@@ -792,23 +792,27 @@ def skips_draw(game, player):
 
 
 def drop_solo(creatures):
-    """Remove creatures that can't attack or block alone while nothing else joins them."""
-    group = list(creatures)
-    while len(group) == 1 and (group[0].card.advanced_rules.get('no_solo') or group[0].card.advanced_rules.get('no_solo_attack')) \
-            and not group[0].abilities_suppressed:
-        group = []
-    return group
+    """Apply declaration-wide attack restrictions."""
+    from .cx_static_combat import declaration_group
+    return declaration_group(creatures, "attack")
 
 
 def drop_solo_blocks(blocks):
-    """A creature that can't block alone is removed from the declared blocks unless another creature blocks too."""
-    blockers = {b for bl in blocks.values() for b in bl}
-    if len(blockers) != 1:
-        return blocks
-    only = next(iter(blockers))
-    if only.card.advanced_rules.get('no_solo') and not only.abilities_suppressed:
-        return {}
-    return blocks
+    """Apply group restrictions and recheck menace after companions are removed."""
+    from .cx_static_combat import declaration_group
+    from .cx_lures import max_blockers
+    while True:
+        blockers = declaration_group((b for bl in blocks.values() for b in bl), "block")
+        kept = {}
+        for a, bl in blocks.items():
+            bl = [b for b in bl if b in blockers]
+            minimum = max(2 if a.has("menace") else 1, a.card.min_blockers)
+            limit = max_blockers(a)
+            if len(bl) >= minimum and (not limit or len(bl) <= limit):
+                kept[a] = bl
+        if kept == blocks:
+            return kept
+        blocks = kept
 
 
 def end_step_draw(game, active):
