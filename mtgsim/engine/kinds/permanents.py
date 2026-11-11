@@ -17,35 +17,50 @@ def destroy(game, p, eff, target, item, **_):
         if eff.data.get("azog") and target is src:
             return NO_SBA
         ctl, power = target.controller, max(0, target.power)
-        game.destroy(target, no_regen=eff.data.get("no_regen", False))
+        did = game.destroy(target, no_regen=eff.data.get("no_regen", False))
         if eff.data.get("azog"):
             if power:
                 game.resolve(ctl, Effect("amass", power, data={"type": eff.data["azog"]}), None, item)
             if ctl is p:
                 game.draw(p)
+        if did:
+            from ..state import note_this_way
+            note_this_way(item, "destroyed", ["creature"] if target.is_creature else ["permanent"], 1)
 
 
 @kind("wrath")
-def wrath(game, p, eff, opp, **_):
+def wrath(game, p, eff, opp, item=None, **_):
     sources = counter_mechanics.death_sources(game)
+    n = 0
     for perm in p.creatures + opp.creatures:
-        game.destroy(perm, no_regen=eff.data.get("no_regen", False), counter_sources=sources)
+        if game.destroy(perm, no_regen=eff.data.get("no_regen", False), counter_sources=sources):
+            n += 1
+    from ..state import note_this_way
+    note_this_way(item, "destroyed", ["creature"], n)
 
 
 @kind("destroy_all")
-def destroy_all(game, p, eff, opp, **_):
+def destroy_all(game, p, eff, opp, item=None, **_):
     """Destroy all artifacts / enchantments / lands."""
     kind = eff.data["type"]
     sources = counter_mechanics.death_sources(game)
+    n = 0
     for perm in [x for x in p.battlefield + opp.battlefield if kind in x.card.types]:
-        game.destroy(perm, counter_sources=sources)
+        if game.destroy(perm, counter_sources=sources):
+            n += 1
+    from ..state import note_this_way
+    note_this_way(item, "destroyed", [kind, "permanent"], n)
 
 
 @kind("wrath_pw")
-def wrath_pw(game, p, eff, opp, **_):
+def wrath_pw(game, p, eff, opp, item=None, **_):
     sources = counter_mechanics.death_sources(game)
+    n = 0
     for perm in p.planeswalkers + opp.planeswalkers:
-        game.destroy(perm, no_regen=eff.data.get("no_regen", False), counter_sources=sources)
+        if game.destroy(perm, no_regen=eff.data.get("no_regen", False), counter_sources=sources):
+            n += 1
+    from ..state import note_this_way
+    note_this_way(item, "destroyed", ["planeswalker", "permanent"], n)
 
 
 @kind("bounce")

@@ -319,6 +319,13 @@ class CostsMixin:
         if kind == "cxq":         # cx_grammar_quantity: devotion, noun-phrase counts, turn history, ...
             from ..cx_grammar_quantity import value
             return value(self, p, spec, item, prev)
+        if kind == "this_way":
+            # "for each ... removed/destroyed this way": the count the previous effect of this
+            # resolution recorded on the item (state.note_this_way).
+            tw = getattr(item, "this_way", None) if item is not None else None
+            if tw is not None and tw[0] == spec[1] and spec[2] in tw[1]:
+                return tw[2]
+            return 0
         if kind == "gy":
             return counting.count(self, p, {"what": spec[1], "zone": "graveyard"}, src)
         return counting.count(self, p, {"what": spec[1], "zone": "battlefield"}, src)
