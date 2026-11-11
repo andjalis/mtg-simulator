@@ -16,6 +16,7 @@ much", "equal to ..." and "where X is ..." amounts are not read here. See mtgsim
 """
 from __future__ import annotations
 
+import dataclasses
 import re
 
 from .cx_grammar import Part, ai_value, count, object_phrase, verb
@@ -137,3 +138,30 @@ def _damage_value(game, me, eff, obj):
             return sign * (perm_value(obj) + 1)
         return sign * 0.3 * eff.amount
     return sign * (life_value(obj.life) - life_value(obj.life - eff.amount))
+
+
+_COUNT_WORDS = {"two": 2, "three": 3, "four": 4, "five": 5}
+
+
+@verb(rf"deals? {_AMOUNT} damage to (?:any target and {_AMOUNT} damage to )?each of (up to )?"
+      rf"(two|three|four|five) (other )?targets", heads=("deal", "deals"), subjects=("permanent", "host"))
+def deals_each_of_targets(m, clause):
+    """"~ deals 2 damage to each of two targets", "... to each of up to three targets", "~ deals 4 damage to any
+    target and 3 damage to each of up to two other targets": one damage Part per target, all different targets."""
+    if clause.duration or _source(clause) != "self" or bool(m[5]) != bool(m[2]):
+        return None             # "other" only means something after a first "any target"
+    first, rest = _amount(m[1]), _amount(m[2] or m[1])
+    if first is None or rest is None:
+        return None
+    anyt = object_phrase("any target")
+    parts = []
+    if m[2]:
+        parts.append(_part(first[0], first[1], anyt, "self", False))
+    n = _COUNT_WORDS[m[4].lower()]
+    obj = dataclasses.replace(anyt, copies=n, data=dict(anyt.data, **({"optional_target": True} if m[3] else {})))
+    parts.append(_part(rest[0], rest[1], obj, "self", False))
+    if any(p is None for p in parts):
+        return None
+    for p in parts:
+        p.data = dict(p.data, distinct=True)
+    return parts

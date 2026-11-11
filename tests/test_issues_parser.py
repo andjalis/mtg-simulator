@@ -186,3 +186,37 @@ class OneOrTwoTargets(Base):
         effs, bad = P._parse_effects("Return one or two target attacking creatures to their owner's hand.")
         self.assertEqual(bad, [])
         self.assertEqual([bool(e.data.get("optional_target")) for e in effs], [False, True])
+
+
+class DamageToEachOfTargets(Base):
+    """#320: "deals N damage to each of two targets" and "... each of up to two other targets"."""
+
+    def test_two_targets_deal_damage(self):
+        c = self.spell("~ deals 2 damage to each of two targets.")
+        x, y = self.perm(BEAR, self.b), self.perm(BEAR, self.b)
+        life = self.b.life
+        self.cast(c, targets=[x, y])
+        self.assertEqual((x.damage, y.damage, self.b.life), (2, 2, life))
+
+    def test_same_target_twice_is_rejected(self):
+        c = self.spell("~ deals 2 damage to each of two targets.")
+        x = self.perm(BEAR, self.b)
+        self.cast(c, targets=[x, x])
+        self.assertEqual(x.damage, 2)               # only one of the two hits lands
+
+    def test_any_target_then_other_targets(self):
+        c = self.spell("~ deals 4 damage to any target and 3 damage to each of up to two other targets.")
+        self.assertEqual(len(c.spell_effects), 3)
+        self.assertEqual([bool(e.data.get("optional_target")) for e in c.spell_effects], [False, True, True])
+        x = self.perm(BEAR, self.b)
+        life = self.b.life
+        self.cast(c, targets=[self.b, x, None])
+        self.assertEqual((self.b.life, x.damage), (life - 4, 3))
+
+    def test_other_without_first_target_unmatched(self):
+        _, bad = P._parse_effects("~ deals 2 damage to each of two other targets.")
+        self.assertTrue(bad)
+
+    def test_variable_count_unmatched(self):
+        _, bad = P._parse_effects("~ deals 4 damage to each of X targets.")
+        self.assertTrue(bad)
