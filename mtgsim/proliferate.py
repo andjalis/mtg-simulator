@@ -16,7 +16,7 @@ def counter_value(obj, kind):
         return 1.0
     if kind == "-1/-1":
         return -1.0
-    if kind in ("stun", "finality", "age", "ice") or kind == "time" and obj.impending:
+    if kind in ("stun", "finality", "age", "ice", "defense") or kind == "time" and obj.impending:   # defense: a Siege's controller attacks it
         return -0.5
     if kind in ("loyalty", "charge", "shield", "oil"):
         return 0.5

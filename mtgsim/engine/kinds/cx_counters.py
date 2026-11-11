@@ -34,7 +34,7 @@ def cx_distribute(game, p, eff, item, **_):
         t.counters[eff.data["counter"]] = t.counters.get(eff.data["counter"], 0) + each + (1 if i < extra else 0)
 
 
-_BAD = ("-1/-1", "stun", "doom", "poison")
+_BAD = ("-1/-1", "stun", "doom", "poison", "defense")   # defense: a Siege's controller wants it defeated
 
 
 def _removal_helps(p, counter, owner):
