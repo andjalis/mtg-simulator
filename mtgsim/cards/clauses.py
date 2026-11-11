@@ -280,6 +280,8 @@ _TRIGGERS = [
     (r"Whenever you cast an instant or sorcery spell that targets a creature, (.+)", ("cast_instant_sorcery",)),
     (r"Whenever ~ becomes the target of a spell or ability you control for the first time each turn, (.+)",
      ("targeted_mine",)),
+    (r"When(?:ever)? ~ becomes the target of a spell or ability for the first time each turn, (.+)",
+     ("targeted",)),
     (r"When(?:ever)? ~ becomes the target of a spell or ability, (.+)", ("targeted",)),
     (r"When ~ is turned face up, (.+)", ("turned_face_up",)),
     (r"Whenever you cast a spell that targets ~, (.+)", ("heroic",)),

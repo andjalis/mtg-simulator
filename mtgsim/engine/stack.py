@@ -79,14 +79,17 @@ class StackMixin:
         """Whoever searched `who`'s library: its opponent's "whenever an opponent searches" listeners."""
         self.fire(self.opponent(who), "opp_searches")
 
-    def fire(self, p: Player, event: str, source: Permanent | None = None, context=None, subject=None):
-        """Deliver a typed event, then queue the existing supported trigger listeners."""
+    def fire(self, p: Player, event: str, source: Permanent | None = None, context=None, subject=None,
+             targeter=None):
+        """Deliver a typed event, then queue the existing supported trigger listeners.
+
+        ``targeter`` is the stack item that targeted ``source`` ("counter that spell" triggers read it)."""
         before = rules_events.snapshot(source) if source is not None and (self.rule_events.history is not None
             or self.rule_events.listeners) else None
         amount = getattr(self, "event_amount", None)
         self.rule_events.emit(rules_events.RulesEvent(event, p, source, context, subject, before,
                                                       amount=amount if amount is not None else 0))
-        self._dispatch_trigger_event(p, event, source, context, subject)
+        self._dispatch_trigger_event(p, event, source, context, subject, targeter)
         cx_events.observe(self, p, event, source, context, subject)
         if event == "dies" and self.cx_watchers:
             from .. import cx_trig_watch
@@ -101,7 +104,7 @@ class StackMixin:
                 if event == "end_step" and controller is not p:
                     self.fire(controller, "opp_end_step", context=p)
 
-    def _dispatch_trigger_event(self, p, event, source=None, context=None, subject=None):
+    def _dispatch_trigger_event(self, p, event, source=None, context=None, subject=None, targeter=None):
         from ..residual_templates import trigger_suppressed
         if trigger_suppressed(self, event, source, context, subject):
             return
@@ -241,7 +244,13 @@ class StackMixin:
                 if subject is not None and any(e.data.get("subject_power") for e in effects):
                     effects = [dataclasses.replace(e, amount=max(0, subject.power)) if e.data.get("subject_power")
                                else e for e in effects]
-                self.queue_trigger(perm.controller, effects, perm, perm.card.name, context, modes=trig.modes,
+                # "that spell" riders on a targeted trigger read the targeting item from the context;
+                # on "any_cast" the spell just cast is the referent
+                ref_item = targeter if targeter is not None else (
+                    getattr(self, "casting_item", None) if event == "any_cast" else None)
+                ctx = ref_item if ref_item is not None and context is None else context
+                self.queue_trigger(perm.controller, effects, perm, perm.card.name, ctx,
+                                   targets=self._that_spell_targets(ref_item, effects), modes=trig.modes,
                                    intervening_if=trig.intervening_if)
         if source is not None:      # Role tokens, Auras and Equipment give their creature triggers
             for equipment in source.equipment:
@@ -300,6 +309,13 @@ class StackMixin:
                 targets[i] = max(enemies, key=perm_value)
         return targets
 
+    @staticmethod
+    def _that_spell_targets(targeter, effects):
+        """Targets for a "counter that spell" trigger: the item that targeted the source, per effect."""
+        if targeter is None or not any(e.kind == "counter" and e.data.get("that_spell") for e in effects):
+            return None
+        return [targeter if e.kind == "counter" and e.data.get("that_spell") else None for e in effects]
+
     def check_ward(self, item: StackItem):
         item.effects = counter_mechanics.protect_graveyard_targets(self, item.effects, item.targets)
         unique_targets = []
@@ -308,12 +324,12 @@ class StackMixin:
                 unique_targets.append(tgt)
         for tgt in unique_targets:
             if isinstance(tgt, Permanent) and tgt in tgt.controller.battlefield:
-                self.fire(tgt.controller, "targeted", source=tgt)          # Illusions: "sacrifice it"
+                self.fire(tgt.controller, "targeted", source=tgt, targeter=item)     # Illusions: "sacrifice it"
                 if item.kind == "spell" and tgt.controller is item.controller:
                     self.fire(tgt.controller, "heroic", source=tgt)
         for tgt in unique_targets:
             if isinstance(tgt, Permanent) and tgt.controller is item.controller and tgt in tgt.controller.battlefield:
-                self.fire(tgt.controller, "targeted_mine", source=tgt)      # Valiant
+                self.fire(tgt.controller, "targeted_mine", source=tgt, targeter=item)  # Valiant
         for tgt in unique_targets:
             if isinstance(tgt, Permanent) and tgt.controller is not item.controller:
                 if tgt.ward:
@@ -327,9 +343,9 @@ class StackMixin:
                     self.queue_trigger(tgt.controller, [Effect("counter", 1, target="spell",
                                                                data={"discard": True})], tgt,
                                        f"{tgt.card.name} ward", targets=[item])
-                self.fire(tgt.controller, "targeted_opp", tgt, context=item.controller)
+                self.fire(tgt.controller, "targeted_opp", tgt, context=item.controller, targeter=item)
                 if item.is_spell:
-                    self.fire(tgt.controller, "targeted_by_spell", tgt, context=item.controller)
+                    self.fire(tgt.controller, "targeted_by_spell", tgt, context=item.controller, targeter=item)
 
     def resolve_top(self):
         item = self.stack.pop()

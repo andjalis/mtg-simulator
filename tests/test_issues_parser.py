@@ -155,6 +155,8 @@ class FalseFullXQuantities(unittest.TestCase):
                  "of cards named Mind Burst in all graveyards.")
         self.assertTrue(c.unsupported)
 
-    def test_that_spells_mana_value_not_full(self):
-        _, bad = P._parse_effects("You may have target player mill X cards, where X is that spell's mana value.")
-        self.assertTrue(bad)
+    def test_that_spells_mana_value_reads_the_referenced_spell(self):
+        effs, bad = P._parse_effects("You may have target player mill X cards, where X is that spell's mana value.")
+        self.assertEqual(bad, [])
+        wrapper = next(e for e in effs if e.kind == "cx_players")
+        self.assertEqual(wrapper.data["xq"], ("spell", "mana value"))
