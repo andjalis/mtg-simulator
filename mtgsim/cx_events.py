@@ -687,7 +687,7 @@ def observe(game, p, event, source=None, context=None, subject=None):
 
 def _match(game, spec, event, perm, p, source, context, subject, wants_player=False):
     """The trigger's context (the creature or player "it"/"that player" means) if the event matches, else False."""
-    from .engine.state import Permanent, Player
+    from .engine.state import Permanent
     me = perm.controller
     if "player" in spec:
         actor = game.opponent(p) if event == "opp_loses_life" else p
@@ -735,7 +735,8 @@ def _match(game, spec, event, perm, p, source, context, subject, wants_player=Fa
         return False
     if flag in ("atk_me", "atk_me_only", "atk_opp"):
         tgt = game.attack_targets.get(obj)
-        defender = tgt if isinstance(tgt, Player) else getattr(tgt, "controller", None)
+        # "attacks you or a planeswalker you control" / "attacks an opponent": an attacked battle is neither (#254)
+        defender = tgt if tgt in game.players else tgt.controller if isinstance(tgt, Permanent) and tgt.is_planeswalker else None
         if flag == "atk_me_only" and tgt is not me:
             return False
         if flag == "atk_me" and defender is not me:

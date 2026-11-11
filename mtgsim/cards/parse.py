@@ -662,6 +662,8 @@ def _parse_face(data: dict) -> CardDef:
     extra.pop("_subtypes", None)
     _auras.finish(extra)
     _storage.finish(extra, unsupported)
+    if "Battle" in types and "Siege" not in type_line.split("—")[-1].split():
+        unsupported.append("Battle rules other than a Siege's (protector and defeat)")    # #254: Sieges only
     for event in ("cast_self", "cycle_self"):     # triggers of the card itself, not of a permanent
         own = [t for t in triggers if t.event == event]
         if own:

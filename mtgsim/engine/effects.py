@@ -100,12 +100,14 @@ class EffectsMixin:
         elif isinstance(target, Permanent) and target in target.controller.battlefield:
             if target.is_planeswalker:
                 target.counters["loyalty"] = target.loyalty - amount
+            if target.is_battle:          # damage to a battle removes that many defense counters (#254)
+                target.counters["defense"] = max(0, target.counters.get("defense", 0) - amount)
             wither = (has("wither") or
                       not combat and by is not None and target.controller is not by
                       and any(x.card.wither_noncombat for x in by.battlefield))
             if target.is_creature and (infect or wither):
                 target.counters["-1/-1"] = target.m1 + amount
-            elif target.is_creature or not target.is_planeswalker:
+            elif target.is_creature or not (target.is_planeswalker or target.is_battle):
                 target.damage += amount
             if target.is_creature and has("deathtouch"):
                 target.deathtouched = True
@@ -537,6 +539,11 @@ class EffectsMixin:
                         self.sacrifice(perm)
                         changed = True
                         continue
+                    if perm.is_battle and not perm.is_creature:
+                        from ..battles import sba as battle_sba
+                        if battle_sba(self, perm):
+                            changed = True
+                            continue
                     if perm.is_planeswalker and perm.loyalty <= 0:
                         self.dies(perm, counter_sources=counter_sources if perm in simultaneous_deaths else None)
                         changed = True

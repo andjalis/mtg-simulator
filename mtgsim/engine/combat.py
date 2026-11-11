@@ -89,10 +89,10 @@ class CombatMixin:
         if not attackers:
             return
         targets = self.hook(p, "choose_attack_targets")(self, p, attackers) or {}
+        from ..battles import can_attack
         for a in attackers:
             t = targets.get(a, opp)
-            self.attack_targets[a] = t if (t is opp or (isinstance(t, Permanent) and t.is_planeswalker
-                                                         and t in opp.battlefield)) else opp
+            self.attack_targets[a] = t if can_attack(self, p, t) else opp
         from ..cx_combat_costs import pay_attackers, pay_blockers
         attackers = pay_attackers(self, p, attackers, self.attack_targets)
         self.attack_targets = {a: self.attack_targets[a] for a in attackers}
@@ -124,7 +124,8 @@ class CombatMixin:
         if len(attackers) >= 3:
             self.fire(p, "attack_three_plus")
         for a in attackers:
-            if self.attack_targets.get(a) is opp or isinstance(self.attack_targets.get(a), Permanent):
+            attacked = self.attack_targets.get(a)
+            if attacked is opp or isinstance(attacked, Permanent) and attacked.is_planeswalker:   # not a battle
                 self.fire(opp, "opp_creature_attacks", context=a)
         self.run_priority(until_empty_stack=False)
         attackers = [a for a in self.attackers if a in p.battlefield]
@@ -210,8 +211,10 @@ class CombatMixin:
             if a not in p.battlefield:
                 continue
             target = self.attack_targets.get(a, opp)
-            if isinstance(target, Permanent) and target not in opp.battlefield:
-                target = None   # its planeswalker is gone: no damage
+            if isinstance(target, Permanent) and not (
+                    target.is_planeswalker and target in opp.battlefield or target.is_battle
+                    and target in target.controller.battlefield and target.protector is opp):
+                target = None   # its planeswalker or battle is gone (or changed sides): no damage
             if a in blocks:
                 alive = [b for b in blocks[a] if b in opp.battlefield]
                 if deals_now(a) and dmg_stat(self, a) > 0 and target is not None and a.card.advanced_rules.get('assign_unblocked') \
