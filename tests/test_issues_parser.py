@@ -158,3 +158,31 @@ class FalseFullXQuantities(unittest.TestCase):
     def test_that_spells_mana_value_not_full(self):
         _, bad = P._parse_effects("You may have target player mill X cards, where X is that spell's mana value.")
         self.assertTrue(bad)
+
+
+class OneOrTwoTargets(Base):
+    """#312: "one or two target <np>" = a required target plus an optional second one."""
+
+    def test_parse_flags(self):
+        effs, bad = P._parse_effects("One or two target creatures each gain haste until end of turn.")
+        self.assertEqual(bad, [])
+        self.assertEqual(len(effs), 2)
+        self.assertFalse(effs[0].data.get("optional_target"))
+        self.assertTrue(effs[1].data.get("optional_target"))
+
+    def test_up_to_one_or_two_stays_unmatched(self):
+        _, bad = P._parse_effects("Up to one or two target creatures each gain haste until end of turn.")
+        self.assertTrue(bad)
+
+    def test_game_second_target_omitted(self):
+        c = self.spell("One or two target creatures each gain haste until end of turn.")
+        mine = self.perm(BEAR, self.a)
+        self.assertFalse(self.game.legal_target(self.a, c.spell_effects[0], None))
+        self.assertTrue(self.game.legal_target(self.a, c.spell_effects[1], None))
+        self.cast(c, targets=[mine, None])
+        self.assertTrue(mine.has("haste"))
+
+    def test_object_position(self):
+        effs, bad = P._parse_effects("Return one or two target attacking creatures to their owner's hand.")
+        self.assertEqual(bad, [])
+        self.assertEqual([bool(e.data.get("optional_target")) for e in effs], [False, True])
