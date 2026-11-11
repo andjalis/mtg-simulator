@@ -45,6 +45,8 @@ def parse_line(line, st):
         "You can't get poison counters.": 'poison_lock',
         "Creatures you control can't have -1/-1 counters put on them.": 'negative_counter_lock',
         'Creatures your opponents control lose infect.': 'remove_infect',
+        "You can't play lands.": 'land_lock_you',
+        "Players can't play lands.": 'land_lock_all',
     }
     if line in flags:
         st.extra.setdefault('advanced_rules', {})[flags[line]] = True
@@ -132,6 +134,17 @@ def anthem_bonus(permanent):
                 power += pp
                 toughness += tt
     return power, toughness
+
+
+def lands_locked(player):
+    """Whether player can't play lands: a static ("You can't play lands." / "Players can't play lands.") or a
+    "Target player can't play lands this turn." flag."""
+    game = getattr(player, '_game', None)
+    if game is None:
+        return False
+    from .cx_next_turn import player_flag
+    return bool(sources(game, 'land_lock_all')) or any(x.controller is player for x in sources(game, 'land_lock_you')) or \
+        player_flag(game, player, 'no_lands')
 
 
 def activation_blocked(game, perm, *, mana=False):

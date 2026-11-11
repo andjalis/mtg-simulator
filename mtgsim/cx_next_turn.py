@@ -239,6 +239,11 @@ def _flag(flag, who="you", amount=0, **data):
     return build
 
 
+def _target_flag(flag):
+    from .cards.model import Effect
+    return Effect("cx_player_flag", target="player", data={"flag": flag, "who": "target"})
+
+
 def _both(*builders):
     def build(m):
         return [b(m) for b in builders]
@@ -289,6 +294,7 @@ EFFECT_PATTERNS = [
      rf"for each of those creatures{_UNTIL}", _flag("attack_tax")),
     (rf"you have no maximum hand size{_UNTIL}", _flag("no_max_hand")),
     (rf"you can't cast spells{_UNTIL}", _flag("no_cast")),
+    (rf"target player can't play lands{_UNTIL}", lambda m: _target_flag("no_lands")),
     (rf"(?:spells your opponents cast cost|(?P<nc>noncreature) spells your opponents cast cost) \{{(?P<n>\d+)\}} more to cast{_UNTIL}",
      lambda m: _flag("tax", filter="noncreature" if m["nc"] else "")(m)),
 ]

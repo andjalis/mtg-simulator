@@ -163,5 +163,43 @@ class CoinFlipBothSides(unittest.TestCase):
         self.assertEqual([c.name for c in a.graveyard], [SANDSWIMMER.name])
 
 
+MINING = card("Test Mining", "{2}{R}", "Enchantment", "You can't play lands.")
+WORMS = card("Test Dispute", "{2}{R}", "Enchantment", "Players can't play lands.")
+QUAKE = card("Test Wound", "{1}{R}", "Sorcery", "Target player can't play lands this turn.")
+
+
+class CantPlayLands(unittest.TestCase):
+    def setUp(self):
+        self.a = Player("a", [ISLAND] * 10, HeuristicAI())
+        self.b = Player("b", [ISLAND] * 10, HeuristicAI())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 1, "main1"
+
+    def test_templates(self):
+        for c in (MINING, WORMS, QUAKE):
+            self.assertEqual(c.unsupported, [], c.name)
+
+    def test_own_lock_only_binds_its_controller(self):
+        self.a.battlefield.append(Permanent(MINING, self.a))
+        self.assertTrue(self.a.land_played)
+        self.assertFalse(self.b.land_played)
+
+    def test_players_lock_binds_everyone(self):
+        self.a.battlefield.append(Permanent(WORMS, self.a))
+        self.assertTrue(self.a.land_played)
+        self.assertTrue(self.b.land_played)
+
+    def test_target_player_this_turn_only(self):
+        for land in (MOUNTAIN, MOUNTAIN):
+            self.a.battlefield.append(Permanent(land, self.a))
+        self.a.hand[:] = [QUAKE]
+        self.assertTrue(self.game.cast(self.a, QUAKE, [self.b]))
+        self.game.settle()
+        self.assertTrue(self.b.land_played)
+        self.assertFalse(self.a.land_played)
+        self.game.turn += 1
+        self.assertFalse(self.b.land_played)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -690,7 +690,9 @@ class Player:
     @property
     def land_played(self) -> bool:
         """Whether this turn's land drops are used up (Icetill Explorer gives another)."""
-        return self.lands_played > sum(x.card.extra_lands for x in self.battlefield) + self.extra_lands_turn
+        from ..residual_templates import lands_locked
+        return self.lands_played > sum(x.card.extra_lands for x in self.battlefield) + self.extra_lands_turn or \
+            lands_locked(self)
 
     @land_played.setter
     def land_played(self, value):
