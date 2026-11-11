@@ -34,12 +34,15 @@ def tuck(game, p, eff, target, **_):
 
 
 @kind("cx_card_move")
-def card_move(game, p, eff, target, **_):
+def card_move(game, p, eff, target, item=None, **_):
     """Move a targeted card out of a graveyard: to its owner's hand, exile or library (top / bottom), or onto the
     battlefield under your control or its owner's."""
+    from ...referent import remember_card
+    remember_card(item, None)
     owner = next((pl for pl in game.players if any(c is target for c in pl.graveyard)), None)
     if owner is None:
         return
+    remember_card(item, target)
     to = eff.data["to"]
     if to == "battlefield":
         owner.graveyard.remove(target)

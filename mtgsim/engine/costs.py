@@ -306,6 +306,8 @@ class CostsMixin:
 
     def gy_move(self, p: Player, eff: Effect, item):
         """"Return up to N target <description> cards from your/a graveyard to your hand/the battlefield"."""
+        from ..referent import remember_card
+        remember_card(item, None)
         d = eff.data
         zones = {"mine": [p], "opp": [self.opponent(p)], "any": [p, self.opponent(p)]}[d["zone"]]
         cands = []
@@ -338,6 +340,7 @@ class CostsMixin:
                 names.add(c.name)
                 picked.append((o, c))
         for owner, card in picked:
+            remember_card(item, card)
             owner.graveyard.remove(card)
         for owner, card in picked:
             if item is not None:

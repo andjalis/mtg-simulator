@@ -137,5 +137,13 @@
     "data": {"source_power": true},
     "example": "~ deals damage equal to its power to any target",
     "cards": ["Balduvian Berserker"]
+  },
+  {
+    "match": "exile the top card of that player's library",
+    "effect": "exile_top",
+    "amount": 1,
+    "target": "that_player",
+    "example": "exile the top card of that player's library",
+    "cards": ["Daxos of Meletis"]
   }
 ]

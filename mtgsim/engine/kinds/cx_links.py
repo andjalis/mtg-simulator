@@ -76,6 +76,8 @@ def tap_own(game, p, eff, item, **_):
 def peek_top(game, p, eff, item, **_):
     """"Look at / reveal the top card of your library": remembered for "if it's a ... card" (cx_links)."""
     if item is not None:
+        from ...referent import remember_card
+        remember_card(item, p.library[-1] if p.library else None)
         item.link_card = p.library[-1] if p.library else None
         item.link_zone = eff.data.get("zone", "library")
     if p.library and eff.data.get("reveal"):

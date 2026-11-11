@@ -282,8 +282,11 @@ def grant_flashback(game, p, eff, **_):
 
 @kind("regrow_any")
 def regrow_any(game, p, item=None, **_):
+    from ...referent import remember_card
+    remember_card(item, None)
     if p.graveyard:
         card = max(p.graveyard, key=lambda c: c.cmc)
+        remember_card(item, card)
         p.graveyard.remove(card)
         p.hand.append(card)
         if item is not None:
