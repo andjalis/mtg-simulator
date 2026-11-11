@@ -7,6 +7,7 @@
         your hand onto the battlefield tapped.                                             (Anticausal Vestige)
     you may put a creature card from your hand onto the battlefield tapped and attacking. (Ilharg, the Raze-Boar)
     you may put an Aura card from your hand onto the battlefield attached to ~.            (Academy Researchers)
+    If you do, you may put a creature card from your hand onto the battlefield blocking that creature. (Aetherplasm)
 
 The effect is the existing ``hand_to_battlefield`` kind; its data gains
 
@@ -14,8 +15,8 @@ The effect is the existing ``hand_to_battlefield`` kind; its data gains
   ``any_sub`` ("an Angel, Demon, or Dragon creature card");
 * ``mvq``: (op, quantity) for a mana value compared with a ``cards._xq`` quantity, evaluated when the effect
   resolves (charge counters added in response count);
-* ``entry``: "tapped", "attacking" (tapped and attacking the opponent) or "attached" (an Aura attached to the
-  source, which must be a legal host).
+* ``entry``: "tapped", "attacking" (tapped and attacking the opponent), "attached" (an Aura attached to the
+  source, which must be a legal host) or "blocking" (blocking the attacker a block trigger names: Aetherplasm).
 
 Only the controller's own hand is covered: "each player may" / "that player may" need a decision by another
 player and are left unmatched, as are quantities ``_xq`` doesn't know ("that damage": #313).
@@ -25,7 +26,7 @@ from __future__ import annotations
 import re
 
 _ENTRY = {"tapped": "tapped", "tapped and attacking": "attacking", "tapped and attacking that opponent": "attacking",
-          "attached to ~": "attached"}
+          "attached to ~": "attached", "blocking that creature": "blocking"}
 _MV_OPS = {"equal to": "==", "less than or equal to": "<=", "x or less": "<=", "x": "=="}
 
 
@@ -99,7 +100,7 @@ def _build(m):
         data["entry"] = _ENTRY[entry]
         if data["entry"] == "attached" and spec.get("sub") != ["Aura"]:
             return NO_MATCH
-        if data["entry"] == "attacking" and not all(
+        if data["entry"] in ("attacking", "blocking") and not all(
                 "creature" in one.get("types", ()) or one.get("any_sub") for one in spec.get("either", [spec])):
             return NO_MATCH          # a noncreature permanent "attacking" (Summoner's Grimoire) is not modelled
     if any(one.get("sub") == ["Aura"] for one in spec.get("either", [spec])) and data.get("entry") != "attached":
@@ -132,7 +133,7 @@ _MV = (r"(?: with mana value (?:(?P<n>\d+) or (?P<dir>less|greater|more)|(?P<op>
 EFFECT_PATTERNS = [
     (r"(?:you may )?put (?:an?|one) (?P<desc>[\w ,'/-]+?) card(?: or an? (?P<desc2>[\w '/-]+?) card)?"
      r"(?P<chosen> of the chosen type)?" + _MV +
-     r" from your hand onto the battlefield(?: (?P<entry>tapped and attacking(?: that opponent)?|tapped|attached to ~))?"
+     r" from your hand onto the battlefield(?: (?P<entry>tapped and attacking(?: that opponent)?|tapped|attached to ~|blocking that creature))?"
      r"(?: HANDPUT_WHERE (?P<where>.+?))?(?P<sac> HANDPUT_SAC_EOT)?", _build),
 ]
 
@@ -177,7 +178,7 @@ def candidates(game, p, eff, item) -> list:
             value = str(getattr(c, stat[0]) or "")
             if not c.is_creature or not value.isdigit() or not _cmp(int(value), stat[1], stat[2]):
                 continue
-        if data.get("entry") == "attacking" and not c.is_creature:
+        if data.get("entry") in ("attacking", "blocking") and not c.is_creature:
             continue
         if chosen and src.chosen_type not in c.subtypes:
             continue
@@ -198,14 +199,30 @@ def choose(game, me, cards, entry):
     """Default policy for ``choose_hand_put``: the card to put, or None to decline.
 
     Skips a legendary card whose name me already controls (the legend rule would cost one of them); an
-    attacker is chosen by power, anything else by mana value."""
+    attacker is chosen by power, a blocker by toughness, anything else by mana value."""
     names = {x.card.name for x in me.battlefield if x.card.legendary}
     pool = [c for c in cards if not (c.legendary and c.name in names)]
     if not pool:
         return None
+    def stat(c, name):
+        value = str(getattr(c, name) or "0")
+        return int(value) if value.isdigit() else 0
     if entry == "attacking":
-        return max(pool, key=lambda c: (int(c.power or 0) if str(c.power or "0").isdigit() else 0, c.cmc))
+        return max(pool, key=lambda c: (stat(c, "power"), c.cmc))
+    if entry == "blocking":
+        return max(pool, key=lambda c: (stat(c, "toughness"), stat(c, "power"), c.cmc))
     return max(pool, key=lambda c: c.cmc)
+
+
+def _blocked_attacker(game, p, item):
+    """ "blocking that creature": the attacker a "whenever ~ blocks a creature" trigger names (its context), while
+    it is still attacking p in this combat; otherwise the creature just enters (CR 506.3)."""
+    from .engine.state import Permanent
+    attacker = getattr(item, "context", None)
+    if not isinstance(attacker, Permanent) or game.step != "declare_blockers" or attacker not in game.attackers \
+            or attacker.controller is p or attacker not in attacker.controller.battlefield:
+        return None
+    return attacker
 
 
 def _optional(eff, item) -> bool:
@@ -242,6 +259,14 @@ def _put(game, p, eff, item):
         # Put onto the battlefield attacking: it was never declared, so "whenever ~ attacks" doesn't trigger.
         # Outside combat it just enters tapped.
         perm = game.enter_battlefield(p, card, tapped_attacking=in_combat, tapped=not in_combat)
+    elif entry == "blocking":
+        perm = game.enter_battlefield(p, card)
+        attacker = _blocked_attacker(game, p, item)
+        if perm is not None and attacker is not None:
+            # Put onto the battlefield blocking: it was never declared, so "whenever ~ blocks" doesn't trigger.
+            # Evasion and block restrictions apply only to declared blocks.
+            game.blocks.setdefault(attacker, []).append(perm)
+            game.log(f"{card.name} blocks {attacker.card.name}", p)
     else:
         perm = game.enter_battlefield(p, card, tapped=entry == "tapped")
     game.log(f"puts {card.name} onto the battlefield" + (f" ({entry})" if entry else ""), p)

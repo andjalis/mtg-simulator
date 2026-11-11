@@ -36,6 +36,10 @@ EITHER = card("Test Either", "{2}", "Artifact", "{T}: You may put a red creature
 GOLEM = card("Test Golem", "{4}", "Artifact Creature — Golem", "", 4, 4)
 ORIGIN = card("Test Origin", "{2}", "Artifact", "{T}: You may put a Goblin creature card from your hand onto the "
               "battlefield. If you don't, draw a card.")
+PLASM = card("Test Plasm", "{2}{U}{U}", "Creature — Shapeshifter", "Whenever ~ blocks a creature, you may return ~ "
+             "to its owner's hand. If you do, you may put a creature card from your hand onto the battlefield "
+             "blocking that creature.", 1, 1)
+WALLER = card("Test Waller", "{2}{W}", "Creature — Wall", "Defender\nWhenever ~ blocks, you gain 4 life.", 1, 6)
 BEAR2 = card("Two Bear", "{1}{G}", "Creature — Bear", "", 2, 2)
 OGRE3 = card("Three Ogre", "{2}{R}", "Creature — Ogre", "", 3, 3)
 GOBLIN = card("Test Goblin", "{1}{R}", "Creature — Goblin", "", 2, 1)
@@ -118,6 +122,51 @@ class Parse(unittest.TestCase):
                 "from your hand onto the battlefield."):
             c = card("Refusal Test", "{1}", "Creature — Human", text, 1, 1)
             self.assertTrue(c.unsupported, text)
+
+
+class Blocking(unittest.TestCase):
+    """Aetherplasm: the put creature blocks the attacker the trigger names; no "whenever ~ blocks"."""
+    def setUp(self):
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 20
+            p.ai.attack, p.ai.block = (), {}
+
+    def put(self, who, c):
+        perm = self.game.enter_battlefield(who, c)
+        perm.sick = False
+        self.game.settle()
+        return perm
+
+    def test_parse(self):
+        self.assertEqual(PLASM.unsupported, [])
+        self.assertEqual(PLASM.triggers[0].effects[-1].data["entry"], "blocking")
+
+    def test_put_blocker_takes_over_the_block(self):
+        ogre = self.put(self.a, OGRE3)
+        plasm = self.put(self.b, PLASM)
+        self.b.hand.extend([WALLER, BEAR2])
+        life = self.b.life
+        self.a.ai.attack = [ogre]
+        self.b.ai.block = {ogre: [plasm]}
+        self.game.combat(self.a, self.b)
+        self.game.settle()
+        self.assertIn(PLASM, self.b.hand)                 # returned
+        waller = next(x for x in self.b.battlefield if x.card.name == "Test Waller")
+        self.assertEqual(waller.damage, 3)                # it blocked the Ogre and took its damage
+        self.assertEqual(ogre.damage, 1)
+        self.assertEqual(self.b.life, life)               # no combat damage through, no "whenever ~ blocks" life
+        self.assertEqual([c.name for c in self.b.hand if c.name == "Two Bear"], ["Two Bear"])
+
+    def test_outside_combat_just_enters(self):
+        from types import SimpleNamespace
+        eff = PLASM.triggers[0].effects[-1]
+        self.b.hand.append(BEAR2)
+        perm = hand_put.resolve(self.game, self.b, eff, SimpleNamespace(source=None, context=None, effects=[eff]))
+        self.assertIsNotNone(perm)
+        self.assertFalse(self.game.blocks)
 
 
 class Resolve(unittest.TestCase):
