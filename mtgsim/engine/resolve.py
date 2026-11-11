@@ -24,6 +24,11 @@ class ResolveMixin:
             target = item.source.aura_host or item.source.attached_to     # "enchanted creature" / "equipped creature"
         if eff.target == "that_controller":
             target = prev.controller if isinstance(prev, (Permanent, StackItem)) else prev
+            ctx = item.context if item is not None else None
+            if target is None and isinstance(ctx, StackItem):       # "that spell's controller" in a cast trigger
+                target = ctx.controller
+            elif target is None and isinstance(ctx, Player) and eff.data.get("cast_spell") is not None:
+                target = ctx
         k = eff.kind
         source = (item.card.name if item and item.card else
                   item.source.card.name if item and isinstance(item.source, Permanent) else "effect")
@@ -47,7 +52,7 @@ class ResolveMixin:
             if getattr(src, "emerged_toughness", None) is not None:
                 eff = dataclasses.replace(eff, amount=src.emerged_toughness)
         if eff.data.get("xq"):     # ", where X is the number of ..."
-            n = self.x_quantity(p, eff.data["xq"], item, prev)
+            n = self.x_quantity(p, eff.data["xq"], item, eff.data.get("cast_spell") or prev)
             if eff.data.get("xq_size"):
                 eff = dataclasses.replace(eff, data=dict(eff.data, power=n, toughness=n))
             else:

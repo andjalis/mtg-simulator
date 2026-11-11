@@ -233,6 +233,11 @@ class StackMixin:
                 if getattr(self, "event_amount", None) is not None and any(e.data.get("that_much") for e in effects):
                     effects = [dataclasses.replace(e, amount=self.event_amount) if e.data.get("that_much") else e
                                for e in effects]
+                if event == "any_cast" and getattr(self, "casting_item", None) is not None:
+                    effects = [dataclasses.replace(e, data=dict(e.data, cast_spell=self.casting_item))
+                               if e.data.get("xq", ("",))[0] == "spell" or e.target == "that_controller"
+                               or e.data.get("who") == "spell_controller" else e
+                               for e in effects]
                 if subject is not None and any(e.data.get("subject_power") for e in effects):
                     effects = [dataclasses.replace(e, amount=max(0, subject.power)) if e.data.get("subject_power")
                                else e for e in effects]
@@ -439,6 +444,8 @@ class StackMixin:
                         prev = None
                         continue
                     prev = tgt
+                    if isinstance(tgt, StackItem):
+                        item.target_spell = tgt        # "that spell" still names it after a later target
                 elif eff.target == "prev":
                     tgt = prev
                 if eff.data.get("distinct") and any(t is tgt for e2, t in zip(item.effects, item.targets)

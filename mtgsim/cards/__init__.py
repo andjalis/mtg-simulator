@@ -217,3 +217,5 @@ _SUBS += _cx_counters.SUBS
 from .. import blink as _blink
 _EFFECT_PATTERNS += _blink.EFFECT_PATTERNS
 _SUBS += _blink.SUBS
+from .. import that_spell as _that_spell
+_SUBS += _that_spell.SUBS

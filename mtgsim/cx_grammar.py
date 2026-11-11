@@ -207,7 +207,7 @@ def count(word: str):
 _PLAYERS = {"you": "you", "each player": "each", "each opponent": "opponents", "that player": "that_player",
             "defending player": "defending", "that creature's controller": "controller",
             "that permanent's controller": "controller", "its controller": "controller", "its owner": "owner",
-            "that creature's owner": "owner"}
+            "that creature's owner": "owner", "that spell's controller": "spell_controller"}
 
 
 def _desc(text: str, plural: bool):
@@ -701,6 +701,14 @@ def players(game, p, who, item, prev, target=None):
     if who == "that_player":
         context = item.context if item is not None else None
         return [context] if context in game.players else []
+    if who == "spell_controller":       # a cast trigger's spell, a spell this one targeted, or the one it targets
+        from .engine.state import StackItem
+        spell = (item.context if item is not None and isinstance(item.context, StackItem) else
+                 prev if isinstance(prev, StackItem) else getattr(item, "target_spell", None))
+        if isinstance(spell, StackItem):
+            return [spell.controller]
+        context = item.context if item is not None else None
+        return [context] if context in game.players else []     # any_cast / "becomes the target of a spell": its controller
     if who in ("controller", "owner"):
         from .engine.state import Permanent
         if isinstance(prev, Permanent):

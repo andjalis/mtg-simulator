@@ -230,6 +230,14 @@ def _parse_effects(text: str, opts: bool = False):
                     e.data["xq_size"] = bool(re.search(r"\bX/X\b", mx[1]))
                 effects += new
                 continue
+        mcol = re.fullmatch(r"(.+?) for each of that spell's colors", s, re.I)
+        if mcol:       # "~ gets +1/+1 until end of turn for each of that spell's colors" (Construction Arsonist)
+            new, bad = _parse_effects(mcol[1][0].upper() + mcol[1][1:] + ".")
+            if new and not bad:
+                for e in new:
+                    e.data["xq"] = ("spell", "colors")
+                effects += new
+                continue
         mparty = re.fullmatch(r"(.+?) for each creature in your party", s, re.I)
         if mparty:
             # "create a 1/1 ... token for each creature in your party" (Squad Commander): the base

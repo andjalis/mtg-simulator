@@ -138,7 +138,7 @@
     "cards": ["Cavalier of Flame"]
   },
   {
-    "match": "(?:~|it|he|she) deals (\\d+) damage to (?:that player|that spell's controller)",
+    "match": "(?:~|it|he|she) deals (\\d+) damage to that player",
     "effect": "damage",
     "amount": "$1:int",
     "target": "that_player",
