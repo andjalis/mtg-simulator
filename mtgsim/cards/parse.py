@@ -394,6 +394,34 @@ def _cost_line(m):
     return parse_mana_cost(m)
 
 
+
+def _kicker_instead(base: list, text: str) -> bool:
+    """Apply "If ~ was kicked, B instead.": B replaces the base effects it stands in for (those of its kinds, or the
+    only base effect), never runs next to them. Edits ``base`` in place; False (nothing changed) when the replaced
+    effects can't be told apart."""
+    body = re.sub(r"^instead,?\s+|\s+instead(?=\.$)", "", text.strip()).rstrip(".")
+    if re.search(r"\binstead\b", body) or not body:
+        return False
+    new, bad = _parse_effects(body[0].upper() + body[1:] + ".")
+    if bad or not new or any("prev" in str(e.data) for e in new):
+        return False                    # leans on an earlier effect's target that isn't there without the base
+    kinds = {e.kind for e in new}
+    hit = [i for i, e in enumerate(base) if e.kind in kinds]
+    if not hit and len(base) == 1:
+        hit = [0]
+    if not hit or any(sum(base[i].kind == k for i in hit) > sum(e.kind == k for e in new) for k in kinds):
+        return False
+    old = base[hit[0]]
+    first = new[0]
+    if first.target == "prev":
+        if first.kind != old.kind:
+            return False
+        new[0] = dataclasses.replace(first, target=old.target, data=dict(old.data, **first.data))
+    elif any(e.target == "prev" for e in new):
+        return False
+    base[:] = base[:hit[0]] + new + [e for i, e in enumerate(base) if i > hit[0] and i not in hit]
+    return True
+
 def _parse_face(data: dict) -> CardDef:
     name = data["name"].split(" // ")[0]
     type_line = data.get("type_line", "").split(" // ")[0]
@@ -519,6 +547,10 @@ def _parse_face(data: dict) -> CardDef:
             m = re.fullmatch(r"it enters with (a|an|one|two|three|four|five) \+1/\+1 counters? on it\.", k)
             if m:
                 extra.setdefault("advanced_rules", {})["kick_counters"] = _num(m[1])
+                continue
+            if re.search(r"\binstead\b", k):
+                if not _kicker_instead(kicked_effects, k):
+                    unsupported.append(f"if kicked: {k}")
                 continue
             effs, bad = _parse_effects(k)
             kicked_effects += effs
