@@ -392,7 +392,7 @@ class StackMixin:
             self._entry_mana_by_color = getattr(item, "mana_by_color", {})
             self._entry_cast = (kind == "kicker" or getattr(item, "kicks", 0) > 0,
                                 bool(getattr(item, "cast_from_hand", False)), getattr(item, "mana_spent", 0))
-            if kind in ("disturb", "room_right"):   # cast transformed: its back face enters (a Room's right door)
+            if kind in ("disturb", "room_right", "siege"):   # cast transformed: its back face enters (a Room's right door)
                 perm = self.enter_battlefield(p, base.back, x=getattr(item, "x", 0), physical_card=base)
             else:
                 perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))

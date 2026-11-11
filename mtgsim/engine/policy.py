@@ -838,9 +838,11 @@ def before_attacks(game: Game, me: Player):
 
 
 def choose_attack_targets(game: Game, me: Player, attackers: list) -> dict:
-    """Send attackers at opposing planeswalkers unless the player is dead on board."""
+    """Send attackers at opposing planeswalkers, then unblockable ones at a battle they would defeat,
+    unless the player is dead on board."""
+    from ..battles import attack_targets as battle_targets
     opp = game.opponent(me)
-    if not opp.planeswalkers or sum(a.power for a in attackers) >= opp.life:
+    if sum(a.power for a in attackers) >= opp.life:
         return {}
     out, free = {}, sorted(attackers, key=lambda a: a.power)
     for pw in sorted(opp.planeswalkers, key=lambda x: -x.loyalty):
@@ -851,7 +853,7 @@ def choose_attack_targets(game: Game, me: Player, attackers: list) -> dict:
             out[a] = pw
             assigned += a.power
             free.remove(a)
-    return out
+    return battle_targets(game, me, attackers, out)
 
 
 def default_loyalty_choice(game: Game, me: Player, pw: Permanent):

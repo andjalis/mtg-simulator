@@ -648,6 +648,9 @@ class CostsMixin:
                 v = dataclasses.replace(card.split_right, name=f"{card.name} ({card.split_right.name})")
             elif kind == "disturb":
                 v = dataclasses.replace(card.back, name=f"{card.back.name} (disturb)", mana_cost=alt.cost)
+            elif kind == "siege":      # a defeated Siege cast transformed: its back face, the front's mana value
+                v = dataclasses.replace(card.back, name=f"{card.back.name} (transformed)", mana_cost=alt.cost,
+                                        cmc=card.cmc)
             elif kind == "bestow":
                 from ..batch1_templates import bestow_face
                 v = bestow_face(card, alt.cost)
@@ -805,7 +808,7 @@ class CostsMixin:
                 "retrace": p.graveyard, "beam": p.graveyard,
                 "escape": p.graveyard, "impulse": p.exile, "suspended": p.exile, "rebound": p.exile,
                 "cascade": p.exile, "cascade_adventure": p.exile,
-                "rebound_adventure": p.exile, "discover": p.exile, "cx_top": p.library}.get(kind, p.hand)
+                "rebound_adventure": p.exile, "discover": p.exile, "siege": p.exile, "cx_top": p.library}.get(kind, p.hand)
 
     def _available(self, p: Player, card: CardDef) -> bool:
         base, kind, _ = self._origin(card)

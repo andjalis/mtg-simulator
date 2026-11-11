@@ -55,6 +55,9 @@ class Counters(dict):
         if value < old:
             from ..cx_statics import counter_changed
             counter_changed(perm, key)
+            if key == "defense":
+                from ..battles import defense_removed
+                defense_removed(perm, old, value)
         if key == "charge" and value != old:       # Spacecraft: a creature at its station threshold
             from .. import continuous
             continuous.refresh(perm)
@@ -64,9 +67,13 @@ class Counters(dict):
                 game.fire(perm.controller, "p1_added", perm)
 
     def __delitem__(self, key):
+        old = self.get(key, 0)
         super().__delitem__(key)
         from ..cx_statics import counter_changed
         counter_changed(self.owner, key)
+        if key == "defense":
+            from ..battles import defense_removed
+            defense_removed(self.owner, old, 0)
 
     def pop(self, key, *default):
         if key not in self:
@@ -188,6 +195,7 @@ class Permanent:
         self.unearthed = False
         self.disturbed = False             # cast with disturb: exiled instead of going to a graveyard
         self.loyalty_used = False
+        self.protector = None              # a battle's protector (battles.py, #254)
         self.entered_turn = 0
         self.entered_x = 0
         self.exile_turn = -1
@@ -528,6 +536,9 @@ class Permanent:
 
     @property
     def is_planeswalker(self): return self.card.is_planeswalker
+
+    @property
+    def is_battle(self): return self.card.is_battle
 
     @property
     def exalted_count(self):

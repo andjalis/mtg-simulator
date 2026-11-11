@@ -607,3 +607,10 @@ def sac_unless_discard(game, p, eff, item, **_):
 def decayed_delay(game, p, target, **_):
     if isinstance(target, Permanent):
         game.delayed_end_combat.append((p, target))
+
+
+@kind("siege_defeat")
+def siege_defeat(game, p, item, **_):
+    """A Siege's defeat trigger: exile it, then its controller may cast it transformed (battles.py)."""
+    from ...battles import defeat
+    defeat(game, p, item)
