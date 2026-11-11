@@ -62,6 +62,16 @@ def rule_turn(game, eff, target, **_):
             [(game.turn, eff.data["rule"], eff.data["value"])]
 
 
+@kind("cx_player_rule")
+def player_rule(game, eff, target, **_):
+    """A family rule on a player for this turn ("target player can't cast creature spells this turn"):
+    cx_grammar.player_rules (run inside cx_players with target = the player)."""
+    from ..state import Player
+    if isinstance(target, Player):
+        game.cx_player_rules = [r for r in getattr(game, "cx_player_rules", []) if r[0] == game.turn] + \
+            [(game.turn, eff.data["rule"], eff.data["value"], target)]
+
+
 def _load_families():
     """Import every engine/kinds/cx_grammar_<family>.py module (they register their kinds)."""
     import importlib
