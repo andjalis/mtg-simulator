@@ -357,6 +357,7 @@ class StackMixin:
                     p.graveyard.append(base)
                     return
             self._entry_mana_colors = getattr(item, "mana_colors", set())
+            self._entry_mana_by_color = getattr(item, "mana_by_color", {})
             self._entry_cast = (kind == "kicker" or getattr(item, "kicks", 0) > 0,
                                 bool(getattr(item, "cast_from_hand", False)), getattr(item, "mana_spent", 0))
             if kind in ("disturb", "room_right"):   # cast transformed: its back face enters (a Room's right door)
@@ -372,6 +373,7 @@ class StackMixin:
             if base.aura == "player":
                 perm.curse_target = self.opponent(p)
             self._entry_mana_colors = set()
+            self._entry_mana_by_color = {}
             self._spent = ""
             if kind in ("disguise", "morph", "megamorph"):
                 perm.hidden = base

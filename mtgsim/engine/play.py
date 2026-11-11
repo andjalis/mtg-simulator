@@ -261,6 +261,8 @@ class PlayMixin:
                           else "exile" if self._zone(p, kind) is p.exile else "other")     # cx_events "cast from"
         from ..advanced_templates import payment_colors
         item.mana_colors = payment_colors(payment, dict(cost, generic=cost.get("generic", 0) + x))
+        from ..advanced_templates import payment_color_counts
+        item.mana_by_color = payment_color_counts(payment, dict(cost, generic=cost.get("generic", 0) + x))
         if kind == "grave_permission":
             source = getattr(card, "permission_source", None)
             if source is not None:

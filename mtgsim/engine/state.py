@@ -179,6 +179,7 @@ class Permanent:
         self.kicked = False                            # cast with a kicker cost ("if it was kicked")
         self.cast_from_hand = False                    # "if you cast it from your hand"
         self.mana_spent = 0                            # "if at least N mana was spent to cast it"
+        self.mana_by_color = {}                        # {"R": 3}: most mana of a colour the payment can have been
         self.curse_target = None                       # a Curse: the player it enchants
         self.aura_host: "Permanent | None" = None      # the permanent this Aura enchants
         self.attached_to: "Permanent | None" = None    # Equipment: the creature it is attached to

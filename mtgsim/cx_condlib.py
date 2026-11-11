@@ -484,6 +484,16 @@ def _mana_spent(m):
     return _code("mana", _n(m["n"]))
 
 
+@rule(rf"(?P<n>{_NUM}) or more mana was spent to cast ~")
+def _mana_spent_or_more(m):
+    return _code("mana", _n(m["n"]))
+
+
+@rule(rf"at least (?P<n>{_NUM}) (?P<c>white|blue|black|red|green|colorless) mana was spent to cast ~")
+def _color_mana_spent(m):
+    return _code("mana_color", "WUBRGC"["white blue black red green colorless".split().index(m["c"].lower())], _n(m["n"]))
+
+
 @rule(rf"x is (?P<n>{_NUM}) or (?:more|greater)")
 def _x_more(m):
     return _code("x", _n(m["n"]))
@@ -971,6 +981,9 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         if spent is None:
             spent = getattr(item, "mana_spent", 0)
         return spent >= args[0]
+    if kind == "mana_color":
+        src = item if getattr(item, "is_spell", False) else source
+        return getattr(src, "mana_by_color", {}).get(args[0], 0) >= args[1]
     if kind == "x":
         x = getattr(item, "x", None)
         if not x and source is not None:
