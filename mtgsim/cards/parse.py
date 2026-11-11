@@ -403,8 +403,16 @@ def _kicker_instead(base: list, text: str) -> bool:
     if re.search(r"\binstead\b", body) or not body:
         return False
     new, bad = _parse_effects(body[0].upper() + body[1:] + ".")
-    if bad or not new or any("prev" in str(e.data) for e in new):
-        return False                    # leans on an earlier effect's target that isn't there without the base
+    if bad or not new:
+        return False
+    if any("prev" in str(e.data) for e in new):
+        # leans on the base effect's target ("each creature target player controls phases out instead": the
+        # target creature's controller): keep the base effect as that carrier. Only safe where running the base
+        # first changes nothing the replacement doesn't also do, which holds for the phase-out and tap family.
+        if not all(e.kind in ("phase_out", "tap", "untap_target") for e in new + base):
+            return False
+        base += new
+        return True
     kinds = {e.kind for e in new}
     hit = [i for i, e in enumerate(base) if e.kind in kinds]
     if not hit and len(base) == 1:
