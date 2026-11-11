@@ -50,5 +50,7 @@ def choose_color(game, p, target) -> str:
     if not counts:
         counts = Counter(c for zone in (opp.battlefield, opp.graveyard) for x in zone
                          for c in getattr(x, "card", x).colors)
+    if not counts:      # nothing coloured in sight: the colours of the mana their lands make
+        counts = Counter(c for x in opp.battlefield if x.card.is_land for c in x.card.produces if c in COLORS)
     color = max(COLORS, key=lambda c: (counts[c], -COLORS.index(c))) if counts else "W"
     return f"protection from {_NAMES[color]}"

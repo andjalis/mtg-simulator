@@ -27,6 +27,16 @@ KINDS = {"extort", "evolve", "renown", "mentor", "battle_cry", "fabricate", "liv
          "attack_counter"}
 
 
+def _keywords_below_backup(card) -> set:
+    """Keywords printed below the Backup line only; abilities above it (Flash, cycling, Dash) aren't granted."""
+    lines = (card.oracle or "").split("\n")
+    idx = next((i for i, ln in enumerate(lines) if ln.startswith("Backup")), None)
+    if idx is None:
+        return set(card.keywords)
+    below = "\n".join(lines[idx + 1:]).lower()
+    return {k for k in card.keywords if re.search(rf"(?:^|\n|, ){re.escape(k)}(?:$|\n|,| )", below)}
+
+
 def _effect(kind, amount=0, **kw):
     from .cards import Effect
     return Effect(kind, amount, **kw)
@@ -243,7 +253,7 @@ def resolve(game, p, eff, target, item):
         pick = max(others, key=perm_value) if others else src
         pick.counters["+1/+1"] = pick.p1 + eff.amount
         if pick is not src:        # the target gains every ability listed below backup until end of turn
-            pick.temp_kw |= set(src.card.keywords)
+            pick.temp_kw |= _keywords_below_backup(src.card)
             pick.temp_triggers += [t for t in src.card.triggers if not any(e.kind == "backup" for e in t.effects)]
             pick.temp_activated += list(src.card.activated)
             pick.temp_min_blocker = max(pick.temp_min_blocker, src.card.min_blocker_power)
