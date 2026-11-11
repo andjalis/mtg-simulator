@@ -210,7 +210,7 @@ class Unless(Base):
         self.assertEqual(self.b.life, 19)                     # no mana: the 1 life instead
 
     def test_rejects(self):
-        for text in ("You gain 3 life unless any player pays {1}.",            # any player: not modelled
+        for text in ("Destroy target creature unless any player pays {1}.",    # any player: whose interest?
                      "Draw a card unless they pay {2}.",                       # "they": no player named
                      "Target player loses 2 life unless its controller pays {1}.",
                      "Destroy target creature unless its controller pays {X}."):

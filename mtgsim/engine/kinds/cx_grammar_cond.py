@@ -29,12 +29,36 @@ def _payer(game, p, who, eff, item, prev):
 def unless(game, p, eff, item, prev=None, **_):
     """"B unless <payer> pays <cost>": the payer chooses to pay (if they can), and B (the effects after this one,
     gated on ``unless_unpaid``) happens only when they don't."""
-    payer = _payer(game, p, eff.data["payer"], eff, item, prev)
+    if eff.data["payer"] == "any":
+        # each player in turn, active player first, until one pays; a player is asked only when B goes against
+        # them (cx_grammar_cond._against): the controller when B removes the source, else the opponents
+        order = sorted(game.players, key=lambda x: x is not game.active)
+        payers = [pl for pl in order if (pl is p) == (eff.data["against"] == "controller")]
+    else:
+        payers = [_payer(game, p, eff.data["payer"], eff, item, prev)]
     paid = False
-    if payer is not None and game.hook(payer, "pay_unless")(game, payer, 0, item):
-        paid = any(_pay(game, payer, cost, item, eff) for cost in eff.data["costs"])     # the first one they can pay
+    for payer in payers:
+        if payer is not None and game.hook(payer, "pay_unless")(game, payer, 0, item):
+            paid = any(_pay(game, payer, cost, item, eff) for cost in eff.data["costs"])  # the first they can pay
+        if paid:
+            break
     if item is not None:
         item.cx_unless_paid = paid
+
+
+@kind("cx_unless_each")
+def unless_each(game, p, eff, item, prev=None, target=None, **_):
+    """"Each player <B> unless they <cost>": every player, active player first, decides and pays before anything
+    happens; then B (the inner player effects) applies to each player who didn't pay."""
+    from ...cx_grammar import players as named
+    from . import HANDLERS
+    order = sorted(named(game, p, eff.data["who"], item, prev, target), key=lambda x: x is not game.active)
+    unpaid = [pl for pl in order if not (game.hook(pl, "pay_unless")(game, pl, 0, item) and
+                                         any(_pay(game, pl, cost, item, eff) for cost in eff.data["costs"]))]
+    for inner in eff.data["effects"]:
+        for who in unpaid:
+            HANDLERS[inner.kind](game, p=p, eff=inner, target=who, item=item, opp=game.opponent(p), prev=prev,
+                                 cause=f"cx_unless_each: {inner.kind}")
 
 
 def _stake(item, eff):

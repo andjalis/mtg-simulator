@@ -1,4 +1,5 @@
 """#330: "unless" gates with counted costs, explicit payers and per-player decisions (cx_grammar_cond)."""
+import dataclasses
 import unittest
 
 from mtgsim.engine import StackItem
@@ -100,6 +101,138 @@ class CountedSacrifice(Base330):
         self.trigger(ench)
         self.assertNotIn(ench, self.a.battlefield)            # two Bears (2 x 4) > a 3-mana enchantment
         self.assertTrue(all(b in self.a.battlefield for b in bears))
+
+
+class EachPlayer(Base330):
+    MAULER = "Each player loses 4 life unless they sacrifice a nontoken creature."
+
+    def test_parse(self):
+        effects, bad = effects_of(self.MAULER)
+        self.assertEqual((bad, [e.kind for e in effects]), ([], ["cx_unless_each"]))
+        self.assertEqual([e.kind for e in effects[0].data["effects"]], ["lose_life"])
+        effects, bad = effects_of("Each player sacrifices a permanent unless they discard a card.")
+        self.assertEqual((bad, effects[0].kind), ([], "cx_unless_each"))
+        for text in ("Each player draws a card unless they pay {1}.",            # no per-player body: unmatched
+                     "Each player loses 4 life unless you sacrifice a creature."):  # one payer for everyone
+            effects, bad = effects_of(text)
+            self.assertTrue(bad or effects[0].kind != "cx_unless_each", text)
+
+    def test_each_player_decides_for_themselves(self):
+        spell = self.spell(self.MAULER, "Sorcery")
+        bear = self.perm(BEAR, self.b)
+        token = self.perm(dataclasses.replace(BEAR, is_token=True), self.a)
+        self.cast(spell)
+        self.assertNotIn(bear, self.b.battlefield)            # b sacrificed a nontoken creature: no life lost
+        self.assertEqual(self.b.life, 20)
+        self.assertIn(token, self.a.battlefield)              # a had only a token: can't pay, loses 4
+        self.assertEqual(self.a.life, 16)
+
+    def test_sacrifice_unless_discard(self):
+        spell = self.spell("Each player sacrifices a permanent unless they discard a card.", "Sorcery")
+        mine, theirs = self.perm(BEAR, self.a), self.perm(BEAR, self.b)
+        self.a.hand, self.b.hand = [], [BEAR]
+        self.cast(spell)
+        self.assertNotIn(mine, self.a.battlefield)            # empty hand: sacrificed
+        self.assertIn(theirs, self.b.battlefield)             # discarded instead
+        self.assertEqual((self.b.hand, self.b.graveyard), ([], [BEAR]))
+
+    def test_target_player_pays(self):
+        spell = self.spell("Target player discards their hand unless they pay 7 life.", "Sorcery")
+        self.b.hand = [BEAR, BEAR]
+        self.cast(spell, targets=[None, self.b])
+        self.assertEqual((self.b.life, len(self.b.hand)), (13, 2))
+        self.cast(spell, targets=[None, self.b])              # 13 - 7 = 6 > 2: pays again
+        self.b.life = 9                                       # 9 - 7 would leave 2: declines
+        self.cast(spell, targets=[None, self.b])
+        self.assertEqual((self.b.life, self.b.hand), (9, []))
+
+
+class OpponentPays(Base330):
+    TORMENTOR = "Draw a card unless target opponent sacrifices a creature or pays 3 life."
+
+    def test_parse(self):
+        for text in (self.TORMENTOR, "Draw a card unless an opponent pays {1}."):
+            effects, bad = effects_of(text)
+            self.assertEqual((bad, effects[0].kind, effects[0].data["payer"]), ([], "cx_unless", "opponent"), text)
+        effects, bad = effects_of("Draw a card unless an opponent was dealt damage this turn.")
+        self.assertTrue(bad)                                  # neither a cost nor a known condition
+
+    def test_opponent_pays_from_their_resources(self):
+        spell = self.spell(self.TORMENTOR, "Sorcery")
+        bear = self.perm(BEAR, self.b)
+        mine = self.perm(BEAR, self.a)
+        hand = len(self.a.hand)
+        self.cast(spell)
+        self.assertNotIn(bear, self.b.battlefield)            # their creature, never mine
+        self.assertIn(mine, self.a.battlefield)
+        self.assertEqual((len(self.a.hand), self.a.life, self.b.life), (hand, 20, 20))     # payoff suppressed
+        self.cast(spell)                                      # no creature: 3 life instead
+        self.assertEqual((len(self.a.hand), self.b.life), (hand, 17))
+        self.b.life = 5                                       # can't afford it: the payoff happens
+        self.cast(spell)
+        self.assertEqual((len(self.a.hand), self.b.life), (hand + 1, 5))
+
+
+class AnyPlayer(Base330):
+    def test_parse_reads_whose_interest_it_is(self):
+        cases = {"Sacrifice ~ unless any player pays {3}.": "controller",
+                 "~ gets +1/+1 until end of turn unless any player pays {2}.": "opponents",
+                 "You gain 3 life unless any player pays {1}.": "opponents"}
+        for text, against in cases.items():
+            effects, bad = effects_of(text)
+            self.assertEqual((bad, effects[0].data["payer"], effects[0].data["against"]), ([], "any", against))
+        for text in ("Destroy target creature unless any player pays {1}.",       # either side may care
+                     "~ gets -1/-1 until end of turn unless any player pays {1}."):
+            _, bad = effects_of(text)
+            self.assertTrue(bad, text)
+
+    def prison(self):
+        c = card("Test Prison", "{U}", "Enchantment",
+                 "At the beginning of your upkeep, sacrifice this enchantment unless any player pays {3}.")
+        self.assertEqual(c.unsupported, [])
+        return self.perm(c, self.a)
+
+    def test_controller_pays_to_keep_it(self):
+        prison = self.prison()
+        lands = [self.perm(self.island_card(), self.a) for _ in range(3)]
+        theirs = [self.perm(self.island_card(), self.b) for _ in range(3)]
+        self.trigger(prison)
+        self.assertIn(prison, self.a.battlefield)
+        self.assertTrue(all(x.tapped for x in lands))
+        self.assertFalse(any(x.tapped for x in theirs))       # the opponent never pays to keep it for you
+
+    def test_nobody_pays_and_it_goes(self):
+        prison = self.prison()
+        for _ in range(3):
+            self.perm(self.island_card(), self.b)             # only the opponent could pay: they won't
+        self.trigger(prison)
+        self.assertNotIn(prison, self.a.battlefield)
+
+    def test_an_opponent_pays_to_deny_a_benefit(self):
+        spell = self.spell("You gain 3 life unless any player pays {1}.", "Sorcery")
+        land = self.perm(self.island_card(), self.b)
+        mine = self.perm(self.island_card(), self.a)
+        self.cast(spell)
+        self.assertEqual((self.a.life, land.tapped, mine.tapped), (20, True, False))
+        self.cast(spell)                                      # their land is tapped now: the payoff happens
+        self.assertEqual(self.a.life, 23)
+
+    @staticmethod
+    def island_card():
+        from tests.test_templates import ISLAND
+        return ISLAND
+
+
+class PayerWordsWithoutACost(unittest.TestCase):
+    def test_a_condition_after_payer_words_is_still_a_condition(self):
+        effects, bad = effects_of("You lose 4 life unless you attacked this turn.")
+        self.assertEqual(bad, [])
+        self.assertEqual(effects[0].cond, 'lib:["not","attacked_turn"]')
+
+    def test_a_delayed_trigger_is_not_gated_now(self):
+        _, bad = effects_of("At the beginning of the next end step, exile those tokens unless you have the "
+                            "city's blessing.")
+        self.assertTrue(bad)
 
 
 if __name__ == "__main__":
