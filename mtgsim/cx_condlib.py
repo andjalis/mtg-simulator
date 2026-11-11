@@ -479,14 +479,19 @@ def _diff_powers(m):
     return _code("diff_powers", _n(m["n"]))
 
 
-@rule(rf"at least (?P<n>{_NUM}) mana was spent to cast (?:it|~|that spell)")
+@rule(rf"at least (?P<n>{_NUM}) mana was spent to cast (?P<ref>it|~|that spell)")
 def _mana_spent(m):
-    return _code("mana", _n(m["n"]))
+    return _code("mana", _n(m["n"]), m["ref"])
 
 
-@rule(rf"(?P<n>{_NUM}) or more mana was spent to cast ~")
+@rule(rf"(?P<n>{_NUM}) or more mana was spent to cast (?P<ref>it|~|that spell)")
 def _mana_spent_or_more(m):
-    return _code("mana", _n(m["n"]))
+    return _code("mana", _n(m["n"]), m["ref"])
+
+
+@rule(r"no (?P<colored>colored )?mana was spent to cast (?P<ref>it|~|that spell)")
+def _no_mana_spent(m):
+    return _code("mana_none", m["ref"], bool(m["colored"]))
 
 
 @rule(rf"at least (?P<n>{_NUM}) (?P<c>white|blue|black|red|green|colorless) mana was spent to cast ~")
@@ -699,7 +704,7 @@ def record(game, p, event, source=None, context=None, subject=None):
         hist[1][key] = hist[1].get(key, 0) + 1
     if not _HIST_HEADS:
         return
-    if event == "perm_to_gy" and source is not None or event == "any_cast" and context is not p:
+    if event == "perm_to_gy" and source is not None or event == "any_cast" and getattr(context, "controller", context) is not p:
         return
     hist = getattr(game, "_condlib_hist", None)
     if hist is None or hist[0] != game.turn:
@@ -781,6 +786,31 @@ def _game_of(p):
 
 def _source(item):
     return getattr(item, "source", None) if item is not None else None
+
+
+def mana_amount(obj):
+    """Actual mana paid, including X and additional costs; copies paid nothing."""
+    if obj is None or getattr(obj, "kind", "") == "copy":
+        return 0
+    return getattr(obj, "mana_paid", getattr(obj, "mana_spent", 0) + getattr(obj, "x", 0))
+
+
+def _mana_object(item, source, prev, ref):
+    from .engine.state import StackItem
+    if ref != "~":
+        if isinstance(prev, StackItem):
+            return prev
+        context = getattr(item, "context", None)
+        if isinstance(context, StackItem):
+            return context
+        # Entry conditions have no resolving item, or the source itself as context.
+        if ref == "that spell":
+            return None
+        if item is None or context is source:
+            return source
+    if getattr(item, "is_spell", False):
+        return item
+    return source if ref == "~" else None
 
 
 def _player_for(game, p, who, item):
@@ -941,7 +971,9 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         if source is not None and hasattr(source, "cast_from_hand"):
             return bool(source.cast_from_hand)
         return bool(getattr(item, "cast_from_hand", False))
-    if args and args[-1] == "it":
+    # "it" here is the generic referent of other condition families; the mana rules carry
+    # their own referent ("~", "it", "that spell") as an explicit arg and must keep it.
+    if args and args[-1] == "it" and kind not in ("mana", "mana_none"):
         args = args[:-1]
         ctx = getattr(item, "context", None)
         from .engine.state import Permanent
@@ -988,10 +1020,13 @@ def check(game, p, code: str, item=None, source=None, prev=None):
     if kind == "diff_powers":
         return len({x.power for x in p.creatures}) >= args[0]
     if kind == "mana":
-        spent = getattr(source, "mana_spent", None) if source is not None else None
-        if spent is None:
-            spent = getattr(item, "mana_spent", 0)
-        return spent >= args[0]
+        obj = _mana_object(item, source, prev, args[1] if len(args) > 1 else "~")
+        return obj is not None and mana_amount(obj) >= args[0]
+    if kind == "mana_none":
+        obj = _mana_object(item, source, prev, args[0])
+        if obj is None:
+            return False
+        return not (set(getattr(obj, "mana_colors", ())) & set("WUBRG")) if args[1] else mana_amount(obj) == 0
     if kind == "act_times":
         idx = getattr(item, "ability_idx", None)
         perm = getattr(item, "source", None)

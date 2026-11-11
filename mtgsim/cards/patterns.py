@@ -99,6 +99,16 @@ def _x_sized_token(m):
     return eff
 
 
+def _counter_target_if(m):
+    """"Counter target spell if <cast-payment condition>": the condition reads the targeted
+    spell (prev) at resolution, so only mana-spent family conditions are accepted."""
+    from .clauses import _if_cond
+    cond = _if_cond(m[1])
+    if cond and cond.startswith('lib:["mana'):
+        return Effect("counter", target="spell", cond=cond)
+    return NO_MATCH
+
+
 _EFFECT_PATTERNS = wordings.patterns("core") + [
     # "N plus the sacrificed <permanent>'s stat" (Broadside Bombardiers, Oswald Fiddlebender):
     # the ("sac_plus", n, stat) X-quantity reads the same recorded stats as ("sac", stat).
@@ -223,6 +233,14 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
      lambda m: Effect("counter", int(m[2] or 0), target="spell",
                       filter=(m[1] or "").strip().replace("instant or sorcery", "instant_sorcery")
                       .replace("artifact or creature", "artifact_creature"))),
+    # "counter that spell"/"counter it" in a cast trigger: the cast spell is the trigger's
+    # context (Game.fire("any_cast", context=<the spell>)), so counter it by context.
+    (r"counter (?:that spell|it)",
+     lambda m: Effect("counter_context")),
+    # "Counter target spell if no mana was spent to cast it." (Nix): only casting-payment
+    # conditions take this shape; anything else keeps the line unmatched rather than guess.
+    (r"counter target spell if (.+)",
+     lambda m: _counter_target_if(m)),
     (r'create (?:a colorless Equipment artifact token named ([A-Z][\w\' ]+)|([A-Z][\w\' ]+), a (legendary )?colorless '
      r'Equipment artifact token) with "Equipped creature gets \+(\d+)/\+(\d+)(?: and has ([a-z, ]+))?" and equip \{(\d+)\}',
      lambda m: _equipment_token(m)),

@@ -333,7 +333,9 @@ class PlayMixin:
             if self.spells_cast.get(p.name) == 2:
                 self.fire(p, "cast_second")
             for pl in self.players:
-                self.fire(pl, "any_cast", context=p, subject=card)
+                # context is the cast spell itself: "if no mana was spent to cast it, counter
+                # that spell" riders read it off the trigger (the caster is item.controller)
+                self.fire(pl, "any_cast", context=item, subject=card)
         self.check_ward(item)
         self.settle()
         return True

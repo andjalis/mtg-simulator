@@ -16,7 +16,8 @@ class ResolveMixin:
         if eff.target == "self" and item is not None:
             target = item.source
         if eff.target == "that_player" and item is not None:
-            target = item.context
+            ctx = item.context
+            target = ctx.controller if isinstance(ctx, StackItem) else ctx   # any_cast: the cast spell's caster
         if eff.target == "trigger_subject" and item is not None:
             target = item.context if isinstance(item.context, Permanent) and item.context in item.context.controller.battlefield \
                 else None
