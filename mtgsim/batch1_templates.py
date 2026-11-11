@@ -33,6 +33,9 @@ def parse_rider(s, effects):
     if not effects:
         return False
     last = effects[-1]
+    from .cx_statics import restrict_rider
+    if restrict_rider(s, effects):
+        return True
     if re.fullmatch(r"those creatures don't untap during their controller's next untap step", s, re.I) and last.kind == "tap":
         effects[-1] = dataclasses.replace(last, data=dict(last.data, freeze=True))
         return True

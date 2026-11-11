@@ -173,3 +173,55 @@ class AlternativeCosts(unittest.TestCase):
         self.game.settle()
         self.assertEqual(len(self.a.exile), 1)
         self.assertEqual(self.a.life, 19)
+
+
+ENGINE = card("Test Engine", "{4}", "Artifact — Vehicle",
+              "When this Vehicle enters, gain control of target creature an opponent controls for as long as you "
+              "control this Vehicle. That creature can't attack or block for as long as you control this Vehicle.", 5, 5)
+SAGA_BLOCK = card("Test Warden", "{2}{W}", "Creature — Human",
+                  "When this creature enters, up to one target creature can't block for as long as you control "
+                  "this creature.", 2, 2)
+
+
+class LinkedRestrictions(unittest.TestCase):
+    def setUp(self):
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 10
+
+    def fire(self, definition, targets):
+        from mtgsim.engine import StackItem
+        source = self.game.enter_battlefield(self.a, definition)
+        source.sick = False
+        self.game.stack.clear()
+        effects = list(definition.triggers[0].effects)
+        self.game.stack.append(StackItem(self.a, effects, targets, source=source, kind="trigger"))
+        self.game.resolve_top()
+        return source
+
+    def test_parse(self):
+        self.assertEqual(ENGINE.unsupported, [])
+        self.assertEqual(SAGA_BLOCK.unsupported, [])
+
+    def test_stolen_creature_cannot_attack_or_block_while_source_stays(self):
+        bear = self.game.enter_battlefield(self.b, BEAR)
+        bear.sick = False
+        source = self.fire(ENGINE, [bear, bear])
+        self.assertIs(bear.controller, self.a)
+        self.assertTrue(bear.has("cant_attack_now") and bear.has("cant_block_now"))
+        self.assertFalse(bear.can_attack())
+        self.game.destroy(source)
+        self.game.settle()
+        self.assertIs(bear.controller, self.b)
+        self.assertFalse(bear.has("cant_attack_now") or bear.has("cant_block_now"))
+
+    def test_cant_block_ends_when_source_leaves(self):
+        bear = self.game.enter_battlefield(self.b, BEAR)
+        source = self.fire(SAGA_BLOCK, [bear])
+        self.assertTrue(bear.has("cant_block_now"))
+        self.assertFalse(bear.has("cant_attack_now"))
+        self.game.destroy(source)
+        self.game.settle()
+        self.assertFalse(bear.has("cant_block_now"))
