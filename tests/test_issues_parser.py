@@ -220,3 +220,24 @@ class DamageToEachOfTargets(Base):
     def test_variable_count_unmatched(self):
         _, bad = P._parse_effects("~ deals 4 damage to each of X targets.")
         self.assertTrue(bad)
+
+
+class MayHaveItDeal(Base):
+    """#319: "you may have it deal ... / fight ..." (base-form verb after "have")."""
+
+    def test_parses(self):
+        for text in ("You may have ~ deal 2 damage to target creature.",
+                     "You may have it deal 3 damage to target creature.",
+                     "You may have it deal damage equal to its power to target creature.",
+                     "You may have it fight target creature you don't control."):
+            effs, bad = P._parse_effects(text)
+            self.assertEqual(bad, [], text)
+            self.assertTrue(effs, text)
+
+    def test_still_optional(self):
+        effs, _ = P._parse_effects("You may have it deal 3 damage to target creature.")
+        self.assertTrue(any(e.kind == "pay_gate" or e.data.get("may_hostile") for e in effs))
+
+    def test_other_verbs_unmatched(self):
+        _, bad = P._parse_effects("You may have it explode violently.")
+        self.assertTrue(bad)

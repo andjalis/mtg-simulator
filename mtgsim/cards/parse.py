@@ -183,6 +183,11 @@ def _parse_effects(text: str, opts: bool = False):
             continue
         mm = re.fullmatch(r"you may (.+)", s, re.I)
         if mm:
+            # "you may have it deal 2 damage to target creature" / "... have ~ fight target creature":
+            # the base-form verb after "have" reads as the plain third-person clause (the choice stays "you may").
+            mh = re.fullmatch(r"have (it|~) (deal|fight)\b(.*)", mm[1], re.I)
+            if mh:
+                mm = re.fullmatch(r"(.+)", f"{mh[1]} {mh[2].lower()}s{mh[3]}")
             new, bad = _parse_effects(mm[1][0].upper() + mm[1][1:] + ".")
             if bad or not new:
                 new, bad = _parse_effects("You " + mm[1] + ".")              # "you may gain 2 life"
