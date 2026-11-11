@@ -349,8 +349,8 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
                 total += tgt.power
             elif k == "hand_to_battlefield":
                 v = hand_put.value(game, me, e, game.target_source)
-                if v <= 0:
-                    return -1          # nothing in hand it could put: don't spend the activation
+                if v <= 0 and all(x.kind in ("pay_gate", "hand_to_battlefield") for x in effects):
+                    return -1          # nothing in hand it could put: don't spend the activation on it alone
                 total += v
             else:
                 total += 1

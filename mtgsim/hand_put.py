@@ -59,11 +59,24 @@ def _build(m):
     spec = _spec(m["desc"])
     if spec is None:
         return NO_MATCH
+    if m["desc2"]:
+        other = _spec(m["desc2"])
+        if other is None or "any_sub" in spec or "any_sub" in other:
+            return NO_MATCH
+        spec = {"either": [spec, other]}
     if m["chosen"]:
         if spec.get("types") != ["creature"] or len(spec) != 1:
             return NO_MATCH
         spec["chosen"] = True
     data = {"spec": spec}
+    if m["n"]:
+        if "mv" in spec or "either" in spec:
+            return NO_MATCH
+        spec["mv"] = ["<=" if m["dir"] == "less" else ">=", int(m["n"])]
+    if m["rel"]:
+        # "with lesser power" (Shadowfax): compared with the source's own power / toughness
+        stat = m["stat"].lower()
+        data["statq"] = (stat, "<" if m["rel"].lower() == "lesser" else "<=", ("stat", "self", stat))
     op = (m["op"] or "").lower()
     if op:
         if op in ("x or less", "x"):
@@ -72,7 +85,10 @@ def _build(m):
             q = m["q"]
             if m["where"]:
                 return NO_MATCH
-        quantity = _xq(q) if q else None
+        if not q and op == "x or less":
+            quantity = ("paid_x",)       # the X paid for the spell or ability (Mind into Matter)
+        else:
+            quantity = _xq(q) if q else None
         if quantity is None or quantity[0] == "stat" and quantity[1] in ("prev", "referent"):
             return NO_MATCH          # "that damage", "that creature's power": dynamic referents (#313)
         data["mvq"] = (_MV_OPS[op], quantity)
@@ -83,9 +99,10 @@ def _build(m):
         data["entry"] = _ENTRY[entry]
         if data["entry"] == "attached" and spec.get("sub") != ["Aura"]:
             return NO_MATCH
-        if data["entry"] == "attacking" and "creature" not in spec.get("types", ()) and not spec.get("any_sub"):
+        if data["entry"] == "attacking" and not all(
+                "creature" in one.get("types", ()) or one.get("any_sub") for one in spec.get("either", [spec])):
             return NO_MATCH          # a noncreature permanent "attacking" (Summoner's Grimoire) is not modelled
-    if spec.get("sub") == ["Aura"] and data.get("entry") != "attached":
+    if any(one.get("sub") == ["Aura"] for one in spec.get("either", [spec])) and data.get("entry") != "attached":
         return NO_MATCH              # a bare Aura put from hand: the host choice is not modelled here
     if m["sac"]:
         data["sac_eot"] = True
@@ -94,16 +111,29 @@ def _build(m):
 
 # "... onto the battlefield. Sacrifice it at the beginning of the next end step." (Planebound Accomplice): the
 # "it" is the card this effect put, which an untargeted effect can't hand on as "prev"; fold it into the put.
+def _own_where(m):
+    """Bind ", where X is Q" to the put alone when X appears nowhere else in the sentence: the shared where-X rule
+    (cards/parse.py) would scale every effect of the sentence ("Put two ingenuity counters on ~, then ...")."""
+    head = m[1][:m[1].lower().rindex("with mana value x")]
+    if re.search(r"\bX\b", head):
+        return m[0]
+    return f"{m[1]} HANDPUT_WHERE {m[2]}."
+
+
 SUBS = [
     (re.compile(r"(from your hand onto the battlefield)\. Sacrifice it at the beginning of the next end step\.", re.I),
      r"\1 HANDPUT_SAC_EOT."),
+    (re.compile(r"([^.]*\bwith mana value X or less from your hand onto the battlefield[^.,]*), where X is ([^.]+)\.",
+                re.I), _own_where),
 ]
 
-_MV = r"(?: with mana value (?P<op>equal to|less than or equal to|X or less|X)(?: (?P<q>(?!from\b).+?))?)?"
+_MV = (r"(?: with mana value (?:(?P<n>\d+) or (?P<dir>less|greater|more)|(?P<op>equal to|less than or equal to|X or less|X)"
+       r"(?: (?P<q>(?!from\b).+?))?)| with (?P<rel>lesser|equal or lesser) (?P<stat>power|toughness))?")
 EFFECT_PATTERNS = [
-    (r"(?:you may )?put (?:an?|one) (?P<desc>[\w ,'/-]+?) card(?P<chosen> of the chosen type)?" + _MV +
+    (r"(?:you may )?put (?:an?|one) (?P<desc>[\w ,'/-]+?) card(?: or an? (?P<desc2>[\w '/-]+?) card)?"
+     r"(?P<chosen> of the chosen type)?" + _MV +
      r" from your hand onto the battlefield(?: (?P<entry>tapped and attacking(?: that opponent)?|tapped|attached to ~))?"
-     r"(?:, where X is (?P<where>.+?))?(?P<sac> HANDPUT_SAC_EOT)?", _build),
+     r"(?: HANDPUT_WHERE (?P<where>.+?))?(?P<sac> HANDPUT_SAC_EOT)?", _build),
 ]
 
 
@@ -111,7 +141,7 @@ EFFECT_PATTERNS = [
 
 def candidates(game, p, eff, item) -> list:
     """The cards in p's hand this effect may put onto the battlefield right now."""
-    from .cx_condlib import _card_ok
+    from .cx_condlib import _card_ok, _cmp
     from .engine.state import Permanent
     data = eff.data
     spec = dict(data["spec"])
@@ -122,10 +152,32 @@ def candidates(game, p, eff, item) -> list:
         return []
     if "mvq" in data:
         op, q = data["mvq"]
-        spec["mv"] = [op, game.x_quantity(p, q, item, None)]
+        n = getattr(item, "x", 0) or 0 if q == ("paid_x",) else game.x_quantity(p, q, item, None)
+        spec["mv"] = [op, n]
+    elif "mv" in spec and data.get("xq"):
+        # ", where X is Q" handled by the parser's shared where-X rule: it parsed "X or less" as "1 or less" and
+        # tagged the effect with the quantity, so the bound is that many times Q
+        op, n = spec["mv"]
+        spec["mv"] = [op, n * game.x_quantity(p, data["xq"], item, None)]
+    either = spec.pop("either", None)
+    stat = None
+    if "statq" in data:
+        name, op, q = data["statq"]
+        stat = (name, op, game.x_quantity(p, q, item, None))
     out = []
     for c in p.hand:
-        if not c.is_permanent or not _card_ok(c, spec):
+        if not c.is_permanent:
+            continue
+        if either:
+            if not any(_card_ok(c, dict(one, **({"mv": spec["mv"]} if "mv" in spec else {}))) for one in either):
+                continue
+        elif not _card_ok(c, spec):
+            continue
+        if stat is not None:
+            value = str(getattr(c, stat[0]) or "")
+            if not c.is_creature or not value.isdigit() or not _cmp(int(value), stat[1], stat[2]):
+                continue
+        if data.get("entry") == "attacking" and not c.is_creature:
             continue
         if chosen and src.chosen_type not in c.subtypes:
             continue
@@ -156,7 +208,21 @@ def choose(game, me, cards, entry):
     return max(pool, key=lambda c: c.cmc)
 
 
+def _optional(eff, item) -> bool:
+    """Whether eff is the "you may put" right after its own "may" gate in item's effects."""
+    effects = list(getattr(item, "effects", None) or ())
+    i = next((n for n, e in enumerate(effects) if e is eff), None)
+    return bool(i) and effects[i - 1].kind == "pay_gate" and effects[i - 1].data.get("gate") == ("may", "")
+
+
 def resolve(game, p, eff, item):
+    perm = _put(game, p, eff, item)
+    if item is not None and _optional(eff, item):
+        item.gate_paid = perm is not None      # "If you do / If you don't, ..." ask whether a card was put
+    return perm
+
+
+def _put(game, p, eff, item):
     from .engine.state import Permanent
     cards = candidates(game, p, eff, item)
     entry = eff.data.get("entry", "")

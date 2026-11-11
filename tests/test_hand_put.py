@@ -26,6 +26,16 @@ WALKER = card_from_scryfall({"name": "Test Walker", "mana_cost": "{3}{R}", "cmc"
                              "type_line": "Legendary Planeswalker — Testy", "oracle_text": "+1: You gain 1 life."})
 RAZER = card("Test Razer", "{1}", "Artifact", "{T}: You may put a creature card from your hand onto the battlefield "
              "tapped and attacking. Return that creature to your hand at the beginning of the next end step.")
+SHARED_X = card("Test Feeder", "{1}", "Artifact", "{T}, Sacrifice a creature: Draw X cards, then you may put a "
+                "permanent card with mana value X or less from your hand onto the battlefield, where X is the "
+                "sacrificed creature's mana value.")
+SHADOW = card("Test Shadow", "{2}", "Creature — Horse", "{T}: You may put a creature card with lesser power from your "
+              "hand onto the battlefield.", 3, 3)
+EITHER = card("Test Either", "{2}", "Artifact", "{T}: You may put a red creature card or an artifact creature card from "
+              "your hand onto the battlefield.")
+GOLEM = card("Test Golem", "{4}", "Artifact Creature — Golem", "", 4, 4)
+ORIGIN = card("Test Origin", "{2}", "Artifact", "{T}: You may put a Goblin creature card from your hand onto the "
+              "battlefield. If you don't, draw a card.")
 BEAR2 = card("Two Bear", "{1}{G}", "Creature — Bear", "", 2, 2)
 OGRE3 = card("Three Ogre", "{2}{R}", "Creature — Ogre", "", 3, 3)
 GOBLIN = card("Test Goblin", "{1}{R}", "Creature — Goblin", "", 2, 1)
@@ -72,6 +82,18 @@ class Parse(unittest.TestCase):
             self.assertEqual(c.unsupported, [], desc)
             self.assertEqual(_eff(c).data["spec"], spec, desc)
 
+    def test_static_either_relative_and_paid_x(self):
+        c = card("Desc Test", "{1}", "Artifact", "{T}: You may put an artifact card with mana value 5 or less from "
+                 "your hand onto the battlefield.")
+        self.assertEqual(_eff(c).data["spec"], {"types": ["artifact"], "mv": ["<=", 5]})
+        self.assertEqual(_eff(EITHER).data["spec"], {"either": [{"colors": ["R"], "types": ["creature"]},
+                                                                {"types": ["artifact", "creature"]}]})
+        self.assertEqual(_eff(SHADOW).data["statq"], ("power", "<", ("stat", "self", "power")))
+        spell = card("Desc Test", "{X}{U}{U}", "Sorcery", "Draw X cards. Then you may put a permanent card with mana "
+                     "value X or less from your hand onto the battlefield tapped.")
+        self.assertEqual(spell.unsupported, [])
+        self.assertEqual(spell.spell_effects[-1].data["mvq"], ("<=", ("paid_x",)))
+
     def test_refusals(self):
         """Unsupported semantics stay visible rather than approximated."""
         for text in (
@@ -91,9 +113,6 @@ class Parse(unittest.TestCase):
                 # "that creature" in a dies trigger is a dynamic referent (#313)
                 "Whenever another creature you control dies, you may put a permanent card with mana value less "
                 "than or equal to that creature's power from your hand onto the battlefield.",
-                # X also sizes the draw: the where-clause can't be bound to the put alone
-                "{T}, Sacrifice another creature: Draw X cards, then you may put a permanent card with mana value "
-                "X or less from your hand onto the battlefield, where X is the sacrificed creature's mana value.",
                 # an unknown quantity
                 "{T}: You may put a creature card with mana value equal to the number of storm clouds overhead "
                 "from your hand onto the battlefield."):
@@ -205,6 +224,50 @@ class Resolve(unittest.TestCase):
         self.assertIn(charger, self.game.attackers)
         self.assertIs(self.game.attack_targets[charger], self.b)
         self.assertEqual(self.a.life, life)          # it was never declared as an attacker
+
+    def test_shared_x_sizes_draw_and_put(self):
+        """"Draw X cards, then put ... X or less, where X is ...": one X for both (the parser's where-X rule)."""
+        self.assertEqual(SHARED_X.unsupported, [])
+        feeder = self.put(SHARED_X, BRUTE, ROCK)
+        self.game.enter_battlefield(self.a, OGRE3)       # the creature to sacrifice: mana value 3
+        self.activate(feeder)
+        self.assertEqual(len(self.a.library), 7)         # drew three
+        self.assertIn("Test Rock", self.names())         # 2 <= 3 put; Brute (5) stays
+        self.assertNotIn("Test Brute", self.names())
+        self.assertNotIn("Three Ogre", self.names())
+
+    def test_either_description(self):
+        either = self.put(EITHER, ELF, GOLEM, GOBLIN)
+        self.activate(either)
+        self.assertIn("Test Golem", self.names())      # the costliest of Goblin (red) and Golem (artifact creature)
+        self.assertEqual(sorted(c.name for c in self.a.hand), ["Test Elf", "Test Goblin"])
+
+    def test_lesser_power_than_source(self):
+        shadow = self.put(SHADOW, OGRE3, BEAR2)
+        self.activate(shadow)
+        self.assertIn("Two Bear", self.names())
+        self.assertEqual([c.name for c in self.a.hand], ["Three Ogre"])
+
+    def test_paid_x(self):
+        from types import SimpleNamespace
+        spell = card("Desc Test", "{X}{U}{U}", "Sorcery", "Draw X cards. Then you may put a permanent card with mana "
+                     "value X or less from your hand onto the battlefield tapped.")
+        self.a.hand.extend([OGRE3, BEAR2])
+        perm = hand_put.resolve(self.game, self.a, spell.spell_effects[-1],
+                                SimpleNamespace(source=None, card=spell, context=None, x=2))
+        self.assertEqual(perm.card.name, "Two Bear")
+        self.assertTrue(perm.tapped)
+
+    def test_if_you_dont_follows_the_put(self):
+        """"If you don't" asks whether a card was put, not whether the always-taken "may" was."""
+        origin = self.put(ORIGIN, ELF)
+        self.activate(origin)                         # no Goblin: nothing put, so draw
+        self.assertEqual(len(self.a.library), 9)
+        self.a.hand.append(GOBLIN)
+        origin.tapped = False
+        self.activate(origin)
+        self.assertIn("Test Goblin", self.names())
+        self.assertEqual(len(self.a.library), 9)      # put one: no draw
 
     def test_returned_at_end_step(self):
         """Ilharg: "that creature" is the card this effect put (the entered-this-resolution fallback)."""
