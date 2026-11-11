@@ -45,9 +45,50 @@ def parse_line(line, st):
         "You can't get poison counters.": 'poison_lock',
         "Creatures you control can't have -1/-1 counters put on them.": 'negative_counter_lock',
         'Creatures your opponents control lose infect.': 'remove_infect',
+        "You can't play lands.": 'land_lock_you',
+        "Players can't play lands.": 'land_lock_all',
+        "Lands can't enter the battlefield.": 'land_entry_lock',
+        "Each opponent who controls more lands than you can't play lands.": 'land_lock_more',
+        "You can't cast ~ if you've played a land this turn.": 'cast_before_land',
+        "You can't play lands if ~ was cast this turn.": 'land_lock_cast_turn',
     }
     if line in flags:
         st.extra.setdefault('advanced_rules', {})[flags[line]] = True
+        return True
+    m = re.fullmatch(rf"Players can't play lands as long as ({NUMBER}) or more lands are on the battlefield\.", line)
+    if m:
+        st.extra.setdefault('advanced_rules', {})['land_lock_total'] = _num(m[1])
+        return True
+    # "Each opponent who controls more creatures than you can't cast creature spells. The same is
+    # true for artifacts and enchantments." (Ward of Bones keeps both sentences on one line.)
+    plural = {'creatures': 'creature', 'artifacts': 'artifact', 'enchantments': 'enchantment', 'lands': 'land'}
+    m = re.fullmatch(rf"Each opponent who controls more ({'|'.join(plural)}) than you can't cast "
+                     rf"({'|'.join(v for v in plural.values() if v != 'land')}) spells\."
+                     rf"(?: The same is true for (.+?) and (.+?)\.)?", line)
+    if m and plural[m[1]] == m[2]:
+        rules_ = st.extra.setdefault('advanced_rules', {})
+        entries = [(m[1][:-1], m[2])]
+        if m[3] and m[3] in plural and m[4] in plural and plural[m[3]] != 'land' and plural[m[4]] != 'land':
+            entries += [(m[3][:-1], plural[m[3]]), (m[4][:-1], plural[m[4]])]
+        rules_['cast_lock_more'] = rules_.get('cast_lock_more', ()) + tuple(entries)
+        return True
+    # Standalone "The same is true for ..." after a "controls more ... can't cast" line.
+    m = re.fullmatch(r'The same is true for (.+?) and (.+?)\.', line)
+    if m and 'cast_lock_more' in st.extra.get('advanced_rules', {}) and \
+            m[1] in plural and m[2] in plural and plural[m[1]] != 'land' and plural[m[2]] != 'land':
+        rules_ = st.extra['advanced_rules']
+        rules_['cast_lock_more'] = rules_.get('cast_lock_more', ()) + ((m[1][:-1], plural[m[1]]), (m[2][:-1], plural[m[2]]))
+        return True
+    # Damping Engine: the player with strictly the most permanents is locked; the optional
+    # sacrifice-to-ignore sentence is played loosely (recorded, not silently dropped).
+    m = re.fullmatch(r"A player who controls more permanents than each other player can't play lands or cast "
+                     r"artifact, creature, or enchantment spells\."
+                     r"(?: That player may sacrifice a permanent of their choice for that player to ignore this "
+                     r"effect until end of turn\.)?", line)
+    if m:
+        st.extra.setdefault('advanced_rules', {})['most_perm_lock'] = True
+        if line.endswith('until end of turn.'):
+            st.approximations.append('the sacrifice-to-ignore clause of the most-permanents lock is not played')
         return True
     m = re.fullmatch(r'(.+?) (?:get|gets) ([+-]\d+)/([+-]\d+)(?: and (?:have|has) (.+))?\.', line)
     if m:
@@ -134,6 +175,43 @@ def anthem_bonus(permanent):
     return power, toughness
 
 
+_KIND_CHECK = {'creature': lambda c: c.is_creature, 'artifact': lambda c: c.is_artifact,
+               'enchantment': lambda c: 'Enchantment' in c.types, 'land': lambda c: c.is_land}
+
+
+def _type_count(player, kind):
+    check = _KIND_CHECK[kind]
+    return sum(1 for x in player.battlefield if check(x.card))
+
+
+def _most_permanents(game, player):
+    """Whether player controls strictly more permanents than every other player (Damping Engine)."""
+    return all(len(player.battlefield) > len(q.battlefield) for q in game.players if q is not player)
+
+
+def lands_locked(player):
+    """Whether player can't play lands: a static ("You can't play lands." / "Players can't play lands.") or a
+    "Target player can't play lands this turn." flag."""
+    game = getattr(player, '_game', None)
+    if game is None:
+        return False
+    from .cx_next_turn import player_flag
+    for source in sources(game, 'land_lock_total'):
+        if sum(x.card.is_land for p in game.players for x in p.battlefield) >= rules(source)['land_lock_total']:
+            return True
+    for source in sources(game, 'land_lock_more'):
+        if source.controller is not player and sum(x.card.is_land for x in player.battlefield) > \
+                sum(x.card.is_land for x in source.controller.battlefield):
+            return True
+    if any(x.controller is player and getattr(x, 'cast_turn', None) == game.turn
+           for x in sources(game, 'land_lock_cast_turn')):
+        return True
+    if sources(game, 'most_perm_lock') and _most_permanents(game, player):
+        return True
+    return bool(sources(game, 'land_lock_all')) or any(x.controller is player for x in sources(game, 'land_lock_you')) or \
+        player_flag(game, player, 'no_lands')
+
+
 def activation_blocked(game, perm, *, mana=False):
     return bool(perm.is_creature and sources(game, 'creature_activation_lock') or
                 perm.card.is_artifact and sources(game, 'artifact_activation_lock') or not mana and
@@ -187,14 +265,15 @@ def tapped_by_opponent(game, perm):
 
 def blocked_entry(game, card, physical=None):
     physical = physical if physical is not None else card
-    if not getattr(physical, 'is_creature', False) or getattr(physical, 'is_token', False) or not sources(game, 'zone_entry_lock'):
-        return False
     pending = getattr(physical, 'pending_move', None)
     zone = getattr(physical, 'zone', None)
     origin = getattr(zone, 'name', '') or (pending[1] if pending else '')
-    if origin not in ('graveyard', 'library'):
+    land_blocked = card.is_land and bool(sources(game, 'land_entry_lock'))
+    cage_blocked = getattr(physical, 'is_creature', False) and not getattr(physical, 'is_token', False) and \
+        origin in ('graveyard', 'library') and bool(sources(game, 'zone_entry_lock'))
+    if not (land_blocked or cage_blocked):
         return False
-    if zone is None and pending is not None:
+    if zone is None and pending is not None and origin in ('hand', 'exile', 'graveyard', 'library'):
         # Older effect handlers remove before entering. Restore the prevented move
         # without emitting a zone event or invalidating physical references.
         zone = getattr(physical, 'departure_zone', None)
@@ -212,6 +291,19 @@ def blocked_entry(game, card, physical=None):
 
 def cast_locked(game, p, card):
     base, kind, _ = game._origin(card)
+    if base.advanced_rules.get('cast_before_land') and p.lands_played:
+        return True
+    from .cx_next_turn import player_flag
+    if card.is_creature and player_flag(game, p, 'no_creature_cast'):
+        return True
+    for source in sources(game, 'cast_lock_more'):
+        if source.controller is not p:
+            for count_kind, spell_kind in rules(source)['cast_lock_more']:
+                if _KIND_CHECK[spell_kind](card) and _type_count(p, count_kind) > _type_count(source.controller, count_kind):
+                    return True
+    if sources(game, 'most_perm_lock') and _most_permanents(game, p) and \
+            (card.is_artifact or card.is_creature or 'Enchantment' in card.types):
+        return True
     zone = game._zone(p, kind)
     return getattr(zone, 'name', '') in ('graveyard', 'library') and bool(sources(game, 'zone_cast_lock'))
 

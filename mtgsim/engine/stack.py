@@ -357,6 +357,7 @@ class StackMixin:
                     p.graveyard.append(base)
                     return
             self._entry_mana_colors = getattr(item, "mana_colors", set())
+            self._entry_mana_by_color = getattr(item, "mana_by_color", {})
             self._entry_cast = (kind == "kicker" or getattr(item, "kicks", 0) > 0,
                                 bool(getattr(item, "cast_from_hand", False)), getattr(item, "mana_spent", 0))
             if kind in ("disturb", "room_right"):   # cast transformed: its back face enters (a Room's right door)
@@ -372,6 +373,7 @@ class StackMixin:
             if base.aura == "player":
                 perm.curse_target = self.opponent(p)
             self._entry_mana_colors = set()
+            self._entry_mana_by_color = {}
             self._spent = ""
             if kind in ("disguise", "morph", "megamorph"):
                 perm.hidden = base
@@ -386,6 +388,7 @@ class StackMixin:
             if kind == "warp":
                 perm.warped = True
             perm.was_cast = True
+            perm.cast_turn = getattr(item, "cast_turn", None)
             perm.kicks = getattr(item, "kicks", 0)
             perm.emerged_toughness = getattr(item, "emerged_toughness", None)
             if perm.kicks and base.advanced_rules.get("kick_counters_each"):
@@ -557,6 +560,8 @@ class StackMixin:
                 item.source.counters.get("charge", 0) >= int(c[8:])
         if c == "paid":
             return bool(getattr(item, "gate_paid", False))
+        if c == "unpaid":                          # the other side of a coin flip
+            return not getattr(item, "gate_paid", False)
         if c == "harnessed":
             return bool(getattr(item.source, "harnessed", False))
         if c == "evidence":

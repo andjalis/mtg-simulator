@@ -248,6 +248,7 @@ class PlayMixin:
                 return False
             targets = mode_targets + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")
+        item.cast_turn = self.turn
         # Prepared spells are copies; channel/graveyard abilities leave their
         # physical source in its actual zone rather than moving it onto the stack.
         item.physical_card = base if kind not in ("prepared", "channel", "gy_ability", "unearth") else None
@@ -261,6 +262,8 @@ class PlayMixin:
                           else "exile" if self._zone(p, kind) is p.exile else "other")     # cx_events "cast from"
         from ..advanced_templates import payment_colors
         item.mana_colors = payment_colors(payment, dict(cost, generic=cost.get("generic", 0) + x))
+        from ..advanced_templates import payment_color_counts
+        item.mana_by_color = payment_color_counts(payment, dict(cost, generic=cost.get("generic", 0) + x))
         if kind == "grave_permission":
             source = getattr(card, "permission_source", None)
             if source is not None:

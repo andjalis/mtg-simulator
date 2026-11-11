@@ -204,6 +204,32 @@ def cast_allowed(game, p, card):
     return True
 
 
+def payment_color_counts(payment, cost):
+    """{colour: most mana of that colour the payment can have been}, the caster choosing the assignment that favours
+    it ("if at least three red mana was spent to cast ~"). Pips of other colours each take a distinct source that
+    can make them; every other source counts toward a colour it can make."""
+    from .engine.mana import _mana_of, _amount
+    slots = [frozenset(_mana_of(s)) for s in payment for _ in range(max(1, _amount(s)))]
+    pips = [c for c in 'WUBRGC' for _ in range(cost.get(c, 0))]
+    out = {}
+    for colour in 'WUBRGC':
+        others = [c for c in pips if c != colour]
+        others.sort(key=lambda c: sum(c in s for s in slots))
+
+        def best(i, free):
+            if i == len(others):
+                return sum(colour in s for s in free)
+            top = -1
+            for j, slot in enumerate(free):
+                if others[i] in slot:
+                    top = max(top, best(i + 1, free[:j] + free[j + 1:]))
+            return top
+        n = best(0, slots)
+        if n > 0:
+            out[colour] = n
+    return out
+
+
 def payment_colors(payment, cost):
     """Choose an explicit legal color for each paid unit, favoring sunburst."""
     from .engine.mana import _mana_of, _amount

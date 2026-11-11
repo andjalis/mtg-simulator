@@ -26,9 +26,13 @@ def set_base(game, p, target, eff, opp, **_):
 
 
 @kind("cx_player_flag")
-def player_flag(game, p, eff, opp, **_):
+def player_flag(game, p, eff, opp, target=None, **_):
     from ...cx_next_turn import add_flag
     who = opp if eff.data.get("who") == "opp" else p
+    if eff.data.get("who") == "target":         # "Target player can't play lands this turn."
+        if target not in game.players:
+            return
+        who = target
     add_flag(game, p, who, eff)
 
 

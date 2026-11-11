@@ -265,6 +265,7 @@ class EffectsMixin:
         from ..residual_templates import grave_exiled
         if to == "graveyard" and grave_exiled(self, perm.owner, token=perm.card.is_token):
             to = "exile"
+        continuous.freeze_colors(perm)
         before = rules_events.snapshot(perm)
         perm.last_triggers = list(perm.triggers)
         perm.last_card = perm.card

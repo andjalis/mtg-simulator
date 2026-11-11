@@ -484,6 +484,27 @@ def _mana_spent(m):
     return _code("mana", _n(m["n"]))
 
 
+@rule(rf"(?P<n>{_NUM}) or more mana was spent to cast ~")
+def _mana_spent_or_more(m):
+    return _code("mana", _n(m["n"]))
+
+
+@rule(rf"at least (?P<n>{_NUM}) (?P<c>white|blue|black|red|green|colorless) mana was spent to cast ~")
+def _color_mana_spent(m):
+    return _code("mana_color", "WUBRGC"["white blue black red green colorless".split().index(m["c"].lower())], _n(m["n"]))
+
+
+@rule(rf"(?P<q>a|one or more|{_NUM} or more) cards? left your graveyard this turn")
+def _cards_left_graveyard(m):
+    q = m["q"].lower()
+    return _code("gy_left", 1 if q in ("a", "one or more") else _n(q.split()[0]))
+
+
+@rule(rf"this ability has been activated (?P<n>{_NUM}) or more times this turn")
+def _ability_times(m):
+    return _code("act_times", _n(m["n"]))
+
+
 @rule(rf"x is (?P<n>{_NUM}) or (?:more|greater)")
 def _x_more(m):
     return _code("x", _n(m["n"]))
@@ -971,6 +992,18 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         if spent is None:
             spent = getattr(item, "mana_spent", 0)
         return spent >= args[0]
+    if kind == "act_times":
+        idx = getattr(item, "ability_idx", None)
+        perm = getattr(item, "source", None)
+        if idx is None or perm is None:
+            return False
+        stamp, n = perm.ability_turns.get(("count", idx), (None, 0))
+        return stamp == game.turn and n >= args[0]
+    if kind == "gy_left":
+        return getattr(p.graveyard, "left_turn", 0) >= args[0]
+    if kind == "mana_color":
+        src = item if getattr(item, "is_spell", False) else source
+        return getattr(src, "mana_by_color", {}).get(args[0], 0) >= args[1]
     if kind == "x":
         x = getattr(item, "x", None)
         if not x and source is not None:

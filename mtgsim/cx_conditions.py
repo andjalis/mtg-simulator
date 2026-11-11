@@ -11,7 +11,7 @@ _N = r"(\d+|one|two|three|four|five|six|seven|eight|nine|ten)"
 _COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 _KEYWORDS = ("flying|first strike|double strike|trample|haste|lifelink|vigilance|menace|deathtouch|reach|indestructible|"
              "hexproof|flash|defender|shroud|shadow|fear|intimidate|wither|persist|undying|infect|skulk|horsemanship|banding|"
-             "protection from (?:white|blue|black|red|green)|cascade")
+             "protection from (?:white|blue|black|red|green)|cascade|lure")
 
 # (pattern, code template); groups are substituted into the template.
 _CONDS = [
@@ -67,6 +67,13 @@ _NUMS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven"
 def parse_line(line: str, st) -> bool:
     if parse_restriction(line, st):
         return True
+    lure = re.fullmatch(rf"({_LABEL})As long as (.+?), all creatures able to block "
+                        r"(~|enchanted creature|equipped creature) do so\.", line)
+    if lure:
+        subject = {"~": "~", "enchanted creature": "Enchanted creature",
+                   "equipped creature": "Equipped creature"}[lure[3]]
+        # Use the same live condition paths as ordinary conditional keywords.
+        line = f"{lure[1]}{subject} has lure as long as {lure[2]}."
     line = re.sub(r"(~|, ~|, it) can't be blocked( as long as|\.$)", r"\1 has can't be blocked\2", line)
     m = _LINE.fullmatch(line)
     if m is not None:
@@ -74,12 +81,13 @@ def parse_line(line: str, st) -> bool:
     else:
         m = _LEADING.fullmatch(line)
         if m is None:
+            from .cx_self_grants import parse_line as self_grants_line
             from .cx_statics import parse_line as statics_line
             from .cx_altcost import parse_line as altcost_line, parse_discard_ability
             from .cx_lures import parse_line as lures_line
             from .cx_shields import parse_line as shields_line
             from .cx_landtypes import parse_line as landtypes_line
-            return statics_line(line, st) or altcost_line(line, st) or parse_discard_ability(line, st) or \
+            return self_grants_line(line, st) or statics_line(line, st) or altcost_line(line, st) or parse_discard_ability(line, st) or \
                 lures_line(line, st) or shields_line(line, st) or landtypes_line(line, st)
         cond, clause = m[1], m.groups()[1:5]
     code = _code(cond)

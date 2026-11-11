@@ -22,11 +22,26 @@ def _gated(gate_effect, rider):
     return [gate_effect] + [dataclasses.replace(e, cond=e.cond or "paid") for e in payoff]
 
 
+def _gated_both(win_rider, lose_rider):
+    """Both riders of "If you win the flip, X. If you lose the flip, Y.": X runs on "paid", Y on "unpaid"."""
+    from .cards import NO_MATCH, Effect, _parse_effects
+    parsed = []
+    for rider, cond in ((win_rider, "paid"), (lose_rider, "unpaid")):
+        effects, bad = _parse_effects(rider[0].upper() + rider[1:] + ".")
+        if bad or not effects:
+            return NO_MATCH
+        parsed.append([dataclasses.replace(e, cond=e.cond or cond) for e in effects])
+    return [Effect("flip_coin")] + parsed[0] + parsed[1]
+
+
 SUBS = [
     # "Clash with an opponent. If you win, <X>." (also "defending player", "If you won")
     (re.compile(r"clash with (?:an opponent|defending player|target opponent)\. "
                 r"if you (?:win|won), ([^.]+)\.?", re.I),
      lambda m: f"CLASHWIN {m[1]}."),
+    # "Flip a coin. If you win the flip, <X>. If you lose the flip, <Y>."
+    (re.compile(r"flip a coin\. if you win the flip, ([^.]+)\. if you lose the flip, ([^.]+)\.?", re.I),
+     lambda m: f"FLIPBOTH {m[1]} || {m[2]}."),
     # "Flip a coin. If/When you win/lose the flip, <X>."
     (re.compile(r"flip a coin\. (?:if|when) you (win|lose) the flip, ([^.]+)\.?", re.I),
      lambda m: f"FLIPCOIN {m[1].lower()} {m[2]}."),
@@ -57,6 +72,7 @@ def _clash_plain(m):
 
 EFFECT_PATTERNS = [
     (r"CLASHWIN (.+)", _clash),
+    (r"FLIPBOTH (.+?) \|\| (.+)", lambda m: _gated_both(m[1], m[2])),
     (r"FLIPCOIN (win|lose) (.+)", _flip),
     # "Clash with an opponent." with no rider (Oaken Brawler), and a coin flip with no
     # rider sentence ("You may flip a coin.")

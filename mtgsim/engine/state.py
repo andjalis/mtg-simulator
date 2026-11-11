@@ -210,6 +210,7 @@ class Permanent:
         self.kicked = False                            # cast with a kicker cost ("if it was kicked")
         self.cast_from_hand = False                    # "if you cast it from your hand"
         self.mana_spent = 0                            # "if at least N mana was spent to cast it"
+        self.mana_by_color = {}                        # {"R": 3}: most mana of a colour the payment can have been
         self.curse_target = None                       # a Curse: the player it enchants
         self.aura_host: "Permanent | None" = None      # the permanent this Aura enchants
         self.attached_to: "Permanent | None" = None    # Equipment: the creature it is attached to
@@ -561,7 +562,8 @@ class Permanent:
             return []
         exalted = [Trigger("attacks_alone", [Effect("pump", 1, 1, target="trigger_subject")])
                    for _ in range(self.exalted_count)]
-        mine = self.card.triggers
+        from ..cx_self_grants import abilities as self_grants
+        mine = list(self.card.triggers) + self_grants(self, triggered=True)
         if self.card.is_class:
             level = self.counters.get("level", 1)
             mine = [t for t in mine if t.min_level <= level]
@@ -598,7 +600,8 @@ class Permanent:
     @property
     def activated(self):
         from ..backlog_templates import grants
-        return list(self.card.activated) + [a for a in grants(self) if a.kind == 'ability']
+        from ..cx_self_grants import abilities as self_grants
+        return list(self.card.activated) + [a for a in grants(self) if a.kind == 'ability'] + self_grants(self)
 
     def granted_mana(self) -> frozenset:
         """Colours other permanents let this one tap for (Enduring Vitality, Great Divide Guide)."""
@@ -722,7 +725,9 @@ class Player:
     @property
     def land_played(self) -> bool:
         """Whether this turn's land drops are used up (Icetill Explorer gives another)."""
-        return self.lands_played > sum(x.card.extra_lands for x in self.battlefield) + self.extra_lands_turn
+        from ..residual_templates import lands_locked
+        return self.lands_played > sum(x.card.extra_lands for x in self.battlefield) + self.extra_lands_turn or \
+            lands_locked(self)
 
     @land_played.setter
     def land_played(self, value):

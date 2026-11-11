@@ -11,7 +11,7 @@ The condition is a ``cx_condlib`` code evaluated from the static's source, with 
 or affected permanent. Both kinds are stored in ``CardDef.advanced_rules``:
 
     host_if:   ((code, power, toughness, keywords, else_power, else_toughness), ...)
-    anthem_if: ((code, scope, spec, other, power, toughness, keywords), ...)   scope "you" or "all"
+    anthem_if: ((code, scope, spec, other, power, toughness, keywords), ...)   scope "you", "opp" or "all"
 
 ``pt_bonus`` and ``grants`` are called from ``Permanent._pt_bonus`` and ``Permanent.has``."""
 from __future__ import annotations
@@ -61,6 +61,9 @@ def _subject(text: str):
     m = re.fullmatch(r"(.+?) you control", text)
     if m:
         scope, text = "you", m[1]
+    m = re.fullmatch(r"(.+?) your opponents control", text)
+    if m:                       # Mindwhisker: only creatures controlled by the source's opponents
+        scope, text = "opp", m[1]
     other = False
     m = re.fullmatch(r"(?:other|each other) (.+)", text, re.I)
     if m:
@@ -73,6 +76,19 @@ def _subject(text: str):
 
 def parse_line(line: str, st) -> bool:
     extra = st.extra
+    per = re.fullmatch(rf"{_LABEL}~ gets ([+-]\d+)/([+-]\d+) for each (.+?) as long as (.+?)\.", line)
+    if per:
+        from .cx_grammar_quantity import quantity
+        from .cx_conditions import _code
+        spec, code = quantity("the number of " + per[3]), _code(per[4])
+        if spec is None or code is None:
+            return False
+        rules = extra.setdefault("advanced_rules", {})
+        rules["pt_per_if"] = rules.get("pt_per_if", ()) + ((code, int(per[1]), int(per[2]), spec),)
+        return True
+    lead = re.fullmatch(rf"({_LABEL})As long as (.+?), ((?:Each |All )?[\w ,-]+? (?:get|gets|have|has) .+)\.", line)
+    if lead and not lead[3].startswith(("~", "Enchanted", "Equipped")):
+        line = f"{lead[1]}{lead[3]} as long as {lead[2]}."        # "As long as C, S gets X." is "S gets X as long as C."
     line = re.sub(r" can't (be blocked|block) as long as", r" has can't \1 as long as", line)
     m = _HOST.fullmatch(line)
     if m:
@@ -133,7 +149,8 @@ def _anthems(perm):
             rules = x.card.advanced_rules
             if rules and "anthem_if" in rules:
                 for rule in rules["anthem_if"]:
-                    if rule[1] == "you" and pl is not perm.controller or rule[3] and x is perm:
+                    if rule[1] == "you" and pl is not perm.controller or rule[1] == "opp" and pl is perm.controller \
+                            or rule[3] and x is perm:
                         continue
                     yield x, rule
 
@@ -149,6 +166,14 @@ def _attached(perm):
 
 def pt_bonus(perm):
     bp = bt = 0
+    if not perm.abilities_suppressed:
+        game = getattr(perm.controller, "_game", None)
+        if game is not None:
+            from .engine.state import StackItem
+            for code, pp, tt, spec in perm.card.advanced_rules.get("pt_per_if", ()):
+                if perm.condition(code):
+                    n = game.x_quantity(perm.controller, spec, StackItem(perm.controller, [], [], source=perm), None)
+                    bp, bt = bp + pp * n, bt + tt * n
     for a in _attached(perm):
         for code, pp, tt, _kws, ep, et in a.card.advanced_rules.get("host_if", ()):
             if _holds(a, code, perm):
