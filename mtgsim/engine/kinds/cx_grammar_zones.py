@@ -47,7 +47,10 @@ def card_move(game, p, eff, target, item=None, **_):
     if to == "battlefield":
         owner.graveyard.remove(target)
         controller = p if eff.data.get("under", "you") == "you" else owner
-        game.enter_battlefield(controller, target, tapped=bool(eff.data.get("tapped")))
+        attacking = (eff.data.get("attacking", False) and controller is game.active and
+                     game.step in ("declare_attackers", "declare_blockers", "first_strike_damage", "combat_damage",
+                                   "end_combat"))
+        game.enter_battlefield(controller, target, tapped=bool(eff.data.get("tapped")), tapped_attacking=attacking)
     elif to in ("library_top", "library_bottom"):
         owner.graveyard.remove(target)
         if to == "library_top":
@@ -57,3 +60,26 @@ def card_move(game, p, eff, target, item=None, **_):
     else:
         game.move_card(target, owner.graveyard, owner.hand if to == "hand" else owner.exile, reason="cx_card_move")
     game.log(f"{target.name} goes from {owner}'s graveyard to {to}", p)
+
+
+@kind("cx_card_choose")
+def card_choose(game, p, eff, target, item=None, **_):
+    """Choose a bounded number of cards at resolution, without adding spell targets."""
+    import dataclasses
+    from ...backlog_templates import entry_batch
+    from ...cx_grammar_zones import card_fits
+    if not isinstance(target, Player):
+        return
+    source = item.source if item is not None else None
+    pool = [c for c in target.graveyard if card_fits(c, eff.data["cx_card"], source)]
+    chosen = []
+    for card in game.hook(target, "choose_dig")(game, target, list(pool), eff.amount):
+        if any(card is c for c in pool) and not any(card is c for c in chosen):
+            chosen.append(card)
+    if not eff.data["up_to"]:
+        chosen += [c for c in pool if not any(c is x for x in chosen)]
+    move = dataclasses.replace(eff, kind="cx_card_move")
+    with entry_batch(game):
+        for card in chosen[:eff.amount]:
+            if any(card is c for c in target.graveyard):
+                card_move(game, p, move, card, item)
