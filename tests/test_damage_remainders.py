@@ -26,6 +26,20 @@ class MultiDamage(Base):
         self.cast(self.spell('~ deals 2 damage to each of one or two targets.'), [self.b, bear])
         self.assertEqual((self.b.life, bear.damage), (18, 2))
 
+    def test_auto_targets_repick_is_player_safe(self):
+        # "any target" includes players; re-picking a distinct second target must not read .controller on them
+        c = self.spell('~ deals 2 damage to each of one or two targets.')
+        bear = self.perm(BEAR, self.b)
+        game, hook = self.game, self.game.hook
+        game.hook = lambda p, name: (lambda *a, **k: bear) if name == "choose_target" else hook(p, name)
+        try:
+            out = game.auto_targets(self.a, c.spell_effects, source=c)
+        finally:
+            game.hook = hook
+        self.assertEqual(out[0], bear)
+        self.assertIsNot(out[1], bear)
+        self.assertIn(out[1], (self.a, self.b, bear))
+
     def test_omitted_slot_does_not_keep_an_illegal_target_spell_resolving(self):
         c = self.spell('~ deals 2 damage to each of one or two targets.')
         bear = self.perm(BEAR, self.b)
