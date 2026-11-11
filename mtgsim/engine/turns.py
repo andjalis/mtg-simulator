@@ -436,6 +436,7 @@ class TurnsMixin:
         self.turn_ended = False
         p.prevent_next = opp.prevent_next = 0
         self.no_prevention_turn = False                # "this turn" spell riders expire in cleanup
+        self.combat_taxes = []
         self.no_lifegain_turn = set()
         self.expire_continuous_effects()
         for pl in self.players:

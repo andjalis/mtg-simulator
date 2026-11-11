@@ -285,8 +285,8 @@ EFFECT_PATTERNS = [
      _both(_flag("life_lock"), _flag("protection"))),
     (rf"prevent all damage that would be dealt to you{_UNTIL}", _flag("prevent_damage")),
     (rf"creatures can't attack you{_UNTIL}", _flag("no_attack")),
-    (rf"creatures can't attack you(?: or planeswalkers you control)? unless their controller pays \{{(?P<n>\d+)\}} "
-     rf"for each of those creatures{_UNTIL}", _flag("attack_tax")),
+    (rf"creatures can't attack you(?P<pw> or planeswalkers you control)? unless their controller pays \{{(?P<n>\d+)\}} "
+     rf"for each of those creatures{_UNTIL}", lambda m: _flag("attack_tax", planeswalkers=bool(m["pw"]))(m)),
     (rf"you have no maximum hand size{_UNTIL}", _flag("no_max_hand")),
     (rf"you can't cast spells{_UNTIL}", _flag("no_cast")),
     (rf"(?:spells your opponents cast cost|(?P<nc>noncreature) spells your opponents cast cost) \{{(?P<n>\d+)\}} more to cast{_UNTIL}",

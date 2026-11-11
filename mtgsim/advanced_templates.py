@@ -185,8 +185,10 @@ def begin_turn(game, p):
 
 
 def attack_tax(game, defender):
-    from .cx_next_turn import attack_flag_tax
-    return sum(rules(x).get('attack_tax', 0) for x in defender.battlefield) + attack_flag_tax(game, defender)
+    """Legacy generic estimate; declarations pay the full, defender-specific cost."""
+    from .cx_combat_costs import attack_cost
+    cost = attack_cost(game, None, defender)
+    return 10 ** 6 if cost is None else cost.get("generic", 0)
 
 
 def cast_allowed(game, p, card):

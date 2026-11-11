@@ -93,16 +93,14 @@ class CombatMixin:
             t = targets.get(a, opp)
             self.attack_targets[a] = t if (t is opp or (isinstance(t, Permanent) and t.is_planeswalker
                                                          and t in opp.battlefield)) else opp
-            from ..advanced_templates import attack_tax
-            tax = attack_tax(self, opp) if self.attack_targets[a] is opp else 0
-            if tax and self.pay(p, {"generic": tax}) is None:
-                self.attack_targets.pop(a, None)
-                continue
+        from ..cx_combat_costs import pay_attackers, pay_blockers
+        attackers = pay_attackers(self, p, attackers, self.attack_targets)
+        self.attack_targets = {a: self.attack_targets[a] for a in attackers}
+        self.attackers = attackers
+        for a in attackers:
             if not a.has("vigilance"):
                 a.tapped = True
                 self.fire(p, "becomes_tapped", a)
-        attackers = [a for a in attackers if a in self.attack_targets]
-        self.attackers = attackers
         if not attackers:
             return
         from ..batch1_templates import enlist
@@ -163,7 +161,7 @@ class CombatMixin:
                 legal[a] = bl
                 for b in bl:
                     used[b] = used.get(b, 0) + 1
-        blocks = drop_solo_blocks(legal)
+        blocks = pay_blockers(self, opp, drop_solo_blocks(legal))
         self.blocks = blocks
         if blocks:
             self.log(f"blocks {blocks}", opp)
