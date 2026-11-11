@@ -9,7 +9,7 @@ from ..cards import Effect
 from .. import modal, costs, counter_mechanics
 from ..actions import atomic_action
 from .policy import any_player_ability, any_player_window, default_choose_target, perm_value, saddle_creatures
-from .state import Permanent, StackItem, TARGETED, can_block, card_matches
+from .state import Permanent, StackItem, TARGETED, can_block, card_matches, note_this_way
 
 if TYPE_CHECKING:
     from .state import Player
@@ -487,6 +487,8 @@ class AbilitiesMixin:
                          kind="ability")
         item.ability_idx = idx
         item.counter_x = sum(n for _, _, n in plan.counter_payments)
+        if c.get("remove_counter"):      # "{T}, Remove a charge counter from ~: ... for each ... removed this way"
+            note_this_way(item, "removed", [c["remove_counter"]], c.get("remove_counter_count", 1))
         if c.get("remove_creature_counters") in ("x", "positive"):
             item.x = item.counter_x
         elif act.cost.get("X") and x:

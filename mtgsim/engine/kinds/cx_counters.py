@@ -44,7 +44,7 @@ def _removal_helps(p, counter, owner):
 
 
 @kind("cx_remove_counters")
-def cx_remove_counters(game, p, eff, target, **_):
+def cx_remove_counters(game, p, eff, target, item=None, **_):
     """Remove counters of one kind (or "a counter" of any kind) from a permanent; "all" empties the kind or the card.
     Without a kind the controller's own permanent loses its worst counters first, an opponent's its best."""
     if not isinstance(target, Permanent):
@@ -59,6 +59,7 @@ def cx_remove_counters(game, p, eff, target, **_):
     if eff.data.get("optional"):               # "you may remove": the AI declines unless removal helps it
         names = [n for n in names if _removal_helps(p, n, target.controller)]
     left = 10 ** 6 if eff.data.get("all") else eff.amount
+    taken = {}
     for name in names:
         if left <= 0:
             break
@@ -67,6 +68,10 @@ def cx_remove_counters(game, p, eff, target, **_):
         if take:
             target.counters[name] = have - take
             left -= take
+            taken[name] = taken.get(name, 0) + take
+    from ..state import note_this_way
+    for name, n in taken.items():               # "for each ... counter removed this way"
+        note_this_way(item, "removed", [name], n)
 
 
 @kind("cx_move_src")

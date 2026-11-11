@@ -31,6 +31,9 @@ class ResolveMixin:
             elif target is None and isinstance(ctx, Player) and eff.data.get("cast_spell") is not None:
                 target = ctx
         k = eff.kind
+        if item is not None and not (isinstance(eff.data.get("xq"), tuple) and eff.data["xq"]
+                                     and eff.data["xq"][0] == "this_way"):
+            item.this_way = None    # a new effect starts: "this way" no longer names the previous one's result
         source = (item.card.name if item and item.card else
                   item.source.card.name if item and isinstance(item.source, Permanent) else "effect")
         cause = f"{source}: {k}"

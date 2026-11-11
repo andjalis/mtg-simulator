@@ -771,6 +771,7 @@ class StackItem:
         self.kind = kind or ("spell" if card else "trigger")   # spell, copy, trigger, chapter, loyalty
         self.snow_spent = 0
         self.mana_spent = 0
+        self.this_way = None    # ("verb", {nouns}, n): what the previous effect of this resolution did "this way"
 
     @property
     def is_spell(self): return self.kind in ("spell", "copy")
@@ -837,6 +838,14 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
 def is_basic_land(c) -> bool:
     return c.is_land and (c.basic or c.name in BASIC_MANA or c.name == "Wastes" or
                          c.name.startswith("Snow-Covered ") and c.name[len("Snow-Covered "):] in BASIC_MANA)
+
+
+def note_this_way(item, verb: str, nouns, n: int):
+    """Record what the resolving effect just did "this way" (counters removed / permanents destroyed), so a
+    following "for each ... this way" sentence of the same resolution reads the resolved event's result
+    (CR 608.2c), not a global count."""
+    if item is not None and n > 0:
+        item.this_way = (verb, frozenset(nouns), n)
 
 
 
