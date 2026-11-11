@@ -169,6 +169,8 @@ from .. import cx_abil_damage as _cx_abil_damage
 _EFFECT_PATTERNS += _cx_abil_damage.EFFECT_PATTERNS
 from .. import cx_abil_mana as _cx_abil_mana
 _EFFECT_PATTERNS += _cx_abil_mana.EFFECT_PATTERNS
+from .. import cx_grammar_addmana as _cx_grammar_addmana
+_EFFECT_PATTERNS += _cx_grammar_addmana.EFFECT_PATTERNS
 from .. import cx_lures as _cx_lures
 _EFFECT_PATTERNS += _cx_lures.EFFECT_PATTERNS
 from .. import cx_recolor as _cx_recolor
