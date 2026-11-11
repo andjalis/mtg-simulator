@@ -196,6 +196,9 @@ def cast_allowed(game, p, card):
     from .cx_next_turn import player_flag
     if player_flag(game, p, 'no_cast'):
         return False
+    from .cx_grammar_prohibit import cast_forbidden
+    if cast_forbidden(game, p, card):
+        return False
     from .cx_timing import window_ok
     if not window_ok(game, p, card):
         return False

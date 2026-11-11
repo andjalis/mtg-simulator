@@ -539,3 +539,28 @@ class YouMayHave(unittest.TestCase):
         effects, bad = P._parse_effects("You may have target creature gain flying until end of turn.")
         self.assertEqual(bad, [])
         self.assertEqual(effects[0].kind, "pay_gate")           # the optional "you may" gate, not a mandatory grant
+
+
+class NearMisses(Base):
+    def test_those_creatures_extend_the_group(self):
+        from mtgsim.cards import parse as P
+        effects, bad = P._parse_effects("Goblins your opponents control get -1/-0 until end of turn. "
+                                        "Those creatures can't block this turn.")
+        self.assertEqual(bad, [])
+        self.assertEqual([e.kind for e in effects], ["cx_group"])
+        g = self.perm(GOBLIN, self.b)
+        self.cast(card("Test", "{R}", "Instant", "Goblins your opponents control get -1/-0 until end of turn. "
+                                               "Those creatures can't block this turn."))
+        self.assertTrue(g.has("cant_block_now"))
+        self.assertEqual(g.power, 0)
+
+    def test_that_land_and_other_than_self(self):
+        self.assertEqual([e.target for e in parse_sentence("That land doesn't untap during its controller's next untap step.")],
+                         ["prev"])
+        eff = parse_sentence("Target creature other than ~ has base power and toughness 1/1 until end of turn.")[0]
+        self.assertTrue(eff.data.get("other"))
+
+    def test_you_imperative(self):
+        from mtgsim.cards import parse as P
+        effects, bad = P._parse_effects("You gain control of target artifact.")
+        self.assertEqual((bad, effects[0].kind), ([], "cx_control"))
