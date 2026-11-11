@@ -686,9 +686,23 @@ def static_rules(game, perm, rule: str) -> list:
 
 # ---------------------------------------------------------------- engine side: who a subject names
 
+def _defending_player(game, item):
+    """The player the relevant attacker is attacking (a planeswalker or battle: its controller), or None
+    when the item names no attacker."""
+    from .engine.state import Permanent
+    attacks = getattr(game, "attack_targets", None) or {}
+    for creature in (item.source if item is not None else None, item.context if item is not None else None):
+        target = attacks.get(creature) if isinstance(creature, Permanent) else None
+        if isinstance(target, Permanent):
+            return target.controller
+        if target in game.players:
+            return target
+    return None
+
+
 def players(game, p, who, item, prev, target=None):
-    """The players a cx_players subject names as it resolves (a two-player game: the defending player is the
-    opponent). who "target": the chosen player (target)."""
+    """The players a cx_players subject names as it resolves (the defending player is the one the attacker
+    attacks; the opponent when no attacker is in play). who "target": the chosen player (target)."""
     opp = game.opponent(p)
     if who == "target":
         return [target] if target in game.players else []
@@ -696,7 +710,9 @@ def players(game, p, who, item, prev, target=None):
         return [p]
     if who == "each":
         return list(game.players)
-    if who in ("opponents", "defending"):
+    if who == "defending":
+        return [_defending_player(game, item) or opp]
+    if who == "opponents":
         return [opp]
     if who == "that_player":
         context = item.context if item is not None else None
