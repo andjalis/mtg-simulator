@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from .. import alt_casts, transmute, copies, learning, proliferate, regeneration, removal, costs
 from ..cards import COLORS, CardDef, Effect
 from .. import modal
+from .. import hand_put
 from .mana import add_costs, payable
 from .state import Permanent, StackItem, TARGETED, _gy_desc, is_basic_land, protected_from
 
@@ -346,6 +347,11 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
                 if game.step != "main1" or not any(not c.tapped for c in opp.creatures):
                     return -1
                 total += tgt.power
+            elif k == "hand_to_battlefield":
+                v = hand_put.value(game, me, e, game.target_source)
+                if v <= 0 and all(x.kind in ("pay_gate", "hand_to_battlefield") for x in effects):
+                    return -1          # nothing in hand it could put: don't spend the activation on it alone
+                total += v
             else:
                 total += 1
         return total
@@ -961,6 +967,7 @@ DEFAULTS = {
     "pay_shock": pay_shock, "choose_discard_from": choose_discard_from, "choose_rummage": choose_rummage,
     "choose_crew": choose_crew, "before_attacks": before_attacks, "choose_attack_targets": choose_attack_targets,
     "use_abilities": use_abilities, "respond_extras": respond_extras, "choose_equip_target": choose_equip_target,
+    "choose_hand_put": lambda game, me, cards, entry: hand_put.choose(game, me, cards, entry),
 }
 # Older names, kept for compatibility.
 default_respond = respond

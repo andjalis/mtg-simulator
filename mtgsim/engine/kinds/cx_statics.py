@@ -50,12 +50,8 @@ def linked_restrict(game, p, target, eff, item, **_):
 
 
 @kind("hand_to_battlefield")
-def hand_to_battlefield(game, p, eff, **_):
-    """"You may put a creature card from your hand onto the battlefield" (Elvish Piper): the costliest match."""
-    from ...cx_condlib import _card_ok
-    cards = [c for c in p.hand if _card_ok(c, eff.data["spec"])]
-    if cards:
-        card = max(cards, key=lambda c: c.cmc)
-        p.hand.remove(card)
-        game.enter_battlefield(p, card)
-        game.log(f"puts {card.name} onto the battlefield", p)
+def hand_to_battlefield(game, p, eff, item, **_):
+    """"You may put a creature card from your hand onto the battlefield" (Elvish Piper) and its qualified
+    forms (dynamic mana value, chosen type, tapped / attacking / attached entry): see mtgsim/hand_put.py."""
+    from ...hand_put import resolve
+    resolve(game, p, eff, item)

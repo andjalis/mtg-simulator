@@ -378,6 +378,8 @@ def _split_compound(s: str):
             continue    # "Target player loses 2 life and mills two cards": the second verb is that player's too
         if sep == r" and " and " unless " in pieces[0].lower():
             continue    # "... unless you sacrifice a land and pay 2 life": one compound cost, never two effects (#330)
+        if re.search(r", where X is ", pieces[1], re.I) and re.search(r"\bX\b", pieces[0]):
+            return None     # "draw X cards, then put ... X or less ..., where X is ...": the X binds both parts
         out = []
         for piece in pieces:
             effs, bad = _parse_effects(piece[0].upper() + piece[1:] + ".")

@@ -234,3 +234,6 @@ from .. import conjure as _conjure_templates
 _EFFECT_PATTERNS += _conjure_templates.EFFECT_PATTERNS
 from .. import cx_grammar_counters as _cx_grammar_counters
 _EFFECT_PATTERNS += _cx_grammar_counters.EFFECT_PATTERNS
+from .. import hand_put as _hand_put
+_EFFECT_PATTERNS += _hand_put.EFFECT_PATTERNS
+_SUBS += _hand_put.SUBS
