@@ -286,7 +286,12 @@ def _parse_effects(text: str, opts: bool = False):
                 for body in (mi[2], re.sub(r"^you ", "", mi[2])):
                     new, bad = _parse_effects(body[0].upper() + body[1:] + ".")
                     if new and not bad:
-                        if cond.startswith('lib:["src_') and re.match(r"(?:~|it) ", mi[1], re.I):
+                        base = cond[1:] if cond.startswith("!") else cond
+                        # a source fact ("~ has fewer than three charge counters on it", "~ didn't
+                        # attack this turn"): the body's "on it" is the source itself
+                        src_fact = base.startswith('lib:["src_') or \
+                            base.startswith('lib:["counters"') and mi[1].startswith("~")
+                        if src_fact and re.match(r"(?:~|it) ", mi[1], re.I):
                             new = [dataclasses.replace(e, target="self") if e.target == "prev" else e
                                    for e in new]     # "If ~ is suspected, put a +1/+1 counter on it"
                         effects += [dataclasses.replace(e, cond=e.cond or cond) for e in new]

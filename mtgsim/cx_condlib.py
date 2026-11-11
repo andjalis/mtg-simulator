@@ -523,15 +523,40 @@ def _x_more(m):
     return _code("x", _n(m["n"]))
 
 
-@rule(rf"(?:~|it) has (?P<q>{_NUM}|{_NUM} or more|no) (?P<c>\+1/\+1|-1/-1|[a-z]+) counters? on it")
+_COUNTER_Q = (rf"no|exactly {_NUM}|at least {_NUM}|fewer than {_NUM}|more than {_NUM}|{_NUM} or more|"
+              rf"{_NUM} or fewer|{_NUM} or less|{_NUM}")
+
+
+@rule(rf"(?:~|it) has (?P<q>{_COUNTER_Q}) (?P<c>\+1/\+1|-1/-1|[a-z]+) counters? on it")
 def _src_counters(m):
     op, n = _quant(m["q"])
     return _code("counters", m["c"], op, n, *_ref(m))
 
 
-@rule(rf"there are (?P<q>{_NUM} or more|no) (?P<c>\+1/\+1|-1/-1|[a-z]+) counters on ~")
+@rule(rf"there are (?P<q>{_COUNTER_Q}) (?P<c>\+1/\+1|-1/-1|[a-z]+) counters on ~")
 def _src_counters2(m):
     return _src_counters(m)
+
+
+@rule(r"~ attacked this turn")
+def _src_attacked(m):
+    return _code("src_attacked_turn")
+
+
+@rule(r"~ (?:didn't|did not|hasn't) attack(?:ed)? this turn")
+def _src_not_attacked(m):
+    return "!" + _code("src_attacked_turn")
+
+
+@rule(r"~ dealt damage to (?:an opponent|any opponent|a player) this turn")
+def _src_damaged_player(m):
+    """"~ dealt damage to an opponent this turn": counted per damaging permanent (record())."""
+    return _code("src_damaged_opp")
+
+
+@rule(r"(?:it's|it is|that creature is|that permanent is) (?P<c>white|blue|black|red|green)")
+def _prev_color(m):
+    return _code("prev_is", {"colors": [_COLORS[m["c"].lower()]]})
 
 
 @rule(rf"(?:~|it)(?:'s| is| has)? (?:power|toughness) (?:is )?(?P<n>{_NUM}) or (?P<d>greater|more|less)")
@@ -709,6 +734,13 @@ def record(game, p, event, source=None, context=None, subject=None):
         if hist is None or hist[0] != game.turn:
             hist = game._condlib_hist = (game.turn, {})
         key = ("@" + event, p.name)
+        hist[1][key] = hist[1].get(key, 0) + 1
+    if event == "damages_player" and source is not None and context is not None and context is not p:
+        # "~ dealt damage to an opponent this turn": the damaging permanent, keyed by identity
+        hist = getattr(game, "_condlib_hist", None)
+        if hist is None or hist[0] != game.turn:
+            hist = game._condlib_hist = (game.turn, {})
+        key = ("@src_dmg_opp", id(source))
         hist[1][key] = hist[1].get(key, 0) + 1
     if not _HIST_HEADS:
         return
@@ -1061,6 +1093,16 @@ def check(game, p, code: str, item=None, source=None, prev=None):
     if kind == "counters":
         name, op, n = args
         return source is not None and _cmp(source.counters.get(name, 0), op, n)
+    if kind == "src_attacked_turn":
+        return source is not None and getattr(source, "attack_count", (None, 0))[0] == game.turn
+    if kind == "src_damaged_opp":
+        hist = getattr(game, "_condlib_hist", None)
+        return source is not None and hist is not None and hist[0] == game.turn and \
+            hist[1].get(("@src_dmg_opp", id(source)), 0) > 0
+    if kind == "host_is":
+        from .engine.state import Permanent
+        host = source.aura_host or source.attached_to if isinstance(source, Permanent) else None
+        return host is not None and _card_ok(host.card, args[0], host)
     from .cx_static_cond import check as static_check      # kinds registered by cx_static_cond
     return static_check(game, p, kind, args, item, source)
 
