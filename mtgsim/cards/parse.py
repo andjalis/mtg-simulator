@@ -516,7 +516,7 @@ def _parse_face(data: dict) -> CardDef:
         text = text.replace('TOKENNAME' + str(index), token_name)
     from .. import cx_replace
     text = cx_replace.two_player_text(text)
-    text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment|class|spacecraft|battle)\b", "~",
+    text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment|class|spacecraft|battle|siege)\b", "~",
                   text, flags=re.I)
     text = re.sub(r"\b([Pp]rotection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
                   lambda m: f"{m[1]} and {m[1][0]}rotection from {m[2]}", text)
@@ -563,6 +563,8 @@ def _parse_face(data: dict) -> CardDef:
     extra["hybrid"] = tuple(a + b for a, b in re.findall(r"\{([WUBRG])/([WUBRG])\}", raw_cost))
     if data.get("loyalty"):
         extra["loyalty"] = stat(data["loyalty"]) or 0
+    if data.get("defense"):
+        extra["defense"] = stat(data["defense"]) or 0
 
     kicked: list = []
     station_min = 0
