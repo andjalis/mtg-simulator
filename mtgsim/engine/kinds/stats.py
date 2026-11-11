@@ -202,7 +202,11 @@ def add_counter(game, p, eff, target, **_):
             n = p.sacrificed_turn
             if n >= 3:
                 target.temp_kw.add("lifelink")
-        target.counters[name] = target.counters.get(name, 0) + n
+        before = target.counters.get(name, 0)
+        target.counters[name] = before + n
+        if eff.data.get("counter_duration"):
+            from ...cx_statics import link_counter
+            link_counter(game, p, target, eff.data["counter_duration"], target.counters.get(name, 0) > before)
 
 
 @kind("increment")
