@@ -17,8 +17,8 @@ See the README's quick start for the `python3 -m mtgsim ...` commands; the agent
 ```
 python3 -m mtgsim.build_carddb                 # once per clone; builds mtgsim/data/cards.sqlite3 (~13 s)
 python3 scripts/coverage_check.py              # coverage + parse delta vs origin/main in ~10 s, cached (0.2 s repeat); --cards NAME for one card
-python3 scripts/fast_check.py                  # what a PR must pass: lint, sampled card parse, games, fast tests (~2 min on 4 cores)
-python3 -m unittest discover -s tests -t .     # full suite (900+ tests, about five minutes; runs nightly in CI)
+python3 scripts/fast_check.py                  # PR check: lint, every card parsed, games, fast tests
+python3 -m unittest discover -s tests -t .     # full suite; broad changes, integration and nightly CI
 ```
 
 Python 3.10+ only, standard library only. Do not add dependencies. CI and the checks every PR must
@@ -45,7 +45,16 @@ The file-by-file layout table is in [README.md](README.md#layout). Additions for
 
 ## Working rules
 
-- **Verify before reporting.** Run the test suite after engine, AI, card or parser changes.
+- **Verify in proportion to the change.** Follow the local verification policy in
+  [CONTRIBUTING.md](CONTRIBUTING.md#local-verification). Documentation and removal of unused
+  scratch scripts or historical artifacts need diff/reference checks, plus lint or a small
+  import/startup check when relevant; do not run the full suite for those changes. For engine,
+  AI, card or parser changes, run focused behavior and related regression tests while editing,
+  then the fast check once the batch is ready; parser changes also need a reviewed parse-diff.
+  Run the full suite for broad engine/shared-infrastructure changes and after integrating a
+  batch of branches. Reuse successful evidence for the same relevant code; repeat or broaden
+  checks only after relevant changes, failures or unresolved concerns. Required CI and explicit
+  task acceptance checks still apply. Record commands, results and any checks not run.
   Ignore the `ResourceWarning` lines in test output; they are not failures. Check the exit status
   and the `OK` / failure count instead.
 - **Card data is generated.** Do not commit `mtgsim/data/cards.sqlite3`. Rebuild it with
