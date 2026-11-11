@@ -7,7 +7,7 @@ from mtgsim.carddb import CardDB
 from mtgsim.engine import Game, Player
 from mtgsim.protection import choose_color
 
-from tests.test_templates import BEAR, ISLAND
+from tests.test_templates import BEAR
 
 
 class ProtectionChoice(unittest.TestCase):
