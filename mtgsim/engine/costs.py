@@ -850,8 +850,7 @@ class CostsMixin:
                         x.card.advanced_rules.get("sorcery_flash") and not x.abilities_suppressed
                         for x in p.battlefield))):
                 return False
-        if any(e.target == "spell" for e in card.spell_effects):
-            if not any(self.can_counter(e, item, p) for e in card.spell_effects if e.kind == "counter"
-                       for item in self.stack):
-                return False
+        if any(e.target == "spell" and not e.data.get("optional_target") and not self.legal_targets(p, e)
+               for e in card.spell_effects):
+            return False
         return self.spell_payable(p, card)
