@@ -20,6 +20,7 @@ replacement effects that read it (Academy Manufactor, sacrifice costs) see them.
 """
 from __future__ import annotations
 
+import contextlib
 import dataclasses
 import re
 
@@ -198,6 +199,30 @@ def describe(desc: str):
 
 
 _OPPONENTS = ("opponents",)                 # a count resolved by the cx_token handler, not by Game.x_quantity
+_THAT_MANY = ("that_many",)                  # "that many": the amount of the event that triggered the effect
+
+# The events whose dispatch sets Game.event_amount (damage actually dealt, life gained/lost, the attacking
+# count): while parsing such a trigger's effects, "create that many ... tokens" is accepted and reads that
+# amount (stack.py bakes it into the effect's amount when the trigger queues). Every event of the trigger
+# must carry it, or a "that many" with no amount would silently create nothing.
+EVENT_AMOUNT_EVENTS = frozenset({
+    "deals_damage", "damages_player", "combat_damage_creature", "dealt_damage", "dealt_combat_damage",
+    "player_damaged", "damage_prevented", "gain_life", "opp_gain_life", "opp_loses_life", "you_attack",
+})
+_that_many_ok = False
+
+
+@contextlib.contextmanager
+def event_amount_ctx(events):
+    """Parser context: the effects being parsed belong to a trigger whose events all carry Game.event_amount."""
+    global _that_many_ok
+    prev = _that_many_ok
+    raws = [e.removeprefix("ev:").removeprefix("host:") for e in events]
+    _that_many_ok = prev or bool(raws) and all(r in EVENT_AMOUNT_EVENTS for r in raws)
+    try:
+        yield
+    finally:
+        _that_many_ok = prev
 
 
 def _quantity(text: str):
@@ -210,12 +235,17 @@ def _quantity(text: str):
     m = re.fullmatch(r"that (?:creature|artifact|enchantment|permanent)'s (power|toughness|mana value)", text, re.I)
     if m:                                   # the previous effect's object
         return ("stat", "prev", m[1].lower())
+    # "for each +1/+1 counter on it": the bound object — the trigger's subject/source when there is one
+    # (baked at queue time as an LKI snapshot), else the source permanent ("When ~ dies, ... on it")
+    m = re.fullmatch(r"([+\w/\-]+) counters? on (?:it|~)\b", text, re.I)
+    if m:
+        return ("subj_counters", m[1].lower())
     if re.search(r"\b(?:it|its|that creature|that permanent|that card)\b", text, re.I):
         return None                         # the triggering object, which the counts don't read
-    from .cx_night_quantity import _quantity as quantity, _PLURAL_ZONES
+    from .cx_night_quantity import _quantity as quantity, _plural_zone
     spec = quantity(text)
     return spec if spec is not None or text.startswith("the number of") else \
-        quantity("the number of " + _PLURAL_ZONES.get(text, text), plural=False)
+        quantity("the number of " + _plural_zone(text), plural=False)
 
 
 def _split_descs(masked: str) -> list:
@@ -235,7 +265,11 @@ def parse_create(subject: str, body: str):
         return NO_MATCH if who in _PLAYER_TARGET else parse_copy(who, body)
     masked, quoted = _mask(body.strip())
     amount_q, per_each = None, False
-    m = re.fullmatch(r"a number of (.+?) equal to (.+)", masked, re.I)
+    if _that_many_ok:                       # "create that many ... tokens": the triggering event's amount
+        m = re.fullmatch(r"that many (.+)", masked, re.I)
+        if m:
+            masked, amount_q = "x " + m[1], _THAT_MANY
+    m = re.fullmatch(r"a number of (.+?) equal to (.+)", masked, re.I) if amount_q is None else None
     if m:
         masked, amount_q = "x " + m[1], _quantity(m[2])
         if amount_q is None:
@@ -274,13 +308,15 @@ def parse_create(subject: str, body: str):
             return NO_MATCH
         n = 1 if count == "x" else int(count) if count.isdigit() else _NUMBERS[count]
         data = dict(spec, who=who)
-        if amount_q == _OPPONENTS:
+        if amount_q is _THAT_MANY:          # the amount comes from the event, baked in when the trigger queues
+            data["that_much"] = True
+        elif amount_q == _OPPONENTS:
             data["per_opponent"] = True
         elif amount_q[0] == "devotion" if amount_q else False:
             data["devotion"] = amount_q[1]
         elif amount_q is not None:
             data["xq"] = amount_q
-        effects.append(Effect("cx_token", n, target=_TARGETS.get(who, "none"),
+        effects.append(Effect("cx_token", 0 if amount_q is _THAT_MANY else n, target=_TARGETS.get(who, "none"),
                               data=data))
     if who in _PLAYER_TARGET and effects:
         extra = {"filter": "opp"} if who == "target_opp" else {}

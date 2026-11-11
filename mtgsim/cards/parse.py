@@ -1010,7 +1010,8 @@ def _parse_trigger_line(line: str):
         later: list = []
         if reflex:
             rest = reflex[1]
-            later, bad2 = _parse_effects(reflex[4][0].upper() + reflex[4][1:])
+            with _cx_tokens.event_amount_ctx(events):
+                later, bad2 = _parse_effects(reflex[4][0].upper() + reflex[4][1:])
             if bad2:
                 return [], bad2, None
             later = [dataclasses.replace(e, cond=f"counters:{reflex[3]}>={_num(reflex[2])}") for e in later]
@@ -1019,18 +1020,21 @@ def _parse_trigger_line(line: str):
         if opus:
             instead = opus[2].rstrip(".").endswith(" instead")
             second = re.sub(r" instead$", "", opus[2].rstrip(".")).replace("~ also ", "~ ")
-            first, bad = _parse_effects(opus[1])
-            more, bad2 = _parse_effects(second[0].upper() + second[1:] + ".")
+            with _cx_tokens.event_amount_ctx(events):
+                first, bad = _parse_effects(opus[1])
+                more, bad2 = _parse_effects(second[0].upper() + second[1:] + ".")
             bad += bad2
             effs = [dataclasses.replace(e, cond="mana<5") for e in first] if instead else first
             effs += [dataclasses.replace(e, cond="mana>=5") for e in more]
         elif unless:
-            first, bad = _parse_effects(unless[1])
-            more, bad2 = _parse_effects(unless[2][0].upper() + unless[2][1:] + ".")
+            with _cx_tokens.event_amount_ctx(events):
+                first, bad = _parse_effects(unless[1])
+                more, bad2 = _parse_effects(unless[2][0].upper() + unless[2][1:] + ".")
             bad += bad2
             effs = first + [dataclasses.replace(e, cond="mana<5") for e in more]
         else:
-            effs, bad = _parse_effects(rest)
+            with _cx_tokens.event_amount_ctx(events):
+                effs, bad = _parse_effects(rest)
             if cond:
                 effs = [dataclasses.replace(e, cond=cond) for e in effs]
         effs += later

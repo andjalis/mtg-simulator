@@ -34,6 +34,9 @@ _ZONES = {"in all graveyards": "all_gy", "in your graveyard": "your_gy", "in an 
 # "the number of <things> <past event> this turn" -> the turn-history condition phrase cx_condlib already counts
 _HISTORY = [
     (r"(.+?) (?:that|which) died(?: under your control)? this turn", "a {0} died{1} this turn"),
+    # "put into your graveyard from the battlefield" is a death of a card you owned: read through the
+    # died-under-your-control history (a permanent that dies goes to its owner's graveyard).
+    (r"(.+?) put into your graveyard from the battlefield this turn", "a {0} died under your control this turn"),
     (r"(.+?) that entered(?: the battlefield)?(?: under your control)? this turn", "a {0} entered{1} this turn"),
     (r"(.+?) you've cast this turn", "you've cast a {0} this turn"),
     (r"(.+?) you've sacrificed this turn", "you've sacrificed a {0} this turn"),

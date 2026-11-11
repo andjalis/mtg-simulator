@@ -246,6 +246,15 @@ class StackMixin:
                 if subject is not None and any(e.data.get("subject_power") for e in effects):
                     effects = [dataclasses.replace(e, amount=max(0, subject.power)) if e.data.get("subject_power")
                                else e for e in effects]
+                # "for each +1/+1 counter on it" where "it" is the event's object (a creature that died or
+                # left), not the trigger's owner: snapshot its counters as LKI when the trigger queues
+                if any(e.data.get("xq", ("",))[0] == "subj_counters" for e in effects):
+                    ref = subject if isinstance(subject, Permanent) else \
+                        source if isinstance(source, Permanent) else perm
+                    if isinstance(ref, Permanent):
+                        effects = [dataclasses.replace(
+                            e, data=dict(e.data, xq=("subj_counters", e.data["xq"][1], dict(ref.counters))))
+                            if e.data.get("xq", ("",))[0] == "subj_counters" else e for e in effects]
                 # "that spell" riders on a targeted trigger read the targeting item from the context;
                 # on "any_cast" the spell just cast is the referent
                 ref_item = targeter if targeter is not None else (

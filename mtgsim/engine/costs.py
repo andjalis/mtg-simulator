@@ -262,6 +262,12 @@ class CostsMixin:
             return getattr(src, "mutations", 0) if src is not None else 0
         if kind == "counters":
             return src.counters.get(spec[1], 0) if src is not None else 0
+        if kind == "subj_counters":
+            # "for each +1/+1 counter on it": the trigger's subject/source, snapshotted as LKI when the
+            # trigger queued (spec[2]); a plain resolving ability reads its own source permanent
+            if len(spec) > 2:
+                return spec[2].get(spec[1], 0)
+            return src.counters.get(spec[1], 0) if src is not None else 0
         if kind == "sac":
             # "the sacrificed creature's power/toughness/mana value": paid as a spell cost (item.sac_stats,
             # set in play.cast), a "you may sacrifice. If you do" gate (item.gate_sac_stats, pay_gate_cost),
