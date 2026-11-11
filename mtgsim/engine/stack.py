@@ -556,6 +556,8 @@ class StackMixin:
                 item.source.counters.get("charge", 0) >= int(c[8:])
         if c == "paid":
             return bool(getattr(item, "gate_paid", False))
+        if c == "unpaid":                          # the other side of a coin flip
+            return not getattr(item, "gate_paid", False)
         if c == "harnessed":
             return bool(getattr(item.source, "harnessed", False))
         if c == "evidence":

@@ -119,5 +119,49 @@ class AdamantEntry(unittest.TestCase):
         self.assertEqual(self.cast_with(MOUNTAIN, MOUNTAIN, ISLAND).counters.get("+1/+1", 0), 0)
 
 
+SANDSWIMMER = card("Test Sandswimmer", "{1}{R}", "Creature — Viashino",
+                   "{R}: Flip a coin. If you win the flip, return ~ to its owner's hand. If you lose the flip, sacrifice ~.", 2, 1)
+
+
+class _Coin(random.Random):
+    """The game's seeded RNG with the next coin forced."""
+    def __init__(self, heads):
+        super().__init__(0)
+        self.heads = heads
+
+    def random(self):
+        return 0.0 if self.heads else 0.99
+
+
+class CoinFlipBothSides(unittest.TestCase):
+    def activate(self, win):
+        a = Player("a", [ISLAND] * 10, HeuristicAI())
+        b = Player("b", [ISLAND] * 10, HeuristicAI())
+        game = Game(a, b, random.Random(0), log=True)
+        game.turn, game.step = 1, "main1"
+        game.rng = _Coin(win)
+        a.battlefield.append(Permanent(MOUNTAIN, a))
+        perm = Permanent(SANDSWIMMER, a)
+        perm.sick = False
+        a.battlefield.append(perm)
+        self.assertTrue(game.activate_ability(a, perm, 0))
+        game.settle()
+        return a, perm
+
+    def test_template(self):
+        self.assertEqual(SANDSWIMMER.unsupported, [])
+
+    def test_win_bounces(self):
+        a, perm = self.activate(True)
+        self.assertNotIn(perm, a.battlefield)
+        self.assertIn(SANDSWIMMER, a.hand)
+
+    def test_lose_sacrifices(self):
+        a, perm = self.activate(False)
+        self.assertNotIn(perm, a.battlefield)
+        self.assertNotIn(SANDSWIMMER, a.hand)
+        self.assertEqual([c.name for c in a.graveyard], [SANDSWIMMER.name])
+
+
 if __name__ == "__main__":
     unittest.main()
