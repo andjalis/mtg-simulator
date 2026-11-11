@@ -247,6 +247,14 @@ def _parse_effects(text: str, opts: bool = False):
                     e.data["xq_size"] = bool(re.search(r"\bX/X\b", mx[1]))
                 effects += new
                 continue
+        mcol = re.fullmatch(r"(.+?) for each of that spell's colors", s, re.I)
+        if mcol:       # "~ gets +1/+1 until end of turn for each of that spell's colors" (Construction Arsonist)
+            new, bad = _parse_effects(mcol[1][0].upper() + mcol[1][1:] + ".")
+            if new and not bad:
+                for e in new:
+                    e.data["xq"] = ("spell", "colors")
+                effects += new
+                continue
         mparty = re.fullmatch(r"(.+?) for each creature in your party", s, re.I)
         if mparty:
             # "create a 1/1 ... token for each creature in your party" (Squad Commander): the base
@@ -493,6 +501,8 @@ def _parse_face(data: dict) -> CardDef:
     text = re.sub(r"\b([Pp]rotection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
                   lambda m: f"{m[1]} and {m[1][0]}rotection from {m[2]}", text)
     text = re.sub(r"(becomes the target of (?:a spell or ability|a spell)), sacrifice it\.", r"\1, sacrifice ~.", text)
+    from ..blink import prepare_linked
+    text = prepare_linked(text)
     # The two-sentence O-ring wording ("... exile X. When ~ leaves the battlefield, return the exiled
     # card(s) to the battlefield ...") is the single-sentence "exile X until ~ leaves the battlefield"
     # the oring templates already implement (the engine returns the card when the source leaves).

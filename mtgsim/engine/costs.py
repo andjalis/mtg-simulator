@@ -8,7 +8,7 @@ from .. import cx_static_cond
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
-from .state import COLOR_WORDS, Permanent, Player, TARGETED, _gy_desc, card_matches, is_basic_land
+from .state import COLOR_WORDS, Permanent, Player, StackItem, TARGETED, _gy_desc, card_matches, is_basic_land
 
 FACE_DOWN = ("disguise", "morph", "megamorph")   # cast face down for {3} as a 2/2, turned face up for this cost
 
@@ -216,6 +216,19 @@ class CostsMixin:
             return len(p.hand)
         if kind == "opp_hand":
             return len(self.opponent(p).hand)
+        if kind == "spell":
+            spell = item.context if item is not None and isinstance(item.context, StackItem) else (
+                prev if isinstance(prev, StackItem) else getattr(item, "target_spell", None))
+            card = spell.card if isinstance(spell, StackItem) else None
+            if card is None:
+                return 0
+            if spec[1] == "colors":
+                return len(card.colors)
+            if spec[1] == "generic":
+                return card.mana_cost.get("generic", 0) if isinstance(card.mana_cost, dict) else 0
+            if spec[1] == "mana value":
+                return card.cmc + getattr(spell, "x", 0) * (card.mana_cost.get("X", 0) if isinstance(card.mana_cost, dict) else 0)
+            return max(0, int(getattr(card, "power" if spec[1] == "power" else "toughness", 0) or 0))
         if kind == "stat":
             if spec[1] == "sacrificed":
                 who = getattr(item, "sacrificed_permanent", None)

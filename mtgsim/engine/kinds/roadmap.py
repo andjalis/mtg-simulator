@@ -43,12 +43,18 @@ def blink_next_end(game, target, item, **_):
 
 
 @kind('return_exile_ref')
-def return_exile_ref(game, item, **_):
+def return_exile_ref(game, item, eff=None, **_):
+    from ...blink import entry_counters, entry_face
     zone, ref = item.context
     card = ref.find(zone)
     if card is not None:
         zone.remove(card)
-        game.enter_battlefield(card.owner, card)
+        data = eff.data if eff is not None else {}
+        face = entry_face(card, data)
+        game.enter_battlefield(item.controller if data.get('yours') else card.owner, face,
+                               tapped=bool(data.get('tapped')),
+                               counters=entry_counters(data),
+                               physical_card=card if face is not card else None)
 
 
 @kind('relationship_mark')

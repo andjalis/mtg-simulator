@@ -195,6 +195,15 @@ def selector(text, *, plural=False):
         result['other'] = True
         text = text.split(' ', 1)[1]
     text = re.sub(r'^(?:a|an) ', '', text, flags=re.I)
+    for scope, label in ((" you own", 'mine'), (" an opponent owns", 'opp')):
+        if scope in text.lower():
+            if 'owner' in result or text.lower().count(scope) != 1:
+                return None
+            tail = text.lower().split(scope, 1)[1]
+            if tail and not tail.startswith((' with ', ' without ')):
+                return None
+            text = re.sub(re.escape(scope), '', text, flags=re.I)
+            result['owner'] = label
     for scope, label in ((" you control", 'mine'), (" an opponent controls", 'opp'), (" you don't control", 'opp'), (" your opponents control", 'opp'),
                          (" each opponent controls", 'opp'), (" target opponent controls", 'opp')):
         if scope in text.lower():
@@ -278,6 +287,8 @@ def matches(game, permanent, spec, controller, source=None):
     if spec.get('other') and permanent is source:
         return False
     if spec.get('controller') and (permanent.controller is controller) != (spec['controller'] == 'mine'):
+        return False
+    if spec.get('owner') and (permanent.owner is controller) != (spec['owner'] == 'mine'):
         return False
     def has_type(kind):
         return permanent.is_creature if kind == 'creature' else True if kind == 'permanent' else kind.title() in permanent.card.types

@@ -116,11 +116,80 @@ def flicker(game, p, eff, target, **_):
         game.log(f"{card.name} returns to the battlefield", p)
 
 
+@kind("blink")
+def blink(game, p, eff, target, item=None, **_):
+    """Exile a permanent, then return it as a new object (at once, or at the next end step); a token is gone."""
+    if not isinstance(target, Permanent) or target not in target.controller.battlefield:
+        return
+    from ...blink import entry_counters, entry_face
+    owner, card = target.owner, target.front
+    if not game.leave_battlefield(target, "exile") or card.is_token or card not in owner.exile:
+        return
+    back = p if eff.data.get("yours") else owner
+    if eff.data.get("delayed"):
+        game.delayed_end_step.append((back, [Effect("return_exile_ref", data=dict(eff.data))],
+                                      item.source if item else None, (owner.exile, owner.exile.reference(card))))
+        return
+    owner.exile.remove(card)
+    face = entry_face(card, eff.data)
+    game.enter_battlefield(back, face, tapped=bool(eff.data.get("tapped")),
+                           counters=entry_counters(eff.data),
+                           physical_card=card if face is not card else None)
+    game.log(f"{card.name} returns to the battlefield" + (" transformed" if face is not card else ""), p)
+
+
 @kind("tuck_top")
 def tuck_top(game, p, target, **_):
     """Put target creature on top of its owner's library (a token just leaves)."""
     if isinstance(target, Permanent) and game.put_in_library(target) and not target.front.is_token:
         game.log(f"{target.card.name} goes on top of its owner's library", p)
+
+
+@kind('blink_link_exile')
+def blink_link_exile(game, p, eff, target, item=None, **_):
+    from ...blink import exile_refs
+    from ...permanent_templates import matches
+    source = item.source if item else None
+    if not isinstance(source, Permanent):
+        return
+    victims = ([x for player in game.players for x in player.battlefield
+                if matches(game, x, eff.data['selector'], p, source)] if eff.data.get('group')
+               else [target] if isinstance(target, Permanent) else [])
+    refs = exile_refs(game, victims)
+    source.blink_linked_exiles = getattr(source, 'blink_linked_exiles', []) + refs
+
+
+@kind('blink_link_return')
+def blink_link_return(game, p, eff, item=None, **_):
+    from ...blink import return_refs
+    source = item.source if item else None
+    if source is None:
+        return
+    refs = getattr(source, 'blink_linked_exiles', [])
+    source.blink_linked_exiles = []
+    return_refs(game, p, refs, eff.data)
+
+
+@kind('blink_roll')
+def blink_roll(game, p, eff, item=None, **_):
+    from ...blink import exile_refs, return_refs
+    from ...dungeon_mechanics import roll, _last_die
+    from ...permanent_templates import matches
+    victims = [x for player in game.players for x in player.battlefield
+               if matches(game, x, eff.data['selector'], p, item.source if item else None)]
+    refs = exile_refs(game, victims)
+    # The complete table is already represented here. Roll listeners still fire,
+    # but the die helper must not queue a second copy of the table's outcomes.
+    roll(game, p, Effect('die_roll', data={'sides': 20}), None, None, None)
+    if _last_die(game, p) >= eff.data['repeat_above']:
+        refs = exile_refs(game, return_refs(game, p, refs, {}))
+    game.delayed_end_step.append((p, [Effect('blink_return_batch')], item.source if item else None, refs))
+
+
+@kind('blink_return_batch')
+def blink_return_batch(game, p, item, **_):
+    from ...blink import return_refs
+    return_refs(game, p, item.context, {})
 
 
 @kind("regenerate")

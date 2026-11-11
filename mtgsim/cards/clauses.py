@@ -46,7 +46,7 @@ _SUBS = [
                 r"until ~ leaves the battlefield\.", re.I), lambda m: f"HANDEXILE {m[1].lower()}."),
     (re.compile(r"^(~ gains [a-z]+ until end of turn)\. tap it\.", re.I), r"\1. Tap ~."),
     # The AI never aims its removal at its own creature, so "another" target is any target.
-    (re.compile(r"(destroy|exile) another target (creature or planeswalker|creature|nonland permanent)", re.I),
+    (re.compile(r"(destroy|exile) another target (creature or planeswalker|creature|nonland permanent)(?! you own)", re.I),
      r"\1 target \2"),
     # Activated and triggered abilities can't be countered in the engine: these counter spells only.
     (re.compile(r"counter target spell, activated ability, or triggered ability", re.I), "counter target spell"),
@@ -442,6 +442,10 @@ def _xq(text: str):
                  "the amount of life you gained this turn": ("gained",),
                  "the number of cards in your hand": ("hand",),
                  "the number of cards in an opponent's hand": ("opp_hand",)}[tl])
+    m = re.fullmatch(r"that spell's (mana value|power|toughness)|the number of (?:that spell's colors)|"
+                     r"the amount of generic mana in that spell's mana cost", t, re.I)
+    if m:      # the spell a cast trigger fired on, or the spell a counterspell targets (not the host)
+        return ("spell", (m[1] or ("colors" if "colors" in tl else "generic")).lower())
     m = re.fullmatch(r"(~|its|that creature|that spell)'s? (power|toughness|mana value)", t, re.I) or \
         re.fullmatch(r"(its) (power|toughness)", t, re.I)
     if m:

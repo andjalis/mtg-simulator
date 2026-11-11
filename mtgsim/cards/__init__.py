@@ -220,3 +220,10 @@ _SUBS += _cx_counters.SUBS
 from .. import referent as _referent
 _EFFECT_PATTERNS += _referent.EFFECT_PATTERNS
 _SUBS += _referent.SUBS
+from .. import blink as _blink
+_EFFECT_PATTERNS += _blink.EFFECT_PATTERNS
+_SUBS += _blink.SUBS
+from .. import that_spell as _that_spell
+_SUBS += _that_spell.SUBS
+from .. import conjure as _conjure_templates
+_EFFECT_PATTERNS += _conjure_templates.EFFECT_PATTERNS

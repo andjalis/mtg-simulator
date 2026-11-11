@@ -333,8 +333,12 @@ class PlayMixin:
                 self.queue_trigger(p, trig.effects, None, f"{card.name}: cast trigger", context=item)
             if self.spells_cast.get(p.name) == 2:
                 self.fire(p, "cast_second")
-            for pl in self.players:
-                self.fire(pl, "any_cast", context=p, subject=card)
+            self.casting_item = item          # "that spell" for the any_cast triggers below
+            try:
+                for pl in self.players:
+                    self.fire(pl, "any_cast", context=p, subject=card)
+            finally:
+                self.casting_item = None
         self.check_ward(item)
         self.settle()
         return True

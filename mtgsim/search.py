@@ -61,6 +61,12 @@ EFFECT_PATTERNS = [
      r"reveal (?:it|them),? put (?:it|them) into your hand, then shuffle",
      _named_multi),
 
+    # "Search your library and/or graveyard for a card named X, reveal it, and put it into your hand"
+    # (Vraska's Scorn, Liliana's Scorn, ...): the graveyard first; "if you search your library this way,
+    # shuffle" is the next sentence.
+    (r"(?:you may )?search your library and/or graveyard for a card named (.+?), reveal it,? (?:and |then )?"
+     r"put it into your hand",
+     lambda m: _named_gy(m[1])),
     (_SEARCH, lambda m: _search(m)),
     (r"if you search your library this way, shuffle", lambda m: []),
     (r"SEARCHOPP (?P<dest>STEAL|EXILE|GY|NAME) (?P<n>\d+) (?P<what>[^.]+)", _search_opp),
@@ -97,6 +103,12 @@ SUBS = [
 ]
 
 
+def _named_gy(name):
+    from .cards import Effect
+    return Effect("search", data={"what": f"a card named {name}", "n": 1, "dest": "hand", "tapped": False,
+                                  "graveyard": True})
+
+
 def _search(m):
     from .cards import Effect
     dest = "top" if not m["dest"] else "hand" if m["dest"].startswith("into") else "battlefield"
@@ -127,6 +139,14 @@ def resolve(game, p, eff, target, item):
             return any(ac.kind == "flashback" for ac in c.alt_costs)
         return card_matches(c, d["what"])
 
+    if d.get("graveyard"):          # "search your library and/or graveyard for a card named X": the graveyard needs no shuffle
+        in_gy = [c for c in who.graveyard if _matches(c)]
+        if in_gy:
+            card = choose_tutor(game, searcher, in_gy)
+            who.graveyard.remove(card)
+            game.log(f"searches their graveyard for {card.name}", searcher)
+            who.hand.append(card)
+            return
     found = []
     for _ in range(d["n"]):
         cands = [c for c in lib if _matches(c)]
