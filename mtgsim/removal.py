@@ -15,6 +15,11 @@ _KW = "flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|h
 _THEIRS = r"(?:an opponent controls|you don't control)"
 
 
+def _up_to(group):
+    """"up to one target ...": the target is optional (Effect data read by Game.legal_target)."""
+    return {"optional_target": True} if group else {}
+
+
 def _destroy(target, flt):
     def build(m):
         from .cards import Effect  # at match time: this module loads before cards
@@ -38,14 +43,15 @@ EFFECT_PATTERNS = wordings.patterns("removal") + [
     # "Target creature can't be regenerated this turn." — a standalone anti-regeneration
     # lock (Gravebind, Hurr Jackal, Furnace Brood): the target's regeneration is blocked
     # until end of turn.
-    (r"destroy (?:up to one )?target (nonbasic )?land(?: (an opponent controls|you don't control))?",
-     lambda m: _effect("destroy", "land", filter="land:" + ("nonbasic:" if m[1] else "") + ("opp" if m[2] else ""))),
+    (r"destroy (up to one )?target (nonbasic )?land(?: (an opponent controls|you don't control))?",
+     lambda m: _effect("destroy", "land", filter="land:" + ("nonbasic:" if m[2] else "") + ("opp" if m[3] else ""),
+                       data=_up_to(m[1]))),
     (r"target creature you control deals damage equal to its power to each of two other target creatures",
      lambda m: _pair("bite") + [_distinct(_pair("bite")[1])]),
     (r"put a \+1/\+1 counter on each of up to two target creatures",
      lambda m: [_distinct(_counter()), _distinct(_counter())]),
-    (r"destroy (?:up to one )?target artifact, enchantment, or creature with flying",
-     _destroy("nonland_perm", "art_ench_fly")),
+    (r"destroy (up to one )?target artifact, enchantment, or creature with flying",
+     lambda m: _effect("destroy", "nonland_perm", filter="art_ench_fly", data=_up_to(m[1]))),
     (r"return up to one other target permanent you control to its owner's hand",
      lambda m: _effect_bounce_own()),
     (r"(?:destroy|exile) target enchantment(?: an opponent controls| you don't control)?",
@@ -56,7 +62,7 @@ EFFECT_PATTERNS = wordings.patterns("removal") + [
     (r"(?:destroy|exile) target creature with power (\d+) or greater",
      _destroy("creature", lambda m: f"min_power:{m[1]}")),
     (r"(?:destroy|exile) target creature with (flying|reach)", _destroy("creature", lambda m: f"kw:{m[1].lower()}")),
-    (r"(destroy|exile) (?:up to one )?target ((?:artifact|enchantment|creature|planeswalker|nonland permanent)"
+    (r"(destroy|exile) (up to one )?target ((?:artifact|enchantment|creature|planeswalker|nonland permanent)"
      r"(?:(?:,| or|, or) (?:artifact|enchantment|creature|planeswalker))*)(?: (an opponent controls|you don't control))?"
      r"(?: with (mana value|power|toughness) (\d+) or (less|greater))?", lambda m: _removal_pattern(m)),
     (r"(?:for each opponent, )?exile (?:up to one )?(?:other )?target (?:non-(\w+) )?((?:artifact|enchantment|creature|planeswalker|nonland permanent)"
@@ -103,14 +109,14 @@ _ORD = ("artifact", "enchantment", "creature", "planeswalker")
 def _removal_pattern(m):
     """destroy/exile target <types> [an opponent controls] [with mana value / power / toughness N or less / greater]."""
     from .cards import Effect, NO_MATCH
-    types = [t for t in re.split(r",? or |, ", m[2]) if t]
-    if not (m[3] or m[4]) and len(types) == 1 and types[0] in ("creature", "artifact", "enchantment"):
+    types = [t for t in re.split(r",? or |, ", m[3]) if t]
+    if not (m[4] or m[5]) and len(types) == 1 and types[0] in ("creature", "artifact", "enchantment"):
         return NO_MATCH            # the plain templates in cards/patterns.py handle these
     kind = types[0] if len(types) == 1 and types[0] in ("creature", "artifact") else "nonland_perm"
-    stat = {"mana value": "cmc", "power": "power", "toughness": "toughness"}.get(m[4], "")
-    cond = f"{stat}{'<=' if m[6] == 'less' else '>='}{m[5]}" if stat else ""
-    flt = f"x:{','.join(types)}|{cond}|{'opp' if m[3] else ''}"
-    return Effect("destroy", target=kind, filter=flt)
+    stat = {"mana value": "cmc", "power": "power", "toughness": "toughness"}.get(m[5], "")
+    cond = f"{stat}{'<=' if m[7] == 'less' else '>='}{m[6]}" if stat else ""
+    flt = f"x:{','.join(types)}|{cond}|{'opp' if m[4] else ''}"
+    return Effect("destroy", target=kind, filter=flt, data=_up_to(m[2]))
 
 
 def _oring(m):

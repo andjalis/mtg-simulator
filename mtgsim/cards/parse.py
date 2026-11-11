@@ -208,6 +208,11 @@ def _parse_effects(text: str, opts: bool = False):
                 effects += new
                 continue
         mx = re.fullmatch(r"(.+?),? where X is (.+)", s, re.I)
+        # not read right yet: "that spell's mana value" resolves to the host's own, "named X" drops the name filter
+        if mx and re.search(r"\bX\b", mx[1]) and re.search(r"\btarget (?:player|opponent)\b", mx[1], re.I) \
+                and re.search(r"\bthat spell's\b|\bnamed\b", mx[2], re.I):
+            unmatched.append(s)
+            continue
         if mx and re.search(r"\bX\b", mx[1]) and _xq(mx[2]):
             spec = _xq(mx[2])
             new, bad = [], True
@@ -215,12 +220,13 @@ def _parse_effects(text: str, opts: bool = False):
                 body = re.sub(r"\bX\b", one, mx[1])
                 if one != "1":
                     body = re.sub(r"\b(creature |artifact )?tokens\b", r"\1token", body)
+                body = re.sub(rf"\b{one} (cards|life)\b", lambda m: f"{one} {m[1][:-1] if m[1] == 'cards' else m[1]}", body)
                 new, bad = _parse_effects(body + ".")
                 if new and not bad:
                     break
             if new and not bad:
                 for e in new:
-                    e.data["xq"] = spec
+                    e.data["xq"] = spec     # a grammar wrapper (cx_players) scales its inner effects by it
                     e.data["xq_size"] = bool(re.search(r"\bX/X\b", mx[1]))
                 effects += new
                 continue
@@ -305,12 +311,19 @@ def _parse_effects(text: str, opts: bool = False):
     return effects, unmatched
 
 
+_OTHER_SUBJECT = re.compile(r"(?:target (?:player|opponent)|that (?:player|opponent)|each (?:opponent|player)|"
+                            r"defending player|an opponent|the (?:chosen|defending) player)\b", re.I)
+_VERB_S = re.compile(r"(?!(?:its|this|is|has|was)\b)[a-z]+s\b", re.I)      # "mills ...": third person, no subject of its own
+
+
 def _split_compound(s: str):
     """Effects for "A, then B" / "A and B" when every part matches a template, else None."""
     for sep in (r",? then ", r" and "):
         pieces = re.split(sep, s, maxsplit=1, flags=re.I)
         if len(pieces) != 2:
             continue
+        if sep == r" and " and _OTHER_SUBJECT.match(pieces[0]) and _VERB_S.match(pieces[1]):
+            continue    # "Target player loses 2 life and mills two cards": the second verb is that player's too
         out = []
         for piece in pieces:
             effs, bad = _parse_effects(piece[0].upper() + piece[1:] + ".")

@@ -77,14 +77,16 @@ def _alternatives(desc: str, adjectives, plural: bool = False):
         if adjs and all(_is_noun(w) for w in nouns) and not any(_is_noun(w) for w in adjs):
             # "white or blue instant or sorcery": every adjective with every noun
             pos = 0
-            noun_groups = []
+            noun_groups, adj_groups = [], []
             for ws in groups:
                 if pos >= first:
                     noun_groups.append(tuple(ws))
-                elif pos + len(ws) > first:
-                    noun_groups.append(tuple(ws[first - pos:]))
+                else:
+                    adj_groups.append(tuple(ws[:first - pos]))     # "nonwhite attacking": ANDed, only "or" ORs
+                    if pos + len(ws) > first:
+                        noun_groups.append(tuple(ws[first - pos:]))
                 pos += len(ws)
-            return [(a,) + ng for a in adjs for ng in noun_groups]
+            return [a + ng for a in adj_groups for ng in noun_groups]
     # "white or black creature": an alternative without a noun borrows the last alternative's nouns
     last = [w for w in groups[-1] if _is_noun(w)]
     for ws in groups[:-1]:
