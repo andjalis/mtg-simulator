@@ -1,0 +1,163 @@
+{
+  "issue": 325,
+  "base": "8c3d5dc6f7f2d2887f94b600214a031fa99bbf78",
+  "cards": [
+    {
+      "card": "Orcish Conscripts",
+      "status": "fully_template_matched",
+      "oracle": "This creature can't attack unless at least two other creatures attack.\nThis creature can't block unless at least two other creatures block.",
+      "residual_ignored": [],
+      "simplifications": []
+    },
+    {
+      "card": "Okk",
+      "status": "fully_template_matched",
+      "oracle": "This creature can't attack unless a creature with greater power also attacks.\nThis creature can't block unless a creature with greater power also blocks.",
+      "residual_ignored": [],
+      "simplifications": []
+    },
+    {
+      "card": "Scarred Puma",
+      "status": "fully_template_matched",
+      "oracle": "This creature can't attack unless a black or green creature also attacks.",
+      "residual_ignored": [],
+      "simplifications": []
+    },
+    {
+      "card": "Master of Cruelties",
+      "status": "partial",
+      "oracle": "First strike, deathtouch\nThis creature can only attack alone.\nWhenever this creature attacks a player and isn't blocked, that player's life total becomes 1. This creature assigns no combat damage this combat.",
+      "residual_ignored": [
+        "Whenever ~ attacks a player and isn't blocked, that player's life total becomes 1. ~ assigns no combat damage this combat."
+      ],
+      "simplifications": []
+    },
+    {
+      "card": "Bloodcrazed Goblin",
+      "status": "fully_template_matched",
+      "oracle": "This creature can't attack unless an opponent has been dealt damage this turn.",
+      "residual_ignored": [],
+      "simplifications": []
+    },
+    {
+      "card": "War Tax",
+      "status": "fully_template_matched",
+      "oracle": "{X}{U}: This turn, creatures can't attack unless their controller pays {X} for each attacking creature they control.",
+      "residual_ignored": [],
+      "simplifications": []
+    },
+    {
+      "card": "Archangel of Tithes",
+      "status": "fully_template_matched",
+      "oracle": "Flying\nAs long as this creature is untapped, creatures can't attack you or planeswalkers you control unless their controller pays {1} for each of those creatures.\nAs long as this creature is attacking, creatures can't block unless their controller pays {1} for each of those creatures.",
+      "residual_ignored": [],
+      "simplifications": []
+    },
+    {
+      "card": "Norn's Annex",
+      "status": "fully_template_matched",
+      "oracle": "({W/P} can be paid with either {W} or 2 life.)\nCreatures can't attack you or planeswalkers you control unless their controller pays {W/P} for each of those creatures.",
+      "residual_ignored": [],
+      "simplifications": []
+    },
+    {
+      "card": "Onakke Oathkeeper",
+      "status": "fully_template_matched",
+      "oracle": "Creatures can't attack planeswalkers you control unless their controller pays {1} for each creature they control that's attacking a planeswalker you control.\n{4}{W}{W}, Exile this card from your graveyard: Return target planeswalker card from your graveyard to the battlefield.",
+      "residual_ignored": [],
+      "simplifications": []
+    },
+    {
+      "card": "Oko, Lord of the Fae",
+      "status": "partial",
+      "oracle": "Creatures can't attack planeswalkers you control unless their controller pays {1} for each of those creatures.\n+1: Up to one target artifact or creature loses all abilities until your next turn.\n\u22121: Create a 2/2 white Ox creature token.\n\u22127: You get an emblem with \"At the beginning of your upkeep, conjure a random planeswalker card into exile. You may cast that card this turn without paying its mana cost.\"",
+      "residual_ignored": [
+        "[+1]: Up to one target artifact or creature loses all abilities until your next turn.",
+        "[\u22127]: You get an emblem with \"At the beginning of your upkeep, conjure a random planeswalker card into exile. You may cast that card this turn without paying its mana cost.\""
+      ],
+      "simplifications": []
+    },
+    {
+      "card": "Nils, Discipline Enforcer",
+      "status": "partial",
+      "oracle": "At the beginning of your end step, for each player, put a +1/+1 counter on up to one target creature that player controls.\nEach creature with one or more counters on it can't attack you or planeswalkers you control unless its controller pays {X}, where X is the number of counters on that creature.",
+      "residual_ignored": [
+        "for each player, put a +1/+1 counter on up to one target creature that player controls."
+      ],
+      "simplifications": []
+    },
+    {
+      "card": "Sphere of Safety",
+      "status": "fully_template_matched",
+      "oracle": "Creatures can't attack you or planeswalkers you control unless their controller pays {X} for each of those creatures, where X is the number of enchantments you control.",
+      "residual_ignored": [],
+      "simplifications": []
+    },
+    {
+      "card": "Collective Restraint",
+      "status": "fully_template_matched",
+      "oracle": "Domain \u2014 Creatures can't attack you unless their controller pays {X} for each creature they control that's attacking you, where X is the number of basic land types among lands you control.",
+      "residual_ignored": [],
+      "simplifications": []
+    },
+    {
+      "card": "Baird, Steward of Argive",
+      "status": "fully_template_matched",
+      "oracle": "Vigilance\nCreatures can't attack you or planeswalkers you control unless their controller pays {1} for each of those creatures.",
+      "residual_ignored": [],
+      "simplifications": []
+    },
+    {
+      "card": "Archon of Absolution",
+      "status": "fully_template_matched",
+      "oracle": "Flying\nProtection from white (This creature can't be blocked, targeted, dealt damage, enchanted, or equipped by anything white.)\nCreatures can't attack you or planeswalkers you control unless their controller pays {1} for each of those creatures.",
+      "residual_ignored": [],
+      "simplifications": []
+    },
+    {
+      "card": "Forbidding Spirit",
+      "status": "fully_template_matched",
+      "oracle": "When this creature enters, until your next turn, creatures can't attack you or planeswalkers you control unless their controller pays {2} for each of those creatures.",
+      "residual_ignored": [],
+      "simplifications": []
+    },
+    {
+      "card": "Summon: Yojimbo",
+      "status": "partial",
+      "oracle": "(As this Saga enters and after your draw step, add a lore counter. Sacrifice after IV.)\nI \u2014 Exile target artifact, enchantment, or tapped creature an opponent controls.\nII, III \u2014 Until your next turn, creatures can't attack you unless their controller pays {2} for each of those creatures.\nIV \u2014 Create X Treasure tokens, where X is the number of opponents who control a creature with power 4 or greater.\nVigilance",
+      "residual_ignored": [
+        "IV \u2014 Create X Treasure tokens, where X is the number of opponents who control a creature with power 4 or greater."
+      ],
+      "simplifications": []
+    },
+    {
+      "card": "Errantry",
+      "status": "partial",
+      "oracle": "Enchant creature\nEnchanted creature gets +3/+0 and can only attack alone.",
+      "residual_ignored": [
+        "Enchanted creature gets +3/+0 and can only attack alone."
+      ],
+      "simplifications": []
+    },
+    {
+      "card": "Qal Sisma Behemoth",
+      "status": "partial",
+      "oracle": "This creature can't attack or block unless you pay {2}.",
+      "residual_ignored": [
+        "~ can't attack or block unless you pay {2}."
+      ],
+      "simplifications": []
+    },
+    {
+      "card": "Sivitri, Dragon Master",
+      "status": "partial",
+      "oracle": "+1: Until your next turn, creatures can't attack you or planeswalkers you control unless their controller pays 2 life for each of those creatures.\n\u22123: Search your library for a Dragon card, reveal it, put it into your hand, then shuffle.\n\u22127: Destroy all non-Dragon creatures.\nSivitri, Dragon Master can be your commander.",
+      "residual_ignored": [
+        "[+1]: Until your next turn, creatures can't attack you or planeswalkers you control unless their controller pays 2 life for each of those creatures.",
+        "~ can be your commander."
+      ],
+      "simplifications": []
+    }
+  ],
+  "note": "Template recognition is separate from behavioral correctness. Unrelated residual clauses remain listed."
+}

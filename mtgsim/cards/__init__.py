@@ -47,6 +47,9 @@ _SUBS += _backlog_templates.SUBS
 from .. import advanced_templates as _advanced_templates
 _EFFECT_PATTERNS += _advanced_templates.EFFECT_PATTERNS
 _SUBS += _advanced_templates.SUBS
+from .. import cx_combat_costs as _cx_combat_costs
+_EFFECT_PATTERNS += _cx_combat_costs.EFFECT_PATTERNS
+_SUBS += _cx_combat_costs.SUBS
 from .. import batch1_templates as _batch1_templates
 _EFFECT_PATTERNS += _batch1_templates.EFFECT_PATTERNS
 from .. import batch2_templates as _batch2_templates
