@@ -230,3 +230,5 @@ _EFFECT_PATTERNS += _that_spell.EFFECT_PATTERNS
 _SUBS += _that_spell.SUBS
 from .. import conjure as _conjure_templates
 _EFFECT_PATTERNS += _conjure_templates.EFFECT_PATTERNS
+from .. import cx_grammar_counters as _cx_grammar_counters
+_EFFECT_PATTERNS += _cx_grammar_counters.EFFECT_PATTERNS
