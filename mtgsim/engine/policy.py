@@ -85,6 +85,10 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     k = eff.kind
+    if k == "copy_spell":
+        return max(legal, key=lambda i: i.card.cmc, default=None)
+    if k == "damage" and eff.data.get("spell_controller"):
+        return max((i for i in legal if i.controller is opp), key=lambda i: i.card.cmc, default=None)
     if eff.target == "player" and k in ("draw", "gain_life"):
         return me if me in legal else None      # "target player draws/gains": the beneficiary is the caster
     if k == 'linked_exile':

@@ -106,7 +106,11 @@ class Smol2Batch3(unittest.TestCase):
         from mtgsim.cards.parse import _parse_effects
         bare, scoped = (_parse_effects("Copy target instant or sorcery spell."),
                         _parse_effects("Copy target instant or sorcery spell you control."))
-        self.assertEqual(bare, scoped)
+        self.assertEqual(bare[1], [])
+        self.assertEqual(scoped[1], [])
+        self.assertEqual(bare[0][0].data["controller"], "any")
+        self.assertEqual(scoped[0][0].data["controller"], "mine")
+        self.assertEqual(bare[0][0].target, "spell")
         self.assertEqual(bare[0][0].kind, "copy_spell")
         self.assertEqual(bare[0][0].data["what"], "instant or sorcery")
         self.assertEqual(_parse_effects("Copy target spell.")[0][0].data["what"], "")

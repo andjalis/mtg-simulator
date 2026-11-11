@@ -70,10 +70,11 @@ def _parse_effects(text: str, opts: bool = False):
         from ..exile_permissions import parse_rider as exile_rider
         if exile_rider(s, effects):
             continue
+        from ..that_spell import parse_rider as spell_rider
         if _cx_tokens.parse_rider(s, effects):
             continue
         if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects) or \
-                delayed_rider(s, effects) or watch_rider(s, effects):
+                delayed_rider(s, effects) or watch_rider(s, effects) or spell_rider(s, effects):
             continue
         if re.fullmatch(r"creatures destroyed this way can't be regenerated", s, re.I):
             last = next((n for n in range(len(effects) - 1, -1, -1)
@@ -225,9 +226,9 @@ def _parse_effects(text: str, opts: bool = False):
                 effects += new
                 continue
         mx = re.fullmatch(r"(.+?),? where X is (.+)", s, re.I)
-        # not read right yet: "that spell's mana value" resolves to the host's own, "named X" drops the name filter
+        # Named-card counts still lack a name-preserving quantity spec.
         if mx and re.search(r"\bX\b", mx[1]) and re.search(r"\btarget (?:player|opponent)\b", mx[1], re.I) \
-                and re.search(r"\bthat spell's\b|\bnamed\b", mx[2], re.I):
+                and re.search(r"\bnamed\b", mx[2], re.I):
             unmatched.append(s)
             continue
         if mx and re.search(r"\bX\b", mx[1]) and _xq(mx[2]):
@@ -298,6 +299,17 @@ def _parse_effects(text: str, opts: bool = False):
                 if new and not bad:
                     effects += [dataclasses.replace(e, cond=e.cond or "!paid") for e in new]
                     continue
+        mcol = re.fullmatch(r"(.+?) for each of that spell's colors", s, re.I)
+        if mcol:       # "If you do, draw a card for each of that spell's colors" (Moonveil Regent): the
+            # suffix loop above ran before the "if you do, " prefix was stripped, so retry on the body
+            new, bad = _parse_effects(mcol[1][0].upper() + mcol[1][1:] + ".")
+            if new and not bad:
+                for e in new:
+                    e.data["xq"] = ("spell", "colors")
+                    if paid:
+                        e.cond = e.cond or "paid"
+                effects += new
+                continue
         for pat, build in _EFFECT_PATTERNS:
             rx = _COMPILED.get(pat) or _COMPILED.setdefault(pat, re.compile(pat, re.IGNORECASE))
             m = rx.fullmatch(s)
@@ -857,6 +869,9 @@ def _parse_trigger(line: str):
 
 
 def _parse_trigger_line(line: str):
+    # trigger heads don't go through _parse_effects, so apply the head-level substitution from
+    # that_spell.SUBS here too: "a spell that's one or more colors" = "a multicolored spell"
+    line = re.sub(r"\b((?:a |an )?)spell that's one or more colors\b", r"\1multicolored spell", line, flags=re.I)
     for pat, events in _TRIGGERS:
         m = re.fullmatch(pat, line)
         if not m:
@@ -878,7 +893,7 @@ def _parse_trigger_line(line: str):
                    ("permanent_enters", "ally_dies"): lambda: {"permanent_enters": f"noself|other|{m[1]}",
                                                                "ally_dies": f"other||{m[1]}"}}.get(events, lambda: None)()
         intervening = rest.startswith("if ")
-        if events == ("any_cast",):
+        if events == ("any_cast",) and "mana value" in pat:      # only the "with mana value N or less" head
             flt = f"cmc<={m[1]}"
         if "while saddled" in pat or events[-1] == "becomes_tapped":
             rest = re.sub(r"^it (gets|gains|deals)\b", r"~ \1", re.sub(r"\b(on|untap|to) it\b", r"\1 ~", rest))
@@ -1011,7 +1026,8 @@ def _parse_trigger_line(line: str):
         if not effs:
             return [], bad or [line], None
         gate = (cond or effs[0].cond) if intervening else ""
-        return [Trigger(e, effs, flt_map[e] if flt_map else flt, once=events == ("targeted_mine",),
+        once = events == ("targeted_mine",) or "for the first time each turn" in pat
+        return [Trigger(e, effs, flt_map[e] if flt_map else flt, once=once,
                         intervening_if=gate) for e in events], bad, None
     return None
 

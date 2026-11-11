@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import dataclasses
 
-from ..state import Permanent, Player
+from ..state import Permanent, Player, StackItem
 from . import kind
 
 
@@ -24,6 +24,8 @@ def damage_referent_board(game, p, eff, item, prev, cause, **_):
 
 @kind("damage")
 def damage(game, p, eff, target, item, opp, cause, **_):
+    if eff.data.get("spell_controller"):
+        target = target.controller if isinstance(target, StackItem) else None
     src = (item.source if item.source is not None else item.card) if item is not None else None
     if eff.data.get("src_prev") or eff.data.get("it_ctx"):         # "it deals damage equal to its power ..." (cx_abil_damage)
         from ...cx_abil_damage import damage_source

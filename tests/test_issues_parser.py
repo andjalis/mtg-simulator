@@ -241,3 +241,8 @@ class MayHaveItDeal(Base):
     def test_other_verbs_unmatched(self):
         _, bad = P._parse_effects("You may have it explode violently.")
         self.assertTrue(bad)
+    def test_that_spells_mana_value_reads_the_referenced_spell(self):
+        effs, bad = P._parse_effects("You may have target player mill X cards, where X is that spell's mana value.")
+        self.assertEqual(bad, [])
+        wrapper = next(e for e in effs if e.kind == "cx_players")
+        self.assertEqual(wrapper.data["xq"], ("spell", "mana value"))
