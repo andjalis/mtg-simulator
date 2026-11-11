@@ -249,6 +249,8 @@ _ALIASES = {
     "you're the monarch": "lib:[\"monarch\"]",
     "you are the monarch": "lib:[\"monarch\"]",
     "there is no monarch": "lib:[\"no_monarch\"]",
+    "defending player is the monarch": "lib:[\"opp_monarch\"]",
+    "an opponent is the monarch": "lib:[\"opp_monarch\"]",
     "it's your turn": "your_turn",
     "it's not your turn": "!your_turn",
     "it isn't your turn": "!your_turn",
@@ -467,6 +469,11 @@ def _drawn(m):
 @rule(rf"you attacked with (?P<n>{_NUM}) or more creatures this turn")
 def _attacked(m):
     return _code("attacked", _n(m["n"]))
+
+
+@rule(rf"there are (?P<n>{_NUM}) or more cards in exile")
+def _exile_total(m):
+    return _code("exile_total", _n(m["n"]))
 
 
 @rule(rf"creatures you control have total power (?P<n>{_NUM}) or (?:greater|more)")
@@ -907,6 +914,10 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         return any(len(pl.library) <= args[0] for pl in game.players)
     if kind == "monarch":
         return getattr(game, "monarch", None) is p
+    if kind == "opp_monarch":
+        return getattr(game, "monarch", None) is game.opponent(p)
+    if kind == "exile_total":
+        return len(game.players[0].exile) + len(game.players[1].exile) >= args[0]
     if kind == "no_monarch":
         return getattr(game, "monarch", None) is None
     if kind in ("starting", "not_starting"):
