@@ -15,6 +15,7 @@ Grandmaster, MMR), and deck assessment. The built-in engine is the default;
 
 ```
 python3 -m mtgsim.build_carddb                 # once per clone; builds mtgsim/data/cards.sqlite3 (~13 s)
+python3 scripts/coverage_check.py              # coverage + parse delta vs origin/main in ~10 s, cached (0.2 s repeat); --cards NAME for one card
 python3 scripts/fast_check.py                  # what a PR must pass: lint, sampled card parse, games, fast tests (~2 min on 4 cores)
 python3 -m unittest discover -s tests -t .     # full suite (900+ tests, about five minutes; runs nightly in CI)
 python3 -m mtgsim A.txt B.txt -n 1000          # matchup
