@@ -81,6 +81,20 @@ class CharacteristicView(CardDef):
 
     @property
     def colors(self):
+        source = getattr(self, '_color_source', None)
+        if source is not None:
+            colors = self.effective_colors
+            # The static's timestamp is the permanent's, while later color
+            # changes can override it. Re-evaluate threshold on every read.
+            effects = list(self._color_effects)
+            for i, (code, values) in enumerate(self.advanced_rules.get('self_colors_if', ())):
+                if source.condition(code) and not source.abilities_suppressed:
+                    effects.append(ContinuousEffect(-1000 - i, source, 'set_colors',
+                                   getattr(source, 'rules_timestamp', 0), colors=values))
+            for effect in ordered(effects):
+                colors = (effect.colors if effect.operation == 'set_colors' else colors | effect.colors
+                          if effect.operation == 'add_colors' else colors - effect.colors)
+            return colors
         return self.effective_colors
 
 
@@ -113,7 +127,8 @@ def characteristics(permanent, base):
     if mods:
         from .cx_landtypes import apply
         base = apply(base, mods)
-    if not effects:
+    conditional_colors = bool(base.advanced_rules.get('self_colors_if'))
+    if not effects and not conditional_colors:
         return base
     key = (id(base), tuple((e.id, e.timestamp) for e in effects))
     cached = getattr(permanent, '_characteristic_cache', None)
@@ -136,8 +151,21 @@ def characteristics(permanent, base):
                       if operation == 'add_colors' else colors - effect.colors)
     view = CharacteristicView(**{f.name: getattr(base, f.name) for f in fields(CardDef)})
     view.types, view.subtypes, view.effective_colors = types, subtypes, colors
+    if conditional_colors:
+        view.effective_colors = base.colors
+        view._color_source = permanent
+        view._color_effects = tuple(e for e in effects if e.layer == (5, 0))
     permanent._characteristic_cache = key, view
     return view
+
+
+def freeze_colors(permanent):
+    """Keep a departing conditional color view at its last-known value."""
+    view = permanent.card
+    if isinstance(view, CharacteristicView) and getattr(view, '_color_source', None) is not None:
+        colors = view.colors
+        view._color_source = None
+        view.effective_colors = colors
 
 
 def base_effects(permanent):

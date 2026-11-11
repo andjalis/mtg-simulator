@@ -75,6 +75,16 @@ def _subject(text: str):
 
 def parse_line(line: str, st) -> bool:
     extra = st.extra
+    per = re.fullmatch(rf"{_LABEL}~ gets ([+-]\d+)/([+-]\d+) for each (.+?) as long as (.+?)\.", line)
+    if per:
+        from .cx_grammar_quantity import quantity
+        from .cx_conditions import _code
+        spec, code = quantity("the number of " + per[3]), _code(per[4])
+        if spec is None or code is None:
+            return False
+        rules = extra.setdefault("advanced_rules", {})
+        rules["pt_per_if"] = rules.get("pt_per_if", ()) + ((code, int(per[1]), int(per[2]), spec),)
+        return True
     lead = re.fullmatch(rf"({_LABEL})As long as (.+?), ((?:Each |All )?[\w ,-]+? (?:get|gets|have|has) .+)\.", line)
     if lead and not lead[3].startswith(("~", "Enchanted", "Equipped")):
         line = f"{lead[1]}{lead[3]} as long as {lead[2]}."        # "As long as C, S gets X." is "S gets X as long as C."
@@ -155,6 +165,14 @@ def _attached(perm):
 
 def pt_bonus(perm):
     bp = bt = 0
+    if not perm.abilities_suppressed:
+        game = getattr(perm.controller, "_game", None)
+        if game is not None:
+            from .engine.state import StackItem
+            for code, pp, tt, spec in perm.card.advanced_rules.get("pt_per_if", ()):
+                if perm.condition(code):
+                    n = game.x_quantity(perm.controller, spec, StackItem(perm.controller, [], [], source=perm), None)
+                    bp, bt = bp + pp * n, bt + tt * n
     for a in _attached(perm):
         for code, pp, tt, _kws, ep, et in a.card.advanced_rules.get("host_if", ()):
             if _holds(a, code, perm):

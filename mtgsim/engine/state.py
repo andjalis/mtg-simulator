@@ -531,7 +531,8 @@ class Permanent:
             return []
         exalted = [Trigger("attacks_alone", [Effect("pump", 1, 1, target="trigger_subject")])
                    for _ in range(self.exalted_count)]
-        mine = self.card.triggers
+        from ..cx_self_grants import abilities as self_grants
+        mine = list(self.card.triggers) + self_grants(self, triggered=True)
         if self.card.is_class:
             level = self.counters.get("level", 1)
             mine = [t for t in mine if t.min_level <= level]
@@ -566,7 +567,8 @@ class Permanent:
     @property
     def activated(self):
         from ..backlog_templates import grants
-        return list(self.card.activated) + [a for a in grants(self) if a.kind == 'ability']
+        from ..cx_self_grants import abilities as self_grants
+        return list(self.card.activated) + [a for a in grants(self) if a.kind == 'ability'] + self_grants(self)
 
     def granted_mana(self) -> frozenset:
         """Colours other permanents let this one tap for (Enduring Vitality, Great Divide Guide)."""
