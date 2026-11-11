@@ -677,6 +677,7 @@ class Player:
         self.mulligans = 0
         self.lost_life_turn = False
         self.life_lost_amount = 0         # life lost this turn (damage and loss alike)
+        self.last_damage_turn = None     # damage dealt, including infect and damage with no life loss
         self.perm_left_turn = False
         self.entered_nonland_turn = 0     # nonland permanents that entered under this player's control this turn
         self.attacked_with = 0

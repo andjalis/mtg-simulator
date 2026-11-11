@@ -68,6 +68,8 @@ class EffectsMixin:
         if amount <= 0:
             return
         infect = has("infect")
+        if isinstance(target, Player):
+            target.last_damage_turn = self.turn
         self.event_amount = amount          # "that much" for the triggers fired below
         if isinstance(source, Permanent) and source in source.controller.battlefield:
             self.fire(source.controller, "deals_damage", source, context=target)

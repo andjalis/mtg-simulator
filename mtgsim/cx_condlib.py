@@ -238,6 +238,7 @@ _ALIASES = {
     "you gained life this turn": "gained_life",
     "you've gained life this turn": "gained_life",
     "an opponent lost life this turn": "opp_lost_life",
+    "an opponent has been dealt damage this turn": 'lib:["opp_damaged"]',
     "evidence was collected": "evidence",
     "~ was bargained": "bargained",
     "it was bargained": "bargained",
@@ -902,6 +903,8 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         return hist is not None and hist[0] == game.turn and hist[1].get(("@" + args[0], p.name), 0) > 0
     if kind == "opp_gained":
         return getattr(game.opponent(p), "life_gained_turn", 0) > 0
+    if kind == "opp_damaged":
+        return game.opponent(p).last_damage_turn == game.turn
     if kind == "attackers":
         return _cmp(len(getattr(game, "attackers", ()) or ()), *args)
     if kind == "exile":
