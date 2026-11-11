@@ -195,8 +195,8 @@ def _costs(text: str):
 
 
 def _cost(text: str):
-    """The cost of "pay(s) {2}{U}", "pay(s) 3 life", "sacrifice(s) a|another <filter>" or "discard(s) a [<filter>]
-    card", else None."""
+    """The cost of "pay(s) {2}{U}", "pay(s) 3 life", "sacrifice(s) a|another <filter>", "sacrifice(s) two <filters>"
+    or "discard(s) a [<filter>] card", else None."""
     from .cards.model import parse_mana_cost
     m = re.fullmatch(r"pays? ((?:\{[\dWUBRGC]\})+)", text, re.I)
     if m:
@@ -209,6 +209,11 @@ def _cost(text: str):
     if m:
         spec = _filter(m[2], plural=False)
         return {"sacrifice": spec, "other": m[1].lower() == "another"} if spec else None
+    m = re.fullmatch(r"sacrifices? (two|three|four|five|six|seven) ([\w -]+)", text, re.I)
+    if m:                       # a counted cost: all of them or none (#330)
+        from .cards.model import _num
+        spec = _filter(m[2], plural=True)
+        return {"sacrifice": spec, "other": False, "count": _num(m[1])} if spec else None
     m = re.fullmatch(r"discards? (?:a|an) (?:([\w -]+) )?card", text, re.I)
     if m:
         spec = _filter(m[1], plural=False) if m[1] else {}
