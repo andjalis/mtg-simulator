@@ -734,6 +734,7 @@ def players(game, p, who, item, prev, target=None):
         return [opp]
     if who == "that_player":
         context = item.context if item is not None else None
+        context = context.controller if event_spell(context) else context
         return [context] if context in game.players else []
     if who == "spell_controller":       # a cast trigger's spell, a spell this one targeted, or the one it targets
         from .engine.state import StackItem

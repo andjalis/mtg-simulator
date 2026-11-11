@@ -201,10 +201,15 @@ def _parse_effects(text: str, opts: bool = False):
         if mm:
             # "you may have it deal 2 damage to target creature" / "... have ~ fight target creature":
             # the base-form verb after "have" reads as the plain third-person clause (the choice stays "you may").
-            mh = re.fullmatch(r"have (it|~) (deal|fight)\b(.*)", mm[1], re.I)
-            if mh:
-                mm = re.fullmatch(r"(.+)", f"{mh[1]} {mh[2].lower()}s{mh[3]}")
+            # Only as a fallback: the original wording keeps its older paths ("Have ~ deal 1 damage to
+            # each creature" already parsed to a gated cx effect before #319).
             new, bad = _parse_effects(mm[1][0].upper() + mm[1][1:] + ".")
+            mh = re.fullmatch(r"have (it|~) (deal|fight)\b(.*)", mm[1], re.I)
+            if (bad or not new) and mh:
+                rewritten = f"{mh[1]} {mh[2].lower()}s{mh[3]}"
+                new, bad = _parse_effects(rewritten[0].upper() + rewritten[1:] + ".")
+                if new and not bad:
+                    mm = re.fullmatch(r"(.+)", rewritten)
             if bad or not new:
                 new, bad = _parse_effects("You " + mm[1] + ".")              # "you may gain 2 life"
             if new and not bad and hostile_may(mm[1], new):
