@@ -731,6 +731,14 @@ def pay_unless(game: Game, me: Player, amount: int, item: StackItem) -> bool:
     return True
 
 
+def pay_unless_sacrifice(game: Game, me: Player, chosen: list, stake) -> bool:
+    """Sacrifice several permanents to keep stake (the permanent the "unless" effect would remove)? Only when they
+    are worth no more than it; a land counts as 2. With nothing at stake, pay (the pay-when-able rule)."""
+    if stake is None:
+        return True
+    return sum(2 if x.card.is_land else perm_value(x) for x in chosen) <= perm_value(stake)
+
+
 def pay_optional(game: Game, me: Player, cost: dict, what: str) -> bool:
     return True
 
@@ -948,7 +956,8 @@ DEFAULTS = {
     "choose_proliferate": proliferate.choose,
     "sneak": default_sneak,
     "respond": respond, "choose_target": choose_target, "choose_modes": default_choose_modes,
-    "scry": scry, "choose_dig": choose_dig, "pay_unless": pay_unless, "pay_optional": pay_optional,
+    "scry": scry, "choose_dig": choose_dig, "pay_unless": pay_unless,
+    "pay_unless_sacrifice": pay_unless_sacrifice, "pay_optional": pay_optional,
     "pay_shock": pay_shock, "choose_discard_from": choose_discard_from, "choose_rummage": choose_rummage,
     "choose_crew": choose_crew, "before_attacks": before_attacks, "choose_attack_targets": choose_attack_targets,
     "use_abilities": use_abilities, "respond_extras": respond_extras, "choose_equip_target": choose_equip_target,

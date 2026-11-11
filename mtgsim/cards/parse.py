@@ -376,6 +376,8 @@ def _split_compound(s: str):
             continue
         if sep == r" and " and _OTHER_SUBJECT.match(pieces[0]) and _VERB_S.match(pieces[1]):
             continue    # "Target player loses 2 life and mills two cards": the second verb is that player's too
+        if sep == r" and " and " unless " in pieces[0].lower():
+            continue    # "... unless you sacrifice a land and pay 2 life": one compound cost, never two effects (#330)
         out = []
         for piece in pieces:
             effs, bad = _parse_effects(piece[0].upper() + piece[1:] + ".")
@@ -922,6 +924,8 @@ def _parse_trigger_line(line: str):
             flt = f"{'other' if m[1] == 'another' else 'any'}||{m[2]}"
         if events[0] in ("attacks", "blocks") and re.fullmatch(r"(?:sacrifice|destroy|return) it( to its owner's hand)? at end of combat\.?", rest):
             rest = rest.replace(" it", " ~", 1)      # "When ~ attacks or blocks, sacrifice it at end of combat"
+        if events in (("etb",), ("attacks",), ("blocks",)) and re.match(r"(?:sacrifice|exile|destroy) it unless ", rest):
+            rest = rest.replace(" it", " ~", 1)      # "When ~ enters|attacks, sacrifice it unless you ..." (#330)
         if events == ("attacks",) and "while saddled" in pat:
             flt = "saddled"
         if events == ("attacks",) and pat.startswith("Whenever ~ and at least"):

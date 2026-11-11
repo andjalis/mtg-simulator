@@ -29,15 +29,50 @@ def _payer(game, p, who, eff, item, prev):
 def unless(game, p, eff, item, prev=None, **_):
     """"B unless <payer> pays <cost>": the payer chooses to pay (if they can), and B (the effects after this one,
     gated on ``unless_unpaid``) happens only when they don't."""
-    payer = _payer(game, p, eff.data["payer"], eff, item, prev)
+    if eff.data["payer"] == "any":
+        # each player in turn, active player first, until one pays; a player is asked only when B goes against
+        # them (cx_grammar_cond._against): the controller when B removes the source, else the opponents
+        order = sorted(game.players, key=lambda x: x is not game.active)
+        payers = [pl for pl in order if (pl is p) == (eff.data["against"] == "controller")]
+    else:
+        payers = [_payer(game, p, eff.data["payer"], eff, item, prev)]
     paid = False
-    if payer is not None and game.hook(payer, "pay_unless")(game, payer, 0, item):
-        paid = any(_pay(game, payer, cost, item) for cost in eff.data["costs"])     # the first one they can pay
+    for payer in payers:
+        if payer is not None and game.hook(payer, "pay_unless")(game, payer, 0, item):
+            paid = any(_pay(game, payer, cost, item, eff) for cost in eff.data["costs"])  # the first they can pay
+        if paid:
+            break
     if item is not None:
         item.cx_unless_paid = paid
 
 
-def _pay(game, payer, cost, item) -> bool:
+@kind("cx_unless_each")
+def unless_each(game, p, eff, item, prev=None, target=None, **_):
+    """"Each player <B> unless they <cost>": every player, active player first, decides and pays before anything
+    happens; then B (the inner player effects) applies to each player who didn't pay."""
+    from ...cx_grammar import players as named
+    from . import HANDLERS
+    order = sorted(named(game, p, eff.data["who"], item, prev, target), key=lambda x: x is not game.active)
+    unpaid = [pl for pl in order if not (game.hook(pl, "pay_unless")(game, pl, 0, item) and
+                                         any(_pay(game, pl, cost, item, eff) for cost in eff.data["costs"]))]
+    for inner in eff.data["effects"]:
+        for who in unpaid:
+            HANDLERS[inner.kind](game, p=p, eff=inner, target=who, item=item, opp=game.opponent(p), prev=prev,
+                                 cause=f"cx_unless_each: {inner.kind}")
+
+
+def _stake(item, eff):
+    """The source permanent the gated effects would sacrifice, destroy or exile ("sacrifice ~ unless ..."), else
+    None: what a counted sacrifice is weighed against."""
+    if item is None or not isinstance(item.source, Permanent):
+        return None
+    after = item.effects[next((i for i, e in enumerate(item.effects) if e is eff), len(item.effects)) + 1:]
+    selfish = any(e.kind in ("sacrifice_self", "exile_self") or e.kind == "destroy" and e.target == "self"
+                  for e in after if e.cond.endswith('"unless_unpaid"]'))
+    return item.source if selfish else None
+
+
+def _pay(game, payer, cost, item, eff=None) -> bool:
     """Pay the cost if the payer can (the ward and counter-unless rule: pay when able; life only above 2 after)."""
     from ..mana import find_payment
     from ..policy import perm_value
@@ -53,9 +88,14 @@ def _pay(game, payer, cost, item) -> bool:
         source = getattr(item, "source", None)
         pool = [x for x in payer.battlefield if _card_ok(x.card, cost["sacrifice"], x)
                 and not (cost["other"] and x is source)]
-        if not pool:
+        n = cost.get("count", 1)
+        if len(pool) < n:           # a counted cost needs every object: no partial payment
             return False
-        game.sacrifice(min(pool, key=lambda x: perm_value(x)))
+        chosen = sorted(pool, key=perm_value)[:n]
+        if n > 1 and not game.hook(payer, "pay_unless_sacrifice")(game, payer, chosen, _stake(item, eff)):
+            return False
+        for x in chosen:
+            game.sacrifice(x)
         return True
     if "discard" in cost:
         cards = [c for c in payer.hand if _card_ok(c, cost["discard"])]
