@@ -47,6 +47,9 @@ _SUBS += _backlog_templates.SUBS
 from .. import advanced_templates as _advanced_templates
 _EFFECT_PATTERNS += _advanced_templates.EFFECT_PATTERNS
 _SUBS += _advanced_templates.SUBS
+from .. import cx_combat_costs as _cx_combat_costs
+_EFFECT_PATTERNS += _cx_combat_costs.EFFECT_PATTERNS
+_SUBS += _cx_combat_costs.SUBS
 from .. import batch1_templates as _batch1_templates
 _EFFECT_PATTERNS += _batch1_templates.EFFECT_PATTERNS
 from .. import batch2_templates as _batch2_templates
@@ -210,7 +213,18 @@ _SUBS += _cx_night_endturn.SUBS
 from .. import cx_tokens as _cx_tokens
 _EFFECT_PATTERNS += _cx_tokens.EFFECT_PATTERNS
 from . import parse as _parse_module
-_parse_module._FACE_LINE_PARSERS = (_cx_tokens.face_line,) + _parse_module._FACE_LINE_PARSERS
+_parse_module._FACE_LINE_PARSERS = (_chance_templates.face_line, _cx_tokens.face_line) + _parse_module._FACE_LINE_PARSERS
 from .. import cx_counters as _cx_counters
 _EFFECT_PATTERNS += _cx_counters.EFFECT_PATTERNS
 _SUBS += _cx_counters.SUBS
+from .. import referent as _referent
+_EFFECT_PATTERNS += _referent.EFFECT_PATTERNS
+_SUBS += _referent.SUBS
+from .. import blink as _blink
+_EFFECT_PATTERNS += _blink.EFFECT_PATTERNS
+_SUBS += _blink.SUBS
+from .. import that_spell as _that_spell
+_EFFECT_PATTERNS += _that_spell.EFFECT_PATTERNS
+_SUBS += _that_spell.SUBS
+from .. import conjure as _conjure_templates
+_EFFECT_PATTERNS += _conjure_templates.EFFECT_PATTERNS

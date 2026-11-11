@@ -248,6 +248,7 @@ class PlayMixin:
                 return False
             targets = mode_targets + targets
         item = StackItem(p, effects, targets, card=card, kind="spell")
+        item.cast_turn = self.turn
         # Prepared spells are copies; channel/graveyard abilities leave their
         # physical source in its actual zone rather than moving it onto the stack.
         item.physical_card = base if kind not in ("prepared", "channel", "gy_ability", "unearth") else None
@@ -261,6 +262,8 @@ class PlayMixin:
                           else "exile" if self._zone(p, kind) is p.exile else "other")     # cx_events "cast from"
         from ..advanced_templates import payment_colors
         item.mana_colors = payment_colors(payment, dict(cost, generic=cost.get("generic", 0) + x))
+        from ..advanced_templates import payment_color_counts
+        item.mana_by_color = payment_color_counts(payment, dict(cost, generic=cost.get("generic", 0) + x))
         if kind == "grave_permission":
             source = getattr(card, "permission_source", None)
             if source is not None:
@@ -330,8 +333,14 @@ class PlayMixin:
                 self.queue_trigger(p, trig.effects, None, f"{card.name}: cast trigger", context=item)
             if self.spells_cast.get(p.name) == 2:
                 self.fire(p, "cast_second")
-            for pl in self.players:
-                self.fire(pl, "any_cast", context=p, subject=card)
+            self.casting_item = item          # "that spell" for the any_cast triggers below
+            try:
+                for pl in self.players:
+                    # context is the cast spell itself (its controller is the caster): "if no mana was
+                    # spent to cast it, counter that spell" riders read it off the trigger
+                    self.fire(pl, "any_cast", context=item, subject=card)
+            finally:
+                self.casting_item = None
         self.check_ward(item)
         self.settle()
         return True

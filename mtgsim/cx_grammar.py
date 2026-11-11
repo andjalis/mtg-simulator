@@ -208,7 +208,7 @@ _PLAYERS = {"you": "you", "each player": "each", "players": "each", "each oppone
             "your opponents": "opponents", "that player": "that_player",
             "defending player": "defending", "that creature's controller": "controller",
             "that permanent's controller": "controller", "its controller": "controller", "its owner": "owner",
-            "that creature's owner": "owner"}
+            "that creature's owner": "owner", "that spell's controller": "spell_controller"}
 
 
 def _desc(text: str, plural: bool):
@@ -280,9 +280,10 @@ def subject(text: str):
             return None
         found.data["other"] = True
         return found
-    m = re.fullmatch(r"(?:(up to) )?(?:(a|one|two|three|four|five) )?(other |another )?target (.+?)( each)?", text, re.I)
-    if m and not (m[1] and not m[2]):
-        n = _NUMBER[m[2].lower()] if m[2] else 1
+    m = re.fullmatch(r"(?:(up to) )?(?:(a|one or two|one|two|three|four|five) )?(other |another )?target (.+?)( each)?",
+                     text, re.I)
+    if m and not (m[1] and not m[2]) and not (m[1] and m[2].lower() == "one or two"):
+        n = 2 if m[2] and m[2].lower() == "one or two" else _NUMBER[m[2].lower()] if m[2] else 1
         if n == 1 and m[5]:
             return None
         noun = _noun(_singular(m[4]) if n > 1 else m[4], plural=False)
@@ -295,6 +296,8 @@ def subject(text: str):
             data["optional_target"] = True
         if n > 1:
             data["distinct"] = True
+        if m[2] and m[2].lower() == "one or two":
+            data["optional_from"] = 1       # the first target is required, the second optional
         return Subject("permanent", target="permanent", data=data, copies=n, text=text)
     m = re.fullmatch(r"(each|all) (.+)", text, re.I)
     words = m[2] if m else text
@@ -414,17 +417,20 @@ def assemble(subj: Subject, parts: list):
     if subj.kind == "imperative" and any(p.obj is None for p in parts):
         return None             # an imperative verb names its own object
     out = []
-    for _ in range(subj.copies):
+    for i in range(subj.copies):
         placed = obj_since = False
+        subj_i = subj
+        if i >= subj.data.get("optional_from", subj.copies):
+            subj_i = dataclasses.replace(subj, data=dict(subj.data, optional_target=True))
         for p in parts:
             if p.obj is not None:
-                effects = _place(p, p.obj, subj)
+                effects = _place(p, p.obj, subj_i)
                 if effects is None:
                     return None
                 out += effects
                 obj_since = True
             elif not placed:
-                out.append(_effect(p.kind, p.amount, p.amount2, target=subj.target, data=dict(subj.data, **p.data)))
+                out.append(_effect(p.kind, p.amount, p.amount2, target=subj.target, data=dict(subj_i.data, **p.data)))
                 placed, obj_since = True, False
             elif subj.target == "permanent" and obj_since:
                 return None     # "prev" would now mean the object's target, not the subject
@@ -459,9 +465,11 @@ def _place(p: Part, obj: Subject, subj: Subject):
     if obj.kind == "player" and "side" not in data:     # a target player: the AI picks one by side
         flt = obj.data.get("filter", "")
         data["side"] = "theirs" if flt == "opp" else side([_effect(p.kind, data=data)])
+    first_optional = obj.data.get("optional_from", obj.copies)
     return [_effect(p.kind, p.amount, p.amount2, target=obj.target, filter=obj.data.get("filter", ""),
-                    data=dict({k: v for k, v in obj.data.items() if k != "filter"}, **data))
-            for _ in range(obj.copies)]
+                    data=dict({k: v for k, v in obj.data.items() if k != "filter"},
+                              **data, **({"optional_target": True} if i >= first_optional else {})))
+            for i in range(obj.copies)]
 
 
 _SCALED = ("pump", "debuff_one", "gain_life", "lose_life", "draw", "discard", "mill")
@@ -532,6 +540,10 @@ def parse_fallback(s: str, effects: list) -> bool:
         new = parse_sentence(rest)          # "You gain control of target creature": the imperative
     if not new:
         return False
+    if any(e.kind == "damage" and e.target == "any" and e.data.get("other") for e in new):
+        from .engine.state import TARGETED
+        if any(e.target in TARGETED for e in effects):
+            return False    # "any other target" can refer to an earlier target (Bond of Passion), not the source
     effects += new
     return True
 
@@ -731,9 +743,29 @@ def player_rules(game, player, rule: str) -> list:
 
 # ---------------------------------------------------------------- engine side: who a subject names
 
+def _defending_player(game, item):
+    """The player the relevant attacker is attacking (a planeswalker or battle: its controller), or None
+    when the item names no attacker."""
+    from .engine.state import Permanent
+    attacks = getattr(game, "attack_targets", None) or {}
+    for creature in (item.source if item is not None else None, item.context if item is not None else None):
+        target = attacks.get(creature) if isinstance(creature, Permanent) else None
+        if isinstance(target, Permanent):
+            return target.controller
+        if target in game.players:
+            return target
+    return None
+
+
+def event_spell(context) -> bool:
+    """An any_cast trigger's context is the cast spell (a StackItem); "that player" is its caster."""
+    from .engine.state import StackItem
+    return isinstance(context, StackItem)
+
+
 def players(game, p, who, item, prev, target=None):
-    """The players a cx_players subject names as it resolves (a two-player game: the defending player is the
-    opponent). who "target": the chosen player (target)."""
+    """The players a cx_players subject names as it resolves (the defending player is the one the attacker
+    attacks; the opponent when no attacker is in play). who "target": the chosen player (target)."""
     opp = game.opponent(p)
     if who == "target":
         return [target] if target in game.players else []
@@ -741,11 +773,22 @@ def players(game, p, who, item, prev, target=None):
         return [p]
     if who == "each":
         return list(game.players)
-    if who in ("opponents", "defending"):
+    if who == "defending":
+        return [_defending_player(game, item) or opp]
+    if who == "opponents":
         return [opp]
     if who == "that_player":
         context = item.context if item is not None else None
+        context = context.controller if event_spell(context) else context
         return [context] if context in game.players else []
+    if who == "spell_controller":       # a cast trigger's spell, a spell this one targeted, or the one it targets
+        from .engine.state import StackItem
+        spell = (item.context if item is not None and isinstance(item.context, StackItem) else
+                 prev if isinstance(prev, StackItem) else getattr(item, "target_spell", None))
+        if isinstance(spell, StackItem):
+            return [spell.controller]
+        context = item.context if item is not None else None
+        return [context] if context in game.players else []     # any_cast / "becomes the target of a spell": its controller
     if who in ("controller", "owner"):
         from .engine.state import Permanent
         if isinstance(prev, Permanent):

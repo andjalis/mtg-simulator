@@ -178,6 +178,8 @@ def _stat(perm, stat: str) -> int:
 
 def value(game, p, spec, item, prev) -> int:
     kind = spec[1]
+    if kind == "flips":
+        return getattr(item, "flips_" + spec[2], 0)
     if kind == "devotion":
         return _devotion(p, spec[2])
     if kind == "opponents":

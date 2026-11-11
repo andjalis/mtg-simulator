@@ -36,7 +36,6 @@ EFFECT_PATTERNS = [
      lambda m: _effect("damage", target="creature", data={"source_power": True})),
     (r"put ~ on top of its owner's library", lambda m: _effect("tuck_top", target="self")),
     (r"exile enchanted creature", lambda m: _effect("exile_permanent", target="host")),
-    (r"exile target creature card from a graveyard", lambda m: _effect("exile_gy", 1)),
     (r"~ gains protection from the color of your choice until end of turn",
      lambda m: _effect("grant", target="self", data={"keyword": "protection_choice"})),
     (r"attach ~ to target creature you control", lambda m: _effect("attach_self", target="creature_mine")),

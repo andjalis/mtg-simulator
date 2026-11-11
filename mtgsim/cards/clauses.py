@@ -46,7 +46,7 @@ _SUBS = [
                 r"until ~ leaves the battlefield\.", re.I), lambda m: f"HANDEXILE {m[1].lower()}."),
     (re.compile(r"^(~ gains [a-z]+ until end of turn)\. tap it\.", re.I), r"\1. Tap ~."),
     # The AI never aims its removal at its own creature, so "another" target is any target.
-    (re.compile(r"(destroy|exile) another target (creature or planeswalker|creature|nonland permanent)", re.I),
+    (re.compile(r"(destroy|exile) another target (creature or planeswalker|creature|nonland permanent)(?! you own)", re.I),
      r"\1 target \2"),
     # Activated and triggered abilities can't be countered in the engine: these counter spells only.
     (re.compile(r"counter target spell, activated ability, or triggered ability", re.I), "counter target spell"),
@@ -280,6 +280,8 @@ _TRIGGERS = [
     (r"Whenever you cast an instant or sorcery spell that targets a creature, (.+)", ("cast_instant_sorcery",)),
     (r"Whenever ~ becomes the target of a spell or ability you control for the first time each turn, (.+)",
      ("targeted_mine",)),
+    (r"When(?:ever)? ~ becomes the target of a spell or ability for the first time each turn, (.+)",
+     ("targeted",)),
     (r"When(?:ever)? ~ becomes the target of a spell or ability, (.+)", ("targeted",)),
     (r"When ~ is turned face up, (.+)", ("turned_face_up",)),
     (r"Whenever you cast a spell that targets ~, (.+)", ("heroic",)),
@@ -370,24 +372,19 @@ _OPT_RIDER = re.compile(r"(?:then )?if (?:~|it|the spell) was bargained, (.+)|(?
 
 
 def _opt_rider(s: str, effects: list):
-    """"If ~ was bargained / the gift was promised, X [instead]": X's effects carry cond bargained / gifted (or !gifted).
-    With "instead" the earlier effect of the same kind (else every unconditional one) only happens otherwise.
-    Returns the new effects, or None when X doesn't parse."""
+    """Additive Bargain/Gift riders. Replacement riders use cx_grammar_cond instead."""
     from .parse import _parse_effects  # deferred: parse imports this module
     m = _OPT_RIDER.fullmatch(s)
     if m is None:
         return None
     cond = "bargained" if m[1] else ("gifted" if m[2].lower() == "was" else "!gifted")
     rest = (m[1] or m[3]).strip()
-    instead = bool(re.search(r"\binstead$", rest, re.I)) or re.match(r"instead,? ", rest, re.I) is not None
+    if re.search(r"\binstead\b", rest, re.I):
+        return None             # the shared replacement grammar binds and gates both branches
     rest = re.sub(r",? instead$|^instead,? ", "", rest, flags=re.I)
     new, bad = _parse_effects(rest[0].upper() + rest[1:] + ".")
     if bad or not new:
         return None
-    if instead:
-        same = [e for e in effects if not e.cond and e.kind == new[0].kind]
-        for e in same or [e for e in effects if not e.cond]:
-            e.cond = "!" + cond
     for e in new:
         e.cond = e.cond or cond
     return new
@@ -447,6 +444,10 @@ def _xq(text: str):
                  "the amount of life you gained this turn": ("gained",),
                  "the number of cards in your hand": ("hand",),
                  "the number of cards in an opponent's hand": ("opp_hand",)}[tl])
+    m = re.fullmatch(r"that spell's (mana value|power|toughness)|the number of (?:that spell's colors)|"
+                     r"the amount of generic mana in that spell's mana cost", t, re.I)
+    if m:      # the spell a cast trigger fired on, or the spell a counterspell targets (not the host)
+        return ("spell", (m[1] or ("colors" if "colors" in tl else "generic")).lower())
     m = re.fullmatch(r"(~|its|that creature|that spell)'s? (power|toughness|mana value)", t, re.I) or \
         re.fullmatch(r"(its) (power|toughness)", t, re.I)
     if m:

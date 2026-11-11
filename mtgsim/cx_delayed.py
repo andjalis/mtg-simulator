@@ -16,6 +16,7 @@ newest permanent that entered while the ability resolved (a token, a reanimated 
 of the target (or of ~); it comes back only if it is still in exile."""
 from __future__ import annotations
 
+import dataclasses
 import re
 
 _WHEN = r"at the beginning of (?:the|your) next end step"
@@ -103,6 +104,11 @@ def parse_rider(sentence: str, effects: list) -> bool:
         if bad or not new or any(e.target not in ("none", "self", "you", "") for e in new):
             return False
         eff = _effect("cx_delay", data={"op": "effects", "who": "none", "effects": new})
+        conds = {e.cond for e in new}
+        if len(conds) == 1 and next(iter(conds)) and re.match(r"if ", body, re.I):
+            # "If <C>, <action> at the beginning of the next end step": C is checked as this resolves, not at the end step
+            eff = dataclasses.replace(eff, cond=next(iter(conds)),
+                                      data=dict(eff.data, effects=[dataclasses.replace(e, cond="") for e in new]))
     if effects and effects[-1].kind == "token" and eff.data["op"] in ("exile", "sacrifice") and \
             eff.data["who"] != "self":
         return False                  # the token line's own "end" rider (cards/parse.py)

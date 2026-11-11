@@ -64,11 +64,27 @@ def _parse_effects(text: str, opts: bool = False):
         from ..cx_shields import parse_rider as shield_rider
         from ..cx_delayed import parse_rider as delayed_rider
         from ..cx_trig_watch import parse_rider as watch_rider
+        from ..cx_statics import counter_rider
+        if counter_rider(s, effects):
+            continue
+        from ..exile_permissions import parse_rider as exile_rider
+        if exile_rider(s, effects):
+            continue
+        from ..that_spell import parse_rider as spell_rider
+        from ..chance_templates import parse_rider as chance_rider
+        if chance_rider(s, effects):
+            continue
         if _cx_tokens.parse_rider(s, effects):
             continue
         if batch1_rider(s, effects) or emerge_rider(s, effects) or shield_rider(s, effects) or \
-                delayed_rider(s, effects) or watch_rider(s, effects):
+                delayed_rider(s, effects) or watch_rider(s, effects) or spell_rider(s, effects):
             continue
+        if re.fullmatch(r"creatures destroyed this way can't be regenerated", s, re.I):
+            last = next((n for n in range(len(effects) - 1, -1, -1)
+                         if effects[n].kind in ("destroy", "wrath", "wrath_pw")), None)
+            if last is not None:
+                effects[last] = dataclasses.replace(effects[last], data=dict(effects[last].data, no_regen=True))
+                continue
         if re.fullmatch(r"(?:it|they|those creatures|the creatures?|a creature destroyed this way) can't be "
                        r"regenerated(?:, of course)?", s, re.I) and effects and \
                 effects[-1].kind in ("destroy", "wrath", "wrath_pw", "selected_mass_move", "group_remove",
@@ -183,7 +199,17 @@ def _parse_effects(text: str, opts: bool = False):
             continue
         mm = re.fullmatch(r"you may (.+)", s, re.I)
         if mm:
+            # "you may have it deal 2 damage to target creature" / "... have ~ fight target creature":
+            # the base-form verb after "have" reads as the plain third-person clause (the choice stays "you may").
+            # Only as a fallback: the original wording keeps its older paths ("Have ~ deal 1 damage to
+            # each creature" already parsed to a gated cx effect before #319).
             new, bad = _parse_effects(mm[1][0].upper() + mm[1][1:] + ".")
+            mh = re.fullmatch(r"have (it|~) (deal|fight)\b(.*)", mm[1], re.I)
+            if (bad or not new) and mh:
+                rewritten = f"{mh[1]} {mh[2].lower()}s{mh[3]}"
+                new, bad = _parse_effects(rewritten[0].upper() + rewritten[1:] + ".")
+                if new and not bad:
+                    mm = re.fullmatch(r"(.+)", rewritten)
             if bad or not new:
                 new, bad = _parse_effects("You " + mm[1] + ".")              # "you may gain 2 life"
             if new and not bad and hostile_may(mm[1], new):
@@ -208,9 +234,9 @@ def _parse_effects(text: str, opts: bool = False):
                 effects += new
                 continue
         mx = re.fullmatch(r"(.+?),? where X is (.+)", s, re.I)
-        # not read right yet: "that spell's mana value" resolves to the host's own, "named X" drops the name filter
+        # Named-card counts still lack a name-preserving quantity spec.
         if mx and re.search(r"\bX\b", mx[1]) and re.search(r"\btarget (?:player|opponent)\b", mx[1], re.I) \
-                and re.search(r"\bthat spell's\b|\bnamed\b", mx[2], re.I):
+                and re.search(r"\bnamed\b", mx[2], re.I):
             unmatched.append(s)
             continue
         if mx and re.search(r"\bX\b", mx[1]) and _xq(mx[2]):
@@ -228,6 +254,14 @@ def _parse_effects(text: str, opts: bool = False):
                 for e in new:
                     e.data["xq"] = spec     # a grammar wrapper (cx_players) scales its inner effects by it
                     e.data["xq_size"] = bool(re.search(r"\bX/X\b", mx[1]))
+                effects += new
+                continue
+        mcol = re.fullmatch(r"(.+?) for each of that spell's colors", s, re.I)
+        if mcol:       # "~ gets +1/+1 until end of turn for each of that spell's colors" (Construction Arsonist)
+            new, bad = _parse_effects(mcol[1][0].upper() + mcol[1][1:] + ".")
+            if new and not bad:
+                for e in new:
+                    e.data["xq"] = ("spell", "colors")
                 effects += new
                 continue
         mparty = re.fullmatch(r"(.+?) for each creature in your party", s, re.I)
@@ -273,6 +307,17 @@ def _parse_effects(text: str, opts: bool = False):
                 if new and not bad:
                     effects += [dataclasses.replace(e, cond=e.cond or "!paid") for e in new]
                     continue
+        mcol = re.fullmatch(r"(.+?) for each of that spell's colors", s, re.I)
+        if mcol:       # "If you do, draw a card for each of that spell's colors" (Moonveil Regent): the
+            # suffix loop above ran before the "if you do, " prefix was stripped, so retry on the body
+            new, bad = _parse_effects(mcol[1][0].upper() + mcol[1][1:] + ".")
+            if new and not bad:
+                for e in new:
+                    e.data["xq"] = ("spell", "colors")
+                    if paid:
+                        e.cond = e.cond or "paid"
+                effects += new
+                continue
         for pat, build in _EFFECT_PATTERNS:
             rx = _COMPILED.get(pat) or _COMPILED.setdefault(pat, re.compile(pat, re.IGNORECASE))
             m = rx.fullmatch(s)
@@ -288,7 +333,9 @@ def _parse_effects(text: str, opts: bool = False):
                     effects.append(eff)
                 break
         else:
-            parts = _split_compound(s)
+            # Bind the whole replacement before splitting its body into effects.
+            # Otherwise "instead A, then B" can leave B running beside the base.
+            parts = None if re.search(r"\binstead\b", s, re.I) else _split_compound(s)
             from ..cx_suspect import parse_otherwise
             from .. import cx_grammar
             if parts:
@@ -394,6 +441,42 @@ def _cost_line(m):
     return parse_mana_cost(m)
 
 
+
+def _kicker_instead(base: list, text: str) -> bool:
+    """Apply "If ~ was kicked, B instead.": B replaces the base effects it stands in for (those of its kinds, or the
+    only base effect), never runs next to them. Edits ``base`` in place; False (nothing changed) when the replaced
+    effects can't be told apart."""
+    body = re.sub(r"^instead,?\s+|\s+instead(?=\.$)", "", text.strip()).rstrip(".")
+    if re.search(r"\binstead\b", body) or not body:
+        return False
+    new, bad = _parse_effects(body[0].upper() + body[1:] + ".")
+    if bad or not new:
+        return False
+    if any("prev" in str(e.data) for e in new):
+        # leans on the base effect's target ("each creature target player controls phases out instead": the
+        # target creature's controller): keep the base effect as that carrier. Only safe where running the base
+        # first changes nothing the replacement doesn't also do, which holds for the phase-out and tap family.
+        if not all(e.kind in ("phase_out", "tap", "untap_target") for e in new + base):
+            return False
+        base += new
+        return True
+    kinds = {e.kind for e in new}
+    hit = [i for i, e in enumerate(base) if e.kind in kinds]
+    if not hit and len(base) == 1:
+        hit = [0]
+    if not hit or any(sum(base[i].kind == k for i in hit) > sum(e.kind == k for e in new) for k in kinds):
+        return False
+    old = base[hit[0]]
+    first = new[0]
+    if first.target == "prev":
+        if first.kind != old.kind:
+            return False
+        new[0] = dataclasses.replace(first, target=old.target, data=dict(old.data, **first.data))
+    elif any(e.target == "prev" for e in new):
+        return False
+    base[:] = base[:hit[0]] + new + [e for i, e in enumerate(base) if i > hit[0] and i not in hit]
+    return True
+
 def _parse_face(data: dict) -> CardDef:
     name = data["name"].split(" // ")[0]
     type_line = data.get("type_line", "").split(" // ")[0]
@@ -408,6 +491,11 @@ def _parse_face(data: dict) -> CardDef:
 
     oracle = data.get("oracle_text", "") or ""
     text = re.sub(r"\([^)]*\)", "", oracle)
+    if not types.isdisjoint({"Instant", "Sorcery"}):
+        # Ability words (Threshold, Morbid, Hellbent, Delirium, ...) carry no rules; their
+        # "— ... instead" paragraphs replace the preceding spell instruction and must be
+        # parsed with it, rather than in isolation.
+        text = re.sub(r"\n[A-Z][^\n—]{0,40}? — (?=[^\n]*\binstead\b)", " ", text)
     token_names = []
     def protect_name(match):
         token_names.append(match[1])
@@ -430,9 +518,11 @@ def _parse_face(data: dict) -> CardDef:
     text = cx_replace.two_player_text(text)
     text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment|class|spacecraft|battle)\b", "~",
                   text, flags=re.I)
-    text = re.sub(r"\b(protection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
-                  r"\1 and protection from \2", text)
+    text = re.sub(r"\b([Pp]rotection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
+                  lambda m: f"{m[1]} and {m[1][0]}rotection from {m[2]}", text)
     text = re.sub(r"(becomes the target of (?:a spell or ability|a spell)), sacrifice it\.", r"\1, sacrifice ~.", text)
+    from ..blink import prepare_linked
+    text = prepare_linked(text)
     # The two-sentence O-ring wording ("... exile X. When ~ leaves the battlefield, return the exiled
     # card(s) to the battlefield ...") is the single-sentence "exile X until ~ leaves the battlefield"
     # the oring templates already implement (the engine returns the card when the source leaves).
@@ -520,6 +610,10 @@ def _parse_face(data: dict) -> CardDef:
             if m:
                 extra.setdefault("advanced_rules", {})["kick_counters"] = _num(m[1])
                 continue
+            if re.search(r"\binstead\b", k):
+                if not _kicker_instead(kicked_effects, k):
+                    unsupported.append(f"if kicked: {k}")
+                continue
             effs, bad = _parse_effects(k)
             kicked_effects += effs
             unsupported += [f"if kicked: {b}" for b in bad]
@@ -579,6 +673,9 @@ def _parse_face(data: dict) -> CardDef:
     triggers = [t for t in triggers if t not in extra["gy_triggers"]]
     extra["spent_colors"] = frozenset(t.effects[0].cond[6:] for t in triggers
                                       if t.effects and t.effects[0].cond.startswith("spent:"))
+    # Payment-dependent spell effects also need the hybrid payment variants.
+    extra["spent_colors"] |= frozenset(m[1] for e in spell
+        if (m := re.fullmatch(r'lib:\["spent_color","([WUBRG])"\]', e.cond)))
     if "prowess" in keywords:
         triggers.append(Trigger("cast_noncreature", [Effect("pump", 1, 1, target="self")]))
     # Triggers with "choose up to one" get their bullet modes; drop ones that ended up empty.
@@ -780,6 +877,9 @@ def _parse_trigger(line: str):
 
 
 def _parse_trigger_line(line: str):
+    # trigger heads don't go through _parse_effects, so apply the head-level substitution from
+    # that_spell.SUBS here too: "a spell that's one or more colors" = "a multicolored spell"
+    line = re.sub(r"\b((?:a |an )?)spell that's one or more colors\b", r"\1multicolored spell", line, flags=re.I)
     for pat, events in _TRIGGERS:
         m = re.fullmatch(pat, line)
         if not m:
@@ -801,7 +901,9 @@ def _parse_trigger_line(line: str):
                    ("permanent_enters", "ally_dies"): lambda: {"permanent_enters": f"noself|other|{m[1]}",
                                                                "ally_dies": f"other||{m[1]}"}}.get(events, lambda: None)()
         intervening = rest.startswith("if ")
-        if events == ("any_cast",):
+        # only the "casts a spell with mana value N or less" pattern has the number in m[1];
+        # the plain "casts a spell, <rider>" one carries the rider there and must keep flt clean
+        if events == ("any_cast",) and m.lastindex == 2 and str(m[1]).isdigit():
             flt = f"cmc<={m[1]}"
         if "while saddled" in pat or events[-1] == "becomes_tapped":
             rest = re.sub(r"^it (gets|gains|deals)\b", r"~ \1", re.sub(r"\b(on|untap|to) it\b", r"\1 ~", rest))
@@ -934,7 +1036,8 @@ def _parse_trigger_line(line: str):
         if not effs:
             return [], bad or [line], None
         gate = (cond or effs[0].cond) if intervening else ""
-        return [Trigger(e, effs, flt_map[e] if flt_map else flt, once=events == ("targeted_mine",),
+        once = events == ("targeted_mine",) or "for the first time each turn" in pat
+        return [Trigger(e, effs, flt_map[e] if flt_map else flt, once=once,
                         intervening_if=gate) for e in events], bad, None
     return None
 

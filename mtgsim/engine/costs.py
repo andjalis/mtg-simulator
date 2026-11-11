@@ -8,7 +8,7 @@ from .. import cx_static_cond
 from ..cards import AltCost, CardDef, Effect, add_mana, make_token
 from .mana import find_payment, payable
 from .policy import perm_value
-from .state import COLOR_WORDS, Permanent, Player, TARGETED, _gy_desc, card_matches, is_basic_land
+from .state import COLOR_WORDS, Permanent, Player, StackItem, TARGETED, _gy_desc, card_matches, is_basic_land
 
 FACE_DOWN = ("disguise", "morph", "megamorph")   # cast face down for {3} as a 2/2, turned face up for this cost
 
@@ -216,8 +216,27 @@ class CostsMixin:
             return len(p.hand)
         if kind == "opp_hand":
             return len(self.opponent(p).hand)
+        if kind == "spell":
+            spell = item.context if item is not None and isinstance(item.context, StackItem) else (
+                prev if isinstance(prev, StackItem) else getattr(item, "target_spell", None))
+            card = spell.card if isinstance(spell, StackItem) else None
+            if card is None:
+                return 0
+            if spec[1] == "colors":
+                return len(card.colors)
+            if spec[1] == "generic":
+                return card.mana_cost.get("generic", 0) if isinstance(card.mana_cost, dict) else 0
+            if spec[1] == "mana value":
+                return card.cmc + getattr(spell, "x", 0) * (card.mana_cost.get("X", 0) if isinstance(card.mana_cost, dict) else 0)
+            return max(0, int(getattr(card, "power" if spec[1] == "power" else "toughness", 0) or 0))
         if kind == "stat":
-            who = prev if spec[1] == "prev" else src
+            if spec[1] == "sacrificed":
+                who = getattr(item, "sacrificed_permanent", None)
+            elif spec[1] == "referent":
+                from ..referent import permanent
+                who = permanent(item, prev, self)
+            else:
+                who = prev if spec[1] == "prev" else src
             if spec[2] == "mana value":
                 if spec[1] == "self" and item is not None and item.card:
                     return item.card.cmc
@@ -306,6 +325,8 @@ class CostsMixin:
 
     def gy_move(self, p: Player, eff: Effect, item):
         """"Return up to N target <description> cards from your/a graveyard to your hand/the battlefield"."""
+        from ..referent import remember_card
+        remember_card(item, None)
         d = eff.data
         zones = {"mine": [p], "opp": [self.opponent(p)], "any": [p, self.opponent(p)]}[d["zone"]]
         cands = []
@@ -338,6 +359,7 @@ class CostsMixin:
                 names.add(c.name)
                 picked.append((o, c))
         for owner, card in picked:
+            remember_card(item, card)
             owner.graveyard.remove(card)
         for owner, card in picked:
             if item is not None:
@@ -747,7 +769,8 @@ class CostsMixin:
                     out.append(self._variant(c, "blitz_gy" if a.kind == "blitz" else a.kind, a))
         from ..advanced_templates import permission_options
         from .. import cx_top      # "You may cast creature spells from the top of your library."
-        return out + permission_options(self, p) + cx_top.options(self, p)
+        from .. import exile_permissions
+        return out + permission_options(self, p) + cx_top.options(self, p) + exile_permissions.options(self, p)
 
     def impulse_cards(self, p: Player) -> list:
         """Exiled cards p may still play (drops the expired ones)."""
@@ -761,6 +784,8 @@ class CostsMixin:
         """The zone a spell_options() variant of this kind is cast from."""
         if kind.startswith("foreign_"):
             return getattr(self, "foreign_zones", {}).get((id(p), kind), p.exile)
+        if kind.startswith("exile_cast_"):
+            return p.exile
         return {"grave_permission": p.graveyard, "aftermath": p.graveyard, "from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile, "airbent": p.airbent,
                 "mayhem": p.graveyard, "madness": p.exile, "unearth": p.graveyard, "disturb": p.graveyard, "jump_start": p.graveyard,
@@ -837,8 +862,7 @@ class CostsMixin:
                         x.card.advanced_rules.get("sorcery_flash") and not x.abilities_suppressed
                         for x in p.battlefield))):
                 return False
-        if any(e.target == "spell" for e in card.spell_effects):
-            if not any(self.can_counter(e, item, p) for e in card.spell_effects if e.kind == "counter"
-                       for item in self.stack):
-                return False
+        if any(e.target == "spell" and not e.data.get("optional_target") and not self.legal_targets(p, e)
+               for e in card.spell_effects):
+            return False
         return self.spell_payable(p, card)

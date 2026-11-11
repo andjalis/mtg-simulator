@@ -10,6 +10,10 @@ from mtgsim.residual_templates import activation_blocked
 from tests.test_combat_triggers import Scripted, BEAR
 from tests.test_templates import ISLAND, card
 
+WATCHER = card("Test Watcher", "{2}{W}", "Creature — Angel",
+               "Flying\nWhenever this creature or another creature you control with flying enters, "
+               "you may gain life equal to that creature's power.", 2, 2)
+FLYER = card("Test Flyer", "{4}", "Creature — Bird", "Flying", 4, 4)
 BIG = card("Test Giant", "{4}", "Creature — Giant", "", 4, 5)
 EMBER = card("Test Ember", "{1}{R}", "Creature — Beast", "~ can't attack or block alone.", 3, 3)
 CROWN = card("Test Commodore", "{2}{U}", "Creature — Pirate", "When Test Commodore enters, you become the monarch.", 1, 1)
@@ -52,6 +56,30 @@ class Batch1(unittest.TestCase):
         self.apply("Each player sacrifices a creature.")
         self.assertNotIn(mine, self.a.battlefield)
         self.assertNotIn(theirs, self.b.battlefield)
+
+    def test_lose_life_equal_to_destroyed_creatures_toughness(self):
+        big = self.put(BIG, self.b)
+        life = self.a.life
+        self.apply("Destroy target creature. You lose life equal to that creature's toughness.", [big])
+        self.assertEqual(self.a.life, life - 5)
+
+    def test_controller_of_exiled_creature_gains_life_equal_to_its_power(self):
+        big = self.put(BIG, self.b)
+        life_a, life_b = self.a.life, self.b.life
+        self.apply("Exile target creature. Its controller gains life equal to its power.", [big])
+        self.assertEqual((self.a.life, self.b.life), (life_a, life_b + 4))
+
+    def test_controller_loses_life_equal_to_toughness_after_destroy(self):
+        big = self.put(BIG, self.b)
+        life_b = self.b.life
+        self.apply("Destroy target creature. That creature's controller loses life equal to its toughness.", [big])
+        self.assertEqual(self.b.life, life_b - 5)
+
+    def test_entering_creatures_power_from_trigger_subject(self):
+        self.put(WATCHER)
+        life = self.a.life
+        self.put(FLYER)
+        self.assertEqual(self.a.life, life + 4)
 
     def test_gain_life_equal_to_destroyed_creatures_power(self):
         big = self.put(BIG, self.b)

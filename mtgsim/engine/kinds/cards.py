@@ -321,10 +321,17 @@ def mill(game, p, eff, target, item, opp, **_):
 
 
 @kind("exile_top")
-def exile_top(game, p, eff, **_):
+def exile_top(game, p, eff, target=None, item=None, **_):
+    from ...referent import remember_card
+    remember_card(item, None)
+    if eff.target == "that_player":
+        if not isinstance(target, Player):
+            return
+        p = target
     p.impulse_new = []
     for _ in range(min(eff.amount, len(p.library))):
         c = p.library.pop()
+        remember_card(item, c)
         p.exile.append(c)
         p.impulse_new.append(c)
     game.log(f"exiles the top {len(p.impulse_new)} card(s) of their library", p)
@@ -571,9 +578,60 @@ def clash(game, p, eff, item, opp, **_):
 def flip_coin(game, p, eff, item, **_):
     """\"Flip a coin. If you win/lose the flip, <X>\" (chance_templates.py): a fair coin
     decides; the rider (cond \"paid\") runs on the named side of the flip."""
-    won = game.rng.random() < 0.5
+    from ...chance_templates import toss
+    n = getattr(item, "x", 0) if eff.data.get("count_x") else eff.amount if eff.data.get("count") else 1
+    wins = losses = 0
+    while eff.data.get("until_lose") or wins + losses < n:
+        won = toss(game, p)
+        wins += int(won)
+        losses += int(not won)
+        if item is not None:
+            item.gate_paid = won != bool(eff.data.get("on_lose"))
+        game.log(f"flips a coin and {'wins' if won else 'loses'}", p)
+        if won:
+            game.fire(p, "you_win_flip")
+        if eff.data.get("until_lose") and not won:
+            break
     if item is not None:
-        item.gate_paid = won != bool(eff.data.get("on_lose"))
-    game.log(f"flips a coin and {'wins' if won else 'loses'}", p)
-    if won:
-        game.fire(p, "you_win_flip")
+        item.flips_won, item.flips_lost = wins, losses
+
+
+_CONJURE_DB = []
+
+
+def conjure_card(name):
+    """A fresh CardDef for a card from outside the game, from the offline database (None when unknown)."""
+    if not _CONJURE_DB:
+        from ...carddb import CardDB
+        _CONJURE_DB.append(CardDB(offline=True))
+    try:
+        return _CONJURE_DB[0].get(name)
+    except (KeyError, ValueError):
+        return None
+
+
+@kind("conjure")
+def conjure(game, p, eff, **_):
+    """Conjure N copies of a named card into a zone of yours; each is a new physical card."""
+    import dataclasses
+    name, dest = eff.data["card_name"], eff.data["dest"]
+    base = conjure_card(name)
+    if base is None:
+        game.log(f"cannot conjure {name} (not in the card database)", p)
+        return
+    for _ in range(max(1, eff.amount)):
+        card = dataclasses.replace(base)
+        if dest == "battlefield":
+            extra = eff.data.get("counters")
+            game.enter_battlefield(p, card, tapped=bool(eff.data.get("tapped")),
+                                   counters={"+1/+1": extra} if extra else None)
+        elif dest == "hand":
+            p.hand.append(card)
+        elif dest == "graveyard":
+            p.graveyard.append(card)
+        else:
+            top = eff.data.get("top")
+            p.library.insert(game.rng.randint(max(0, len(p.library) - top + 1), len(p.library)) if top else len(p.library), card)
+    if dest == "library" and eff.data.get("shuffle"):
+        p.library.shuffle(game.rng)
+    game.log(f"conjures {name} into {dest}" if dest != "battlefield" else f"conjures {name}", p)

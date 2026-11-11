@@ -10,13 +10,12 @@ engine hands the effect kinds in KINDS to resolve() here.
     You may have ~ enter as a copy of any creature on the battlefield[, except ...].
     When you next cast an instant or sorcery spell this turn, copy that spell [twice].
     Copy target instant or sorcery spell you control.  /  (cast trigger) copy that spell.
-    "Copy target spell" without "you control" matches the same template: the engine only ever
-    copies spells you control, so the restriction is implicit rather than a wording approximation.
+    Targeted spell copies choose a spell on the stack, honoring controller, type, mana-value and target restrictions.
 
     ~ becomes a copy of target creature you control until end of turn.  (reverts in the cleanup step)
     Copy target activated or triggered ability you control [from a creature source] [X times].
 
-Simplifications: the permanent or spell to copy is picked when the effect resolves (so "target"
+Simplifications: the permanent to copy is picked when the effect resolves (so "target"
 only checks hexproof on the opponent's permanents), the legend rule isn't modelled (so "except it
 isn't legendary" changes nothing), and a token sacrificed "at the beginning of the next end step"
 goes at its controller's end step.
@@ -32,7 +31,8 @@ KINDS = {"copy_perm", "copy_spell", "copy_next_spell", "copy_sac", "become_copy"
 
 _KW = (r"flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|"
        r"indestructible|menace|reach|defender|flash|prowess")
-_COLORS = {"white", "blue", "black", "red", "green", "colorless"}
+_COLOR_CODES = dict(zip(("white", "blue", "black", "red", "green"), "WUBRG"))
+_COLORS = set(_COLOR_CODES) | {"colorless"}
 _TYPES = {"artifact": "Artifact", "creature": "Creature", "enchantment": "Enchantment", "land": "Land",
           "planeswalker": "Planeswalker", "instant": "Instant", "sorcery": "Sorcery"}
 _SAC_QUOTE = re.compile(r'"At the beginning of the end step, sacrifice ~\.?"\.?')
@@ -121,6 +121,35 @@ def _target_copy(m):
 _EXCEPT = r"(?:, except (?P<exc>.+?))?(?P<flags>(?: COPY[A-Z]+)*)"
 _MANY = rf"(?:a token that's a copy|(?P<n>{_N[1:-1]}) tokens that are copies)"
 
+
+def _target_spell_copy(m):
+    from .cards import Effect
+    times = {"twice": 2, "two times": 2, "three times": 3, "four times": 4, "five times": 5}
+    data = {"of": "target", "what": (m["what"] or "").strip(),
+            "n": times.get((m["times"] or "").strip().lower(), 1),
+            "controller": "mine" if m["mine"] else "opps" if m["opps"] else "any"}
+    if m["limit"]:
+        data["max_cmc"] = int(m["limit"])
+    if m["not_cast"]:
+        data["not_cast"] = True
+    if m["targets_you"]:
+        data["targets_you"] = True
+    if m["color"]:
+        data["mods"] = {"color_override": frozenset() if m["color"].lower() == "colorless"
+                        else frozenset({_COLOR_CODES[m["color"].lower()]})}
+    if m["nonlegendary"]:
+        data["mods"] = {"legendary": False}
+    return Effect("copy_spell", target="spell", data=data)
+
+
+_SPELL_COPY = (r"copy target (?P<what>instant or sorcery |instant |sorcery |creature |artifact |permanent )?spell"
+               r"(?P<mine> you control)?(?P<opps> an opponent controls)?"
+               r"(?: with mana value (?P<limit>\d+) or less)?"
+               r"(?P<not_cast> that wasn't cast)?(?P<targets_you> that targets you)?"
+               r"(?P<times> (?:twice|two times|three times|four times|five times))?"
+               r"(?:, except (?:that the copy is (?P<color>white|blue|black|red|green|colorless)|"
+               r"(?P<nonlegendary>it isn't legendary if the spell is legendary)))?")
+
 EFFECT_PATTERNS = [
     (rf"create {_MANY} of (?P<other>another )?target (?P<what>[\w ,-]+?)(?P<scope> you control| an opponent "
      rf"controls)?{_EXCEPT}", _target_copy),
@@ -132,8 +161,7 @@ EFFECT_PATTERNS = [
     (r"you may choose new targets for the cop(?:y|ies)", lambda m: None),
     (r"(?:you may )?copy (?:that spell|it)( twice)?(?: and you may choose new targets for the copy)?",
      lambda m: _effect("copy_spell", of="that", n=2 if m[1] else 1)),
-    (r"copy target (?P<what>instant or sorcery |instant |sorcery |creature )?spell(?: you control)?",
-     lambda m: _effect("copy_spell", of="target", what=(m["what"] or "").strip(), n=1)),
+    (_SPELL_COPY, _target_spell_copy),
     (r"when you (?:next cast an? (?P<a>instant or sorcery|creature) spell|cast your next (?P<b>instant or sorcery) "
      r"spell(?: with mana value (?P<cmc>\d+) or less)?) this turn, copy (?:that spell|it)(?P<twice> twice)?"
      r"(?:, except the copy isn't legendary)?(?: and you may choose new targets for the cop(?:y|ies))?",
@@ -151,6 +179,9 @@ EFFECT_PATTERNS = [
     (r"this ability can't be copied(?: and X can't be 0)?", lambda m: None),
     (r"copy the next spell you cast this turn when you cast it",
      lambda m: _effect("copy_next_spell", what="", max_cmc=99, n=1)),
+    (r"copy the next (?P<what>instant or sorcery|instant|sorcery|creature) spell(?: with mana value "
+     r"(?P<cmc>\d+) or less)? you cast this turn when you cast it",
+     lambda m: _effect("copy_next_spell", what=m["what"], max_cmc=int(m["cmc"] or 99), n=1)),
 ]
 
 
@@ -312,8 +343,7 @@ def value(game, me, eff, source=None) -> float:
         return 2.0 if _abilities(game, me, eff) else -1
     if k == "copy_spell":
         if d.get("of") == "target":
-            own = [i for i in game.stack if i.is_spell and i.controller is me and _spell_fits(i.card, d.get("what"))]
-            return max((i.card.cmc for i in own), default=-1)
+            return max((i.card.cmc for i in spell_targets(game, me, eff)), default=-1)
         return 2.0
     if k == "copy_next_spell":
         return 1.0 if any(_spell_fits(c, d.get("what")) and c.cmc <= d.get("max_cmc", 99)
@@ -349,7 +379,20 @@ def _spell_fits(card, what) -> bool:
         return False
     if what == "instant or sorcery":
         return card.is_instant or card.is_sorcery
-    return {"instant": card.is_instant, "sorcery": card.is_sorcery, "creature": card.is_creature}.get(what or "", True)
+    return {"instant": card.is_instant, "sorcery": card.is_sorcery, "creature": card.is_creature,
+            "artifact": card.is_artifact, "permanent": card.is_permanent}.get(what or "", True)
+
+
+def spell_targets(game, p, eff):
+    """The spells a targeted copy can legally select, including opposing spells and copies."""
+    d = eff.data
+    ctrl = d.get("controller")
+    return [s for s in game.stack if s.is_spell and _spell_fits(s.card, d.get("what"))
+            and (ctrl == "any" or (ctrl == "mine") == (s.controller is p))
+            and (not d.get("not_cast") or s.kind == "copy")
+            and (not d.get("targets_you") or any(t is p for t in s.targets))
+            and ("max_cmc" not in d or s.card.cmc + getattr(s, "x", 0)
+                 * (s.card.mana_cost.get("X", 0) if isinstance(s.card.mana_cost, dict) else 0) <= d["max_cmc"])]
 
 
 def resolve(game, p, eff, target, item=None):
@@ -406,27 +449,33 @@ def resolve(game, p, eff, target, item=None):
     elif k == "copy_spell":
         spell = None
         if d.get("of") == "that":
-            spell = item.context if item is not None else None
+            from .engine import StackItem
+            spell = item.context if item is not None and isinstance(item.context, StackItem) else getattr(item, "target_spell", None)
         else:
-            own = [i for i in game.stack if i.is_spell and i.controller is p and _spell_fits(i.card, d.get("what"))]
-            spell = own[-1] if own else None
+            spell = target if any(target is s for s in spell_targets(game, p, eff)) else None
         if spell is not None and spell in game.stack and spell.card is not None:
             for _ in range(d.get("n", 1)):
-                copy_spell(game, p, spell)
+                copy_spell(game, p, spell, mods=d.get("mods"))
     elif k == "copy_next_spell":
         game.copy_next = [c for c in getattr(game, "copy_next", []) if c[2] == game.turn]
         game.copy_next.append((p, d, game.turn))
         game.log("will copy the next matching spell this turn", p)
 
 
-def copy_spell(game, p, spell):
+def copy_spell(game, p, spell, *, mods=None):
     """Put a copy of spell (a StackItem) on the stack under p's control, with new targets where better."""
     from .engine import StackItem
     card = spell.card
     if card.is_permanent:
         face = getattr(card, "cast_face", None) or game._origin(card)[0]
         card = dataclasses.replace(face, is_token=True)
-    targets = game.auto_targets(p, spell.effects)
+    if mods:
+        card = dataclasses.replace(card, **mods)
+    # Keep legal spell targets. Retargeting a copied copy spell to the original copy spell itself
+    # would otherwise make the default policy create copies forever.
+    preset = [t if e.target == "spell" and game.legal_target(p, e, t) else None
+              for e, t in zip(spell.effects, spell.targets)]
+    targets = game.auto_targets(p, spell.effects, preset=preset)
     targets = [t if t is not None else old for t, old in zip(targets, spell.targets)]
     copy = StackItem(p, list(spell.effects), targets, card=card, name=f"copy of {spell.card.name}", kind="copy")
     copy.x = getattr(spell, "x", 0)

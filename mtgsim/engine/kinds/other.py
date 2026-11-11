@@ -9,6 +9,12 @@ from ..state import FIREBEND_MANA, Permanent, StackItem, pool_mana
 from . import kind
 
 
+@kind("combat_tax")
+def combat_tax(game, eff, **_):
+    from ...cx_combat_costs import add_temporary
+    add_temporary(game, eff.amount)
+
+
 @kind("airbend")
 def airbend(game, p, target, **_):
     """Exile a permanent; its owner may cast it for {2} for as long as it stays exiled."""

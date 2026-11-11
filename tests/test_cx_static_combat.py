@@ -91,6 +91,36 @@ class CombatUnless(unittest.TestCase):
         self.put(card("Test Werewolf", "{1}{G}", "Creature — Human Werewolf", "", 2, 2))
         self.assertTrue(can_block(wolf, attacker))
 
+    def test_if_form_stops_while_condition_holds(self):
+        orgg = self.put("Orgg")           # can't attack if defending player controls an untapped creature with power 3+
+        self.assertTrue(orgg.can_attack())
+        big = self.put(card("Test Ogre", "{3}", "Creature — Ogre", "", 3, 3), self.b)
+        self.assertFalse(orgg.can_attack())
+        big.tapped = True
+        self.assertTrue(orgg.can_attack())
+
+    def test_if_form_on_block_uses_own_lands(self):
+        bl = self.put("Branded Brawlers")  # can't block if you control an untapped land
+        attacker = self.put(BEAR, self.b)
+        land = self.put(card("Mountain", types="Basic Land — Mountain", text="({T}: Add {R}.)"))
+        self.assertFalse(can_block(bl, attacker))
+        land.tapped = True
+        self.assertTrue(can_block(bl, attacker))
+
+    def test_defending_player_is_the_monarch(self):
+        hireling = self.put("Crown-Hunter Hireling")
+        self.assertFalse(hireling.can_attack())
+        self.game.monarch = self.b
+        self.assertTrue(hireling.can_attack())
+
+    def test_cards_in_exile_total(self):
+        ket = self.put(card("Test Ket", "{2}{B}", "Creature — Spirit",
+                            "~ can't attack or block unless there are seven or more cards in exile.", 2, 2))
+        self.assertFalse(ket.can_attack())
+        self.a.exile += [BEAR] * 4
+        self.b.exile += [BEAR] * 3
+        self.assertTrue(ket.can_attack())
+
     def test_prices_stay_unparsed(self):
         self.assertTrue(self.db.get("Qal Sisma Behemoth").unsupported)
 

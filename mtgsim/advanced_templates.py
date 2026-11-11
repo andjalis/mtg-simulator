@@ -185,8 +185,10 @@ def begin_turn(game, p):
 
 
 def attack_tax(game, defender):
-    from .cx_next_turn import attack_flag_tax
-    return sum(rules(x).get('attack_tax', 0) for x in defender.battlefield) + attack_flag_tax(game, defender)
+    """Legacy generic estimate; declarations pay the full, defender-specific cost."""
+    from .cx_combat_costs import attack_cost
+    cost = attack_cost(game, None, defender)
+    return 10 ** 6 if cost is None else cost.get("generic", 0)
 
 
 def cast_allowed(game, p, card):
@@ -205,6 +207,32 @@ def cast_allowed(game, p, card):
     if not card.is_creature and any(rules(x).get('land_cast_limit') for x in game.opponent(p).battlefield):
         return card.cmc <= sum(x.card.is_land for x in p.battlefield)
     return True
+
+
+def payment_color_counts(payment, cost):
+    """{colour: most mana of that colour the payment can have been}, the caster choosing the assignment that favours
+    it ("if at least three red mana was spent to cast ~"). Pips of other colours each take a distinct source that
+    can make them; every other source counts toward a colour it can make."""
+    from .engine.mana import _mana_of, _amount
+    slots = [frozenset(_mana_of(s)) for s in payment for _ in range(max(1, _amount(s)))]
+    pips = [c for c in 'WUBRGC' for _ in range(cost.get(c, 0))]
+    out = {}
+    for colour in 'WUBRGC':
+        others = [c for c in pips if c != colour]
+        others.sort(key=lambda c: sum(c in s for s in slots))
+
+        def best(i, free):
+            if i == len(others):
+                return sum(colour in s for s in free)
+            top = -1
+            for j, slot in enumerate(free):
+                if others[i] in slot:
+                    top = max(top, best(i + 1, free[:j] + free[j + 1:]))
+            return top
+        n = best(0, slots)
+        if n > 0:
+            out[colour] = n
+    return out
 
 
 def payment_colors(payment, cost):
@@ -267,6 +295,9 @@ def permission_available(game, p, card, kind):
         return card.advanced_rules.get('aftermath', False)
     if kind.startswith('foreign_'):
         return any(ref.find(zone) is game._origin(card)[0] for zone, ref in getattr(p, 'foreign_permissions', []))
+    if kind.startswith('exile_cast_'):
+        from . import exile_permissions
+        return exile_permissions.available(game, p, card, kind)
     return True
 
 

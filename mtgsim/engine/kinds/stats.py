@@ -202,7 +202,11 @@ def add_counter(game, p, eff, target, **_):
             n = p.sacrificed_turn
             if n >= 3:
                 target.temp_kw.add("lifelink")
-        target.counters[name] = target.counters.get(name, 0) + n
+        before = target.counters.get(name, 0)
+        target.counters[name] = before + n
+        if eff.data.get("counter_duration"):
+            from ...cx_statics import link_counter
+            link_counter(game, p, target, eff.data["counter_duration"], target.counters.get(name, 0) > before)
 
 
 @kind("increment")
@@ -384,3 +388,14 @@ def level_up(game, p, eff, item, **_):
         src.counters["level"] = eff.data["to"]
         game.log(f"{src.card.name} becomes level {eff.data['to']}", p)
         game.fire(p, "class_level", src, subject=eff.data["to"])
+
+
+@kind("set_base_referent")
+def set_base_referent(game, eff, target, item, prev=None, **_):
+    """Freeze the trigger subject's stats into a temporary base-stat setting effect."""
+    subject = prev if isinstance(prev, Permanent) else getattr(item, "context", None)
+    if not isinstance(subject, Permanent) or not isinstance(target, Permanent) or target not in target.controller.battlefield:
+        return
+    power = subject.power if eff.data["stat"] in ("power", "both") else None
+    toughness = subject.toughness if eff.data["stat"] in ("toughness", "both") else None
+    game.add_continuous_effect(target, "set_base", power=power, toughness=toughness, until_eot=True)

@@ -616,8 +616,8 @@ def observe(game, p, event, source=None, context=None, subject=None):
         return
     if event == "perm_to_gy" and source is not None:
         return      # fired twice (with and without a source); listen once
-    if event == "any_cast" and context is not p:
-        return      # fired once per player; listen to the caster's copy
+    if event == "any_cast" and getattr(context, "controller", context) is not p:
+        return      # fired once per player; listen to the caster's copy (context: the cast spell)
     from .residual_templates import trigger_suppressed
     if trigger_suppressed(game, event, source, context, subject):
         return      # Torpor Orb and friends
@@ -675,7 +675,13 @@ def observe(game, p, event, source=None, context=None, subject=None):
             if amount is not None and any(e.data.get("that_much") for e in effects):
                 import dataclasses
                 effects = [dataclasses.replace(e, amount=amount) if e.data.get("that_much") else e for e in effects]
-            game.queue_trigger(perm.controller, effects, perm, perm.card.name, ctx, modes=trig.modes,
+            # "counter that spell" on a cast trigger: the spell just cast is the referent
+            tgts = None
+            cast_item = getattr(game, "casting_item", None)
+            if event == "any_cast" and cast_item is not None and any(
+                    e.kind == "counter" and e.data.get("that_spell") for e in effects):
+                tgts = [cast_item if e.kind == "counter" and e.data.get("that_spell") else None for e in effects]
+            game.queue_trigger(perm.controller, effects, perm, perm.card.name, ctx, targets=tgts, modes=trig.modes,
                                intervening_if=trig.intervening_if)
 
 

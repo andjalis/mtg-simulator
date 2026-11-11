@@ -23,6 +23,9 @@ def _rules(st):
 
 
 def parse_line(line: str, st) -> bool:
+    lead = re.fullmatch(r"((?:[A-Z][\w' -]* — )?)If (.+?), (~ enters(?: the battlefield)? with .+? counters? on it)\.", line)
+    if lead:        # "Adamant — If at least three red mana was spent to cast ~, ~ enters with a +1/+1 counter on it."
+        line = f"{lead[1]}{lead[3]} if {lead[2]}."
     m = re.fullmatch(r"(?:[A-Z][\w' -]* — )?~ enters(?: the battlefield)? with (a|an|one|two|three|four|five|six|"
                      r"seven|eight|\d+) (?:additional )?(\+1/\+1|-1/-1|[a-z]+) counters? on it if (.+)\.", line)
     if m:

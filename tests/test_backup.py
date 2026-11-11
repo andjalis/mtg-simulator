@@ -48,6 +48,12 @@ class Backup(unittest.TestCase):
         self.assertFalse(any(e.kind == "backup" for t in granted for e in t.effects))
         self.assertTrue(slinger.triggers)
 
+    def test_abilities_above_backup_are_not_granted(self):
+        """#271: only what is printed below the backup keyword is granted (Saiba Cryptomancer: Flash above)."""
+        self.back_up("Saiba Cryptomancer")
+        self.assertTrue(self.ally.has("hexproof"))
+        self.assertFalse(self.ally.has("flash"))
+
     def test_activated_ability_is_granted(self):
         self.assertEqual(len(self.ally.card.activated), 0)
         self.back_up("Voldaren Thrillseeker")

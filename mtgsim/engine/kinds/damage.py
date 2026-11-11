@@ -3,12 +3,29 @@ from __future__ import annotations
 
 import dataclasses
 
-from ..state import Permanent, Player
+from ..state import Permanent, Player, StackItem
 from . import kind
+
+
+@kind("damage_referent_board")
+def damage_referent_board(game, p, eff, item, prev, cause, **_):
+    """A creature deals its power to each other creature, optionally also each opponent."""
+    from ...referent import permanent
+    src = permanent(item, prev, game)
+    if src is None:
+        return
+    amount = max(0, src.power)
+    victims = [c for pl in game.players for c in pl.creatures if c is not src]
+    if eff.data.get("opponents"):
+        victims += [pl for pl in game.players if pl is not src.controller]
+    for victim in victims:
+        game.deal_damage(victim, amount, by=src.controller, cause=cause, source=src)
 
 
 @kind("damage")
 def damage(game, p, eff, target, item, opp, cause, **_):
+    if eff.data.get("spell_controller"):
+        target = target.controller if isinstance(target, StackItem) else None
     src = (item.source if item.source is not None else item.card) if item is not None else None
     if eff.data.get("src_prev") or eff.data.get("it_ctx"):         # "it deals damage equal to its power ..." (cx_abil_damage)
         from ...cx_abil_damage import damage_source
@@ -69,13 +86,6 @@ def drain(game, p, eff, opp, cause, **_):
 def lose_life(game, p, eff, target, cause, **_):
     who = target if eff.target in ("that_player", "that_controller", "prev") and isinstance(target, Player) else p
     game.change_life(who, -eff.amount, cause)
-
-
-@kind("gain_prev_toughness")
-def gain_prev_toughness(game, p, prev, cause, **_):
-    """"You gain life equal to that creature's toughness": the previous effect's target, as it last existed."""
-    if isinstance(prev, Permanent):
-        game.change_life(p, max(0, prev.last_pt[1] if prev not in prev.controller.battlefield else prev.toughness), cause)
 
 
 @kind("lose_each")

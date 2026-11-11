@@ -16,7 +16,8 @@ class ResolveMixin:
         if eff.target == "self" and item is not None:
             target = item.source
         if eff.target == "that_player" and item is not None:
-            target = item.context
+            ctx = item.context
+            target = ctx.controller if isinstance(ctx, StackItem) else ctx   # any_cast: the cast spell's caster
         if eff.target == "trigger_subject" and item is not None:
             target = item.context if isinstance(item.context, Permanent) and item.context in item.context.controller.battlefield \
                 else None
@@ -24,6 +25,11 @@ class ResolveMixin:
             target = item.source.aura_host or item.source.attached_to     # "enchanted creature" / "equipped creature"
         if eff.target == "that_controller":
             target = prev.controller if isinstance(prev, (Permanent, StackItem)) else prev
+            ctx = item.context if item is not None else None
+            if target is None and isinstance(ctx, StackItem):       # "that spell's controller" in a cast trigger
+                target = ctx.controller
+            elif target is None and isinstance(ctx, Player) and eff.data.get("cast_spell") is not None:
+                target = ctx
         k = eff.kind
         source = (item.card.name if item and item.card else
                   item.source.card.name if item and isinstance(item.source, Permanent) else "effect")
@@ -47,7 +53,7 @@ class ResolveMixin:
             if getattr(src, "emerged_toughness", None) is not None:
                 eff = dataclasses.replace(eff, amount=src.emerged_toughness)
         if eff.data.get("xq"):     # ", where X is the number of ..."
-            n = self.x_quantity(p, eff.data["xq"], item, prev)
+            n = self.x_quantity(p, eff.data["xq"], item, eff.data.get("cast_spell") or prev)
             if eff.data.get("xq_size"):
                 eff = dataclasses.replace(eff, data=dict(eff.data, power=n, toughness=n))
             else:
@@ -62,6 +68,8 @@ class ResolveMixin:
                     if what == "artifacts" else x.is_creature if what == "creatures" else x.card.is_land
                     for x in p.battlefield)
             eff = dataclasses.replace(eff, amount=n)
+        if eff.data.get("instead_multiplier"):
+            eff = dataclasses.replace(eff, amount=eff.amount * eff.data["instead_multiplier"])
         handler = HANDLERS.get(k)
         if handler is not None:
             from ..backlog_templates import entry_batch

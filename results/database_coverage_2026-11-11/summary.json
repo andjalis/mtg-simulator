@@ -1,0 +1,326 @@
+{
+  "measured_on": "2026-11-11",
+  "total": 34922,
+  "counts": {
+    "full": 20142,
+    "simplified": 207,
+    "partial": 14573,
+    "parse_error": 0
+  },
+  "parse_errors": [],
+  "ranking_method": "Potential full matches have every ignored line in the gap and no recorded simplifications. Counts are upper bounds, overlap, and must not be summed.",
+  "unclassified": {
+    "gap": "unclassified",
+    "affected_cards": 6985,
+    "potential_full_matches": 4676,
+    "examples": [
+      "A Chaotic Night in Vegas",
+      "A Real Handful",
+      "AWOL"
+    ]
+  },
+  "families": [
+    {
+      "gap": "counters",
+      "affected_cards": 2008,
+      "potential_full_matches": 1426,
+      "examples": [
+        "Aang, Airbending Master",
+        "Aboroth",
+        "Ace, Fearless Rebel"
+      ]
+    },
+    {
+      "gap": "triggered (whenever/when)",
+      "affected_cards": 2027,
+      "potential_full_matches": 1337,
+      "examples": [
+        "A Girl and Her Dogs",
+        "A Good Day to Pie",
+        "Aang, at the Crossroads // Aang, Destined Savior"
+      ]
+    },
+    {
+      "gap": "activated abilities",
+      "affected_cards": 1528,
+      "potential_full_matches": 1204,
+      "examples": [
+        "A Container of Booster Packs",
+        "A-Town",
+        "Abuna Acolyte"
+      ]
+    },
+    {
+      "gap": "graveyard",
+      "affected_cards": 1818,
+      "potential_full_matches": 1092,
+      "examples": [
+        "\"Rumors of My Death . . .\"",
+        "A Good Day to Pie",
+        "Aatchik, Emerald Radian"
+      ]
+    },
+    {
+      "gap": "exile",
+      "affected_cards": 1597,
+      "potential_full_matches": 910,
+      "examples": [
+        "\"Rumors of My Death . . .\"",
+        "A Container of Booster Packs",
+        "Abdel Adrian, Gorion's Ward"
+      ]
+    },
+    {
+      "gap": "tokens",
+      "affected_cards": 1352,
+      "potential_full_matches": 828,
+      "examples": [
+        "A Girl and Her Dogs",
+        "Aatchik, Emerald Radian",
+        "Abyssal Harvester"
+      ]
+    },
+    {
+      "gap": "sacrifice",
+      "affected_cards": 1222,
+      "potential_full_matches": 763,
+      "examples": [
+        "Abjure",
+        "Ace, Fearless Rebel",
+        "Acidic Dagger"
+      ]
+    },
+    {
+      "gap": "auras/enchant",
+      "affected_cards": 694,
+      "potential_full_matches": 597,
+      "examples": [
+        "Absorbing Man",
+        "Academy Researchers",
+        "Aerial Modification"
+      ]
+    },
+    {
+      "gap": "X costs",
+      "affected_cards": 856,
+      "potential_full_matches": 508,
+      "examples": [
+        "Abaddon the Despoiler",
+        "Accessories to Murder",
+        "Aether Burst"
+      ]
+    },
+    {
+      "gap": "can't restrictions",
+      "affected_cards": 783,
+      "potential_full_matches": 462,
+      "examples": [
+        "Abyssal Persecutor",
+        "Academic Probation",
+        "Agatha of the Vile Cauldron"
+      ]
+    },
+    {
+      "gap": "copy effects",
+      "affected_cards": 580,
+      "potential_full_matches": 336,
+      "examples": [
+        "Aboleth Spawn",
+        "Absorb Identity",
+        "Absorbing Man"
+      ]
+    },
+    {
+      "gap": "equipment",
+      "affected_cards": 422,
+      "potential_full_matches": 333,
+      "examples": [
+        "Ace's Baseball Bat",
+        "Aegis of the Legion",
+        "Aettir and Priwen"
+      ]
+    },
+    {
+      "gap": "library search",
+      "affected_cards": 340,
+      "potential_full_matches": 177,
+      "examples": [
+        "70,000 Light-Years from Home",
+        "Angel's Herald",
+        "Arachnus Spinner"
+      ]
+    },
+    {
+      "gap": "cost reduction",
+      "affected_cards": 253,
+      "potential_full_matches": 137,
+      "examples": [
+        "Absorb Energy",
+        "Acolyte of Bahamut",
+        "Alisaie Leveilleur"
+      ]
+    },
+    {
+      "gap": "transform",
+      "affected_cards": 106,
+      "potential_full_matches": 67,
+      "examples": [
+        "Aang, at the Crossroads // Aang, Destined Savior",
+        "Afflicted Deserter // Werewolf Ransacker",
+        "Archangel Avacyn // Avacyn, the Purifier"
+      ]
+    }
+  ],
+  "exact_wording": [
+    {
+      "gap": "open an attraction.",
+      "affected_cards": 18,
+      "potential_full_matches": 11,
+      "examples": [
+        "Coming Attraction",
+        "Complaints Clerk",
+        "Deadbeat Attendant"
+      ]
+    },
+    {
+      "gap": "banding",
+      "affected_cards": 14,
+      "potential_full_matches": 10,
+      "examples": [
+        "Benalish Hero",
+        "Benalish Infantry",
+        "Icatian Phalanx"
+      ]
+    },
+    {
+      "gap": "draft a card from ~'s spellbook.",
+      "affected_cards": 13,
+      "potential_full_matches": 9,
+      "examples": [
+        "Bladehold Cleaver",
+        "Boseiju Pathlighter",
+        "Cursebound Witch"
+      ]
+    },
+    {
+      "gap": "an \"instead\" effect without the effect it replaces.",
+      "affected_cards": 10,
+      "potential_full_matches": 9,
+      "examples": [
+        "Desolation Angel",
+        "Dispense Justice",
+        "Necra Sanctuary"
+      ]
+    },
+    {
+      "gap": "if you do, ~ assigns no combat damage this turn.",
+      "affected_cards": 12,
+      "potential_full_matches": 7,
+      "examples": [
+        "Dwarven Vigilantes",
+        "Farrel's Zealot",
+        "Laccolith Grunt"
+      ]
+    },
+    {
+      "gap": "double team",
+      "affected_cards": 16,
+      "potential_full_matches": 6,
+      "examples": [
+        "Amber-Plate Ainok",
+        "Dragonblood Twins",
+        "Lizardfolk Librarians"
+      ]
+    },
+    {
+      "gap": "you get {tk}, then you may put a sticker on a nonland permanent you own.",
+      "affected_cards": 6,
+      "potential_full_matches": 6,
+      "examples": [
+        "Aerialephant",
+        "Carnival Carnivore",
+        "Chicken Troupe"
+      ]
+    },
+    {
+      "gap": "you may cast ~ as though it had flash. if you cast it any time a sorcery couldn't have been cast, the controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step.",
+      "affected_cards": 10,
+      "potential_full_matches": 5,
+      "examples": [
+        "Lightning Reflexes",
+        "Mystic Veil",
+        "Parapet"
+      ]
+    },
+    {
+      "gap": "spell commander",
+      "affected_cards": 5,
+      "potential_full_matches": 5,
+      "examples": [
+        "Clear, the Mind",
+        "Gather, the Townsfolk",
+        "Lava, Axe"
+      ]
+    },
+    {
+      "gap": "when a creature with mana value 6 or greater enters, you may return this card from your graveyard to the battlefield attached to that creature.",
+      "affected_cards": 5,
+      "potential_full_matches": 5,
+      "examples": [
+        "Dragon Breath",
+        "Dragon Fangs",
+        "Dragon Scales"
+      ]
+    },
+    {
+      "gap": "as an additional cost to cast ~, discard x cards.",
+      "affected_cards": 10,
+      "potential_full_matches": 4,
+      "examples": [
+        "Channeled Force",
+        "Nostalgic Dreams",
+        "Restless Dreams"
+      ]
+    },
+    {
+      "gap": "copy it for each time you've cast your commander from the command zone this game.",
+      "affected_cards": 6,
+      "potential_full_matches": 4,
+      "examples": [
+        "Echo Storm",
+        "Empyrial Storm",
+        "Fury Storm"
+      ]
+    },
+    {
+      "gap": "spells your opponents cast that target ~ cost {2} more to cast.",
+      "affected_cards": 6,
+      "potential_full_matches": 4,
+      "examples": [
+        "Boreal Elemental",
+        "Charix, the Raging Isle",
+        "Icefall Regent"
+      ]
+    },
+    {
+      "gap": "if you control a commander, you may cast ~ without paying its mana cost.",
+      "affected_cards": 5,
+      "potential_full_matches": 4,
+      "examples": [
+        "Deadly Rollick",
+        "Fierce Guardianship",
+        "Flawless Maneuver"
+      ]
+    },
+    {
+      "gap": "if you don't put the card into your hand, you may put it into your graveyard.",
+      "affected_cards": 5,
+      "potential_full_matches": 4,
+      "examples": [
+        "Archghoul of Thraben",
+        "Sarinth Steelseeker",
+        "Territory Culler"
+      ]
+    }
+  ]
+}

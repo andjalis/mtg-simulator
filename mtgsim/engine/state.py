@@ -52,6 +52,9 @@ class Counters(dict):
             from ..advanced_templates import counter_amount
             value = old + counter_amount(perm, key, value - old)
         super().__setitem__(key, value)
+        if value < old:
+            from ..cx_statics import counter_changed
+            counter_changed(perm, key)
         if key == "charge" and value != old:       # Spacecraft: a creature at its station threshold
             from .. import continuous
             continuous.refresh(perm)
@@ -59,6 +62,28 @@ class Counters(dict):
             game = getattr(perm.controller, "_game", None)
             if game is not None:
                 game.fire(perm.controller, "p1_added", perm)
+
+    def __delitem__(self, key):
+        super().__delitem__(key)
+        from ..cx_statics import counter_changed
+        counter_changed(self.owner, key)
+
+    def pop(self, key, *default):
+        if key not in self:
+            return super().pop(key, *default)
+        value = self[key]
+        del self[key]
+        return value
+
+    def clear(self):
+        for key in list(self):
+            del self[key]
+
+    def popitem(self):
+        if not self:
+            return super().popitem()
+        key = next(reversed(self))
+        return key, self.pop(key)
 
 
 def protected_from(perm, source) -> bool:
@@ -110,7 +135,13 @@ class Permanent:
 
     @tapped.setter
     def tapped(self, value):
+        was_tapped = getattr(self, "_tapped", False)
         self._tapped = value
+        if was_tapped and not value:
+            game = getattr(getattr(self, "controller", None), "_game", None)
+            if game is not None:
+                from ..cx_statics import on_untap
+                on_untap(game, self)
         if not value and getattr(self, "net_locked", False):
             self.net_locked = False
 
@@ -179,6 +210,7 @@ class Permanent:
         self.kicked = False                            # cast with a kicker cost ("if it was kicked")
         self.cast_from_hand = False                    # "if you cast it from your hand"
         self.mana_spent = 0                            # "if at least N mana was spent to cast it"
+        self.mana_by_color = {}                        # {"R": 3}: most mana of a colour the payment can have been
         self.curse_target = None                       # a Curse: the player it enchants
         self.aura_host: "Permanent | None" = None      # the permanent this Aura enchants
         self.attached_to: "Permanent | None" = None    # Equipment: the creature it is attached to
@@ -530,7 +562,8 @@ class Permanent:
             return []
         exalted = [Trigger("attacks_alone", [Effect("pump", 1, 1, target="trigger_subject")])
                    for _ in range(self.exalted_count)]
-        mine = self.card.triggers
+        from ..cx_self_grants import abilities as self_grants
+        mine = list(self.card.triggers) + self_grants(self, triggered=True)
         if self.card.is_class:
             level = self.counters.get("level", 1)
             mine = [t for t in mine if t.min_level <= level]
@@ -538,7 +571,9 @@ class Permanent:
         attack_counters = [Trigger("attacks", [Effect("attack_counter", data={"training": kw == "training"})], filter=kw)
                            for kw in ("training", "dethrone") if self.has(kw)
                            for _ in range(max(1, self.keyword_instances(kw)))]
-        return list(mine) + (list(self.animated.triggers) if self.animated else []) + exalted + decayed + attack_counters + list(self.temp_triggers)
+        from ..cx_statics import linked_triggers
+        return (list(mine) + (list(self.animated.triggers) if self.animated else []) + exalted + decayed +
+                attack_counters + list(self.temp_triggers) + linked_triggers(self))
 
     @property
     def ward(self) -> int:
@@ -565,7 +600,8 @@ class Permanent:
     @property
     def activated(self):
         from ..backlog_templates import grants
-        return list(self.card.activated) + [a for a in grants(self) if a.kind == 'ability']
+        from ..cx_self_grants import abilities as self_grants
+        return list(self.card.activated) + [a for a in grants(self) if a.kind == 'ability'] + self_grants(self)
 
     def granted_mana(self) -> frozenset:
         """Colours other permanents let this one tap for (Enduring Vitality, Great Divide Guide)."""
@@ -677,6 +713,7 @@ class Player:
         self.mulligans = 0
         self.lost_life_turn = False
         self.life_lost_amount = 0         # life lost this turn (damage and loss alike)
+        self.last_damage_turn = None     # damage dealt, including infect and damage with no life loss
         self.perm_left_turn = False
         self.entered_nonland_turn = 0     # nonland permanents that entered under this player's control this turn
         self.attacked_with = 0
@@ -689,7 +726,9 @@ class Player:
     @property
     def land_played(self) -> bool:
         """Whether this turn's land drops are used up (Icetill Explorer gives another)."""
-        return self.lands_played > sum(x.card.extra_lands for x in self.battlefield) + self.extra_lands_turn
+        from ..residual_templates import lands_locked
+        return self.lands_played > sum(x.card.extra_lands for x in self.battlefield) + self.extra_lands_turn or \
+            lands_locked(self)
 
     @land_played.setter
     def land_played(self, value):

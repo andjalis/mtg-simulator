@@ -138,7 +138,7 @@
     "cards": ["Cavalier of Flame"]
   },
   {
-    "match": "(?:~|it|he|she) deals (\\d+) damage to (?:that player|that spell's controller)",
+    "match": "(?:~|it|he|she) deals (\\d+) damage to that player",
     "effect": "damage",
     "amount": "$1:int",
     "target": "that_player",
@@ -590,12 +590,6 @@
     "cards": ["Azusa's Many Journeys // Likeness of the Seeker"]
   },
   {
-    "match": "you gain life equal to that creature's toughness",
-    "effect": "gain_prev_toughness",
-    "example": "you gain life equal to that creature's toughness",
-    "cards": ["Abattoir Ghoul"]
-  },
-  {
     "match": "~ deals (\\d+) damage to that creature's controller",
     "effect": "damage",
     "amount": "$1:int",
@@ -635,7 +629,7 @@
   },
   {
     "match": "~ deals (\\d+) damage to any target and (\\d+) damage to you",
-    "effects": [{"effect": "damage", "amount": "$1:int", "target": "any"}, {"effect": "lose_life", "amount": "$2:int"}],
+    "effects": [{"effect": "damage", "amount": "$1:int", "target": "any"}, {"effect": "cx_damage", "amount": "$2:int", "data": {"source": "self", "side": "theirs", "who": "you"}}],
     "example": "~ deals 1 damage to any target and 1 damage to you",
     "cards": ["Brothers of Fire"]
   },
@@ -1565,9 +1559,10 @@
   },
   {
     "match": "~ deals 1 damage to each of one or two targets",
-    "effect": "damage",
-    "amount": 1,
-    "target": "any",
+    "effects": [
+      {"effect": "damage", "amount": 1, "target": "any", "data": {"distinct": true}},
+      {"effect": "damage", "amount": 1, "target": "any", "data": {"distinct": true, "optional_target": true}}
+    ],
     "example": "~ deals 1 damage to each of one or two targets",
     "cards": ["Prismari Charm"]
   },

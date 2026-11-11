@@ -149,6 +149,10 @@ def _face_special_lines(st, line):
             line = re.sub(r"\s*If ~'s additional cost was paid, [^.]+\.", "", line).strip()
             if not line:
                 return None
+        if re.match(r"(?:When|Whenever|At)\b", line) and "copy the next " in line.lower():
+            # This rider upgrades a delayed copy instruction inside the trigger,
+            # rather than adding a spell effect to the creature's kicked face.
+            line = re.sub(r"If ~ was kicked, (?=copy that spell)", "If it was kicked, ", line)
         kicked += re.findall(r"If ~ was kicked, (.+?\.)", line)
         m = re.search(r"\s*If ~ was cast from a graveyard, draw (\w+) cards instead\.", line)
         if m and _num(m[1]):                      # Plunder the Trollshaws: the graveyard casts draw more
@@ -179,7 +183,9 @@ def _face_special_lines(st, line):
         from .. import cx_static_cond as _cx_static_cond
         if _cx_static_cond.parse_line(line, st):
             return None
-        from .. import counter_mechanics, permanent_templates, backlog_templates, advanced_templates, residual_templates, batch1_templates
+        from .. import counter_mechanics, permanent_templates, backlog_templates, advanced_templates, residual_templates, batch1_templates, cx_combat_costs
+        if cx_combat_costs.parse_line(line, st):
+            return None
         from .. import cx_replace, cx_top, cx_abilitycopy
         if cx_replace.parse_line(line, st) or cx_top.parse_line(line, st) or cx_abilitycopy.parse_line(line, st) or residual_templates.parse_line(line, st) or batch1_templates.parse_line(line, st) or advanced_templates.parse_line(line, st) or backlog_templates.parse_line(line, st) or permanent_templates.parse_line(line, st) or counter_mechanics.parse_line(line, st) or _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st):
             return None

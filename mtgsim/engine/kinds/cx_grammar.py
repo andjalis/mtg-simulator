@@ -50,7 +50,7 @@ def _scaled(game, p, eff, item, prev):
                   if e.data.get("x") else e for e in inners]
     if not eff.data.get("xq"):
         return inners
-    n = game.x_quantity(p, eff.data["xq"], item, prev)
+    n = game.x_quantity(p, eff.data["xq"], item, eff.data.get("cast_spell") or prev)
     return [dataclasses.replace(e, amount=e.amount * n, amount2=e.amount2 * n) for e in inners]
 
 

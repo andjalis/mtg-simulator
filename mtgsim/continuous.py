@@ -19,8 +19,8 @@ class ContinuousEffect:
     target: object
     operation: str
     timestamp: int
-    power: int = 0
-    toughness: int = 0
+    power: int | None = 0
+    toughness: int | None = 0
     keyword: str = ''
     depends_on: tuple = ()
     source: object = None
@@ -65,10 +65,11 @@ def active(permanent):
     game = getattr(permanent.controller, '_game', None)
     if game is None:
         return []
+    from .cx_statics import linked_effects
     from .residual_templates import sources
     static = [ContinuousEffect(-id(src), permanent, "remove", getattr(src, "rules_timestamp", 0), keyword="infect", source=src)
               for src in sources(game, "remove_infect") if (permanent.is_creature if hasattr(permanent, "impending") else permanent._card.is_creature) and src.controller is not permanent.controller]
-    return static + [e for e in game.continuous_effects if e.target is permanent and
+    return static + linked_effects(permanent) + [e for e in game.continuous_effects if e.target is permanent and
             permanent in permanent.controller.battlefield and (e.source is None or
             e.source in e.source.controller.battlefield)]
 
@@ -81,6 +82,20 @@ class CharacteristicView(CardDef):
 
     @property
     def colors(self):
+        source = getattr(self, '_color_source', None)
+        if source is not None:
+            colors = self.effective_colors
+            # The static's timestamp is the permanent's, while later color
+            # changes can override it. Re-evaluate threshold on every read.
+            effects = list(self._color_effects)
+            for i, (code, values) in enumerate(self.advanced_rules.get('self_colors_if', ())):
+                if source.condition(code) and not source.abilities_suppressed:
+                    effects.append(ContinuousEffect(-1000 - i, source, 'set_colors',
+                                   getattr(source, 'rules_timestamp', 0), colors=values))
+            for effect in ordered(effects):
+                colors = (effect.colors if effect.operation == 'set_colors' else colors | effect.colors
+                          if effect.operation == 'add_colors' else colors - effect.colors)
+            return colors
         return self.effective_colors
 
 
@@ -113,7 +128,8 @@ def characteristics(permanent, base):
     if mods:
         from .cx_landtypes import apply
         base = apply(base, mods)
-    if not effects:
+    conditional_colors = bool(base.advanced_rules.get('self_colors_if'))
+    if not effects and not conditional_colors:
         return base
     key = (id(base), tuple((e.id, e.timestamp) for e in effects))
     cached = getattr(permanent, '_characteristic_cache', None)
@@ -136,8 +152,21 @@ def characteristics(permanent, base):
                       if operation == 'add_colors' else colors - effect.colors)
     view = CharacteristicView(**{f.name: getattr(base, f.name) for f in fields(CardDef)})
     view.types, view.subtypes, view.effective_colors = types, subtypes, colors
+    if conditional_colors:
+        view.effective_colors = base.colors
+        view._color_source = permanent
+        view._color_effects = tuple(e for e in effects if e.layer == (5, 0))
     permanent._characteristic_cache = key, view
     return view
+
+
+def freeze_colors(permanent):
+    """Keep a departing conditional color view at its last-known value."""
+    view = permanent.card
+    if isinstance(view, CharacteristicView) and getattr(view, '_color_source', None) is not None:
+        colors = view.colors
+        view._color_source = None
+        view.effective_colors = colors
 
 
 def base_effects(permanent):
@@ -157,7 +186,9 @@ def base_effects(permanent):
 def base_pt(permanent):
     p, t = permanent.card.power or 0, permanent.card.toughness or 0
     for effect in ordered(base_effects(permanent) + [e for e in active(permanent) if e.operation == "set_base"]):
-        p, t = effect.power, effect.toughness
+        # A set-base effect may set only one characteristic (Belligerent Yearling).
+        p = effect.power if effect.power is not None else p
+        t = effect.toughness if effect.toughness is not None else t
     return p, t
 
 
@@ -170,7 +201,8 @@ def pt(permanent):
             p, t = block[0]
     effects = active(permanent)
     for effect in ordered(base_effects(permanent) + [e for e in effects if e.operation == 'set_base']):
-        p, t = effect.power, effect.toughness
+        p = effect.power if effect.power is not None else p
+        t = effect.toughness if effect.toughness is not None else t
     bp, bt = permanent._pt_bonus()
     p += bp + permanent.pump_p
     t += bt + permanent.pump_t

@@ -144,6 +144,11 @@ class TargetsMixin:
             walkers = [x for x in everything if x.is_planeswalker] if eff.data.get("or_pw") else []   # "player or planeswalker"
             return [x for x in ([self.opponent(p)] if eff.filter == "opp" else list(self.players)) if player_targetable(self, x, p)] + walkers
         if t == "spell":
+            if eff.kind == "copy_spell":
+                from ..copies import spell_targets
+                return spell_targets(self, p, eff)
+            if eff.kind == "damage" and eff.data.get("spell_controller"):
+                return [i for i in self.stack if i.is_spell]
             return [i for i in self.stack if self.can_counter(eff, i, p)]
         if t in ("spell_or_permanent", "spell_or_creature"):
             spells = [i for i in self.stack if self.can_counter(eff, i, p)]
@@ -231,8 +236,10 @@ class TargetsMixin:
                         if e2.data.get("group", e2.kind) == group and e2.data.get("distinct")):
                     taken = [t for e2, t in zip(effects, out)
                              if e2.data.get("group", e2.kind) == group and e2.data.get("distinct")]
+                    # "any target" also lists players; a player stands for its own controller here
                     tgt = max((x for x in self.legal_targets(p, e) if all(x is not t for t in taken)
-                               and (x.controller is not p) == (tgt.controller is not p)), key=perm_value, default=None) \
+                               and (getattr(x, "controller", x) is not p) == (tgt.controller is not p)),
+                              key=lambda x: perm_value(x) if isinstance(x, Permanent) else -1.0, default=None) \
                         if isinstance(tgt, Permanent) else None
                 out.append(tgt)
             return out
