@@ -756,7 +756,8 @@ class CostsMixin:
                     out.append(self._variant(c, "blitz_gy" if a.kind == "blitz" else a.kind, a))
         from ..advanced_templates import permission_options
         from .. import cx_top      # "You may cast creature spells from the top of your library."
-        return out + permission_options(self, p) + cx_top.options(self, p)
+        from .. import exile_permissions
+        return out + permission_options(self, p) + cx_top.options(self, p) + exile_permissions.options(self, p)
 
     def impulse_cards(self, p: Player) -> list:
         """Exiled cards p may still play (drops the expired ones)."""
@@ -770,6 +771,8 @@ class CostsMixin:
         """The zone a spell_options() variant of this kind is cast from."""
         if kind.startswith("foreign_"):
             return getattr(self, "foreign_zones", {}).get((id(p), kind), p.exile)
+        if kind.startswith("exile_cast_"):
+            return p.exile
         return {"grave_permission": p.graveyard, "aftermath": p.graveyard, "from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile, "airbent": p.airbent,
                 "mayhem": p.graveyard, "madness": p.exile, "unearth": p.graveyard, "disturb": p.graveyard, "jump_start": p.graveyard,

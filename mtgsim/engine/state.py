@@ -52,6 +52,9 @@ class Counters(dict):
             from ..advanced_templates import counter_amount
             value = old + counter_amount(perm, key, value - old)
         super().__setitem__(key, value)
+        if value < old:
+            from ..cx_statics import counter_changed
+            counter_changed(perm, key)
         if key == "charge" and value != old:       # Spacecraft: a creature at its station threshold
             from .. import continuous
             continuous.refresh(perm)
@@ -59,6 +62,28 @@ class Counters(dict):
             game = getattr(perm.controller, "_game", None)
             if game is not None:
                 game.fire(perm.controller, "p1_added", perm)
+
+    def __delitem__(self, key):
+        super().__delitem__(key)
+        from ..cx_statics import counter_changed
+        counter_changed(self.owner, key)
+
+    def pop(self, key, *default):
+        if key not in self:
+            return super().pop(key, *default)
+        value = self[key]
+        del self[key]
+        return value
+
+    def clear(self):
+        for key in list(self):
+            del self[key]
+
+    def popitem(self):
+        if not self:
+            return super().popitem()
+        key = next(reversed(self))
+        return key, self.pop(key)
 
 
 def protected_from(perm, source) -> bool:
@@ -110,7 +135,13 @@ class Permanent:
 
     @tapped.setter
     def tapped(self, value):
+        was_tapped = getattr(self, "_tapped", False)
         self._tapped = value
+        if was_tapped and not value:
+            game = getattr(getattr(self, "controller", None), "_game", None)
+            if game is not None:
+                from ..cx_statics import on_untap
+                on_untap(game, self)
         if not value and getattr(self, "net_locked", False):
             self.net_locked = False
 
@@ -538,7 +569,9 @@ class Permanent:
         attack_counters = [Trigger("attacks", [Effect("attack_counter", data={"training": kw == "training"})], filter=kw)
                            for kw in ("training", "dethrone") if self.has(kw)
                            for _ in range(max(1, self.keyword_instances(kw)))]
-        return list(mine) + (list(self.animated.triggers) if self.animated else []) + exalted + decayed + attack_counters + list(self.temp_triggers)
+        from ..cx_statics import linked_triggers
+        return (list(mine) + (list(self.animated.triggers) if self.animated else []) + exalted + decayed +
+                attack_counters + list(self.temp_triggers) + linked_triggers(self))
 
     @property
     def ward(self) -> int:

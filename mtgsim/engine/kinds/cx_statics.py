@@ -26,27 +26,27 @@ def control_linked(game, p, target, eff, item, **_):
 
 @kind("linked_pump")
 def linked_pump(game, p, target, eff, item, **_):
-    from ...cx_statics import linked_ok
+    from ...cx_statics import LinkedStatic, linked_ok
     source = _source(item)
     mode = eff.data["duration"]
     if not isinstance(target, Permanent) or not linked_ok(source, mode, p):
         return
     if not hasattr(game, "_linked_statics"):
         game._linked_statics = []
-    game._linked_statics.append((source, target, mode, p, tuple(eff.data["pt"]), tuple(eff.data["kws"])))
+    game._linked_statics.append(LinkedStatic(source, target, mode, p, tuple(eff.data["pt"]), tuple(eff.data["kws"])))
 
 
 @kind("linked_restrict")
 def linked_restrict(game, p, target, eff, item, **_):
     """"Can't attack / block for as long as you control ~": a keyword-style grant with no stat change (cx_statics._linked)."""
-    from ...cx_statics import linked_ok
+    from ...cx_statics import LinkedStatic, linked_ok
     source = _source(item)
     mode = eff.data["duration"]
     if not isinstance(target, Permanent) or not linked_ok(source, mode, p):
         return
     if not hasattr(game, "_linked_statics"):
         game._linked_statics = []
-    game._linked_statics.append((source, target, mode, p, (0, 0), tuple(eff.data["kws"])))
+    game._linked_statics.append(LinkedStatic(source, target, mode, p, kws=tuple(eff.data["kws"])))
 
 
 @kind("hand_to_battlefield")

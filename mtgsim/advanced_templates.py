@@ -264,6 +264,9 @@ def permission_available(game, p, card, kind):
         return card.advanced_rules.get('aftermath', False)
     if kind.startswith('foreign_'):
         return any(ref.find(zone) is game._origin(card)[0] for zone, ref in getattr(p, 'foreign_permissions', []))
+    if kind.startswith('exile_cast_'):
+        from . import exile_permissions
+        return exile_permissions.available(game, p, card, kind)
     return True
 
 

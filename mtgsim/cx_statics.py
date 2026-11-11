@@ -17,6 +17,7 @@ or affected permanent. Both kinds are stored in ``CardDef.advanced_rules``:
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass, replace
 
 from .cx_conditions import _KEYWORDS
 
@@ -218,6 +219,14 @@ def _pump(m):
                         "kws": list(_keywords(m["k"] or m["k2"]))})
 
 
+def _pump_group(m):
+    from .cards.model import NO_MATCH
+    from .permanent_templates import build
+    eff = build("linked_pump", m["f"], data={"duration": _mode(m["d"]),
+                "pt": [int(m["p"] or 0), int(m["t"] or 0)], "kws": list(_keywords(m["k"] or m["k2"]))})
+    return eff if eff is not None and eff.kind == "permanent_group" else NO_MATCH
+
+
 _RESTRICT = {"attack or block": ("cant_attack_now", "cant_block_now"), "attack": ("cant_attack_now",),
              "block": ("cant_block_now",)}
 
@@ -248,7 +257,77 @@ EFFECT_PATTERNS = [
      r"for as long as (?P<d>you control ~)", lambda m: _restrict(dict(m.groupdict(), who=None))),
     (rf"(?:you may )?gain control of (?P<up>up to one )?target (?P<f>[\w ,'~-]+?) {_DUR}", _control),
     (rf"(?P<other>another )?target (?P<f>[\w ,'~-]+?) {_PT_KWS} {_DUR}", _pump),
+    (rf"(?P<f>(?:all|each) [\w ,'~-]+?|(?:other )?creatures you control) {_PT_KWS.replace('gets ', 'get ')} {_DUR}",
+     _pump_group),
 ]
+
+
+@dataclass(frozen=True)
+class LinkedStatic:
+    source: object
+    target: object
+    mode: str
+    giver: object
+    pt: tuple = (0, 0)
+    kws: tuple = ()
+    effects: tuple = ()
+    triggers: tuple = ()
+
+
+def counter_rider(sentence, effects):
+    """Attach a duration to the counter placement that identifies its permanent.
+
+    Refuse untracked referents and unsupported payloads instead of swallowing a
+    duration. These are resolving effects, so losing the last counter ends them
+    permanently, even if a counter of that name is added again later.
+    """
+    if not effects or effects[-1].kind != "add_counter" or effects[-1].target != "permanent":
+        return False
+    m = re.fullmatch(r"(?:if you do, )?(?:that creature|it) has base power and toughness (\d+)/(\d+) "
+                     rf"and has ({_KWS}) for as long as it has an? ([\w-]+) counter on it", sentence, re.I)
+    data = None
+    if m:
+        data = {"base": (int(m[1]), int(m[2])), "keywords": _keywords(m[3].lower()),
+                "counter": m[4].lower(), "placed": sentence.lower().startswith("if you do")}
+    m = re.fullmatch(r'for as long as that (?:creature|land) has an? ([\w-]+) counter on it, it has "(.+)"',
+                     sentence, re.I)
+    if m:
+        from .cards.parse import _parse_trigger
+        # The older self-damage wording is simplified to life loss. A granted
+        # land ability must retain damage (prevention, lifelink and its source).
+        damage = re.fullmatch(r"at the beginning of your upkeep, ~ deals (\d+) damage to you\.?", m[2], re.I)
+        if damage:
+            from .cards.model import Effect, Trigger
+            triggers = (Trigger("upkeep", [Effect("cx_players", data={"who": "you", "effects":
+                        [Effect("damage", int(damage[1]), target="that_controller")]})]),)
+            data = {"triggers": triggers, "counter": m[1].lower()}
+        elif not re.search(r"\bdamage\b", m[2], re.I):
+            parsed = _parse_trigger(m[2].rstrip(".") + ".")
+            if parsed and parsed[0] and not parsed[1] and parsed[2] is None:
+                data = {"triggers": tuple(parsed[0]), "counter": m[1].lower()}
+    if not data or data["counter"] != effects[-1].data.get("counter"):
+        return False
+    effects[-1] = replace(effects[-1], data=dict(effects[-1].data, counter_duration=data))
+    return True
+
+
+def link_counter(game, p, target, data, placed):
+    from .continuous import ContinuousEffect
+    name = data["counter"]
+    if target.counters.get(name, 0) <= 0 or data.get("placed") and not placed:
+        return
+    stamp = game.next_effect_timestamp()
+    changes = []
+    if "base" in data:
+        changes.append(ContinuousEffect(stamp, target, "set_base", stamp, *data["base"]))
+    for kw in data.get("keywords", ()):
+        stamp = game.next_effect_timestamp()
+        changes.append(ContinuousEffect(stamp, target, "grant", stamp, keyword=kw))
+    link = LinkedStatic(None, target, "counter:" + name, p, effects=tuple(changes),
+                        triggers=data.get("triggers", ()))
+    if not hasattr(game, "_linked_statics"):
+        game._linked_statics = []
+    game._linked_statics.append(link)
 
 
 def linked_ok(source, mode: str, giver) -> bool:
@@ -264,7 +343,9 @@ def _linked(game):
     links = getattr(game, "_linked_statics", None)
     if not links:
         return ()
-    alive = [x for x in links if linked_ok(x[0], x[2], x[3]) and x[1] in x[1].controller.battlefield]
+    alive = [x for x in links if x.target in x.target.controller.battlefield and
+             (x.target.counters.get(x.mode[8:], 0) > 0 if x.mode.startswith("counter:") else
+              linked_ok(x.source, x.mode, x.giver))]
     if len(alive) != len(links):
         game._linked_statics = alive
     return alive
@@ -273,22 +354,43 @@ def _linked(game):
 def linked_bonus(perm):
     game = getattr(perm.controller, "_game", None)
     bp = bt = 0
-    for source, target, _mode_, _giver, pt, _kws in _linked(game):
-        if target is perm:
-            bp, bt = bp + pt[0], bt + pt[1]
+    for link in _linked(game):
+        if link.target is perm:
+            bp, bt = bp + link.pt[0], bt + link.pt[1]
     return bp, bt
 
 
 def linked_grants(perm, kw) -> bool:
     game = getattr(perm.controller, "_game", None)
-    return any(target is perm and kw in kws for _s, target, _m, _g, _pt, kws in _linked(game))
+    return any(x.target is perm and kw in x.kws for x in _linked(game))
+
+
+def linked_effects(perm):
+    game = getattr(perm.controller, "_game", None)
+    return [e for x in _linked(game) if x.target is perm for e in x.effects]
+
+
+def linked_triggers(perm):
+    game = getattr(perm.controller, "_game", None)
+    return [t for x in _linked(game) if x.target is perm for t in x.triggers]
+
+
+def counter_changed(perm, name):
+    """Expire immediately, including removal and replacement within one resolution."""
+    game = getattr(perm.controller, "_game", None)
+    links = getattr(game, "_linked_statics", ())
+    if perm.counters.get(name, 0) > 0 or not links:
+        return
+    removed = [x for x in links if x.target is perm and x.mode == "counter:" + name]
+    if removed:
+        game._linked_statics = [x for x in links if x not in removed]
 
 
 def on_untap(game, source):
     """"~ remains tapped" ends for good when ~ untaps, even if it's tapped again later."""
     links = getattr(game, "_linked_statics", None)
     if links:
-        game._linked_statics = [x for x in links if not (x[0] is source and "tapped" in x[2])]
+        game._linked_statics = [x for x in links if not (x.source is source and "tapped" in x.mode)]
     modes = getattr(game, "_control_modes", None)
     if modes and any(key[1] == id(source) and "tapped" in mode for key, (mode, _g) in modes.items()):
         for key in [k for k, (mode, _g) in modes.items() if k[1] == id(source) and "tapped" in mode]:
