@@ -201,7 +201,7 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return max(theirs, key=perm_value, default=None)
     if k in ("pump", "p1_counters", "double_power", "grant", "explore", "attach_self", "force_blocked", "inherit_counters"):
         return max(mine, key=perm_value, default=None)
-    if k == "oring":
+    if k in ("oring", "blink_link_exile"):     # O-Ring style "exile target ... until/when ~ leaves" (#358)
         return max(theirs, key=perm_value, default=None)
     if k in ("cx_set_base", "set_base_pt") and eff.target != "player":      # "target creature has base P/T 1/1": shrink theirs
         small = eff.amount <= 2 and eff.amount2 <= 2
