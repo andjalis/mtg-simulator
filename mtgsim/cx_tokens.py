@@ -398,7 +398,8 @@ def create(game, who, eff_data: dict, n: int):
         attacking = eff_data["attacking"] and game.step in ("declare_attackers", "declare_blockers")
         with entry_batch(game):
             for _ in range(count):
-                perm = game.enter_battlefield(who, dataclasses.replace(card), tapped_attacking=attacking)
+                perm = game.enter_battlefield(who, dataclasses.replace(card), tapped_attacking=attacking,
+                                              counters=eff_data.get("counters"))
                 if eff_data["tapped"]:
                     perm.tapped = True
         game.log(f"creates {count} {card.name}" + ("" if card.name.endswith("token") else " token") + "(s)", who)

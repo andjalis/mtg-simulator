@@ -174,6 +174,8 @@ def draw_recipient(game, p, replaced=()):
 
 
 def begin_turn(game, p):
+    from .copies import revert_next_turn
+    revert_next_turn(game, p)
     waiting = getattr(game, 'next_turn_modifiers', [])
     for controller, effect in list(waiting):
         if controller is p:
