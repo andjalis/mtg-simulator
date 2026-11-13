@@ -269,6 +269,8 @@ EFFECT_PATTERNS = [
      rf"controls)?{_EXCEPT}", _target_copy),
     (rf"create {_MANY} of (?:~|this equipment|this artifact|this enchantment){_EXCEPT}",
      lambda m: _perm_copy(m, what="self", n=_num(m["n"]) if m["n"] else 1, target="self")),
+    # "target player controls" is read as the opponent (who="opp"): no player is targeted, so it can't be pointed
+    # at yourself and ignores player hexproof. An AI-level simplification (sim-review on #384).
     (rf"for each (?P<other>other )?(?P<what>[\w ,-]+?) (?P<scope>you control|target opponent controls|target player "
      rf"controls), create a token that's a copy of that (?:creature|permanent|artifact){_EXCEPT}",
      lambda m: _perm_copy(m, what=m["what"], n=1, other=bool(m["other"]), each=True,
@@ -481,6 +483,18 @@ def entry_counters(mods: dict, x: int = 0) -> dict:
     They are not copiable values, so they are not part of the copy's CardDef."""
     return {kind: (x if n == "x" else n) for kind, n in (mods or {}).get("counters", {}).items()
             if (x if n == "x" else n)}
+
+
+def unfired_notes(types, triggers) -> list:
+    """cards/parse.py hook: a noncreature's "When ~ is put into a graveyard from the battlefield, create a token
+    that's a copy of enchanted creature" is parsed as a dies trigger, which only fires for creatures (#369). The
+    copy itself works; the card counts as simplified, not full, until that trigger fires."""
+    if "Creature" in types:
+        return []
+    if any(t.event == "dies" and any(e.kind == "cx_token" and "copy" in e.data and e.target == "host"
+                                     for e in t.effects) for t in triggers):
+        return ["the graveyard trigger of a noncreature doesn't fire yet (#369)"]
+    return []
 
 
 def clone_entry_counters(card, front, x: int, counters: dict | None) -> dict | None:

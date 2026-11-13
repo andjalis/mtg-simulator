@@ -483,6 +483,12 @@ class TokenCopyReferents(Base):
         self.fire_trigger(ff, "upkeep")
         self.assertEqual([t.card.name for t in self.tokens()], [DRAGON3.name])
 
+    def test_penumbra_umbra_is_simplified_until_its_trigger_fires(self):
+        pu = self.db.get("Penumbra Umbra")
+        self.assertEqual(pu.unsupported, [])
+        self.assertEqual(pu.approximations, ["the graveyard trigger of a noncreature doesn't fire yet (#369)"])
+        self.assertEqual(self.db.get("Followed Footsteps").approximations, [])
+
     def test_penumbra_umbra_copies_its_last_creature_in_black(self):
         # The trigger itself doesn't fire on a noncreature yet (#369); its effect is resolved here after the
         # Aura has left, reading "enchanted creature" by last known information.

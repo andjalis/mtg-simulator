@@ -5,7 +5,7 @@ import dataclasses
 import re
 
 from .. import cx_activation, milling, modal, returns, permanent_templates
-from .. import auras as _auras, cx_tokens as _cx_tokens, storage as _storage
+from .. import auras as _auras, copies as _copies, cx_tokens as _cx_tokens, storage as _storage
 from .model import (
     Activated, AltCost, BASIC_MANA, CardDef, Effect, NO_MATCH, Trigger, _num, add_mana, parse_mana_cost,
 )
@@ -694,6 +694,7 @@ def _parse_face(data: dict) -> CardDef:
     # Triggers with "choose up to one" get their bullet modes; drop ones that ended up empty.
     triggers = [t for t in triggers if t.effects or t.modes]
     approximations += [note for rx, note in _SUB_NOTES if rx.search(oracle)]
+    approximations += _copies.unfired_notes(types, triggers)      # #369
 
     if data.get("mana_cost") == "" and "Land" not in types:     # no mana cost at all (not {0}): CR 118.6
         extra.setdefault("advanced_rules", {})["no_mana_cost"] = True
