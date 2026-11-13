@@ -879,7 +879,10 @@ def _parse_trigger(line: str):
     once_game = line.endswith(" This ability triggers only once.")
     if once_game:
         line = line[:-len(" This ability triggers only once.")]
-    out = _parse_trigger_line(line)
+    out = _parse_one_trigger_line(line)
+    if out is None and not (once or once_game):
+        # a compound head is two Trigger objects: "triggers only once" over both isn't representable (#399)
+        out = _parse_compound_trigger(line)
     if out is not None and once:
         for t in out[0]:
             t.once = True
@@ -890,6 +893,40 @@ def _parse_trigger(line: str):
 
 
 def _parse_trigger_line(line: str):
+    """(triggers, unmatched, modes) for one triggered-ability line, or None. A compound head ("When ~ enters and
+    whenever you cast a spell with mana value 5 or greater, draw a card") is read as two triggers with the same
+    effects when no template reads the whole line (#399)."""
+    out = _parse_one_trigger_line(line)
+    return out if out is not None else _parse_compound_trigger(line)
+
+
+_COMPOUND_JOIN = re.compile(r" and (when(?:ever)?|at the beginning) ", re.I)
+
+
+def _parse_compound_trigger(line: str):
+    """"<head A> and when/whenever/at <head B>, <effects>": both heads must read on their own with these effects.
+    "it" opening head B is the source ("When ~ enters and whenever it deals combat damage to a player")."""
+    for join in _COMPOUND_JOIN.finditer(line):
+        head_a = line[:join.start()]
+        if not re.match(r"(?:When(?:ever)?|At) ", head_a) or ", " in head_a:
+            continue
+        tail = line[join.end():]
+        lead = join[1][0].upper() + join[1][1:]
+        tail = re.sub(r"^(it|this creature)\b", "~", tail)
+        tail = re.sub(r"^you sacrifice it\b", "you sacrifice ~", tail)
+        for comma in re.finditer(r", ", tail):
+            head_b, rest = tail[:comma.start()], tail[comma.end():]
+            first = _parse_one_trigger_line(f"{head_a}, {rest}")
+            second = _parse_one_trigger_line(f"{lead} {head_b}, {rest}")
+            if first is None or second is None or first[2] is not None or second[2] is not None:
+                continue
+            if not first[0] or not second[0] or first[1] != second[1]:
+                continue        # each head must make a trigger, reading the effects the same way
+            return first[0] + second[0], first[1], None
+    return None
+
+
+def _parse_one_trigger_line(line: str):
     # trigger heads don't go through _parse_effects, so apply the head-level substitution from
     # that_spell.SUBS here too: "a spell that's one or more colors" = "a multicolored spell"
     line = re.sub(r"\b((?:a |an )?)spell that's one or more colors\b", r"\1multicolored spell", line, flags=re.I)
