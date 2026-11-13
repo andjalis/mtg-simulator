@@ -1,4 +1,4 @@
 # sim-fixes2
-- #285 remainder (Everflame Eidolon "If it's an Aura"): PR #350. Ancient Animus gate false positive: PR #351.
-- #296 already fixed by 0042800 (commented on the issue, suggest close). #271 (backup grants only abilities below it): PR on claude/wfixes2-3.
-- Next: #297.
+- PRs (stacked, base integration/grammar-wave-2): #350 (#285 Everflame Eidolon), #351 (pilot-gate lib: false positive; Ancient Animus verified), #352 (#271 backup).
+- #296 and #297 were already fixed in wave 2 (0042800, battles.defending_player): verified, commented, suggest closing.
+- Queue empty for this session; idle.
