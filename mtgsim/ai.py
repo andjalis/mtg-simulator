@@ -959,6 +959,9 @@ class HeuristicAI:
                     tgt = self.choose_target(game, me, eff, card)
                 finally:
                     game._choosing_targets, game._choosing_effects = previous
+                if tgt is None and eff.data.get("chosen"):
+                    targets.append(None)    # "put a counter on a creature you control" with none: the rest still works
+                    continue
                 if tgt is None:
                     return None
                 targets.append(tgt)
