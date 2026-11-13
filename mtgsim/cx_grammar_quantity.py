@@ -91,6 +91,9 @@ def quantity(text: str):
         return ("cxq", "life_lost")         # damage and life loss alike (Player.life_lost_amount)
     if low == "the total life lost by all players this turn":
         return ("cxq", "life_lost_all")
+    m = re.fullmatch(r"the number of (permanents|creatures|artifacts|lands|enchantments|tokens) sacrificed this way", low)
+    if m:       # the "Sacrifice any number of ..." just before it (cx_grammar_thatmany records one type, or none)
+        return ("this_way", "sacrificed", m[1][:-1])
     if low == "the number of cards drawn this way":
         return ("this_way", "drawn", "card")    # the draw just before it in this resolution (kinds.cards.draw)
     m = re.fullmatch(r"(twice|half) (.+?)(?:, rounded (up|down))?", t, re.I)
