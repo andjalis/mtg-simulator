@@ -191,6 +191,7 @@ class CardDef:
     filtered_entry_watch: bool = False
     filtered_death_watch: bool = False
     ability_grants: tuple = ()
+    trigger_grants: tuple = ()                          # ((spec, triggers), ...): quoted triggers given to others (cx_trigger_grants)
     entry_counter_quantity: tuple = ()
     attack_limit: int = -1
     block_limit: int = -1
