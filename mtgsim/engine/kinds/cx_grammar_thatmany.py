@@ -1,7 +1,8 @@
 """Kinds for "<player> <puts cards away>, then draw(s) that many cards" (mtgsim.cx_grammar_thatmany).
 
 cx_away puts the player's cards away and records how many actually went, per player, on the resolving item;
-cx_draw_that_many draws that count (plus or minus a fixed amount) for the same player. Both run inside cx_players
+cx_draw_that_many draws that count (plus or minus a fixed amount) for the same player, or with data["greatest"]
+the largest count any player put away (Windfall). Both run inside cx_players
 with target = the player."""
 from ..state import Player
 from . import kind
@@ -48,6 +49,8 @@ def away(game, p, eff, target, item=None, **_):
 @kind("cx_draw_that_many")
 def draw_that_many(game, p, eff, target, item=None, **_):
     who = target if isinstance(target, Player) else p
-    n = max(0, _counts(game, item).get(id(who), 0) + eff.data.get("delta", 0))
+    counts = _counts(game, item)
+    base = max(counts.values(), default=0) if eff.data.get("greatest") else counts.get(id(who), 0)
+    n = max(0, base + eff.data.get("delta", 0))
     if n:
         game.draw(who, n)

@@ -8,6 +8,8 @@
     Put any number of cards from your hand on the bottom of your library, then draw that many cards plus one.
     Target player exiles all cards from their hand face down, then draws that many cards.   (Induced Amnesia)
     Shuffle any number of cards from your hand into your library, then draw that many cards.   (Credit Voucher)
+    Each player discards their hand, then draws cards equal to the greatest number of cards a player discarded
+    this way.                                                                         (Windfall)
 
 "That many" is the number of cards each player actually put away this way (a discarded card counts even when
 madness exiles it), counted per player: "each player discards ..., then draws that many" makes every player put
@@ -61,6 +63,18 @@ def put_away_then_draw(m, inner):
     return effects
 
 
+@rider(r"(?P<head>each player discards their hand), then draws cards equal to the greatest number of cards a player "
+       r"discarded this way")
+def windfall(m, inner):
+    """Windfall, Whispering Madness, Jace's Archivist: every hand is discarded first, then each player draws the
+    largest count any one player discarded."""
+    found = _action(m["head"])
+    if found is None or found[0].who != "each":
+        return None
+    return assemble(found[0], [Part("cx_away", data={"mode": "discard_hand"}),
+                               Part("cx_draw_that_many", data={"delta": 0, "mode": "discard_hand", "greatest": True})])
+
+
 def _action(head: str):
     """(player Subject, mode, third person) for "<subject> <action>", or None."""
     for rx, mode in _ACTIONS:
@@ -104,4 +118,7 @@ def _draw_value(game, me, eff, obj):
     sign = 1.0 if obj is me else -1.0
     dead = len(choose_rummage(game, obj, len(hand))) if hand else 0
     kept = 0 if eff.data.get("mode", "").endswith("_any") else len(hand) - dead      # "any number": only dead ones go
-    return sign * (0.5 * dead - 0.2 * kept + 1.5 * eff.data.get("delta", 0))
+    extra = eff.data.get("delta", 0)
+    if eff.data.get("greatest"):        # Windfall: everyone draws the biggest hand's count
+        extra += max(len(pl.hand) for pl in game.players) - len(hand)
+    return sign * (0.5 * dead - 0.2 * kept + 1.5 * extra)

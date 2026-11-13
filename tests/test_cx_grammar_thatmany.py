@@ -57,7 +57,9 @@ class Parsing(unittest.TestCase):
                   "Discard all the cards in your hand, then draw that many cards plus four.",
                   "Each player shuffles all cards from their hand and all permanents they own into their library, "
                   "then draws that many cards.",
-                  "Discard all the cards in your hand, then draw that many cards, or draw a card."):
+                  "Discard all the cards in your hand, then draw that many cards, or draw a card.",
+                  "Target player discards their hand, then draws cards equal to the greatest number of cards a player "
+                  "discarded this way."):
             self.assertIsNone(parse_sentence(s), s)
 
     def test_fixed_amounts_unchanged(self):
@@ -154,6 +156,13 @@ class Behaviour(Base):
         self.assertEqual((len(self.a.hand), len(self.b.hand)), (2, 3))
 
 
+    def test_windfall_draws_the_greatest_count(self):
+        self.a.hand, self.b.hand = [BEAR] * 1, [BEAR] * 4
+        self.cast(self.spell("Each player discards their hand, then draws cards equal to the greatest number of cards "
+                             "a player discarded this way.", "Sorcery"))
+        self.assertEqual((len(self.a.hand), len(self.b.hand)), (4, 4))
+        self.assertEqual(len(self.b.graveyard), 4)
+
     def test_each_draw_step_trigger_is_the_drawing_player(self):
         box = self.perm(card("Test Box", "{4}", "Artifact",
                              "At the beginning of each player's draw step, that player puts the cards in their hand "
@@ -203,7 +212,8 @@ class RealCards(unittest.TestCase):
         for name in ("Barbed Shocker", "Cavalier of Flame", "Collective Defiance", "Colossus of the Blood Age",
                      "Dark Deal", "Flux", "Heartwarming Redemption", "Incendiary Command", "Induced Amnesia",
                      "Robber Fly", "Shocker", "Steal the Show", "Teferi's Puzzle Box", "Whirlpool Warrior",
-                     "Winds of Change", "Valakut Awakening", "Credit Voucher"):
+                     "Winds of Change", "Valakut Awakening", "Credit Voucher", "Windfall", "Whispering Madness",
+                     "Jace's Archivist"):
             self.assertEqual(card_coverage(db.get(name)).ignored, [], name)
 
     def test_still_partial(self):
