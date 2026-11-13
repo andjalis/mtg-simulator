@@ -20,11 +20,16 @@ SCRYFALL_COLLECTION = "https://api.scryfall.com/cards/collection"
 class CardDB:
     def __init__(self, offline: bool = False):
         self.offline = offline
+        # Lookup order: the bundled sample cards, the offline database, then the per-user Scryfall cache. The
+        # cache is shared by every checkout on the machine and changes over time, and its entries keep fewer
+        # fields (older ones lack colors and loyalty), so it must never shadow the database: a card's parse
+        # would then depend on which other runs happened to fetch it (#392).
         self.raw: dict[str, dict] = {}
-        for path in (BUILTIN, CACHE):
+        self.cached: dict[str, dict] = {}
+        for path, into in ((BUILTIN, self.raw), (CACHE, self.cached)):
             if path.exists():
                 for card in json.loads(path.read_text()):
-                    self.raw[card["name"].lower()] = card
+                    into[card["name"].lower()] = card
         self._defs: dict[str, CardDef] = {}
         self._all = None
         if ALL_CARDS.exists():
@@ -39,6 +44,8 @@ class CardDB:
             if k.split(" // ")[0] == key:
                 return k
         card = self.lookup(name)
+        if card is None:            # not in the database: a card fetched from Scryfall earlier
+            card = self.cached.get(key) or next((c for k, c in self.cached.items() if k.split(" // ")[0] == key), None)
         if card:
             key = card["name"].lower()
             self.raw.setdefault(key, card)
@@ -94,6 +101,7 @@ class CardDB:
             return
         CACHE.parent.mkdir(parents=True, exist_ok=True)
         existing = json.loads(CACHE.read_text()) if CACHE.exists() else []
-        keep = ("name", "mana_cost", "cmc", "type_line", "oracle_text", "power", "toughness", "card_faces")
+        keep = ("name", "mana_cost", "cmc", "type_line", "oracle_text", "power", "toughness", "card_faces", "colors",
+                "color_indicator", "loyalty", "defense", "layout", "keywords", "produced_mana")
         existing += [{k: c[k] for k in keep if k in c} for c in cards]
         CACHE.write_text(json.dumps(existing))
