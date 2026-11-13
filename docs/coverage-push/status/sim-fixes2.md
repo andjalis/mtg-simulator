@@ -1,4 +1,4 @@
 # sim-fixes2
-- #285 remainder (Everflame Eidolon "If it's an Aura" read as prev target): PR #350.
-- Ancient Animus (PR #349 gate flag) plays right; the flag was a pilot-gate false positive on lib: JSON. Gate fix: PR on claude/wfixes2-2.
-- Next: #296, #271, #297.
+- #285 remainder (Everflame Eidolon "If it's an Aura"): PR #350. Ancient Animus gate false positive: PR #351.
+- #296 already fixed by 0042800 (commented on the issue, suggest close). #271 (backup grants only abilities below it): PR on claude/wfixes2-3.
+- Next: #297.
