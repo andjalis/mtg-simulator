@@ -100,6 +100,11 @@ def _names_source(st) -> bool:
 
 
 def parse_line(line: str, st) -> bool:
+    return _simple(line, st) or _compound(line, st)
+
+
+def _simple(line: str, st) -> bool:
+    """`<recipient> [gets +N/+N and] has/have "<trigger>"` on its own."""
     m = _LINE.fullmatch(line)
     if not m:
         return False
@@ -113,8 +118,10 @@ def parse_line(line: str, st) -> bool:
             return False
         spec = {"host": True}
     else:
-        if m[2] or re.match(r"(?:enchanted|equipped)\b", subj, re.I):
-            return False             # "Creatures you control get +1/+0 and have ..." needs an anthem in the same layer pass
+        if re.match(r"(?:enchanted|equipped)\b", subj, re.I):
+            return False
+        if m[2]:
+            return False             # "Creatures you control get +1/+0 and have ...": _compound gives the P/T to the anthem parser
         from .permanent_templates import selector
         spec = selector(subj, plural=True)
         if spec is None or "keyword" in spec:
@@ -168,3 +175,50 @@ def _token_grant(m):
 # "It has" for one token, "They have" for several; the description must end the sentence (no "that's tapped ...").
 SUBS = [(re.compile(r'(\b[Cc]reate (?:a|an|one|two|three|four|five|X|\d+) [^."]*?\b(token)s?(?: named [^."]+?)?)'
                     r'\. (?:It has|They have) ("(?:When|Whenever|At) [^"]+")'), _token_grant)]
+
+
+# One quoted trigger among other static modifiers of the same recipient: "Creatures you control get +1/+0 and have
+# "...".", "Equipped creature has "When ..." and "{4}: Draw a card."", "Enchanted creature has flying and "...".
+_QUOTED = re.compile(r'(?:,? and |, )?(?:(has|have) )?"((?:When|Whenever|At) [^"]+)"(,)?')
+
+
+def _compound(line: str, st) -> bool:
+    """The line without its quoted trigger is parsed by the static parsers that own the rest (the grammar's
+    anthems / keyword grants / host bonus, or an activated-ability grant); then the recipient also gets the
+    trigger. Nothing is recorded unless both halves are understood."""
+    import copy
+    quotes = list(_QUOTED.finditer(line))
+    if len(quotes) != 1 or line.count('"') > 4:
+        return False
+    q = quotes[0]
+    after = line[q.end():]
+    if q[1] and after.startswith(" and "):          # 'has "When ..." and "{4}: ..."' -> 'has "{4}: ..."'
+        after = " " + q[1] + " " + after[5:]
+    rest = re.sub(r"\s+", " ", line[:q.start()] + after).strip()
+    if not after.strip():                            # the quote ended the line, with the final period inside it
+        rest += "."
+    head = re.match(r'(?:All )?(.+?) (?:gets?|has|have|is|are)\b', rest)
+    if head is None or not rest.endswith((".", ".\"")) or rest == line:
+        return False
+    subj = head[1]
+    host = re.fullmatch(_HOST, subj)
+    if host:
+        spec = {"host": True}
+    else:
+        from .permanent_templates import selector
+        spec = selector(subj, plural=True)
+        if spec is None or "keyword" in spec:
+            return False
+    triggers = quoted_triggers(q[2])
+    if triggers is None or _names_source(st) or hostile(q[2]) and host:
+        return False
+    saved = copy.deepcopy(st.extra)
+    from .cx_grammar import parse_static
+    from .backlog_templates import parse_line as ability_grant_line
+    if not (parse_static(rest, st) or '"' in rest and ability_grant_line(rest, st)):
+        st.extra.clear()
+        st.extra.update(saved)
+        return False
+    st.extra["trigger_grants"] = st.extra.get("trigger_grants", ()) + ((spec, triggers),)
+    st.extra.setdefault("advanced_rules", {})["trigger_grants"] = True
+    return True

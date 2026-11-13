@@ -47,9 +47,9 @@ class Parsing(unittest.TestCase):
                 # the quoted body isn't matched by the trigger parser
                 ("Enchant creature\nEnchanted creature has \"Whenever this creature attacks, frobnicate.\"",
                  "Enchantment — Aura"),
-                # anthem plus grant in one group line: not this slice
-                ("Creatures you control get +1/+0 and have \"At the beginning of your upkeep, you lose 1 life.\"",
-                 "Enchantment"),
+                # a type addition beside the grant: the static parsers don't add host/group types
+                ("Equip {1}\nEquipped creature gets +1/+0, has \"Whenever this creature attacks, you gain 1 life,\" "
+                 "and is a Wizard in addition to its other types.", "Artifact — Equipment"),
                 # an Equipment that hurts its holder: the AI only equips its own creatures
                 ("Equipped creature has \"At the beginning of your upkeep, you lose 1 life.\"\nEquip {1}",
                  "Artifact — Equipment"),
@@ -350,7 +350,6 @@ class GrantedEventTriggers(unittest.TestCase):
         self.fight([trampler], {trampler: [wall]})
         self.assertEqual(self.a.life, life + 5)                  # 2 to the wall and 3 to the player
 
-
     @unittest.skipUnless(os.path.exists(DB), "card database not built")
     def test_temporarily_granted_event_trigger_fires(self):
         """#416: Cruel Deceiver gains "Whenever ~ deals damage to a creature, destroy that creature" (ev:deals_damage)."""
@@ -365,6 +364,47 @@ class GrantedEventTriggers(unittest.TestCase):
         self.game.deal_damage(bear, 1, by=self.a, source=mine)
         self.game.settle()
         self.assertNotIn(bear, self.b.battlefield)
+
+
+class Compound(unittest.TestCase):
+    """A quoted trigger beside other static modifiers of the same recipient (step 4)."""
+    def setUp(self):
+        self.a = Player("a", [BEAR] * 10, HeuristicAI())
+        self.b = Player("b", [BEAR] * 10, HeuristicAI())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 1, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 20
+
+    def test_anthem_and_grant(self):
+        master = card("Test Master", "{3}{B}", "Legendary Creature — Human Wizard", "Creatures you control get +1/+0 "
+                      "and have \"At the beginning of your upkeep, you lose 1 life.\"", power=3, toughness=3)
+        self.assertEqual(master.unsupported, [])
+        self.game.enter_battlefield(self.a, master)
+        bear = self.game.enter_battlefield(self.a, BEAR)
+        theirs = self.game.enter_battlefield(self.b, BEAR)
+        self.assertEqual((bear.power, theirs.power), (3, 2))
+        life = self.a.life
+        self.game.fire(self.a, "upkeep")
+        self.game.settle()
+        self.assertEqual(self.a.life, life - 2)          # the Master and the bear each have it
+
+    def test_keyword_and_grant_and_two_quotes(self):
+        call = card("Test Call", "{2}{W}", "Enchantment — Aura", "Enchant creature\nEnchanted creature has vigilance "
+                    "and \"At the beginning of your end step, create a 1/1 white Human creature token.\"")
+        wand = card("Test Wand", "{3}", "Artifact — Equipment", "Equipped creature has \"Whenever you draw a card, "
+                    "this creature gets +1/+1 and gains flying until end of turn\" and \"{4}: Draw a card.\"\nEquip {3}")
+        for c in (call, wand):
+            with self.subTest(c.name):
+                self.assertEqual(c.unsupported, [])
+                self.assertEqual(len(c.trigger_grants), 1)
+        self.assertEqual(call.equip_keywords, frozenset({"vigilance"}))
+        self.assertEqual(len(wand.ability_grants), 1)
+        host = self.game.enter_battlefield(self.a, BEAR)
+        w = self.game.enter_battlefield(self.a, wand)
+        w.attached_to = host
+        self.assertEqual(len(host.activated), 1)
+        self.assertEqual([t.event for t in host.triggers], ["you_draw"])
 
 
 if __name__ == "__main__":
