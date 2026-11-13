@@ -75,7 +75,7 @@ class Fires(Base):
 
     def test_aura_returns_when_its_host_dies(self):
         bear = self.enter(BEAR)
-        aura = self.attach(AURA, bear)
+        self.attach(AURA, bear)
         self.game.destroy(bear)
         self.settle()
         self.assertIn("Test Aura", [c.name for c in self.a.hand])
