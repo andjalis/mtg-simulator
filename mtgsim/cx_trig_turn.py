@@ -55,8 +55,16 @@ def _build(m):
 # and attacking. Sacrifice them at the beginning of the next end step."): keep them in one sentence, joined by " ;; ".
 SUBS = [
     (re.compile(r"(\bWhen(?:ever)? [^.;]+? this turn, [^.]+)\.((?: [A-Z][^.]*\.)+)\s*$"),
-     lambda m: m[1] + "".join(" ;; " + x.strip().rstrip(".") for x in re.findall(r" [A-Z][^.]*\.", m[2])) + "."),
+     lambda m: _join(m)),
 ]
+
+
+def _join(m):
+    """The joined sentence when it reads as one temporary trigger, else the text unchanged (other templates own
+    "When you next cast ... this turn, copy that spell. You may choose new targets for the copy.")."""
+    joined = m[1] + "".join(" ;; " + x.strip().rstrip(".") for x in re.findall(r" [A-Z][^.]*\.", m[2]))
+    lead = re.search(r"\bWhen(?:ever)? ", joined)
+    return joined + "." if lead and parse(joined[lead.start():]) is not None else m[0]
 
 EFFECT_PATTERNS = [
     (r"When(?:ever)? .+? this turn, .+", _build),
