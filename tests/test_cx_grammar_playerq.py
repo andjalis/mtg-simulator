@@ -44,7 +44,6 @@ class Parsing(unittest.TestCase):
                   "Each player loses 1 life for each creature they control and you control.",
                   "Target player draws a card for each creature that player's opponents control.",
                   "Each player loses 1 life for each spell they've cast this turn.",     # not a per-player quantity here
-                  "Each player loses life equal to the life they lost this turn.",
                   "Each player draws a card and loses 1 life for each creature they control.",
                   "Target player loses 1 life for each creature they control for each opponent."):
             self.assertIsNone(rel(s), s)

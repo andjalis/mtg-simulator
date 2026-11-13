@@ -13,6 +13,7 @@ None. ``value(game, p, spec, item, prev)`` evaluates it when the effect resolves
     the number of creatures that died this turn  (turn history: died, entered, left, cast, sacrificed, discarded)
     the number of spells you've cast this turn
     the number of cards you've drawn this turn
+    the life you've lost this turn / the total life lost by all players this turn
     the greatest mana value among artifacts you control
     the total power of creatures you control
     the number of opponents you have
@@ -85,6 +86,10 @@ def quantity(text: str):
         return ("cxq", "drawn")
     if low == "the number of cards you've discarded this turn":
         return ("cxq", "discarded")
+    if re.fullmatch(r"the (?:amount of )?life you(?:'ve)? lost this turn", low):
+        return ("cxq", "life_lost")         # damage and life loss alike (Player.life_lost_amount)
+    if low == "the total life lost by all players this turn":
+        return ("cxq", "life_lost_all")
     m = re.fullmatch(r"(twice|half) (.+?)(?:, rounded (up|down))?", t, re.I)
     if m and (m[1].lower() == "half") == bool(m[3]):
         inner = _any(m[2])
@@ -197,6 +202,10 @@ def value(game, p, spec, item, prev) -> int:
         return drawn[1] if drawn[0] == game.turn else 0
     if kind == "discarded":
         return len(p.discarded_cards)
+    if kind == "life_lost":
+        return p.life_lost_amount
+    if kind == "life_lost_all":
+        return sum(pl.life_lost_amount for pl in game.players)
     if kind == "twice":
         return 2 * game.x_quantity(p, spec[2], item, prev)
     if kind == "half":
