@@ -168,6 +168,45 @@ def _trusted(spec, text: str, strict: bool = True) -> bool:
         return not re.search(r"\b(?:and|or)\b", desc)
     return not strict and kind in ("domain", "named_lands", "greatest_perm", "greatest")
 
+def _nouns(value) -> set:
+    """The type / subtype words a spec (or a group spec) names, lower case."""
+    out = set()
+    if isinstance(value, dict):
+        for k, v in value.items():
+            if k in ("types_all", "types_any", "subtypes", "types", "sub", "any"):
+                out |= {w.lower() for w in v}
+            elif k in ("selector", "group") or isinstance(v, dict):
+                out |= _nouns(v)
+            elif k == "cx_desc":
+                out |= {w.lower().rstrip("s") for w in v.split()}
+    elif isinstance(value, (tuple, list)):
+        for v in value:
+            out |= _nouns(v)
+    elif isinstance(value, str):
+        out |= {w.lower().rstrip("s") for w in value.split() if w.lower() != "other"}
+    return out
+
+
+def _other(xq, scope: str, spec, st):
+    """For a scaled group / host bonus whose Q says "other": "" (other than the static's source: it can be one of
+    them, Ancestral Mask's "other enchantment"), "recipient" (other than the permanent getting the bonus: Skeletal
+    Swarming's "other Skeletons" on each Skeleton), or None when either could be meant."""
+    if scope == "self" or not re.search(r"\bother\b|'other'", repr(xq)):
+        return ""
+    words = _nouns(xq[1:] if xq[0] == "cxq" else xq[1])
+    words = words - {"permanent"} if len(words) > 1 else words      # the grammar's marker beside a subtype
+    own = {t.lower() for t in st.types} | {w.lower() for w in st.type_line.split("—")[-1].split()} \
+        if "—" in st.type_line else {t.lower() for t in st.types}
+    receivers = {"creature"} if scope == "host" else _nouns(spec) or {"permanent"}
+    receivers = receivers - {"permanent"} if len(receivers) > 1 else receivers
+    source_fits = "permanent" in words or bool(words & own)
+    receiver_fits = "permanent" in words or "permanent" in receivers or bool(words & receivers) \
+        or "creature" in words and "creature" in receivers
+    if source_fits and receiver_fits:
+        return None
+    return "" if source_fits else "recipient"
+
+
 def _parts(body: str, st):
     """(Subject, Parts) of a static body, or None."""
     from . import cx_grammar as g
@@ -239,10 +278,13 @@ def parse_line(line: str, st) -> bool:
                 continue
             if g._condition_keywords(spec) and any(k in KEYWORDS for k in kws):
                 continue
+        other = _other(xq, scope, spec, st) if xq is not None else ""
+        if other is None:
+            continue
         rows = []
         for p in parts:
             if p.kind == "pump":
-                rows.append((code, scope, spec, ("pt", p.amount, p.amount2, xq)))
+                rows.append((code, scope, spec, ("pt", p.amount, p.amount2, xq) + ((other,) if other else ())))
             elif p.kind == "cx_static":
                 rows.append((code, scope, spec, ("rule", p.data["rule"], p.data["value"])))
         if kws:
@@ -307,19 +349,23 @@ def _on(source, code, perm) -> bool:
     return _holds(source, code, perm)
 
 
-def _count(source, spec) -> int:
+def _count(source, spec, perm, recipient=False) -> int:
+    """Q from the static's controller's point of view, with the static's source as the count's source ("counters on
+    ~", "other enchantment" on Ancestral Mask), or the permanent getting the bonus when the row says "recipient"
+    ("the number of other Skeletons you control" on each Skeleton: see _other)."""
     from .engine.state import StackItem
     game = getattr(source.controller, "_game", None)
     if game is None:
         return 0
-    return game.x_quantity(source.controller, spec, StackItem(source.controller, [], [], source=source), None)
+    ref = perm if recipient else source
+    return game.x_quantity(source.controller, spec, StackItem(source.controller, [], [], source=ref), None)
 
 
 def pt_bonus(perm):
     bp = bt = 0
-    for source, code, (_, p, t, xq) in _rows(perm, "pt"):
+    for source, code, (_, p, t, xq, *ref) in _rows(perm, "pt"):
         if _on(source, code, perm):
-            n = 1 if xq is None else _count(source, xq)
+            n = 1 if xq is None else _count(source, xq, perm, bool(ref and ref[0] == "recipient"))
             bp, bt = bp + p * n, bt + t * n
     return bp, bt
 
