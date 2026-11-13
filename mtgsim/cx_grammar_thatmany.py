@@ -10,6 +10,8 @@
     Shuffle any number of cards from your hand into your library, then draw that many cards.   (Credit Voucher)
     Each player discards their hand, then draws cards equal to the greatest number of cards a player discarded
     this way.                                                                         (Windfall)
+    Target player draws cards equal to the number of cards in their hand, then discards that many cards.
+    Draw cards equal to the number of cards in your hand, then discard a card for each card drawn this way.
 
 "That many" is the number of cards each player actually put away this way (a discarded card counts even when
 madness exiles it), counted per player: "each player discards ..., then draws that many" makes every player put
@@ -75,6 +77,37 @@ def windfall(m, inner):
                                Part("cx_draw_that_many", data={"delta": 0, "mode": "discard_hand", "greatest": True})])
 
 
+@rider(r"(?:(?P<subj>.+?) )?(?P<draw>draws?) cards equal to (?P<q>.+?), then (?P<disc>discards?) "
+       r"(?P<what>that many cards|a card for each card drawn this way)")
+def draw_then_discard(m, inner):
+    """Laquatus's Creativity ("... draws cards equal to Q, then discards that many cards": Q, read once before the
+    draw) and Ancient Excavation ("... then discard a card for each card drawn this way": the cards actually
+    drawn, which a draw replacement can change)."""
+    from .cx_grammar_playerq import _quantity, _swap
+    if m["subj"] is None:
+        subj = Subject("player", who="you", text="")
+    else:
+        subj = subject(m["subj"])
+        if subj is None or subj.kind != "player":
+            return None
+    third = subj.who != "you"
+    if third != (m["draw"].lower() == "draws") or third != (m["disc"].lower() == "discards"):
+        return None
+    if subj.who == "you":
+        spec, rel = (None if re.search(r"\b(?:they|their|them)\b", m["q"], re.I) else _quantity(m["q"])), False
+    else:
+        q = _swap(m["q"])
+        spec, rel = (_quantity(q) if q is not None else None), True
+    if spec is None:
+        return None
+    second = Part("discard", 1) if m["what"].startswith("that many") else Part("cx_discard_drawn", 1)
+    effects = assemble(subj, [Part("draw", 1), second])
+    if not effects or len(effects) != 1 or effects[0].kind != "cx_players":
+        return None
+    effects[0].data.update(xq=spec, **({"xq_rel": True} if rel else {}))
+    return effects
+
+
 def _action(head: str):
     """(player Subject, mode, third person) for "<subject> <action>", or None."""
     for rx, mode in _ACTIONS:
@@ -107,6 +140,12 @@ def _action(head: str):
 @ai_value("cx_away")
 def _away_value(game, me, eff, obj):
     return 0.0          # valued with the draw that follows it
+
+
+@ai_value("cx_discard_drawn")
+def _discard_drawn_value(game, me, eff, obj):
+    """Sized like the draw before it (the AI scales the amount by the same count): cards out of that hand."""
+    return -(0.8 if obj is me else -1.0) * eff.amount
 
 
 @ai_value("cx_draw_that_many")

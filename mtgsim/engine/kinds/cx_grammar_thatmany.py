@@ -54,3 +54,16 @@ def draw_that_many(game, p, eff, target, item=None, **_):
     n = max(0, base + eff.data.get("delta", 0))
     if n:
         game.draw(who, n)
+
+
+@kind("cx_discard_drawn")
+def discard_drawn(game, p, eff, target, item=None, **kw):
+    """"..., then discard a card for each card drawn this way": as many cards as the draw just before it in this
+    resolution actually drew (kinds.cards.draw records it), the player's choice."""
+    import dataclasses
+    from . import HANDLERS
+    tw = getattr(item, "this_way", None) if item is not None else None
+    n = tw[2] if tw is not None and tw[0] == "drawn" else 0
+    if n:
+        HANDLERS["discard"](game, p=p, eff=dataclasses.replace(eff, kind="discard", amount=n), target=target,
+                            item=item, **kw)
