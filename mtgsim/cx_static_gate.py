@@ -41,6 +41,11 @@ def _gates(s: str):
         from .cx_condlib import as_static
         code = as_static(m[1]) if m[1] else ""
         return [("@gy" + code, m[2], m[1] or "")] if code or not m[1] else []
+    m = re.fullmatch(r"(.+ can't (?:attack|block|attack or block)) unless (.+)", s)
+    if m and not re.search(r"\bpays?\b|\bsacrifices?\b|\bdiscards?\b", m[2]):
+        from .cx_condlib import _code, as_static
+        code = as_static(m[2])      # "~ can't attack unless you control a 1/1 creature": the restriction gated on not-C
+        return [(_code("not", code), m[1], m[2])] if code else []
     m = re.fullmatch(r"During your turn, (.+)", s)
     if m:
         out.append((_cond("it's your turn"), m[1], "turn"))

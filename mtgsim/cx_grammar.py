@@ -556,7 +556,8 @@ def parse_static(line: str, st) -> bool:
     group, equip_bonus / equip_keywords for the host. Returns True when the line is consumed."""
     s = line.strip()
     if s.endswith(".") and not re.search(r'[:"]', s) \
-            and re.search(r"\b(?:as long as|for each|where X is)\b|(?:^|, |— )during your turn\b", s, re.I):
+            and re.search(r"\b(?:as long as|for each|where X is)\b|(?:^|, |— )during your turn\b|"
+                          r"\bcan't (?:attack|block|attack or block) unless\b", s, re.I):
         from .cx_static_gate import parse_line as gated          # "As long as C, <static>", "+1/+1 for each Q"
         return gated(s, st)
     if not s.endswith(".") or re.search(r'[:"]|\b(?:until|this turn|as long as|if(?! able)|for each|where|except)\b',
