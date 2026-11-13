@@ -155,3 +155,16 @@ def granted(perm) -> list:
             if ok:
                 out.extend(triggers)
     return out
+
+
+def _token_grant(m):
+    """"Create two 1/1 red Devil creature tokens. They have "When this token dies, ..."" is one token description:
+    the tokens are created with the ability (cx_tokens reads "with "..."")."""
+    desc, quote = m[1], m[3]
+    join = " and " if re.search(r"\bwith\b", desc) else " with "
+    return desc + join + quote
+
+
+# "It has" for one token, "They have" for several; the description must end the sentence (no "that's tapped ...").
+SUBS = [(re.compile(r'(\b[Cc]reate (?:a|an|one|two|three|four|five|X|\d+) [^."]*?\b(token)s?(?: named [^."]+?)?)'
+                    r'\. (?:It has|They have) ("(?:When|Whenever|At) [^"]+")'), _token_grant)]
