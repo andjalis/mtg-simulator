@@ -192,5 +192,69 @@ class AnyNumber(Base):
         self.assertFalse(any(x in self.b.battlefield for x in theirs))
 
 
+class Strive(Base):
+    """Strive: "~ costs {1}{W} more to cast for each target beyond the first" (#391 slice C)."""
+    FORMATION = card("Test Formation", "{1}{W}", "Instant", "Strive — This spell costs {1}{W} more to cast for each "
+                     "target beyond the first.\nAny number of target creatures each gain double strike until end of turn.")
+
+    def lands(self, n):
+        from mtgsim.engine import Permanent
+        plains = card("Test Plains", "", "Basic Land — Plains", "({T}: Add {W}.)")
+        for _ in range(n):
+            self.a.battlefield.append(Permanent(plains, self.a))
+
+    def test_parse(self):
+        self.assertEqual(self.FORMATION.unsupported, [])
+        self.assertEqual(self.FORMATION.advanced_rules["strive"], {"generic": 1, "W": 1})
+
+    def test_tax_per_extra_target_and_the_list_cut_to_what_can_be_paid(self):
+        from mtgsim.cx_multi_target import strive_cost
+        bears = [self.game.enter_battlefield(self.a, BEAR) for _ in range(3)]
+        effects = list(self.FORMATION.spell_effects)
+        self.lands(10)
+        cost, targets = strive_cost(self.game, self.a, self.FORMATION, effects, [tuple(bears)], {"generic": 1, "W": 1})
+        self.assertEqual(cost, {"generic": 3, "W": 3})              # two targets beyond the first
+        self.assertEqual(len(targets[0]), 3)
+        for _ in range(6):
+            self.a.battlefield.pop()                               # 4 Plains: room for one extra target
+        cost, targets = strive_cost(self.game, self.a, self.FORMATION, effects, [tuple(bears)], {"generic": 1, "W": 1})
+        self.assertEqual((cost, len(targets[0])), ({"generic": 2, "W": 2}, 2))
+
+    def test_cast_pays_the_tax(self):
+        bears = [self.game.enter_battlefield(self.a, BEAR) for _ in range(2)]
+        self.lands(4)
+        self.a.hand.append(self.FORMATION)
+        self.assertTrue(self.game.cast(self.a, self.FORMATION))
+        self.game.settle()
+        self.assertTrue(all(b.has("double strike") for b in bears))
+        self.assertTrue(all(x.tapped for x in self.a.battlefield if x.card.is_land))   # 2 + 2 mana
+
+    def test_riders_on_those_creatures(self):
+        heroics = parsed("Any number of target creatures each get +2/+2 until end of turn. Untap those creatures.")
+        self.assertEqual([e.kind for e in heroics[0].data["chain"]], ["pump", "untap_prev"])
+        harness = parsed("Gain control of any number of target creatures until end of turn. Untap those creatures. "
+                         "They gain haste until end of turn.")
+        self.assertEqual(len(harness), 1)
+        self.assertEqual(len(harness[0].data["chain"]), 3)
+        theirs = self.game.enter_battlefield(self.b, BEAR)
+        theirs.tapped = True
+        spell = card("Test Harness", "{3}{R}", "Sorcery", "Gain control of any number of target creatures until end "
+                     "of turn. Untap those creatures. They gain haste until end of turn.")
+        self.resolve(spell, [(theirs,)])
+        self.assertIs(theirs.controller, self.a)
+        self.assertFalse(theirs.tapped)
+        self.assertTrue(theirs.has("haste"))
+
+    @unittest.skipUnless(os.path.exists(DB), "card database not built")
+    def test_real_cards_are_full(self):
+        from mtgsim.carddb import CardDB
+        from mtgsim.coverage import card_coverage
+        db = CardDB(offline=True)
+        for name in ("Phalanx Formation", "Ajani's Presence", "Kiora's Dismissal", "Colossal Heroics",
+                     "Harness by Force", "Scapegoat"):
+            with self.subTest(name):
+                self.assertEqual(card_coverage(db.get(name)).status, "full")
+
+
 if __name__ == "__main__":
     unittest.main()

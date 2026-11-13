@@ -138,6 +138,8 @@ def lift(s: str, effects: list) -> bool:
     """Parse s, a sentence with one counted target ("up to two target creatures"), into effects. True if it did."""
     from .cards.parse import _parse_effects
     from .engine.state import TARGETED
+    if chain_rider(s, effects):
+        return True
     outside = re.sub(r'"[^"]*"', '""', s)          # a quoted ability's own targets are its own
     if len(re.findall(r"\btarget\b", outside, re.I)) != 1:
         return False
@@ -177,3 +179,70 @@ def lift(s: str, effects: list) -> bool:
         effects.extend(dataclasses.replace(e, data=dict(e.data)) for e in new[1:])
     return True
 
+
+
+# ---------------------------------------------------------------- strive and riders on the chosen targets
+
+_STRIVE = re.compile(r"(?:Strive — )?~ costs ((?:\{[^}]+\})+) more to cast for each target beyond the first\.")
+
+
+def parse_line(line: str, st) -> bool:
+    """"Strive — ~ costs {1}{W} more to cast for each target beyond the first." (face line)."""
+    m = _STRIVE.fullmatch(line)
+    if not m or "strive" in st.extra.get("advanced_rules", {}):
+        return False
+    from .cards.model import parse_mana_cost
+    st.extra.setdefault("advanced_rules", {})["strive"] = parse_mana_cost(m[1])
+    return True
+
+
+def _count(effects, targets) -> int:
+    from .engine.state import TARGETED
+    return sum(len(t) if isinstance(t, tuple) else t is not None
+               for e, t in zip(effects, targets) if e.target in TARGETED)
+
+
+def strive_cost(game, p, card, effects, targets, cost):
+    """The cost with strive's tax for each target beyond the first; a list target the caster can't pay for is cut
+    to its most valuable members it can (choose_list sorts them). Returns (cost, targets)."""
+    tax = card.advanced_rules.get("strive")
+    if not tax:
+        return cost, targets
+    from . import costs as _costs
+
+    def priced(n):
+        out = dict(cost)
+        for k, v in tax.items():
+            out[k] = out.get(k, 0) + v * max(0, n - 1)
+        return out
+    targets = list(targets)
+    while True:
+        total = priced(_count(effects, targets))
+        if _costs.spell_plan(game, p, card, total) is not None:
+            return total, targets
+        i = next((i for i in range(len(targets) - 1, -1, -1) if isinstance(targets[i], tuple) and len(targets[i]) > 1),
+                 None)
+        if i is None:
+            return total, targets              # unaffordable: payment fails as usual
+        targets[i] = targets[i][:-1]
+
+
+_RIDER = re.compile(r"(untap|tap) (?:those creatures|them)|(?:they|those creatures) (gain|get) (.+)", re.I)
+
+
+def chain_rider(s: str, effects: list) -> bool:
+    """"Untap those creatures." / "They gain haste until end of turn." after an "any number of target" Effect: more
+    of the chain each chosen target gets."""
+    if not effects or effects[-1].kind != "cx_multi":
+        return False
+    m = _RIDER.fullmatch(s.strip().rstrip("."))
+    if not m:
+        return False
+    from .cards.parse import _parse_effects
+    text = f"{m[1].capitalize()} it." if m[1] else f"It {_AGREE[m[2].lower()]} {m[3]}."
+    new, bad = _parse_effects(text)
+    if bad or not new or any(e.target != "prev" or e.cond for e in new):
+        return False
+    multi = effects[-1]
+    effects[-1] = dataclasses.replace(multi, data=dict(multi.data, chain=list(multi.data["chain"]) + new))
+    return True
