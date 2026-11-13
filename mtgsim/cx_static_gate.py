@@ -1,0 +1,253 @@
+"""Grammar static lines with a condition gate or a quantity scale (#398, #401). See docs/coverage-push/plans/static-gate.md.
+
+    As long as you have the city's blessing, Detectives you control can't be blocked.     (a gate)
+    During your turn, other historic creatures you control have double strike.
+    ~ has protection from each color as long as you control three or more artifacts.
+    ~ gets +1/+1 for each creature your opponents control.                                 (a scale)
+    Equipped creature gets +X/+0, where X is the number of rev counters on ~.
+
+The gate's condition is read by ``cx_conditions._code`` (its table, then ``cx_condlib.as_static``), the scale's quantity by ``cx_grammar._count_spec`` ("for
+each Q") or ``cards.clauses._xq`` ("where X is Q"); the static itself by the grammar (``cx_grammar._clauses`` with the
+"static" duration): pumps, keyword grants and ``cx_static`` family rules on ~, the enchanted / equipped creature, or
+a group. Anything unread keeps the line ignored.
+
+Each payload is one row of ``advanced_rules["gated"]``: ``(code, scope, spec, payload)`` with scope ``self``,
+``host`` or ``group`` (spec: the grammar group spec), payload ``("pt", p, t, xq)``, ``("kw", keywords)`` or
+``("rule", name, value)``. The engine reads the rows in ``cx_statics.pt_bonus`` / ``grants`` and
+``cx_grammar.static_rules``; the condition is checked from the source's point of view with "it" the affected
+permanent (``cx_statics._holds``)."""
+from __future__ import annotations
+
+import re
+
+_LABEL = re.compile(r"^[A-Z][\w' ,-]* — ")
+_KW_WORDS = re.compile(r"\b(?:flying|first strike|double strike|deathtouch|trample|vigilance|haste|lifelink|reach|menace|"
+                       r"hexproof|indestructible|shroud|defender|protection|ward|keyword|abilit(?:y|ies))\b", re.I)
+
+
+# ---------------------------------------------------------------- parsing
+
+def _cond(text: str) -> str:
+    """The code for a static's condition: cx_conditions' table (the city's blessing, ...), else cx_condlib."""
+    from .cx_conditions import _code
+    return _code(text) or ""
+
+
+def _gates(s: str):
+    """(condition code or "", body, condition text) readings of a line; codes are "" for no gate."""
+    out = []
+    m = re.fullmatch(r"During your turn, (.+)", s)
+    if m:
+        out.append((_cond("it's your turn"), m[1], "turn"))
+    m = re.fullmatch(r"(.+) during your turn", s)
+    if m:
+        out.append((_cond("it's your turn"), m[1], "turn"))
+    m = re.match(r"As long as ", s)
+    if m:
+        rest = s[m.end():]
+        for comma in re.finditer(r", ", rest):        # the condition may hold commas: try each split
+            cond, body = rest[:comma.start()], rest[comma.end():]
+            code = _cond(cond)
+            if code:
+                out.append((code, body, cond))
+                break
+    m = re.fullmatch(r"(.+?) (?<!for )as long as (.+)", s)
+    if m and not s.startswith("As long as"):
+        code = _cond(m[2])
+        if code:
+            out.append((code, m[1], m[2]))
+    if not out and not re.search(r"\b(?:as long as|during)\b", s, re.I):
+        out.append(("", s, ""))
+    return out
+
+
+def _it(body: str, cond: str) -> str:
+    """After a leading gate, "it" is what the condition named: ~ (or the enchanted / equipped creature). "That
+    creature" after "you control exactly one creature" is the one creature you control."""
+    body = re.sub(r"\bgets an additional\b", "gets", body)
+    one = re.fullmatch(r"you control exactly one (creature|artifact|enchantment|land)", cond)
+    if one:
+        return re.sub(rf"^that {one[1]}\b", f"{one[1]}s you control", body)
+    host = re.match(r"(enchanted|equipped) creature\b", cond, re.I)
+    if host:
+        return re.sub(r"^(?:it|they)\b", host[1].capitalize() + " creature", body)
+    if re.match(r"(?:~|it)\b", cond) or "~" in cond or not cond:
+        return re.sub(r"^it\b", "~", body)
+    return body
+
+
+_PT = r"[+-](?:\d+|X)/[+-](?:\d+|X)"
+
+
+def _scale(body: str):
+    """(body with a plain pump, quantity spec or None) or None when the scale can't be read."""
+    from .cx_grammar import _count_spec
+    m = re.fullmatch(r"(.+), where X is (.+)", body)
+    if m:
+        from .cards.clauses import _xq
+        pts = re.findall(r"([+-])(X|\d+)/([+-])(X|\d+)", m[1])
+        if len(pts) != 1 or "X" not in pts[0] or re.search(r"\bX\b", re.sub(_PT, "", m[1])):
+            return None
+        sp, p, st, t = pts[0]
+        if p != "X" and p != "0" or t != "X" and t != "0":
+            return None             # "+X/+1": only part of the pump scales
+        new = f"{sp}{1 if p == 'X' else 0}/{st}{1 if t == 'X' else 0}"
+        return re.sub(_PT, new, m[1], count=1), _quantity(_xq(m[2]), m[2])
+    m = re.fullmatch(rf"(.*\bgets? {_PT}) for each (.+?)((?:,| and|, and) (?:has|have|gets?|is|can|attacks)\b.*)?", body)
+    if m:
+        return m[1] + (m[3] or ""), _quantity(_count_spec(m[2]), m[2])
+    if re.search(r"\b(?:for each|where X is)\b|\bX\b", body):
+        return None
+    return body, None
+
+
+def _quantity(spec, text: str):
+    """The spec, or False when a static can't read it: a referent that isn't fixed ("it", that spell, the sacrificed
+    creature) or one that reads power / toughness (it would read the bonus it gives)."""
+    if spec is None or re.search(r"\b(?:it|its|that|those|them)\b", text, re.I) \
+            or re.search(r"power|toughness", text + repr(spec), re.I) or spec[0] in ("stat", "sac", "spell"):
+        return False
+    return spec
+
+
+def _parts(body: str, st):
+    """(Subject, Parts) of a static body, or None."""
+    from . import cx_grammar as g
+    split = g._split(body)
+    if split is None:
+        return None
+    subj = g.subject(split[0])
+    if subj is None or subj.kind not in ("group", "host", "permanent") or subj.kind == "group" and subj.target != "none" \
+            or subj.kind == "permanent" and subj.target != "self":
+        return None
+    if subj.kind == "host" and (subj.text.lower().startswith("equipped") and "Equipment" not in st.type_line
+                                or subj.text.lower().startswith("enchanted") and not st.extra.get("aura")):
+        return None
+    parts = g._clauses(split[1], subj, "static")
+    if parts is None and subj.kind == "permanent":
+        # "~ has hexproof": the static keyword verbs name groups and hosts; ~ reads the same.
+        import dataclasses
+        parts = g._clauses(split[1], dataclasses.replace(subj, kind="host"), "static")
+    if parts is None or any(p.kind not in ("pump", "grant", "cx_temp_kw", "cx_static") for p in parts) \
+            or sum(p.kind == "pump" for p in parts) > 1:
+        return None
+    return subj, parts
+
+
+def parse_line(line: str, st) -> bool:
+    """The parse_static hook for a line with "as long as", "during your turn", "for each" or "where X is"."""
+    from . import cx_grammar as g
+    from .cards.model import KEYWORDS
+    s = _LABEL.sub("", line.strip()[:-1])
+    for code, body, cond in _gates(s):
+        if re.search(r"\b(?:as long as|during|until|this turn|if(?! able)|except|unless)\b", body, re.I):
+            continue                    # another condition or a duration left in the static
+        body = _it(body, cond if cond != "turn" else "")
+        scaled = _scale(body)
+        if scaled is None or scaled[1] is False:
+            continue
+        body, xq = scaled
+        if not code and xq is None:
+            continue                    # neither gate nor scale: not this module's line
+        read = _parts(body, st)
+        if read is None:
+            continue
+        subj, parts = read
+        has_pt = any(p.kind == "pump" for p in parts)
+        kws = tuple(k for p in parts if p.kind in ("grant", "cx_temp_kw")
+                    for k in ([p.data["keyword"]] if p.kind == "grant" else sorted(p.data["keywords"])))
+        if xq is not None and not has_pt:
+            continue
+        if has_pt and re.search(r"power|toughness", cond, re.I):
+            continue                    # the condition would read the bonus it gates
+        if any(k in KEYWORDS for k in kws) and _KW_WORDS.search(cond):
+            continue                    # a keyword grant gated on keywords
+        scope = {"permanent": "self", "host": "host", "group": "group"}[subj.kind]
+        if scope != "self" and code and not code.startswith("lib:") and re.search(r"\bit(?:s|'s)?\b", cond):
+            from .cx_condlib import as_static
+            code = as_static(cond)      # "it" is the affected permanent: cx_condlib's codes read it as the ref
+            if not code:
+                continue
+        spec = None
+        if scope == "group":
+            spec = subj.group["selector"] if "selector" in subj.group else dict(subj.group)
+            if g._stat_conditioned(spec) and has_pt:
+                continue
+            if g._condition_keywords(spec) and any(k in KEYWORDS for k in kws):
+                continue
+        rows = []
+        for p in parts:
+            if p.kind == "pump":
+                rows.append((code, scope, spec, ("pt", p.amount, p.amount2, xq)))
+            elif p.kind == "cx_static":
+                rows.append((code, scope, spec, ("rule", p.data["rule"], p.data["value"])))
+        if kws:
+            rows.append((code, scope, spec, ("kw", kws)))
+        if scope == "host" and st.extra.get("aura") and any(p.kind == "pump" and (p.amount < 0 or p.amount2 < 0) for p in parts):
+            st.extra["gate_hostile"] = True     # "Enchanted creature gets -1/-1 for each Swamp you control": auras.finish
+        rules = st.extra.setdefault("advanced_rules", {})
+        rules["gated"] = tuple(rules.get("gated", ())) + tuple(rows)
+        return True
+    return False
+
+
+# ---------------------------------------------------------------- engine
+
+def _rows(perm, what: str):
+    """(source, code, payload) for every gated row of kind ``what`` that reaches perm, before its condition."""
+    from .permanent_templates import matches
+    if not perm.abilities_suppressed:
+        for code, scope, _spec, payload in perm.card.advanced_rules.get("gated", ()):
+            if scope == "self" and payload[0] == what:
+                yield perm, code, payload
+    for x in list(perm.auras) + list(perm.equipment):
+        for code, scope, _spec, payload in x.card.advanced_rules.get("gated", ()):
+            if scope == "host" and payload[0] == what and perm.is_creature:
+                yield x, code, payload
+    game = getattr(perm.controller, "_game", None)
+    if game is None:
+        return
+    for pl in game.players:
+        for x in pl.battlefield:
+            rows = x.card.advanced_rules.get("gated", ()) if x.card.advanced_rules else ()
+            if not rows or x.abilities_suppressed:
+                continue
+            for code, scope, spec, payload in rows:
+                if scope == "group" and payload[0] == what and matches(game, perm, spec, x.controller, x):
+                    yield x, code, payload
+
+
+def _on(source, code, perm) -> bool:
+    if not code:
+        return True
+    if not code.startswith("lib:"):
+        return source.condition(code)        # cx_conditions' codes: the source's own point of view
+    from .cx_statics import _holds
+    return _holds(source, code, perm)
+
+
+def _count(source, spec) -> int:
+    from .engine.state import StackItem
+    game = getattr(source.controller, "_game", None)
+    if game is None:
+        return 0
+    return game.x_quantity(source.controller, spec, StackItem(source.controller, [], [], source=source), None)
+
+
+def pt_bonus(perm):
+    bp = bt = 0
+    for source, code, (_, p, t, xq) in _rows(perm, "pt"):
+        if _on(source, code, perm):
+            n = 1 if xq is None else _count(source, xq)
+            bp, bt = bp + p * n, bt + t * n
+    return bp, bt
+
+
+def grants(perm, kw: str) -> bool:
+    return any(kw in payload[1] and _on(source, code, perm) for source, code, payload in _rows(perm, "kw"))
+
+
+def rules(game, perm, rule: str) -> list:
+    """The gated values of a cx_static family rule that apply to perm now (cx_grammar.static_rules)."""
+    return [payload[2] for source, code, payload in _rows(perm, "rule")
+            if payload[1] == rule and _on(source, code, perm)]
