@@ -141,6 +141,8 @@ def lift(s: str, effects: list) -> bool:
     outside = re.sub(r'"[^"]*"', '""', s)          # a quoted ability's own targets are its own
     if len(re.findall(r"\btarget\b", outside, re.I)) != 1:
         return False
+    if re.match(r"(?:you may )?choose\b", s, re.I):
+        return False                          # "choose up to one target creature": a referent for later sentences
     if _ANY.search(outside):
         return not _COUNTED.search(outside) and _lift_any(s, effects)
     found = list(_COUNTED.finditer(s))
@@ -150,8 +152,6 @@ def lift(s: str, effects: list) -> bool:
     n, upto = _NUM[m[2].lower()], bool(m[1])
     if n == 1 and not upto:
         return False                          # "one target creature" is just "target creature"
-    if re.match(r"(?:you may )?choose\b", s, re.I):
-        return False                          # "choose up to one target creature": a referent for later sentences
     text = _rewrite(s, n)
     if text is None:
         return False

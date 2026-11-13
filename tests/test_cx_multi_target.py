@@ -59,7 +59,7 @@ class Parsing(unittest.TestCase):
                 self.assertEqual(card_coverage(db.get(name)).status, "full")
 
 
-class Behaviour(unittest.TestCase):
+class Base(unittest.TestCase):
     def setUp(self):
         self.a = Player("a", [BEAR] * 10, HeuristicAI())
         self.b = Player("b", [BEAR] * 10, HeuristicAI())
@@ -79,6 +79,8 @@ class Behaviour(unittest.TestCase):
         self.game.resolve_top()
         return item
 
+
+class Behaviour(Base):
     def test_ai_picks_distinct_targets_and_may_pick_fewer(self):
         bounce = self.spell("Return up to two target nonland permanents to their owners' hands.")
         theirs = [self.game.enter_battlefield(self.b, BEAR)]
@@ -115,6 +117,79 @@ class Behaviour(unittest.TestCase):
         item = self.resolve(tap, [None, None, None])
         self.assertTrue(item.resolved)
         self.assertEqual(self.a.life, life + 1)
+
+
+class AnyNumber(Base):
+    """"any number of target ...": one Effect whose target is a tuple of objects (#391)."""
+    def test_parse(self):
+        destroy = parsed("Destroy any number of target creatures.")
+        self.assertEqual([(e.kind, e.target) for e in destroy], [("cx_multi", "multi")])
+        self.assertEqual([e.kind for e in destroy[0].data["chain"]], ["destroy"])
+        pump = parsed("Until end of turn, any number of target creatures you control each get +1/+0 and gain trample.")
+        self.assertEqual([e.kind for e in pump[0].data["chain"]], ["pump", "grant"])
+        for text in ("Destroy any number of target creatures and up to one target artifact.",   # two target phrases
+                     "Any number of target players each mill two cards and frobnicate."):
+            with self.subTest(text):
+                self.assertIsNone(parsed(text))
+
+    def test_ai_takes_the_whole_side_its_policy_picks(self):
+        wipe = self.spell("Destroy any number of target creatures.")
+        mine = self.game.enter_battlefield(self.a, BEAR)
+        theirs = [self.game.enter_battlefield(self.b, BEAR) for _ in range(3)]
+        chosen = self.game.auto_targets(self.a, wipe.spell_effects)[0]
+        self.assertEqual({id(x) for x in chosen}, {id(x) for x in theirs})
+        self.assertNotIn(mine, chosen)
+        boost = self.spell("Until end of turn, any number of target creatures you control each get +1/+0 and gain "
+                           "trample.")
+        self.assertEqual(self.game.auto_targets(self.a, boost.spell_effects)[0], (mine,))
+
+    def test_cast_legality(self):
+        wipe = self.spell("Destroy any number of target creatures.")
+        x, y = self.game.enter_battlefield(self.b, BEAR), self.game.enter_battlefield(self.b, BEAR)
+        self.assertTrue(self.game.valid_action_targets(self.a, wipe.spell_effects, [(x, y)]))
+        self.assertTrue(self.game.valid_action_targets(self.a, wipe.spell_effects, [()]))
+        self.assertFalse(self.game.valid_action_targets(self.a, wipe.spell_effects, [(x, x)]))     # each once
+        warded = self.game.enter_battlefield(self.b, card("Test Hexer", "{1}", "Creature — Elf", "Hexproof", 1, 1))
+        self.assertFalse(self.game.valid_action_targets(self.a, wipe.spell_effects, [(x, warded)]))
+
+    def test_resolution_skips_gone_members_and_fizzles_when_all_are_gone(self):
+        wipe = self.spell("Destroy any number of target creatures.")
+        x, y = self.game.enter_battlefield(self.b, BEAR), self.game.enter_battlefield(self.b, BEAR)
+        self.game.leave_battlefield(x, "exile")
+        item = self.resolve(wipe, [(x, y)])
+        self.assertTrue(item.resolved)
+        self.assertNotIn(y, self.b.battlefield)
+        z = self.game.enter_battlefield(self.b, BEAR)
+        self.game.leave_battlefield(z, "exile")
+        self.assertFalse(self.resolve(wipe, [(z,)]).resolved)
+
+    def test_none_chosen_resolves_the_rest(self):
+        spell = self.spell("Destroy any number of target creatures. You gain 2 life.")
+        life = self.a.life
+        item = self.resolve(spell, [(), None])
+        self.assertTrue(item.resolved)
+        self.assertEqual(self.a.life, life + 2)
+
+    def test_each_member_becomes_the_target(self):
+        illusion = card("Test Illusion", "{1}{U}", "Creature — Illusion",
+                        "When ~ becomes the target of a spell or ability, sacrifice it.", 3, 3)
+        untap = self.spell("Untap any number of target creatures.")
+        ill, bear = self.game.enter_battlefield(self.b, illusion), self.game.enter_battlefield(self.b, BEAR)
+        item = StackItem(self.a, list(untap.spell_effects), [(bear, ill)], card=untap, name=untap.name)
+        self.game.stack.append(item)
+        self.game.check_ward(item)
+        self.game.settle()
+        self.assertNotIn(ill, self.b.battlefield)
+
+    def test_cast_through_the_engine(self):
+        wipe = card("Test Purge", "{B}", "Sorcery", "Destroy any number of target creatures.")
+        self.a.hand.append(wipe)
+        self.a.battlefield.append(__import__("mtgsim.engine", fromlist=["Permanent"]).Permanent(
+            card("Test Swamp", "", "Basic Land — Swamp", "({T}: Add {B}.)"), self.a))
+        theirs = [self.game.enter_battlefield(self.b, BEAR) for _ in range(2)]
+        self.assertTrue(self.game.cast(self.a, wipe))
+        self.game.settle()
+        self.assertFalse(any(x in self.b.battlefield for x in theirs))
 
 
 if __name__ == "__main__":
