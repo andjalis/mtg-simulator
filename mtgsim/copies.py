@@ -138,6 +138,14 @@ def parse_except(text: str, mods: dict | None = None) -> dict | None:
         mods["sac_end"] = True
         text = _SAC_QUOTE.sub("", text + ".").strip().rstrip(".").strip()
         text = re.sub(r"(?:,? and|,)$", "", text).strip()
+    # Quoted triggered abilities ("it has "Whenever ~ attacks, it connives."") are masked as \x00N\x00 and
+    # parsed by cx_trigger_grants.quoted_triggers; a quote it doesn't fully read rejects the whole clause.
+    quotes = []
+
+    def _mask(m):
+        quotes.append(m[1])
+        return f"\x00{len(quotes) - 1}\x00"
+    text = re.sub(r'"([^"]+)"', _mask, text).strip().rstrip(".")
     if '"' in text or "." in text:
         return None
     for clause in _CLAUSE_SPLIT.split(text):
@@ -154,6 +162,26 @@ def parse_except(text: str, mods: dict | None = None) -> dict | None:
             mods["keep_name"] = True
             continue
         m = re.fullmatch(rf"(?:{_SUBJ} )?(?:has|have|gains?) (.+)", c, flags=re.I)
+        if m and "\x00" in m[1]:
+            words = [w.strip() for w in re.split(r",? and |, ", m[1]) if w.strip()]
+            granted = []
+            for w in words:
+                q = re.fullmatch(r"\x00(\d+)\x00", w)
+                if q is None:
+                    continue
+                from .cx_trigger_grants import quoted_triggers
+                trigs = quoted_triggers(quotes[int(q[1])])
+                if not trigs:
+                    return None
+                granted.extend(trigs)
+            rest = [w for w in words if not re.fullmatch(r"\x00\d+\x00", w)]
+            kws = _keywords(", ".join(rest)) if rest else frozenset()
+            if kws is None or "changeling" in kws:
+                return None
+            if kws:
+                mods["keywords"] = mods.get("keywords", frozenset()) | kws
+            mods["triggers"] = tuple(mods.get("triggers", ())) + tuple(granted)
+            continue
         if m:
             kws = _keywords(m[1])
             if kws is None:
@@ -349,7 +377,7 @@ def parse_line(line: str) -> dict | None:
     if m:
         cond = "creature" if m["creature"] else "another" if m["another"] else "gained_life" if m["life"] else ""
         return {"cast_copy": {"cond": cond, "n": "x" if m["x"] else 1}}
-    m = _CLONE.fullmatch(line)
+    m = _CLONE.fullmatch(re.sub(r'\."$', '".', line))     # 'except it has "... ~."' ends inside the quote
     if not m:
         return None
     mods = parse_except(m["exc"]) if m["exc"] else {}
@@ -413,7 +441,7 @@ def make_copy(card, mods: dict, token: bool = True, name: str | None = None):
         changes["name"] = name
     changes.update(exception_changes(card, mods))
     if mods.get("sac_end"):
-        changes["triggers"] = list(card.triggers) + [Trigger("end_step", [Effect("copy_sac", target="self")])]
+        changes["triggers"] = list(changes.get("triggers", card.triggers)) + [Trigger("end_step", [Effect("copy_sac", target="self")])]
     return dataclasses.replace(card, **changes)
 
 
@@ -437,6 +465,8 @@ def exception_changes(card, mods: dict) -> dict:
         changes["color_override"] = card.colors | mods["colors"]
     if mods.get("keywords"):
         changes["keywords"] = card.keywords | mods["keywords"]
+    if mods.get("triggers"):        # quoted triggered abilities: copiable values of the copy (rule 707.9a)
+        changes["triggers"] = list(changes.get("triggers", card.triggers)) + list(mods["triggers"])
     if mods.get("changeling"):
         changes["changeling"] = True
     if "legendary" in mods:

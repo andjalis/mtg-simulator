@@ -561,6 +561,68 @@ class TokenCopyReferents(Base):
         self.assertEqual([(t.card.name, t.power, t.card.subtypes, t.card.colors, t.tapped) for t in tok],
                          [(DRAGON3.name, 4, frozenset({"Zombie"}), frozenset("B"), True)])
 
+@unittest.skipUnless(DB_FILE.exists(), "needs the card database")
+class QuotedAbilityExceptions(Base):
+    """'except it has "<triggered ability>"' through cx_trigger_grants.quoted_triggers (#338)."""
+
+    @classmethod
+    def setUpClass(cls):
+        from mtgsim.carddb import CardDB
+        cls.db = CardDB()
+
+    def test_parse_masks_quotes_and_rejects_unparsed_ones(self):
+        mods = parse_except('it has haste and "At the beginning of the end step, exile ~."')
+        self.assertEqual(mods["keywords"], frozenset({"haste"}))
+        self.assertEqual([t.event for t in mods["triggers"]], ["each_end_step"])
+        for text in ('it has "{U}{B}, {T}: Destroy target creature with the same name as ~."',
+                     'it has "At the beginning of your upkeep, if ~ isn\'t a token, create a token that\'s a copy of ~."',
+                     'it has changeling and "Whenever ~ attacks, it connives."'):
+            with self.subTest(text=text):
+                self.assertIsNone(parse_except(text))
+
+    def test_phantasmal_image_copy_is_sacrificed_when_targeted(self):
+        self.perm(DRAGON3, self.b)
+        img = self.game.enter_battlefield(self.a, self.db.get("Phantasmal Image"))
+        self.assertEqual(img.card.name, DRAGON3.name)
+        self.assertIn("Illusion", img.card.subtypes)
+        self.assertTrue(any(t.event == "targeted" for t in img.card.triggers))
+        # a copy of the Image copies the granted trigger too (707.9a)
+        clone = card("Plain Clone", "{3}{U}", "Creature — Shapeshifter", (
+            "You may have Plain Clone enter as a copy of a creature you control."), 0, 0)
+        c2 = self.game.enter_battlefield(self.a, clone)
+        self.assertTrue(any(t.event == "targeted" for t in c2.card.triggers))
+        ping = card("Test Ping", "{R}", "Instant", "Test Ping deals 1 damage to target creature.")
+        self.perm(self.db.get("Mountain"), self.b)
+        self.b.hand = [ping]
+        self.assertTrue(self.game.cast(self.b, ping, [img]))
+        self.game.run_priority()
+        self.assertNotIn(img, self.a.battlefield)                   # sacrificed, not killed by 1 damage
+        self.assertEqual([c.name for c in self.a.graveyard], ["Phantasmal Image"])
+
+    def test_copycrook_copy_connives_when_it_attacks(self):
+        self.perm(DRAGON3, self.b)
+        cc = self.game.enter_battlefield(self.a, self.db.get("Copycrook"))
+        self.assertEqual(cc.card.name, DRAGON3.name)
+        self.assertTrue(any(t.event == "attacks" and t.effects[0].kind == "connive" for t in cc.card.triggers))
+
+    def test_heat_shimmer_token_has_haste_and_is_exiled_at_end_step(self):
+        self.perm(DRAGON3, self.b)
+        self.resolve(self.db.get("Heat Shimmer"))
+        tok = [x for x in self.a.battlefield if x.card.is_token]
+        self.assertEqual([(t.card.name, t.has("haste")) for t in tok], [(DRAGON3.name, True)])
+        self.game.fire(self.a, "each_end_step")
+        self.game.fire(self.a, "end_step")
+        self.game.run_priority()
+        self.assertEqual([x for x in self.a.battlefield if x.card.is_token], [])
+
+    def test_aggressive_biomancy_tokens_fight_on_entering(self):
+        self.perm(card("Big Mine", "{4}{G}", "Creature — Beast", "", 6, 6))
+        victim = self.perm(BEAR, self.b)
+        self.resolve(self.db.get("Aggressive Biomancy"), x=1)
+        self.game.run_priority()
+        self.assertEqual(sum(x.card.is_token for x in self.a.battlefield), 1)
+        self.assertNotIn(victim, self.b.battlefield)
+
 
 if __name__ == "__main__":
     unittest.main()
