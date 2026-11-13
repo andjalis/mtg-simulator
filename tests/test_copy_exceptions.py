@@ -541,6 +541,15 @@ class TokenCopyReferents(Base):
         self.game.resolve_top()
         self.assertEqual([t.card.name for t in self.tokens(self.b)], [BEAR.name])
 
+    def test_god_pharaohs_gift_copies_the_exiled_card_as_a_hasty_zombie(self):
+        gift = self.perm(self.db.get("God-Pharaoh's Gift"))
+        self.a.graveyard.append(DRAGON3)
+        self.fire_trigger(gift, "begin_combat")
+        tok = self.tokens()
+        self.assertEqual([(t.card.name, t.power, t.card.subtypes, t.card.colors, t.has("haste")) for t in tok],
+                         [(DRAGON3.name, 4, frozenset({"Zombie"}), frozenset("B"), True)])
+        self.assertEqual([c.name for c in self.a.exile], [DRAGON3.name])
+
     def test_hashaton_copies_the_discarded_creature_card_as_a_zombie(self):
         self.perm(self.db.get("Hashaton, Scarab's Fist"))
         for land in ["Island"] * 3:
