@@ -24,9 +24,12 @@ import dataclasses
 import re
 
 _NUM = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7}
-_COUNTED = re.compile(r"\b(up to )?(one|two|three|four|five|six|seven) (other |another )?target\b", re.I)
+_COUNTED = re.compile(r"\b(?:each of )?(up to )?(one|two|three|four|five|six|seven) (other |another )?target\b", re.I)
 _PLURAL = re.compile(r"\b(creature|permanent|artifact|land|enchantment|planeswalker|player|opponent|card|spell|"
                      r"Equipment|Aura|Vehicle|token)s\b|\b([A-Z][a-z]+)s\b")
+# Kinds whose lane decided an optional target needs rules of its own ("exchange control of ~ and up to one target
+# creature": no exchange happens, #334).
+_OWN_RULES = {"cx_exchange"}
 _IRREGULAR = {"Elves": "Elf", "Dwarves": "Dwarf", "Wolves": "Wolf"}
 
 
@@ -50,6 +53,8 @@ def _rewrite(s: str, n: int):
         rest = _singular_np(rest)
         rest = re.sub(r"\btheir owners'", "its owner's", rest)
         rest = re.sub(r"\btheir owner's\b", "its owner's", rest)
+        rest = re.sub(r"\bits owner's (hand|librar|graveyard)(s|ies)\b",
+                      lambda m: "its owner's " + {"librar": "library"}.get(m[1], m[1]), rest)
         rest = re.sub(r"\bthem\b", "it", rest)
         rest = re.sub(r"\bthose (creature|permanent|land|artifact|card)s\b", r"that \1", rest)
         if re.search(r"\b(?:they|their|them|those|each|these)\b", rest, re.I):
@@ -68,6 +73,8 @@ def lift(s: str, effects: list) -> bool:
     n, upto = _NUM[m[2].lower()], bool(m[1])
     if n == 1 and not upto:
         return False                          # "one target creature" is just "target creature"
+    if re.match(r"(?:you may )?choose\b", s, re.I):
+        return False                          # "choose up to one target creature": a referent for later sentences
     text = _rewrite(s, n)
     if text is None:
         return False
@@ -80,6 +87,8 @@ def lift(s: str, effects: list) -> bool:
     # the chain on one target: the targeted Effect and Effects on "it"; for one target, untargeted Effects too
     # ("destroy up to one target artifact and you gain 2 life"), which several copies would repeat
     if any(e.target != "prev" and not (n == 1 and e.target == "none") for e in new[1:]):
+        return False
+    if new[0].kind in _OWN_RULES:
         return False
     if any(e.data.get("distinct") or e.data.get("optional_target") for e in new):
         return False                          # already a counted target of its own
