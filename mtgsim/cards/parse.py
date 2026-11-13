@@ -886,6 +886,9 @@ def _parse_trigger(line: str):
     if out is not None and once_game:
         for t in out[0]:
             t.once_game = True
+    if out is not None and out[0] and not out[1]:     # an unmatched sentence may hold the antecedent of "it"
+        from ..cx_trig_self_it import bind
+        out = (bind(line, out[0]),) + tuple(out[1:])
     return out
 
 
