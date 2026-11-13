@@ -951,7 +951,13 @@ class HeuristicAI:
                 value += sum(perm_value(x) for x in getattr(opp, "planeswalkers", [])) - \
                     sum(perm_value(x) for x in getattr(me, "planeswalkers", []))
             elif eff.target in getattr(engine, "TARGETED", ()):
-                tgt = self.choose_target(game, me, eff, card)
+                # the targets chosen so far (a fight's own creature, the +1/+1 counter put on it first)
+                previous = getattr(game, "_choosing_targets", []), getattr(game, "_choosing_effects", ())
+                game._choosing_targets, game._choosing_effects = targets, card.spell_effects
+                try:
+                    tgt = self.choose_target(game, me, eff, card)
+                finally:
+                    game._choosing_targets, game._choosing_effects = previous
                 if tgt is None:
                     return None
                 targets.append(tgt)

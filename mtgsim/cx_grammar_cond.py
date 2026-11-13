@@ -143,6 +143,11 @@ def resolve_instead(effects: list) -> list:
             bad.append("An \"instead\" effect without the effect it replaces.")
             del effects[i:j]
             continue
+        if cond.startswith('lib:["prev_is",') and all(o.target == "self" for o in old):
+            # "~ gets +1/+0. If it's an Aura, ... instead": "it" is the object of the replaced sentence, ~ itself
+            src = 'lib:["src_is",' + cond[len('lib:["prev_is",'):]
+            group = [dataclasses.replace(g, cond=src) for g in group]
+            cond = src
         gate = {"cond": cond}       # shared identity: evaluate once before either branch changes the board
         for n, o in enumerate(old):
             effects[i - k + n] = dataclasses.replace(o, cond=_both(o.cond, _negate(cond)),

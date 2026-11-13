@@ -88,7 +88,8 @@ def parse_line(line: str, st) -> bool:
         elif m[1] == "Rampage":
             triggers.append(_trigger("becomes_blocked", [_effect("rampage", n)]))
         elif m[1] == "Backup":
-            triggers.append(_trigger("etb", [_effect("backup", n)]))
+            # activated abilities printed above Backup aren't granted (702.165a): how many there are so far
+            triggers.append(_trigger("etb", [_effect("backup", n, data={"activated_above": len(st.activated)})]))
         elif m[1] == "Renown":
             triggers.append(_trigger("combat_damage_player", [_effect("renown", n)]))
         elif m[1] == "Fabricate":
@@ -252,10 +253,12 @@ def resolve(game, p, eff, target, item):
         others = [x for x in p.creatures if x is not src]
         pick = max(others, key=perm_value) if others else src
         pick.counters["+1/+1"] = pick.p1 + eff.amount
-        if pick is not src:        # the target gains every ability listed below backup until end of turn
+        if pick is not src:        # the target gains the abilities printed below backup until end of turn (702.165a)
             pick.temp_kw |= _keywords_below_backup(src.card)
-            pick.temp_triggers += [t for t in src.card.triggers if not any(e.kind == "backup" for e in t.effects)]
-            pick.temp_activated += list(src.card.activated)
+            triggers = src.card.triggers      # parsed in line order: the ones after the backup trigger are below it
+            first = next((i + 1 for i, t in enumerate(triggers) if any(e is eff for e in t.effects)), 0)
+            pick.temp_triggers += [t for t in triggers[first:] if not any(e.kind == "backup" for e in t.effects)]
+            pick.temp_activated += list(src.card.activated[eff.data.get("activated_above", 0):])
             pick.temp_min_blocker = max(pick.temp_min_blocker, src.card.min_blocker_power)
     elif k == "evolve":
         new = item.context

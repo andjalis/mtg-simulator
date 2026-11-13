@@ -65,6 +65,13 @@ class PilotGateTests(unittest.TestCase):
         self.assertTrue(any("placeholder" in f for f in flags))
         self.assertEqual(verdict({}, {}, [{"name": "A", "flags": flags}], self.smoke)[0], "FAIL")
 
+    def test_condlib_json_is_not_a_placeholder(self):
+        # Ancient Animus, PR #349: a cx_condlib condition is JSON, and its filter object is not a "{...}" placeholder
+        self.assertEqual(suspicious({"cond": 'lib:["prev_is",{"legendary":true}]'}), [])
+        self.assertEqual(suspicious({"cond": 'lib:["not","lib:[\\"src_is\\",{\\"sub\\":[\\"Aura\\"]}]"]'}), [])
+        self.assertEqual(len(suspicious({"cond": 'lib:["prev_is",{"legendary":true}'})), 1)     # broken JSON
+        self.assertEqual(len(suspicious({"cond": 'lib:["prev_is",{"f":"{unresolved}"}]'})), 1)  # placeholder inside
+
     def test_untargeted_none_is_advisory(self):
         sample = {"name": "Innocent Blood", "flags": ["parse.spell_effects[0].target='none'"]}
         self.assertEqual(verdict({}, {}, [sample], self.smoke)[0], "PASS")
