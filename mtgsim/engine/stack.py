@@ -122,6 +122,8 @@ class StackMixin:
             for i, trig in enumerate(triggers):
                 if trig.event != event:
                     continue
+                if any(e.data.get("suspended_self") for e in trig.effects):
+                    continue        # "if this card is suspended": works only from exile (time_counters)
                 if trig.data.get("enters_untapped") and perm.tapped:
                     continue
                 if (event == "etb" and getattr(perm, "_etb_roll_consumed", False)
@@ -275,6 +277,9 @@ class StackMixin:
                     if trig.event == event:
                         self.queue_trigger(aura.controller, self._that_much(trig.effects), source, aura.card.name,
                                            ctx(trig.effects))
+        if source is None and p.suspended:     # "if this card is suspended" abilities (Deep-Sea Kraken)
+            from ..time_counters import suspended_triggers
+            suspended_triggers(self, p, event, context)
         if source is None:      # abilities that trigger from the graveyard (Bloodghast)
             for card in list(p.graveyard):
                 for trig in card.gy_triggers:

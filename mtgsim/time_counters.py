@@ -14,6 +14,8 @@ vanishing permanent's last one sacrifices it (vanishing's "when the last is remo
 """
 from __future__ import annotations
 
+import re
+
 _N = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "x": 0}
 _NUM = r"(a|an|one|two|three|four|five|x|\d+)"
 
@@ -32,7 +34,24 @@ def _effect(op, n, group=False, has_time=False):
     return Effect("time_counters", amount, target="none" if group else "perm_or_suspended", data=data)
 
 
+# "Whenever ..., if this card is suspended, remove a time counter from it" (Deep-Sea Kraken) / "... that player may put
+# a time counter on this card" (Pardic Dragon): an ability that works only while the card is suspended. The effect is
+# marked suspended_self; Game.fire skips it on the battlefield and ``suspended_triggers`` queues it from exile.
+SUBS = [
+    (re.compile(r"if this card is suspended, remove a time counter from (?:it|this card)\.", re.I),
+     lambda m: "SUSPTICK remove you."),
+    (re.compile(r"if this card is suspended, that player may put a time counter on this card\.", re.I),
+     lambda m: "SUSPTICK put caster."),
+]
+
+
+def _self_tick(m):
+    from .cards.model import Effect
+    return Effect("time_counters", 1, data={"op": m[1], "suspended_self": True, "who": m[2]})
+
+
 EFFECT_PATTERNS = [
+    (r"SUSPTICK (remove|put) (you|caster)", _self_tick),
     (rf"remove {_NUM} time counters? from target permanent or suspended card",
      lambda m: _effect("remove", m[1])),
     (rf"put {_NUM} time counters? on target permanent with a time counter on it or suspended card",
@@ -127,4 +146,21 @@ def apply(game, p, eff, target, n):
             else:
                 entry[1] += n
                 game.log(f"puts {n} time counters on suspended {obj.name} ({entry[1]})", p)
+
+
+def suspended_triggers(game, p, event, context):
+    """Game.fire: p's suspended cards whose "if this card is suspended" ability triggers on event (an opponent's
+    spell: the any_cast filter "opp")."""
+    import dataclasses
+    for _, entry in [(pl, e) for pl, e in suspended_cards(game) if pl is p]:
+        card = entry[0]
+        for trig in card.triggers:
+            if trig.event != event or not any(e.data.get("suspended_self") for e in trig.effects):
+                continue
+            caster = getattr(context, "controller", context)
+            if event == "any_cast" and trig.filter == "opp" and caster is p:
+                continue
+            effects = [dataclasses.replace(e, data=dict(e.data, card_ref=card)) if e.data.get("suspended_self")
+                       else e for e in trig.effects]
+            game.queue_trigger(p, effects, None, f"{card.name} (suspended)", context=context)
 

@@ -78,6 +78,10 @@ def cx_remove_counters(game, p, eff, target, item=None, **_):
 def time_counters(game, p, eff, target, **_):
     """Time counters on a permanent or a suspended card, or on all of them (mtgsim/time_counters.py)."""
     from ...time_counters import apply
+    if eff.data.get("suspended_self"):        # the suspended card's own ability: that very card, if still suspended
+        target = eff.data.get("card_ref")
+        if target is None:
+            return
     apply(game, p, eff, target, eff.amount)
 
 

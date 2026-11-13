@@ -241,6 +241,7 @@ from .. import cx_exchange as _cx_exchange
 _EFFECT_PATTERNS += _cx_exchange.EFFECT_PATTERNS
 from .. import time_counters as _time_counters
 _EFFECT_PATTERNS += _time_counters.EFFECT_PATTERNS
+_SUBS += _time_counters.SUBS
 from .. import capped_counters as _capped_counters
 _EFFECT_PATTERNS += _capped_counters.EFFECT_PATTERNS
 _SUBS += _capped_counters.SUBS
