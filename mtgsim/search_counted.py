@@ -1,0 +1,345 @@
+"""Counted library searches with a player scope and a destination plan (#339).
+
+One sentence = who searches + how many + which cards + where they go + when the library is shuffled:
+
+    Search your library for three cards, put them into your hand, then shuffle.          (Behold the Beyond)
+    Search your library for up to three creature cards, put them into your graveyard, then shuffle.
+    Search your library for up to two basic land cards, reveal those cards, put one onto the battlefield
+        tapped and the other into your hand, then shuffle.                                 (Cultivate)
+    Search your library for a card, then shuffle and put that card on top.               (Vampiric Tutor)
+    Each player searches their library for up to two basic land cards, puts them onto the battlefield,
+        then shuffles.                                                                     (Avatar of Growth)
+    Target player searches their library for a basic land card, puts it onto the battlefield tapped,
+        then shuffles.                                                                     (Fertilid)
+
+The sentence is read in parts and refused (NO_MATCH, the sentence stays ignored) unless every part is
+understood:
+
+- subject: you (none), "target player" (the default AI picks a side: data["side"]), "each player", "each
+  opponent", "its controller" / "that player" / "that creature's controller" (target that_controller);
+  an optional "may" (the searcher always searches: hidden-zone searches may fail to find anyway);
+- quantity: "a"/"an", a number, "up to N", "X" / "up to X" (data["x_count"]: the spell's or ability's X,
+  or the X its permanent entered with), "any number of";
+  ", where X is ..." sets data["xq"] (amount 1, which Game.resolve scales): at the end of the sentence
+  through the generic wrapper in cards.parse, in the middle ("up to X basic land cards, where X is ...,
+  put them ...") here;
+- filter: a noun phrase card_matches understands, validated word by word (unknown words refuse the
+  sentence rather than match nothing); alternatives ("instant or sorcery", "Plains, Island, ... or Forest",
+  "basic land cards and/or Gate cards") become card_matches alternatives; suffixes "with mana value N or
+  less/greater", "with mana value X or less", "named ~";
+- plan: "put it/them into your hand / graveyard", "onto the battlefield [tapped]", "exile it/them",
+  "put one onto the battlefield tapped and the other into your hand", or "then shuffle and put that card /
+  those cards on top [in any order]"; "reveal ..." is information only;
+- shuffle: after the move ("then shuffle", or a following "Then shuffle." sentence, which parses to
+  nothing) or before it (the top-of-library plan).
+
+Effect ``search_plan``: amount = the count, data what (card_matches description), searcher (you / target /
+that / each / each_opp), upto, all ("any number of"), plan [[dest, count or None (the rest), tapped]],
+shuffle ("after" / "before"), x_count, mv_x ("less"/"greater": mana value compared with the spell's X).
+Each searching player searches their own library; the picks are physical cards removed from it, so none is
+duplicated or lost.
+"""
+from __future__ import annotations
+
+import re
+
+KINDS = {"search_plan"}
+
+_NUM = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9,
+        "ten": 10}
+_N = r"(?:one|two|three|four|five|six|seven|eight|nine|ten|\d+)"
+
+_SUBJECTS = {
+    "": "you", "you": "you", "target player": "target", "each player": "each", "each opponent": "each_opp",
+    "its controller": "that", "that player": "that", "that creature's controller": "that",
+    "its owner": "that",
+}
+_SUBJ = r"(?:target player|each player|each opponent|its controller|that player|that creature's controller|its owner)"
+
+_SENTENCE = re.compile(
+    rf"(?:(?P<subj>{_SUBJ}) )?(?P<may>may )?search(?:es)? (?P<lib>your|their) library for (?P<rest>.+)", re.I)
+
+_TYPES = {"creature", "land", "artifact", "enchantment", "planeswalker", "instant", "sorcery", "battle"}
+_COLORS = {"white", "blue", "black", "red", "green"}
+_ADJ = {"basic", "nonbasic", "snow", "legendary", "permanent", "historic", "multicolored", "colorless"} | \
+    _COLORS | {"non" + c for c in _COLORS} | {"non" + t for t in _TYPES}
+
+_PRONOUN = r"(?:it|them|that card|those cards|the card|the cards)"
+_DEST = (r"(?P<where>into (?:your|their) (?P<zone>hand|graveyard)|onto the battlefield(?P<tapped> tapped)?)")
+
+
+def _quantity(text):
+    """(count, upto, all, x, rest) for the quantity at the start of text, or None."""
+    m = re.match(rf"(?:(an?)|up to ({_N}|x)|({_N}|x)|(any number of)) (.+)", text, re.I)
+    if not m:
+        return None
+    if m[1]:
+        return 1, False, False, False, m[5]
+    if m[4]:
+        return 0, False, True, False, m[5]
+    word = (m[2] or m[3]).lower()
+    if word == "x":
+        return 0, bool(m[2]), False, True, m[5]
+    n = _NUM.get(word) or int(word)
+    return n, bool(m[2]), False, False, m[5]
+
+
+def _alternative(words):
+    """One card_matches alternative ("basic land", "Dragon creature", "nonland") or None."""
+    out, types = [], 0
+    for w in words:
+        lw = w.lower()
+        if lw in _TYPES:
+            types += 1
+            out.append(lw)
+        elif lw in _ADJ:
+            out.append(lw)
+        elif re.fullmatch(r"[A-Z][a-z'-]+", w):          # a subtype (Goblin, Forest, Aura, Gate)
+            out.append(w)
+        else:
+            return None
+    if not out or types > 1:      # card_matches reads two type words as either type: refuse
+        return None
+    return " ".join(out)
+
+
+def _filter(text):
+    """(card_matches description, mv_x) for a noun phrase like "basic land cards", or None."""
+    mv_x = None
+    suffix = ""
+    m = re.fullmatch(r"(.+?) cards? with mana value (\d+|x) or (less|greater)", text, re.I)
+    if m:
+        if m[2].lower() == "x":
+            mv_x = m[3].lower()
+        else:
+            suffix = f" with mana value {m[2]} or {m[3].lower()}"
+        text = m[1] + " card"
+    if re.fullmatch(r"cards? named ~", text, re.I):
+        return "a card named ~", None
+    m = re.fullmatch(r"(.*?) ?cards?", text, re.I)
+    if not m:
+        return None
+    body = m[1]
+    if not body:
+        return "a card" + suffix, mv_x
+    # "basic land cards and/or Gate cards": an inner "cards" separates two alternatives
+    body = re.sub(r" cards? (?=(?:and/or|or) )", " ", body, flags=re.I)
+    pieces = [p for p in re.split(r",? (?:and/or|or) |, ", body, flags=re.I) if p]
+    alts = []
+    for piece in pieces:
+        alt = _alternative(piece.split())
+        if alt is None:
+            return None
+        alts.append(alt)
+    return " or ".join(f"{'an' if a[0] in 'aeiou' else 'a'} {a} card{suffix}" for a in alts), mv_x
+
+
+def _plan(tail, single):
+    """(plan, shuffle) for the steps after the filter ("put them into your hand, then shuffle"), or None."""
+    t = tail.rstrip().rstrip(".")
+    t = re.sub(rf"^(?:,|,? and) reveals? (?:{_PRONOUN}|those cards)", "", t, flags=re.I)
+    m = re.fullmatch(rf"(?:,|,? and) (?:then )?puts? {_PRONOUN} {_DEST}(?P<shuffle>,? (?:and )?then shuffles?)?",
+                     t, re.I)
+    if m:
+        dest = "battlefield" if m["where"].lower().startswith("onto") else m["zone"].lower()
+        return [[dest, None, bool(m["tapped"])]], "after" if m["shuffle"] else ""
+    m = re.fullmatch(rf"(?:,|,? and) (?:then )?exiles? {_PRONOUN}(?P<shuffle>,? (?:and )?then shuffles?)?", t, re.I)
+    if m:
+        return [["exile", None, False]], "after" if m["shuffle"] else ""
+    m = re.fullmatch(r"(?:,|,? and) puts? (one|two) onto the battlefield( tapped)? and the (?:other|rest) "
+                     r"into (?:your|their) hand(?P<shuffle>,? (?:and )?then shuffles?)?", t, re.I)
+    if m and not single:
+        return [["battlefield", _NUM[m[1].lower()], bool(m[2])], ["hand", None, False]], \
+            "after" if m["shuffle"] else ""
+    m = re.fullmatch(rf",? (?:and )?then shuffles? and puts? {_PRONOUN} on top(?: of (?:your|their) library)?"
+                     rf"(?P<order> in any order)?", t, re.I)
+    if m:
+        return [["top", None, False]], "before"
+    return None
+
+
+def parse(text):
+    """The search_plan Effect for one sentence, or None."""
+    from .cards import Effect
+    m = _SENTENCE.fullmatch(text.strip().rstrip("."))
+    if not m:
+        return None
+    subj = (m["subj"] or "").lower()
+    searcher = _SUBJECTS[subj]
+    if (m["lib"].lower() == "your") != (searcher == "you"):
+        return None
+    if searcher == "you" and m["may"]:
+        return None          # "you may search" is the generic "you may" wrapper's
+    rest, xq = m["rest"], None
+    mid = re.search(r", where X is ([^,]+)(?=,)", rest, re.I)
+    if mid:        # "for up to X basic land cards, where X is the number of lands you control, put them ..."
+        from .cards.clauses import _xq
+        xq = _xq(mid[1])
+        if not xq:
+            return None
+        rest = rest[:mid.start()] + rest[mid.end():]
+    split = re.match(r"(.+?)(?=(?:,|,? and) (?:reveals?|puts?|exiles?|then)\b)(.+)", rest, re.I)
+    if not split:
+        return None
+    q = _quantity(split[1])
+    if q is None:
+        return None
+    count, upto, every, x, noun = q
+    what = _filter(noun)
+    if what is None:
+        return None
+    desc, mv_x = what
+    if mv_x and x:
+        return None          # one X can't be both the count and the mana value here
+    single = count == 1 and not upto and not every and not x
+    planned = _plan(split[2], single)
+    if planned is None:
+        return None
+    plan, shuffle = planned
+    shuffle = shuffle or "after"     # "... onto the battlefield. Then shuffle." (the next sentence is a no-op)
+    if every and plan[0][0] == "exile":
+        return None          # "exile any number of": which cards is a real choice the AI doesn't model
+    data = {"what": desc, "searcher": searcher, "upto": upto, "all": every, "plan": plan, "shuffle": shuffle}
+    if xq:
+        if not x:
+            return None
+        count, data["xq"] = 1, xq          # Game.resolve multiplies amount by the quantity
+    elif x:
+        data["x_count"] = True     # not data["x"]: Game.resolve reads that from the stack item only
+    if mv_x:
+        data["mv_x"] = mv_x
+    target = "none"
+    if searcher == "target":
+        target, data["side"] = "player", "mine"
+    elif searcher == "that":
+        target = "that_controller"
+    return Effect("search_plan", count, target=target, data=data)
+
+
+def _build(m):
+    from .cards import NO_MATCH
+    eff = parse(m[0])
+    return NO_MATCH if eff is None else eff
+
+
+EFFECT_PATTERNS = [
+    (r"(?:(?:target player|each player|each opponent|its controller|that player|that creature's controller|"
+     r"its owner) )?(?:may )?search(?:es)? (?:your|their) library for .+", _build),
+]
+
+
+# ---- resolution ---------------------------------------------------------------------------------
+
+def _searchers(game, p, eff, target, item):
+    who = eff.data.get("searcher", "you")
+    if who == "you":
+        return [p]
+    if who in ("target", "that"):
+        from .engine import Permanent, Player
+        if isinstance(target, Player):
+            return [target]
+        ctx = getattr(item, "context", None)
+        if who == "that" and isinstance(ctx, Permanent):
+            return [ctx.controller]   # "When enchanted creature dies, that creature's controller ..." (the dead creature)
+        return []
+    others = [x for x in game.players if x is not p]
+    return [p] + others if who == "each" else others
+
+
+def _rank_lands(game, me, cands):
+    """Lands first by the colour the player needs most (policy.choose_basic's measure)."""
+    from .engine.policy import COLORS
+    have = {col: sum(col in x.card.produces for x in me.battlefield if x.card.is_land) for col in COLORS}
+    need = {col: sum(c.mana_cost.get(col, 0) for c in me.hand + me.library) for col in COLORS}
+    return max(cands, key=lambda c: max((need[col] / (1 + have[col]) for col in c.produces), default=0))
+
+
+def _pick(game, me, cands, dest):
+    """The next card the searching player takes for a destination."""
+    from .engine.policy import _wants_land, choose_tutor
+    if dest == "graveyard":        # binning: the biggest creature (reanimation), else the biggest card
+        return max(cands, key=lambda c: (c.is_creature, c.cmc))
+    if dest == "exile":            # thinning: what this player wants least
+        want = _wants_land(game, me)
+        return max(cands, key=lambda c: (c.is_land != want, -c.cmc if want else c.cmc))
+    if all(c.is_land for c in cands):
+        return _rank_lands(game, me, cands)
+    return choose_tutor(game, me, cands)
+
+
+def resolve(game, p, eff, target, item):
+    from .engine import card_matches
+    d = eff.data
+    ref = (item.card or getattr(item.source, "card", None)) if item is not None else None
+    # X: the spell's or ability's X, or the X a permanent entered with (its enters trigger: Sporocyst, Rocco)
+    x = getattr(item, "x", 0) or getattr(getattr(item, "source", None), "entered_x", 0) or 0
+
+    def fits(c):
+        if not card_matches(c, d["what"], ref=ref):
+            return False
+        if d.get("mv_x") == "less":
+            return c.cmc <= x
+        if d.get("mv_x") == "greater":
+            return c.cmc >= x
+        return True
+
+    for who in _searchers(game, p, eff, target, item):
+        lib = who.library
+        limit = len(lib) if d.get("all") else x if d.get("x_count") else max(0, eff.amount)
+        plan = d["plan"]
+        moves = []           # (card, dest, tapped)
+        for dest, n, tapped in plan:
+            room = limit - len(moves) if n is None else min(n, limit - len(moves))
+            for _ in range(max(0, room)):
+                cands = [c for c in lib if fits(c)]
+                if not cands:
+                    break
+                card = _pick(game, who, cands, dest if dest != "top" else "hand")
+                lib.remove(card)
+                moves.append((card, dest, tapped))
+                game.log(f"searches for {card.name}", who)
+        if d.get("shuffle") == "before":
+            lib.shuffle(game.rng)
+        for card, dest, tapped in reversed(moves) if plan[0][0] == "top" else moves:
+            if dest == "hand":
+                who.hand.append(card)
+            elif dest == "graveyard":
+                who.graveyard.append(card)
+                game.log(f"puts {card.name} into their graveyard", who)
+            elif dest == "exile":
+                who.exile.append(card)
+                game.log(f"exiles {card.name}", who)
+            elif dest == "top":
+                lib.append(card)        # the top of the library is the end of the list; the first pick ends on top
+            else:
+                game.enter_battlefield(who, card, tapped=tapped)
+        if d.get("shuffle") == "after":
+            lib.shuffle(game.rng)
+        game.library_searched(who)
+
+
+def value(game, me, eff):
+    """The default AI's worth of a search_plan it controls (ai._extra_value): about 1.5 per card found for
+    the hand or the battlefield, less for the top, the graveyard and exile; what opponents find counts
+    against it ("each player searches": worth casting only when we find more)."""
+    from .engine import card_matches
+    d = eff.data
+    n = 2 if d.get("all") or d.get("x_count") else max(1, eff.amount)
+    worth = {"hand": 1.5, "battlefield": 1.5, "top": 1.0, "graveyard": 0.3, "exile": 0.1}
+
+    def found(player):
+        k = min(n, sum(card_matches(c, d["what"]) for c in player.library))
+        v = 0.0
+        for dest, count, _ in d["plan"]:
+            take = k if count is None else min(count, k)
+            v += worth.get(dest, 0.5) * take
+            k -= take
+        return v
+
+    who = d.get("searcher", "you")
+    opps = [x for x in game.players if x is not me]
+    if who == "each_opp":
+        return -sum(found(x) for x in opps)
+    if who == "each":
+        return found(me) - sum(found(x) for x in opps)
+    return found(me)

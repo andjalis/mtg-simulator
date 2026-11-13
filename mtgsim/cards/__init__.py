@@ -239,3 +239,5 @@ _EFFECT_PATTERNS += _hand_put.EFFECT_PATTERNS
 _SUBS += _hand_put.SUBS
 from .. import cx_exchange as _cx_exchange
 _EFFECT_PATTERNS += _cx_exchange.EFFECT_PATTERNS
+from .. import search_counted as _search_counted
+_EFFECT_PATTERNS += _search_counted.EFFECT_PATTERNS

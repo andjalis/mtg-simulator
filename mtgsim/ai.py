@@ -14,7 +14,7 @@ import math
 from itertools import combinations
 
 from .cards import CardDef, Effect
-from . import copies, counting, engine, learning, modal, proliferate, protection
+from . import copies, counting, engine, learning, modal, proliferate, protection, search_counted
 from .engine import Game, Permanent, Player, can_block, payable
 
 LETHAL = 1000.0
@@ -146,7 +146,7 @@ def _aim(card: CardDef, eff, target) -> list:
 
 # Effects plan_spell values through _extra_value.
 EXTRA_KINDS = {"reanimate_total", "reanimate_one", "tutor_gy", "regrow_perm", "regrow_any", "tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "double_counters", "learn",
-               "tap", "stun", "mill", "proliferate"} | copies.KINDS
+               "tap", "stun", "mill", "proliferate", "search_plan"} | copies.KINDS
 
 CARRIER_KINDS = ("pump", "grant", "p1_counters", "unblockable")   # aimed at the creature that attacks
 
@@ -1146,6 +1146,9 @@ class HeuristicAI:
             return None, self._graveyard_value(me, eff, pending)
         if k == "tutor":
             return None, 2.0      # the best card of a kind, from the library
+        if k == "search_plan":
+            v = search_counted.value(game, me, eff)       # "target player searches": that's us
+            return (me if eff.target == "player" else None, v) if v > 0 else None
         if k == "explore":
             tgt = self.choose_target(game, me, eff, card) if eff.target == "creature_mine" else None
             if eff.target == "creature_mine" and tgt is None:
