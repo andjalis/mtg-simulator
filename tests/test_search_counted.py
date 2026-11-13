@@ -72,6 +72,23 @@ class Parsing(unittest.TestCase):
                       "them onto the battlefield tapped, then shuffle.")
         self.assertEqual(e.data["what"], "a basic land card or a Town card")
 
+    def test_graveyard_and_names(self):
+        e = self.data("Search your library and/or graveyard for a card named Sunlit Hoplite and put it onto the "
+                      "battlefield.")
+        self.assertEqual((e.data["what"], e.data["graveyard"]), ("a card named Sunlit Hoplite", True))
+        e = self.data("Search your library and/or graveyard for a basic land card or a card named Starship "
+                      "Enterprise, reveal it, and put it into your hand.")
+        self.assertEqual(e.data["what"], "a basic land card or a card named Starship Enterprise")
+        e = self.data("Search your library and graveyard for a card named Nissa, Nature's Artisan, reveal it, put it "
+                      "into your hand, then shuffle.")
+        self.assertEqual(e.data["what"], "a card named Nissa, Nature's Artisan")
+        e = self.data("Search your library for a creature card, reveal it, put it into your hand or graveyard, then "
+                      "shuffle.")
+        self.assertEqual(e.data["plan"], [["hand_or_graveyard", None, False]])
+        e = self.data("Search your library and/or graveyard for a non-Human creature card with mana value X or less "
+                      "and put it onto the battlefield.")
+        self.assertEqual((e.data["what"], e.data["mv_x"]), ("a non-Human creature card", "less"))
+
     def test_player_scope(self):
         e = self.data("Each player searches their library for up to two basic land cards, puts them onto the "
                       "battlefield, then shuffles.")
@@ -90,7 +107,14 @@ class Parsing(unittest.TestCase):
         for text in (
                 "Search your library for a nonlegendary card, put that card into your graveyard, then shuffle.",
                 "Search your library for a card named ~ with different names, put it into your hand, then shuffle.",
-                "Search your library for a creature card, reveal it, put it into your hand or graveyard, then shuffle.",
+                "Search your library for a card named ~'s Chosen, put it onto the battlefield, then shuffle.",
+                "Search your library for a card named Festering Newt or Bubbling Cauldron, put it onto the "
+                "battlefield tapped, then shuffle.",
+                "Search your library and/or graveyard for a card, then shuffle and put that card on top.",
+                "Search your library and/or graveyard for up to two basic land cards, reveal those cards, put one "
+                "onto the battlefield tapped and the other into your hand, then shuffle.",
+                "Search your library and/or graveyard for a creature card with no abilities, reveal it, and put it "
+                "into your hand.",
                 "Search your library for any number of land cards, exile them, then shuffle.",
                 "Search your library for a basic land card that doesn't share a land type with a land you control, "
                 "put that card onto the battlefield, then shuffle.",
@@ -238,6 +262,46 @@ class Resolution(Base):
         self.cast(menagerie, x=2)
         self.assertEqual(sorted(c.name for c in self.a.hand), ["Grizzly Bears", "Two Drop"])
 
+    def test_graveyard_first_without_shuffle(self):
+        moogle = spell("Test Momo", "{2}{W}", "Search your library and/or graveyard for a creature card, reveal it, "
+                                             "and put it into your hand. If you search your library this way, shuffle.")
+        order = [card(f"Land {i}", types="Land") for i in range(6)] + [OGRE]
+        self.a.library = list(order)
+        self.a.graveyard = [OGRE]
+        fired = []
+        self.game.library_searched = lambda who: fired.append(who)
+        self.cast(moogle)
+        self.assertEqual([c.name for c in self.a.hand], ["Big Ogre"])
+        self.assertEqual(self.a.library, order)               # untouched: the graveyard copy was enough
+        self.assertEqual(([c.name for c in self.a.graveyard], fired), (["Test Momo"], []))
+        self.cast(moogle)                                        # none left in the graveyard: from the library
+        self.assertEqual(sum(c.name == "Big Ogre" for c in self.a.hand), 2)
+        self.assertEqual((len(self.a.library), fired), (6, [self.a]))
+
+    def test_up_to_n_across_both_zones(self):
+        doctors = spell("Test Doctors", "{4}{W}", "Search your library and/or graveyard for up to three creature "
+                                                 "cards, reveal them, and put them into your hand.")
+        self.a.library, self.a.graveyard = [BEAR, ISLAND, ISLAND], [GOBLIN, ISLAND]
+        before = self.zones(self.a)
+        self.cast(doctors)
+        self.assertEqual(sorted(c.name for c in self.a.hand), ["Grizzly Bears", "Test Goblin"])
+        self.assertEqual(self.zones(self.a) - Counter({"Test Doctors": 1}), before)
+
+    def test_named_card_or_basic(self):
+        kirk = spell("Test Kirk", "{2}{W}", "Search your library and/or graveyard for a basic land card or a card "
+                                           "named Clan Elf, reveal it, and put it into your hand.")
+        self.a.library = [BEAR, NAMED, OGRE]
+        self.a.battlefield = [Permanent(FOREST, self.a) for _ in range(6)]
+        self.cast(kirk)
+        self.assertEqual([c.name for c in self.a.hand], ["Clan Elf"])
+
+    def test_hand_or_graveyard(self):
+        guidance = spell("Test Guidance", "{1}{G}", "Search your library for a creature card, reveal it, put it into "
+                                                   "your hand or graveyard, then shuffle.")
+        self.a.library = [ISLAND, BEAR]
+        self.cast(guidance)
+        self.assertEqual([c.name for c in self.a.hand], ["Grizzly Bears"])
+
     def test_each_player_searches_their_own_library(self):
         self.a.library = [FOREST] * 3 + [BEAR]
         self.b.library = [PLAINS] * 1 + [BEAR] * 3
@@ -364,7 +428,8 @@ class RealCards(unittest.TestCase):
                      "Entomb", "Worldly Tutor", "Spoils of Victory", "Increasing Ambition", "Old-Growth Dryads",
                      "Pattern of Rebirth", "Shared Summons", "Three Dreams", "Saheeli Rai", "Deathbellow War Cry",
                      "Reach the Horizon", "Fblthp, Knows the Way", "Begin the Invasion", "Tiamat",
-                     "Uncage the Menagerie"):
+                     "Uncage the Menagerie", "Tale of Momo", "Delivery Moogle", "Elspeth, Undaunted Hero",
+                     "Captain Kirk, Boldly Going", "Verdant Crescendo", "Dina's Guidance"):
             self.assertEqual(card_coverage(db.get(name)).status, "full", name)
 
 

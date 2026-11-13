@@ -57,7 +57,7 @@ _SUBJECTS = {
 _SUBJ = r"(?:target player|each player|each opponent|its controller|that player|that creature's controller|its owner)"
 
 _SENTENCE = re.compile(
-    rf"(?:(?P<subj>{_SUBJ}) )?(?P<may>may )?search(?:es)? (?P<lib>your|their) library for (?P<rest>.+)", re.I)
+    rf"(?:(?P<subj>{_SUBJ}) )?(?P<may>may )?search(?:es)? (?P<lib>your|their) library(?P<gy> and(?:/or)? graveyard)? for (?P<rest>.+)", re.I)
 
 _TYPES = {"creature", "land", "artifact", "enchantment", "planeswalker", "instant", "sorcery", "battle"}
 _COLORS = {"white", "blue", "black", "red", "green"}
@@ -65,7 +65,8 @@ _ADJ = {"basic", "nonbasic", "snow", "legendary", "permanent", "historic", "mult
     _COLORS | {"non" + c for c in _COLORS} | {"non" + t for t in _TYPES}
 
 _PRONOUN = r"(?:it|them|that card|those cards|the card|the cards)"
-_DEST = (r"(?P<where>into (?:your|their) (?P<zone>hand|graveyard)|onto the battlefield(?P<tapped> tapped)?)")
+_DEST = (r"(?P<where>into (?:your|their) (?P<zone>hand or graveyard|hand|graveyard)|"
+         r"onto the battlefield(?P<tapped> tapped)?)")
 
 
 def _quantity(text):
@@ -94,7 +95,7 @@ def _alternative(words):
             out.append(lw)
         elif lw in _ADJ:
             out.append(lw)
-        elif re.fullmatch(r"[A-Z][a-z'-]+", w):          # a subtype (Goblin, Forest, Aura, Gate)
+        elif re.fullmatch(r"(?:non-)?[A-Z][a-z'-]+", w):   # a subtype (Goblin, Forest, Aura, Gate) or non-Human
             out.append(w)
         else:
             return None
@@ -139,8 +140,17 @@ def _filter(text):
         else:
             suffix = f" with mana value {m[2]} or {m[3].lower()}"
         text = m[1] + " card"
-    if re.fullmatch(r"cards? named ~", text, re.I):
-        return ("a card named ~", None, extras) if not extras and not suffix and not mv_x else None
+    named = re.fullmatch(r"(?:(.+?) cards? or an? )?cards? named (~|[A-Z][\w',-]*(?: [\w',-]+)*)", text)
+    if named:
+        if extras or suffix or mv_x or (named[2] != "~" and ("~" in named[2] or " or " in named[2])):
+            return None      # "named ~'s Chosen" would read the resolving card's name; "X or Y" is two names
+        desc = f"a card named {named[2]}"
+        if named[1]:         # "a basic land card or a card named Starship Enterprise"
+            other = _filter(named[1] + " card")
+            if other is None or other[1] or other[2]:
+                return None
+            desc = f"{other[0]} or {desc}"
+        return desc, None, {}
     m = re.fullmatch(r"(.*?) ?cards?", text, re.I)
     if not m:
         return None
@@ -166,7 +176,7 @@ def _plan(tail, single):
     m = re.fullmatch(rf"(?:,|,? and) (?:then )?puts? {_PRONOUN} {_DEST}(?P<shuffle>,? (?:and )?then shuffles?)?",
                      t, re.I)
     if m:
-        dest = "battlefield" if m["where"].lower().startswith("onto") else m["zone"].lower()
+        dest = "battlefield" if m["where"].lower().startswith("onto") else m["zone"].lower().replace(" or ", "_or_")
         return [[dest, None, bool(m["tapped"])]], "after" if m["shuffle"] else ""
     m = re.fullmatch(rf"(?:,|,? and) (?:then )?exiles? {_PRONOUN}(?P<shuffle>,? (?:and )?then shuffles?)?", t, re.I)
     if m:
@@ -223,6 +233,10 @@ def parse(text):
     if every and plan[0][0] == "exile":
         return None          # "exile any number of": which cards is a real choice the AI doesn't model
     data = {"what": desc, "searcher": searcher, "upto": upto, "all": every, "plan": plan, "shuffle": shuffle}
+    if m["gy"]:
+        if plan[0][0] in ("top", "exile") or len(plan) > 1:
+            return None      # these plans are written for the library only
+        data["graveyard"] = True     # the graveyard too; the library is shuffled only if it was searched
     if xq:
         if not x or mv_x:
             return None      # the where-X is the count; "mana value X" would read the spell's X instead
@@ -248,7 +262,7 @@ def _build(m):
 
 EFFECT_PATTERNS = [
     (r"(?:(?:target player|each player|each opponent|its controller|that player|that creature's controller|"
-     r"its owner) )?(?:may )?search(?:es)? (?:your|their) library for .+", _build),
+     r"its owner) )?(?:may )?search(?:es)? (?:your|their) library(?: and(?:/or)? graveyard)? for .+", _build),
 ]
 
 
@@ -313,26 +327,35 @@ def resolve(game, p, eff, target, item):
 
     for who in _searchers(game, p, eff, target, item):
         lib = who.library
-        limit = len(lib) if d.get("all") else x if d.get("x_count") else max(0, eff.amount)
+        yard = who.graveyard if d.get("graveyard") else None     # "search your library and/or graveyard"
+        limit = len(lib) + len(yard or ()) if d.get("all") else x if d.get("x_count") else max(0, eff.amount)
         plan = d["plan"]
         moves = []           # (card, dest, tapped)
+        searched = yard is None      # the library is searched (and shuffled) unless the graveyard alone sufficed
         for dest, n, tapped in plan:
             room = limit - len(moves) if n is None else min(n, limit - len(moves))
             for _ in range(max(0, room)):
-                cands = [c for c in lib if fits(c)]
+                # graveyard copies first: on a tie the pick (max) keeps the first, so the library stays unsearched
+                cands = [c for c in yard or () if fits(c)] + [c for c in lib if fits(c)]
                 if d.get("distinct"):          # "with different names": none named like a card already taken
                     taken = {card.name for card, _, _ in moves}
                     cands = [c for c in cands if c.name not in taken]
                 if not cands:
+                    searched = True       # came up short: the library was looked through too
                     break
                 card = _pick(game, who, cands, dest if dest != "top" else "hand")
-                lib.remove(card)
+                if yard is not None and card in yard:     # the public copy first: no library search needed
+                    yard.remove(card)
+                    game.log(f"takes {card.name} from their graveyard", who)
+                else:
+                    lib.remove(card)
+                    searched = True
+                    game.log(f"searches for {card.name}", who)
                 moves.append((card, dest, tapped))
-                game.log(f"searches for {card.name}", who)
         if d.get("shuffle") == "before":
             lib.shuffle(game.rng)
         for card, dest, tapped in reversed(moves) if plan[0][0] == "top" else moves:
-            if dest == "hand":
+            if dest in ("hand", "hand_or_graveyard"):    # "into your hand or graveyard": the AI keeps it
                 who.hand.append(card)
             elif dest == "graveyard":
                 who.graveyard.append(card)
@@ -344,6 +367,8 @@ def resolve(game, p, eff, target, item):
                 lib.append(card)        # the top of the library is the end of the list; the first pick ends on top
             else:
                 game.enter_battlefield(who, card, tapped=tapped)
+        if not searched:
+            continue
         if d.get("shuffle") == "after":
             lib.shuffle(game.rng)
         game.library_searched(who)
@@ -356,10 +381,11 @@ def value(game, me, eff):
     from .engine import card_matches
     d = eff.data
     n = 2 if d.get("all") or d.get("x_count") else max(1, eff.amount)
-    worth = {"hand": 1.5, "battlefield": 1.5, "top": 1.0, "graveyard": 0.3, "exile": 0.1}
+    worth = {"hand": 1.5, "hand_or_graveyard": 1.5, "battlefield": 1.5, "top": 1.0, "graveyard": 0.3, "exile": 0.1}
 
     def found(player):
-        k = min(n, sum(card_matches(c, d["what"]) for c in player.library))
+        pool = list(player.library) + (list(player.graveyard) if d.get("graveyard") else [])
+        k = min(n, sum(card_matches(c, d["what"]) for c in pool))
         v = 0.0
         for dest, count, _ in d["plan"]:
             take = k if count is None else min(count, k)
