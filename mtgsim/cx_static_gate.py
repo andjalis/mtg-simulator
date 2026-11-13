@@ -92,7 +92,7 @@ def _scale(body: str):
         if p != "X" and p != "0" or t != "X" and t != "0":
             return None             # "+X/+1": only part of the pump scales
         new = f"{sp}{1 if p == 'X' else 0}/{st}{1 if t == 'X' else 0}"
-        return re.sub(_PT, new, m[1], count=1), _quantity(_xq(m[2]), m[2])
+        return re.sub(_PT, new, m[1], count=1), _quantity(_xq(m[2]), m[2], strict=False)    # _xq's own table
     m = re.fullmatch(rf"(.*\bgets? {_PT}) for each (.+?)((?:,| and|, and) (?:has|have|gets?|is|can|attacks)\b.*)?", body)
     if m:
         return m[1] + (m[3] or ""), _quantity(_count_spec(m[2]), m[2])
@@ -101,13 +101,46 @@ def _scale(body: str):
     return body, None
 
 
-def _quantity(spec, text: str):
+# x_quantity kinds that read the resolving item (the spell, the cost paid, what was revealed): no referent in a static.
+_CONTEXT = ("spell", "stat", "sac", "sac_plus", "tap", "revealed", "exiled_gy", "subj_counters", "this_way", "arith")
+
+
+def _quantity(spec, text: str, strict: bool = True):
     """The spec, or False when a static can't read it: a referent that isn't fixed ("it", that spell, the sacrificed
     creature) or one that reads power / toughness (it would read the bonus it gives)."""
     if spec is None or re.search(r"\b(?:it|its|that|those|them)\b", text, re.I) \
-            or re.search(r"power|toughness", text + repr(spec), re.I) or spec[0] in ("stat", "sac", "spell"):
+            or re.search(r"power|toughness", text + repr(spec), re.I) or spec[0] in _CONTEXT \
+            or strict and not _trusted(spec, text):
         return False
     return spec
+
+
+def _singular(word: str) -> str:
+    from .cx_grammar_quantity import _singular as singular
+    return singular(word)
+
+
+def _trusted(spec, text: str) -> bool:
+    """Whether the quantity reader's spec says what the words say. The "for each" reader pluralises a word and asks
+    the ", where X is" table, which can stop at the first noun ("artifact token you control" -> all artifacts,
+    "land you control and each land card in your graveyard" -> a graveyard count): only kinds whose reading is
+    checked here count."""
+    kind = spec[0]
+    t = re.sub(r"^the number of ", "", text.strip(), flags=re.I)
+    if kind in ("life", "speed", "hand", "party", "colors_among", "devotion"):
+        return True
+    if kind == "counters":
+        return bool(re.fullmatch(rf"{re.escape(spec[1])} counters? on ~", t, re.I))
+    if kind == "count":
+        m = re.fullmatch(r"([A-Za-z]+) you control", t)
+        return bool(m) and _singular(m[1]).lower() == str(spec[1]).lower()
+    if kind == "gy":
+        m = re.fullmatch(r"(?:([A-Za-z]+) )?cards? in your graveyard", t)
+        return bool(m) and _singular(m[1] or "").lower() == str(spec[1]).lower()
+    if kind == "cxq":
+        desc = next((x["cx_desc"] for x in spec[1:] if isinstance(x, dict) and "cx_desc" in x), "")
+        return not re.search(r"\b(?:and|or)\b", desc)
+    return False
 
 
 def _parts(body: str, st):

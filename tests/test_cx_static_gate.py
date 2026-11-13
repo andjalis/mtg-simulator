@@ -58,6 +58,9 @@ class Parsing(unittest.TestCase):
                 ("Equipped creature gets +X/+1, where X is the number of artifacts you control.",  # only part scales
                  "Artifact — Equipment"),
                 ("Equipped creature gets +X/+X, where X is its mana value.", "Artifact — Equipment"),  # "its"
+                ("~ gets +1/+1 for each land you control and each land card in your graveyard.",    # misread Q
+                 "Creature — Avatar"),
+                ("~ gets +1/+1 for each artifact token you control.", "Creature — Golem"),         # tokens only
                 ("~ has flying as long as you control a creature with flying.", "Creature — Beast"),   # kw on kw
                 ("As long as ~ is monstrous, it has flying until end of turn.", "Creature — Beast"),
                 ("Equipped creature gets +1/+1 as long as it's a Human.", "Enchantment — Aura"),    # not an Equipment
