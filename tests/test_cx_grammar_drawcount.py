@@ -80,6 +80,11 @@ class Behaviour(Base):
         self.resolve("Draw two cards. You lose 1 life for each card drawn this way.")
         self.assertEqual(self.a.life, 13)
 
+    def test_lose_life_equal_to_the_number_drawn_this_way(self):
+        self.perm(DOUBLER, self.a)
+        self.resolve("Draw two cards. You lose life equal to the number of cards drawn this way.")
+        self.assertEqual((self.a.life, len(self.a.hand)), (16, 4))
+
 
 class DefaultAI(Base):
     def test_casts_excavation_with_cards_in_hand(self):
@@ -99,7 +104,7 @@ class RealCards(unittest.TestCase):
         from mtgsim.carddb import CardDB
         from mtgsim.coverage import card_coverage
         db = CardDB(offline=True)
-        for name in ("Laquatus's Creativity", "Ancient Excavation"):
+        for name in ("Laquatus's Creativity", "Ancient Excavation", "Rise of the Deathbringer"):
             self.assertEqual(card_coverage(db.get(name)).ignored, [], name)
 
 
