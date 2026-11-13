@@ -69,6 +69,31 @@ class CounterOnAChosenPermanent(unittest.TestCase):
         g.settle()
         self.assertFalse(mine.counters.get("menace"))
 
+    def test_a_choice_triggers_no_heroic_or_illusion(self):
+        # sim-review on #367: the chosen slot is not a target, so "becomes the target" abilities don't trigger
+        hero = card("Test Hero", "{1}{W}", "Creature — Human",
+                    "Heroic — Whenever you cast a spell that targets this creature, you gain 3 life.", 2, 2)
+        illusion = card("Test Illusion", "{1}{U}", "Creature — Illusion",
+                        "When this creature becomes the target of a spell or ability, sacrifice it.", 2, 2)
+        for creature in (hero, illusion):
+            g, a, b, foe = game()
+            mine = g.enter_battlefield(a, creature)
+            g.settle()
+            life = a.life
+            a.hand.append(CURDLE)
+            self.assertTrue(g.cast(a, CURDLE, targets=[foe, mine]))
+            g.settle()
+            self.assertIn(mine, a.battlefield)
+            self.assertEqual(mine.counters.get("menace"), 1)
+            self.assertEqual(a.life, life)
+
+    def test_each_listed_types_are_not_single_targets(self):
+        # Blech, Loafing Pest was read as a Pest group without "you control" plus one *target* Bat, Insect and Snake;
+        # without an article the object list is a group, never "target <noun>"
+        from mtgsim.cards.parse import _parse_effects
+        effects, _ = _parse_effects("Put a +1/+1 counter on each Pest, Bat, Insect, Snake, and Spider you control.")
+        self.assertFalse(any(e.target == "permanent" for e in effects))
+
 
 if __name__ == "__main__":
     unittest.main()
