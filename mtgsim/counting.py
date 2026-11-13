@@ -12,17 +12,40 @@ import re
 
 _PT = r"[+-]?\d+"
 
+# The words copies.fits (which count() uses) actually tests. Anything else makes fits() return False, so a count
+# over it would silently be 0: known() lets parsers refuse such a description instead (#372).
+_FITS_WORDS = {"permanent", "token", "nontoken", "nonland", "noncreature", "nonartifact", "creature", "basic",
+               "artifact", "enchantment", "land", "planeswalker", "instant", "sorcery"}
+
+
+def known(what: str) -> bool:
+    """Whether count()/copies.fits can evaluate a description ("other artifact", "Elf", "nonland permanent",
+    "artifact, creature, or land"): every word is fits vocabulary or a capitalised subtype. "nonlegendary" is
+    refused too (fits skips it, so legendary permanents would be counted)."""
+    w = what.strip()
+    if w.startswith("ctr:") or w == "":
+        return True
+    w = w[6:] if w.startswith("other ") else w
+    for alt in re.split(r",? or |, ", w):
+        words = alt.split()
+        if not words:
+            return False
+        for word in words:
+            if not (word.lower() in _FITS_WORDS or word.startswith("non-") or word[:1].isupper()):
+                return False
+    return True
+
 
 def parse_line(line: str, extra: dict) -> bool:
     """Consume a static "gets +N/+N for each ..." or "power (and toughness) ... equal to the number of ..." line."""
     m = re.fullmatch(r"~ gets \+(\d+)/\+(\d+) for each (other )?([\w -]+?) you control\.", line)
-    if m:
+    if m and known(m[4]):
         extra["pt_per"] = ("other " if m[3] else "") + m[4]
         extra["pt_scale"] = (int(m[1]), int(m[2]))
         return True
     m = re.fullmatch(r"~'s (power and toughness are each|power is|toughness is) equal to the number of "
                      r"([\w -]+?) you control\.", line)
-    if m:
+    if m and known(_singular(m[2])):
         extra["pt_per"] = _singular(m[2])
         extra["pt_scale"] = (1, 1) if "and" in m[1] else (1, 0) if m[1].startswith("power") else (0, 1)
         return True
@@ -48,8 +71,10 @@ def _n(w: str) -> int:
 
 def _per(kind, scope="battlefield", **kw):
     def build(m):
-        from .cards import Effect  # at match time: this module loads before cards
+        from .cards import Effect, NO_MATCH  # at match time: this module loads before cards
         what = _singular(m["what"])
+        if not known(what):
+            return NO_MATCH
         return Effect(kind, kw.get("amount", 1), target=kw.get("target", "none"),
                       data={"per": {"what": what, "zone": scope}})
     return build
@@ -71,6 +96,9 @@ EFFECT_PATTERNS = [
 
 
 def _scaled(eff, n):
+    from .cards import NO_MATCH
+    if eff is NO_MATCH:
+        return eff
     eff.amount = n
     return eff
 

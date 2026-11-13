@@ -53,6 +53,9 @@ def parse_line(line: str, extra: dict, types) -> bool:
         what = m[4]
         if what == what.lower() and what.endswith("s") and not what.endswith("ss"):
             what = what[:-1]
+        from .counting import known
+        if not known(what):
+            return False         # copies.fits can't count it: the bonus would be 0
         extra["pt_per"] = ("other " if m[3] else "") + what
         extra["pt_scale"] = (int(m[1]), int(m[2]))
         if m[5]:
