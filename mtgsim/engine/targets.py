@@ -109,6 +109,8 @@ class TargetsMixin:
             self.target_source = outer
 
     def legal_targets(self, p: Player, eff: Effect) -> list:
+        if eff.target == "multi":           # the candidates for each member of the list
+            return self.legal_targets(p, eff.data["probe"])
         everything = [x for pl in self.players for x in pl.battlefield if self.targetable(x, p)]
         source = self.target_source.source if isinstance(self.target_source, StackItem) else self.target_source
         if eff.data.get('other'):
@@ -167,6 +169,9 @@ class TargetsMixin:
                 return False
         if tgt is None and eff.data.get('optional_target'):
             return True
+        if eff.target == "multi":           # every chosen object a legal target, each chosen once
+            from ..cx_multi_target import legal_list
+            return legal_list(self, p, eff, tgt)
         return any(tgt is candidate for candidate in self.legal_targets(p, eff))
 
     def can_counter(self, eff: Effect, item: StackItem, by: Player | None = None) -> bool:
@@ -231,7 +236,7 @@ class TargetsMixin:
                 if e.target not in TARGETED:
                     out.append(None)
                     continue
-                tgt = self.hook(p, "choose_target")(self, p, e)
+                tgt = self.hook(p, "choose_target")(self, p, e) if e.target != "multi" else None
                 if tgt is None or not self.legal_target(p, e, tgt):
                     tgt = default_choose_target(self, p, e)
                 group = e.data.get("group", e.kind)

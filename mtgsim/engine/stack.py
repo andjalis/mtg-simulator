@@ -327,10 +327,16 @@ class StackMixin:
             return None
         return [targeter if e.kind == "counter" and e.data.get("that_spell") else None for e in effects]
 
+    def multi_still_legal(self, p, eff, tgt) -> bool:
+        """A list target on resolution: some member still legal (none chosen: it runs and does nothing)."""
+        if not tgt:
+            return True
+        return any(self.legal_target(p, eff.data["probe"], m) for m in tgt)
+
     def check_ward(self, item: StackItem):
         item.effects = counter_mechanics.protect_graveyard_targets(self, item.effects, item.targets)
         unique_targets = []
-        for tgt in item.targets:
+        for tgt in [m for t in item.targets for m in (t if isinstance(t, tuple) else (t,))]:   # list targets: each
             if not any(tgt is previous for previous in unique_targets):
                 unique_targets.append(tgt)
         for tgt in unique_targets:
@@ -450,10 +456,13 @@ class StackMixin:
                 perm.counters["+1/+1"] = perm.p1 + p.next_creature_counters
                 p.next_creature_counters = 0
             return
-        targeted = [(e, t) for e, t in zip(item.effects, item.targets)
-                    if e.target in TARGETED and not (t is None and e.data.get("optional_target"))]
+        targeted = [(e, t) for e, t in zip(item.effects, item.targets)        # a list with nobody chosen: no target
+                    if e.target in TARGETED and not (t is None and e.data.get("optional_target"))
+                    and not (e.target == "multi" and not t)]
         with self.targeting(item):
-            item.resolved = not (targeted and all(not self.legal_target(p, e, t) for e, t in targeted))
+            item.resolved = not (targeted and all(not (self.legal_target(p, e, t) if e.target != "multi" else
+                                                       self.multi_still_legal(p, e, t))
+                                                  for e, t in targeted))
         if not item.resolved:
             self.log(f"{item} fizzles (no legal target)", p)
         else:
@@ -473,7 +482,8 @@ class StackMixin:
                     if tgt is None and eff.data.get("optional_target"):
                         continue    # no target was chosen for this slot; it cannot deal damage or keep the spell legal
                     with self.targeting(item):
-                        legal = self.legal_target(p, eff, tgt)
+                        legal = self.legal_target(p, eff, tgt) if eff.target != "multi" else \
+                            self.multi_still_legal(p, eff, tgt)
                     if not legal:
                         prev = None
                         continue

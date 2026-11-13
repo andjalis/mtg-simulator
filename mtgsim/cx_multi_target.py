@@ -14,7 +14,11 @@ The one targeted Effect of that parse, with the Effects that act on it ("prev"),
 - "N" / "up to N": N copies of the chain, their targets distinct (``distinct`` within a group of their own),
   each optional for "up to".
 
-Each target is then an ordinary slot: chosen by the AI's per-kind policy, checked on resolution, counted for
+- "any number of": one ``cx_multi`` Effect whose target slot holds a tuple of objects (engine kind "multi"):
+  every member must be a legal target for the chain's first Effect (``probe``), each chosen once; on resolution
+  the chain runs on each member that is still legal, and the spell fizzles only if every chosen member is gone.
+
+Each target of a fixed count is then an ordinary slot: chosen by the AI's per-kind policy, checked on resolution, counted for
 fizzling, wardable. Rejected: a sentence with another target, plural references the rewrite can't make
 singular ("they", "each of them"), or a parse where other Effects don't act on the target.
 """
@@ -62,12 +66,85 @@ def _rewrite(s: str, n: int):
     return head + other + "target" + rest
 
 
+_ANY = re.compile(r"\bany number of (other |another )?target\b", re.I)
+_AGREE = {"get": "gets", "gain": "gains", "have": "has", "become": "becomes", "lose": "loses", "deal": "deals"}
+
+
+def _rewrite_any(s: str):
+    m = _ANY.search(s)
+    rest = _singular_np(s[m.end():])
+    # "... each get +1/+0 and gain ...": the verbs agree with one target now
+    rest = re.sub(r"^((?:\s+\S+)*?)\s+each (get|gain|have|become|lose|deal)\b",
+                  lambda v: v[1] + " " + _AGREE[v[2]], rest, count=1)
+    rest = re.sub(r'\band (get|gain|have|become|lose)\b(?=[^"]*(?:"[^"]*"[^"]*)*$)', lambda v: "and " + _AGREE[v[1]],
+                  rest, count=1)            # not inside a quoted ability (an even number of quotes follows)
+    return _plural_refs(s[:m.start()] + (m[1] or "") + "target" + rest)
+
+
+def _plural_refs(text: str):
+    head, quote, tail = text.partition('"')
+    head = re.sub(r"\btheir owners'", "its owner's", head)
+    head = re.sub(r"\btheir owner's\b", "its owner's", head)
+    head = re.sub(r"\bits owner's (hand|librar|graveyard)(s|ies)\b",
+                  lambda m: "its owner's " + {"librar": "library"}.get(m[1], m[1]), head)
+    head = re.sub(r"\bthem\b", "it", head)
+    if re.search(r"\b(?:they|their|them|those|each|these)\b", head, re.I):
+        return None
+    return head + quote + tail
+
+
+def legal_list(game, p, eff, tgt) -> bool:
+    """A list target: each member a legal target for the chain's first Effect, none twice."""
+    if tgt is None:
+        return True
+    if not isinstance(tgt, tuple) or len({id(x) for x in tgt}) != len(tgt):
+        return False
+    return all(game.legal_target(p, eff.data["probe"], x) for x in tgt)
+
+
+def choose_list(game, me, eff) -> tuple:
+    """The AI's choice for "any number of target ...": everything on the side its policy for one such target
+    picks (its own creatures for a pump, the opponent's for removal), most valuable first."""
+    from .engine.policy import default_choose_target, perm_value
+    from .engine.state import Permanent
+    probe = eff.data["probe"]
+    pick = default_choose_target(game, me, probe)
+    if pick is None:
+        return ()
+    side = pick.controller if isinstance(pick, Permanent) else pick
+    pool = [x for x in game.legal_targets(me, probe)
+            if (x.controller if isinstance(x, Permanent) else x) is side]
+    return tuple(sorted(pool, key=lambda x: -perm_value(x) if isinstance(x, Permanent) else 0))
+
+
+def _lift_any(s: str, effects: list) -> bool:
+    from .cards.parse import _parse_effects
+    from .cards.model import Effect
+    from .engine.state import TARGETED
+    text = _rewrite_any(s)
+    if text is None:
+        return False
+    new, bad = _parse_effects(text[0].upper() + text[1:] + ".")
+    if bad or not new or new[0].target not in TARGETED or new[0].target == "multi" or new[0].kind in _OWN_RULES:
+        return False
+    if any(e.target != "prev" for e in new[1:]) or any(e.cond or e.data.get("distinct") or
+                                                       e.data.get("optional_target") for e in new):
+        return False
+    effects.append(Effect("cx_multi", target="multi", data={"probe": new[0], "chain": list(new)}))
+    return True
+
+
 def lift(s: str, effects: list) -> bool:
     """Parse s, a sentence with one counted target ("up to two target creatures"), into effects. True if it did."""
     from .cards.parse import _parse_effects
     from .engine.state import TARGETED
+    outside = re.sub(r'"[^"]*"', '""', s)          # a quoted ability's own targets are its own
+    if len(re.findall(r"\btarget\b", outside, re.I)) != 1:
+        return False
+    if _ANY.search(outside):
+        return not _COUNTED.search(outside) and _lift_any(s, effects)
     found = list(_COUNTED.finditer(s))
-    if len(found) != 1 or len(re.findall(r"\btarget\b", s, re.I)) != 1:
+    if len(found) != 1:
         return False
     m = found[0]
     n, upto = _NUM[m[2].lower()], bool(m[1])
