@@ -185,6 +185,9 @@ def base_effects(permanent):
 
 def base_pt(permanent):
     p, t = permanent.card.power or 0, permanent.card.toughness or 0
+    if permanent.card.advanced_rules and "cda" in permanent.card.advanced_rules:     # layer 7a (cx_static_cda)
+        from .cx_static_cda import base as cda_base
+        p, t = cda_base(permanent, p, t)
     for effect in ordered(base_effects(permanent) + [e for e in active(permanent) if e.operation == "set_base"]):
         # A set-base effect may set only one characteristic (Belligerent Yearling).
         p = effect.power if effect.power is not None else p
@@ -194,6 +197,9 @@ def base_pt(permanent):
 
 def pt(permanent):
     p, t = permanent.card.power or 0, permanent.card.toughness or 0
+    if permanent.card.advanced_rules and "cda" in permanent.card.advanced_rules:     # layer 7a (cx_static_cda)
+        from .cx_static_cda import base as cda_base
+        p, t = cda_base(permanent, p, t)
     if permanent.card.level_blocks:
         from .batch1_templates import level_block
         block = level_block(permanent)

@@ -190,3 +190,50 @@ class RealCards(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+GOYF = card("Test Goyf", "{1}{G}", "Creature — Lhurgoyf",
+            "~'s power is equal to the number of card types among cards in all graveyards and its toughness is equal "
+            "to that number plus 1.", 0, 0)
+
+
+class CharacteristicDefining(Base):
+    def test_parses(self):
+        self.assertEqual(GOYF.unsupported, [])
+        kavu = card("Kavu", "{2}{R}{G}", "Creature — Kavu",
+                    "~'s power is equal to the number of red creatures on the battlefield.\n"
+                    "~'s toughness is equal to the number of green creatures on the battlefield.", 0, 0)
+        self.assertEqual(kavu.unsupported, [])
+        self.assertTrue(all(kavu.advanced_rules["cda"]))
+        for text in ("~'s power and toughness are each equal to the total power of creatures you control.",
+                     "~'s power and toughness are each equal to the number of cards in the chosen zone."):
+            self.assertTrue(card("X", "{2}", "Creature — Beast", text, 0, 0).unsupported, text)
+
+    def test_base_follows_the_count_and_set_base_wins(self):
+        goyf = self.perm(GOYF, self.a)
+        self.assertEqual((goyf.power, goyf.toughness), (0, 1))
+        self.b.graveyard = [ISLAND, BEAR]
+        self.assertEqual((goyf.power, goyf.toughness), (2, 3))
+        goyf.pump_p = 1
+        self.assertEqual(goyf.power, 3)                       # modifiers apply on top of the defined base
+        from mtgsim import continuous
+        continuous.add(self.game, goyf, "set_base", power=1, toughness=1)
+        self.assertEqual((goyf.power, goyf.toughness), (2, 1))  # a later set-base effect overrides (layer 7b)
+
+    def test_scaled_twice_plus(self):
+        elder = self.perm(card("Elder", "{3}", "Creature — Beast",
+                               "~'s power and toughness are each equal to 1 plus twice the number of age counters on it.",
+                               0, 0), self.a)
+        elder.counters["age"] = 2
+        self.assertEqual((elder.power, elder.toughness), (5, 5))
+
+    def test_ai_casts_it(self):
+        self.b.graveyard = [ISLAND, BEAR]
+        self.a.battlefield += [Permanent(card("Forest", "", "Basic Land — Forest", "({T}: Add {G}.)"), self.a)
+                               for _ in range(2)]
+        self.a.hand = [GOYF]
+        self.a.ai.main_phase(self.game, self.a)
+        self.assertNotIn(GOYF, self.a.hand)
+        while self.game.stack:
+            self.game.resolve_top()
+        self.assertEqual([x.power for x in self.a.battlefield if x.card.name == "Test Goyf"], [2])
