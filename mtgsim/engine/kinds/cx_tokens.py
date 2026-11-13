@@ -35,8 +35,9 @@ def cx_token(game, p, eff, target, opp, item=None, **_):
             from ...copies import entry_counters
             if eff.data.get("who") == "that_controller":       # "its controller creates a token that's a copy of it"
                 p = target.controller if isinstance(target, Permanent) else p
-            create(game, p, dict(eff.data, card=make_copy(card, eff.data["copy"]),
-                                 counters=entry_counters(eff.data["copy"], getattr(item, "x", 0)) or None), eff.amount)
+            copy = make_copy(card, eff.data["copy"])
+            create(game, p, dict(eff.data, card=copy,
+                                 counters=entry_counters(eff.data["copy"], getattr(item, "x", 0), copy) or None), eff.amount)
         return
     who = eff.data["who"]
     if who == "owner":

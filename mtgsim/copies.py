@@ -53,7 +53,7 @@ _BE = r"(?:'s|'re| is| are| isn't| is not| aren't| are not)"
 # that continues the previous subject ("it isn't legendary, is an artifact ..., and has myriad").
 _CLAUSE_SPLIT = re.compile(rf"(?:,? and |, )(?=(?:{_SUBJ}|{_POSS} name|is|are|has|have|gains?|enters?)\b)", re.I)
 _TYPE_WORD = {**_TYPES, **{k + "s": v for k, v in _TYPES.items()}}
-_COUNTER = r"(?P<counter>\+1/\+1|loyalty|shield)"
+_COUNTER = r"(?P<counter>\+1/\+1|loyalty)"       # shield counters have no engine rules yet
 
 
 _FIELD_KEYWORDS = {"exalted", "cascade", "storm", "flanking", "rebound", "undying", "persist", "split second"}
@@ -193,12 +193,16 @@ def parse_except(text: str, mods: dict | None = None) -> dict | None:
                 mods["keywords"] = mods.get("keywords", frozenset()) | kws
             continue
         m = re.fullmatch(rf"(?:{_SUBJ} )?enters? with (?P<n>an|one|two|three|four|five|X) additional {_COUNTER} "
-                         rf"counters? on (?:it|him|her|them)", c, flags=re.I)
+                         rf"counters? on (?:it|him|her|them)(?: if it's an? (?P<if>creature|planeswalker))?", c, flags=re.I)
         if m:
             n = "x" if m["n"] == "X" else _num(m["n"].lower())
             counters = dict(mods.get("counters", {}))
+            if m["counter"] in counters:
+                return None
             counters[m["counter"]] = n
             mods["counters"] = counters
+            if m["if"]:         # Spark Double: checked against the copy's own types as it enters
+                mods["counters_if"] = {**mods.get("counters_if", {}), m["counter"]: m["if"].title()}
             continue
         if _type_phrase(c, mods):
             continue
@@ -478,11 +482,12 @@ def exception_changes(card, mods: dict) -> dict:
     return changes
 
 
-def entry_counters(mods: dict, x: int = 0) -> dict:
-    """The counters "except it enters with N additional ... counters on it" puts on the copy as it enters.
-    They are not copiable values, so they are not part of the copy's CardDef."""
+def entry_counters(mods: dict, x: int = 0, card=None) -> dict:
+    """The counters "except it enters with N additional ... counters on it [if it's a creature]" puts on the
+    copy (card) as it enters. They are not copiable values, so they are not part of the copy's CardDef."""
+    conds = (mods or {}).get("counters_if", {})
     return {kind: (x if n == "x" else n) for kind, n in (mods or {}).get("counters", {}).items()
-            if (x if n == "x" else n)}
+            if (x if n == "x" else n) and (kind not in conds or (card is not None and conds[kind] in card.types))}
 
 
 def unfired_notes(types, triggers) -> list:
@@ -501,7 +506,7 @@ def clone_entry_counters(card, front, x: int, counters: dict | None) -> dict | N
     """enter_battlefield hook: a clone that entered as a copy (card is not front) gets the counters of its
     "except it enters with N additional ... counters on it" too, before its enter triggers are checked."""
     spec = getattr(front, "clone", None)
-    extra = entry_counters(spec["mods"], x) if spec and card is not front else {}
+    extra = entry_counters(spec["mods"], x, card) if spec and card is not front else {}
     if not extra:
         return counters
     merged = dict(counters or {})
@@ -630,8 +635,8 @@ def resolve(game, p, eff, target, item=None):
         chosen = cands if d.get("each") else [max(cands, key=lambda x: score(x.card))]
         for perm in chosen:
             for _ in range(n):
-                game.enter_battlefield(p, make_copy(perm.copiable_card, d.get("mods", {})),
-                                       counters=entry_counters(d.get("mods"), getattr(item, "x", 0)) or None)
+                copy = make_copy(perm.copiable_card, d.get("mods", {}))
+                game.enter_battlefield(p, copy, counters=entry_counters(d.get("mods"), getattr(item, "x", 0), copy) or None)
             game.log(f"creates {n} token cop{'y' if n == 1 else 'ies'} of {perm.card.name}", p)
     elif k == "become_copy":
         perm = source

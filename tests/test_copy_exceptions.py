@@ -54,7 +54,7 @@ class ParseExcept(unittest.TestCase):
         for text in ("it has this ability", "it isn't legendary, is an artifact in addition to its other types, "
                      "and has myriad", "it isn't a Zombie", "it has \"{T}: Add {U}.\"",
                      "it's legendary and snow in addition to its other types",
-                     "it enters with an additional +1/+1 counter on it if it's a creature",
+                     "it enters with a shield counter on it if you control that creature",
                      "it has haste and exalted", "it's a Vehicle artifact with crew 3 and it loses all other card types",
                      "it's an artifact. Activate only as a sorcery"):
             with self.subTest(text=text):
@@ -236,7 +236,7 @@ class DatabaseCards(Base):
                 self.assertEqual((c.unsupported, c.approximations), ([], []))
 
     def test_still_partial(self):
-        for name in ("Volrath, the Shapestealer", "Auton Soldier", "Spark Double", "Machine God's Effigy", "Moritte of the Frost"):
+        for name in ("Volrath, the Shapestealer", "Auton Soldier", "Undercover Operative", "Machine God's Effigy", "Moritte of the Frost"):
             with self.subTest(card=name):
                 self.assertNotEqual(self.db.get(name).unsupported, [])
 
@@ -628,6 +628,41 @@ class QuotedAbilityExceptions(Base):
         self.game.run_priority()
         self.assertEqual(sum(x.card.is_token for x in self.a.battlefield), 1)
         self.assertNotIn(victim, self.b.battlefield)
+
+@unittest.skipUnless(DB_FILE.exists(), "needs the card database")
+class ConditionalEntryCounters(Base):
+    """"except it enters with an additional +1/+1 counter on it if it's a creature, ... loyalty counter ... if it's
+    a planeswalker, and it isn't legendary" (Spark Double)."""
+
+    @classmethod
+    def setUpClass(cls):
+        from unittest import mock
+        from mtgsim import carddb
+        with mock.patch.object(carddb, "CACHE", Path("/nonexistent/mtgsim-cache.json")):     # #392
+            cls.db = carddb.CardDB(offline=True)
+
+    def test_parse(self):
+        mods = parse_except("it enters with an additional +1/+1 counter on it if it's a creature, it enters with an "
+                            "additional loyalty counter on it if it's a planeswalker, and it isn't legendary")
+        self.assertEqual(mods, {"counters": {"+1/+1": 1, "loyalty": 1},
+                                "counters_if": {"+1/+1": "Creature", "loyalty": "Planeswalker"}, "legendary": False})
+        self.assertIsNone(parse_except("it enters with a shield counter on it if you control that creature"))
+
+    def test_spark_double_copying_a_legendary_creature(self):
+        legend = self.perm(LEGEND)
+        sd = self.game.enter_battlefield(self.a, self.db.get("Spark Double"))
+        self.game.state_based_actions()
+        self.assertEqual((sd.card.name, sd.card.legendary, sd.counters.get("+1/+1"), sd.counters.get("loyalty", 0)),
+                         (LEGEND.name, False, 1, 0))
+        self.assertIn(legend, self.a.battlefield)            # no legend rule: the copy isn't legendary
+
+    def test_spark_double_copying_a_planeswalker(self):
+        karn = self.perm(self.db.get("Karn Liberated"))
+        sd = self.game.enter_battlefield(self.a, self.db.get("Spark Double"))
+        self.game.state_based_actions()
+        self.assertEqual((sd.card.name, sd.counters.get("loyalty"), sd.counters.get("+1/+1", 0)),
+                         ("Karn Liberated", karn.card.loyalty + 1, 0))
+        self.assertIn(karn, self.a.battlefield)
 
 
 if __name__ == "__main__":
