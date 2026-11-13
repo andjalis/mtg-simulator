@@ -451,7 +451,8 @@ class StackMixin:
                 p.next_creature_counters = 0
             return
         targeted = [(e, t) for e, t in zip(item.effects, item.targets)
-                    if e.target in TARGETED and not (t is None and e.data.get("optional_target"))]
+                    if e.target in TARGETED and not (t is None and e.data.get("optional_target"))
+                    and not e.data.get("chosen")]          # a choice on resolution, not a target (#360)
         with self.targeting(item):
             item.resolved = not (targeted and all(not self.legal_target(p, e, t) for e, t in targeted))
         if not item.resolved:

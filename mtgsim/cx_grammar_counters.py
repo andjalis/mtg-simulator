@@ -43,23 +43,36 @@ def _num(word: str) -> int:
     return num(word)
 
 
+_CHOSEN = "chosen:"      # _obj's mark for an article object: a choice on resolution, picked like a target
+
+
 def _obj(text: str):
     """The object of a placement clause, normalised: an article in front of a group noun
-    ("a creature you control") is a choice from that group, read as "target <group>"."""
+    ("a creature you control") is a choice from that group, read as "target <group>" and marked _CHOSEN."""
     from .permanent_templates import subject
     text = _ORDINAL.sub("another ", text)
-    for cand in (text, re.sub(r"^(?:a|an) ", "", text, flags=re.I),
-                 "target " + re.sub(r"^(?:a|an) ", "", text, flags=re.I)):
+    bare = re.sub(r"^(?:a|an) ", "", text, flags=re.I)
+    for cand in (text, bare):
         if subject(cand) is not None:
             return cand
+    if bare != text and subject("target " + bare) is not None:
+        return _CHOSEN + "target " + bare
     return None
 
 
 def _place(obj, n, kind):
+    """The add_counter for one clause. An article object ("a planeswalker you control", #360) is not a target:
+    the slot may stay empty (the spell is cast and its other effects happen without one) and it doesn't keep the
+    spell from fizzling (``data["chosen"]``)."""
     from .cards.model import NO_MATCH
     from .permanent_templates import build
-    eff = build("add_counter", obj, amount=n, data={"counter": kind})
-    return NO_MATCH if eff is None else eff
+    chosen = obj.startswith(_CHOSEN)
+    eff = build("add_counter", obj[len(_CHOSEN):] if chosen else obj, amount=n, data={"counter": kind})
+    if eff is None:
+        return NO_MATCH
+    if chosen:
+        eff = dataclasses.replace(eff, data=dict(eff.data, optional_target=True, chosen=True))
+    return eff
 
 
 def _coordinated(m):
