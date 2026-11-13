@@ -38,6 +38,8 @@ def _token(m_count, power, toughness, desc, with_kw="", attacking=False, ability
     if ability:
         per = re.fullmatch(r"(?:This (?:token|creature)|~) gets \+1/\+1 for each (\w+?)s? you control\.?", ability)
         parsed = None if per else _parse_trigger(ability.rstrip("."). replace("this creature", "~") + ".")
+        if not per and (not parsed or not parsed[0] or parsed[1] or parsed[2] is not None):
+            return NO_MATCH          # an ability the trigger parser doesn't fully match stays visible (#338)
         triggers = parsed[0] if parsed else []
         pt_per = per[1] if per else ""
     artifact = "artifact" in subtypes

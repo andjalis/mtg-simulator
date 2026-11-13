@@ -233,6 +233,60 @@ class Behaviour(unittest.TestCase):
             self.assertEqual(bear in self.b.battlefield, alive)
 
 
+class TokenGrants(unittest.TestCase):
+    """"Create ... tokens. They have "..."": the tokens are created with the ability (slice 3)."""
+    def setUp(self):
+        self.a = Player("a", [BEAR] * 10, HeuristicAI())
+        self.b = Player("b", [BEAR] * 10, HeuristicAI())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 1, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 20
+
+    def cast(self, c):
+        from mtgsim.engine.state import StackItem
+        effects = list(c.spell_effects)
+        self.game.stack.append(StackItem(self.a, effects, [None] * len(effects), card=c, name=c.name))
+        self.game.resolve_top()
+        self.game.settle()
+
+    def test_they_have_is_part_of_the_token(self):
+        devils = card("Test Devils", "{2}{R}", "Sorcery", "Create two 1/1 red Devil creature tokens. They have "
+                      "\"When this token dies, it deals 1 damage to any target.\"")
+        self.assertEqual(devils.unsupported, [])
+        self.cast(devils)
+        tokens = [x for x in self.a.battlefield if x.card.is_token]
+        self.assertEqual(len(tokens), 2)
+        self.assertTrue(all(t.event == "dies" for x in tokens for t in x.triggers))
+        life = self.b.life
+        self.game.destroy(tokens[0])
+        self.game.settle()
+        self.assertEqual(self.b.life, life - 1)          # the AI aims the token's ping at the opponent
+
+    def test_refusals(self):
+        for text in (
+                # the tokens are described further after "tokens": not a plain description
+                "Create a number of 1/1 green Saproling creature tokens equal to the number of cards in your hand. "
+                "They have \"When this token dies, you gain 1 life.\"",
+                # the quoted body isn't matched
+                "Create a 1/1 red Devil creature token. It has \"When this token dies, frobnicate.\""):
+            with self.subTest(text):
+                self.assertTrue(card("Test Refusal", "{1}", "Sorcery", text).unsupported)
+
+    @unittest.skipUnless(os.path.exists(DB), "card database not built")
+    def test_nested_token_grant(self):
+        from mtgsim.carddb import CardDB
+        slime = self.game.enter_battlefield(self.a, CardDB(offline=True).get("Mitotic Slime"))
+        self.game.destroy(slime)
+        self.game.settle()
+        oozes = [x for x in self.a.battlefield if x.card.is_token]
+        self.assertEqual([(x.power, x.toughness) for x in oozes], [(2, 2), (2, 2)])
+        self.game.destroy(oozes[0])
+        self.game.settle()
+        small = [x for x in self.a.battlefield if x.card.is_token and x.power == 1]
+        self.assertEqual(len(small), 2)
+        self.assertEqual([t for x in small for t in x.triggers], [])    # the 1/1s have no ability
+
 class GrantedEventTriggers(unittest.TestCase):
     """Granted triggers on library (ev:) events fire in real combat; "deals combat damage" fires once per step."""
     def setUp(self):
