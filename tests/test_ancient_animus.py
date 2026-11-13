@@ -45,12 +45,19 @@ class AncientAnimus(unittest.TestCase):
         self.assertEqual(foe.damage, 3)
 
     def test_ai_casts_it_on_the_right_sides(self):
-        g, a, b, mine, foe = game(HeuristicAI(), True)
-        mine.card = card("Mine", "{1}", "Legendary Creature — Elf", "", 4, 4)   # wins the fight without the counter:
-        g.main_phase(a)                                                          # the AI's fight check ignores the counter
+        g, a, b, mine, foe = game(HeuristicAI(), True)     # 3/3 legend vs 3/4: the counter makes it a winning fight
+        g.main_phase(a)
         g.settle()
         self.assertEqual(mine.counters.get("+1/+1"), 1)
         self.assertNotIn(foe, b.battlefield)
+        self.assertIn(mine, a.battlefield)
+
+    def test_ai_skips_a_losing_fight_without_the_counter(self):
+        g, a, b, mine, foe = game(HeuristicAI(), False)    # 3/3 nonlegendary vs 3/4: no counter, it would just die
+        g.main_phase(a)
+        g.settle()
+        self.assertIn(ANIMUS, a.hand)
+        self.assertIn(mine, a.battlefield)
 
 
 if __name__ == "__main__":

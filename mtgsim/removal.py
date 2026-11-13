@@ -183,12 +183,30 @@ def choose(game, me, eff):
         if eff.kind == "untap_target":
             mine = [x for x in mine if x.tapped]
         return max(mine, key=lambda x: (x.power, perm_value(x)), default=None)
-    power = max((c.power for c in me.creatures), default=0)
+    fighter, bonus = _fighter(game, me)
+    ours = [fighter] if fighter is not None else me.creatures
+    power = max((c.power + bonus for c in ours), default=0)
     kill = [x for x in theirs if x.toughness - x.damage <= power and not x.has("indestructible")]
     if eff.kind == "fight":     # don't trade down: the creature must also survive or be worth less
-        kill = [x for x in kill if x.power < max((c.toughness for c in me.creatures), default=0)
-                or perm_value(x) >= max((perm_value(c) for c in me.creatures), default=0)]
+        kill = [x for x in kill if x.power < max((c.toughness - c.damage + bonus for c in ours), default=0)
+                or perm_value(x) >= max((perm_value(c) for c in ours), default=0)]
     return max(kill, key=perm_value, default=None)
+
+
+def _fighter(game, me):
+    """The creature of mine already chosen as the spell's first target (it fights or bites), and the +1/+1
+    counters or pump the same spell gives it first, when its condition holds (Ancient Animus: if it's legendary)."""
+    from .engine.state import Permanent
+    chosen = getattr(game, "_choosing_targets", None) or []
+    fighter = chosen[0] if chosen and isinstance(chosen[0], Permanent) and chosen[0].controller is me else None
+    if fighter is None:
+        return None, 0
+    bonus = 0
+    for e, t in zip(getattr(game, "_choosing_effects", ()), chosen):
+        plus = e.data.get("counter") == "+1/+1" and e.kind == "add_counter" or e.kind == "p1_counters"
+        if t is fighter and plus and (not e.cond or game.check_cond(me, e, None, fighter)):
+            bonus += max(1, e.amount)
+    return fighter, bonus
 
 
 def resolve(game, p, eff, target, item):
