@@ -1,11 +1,31 @@
 # sim-fixes2
 
-## PRs (stacked, base integration/grammar-wave-2)
-- #350 (#285 Everflame Eidolon), #351 (pilot-gate lib: false positive; Ancient Animus verified), #352 (#271 backup),
-  #354 (Animus AI fight valuation).
-- Audit of #349 fixes: #363 (#358 linked exile), #366 (#359 creature or planeswalker), #367 (#360 counter on "a"
-  creature), #370 (#361 host-trigger "that much").
-- #296 and #297 were already fixed in wave 2 (verified, commented).
+## Where I stopped (2026-11-13, 15:15)
+Everything is committed and pushed; nothing is WIP. Branches claude/wfixes2-1 … -22 are one linear stack, all with
+origin/main (incl. #349) merged in. PRs #350–#426 target main (each shows the cumulative diff of the ones below it;
+the body names its own commit); #432 → base claude/wfixes2-19, #434 → claude/wfixes2-20, #439 → claude/wfixes2-21.
+After #349 was merged, GitHub closed #350–#370 and #422/#423/#425 (their base branch vanished): I reopened them and
+retargeted them to main. Pilot gate on #367 and above: FAIL on the deliberate Blech, Loafing Pest regression (explained
+in #367's body; sim-review agreed).
+
+## PRs (one cause each)
+- Bugs: #350 (#285 Everflame Eidolon), #351 (pilot-gate lib: false positive; Ancient Animus verified), #352 (#271
+  backup), #354 (Animus AI fight valuation), #363 (#358 O-Ring linked exile, on main before), #366 (#359 creature or
+  planeswalker damage, 45 cards), #367 (#360 counter on "a" creature; + review fixes), #370 (#361 host "that much"),
+  #386 (#377 mandatory -N/-N triggers), #394 (#393 Legerdemain pair check), #410 (Alabaster Potion pin; docs),
+  #422 (#417 creature bounce, 92 cards), #423 (#418 hybrid activated costs), #425 (#419 pack tactics),
+  #426 (#420 attacking count), #432 (#421 Invasion of Lorwyn X), #439 (#435 bounce "other").
+- Coverage, #345: #376 (+3), #381 (+5), #402 (+5 Clockwork + end-of-combat for blockers), #409 (+2 suspended
+  abilities), #434 (+3 Nihilith etc. via the "card put into an opponent's graveyard" trigger). Total +18.
+- #296 and #297 were already fixed in wave 2 (verified, commented; the lead closes).
+
+## Next (for a fresh session)
+1. Put each PR's CI numbers (pilot gate, parse-diff) into its body once its runs finish after the retargeting; the
+   counts are cumulative against main, so state the PR's own share (see the coverage lines in each body).
+2. Answer review comments (gh pr view N --comments) and merge fixes up the stack (merge, never rebase).
+3. #345 leftovers, one card each: Greater Gargadon (activation from exile), Curse of the Cabal, Bloodchief
+   Ascension's other lines, damage-prevention-by-counter replacements, Suncleanser.
+4. A third audit sample of #349 (token and exchange buckets).
 
 ## Audit of PR #349 (grammar wave 2), 2026-11-13
 198 newly full cards (coverage_check vs origin/main; matches the pilot gate). I sampled 38 across #327-#334 and Sieges,
