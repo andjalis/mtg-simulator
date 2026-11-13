@@ -882,19 +882,19 @@
     "cards": ["Blessing of Leeches"]
   },
   {
-    "match": "return (up to one )?(?:other )?target (nonland permanent|creature|artifact, creature, enchantment, or planeswalker) (?:an opponent controls|you don't control) to its owner's hand",
+    "match": "return (up to one )?(other )?target (nonland permanent|creature|artifact, creature, enchantment, or planeswalker) (?:an opponent controls|you don't control) to its owner's hand",
     "effect": "bounce",
-    "target": {"$map": "$2", "values": {"creature": "creature", "nonland permanent": "nonland_perm", "artifact, creature, enchantment, or planeswalker": "nonland_perm"}},
+    "target": {"$map": "$3", "values": {"creature": "creature", "nonland permanent": "nonland_perm", "artifact, creature, enchantment, or planeswalker": "nonland_perm"}},
     "filter": "opp",
-    "data": {"optional_target": "$1:bool"},
+    "data": {"optional_target": "$1:bool", "other": "$2:bool"},
     "example": "Return target nonland permanent an opponent controls to its owner's hand",
     "cards": ["A-Hullbreaker Horror"]
   },
   {
-    "match": "return (up to one )?(?:other )?target (nonland permanent|creature|artifact, creature, enchantment, or planeswalker) to its owner's hand",
+    "match": "return (up to one )?(other )?target (nonland permanent|creature|artifact, creature, enchantment, or planeswalker) to its owner's hand",
     "effect": "bounce",
-    "target": {"$map": "$2", "values": {"creature": "creature", "nonland permanent": "nonland_perm", "artifact, creature, enchantment, or planeswalker": "nonland_perm"}},
-    "data": {"optional_target": "$1:bool"},
+    "target": {"$map": "$3", "values": {"creature": "creature", "nonland permanent": "nonland_perm", "artifact, creature, enchantment, or planeswalker": "nonland_perm"}},
+    "data": {"optional_target": "$1:bool", "other": "$2:bool"},
     "example": "Return target nonland permanent to its owner's hand",
     "cards": ["A-Hullbreaker Horror"]
   },
