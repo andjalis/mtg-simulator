@@ -241,9 +241,10 @@ EFFECT_PATTERNS = [
      rf"controls)?{_EXCEPT}", _target_copy),
     (rf"create {_MANY} of (?:~|this equipment|this artifact|this enchantment){_EXCEPT}",
      lambda m: _perm_copy(m, what="self", n=_num(m["n"]) if m["n"] else 1, target="self")),
-    (rf"for each (?P<other>other )?(?P<what>[\w ,-]+?) you control, create a token that's a copy of that "
-     rf"(?:creature|permanent|artifact){_EXCEPT}",
-     lambda m: _perm_copy(m, what=m["what"], n=1, other=bool(m["other"]), who="mine", each=True)),
+    (rf"for each (?P<other>other )?(?P<what>[\w ,-]+?) (?P<scope>you control|target opponent controls|target player "
+     rf"controls), create a token that's a copy of that (?:creature|permanent|artifact){_EXCEPT}",
+     lambda m: _perm_copy(m, what=m["what"], n=1, other=bool(m["other"]), each=True,
+                          who="mine" if m["scope"] == "you control" else "opp")),
     (r"you may choose new targets for the cop(?:y|ies)", lambda m: None),
     (r"(?:you may )?copy (?:that spell|it)( twice)?(?:, except (?P<exc>the cop(?:y|ies) .+?))?"
      r"(?: and you may choose new targets for the copy)?",
@@ -471,8 +472,9 @@ def candidates(game, p, eff, source=None) -> list:
     if eff.target == "self":
         return [source] if source is not None else []
     who = d.get("who", "mine")
+    # "for each creature target opponent controls": the player is targeted, not the creatures
     pool = [x for pl in game.players for x in pl.battlefield
-            if (who == "any" or (x.controller is p) == (who == "mine")) and game.targetable(x, p)]
+            if (who == "any" or (x.controller is p) == (who == "mine")) and (d.get("each") or game.targetable(x, p))]
     return [x for x in pool if fits(x.card, d.get("what", "permanent"), x)
             and not (d.get("other") and x is source)]
 

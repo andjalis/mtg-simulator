@@ -25,8 +25,13 @@ def cx_token(game, p, eff, target, opp, item=None, **_):
         from ...copies import make_copy
         card = target.copiable_card if isinstance(target, Permanent) else target if isinstance(target, CardDef) \
             else None
+        context = getattr(item, "context", None)
+        if card is None and eff.data.get("ref") == "card" and isinstance(context, Player) and context.discarded_cards:
+            card = context.discarded_cards[-1]      # "whenever you discard a creature card, ... that card"
         if card is not None:
             from ...copies import entry_counters
+            if eff.data.get("who") == "that_controller":       # "its controller creates a token that's a copy of it"
+                p = target.controller if isinstance(target, Permanent) else p
             create(game, p, dict(eff.data, card=make_copy(card, eff.data["copy"]),
                                  counters=entry_counters(eff.data["copy"], getattr(item, "x", 0)) or None), eff.amount)
         return
