@@ -490,15 +490,15 @@ class TokenCopyReferents(Base):
         self.assertEqual(self.db.get("Followed Footsteps").approximations, [])
 
     def test_penumbra_umbra_copies_its_last_creature_in_black(self):
-        # The trigger itself doesn't fire on a noncreature yet (#369); its effect is resolved here after the
-        # Aura has left, reading "enchanted creature" by last known information.
+        # Since #389/#369 the noncreature "put into a graveyard" trigger fires on its own; its effect resolves
+        # after the Aura has left, reading "enchanted creature" by last known information. Exactly one token.
         pu = self.perm(self.db.get("Penumbra Umbra"))
         bear = self.perm(BEAR)
         pu.aura_host = bear
         bear.auras.append(pu)
         self.game.destroy(pu)
         self.assertIsNone(pu.aura_host)
-        self.fire_trigger(pu, "dies")
+        self.game.run_priority()
         tok = self.tokens()
         self.assertEqual([(t.card.name, t.card.colors) for t in tok], [(BEAR.name, frozenset("B"))])
 
