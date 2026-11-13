@@ -7,6 +7,7 @@
     Each player shuffles the cards from their hand into their library, then draws that many cards.   (Winds of Change)
     Put any number of cards from your hand on the bottom of your library, then draw that many cards plus one.
     Shuffle any number of cards from your hand into your library, then draw that many cards.   (Credit Voucher)
+    Sacrifice any number of artifacts, enchantments, and/or tokens, then draw that many cards.   (Malevolent Witchkite)
     Each player discards their hand, then draws cards equal to the greatest number of cards a player discarded
     this way.                                                                         (Windfall)
     Target player draws cards equal to the number of cards in their hand, then discards that many cards.
@@ -40,7 +41,22 @@ _ACTIONS = [
      r"(?: in any order)?", "bottom_hand"),
     (rf"put(?:s)? any number of cards from {_P} hand on the bottom of (?P<pron2>your|their) library"
      r"(?: in any order)?", "bottom_any"),
+    (r"sacrifice any number of (?P<sac>[\w ,/-]+?)", "sac_any"),
 ]
+_SAC_TYPES = {"permanents": "permanent", "artifacts": "artifact", "creatures": "creature", "lands": "land",
+              "enchantments": "enchantment", "tokens": "token", "planeswalkers": "planeswalker"}
+
+
+def _sac_spec(text: str):
+    """{"types": [...], "other": bool} for "other permanents" / "artifacts, enchantments, and/or tokens" /
+    "permanents you control", or None."""
+    t = re.sub(r" you control$", "", text.strip().lower())
+    other = t.startswith("other ")
+    t = t[6:] if other else t
+    words = [w for w in re.split(r",? and/or |,? and |,? or |, ", t) if w]
+    if not words or any(w not in _SAC_TYPES for w in words):
+        return None
+    return {"types": [_SAC_TYPES[w] for w in words], "other": other}
 
 
 @rider(r"(?P<head>.+?), then (?P<draw>draws?) that many cards(?: (?P<op>plus|minus) (?P<n>one|two|three))?")
@@ -51,10 +67,11 @@ def put_away_then_draw(m, inner):
     found = _action(head)
     if found is None:
         return None
-    subj, mode, third = found
+    subj, mode, third, extra = found
     if third != (m["draw"].lower() == "draws"):
         return None             # "Discard ..., then draws" / "Target player discards ..., then draw"
-    parts = [Part("cx_away", data={"mode": mode}), Part("cx_draw_that_many", data={"delta": delta, "mode": mode})]
+    parts = [Part("cx_away", data={"mode": mode, **extra}),
+             Part("cx_draw_that_many", data={"delta": delta, "mode": mode, **extra})]
     effects = assemble(subj, parts)
     if not effects or len(effects) != 1 or effects[0].kind != "cx_players":
         return None
@@ -109,7 +126,7 @@ def draw_then_discard(m, inner):
 
 
 def _action(head: str):
-    """(player Subject, mode, third person) for "<subject> <action>", or None."""
+    """(player Subject, mode, third person, extra Part data) for "<subject> <action>", or None."""
     for rx, mode in _ACTIONS:
         m = re.search(rf"(?:^|(?<= )){rx}$", head, re.I)
         if m is None:
@@ -117,6 +134,11 @@ def _action(head: str):
         subj_text = head[:m.start()].strip()
         verb = m[0].split(" ", 1)[0].lower()
         third = verb in ("discards", "shuffles", "puts")
+        extra = {}
+        if mode == "sac_any":
+            extra = {"sac": _sac_spec(m["sac"])}
+            if extra["sac"] is None or head[:m.start()].strip():
+                return None     # only "Sacrifice any number of ..." (you): no player-subject wording exists
         if not subj_text:
             if third:
                 return None
@@ -133,7 +155,7 @@ def _action(head: str):
         prons = [g for g in (m.groupdict().get("pron"), m.groupdict().get("pron2")) if g]
         if any((pr.lower() == "your") != mine for pr in prons):
             return None         # "Target player shuffles your hand ...": not the same player's cards
-        return subj, mode, third
+        return subj, mode, third, extra
     return None
 
 
@@ -156,6 +178,10 @@ def _draw_value(game, me, eff, obj):
     hand = list(getattr(obj, "hand", ()))
     sign = 1.0 if obj is me else -1.0
     dead = len(choose_rummage(game, obj, len(hand))) if hand else 0
+    if eff.data.get("mode") == "sac_any":       # a card for each permanent the conservative choice gives up
+        from .engine.kinds.cx_grammar_thatmany import sac_candidates, choose_sac_any
+        picks = choose_sac_any(game, obj, sac_candidates(game, obj, eff.data["sac"], None))
+        return sign * (1.2 * len(picks) + 1.5 * eff.data.get("delta", 0))
     kept = 0 if eff.data.get("mode", "").endswith("_any") else len(hand) - dead      # "any number": only dead ones go
     extra = eff.data.get("delta", 0)
     if eff.data.get("greatest"):        # Windfall: everyone draws the biggest hand's count

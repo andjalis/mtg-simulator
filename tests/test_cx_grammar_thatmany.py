@@ -50,7 +50,6 @@ class Parsing(unittest.TestCase):
         for s in ("Target player discards all the cards in your hand, then draws that many cards.",   # whose hand
                   "Discard all the cards in your hand, then draws that many cards.",                  # verb form
                   "Each player discards their hand, then draw that many cards.",
-                  "Sacrifice any number of permanents, then draw that many cards.",                   # not this family
                   "Each friend discards all cards from their hand, then draws that many cards plus one.",
                   "Discard all the cards in your hand, then draw that many cards plus four.",
                   "Each player shuffles all cards from their hand and all permanents they own into their library, "
