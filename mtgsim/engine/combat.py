@@ -244,8 +244,10 @@ class CombatMixin:
                 hits.append((a, target, dmg_stat(self, a)))
         if any(isinstance(tgt, Player) for _, tgt, _ in hits):
             self.fire(p, "allies_hit_player")
+        dealt = {}
         for src, tgt, amt in hits:
             self.deal_damage(tgt, amt, by=src.controller, cause=f"{src.card.name}: combat damage", source=src, combat=True)
+            dealt[src] = dealt.get(src, 0) + (getattr(self, "last_dealt", 0) or 0)
             if isinstance(tgt, Player):
                 from ..batch1_templates import combat_hit
                 combat_hit(self, src, tgt)
@@ -258,5 +260,12 @@ class CombatMixin:
                 from ..advanced_templates import cipher_damage
                 cipher_damage(self, src)
                 self.fire(src.controller, "ally_combat_damage")
+        for src, total in dealt.items():     # "whenever ~ deals combat damage": once per step, "that much" = all of it
+            if total > 0:
+                self.event_amount = total
+                try:
+                    self.fire(src.controller, "combat_damage_any", src)
+                finally:
+                    self.event_amount = None
         self.state_based_actions()
         self.settle()
