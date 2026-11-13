@@ -115,14 +115,14 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
     (r"~ deals damage equal to (\w+) plus the sacrificed "
      r"(?:creature|artifact|enchantment|planeswalker|land|permanent)'s "
      r"(power|toughness|mana value) to (any target|target creature or planeswalker|target player)",
-     lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature",
+     lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature_pw",
                                            "target player": "player"}[m[3]],
                       data={"xq": ("sac_plus", _num(m[1]), m[2])})),
     # "the exiled card's stat": the graveyard card exiled to pay the spell or ability's cost
     # (Corpse Lunge, Molten-Tail Masticore): the ("exiled_gy", stat) X-quantity.
     (r"~ deals damage equal to the exiled card's (power|toughness|mana value) to "
      r"(any target|target creature or planeswalker|target creature|target player)",
-     lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature",
+     lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature_pw",
                                            "target creature": "creature", "target player": "player"}[m[2]],
                       data={"xq": ("exiled_gy", m[1])})),
     # Dark Confidant family: the mana value of the card the resolving dig just put into the hand.
@@ -151,7 +151,7 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
     (r"~ deals damage equal to the sacrificed (?:creature|artifact|enchantment|planeswalker|land|permanent)'s "
      r"(power|toughness|mana value) to (any target|target creature or planeswalker|"
      r"target player or planeswalker|target player)",
-     lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature",
+     lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature_pw",
                                           "target player or planeswalker": "player", "target player": "player"}[m[2]],
                       data={"xq": ("sac", m[1])})),
     (r"you gain life equal to the sacrificed (?:creature|artifact|enchantment|planeswalker|land|permanent)'s "

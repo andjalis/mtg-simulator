@@ -103,20 +103,20 @@
     "cards": ["Branching Bolt"]
   },
   {
-    "match": "(?:~|it|he|she) deals (\\d+) damage to (up to one )?target (?:creature or planeswalker|creature) (?:an opponent controls|you don't control)",
+    "match": "(?:~|it|he|she) deals (\\d+) damage to (up to one )?target (creature or planeswalker|creature) (?:an opponent controls|you don't control)",
     "effect": "damage",
     "amount": "$1:int",
-    "target": "creature",
+    "target": {"$map": "$3", "values": {"creature or planeswalker": "creature_pw", "creature": "creature"}},
     "filter": "opp",
     "data": {"optional_target": "$2:bool"},
     "example": "~ deals 3 damage to target creature an opponent controls",
     "cards": ["Abrade"]
   },
   {
-    "match": "(?:~|it|he|she) deals (\\d+) damage to (up to one )?target (?:creature or planeswalker|creature)",
+    "match": "(?:~|it|he|she) deals (\\d+) damage to (up to one )?target (creature or planeswalker|creature)",
     "effect": "damage",
     "amount": "$1:int",
-    "target": "creature",
+    "target": {"$map": "$3", "values": {"creature or planeswalker": "creature_pw", "creature": "creature"}},
     "data": {"optional_target": "$2:bool"},
     "example": "~ deals 3 damage to target creature",
     "cards": ["Abrade"]
@@ -1721,7 +1721,7 @@
     "match": "(?:~|it|he|she) deals damage equal to the number of (treasures|artifacts|creatures|lands) you control to (any target|target creature or planeswalker|target player or planeswalker|target player)",
     "effect": "damage",
     "amount": 0,
-    "target": {"$map": "$2", "values": {"any target": "any", "target creature or planeswalker": "creature", "target player or planeswalker": "player", "target player": "player"}},
+    "target": {"$map": "$2", "values": {"any target": "any", "target creature or planeswalker": "creature_pw", "target player or planeswalker": "player", "target player": "player"}},
     "data": {"count": "$1:lower"},
     "example": "~ deals damage equal to the number of creatures you control to target creature or planeswalker",
     "cards": ["Cabaretti Charm"]
