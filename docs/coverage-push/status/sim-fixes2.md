@@ -1,6 +1,6 @@
 # sim-fixes2
 
-## Where I stopped (2026-11-13, 15:15)
+## Where I stopped (2026-11-13, 15:17)
 Everything is committed and pushed; nothing is WIP. Branches claude/wfixes2-1 … -22 are one linear stack, all with
 origin/main (incl. #349) merged in. PRs #350–#426 target main (each shows the cumulative diff of the ones below it;
 the body names its own commit); #432 → base claude/wfixes2-19, #434 → claude/wfixes2-20, #439 → claude/wfixes2-21.
@@ -14,7 +14,8 @@ in #367's body; sim-review agreed).
   planeswalker damage, 45 cards), #367 (#360 counter on "a" creature; + review fixes), #370 (#361 host "that much"),
   #386 (#377 mandatory -N/-N triggers), #394 (#393 Legerdemain pair check), #410 (Alabaster Potion pin; docs),
   #422 (#417 creature bounce, 92 cards), #423 (#418 hybrid activated costs), #425 (#419 pack tactics),
-  #426 (#420 attacking count), #432 (#421 Invasion of Lorwyn X), #439 (#435 bounce "other").
+  #426 (#420 attacking count), #432 (#421 Invasion of Lorwyn X), #439 (#435 bounce "other"), #445 (#443 -N/-N 'an opponent controls' filter;
+  stacked on claude/wfixes2-22).
 - Coverage, #345: #376 (+3), #381 (+5), #402 (+5 Clockwork + end-of-combat for blockers), #409 (+2 suspended
   abilities), #434 (+3 Nihilith etc. via the "card put into an opponent's graveyard" trigger). Total +18.
 - #296 and #297 were already fixed in wave 2 (verified, commented; the lead closes).
@@ -25,7 +26,11 @@ in #367's body; sim-review agreed).
 2. Answer review comments (gh pr view N --comments) and merge fixes up the stack (merge, never rebase).
 3. #345 leftovers, one card each: Greater Gargadon (activation from exile), Curse of the Cabal, Bloodchief
    Ascension's other lines, damage-prevention-by-counter replacements, Suncleanser.
-4. A third audit sample of #349 (token and exchange buckets).
+4. Third #349 audit (done 15:17): 15 token/exchange cards, 14 correct; Invasion of Innistrad wrong → #443/PR #445.
+   Not yet fixed from #443: patterns.py ~l.209 ('up to one target creature gets -N/-N' wrongly opp-only) and ~l.213
+   ('another' dropped). #446 (Infiltrator AI) closed: the AI uses it at the opponent's end step.
+5. CI on all PRs was still queued at 15:17 (re-runs after the retarget); bodies of #350–#409 carry the last completed
+   run's numbers, the rest still need theirs.
 
 ## Audit of PR #349 (grammar wave 2), 2026-11-13
 198 newly full cards (coverage_check vs origin/main; matches the pilot gate). I sampled 38 across #327-#334 and Sieges,
