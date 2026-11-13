@@ -263,6 +263,7 @@ _TRIGGERS = [
     (r"At the beginning of each player's draw step, (.+)", ("each_draw_step",)),
     (r"Whenever you scry, (.+)", ("you_scry",)),
     (r"At end of combat, (.+)", ("end_combat",)),
+    (r"Whenever a card is put into an opponent's graveyard from anywhere, (.+)", ("opp_card_to_gy",)),
     (r"When ~ becomes monstrous, (.+)", ("monstrous",)),
     (r"Whenever one or more \+1/\+1 counters are put on ~, (.+)", ("p1_added",)),
     (r"Whenever you put one or more \+1/\+1 counters on ~, (.+)", ("p1_added",)),

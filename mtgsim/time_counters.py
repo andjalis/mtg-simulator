@@ -38,7 +38,7 @@ def _effect(op, n, group=False, has_time=False):
 # a time counter on this card" (Pardic Dragon): an ability that works only while the card is suspended. The effect is
 # marked suspended_self; Game.fire skips it on the battlefield and ``suspended_triggers`` queues it from exile.
 SUBS = [
-    (re.compile(r"if this card is suspended, remove a time counter from (?:it|this card)\.", re.I),
+    (re.compile(r"if this card is suspended, (?:you may )?remove a time counter from (?:it|this card)\.", re.I),
      lambda m: "SUSPTICK remove you."),
     (re.compile(r"if this card is suspended, that player may put a time counter on this card\.", re.I),
      lambda m: "SUSPTICK put caster."),
