@@ -110,7 +110,7 @@ def _quantity(spec, text: str, strict: bool = True):
     creature) or one that reads power / toughness (it would read the bonus it gives)."""
     if spec is None or re.search(r"\b(?:it|its|that|those|them)\b", text, re.I) \
             or re.search(r"power|toughness", text + repr(spec), re.I) or spec[0] in _CONTEXT \
-            or strict and not _trusted(spec, text):
+            or not _trusted(spec, text, strict):
         return False
     return spec
 
@@ -120,28 +120,43 @@ def _singular(word: str) -> str:
     return singular(word)
 
 
-def _trusted(spec, text: str) -> bool:
+def _fits_words(what: str) -> bool:
+    """Whether copies.fits (which counting.count uses for "count" / "gy" specs) understands every word: an unknown
+    word makes it count nothing ("instant and sorcery", "legendary creature")."""
+    from .copies import _TYPES
+    what = re.sub(r"^other ", "", what.strip())
+    known = set(_TYPES) | {"permanent", "nonlegendary", "token", "nontoken", "nonland", "noncreature",
+                           "nonartifact", "basic"}
+    return all(w.lower() in known or w[:1].isupper() and w.isalpha() or w.lower().startswith("non-")
+               for alt in re.split(r",? or |, ", what) for w in alt.split())
+
+
+def _trusted(spec, text: str, strict: bool = True) -> bool:
     """Whether the quantity reader's spec says what the words say. The "for each" reader pluralises a word and asks
     the ", where X is" table, which can stop at the first noun ("artifact token you control" -> all artifacts,
-    "land you control and each land card in your graveyard" -> a graveyard count): only kinds whose reading is
-    checked here count."""
+    "land you control and each land card in your graveyard" -> a graveyard count); and a "count" / "gy" spec holds
+    words copies.fits must understand. Only kinds checked here count."""
     kind = spec[0]
     t = re.sub(r"^the number of ", "", text.strip(), flags=re.I)
     if kind in ("life", "speed", "hand", "party", "colors_among", "devotion"):
         return True
     if kind == "counters":
         return bool(re.fullmatch(rf"{re.escape(spec[1])} counters? on ~", t, re.I))
-    if kind == "count":
-        m = re.fullmatch(r"([A-Za-z]+) you control", t)
-        return bool(m) and _singular(m[1]).lower() == str(spec[1]).lower()
-    if kind == "gy":
+    if kind in ("count", "gy"):
+        if not isinstance(spec[1], str) or not _fits_words(spec[1]) or spec[1].lower().startswith("other") \
+                and kind == "gy":
+            return False
+        if not strict:
+            return True
+        if kind == "count":
+            m = re.fullmatch(r"([A-Za-z]+) you control", t)
+            return bool(m) and _singular(m[1]).lower() == spec[1].lower()
         m = re.fullmatch(r"(?:([A-Za-z]+) )?cards? in your graveyard", t)
-        return bool(m) and _singular(m[1] or "").lower() == str(spec[1]).lower()
+        return bool(m) and _singular(m[1] or "").lower() == spec[1].lower()
     if kind == "cxq":
         desc = next((x["cx_desc"] for x in spec[1:] if isinstance(x, dict) and "cx_desc" in x), "")
         return not re.search(r"\b(?:and|or)\b", desc)
-    return False
-
+    return not strict and kind in ("domain", "named_lands", "greatest_perm", "greatest")
 
 def _parts(body: str, st):
     """(Subject, Parts) of a static body, or None."""
