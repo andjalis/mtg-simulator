@@ -26,7 +26,9 @@ def cx_token(game, p, eff, target, opp, item=None, **_):
         card = target.copiable_card if isinstance(target, Permanent) else target if isinstance(target, CardDef) \
             else None
         if card is not None:
-            create(game, p, dict(eff.data, card=make_copy(card, eff.data["copy"])), eff.amount)
+            from ...copies import entry_counters
+            create(game, p, dict(eff.data, card=make_copy(card, eff.data["copy"]),
+                                 counters=entry_counters(eff.data["copy"], getattr(item, "x", 0)) or None), eff.amount)
         return
     who = eff.data["who"]
     if who == "owner":

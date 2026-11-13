@@ -60,6 +60,7 @@ class BattlefieldMixin:
             # Reusable token blueprints create a new physical token each time.
             card = CardInstance(card)
         card, front = copies.clone_on_enter(self, p, card)
+        counters = copies.clone_entry_counters(card, front, x, counters)
         perm = Permanent(card, p)
         perm.front = instance(physical_card if physical_card is not None else front, p)
         perm.owner = perm.front.owner
