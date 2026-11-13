@@ -346,7 +346,8 @@ def _parse_effects(text: str, opts: bool = False):
             if parts:
                 effects += parts
             elif not parse_otherwise(s, effects) and not cx_grammar.parse_fallback(s, effects) \
-                    and not _then_if(s, effects) and not _suffix_if(s, effects):    # "Otherwise, ..."; grammar; #397
+                    and not _then_if(s, effects) and not _suffix_if(s, effects) \
+                    and not _equal_to(s, effects):     # "Otherwise, ..."; grammar; #397
                 unmatched.append(sentence.strip())
         effects[first:] = _cx_tokens.reparse(s, effects[first:])
         if paid:
@@ -382,6 +383,71 @@ def _then_if(s: str, effects: list) -> bool:
         return False
     effects += new
     return True
+
+
+_FITS_WORDS = {"artifact", "creature", "enchantment", "land", "planeswalker", "instant", "sorcery", "battle",
+               "permanent", "token", "nontoken", "nonland", "noncreature", "nonartifact", "basic", "nonlegendary"}
+
+
+def _quantity_ok(spec, subject: str) -> bool:
+    """Whether the engine really computes this _xq quantity as written. Counts are matched word by word by
+    copies.fits, so a word it doesn't read ("other", "differently named", a plural subtype) would silently
+    count 0; "its power" is the source's only when the subject is the source; "that creature's ..." waits
+    for a slice that checks which object the previous effect leaves behind."""
+    if not spec:
+        return False
+    kind = spec[0]
+    if kind in ("counters", "cxq", "domain", "colors_among", "hand", "opp_hand", "life", "devotion", "party"):
+        return True
+    if kind in ("count", "gy"):
+        for alt in re.split(r",? or |, ", spec[1]):
+            for w in alt.split():
+                if not (w.lower() in _FITS_WORDS or w[:1].isupper() and w.isalpha() and not w.endswith("s")):
+                    return False
+        return True
+    if kind == "stat":
+        return spec[1] == "self" and subject.strip().lower() == "~"
+    if kind == "arith":
+        return _quantity_ok(spec[1], subject) and (not isinstance(spec[3], tuple) or _quantity_ok(spec[3], subject))
+    return False
+
+
+_EQUAL_TO = [
+    # "~ deals damage equal to Q to R"
+    (re.compile(r"(?P<subj>.+?) deals damage equal to (?P<q>.+?) to (?P<rest>.+)", re.I),
+     lambda m: f"{m['subj']} deals X damage to {m['rest']}"),
+    # "Its controller loses life equal to Q" / "you gain life equal to Q"
+    (re.compile(r"(?P<subj>.+?) (?P<v>loses?|gains?) life equal to (?P<q>.+)", re.I),
+     lambda m: f"{m['subj']} {m['v']} X life"),
+    # "draw cards equal to Q"
+    (re.compile(r"(?P<subj>(?:.+? )?)(?P<v>draws?) cards equal to (?P<q>.+)", re.I),
+     lambda m: f"{m['subj']}{m['v']} X cards"),
+    # "create a number of 1/1 green Elf Warrior creature tokens equal to Q"
+    (re.compile(r"(?P<subj>(?:.+? )?)(?P<v>creates?) a number of (?P<t>.+? tokens?) equal to (?P<q>.+)", re.I),
+     lambda m: f"{m['subj']}{m['v']} X {m['t']}"),
+]
+
+
+def _equal_to(s: str, effects: list) -> bool:
+    """"<verb> equal to Q" on verbs that otherwise take a literal (#397 slice 2): read as "<verb> X ...,
+    where X is Q", which the ", where X is" path above scales by _xq(Q). Q must be a quantity the engine
+    computes as written (_quantity_ok)."""
+    for rx, build in _EQUAL_TO:
+        m = rx.fullmatch(s)
+        if m is None:
+            continue
+        q = m["q"]
+        spec = _xq(q)
+        subj = m["subj"] if "subj" in m.re.groupindex else ""
+        if not _quantity_ok(spec, re.sub(r"^then ", "", subj.strip(), flags=re.I)):
+            return False
+        body = build(m)
+        new, bad = _parse_effects(body[0].upper() + body[1:] + f", where X is {q}.")
+        if bad or not new or not all(e.data.get("xq") == spec for e in new):
+            return False
+        effects += new
+        return True
+    return False
 
 
 def _suffix_if(s: str, effects: list) -> bool:
