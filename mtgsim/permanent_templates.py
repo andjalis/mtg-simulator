@@ -344,7 +344,8 @@ def subject(text):
         return 'self', {}
     if low in ('it', 'that creature', 'that permanent'):
         return 'prev', {}
-    if low in ('enchanted creature', 'equipped creature'):
+    if low in ('enchanted creature', 'equipped creature') or \
+            re.fullmatch(r'(?:enchanted|equipped) (?:planeswalker|permanent|battle)', low):
         return 'host', {}
     m = re.fullmatch(r'(up to one )?(?:another |other )?target (.+)', text, re.I)
     if m:

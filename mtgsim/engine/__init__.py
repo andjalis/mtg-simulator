@@ -43,7 +43,7 @@ from .policy import (
     perm_value, _threat, default_choose_target, damage_amount, choose_basic, choose_earthbend, play_extra_lands, choose_tutor,
     choose_color, choose_target, _mode_value, default_choose_modes, _targets_for, _removal, respond, _option_value,
     respond_extras, _self_pump, ability_worth, choose_equip_target, equip_all, choose_ability, combat_pump,
-    _wants_land, scry, choose_dig, pay_unless, pay_optional, pay_shock, choose_discard_from, choose_rummage,
+    _wants_land, scry, choose_dig, pay_unless, pay_unless_sacrifice, pay_optional, pay_shock, choose_discard_from, choose_rummage,
     saddle_creatures, choose_crew, _reserve, before_attacks, choose_attack_targets, default_loyalty_choice,
     use_abilities, default_sneak, DEFAULTS, default_respond, default_scry, default_dig,
 )

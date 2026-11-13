@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from .. import alt_casts, transmute, copies, learning, proliferate, regeneration, removal, costs
 from ..cards import COLORS, CardDef, Effect
 from .. import modal
+from .. import hand_put
 from .mana import add_costs, payable
 from .state import Permanent, StackItem, TARGETED, _gy_desc, is_basic_land, protected_from
 
@@ -113,6 +114,9 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return opp if eff.target in ("any", "player") else None
     if k in removal.KINDS:
         return removal.choose(game, me, eff)
+    if k in ("cx_exchange_mark", "cx_exchange"):
+        from ..cx_exchange import choose
+        return choose(game, me, eff)
     if k in ('graveyard_exile_all', 'graveyard_exile_choice'):
         return opp
     if k == 'adapt_exception':
@@ -296,6 +300,13 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
                 tgt = None
             chosen.append(tgt)
             k = e.kind
+            if k in ("cx_exchange_mark", "cx_exchange"):
+                from ..cx_exchange import mode_value
+                v = mode_value(game, me, e, tgt, chosen)
+                if v < 0 and k == "cx_exchange" and not e.data.get("optional"):
+                    return -1
+                total += max(v, 0.0)
+                continue
             from ..residual_templates import effect_value
             residual_value = effect_value(game, me, e, tgt)
             if residual_value is None:
@@ -346,6 +357,11 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
                 if game.step != "main1" or not any(not c.tapped for c in opp.creatures):
                     return -1
                 total += tgt.power
+            elif k == "hand_to_battlefield":
+                v = hand_put.value(game, me, e, game.target_source)
+                if v <= 0 and all(x.kind in ("pay_gate", "hand_to_battlefield") for x in effects):
+                    return -1          # nothing in hand it could put: don't spend the activation on it alone
+                total += v
             else:
                 total += 1
         return total
@@ -731,6 +747,14 @@ def pay_unless(game: Game, me: Player, amount: int, item: StackItem) -> bool:
     return True
 
 
+def pay_unless_sacrifice(game: Game, me: Player, chosen: list, stake) -> bool:
+    """Sacrifice several permanents to keep stake (the permanent the "unless" effect would remove)? Only when they
+    are worth no more than it; a land counts as 2. With nothing at stake, pay (the pay-when-able rule)."""
+    if stake is None:
+        return True
+    return sum(2 if x.card.is_land else perm_value(x) for x in chosen) <= perm_value(stake)
+
+
 def pay_optional(game: Game, me: Player, cost: dict, what: str) -> bool:
     return True
 
@@ -814,9 +838,11 @@ def before_attacks(game: Game, me: Player):
 
 
 def choose_attack_targets(game: Game, me: Player, attackers: list) -> dict:
-    """Send attackers at opposing planeswalkers unless the player is dead on board."""
+    """Send attackers at opposing planeswalkers, then unblockable ones at a battle they would defeat,
+    unless the player is dead on board."""
+    from ..battles import attack_targets as battle_targets
     opp = game.opponent(me)
-    if not opp.planeswalkers or sum(a.power for a in attackers) >= opp.life:
+    if sum(a.power for a in attackers) >= opp.life:
         return {}
     out, free = {}, sorted(attackers, key=lambda a: a.power)
     for pw in sorted(opp.planeswalkers, key=lambda x: -x.loyalty):
@@ -827,7 +853,7 @@ def choose_attack_targets(game: Game, me: Player, attackers: list) -> dict:
             out[a] = pw
             assigned += a.power
             free.remove(a)
-    return out
+    return battle_targets(game, me, attackers, out)
 
 
 def default_loyalty_choice(game: Game, me: Player, pw: Permanent):
@@ -948,10 +974,12 @@ DEFAULTS = {
     "choose_proliferate": proliferate.choose,
     "sneak": default_sneak,
     "respond": respond, "choose_target": choose_target, "choose_modes": default_choose_modes,
-    "scry": scry, "choose_dig": choose_dig, "pay_unless": pay_unless, "pay_optional": pay_optional,
+    "scry": scry, "choose_dig": choose_dig, "pay_unless": pay_unless,
+    "pay_unless_sacrifice": pay_unless_sacrifice, "pay_optional": pay_optional,
     "pay_shock": pay_shock, "choose_discard_from": choose_discard_from, "choose_rummage": choose_rummage,
     "choose_crew": choose_crew, "before_attacks": before_attacks, "choose_attack_targets": choose_attack_targets,
     "use_abilities": use_abilities, "respond_extras": respond_extras, "choose_equip_target": choose_equip_target,
+    "choose_hand_put": lambda game, me, cards, entry: hand_put.choose(game, me, cards, entry),
 }
 # Older names, kept for compatibility.
 default_respond = respond

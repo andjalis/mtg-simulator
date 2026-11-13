@@ -744,17 +744,10 @@ def player_rules(game, player, rule: str) -> list:
 # ---------------------------------------------------------------- engine side: who a subject names
 
 def _defending_player(game, item):
-    """The player the relevant attacker is attacking (a planeswalker or battle: its controller), or None
-    when the item names no attacker."""
-    from .engine.state import Permanent
-    attacks = getattr(game, "attack_targets", None) or {}
-    for creature in (item.source if item is not None else None, item.context if item is not None else None):
-        target = attacks.get(creature) if isinstance(creature, Permanent) else None
-        if isinstance(target, Permanent):
-            return target.controller
-        if target in game.players:
-            return target
-    return None
+    """The player the relevant attacker is attacking (a planeswalker: its controller; a battle: its
+    protector), or None when the item names no attacker. Shared with ai.py through battles.py."""
+    from .battles import defending_player
+    return defending_player(game, item)
 
 
 def event_spell(context) -> bool:

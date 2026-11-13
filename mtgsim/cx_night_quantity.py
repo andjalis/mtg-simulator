@@ -36,6 +36,22 @@ def _quantity(text, plural=True):
     return ("selector", sel) if sel else None
 
 
+_PLURAL_ZONES = {"card in your hand": "cards in your hand", "card in an opponent's hand": "cards in an opponent's hand",
+                 "card in your graveyard": "cards in your graveyard"}
+# The same pluralisation inside a longer "for each <things> card in <zone>" phrase ("artifact and/or creature
+# card in your graveyard"), where the whole string is not a _PLURAL_ZONES key.
+_ZONE_PLURAL = re.compile(r"\b(card|spell|permanent) (in all graveyards|in your graveyard|in an opponent's graveyard|"
+                          r"in your hand|in an opponent's hand|in exile|you own in exile|in your library)\b", re.I)
+
+
+def _plural_zone(text: str) -> str:
+    """"artifact and/or creature card in your graveyard" -> "... cards in your graveyard"."""
+    return _ZONE_PLURAL.sub(lambda m: m[1] + "s " + m[2], text)
+
+
+_SCALES = {"pump", "debuff", "pump_all", "damage", "gain_life", "lose_life", "drain", "draw", "mill"}
+
+
 def _scaled(fixed):
     """Template builder: fixed(m) is the plain sentence with amount 1; the last group is the quantity."""
     def build(m):
@@ -52,17 +68,12 @@ def _scaled(fixed):
     return build
 
 
-_PLURAL_ZONES = {"card in your hand": "cards in your hand", "card in an opponent's hand": "cards in an opponent's hand",
-                 "card in your graveyard": "cards in your graveyard"}
-_SCALES = {"pump", "debuff", "pump_all", "damage", "gain_life", "lose_life", "drain", "draw", "mill"}
-
-
 def _for_each(m):
     """``<fixed effect> for each <thing>``: the fixed sentence scaled by the number of things, for the effect kinds
     whose amount the X-quantity scales."""
     from .cards import _parse_effects
     from .cards.model import NO_MATCH
-    spec = _quantity("the number of " + _PLURAL_ZONES.get(m[2], m[2]), plural=False)
+    spec = _quantity("the number of " + _plural_zone(m[2]), plural=False)
     if spec is None:
         return NO_MATCH
     effects, unmatched = _parse_effects(m[1][0].upper() + m[1][1:])

@@ -153,6 +153,7 @@ class CardDef:
     modes: list = field(default_factory=list)           # modal spells: one effect list per mode
     modes_choose: int = 1
     loyalty: int = 0
+    defense: int = 0                                       # Battle: defense counters it enters with
     loyalty_abilities: list = field(default_factory=list)   # (cost, effects)
     turn_creature: tuple = ()                           # Kaito: (power, toughness, subtypes, keywords) during your turn
     pw_instant_on_entry: bool = False                   # The Wandering Emperor
@@ -347,6 +348,9 @@ class CardDef:
 
     @property
     def is_planeswalker(self): return "Planeswalker" in self.types
+
+    @property
+    def is_battle(self): return "Battle" in self.types
 
     @property
     def is_artifact(self): return "Artifact" in self.types

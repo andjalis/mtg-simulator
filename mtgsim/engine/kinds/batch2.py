@@ -120,20 +120,26 @@ def haunt_attach(game, p, item, **_):
 @kind("group_remove")
 def group_remove(game, p, eff, item, cause, **_):
     from ...permanent_templates import matches
+    from ..state import note_this_way
     source = item.source if item else None
     victims = [x for pl in game.players for x in pl.battlefield if matches(game, x, eff.data["selector"], p, source)]
     op = eff.data["op"]
     sources = counter_mechanics.death_sources(game) if op == "destroy" else None
     src = (item.source if item.source is not None else item.card) if item is not None else None
+    destroyed = 0
     for perm in victims:
         if perm not in perm.controller.battlefield:
             continue
         if op == "destroy":
-            game.destroy(perm, counter_sources=sources, no_regen=eff.data.get("no_regen", False))
+            if game.destroy(perm, counter_sources=sources, no_regen=eff.data.get("no_regen", False)):
+                destroyed += 1
         elif op == "damage":
             game.deal_damage(perm, eff.amount, by=p, cause=cause, source=src)
         else:
             game.leave_battlefield(perm, "exile" if op == "exile" else "hand")
+    if destroyed:
+        nouns = ["permanent"] + (["creature"] if victims and all(v.is_creature for v in victims) else [])
+        note_this_way(item, "destroyed", nouns, destroyed)
 
 
 @kind("conspire")

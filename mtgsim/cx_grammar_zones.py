@@ -175,8 +175,9 @@ _CARD_TYPES = ("artifact", "creature", "enchantment", "land", "instant", "sorcer
                "permanent")
 _TYPE = "|".join(_CARD_TYPES)
 _CARD_NOUN = re.compile(
-    rf"(?:({_COLOR}|colorless|multicolored) )?(?:non({_TYPE}) )?(?:((?:{_TYPE})(?:(?:,? or |, )(?:{_TYPE}))*) )?cards?"
-    r"(?: with (mana value|power|toughness) (\d+) or (less|greater))?")
+    rf"(?:({_COLOR}|colorless|multicolored) )?(?:non({_TYPE}) )?"
+    rf"(?:((?:{_TYPE})(?:(?:,? or |, | and/or )(?:{_TYPE}))*) )?cards?"
+    r"(?: with (mana value|power|toughness) (.+))?")
 _ZONES = {"your graveyard": "you", "a graveyard": "any", "an opponent's graveyard": "opp"}
 
 
@@ -186,17 +187,26 @@ def card_noun(text: str):
     m = _CARD_NOUN.fullmatch(text)
     if m is None:
         return None
-    spec = {"types": re.split(r",? or |, ", m[3]) if m[3] else []}
+    spec = {"types": re.split(r",? or |, | and/or ", m[3]) if m[3] else []}
     if m[1]:
         spec["color"] = m[1]
     if m[2]:
         spec["non"] = m[2]
     if m[4]:
-        spec["stat"] = [m[4], int(m[5]), m[6]]
+        bound = re.fullmatch(r"(\d+) or (less|greater)", m[5])
+        if bound:
+            spec["stat"] = [m[4], int(bound[1]), bound[2]]
+        else:
+            bound = re.fullmatch(r"(less than|less than or equal to|equal to|greater than|greater than or equal to) "
+                                 r"(\d+|~'s (?:power|toughness|mana value))", m[5])
+            if bound is None:
+                return None
+            limit = int(bound[2]) if bound[2].isdigit() else ["source", bound[2][4:]]
+            spec["bound"] = [m[4], bound[1], limit]
     return spec
 
 
-def card_fits(card, spec) -> bool:
+def card_fits(card, spec, source=None) -> bool:
     def is_type(t):
         return card.is_permanent if t == "permanent" else t.title() in card.types
     if spec["types"] and not any(is_type(t) for t in spec["types"]):
@@ -212,6 +222,18 @@ def card_fits(card, spec) -> bool:
         stat, n, way = spec["stat"]
         value = card.cmc if stat == "mana value" else (getattr(card, stat, 0) or 0)
         if (value > n) if way == "less" else (value < n):
+            return False
+    if spec.get("bound"):
+        stat, comparison, limit = spec["bound"]
+        if isinstance(limit, list):
+            from .engine.state import Permanent
+            if not isinstance(source, Permanent):
+                return False
+            limit = source.card.cmc if limit[1] == "mana value" else getattr(source, limit[1])
+        value = card.cmc if stat == "mana value" else (getattr(card, stat, 0) or 0)
+        if not {"less than": value < limit, "less than or equal to": value <= limit,
+                "equal to": value == limit, "greater than": value > limit,
+                "greater than or equal to": value >= limit}[comparison]:
             return False
     return True
 
@@ -231,6 +253,9 @@ def _card_part(text: str, zone: str, data: dict, side: str):
 def _card_object(text: str, zone: str):
     """A Subject for "[up to N] [other] target <card noun> from <zone>" (target graveyard_card), or None."""
     from .cx_grammar import Subject
+    other = bool(re.search(r"\b(?:other|another) target\b", text))
+    if other:
+        text = re.sub(r"\b(?:other|another) target\b", "target", text)
     m = re.fullmatch(r"(?:(up to) )?(?:(a|one|two|three|four|five) )?target (.+)", text)
     if m is None or m[1] and not m[2] or zone not in _ZONES:
         return None
@@ -239,6 +264,8 @@ def _card_object(text: str, zone: str):
     if spec is None or (n > 1) != m[3].split(" with ")[0].endswith("cards"):
         return None
     data = {"cx_card": spec, "zone": _ZONES[zone]}
+    if other:
+        data["other"] = True
     if m[1]:
         data["optional_target"] = True
     if n > 1:
@@ -249,23 +276,77 @@ def _card_object(text: str, zone: str):
 _GY = r"(.+?) from (your graveyard|a graveyard|an opponent's graveyard)"
 
 
-@verb(rf"return {_GY} to (your hand|its owner's hand|their owners' hands|their hand|the battlefield)( tapped)?",
-      heads=("return",), subjects=("imperative",))
+@verb(rf"return {_GY} to (your hand|its owner's hand|their owners' hands|their hand|the battlefield)"
+      r"( tapped(?: and attacking)?)?",
+      heads=("return",), subjects=("imperative", "player"))
 def return_card(m, clause):
     """"Return target creature card from your graveyard to your hand / to the battlefield [tapped]", "Return target
     card from a graveyard to its owner's hand": cx_card_move. The card goes to its owner's hand; to the battlefield
     only from your own graveyard (under your control)."""
     if clause.duration:
         return None
-    dest = m[3]
+    return _return_parts(m[1], m[2], m[3], m[4], clause)
+
+
+def _return_parts(text, zone, dest, state, clause):
+    if clause.subject.kind == "player" and clause.subject.who != "you":
+        return None
     if dest == "the battlefield":
-        if m[2] != "your graveyard":
+        if zone != "your graveyard":
             return None
-        return _card_part(m[1], m[2], {"to": "battlefield", "tapped": bool(m[4])}, "mine")
-    if m[4] or (dest == "your hand") != (m[2] == "your graveyard") or dest == "their hand" and m[2] != \
+        data = {"to": "battlefield", "tapped": bool(state)}
+        if state and "attacking" in state:
+            # Only creatures can enter attacking; do not broaden a card/permanent noun to this shape.
+            data["attacking"] = True
+    elif state or (dest == "your hand") != (zone == "your graveyard") or dest == "their hand" and zone != \
             "an opponent's graveyard":
         return None
-    return _card_part(m[1], m[2], {"to": "hand"}, "mine")
+    else:
+        data = {"to": "hand"}
+    parts = _card_part(text, zone, data, "mine")
+    if parts is not None:
+        if clause.subject.kind != "imperative":
+            return None
+        if data.get("attacking") and parts[0].obj.data["cx_card"]["types"] != ["creature"]:
+            return None
+        return parts
+    # Nontargeted choices happen at resolution, even when the graveyard is empty at cast time.
+    from .cards.model import Effect
+    from .cx_grammar import Subject
+    m = re.fullmatch(r"(?:(up to) )?(a|one|two|three|four|five) (.+)", text)
+    if m is None or zone != "your graveyard" or dest not in ("your hand", "the battlefield"):
+        return None
+    n, spec = count(m[2]), card_noun(m[3])
+    if spec is None or (n > 1) != m[3].split(" with ")[0].endswith("cards"):
+        return None
+    if dest == "the battlefield" and (not spec["types"] or any(t in ("instant", "sorcery") for t in spec["types"])):
+        return None
+    if data.get("attacking") and spec["types"] != ["creature"]:
+        return None
+    data = dict(data, cx_card=spec, up_to=bool(m[1]))
+    if clause.subject.kind == "player":
+        return [Part("cx_card_choose", n, data=data)]
+    # A player wrapper gives the AI the same family-local valuation as explicit "you return".
+    return [Part("cx_players", obj=Subject("player", who="you"),
+                 data={"effects": [Effect("cx_card_choose", n, data=data)]})]
+
+
+@verb(r"return from (your graveyard) to (your hand|the battlefield) (.+?)( tapped(?: and attacking)?)?",
+      heads=("return",), subjects=("imperative", "player"))
+def return_card_reordered(m, clause):
+    if clause.duration:
+        return None
+    return _return_parts(m[3], m[1], m[2], m[4], clause)
+
+
+@ai_value("cx_card_choose")
+def _return_choice_value(game, me, eff, obj):
+    from .engine.state import Player
+    if not isinstance(obj, Player):
+        return 0.0
+    source = getattr(game.target_source, "source", game.target_source)
+    values = sorted((1 + c.cmc for c in obj.graveyard if card_fits(c, eff.data["cx_card"], source)), reverse=True)
+    return sum(values[:eff.amount]) * (1 if obj is me else -1)
 
 
 @verb(rf"put {_GY} (onto the battlefield under (?:your|its owner's) control|on top of its owner's library|"
@@ -296,4 +377,6 @@ def grave_cards(game, p, eff):
     """The cards a cx_card graveyard target may be: in the named graveyards, matching the noun phrase."""
     zone = eff.data["zone"]
     owners = [p] if zone == "you" else [game.opponent(p)] if zone == "opp" else list(game.players)
-    return [c for o in owners for c in o.graveyard if card_fits(c, eff.data["cx_card"])]
+    source = getattr(game.target_source, "source", game.target_source)
+    excluded = getattr(source, "front", source) if eff.data.get("other") else None
+    return [c for o in owners for c in o.graveyard if c is not excluded and card_fits(c, eff.data["cx_card"], source)]

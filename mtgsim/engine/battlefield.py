@@ -171,6 +171,9 @@ class BattlefieldMixin:
             cx_static_choice.choose(self, p, perm, card)
         if card.loyalty:
             perm.counters["loyalty"] = card.loyalty
+        if card.is_battle:
+            from ..battles import entered as battle_entered
+            battle_entered(self, perm)
         if card.advanced_rules.get("sunburst"):
             kind = "+1/+1" if card.is_creature else "charge"
             perm.counters[kind] = len(getattr(self, "_entry_mana_colors", ()))

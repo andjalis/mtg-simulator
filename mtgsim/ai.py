@@ -819,7 +819,7 @@ class HeuristicAI:
                     + self._static_value(game, me, card) - self._sac_cost(game, me, card), None)
         instant = card.instant_speed
         if any('anchor' in e.data or e.kind in ('allocated_counter', 'return_tribal_grave', 'grave_library_top',
-                'control_permanent', 'populate', 'advanced_quantity_stats', 'selected_mass_move', 'filtered_grave_return', 'graveyard_exile_all', 'graveyard_exile_choice') for e in card.spell_effects):
+                'control_permanent', 'cx_exchange', 'populate', 'advanced_quantity_stats', 'selected_mass_move', 'filtered_grave_return', 'graveyard_exile_all', 'graveyard_exile_choice') for e in card.spell_effects):
             from .engine.policy import _mode_value
             with game.targeting(card):
                 value = _mode_value(game, me, card.spell_effects)
@@ -835,7 +835,7 @@ class HeuristicAI:
             return (v, None) if v > 0 else None
         if not card.spell_effects:
             return None  # nothing we know how to do with it
-        targets, value, pending = [], 0.0, []
+        targets, value, pending = [], self._mana_spell_value(game, me, card), []
         stolen, group_value, group_combat = False, None, False
         for eff in card.spell_effects:
             if stolen and eff.target == "prev":
@@ -956,6 +956,8 @@ class HeuristicAI:
                     return None
                 targets.append(tgt)
                 value += 1.0
+            elif eff.kind == "add_mana":
+                targets.append(None)      # value already counted once by _mana_spell_value
             else:
                 targets.append(None)
                 value += MINOR_EFFECTS.get(eff.kind, 0.0) * max(1, eff.amount)
@@ -968,6 +970,28 @@ class HeuristicAI:
             if targets is None:
                 return None
         return (value - self._sac_cost(game, me, card), targets)
+
+    def _mana_spell_value(self, game: Game, me: Player, card: CardDef) -> float:
+        """A spell that only adds mana ("ritual"): worth casting when the mana it would make brings a
+        spell in hand within reach right now. The ritual's own mana is never counted as available
+        (can_cast_now reads lands and the pool only), so no future mana is invented."""
+        if not all(e.kind in ("add_mana", "mana_restrict") for e in card.spell_effects):
+            return 0.0
+        from types import SimpleNamespace
+        adds = 0
+        for e in card.spell_effects:
+            if e.kind != "add_mana":
+                continue
+            n = max(1, e.amount)
+            if e.data.get("xq"):        # a counted amount ("for each ..."): what it makes now
+                n = game.x_quantity(me, e.data["xq"], SimpleNamespace(source=None, card=card, context=None), None)
+            adds += n * max(1, len(e.data.get("colors", [])))
+        if adds <= 0:
+            return 0.0
+        supply = sum(getattr(s, "amount_now", None) or max(1, s.card.mana_amount) for s in game.mana_sources(me))
+        reach = [c for c in me.hand if not c.is_land and c is not card and not self._can_cast(game, me, c)
+                 and c.cmc <= supply + adds]
+        return 2.0 * len(reach) + 0.1 * adds if reach else 0.0
 
     def _distinct_targets(self, game: Game, me: Player, card: CardDef, targets: list):
         """"Two target creatures each ...": the effects marked distinct get different objects (game.auto_targets
@@ -1034,21 +1058,13 @@ class HeuristicAI:
         else:
             named = {"you": [me], "each": [me, opp], "opponents": [opp]}.get(who)
             if who == "defending":
-                # Mirror cx_grammar's #297 rule without requiring the unmerged helper.
-                # The attacker may be the trigger's source or its event context.
+                # cx_grammar's #297 rule (battles.defending_player): the attacker may be the
+                # trigger's source or its event context.
+                from .battles import defending_player
                 item = getattr(game, "target_source", None)
                 if not hasattr(item, "effects"):
                     item = getattr(game, "resolving_item", None)
-                defender = None
-                for creature in (getattr(item, "source", None), getattr(item, "context", None)):
-                    attacked = game.attack_targets.get(creature) if isinstance(creature, Permanent) else None
-                    if isinstance(attacked, Permanent):
-                        defender = attacked.controller
-                    elif attacked in game.players:
-                        defender = attacked
-                    if defender is not None:
-                        break
-                named = [defender or opp]
+                named = [defending_player(game, item) or opp]
             if named is None:
                 return None, 0.0    # "that player", "its owner": a rider of another effect, valued by that one
         value = 0.0

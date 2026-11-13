@@ -16,7 +16,7 @@ from .patterns import _EFFECT_PATTERNS
 # "You may <effect>" is always taken, so only for effects that cost the player nothing.
 _MAY_DECLINED = {"sacrifice", "sacrifice_self", "discard", "discard_choice", "lose_life", "mill", "pay_gate",
                  "damage", "drain", "destroy", "exile", "exile_permanent", "wrath", "bounce"}
-_MAY_COUNTERS = {"cx_remove_counters", "cx_move_counters"}
+_MAY_COUNTERS = {"cx_remove_counters", "cx_move_counters", "cx_exchange_mark", "cx_exchange"}   # the AI may decline
 
 
 def hostile_may(text, new):
@@ -216,7 +216,7 @@ def _parse_effects(text: str, opts: bool = False):
                 effects += new      # "you may destroy target ...": skipped at resolution unless the target is the opponent's
                 continue
             if new and not bad and any(e.kind in _MAY_COUNTERS for e in new):
-                for e in new:       # optional counter removal / moves: the handler lets the AI decline (cx_counters)
+                for e in new:       # optional counter removal / moves / exchanges: the AI may decline (cx_counters, cx_exchange)
                     if e.kind in _MAY_COUNTERS:
                         e.data["optional"] = True
                 effects += new
@@ -286,7 +286,12 @@ def _parse_effects(text: str, opts: bool = False):
                 for body in (mi[2], re.sub(r"^you ", "", mi[2])):
                     new, bad = _parse_effects(body[0].upper() + body[1:] + ".")
                     if new and not bad:
-                        if cond.startswith('lib:["src_') and re.match(r"(?:~|it) ", mi[1], re.I):
+                        base = cond[1:] if cond.startswith("!") else cond
+                        # a source fact ("~ has fewer than three charge counters on it", "~ didn't
+                        # attack this turn"): the body's "on it" is the source itself
+                        src_fact = base.startswith('lib:["src_') or \
+                            base.startswith('lib:["counters"') and mi[1].startswith("~")
+                        if src_fact and re.match(r"(?:~|it) ", mi[1], re.I):
                             new = [dataclasses.replace(e, target="self") if e.target == "prev" else e
                                    for e in new]     # "If ~ is suspected, put a +1/+1 counter on it"
                         effects += [dataclasses.replace(e, cond=e.cond or cond) for e in new]
@@ -371,6 +376,10 @@ def _split_compound(s: str):
             continue
         if sep == r" and " and _OTHER_SUBJECT.match(pieces[0]) and _VERB_S.match(pieces[1]):
             continue    # "Target player loses 2 life and mills two cards": the second verb is that player's too
+        if sep == r" and " and " unless " in pieces[0].lower():
+            continue    # "... unless you sacrifice a land and pay 2 life": one compound cost, never two effects (#330)
+        if re.search(r", where X is ", pieces[1], re.I) and re.search(r"\bX\b", pieces[0]):
+            return None     # "draw X cards, then put ... X or less ..., where X is ...": the X binds both parts
         out = []
         for piece in pieces:
             effs, bad = _parse_effects(piece[0].upper() + piece[1:] + ".")
@@ -516,7 +525,7 @@ def _parse_face(data: dict) -> CardDef:
         text = text.replace('TOKENNAME' + str(index), token_name)
     from .. import cx_replace
     text = cx_replace.two_player_text(text)
-    text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment|class|spacecraft|battle)\b", "~",
+    text = re.sub(r"\bthis (creature|land|spell|enchantment|artifact|permanent|token|vehicle|saga|aura|equipment|class|spacecraft|battle|siege)\b", "~",
                   text, flags=re.I)
     text = re.sub(r"\b([Pp]rotection from (?:white|blue|black|red|green)) and from (white|blue|black|red|green)\b",
                   lambda m: f"{m[1]} and {m[1][0]}rotection from {m[2]}", text)
@@ -563,6 +572,8 @@ def _parse_face(data: dict) -> CardDef:
     extra["hybrid"] = tuple(a + b for a, b in re.findall(r"\{([WUBRG])/([WUBRG])\}", raw_cost))
     if data.get("loyalty"):
         extra["loyalty"] = stat(data["loyalty"]) or 0
+    if data.get("defense"):
+        extra["defense"] = stat(data["defense"]) or 0
 
     kicked: list = []
     station_min = 0
@@ -660,6 +671,8 @@ def _parse_face(data: dict) -> CardDef:
     extra.pop("_subtypes", None)
     _auras.finish(extra)
     _storage.finish(extra, unsupported)
+    if "Battle" in types and "Siege" not in type_line.split("—")[-1].split():
+        unsupported.append("Battle rules other than a Siege's (protector and defeat)")    # #254: Sieges only
     for event in ("cast_self", "cycle_self"):     # triggers of the card itself, not of a permanent
         own = [t for t in triggers if t.event == event]
         if own:
@@ -917,6 +930,8 @@ def _parse_trigger_line(line: str):
             flt = f"{'other' if m[1] == 'another' else 'any'}||{m[2]}"
         if events[0] in ("attacks", "blocks") and re.fullmatch(r"(?:sacrifice|destroy|return) it( to its owner's hand)? at end of combat\.?", rest):
             rest = rest.replace(" it", " ~", 1)      # "When ~ attacks or blocks, sacrifice it at end of combat"
+        if events in (("etb",), ("attacks",), ("blocks",)) and re.match(r"(?:sacrifice|exile|destroy) it unless ", rest):
+            rest = rest.replace(" it", " ~", 1)      # "When ~ enters|attacks, sacrifice it unless you ..." (#330)
         if events == ("attacks",) and "while saddled" in pat:
             flt = "saddled"
         if events == ("attacks",) and pat.startswith("Whenever ~ and at least"):
@@ -1005,7 +1020,8 @@ def _parse_trigger_line(line: str):
         later: list = []
         if reflex:
             rest = reflex[1]
-            later, bad2 = _parse_effects(reflex[4][0].upper() + reflex[4][1:])
+            with _cx_tokens.event_amount_ctx(events):
+                later, bad2 = _parse_effects(reflex[4][0].upper() + reflex[4][1:])
             if bad2:
                 return [], bad2, None
             later = [dataclasses.replace(e, cond=f"counters:{reflex[3]}>={_num(reflex[2])}") for e in later]
@@ -1014,18 +1030,21 @@ def _parse_trigger_line(line: str):
         if opus:
             instead = opus[2].rstrip(".").endswith(" instead")
             second = re.sub(r" instead$", "", opus[2].rstrip(".")).replace("~ also ", "~ ")
-            first, bad = _parse_effects(opus[1])
-            more, bad2 = _parse_effects(second[0].upper() + second[1:] + ".")
+            with _cx_tokens.event_amount_ctx(events):
+                first, bad = _parse_effects(opus[1])
+                more, bad2 = _parse_effects(second[0].upper() + second[1:] + ".")
             bad += bad2
             effs = [dataclasses.replace(e, cond="mana<5") for e in first] if instead else first
             effs += [dataclasses.replace(e, cond="mana>=5") for e in more]
         elif unless:
-            first, bad = _parse_effects(unless[1])
-            more, bad2 = _parse_effects(unless[2][0].upper() + unless[2][1:] + ".")
+            with _cx_tokens.event_amount_ctx(events):
+                first, bad = _parse_effects(unless[1])
+                more, bad2 = _parse_effects(unless[2][0].upper() + unless[2][1:] + ".")
             bad += bad2
             effs = first + [dataclasses.replace(e, cond="mana<5") for e in more]
         else:
-            effs, bad = _parse_effects(rest)
+            with _cx_tokens.event_amount_ctx(events):
+                effs, bad = _parse_effects(rest)
             if cond:
                 effs = [dataclasses.replace(e, cond=cond) for e in effs]
         effs += later

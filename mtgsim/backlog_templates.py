@@ -74,7 +74,9 @@ def parse_line(line, state):
     from .cards.parse import _parse_trigger
     from .cards.model import _num
     m = re.fullmatch(r'When(?:ever)? (.+?) (enters?|dies?), (.+)', line)
-    if m and not m[1].startswith(('~', 'equipped ', 'enchanted ')):
+    # "sacrifice it unless ...": "it" is the entering object here, not the ~ the self-ETB rewrite reads (#330)
+    if m and not m[1].startswith(('~', 'equipped ', 'enchanted ')) and \
+            not re.match(r'(?:sacrifice|exile|destroy) it unless ', m[3]):
         established = _parse_trigger(line)
         if established and established[0] and not established[1]:
             return False  # Preserve existing event-specific context and graveyard listeners.

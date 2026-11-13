@@ -208,8 +208,19 @@ def _mana_abilities(game, me):
                     ((c.get("sac_self") or c.get("exile_self")) and perm_value(perm) > 1) or \
                     not ai_cost_ok(game, me, perm, c) or not game.can_activate(me, perm, i):
                 continue
-            adds = sum(max(1, e.amount) * max(1, len(e.data.get("colors", []))) if not e.data.get("cx_mana")
-                       and not e.data.get("xq") else max(1, e.amount) for e in act.effects if e.kind == "add_mana")
+            adds = 0
+            for e in act.effects:
+                if e.kind != "add_mana":
+                    continue
+                if e.data.get("cx_mana"):
+                    adds += max(1, e.amount)
+                    continue
+                n = max(1, e.amount)
+                if e.data.get("xq"):    # a counted amount ("for each ..."): estimate what it makes now
+                    from types import SimpleNamespace
+                    n = game.x_quantity(me, e.data["xq"],
+                                        SimpleNamespace(source=perm, card=perm.card, context=None), None)
+                adds += n * max(1, len(e.data.get("colors", [])))
             code = next((e.data["code"] for e in act.effects if e.kind == "mana_restrict"), "")
             out.append((perm, i, adds, code))
     return out

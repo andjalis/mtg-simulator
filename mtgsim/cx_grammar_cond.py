@@ -176,7 +176,25 @@ def resolve_instead(effects: list) -> list:
 
 _PAYERS = {"you": "you", "they": "they", "that player": "they", "its controller": "controller",
            "their controller": "controller", "that creature's controller": "controller",
-           "that permanent's controller": "controller", "that spell's controller": "controller"}
+           "that permanent's controller": "controller", "that spell's controller": "controller",
+           # two players: "target opponent" is the opponent, as "target opponent loses 3 life" already reads
+           "target opponent": "opponent", "an opponent": "opponent", "any player": "any"}
+
+# "unless any player pays": whose interest B is, from B's kinds. B that only costs its controller (the source
+# leaves) is paid for by the controller; B that only helps the controller is paid for by an opponent. Anything
+# else stays unmatched.
+_HURTS_CONTROLLER = ("sacrifice_self", "exile_self")
+_HELPS_CONTROLLER = ("draw", "gain_life")
+_HELPS_SELF = ("pump", "p1_counters")
+
+
+def _against(effects):
+    if all(e.kind in _HURTS_CONTROLLER or e.kind == "destroy" and e.target == "self" for e in effects):
+        return "controller"
+    if all(e.kind in _HELPS_CONTROLLER and e.target == "none" or e.kind in _HELPS_SELF and e.target == "self"
+           and e.amount >= 0 and e.amount2 >= 0 for e in effects):
+        return "opponents"
+    return None
 
 
 def _costs(text: str):
@@ -195,8 +213,8 @@ def _costs(text: str):
 
 
 def _cost(text: str):
-    """The cost of "pay(s) {2}{U}", "pay(s) 3 life", "sacrifice(s) a|another <filter>" or "discard(s) a [<filter>]
-    card", else None."""
+    """The cost of "pay(s) {2}{U}", "pay(s) 3 life", "sacrifice(s) a|another <filter>", "sacrifice(s) two <filters>"
+    or "discard(s) a [<filter>] card", else None."""
     from .cards.model import parse_mana_cost
     m = re.fullmatch(r"pays? ((?:\{[\dWUBRGC]\})+)", text, re.I)
     if m:
@@ -209,6 +227,11 @@ def _cost(text: str):
     if m:
         spec = _filter(m[2], plural=False)
         return {"sacrifice": spec, "other": m[1].lower() == "another"} if spec else None
+    m = re.fullmatch(r"sacrifices? (two|three|four|five|six|seven) ([\w -]+)", text, re.I)
+    if m:                       # a counted cost: all of them or none (#330)
+        from .cards.model import _num
+        spec = _filter(m[2], plural=True)
+        return {"sacrifice": spec, "other": False, "count": _num(m[1])} if spec else None
     m = re.fullmatch(r"discards? (?:a|an) (?:([\w -]+) )?card", text, re.I)
     if m:
         spec = _filter(m[1], plural=False) if m[1] else {}
@@ -220,17 +243,32 @@ def _who_pays(payer: str, first):
     """The cx_unless payer code for the payer words and B's first effect, or None when the words have no fixed
     referent there: "they" is the player B names, "its controller" the controller of the object B names."""
     from .engine.state import TARGETED
-    if payer == "you":
-        return "you"
+    if payer in ("you", "opponent"):
+        return payer
     if first.kind == "cx_players":
         who = first.data.get("who")
-        return {"controller": "prev_controller", "that_player": "context", "opponents": "opponent"}.get(who) \
+        return {"controller": "prev_controller", "that_player": "context", "opponents": "opponent",
+                "target": "target"}.get(who) \
             if payer == "they" else None
     if payer == "they":
         return {"player": "target", "each_opponent": "opponent", "that_player": "context"}.get(first.target)
     if first.target == "prev":
         return "prev_controller"
     return "controller" if first.target in TARGETED and first.target != "player" else None
+
+
+def _each_gate(first, costs):
+    """"Each player <B> unless they <cost>": one cx_unless_each effect, so every player decides for themselves
+    and B reaches only those who didn't pay. None for other bodies."""
+    from .cards.model import Effect
+    if first.kind == "lose_each" and not first.cond and not first.data:
+        inner = [Effect("lose_life", first.amount, target="that_player")]
+    elif first.kind == "cx_players" and first.data.get("who") == "each" and not first.cond \
+            and set(first.data) == {"who", "effects"}:
+        inner = list(first.data["effects"])
+    else:
+        return None
+    return [Effect("cx_unless_each", data={"who": "each", "costs": costs, "effects": inner})]
 
 
 @rider(r"(?P<body>.+?) unless (?P<rest>.+)")
@@ -244,16 +282,27 @@ def unless(m, inner):
     if not effects or any(e.target == _SAME for e in effects):
         return None
     rest = m["rest"].strip()
-    payer = next((v for k, v in _PAYERS.items() if rest.lower().startswith(k + " ")), None)
-    if payer is None:
+    words = next((k for k in _PAYERS if rest.lower().startswith(k + " ")), None)
+    costs = _costs(rest[len(words) + 1:]) if words else None
+    if costs is None:           # "unless an opponent was dealt damage this turn": a condition, not a cost
+        if any(e.kind == "cx_delay" for e in effects):
+            return None         # the condition belongs to the delayed trigger's resolution, not to now
         cond = _if_cond(rest)
         return [dataclasses.replace(e, cond=_both(e.cond, _negate(cond))) for e in effects] if cond else None
-    costs = _costs(rest[len(next(k for k, v in _PAYERS.items() if rest.lower().startswith(k + " "))) + 1:])
-    if costs is None:
-        return None
-    who = _who_pays(payer, effects[0])
+    payer = _PAYERS[words]
+    if payer == "they" and len(effects) == 1:
+        each = _each_gate(effects[0], costs)
+        if each:
+            return each
+    data = {}
+    if payer == "any":
+        who, data["against"] = "any", _against(effects)
+        if data["against"] is None:
+            return None
+    else:
+        who = _who_pays(payer, effects[0])
     if who is None:
         return None
-    gate = Effect("cx_unless", data={"costs": costs, "payer": who})
+    gate = Effect("cx_unless", data={"costs": costs, "payer": who, **data})
     unpaid = _code("unless_unpaid")
     return [gate] + [dataclasses.replace(e, cond=_both(e.cond, unpaid)) for e in effects]

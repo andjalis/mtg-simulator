@@ -262,6 +262,12 @@ class CostsMixin:
             return getattr(src, "mutations", 0) if src is not None else 0
         if kind == "counters":
             return src.counters.get(spec[1], 0) if src is not None else 0
+        if kind == "subj_counters":
+            # "for each +1/+1 counter on it": the trigger's subject/source, snapshotted as LKI when the
+            # trigger queued (spec[2]); a plain resolving ability reads its own source permanent
+            if len(spec) > 2:
+                return spec[2].get(spec[1], 0)
+            return src.counters.get(spec[1], 0) if src is not None else 0
         if kind == "sac":
             # "the sacrificed creature's power/toughness/mana value": paid as a spell cost (item.sac_stats,
             # set in play.cast), a "you may sacrifice. If you do" gate (item.gate_sac_stats, pay_gate_cost),
@@ -319,6 +325,13 @@ class CostsMixin:
         if kind == "cxq":         # cx_grammar_quantity: devotion, noun-phrase counts, turn history, ...
             from ..cx_grammar_quantity import value
             return value(self, p, spec, item, prev)
+        if kind == "this_way":
+            # "for each ... removed/destroyed this way": the count the previous effect of this
+            # resolution recorded on the item (state.note_this_way).
+            tw = getattr(item, "this_way", None) if item is not None else None
+            if tw is not None and tw[0] == spec[1] and spec[2] in tw[1]:
+                return tw[2]
+            return 0
         if kind == "gy":
             return counting.count(self, p, {"what": spec[1], "zone": "graveyard"}, src)
         return counting.count(self, p, {"what": spec[1], "zone": "battlefield"}, src)
@@ -635,6 +648,9 @@ class CostsMixin:
                 v = dataclasses.replace(card.split_right, name=f"{card.name} ({card.split_right.name})")
             elif kind == "disturb":
                 v = dataclasses.replace(card.back, name=f"{card.back.name} (disturb)", mana_cost=alt.cost)
+            elif kind == "siege":      # a defeated Siege cast transformed: its back face, the front's mana value
+                v = dataclasses.replace(card.back, name=f"{card.back.name} (transformed)", mana_cost=alt.cost,
+                                        cmc=card.cmc)
             elif kind == "bestow":
                 from ..batch1_templates import bestow_face
                 v = bestow_face(card, alt.cost)
@@ -792,7 +808,7 @@ class CostsMixin:
                 "retrace": p.graveyard, "beam": p.graveyard,
                 "escape": p.graveyard, "impulse": p.exile, "suspended": p.exile, "rebound": p.exile,
                 "cascade": p.exile, "cascade_adventure": p.exile,
-                "rebound_adventure": p.exile, "discover": p.exile, "cx_top": p.library}.get(kind, p.hand)
+                "rebound_adventure": p.exile, "discover": p.exile, "siege": p.exile, "cx_top": p.library}.get(kind, p.hand)
 
     def _available(self, p: Player, card: CardDef) -> bool:
         base, kind, _ = self._origin(card)
