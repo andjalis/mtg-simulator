@@ -60,13 +60,9 @@ class Parse(unittest.TestCase):
 
 class Play(unittest.TestCase):
     def test_leech_strips_the_counters_of_its_target(self):
-        from mtgsim.engine.state import StackItem
         g, a, b = game()
         foe = put(g, b, card("Foe", "{3}", "Creature — Ogre", "", 3, 3), **{"+1/+1": 2, "flying": 1})
-        leech = put(g, a, LEECH)
-        effects = leech.card.triggers[0].effects
-        g.stack.append(StackItem(a, list(effects), [foe, None], source=leech, kind="trigger"))
-        g.settle()
+        put(g, a, LEECH)                      # its ETB: -2/-2 on the only opposing creature, then strip it (#377)
         self.assertEqual({k: v for k, v in foe.counters.items() if v}, {})
         self.assertEqual((foe.power, foe.toughness), (1, 1))          # 3/3 base, counters gone, -2/-2
 

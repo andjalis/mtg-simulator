@@ -316,10 +316,14 @@ class StackMixin:
         return True
 
     def force_damage_targets(self, controller, effects, targets, source):
-        """A mandatory trigger must target when a legal creature exists, killable or not (#295)."""
+        """A mandatory trigger must target when a legal creature exists, killable or not: damage (#295) and
+        -N/-N (#377). Not after a "you may" gate, nor for optional targets."""
         targets = list(targets)
+        may = False
         for i, e in enumerate(effects):
-            if e.kind != "damage" or e.target != "creature" or e.data.get("optional") or i >= len(targets) \
+            may = may or e.kind == "pay_gate" and (e.data.get("gate") or ("",))[0] == "may"
+            hostile = e.kind == "damage" and e.target == "creature" or e.kind == "debuff_one" and e.target in TARGETED
+            if not hostile or may or e.data.get("optional") or e.data.get("optional_target") or i >= len(targets) \
                     or targets[i] is not None:
                 continue
             with self.targeting(source):
