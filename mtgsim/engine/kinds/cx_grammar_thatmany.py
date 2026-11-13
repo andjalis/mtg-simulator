@@ -32,8 +32,6 @@ def away(game, p, eff, target, item=None, **_):
             continue
         if mode.startswith("discard"):
             game.discard_card(who, card)
-        elif mode == "exile_hand":
-            game.move_card(card, who.hand, who.exile, reason="exile")
         else:           # shuffled into or put on the bottom of the library
             game.move_card(card, who.hand, who.library, reason="hand_to_library")
             if mode.startswith("bottom"):

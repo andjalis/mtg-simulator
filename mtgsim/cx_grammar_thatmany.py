@@ -6,7 +6,6 @@
     Each player discards all the cards in their hand, then draws that many cards minus one.   (Dark Deal)
     Each player shuffles the cards from their hand into their library, then draws that many cards.   (Winds of Change)
     Put any number of cards from your hand on the bottom of your library, then draw that many cards plus one.
-    Target player exiles all cards from their hand face down, then draws that many cards.   (Induced Amnesia)
     Shuffle any number of cards from your hand into your library, then draw that many cards.   (Credit Voucher)
     Each player discards their hand, then draws cards equal to the greatest number of cards a player discarded
     this way.                                                                         (Windfall)
@@ -18,7 +17,9 @@ madness exiles it), counted per player: "each player discards ..., then draws th
 their cards away first, then each draws their own count. The two steps are the cx_players inner kinds
 ``cx_away`` and ``cx_draw_that_many`` (engine/kinds/cx_grammar_thatmany.py); the draw goes through Game.draw, so
 draw replacements apply to each card. "Any number of cards" is the putting-away player's choice
-(policy.choose_rummage). The sentence must be whole: a later rider ("..., or ~ deals damage ...") stays unparsed.
+(policy.choose_rummage). "Exiles all cards from their hand" is left out until the cards can be tied to the
+exiling permanent's own return trigger (Induced Amnesia, #389). The sentence must be whole: a later rider
+("..., or ~ deals damage ...") stays unparsed.
 """
 from __future__ import annotations
 
@@ -39,7 +40,6 @@ _ACTIONS = [
      r"(?: in any order)?", "bottom_hand"),
     (rf"put(?:s)? any number of cards from {_P} hand on the bottom of (?P<pron2>your|their) library"
      r"(?: in any order)?", "bottom_any"),
-    (rf"exile(?:s)? all (?:the )?cards from {_P} hand(?: face down)?", "exile_hand"),
 ]
 
 
@@ -116,7 +116,7 @@ def _action(head: str):
             continue
         subj_text = head[:m.start()].strip()
         verb = m[0].split(" ", 1)[0].lower()
-        third = verb in ("discards", "shuffles", "puts", "exiles")
+        third = verb in ("discards", "shuffles", "puts")
         if not subj_text:
             if third:
                 return None
