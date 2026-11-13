@@ -13,12 +13,13 @@ import re
 def _xtoken(m):
     from .cards import NO_MATCH, _parse_effects
     desc = m[1]
-    singular = re.sub(r" tokens\b", " token", desc)
+    sized = bool(re.match(r"X/X ", desc))         # "Create X X/X green Ooze creature tokens": X of them, each X/X
+    singular = re.sub(r" tokens\b", " token", re.sub(r"^X/X ", "1/1 ", desc))
     effects, bad = _parse_effects("Create one " + singular + ".")
-    if bad or not effects:
+    if bad or not effects or (sized and any(e.kind != "token" for e in effects)):
         return NO_MATCH
-    return [dataclasses.replace(e, data=dict(e.data, x=True)) if e.kind == "token" else e
-            for e in effects]
+    return [dataclasses.replace(e, data=dict(e.data, x=True, **({"x_size": True} if sized else {})))
+            if e.kind == "token" else e for e in effects]
 
 
 EFFECT_PATTERNS = [

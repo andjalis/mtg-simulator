@@ -75,6 +75,7 @@ def monstrosity(game, p, eff, item, **_):
     if isinstance(src, Permanent) and src in p.battlefield and not getattr(src, "monstrous", False):
         src.counters["+1/+1"] = src.p1 + eff.amount
         src.monstrous = True
+        src.monstrosity_x = eff.amount      # "When ~ becomes monstrous, create X ..." reads this X
         game.fire(p, "monstrous", src)
 
 

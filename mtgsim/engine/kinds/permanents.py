@@ -251,6 +251,12 @@ def token(game, p, eff, target, item, prev=None, **_):
     if eff.data.get("x"):
         n = (getattr(item.source, "entered_x", 0) if item.source is not None else getattr(item, "x", 0)) \
             if item is not None else 0
+        src = item.source if item is not None else None
+        if isinstance(src, Permanent) and getattr(src, "monstrosity_x", None) is not None and any(
+                t.event == "monstrous" and any(e.kind == eff.kind and e.data.get("x_size") == eff.data.get("x_size") and e.data.get("name") == eff.data.get("name") for e in t.effects) for t in src.card.triggers):
+            n = src.monstrosity_x           # the X of its monstrosity, not of its casting
+        if eff.data.get("x_size"):          # "X X/X ... tokens": each is X/X too
+            eff = dataclasses.replace(eff, data=dict(eff.data, power=n, toughness=n))
     game.create_token(who, eff, n)
 
 
