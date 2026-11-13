@@ -69,9 +69,9 @@ def cx_remove_counters(game, p, eff, target, item=None, **_):
             target.counters[name] = have - take
             left -= take
             taken[name] = taken.get(name, 0) + take
-    from ..state import note_this_way
-    for name, n in taken.items():               # "for each ... counter removed this way"
-        note_this_way(item, "removed", [name], n)
+    from ..state import note_this_way           # "for each [<kind>] counter removed this way": the total (#345)
+    note_this_way(item, "removed", list(taken) + ["counter"] if len(taken) == 1 else ["counter"],
+                  sum(taken.values()))
 
 
 @kind("cx_move_src")

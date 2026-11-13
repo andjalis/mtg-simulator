@@ -151,6 +151,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         pool = theirs if eff.data['operation'] == 'remove' else mine
         if eff.data.get('counter') == '-1/-1':
             pool = mine if eff.data['operation'] == 'remove' else theirs
+        if eff.data['operation'] == 'remove' and eff.data.get('counter'):    # one that has such a counter (#345)
+            pool = [x for x in pool if x.counters.get(eff.data['counter'], 0) > 0] or pool
         return max(pool, key=perm_value, default=None)
     if k in ('add_counter', 'cx_distribute'):
         pool = theirs if eff.data.get('counter') in ('-1/-1', 'stun') else mine

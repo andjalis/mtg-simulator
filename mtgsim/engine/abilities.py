@@ -491,6 +491,8 @@ class AbilitiesMixin:
             note_this_way(item, "removed", [c["remove_counter"]], c.get("remove_counter_count", 1))
         if c.get("remove_creature_counters") in ("x", "positive"):
             item.x = item.counter_x
+            if c.get("creature_counter_kind"):       # "... counters removed this way" (Ooze Flux)
+                note_this_way(item, "removed", [c["creature_counter_kind"], "counter"], item.counter_x)
         elif act.cost.get("X") and x:
             item.x = x
         self.stack.append(item)

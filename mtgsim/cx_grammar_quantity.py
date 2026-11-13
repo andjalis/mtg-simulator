@@ -77,6 +77,9 @@ def quantity(text: str):
     m = re.fullmatch(r"your devotion to (white|blue|black|red|green)(?: and (white|blue|black|red|green))?", low)
     if m:
         return ("cxq", "devotion", "".join(_COLORS[c] for c in m.groups() if c))
+    m = re.fullmatch(r"the number of (?:([\w+/-]+) )?counters? removed this way", low)
+    if m:       # "draw a card for each counter removed this way": what the previous effect removed (#345)
+        return ("this_way", "removed", m[1] or "counter")
     if low == "the number of opponents you have":
         return ("cxq", "opponents")
     if low in ("the number of colors of mana spent to cast ~", "the number of colors of mana spent to cast this spell"):
