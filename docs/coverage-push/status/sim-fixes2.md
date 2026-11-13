@@ -32,7 +32,7 @@ against its Oracle text.
 | Icy Prison | unless | wrong | ETB exile always fizzles: no target policy for blink_link_exile; the same bug hits Oblivion Ring, Journey to Nowhere, Fiend Hunter (11 cards; on main via #348) (#358, PR #363) |
 | Rogue Elephant | unless | correct | sacrifices a Forest, else itself |
 | Mold Demon | unless | correct | sacrifices two Swamps |
-| Hecatomb | unless | AI choice | AI never sacrifices four creatures (keeps them; Hecatomb goes); rules path untested by force |
+| Hecatomb | unless | correct (AI choice) | engine pays the four creatures when the player agrees; HeuristicAI declines (checked in #394) |
 | Tyrannize | unless | correct | target pays 7 life at 20, discards at 8 |
 | Urborg Justice | unless/edict | correct | 2 deaths -> opponent sacrifices 2 |
 | Elvish Pioneer | hand->bf | correct | basic land enters tapped |
@@ -42,10 +42,10 @@ against its Oracle text.
 | Songs of the Damned | mana | correct | {B} per creature card in graveyard |
 | Culling Ritual | mana | correct | 3 destroyed -> 3 mana |
 | Mana Geyser | mana | correct | {R} per tapped opposing land |
-| Alabaster Potion | prevent | AI-never-uses | AI at 5 life with WWWWW doesn't cast it |
+| Alabaster Potion | prevent | correct | cast at the opponent's end step (respond_extras): gains X life. My first check only tried the main phase |
 | Samite Censer-Bearer | prevent | correct | prevents 1 to each of my creatures only |
 | Switcheroo | exchange | correct | AI swaps its 1/1 for their 5/5 |
-| Legerdemain | exchange | minor | a pair sharing no type can be chosen; resolves as a no-op (rules: illegal choice) |
+| Legerdemain | exchange | wrong | a pair sharing no type could be chosen, then a no-op (#393, PR #394) |
 | Shifting Borders | exchange | correct | AI takes their dual land for an Island |
 | Daring Thief | exchange | correct | untap trigger swaps sharing artifacts |
 | Invasion of Amonkhet | Siege | correct | mills 3 each, opponent discards, you draw; defense 4, protector set |
@@ -53,15 +53,19 @@ against its Oracle text.
 | Burning Hands | other | wrong | can't target planeswalkers (pre-existing: 45 cards, #359, PR #366); green branch correct |
 | Ray of Enfeeblement | other | correct | -4/-4 white, -4/-1 otherwise |
 
-Result: 38 sampled. 6 wrong (Settle the Score, Blood Curdle, Kayla's Command, Druid's Call, Icy Prison, Burning Hands),
-from 4 causes, all filed and fixed in a PR. 2 AI choices / AI-unused, 1 minor, 3 can't tell. Two of the causes are
+Result: 38 sampled. 7 wrong (Settle the Score, Blood Curdle, Kayla's Command, Druid's Call, Icy Prison, Burning Hands,
+Legerdemain), from 5 causes, all filed and fixed in a PR; 3 can't tell. (Corrected 2026-11-13: Alabaster Potion
+and Hecatomb are correct; Legerdemain was a real bug.) Two of the causes are
 broader than #349: linked exile (on main, 11 cards incl. Oblivion Ring) and creature-or-planeswalker damage
 (pre-existing, ~45 cards).
 
 ## #345 (counter removal), in progress
 - Slice 1, PR #376: "that creature", removed-this-way totals, remove-and-put (+3: Blitz Leech, Decimator Beetle,
   Nexus Mentality). Found #377 (AI lets mandatory debuff triggers fizzle).
-- Slice 2, PR on claude/wfixes2-10: time counters on permanents/suspended cards (+5: Fury Charm, Timebender,
+- Slice 2, PR #381: time counters on permanents/suspended cards (+5: Fury Charm, Timebender,
   Shivan Sand-Mage, Timecrafting, Dust of Moments).
-- Left in the family (1-4 cards per unit): Clockwork creatures (end-of-combat removal + capped upkeep X ability),
-  suspended-zone triggers (Deep-Sea Kraken, Nihilith), damage-prevention-by-counter replacements, Suncleanser.
+- Slice 3, PR #402: Clockwork creatures + end-of-combat for blockers (+5 incl. Kjeldoran Home Guard).
+- Slice 4, PR #409: abilities of suspended cards (+2: Deep-Sea Kraken, Pardic Dragon).
+- Left (1 card per unit): Nihilith (head), Greater Gargadon (exile activation), Curse of the Cabal,
+  damage-prevention-by-counter replacements, Suncleanser.
+- Also: #377 (PR #386), #393 Legerdemain (PR #394), #367 review fixes merged up the stack.
