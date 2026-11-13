@@ -357,8 +357,8 @@ class AbilitiesMixin:
 
     def valid_action_targets(self, p, effects, targets, source=None):
         with self.targeting(source if source is not None else self.target_source):
-            previous = getattr(self, '_choosing_targets', [])
-            self._choosing_targets = targets
+            previous = getattr(self, '_choosing_targets', []), getattr(self, '_choosing_effects', ())
+            self._choosing_targets, self._choosing_effects = targets, effects      # cx_exchange.anchor reads both
             try:
                 if not all(e.target not in TARGETED or (i < len(targets) and
                            self.legal_target(p, e, targets[i])) for i, e in enumerate(effects)):
@@ -367,7 +367,7 @@ class AbilitiesMixin:
                           if e.data.get("distinct") and i < len(targets) and targets[i] is not None]   # different ones
                 return len(chosen) == len(set(chosen))
             finally:
-                self._choosing_targets = previous
+                self._choosing_targets, self._choosing_effects = previous
 
     @atomic_action
     def activate_ability(self, p: Player, perm: Permanent, idx: int, targets=None, *, x=None, counter_choices=None) -> bool:
