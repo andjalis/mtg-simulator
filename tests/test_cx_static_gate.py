@@ -237,3 +237,51 @@ class CharacteristicDefining(Base):
         while self.game.stack:
             self.game.resolve_top()
         self.assertEqual([x.power for x in self.a.battlefield if x.card.name == "Test Goyf"], [2])
+
+
+MOUNTAIN = card("Mountain", "", "Basic Land — Mountain", "({T}: Add {R}.)")
+
+
+class MoreConditions(Base):
+    def test_graveyard_static(self):
+        anger = card("Anger", "{3}{R}", "Creature — Incarnation",
+                     "Haste\nAs long as this card is in your graveyard and you control a Mountain, "
+                     "creatures you control have haste.", 2, 2)
+        self.assertEqual(anger.unsupported, [])
+        bear, theirs = self.perm(BEAR, self.a), self.perm(BEAR, self.b)
+        self.a.graveyard = [anger]
+        self.assertFalse(bear.has("haste"))
+        self.perm(MOUNTAIN, self.a)
+        self.assertTrue(bear.has("haste"))
+        self.assertFalse(theirs.has("haste"))
+        self.a.graveyard = []
+        on_field = self.perm(anger, self.a)            # on the battlefield the line does nothing (only its own haste)
+        self.assertFalse(bear.has("haste"))
+        self.assertTrue(on_field.has("haste"))
+
+    def test_either_subtype_and_host_controller(self):
+        warg = self.perm(card("Warg", "{2}{B}", "Creature — Wolf",
+                              "As long as you control a Goblin or Orc, ~ gets +1/+0.", 2, 2), self.a)
+        self.assertEqual(warg.power, 2)
+        self.perm(card("Orc", "{B}", "Creature — Orc", "", 1, 1), self.a)
+        self.assertEqual(warg.power, 3)
+        destiny = card("Destiny", "{1}{W}", "Enchantment — Aura",
+                       "Enchant creature\nEnchanted creature has shroud as long as its controller controls another "
+                       "creature.")
+        self.assertEqual(destiny.unsupported, [])
+        bear = self.perm(BEAR, self.b)
+        aura = self.perm(destiny, self.a)
+        aura.aura_host = bear
+        bear.auras.append(aura)
+        self.assertFalse(bear.has("shroud"))
+        self.perm(BEAR, self.b)
+        self.assertTrue(bear.has("shroud"))
+
+    def test_any_counter_and_enchanted_or_equipped(self):
+        wall = self.perm(card("Wall", "{1}{B}", "Creature — Wall",
+                              "Defender\nAs long as ~ has a counter on it, it can attack as though it didn't have "
+                              "defender.", 3, 3), self.a)
+        wall.sick = False
+        self.assertFalse(wall.can_attack())
+        wall.counters["-1/-1"] = 1
+        self.assertTrue(wall.can_attack())

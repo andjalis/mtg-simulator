@@ -60,7 +60,40 @@ def _src_flag(m):
     return _code("src_flag", m[1].lower())
 
 
+def _control_either(m):
+    """"you control a Goblin or Orc", "you control another Wolf or Werewolf": the subject and article carry over."""
+    from .cx_condlib import _code, parse
+    a, b = parse(f"you control {m['q']} {m['a']}"), parse(f"you control {m['q']} {m['b']}")
+    return _code("or", a, b) if a and b else ""
+
+
+def _host_ctl(m):
+    """"its controller controls another creature / no other creatures": the Aura's host's controller, besides it."""
+    from .cx_condlib import _code
+    return _code("host_ctl_other", "==" if m[1] == "no other creatures" else ">=", 0 if m[1] == "no other creatures" else 1)
+
+
+def _top_card(m):
+    from .cx_condlib import _code, _filter
+    spec = _filter(m["f"], plural=False)
+    return _code("top_is", spec) if spec and set(spec) <= {"types", "sub", "colors", "legendary"} else ""
+
+
+def _both_in_gy(m):
+    from .cx_condlib import _code, parse
+    a = parse(f"there is an {m['a']} card in your graveyard")
+    b = parse(f"there is a {m['b']} card in your graveyard")
+    return _code("and", a, b) if a and b else ""
+
+
 RULES = [   # (pattern, builder): appended to cx_condlib's phrase rules
+    (r"you control (?P<q>a|an|another) (?P<a>[A-Z][a-z]+) or (?P<b>[A-Z][a-z]+)", _control_either),
+    (r"~ is enchanted or equipped", lambda m: 'lib:["or","lib:[\\"src_enchanted\\"]","lib:[\\"src_equipped\\"]"]'),
+    (r"~ has a counter on it", lambda m: 'lib:["src_any_counter"]'),
+    (r"its controller controls (another creature|no other creatures)", _host_ctl),
+    (r"your life total is greater than or equal to your starting life total", lambda m: 'lib:["res","you","life",">=",20]'),
+    (r"the top card of your library is an? (?P<f>[\w ]+?) card", _top_card),
+    (r"an (?P<a>instant) card and a (?P<b>sorcery) card are in your graveyard", _both_in_gy),
     (r"(?:enchanted|equipped) (?:creature|land) is (?P<f>[\w /-]+)", _host_is),
     (r"~ is (monstrous|renowned)", _src_flag),
     (r"you've lost life this turn", lambda m: 'lib:["lost_life"]'),
@@ -110,6 +143,17 @@ def check(game, p, kind, args, item=None, source=None):
         return _cmp(devotion(p, colors), op, n)
     if kind == "common_color":
         return game is not None and _common(game, *args)
+    if kind == "src_any_counter":
+        return any(n > 0 for n in getattr(source, "counters", {}).values())
+    if kind == "host_ctl_other":
+        host = getattr(source, "aura_host", None) or getattr(source, "attached_to", None)
+        if host is None:
+            return False
+        from .cx_condlib import _cmp
+        return _cmp(sum(x.is_creature and x is not host for x in host.controller.battlefield), *args)
+    if kind == "top_is":
+        from .cx_condlib import _card_ok
+        return bool(p.library) and _card_ok(p.library[-1], args[0])
     if kind == "src_flag":          # "~ is monstrous / renowned": set by the monstrosity / renown actions
         return bool(getattr(source, args[0], False))
     if kind == "lost_life":

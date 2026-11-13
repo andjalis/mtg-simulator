@@ -36,6 +36,11 @@ def _cond(text: str) -> str:
 def _gates(s: str):
     """(condition code or "", body, condition text) readings of a line; codes are "" for no gate."""
     out = []
+    m = re.fullmatch(r"As long as this card is in your graveyard(?: and (.+?))?, (.+)", s)
+    if m:       # Anger: a static that works only from its owner's graveyard
+        from .cx_condlib import as_static
+        code = as_static(m[1]) if m[1] else ""
+        return [("@gy" + code, m[2], m[1] or "")] if code or not m[1] else []
     m = re.fullmatch(r"During your turn, (.+)", s)
     if m:
         out.append((_cond("it's your turn"), m[1], "turn"))
@@ -188,6 +193,8 @@ def parse_line(line: str, st) -> bool:
     from .cards.model import KEYWORDS
     s = _LABEL.sub("", line.strip()[:-1])
     for code, body, cond in _gates(s):
+        graveyard = code.startswith("@gy")
+        code = code[3:] if graveyard else code
         if re.search(r"\b(?:as long as|during|until|this turn|if(?! able)|except|unless)\b", body, re.I):
             continue                    # another condition or a duration left in the static
         body = _it(body, cond if cond != "turn" else "")
@@ -195,7 +202,7 @@ def parse_line(line: str, st) -> bool:
         if scaled is None or scaled[1] is False:
             continue
         body, xq = scaled
-        if not code and xq is None:
+        if not code and xq is None and not graveyard:
             continue                    # neither gate nor scale: not this module's line
         read = _parts(body, st)
         if read is None:
@@ -211,13 +218,17 @@ def parse_line(line: str, st) -> bool:
         if any(k in KEYWORDS for k in kws) and _KW_WORDS.search(cond):
             continue                    # a keyword grant gated on keywords
         scope = {"permanent": "self", "host": "host", "group": "group"}[subj.kind]
+        if graveyard:
+            if scope != "group":
+                continue
+            scope = "gy_group"
         if scope != "self" and code and not code.startswith("lib:") and re.search(r"\bit(?:s|'s)?\b", cond):
             from .cx_condlib import as_static
             code = as_static(cond)      # "it" is the affected permanent: cx_condlib's codes read it as the ref
             if not code:
                 continue
         spec = None
-        if scope == "group":
+        if scope in ("group", "gy_group"):
             spec = subj.group["selector"] if "selector" in subj.group else dict(subj.group)
             if g._stat_conditioned(spec) and has_pt:
                 continue
@@ -263,6 +274,23 @@ def _rows(perm, what: str):
             for code, scope, spec, payload in rows:
                 if scope == "group" and payload[0] == what and matches(game, perm, spec, x.controller, x):
                     yield x, code, payload
+        for c in pl.graveyard:
+            for code, scope, spec, payload in (c.advanced_rules.get("gated", ()) if c.advanced_rules else ()):
+                if scope == "gy_group" and payload[0] == what:
+                    owner = _InGraveyard(pl, c)
+                    if matches(game, perm, spec, pl, owner):
+                        yield owner, code, payload
+
+
+class _InGraveyard:
+    """The source of a graveyard static (Anger): its owner is "you"."""
+    abilities_suppressed = False
+    auras = equipment = ()
+
+    def __init__(self, owner, card):
+        self.controller = self.owner = owner
+        self.card = card
+        self.counters = {}
 
 
 def _on(source, code, perm) -> bool:
