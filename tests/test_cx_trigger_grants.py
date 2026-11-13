@@ -287,6 +287,69 @@ class TokenGrants(unittest.TestCase):
         self.assertEqual(len(small), 2)
         self.assertEqual([t for x in small for t in x.triggers], [])    # the 1/1s have no ability
 
+class GrantedEventTriggers(unittest.TestCase):
+    """Granted triggers on library (ev:) events fire in real combat; "deals combat damage" fires once per step."""
+    def setUp(self):
+        from tests.test_combat_triggers import Scripted
+        self.a = Player("a", [], Scripted())
+        self.b = Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 20
+            p.ai.attack, p.ai.block = (), {}
+
+    def put(self, who, c):
+        perm = self.game.enter_battlefield(who, c)
+        perm.sick = False
+        self.game.settle()
+        return perm
+
+    def fight(self, attackers, blocks=None):
+        self.a.ai.attack = attackers
+        self.b.ai.block = blocks or {}
+        self.game.combat(self.a, self.b)
+        self.game.settle()
+
+    def bloods(self):
+        return sum(x.card.name == "Blood" for x in self.a.battlefield)
+
+    def knife(self, host, n=1):
+        knife = card("Test Knife", "{1}", "Artifact — Equipment", "Equipped creature gets +1/+0 and has \"Whenever "
+                     "this creature deals combat damage, create a Blood token.\"\nEquip {1}")
+        self.assertEqual(knife.unsupported, [])
+        for _ in range(n):
+            self.put(self.a, knife).attached_to = host
+
+    def test_unblocked_and_trample_through_a_blocker_make_one_blood_each(self):
+        trampler = self.put(self.a, card("Test Trampler", "{4}{G}", "Creature — Beast", "Trample", 5, 5))
+        self.knife(trampler)
+        self.fight([trampler])
+        self.assertEqual((self.bloods(), self.b.life), (1, 14))
+        wall = self.put(self.b, card("Test Wall", "{W}", "Creature — Wall", "", 0, 2))
+        trampler.tapped = False
+        self.fight([trampler], {trampler: [wall]})
+        self.assertEqual(self.bloods(), 2)                       # creature and player hit: one trigger, not two
+        self.assertEqual(self.b.life, 10)
+
+    def test_two_sources_are_two_abilities(self):
+        bear = self.put(self.a, BEAR)
+        self.knife(bear, n=2)
+        self.fight([bear])
+        self.assertEqual(self.bloods(), 2)
+
+    def test_that_much_is_all_its_combat_damage(self):
+        lifelinker = card("Test Charm", "{1}{W}", "Enchantment — Aura", "Enchant creature\nEnchanted creature has "
+                          "\"Whenever this creature deals combat damage, you gain that much life.\"")
+        self.assertEqual(lifelinker.unsupported, [])
+        trampler = self.put(self.a, card("Test Trampler", "{4}{G}", "Creature — Beast", "Trample", 5, 5))
+        self.game._aura_host = trampler
+        self.put(self.a, lifelinker)
+        wall = self.put(self.b, card("Test Wall", "{W}", "Creature — Wall", "", 0, 2))
+        life = self.a.life
+        self.fight([trampler], {trampler: [wall]})
+        self.assertEqual(self.a.life, life + 5)                  # 2 to the wall and 3 to the player
+
 
 class Compound(unittest.TestCase):
     """A quoted trigger beside other static modifiers of the same recipient (step 4)."""
