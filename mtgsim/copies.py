@@ -241,9 +241,12 @@ EFFECT_PATTERNS = [
      rf"controls)?{_EXCEPT}", _target_copy),
     (rf"create {_MANY} of (?:~|this equipment|this artifact|this enchantment){_EXCEPT}",
      lambda m: _perm_copy(m, what="self", n=_num(m["n"]) if m["n"] else 1, target="self")),
-    (rf"for each (?P<other>other )?(?P<what>[\w ,-]+?) you control, create a token that's a copy of that "
-     rf"(?:creature|permanent|artifact){_EXCEPT}",
-     lambda m: _perm_copy(m, what=m["what"], n=1, other=bool(m["other"]), who="mine", each=True)),
+    # "target player controls" is read as the opponent (who="opp"): no player is targeted, so it can't be pointed
+    # at yourself and ignores player hexproof. An AI-level simplification (sim-review on #384).
+    (rf"for each (?P<other>other )?(?P<what>[\w ,-]+?) (?P<scope>you control|target opponent controls|target player "
+     rf"controls), create a token that's a copy of that (?:creature|permanent|artifact){_EXCEPT}",
+     lambda m: _perm_copy(m, what=m["what"], n=1, other=bool(m["other"]), each=True,
+                          who="mine" if m["scope"] == "you control" else "opp")),
     (r"you may choose new targets for the cop(?:y|ies)", lambda m: None),
     (r"(?:you may )?copy (?:that spell|it)( twice)?(?:, except (?P<exc>the cop(?:y|ies) .+?))?"
      r"(?: and you may choose new targets for the copy)?",
@@ -452,6 +455,18 @@ def entry_counters(mods: dict, x: int = 0) -> dict:
             if (x if n == "x" else n)}
 
 
+def unfired_notes(types, triggers) -> list:
+    """cards/parse.py hook: a noncreature's "When ~ is put into a graveyard from the battlefield, create a token
+    that's a copy of enchanted creature" is parsed as a dies trigger, which only fires for creatures (#369). The
+    copy itself works; the card counts as simplified, not full, until that trigger fires."""
+    if "Creature" in types:
+        return []
+    if any(t.event == "dies" and any(e.kind == "cx_token" and "copy" in e.data and e.target == "host"
+                                     for e in t.effects) for t in triggers):
+        return ["the graveyard trigger of a noncreature doesn't fire yet (#369)"]
+    return []
+
+
 def clone_entry_counters(card, front, x: int, counters: dict | None) -> dict | None:
     """enter_battlefield hook: a clone that entered as a copy (card is not front) gets the counters of its
     "except it enters with N additional ... counters on it" too, before its enter triggers are checked."""
@@ -471,8 +486,9 @@ def candidates(game, p, eff, source=None) -> list:
     if eff.target == "self":
         return [source] if source is not None else []
     who = d.get("who", "mine")
+    # "for each creature target opponent controls": the player is targeted, not the creatures
     pool = [x for pl in game.players for x in pl.battlefield
-            if (who == "any" or (x.controller is p) == (who == "mine")) and game.targetable(x, p)]
+            if (who == "any" or (x.controller is p) == (who == "mine")) and (d.get("each") or game.targetable(x, p))]
     return [x for x in pool if fits(x.card, d.get("what", "permanent"), x)
             and not (d.get("other") and x is source)]
 

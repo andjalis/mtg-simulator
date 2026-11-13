@@ -424,6 +424,149 @@ class SpellCopies(Base):
             "Whenever you cast an instant spell, copy it, except the copy has \"Draw a card.\""), 1, 1)
         self.assertNotEqual(c.unsupported, [])
 
+@unittest.skipUnless(DB_FILE.exists(), "needs the card database")
+class TokenCopyReferents(Base):
+    """Token copies of "that card", "equipped / enchanted creature", "each creature target opponent controls",
+    and "its controller creates a token that's a copy of it"."""
+
+    @classmethod
+    def setUpClass(cls):
+        from mtgsim.carddb import CardDB
+        cls.db = CardDB()
+
+    def fire_trigger(self, perm, event, context=None):
+        trig = next(t for t in perm.card.triggers if t.event == event)
+        targets = self.game.auto_targets(perm.controller, list(trig.effects))
+        item = StackItem(perm.controller, list(trig.effects), targets, source=perm,
+                         name="trigger", kind="trigger", context=context)
+        self.game.stack.append(item)
+        self.game.run_priority()
+
+    def tokens(self, p=None):
+        return [x for x in (p or self.a).battlefield if x.card.is_token]
+
+    def test_seance_copies_the_exiled_card_as_a_spirit_until_end_step(self):
+        s = self.perm(self.db.get("Séance"))
+        self.a.graveyard.append(DRAGON3)
+        self.fire_trigger(s, "each_upkeep")
+        tok = self.tokens()
+        self.assertEqual([(t.card.name, "Spirit" in t.card.subtypes, "Dragon" in t.card.subtypes) for t in tok],
+                         [(DRAGON3.name, True, True)])
+        self.assertEqual([c.name for c in self.a.exile], [DRAGON3.name])
+        self.assertIn((tok[0], "exile"), self.game.end_cleanup)       # "Exile it at the beginning of the next end step"
+
+    def test_blastoneuron_token_has_haste_and_is_sacrificed(self):
+        self.a.graveyard.append(BEAR)
+        b = self.game.enter_battlefield(self.a, self.db.get("Blastoneuron"))
+        self.game.run_priority()
+        tok = self.tokens()
+        self.assertEqual([t.card.name for t in tok], [BEAR.name])
+        self.assertTrue(tok[0].has("haste"))
+        self.assertFalse("haste" in tok[0].copiable_card.keywords)       # granted, not a copiable value
+        self.assertTrue(any(x[0] is tok[0] for x in self.game.end_cleanup))
+        self.assertIsNotNone(b)
+
+    def test_helm_of_the_host_copies_the_equipped_legend_nonlegendary_with_haste(self):
+        helm = self.perm(self.db.get("Helm of the Host"))
+        legend = self.perm(LEGEND)
+        helm.attached_to = legend
+        self.fire_trigger(helm, "begin_combat")
+        self.game.state_based_actions()
+        tok = self.tokens()
+        self.assertEqual([(t.card.name, t.card.legendary, t.has("haste")) for t in tok], [(LEGEND.name, False, True)])
+        self.assertIn(legend, self.a.battlefield)
+
+    def test_followed_footsteps_copies_the_enchanted_creature(self):
+        ff = self.perm(self.db.get("Followed Footsteps"))
+        dragon = self.perm(DRAGON3, self.b)
+        ff.aura_host = dragon
+        self.fire_trigger(ff, "upkeep")
+        self.assertEqual([t.card.name for t in self.tokens()], [DRAGON3.name])
+
+    def test_penumbra_umbra_is_simplified_until_its_trigger_fires(self):
+        pu = self.db.get("Penumbra Umbra")
+        self.assertEqual(pu.unsupported, [])
+        self.assertEqual(pu.approximations, ["the graveyard trigger of a noncreature doesn't fire yet (#369)"])
+        self.assertEqual(self.db.get("Followed Footsteps").approximations, [])
+
+    def test_penumbra_umbra_copies_its_last_creature_in_black(self):
+        # The trigger itself doesn't fire on a noncreature yet (#369); its effect is resolved here after the
+        # Aura has left, reading "enchanted creature" by last known information.
+        pu = self.perm(self.db.get("Penumbra Umbra"))
+        bear = self.perm(BEAR)
+        pu.aura_host = bear
+        bear.auras.append(pu)
+        self.game.destroy(pu)
+        self.assertIsNone(pu.aura_host)
+        self.fire_trigger(pu, "dies")
+        tok = self.tokens()
+        self.assertEqual([(t.card.name, t.card.colors) for t in tok], [(BEAR.name, frozenset("B"))])
+
+    def test_clone_legion_copies_each_creature_of_the_opponent_even_with_hexproof(self):
+        warded = card("Shy Thing", "{1}{G}", "Creature — Elf", "Hexproof", 1, 1)
+        self.perm(BEAR, self.b)
+        self.perm(warded, self.b)
+        self.perm(DRAGON3)
+        self.resolve(self.db.get("Clone Legion"))
+        self.assertEqual(sorted(t.card.name for t in self.tokens()), sorted([BEAR.name, "Shy Thing"]))
+
+    def test_mirror_universe_intrusion_kicked_copies_each_creature(self):
+        mui = self.db.get("Mirror Universe Intrusion")
+        kicked = next(a for a in mui.alt_costs if a.kind == "kicker")
+        self.perm(BEAR, self.b)
+        self.perm(DRAGON3, self.b)
+        self.resolve(mui, effects=kicked.effects)
+        self.assertEqual(sorted((t.card.name, t.has("menace")) for t in self.tokens()),
+                         sorted([(BEAR.name, True), (DRAGON3.name, True)]))
+
+    def test_dedicated_dollmaker_gives_the_copy_to_the_exiled_permanents_controller(self):
+        legend = self.perm(LEGEND, self.b)
+        self.game.enter_battlefield(self.a, self.db.get("Dedicated Dollmaker"))
+        self.game.run_priority()
+        self.assertNotIn(legend, self.b.battlefield)
+        tok = self.tokens(self.b)
+        self.assertEqual([(t.card.name, t.card.legendary, t.card.types) for t in tok],
+                         [(LEGEND.name, False, frozenset({"Creature", "Artifact"}))])
+        self.assertEqual(self.tokens(self.a), [])
+
+    def test_bramble_sovereign_copy_goes_to_that_creatures_controller(self):
+        self.perm(self.db.get("Bramble Sovereign"))
+        for land in ["Forest"] * 2:
+            self.perm(self.db.get(land))
+        self.game.enter_battlefield(self.a, DRAGON3)
+        self.game.run_priority()
+        self.assertEqual([t.card.name for t in self.tokens()], [DRAGON3.name])
+        self.assertEqual(self.tokens(self.b), [])
+        # the copy of an opponent's creature would be theirs: same rule, other player
+        effects = next(t for t in self.a.battlefield if t.card.name == "Bramble Sovereign").card.triggers[0].effects
+        theirs = self.perm(BEAR, self.b)
+        import dataclasses
+        paid = dataclasses.replace(effects[-1], cond="")         # as if {1}{G} was paid
+        item = StackItem(self.a, [paid], [None], name="trigger", kind="trigger", context=theirs)
+        self.game.stack.append(item)
+        self.game.resolve_top()
+        self.assertEqual([t.card.name for t in self.tokens(self.b)], [BEAR.name])
+
+    def test_god_pharaohs_gift_copies_the_exiled_card_as_a_hasty_zombie(self):
+        gift = self.perm(self.db.get("God-Pharaoh's Gift"))
+        self.a.graveyard.append(DRAGON3)
+        self.fire_trigger(gift, "begin_combat")
+        tok = self.tokens()
+        self.assertEqual([(t.card.name, t.power, t.card.subtypes, t.card.colors, t.has("haste")) for t in tok],
+                         [(DRAGON3.name, 4, frozenset({"Zombie"}), frozenset("B"), True)])
+        self.assertEqual([c.name for c in self.a.exile], [DRAGON3.name])
+
+    def test_hashaton_copies_the_discarded_creature_card_as_a_zombie(self):
+        self.perm(self.db.get("Hashaton, Scarab's Fist"))
+        for land in ["Island"] * 3:
+            self.perm(self.db.get(land))
+        self.a.hand = [DRAGON3]
+        self.game.discard_card(self.a, DRAGON3)
+        self.game.run_priority()
+        tok = self.tokens()
+        self.assertEqual([(t.card.name, t.power, t.card.subtypes, t.card.colors, t.tapped) for t in tok],
+                         [(DRAGON3.name, 4, frozenset({"Zombie"}), frozenset("B"), True)])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -229,6 +229,8 @@ def detach(aura):
     host = aura.aura_host
     if host is not None and aura in host.auras:
         host.auras.remove(aura)
+    if host is not None:
+        aura.last_host = host       # "enchanted creature" in its leaves-the-battlefield trigger (last known information)
     aura.aura_host = None
     if getattr(aura, "controlled_host", None) is not None:
         from .counter_mechanics import expire_source_control

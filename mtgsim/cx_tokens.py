@@ -327,26 +327,43 @@ def parse_create(subject: str, body: str):
 
 
 _COPY = re.compile(r"(?P<n>an?|one|two|three|four|five|x) (?P<tapped>tapped )?(?:token that's a copy|tokens that are copies) "
-                   r"of (?P<what>that creature|that artifact|that permanent|that enchantment|that land|it|~)"
-                   r"(?:,? that(?:'s| are) (?P<state>tapped and attacking|tapped|attacking))?(?:, except (?P<exc>.+))?",
+                   r"of (?P<what>that creature|that artifact|that permanent|that enchantment|that land|that card|it|~|"
+                   r"equipped creature|enchanted creature)"
+                   r"(?:,? that(?:'s| are) (?P<state>tapped and attacking|tapped|attacking))?(?:, except (?P<exc>.+?))?"
+                   r"(?P<flags>(?: COPY[A-Z]+)*)",
                    re.I)
+_COPY_TARGET = {"~": "self", "equipped creature": "host", "enchanted creature": "host"}
 
 
 def parse_copy(who: str, body: str):
-    """"create a token that's a copy of that creature / it [, except ...]": a copy of the object the previous
-    effect acted on (or the trigger's subject), as a cx_token effect whose card is made when it resolves."""
+    """"create a token that's a copy of that creature / that card / it / equipped creature [, except ...]": a copy
+    of the object the previous effect acted on (or the trigger's subject, or the Aura's or Equipment's creature),
+    as a cx_token effect whose card is made when it resolves. "Its controller creates ..." gives it to that
+    object's controller. The folded "That token gains haste. Sacrifice it at the beginning of the next end
+    step." (copies.SUBS flags) become the usual riders, not copiable values."""
     from .cards.model import Effect, NO_MATCH
     from .copies import parse_except
     m = _COPY.fullmatch(body.strip())
-    if m is None or who != "you" or m["n"].lower() == "x":
+    if m is None or who not in ("you", "that_controller") or m["n"].lower() == "x":
+        return NO_MATCH
+    what = m["what"].lower()
+    if who == "that_controller" and what not in ("it", "that creature", "that permanent", "that artifact",
+                                                  "that enchantment", "that land"):
         return NO_MATCH
     mods = parse_except(m["exc"]) if m["exc"] else {}
     if mods is None:
         return NO_MATCH
     state = m["state"] or ""
-    return [Effect("cx_token", _NUMBERS[m["n"].lower()], target="self" if m["what"] == "~" else "prev",
-                   data={"copy": mods, "tapped": bool(m["tapped"]) or "tapped" in state,
-                         "attacking": "attacking" in state, "who": "you"})]
+    data = {"copy": mods, "tapped": bool(m["tapped"]) or "tapped" in state, "attacking": "attacking" in state,
+            "who": who}
+    if what == "that card":
+        data["ref"] = "card"
+    flags = m["flags"] or ""
+    if "COPYHASTE" in flags:
+        data["granted_keywords"] = ("haste",)
+    if "COPYSACEND" in flags:
+        data["leave"] = ("end_step", "sacrifice")
+    return [Effect("cx_token", _NUMBERS[m["n"].lower()], target=_COPY_TARGET.get(what, "prev"), data=data)]
 
 
 def reparse(sentence: str, effects: list) -> list:
