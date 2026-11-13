@@ -167,6 +167,21 @@ class Playing(Base):
         self.a.graveyard = [ISLAND, ISLAND]
         self.assertEqual(theirs.power, 0)
 
+    def test_other_means_the_recipient_or_the_source(self):
+        self.perm(gated("Each Skeleton you control gets +X/+0, where X is the number of other Skeletons you control.",
+                        "Enchantment"), self.a)
+        skel = card("Skel", "{B}", "Creature — Skeleton", "", 1, 1)
+        one, two = self.perm(skel, self.a), self.perm(skel, self.a)
+        self.assertEqual((one.power, two.power), (2, 2))          # each counts the other one, not itself
+        mask = self.perm(gated("Enchant creature\nEnchanted creature gets +2/+2 for each other enchantment on the "
+                               "battlefield.", "Enchantment — Aura"), self.a)
+        bear = self.perm(BEAR, self.a)
+        mask.aura_host = bear
+        bear.auras.append(mask)
+        self.assertEqual(bear.power, 4)                           # the Skeleton enchantment, not the Mask itself
+        self.assertFalse(card("Lord", "{3}", "Creature — Elf", "Other creatures you control get +1/+1 for each other "
+                              "creature you control.", 2, 2).advanced_rules.get("gated"))   # either could be meant
+
     def test_life_total_scale(self):
         shadow = self.perm(card("Shade", "{B}", "Creature — Avatar", "~ gets -X/-X, where X is your life total.",
                                 13, 13), self.a)
