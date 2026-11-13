@@ -1207,7 +1207,7 @@ class HeuristicAI:
         effects = [e for t in card.triggers if t.event == "etb" for e in t.effects] or list(card.etb_effects)
         value = 0.0
         for eff in effects:
-            if eff.kind == "oring":
+            if eff.kind == "oring" or eff.kind == "blink_link_exile" and eff.target != "none":
                 tgt = self.choose_target(game, me, eff, card)
                 value += perm_value(tgt) if tgt is not None else 0.0
             elif eff.kind == "oring_all":   # symmetric: it exiles our own small permanents too
