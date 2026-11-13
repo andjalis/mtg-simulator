@@ -351,5 +351,21 @@ class GrantedEventTriggers(unittest.TestCase):
         self.assertEqual(self.a.life, life + 5)                  # 2 to the wall and 3 to the player
 
 
+    @unittest.skipUnless(os.path.exists(DB), "card database not built")
+    def test_temporarily_granted_event_trigger_fires(self):
+        """#416: Cruel Deceiver gains "Whenever ~ deals damage to a creature, destroy that creature" (ev:deals_damage)."""
+        from mtgsim.carddb import CardDB
+        from mtgsim.engine.kinds import HANDLERS
+        deceiver = CardDB(offline=True).get("Cruel Deceiver")
+        grant = next(e for act in deceiver.activated for e in act.effects if e.kind == "grant_triggers")
+        mine = self.put(self.a, deceiver)
+        bear = self.put(self.b, BEAR)
+        HANDLERS["grant_triggers"](self.game, p=self.a, eff=grant, target=mine, item=None, opp=self.b, prev=None,
+                                   k="grant_triggers")
+        self.game.deal_damage(bear, 1, by=self.a, source=mine)
+        self.game.settle()
+        self.assertNotIn(bear, self.b.battlefield)
+
+
 if __name__ == "__main__":
     unittest.main()

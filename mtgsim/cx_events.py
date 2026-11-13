@@ -614,7 +614,8 @@ def _has_ev(perm) -> bool:
         return True
     # triggers it gained: until end of turn (temp_triggers) or from another permanent's static grant (#338)
     from .cx_trigger_grants import granted
-    return any(t.event.startswith("ev:") for t in list(perm.temp_triggers) + granted(perm))
+    from .cx_statics import linked_triggers
+    return any(t.event.startswith("ev:") for t in list(perm.temp_triggers) + granted(perm) + list(linked_triggers(perm)))
 
 
 def observe(game, p, event, source=None, context=None, subject=None):
