@@ -190,6 +190,9 @@ class StackMixin:
                     continue
                 if trig.filter.startswith("pack:") and len(self.attackers) < int(trig.filter[5:]) + 1:
                     continue
+                if trig.filter.startswith("packpow:") and sum(max(0, x.power) for x in self.attackers
+                                                               if x.controller is perm.controller) < int(trig.filter[8:]):
+                    continue        # Pack tactics: total power attacked with this combat (#419)
                 if trig.filter == "first_attack" and getattr(perm, 'attack_count', (None, 0)) != (self.turn, 1):
                     continue
                 # These attack conditions are checked only when the ability triggers.
