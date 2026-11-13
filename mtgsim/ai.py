@@ -440,7 +440,7 @@ def unblocked_damage(attackers, blockers, chump=True) -> int:
     return total
 
 
-def _sized_inner(game: Game, me: Player, eff: Effect) -> list:
+def _sized_inner(game: Game, me: Player, eff: Effect, who: Player | None = None) -> list:
     """A grammar wrapper's inner effects with the amounts they will resolve with: X paid (the wrapper's amount,
     as plan_spell sized it) and "for each" / "where X is" counts, as cx_group / cx_players apply them."""
     inner = eff.data["effects"]
@@ -448,7 +448,8 @@ def _sized_inner(game: Game, me: Player, eff: Effect) -> list:
     inner = [dataclasses.replace(e, amount=eff.amount, amount2=eff.amount if e.data.get("x2") else e.amount2)
              if e.data.get("x") else e for e in inner]
     if eff.data.get("xq"):
-        n = game.x_quantity(me, eff.data["xq"], None, None)
+        # a subject-relative count ("for each creature they control") is the named player's own
+        n = game.x_quantity(who if eff.data.get("xq_rel") and who is not None else me, eff.data["xq"], None, None)
         inner = [dataclasses.replace(e, amount=e.amount * n, amount2=e.amount2 * n) for e in inner]
     return inner
 
@@ -1069,7 +1070,7 @@ class HeuristicAI:
                 return None, 0.0    # "that player", "its owner": a rider of another effect, valued by that one
         value = 0.0
         for pl in named:
-            for e in _sized_inner(game, me, eff):
+            for e in _sized_inner(game, me, eff, pl):
                 if e.kind == "lose_life" and pl is opp and e.amount >= opp.life:
                     return target, LETHAL
                 value += member_value(game, me, e, pl)[0]
