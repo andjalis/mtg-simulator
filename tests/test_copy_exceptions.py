@@ -236,7 +236,7 @@ class DatabaseCards(Base):
                 self.assertEqual((c.unsupported, c.approximations), ([], []))
 
     def test_still_partial(self):
-        for name in ("Artisan of Forms", "Auton Soldier", "Spark Double", "Machine God's Effigy", "Moritte of the Frost"):
+        for name in ("Volrath, the Shapestealer", "Auton Soldier", "Spark Double", "Machine God's Effigy", "Moritte of the Frost"):
             with self.subTest(card=name):
                 self.assertNotEqual(self.db.get(name).unsupported, [])
 
@@ -267,6 +267,114 @@ class DatabaseCards(Base):
                 self.game.run_priority()
                 copies = [x for x in self.a.battlefield if x.card.name == DRAGON3.name]
                 self.assertEqual(len(copies), 1, self.a.hand)
+
+
+@unittest.skipUnless(DB_FILE.exists(), "needs the card database")
+class BecomeCopy(Base):
+    """"~ becomes a copy of ..., except it has this ability": durations, retained abilities, "that creature"."""
+
+    @classmethod
+    def setUpClass(cls):
+        from mtgsim.carddb import CardDB
+        cls.db = CardDB()
+
+    def trigger(self, perm, index=0, context=None):
+        trig = perm.card.triggers[index]
+        item = StackItem(perm.controller, list(trig.effects), [None] * len(trig.effects), source=perm,
+                         name="trigger", kind="trigger", context=context)
+        self.game.stack.append(item)
+        self.game.resolve_top()
+
+    def cleanup(self):
+        from mtgsim import copies
+        for pl in self.game.players:
+            for x in pl.battlefield:
+                copies.revert(x)
+
+    def test_cryptoplasm_lasting_copy_keeps_its_upkeep_ability(self):
+        cp = self.perm(self.db.get("Cryptoplasm"))
+        self.perm(DRAGON3, self.b)
+        self.trigger(cp)
+        self.assertEqual((cp.card.name, cp.power), (DRAGON3.name, 3))
+        self.assertEqual([t.event for t in cp.card.triggers if t.event == "upkeep"], ["upkeep"])
+        self.cleanup()                                          # no duration: the copy doesn't end at cleanup
+        self.assertEqual(cp.card.name, DRAGON3.name)
+        big = card("Huge Thing", "{6}{G}", "Creature — Beast", "", 7, 7)
+        self.perm(big, self.b)
+        self.trigger(cp, index=[t.event for t in cp.card.triggers].index("upkeep"))     # the retained ability
+        self.assertEqual((cp.card.name, cp.power), ("Huge Thing", 7))
+        self.game.destroy(cp)
+        self.assertEqual([c.name for c in self.a.graveyard], ["Cryptoplasm"])
+
+    def test_thespians_stage_keeps_its_activated_ability(self):
+        stage = self.perm(self.db.get("Thespian's Stage"))
+        vesuva_target = self.perm(self.db.get("Dryad Arbor"), self.b)
+        effects = stage.card.activated[0].effects
+        item = StackItem(self.a, list(effects), [None], source=stage, name="ability", kind="ability")
+        self.game.stack.append(item)
+        self.game.resolve_top()
+        self.assertEqual(stage.card.name, vesuva_target.card.name)
+        self.assertEqual(len(stage.card.activated), len(vesuva_target.card.activated) + 1)
+        self.assertIs(stage.card.activated[-1].effects[0], effects[0])
+
+    def test_hulkling_until_end_of_turn_keeps_name_and_reverts(self):
+        h = self.perm(self.db.get("Hulkling, Young Avenger"))
+        self.perm(card("Huge Thing", "{6}{G}", "Creature — Beast", "Trample", 7, 7), self.b)
+        self.trigger(h)
+        self.assertEqual((h.card.name, h.power, h.toughness, h.has("flying"), h.has("trample")),
+                         ("Hulkling, Young Avenger", 4, 4, True, True))
+        self.assertEqual(h.card.subtypes, frozenset({"Beast"}))
+        self.cleanup()
+        self.assertEqual((h.card.subtypes, h.has("trample")), (frozenset({"Skrull", "Kree", "Hero"}), False))
+
+    def test_crystalline_resonance_lasts_until_your_next_turn(self):
+        from mtgsim.advanced_templates import begin_turn
+        cr = self.perm(self.db.get("Crystalline Resonance"))
+        self.perm(DRAGON3, self.b)
+        self.trigger(cr)
+        self.assertEqual(cr.card.name, DRAGON3.name)
+        self.cleanup()
+        begin_turn(self.game, self.b)
+        self.assertEqual(cr.card.name, DRAGON3.name)            # not over at cleanup or on the opponent's turn
+        begin_turn(self.game, self.a)
+        self.assertEqual(cr.card.name, "Crystalline Resonance")
+
+    def test_unstable_shapeshifter_must_copy_the_entering_creature(self):
+        us = self.perm(self.db.get("Unstable Shapeshifter"))
+        self.perm(DRAGON3, self.b)
+        bear = self.perm(BEAR, self.b)
+        self.trigger(us, context=bear)
+        self.assertEqual(us.card.name, BEAR.name)               # no "may": even a worse creature is copied
+        self.assertTrue(any(t.event == "filtered_enters" for t in us.card.triggers))
+
+    def test_renegade_doppelganger_may_decline_a_worse_creature(self):
+        rd = self.perm(self.db.get("Renegade Doppelganger"))
+        token = self.perm(card("Tiny Thing", "", "Creature — Insect", "", 1, 1))
+        self.trigger(rd, context=token)
+        self.assertEqual(rd.card.name, "Renegade Doppelganger")
+        self.trigger(rd, context=self.perm(DRAGON3))
+        self.assertEqual(rd.card.name, DRAGON3.name)
+
+    def test_cemetery_puca_copies_the_dead_creature_by_last_known_information(self):
+        puca = self.perm(self.db.get("Cemetery Puca"))
+        for _ in range(2):
+            self.perm(self.db.get("Island"))
+        dragon = self.perm(DRAGON3, self.b)
+        self.game.destroy(dragon)
+        self.game.run_priority()
+        self.assertEqual(puca.card.name, DRAGON3.name)
+        self.assertEqual(sum(t.event == "creature_dies" for t in puca.card.triggers), 1)
+
+    def test_ai_activates_a_lasting_become_copy(self):
+        m = self.perm(self.db.get("Mizzium Transreliquat"))
+        self.perm(self.db.get("Wurmcoil Engine"), self.b)
+        for land in ["Island"] * 3 + ["Mountain"] * 3:
+            self.perm(self.db.get(land))
+        self.a.hand = []
+        self.game.step = "main2"
+        self.a.ai.use_abilities(self.game, self.a)
+        self.game.run_priority()
+        self.assertEqual(m.card.name, "Wurmcoil Engine")
 
 
 if __name__ == "__main__":

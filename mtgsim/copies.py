@@ -253,9 +253,10 @@ EFFECT_PATTERNS = [
      r"(?:, except the copy isn't legendary)?(?: and you may choose new targets for the cop(?:y|ies))?",
      lambda m: _effect("copy_next_spell", what=m["a"] or m["b"], max_cmc=int(m["cmc"] or 99),
                        n=2 if m["twice"] else 1)),
-    (r"(?:you may have )?(?:~|it|this creature|this permanent) becomes? a copy of (?P<what>target creature you control|"
-     r"another creature you control|target creature|another target creature|up to one other target creature|"
-     r"another creature)(?P<until> until end of turn)?(?:, except (?P<exc>.+?))?(?P<until2> until end of turn)?",
+    (r"(?P<may>you may have )?(?:~|it|this creature|this permanent|this land|this artifact|this enchantment) "
+     r"becomes? a copy of (?:(?P<tgt>target|another target|another|up to one other target|up to one target) "
+     r"(?P<kind>creature|land|permanent|artifact|enchantment|[A-Z][a-z]+)(?P<mine> you control)?|"
+     r"(?P<that>that creature))(?P<until> until end of turn)?(?:, except (?P<exc>.+?))?(?P<until2> until end of turn)?",
      lambda m: _become(m)),
     (r"the \"legend rule\" doesn't apply to permanents you control this turn", lambda m: None),
     (r"copy target (?:activated or triggered|triggered|activated) ability you control(?: from an? "
@@ -272,13 +273,27 @@ EFFECT_PATTERNS = [
 
 
 def _become(m):
+    """"~ becomes a copy of target creature [until end of turn][, except ...]". Without a duration the copy
+    effect lasts indefinitely; "except it has this ability" keeps the ability that made it a copy (707.9a)."""
     from .cards import NO_MATCH, Effect
-    mods = parse_except(m["exc"]) if m["exc"] else {}
+    exc = m["exc"] or ""
+    this = False
+    if exc:
+        exc, n = re.subn(r"((?:,? and |, )?(?:it|he|she|they) (?:has|have) (?:[a-z ,]+? and )?)this ability$",
+                         lambda x: x[1][:-5] if x[1].endswith(" and ") else "", exc)
+        this = bool(n)
+        exc = re.sub(r"(?:,? and|,)$", "", exc.strip()).strip()
+    mods = parse_except(exc) if exc else {}
     if mods is None:
         return NO_MATCH
-    mine = "you control" in m["what"] or m["what"] == "another creature"
-    return Effect("become_copy", target="none", data={"what": "creature", "who": "mine" if mine else "any",
-                                                       "other": True, "mods": mods})
+    if this:
+        mods["this_ability"] = True
+    kind = m["kind"] or "creature"
+    eot = bool(m["until"] or m["until2"])
+    other = m["that"] is None and m["tgt"] != "target" and m["tgt"] != "up to one target"
+    data = {"what": kind, "who": "mine" if m["mine"] or m["tgt"] == "another" else "any", "other": other,
+            "mods": mods, "eot": eot, "may": bool(m["may"]) or "up to one" in (m["tgt"] or "")}
+    return Effect("become_copy", target="prev" if m["that"] else "none", data=data)
 
 
 def _effect(kind, **data):
@@ -462,9 +477,12 @@ def value(game, me, eff, source=None) -> float:
         v = sum(best) if d.get("each") else best[0] * max(n, 1)
         return v / 2 if d.get("mods", {}).get("sac_end") else v
     if k == "become_copy":
-        if source is None:
-            return -1
-        cands = candidates(game, me, eff, source)
+        if source is None:      # the AI asks without a source: the permanent whose ability this is
+            source = next((x for x in me.battlefield for a in list(x.card.activated) + list(x.card.triggers)
+                           if any(e is eff for e in a.effects)), None)
+        if source is None or eff.target == "prev":
+            return -1 if source is None else 1.0
+        cands = [x for x in candidates(game, me, eff, source) if x is not source]
         gain = max((score(x.card) for x in cands), default=0) - score(source.card)
         return gain if gain > 0 else -1
     if k == "copy_ability":
@@ -494,6 +512,17 @@ def _source_fits(src, kind: str) -> bool:
     if src is None:
         return False
     return not src.card.colors if kind == "colorless" else kind.title() in src.card.types
+
+
+def revert_next_turn(game, p):
+    """advanced_templates.begin_turn: "becomes a copy ... until your next turn" ends as p's turn begins."""
+    keep = []
+    for who, perm, before, copied in getattr(game, "copy_next_turn", []):
+        if who is not p:
+            keep.append((who, perm, before, copied))
+        elif perm in perm.controller.battlefield and perm.copiable_card is copied:
+            perm.card = before
+    game.copy_next_turn = keep
 
 
 def revert(perm):
@@ -546,19 +575,40 @@ def resolve(game, p, eff, target, item=None):
                                        counters=entry_counters(d.get("mods"), getattr(item, "x", 0)) or None)
             game.log(f"creates {n} token cop{'y' if n == 1 else 'ies'} of {perm.card.name}", p)
     elif k == "become_copy":
-        target = source
-        if target is None or target not in target.controller.battlefield:
+        perm = source
+        if perm is None or perm not in perm.controller.battlefield:
             return
-        cands = candidates(game, p, eff, target)
-        best = max(cands, key=lambda x: score(x.card), default=None)
+        if eff.target == "prev":
+            # "that creature": its copiable values as it last existed, even after it died or was exiled
+            from .engine.state import Permanent
+            best = target if isinstance(target, Permanent) and target is not perm else None
+        else:
+            cands = [x for x in candidates(game, p, eff, perm) if x is not perm]
+            best = max(cands, key=lambda x: score(x.card), default=None)
+        if best is not None and d.get("may") and score(best.copiable_card) <= score(perm.card):
+            best = None               # "you may": keep the better current form
         if best is None:
             return
-        if getattr(target, "copy_revert", None) is None:
-            target.copy_revert = target.copiable_card
         mods = d.get("mods", {})
-        target.card = make_copy(best.copiable_card, mods, token=target.copy_revert.is_token,
-                                name=target.copy_revert.name if mods.get("keep_name") else None)
-        game.log(f"{target.copy_revert.name} becomes a copy of {best.card.name} until end of turn", p)
+        own = perm.copy_revert if getattr(perm, "copy_revert", None) is not None else perm.copiable_card
+        name = getattr(perm.front, "name", own.name) if mods.get("keep_name") else None
+        new = make_copy(best.copiable_card, mods, token=own.is_token, name=name)
+        if mods.get("this_ability"):
+            new = _with_ability(new, perm.copiable_card, eff)
+        before = own
+        if d.get("until_next_turn"):
+            perm.copy_revert = None   # reverts when p's next turn begins (revert_next_turn), not at cleanup
+        elif d.get("eot", True):
+            if getattr(perm, "copy_revert", None) is None:
+                perm.copy_revert = perm.copiable_card
+        else:
+            perm.copy_revert = None   # a lasting copy effect: nothing to revert to at cleanup
+        perm.card = new
+        if d.get("until_next_turn"):
+            game.copy_next_turn = [e for e in getattr(game, "copy_next_turn", []) if e[1] is not perm]
+            game.copy_next_turn.append((p, perm, before, perm.copiable_card))
+        game.log(f"{own.name} becomes a copy of {best.card.name}" + (" until end of turn" if d.get("eot", True)
+                                                                      else ""), p)
     elif k == "copy_ability":
         from .engine import StackItem
         found = _abilities(game, p, eff, item)
@@ -589,6 +639,18 @@ def resolve(game, p, eff, target, item=None):
         game.copy_next = [c for c in getattr(game, "copy_next", []) if c[2] == game.turn]
         game.copy_next.append((p, d, game.turn))
         game.log("will copy the next matching spell this turn", p)
+
+
+def _with_ability(new, old, eff):
+    """new plus the triggered or activated ability of old whose effects include eff ("except it has this
+    ability"). The ability becomes part of the copiable values (rule 707.9a)."""
+    for trig in old.triggers:
+        if any(e is eff for e in trig.effects) and not any(t is trig for t in new.triggers):
+            return dataclasses.replace(new, triggers=list(new.triggers) + [trig])
+    for act in old.activated:
+        if any(e is eff for e in act.effects) and not any(a is act for a in new.activated):
+            return dataclasses.replace(new, activated=list(new.activated) + [act])
+    return new
 
 
 def copy_spell(game, p, spell, *, mods=None):
