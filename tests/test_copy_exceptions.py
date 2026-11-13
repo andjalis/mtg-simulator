@@ -376,6 +376,54 @@ class BecomeCopy(Base):
         self.game.run_priority()
         self.assertEqual(m.card.name, "Wurmcoil Engine")
 
+@unittest.skipUnless(DB_FILE.exists(), "needs the card database")
+class SpellCopies(Base):
+    """"copy it, except the copy isn't legendary / is an artifact in addition to its other types"."""
+
+    @classmethod
+    def setUpClass(cls):
+        from mtgsim.carddb import CardDB
+        cls.db = CardDB()
+
+    def lands(self, name, n):
+        for _ in range(n):
+            self.perm(self.db.get(name))
+
+    def test_sixth_doctor_copy_of_a_legend_isnt_legendary(self):
+        self.perm(self.db.get("The Sixth Doctor"))
+        self.lands("Plains", 3)
+        legend = card("Test Legend", "{2}{W}", "Legendary Creature — Human Knight", "", 3, 3)
+        self.a.hand = [legend]
+        self.game.cast(self.a, legend)
+        self.game.run_priority()
+        self.game.state_based_actions()
+        mine = [x for x in self.a.battlefield if x.card.name == "Test Legend"]
+        self.assertEqual(sorted((x.card.is_token, x.card.legendary) for x in mine), [(False, True), (True, False)])
+
+    def test_tawnos_copy_is_an_artifact_token(self):
+        self.perm(self.db.get("Tawnos, the Toymaker"))
+        self.lands("Forest", 3)
+        beast = card("Test Beast", "{2}{G}", "Creature — Beast", "", 3, 3)
+        self.a.hand = [beast]
+        self.game.cast(self.a, beast)
+        self.game.run_priority()
+        beasts = sorted(((x.card.is_token, x.card.types) for x in self.a.battlefield if x.card.name == "Test Beast"),
+                        key=lambda t: t[0])
+        self.assertEqual(beasts, [(False, frozenset({"Creature"})), (True, frozenset({"Creature", "Artifact"}))])
+
+    def test_tawnos_ignores_other_creatures(self):
+        self.perm(self.db.get("Tawnos, the Toymaker"))
+        self.lands("Forest", 2)
+        self.a.hand = [BEAR]
+        self.game.cast(self.a, BEAR)
+        self.game.run_priority()
+        self.assertEqual(sum(x.card.name == BEAR.name for x in self.a.battlefield), 1)
+
+    def test_unknown_spell_copy_exception_stays_a_gap(self):
+        c = card("Odd Copier", "{1}{U}", "Creature — Wizard", (
+            "Whenever you cast an instant spell, copy it, except the copy has \"Draw a card.\""), 1, 1)
+        self.assertNotEqual(c.unsupported, [])
+
 
 if __name__ == "__main__":
     unittest.main()

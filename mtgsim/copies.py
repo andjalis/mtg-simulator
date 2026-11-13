@@ -245,14 +245,15 @@ EFFECT_PATTERNS = [
      rf"(?:creature|permanent|artifact){_EXCEPT}",
      lambda m: _perm_copy(m, what=m["what"], n=1, other=bool(m["other"]), who="mine", each=True)),
     (r"you may choose new targets for the cop(?:y|ies)", lambda m: None),
-    (r"(?:you may )?copy (?:that spell|it)( twice)?(?: and you may choose new targets for the copy)?",
-     lambda m: _effect("copy_spell", of="that", n=2 if m[1] else 1)),
+    (r"(?:you may )?copy (?:that spell|it)( twice)?(?:, except (?P<exc>the cop(?:y|ies) .+?))?"
+     r"(?: and you may choose new targets for the copy)?",
+     lambda m: _spell_copy_that(m)),
     (_SPELL_COPY, _target_spell_copy),
     (r"when you (?:next cast an? (?P<a>instant or sorcery|creature) spell|cast your next (?P<b>instant or sorcery) "
      r"spell(?: with mana value (?P<cmc>\d+) or less)?) this turn, copy (?:that spell|it)(?P<twice> twice)?"
-     r"(?:, except the copy isn't legendary)?(?: and you may choose new targets for the cop(?:y|ies))?",
+     r"(?P<nonlegendary>, except the copy isn't legendary)?(?: and you may choose new targets for the cop(?:y|ies))?",
      lambda m: _effect("copy_next_spell", what=m["a"] or m["b"], max_cmc=int(m["cmc"] or 99),
-                       n=2 if m["twice"] else 1)),
+                       n=2 if m["twice"] else 1, **({"exc": {"legendary": False}} if m["nonlegendary"] else {}))),
     (r"(?P<may>you may have )?(?:~|it|this creature|this permanent|this land|this artifact|this enchantment) "
      r"becomes? a copy of (?:(?P<tgt>target|another target|another|up to one other target|up to one target) "
      r"(?P<kind>creature|land|permanent|artifact|enchantment|[A-Z][a-z]+)(?P<mine> you control)?|"
@@ -294,6 +295,18 @@ def _become(m):
     data = {"what": kind, "who": "mine" if m["mine"] or m["tgt"] == "another" else "any", "other": other,
             "mods": mods, "eot": eot, "may": bool(m["may"]) or "up to one" in (m["tgt"] or "")}
     return Effect("become_copy", target="prev" if m["that"] else "none", data=data)
+
+
+def _spell_copy_that(m):
+    """"copy that spell / it [twice][, except the copy isn't legendary / is an artifact in addition ...]"."""
+    from .cards import NO_MATCH
+    data = {"of": "that", "n": 2 if m[1] else 1}
+    if m["exc"]:
+        exc = parse_except(m["exc"])
+        if exc is None or exc.get("counters") or exc.get("sac_end"):
+            return NO_MATCH
+        data["exc"] = exc
+    return _effect("copy_spell", **data)
 
 
 def _effect(kind, **data):
@@ -634,7 +647,7 @@ def resolve(game, p, eff, target, item=None):
             spell = target if any(target is s for s in spell_targets(game, p, eff)) else None
         if spell is not None and spell in game.stack and spell.card is not None:
             for _ in range(d.get("n", 1)):
-                copy_spell(game, p, spell, mods=d.get("mods"))
+                copy_spell(game, p, spell, mods=d.get("mods"), exc=d.get("exc"))
     elif k == "copy_next_spell":
         game.copy_next = [c for c in getattr(game, "copy_next", []) if c[2] == game.turn]
         game.copy_next.append((p, d, game.turn))
@@ -653,8 +666,10 @@ def _with_ability(new, old, eff):
     return new
 
 
-def copy_spell(game, p, spell, *, mods=None):
-    """Put a copy of spell (a StackItem) on the stack under p's control, with new targets where better."""
+def copy_spell(game, p, spell, *, mods=None, exc=None):
+    """Put a copy of spell (a StackItem) on the stack under p's control, with new targets where better.
+    mods: CardDef fields to set; exc: parse_except changes ("except the copy isn't legendary"), which become
+    copiable values of the copy and of the token a copied permanent spell becomes (rule 707.10)."""
     from .engine import StackItem
     card = spell.card
     if card.is_permanent:
@@ -662,6 +677,8 @@ def copy_spell(game, p, spell, *, mods=None):
         card = dataclasses.replace(face, is_token=True)
     if mods:
         card = dataclasses.replace(card, **mods)
+    if exc:
+        card = dataclasses.replace(card, **exception_changes(card, exc))
     # Keep legal spell targets. Retargeting a copied copy spell to the original copy spell itself
     # would otherwise make the default policy create copies forever.
     preset = [t if e.target == "spell" and game.legal_target(p, e, t) else None
@@ -699,7 +716,7 @@ def on_cast(game, p, item):
     for who, d, turn in pending:
         if who is p and _spell_fits(item.card, d.get("what")) and item.card.cmc <= d.get("max_cmc", 99):
             for _ in range(d.get("n", 1)):
-                copy_spell(game, p, item)
+                copy_spell(game, p, item, exc=d.get("exc"))
         else:
             keep.append((who, d, turn))
     game.copy_next = keep
