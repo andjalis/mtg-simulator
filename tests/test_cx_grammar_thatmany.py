@@ -34,8 +34,6 @@ class Parsing(unittest.TestCase):
                  "that many cards.", "that_player", "bottom_hand"),
                 ("Put any number of cards from your hand on the bottom of your library, then draw that many cards "
                  "plus one.", "you", "bottom_any"),
-                ("Target player exiles all cards from their hand face down, then draws that many cards.", "target",
-                 "exile_hand"),
                 ("Defending player discards all the cards in their hand, then draws that many cards.", "defending",
                  "discard_hand")]:
             got = inner(s)
@@ -58,6 +56,7 @@ class Parsing(unittest.TestCase):
                   "Each player shuffles all cards from their hand and all permanents they own into their library, "
                   "then draws that many cards.",
                   "Discard all the cards in your hand, then draw that many cards, or draw a card.",
+                  "Target player exiles all cards from their hand face down, then draws that many cards.",   # #389
                   "Target player discards their hand, then draws cards equal to the greatest number of cards a player "
                   "discarded this way."):
             self.assertIsNone(parse_sentence(s), s)
@@ -116,13 +115,6 @@ class Behaviour(Base):
                              "many cards."))
         self.assertEqual([c.name for c in self.a.hand], ["Island", "Island"])
         self.assertEqual([c.name for c in self.a.library[:2]], ["Grizzly Bears"] * 2)    # the bottom
-
-    def test_exile_hand(self):
-        self.b.hand = [BEAR] * 2
-        c = self.spell("Target player exiles all cards from their hand face down, then draws that many cards.")
-        self.game.stack.append(StackItem(self.a, list(c.spell_effects), [self.b], card=c, name=c.name))
-        self.game.resolve_top()
-        self.assertEqual((len(self.b.hand), len(self.b.exile)), (2, 2))
 
     def test_any_number_discards_only_dead_cards(self):
         for _ in range(5):
@@ -210,7 +202,7 @@ class RealCards(unittest.TestCase):
         from mtgsim.coverage import card_coverage
         db = CardDB(offline=True)
         for name in ("Barbed Shocker", "Cavalier of Flame", "Collective Defiance", "Colossus of the Blood Age",
-                     "Dark Deal", "Flux", "Heartwarming Redemption", "Incendiary Command", "Induced Amnesia",
+                     "Dark Deal", "Flux", "Heartwarming Redemption", "Incendiary Command",
                      "Robber Fly", "Shocker", "Steal the Show", "Teferi's Puzzle Box", "Whirlpool Warrior",
                      "Winds of Change", "Valakut Awakening", "Credit Voucher", "Windfall", "Whispering Madness",
                      "Jace's Archivist"):
@@ -220,7 +212,8 @@ class RealCards(unittest.TestCase):
         from mtgsim.carddb import CardDB
         from mtgsim.coverage import card_coverage
         db = CardDB(offline=True)
-        for name in ("Sycorax Commander", "Khorvath's Fury", "The Great Aurora", "Fervent Mastery"):
+        for name in ("Sycorax Commander", "Khorvath's Fury", "The Great Aurora", "Fervent Mastery",
+                     "Induced Amnesia"):     # its return trigger can't fire yet (#389)
             self.assertNotEqual(card_coverage(db.get(name)).ignored, [], name)
 
 
