@@ -58,5 +58,10 @@ from 4 causes, all filed and fixed in a PR. 2 AI choices / AI-unused, 1 minor, 3
 broader than #349: linked exile (on main, 11 cards incl. Oblivion Ring) and creature-or-planeswalker damage
 (pre-existing, ~45 cards).
 
-## Next
-- #345 (remove counters from bound objects and suspended cards).
+## #345 (counter removal), in progress
+- Slice 1, PR #376: "that creature", removed-this-way totals, remove-and-put (+3: Blitz Leech, Decimator Beetle,
+  Nexus Mentality). Found #377 (AI lets mandatory debuff triggers fizzle).
+- Slice 2, PR on claude/wfixes2-10: time counters on permanents/suspended cards (+5: Fury Charm, Timebender,
+  Shivan Sand-Mage, Timecrafting, Dust of Moments).
+- Left in the family (1-4 cards per unit): Clockwork creatures (end-of-combat removal + capped upkeep X ability),
+  suspended-zone triggers (Deep-Sea Kraken, Nihilith), damage-prevention-by-counter replacements, Suncleanser.

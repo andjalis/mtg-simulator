@@ -74,6 +74,13 @@ def cx_remove_counters(game, p, eff, target, item=None, **_):
                   sum(taken.values()))
 
 
+@kind("time_counters")
+def time_counters(game, p, eff, target, **_):
+    """Time counters on a permanent or a suspended card, or on all of them (mtgsim/time_counters.py)."""
+    from ...time_counters import apply
+    apply(game, p, eff, target, eff.amount)
+
+
 @kind("cx_move_src")
 def cx_move_src(game, **_):
     """Names the first target of "move a counter from target X onto Y"; the move itself is cx_move_counters."""

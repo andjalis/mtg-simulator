@@ -120,6 +120,9 @@ class TargetsMixin:
         if t == 'graveyard_card':
             from ..advanced_templates import grave_targets
             return grave_targets(self, p, eff)
+        if t == 'perm_or_suspended':          # "target permanent or suspended card" (time_counters)
+            from ..time_counters import legal
+            return legal(self, p, eff)
         if t == 'creature_or_graveyard':
             return creatures + counter_mechanics.graveyard_targets(self)
         if t == "permanent":
