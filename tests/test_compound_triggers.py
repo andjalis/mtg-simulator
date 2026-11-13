@@ -94,6 +94,23 @@ class Behaviour(unittest.TestCase):
         self.settle()
         self.assertEqual(perm.counters.get("charge", 0), 2)
 
+    def test_when_you_sacrifice_it(self):
+        cake = card("Test Cake", "{1}{G}", "Artifact — Food", "When Test Cake enters and when you sacrifice it, "
+                    "create a 1/1 white Rabbit creature token.")
+        self.assertEqual(cake.unsupported, [])
+        self.assertEqual([t.event for t in cake.triggers], ["etb", "ev:sacrificed"])
+        perm = self.game.enter_battlefield(self.a, cake)
+        self.settle()
+        self.assertEqual(len(self.a.creatures), 1)
+        other = Permanent(BEAR, self.a)
+        self.a.battlefield.append(other)
+        self.game.sacrifice(other)                # another permanent: no Rabbit
+        self.settle()
+        self.assertEqual(len(self.a.creatures), 1)
+        self.game.sacrifice(perm)
+        self.settle()
+        self.assertEqual([x.card.name for x in self.a.creatures], ["Rabbit token", "Rabbit token"])
+
 
 @unittest.skipUnless(DB_FILE.exists(), "card database not built")
 class RealCards(unittest.TestCase):
@@ -102,7 +119,7 @@ class RealCards(unittest.TestCase):
         from mtgsim.coverage import card_coverage
         db = CardDB(offline=True)
         for name in ("Up the Beanstalk", "Voice of Resurgence", "Ivora, Insatiable Heir", "Shrine of Burning Rage",
-                     "Bant Sojourners", "Titans' Vanguard"):
+                     "Bant Sojourners", "Titans' Vanguard", "Carrot Cake", "Heaped Harvest"):
             self.assertEqual(card_coverage(db.get(name)).status, "full", name)
         for name in ("Paired Tactician", "MACH-1, Swooping Scoundrel"):
             self.assertEqual(card_coverage(db.get(name)).status, "partial", name)
