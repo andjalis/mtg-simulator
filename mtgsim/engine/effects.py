@@ -278,6 +278,8 @@ class EffectsMixin:
         perm.front.pending_move = (before, "battlefield", controller, perm, intent.applied)
         controller.battlefield.remove(perm)
         self._residual_source_index = None
+        from ..cx_type_grants import changed as type_grants_changed
+        type_grants_changed(self, perm)
         counter_mechanics.expire_source_control(self)
         for effect in self.continuous_effects:
             if effect.source is perm:
