@@ -89,6 +89,18 @@ class Parsing(unittest.TestCase):
                       "and put it onto the battlefield.")
         self.assertEqual((e.data["what"], e.data["mv_x"]), ("a non-Human creature card", "less"))
 
+    def test_mana_value_quantities_and_entry_counters(self):
+        e = self.data("Search your library for a creature card with mana value equal to 1 plus the sacrificed "
+                      "creature's mana value, put that card onto the battlefield with an additional +1/+1 counter on "
+                      "it, then shuffle.")
+        self.assertEqual(e.data["mv_q"], ("equal to", ("arith", 1, "+", ("sac", "mana value"))))
+        self.assertEqual(e.data["plan"], [["battlefield", None, False, 1]])
+        e = self.data("Search your library for a legendary permanent card with mana value less than ~'s power, put "
+                      "that card onto the battlefield, then shuffle.")
+        self.assertEqual(e.data["mv_q"], ("less than", ("stat", "self", "power")))
+        self.assertIsNone(parse("Search your library for a creature card with mana value equal to the number of "
+                                "creatures attacking you, put it onto the battlefield, then shuffle."))
+
     def test_player_scope(self):
         e = self.data("Each player searches their library for up to two basic land cards, puts them onto the "
                       "battlefield, then shuffles.")
@@ -302,6 +314,40 @@ class Resolution(Base):
         self.cast(guidance)
         self.assertEqual([c.name for c in self.a.hand], ["Grizzly Bears"])
 
+    def test_sacrificed_mana_value_plus_one(self):
+        three = card("Three Drop", "{2}{G}", "Creature — Beast", "", 3, 3)
+        neoform = spell("Test Neoform", "{G}{U}", "As an additional cost to cast this spell, sacrifice a creature.\n"
+                        "Search your library for a creature card with mana value equal to 1 plus the sacrificed "
+                        "creature's mana value, put that card onto the battlefield with an additional +1/+1 counter on "
+                        "it, then shuffle.")
+        self.a.library = [OGRE, three, BEAR]
+        effects = list(neoform.spell_effects)
+        item = StackItem(self.a, effects, [None] * len(effects), card=neoform, name=neoform.name)
+        item.sac_stats = (2, 2, 2)                     # a Grizzly Bears paid as the cost
+        self.game.stack.append(item)
+        self.game.resolve_top()
+        self.assertEqual([(x.card.name, x.counters.get("+1/+1", 0)) for x in self.a.battlefield], [("Three Drop", 1)])
+        item = StackItem(self.a, effects, [None] * len(effects), card=neoform, name=neoform.name)
+        item.sac_stats = (5, 5, 5)                     # nothing with mana value 6: finds nothing
+        self.game.stack.append(item)
+        self.game.resolve_top()
+        self.assertEqual(len(self.a.battlefield), 1)
+
+    def test_counters_and_power_quantities(self):
+        yisan = card("Test Bard", "{2}{G}", "Legendary Creature — Human Bard",
+                     "{2}{G}, {T}, Put a verse counter on Test Bard: Search your library for a creature card with mana "
+                     "value equal to the number of verse counters on Test Bard, put it onto the battlefield, then "
+                     "shuffle.", 2, 2)
+        self.assertEqual(yisan.unsupported, [])
+        perm = Permanent(yisan, self.a)
+        perm.counters["verse"] = 1
+        self.a.battlefield.append(perm)
+        self.a.library = [BEAR, GOBLIN, OGRE]
+        eff = yisan.activated[0].effects[-1]
+        self.game.stack.append(StackItem(self.a, [eff], [None], source=perm, name="Test Bard ability", kind="ability"))
+        self.game.resolve_top()
+        self.assertEqual(sorted(x.card.name for x in self.a.battlefield), ["Test Bard", "Test Goblin"])
+
     def test_each_player_searches_their_own_library(self):
         self.a.library = [FOREST] * 3 + [BEAR]
         self.b.library = [PLAINS] * 1 + [BEAR] * 3
@@ -405,6 +451,27 @@ class AIChoice(Base):
         self.a.library = [ISLAND] * 5
         self.assertIsNone(self.a.ai.plan_spell(self.game, self.a, buried))      # nothing to find
 
+    def test_ai_pods_up_only_when_it_finds_an_upgrade(self):
+        pod = card("Test Pod", "{3}{G}", "Artifact", "{1}{G}, {T}, Sacrifice a creature: Search your library for a "
+                   "creature card with mana value equal to 1 plus the sacrificed creature's mana value, put that card "
+                   "onto the battlefield, then shuffle. Activate only as a sorcery.")
+        self.assertEqual(pod.unsupported, [])
+        three = card("Three Drop", "{2}{G}", "Creature — Beast", "", 3, 3)
+        self.game.step = "main2"
+        self.a.library = [OGRE, ISLAND]                       # no mana value 3 creature: keep the Bears
+        self.a.battlefield = [Permanent(FOREST, self.a) for _ in range(4)] + [Permanent(pod, self.a),
+                                                                              Permanent(BEAR, self.a)]
+        for x in self.a.battlefield:
+            x.sick = False
+        self.a.ai.use_abilities(self.game, self.a)
+        self.assertIn("Grizzly Bears", [x.card.name for x in self.a.battlefield])
+        self.a.library = [three, OGRE, ISLAND]
+        self.a.ai.use_abilities(self.game, self.a)
+        while self.game.stack:
+            self.game.resolve_top()
+        self.assertEqual(sorted(x.card.name for x in self.a.creatures), ["Three Drop"])
+        self.assertEqual([c.name for c in self.a.graveyard], ["Grizzly Bears"])
+
     def test_ai_plays_cultivate_in_a_game(self):
         cult = spell("Test Cultivate", "{2}{G}",
                      "Search your library for up to two basic land cards, reveal those cards, put one onto the "
@@ -429,7 +496,9 @@ class RealCards(unittest.TestCase):
                      "Pattern of Rebirth", "Shared Summons", "Three Dreams", "Saheeli Rai", "Deathbellow War Cry",
                      "Reach the Horizon", "Fblthp, Knows the Way", "Begin the Invasion", "Tiamat",
                      "Uncage the Menagerie", "Tale of Momo", "Delivery Moogle", "Elspeth, Undaunted Hero",
-                     "Captain Kirk, Boldly Going", "Verdant Crescendo", "Dina's Guidance"):
+                     "Captain Kirk, Boldly Going", "Verdant Crescendo", "Dina's Guidance", "Birthing Pod",
+                     "Prime Speaker Vannifar", "Neoform", "Enigmatic Incarnation", "Yisan, the Wanderer Bard",
+                     "Sisay, Weatherlight Captain"):
             self.assertEqual(card_coverage(db.get(name)).status, "full", name)
 
 

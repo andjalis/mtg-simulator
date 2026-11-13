@@ -66,7 +66,8 @@ _ADJ = {"basic", "nonbasic", "snow", "legendary", "permanent", "historic", "mult
 
 _PRONOUN = r"(?:it|them|that card|those cards|the card|the cards)"
 _DEST = (r"(?P<where>into (?:your|their) (?P<zone>hand or graveyard|hand|graveyard)|"
-         r"onto the battlefield(?P<tapped> tapped)?)")
+         r"onto the battlefield(?P<tapped> tapped)?"
+         r"(?: with (?P<ctr>an additional|a|one|two|three|four|five) \+1/\+1 counters? on it)?)")
 
 
 def _quantity(text):
@@ -131,9 +132,18 @@ def _filter(text):
             mv_x = "equal"
         else:
             suffix = f" with mana value {v}"
+    m = re.fullmatch(r"(.+?) cards? with mana value (equal to|less than or equal to|less than|greater than) (.+)",
+                     text, re.I)
+    if m and not mv_x and not suffix:     # "equal to 1 plus the sacrificed creature's mana value" (Birthing Pod)
+        from .cards.clauses import _xq
+        spec = _xq(m[3])
+        if spec is None:
+            return None
+        extras["mv_q"] = (m[2].lower(), spec)
+        text = m[1] + " card"
     m = re.fullmatch(r"(.+?) cards? with mana value (\d+|x) or (less|greater)", text, re.I)
     if m:
-        if mv_x or suffix:
+        if mv_x or suffix or "mv_q" in extras:
             return None
         if m[2].lower() == "x":
             mv_x = m[3].lower()
@@ -177,6 +187,9 @@ def _plan(tail, single):
                      t, re.I)
     if m:
         dest = "battlefield" if m["where"].lower().startswith("onto") else m["zone"].lower().replace(" or ", "_or_")
+        if m["ctr"]:         # "with an additional +1/+1 counter on it" (Neoform): entry counters
+            n = 1 if m["ctr"].lower() in ("an additional", "a") else _NUM[m["ctr"].lower()]
+            return [[dest, None, bool(m["tapped"]), n]], "after" if m["shuffle"] else ""
         return [[dest, None, bool(m["tapped"])]], "after" if m["shuffle"] else ""
     m = re.fullmatch(rf"(?:,|,? and) (?:then )?exiles? {_PRONOUN}(?P<shuffle>,? (?:and )?then shuffles?)?", t, re.I)
     if m:
@@ -312,6 +325,9 @@ def resolve(game, p, eff, target, item):
     # X: the spell's or ability's X, or the X a permanent entered with (its enters trigger: Sporocyst, Rocco)
     x = getattr(item, "x", 0) or getattr(getattr(item, "source", None), "entered_x", 0) or 0
 
+    # "mana value equal to 1 plus the sacrificed creature's mana value": the quantity, read once before searching
+    mv_q = (d["mv_q"][0], game.x_quantity(p, d["mv_q"][1], item, None)) if d.get("mv_q") else None
+
     def fits(c):
         if not card_matches(c, d["what"], ref=ref):
             return False
@@ -323,6 +339,10 @@ def resolve(game, p, eff, target, item):
             return c.cmc == x
         if d.get("not_self") and ref is not None and c.name == ref.name:
             return False
+        if mv_q is not None:
+            op, n = mv_q
+            return c.cmc == n if op == "equal to" else c.cmc < n if op == "less than" else \
+                c.cmc > n if op == "greater than" else c.cmc <= n
         return True
 
     for who in _searchers(game, p, eff, target, item):
@@ -330,15 +350,16 @@ def resolve(game, p, eff, target, item):
         yard = who.graveyard if d.get("graveyard") else None     # "search your library and/or graveyard"
         limit = len(lib) + len(yard or ()) if d.get("all") else x if d.get("x_count") else max(0, eff.amount)
         plan = d["plan"]
-        moves = []           # (card, dest, tapped)
+        moves = []           # (card, dest, tapped, +1/+1 counters)
         searched = yard is None      # the library is searched (and shuffled) unless the graveyard alone sufficed
-        for dest, n, tapped in plan:
+        for dest, n, tapped, *more in plan:
+            counters = more[0] if more else 0
             room = limit - len(moves) if n is None else min(n, limit - len(moves))
             for _ in range(max(0, room)):
                 # graveyard copies first: on a tie the pick (max) keeps the first, so the library stays unsearched
                 cands = [c for c in yard or () if fits(c)] + [c for c in lib if fits(c)]
                 if d.get("distinct"):          # "with different names": none named like a card already taken
-                    taken = {card.name for card, _, _ in moves}
+                    taken = {move[0].name for move in moves}
                     cands = [c for c in cands if c.name not in taken]
                 if not cands:
                     searched = True       # came up short: the library was looked through too
@@ -351,10 +372,10 @@ def resolve(game, p, eff, target, item):
                     lib.remove(card)
                     searched = True
                     game.log(f"searches for {card.name}", who)
-                moves.append((card, dest, tapped))
+                moves.append((card, dest, tapped, counters))
         if d.get("shuffle") == "before":
             lib.shuffle(game.rng)
-        for card, dest, tapped in reversed(moves) if plan[0][0] == "top" else moves:
+        for card, dest, tapped, counters in reversed(moves) if plan[0][0] == "top" else moves:
             if dest in ("hand", "hand_or_graveyard"):    # "into your hand or graveyard": the AI keeps it
                 who.hand.append(card)
             elif dest == "graveyard":
@@ -366,7 +387,7 @@ def resolve(game, p, eff, target, item):
             elif dest == "top":
                 lib.append(card)        # the top of the library is the end of the list; the first pick ends on top
             else:
-                game.enter_battlefield(who, card, tapped=tapped)
+                game.enter_battlefield(who, card, tapped=tapped, counters={"+1/+1": counters} if counters else None)
         if not searched:
             continue
         if d.get("shuffle") == "after":
@@ -387,7 +408,7 @@ def value(game, me, eff):
         pool = list(player.library) + (list(player.graveyard) if d.get("graveyard") else [])
         k = min(n, sum(card_matches(c, d["what"]) for c in pool))
         v = 0.0
-        for dest, count, _ in d["plan"]:
+        for dest, count, *_ in d["plan"]:
             take = k if count is None else min(count, k)
             v += worth.get(dest, 0.5) * take
             k -= take
@@ -400,3 +421,26 @@ def value(game, me, eff):
     if who == "each":
         return found(me) - sum(found(x) for x in opps)
     return found(me)
+
+
+def sac_upgrade(game, me, perm, effects, victim):
+    """Whether sacrificing victim to pay for these effects searches up something better (Birthing Pod: "mana
+    value equal to 1 plus the sacrificed creature's mana value"), judged with victim's stats as the sacrifice."""
+    from types import SimpleNamespace
+    from .engine import card_matches
+    from .engine.policy import perm_value
+    from .ai import card_value
+    for e in effects:
+        d = e.data
+        if e.kind != "search_plan" or not d.get("mv_q") or d.get("searcher", "you") != "you" or \
+                d["plan"][0][0] != "battlefield":
+            continue
+        item = SimpleNamespace(source=perm, card=None, x=0, context=None, this_way=None,
+                               gate_sac_stats=(victim.power, victim.toughness, victim.card.cmc))
+        op, n = d["mv_q"][0], game.x_quantity(me, d["mv_q"][1], item, None)
+        ok = {"equal to": lambda v: v == n, "less than": lambda v: v < n, "greater than": lambda v: v > n}.get(
+            op, lambda v: v <= n)
+        found = [c for c in me.library if card_matches(c, d["what"]) and ok(c.cmc)]
+        if found and max(card_value(c) for c in found) > perm_value(victim):
+            return True
+    return False
