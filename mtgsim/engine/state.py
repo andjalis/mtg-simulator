@@ -583,8 +583,9 @@ class Permanent:
                            for kw in ("training", "dethrone") if self.has(kw)
                            for _ in range(max(1, self.keyword_instances(kw)))]
         from ..cx_statics import linked_triggers
+        from ..cx_trigger_grants import granted as trigger_grants
         return (list(mine) + (list(self.animated.triggers) if self.animated else []) + exalted + decayed +
-                attack_counters + list(self.temp_triggers) + linked_triggers(self))
+                attack_counters + list(self.temp_triggers) + linked_triggers(self) + trigger_grants(self))
 
     @property
     def ward(self) -> int:
