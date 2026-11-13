@@ -434,7 +434,7 @@ def _xq(text: str):
     """The quantity in ", where X is ...": a tuple the engine evaluates, or None when it isn't a known one."""
     t = text.strip().rstrip(".")
     tl = t.lower()
-    from ..counting import _singular
+    from ..counting import _singular, known
     if tl.startswith("your devotion to "):
         from ..cx_static_cond import devotion_spec
         return devotion_spec(tl)
@@ -474,7 +474,7 @@ def _xq(text: str):
     if m:
         return ("counters", m[1])
     m = re.fullmatch(r"the number of ([\w -]+?) cards? in your graveyard", t, re.I)
-    if m:
+    if m and known(_singular(m[1])):        # an unknown word would count 0: try the readings below instead
         return ("gy", _singular(m[1]))
     if tl == "the number of cards in your graveyard":
         return ("gy", "")
@@ -488,8 +488,10 @@ def _xq(text: str):
         head, _, last = m[1].rpartition(" ")
         if last[:1].isupper():      # a subtype: "Zombies" -> "Zombie" (the "ies" -> "y" rule is for "Sorceries")
             from ..cx_events import _singular as subtype
-            return ("count", (head + " " if head else "") + subtype(last))
-        return ("count", _singular(m[1]))
+            if known((head + " " if head else "") + subtype(last)):
+                return ("count", (head + " " if head else "") + subtype(last))
+        elif known(_singular(m[1])):
+            return ("count", _singular(m[1]))
     if tl == "the number of creatures in your party":
         return ("party",)
     # "3 minus the number of cards in their hand" (Rackling), "the number of cards in their hand

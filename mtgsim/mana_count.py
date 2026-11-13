@@ -17,7 +17,8 @@ def parse_dynamic(text: str) -> tuple:
     if re.fullmatch(r"an amount of " + _SYM + r" equal to ~'s power", text):
         return ("power",)
     m = re.fullmatch(_SYM + r" for each (\w+) (you control|on the battlefield)", text)
-    if m:                    # one type or subtype word: copies.fits can't test "with defender" or "power 4 or greater"
+    from .counting import known
+    if m and known(m[1]):    # one type or subtype word: copies.fits can't test "with defender" or "power 4 or greater"
         return ("count", m[1], "battlefield" if m[2] == "you control" else "all")
     return ()
 

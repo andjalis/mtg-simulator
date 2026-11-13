@@ -73,8 +73,16 @@ def _add_amount(m):
     return _add_xq(m[2], Effect("add_mana", 1, data={"colors": [m[1]]}))
 
 
+def _known(what):
+    from ..counting import known
+    return known(what)
+
+
 def _per_token(what, power, toughness, desc):
     """``Create a N/N ... creature token for each <what> you control``: amount = the number you control."""
+    from ..counting import known
+    if not known(what):
+        return NO_MATCH          # copies.fits can't count it: the count would be 0
     eff = _token("a", power, toughness, desc)
     eff.data["per"] = {"what": what, "zone": "battlefield"}
     return eff
@@ -165,7 +173,7 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
      lambda m: Effect("discard", 1, target="player", data={"xq": ("sac", m[1])})),
     (r"add an amount of \{([WUBRGC])\} equal to (.+)", _add_amount),
     (r"add \{([WUBRGC])\} for each ([\w' -]+?) you control",
-     lambda m: Effect("add_mana", 1, data={"colors": [m[1]], "xq": ("count", m[2])})),
+     lambda m: Effect("add_mana", 1, data={"colors": [m[1]], "xq": ("count", m[2])}) if _known(m[2]) else NO_MATCH),
     (r"regenerate (each|all) creatures?( you control)?",
      lambda m: Effect("regenerate", 1, target="creatures_mine" if m[2] else "each_creature")),
     (r"draw (a card|one card|(?:\d+|two|three|four|five|six|seven|eight|nine|ten) cards) at the beginning of "
