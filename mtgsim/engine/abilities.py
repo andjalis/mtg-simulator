@@ -237,7 +237,31 @@ class AbilitiesMixin:
             if n:
                 cost = dict(cost, generic=max(0, cost["generic"] - n))
         from ..advanced_templates import activation_cost
-        return activation_cost(self, p, perm, cost)
+        return self._hybrid_split(p, act, activation_cost(self, p, perm, cost))
+
+    def _hybrid_split(self, p: Player, act, cost: dict) -> dict:
+        """Hybrid pips in the printed cost ("{U/R}{U/R}: ...") were parsed as their first colour: pay them with
+        whichever colours p's mana can cover (#418), else leave the cost as parsed."""
+        import itertools
+        import re as _re
+        head = (act.text or "").split(":", 1)[0]
+        pips = _re.findall(r"\{([WUBRG])/([WUBRG])\}", head)
+        if not pips or len(pips) > 6:
+            return cost
+        from .mana import find_payment
+        sources = self.mana_sources(p, spell="ability")
+        base = dict(cost)
+        for first, _ in pips:
+            base[first] = base.get(first, 0) - 1
+        if any(v < 0 for k, v in base.items() if k != "generic" and isinstance(v, int)):
+            return cost                         # the cost was changed in a way that no longer has those pips
+        for picks in itertools.product(*pips):
+            trial = dict(base)
+            for c in picks:
+                trial[c] = trial.get(c, 0) + 1
+            if find_payment(sources, {k: v for k, v in trial.items() if k != "X" and v}) is not None:
+                return {k: v for k, v in trial.items() if v or k == "generic"}
+        return cost
 
     def can_activate(self, p: Player, perm: Permanent, idx: int, *, x=None, counter_choices=None) -> bool:
         """Whether perm's activated ability idx (kind "ability") can be activated now, by p.
