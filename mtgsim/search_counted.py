@@ -103,25 +103,50 @@ def _alternative(words):
     return " ".join(out)
 
 
+_SUFFIXES = (
+    (r" (?:with|that (?:each )?have) different names", "distinct"),     # Shared Summons, Tiamat
+    (r" not named ~", "not_self"),                                          # Tiamat
+    (r" that each have mana value (\d+|x)", "mv_each"),                    # Uncage the Menagerie
+)
+
+
 def _filter(text):
-    """(card_matches description, mv_x) for a noun phrase like "basic land cards", or None."""
+    """(card_matches description, mv_x, extras) for a noun phrase like "basic land cards", or None. extras:
+    distinct (different names), not_self (not named ~), mv_x "equal" (each has mana value X)."""
     mv_x = None
     suffix = ""
+    extras = {}
+    stripped = True
+    while stripped:          # trailing qualifiers, in any order ("... not named ~ that each have different names")
+        stripped = False
+        for rx, key in _SUFFIXES:
+            m = re.search(rx + "$", text, re.I)
+            if m and key not in extras:
+                extras[key] = m[1].lower() if m.groups() else True
+                text, stripped = text[:m.start()], True
+    if "mv_each" in extras:
+        v = extras.pop("mv_each")
+        if v == "x":
+            mv_x = "equal"
+        else:
+            suffix = f" with mana value {v}"
     m = re.fullmatch(r"(.+?) cards? with mana value (\d+|x) or (less|greater)", text, re.I)
     if m:
+        if mv_x or suffix:
+            return None
         if m[2].lower() == "x":
             mv_x = m[3].lower()
         else:
             suffix = f" with mana value {m[2]} or {m[3].lower()}"
         text = m[1] + " card"
     if re.fullmatch(r"cards? named ~", text, re.I):
-        return "a card named ~", None
+        return ("a card named ~", None, extras) if not extras and not suffix and not mv_x else None
     m = re.fullmatch(r"(.*?) ?cards?", text, re.I)
     if not m:
         return None
     body = m[1]
     if not body:
-        return "a card" + suffix, mv_x
+        return "a card" + suffix, mv_x, extras
     # "basic land cards and/or Gate cards": an inner "cards" separates two alternatives
     body = re.sub(r" cards? (?=(?:and/or|or) )", " ", body, flags=re.I)
     pieces = [p for p in re.split(r",? (?:and/or|or) |, ", body, flags=re.I) if p]
@@ -131,7 +156,7 @@ def _filter(text):
         if alt is None:
             return None
         alts.append(alt)
-    return " or ".join(f"{'an' if a[0] in 'aeiou' else 'a'} {a} card{suffix}" for a in alts), mv_x
+    return " or ".join(f"{'an' if a[0] in 'aeiou' else 'a'} {a} card{suffix}" for a in alts), mv_x, extras
 
 
 def _plan(tail, single):
@@ -188,9 +213,7 @@ def parse(text):
     what = _filter(noun)
     if what is None:
         return None
-    desc, mv_x = what
-    if mv_x and x:
-        return None          # one X can't be both the count and the mana value here
+    desc, mv_x, extras = what
     single = count == 1 and not upto and not every and not x
     planned = _plan(split[2], single)
     if planned is None:
@@ -201,13 +224,14 @@ def parse(text):
         return None          # "exile any number of": which cards is a real choice the AI doesn't model
     data = {"what": desc, "searcher": searcher, "upto": upto, "all": every, "plan": plan, "shuffle": shuffle}
     if xq:
-        if not x:
-            return None
+        if not x or mv_x:
+            return None      # the where-X is the count; "mana value X" would read the spell's X instead
         count, data["xq"] = 1, xq          # Game.resolve multiplies amount by the quantity
     elif x:
         data["x_count"] = True     # not data["x"]: Game.resolve reads that from the stack item only
     if mv_x:
         data["mv_x"] = mv_x
+    data.update(extras)
     target = "none"
     if searcher == "target":
         target, data["side"] = "player", "mine"
@@ -281,6 +305,10 @@ def resolve(game, p, eff, target, item):
             return c.cmc <= x
         if d.get("mv_x") == "greater":
             return c.cmc >= x
+        if d.get("mv_x") == "equal":
+            return c.cmc == x
+        if d.get("not_self") and ref is not None and c.name == ref.name:
+            return False
         return True
 
     for who in _searchers(game, p, eff, target, item):
@@ -292,6 +320,9 @@ def resolve(game, p, eff, target, item):
             room = limit - len(moves) if n is None else min(n, limit - len(moves))
             for _ in range(max(0, room)):
                 cands = [c for c in lib if fits(c)]
+                if d.get("distinct"):          # "with different names": none named like a card already taken
+                    taken = {card.name for card, _, _ in moves}
+                    cands = [c for c in cands if c.name not in taken]
                 if not cands:
                     break
                 card = _pick(game, who, cands, dest if dest != "top" else "hand")

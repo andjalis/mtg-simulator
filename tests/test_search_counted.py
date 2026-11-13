@@ -58,6 +58,20 @@ class Parsing(unittest.TestCase):
                       "put one onto the battlefield tapped and the other into your hand, then shuffle.")
         self.assertEqual(e.data["what"], "a basic land card or a Gate card")
 
+    def test_name_and_mana_value_qualifiers(self):
+        e = self.data("Search your library for up to two creature cards with different names, reveal them, put them "
+                      "into your hand, then shuffle.")
+        self.assertEqual((e.data["what"], e.data["distinct"]), ("a creature card", True))
+        e = self.data("Search your library for up to five Dragon cards not named ~ that each have different names, "
+                      "reveal them, put them into your hand, then shuffle.")
+        self.assertEqual((e.data["what"], e.data["distinct"], e.data["not_self"]), ("a Dragon card", True, True))
+        e = self.data("Search your library for up to X creature cards with different names that each have mana "
+                      "value X, reveal them, put them into your hand, then shuffle.")
+        self.assertEqual((e.data["mv_x"], e.data["distinct"], e.data["x_count"]), ("equal", True, True))
+        e = self.data("Search your library for up to two basic land cards and/or Town cards with different names, put "
+                      "them onto the battlefield tapped, then shuffle.")
+        self.assertEqual(e.data["what"], "a basic land card or a Town card")
+
     def test_player_scope(self):
         e = self.data("Each player searches their library for up to two basic land cards, puts them onto the "
                       "battlefield, then shuffles.")
@@ -75,8 +89,7 @@ class Parsing(unittest.TestCase):
     def test_refusals(self):
         for text in (
                 "Search your library for a nonlegendary card, put that card into your graveyard, then shuffle.",
-                "Search your library for up to two creature cards with different names, reveal them, put them "
-                "into your hand, then shuffle.",
+                "Search your library for a card named ~ with different names, put it into your hand, then shuffle.",
                 "Search your library for a creature card, reveal it, put it into your hand or graveyard, then shuffle.",
                 "Search your library for any number of land cards, exile them, then shuffle.",
                 "Search your library for a basic land card that doesn't share a land type with a land you control, "
@@ -88,8 +101,10 @@ class Parsing(unittest.TestCase):
                 "Search your library for a card, put that card into your hand, discard a card at random, then shuffle.",
                 "Search your library for a land card with a basic land type, put it onto the battlefield tapped, "
                 "then shuffle.",
-                "Search your library for up to X basic land cards with mana value X or less, put them onto the "
-                "battlefield, then shuffle."):
+                "Search your library for up to X basic land cards, where X is the number of lands you control, "
+                "with mana value X or less, put them onto the battlefield, then shuffle.",
+                "Search your library for up to two creature cards that each have mana value 2 with mana value 3 "
+                "or less, put them into your hand, then shuffle."):
             self.assertIsNone(parse(text), text)
 
 
@@ -187,6 +202,41 @@ class Resolution(Base):
         self.assertEqual(len(self.a.battlefield), 6)
         self.assertIsNone(parse("Search your library for up to X basic land cards, where X is the number of "
                                 "creatures attacking you, put them onto the battlefield tapped, then shuffle."))
+
+    def test_different_names(self):
+        summons = spell("Test Summons", "{4}{G}", "Search your library for up to three creature cards with different "
+                                                 "names, reveal them, put them into your hand, then shuffle.")
+        self.a.library = [OGRE, OGRE, OGRE, BEAR, BEAR, ISLAND]
+        self.cast(summons)
+        self.assertEqual(sorted(c.name for c in self.a.hand), ["Big Ogre", "Grizzly Bears"])
+        self.assertEqual(sorted(c.name for c in self.a.library), ["Big Ogre", "Big Ogre", "Grizzly Bears", "Island"])
+        lands = spell("Test Horizon", "{3}{G}", "Search your library for up to two basic land cards with different "
+                                               "names, put them onto the battlefield tapped, then shuffle.")
+        self.a.library = [FOREST] * 4
+        self.cast(lands)
+        self.assertEqual([x.card.name for x in self.a.battlefield], ["Forest"])
+
+    def test_not_named_self_and_each_mana_value_x(self):
+        tiamat = card("Test Tiamat", "{2}{W}{U}{B}{R}{G}", "Legendary Creature — Dragon God",
+                      "Flying\nWhen Test Tiamat enters, search your library for up to two Dragon cards not named "
+                      "Test Tiamat that each have different names, reveal them, put them into your hand, then shuffle.",
+                      7, 7)
+        self.assertEqual(tiamat.unsupported, [])
+        dragon = card("Test Drake", "{1}{R}", "Creature — Dragon", "Flying", 2, 2)
+        self.a.library = [tiamat, dragon, dragon]
+        perm = Permanent(tiamat, self.a)
+        self.a.battlefield.append(perm)
+        self.game.stack.append(StackItem(self.a, list(tiamat.triggers[0].effects), [None], source=perm,
+                                         name="Test Tiamat trigger", kind="trigger"))
+        self.game.resolve_top()
+        self.assertEqual([c.name for c in self.a.hand], ["Test Drake"])
+        self.assertEqual(sorted(c.name for c in self.a.library), ["Test Drake", "Test Tiamat"])
+        menagerie = spell("Test Menagerie", "{X}{G}{G}", "Search your library for up to X creature cards with "
+                                                         "different names that each have mana value X, reveal them, "
+                                                         "put them into your hand, then shuffle.")
+        self.a.hand, self.a.library = [], [BEAR, GOBLIN, OGRE, card("Two Drop", "{1}{W}", "Creature — Human", "", 2, 1)]
+        self.cast(menagerie, x=2)
+        self.assertEqual(sorted(c.name for c in self.a.hand), ["Grizzly Bears", "Two Drop"])
 
     def test_each_player_searches_their_own_library(self):
         self.a.library = [FOREST] * 3 + [BEAR]
@@ -312,7 +362,9 @@ class RealCards(unittest.TestCase):
         for name in ("Behold the Beyond", "Buried Alive", "Cultivate", "Kodama's Reach", "Vampiric Tutor",
                      "Avatar of Growth", "Field of Ruin", "Fertilid", "Green Sun's Zenith", "Diabolic Revelation",
                      "Entomb", "Worldly Tutor", "Spoils of Victory", "Increasing Ambition", "Old-Growth Dryads",
-                     "Pattern of Rebirth"):
+                     "Pattern of Rebirth", "Shared Summons", "Three Dreams", "Saheeli Rai", "Deathbellow War Cry",
+                     "Reach the Horizon", "Fblthp, Knows the Way", "Begin the Invasion", "Tiamat",
+                     "Uncage the Menagerie"):
             self.assertEqual(card_coverage(db.get(name)).status, "full", name)
 
 
