@@ -91,6 +91,9 @@ class StackMixin:
                                                       amount=amount if amount is not None else 0))
         self._dispatch_trigger_event(p, event, source, context, subject, targeter)
         cx_events.observe(self, p, event, source, context, subject)
+        if self.__dict__.get("cx_turn_watchers"):     # "Whenever ... this turn" set up by an effect (#399)
+            from .. import cx_trig_turn
+            cx_trig_turn.observe(self, p, event, source, context, subject)
         if event == "dies" and self.cx_watchers:
             from .. import cx_trig_watch
             cx_trig_watch.observe(self, p, event, source)

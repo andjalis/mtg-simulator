@@ -239,3 +239,5 @@ _EFFECT_PATTERNS += _hand_put.EFFECT_PATTERNS
 _SUBS += _hand_put.SUBS
 from .. import cx_exchange as _cx_exchange
 _EFFECT_PATTERNS += _cx_exchange.EFFECT_PATTERNS
+from .. import cx_trig_turn as _cx_trig_turn
+_EFFECT_PATTERNS += _cx_trig_turn.EFFECT_PATTERNS
