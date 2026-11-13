@@ -235,9 +235,7 @@ class StackMixin:
                 if event == "dies":
                     effects = [dataclasses.replace(e, data=dict(e.data, counters=dict(perm.counters)))
                                if e.kind == "inherit_counters" else e for e in effects]
-                if getattr(self, "event_amount", None) is not None and any(e.data.get("that_much") for e in effects):
-                    effects = [dataclasses.replace(e, amount=self.event_amount) if e.data.get("that_much") else e
-                               for e in effects]
+                effects = self._that_much(effects)
                 if event == "any_cast" and getattr(self, "casting_item", None) is not None:
                     effects = [dataclasses.replace(e, data=dict(e.data, cast_spell=self.casting_item))
                                if e.data.get("xq", ("",))[0] == "spell" or e.target == "that_controller"
@@ -264,19 +262,30 @@ class StackMixin:
                                    targets=self._that_spell_targets(ref_item, effects), modes=trig.modes,
                                    intervening_if=trig.intervening_if)
         if source is not None:      # Role tokens, Auras and Equipment give their creature triggers
+            # "its controller" in "Whenever enchanted creature ..., its controller ..." is the creature's (#361)
+            ctx = lambda effects: source if any(e.target == "that_controller" or e.data.get("who") == "that_controller"
+                                                for e in effects) else context
             for equipment in source.equipment:
                 for trig in equipment.card.host_triggers:
                     if trig.event == event:
-                        self.queue_trigger(equipment.controller, trig.effects, source, equipment.card.name, context)
+                        self.queue_trigger(equipment.controller, self._that_much(trig.effects), source,
+                                           equipment.card.name, ctx(trig.effects))
             for aura in list(source.auras):
                 for trig in aura.card.host_triggers:
                     if trig.event == event:
-                        self.queue_trigger(aura.controller, trig.effects, source, aura.card.name, context)
+                        self.queue_trigger(aura.controller, self._that_much(trig.effects), source, aura.card.name,
+                                           ctx(trig.effects))
         if source is None:      # abilities that trigger from the graveyard (Bloodghast)
             for card in list(p.graveyard):
                 for trig in card.gy_triggers:
                     if trig.event == event:
                         self.queue_trigger(p, trig.effects, None, card.name, context=card)
+
+    def _that_much(self, effects: list) -> list:
+        """"That much"/"that many": the amount of the event being fired, copied into the trigger as it queues."""
+        if getattr(self, "event_amount", None) is None or not any(e.data.get("that_much") for e in effects):
+            return effects
+        return [dataclasses.replace(e, amount=self.event_amount) if e.data.get("that_much") else e for e in effects]
 
     def flush_triggers(self) -> bool:
         """Put pending triggers on the stack, active player's first (so they resolve last)."""
