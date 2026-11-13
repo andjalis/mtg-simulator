@@ -345,12 +345,13 @@ def _parse_effects(text: str, opts: bool = False):
             from .. import cx_grammar
             if parts:
                 effects += parts
-            elif not parse_otherwise(s, effects) and not cx_grammar.parse_fallback(s, effects):   # "Otherwise, ..."; grammar
+            elif not parse_otherwise(s, effects) and not cx_grammar.parse_fallback(s, effects) \
+                    and not _then_if(s, effects) and not _suffix_if(s, effects):    # "Otherwise, ..."; grammar; #397
                 unmatched.append(sentence.strip())
         effects[first:] = _cx_tokens.reparse(s, effects[first:])
         if paid:
             for eff in effects[first:]:
-                eff.cond = eff.cond or "paid"
+                eff.cond = _and_cond("paid", eff.cond)      # "If you do, B if C": both (#397)
             if reflexive:        # "When you do, <target ...>": the payoff's target is chosen after the action
                 from ..cx_trig_reflex import late_target
                 effects[first:] = [late_target(e) for e in effects[first:]]
@@ -361,6 +362,53 @@ def _parse_effects(text: str, opts: bool = False):
     unmatched += resolve_instead(effects)      # "If C, B instead": the effects B replaces get "not C"
     mark(effects, pending)
     return effects, unmatched
+
+
+def _and_cond(outer: str, inner: str) -> str:
+    """Both conditions: an effect that already has one keeps it, joined to the new one."""
+    if not inner or inner == outer:
+        return outer
+    from ..cx_condlib import _code
+    return _code("and", outer, inner)
+
+
+def _then_if(s: str, effects: list) -> bool:
+    """"Then if C, B" read as "If C, B" when nothing else took it. Each effect checks C as it resolves, so C
+    sees the state after the effects before it."""
+    if not re.match(r"then if [^,]+, ", s, re.I):
+        return False
+    new, bad = _parse_effects(s[5].upper() + s[6:] + ".")
+    if bad or not new:
+        return False
+    effects += new
+    return True
+
+
+def _suffix_if(s: str, effects: list) -> bool:
+    """"Counter target instant spell if it's blue" / "Draw a card if you control an artifact" / "Then create a
+    Treasure token if you weren't the starting player": B with a trailing "if C" that _if_cond knows. C is
+    checked when B resolves. "it" in C must be B's own target; "that creature" is the previous object.
+    "instead if", "only if", "if able" and "if you do" are other wordings and are left alone."""
+    for m in reversed(list(re.finditer(r" if ", s, re.I))):
+        body, phrase = s[:m.start()].strip(), s[m.end():].strip()
+        if not body or re.search(r"\b(?:instead|only|even|as)$", body, re.I) or \
+                re.match(r"(?:able|you do|you don't|possible)\b", phrase, re.I):
+            continue
+        cond = _if_cond(phrase)
+        if not cond:
+            continue
+        body = re.sub(r"^then ", "", body, flags=re.I)
+        new, bad = _parse_effects(body[0].upper() + body[1:] + ".")
+        if bad or not new:
+            continue
+        if re.match(r"(?:it|its|it's|they|their|they're)\b", phrase, re.I) and \
+                not re.fullmatch(r"it's (?:not )?(?:your|an opponent's|their) turn", phrase, re.I) and \
+                not ('"prev_is"' in cond and any(e.target not in ("none", "self", "prev", "my_creatures", "")
+                                                  for e in new)):
+            continue      # "it" must be B's own target, read as such ("if it was kicked" is not the source's)
+        effects += [dataclasses.replace(e, cond=_and_cond(cond, e.cond)) for e in new]
+        return True
+    return False
 
 
 _OTHER_SUBJECT = re.compile(r"(?:target (?:player|opponent)|that (?:player|opponent)|each (?:opponent|player)|"

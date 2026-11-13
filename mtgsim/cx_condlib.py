@@ -107,7 +107,8 @@ def _word_spec(word: str, spec: dict, plural: bool = True) -> bool:
     elif low.rstrip("s") in _BASICS or low in _BASICS:
         spec.setdefault("sub", []).append(low.rstrip("s").capitalize() if low != "plains" else "Plains")
     elif word[:1].isupper() and word.isalpha():
-        sub = word if not plural or not word.endswith("s") or word.endswith("ss") else word[:-1]
+        sub = word if not plural or not word.endswith("s") or word.endswith("ss") else \
+            word[:-2] if re.search(r"(?:ch|sh|x|ss|z)es$", word) else word[:-1]     # Leeches, Foxes, Witches
         spec.setdefault("sub", []).append(sub)
     else:
         return False
@@ -947,6 +948,8 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         spec = args[0]
         if prev is None and not isinstance(obj, Permanent):
             prev = getattr(item, "exiled_card", None)
+        if not isinstance(prev, Permanent) and getattr(prev, "is_spell", False) and getattr(prev, "card", None):
+            prev, obj = prev.card, None     # a target spell ("counter target spell if it's blue"): its card
         if not isinstance(obj, Permanent):
             # a card target ("return target creature card ... If it's an Angel"): its printed characteristics
             return prev is not None and hasattr(prev, "types") and not spec.get("state") and _card_ok(prev, spec)
