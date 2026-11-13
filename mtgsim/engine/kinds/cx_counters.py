@@ -81,6 +81,14 @@ def time_counters(game, p, eff, target, **_):
     apply(game, p, eff, target, eff.amount)
 
 
+@kind("cap_counters")
+def cap_counters(game, p, eff, item=None, **_):
+    """"Put up to X <kind> counters on ~ ... can't cause the total ... to be greater than N" (capped_counters)."""
+    from ...capped_counters import apply
+    if item is not None and isinstance(item.source, Permanent):
+        apply(game, p, eff, item.source)
+
+
 @kind("cx_move_src")
 def cx_move_src(game, **_):
     """Names the first target of "move a counter from target X onto Y"; the move itself is cx_move_counters."""

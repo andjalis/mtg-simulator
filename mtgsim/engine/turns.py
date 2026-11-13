@@ -482,3 +482,5 @@ class TurnsMixin:
         storage.upkeep(self, p)
         alt_casts.upkeep(self, p)
         self.fire(p, "upkeep")
+        from .. import capped_counters
+        capped_counters.upkeep(self, p)

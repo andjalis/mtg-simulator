@@ -353,6 +353,10 @@ class AbilitiesMixin:
             if costs.ability_plan(self, p, perm, act, cost) is None:
                 break
             best = n
+        from ..capped_counters import x_limit
+        cap = x_limit(perm, act)            # "can't cause the total ... to be greater than N": no X beyond that
+        if best is not None and cap is not None:
+            best = min(best, cap) or None
         return best
 
     def valid_action_targets(self, p, effects, targets, source=None):
