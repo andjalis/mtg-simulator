@@ -34,7 +34,7 @@ def parse(sentence: str):
     got = cx_events.compile_head(head)
     if got is None:
         return None
-    body = m["body"]
+    body = m["body"].replace(" ;; ", ". ")      # the later sentences of the same ability (SUBS below)
     if re.search(r"~", body):
         return None              # the spell isn't on the battlefield to be "~"
     with _cx_tokens.event_amount_ctx(got[0]):
@@ -50,6 +50,13 @@ def _build(m):
     out = parse(m[0])
     return NO_MATCH if out is None else out
 
+
+# Sentences after "Whenever <event> this turn, A." belong to that trigger ("... create two tokens that are tapped
+# and attacking. Sacrifice them at the beginning of the next end step."): keep them in one sentence, joined by " ;; ".
+SUBS = [
+    (re.compile(r"(\bWhen(?:ever)? [^.;]+? this turn, [^.]+)\.((?: [A-Z][^.]*\.)+)\s*$"),
+     lambda m: m[1] + "".join(" ;; " + x.strip().rstrip(".") for x in re.findall(r" [A-Z][^.]*\.", m[2])) + "."),
+]
 
 EFFECT_PATTERNS = [
     (r"When(?:ever)? .+? this turn, .+", _build),
@@ -104,5 +111,10 @@ def observe(game, p, event, source=None, context=None, subject=None):
             w["batch"]["stamp"] = stamp
         if w["once"]:
             watchers.remove(w)
-        game.queue_trigger(w["controller"], w["effects"], None, w["host"].card.name, ctx)
+        effects = w["effects"]
+        amount = getattr(game, "event_amount", None)
+        if amount is not None and any(e.data.get("that_much") for e in effects):     # "loses that much life"
+            import dataclasses
+            effects = [dataclasses.replace(e, amount=amount) if e.data.get("that_much") else e for e in effects]
+        game.queue_trigger(w["controller"], effects, None, w["host"].card.name, ctx)
 

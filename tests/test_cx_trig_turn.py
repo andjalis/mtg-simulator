@@ -113,6 +113,20 @@ class Behaviour(unittest.TestCase):
         self.settle()
         self.assertEqual(len(self.a.battlefield), 2)
 
+    def test_that_much(self):
+        self.cast(spell("Whenever you gain life this turn, each opponent loses that much life.", cost="{W}"))
+        self.game.change_life(self.a, 3, "test")
+        self.settle()
+        self.assertEqual(self.b.life, 17)
+
+    def test_later_sentences_belong_to_the_trigger(self):
+        raid = spell("Whenever you attack this turn, create two 1/1 red Warrior creature tokens that are tapped and "
+                     "attacking. Sacrifice them at the beginning of the next end step.", cost="{W}")
+        self.assertEqual([e.kind for e in raid.spell_effects], ["cx_turn_trigger"])
+        inner = raid.spell_effects[0].data["effects"]
+        self.assertEqual(inner[-1].data.get("leave"), ("end_step", "sacrifice"))
+        self.assertIsNone(parse("Whenever you attack this turn, draw a card ;; Frob them."))
+
     def test_ai_casts_it(self):
         glimpse = spell("Whenever you cast a creature spell this turn, draw a card.", cost="{G}", types="Sorcery")
         self.a.battlefield = [Permanent(FOREST, self.a)]
