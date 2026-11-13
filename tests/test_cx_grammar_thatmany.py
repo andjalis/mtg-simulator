@@ -202,7 +202,7 @@ class RealCards(unittest.TestCase):
         db = CardDB(offline=True)
         for name in ("Barbed Shocker", "Cavalier of Flame", "Collective Defiance", "Colossus of the Blood Age",
                      "Dark Deal", "Flux", "Heartwarming Redemption", "Incendiary Command",
-                     "Robber Fly", "Shocker", "Steal the Show", "Teferi's Puzzle Box", "Whirlpool Warrior",
+                     "Robber Fly", "Shocker", "Teferi's Puzzle Box", "Whirlpool Warrior",
                      "Winds of Change", "Valakut Awakening", "Credit Voucher", "Windfall", "Whispering Madness",
                      "Jace's Archivist"):
             self.assertEqual(card_coverage(db.get(name)).ignored, [], name)
@@ -212,7 +212,8 @@ class RealCards(unittest.TestCase):
         from mtgsim.coverage import card_coverage
         db = CardDB(offline=True)
         for name in ("Sycorax Commander", "Khorvath's Fury", "The Great Aurora", "Fervent Mastery",
-                     "Induced Amnesia"):     # its return trigger can't fire yet (#389)
+                     "Induced Amnesia",       # its return trigger can't fire yet (#389)
+                     "Steal the Show"):       # "instant and sorcery cards" count refused since #385
             self.assertNotEqual(card_coverage(db.get(name)).ignored, [], name)
 
 
