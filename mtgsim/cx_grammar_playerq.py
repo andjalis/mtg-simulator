@@ -5,6 +5,7 @@
     Each player draws a card for each creature card in their graveyard.                 (Nature's Resurgence)
     Defending player loses 1 life for each card in their graveyard.                     (Guiltfeeder)
     Target opponent loses life equal to the number of creatures they control.           (Villainous Wrath)
+    Each opponent loses life equal to the life that player lost this turn.               (Archfiend of Despair)
 
 "They" / "their" is the verb's subject, not the caster: the quantity is read with "you" in their place (the
 shared ", where X is ..." quantities: cards.clauses._xq and cx_grammar_quantity) and marked ``xq_rel``, so
@@ -18,15 +19,16 @@ import re
 
 from .cx_grammar import rider
 
-_THEY = re.compile(r"\b(?:they|their|them)\b", re.I)
-_SWAP = [(r"\bthey control\b", "you control"), (r"\bthey own\b", "you own"), (r"\btheir (graveyard|hand|library)\b",
-                                                                              r"your \1")]
+_THEY = re.compile(r"\b(?:they|their|them|that player)\b", re.I)
+# "that player" in the quantity is the subject too: "each opponent loses life equal to the life that player lost"
+_SWAP = [(r"\bthey control\b", "you control"), (r"\bthey own\b", "you own"),
+         (r"\btheir (graveyard|hand|library)\b", r"your \1"), (r"\b(?:they|that player) lost\b", "you lost")]
 # the noun phrase ends before these words: "basic land TYPE among lands", "creature CARD in your graveyard"
 _STOPS = {"among", "in", "you", "that", "with", "of", "on", "from", "named", "attached", "your"}
 # x_quantity kinds that read only the player they are evaluated for (engine/costs.py, cx_grammar_quantity)
 _REL_KINDS = {"count", "gy", "domain", "colors_among", "colors_among_lands", "named_lands", "tapped_any", "hand",
               "defenders", "greatest", "greatest_perm"}
-_REL_CXQ = {"perms", "devotion", "total", "greatest", "cards", "card_types"}
+_REL_CXQ = {"perms", "devotion", "total", "greatest", "cards", "card_types", "life_lost"}
 _OWN_ZONES = {"your_gy", "your_hand", "your_library", "your_exile"}
 _BODY = {("loses", "life"): "loses 1 life", ("gains", "life"): "gains 1 life", ("draws", "cards"): "draws a card",
          ("discards", "cards"): "discards a card", ("mills", "cards"): "mills a card"}

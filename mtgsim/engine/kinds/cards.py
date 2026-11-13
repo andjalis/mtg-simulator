@@ -6,7 +6,7 @@ import re
 from ... import learning, milling
 from ...cards import make_token
 from ..policy import choose_basic, choose_tutor, perm_value
-from ..state import Permanent, Player, card_matches, is_basic_land
+from ..state import Permanent, Player, card_matches, is_basic_land, note_this_way
 from . import NO_SBA, kind
 
 
@@ -20,7 +20,15 @@ def draw(game, p, eff, opp, item=None, target=None, **_):
         n = (getattr(src, "entered_x", 0) or getattr(item, "x", 0)) // 2
     if eff.data.get("x_count"):
         n = sum(card_matches(x.card, "a " + eff.data["x_count"]) for x in p.battlefield)
+    before = drawn_this_turn(game, who)
     game.draw(who, n)
+    # "... for each card drawn this way": the cards actually drawn (a replaced draw isn't one), CR 608.2c
+    note_this_way(item, "drawn", ["card"], drawn_this_turn(game, who) - before)
+
+
+def drawn_this_turn(game, who) -> int:
+    drawn = getattr(who, "drawn_turn", (None, 0))
+    return drawn[1] if drawn[0] == game.turn else 0
 
 
 @kind("draw_delayed")
