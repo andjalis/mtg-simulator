@@ -6,6 +6,7 @@
     Defending player loses 1 life for each card in their graveyard.                     (Guiltfeeder)
     Target opponent loses life equal to the number of creatures they control.           (Villainous Wrath)
     Each opponent loses life equal to the life that player lost this turn.               (Archfiend of Despair)
+    ~ deals damage to each player equal to the number of lands they control.            (Acidic Soil)
 
 "They" / "their" is the verb's subject, not the caster: the quantity is read with "you" in their place (the
 shared ", where X is ..." quantities: cards.clauses._xq and cx_grammar_quantity) and marked ``xq_rel``, so
@@ -17,17 +18,18 @@ from __future__ import annotations
 
 import re
 
-from .cx_grammar import rider
+from .cx_grammar import Part, rider, verb
 
 _THEY = re.compile(r"\b(?:they|their|them|that player)\b", re.I)
 # "that player" in the quantity is the subject too: "each opponent loses life equal to the life that player lost"
-_SWAP = [(r"\bthey control\b", "you control"), (r"\bthey own\b", "you own"),
-         (r"\btheir (graveyard|hand|library)\b", r"your \1"), (r"\b(?:they|that player) lost\b", "you lost")]
+_SWAP = [(r"\b(?:they|that player) controls?\b", "you control"), (r"\b(?:they|that player) owns?\b", "you own"),
+         (r"\b(?:their|that player's) (graveyard|hand|library)\b", r"your \1"),
+         (r"\b(?:they|that player) lost\b", "you lost")]
 # the noun phrase ends before these words: "basic land TYPE among lands", "creature CARD in your graveyard"
 _STOPS = {"among", "in", "you", "that", "with", "of", "on", "from", "named", "attached", "your"}
 # x_quantity kinds that read only the player they are evaluated for (engine/costs.py, cx_grammar_quantity)
 _REL_KINDS = {"count", "gy", "domain", "colors_among", "colors_among_lands", "named_lands", "tapped_any", "hand",
-              "defenders", "greatest", "greatest_perm"}
+              "defenders", "greatest", "greatest_perm", "selector"}
 _REL_CXQ = {"perms", "devotion", "total", "greatest", "cards", "card_types", "life_lost"}
 _OWN_ZONES = {"your_gy", "your_hand", "your_library", "your_exile"}
 _BODY = {("loses", "life"): "loses 1 life", ("gains", "life"): "gains 1 life", ("draws", "cards"): "draws a card",
@@ -53,8 +55,14 @@ def _plural(word: str) -> str:
 def _spec_ok(spec) -> bool:
     if not isinstance(spec, tuple) or not spec:
         return False
-    if spec[0] == "count":
-        return isinstance(spec[1], str) and not re.search(r"\b(?:among|in|of|with|that|from)\b", spec[1])
+    if spec[0] == "count":      # counted by copies.fits, which reads only these words (#428): anything else is 0
+        from .copies import _TYPES
+        known = {"permanent", "token", "nontoken", "nonland", "noncreature", "nonartifact", "creature", "basic",
+                 "other"} | set(_TYPES)
+        return isinstance(spec[1], str) and all(w.lower() in known or w[:1].isupper() or w.lower().startswith("non-")
+                                                for w in spec[1].split())
+    if spec[0] == "cxq" and spec[1] in ("twice", "half"):
+        return _spec_ok(spec[2])
     if spec[0] == "cxq":
         return spec[1] in _REL_CXQ and (spec[1] not in ("cards", "card_types") or spec[2] in _OWN_ZONES)
     return spec[0] in _REL_KINDS
@@ -103,3 +111,29 @@ def equal_to_theirs(m, inner):
     if body is None or q is None:
         return None
     return _relative(inner(f"{m['subj']} {body}"), _quantity(q))
+
+
+# ---------------------------------------------------------------- damage
+
+@verb(r"deals? damage to (?P<obj>.+?) equal to (?P<q>.+)", heads=("deal", "deals"), subjects=("permanent", "host"))
+def damage_equal_to_theirs(m, clause):
+    """"~ deals damage to each player equal to the number of lands they control" (Acidic Soil), "... to that player
+    equal to the number of Swamps they control" (Karma): each named player is dealt their own count, every count read
+    before any damage. Only untargeted players: a chosen player stays with the damage family's own targeting."""
+    from .cx_grammar_damage import _object, _source
+    source = _source(clause)
+    if clause.duration or source is None:
+        return None
+    written = re.fullmatch(r"deals? damage to (?P<obj>.+?) equal to (?P<q>.+)", clause.text, re.I)   # subtypes' case
+    obj = _object(m["obj"], source)
+    q = _swap(written["q"]) if written else None
+    if obj is None or obj.kind != "player" or obj.who in ("target", "you") or q is None:
+        return None
+    spec = _quantity(q)
+    if spec is None:
+        return None
+    from .cards.model import Effect
+    from .cx_grammar import Subject
+    # inside cx_players (one player at a time, target = that player) so the AI values it per named player
+    inner = Effect("cx_damage", 0, target="that_controller", data={"source": source, "side": "theirs", "xq_each": spec})
+    return [Part("cx_players", obj=Subject("player", who=obj.who), data={"effects": [inner]})]

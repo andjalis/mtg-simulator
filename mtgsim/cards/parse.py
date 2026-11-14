@@ -381,6 +381,8 @@ def _split_compound(s: str):
             continue    # "... unless you sacrifice a land and pay 2 life": one compound cost, never two effects (#330)
         if re.search(r", where X is ", pieces[1], re.I) and re.search(r"\bX\b", pieces[0]):
             return None     # "draw X cards, then put ... X or less ..., where X is ...": the X binds both parts
+        if re.search(r"\bany number of\b", pieces[0], re.I) and re.search(r"\bthat many\b", pieces[1], re.I):
+            return None     # "sacrifice any number of ..., then draw that many cards": the count binds both parts
         out = []
         for piece in pieces:
             effs, bad = _parse_effects(piece[0].upper() + piece[1:] + ".")

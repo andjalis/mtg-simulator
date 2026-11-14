@@ -135,6 +135,8 @@ def _damage_value(game, me, eff, obj):
     from .engine.state import Permanent
     mine = getattr(obj, "controller", obj) is me
     sign = -1.0 if mine else 1.0
+    if eff.data.get("xq_each") and not isinstance(obj, Permanent):     # each named player's own count
+        eff = dataclasses.replace(eff, amount=game.x_quantity(obj, eff.data["xq_each"], None, None))
     if isinstance(obj, Permanent):
         if not (obj.is_creature or obj.is_planeswalker):
             return 0.0

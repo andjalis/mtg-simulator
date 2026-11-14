@@ -82,6 +82,17 @@ def put_away_then_draw(m, inner):
     return effects
 
 
+@rider(r"sacrifice any number of (?P<sac>[\w ,/-]+)")
+def sacrifice_any(m, inner):
+    """"Sacrifice any number of artifacts, creatures, and/or lands." on its own (Reprocess, Renounce): the count is
+    recorded "this way" for the next sentence's "for each permanent sacrificed this way"."""
+    spec = _sac_spec(m["sac"])
+    if spec is None:
+        return None
+    return assemble(Subject("player", who="you", text=""),
+                    [Part("cx_away", data={"mode": "sac_any", "sac": spec, "alone": True})])
+
+
 @rider(r"(?P<head>each player discards their hand), then draws cards equal to the greatest number of cards a player "
        r"discarded this way")
 def windfall(m, inner):
@@ -161,7 +172,13 @@ def _action(head: str):
 
 @ai_value("cx_away")
 def _away_value(game, me, eff, obj):
-    return 0.0          # valued with the draw that follows it
+    """Valued with the draw that follows it, except a sacrifice standing alone ("Sacrifice any number of ... ."):
+    every such card rewards each permanent "sacrificed this way" in its next sentence, so it is worth what the
+    conservative choice would give up (nothing when it would give up nothing)."""
+    if not eff.data.get("alone"):
+        return 0.0
+    from .engine.kinds.cx_grammar_thatmany import sac_candidates, choose_sac_any
+    return (1.0 if obj is me else -1.0) * len(choose_sac_any(game, obj, sac_candidates(game, obj, eff.data["sac"], None)))
 
 
 @ai_value("cx_discard_drawn")

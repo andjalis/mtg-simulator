@@ -121,6 +121,12 @@ or the attachment's bonus (host). `grant` with `data["keyword"]`, and `cx_temp_k
 a static keyword grant. Any other kind makes the line unsupported. A static verb must accept
 `clause.duration == "static"` explicitly.
 
+A static line may carry a **condition gate** ("As long as C, ...", "... as long as C", "During your turn, ...") or
+a **quantity scale** ("gets +1/+1 for each Q", "gets +X/+0, where X is Q"). `cx_static_gate` peels them off, reads
+the rest with the same static verbs and records the result in `advanced_rules["gated"]`; `static_rules` returns a
+gated `cx_static` value only while its condition holds, so family rules need nothing extra. See
+`docs/coverage-push/plans/static-gate.md`.
+
 Shared helpers in `cx_grammar`: `keyword_list(text)` (known keywords or None) and `count(word)` ("a"/"two"/"3" →
 int or None). `cx_grammar_color.colors(text)` reads colour words.
 

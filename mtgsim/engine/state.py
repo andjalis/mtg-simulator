@@ -110,6 +110,13 @@ def protected_from(perm, source) -> bool:
 
 class Permanent:
     def __setattr__(self, name, value):
+        if name in ("attached_to", "aura_host") and "card" in self.__dict__:
+            old = self.__dict__.get(name)
+            object.__setattr__(self, name, value)
+            if old is not value:            # an Aura / Equipment adding a creature type moved (cx_type_grants)
+                from ..cx_type_grants import refresh_attach
+                refresh_attach(self, old, value)
+            return
         if name == "card":
             object.__setattr__(self, "_card", value)
             object.__setattr__(self, "_characteristic_cache", None)
