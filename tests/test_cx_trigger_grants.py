@@ -47,9 +47,9 @@ class Parsing(unittest.TestCase):
                 # the quoted body isn't matched by the trigger parser
                 ("Enchant creature\nEnchanted creature has \"Whenever this creature attacks, frobnicate.\"",
                  "Enchantment — Aura"),
-                # a type addition beside the grant: the static parsers don't add host/group types
+                # a card-type addition beside the grant: cx_type_grants adds creature types only
                 ("Equip {1}\nEquipped creature gets +1/+0, has \"Whenever this creature attacks, you gain 1 life,\" "
-                 "and is a Wizard in addition to its other types.", "Artifact — Equipment"),
+                 "and is an artifact in addition to its other types.", "Artifact — Equipment"),
                 # an Equipment that hurts its holder: the AI only equips its own creatures
                 ("Equipped creature has \"At the beginning of your upkeep, you lose 1 life.\"\nEquip {1}",
                  "Artifact — Equipment"),
