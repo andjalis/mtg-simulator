@@ -17,7 +17,8 @@ COLOR_WORDS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"
 PROTECTION = {c: f"protection from {w}" for w, c in COLOR_WORDS.items()}
 TARGETED = ("graveyard_card", "permanent", "any", "creature", "creature_pw", "creature_mine", "nonland_perm", "land", "artifact", "artifact_enchantment",
             "artifact_land",
-            "player", "spell", "creature_or_graveyard", "perm_or_suspended")
+            "player", "spell", "creature_or_graveyard", "perm_or_suspended",
+            "multi")       # a list of objects: "any number of target ..." (cx_multi_target)
 
 
 class PlayerCounters(dict):

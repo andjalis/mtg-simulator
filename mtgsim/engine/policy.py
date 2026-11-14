@@ -81,6 +81,9 @@ def damage_amount(game: Game, eff: Effect, source=None) -> int:
 
 def default_choose_target(game: Game, me: Player, eff: Effect):
     """A reasonable target for eff, respecting hexproof and targeting restrictions."""
+    if eff.target == "multi":
+        from ..cx_multi_target import choose_list
+        return choose_list(game, me, eff)
     opp = game.opponent(me)
     legal = game.legal_targets(me, eff)
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
