@@ -183,7 +183,30 @@ def _remove(m):
 
 EFFECT_PATTERNS.append(
     (rf"(you may )?remove (a|an|one|two|three|four|five|up to (?:one|two|three|four|five)|\d+|all) "
-     rf"(?:({_COUNTER}) )?(counters?)(?: of that kind)? from (it|~|target [^,]+|all [^,]+|each [^,]+)", _remove))
+     rf"(?:({_COUNTER}) )?(counters?)(?: of that kind)? from (it|~|that creature|that permanent|target [^,]+|all [^,]+|each [^,]+)",
+     _remove))
+
+
+def _remove_and_put(m):
+    """"Remove a -1/-1 counter from target creature you control and put a -1/-1 counter on up to one target creature
+    defending player controls" (Decimator Beetle): the two clauses, each read on its own. With two players the
+    defending player of the attack that triggers it is the opponent."""
+    from .cards.model import NO_MATCH
+    from .cards.parse import _parse_effects
+    out = []
+    for half in (m[1], m[2]):
+        half = re.sub(r"\bdefending player controls\b", "an opponent controls", half, flags=re.I)
+        effects, bad = _parse_effects(half[0].upper() + half[1:] + ".")
+        if bad or not effects:
+            return NO_MATCH
+        out += effects
+    return out
+
+
+EFFECT_PATTERNS.append(
+    (r"(remove (?:a|an|one|two|three|\d+) [^.]+? counters? from (?:target|another target) [^.]+?) and "
+     r"(put (?:a|an|one|two|three|\d+) [^.]+? counters? on (?:up to one )?(?:another )?target [^.]+)",
+     _remove_and_put))
 
 
 def _move(m):

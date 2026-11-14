@@ -259,8 +259,8 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
     # Crippling Fear: approximated as "your creatures share the chosen type".
     (r"creatures that aren't of the chosen type get -(\d+)/-(\d+) until end of turn",
      lambda m: Effect("debuff", int(m[1]), int(m[2]), target="opp_creatures")),
-    (r"target creature(?: an opponent controls| you don't control)? gets -(\d+)/-(\d+) until end of turn",
-     lambda m: Effect("debuff_one", int(m[1]), int(m[2]), target="creature")),
+    (r"target creature( an opponent controls| you don't control)? gets -(\d+)/-(\d+) until end of turn",
+     lambda m: Effect("debuff_one", int(m[2]), int(m[3]), target="creature", filter="opp" if m[1] else "")),
     (r"(?:all creatures|each creature) gets? -(\d+)/-(\d+) until end of turn",
      lambda m: Effect("debuff", int(m[1]), int(m[2]), target="each_creature")),
     (r"choose a creature type", lambda m: None),

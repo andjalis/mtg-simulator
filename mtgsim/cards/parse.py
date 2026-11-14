@@ -940,6 +940,8 @@ def _parse_trigger_line(line: str):
             flt = "saddled"
         if events == ("attacks",) and pat.startswith("Whenever ~ and at least"):
             flt = f"pack:{_num(m[1])}"
+        if events == ("attacks",) and pat.startswith("Pack tactics"):
+            flt = f"packpow:{m[1]}"         # "if you attacked with creatures with total power N or greater" (#419)
         if events == ("creature_dies",) and "another creature" in pat:
             flt = "other"
         if events == ("any_cast",) and "an opponent casts" in line:
