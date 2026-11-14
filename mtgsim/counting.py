@@ -110,6 +110,10 @@ def count(game, p, per: dict, source=None) -> int:
         return source.counters.get(what[4:], 0) if source is not None and hasattr(source, "counters") else 0
     other = what.startswith("other ")
     what = what[6:] if other else what
+    if what.startswith("attacking ") and per["zone"] != "graveyard":    # "the number of attacking creatures" (#420)
+        attackers = getattr(game, "attackers", None) or ()
+        return sum(1 for x in attackers if (per["zone"] == "all" or x.controller is p) and not (other and x is source)
+                   and fits(x.card, what[10:], x))
     if per["zone"] == "graveyard":
         return sum(fits(c, what) for c in p.graveyard)
     if per["zone"] == "all":          # "on the battlefield": every player's permanents

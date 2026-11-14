@@ -52,6 +52,7 @@ class CombatMixin:
             name = source.card.name if isinstance(source, Permanent) else "delayed"
             self.queue_trigger(controller, effects, source, f"{name}: at end of combat", context=subject)
         self.fire(p, "end_combat")
+        self.fire(self.opponent(p), "end_combat")     # "At end of combat" is every combat's: a blocker's too
         self.run_priority(until_empty_stack=False)
         self.last_attackers = self.attackers
         self.attackers = []   # nobody is attacking after combat (#244); blocks stay for inspection

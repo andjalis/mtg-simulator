@@ -69,9 +69,28 @@ def cx_remove_counters(game, p, eff, target, item=None, **_):
             target.counters[name] = have - take
             left -= take
             taken[name] = taken.get(name, 0) + take
-    from ..state import note_this_way
-    for name, n in taken.items():               # "for each ... counter removed this way"
-        note_this_way(item, "removed", [name], n)
+    from ..state import note_this_way           # "for each [<kind>] counter removed this way": the total (#345)
+    note_this_way(item, "removed", list(taken) + ["counter"] if len(taken) == 1 else ["counter"],
+                  sum(taken.values()))
+
+
+@kind("time_counters")
+def time_counters(game, p, eff, target, **_):
+    """Time counters on a permanent or a suspended card, or on all of them (mtgsim/time_counters.py)."""
+    from ...time_counters import apply
+    if eff.data.get("suspended_self"):        # the suspended card's own ability: that very card, if still suspended
+        target = eff.data.get("card_ref")
+        if target is None:
+            return
+    apply(game, p, eff, target, eff.amount)
+
+
+@kind("cap_counters")
+def cap_counters(game, p, eff, item=None, **_):
+    """"Put up to X <kind> counters on ~ ... can't cause the total ... to be greater than N" (capped_counters)."""
+    from ...capped_counters import apply
+    if item is not None and isinstance(item.source, Permanent):
+        apply(game, p, eff, item.source)
 
 
 @kind("cx_move_src")

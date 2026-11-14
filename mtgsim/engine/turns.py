@@ -30,6 +30,11 @@ class TurnsMixin:
         self.rule_events.emit(rules_events.RulesEvent("zone_change", actor, source=source,
             subject=card, before=before, destination=destination.name,
             source_zone=origin, reason=getattr(self, "_zone_reason", "move"), replacements=replacements))
+        if destination.name == "graveyard" and not getattr(card, "is_token", False):
+            owner = getattr(destination, "owner", None)    # "Whenever a card is put into an opponent's graveyard"
+            for pl in self.players:
+                if pl is not owner:          # triggers only: the move itself is the zone_change event above
+                    self._dispatch_trigger_event(pl, "opp_card_to_gy", None, card)
 
     def next_effect_timestamp(self):
         self.effect_clock += 1
@@ -482,3 +487,5 @@ class TurnsMixin:
         storage.upkeep(self, p)
         alt_casts.upkeep(self, p)
         self.fire(p, "upkeep")
+        from .. import capped_counters
+        capped_counters.upkeep(self, p)

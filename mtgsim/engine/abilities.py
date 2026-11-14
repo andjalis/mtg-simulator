@@ -237,7 +237,31 @@ class AbilitiesMixin:
             if n:
                 cost = dict(cost, generic=max(0, cost["generic"] - n))
         from ..advanced_templates import activation_cost
-        return activation_cost(self, p, perm, cost)
+        return self._hybrid_split(p, act, activation_cost(self, p, perm, cost))
+
+    def _hybrid_split(self, p: Player, act, cost: dict) -> dict:
+        """Hybrid pips in the printed cost ("{U/R}{U/R}: ...") were parsed as their first colour: pay them with
+        whichever colours p's mana can cover (#418), else leave the cost as parsed."""
+        import itertools
+        import re as _re
+        head = (act.text or "").split(":", 1)[0]
+        pips = _re.findall(r"\{([WUBRG])/([WUBRG])\}", head)
+        if not pips or len(pips) > 6:
+            return cost
+        from .mana import find_payment
+        sources = self.mana_sources(p, spell="ability")
+        base = dict(cost)
+        for first, _ in pips:
+            base[first] = base.get(first, 0) - 1
+        if any(v < 0 for k, v in base.items() if k != "generic" and isinstance(v, int)):
+            return cost                         # the cost was changed in a way that no longer has those pips
+        for picks in itertools.product(*pips):
+            trial = dict(base)
+            for c in picks:
+                trial[c] = trial.get(c, 0) + 1
+            if find_payment(sources, {k: v for k, v in trial.items() if k != "X" and v}) is not None:
+                return {k: v for k, v in trial.items() if v or k == "generic"}
+        return cost
 
     def can_activate(self, p: Player, perm: Permanent, idx: int, *, x=None, counter_choices=None) -> bool:
         """Whether perm's activated ability idx (kind "ability") can be activated now, by p.
@@ -353,12 +377,16 @@ class AbilitiesMixin:
             if costs.ability_plan(self, p, perm, act, cost) is None:
                 break
             best = n
+        from ..capped_counters import x_limit
+        cap = x_limit(perm, act)            # "can't cause the total ... to be greater than N": no X beyond that
+        if best is not None and cap is not None:
+            best = min(best, cap) or None
         return best
 
     def valid_action_targets(self, p, effects, targets, source=None):
         with self.targeting(source if source is not None else self.target_source):
-            previous = getattr(self, '_choosing_targets', [])
-            self._choosing_targets = targets
+            previous = getattr(self, '_choosing_targets', []), getattr(self, '_choosing_effects', ())
+            self._choosing_targets, self._choosing_effects = targets, effects      # cx_exchange.anchor reads both
             try:
                 if not all(e.target not in TARGETED or (i < len(targets) and
                            self.legal_target(p, e, targets[i])) for i, e in enumerate(effects)):
@@ -367,7 +395,7 @@ class AbilitiesMixin:
                           if e.data.get("distinct") and i < len(targets) and targets[i] is not None]   # different ones
                 return len(chosen) == len(set(chosen))
             finally:
-                self._choosing_targets = previous
+                self._choosing_targets, self._choosing_effects = previous
 
     @atomic_action
     def activate_ability(self, p: Player, perm: Permanent, idx: int, targets=None, *, x=None, counter_choices=None) -> bool:
@@ -491,6 +519,8 @@ class AbilitiesMixin:
             note_this_way(item, "removed", [c["remove_counter"]], c.get("remove_counter_count", 1))
         if c.get("remove_creature_counters") in ("x", "positive"):
             item.x = item.counter_x
+            if c.get("creature_counter_kind"):       # "... counters removed this way" (Ooze Flux)
+                note_this_way(item, "removed", [c["creature_counter_kind"], "counter"], item.counter_x)
         elif act.cost.get("X") and x:
             item.x = x
         self.stack.append(item)
