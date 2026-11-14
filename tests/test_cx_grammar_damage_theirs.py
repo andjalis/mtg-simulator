@@ -35,7 +35,6 @@ class Parsing(unittest.TestCase):
     def test_refusals(self):
         for s in ("~ deals damage to target player equal to the number of artifacts they control.",   # targeted
                   "~ deals damage to each player equal to the number of lands you control.",          # the caster's
-                  "~ deals damage to each player equal to twice the number of nonbasic lands that player controls.",
                   "~ deals damage to that player equal to the number of snow lands they control.",    # #428
                   "~ deals damage to each player equal to the number of spells they've cast this turn.",
                   "~ deals damage to each creature equal to the number of lands they control."):
@@ -56,6 +55,16 @@ class Behaviour(Base):
             self.perm(ISLAND, self.b)
         self.resolve("~ deals damage to each player equal to the number of lands they control.")
         self.assertEqual((self.a.life, self.b.life), (18, 15))
+
+    def test_nonbasic_lands_each_player_their_own(self):     # read through the perms quantity, not copies.fits (#428)
+        nonbasic = card("Test Nonbasic", types="Land", text="({T}: Add {C}.)")
+        self.perm(nonbasic, self.a)
+        for _ in range(3):
+            self.perm(nonbasic, self.b)
+        for _ in range(4):
+            self.perm(ISLAND, self.b)
+        self.resolve("~ deals damage to each player equal to twice the number of nonbasic lands that player controls.")
+        self.assertEqual((self.a.life, self.b.life), (18, 14))
 
     def test_zero(self):
         self.resolve("~ deals damage to each opponent equal to the number of cards in that player's hand.")
