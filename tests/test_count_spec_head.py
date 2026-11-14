@@ -18,7 +18,7 @@ class Specs(unittest.TestCase):
         self.assertEqual(_count_spec("basic land type among lands you control"), ("domain",))
         self.assertEqual(_count_spec("tapped artifact you control"), ("tapped_any", ("artifact",)))
         self.assertEqual(_count_spec("legendary creature you control"),
-                         ("selector", {"controller": "mine", "traits": ["legendary"], "types_all": ["creature"]}))
+                         ("cxq", "perms", {"selector": {"controller": "mine", "traits": ["legendary"], "types_all": ["creature"]}}))
         self.assertEqual(_count_spec("other creature you control")[1], "other creature")
 
     def test_unchanged(self):
