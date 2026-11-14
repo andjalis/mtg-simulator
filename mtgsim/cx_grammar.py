@@ -491,23 +491,43 @@ def _for_each(rest: str, desc: str):
     return [dataclasses.replace(e, data=dict(e.data, xq=spec)) for e in effects]
 
 
+_COUNT_STOPS = {"among", "in", "you", "you've", "your", "they've", "that", "with", "without", "of", "on", "from",
+                "named", "attached", "they", "their", "who", "which", "beyond", "except", "removed", "destroyed",
+                "exiled", "sacrificed", "put", "revealed", "discarded", "milled", "returned", "drawn", "dealt", "gained", "lost"}
+
+
 def _count_spec(desc: str):
     """The X-quantity spec for "the number of <desc, made plural>", or None."""
     from .cards.clauses import _xq
     from .cx_events import _IRREGULAR
     plural = {v.lower(): k.lower() for k, v in _IRREGULAR.items()}
     words = desc.split()
+    # the head noun is the word before the phrase's first preposition / relative ("basic land TYPE among lands you
+    # control", "tapped ARTIFACT you control", "creature CARD in your graveyard"): only it is made plural, so a
+    # loose "the number of <anything> you control" match on an earlier word can't stand in for the phrase (#373)
+    head_at = next((j - 1 for j, w in enumerate(words) if j and w.lower() in _COUNT_STOPS), len(words) - 1)
     for i, w in enumerate(words):
+        if i != head_at:
+            continue
         low = w.lower()
         many = plural.get(low) or (low[:-1] + "ies" if low.endswith("y") and low[-2:-1] not in "aeiou"
                                    else low + "es" if low.endswith(("s", "x", "ch", "sh")) else low + "s")
         if w[:1].isupper():
             many = many.capitalize()
-        spec = _xq("the number of " + " ".join(words[:i] + [many] + words[i + 1:]))
+        phrase = " ".join(words[:i] + [many] + words[i + 1:])
+        spec = _xq("the number of " + phrase)
         if spec is None:
             continue
         # the plural we made up names a thing: use the word as written ("soot counter": counters are stored "soot")
-        spec = tuple(w.lower() if isinstance(v, str) and v.lower() == many.lower() else v for v in spec)
+        spec = spec[:1] + tuple(w.lower() if isinstance(v, str) and v.lower() == many.lower() else v for v in spec[1:])
+        if spec[0] == "count" and isinstance(spec[1], str) and \
+                any(x in _COUNT_STOPS - {"you"} for x in spec[1].lower().split()):
+            return None     # the loose "the number of ... you control" swallowed a phrase it can't count
+        if spec[0] == "count" and isinstance(spec[1], str) and " " in re.sub(r"^other ", "", spec[1]):
+            # an adjective the plain count can't read ("legendary creature"): the battlefield selector, or nothing
+            from .permanent_templates import selector as perm_selector
+            sel = perm_selector(phrase, plural=True)
+            return ("cxq", "perms", {"selector": sel}) if sel else None
         if spec[0] == "count" and isinstance(spec[1], str):
             # _xq singularises with a plain trailing "s" ("Elves" -> "Elve"): name the thing as written instead.
             head = " ".join(words[:i + 1])
