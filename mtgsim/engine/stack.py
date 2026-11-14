@@ -327,14 +327,21 @@ class StackMixin:
             return None
         return [targeter if e.kind == "counter" and e.data.get("that_spell") else None for e in effects]
 
+    def multi_still_legal(self, p, eff, tgt) -> bool:
+        """A list target on resolution: some member still legal (none chosen: it runs and does nothing)."""
+        if not tgt:
+            return True
+        return any(self.legal_target(p, eff.data["probe"], m) for m in tgt)
+
     def check_ward(self, item: StackItem):
         item.effects = counter_mechanics.protect_graveyard_targets(self, item.effects, item.targets)
         unique_targets = []
-        for i, tgt in enumerate(item.targets):
+        for i, targets_i in enumerate(item.targets):
             if i < len(item.effects) and item.effects[i].data.get("chosen"):
                 continue        # "a creature you control" is a choice, not a target: no heroic/ward/Illusion (#360)
-            if not any(tgt is previous for previous in unique_targets):
-                unique_targets.append(tgt)
+            for tgt in (targets_i if isinstance(targets_i, tuple) else (targets_i,)):   # list targets: each
+                if not any(tgt is previous for previous in unique_targets):
+                    unique_targets.append(tgt)
         for tgt in unique_targets:
             if isinstance(tgt, Permanent) and tgt in tgt.controller.battlefield:
                 self.fire(tgt.controller, "targeted", source=tgt, targeter=item)     # Illusions: "sacrifice it"
@@ -452,11 +459,14 @@ class StackMixin:
                 perm.counters["+1/+1"] = perm.p1 + p.next_creature_counters
                 p.next_creature_counters = 0
             return
-        targeted = [(e, t) for e, t in zip(item.effects, item.targets)
+        targeted = [(e, t) for e, t in zip(item.effects, item.targets)        # a list with nobody chosen: no target
                     if e.target in TARGETED and not (t is None and e.data.get("optional_target"))
-                    and not e.data.get("chosen")]          # a choice on resolution, not a target (#360)
+                    and not e.data.get("chosen")          # a choice on resolution, not a target (#360)
+                    and not (e.target == "multi" and not t)]
         with self.targeting(item):
-            item.resolved = not (targeted and all(not self.legal_target(p, e, t) for e, t in targeted))
+            item.resolved = not (targeted and all(not (self.legal_target(p, e, t) if e.target != "multi" else
+                                                       self.multi_still_legal(p, e, t))
+                                                  for e, t in targeted))
         if not item.resolved:
             self.log(f"{item} fizzles (no legal target)", p)
         else:
@@ -476,7 +486,8 @@ class StackMixin:
                     if tgt is None and eff.data.get("optional_target"):
                         continue    # no target was chosen for this slot; it cannot deal damage or keep the spell legal
                     with self.targeting(item):
-                        legal = self.legal_target(p, eff, tgt)
+                        legal = self.legal_target(p, eff, tgt) if eff.target != "multi" else \
+                            self.multi_still_legal(p, eff, tgt)
                     if not legal:
                         prev = None
                         continue
