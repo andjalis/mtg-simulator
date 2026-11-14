@@ -493,7 +493,7 @@ def _for_each(rest: str, desc: str):
 
 _COUNT_STOPS = {"among", "in", "you", "you've", "your", "they've", "that", "with", "without", "of", "on", "from",
                 "named", "attached", "they", "their", "who", "which", "beyond", "except", "removed", "destroyed",
-                "exiled", "sacrificed", "put", "revealed", "discarded", "milled", "returned"}
+                "exiled", "sacrificed", "put", "revealed", "discarded", "milled", "returned", "drawn", "dealt", "gained", "lost"}
 
 
 def _count_spec(desc: str):
