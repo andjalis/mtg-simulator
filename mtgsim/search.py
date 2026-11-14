@@ -68,7 +68,7 @@ EFFECT_PATTERNS = [
      r"put it into your hand",
      lambda m: _named_gy(m[1])),
     (_SEARCH, lambda m: _search(m)),
-    (r"if you search your library this way, shuffle", lambda m: []),
+    (r"if you search your library this way, shuffle(?: it)?", lambda m: []),
     (r"SEARCHOPP (?P<dest>STEAL|EXILE|GY|NAME) (?P<n>\d+) (?P<what>[^.]+)", _search_opp),
 ]
 

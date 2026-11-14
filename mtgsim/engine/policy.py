@@ -326,6 +326,9 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
                 residual_value = dungeon_effect_value(game, me, e, tgt) if dungeon_effect_value else None
             if residual_value is not None:
                 total += residual_value
+            elif k == "search_plan":
+                from .. import search_counted
+                total += search_counted.value(game, me, e)
             elif k in ("return_tribal_grave", "grave_library_top"):
                 total += tgt.cmc + 1 if tgt is not None else 0
             elif k == "control_permanent":
@@ -614,8 +617,10 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
         if perm.card.is_land and sum(x.card.is_land for x in me.battlefield) < 6:
             return False
     if c.get("sacrifice"):
+        from .. import search_counted
         for victim in game.sacrifice_candidates(me, perm, c["sacrifice"])[:c.get("sac_n", 1)]:
-            if not victim.card.is_token and perm_value(victim) > 1:
+            if not victim.card.is_token and perm_value(victim) > 1 and \
+                    not search_counted.sac_upgrade(game, me, perm, effects, victim):
                 return False
     if c.get("cx_costs"):
         from ..cx_abil_costs import ai_cost_ok
