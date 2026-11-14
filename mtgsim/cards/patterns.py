@@ -37,7 +37,11 @@ def _token(m_count, power, toughness, desc, with_kw="", attacking=False, ability
     triggers, pt_per = [], ""
     if ability:
         per = re.fullmatch(r"(?:This (?:token|creature)|~) gets \+1/\+1 for each (\w+?)s? you control\.?", ability)
+        # a quote inside the quote is written with single quotes (Reef Worm's Whale token "with 'When ...'")
+        ability = re.sub(r"'((?:When|Whenever|At) [^']+)'", r'"\1"', ability)
         parsed = None if per else _parse_trigger(ability.rstrip("."). replace("this creature", "~") + ".")
+        if not per and (not parsed or not parsed[0] or parsed[1] or parsed[2] is not None):
+            return NO_MATCH          # an ability the trigger parser doesn't fully match stays visible (#338)
         triggers = parsed[0] if parsed else []
         pt_per = per[1] if per else ""
     artifact = "artifact" in subtypes
@@ -73,8 +77,16 @@ def _add_amount(m):
     return _add_xq(m[2], Effect("add_mana", 1, data={"colors": [m[1]]}))
 
 
+def _known(what):
+    from ..counting import known
+    return known(what)
+
+
 def _per_token(what, power, toughness, desc):
     """``Create a N/N ... creature token for each <what> you control``: amount = the number you control."""
+    from ..counting import known
+    if not known(what):
+        return NO_MATCH          # copies.fits can't count it: the count would be 0
     eff = _token("a", power, toughness, desc)
     eff.data["per"] = {"what": what, "zone": "battlefield"}
     return eff
@@ -115,14 +127,14 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
     (r"~ deals damage equal to (\w+) plus the sacrificed "
      r"(?:creature|artifact|enchantment|planeswalker|land|permanent)'s "
      r"(power|toughness|mana value) to (any target|target creature or planeswalker|target player)",
-     lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature",
+     lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature_pw",
                                            "target player": "player"}[m[3]],
                       data={"xq": ("sac_plus", _num(m[1]), m[2])})),
     # "the exiled card's stat": the graveyard card exiled to pay the spell or ability's cost
     # (Corpse Lunge, Molten-Tail Masticore): the ("exiled_gy", stat) X-quantity.
     (r"~ deals damage equal to the exiled card's (power|toughness|mana value) to "
      r"(any target|target creature or planeswalker|target creature|target player)",
-     lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature",
+     lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature_pw",
                                            "target creature": "creature", "target player": "player"}[m[2]],
                       data={"xq": ("exiled_gy", m[1])})),
     # Dark Confidant family: the mana value of the card the resolving dig just put into the hand.
@@ -151,7 +163,7 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
     (r"~ deals damage equal to the sacrificed (?:creature|artifact|enchantment|planeswalker|land|permanent)'s "
      r"(power|toughness|mana value) to (any target|target creature or planeswalker|"
      r"target player or planeswalker|target player)",
-     lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature",
+     lambda m: Effect("damage", 1, target={"any target": "any", "target creature or planeswalker": "creature_pw",
                                           "target player or planeswalker": "player", "target player": "player"}[m[2]],
                       data={"xq": ("sac", m[1])})),
     (r"you gain life equal to the sacrificed (?:creature|artifact|enchantment|planeswalker|land|permanent)'s "
@@ -165,7 +177,7 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
      lambda m: Effect("discard", 1, target="player", data={"xq": ("sac", m[1])})),
     (r"add an amount of \{([WUBRGC])\} equal to (.+)", _add_amount),
     (r"add \{([WUBRGC])\} for each ([\w' -]+?) you control",
-     lambda m: Effect("add_mana", 1, data={"colors": [m[1]], "xq": ("count", m[2])})),
+     lambda m: Effect("add_mana", 1, data={"colors": [m[1]], "xq": ("count", m[2])}) if _known(m[2]) else NO_MATCH),
     (r"regenerate (each|all) creatures?( you control)?",
      lambda m: Effect("regenerate", 1, target="creatures_mine" if m[2] else "each_creature")),
     (r"draw (a card|one card|(?:\d+|two|three|four|five|six|seven|eight|nine|ten) cards) at the beginning of "

@@ -11,14 +11,10 @@ import re
 
 
 def _known_words(what):
-    """Whether copies.fits understands every word of a count's description (an unknown lower-case word counts nothing)."""
-    from .copies import _TYPES
-    if what.startswith("other "):
-        what = what[6:]
-    return all(w[0].isupper() or w.lower() in _TYPES or w.lower() in ("creature", "token", "nontoken", "nonland",
-                                                                    "noncreature", "nonartifact", "basic", "permanent",
-                                                                    "or", "and", "and/or")
-               or w.lower().startswith("non-") for w in what.split())
+    """Whether copies.fits understands every word of a count's description (an unknown lower-case word counts
+    nothing): counting.known, the one shared check (#372; "and" isn't a separator fits reads)."""
+    from .counting import known
+    return known(what)
 
 
 def _quantity(text, plural=True):

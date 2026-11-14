@@ -11,6 +11,10 @@ from tests.test_combat_triggers import Scripted
 
 
 class Coins(random.Random):
+    def __new__(cls, *wins):
+        # Python 3.10's Random.__new__ rejects extra arguments in subclasses (fixed in 3.11).
+        return super().__new__(cls)
+
     def __init__(self, *wins):
         super().__init__(0)
         self.results = iter(wins)

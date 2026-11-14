@@ -34,9 +34,26 @@ def players(game, p, item, eff, prev=None, target=None, **_):
     from ...cx_grammar import players as named
     from . import HANDLERS
     named_players = named(game, p, eff.data["who"], item, prev, target)
+    if eff.data.get("xq_rel"):      # "... for each creature they control": the count is each named player's own (#337)
+        _per_player(game, p, eff, item, prev, named_players)
+        return
     for inner in _scaled(game, p, eff, item, prev):          # "each player discards a card, then draws a card": all, verb by verb
         for who in named_players:
             HANDLERS[inner.kind](game, p=p, eff=inner, target=who, item=item, opp=game.opponent(p), prev=prev,
+                                 cause=f"cx_players: {inner.kind}")
+
+
+def _per_player(game, p, eff, item, prev, named_players):
+    """cx_players with a subject-relative quantity (cx_grammar_playerq): every player's count is read first, then
+    the inner effects run verb by verb with each player's own count."""
+    import dataclasses
+    from . import HANDLERS
+    spec = eff.data["xq"]
+    counts = [game.x_quantity(who, spec, item, eff.data.get("cast_spell") or prev) for who in named_players]
+    for inner in eff.data["effects"]:
+        for who, n in zip(named_players, counts):
+            scaled = dataclasses.replace(inner, amount=inner.amount * n, amount2=inner.amount2 * n)
+            HANDLERS[inner.kind](game, p=p, eff=scaled, target=who, item=item, opp=game.opponent(p), prev=prev,
                                  cause=f"cx_players: {inner.kind}")
 
 

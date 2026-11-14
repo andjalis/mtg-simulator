@@ -58,6 +58,29 @@ def run(command, cwd, log, env=None, timeout=CHECK_TIMEOUT):
             "log": log.name}
 
 
+def _placeholder(text):
+    """An unresolved "{...}"/"<...>" or the word unknown/placeholder. A cx_condlib code ("lib:" + JSON) is judged
+    by its string leaves, since its filter objects are JSON braces; broken JSON there is suspicious too."""
+    if text.startswith("lib:"):
+        try:
+            code = json.loads(text[4:])
+        except ValueError:
+            return True
+        stack = [code]
+        while stack:
+            x = stack.pop()
+            if isinstance(x, str):
+                if _placeholder(x):
+                    return True
+            elif isinstance(x, dict):
+                stack.extend(x.keys())
+                stack.extend(x.values())
+            elif isinstance(x, list):
+                stack.extend(x)
+        return False
+    return bool(re.search(r"\{(?![0-9WUBRGCSXYZTEP/]+\})[^{}]+\}|<[^>]+>|\b(?:unknown|placeholder)\b", text, re.I))
+
+
 def suspicious(value, path="parse", seen=None):
     """Inspect actual fields (including defaults hidden by parse_diff.describe)."""
     seen = set() if seen is None else seen
@@ -75,9 +98,8 @@ def suspicious(value, path="parse", seen=None):
             if key == "what" and not item:
                 flags.append(f"{at} is empty")
             # Oracle/name strings may legitimately contain card or mana symbols.
-            if key not in {"oracle", "name", "text"} and isinstance(item, str):
-                if re.search(r"\{(?![0-9WUBRGCSXYZTEP/]+\})[^{}]+\}|<[^>]+>|\b(?:unknown|placeholder)\b", item, re.I):
-                    flags.append(f"{at}: unknown placeholder {item!r}")
+            if key not in {"oracle", "name", "text"} and isinstance(item, str) and _placeholder(item):
+                flags.append(f"{at}: unknown placeholder {item!r}")
             flags.extend(suspicious(item, at, seen))
     elif isinstance(value, (list, tuple, set, frozenset)):
         for i, item in enumerate(value):

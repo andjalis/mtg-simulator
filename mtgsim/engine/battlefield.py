@@ -60,6 +60,7 @@ class BattlefieldMixin:
             # Reusable token blueprints create a new physical token each time.
             card = CardInstance(card)
         card, front = copies.clone_on_enter(self, p, card)
+        counters = copies.clone_entry_counters(card, front, x, counters)
         perm = Permanent(card, p)
         perm.front = instance(physical_card if physical_card is not None else front, p)
         perm.owner = perm.front.owner
@@ -73,6 +74,8 @@ class BattlefieldMixin:
         perm.front.zone = perm
         perm.entered_turn = self.turn
         perm.rules_timestamp = self.next_effect_timestamp()
+        from ..cx_type_grants import changed as type_grants_changed
+        type_grants_changed(self, perm)         # a creature type granted by a static ability (layer 4)
         from ..advanced_templates import rules
         if card.is_land and not card.basic and any(rules(x).get("land_conversion") for pl in self.players for x in pl.battlefield):
             from ..continuous import refresh

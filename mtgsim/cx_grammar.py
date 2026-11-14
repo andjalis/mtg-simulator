@@ -575,6 +575,10 @@ def parse_static(line: str, st) -> bool:
     restriction, recorded where the engine reads them: advanced_rules["anthems"] and static_keyword_grants for a
     group, equip_bonus / equip_keywords for the host. Returns True when the line is consumed."""
     s = line.strip()
+    if s.endswith(".") and not re.search(r'[:"]', s) \
+            and re.search(r"\b(?:as long as|for each|where X is)\b|(?:^|, |— )during your turn\b", s, re.I):
+        from .cx_static_gate import parse_line as gated          # "As long as C, <static>", "+1/+1 for each Q"
+        return gated(s, st)
     if not s.endswith(".") or re.search(r'[:"]|\b(?:until|this turn|as long as|if(?! able)|for each|where|except)\b',
                                         s, re.I) or re.search(r"(?:^|, |— )during\b", s, re.I):
         return False            # conditions and durations ("During your turn, ...") are other lanes' statics
@@ -742,6 +746,8 @@ def static_rules(game, perm, rule: str) -> list:
                     if not x.abilities_suppressed and matches(game, perm, spec, x.controller, x):
                         out.append(value)
         out += [v for turn, r, v in getattr(perm, "cx_rules_turn", ()) if r == rule and turn == game.turn]
+        from .cx_static_gate import rules as gated_rules     # "as long as C, ~ can't be blocked"
+        out += gated_rules(game, perm, rule)
     return out
 
 
@@ -793,6 +799,10 @@ def players(game, p, who, item, prev, target=None):
     if who == "that_player":
         context = item.context if item is not None else None
         context = context.controller if event_spell(context) else context
+        if context not in game.players and item is not None:
+            # no event player: "Target player reveals their hand. ~ deals damage to that player ..." is the player
+            # this spell or ability chose (Inquisition)
+            context = next((t for t in getattr(item, "targets", ()) or () if t in game.players), None)
         return [context] if context in game.players else []
     if who == "spell_controller":       # a cast trigger's spell, a spell this one targeted, or the one it targets
         from .engine.state import StackItem

@@ -44,10 +44,13 @@ class Buffs(unittest.TestCase):
         self.assertEqual(c.equip_keywords, frozenset({"flying"}))
         self.assertEqual(len(c.ability_grants), 1)
 
-    def test_upkeep_grant_stays_unsupported(self):
+    def test_upkeep_grant_is_a_real_grant_not_a_host_trigger(self):
+        # "your upkeep" is the creature's controller's: cx_trigger_grants gives the creature the ability (#338)
         c = card("Test Fervor", "{1}{R}", "Enchantment — Aura", "Enchant creature\nEnchanted creature gets +3/+3 and has "
                  "\"At the beginning of your upkeep, put a -1/-1 counter on ~.\"")
-        self.assertEqual(len(c.unsupported), 1)
+        self.assertEqual(c.unsupported, [])
+        self.assertEqual(c.host_triggers, [])
+        self.assertEqual(len(c.trigger_grants), 1)
 
     def test_aura_gives_bonus_and_ability(self):
         host = self.game.enter_battlefield(self.a, BEAR)

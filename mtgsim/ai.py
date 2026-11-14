@@ -440,7 +440,7 @@ def unblocked_damage(attackers, blockers, chump=True) -> int:
     return total
 
 
-def _sized_inner(game: Game, me: Player, eff: Effect) -> list:
+def _sized_inner(game: Game, me: Player, eff: Effect, who: Player | None = None) -> list:
     """A grammar wrapper's inner effects with the amounts they will resolve with: X paid (the wrapper's amount,
     as plan_spell sized it) and "for each" / "where X is" counts, as cx_group / cx_players apply them."""
     inner = eff.data["effects"]
@@ -448,7 +448,8 @@ def _sized_inner(game: Game, me: Player, eff: Effect) -> list:
     inner = [dataclasses.replace(e, amount=eff.amount, amount2=eff.amount if e.data.get("x2") else e.amount2)
              if e.data.get("x") else e for e in inner]
     if eff.data.get("xq"):
-        n = game.x_quantity(me, eff.data["xq"], None, None)
+        # a subject-relative count ("for each creature they control") is the named player's own
+        n = game.x_quantity(who if eff.data.get("xq_rel") and who is not None else me, eff.data["xq"], None, None)
         inner = [dataclasses.replace(e, amount=e.amount * n, amount2=e.amount2 * n) for e in inner]
     return inner
 
@@ -915,6 +916,8 @@ class HeuristicAI:
                 if instant:
                     return None  # card draw at the opponent's end step
                 targets.append(None)
+                if (eff.data.get("xq") or ("",))[0] == "this_way":
+                    continue    # "for each ... sacrificed this way": the earlier effect's own value carries it
                 value += 1.5 * (eff.amount2 if eff.kind == "dig" else eff.amount) * \
                     (0.3 if eff.kind in ("scry", "surveil") else 1)
             elif eff.kind == "discard":
@@ -951,7 +954,16 @@ class HeuristicAI:
                 value += sum(perm_value(x) for x in getattr(opp, "planeswalkers", [])) - \
                     sum(perm_value(x) for x in getattr(me, "planeswalkers", []))
             elif eff.target in getattr(engine, "TARGETED", ()):
-                tgt = self.choose_target(game, me, eff, card)
+                # the targets chosen so far (a fight's own creature, the +1/+1 counter put on it first)
+                previous = getattr(game, "_choosing_targets", []), getattr(game, "_choosing_effects", ())
+                game._choosing_targets, game._choosing_effects = targets, card.spell_effects
+                try:
+                    tgt = self.choose_target(game, me, eff, card)
+                finally:
+                    game._choosing_targets, game._choosing_effects = previous
+                if tgt is None and eff.data.get("chosen"):
+                    targets.append(None)    # "put a counter on a creature you control" with none: the rest still works
+                    continue
                 if tgt is None:
                     return None
                 targets.append(tgt)
@@ -1069,7 +1081,7 @@ class HeuristicAI:
                 return None, 0.0    # "that player", "its owner": a rider of another effect, valued by that one
         value = 0.0
         for pl in named:
-            for e in _sized_inner(game, me, eff):
+            for e in _sized_inner(game, me, eff, pl):
                 if e.kind == "lose_life" and pl is opp and e.amount >= opp.life:
                     return target, LETHAL
                 value += member_value(game, me, e, pl)[0]
@@ -1201,7 +1213,7 @@ class HeuristicAI:
         effects = [e for t in card.triggers if t.event == "etb" for e in t.effects] or list(card.etb_effects)
         value = 0.0
         for eff in effects:
-            if eff.kind == "oring":
+            if eff.kind == "oring" or eff.kind == "blink_link_exile" and eff.target != "none":
                 tgt = self.choose_target(game, me, eff, card)
                 value += perm_value(tgt) if tgt is not None else 0.0
             elif eff.kind == "oring_all":   # symmetric: it exiles our own small permanents too

@@ -64,10 +64,23 @@ def wrath_pw(game, p, eff, opp, item=None, **_):
 
 
 @kind("bounce")
-def bounce(game, p, target, **_):
+def bounce(game, p, target, eff=None, item=None, **_):
     if isinstance(target, Permanent) and target in target.controller.battlefield:
         game.log(f"{target.card.name} returns to hand", p)
         game.leave_battlefield(target, "hand")
+    elif item is not None and isinstance(item.source, Permanent) and (
+            target is item.source or (target is None and eff is not None and eff.target == "prev")):
+        _from_graveyard(game, item.source)      # "it" with nothing before it: the trigger's own permanent
+
+
+def _from_graveyard(game, perm):
+    """"When ~ dies / is put into a graveyard from the battlefield, return it to its owner's hand" (Rancor,
+    Immortal Phoenix): the trigger finds the card it became in the graveyard (CR 400.7), if it is still there."""
+    card = getattr(perm, "front", None)
+    if isinstance(perm, Permanent) and getattr(perm, "last_destination", None) == "graveyard" and card is not None \
+            and not card.is_token and card in perm.owner.graveyard:
+        game.move_card(card, perm.owner.graveyard, perm.owner.hand, reason="return")
+        game.log(f"{card.name} returns to its owner's hand", perm.owner)
 
 
 @kind("return_own")
@@ -275,6 +288,8 @@ def bounce_self(game, p, item, **_):
     if src is not None and src in src.controller.battlefield:
         game.log(f"{src.card.name} returns to hand", p)
         game.leave_battlefield(src, "hand")
+    elif src is not None:
+        _from_graveyard(game, src)
 
 
 @kind("role")

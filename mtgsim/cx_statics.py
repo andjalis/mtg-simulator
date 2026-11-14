@@ -184,7 +184,9 @@ def pt_bonus(perm):
         if (rule[4] or rule[5]) and _applies(source, rule, perm):
             bp, bt = bp + rule[4], bt + rule[5]
     lp, lt = linked_bonus(perm)
-    return bp + lp, bt + lt
+    from .cx_static_gate import pt_bonus as gated_bonus       # grammar statics with a condition or a quantity
+    gp, gt = gated_bonus(perm)
+    return bp + lp + gp, bt + lt + gt
 
 
 def grants(perm, kw: str) -> bool:
@@ -194,8 +196,9 @@ def grants(perm, kw: str) -> bool:
         for code, _pp, _tt, kws, _ep, _et in a.card.advanced_rules.get("host_if", ()):
             if kw in kws and _holds(a, code, perm):
                 return True
+    from .cx_static_gate import grants as gated_grants
     return any(kw in rule[6] and _applies(source, rule, perm) for source, rule in _anthems(perm)) or \
-        linked_grants(perm, kw)
+        linked_grants(perm, kw) or gated_grants(perm, kw)
 
 
 # ---------------------------------------------------------------------------

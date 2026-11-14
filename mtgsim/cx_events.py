@@ -435,7 +435,8 @@ _OBJ_VERBS = [
      ("combat_damage_player",), ""),
     (r"deals? combat damage to you", ("combat_damage_player",), "dmg_me"),
     (r"deals? combat damage to a creature", ("combat_damage_creature",), ""),
-    (r"deals? combat damage", ("combat_damage_player", "combat_damage_creature"), ""),
+    # once per combat damage step, however many creatures and players it hit (a trampler hits both)
+    (r"deals? combat damage", ("combat_damage_any",), ""),
     (r"deals? damage to (?:a player|an opponent)", ("damages_player",), ""),
     (r"deals? damage to you", ("damages_player",), "dmg_me"),
     (r"deals? damage to a creature", ("deals_damage",), "dmg_creature"),
@@ -602,14 +603,19 @@ def split_head(line: str):
 # ---------------------------------------------------------------- engine side
 
 _OBSERVED = {"attacks", "blocks", "becomes_blocked", "dies", "etb", "leaves", "becomes_tapped", "becomes_untapped",
-             "combat_damage_player", "combat_damage_creature", "damages_player", "deals_damage", "dealt_damage",
+             "combat_damage_player", "combat_damage_creature", "combat_damage_any", "damages_player", "deals_damage", "dealt_damage",
              "targeted", "targeted_opp", "targeted_mine", "targeted_by_spell", "turned_face_up", "perm_to_gy",
              "any_cast", "you_draw", "gain_life", "opp_loses_life", "you_discard", "you_cycle", "sacrificed",
              "land_played", "you_attack", "you_scry", "spell_copied", "blocked_by"}
 
 
 def _has_ev(perm) -> bool:
-    return any(t.event.startswith("ev:") for t in perm.card.triggers) or bool(getattr(perm, "animated", None))
+    if any(t.event.startswith("ev:") for t in perm.card.triggers) or getattr(perm, "animated", None):
+        return True
+    # triggers it gained: until end of turn (temp_triggers) or from another permanent's static grant (#338)
+    from .cx_trigger_grants import granted
+    from .cx_statics import linked_triggers
+    return any(t.event.startswith("ev:") for t in list(perm.temp_triggers) + granted(perm) + list(linked_triggers(perm)))
 
 
 def observe(game, p, event, source=None, context=None, subject=None):

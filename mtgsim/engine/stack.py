@@ -330,7 +330,9 @@ class StackMixin:
     def check_ward(self, item: StackItem):
         item.effects = counter_mechanics.protect_graveyard_targets(self, item.effects, item.targets)
         unique_targets = []
-        for tgt in item.targets:
+        for i, tgt in enumerate(item.targets):
+            if i < len(item.effects) and item.effects[i].data.get("chosen"):
+                continue        # "a creature you control" is a choice, not a target: no heroic/ward/Illusion (#360)
             if not any(tgt is previous for previous in unique_targets):
                 unique_targets.append(tgt)
         for tgt in unique_targets:
@@ -451,7 +453,8 @@ class StackMixin:
                 p.next_creature_counters = 0
             return
         targeted = [(e, t) for e, t in zip(item.effects, item.targets)
-                    if e.target in TARGETED and not (t is None and e.data.get("optional_target"))]
+                    if e.target in TARGETED and not (t is None and e.data.get("optional_target"))
+                    and not e.data.get("chosen")]          # a choice on resolution, not a target (#360)
         with self.targeting(item):
             item.resolved = not (targeted and all(not self.legal_target(p, e, t) for e, t in targeted))
         if not item.resolved:

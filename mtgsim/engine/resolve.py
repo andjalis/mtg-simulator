@@ -22,7 +22,8 @@ class ResolveMixin:
             target = item.context if isinstance(item.context, Permanent) and item.context in item.context.controller.battlefield \
                 else None
         if eff.target == "host" and item is not None and isinstance(item.source, Permanent):
-            target = item.source.aura_host or item.source.attached_to     # "enchanted creature" / "equipped creature"
+            target = item.source.aura_host or item.source.attached_to \
+                or getattr(item.source, "last_host", None)     # "enchanted creature" / "equipped creature"
         if eff.target == "that_controller":
             target = prev.controller if isinstance(prev, (Permanent, StackItem)) else prev
             ctx = item.context if item is not None else None
@@ -31,6 +32,12 @@ class ResolveMixin:
             elif target is None and isinstance(ctx, Player) and eff.data.get("cast_spell") is not None:
                 target = ctx
         k = eff.kind
+        tw = getattr(item, "this_way", None) if item is not None else None
+        if eff.data.get("that_much") and not eff.amount and tw is not None and tw[0] == "sacrificed" \
+                and getattr(self, "event_amount", None) is None:
+            # "Sacrifice any number of creatures. ~ deals that much damage ...": no event, so "that much" is the
+            # number just sacrificed (Last-Ditch Effort)
+            eff = dataclasses.replace(eff, amount=tw[2])
         if item is not None and not (isinstance(eff.data.get("xq"), tuple) and eff.data["xq"]
                                      and eff.data["xq"][0] == "this_way"):
             item.this_way = None    # a new effect starts: "this way" no longer names the previous one's result

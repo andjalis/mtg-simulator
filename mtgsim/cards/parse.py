@@ -5,7 +5,7 @@ import dataclasses
 import re
 
 from .. import cx_activation, milling, modal, returns, permanent_templates
-from .. import auras as _auras, cx_tokens as _cx_tokens, storage as _storage
+from .. import auras as _auras, copies as _copies, cx_tokens as _cx_tokens, storage as _storage
 from .model import (
     Activated, AltCost, BASIC_MANA, CardDef, Effect, NO_MATCH, Trigger, _num, add_mana, parse_mana_cost,
 )
@@ -380,6 +380,8 @@ def _split_compound(s: str):
             continue    # "... unless you sacrifice a land and pay 2 life": one compound cost, never two effects (#330)
         if re.search(r", where X is ", pieces[1], re.I) and re.search(r"\bX\b", pieces[0]):
             return None     # "draw X cards, then put ... X or less ..., where X is ...": the X binds both parts
+        if re.search(r"\bany number of\b", pieces[0], re.I) and re.search(r"\bthat many\b", pieces[1], re.I):
+            return None     # "sacrifice any number of ..., then draw that many cards": the count binds both parts
         out = []
         for piece in pieces:
             effs, bad = _parse_effects(piece[0].upper() + piece[1:] + ".")
@@ -582,7 +584,7 @@ def _parse_face(data: dict) -> CardDef:
                     enters_tapped=enters_tapped, etb=etb, extra=extra, gate=gate, keywords=keywords, kicked=kicked,
                     level_marks=level_marks, loyalty_abilities=loyalty_abilities, mode_sink=mode_sink, modes=modes,
                     produces=produces, spell=spell, station_min=station_min, triggers=triggers,
-                    type_line=type_line, types=types, unsupported=unsupported)
+                    type_line=type_line, types=types, unsupported=unsupported, name=name, oracle=oracle)
     for line in (l.strip() for l in text.split("\n")):
         for handle in _FACE_LINE_PARSERS:
             line = handle(st, line)
@@ -694,6 +696,7 @@ def _parse_face(data: dict) -> CardDef:
     # Triggers with "choose up to one" get their bullet modes; drop ones that ended up empty.
     triggers = [t for t in triggers if t.effects or t.modes]
     approximations += [note for rx, note in _SUB_NOTES if rx.search(oracle)]
+    approximations += _copies.unfired_notes(types, triggers)      # #369
 
     if data.get("mana_cost") == "" and "Land" not in types:     # no mana cost at all (not {0}): CR 118.6
         extra.setdefault("advanced_rules", {})["no_mana_cost"] = True
@@ -886,6 +889,9 @@ def _parse_trigger(line: str):
     if out is not None and once_game:
         for t in out[0]:
             t.once_game = True
+    if out is not None and out[0] and not out[1]:     # an unmatched sentence may hold the antecedent of "it"
+        from ..cx_trig_self_it import bind
+        out = (bind(line, out[0]),) + tuple(out[1:])
     return out
 
 

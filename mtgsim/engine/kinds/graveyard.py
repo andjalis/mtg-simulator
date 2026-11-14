@@ -409,6 +409,7 @@ def pay_exile_gy(game, p, eff, item, **_):
         p.graveyard.remove(card)
         p.exile.append(card)
         item.gate_paid = True
+        item.exiled_card = card      # "If you do, create a token that's a copy of that card" (cx_tokens)
         game.log(f"exiles {card.name} from their graveyard", p)
 
 

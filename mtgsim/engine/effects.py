@@ -271,6 +271,7 @@ class EffectsMixin:
             to = "exile"
         continuous.freeze_colors(perm)
         before = rules_events.snapshot(perm)
+        was_creature = perm.is_creature
         perm.last_triggers = list(perm.triggers)
         perm.last_card = perm.card
         controller, owner = perm.controller, perm.owner
@@ -278,6 +279,8 @@ class EffectsMixin:
         perm.front.pending_move = (before, "battlefield", controller, perm, intent.applied)
         controller.battlefield.remove(perm)
         self._residual_source_index = None
+        from ..cx_type_grants import changed as type_grants_changed
+        type_grants_changed(self, perm)
         counter_mechanics.expire_source_control(self)
         for effect in self.continuous_effects:
             if effect.source is perm:
@@ -328,6 +331,11 @@ class EffectsMixin:
         if to == "graveyard":
             self.fire(owner, "perm_to_gy", subject=perm)
             self.fire(owner, "perm_to_gy", perm, subject=perm)
+            if not was_creature:
+                # "When ~ is put into a graveyard from the battlefield" (parsed as its own "dies" trigger, CR 700.4)
+                # on an artifact, enchantment or Aura: only its own triggers. Game.dies fires "dies" for
+                # creatures, along with the "a creature dies" listeners and histories, which this isn't (#389).
+                self._dispatch_trigger_event(controller, "dies", perm)
         return True
 
     def put_in_library(self, perm: Permanent, where="top") -> bool:

@@ -109,6 +109,13 @@ def protected_from(perm, source) -> bool:
 
 class Permanent:
     def __setattr__(self, name, value):
+        if name in ("attached_to", "aura_host") and "card" in self.__dict__:
+            old = self.__dict__.get(name)
+            object.__setattr__(self, name, value)
+            if old is not value:            # an Aura / Equipment adding a creature type moved (cx_type_grants)
+                from ..cx_type_grants import refresh_attach
+                refresh_attach(self, old, value)
+            return
         if name == "card":
             object.__setattr__(self, "_card", value)
             object.__setattr__(self, "_characteristic_cache", None)
@@ -583,8 +590,9 @@ class Permanent:
                            for kw in ("training", "dethrone") if self.has(kw)
                            for _ in range(max(1, self.keyword_instances(kw)))]
         from ..cx_statics import linked_triggers
+        from ..cx_trigger_grants import granted as trigger_grants
         return (list(mine) + (list(self.animated.triggers) if self.animated else []) + exalted + decayed +
-                attack_counters + list(self.temp_triggers) + linked_triggers(self))
+                attack_counters + list(self.temp_triggers) + linked_triggers(self) + trigger_grants(self))
 
     @property
     def ward(self) -> int:

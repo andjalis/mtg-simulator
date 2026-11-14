@@ -90,6 +90,8 @@ def parse_line(line: str, st) -> bool:
             return self_grants_line(line, st) or statics_line(line, st) or altcost_line(line, st) or parse_discard_ability(line, st) or \
                 lures_line(line, st) or shields_line(line, st) or landtypes_line(line, st)
         cond, clause = m[1], m.groups()[1:5]
+        if re.match(r"(?:enchanted|equipped) ", cond):
+            return False        # "As long as equipped creature is a Human, it ...": "it" is the host (cx_static_gate)
     code = _code(cond)
     if code is None:
         return False

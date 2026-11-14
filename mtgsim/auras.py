@@ -53,6 +53,9 @@ def parse_line(line: str, extra: dict, types) -> bool:
         what = m[4]
         if what == what.lower() and what.endswith("s") and not what.endswith("ss"):
             what = what[:-1]
+        from .counting import known
+        if not known(what):
+            return False         # copies.fits can't count it: the bonus would be 0
         extra["pt_per"] = ("other " if m[3] else "") + what
         extra["pt_scale"] = (int(m[1]), int(m[2]))
         if m[5]:
@@ -133,10 +136,11 @@ def parse_line(line: str, extra: dict, types) -> bool:
 
 def finish(extra: dict):
     """After all lines are parsed: is the Aura hostile (put on the opponent's creature)?"""
+    gated = extra.pop("gate_hostile", False)        # a debuff read by cx_static_gate
     if extra.get("aura"):
         b = extra.get("equip_bonus", (0, 0))
         extra["aura_hostile"] = bool(extra.get("aura_flags")) or b[0] < 0 or b[1] < 0 or \
-            extra["aura"] in ("creature an opponent controls", "player")
+            extra["aura"] in ("creature an opponent controls", "player") or gated
 
 
 EFFECT_PATTERNS = wordings.patterns("auras") + [
@@ -229,6 +233,8 @@ def detach(aura):
     host = aura.aura_host
     if host is not None and aura in host.auras:
         host.auras.remove(aura)
+    if host is not None:
+        aura.last_host = host       # "enchanted creature" in its leaves-the-battlefield trigger (last known information)
     aura.aura_host = None
     if getattr(aura, "controlled_host", None) is not None:
         from .counter_mechanics import expire_source_control

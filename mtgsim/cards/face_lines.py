@@ -186,8 +186,8 @@ def _face_special_lines(st, line):
         from .. import counter_mechanics, permanent_templates, backlog_templates, advanced_templates, residual_templates, batch1_templates, cx_combat_costs
         if cx_combat_costs.parse_line(line, st):
             return None
-        from .. import cx_replace, cx_top, cx_abilitycopy
-        if cx_replace.parse_line(line, st) or cx_top.parse_line(line, st) or cx_abilitycopy.parse_line(line, st) or residual_templates.parse_line(line, st) or batch1_templates.parse_line(line, st) or advanced_templates.parse_line(line, st) or backlog_templates.parse_line(line, st) or permanent_templates.parse_line(line, st) or counter_mechanics.parse_line(line, st) or _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st):
+        from .. import cx_replace, cx_top, cx_abilitycopy, cx_trigger_grants as _cx_trigger_grants, cx_grammar_crewblock as _cx_crewblock, cx_type_grants as _cx_type_grants
+        if cx_replace.parse_line(line, st) or cx_top.parse_line(line, st) or cx_abilitycopy.parse_line(line, st) or residual_templates.parse_line(line, st) or batch1_templates.parse_line(line, st) or advanced_templates.parse_line(line, st) or backlog_templates.parse_line(line, st) or permanent_templates.parse_line(line, st) or counter_mechanics.parse_line(line, st) or _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st) or _cx_trigger_grants.parse_line(line, st) or _cx_type_grants.parse_line(line, st) or _cx_crewblock.parse_line(line, st):
             return None
         parts = [p.strip().lower() for p in re.split(r",(?: and)? | and |,", line)]
         if all(p in KEYWORDS or re.fullmatch(r"(?:ward \{\d+\}|toxic \d+|bushido \d+)", p) for p in parts):
@@ -364,8 +364,8 @@ def _face_land_and_mana_lines(st, line):
             return None
         m = re.fullmatch(r"Equipped creature (?:gets \+(\d+)/\+(\d+))?(?: and )?(?:has (.+?))?"
                          r"(?:(?: and )?is an? ([A-Z]\w+) in addition to its other types)?\.", line)
-        if m and m[4]:
-            approximations.append(f"the {m[4]} type isn't added")
+        if m and m[4] and not (m[1] or m[3]):
+            m = None                # "Equipped creature is a Wizard ...": cx_type_grants
         if m and (m[1] or m[3]):
             kws, ward, ok = set(), 0, True
             for k in re.split(r", (?:and )?| and ", m[3] or ""):
@@ -381,9 +381,15 @@ def _face_land_and_mana_lines(st, line):
                     approximations.append("hexproof from monocolored is played as hexproof")
                 else:
                     ok = False
+            from ..cx_type_grants import _subtypes, record
+            subs = _subtypes(m[4], plural=False) if m[4] else ()
+            if ok and subs is None:
+                approximations.append(f"the {m[4]} type isn't added")      # not a creature type
             if ok:
                 extra.update(equip_bonus=(int(m[1] or 0), int(m[2] or 0)), equip_keywords=frozenset(kws),
                              equip_ward=ward)
+                if subs:
+                    record(extra, {"host": True}, subs)                     # layer 4 (cx_type_grants)
                 return None
         m = re.fullmatch(r"Equip (\{[^ .]+\})(\. This ability costs [^.]+ less to activate[^.]*\.)?", line)
         if m:

@@ -201,7 +201,7 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return max(theirs, key=perm_value, default=None)
     if k in ("pump", "p1_counters", "double_power", "grant", "explore", "attach_self", "force_blocked", "inherit_counters"):
         return max(mine, key=perm_value, default=None)
-    if k == "oring":
+    if k in ("oring", "blink_link_exile"):     # O-Ring style "exile target ... until/when ~ leaves" (#358)
         return max(theirs, key=perm_value, default=None)
     if k in ("cx_set_base", "set_base_pt") and eff.target != "player":      # "target creature has base P/T 1/1": shrink theirs
         small = eff.amount <= 2 and eff.amount2 <= 2
@@ -779,7 +779,9 @@ def choose_rummage(game: Game, me: Player, n: int) -> list[CardDef]:
 def saddle_creatures(game: Game, me: Player, mount: Permanent):
     """Creatures to tap to saddle mount (total power at least its saddle number): summoning-sick ones first,
     then the smallest. Not worth it when a creature as strong as the Mount would be tapped."""
-    cands = sorted((c for c in me.creatures if c is not mount and not c.tapped), key=lambda c: (not c.sick, c.power))
+    from ..cx_grammar_crewblock import crew_power
+    cands = sorted((c for c in me.creatures if c is not mount and not c.tapped),
+                   key=lambda c: (not c.sick, crew_power(c, saddle=True)))
     crew, total = [], 0
     for c in cands:
         if total >= mount.card.saddle:
@@ -787,7 +789,7 @@ def saddle_creatures(game: Game, me: Player, mount: Permanent):
         if not c.sick and c.power >= mount.power:
             break
         crew.append(c)
-        total += c.power
+        total += crew_power(c, saddle=True)
     return crew if total >= mount.card.saddle else None
 
 
@@ -795,8 +797,9 @@ def choose_crew(game: Game, me: Player, vehicle: Permanent):
     """Creatures to tap to crew vehicle: summoning-sick ones first, then the smallest."""
     if vehicle.sick or vehicle.tapped:
         return None
+    from ..cx_grammar_crewblock import crew_power
     cands = sorted((c for c in me.creatures if c is not vehicle and not c.tapped),
-                   key=lambda c: (not c.sick, c.power))
+                   key=lambda c: (not c.sick, crew_power(c)))
     crew, total = [], 0
     for c in cands:
         if total >= vehicle.card.crew:
@@ -804,7 +807,7 @@ def choose_crew(game: Game, me: Player, vehicle: Permanent):
         if not c.sick and c.power >= vehicle.card.power:
             break
         crew.append(c)
-        total += c.power
+        total += crew_power(c)
     return crew if total >= vehicle.card.crew else None
 
 
