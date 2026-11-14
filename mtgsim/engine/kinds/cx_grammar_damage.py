@@ -30,6 +30,9 @@ def cx_damage(game, p, eff, target, item, prev=None, cause=None, **_):
         n = max(0, src.power) if isinstance(src, Permanent) else 0
     victims = players(game, p, eff.data["who"], item, prev, target) if eff.data.get("who") else [target]
     by = src.controller if isinstance(src, Permanent) else p
-    for victim in victims:
+    # "... equal to the number of lands they control": each player's own count, all read first (cx_grammar_playerq)
+    each = [game.x_quantity(v, eff.data["xq_each"], item, prev) if isinstance(v, Player) else 0 for v in victims] \
+        if eff.data.get("xq_each") else [n] * len(victims)
+    for victim, amount in zip(victims, each):
         if isinstance(victim, Player) or isinstance(victim, Permanent) and victim in victim.controller.battlefield:
-            game.deal_damage(victim, n, by=by, cause=cause or "noncombat damage", source=src)
+            game.deal_damage(victim, amount, by=by, cause=cause or "noncombat damage", source=src)

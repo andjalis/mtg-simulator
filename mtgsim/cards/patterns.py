@@ -37,6 +37,8 @@ def _token(m_count, power, toughness, desc, with_kw="", attacking=False, ability
     triggers, pt_per = [], ""
     if ability:
         per = re.fullmatch(r"(?:This (?:token|creature)|~) gets \+1/\+1 for each (\w+?)s? you control\.?", ability)
+        # a quote inside the quote is written with single quotes (Reef Worm's Whale token "with 'When ...'")
+        ability = re.sub(r"'((?:When|Whenever|At) [^']+)'", r'"\1"', ability)
         parsed = None if per else _parse_trigger(ability.rstrip("."). replace("this creature", "~") + ".")
         if not per and (not parsed or not parsed[0] or parsed[1] or parsed[2] is not None):
             return NO_MATCH          # an ability the trigger parser doesn't fully match stays visible (#338)

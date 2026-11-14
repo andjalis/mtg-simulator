@@ -38,7 +38,32 @@ def _common_color(m):
     return _code("common_color", _COLORS[m["c"].lower()], bool(m["tie"]))
 
 
+def _host_is(m):
+    """"enchanted creature is black", "equipped creature is a Human or an Angel", "enchanted land is a basic
+    Mountain": the Aura's / Equipment's host now (cx_condlib's ``host_is``)."""
+    from .cx_condlib import _code, _filter
+    alts = re.split(r" or ", m["f"])
+    if len(alts) > 2:
+        return ""
+    codes = []
+    for alt in alts:
+        spec = _filter(re.sub(r"^(?:a|an) ", "", alt.strip()), plural=False)
+        if not spec or set(spec) - {"sub", "colors", "legendary", "basic", "types"} \
+                or spec.get("types", ["creature"]) != ["creature"]:
+            return ""           # what the host is now, by its card: not states, counters or animated types
+        codes.append(_code("host_is", spec))
+    return codes[0] if len(codes) == 1 else _code("or", *codes)
+
+
+def _src_flag(m):
+    from .cx_condlib import _code
+    return _code("src_flag", m[1].lower())
+
+
 RULES = [   # (pattern, builder): appended to cx_condlib's phrase rules
+    (r"(?:enchanted|equipped) (?:creature|land) is (?P<f>[\w /-]+)", _host_is),
+    (r"~ is (monstrous|renowned)", _src_flag),
+    (r"you've lost life this turn", lambda m: 'lib:["lost_life"]'),
     (rf"your devotion to (?P<a>{_COLOR})(?: and (?P<b>{_COLOR}))? is (?P<op>less than|greater than|at least) "
      rf"(?P<n>{_NUM})", _devotion_cmp),
     (rf"your devotion to (?P<a>{_COLOR})(?: and (?P<b>{_COLOR}))? is (?P<n>{_NUM}) or (?P<op>greater|more|less)",
@@ -85,6 +110,10 @@ def check(game, p, kind, args, item=None, source=None):
         return _cmp(devotion(p, colors), op, n)
     if kind == "common_color":
         return game is not None and _common(game, *args)
+    if kind == "src_flag":          # "~ is monstrous / renowned": set by the monstrosity / renown actions
+        return bool(getattr(source, args[0], False))
+    if kind == "lost_life":
+        return bool(p.lost_life_turn)
     return False
 
 
