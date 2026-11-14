@@ -30,6 +30,12 @@ class TargetsMixin:
         spec = eff.data.get('selector')
         if spec is not None:
             source = self.target_source.source if isinstance(self.target_source, StackItem) else self.target_source
+            if eff.data.get('xq') and spec.get('stat') and spec['stat'][2] == 1 and eff.kind != 'damage':
+                # "with power X or less, where X is Q": the shared where-X rule read X as 1 and tagged the effect
+                # with Q (#421); the bound is Q now
+                item = self.target_source if isinstance(self.target_source, StackItem) else None
+                n = self.x_quantity(by, eff.data['xq'], item, None)
+                spec = dict(spec, stat=[spec['stat'][0], spec['stat'][1], n])
             if not permanent_templates.matches(self, perm, spec, by, source):
                 return False
         if eff.data.get('cx_desc') or eff.data.get('cx_snow'):
@@ -120,6 +126,9 @@ class TargetsMixin:
         if t == 'graveyard_card':
             from ..advanced_templates import grave_targets
             return grave_targets(self, p, eff)
+        if t == 'perm_or_suspended':          # "target permanent or suspended card" (time_counters)
+            from ..time_counters import legal
+            return legal(self, p, eff)
         if t == 'creature_or_graveyard':
             return creatures + counter_mechanics.graveyard_targets(self)
         if t == "permanent":
