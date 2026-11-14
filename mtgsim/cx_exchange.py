@@ -195,6 +195,10 @@ def anchor(game, eff):
             return item.targets[idx - 1]
         return None
     chosen = getattr(game, "_choosing_targets", None)
+    effects = getattr(game, "_choosing_effects", None) or ()
+    idx = next((i for i, e in enumerate(effects) if e is eff), None)
+    if chosen and idx:          # a whole target list being checked: the target of the effect before this one
+        return chosen[idx - 1] if idx - 1 < len(chosen) else None
     return chosen[-1] if chosen else None
 
 

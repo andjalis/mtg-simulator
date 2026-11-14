@@ -254,8 +254,9 @@ TRIGGERS = [
     (rf"{a} or {b} — (.+)", (f"die:{a}-{b}",)) for a, b in ((1, 2), (4, 5))
 ] + [
     # Pack tactics needs its own entry: the generic prefixed patterns shadow it otherwise.
+    # The condition is the trigger filter "packpow:N" (cards/parse.py), checked by Game.fire (#419).
     (r"Pack tactics — Whenever ~ attacks, if you attacked with creatures with total power "
-     r"\d+ or greater this combat, (.+)", ("attacks",)),
+     r"(\d+) or greater this combat, (.+)", ("attacks",)),
     # Ability-word-prefixed trigger lines the generic templates don't strip.
     (r"(?:[A-Z][\w' ]* — )?When ~ enters, (.+)", ("etb",)),
     (r"(?:[A-Z][\w' ]* — )?Whenever ~ attacks, (.+)", ("attacks",)),

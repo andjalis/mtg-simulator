@@ -543,6 +543,12 @@ def _src_attacked(m):
     return _code("src_attacked_turn")
 
 
+@rule(r"~ attacked or blocked this combat")
+def _src_in_combat(m):
+    """"At end of combat, if ~ attacked or blocked this combat" (the Clockwork creatures, #345)."""
+    return _code("src_in_combat")
+
+
 @rule(r"~ (?:didn't|did not|hasn't) attack(?:ed)? this turn")
 def _src_not_attacked(m):
     return "!" + _code("src_attacked_turn")
@@ -1093,6 +1099,11 @@ def check(game, p, code: str, item=None, source=None, prev=None):
     if kind == "counters":
         name, op, n = args
         return source is not None and _cmp(source.counters.get(name, 0), op, n)
+    if kind == "src_in_combat":       # still set during the end of combat step (Game.end_combat)
+        attackers = getattr(game, "attackers", None) or getattr(game, "last_attackers", ())
+        blocks = getattr(game, "blocks", None) or {}
+        return source is not None and (any(x is source for x in attackers)
+                                       or any(source is b for bl in blocks.values() for b in bl))
     if kind == "src_attacked_turn":
         return source is not None and getattr(source, "attack_count", (None, 0))[0] == game.turn
     if kind == "src_damaged_opp":

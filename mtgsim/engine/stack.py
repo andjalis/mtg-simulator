@@ -122,6 +122,8 @@ class StackMixin:
             for i, trig in enumerate(triggers):
                 if trig.event != event:
                     continue
+                if any(e.data.get("suspended_self") for e in trig.effects):
+                    continue        # "if this card is suspended": works only from exile (time_counters)
                 if trig.data.get("enters_untapped") and perm.tapped:
                     continue
                 if (event == "etb" and getattr(perm, "_etb_roll_consumed", False)
@@ -188,6 +190,9 @@ class StackMixin:
                     continue
                 if trig.filter.startswith("pack:") and len(self.attackers) < int(trig.filter[5:]) + 1:
                     continue
+                if trig.filter.startswith("packpow:") and sum(max(0, x.power) for x in self.attackers
+                                                               if x.controller is perm.controller) < int(trig.filter[8:]):
+                    continue        # Pack tactics: total power attacked with this combat (#419)
                 if trig.filter == "first_attack" and getattr(perm, 'attack_count', (None, 0)) != (self.turn, 1):
                     continue
                 # These attack conditions are checked only when the ability triggers.
@@ -235,9 +240,7 @@ class StackMixin:
                 if event == "dies":
                     effects = [dataclasses.replace(e, data=dict(e.data, counters=dict(perm.counters)))
                                if e.kind == "inherit_counters" else e for e in effects]
-                if getattr(self, "event_amount", None) is not None and any(e.data.get("that_much") for e in effects):
-                    effects = [dataclasses.replace(e, amount=self.event_amount) if e.data.get("that_much") else e
-                               for e in effects]
+                effects = self._that_much(effects)
                 if event == "any_cast" and getattr(self, "casting_item", None) is not None:
                     effects = [dataclasses.replace(e, data=dict(e.data, cast_spell=self.casting_item))
                                if e.data.get("xq", ("",))[0] == "spell" or e.target == "that_controller"
@@ -264,19 +267,33 @@ class StackMixin:
                                    targets=self._that_spell_targets(ref_item, effects), modes=trig.modes,
                                    intervening_if=trig.intervening_if)
         if source is not None:      # Role tokens, Auras and Equipment give their creature triggers
+            # "its controller" in "Whenever enchanted creature ..., its controller ..." is the creature's (#361)
+            ctx = lambda effects: source if any(e.target == "that_controller" or e.data.get("who") == "that_controller"
+                                                for e in effects) else context
             for equipment in source.equipment:
                 for trig in equipment.card.host_triggers:
                     if trig.event == event:
-                        self.queue_trigger(equipment.controller, trig.effects, source, equipment.card.name, context)
+                        self.queue_trigger(equipment.controller, self._that_much(trig.effects), source,
+                                           equipment.card.name, ctx(trig.effects))
             for aura in list(source.auras):
                 for trig in aura.card.host_triggers:
                     if trig.event == event:
-                        self.queue_trigger(aura.controller, trig.effects, source, aura.card.name, context)
+                        self.queue_trigger(aura.controller, self._that_much(trig.effects), source, aura.card.name,
+                                           ctx(trig.effects))
+        if source is None and p.suspended:     # "if this card is suspended" abilities (Deep-Sea Kraken)
+            from ..time_counters import suspended_triggers
+            suspended_triggers(self, p, event, context)
         if source is None:      # abilities that trigger from the graveyard (Bloodghast)
             for card in list(p.graveyard):
                 for trig in card.gy_triggers:
                     if trig.event == event:
                         self.queue_trigger(p, trig.effects, None, card.name, context=card)
+
+    def _that_much(self, effects: list) -> list:
+        """"That much"/"that many": the amount of the event being fired, copied into the trigger as it queues."""
+        if getattr(self, "event_amount", None) is None or not any(e.data.get("that_much") for e in effects):
+            return effects
+        return [dataclasses.replace(e, amount=self.event_amount) if e.data.get("that_much") else e for e in effects]
 
     def flush_triggers(self) -> bool:
         """Put pending triggers on the stack, active player's first (so they resolve last)."""
@@ -307,10 +324,14 @@ class StackMixin:
         return True
 
     def force_damage_targets(self, controller, effects, targets, source):
-        """A mandatory trigger must target when a legal creature exists, killable or not (#295)."""
+        """A mandatory trigger must target when a legal creature exists, killable or not: damage (#295) and
+        -N/-N (#377). Not after a "you may" gate, nor for optional targets."""
         targets = list(targets)
+        may = False
         for i, e in enumerate(effects):
-            if e.kind != "damage" or e.target != "creature" or e.data.get("optional") or i >= len(targets) \
+            may = may or e.kind == "pay_gate" and (e.data.get("gate") or ("",))[0] == "may"
+            hostile = e.kind == "damage" and e.target == "creature" or e.kind == "debuff_one" and e.target in TARGETED
+            if not hostile or may or e.data.get("optional") or e.data.get("optional_target") or i >= len(targets) \
                     or targets[i] is not None:
                 continue
             with self.targeting(source):

@@ -51,8 +51,9 @@ def _value(spec, m):
 def _effect(spec, m):
     from .cards.model import Effect
     kw = {k: _value(spec[k], m) for k in ("amount2", "target", "filter", "cond", "data") if k in spec}
-    if kw.get("data", {}).get("optional_target") is False:
-        kw["data"] = {k: v for k, v in kw["data"].items() if k != "optional_target"}    # "(up to one )?" not taken
+    for flag in ("optional_target", "other"):        # "(up to one )?" / "(other )?" not taken: no key at all
+        if kw.get("data", {}).get(flag) is False:
+            kw["data"] = {k: v for k, v in kw["data"].items() if k != flag}
     return Effect(spec["effect"], _value(spec.get("amount", 0), m), **kw)
 
 
