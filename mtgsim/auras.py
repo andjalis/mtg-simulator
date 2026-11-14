@@ -136,10 +136,11 @@ def parse_line(line: str, extra: dict, types) -> bool:
 
 def finish(extra: dict):
     """After all lines are parsed: is the Aura hostile (put on the opponent's creature)?"""
+    gated = extra.pop("gate_hostile", False)        # a debuff read by cx_static_gate
     if extra.get("aura"):
         b = extra.get("equip_bonus", (0, 0))
         extra["aura_hostile"] = bool(extra.get("aura_flags")) or b[0] < 0 or b[1] < 0 or \
-            extra["aura"] in ("creature an opponent controls", "player")
+            extra["aura"] in ("creature an opponent controls", "player") or gated
 
 
 EFFECT_PATTERNS = wordings.patterns("auras") + [

@@ -47,9 +47,9 @@ class Parsing(unittest.TestCase):
                 # the quoted body isn't matched by the trigger parser
                 ("Enchant creature\nEnchanted creature has \"Whenever this creature attacks, frobnicate.\"",
                  "Enchantment — Aura"),
-                # a type addition beside the grant: the static parsers don't add host/group types
+                # a card-type addition beside the grant: cx_type_grants adds creature types only
                 ("Equip {1}\nEquipped creature gets +1/+0, has \"Whenever this creature attacks, you gain 1 life,\" "
-                 "and is a Wizard in addition to its other types.", "Artifact — Equipment"),
+                 "and is an artifact in addition to its other types.", "Artifact — Equipment"),
                 # an Equipment that hurts its holder: the AI only equips its own creatures
                 ("Equipped creature has \"At the beginning of your upkeep, you lose 1 life.\"\nEquip {1}",
                  "Artifact — Equipment"),
@@ -272,6 +272,22 @@ class TokenGrants(unittest.TestCase):
                 "Create a 1/1 red Devil creature token. It has \"When this token dies, frobnicate.\""):
             with self.subTest(text):
                 self.assertTrue(card("Test Refusal", "{1}", "Sorcery", text).unsupported)
+
+    @unittest.skipUnless(os.path.exists(DB), "card database not built")
+    def test_quote_inside_a_token_quote(self):
+        """Reef Worm: Fish "with 'When this token dies, create a 9/9 Kraken'" -> Whale -> Kraken."""
+        from mtgsim.carddb import CardDB
+        from mtgsim.coverage import card_coverage
+        worm = CardDB(offline=True).get("Reef Worm")
+        self.assertEqual(card_coverage(worm).status, "full")
+        dying, sizes = self.game.enter_battlefield(self.a, worm), []
+        for _ in range(3):
+            self.game.destroy(dying)
+            self.game.settle()
+            tokens = [x for x in self.a.battlefield if x.card.is_token]
+            sizes.append([(x.power, x.toughness) for x in tokens])
+            dying = tokens[0]
+        self.assertEqual(sizes, [[(3, 3)], [(6, 6)], [(9, 9)]])
 
     @unittest.skipUnless(os.path.exists(DB), "card database not built")
     def test_nested_token_grant(self):

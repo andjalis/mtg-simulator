@@ -916,6 +916,8 @@ class HeuristicAI:
                 if instant:
                     return None  # card draw at the opponent's end step
                 targets.append(None)
+                if (eff.data.get("xq") or ("",))[0] == "this_way":
+                    continue    # "for each ... sacrificed this way": the earlier effect's own value carries it
                 value += 1.5 * (eff.amount2 if eff.kind == "dig" else eff.amount) * \
                     (0.3 if eff.kind in ("scry", "surveil") else 1)
             elif eff.kind == "discard":

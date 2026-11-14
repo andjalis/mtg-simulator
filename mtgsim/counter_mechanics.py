@@ -140,6 +140,8 @@ def change_control(game, permanent, controller):
     permanent.controller.battlefield.remove(permanent)
     permanent.controller = controller
     controller.battlefield.append(permanent)
+    from .cx_type_grants import changed as type_grants_changed
+    type_grants_changed(game, permanent)        # "creatures you control are ..." (cx_type_grants)
     permanent.sick = True
     if permanent in game.attackers:
         game.attackers.remove(permanent)
