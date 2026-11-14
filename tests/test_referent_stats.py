@@ -135,7 +135,7 @@ class ReferentStats(unittest.TestCase):
 
     def test_avatar_destiny_mills_hosts_last_known_power(self):
         avatar = self.db.get("Avatar Destiny")
-        self.assertEqual(len(avatar.unsupported), 2)
+        self.assertEqual(len(avatar.unsupported), 1)
         host = self.g.enter_battlefield(self.a, ELF)
         aura = self.g.enter_battlefield(self.a, avatar)
         from mtgsim.auras import attach
