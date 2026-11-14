@@ -241,3 +241,5 @@ from .. import cx_exchange as _cx_exchange
 _EFFECT_PATTERNS += _cx_exchange.EFFECT_PATTERNS
 from .. import cx_trigger_grants as _cx_trigger_grants
 _SUBS += _cx_trigger_grants.SUBS
+from .. import search_counted as _search_counted
+_EFFECT_PATTERNS += _search_counted.EFFECT_PATTERNS
