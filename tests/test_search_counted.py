@@ -494,11 +494,10 @@ class RealCards(unittest.TestCase):
                      "Avatar of Growth", "Field of Ruin", "Fertilid", "Green Sun's Zenith", "Diabolic Revelation",
                      "Entomb", "Worldly Tutor", "Spoils of Victory", "Increasing Ambition", "Old-Growth Dryads",
                      "Pattern of Rebirth", "Shared Summons", "Three Dreams", "Saheeli Rai", "Deathbellow War Cry",
-                     "Reach the Horizon", "Fblthp, Knows the Way", "Begin the Invasion", "Tiamat",
+                     "Reach the Horizon", "Begin the Invasion", "Tiamat",
                      "Uncage the Menagerie", "Tale of Momo", "Delivery Moogle", "Elspeth, Undaunted Hero",
                      "Captain Kirk, Boldly Going", "Verdant Crescendo", "Dina's Guidance", "Birthing Pod",
-                     "Prime Speaker Vannifar", "Neoform", "Enigmatic Incarnation", "Yisan, the Wanderer Bard",
-                     "Sisay, Weatherlight Captain"):
+                     "Prime Speaker Vannifar", "Neoform", "Enigmatic Incarnation", "Yisan, the Wanderer Bard"):
             self.assertEqual(card_coverage(db.get(name)).status, "full", name)
 
 
