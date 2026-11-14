@@ -527,7 +527,7 @@ def _count_spec(desc: str):
             # an adjective the plain count can't read ("legendary creature"): the battlefield selector, or nothing
             from .permanent_templates import selector as perm_selector
             sel = perm_selector(phrase, plural=True)
-            return ("selector", sel) if sel else None
+            return ("cxq", "perms", {"selector": sel}) if sel else None
         if spec[0] == "count" and isinstance(spec[1], str):
             # _xq singularises with a plain trailing "s" ("Elves" -> "Elve"): name the thing as written instead.
             head = " ".join(words[:i + 1])

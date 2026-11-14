@@ -20,6 +20,7 @@ class Specs(unittest.TestCase):
         self.assertEqual(_count_spec("legendary creature you control"),
                          ("cxq", "perms", {"selector": {"controller": "mine", "traits": ["legendary"], "types_all": ["creature"]}}))
         self.assertEqual(_count_spec("other creature you control")[1], "other creature")
+        self.assertEqual(_count_spec("artifact token you control")[:2], ("cxq", "perms"))     # Thorin, King of Durin's Folk
 
     def test_unchanged(self):
         self.assertEqual(_count_spec("creature you control"), ("count", "creature"))
