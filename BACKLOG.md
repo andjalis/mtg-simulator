@@ -19,8 +19,9 @@ random, or top-creature returns now matches Body Snatcher, Celestial Gatekeeper,
 Mistmoon Griffin, Moldgraf Monstrosity, and Sylvan Hierophant. Offline coverage adds
 five full matches, with no losses or new parse errors. A subsequent repeated-subtype
 choice slice adds Grim Captain's Call. Further slices add Magnetic Snuffler, Patch Up,
-March from the Tomb, and Seasons Past, for ten full matches total against the same base.
-Other attached returns, distinct-value and total-power targets, opponent choices, and
+March from the Tomb, and Seasons Past. A later batch adds One Last Job, Unfinished
+Business, and Agadeem's Awakening, for thirteen full matches against the same base.
+Other attached returns, total-power targets, opponent choices, and
 chosen types remain open; see the [machine-readable scope record](docs/coverage-push/status/sim-508.json).
 Scout for Survivors remains partial: "Put a +1/+1 counter on each of them."
 

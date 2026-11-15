@@ -1,6 +1,7 @@
 """Game methods for playing cards: lands, casting, plot, foretell and station."""
 from __future__ import annotations
 
+import dataclasses
 from typing import TYPE_CHECKING
 
 from .. import alt_casts, cast_triggers, copies, emerge
@@ -92,6 +93,20 @@ class PlayMixin:
                 card.origin = (actual, kind, alt)
             base = actual
         effects = [] if card.is_permanent else list(card.spell_effects)
+        chosen_target_x = None
+        if any(e.data.get("distinct_mana_x") for e in effects):
+            # X is part of target legality, so plan it before picking targets.
+            # The ordinary X path pays the base cost before selecting X.
+            from ..graveyard_returns import max_target_x
+            from ..cx_spell_costs import alternatives as additional_costs
+            if (card.convoke or card.delve or card.improvise or card.extra_sacrifice or card.extra_discard
+                    or additional_costs(card)):
+                return False
+            chosen_target_x = max_target_x(self, p, card)
+            if chosen_target_x is None:
+                return False
+            effects = [dataclasses.replace(e, data=dict(e.data, x_limit=chosen_target_x))
+                       if e.data.get("distinct_mana_x") else e for e in effects]
         targets = list(targets or [])
         targets += [None] * (len(effects) - len(targets))
         for i, e in enumerate(effects):     # "each of up to two target ...": a repeated pick is re-chosen below
@@ -118,7 +133,9 @@ class PlayMixin:
             cost, targets = strive_cost(self, p, card, effects, targets, cost)
         convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
         assisted = card.improvise or card.delve
-        x = 0
+        x = chosen_target_x if chosen_target_x is not None else 0
+        if chosen_target_x is not None:
+            cost["generic"] = cost.get("generic", 0) + chosen_target_x
         if assisted and "X" in card.mana_cost:
             for n in range(1, 21):
                 trial = dict(cost, generic=cost.get("generic", 0) + n)
@@ -148,7 +165,7 @@ class PlayMixin:
         for c in delved:
             p.graveyard.remove(c)
             p.exile.append(c)
-        if "X" in card.mana_cost and not assisted:     # X: as much as the remaining mana allows
+        if "X" in card.mana_cost and not assisted and chosen_target_x is None:     # X: as much as the remaining mana allows
             while x < 20 and payable([s for s in self.mana_sources(p, spell=card) if s not in plan.exclude], {"generic": x + 1}):
                 x += 1
             if x:

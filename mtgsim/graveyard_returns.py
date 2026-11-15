@@ -33,6 +33,8 @@ EFFECT_PATTERNS = [
      lambda m: _budget_returns(int(m[1]), 3)),
     (r"return any number of target ally creature cards with total mana value (\d+) or less from your graveyard to the battlefield",
      lambda m: _budget_returns(int(m[1]), None, "ally")),
+    (r"return from your graveyard to the battlefield any number of target creature cards that each have a different "
+     r"mana value x or less", lambda m: _distinct_target_values()),
 ]
 
 
@@ -89,12 +91,39 @@ def _budget_returns(limit, maximum, subtype=None):
     return Effect("gy_budget_return", target="multi", data={"probe": probe, "budget": limit, "cap": maximum})
 
 
+def _distinct_target_values():
+    effect = _budget_returns(0, None)
+    effect.data["distinct_mana_x"] = True
+    return effect
+
+
+def max_target_x(game, player, card):
+    """Plan the X payment before target choice, without spending any resources."""
+    from . import costs
+    base = game.cost_of(player, card, assist=False)
+    _, kind, _ = game._origin(card)
+    if (not base.get("X") or kind in ("free", "cascade", "rebound", "discover", "cascade_adventure",
+                                     "rebound_adventure", "prepared")):
+        return 0 if costs.spell_plan(game, player, card, base) is not None else None
+    for x in range(20, -1, -1):
+        cost = dict(base, generic=base.get("generic", 0) + x)
+        if costs.spell_plan(game, player, card, cost) is not None:
+            return x
+    return None
+
+
 def budget_legal(eff, targets):
+    if eff.data.get("distinct_mana_x"):
+        limit = eff.data.get("x_limit")
+        return limit is not None and all(c.cmc <= limit for c in targets) and \
+            len({c.cmc for c in targets}) == len(targets)
     cap = eff.data["cap"]
     return (cap is None or len(targets) <= cap) and sum(c.cmc for c in targets) <= eff.data["budget"]
 
 
 def budget_choose(game, player, eff):
+    if eff.data.get("distinct_mana_x") and "x_limit" not in eff.data:
+        return None  # cast() chooses X and retries target selection with the bound effect.
     pool = sorted(game.legal_targets(player, eff.data["probe"]), key=lambda c: c.cmc, reverse=True)
     picks = []
     for candidate in pool:
@@ -106,7 +135,9 @@ def budget_choose(game, player, eff):
 def budget_member_legal(game, player, eff, member):
     refs = eff.data.get("graveyard_refs", {})
     ref = refs.get(id(member))
-    return (ref is None or ref[0].find(ref[1]) is member) and game.legal_target(player, eff.data["probe"], member)
+    return ((ref is None or ref[0].find(ref[1]) is member) and
+            (not eff.data.get("distinct_mana_x") or member.cmc <= eff.data["x_limit"]) and
+            game.legal_target(player, eff.data["probe"], member))
 
 
 def _noun(text):

@@ -1294,6 +1294,14 @@ class HeuristicAI:
         return opp, face
 
     def choose_target(self, game: Game, me: Player, eff: Effect, card: CardDef | None = None):
+        if eff.data.get("distinct_mana_x") and card is not None:
+            from .graveyard_returns import max_target_x
+            limit = max_target_x(game, me, card)
+            if limit is None:
+                return None
+            bound = dataclasses.replace(eff, data=dict(eff.data, x_limit=limit))
+            with game.targeting(card):
+                return engine.default_choose_target(game, me, bound)
         if eff.target == 'permanent':
             with game.targeting(card if card is not None else game.target_source):
                 return engine.default_choose_target(game, me, eff)

@@ -259,8 +259,7 @@ class Refusals(unittest.TestCase):
         for name in ("Alesha, Who Laughs at Fate", "Alesha, Who Smiles at Death", "Another Chance", "Bond of Insight", "Unseal the Necropolis"):
             row = card_coverage(db.get(name))
             self.assertEqual(row.status, "full", (name, row.ignored))
-        for name in ("Aether Rift", "Agadeem's Awakening"):     # All Suns' Dawn: test_cx_grammar_zones_returns
-            self.assertTrue(card_coverage(db.get(name)).ignored, name)
+        self.assertTrue(card_coverage(db.get("Aether Rift")).ignored)     # All Suns' Dawn: test_cx_grammar_zones_returns
 
 
 @unittest.skipUnless(DB_FILE.exists(), "card database not built")
