@@ -216,9 +216,18 @@ def quoted_grant(text: str):
     matches all of it without simplifications. The ability is parsed as the one line of a blank creature, so
     a triggered, activated, mana or static ability reads "~" as the object that has it."""
     import dataclasses as dc
-    probe = _probe(text)
+    # Preserve this intervening-if on the trigger, so it is checked both when
+    # the upkeep begins and when the ability resolves. Parse the body normally.
+    nontoken = re.fullmatch(r"At the beginning of your upkeep, if ~ isn't a token, (.+)", text)
+    parsed_text = ("At the beginning of your upkeep, " + nontoken[1]) if nontoken else text
+    probe = _probe(parsed_text)
     if probe.unsupported or probe.approximations:
         return None
+    if nontoken:
+        from .cx_condlib import _code
+        if len(probe.triggers) != 1 or probe.triggers[0].event != "upkeep" or probe.triggers[0].intervening_if:
+            return None
+        probe.triggers[0].intervening_if = _code("src_is", {"token": False})
     blank = _probe("")
     grant = {f.name: getattr(probe, f.name) for f in dc.fields(probe)
              if f.name not in _PROBE_FIELDS_SKIPPED and getattr(probe, f.name) != getattr(blank, f.name)}

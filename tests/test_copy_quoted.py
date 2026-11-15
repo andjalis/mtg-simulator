@@ -1,5 +1,6 @@
 """Copy exceptions that grant a quoted ability: 'except it has "{T}: Add {U}."' (#340 slice 5, copies.quoted_grant).
 The quoted ability becomes a copiable value of the copy (rule 707.9a)."""
+import dataclasses
 import os
 import random
 import unittest
@@ -45,9 +46,9 @@ class Parse(unittest.TestCase):
 
 @unittest.skipUnless(os.path.exists(ALL_CARDS), "card database not built")
 class Games(unittest.TestCase):
-    FULL = ("Phantasmal Image", "Mercurial Pretender", "Copycrook", "Machine God's Effigy", "Sakashima the Impostor",
+    FULL = ("Progenitor Mimic", "Phantasmal Image", "Mercurial Pretender", "Copycrook", "Machine God's Effigy", "Sakashima the Impostor",
             "Colossal Clone Master", "Heat Shimmer", "Cephalid Facetaker", "Aggressive Biomancy")
-    STILL_PARTIAL = ("Evil Twin", "Mocking Doppelganger", "Gigantoplasm", "Progenitor Mimic")
+    STILL_PARTIAL = ("Evil Twin", "Mocking Doppelganger", "Gigantoplasm")
 
     def setUp(self):
         self.db = CardDB(offline=True)
@@ -69,6 +70,30 @@ class Games(unittest.TestCase):
         perm = self.g.enter_battlefield(who or self.a, self.db.get(name))
         self.g.settle()
         return perm
+
+    def test_nontoken_upkeep_grant_is_inherited_but_does_not_trigger_on_tokens(self):
+        self.g.enter_battlefield(self.b, BEAR)
+        mimic = self.clone("Progenitor Mimic")
+        self.g.fire(self.a, "upkeep", source=mimic)
+        self.g.settle()
+        tokens = [x for x in self.a.battlefield if x.card.is_token]
+        self.assertEqual(len(tokens), 1)
+        token = tokens[0]
+        self.assertEqual(token.card.name, BEAR.name)
+        self.assertTrue(any(t.intervening_if for t in token.card.triggers))
+        self.g.fire(self.a, "upkeep", source=token)
+        self.assertFalse(self.g.pending)
+        self.assertEqual(len([x for x in self.a.battlefield if x.card.is_token]), 1)
+
+    def test_nontoken_upkeep_condition_is_rechecked_on_resolution(self):
+        self.g.enter_battlefield(self.b, BEAR)
+        mimic = self.clone("Progenitor Mimic")
+        self.g.fire(self.a, "upkeep", source=mimic)
+        self.g.flush_triggers()
+        self.assertTrue(self.g.stack)
+        mimic.card = dataclasses.replace(mimic.card, is_token=True)
+        self.g.settle()
+        self.assertEqual(len(self.a.battlefield), 1)
 
     def test_phantasmal_image_is_an_illusion_and_dies_when_targeted(self):
         self.g.enter_battlefield(self.b, LEGEND)
