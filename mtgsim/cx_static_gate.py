@@ -79,8 +79,10 @@ def _it(body: str, cond: str) -> str:
 _PT = r"[+-](?:\d+|X)/[+-](?:\d+|X)"
 
 
-def _scale(body: str):
-    """(body with a plain pump, quantity spec or None, the quantity as written) or None when the scale can't be read."""
+def _scale(body: str, host: bool = False):
+    """(body with a plain pump, quantity spec or None, the quantity as written) or None when the scale can't be
+    read. ``host``: the subject is the enchanted / equipped creature or ~, so "its controller's graveyard" names
+    that permanent's controller's graveyard."""
     from .cx_grammar import _count_spec
     m = re.fullmatch(r"(.+), where X is (.+)", body)
     if m:
@@ -92,10 +94,10 @@ def _scale(body: str):
         if p != "X" and p != "0" or t != "X" and t != "0":
             return None             # "+X/+1": only part of the pump scales
         new = f"{sp}{1 if p == 'X' else 0}/{st}{1 if t == 'X' else 0}"
-        return re.sub(_PT, new, m[1], count=1), _quantity(_xq(m[2]), m[2], strict=False), m[2]    # _xq's own table
+        return re.sub(_PT, new, m[1], count=1), _quantity(_xq(m[2]), m[2], strict=False, host=host), m[2]    # _xq's own table
     m = re.fullmatch(rf"(.*\bgets? {_PT}) for each (.+?)((?:,| and|, and) (?:has|have|gets?|is|can|attacks)\b.*)?", body)
     if m:
-        return m[1] + (m[3] or ""), _quantity(_count_spec(m[2]), m[2]), m[2]
+        return m[1] + (m[3] or ""), _quantity(_count_spec(m[2]), m[2], host=host), m[2]
     if re.search(r"\b(?:for each|where X is)\b|\bX\b", body):
         return None
     return body, None, ""
@@ -105,13 +107,30 @@ def _scale(body: str):
 _CONTEXT = ("spell", "stat", "sac", "sac_plus", "tap", "revealed", "exiled_gy", "subj_counters", "this_way", "arith")
 
 
-def _quantity(spec, text: str, strict: bool = True):
+def _host_gy(text: str):
+    """("host_gy", filter) for "the number of <filter> cards in its controller's graveyard" on a line whose subject
+    is the enchanted / equipped creature (or ~): "its" is that permanent, so the graveyard is its controller's."""
+    t = re.sub(r"^the number of ", "", text.strip(), flags=re.I)
+    m = re.fullmatch(r"(.+?) in its controller's graveyard", t, re.I)
+    if m is None:
+        return None
+    if m[1].lower() in ("card", "cards"):
+        return ("host_gy", {})
+    from .cx_grammar_quantity import _cards
+    f = _cards(m[1])
+    return ("host_gy", f) if f is not None else None
+
+
+def _quantity(spec, text: str, strict: bool = True, host: bool = False):
     """The spec, or False when a static can't read it: a referent that isn't fixed ("it", that spell, the sacrificed
-    creature) or one that reads power / toughness (it would read the bonus it gives). "counters on it" is the one
-    pronoun a static can resolve: it names the permanent getting the bonus (marked "recipient" by parse_line)."""
+    creature) or one that reads power / toughness (it would read the bonus it gives). Two pronouns a static can
+    resolve: "counters on it" names the permanent getting the bonus (marked "recipient" by parse_line), and on a
+    host line "its controller's graveyard" is the host's controller's."""
+    if spec is None and host:
+        spec = _host_gy(text)
     on_it = spec is not None and spec[0] == "counters" and bool(re.search(r"\bcounters? on it\b", text, re.I))
     if spec is None or spec[0] in _CONTEXT or re.search(r"power|toughness", text + repr(spec), re.I) \
-            or re.search(r"\b(?:it|its|that|those|them)\b", text, re.I) and not on_it \
+            or re.search(r"\b(?:it|its|that|those|them)\b", text, re.I) and not on_it and spec[0] != "host_gy" \
             or not _trusted(spec, text, strict):
         return False
     return spec
@@ -140,8 +159,8 @@ def _trusted(spec, text: str, strict: bool = True) -> bool:
     words copies.fits must understand. Only kinds checked here count."""
     kind = spec[0]
     t = re.sub(r"^the number of ", "", text.strip(), flags=re.I)
-    if kind in ("life", "speed", "hand", "party", "colors_among", "devotion"):
-        return True
+    if kind in ("life", "speed", "hand", "party", "colors_among", "devotion", "host_gy"):
+        return True             # host_gy: _host_gy matched the words exactly
     if kind == "counters":
         return bool(re.fullmatch(rf"{re.escape(spec[1])} counters? on (?:~|it)", t, re.I))
     if kind in ("count", "gy"):
@@ -235,7 +254,7 @@ def parse_line(line: str, st) -> bool:
         if re.search(r"\b(?:as long as|during|until|this turn|if(?! able)|except|unless)\b", body, re.I):
             continue                    # another condition or a duration left in the static
         body = _it(body, cond if cond != "turn" else "")
-        scaled = _scale(body)
+        scaled = _scale(body, host=bool(re.match(r"(?:Enchanted|Equipped|~) ", body)))
         if scaled is None or scaled[1] is False:
             continue
         body, xq, qtext = scaled
@@ -327,8 +346,12 @@ def _on(source, code, perm) -> bool:
 def _count(source, spec, perm, recipient=False) -> int:
     """Q from the static's controller's point of view, with the static's source as the count's source ("counters on
     ~", "other enchantment" on Ancestral Mask), or the permanent getting the bonus when the row says "recipient"
-    ("the number of other Skeletons you control" on each Skeleton: see _other)."""
+    ("the number of other Skeletons you control" on each Skeleton: see _other). "host_gy" reads the host's
+    controller's graveyard: perm is the enchanted / equipped creature."""
     from .engine.state import StackItem
+    if spec[0] == "host_gy":
+        from .cx_condlib import _card_ok
+        return sum(1 for c in perm.controller.graveyard if _card_ok(c, spec[1]))
     game = getattr(source.controller, "_game", None)
     if game is None:
         return 0

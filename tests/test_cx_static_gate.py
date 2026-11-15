@@ -46,6 +46,11 @@ class Parsing(unittest.TestCase):
         self.assertEqual(rows[0][3], ("pt", 1, 0, ("domain",)))
         rows = self.full("Each creature you control gets +1/+1 for each +1/+1 counter on it.")
         self.assertEqual(rows[0][3], ("pt", 1, 1, ("counters", "+1/+1"), "recipient"))
+        rows = self.full("Enchant creature\nEnchanted creature gets -X/-X, where X is the number of creature cards in "
+                         "its controller's graveyard.", "Enchantment — Aura")
+        self.assertEqual(rows[0][1], "host")
+        self.assertEqual(rows[0][3][0], "pt")
+        self.assertEqual(rows[0][3][3][0], "host_gy")
         rows = self.full("Enchant creature\nEnchanted creature gets -X/-0, where X is the number of cards in your "
                          "graveyard.", "Enchantment — Aura")
         self.assertEqual(rows[0][3][1:3], (-1, 0))
@@ -61,6 +66,8 @@ class Parsing(unittest.TestCase):
                 ("~ gets +1/+1 for each creature with power 4 or greater.", "Creature — Beast"),    # quantity reads P/T
                 ("~ gets +1/+1 for each basic land type among lands your opponents control.", "Creature — Beast"),
                 ("~ gets +1/+1 for each +1/+1 counter on that creature.", "Creature — Beast"),      # referent not fixed
+                ("Creatures you control get +X/+X, where X is the number of cards in its controller's "
+                 "graveyard.", "Enchantment"),                                                       # "its" not fixed for a group
                 ("Equipped creature gets +X/+1, where X is the number of artifacts you control.",  # only part scales
                  "Artifact — Equipment"),
                 ("Equipped creature gets +X/+X, where X is its mana value.", "Artifact — Equipment"),  # "its"
@@ -190,6 +197,18 @@ class Playing(Base):
                                 13, 13), self.a)
         self.a.life = 10
         self.assertEqual((shadow.power, shadow.toughness), (3, 3))
+
+    def test_host_scale_reads_the_host_controllers_graveyard(self):
+        curse = self.perm(gated("Enchant creature\nEnchanted creature gets -X/-X, where X is the number of creature "
+                                "cards in its controller's graveyard.", "Enchantment — Aura"), self.a)
+        theirs = self.perm(BEAR, self.b)
+        curse.aura_host = theirs
+        theirs.auras.append(curse)
+        self.a.graveyard = [BEAR, BEAR]                # the Aura's controller's graveyard: not read
+        self.b.graveyard = [BEAR, ISLAND, ISLAND]
+        self.assertEqual((theirs.power, theirs.toughness), (1, 1))     # 2/2 minus the host controller's 1 creature card
+        self.b.graveyard = [BEAR, BEAR, ISLAND, ISLAND]
+        self.assertEqual((theirs.power, theirs.toughness), (0, 0))
 
     def test_domain_scale_and_counters_on_it(self):
         scout = self.perm(card("Scout", "{R}", "Creature — Kavu", "~ gets +1/+0 for each basic land type among "
