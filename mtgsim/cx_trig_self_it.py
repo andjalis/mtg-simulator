@@ -27,8 +27,21 @@ _EVENTS = re.compile(r"(?:attacks|blocks|becomes blocked|blocks or becomes block
 _GATES = {"pay_gate", "pay_energy", "link_start", "link_check", "sac_filtered"}
 
 
+_ALLY = re.compile(r"Whenever a creature you control deals combat damage to a player, ")
+
+
 def bind(line: str, triggers) -> list:
     """The triggers with leading "it" Effects bound to the permanent itself, where the head allows it."""
+    ally = _ALLY.match(line)
+    if ally:
+        # The other way round (#458): under "a creature you control deals combat damage", "it" is that creature.
+        # Templates that read "put that many +1/+1 counters on it" as ~ (right for devour-like "As ~ enters"
+        # lines) are rebound to it when the payoff never names ~.
+        if re.search(r"~|\bthis (?:creature|permanent|artifact|enchantment)\b", line[ally.end():]) or \
+                not re.search(r"\bit\b", line[ally.end():]):
+            return triggers
+        return [dataclasses.replace(t, effects=[dataclasses.replace(e, target="prev") if e.target == "self" else e
+                                                for e in t.effects]) for t in triggers]
     head = _HEAD.match(line)
     if not head or not _EVENTS.fullmatch(head[1]):
         return triggers
