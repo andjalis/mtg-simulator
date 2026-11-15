@@ -120,10 +120,33 @@ def _self(m):
     return Effect("blink", target="self" if who == "~" else "prev", data=dict(flags, delayed=False))
 
 
+def dies_return_rewrite(rest):
+    """Under a "When ~ dies" head, rewrite a leading "return it to the battlefield ... ." sentence to the
+    DIESRETURN sentinel (EFFECT_PATTERNS reads it as cx_return_died). Only a complete sentence is rewritten:
+    anything more in it (a condition, a rider) stays visible."""
+    m = re.match(r"return (?:it|him|her) (" + _RETURN + r")(?:\.(?=\s|$)|$)", rest, re.I)
+    if m is None:
+        return rest
+    flags = _flags(m["tail"], m["who"], m["counter"])
+    if flags is None or flags.get("attacking") or flags.get("transformed"):
+        return rest
+    return "DIESRETURN " + m[1] + rest[m.end():]
+
+
+def _dies_return_effect(m):
+    from .cards import Effect, NO_MATCH
+    flags = _flags(m["tail"], m["who"], m["counter"])
+    if flags is None:
+        return NO_MATCH
+    return Effect("cx_return_died", data=flags)
+
+
+
 EFFECT_PATTERNS = [
     (r"BLINKROLL (.+)\|(\d+)", lambda m: _roll_effect(m[1], int(m[2]))),
     (r"BLINKTAKE (.+)", lambda m: _linked_exile(m[1])),
     (r"BLINKLINKRETURN " + _RETURN, lambda m: _linked_return(m)),
+    (r"DIESRETURN " + _RETURN, _dies_return_effect),
     (r"exile (?:((?:up to )?(?:one|two)|any number of) )?(another |other )?target (.+?)(?:, then| and then) "
      r"return (?:it|him|her|that card|those cards|them) " + _RETURN, lambda m: _build(m)),
     (r"exile (~|it|him|her)(?:, then| and then) return (?:it|him|her) " + _RETURN,

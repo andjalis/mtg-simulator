@@ -8,7 +8,8 @@ from ..state import Permanent
 def cx_return_died(game, p, eff, item, **_):
     """Return the card the trigger's permanent became when it died, if it is still that card in its owner's
     graveyard: it went straight from the battlefield there and hasn't moved since (a card exiled from the graveyard
-    in response, or that left and came back, is a new object)."""
+    in response, or that left and came back, is a new object). A face-down return enters as a hidden 2/2; a
+    "under your control" return enters under the trigger's controller."""
     gone = item.source if item is not None else None
     if not isinstance(gone, Permanent) or gone in gone.controller.battlefield:
         return
@@ -17,9 +18,13 @@ def cx_return_died(game, p, eff, item, **_):
             getattr(gone, "last_destination", "graveyard") != "graveyard":
         return
     owner.graveyard.remove(card)
-    game.log(f"{card.name} returns to the battlefield under {owner}'s control", owner)
-    back = game.enter_battlefield(owner, card, tapped=eff.data.get("tapped", False),
+    back_to = p if eff.data.get("yours") else owner
+    game.log(f"{card.name} returns to the battlefield under {back_to}'s control", back_to)
+    from ...blink import enter_face_down
+    back = game.enter_battlefield(back_to, card, tapped=eff.data.get("tapped", False),
                                   counters={"+1/+1": 1} if eff.data.get("counter") else None)
+    if eff.data.get("face_down") and back is not None:
+        enter_face_down(back, card)
     from . import HANDLERS
     for then in eff.data.get("then", ()):      # "... and suspect it": "it" is the returned permanent
         if then.target == "prev" and back is None:

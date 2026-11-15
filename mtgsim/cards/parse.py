@@ -952,6 +952,9 @@ def _parse_trigger_line(line: str):
             rest = rest.replace(" it", " ~", 1)      # "When ~ attacks or blocks, sacrifice it at end of combat"
         if events in (("etb",), ("attacks",), ("blocks",)) and re.match(r"(?:sacrifice|exile|destroy) it unless ", rest):
             rest = rest.replace(" it", " ~", 1)      # "When ~ enters|attacks, sacrifice it unless you ..." (#330)
+        if events == ("dies",):                      # "When ~ dies, return it to the battlefield [face down] ..."
+            from ..blink import dies_return_rewrite
+            rest = dies_return_rewrite(rest)
         if events == ("attacks",) and "while saddled" in pat:
             flt = "saddled"
         if events == ("attacks",) and pat.startswith("Whenever ~ and at least"):
