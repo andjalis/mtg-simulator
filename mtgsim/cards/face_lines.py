@@ -640,7 +640,9 @@ def _face_cost_and_static_lines(st, line):
             return None
         m = re.fullmatch(r"\+ (\{[^ ]+\}) — (.+)", line)
         if m and extra.get("is_spree"):
-            effs, bad = _parse_effects(m[2])
+            from ..graveyard_returns import spree_return_mode
+            effs = spree_return_mode(m[2])
+            effs, bad = (effs, []) if effs is not None else _parse_effects(m[2])
             if effs and not bad:
                 extra.setdefault("spree", []).append((parse_mana_cost(m[1]), effs))
             else:

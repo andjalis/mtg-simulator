@@ -95,6 +95,24 @@ def gy_return_equipment(game, p, target, item, **_):
     game.log(f"returns {target.name} from the graveyard to the battlefield", p)
 
 
+@kind("gy_return_attachment_choice")
+def gy_return_attachment_choice(game, p, target, **_):
+    """Choose a controlled creature, without targeting it, before entry."""
+    from ...cx_attach import can_host
+    from ...residual_templates import blocked_entry
+    from ..policy import perm_value
+    if blocked_entry(game, target):
+        return
+    preview = Permanent(target, p)
+    host = max((c for c in p.creatures if can_host(game, preview, c)), key=perm_value, default=None)
+    if "Aura" in target.subtypes and host is None:
+        return
+    p.graveyard.remove(target)
+    game.enter_battlefield(p, target, aura_host=host if target.aura else None,
+                           equipment_host=host if not target.aura else None)
+    game.log(f"returns {target.name} from the graveyard to the battlefield", p)
+
+
 @kind("gy_budget_return")
 def gy_budget_return(game, p, eff, target, **_):
     from ...graveyard_returns import budget_member_legal

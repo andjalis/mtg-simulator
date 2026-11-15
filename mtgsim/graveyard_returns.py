@@ -45,6 +45,25 @@ def _attached_equipment():
                         "zone": "you", "side": "mine"})
 
 
+def spree_return_mode(text):
+    """Recognize targeted graveyard-return modes without losing target timing."""
+    from .cards import Effect
+    creature = re.fullmatch(r"Return target creature card from your graveyard to the battlefield\.", text, re.I)
+    vehicles = re.fullmatch(r"Return target Mount or Vehicle card from your graveyard to the battlefield\.", text, re.I)
+    attached = re.fullmatch(r"Return target Aura or Equipment card from your graveyard to the battlefield "
+                            r"attached to a creature you control\.", text, re.I)
+    if not (creature or vehicles or attached):
+        return None
+    spec = ({"types": ["creature"]} if creature else
+            {"types": [], "subtypes_any": ["mount", "vehicle"]} if vehicles else
+            {"types": [], "subtypes_exact": ["aura", "equipment"]})
+    data = {"cx_card": spec, "zone": "you", "side": "mine"}
+    if attached:
+        return [Effect("gy_return_attachment_choice", target="graveyard_card", data=data)]
+    data.update(to="battlefield", under="you")
+    return [Effect("cx_card_move", target="graveyard_card", data=data)]
+
+
 def _budget_returns(limit, maximum, subtype=None):
     from .cards import Effect
     spec = {"types": ["creature"]}
