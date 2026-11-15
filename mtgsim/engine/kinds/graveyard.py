@@ -57,6 +57,52 @@ def _return_graveyard_cards(game, p, cards, to):
         game.log(f"returns {card.name} from the graveyard to {to}", p)
 
 
+@kind("gy_return_each_subtype")
+def gy_return_choices(game, p, eff, **_):
+    """Make each mandatory subtype choice after the previous return."""
+    for group in eff.data["subtypes"]:
+        pool = [c for c in p.graveyard if c.changeling or
+                group in {s.lower() for s in c.subtypes}]
+        if not pool:
+            continue
+        selected = game.hook(p, "choose_dig")(game, p, list(pool), 1)
+        chosen = next((c for c in selected if any(c is candidate for candidate in pool)), None)
+        if chosen is None:
+            chosen = pool[0]  # Each subtype choice is mandatory when possible.
+        _return_graveyard_cards(game, p, [chosen], "hand")
+
+
+@kind("gy_return_distinct_mana_values")
+def gy_return_distinct(game, p, **_):
+    """Choose at most one card per mana value before moving any of them."""
+    picks = []
+    for value in sorted({c.cmc for c in p.graveyard}):
+        pool = [c for c in p.graveyard if c.cmc == value]
+        chosen = game.hook(p, "choose_dig")(game, p, list(pool), 1)
+        card = next((c for c in chosen if any(c is candidate for candidate in pool)), None)
+        if card is not None:
+            picks.append(card)
+    _return_graveyard_cards(game, p, picks, "hand")
+
+
+@kind("gy_return_equipment_to_source")
+def gy_return_equipment(game, p, target, item, **_):
+    from ...residual_templates import blocked_entry
+    if blocked_entry(game, target):
+        return
+    p.graveyard.remove(target)
+    game.enter_battlefield(p, target, equipment_host=item.source)
+    game.log(f"returns {target.name} from the graveyard to the battlefield", p)
+
+
+@kind("gy_budget_return")
+def gy_budget_return(game, p, eff, target, **_):
+    from ...graveyard_returns import budget_member_legal
+    from ...residual_templates import blocked_entry
+    cards = [c for c in target if budget_member_legal(game, p, eff, c) and not blocked_entry(game, c)]
+    _return_graveyard_cards(game, p, cards, "battlefield")
+
+
 @kind("dig_gy")
 def dig_gy(game, p, eff, **_):
     """"Look at/reveal the top N: some go to your hand (or back on top), the rest into your graveyard."""

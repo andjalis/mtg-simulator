@@ -81,6 +81,9 @@ def damage_amount(game: Game, eff: Effect, source=None) -> int:
 
 def default_choose_target(game: Game, me: Player, eff: Effect):
     """A reasonable target for eff, respecting hexproof and targeting restrictions."""
+    if eff.kind == "gy_budget_return":
+        from ..graveyard_returns import budget_choose
+        return budget_choose(game, me, eff)
     if eff.target == "multi" and eff.data["probe"].kind == "cx_attach" and eff.data["probe"].data.get("host") != "target":
         from ..cx_attach import choose_many
         return choose_many(game, me, eff)

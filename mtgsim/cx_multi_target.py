@@ -126,7 +126,12 @@ def legal_list(game, p, eff, tgt) -> bool:
     most = max_count(game, p, eff)
     if most is not None and len(tgt) > most:
         return False
-    return all(game.legal_target(p, eff.data["probe"], x) for x in tgt)
+    if not all(game.legal_target(p, eff.data["probe"], x) for x in tgt):
+        return False
+    if eff.kind == "gy_budget_return":
+        from .graveyard_returns import budget_legal
+        return budget_legal(eff, tgt)
+    return True
 
 
 def choose_list(game, me, eff) -> tuple:

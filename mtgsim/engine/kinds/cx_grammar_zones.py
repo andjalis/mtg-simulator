@@ -24,9 +24,20 @@ def edict(game, p, eff, target, item, **_):
 
 
 @kind("cx_tuck")
-def tuck(game, p, eff, target, **_):
+def tuck(game, p, eff, target, item=None, **_):
     """Put a permanent on top of / on the bottom of / shuffled into its owner's library, never through the
     graveyard (Game.put_in_library); a token ceases to exist."""
+    if (eff.target == "self" and item is not None and item.is_spell and target is item.source
+            and eff.data["where"] in ("top", "bottom")):
+        if item.kind != "copy" and not getattr(item, "self_moved", False):
+            base, _, _ = game._origin(item.card)
+            owner = getattr(base, "owner", None) or p
+            if eff.data["where"] == "bottom":
+                owner.library.insert(0, base)
+            else:
+                owner.library.append(base)
+            item.self_moved = True
+        return
     if isinstance(target, Permanent) and target in target.controller.battlefield:
         name = target.card.name
         if game.put_in_library(target, eff.data["where"]):

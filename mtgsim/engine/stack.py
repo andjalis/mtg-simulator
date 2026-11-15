@@ -356,6 +356,9 @@ class StackMixin:
         """A list target on resolution: some member still legal (none chosen: it runs and does nothing)."""
         if not tgt:
             return True
+        if eff.kind == "gy_budget_return":
+            from ..graveyard_returns import budget_member_legal
+            return any(budget_member_legal(self, p, eff, m) for m in tgt)
         return any(self.legal_target(p, eff.data["probe"], m) for m in tgt)
 
     def check_ward(self, item: StackItem):
@@ -551,7 +554,7 @@ class StackMixin:
         self.state_based_actions()
 
     def to_graveyard_after_resolving(self, item: StackItem):
-        if item.kind == "copy":
+        if item.kind == "copy" or getattr(item, "self_moved", False):
             return
         base, kind, _ = self._origin(item.card)
         owner = getattr(base, "owner", None) or item.controller

@@ -56,7 +56,7 @@ class BattlefieldMixin:
 
     def enter_battlefield(self, p: Player, card: CardDef, tapped_attacking: bool = False, x: int = 0,
                           *, tapped: bool = False, counters: dict | None = None,
-                          physical_card: CardDef | None = None) -> Permanent:
+                          physical_card: CardDef | None = None, equipment_host=None) -> Permanent:
         from ..residual_templates import blocked_entry
         if blocked_entry(self, card, physical_card):
             return None
@@ -231,6 +231,11 @@ class BattlefieldMixin:
             p.entered_nonland_turn += 1
         if card.turn_creature and p is self.active:
             self.animate_turn_creatures(p)
+        if equipment_host is not None:
+            from ..cx_attach import can_host
+            if can_host(self, perm, equipment_host):
+                perm.attached_to = equipment_host
+                perm.attachment_timestamp = self.next_effect_timestamp()
         self.rule_events.emit(rules_events.RulesEvent("zone_change", p, source=perm,
             before=before, source_zone=source_zone, destination="battlefield", reason="enter_battlefield"))
         host = getattr(self, "_aura_host", None)

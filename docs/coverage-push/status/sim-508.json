@@ -2,28 +2,33 @@
   "issue": 508,
   "status": "partial",
   "base": "4ed2d9c",
-  "slice": "dies-source exile followed by graveyard returns",
+  "slice": "dies-source returns, subtype and distinct-value choices, attached equipment, and mana-value budgets",
   "coverage": {
     "total": 35284,
     "before_full": 21347,
-    "after_full": 21352,
-    "gained_full": 5,
+    "after_full": 21357,
+    "gained_full": 10,
     "lost_full": 0,
     "new_parse_errors": 0,
-    "parse_changed": 5
+    "parse_changed": 11
   },
   "completed_cards": [
     "Body Snatcher",
     "Celestial Gatekeeper",
+    "Grim Captain's Call",
+    "Magnetic Snuffler",
+    "March from the Tomb",
     "Mistmoon Griffin",
     "Moldgraf Monstrosity",
+    "Patch Up",
+    "Seasons Past",
     "Sylvan Hierophant"
   ],
   "remaining": [
     {
       "family": "distinct mana values",
-      "cards": ["Agadeem's Awakening", "Seasons Past"],
-      "needs": "Pairwise constraints and physical zone references for target lists; untargeted resolution choice for Seasons Past."
+      "cards": ["Agadeem's Awakening"],
+      "needs": "Pairwise constraints and X known during target selection; the current casting pipeline chooses X after targets."
     },
     {
       "family": "opponent chooses",
@@ -37,18 +42,13 @@
     },
     {
       "family": "attached returns",
-      "cards": ["Magnetic Snuffler", "One Last Job", "Unfinished Business", "Forum Filibuster"],
-      "needs": "Legal attachment host and attachment during entry, including host references across nested/reflexive instructions."
-    },
-    {
-      "family": "repeat for subtypes",
-      "cards": ["Grim Captain's Call"],
-      "needs": "Four sequential untargeted subtype choices, so the same physical card cannot be chosen twice."
+      "cards": ["One Last Job", "Unfinished Business", "Forum Filibuster"],
+      "needs": "Choice of a legal Aura/Equipment host and physical host references across nested/reflexive instructions; One Last Job's other spree modes also need their existing untargeted parses corrected."
     },
     {
       "family": "aggregate target budgets",
-      "cards": ["Patch Up", "March from the Tomb", "Reunion of the House"],
-      "needs": "Target-list total mana value or total power validation and selection; fixed count caps where printed."
+      "cards": ["Reunion of the House", "Scout for Survivors"],
+      "needs": "Reunion needs total power validation including negative and characteristic-defining power in the graveyard. Scout's return matches, but 'Put a +1/+1 counter on each of them.' still needs references to the returned permanents."
     }
   ],
   "excluded": [

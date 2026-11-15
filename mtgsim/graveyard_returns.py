@@ -10,6 +10,71 @@ import dataclasses
 import re
 
 
+def _repeated_subtypes(m):
+    from .cards import Effect, NO_MATCH
+    from .permanent_templates import _CREATURE_SUBTYPES
+    types = [m[1].lower()] + re.split(r",? and |, ", m[2].lower())
+    if len(types) < 2 or any(t not in _CREATURE_SUBTYPES for t in types):
+        return NO_MATCH
+    return Effect("gy_return_each_subtype", data={"subtypes": types})
+
+
+EFFECT_PATTERNS = [
+    (r"return a ([a-z]+) card from your graveyard to your hand, then do the same for (.+)",
+     _repeated_subtypes),
+    (r"return any number of cards with different mana values from your graveyard to your hand",
+     lambda m: _distinct_values()),
+    (r"return target equipment card from your graveyard to the battlefield attached to ~",
+     lambda m: _attached_equipment()),
+    (r"return up to three target creature cards with total mana value (\d+) or less from your graveyard to the battlefield",
+     lambda m: _budget_returns(int(m[1]), 3)),
+    (r"return any number of target ally creature cards with total mana value (\d+) or less from your graveyard to the battlefield",
+     lambda m: _budget_returns(int(m[1]), None, "ally")),
+]
+
+
+def _distinct_values():
+    from .cards import Effect
+    return Effect("gy_return_distinct_mana_values")
+
+
+def _attached_equipment():
+    from .cards import Effect
+    return Effect("gy_return_equipment_to_source", target="graveyard_card",
+                  data={"cx_card": {"types": [], "subtypes_exact": ["equipment"]},
+                        "zone": "you", "side": "mine"})
+
+
+def _budget_returns(limit, maximum, subtype=None):
+    from .cards import Effect
+    spec = {"types": ["creature"]}
+    if subtype:
+        spec["subtypes_any"] = [subtype]
+    probe = Effect("gy_budget_probe", target="graveyard_card",
+                   data={"cx_card": spec, "zone": "you", "side": "mine"})
+    return Effect("gy_budget_return", target="multi", data={"probe": probe, "budget": limit, "cap": maximum})
+
+
+def budget_legal(eff, targets):
+    cap = eff.data["cap"]
+    return (cap is None or len(targets) <= cap) and sum(c.cmc for c in targets) <= eff.data["budget"]
+
+
+def budget_choose(game, player, eff):
+    pool = sorted(game.legal_targets(player, eff.data["probe"]), key=lambda c: c.cmc, reverse=True)
+    picks = []
+    for candidate in pool:
+        if budget_legal(eff, picks + [candidate]):
+            picks.append(candidate)
+    return tuple(picks)
+
+
+def budget_member_legal(game, player, eff, member):
+    refs = eff.data.get("graveyard_refs", {})
+    ref = refs.get(id(member))
+    return (ref is None or ref[0].find(ref[1]) is member) and game.legal_target(player, eff.data["probe"], member)
+
+
 def _noun(text):
     from .cx_grammar_zones import card_noun
     from .permanent_templates import _CREATURE_SUBTYPES
