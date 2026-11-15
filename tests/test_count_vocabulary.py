@@ -73,6 +73,28 @@ class Evaluation(unittest.TestCase):
         self.game.attackers = list(self.a.battlefield[:2])
         self.assertEqual(self.game.x_quantity(self.a, effects[0].data["xq"], None, None), 2)
 
+    def _count(self, text):
+        effects, bad = _parse_effects(text)
+        self.assertEqual(bad, [], text)
+        return self.game.x_quantity(self.a, effects[0].data["xq"], None, None)
+
+    def test_other_adjectives_count(self):
+        """#428: legendary / colorless / multicolored / attacking-subtype counts read the adjective."""
+        legend = card("Test Legend", "{G}", "Legendary Creature — Elf", "", 1, 1)
+        gold = card("Test Gold", "{R}{G}", "Creature — Ogre", "", 2, 2)
+        self.a.battlefield += [Permanent(legend, self.a), Permanent(gold, self.a)]
+        self.assertEqual(self._count("You gain 1 life for each legendary creature you control."), 1)
+        self.assertEqual(self._count("Draw a card for each multicolored permanent you control."), 1)
+        self.assertEqual(self._count("You gain 1 life for each colorless creature you control."), 0)
+        self.game.attackers = [self.a.battlefield[2], self.a.battlefield[3]]
+        self.assertEqual(self._count("You gain 1 life for each attacking Elf you control."), 1)
+        self.assertEqual(self._count("You gain 1 life for each tapped creature you control."), 0)
+        self.a.battlefield[0].tapped = True
+        self.assertEqual(self._count("You gain 1 life for each tapped creature you control."), 1)
+        self.assertEqual(self._count("Draw a card for each modified creature you control."), 0)
+        self.a.battlefield[1].counters["+1/+1"] = 1
+        self.assertEqual(self._count("Draw a card for each modified creature you control."), 1)
+
 
 @unittest.skipUnless(DB_FILE.exists(), "card database not built")
 class RealCards(unittest.TestCase):
