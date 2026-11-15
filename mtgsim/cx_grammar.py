@@ -646,7 +646,7 @@ def parse_static(line: str, st) -> bool:
 
 
 def _stat_conditioned(spec) -> bool:
-    if "stat" in spec and spec["stat"][0] != "mana value" or "base_pt" in spec:
+    if "stat" in spec and spec["stat"][0] != "mana value" or "base_pt" in spec or "tough_gt_power" in spec:
         return True
     if "cx_desc" in spec:
         desc = _desc(spec["cx_desc"], spec["plural"])

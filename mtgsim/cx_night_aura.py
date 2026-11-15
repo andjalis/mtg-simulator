@@ -81,4 +81,10 @@ def dmg_stat(game, perm) -> int:
     if sources(game, "toughness_damage_all") or any(x.controller is perm.controller
                                                     for x in sources(game, "toughness_damage")):
         return perm.toughness
+    from .cx_grammar import static_rules        # the grammar's "assigns combat damage equal to its ..." (#313)
+    rules = static_rules(game, perm, "cx_dmg_stat")
+    if "toughness" in rules:
+        return perm.toughness
+    if "mana value" in rules:
+        return perm.card.cmc
     return perm.power

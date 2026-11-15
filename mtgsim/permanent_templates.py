@@ -220,7 +220,11 @@ def selector(text, *, plural=False):
         text = text[:base.start()]
     # Only one supported trailing predicate; additional text fails below.
     m = re.search(r' with (power|toughness|mana value) (\d+) or (less|greater)$', text, re.I)
-    if m:
+    rel = re.search(r' with toughness greater than (?:its|their) power$', text, re.I)
+    if rel:          # Doran's friends: "each creature you control with toughness greater than its power"
+        result['tough_gt_power'] = True
+        text = text[:rel.start()]
+    elif m:
         result['stat'] = [m[1].lower(), '<=' if m[3].lower() == 'less' else '>=', int(m[2])]
         text = text[:m.start()]
     else:
@@ -329,6 +333,8 @@ def matches(game, permanent, spec, controller, source=None):
         name, present = spec['keyword']
         if permanent.has(name) != present:
             return False
+    if spec.get('tough_gt_power') and not permanent.toughness > permanent.power:
+        return False
     if 'stat' in spec:
         stat, op, n = spec['stat']
         value = permanent.card.cmc if stat == 'mana value' else getattr(permanent, stat)
