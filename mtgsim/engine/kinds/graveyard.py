@@ -113,6 +113,47 @@ def gy_return_attachment_choice(game, p, target, **_):
     game.log(f"returns {target.name} from the graveyard to the battlefield", p)
 
 
+@kind("gy_cross_host", "gy_cross_attachment")
+def gy_cross_collect(game, p, eff, target, item, **_):
+    if eff.kind == "gy_cross_host":
+        item.gy_cross_host = (target, eff)
+    else:
+        if not hasattr(item, "gy_cross_attachments"):
+            item.gy_cross_attachments = []
+        item.gy_cross_attachments.append((target, eff))
+    return NO_SBA
+
+
+@kind("gy_cross_finish")
+def gy_cross_finish(game, p, item, **_):
+    from ...backlog_templates import entry_batch
+    from ...cx_attach import can_host
+    from ...residual_templates import blocked_entry
+    host = None
+    pair = getattr(item, "gy_cross_host", None)
+    if pair and game.legal_target(p, pair[1], pair[0]) and not blocked_entry(game, pair[0]):
+        card = pair[0]
+        p.graveyard.remove(card)
+        host = game.enter_battlefield(p, card, defer_sba=True)
+        game.log(f"returns {card.name} from the graveyard to the battlefield", p)
+    ready = []
+    for card, eff in getattr(item, "gy_cross_attachments", []):
+        if not game.legal_target(p, eff, card) or blocked_entry(game, card):
+            continue
+        preview = Permanent(card, p)
+        can_attach = host is not None and can_host(game, preview, host)
+        if "Aura" in card.subtypes and not can_attach:
+            continue
+        ready.append((card, host if can_attach else None))
+    for card, _ in ready:
+        p.graveyard.remove(card)
+    with entry_batch(game):
+        for card, dest in ready:
+            game.enter_battlefield(p, card, aura_host=dest if card.aura else None,
+                                   equipment_host=dest if not card.aura else None)
+            game.log(f"returns {card.name} from the graveyard to the battlefield", p)
+
+
 @kind("gy_budget_return")
 def gy_budget_return(game, p, eff, target, **_):
     from ...graveyard_returns import budget_member_legal

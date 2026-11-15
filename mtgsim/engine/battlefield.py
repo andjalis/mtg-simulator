@@ -56,7 +56,8 @@ class BattlefieldMixin:
 
     def enter_battlefield(self, p: Player, card: CardDef, tapped_attacking: bool = False, x: int = 0,
                           *, tapped: bool = False, counters: dict | None = None,
-                          physical_card: CardDef | None = None, equipment_host=None, aura_host=None) -> Permanent:
+                          physical_card: CardDef | None = None, equipment_host=None, aura_host=None,
+                          defer_sba: bool = False) -> Permanent:
         from ..residual_templates import blocked_entry
         if blocked_entry(self, card, physical_card):
             return None
@@ -286,7 +287,7 @@ class BattlefieldMixin:
                 self.fire(pl, "permanent_enters", subject=perm)
         if card.is_land:
             self.fire(p, "land_enters", subject=perm)
-        if getattr(self, '_entry_batch', None) is None:
+        if getattr(self, '_entry_batch', None) is None and not defer_sba:
             self.state_based_actions()
         return perm
 

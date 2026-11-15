@@ -119,3 +119,63 @@ class SpreeReturns(Base):
         self.a.graveyard.append(card("Mount", "{1}", "Creature — Horse Mount", "", 1, 1))
         target = self.a.graveyard[0]
         self.assertTrue(self.game.valid_action_targets(self.a, [first, second], [target, target]))
+
+
+class ReturnedCreatureAttachments(Base):
+    def spell_and_cards(self, toughness=2):
+        text = ("Return target creature card from your graveyard to the battlefield, then return up to two target "
+                "Aura and/or Equipment cards from your graveyard to the battlefield attached to that creature.")
+        spell = self.spell(text, types="Sorcery")
+        creature = card("Host", "{1}", "Creature — Human", "", 2, toughness)
+        aura = card("Aura", "{1}", "Enchantment — Aura", "Enchant creature\nEnchanted creature gets +1/+1.")
+        equipment = card("Sword", "{1}", "Artifact — Equipment", "")
+        self.a.graveyard.extend([creature, aura, equipment])
+        return spell, list(self.a.graveyard)
+
+    def resolve_targets(self, spell, targets, before=None):
+        effects = protect_graveyard_targets(self.game, spell.spell_effects, targets)
+        item = StackItem(self.a, effects, targets, card=spell, kind="spell")
+        self.game.stack.append(item)
+        if before:
+            before()
+        self.game.resolve_top()
+        return item
+
+    def test_returns_attachments_to_the_actual_returned_creature(self):
+        spell, (host_card, aura_card, sword_card) = self.spell_and_cards()
+        other = self.perm(card("Other", "{5}", "Creature — Human", "", 5, 5), self.a)
+        self.resolve_targets(spell, [host_card, aura_card, sword_card, None])
+        host = next(p for p in self.a.creatures if p.card.name == "Host")
+        aura = next(p for p in self.a.battlefield if p.card.name == "Aura")
+        sword = next(p for p in self.a.battlefield if p.card.name == "Sword")
+        self.assertIs(aura.aura_host, host)
+        self.assertIs(sword.attached_to, host)
+        self.assertIsNot(host, other)
+
+    def test_aura_can_save_zero_toughness_host_before_state_actions(self):
+        spell, (host_card, aura_card, _) = self.spell_and_cards(toughness=0)
+        self.resolve_targets(spell, [host_card, aura_card, None, None])
+        host = next(p for p in self.a.battlefield if p.card.name == "Host")
+        self.assertEqual(host.toughness, 1)
+
+    def test_invalid_host_leaves_aura_but_equipment_enters_unattached(self):
+        spell, (host_card, aura_card, sword_card) = self.spell_and_cards()
+        item = self.resolve_targets(spell, [host_card, aura_card, sword_card, None],
+                                    lambda: self.game.move_card(host_card, self.a.graveyard, self.a.exile))
+        self.assertTrue(item.resolved)
+        self.assertIn(aura_card, self.a.graveyard)
+        sword = next(p for p in self.a.battlefield if p.card.name == "Sword")
+        self.assertIsNone(sword.attached_to)
+
+    def test_an_illegal_attachment_does_not_stop_other_targets(self):
+        spell, (host_card, aura_card, sword_card) = self.spell_and_cards()
+        self.resolve_targets(spell, [host_card, aura_card, sword_card, None],
+                             lambda: self.game.move_card(aura_card, self.a.graveyard, self.a.exile))
+        host = next(p for p in self.a.battlefield if p.card.name == "Host")
+        sword = next(p for p in self.a.battlefield if p.card.name == "Sword")
+        self.assertIs(sword.attached_to, host)
+
+    def test_attachment_slots_must_be_distinct(self):
+        spell, (host_card, aura_card, _) = self.spell_and_cards()
+        self.assertFalse(self.game.valid_action_targets(self.a, spell.spell_effects,
+                                                       [host_card, aura_card, aura_card, None]))

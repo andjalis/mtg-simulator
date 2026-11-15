@@ -26,6 +26,9 @@ EFFECT_PATTERNS = [
      lambda m: _distinct_values()),
     (r"return target equipment card from your graveyard to the battlefield attached to ~",
      lambda m: _attached_equipment()),
+    (r"return target creature card from your graveyard to the battlefield, then return up to two target "
+     r"aura and/or equipment cards from your graveyard to the battlefield attached to that creature",
+     lambda m: _creature_with_attachments()),
     (r"return up to three target creature cards with total mana value (\d+) or less from your graveyard to the battlefield",
      lambda m: _budget_returns(int(m[1]), 3)),
     (r"return any number of target ally creature cards with total mana value (\d+) or less from your graveyard to the battlefield",
@@ -43,6 +46,18 @@ def _attached_equipment():
     return Effect("gy_return_equipment_to_source", target="graveyard_card",
                   data={"cx_card": {"types": [], "subtypes_exact": ["equipment"]},
                         "zone": "you", "side": "mine"})
+
+
+def _creature_with_attachments():
+    from .cards import Effect
+    creature = {"cx_card": {"types": ["creature"]}, "zone": "you", "side": "mine"}
+    attachment = {"cx_card": {"types": [], "subtypes_exact": ["aura", "equipment"]},
+                  "zone": "you", "side": "mine", "optional_target": True,
+                  "distinct": True, "group": "gy_attached"}
+    return [Effect("gy_cross_host", target="graveyard_card", data=creature),
+            Effect("gy_cross_attachment", target="graveyard_card", data=dict(attachment)),
+            Effect("gy_cross_attachment", target="graveyard_card", data=dict(attachment)),
+            Effect("gy_cross_finish")]
 
 
 def spree_return_mode(text):
