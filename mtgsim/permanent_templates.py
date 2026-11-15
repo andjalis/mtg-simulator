@@ -17,7 +17,7 @@ _CREATURE_SUBTYPES = frozenset((
     'advisor aenar aetherborn alien ally andorian android angel antelope ape archer archon armadillo armored army '
     'artificer assassin assembly-worker astartes atog aurochs avatar azra badger barbarian bard basilisk bat '
     'bear beast beaver beeble beholder berserker bird bison boar borg brainiac bringer brushwagg caitian camel '
-    'capybara carrier cat centaur chef child chimera citizen clamfolk cleric clown cockatrice construct cow '
+    'capybara carrier cat centaur chef child chimera citizen clamfolk cleric clown cockatrice commander construct cow '
     'coward coyote crab crocodile custodes cyberman cyborg cyclops dauthi demigod demon detective devil '
     'dinosaur djinn doctor dog dragon drake dreadnought drix drone druid dryad dwarf echidna efreet egg elder '
     'eldrazi elemental elephant elf elk employee eternal eye faerie ferret fish flagbearer fox fractal frog '
