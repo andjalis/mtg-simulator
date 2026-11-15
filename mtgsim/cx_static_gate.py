@@ -80,7 +80,7 @@ _PT = r"[+-](?:\d+|X)/[+-](?:\d+|X)"
 
 
 def _scale(body: str):
-    """(body with a plain pump, quantity spec or None) or None when the scale can't be read."""
+    """(body with a plain pump, quantity spec or None, the quantity as written) or None when the scale can't be read."""
     from .cx_grammar import _count_spec
     m = re.fullmatch(r"(.+), where X is (.+)", body)
     if m:
@@ -92,13 +92,13 @@ def _scale(body: str):
         if p != "X" and p != "0" or t != "X" and t != "0":
             return None             # "+X/+1": only part of the pump scales
         new = f"{sp}{1 if p == 'X' else 0}/{st}{1 if t == 'X' else 0}"
-        return re.sub(_PT, new, m[1], count=1), _quantity(_xq(m[2]), m[2], strict=False)    # _xq's own table
+        return re.sub(_PT, new, m[1], count=1), _quantity(_xq(m[2]), m[2], strict=False), m[2]    # _xq's own table
     m = re.fullmatch(rf"(.*\bgets? {_PT}) for each (.+?)((?:,| and|, and) (?:has|have|gets?|is|can|attacks)\b.*)?", body)
     if m:
-        return m[1] + (m[3] or ""), _quantity(_count_spec(m[2]), m[2])
+        return m[1] + (m[3] or ""), _quantity(_count_spec(m[2]), m[2]), m[2]
     if re.search(r"\b(?:for each|where X is)\b|\bX\b", body):
         return None
-    return body, None
+    return body, None, ""
 
 
 # x_quantity kinds that read the resolving item (the spell, the cost paid, what was revealed): no referent in a static.
@@ -107,9 +107,11 @@ _CONTEXT = ("spell", "stat", "sac", "sac_plus", "tap", "revealed", "exiled_gy", 
 
 def _quantity(spec, text: str, strict: bool = True):
     """The spec, or False when a static can't read it: a referent that isn't fixed ("it", that spell, the sacrificed
-    creature) or one that reads power / toughness (it would read the bonus it gives)."""
-    if spec is None or re.search(r"\b(?:it|its|that|those|them)\b", text, re.I) \
-            or re.search(r"power|toughness", text + repr(spec), re.I) or spec[0] in _CONTEXT \
+    creature) or one that reads power / toughness (it would read the bonus it gives). "counters on it" is the one
+    pronoun a static can resolve: it names the permanent getting the bonus (marked "recipient" by parse_line)."""
+    on_it = spec is not None and spec[0] == "counters" and bool(re.search(r"\bcounters? on it\b", text, re.I))
+    if spec is None or spec[0] in _CONTEXT or re.search(r"power|toughness", text + repr(spec), re.I) \
+            or re.search(r"\b(?:it|its|that|those|them)\b", text, re.I) and not on_it \
             or not _trusted(spec, text, strict):
         return False
     return spec
@@ -141,7 +143,7 @@ def _trusted(spec, text: str, strict: bool = True) -> bool:
     if kind in ("life", "speed", "hand", "party", "colors_among", "devotion"):
         return True
     if kind == "counters":
-        return bool(re.fullmatch(rf"{re.escape(spec[1])} counters? on ~", t, re.I))
+        return bool(re.fullmatch(rf"{re.escape(spec[1])} counters? on (?:~|it)", t, re.I))
     if kind in ("count", "gy"):
         if not isinstance(spec[1], str) or not _fits_words(spec[1]) or spec[1].lower().startswith("other") \
                 and kind == "gy":
@@ -156,6 +158,9 @@ def _trusted(spec, text: str, strict: bool = True) -> bool:
     if kind == "cxq":
         desc = next((x["cx_desc"] for x in spec[1:] if isinstance(x, dict) and "cx_desc" in x), "")
         return not re.search(r"\b(?:and|or)\b", desc)
+    if kind == "domain":
+        # "for each basic land type among lands you control": the only domain phrase whose words match the spec
+        return bool(re.fullmatch(r"basic land types? among lands you control", t, re.I))
     return not strict and kind in ("domain", "named_lands", "greatest_perm", "greatest")
 
 def _nouns(value) -> set:
@@ -233,7 +238,7 @@ def parse_line(line: str, st) -> bool:
         scaled = _scale(body)
         if scaled is None or scaled[1] is False:
             continue
-        body, xq = scaled
+        body, xq, qtext = scaled
         if not code and xq is None:
             continue                    # neither gate nor scale: not this module's line
         read = _parts(body, st)
@@ -265,6 +270,9 @@ def parse_line(line: str, st) -> bool:
         other = _other(xq, scope, spec, st) if xq is not None else ""
         if other is None:
             continue
+        if other != "recipient" and xq is not None and xq[0] == "counters" \
+                and re.search(r"\bcounters? on it\b", qtext, re.I):
+            other = "recipient"     # "for each +1/+1 counter on it": each permanent getting the bonus counts its own
         rows = []
         for p in parts:
             if p.kind == "pump":

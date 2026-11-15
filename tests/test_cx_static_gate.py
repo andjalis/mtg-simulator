@@ -42,6 +42,10 @@ class Parsing(unittest.TestCase):
         rows = self.full("~ gets +1/+1 for each creature your opponents control.")
         self.assertEqual(rows[0][0], "")
         self.assertIsNotNone(rows[0][3][3])
+        rows = self.full("~ gets +1/+0 for each basic land type among lands you control.")
+        self.assertEqual(rows[0][3], ("pt", 1, 0, ("domain",)))
+        rows = self.full("Each creature you control gets +1/+1 for each +1/+1 counter on it.")
+        self.assertEqual(rows[0][3], ("pt", 1, 1, ("counters", "+1/+1"), "recipient"))
         rows = self.full("Enchant creature\nEnchanted creature gets -X/-0, where X is the number of cards in your "
                          "graveyard.", "Enchantment — Aura")
         self.assertEqual(rows[0][3][1:3], (-1, 0))
@@ -55,6 +59,8 @@ class Parsing(unittest.TestCase):
                 ('As long as ~ is monstrous, it has "{T}: Draw a card."', "Creature — Beast"),       # quoted (#338)
                 ("During your turn, creatures you control with power 2 or less get +1/+1.", "Enchantment"),
                 ("~ gets +1/+1 for each creature with power 4 or greater.", "Creature — Beast"),    # quantity reads P/T
+                ("~ gets +1/+1 for each basic land type among lands your opponents control.", "Creature — Beast"),
+                ("~ gets +1/+1 for each +1/+1 counter on that creature.", "Creature — Beast"),      # referent not fixed
                 ("Equipped creature gets +X/+1, where X is the number of artifacts you control.",  # only part scales
                  "Artifact — Equipment"),
                 ("Equipped creature gets +X/+X, where X is its mana value.", "Artifact — Equipment"),  # "its"
@@ -184,6 +190,21 @@ class Playing(Base):
                                 13, 13), self.a)
         self.a.life = 10
         self.assertEqual((shadow.power, shadow.toughness), (3, 3))
+
+    def test_domain_scale_and_counters_on_it(self):
+        scout = self.perm(card("Scout", "{R}", "Creature — Kavu", "~ gets +1/+0 for each basic land type among "
+                             "lands you control.", 2, 2), self.a)
+        self.assertEqual((scout.power, scout.toughness), (2, 2))
+        from tests.test_templates import MOUNTAIN, PLAINS
+        self.perm(PLAINS, self.a)
+        self.perm(ISLAND, self.a)
+        self.assertEqual((scout.power, scout.toughness), (4, 2))
+        self.perm(MOUNTAIN, self.a)
+        self.assertEqual((scout.power, scout.toughness), (5, 2))
+        self.perm(gated("Each creature you control gets +1/+1 for each +1/+1 counter on it.", "Enchantment"), self.a)
+        plain, rich = self.perm(BEAR, self.a), self.perm(BEAR, self.a)
+        rich.counters["+1/+1"] = 2
+        self.assertEqual((plain.power, rich.power), (2, 6))     # each counts its own counters (plus the counters' own +2/+2)
 
 
 @unittest.skipUnless(DB_FILE.exists(), "card database not built")
