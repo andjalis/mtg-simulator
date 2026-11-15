@@ -1439,6 +1439,9 @@ class HeuristicAI:
                         return card, _aim(card, first, tgt)
                 if lethal_damage and boost and tgt.toughness - tgt.damage + boost[2] > eff.amount:
                     return card, _aim(card, boost[0], tgt)
+                shield = sum(e.amount for e in card.spell_effects if e.kind == "divided_prevent" and not e.data)
+                if lethal_damage and shield and tgt.toughness - tgt.damage + shield > eff.amount:
+                    return card, [None] * len(card.spell_effects)   # the division goes to tgt (divided_prevent.plan)
         return None
 
     def counter(self, game: Game, me: Player, item, options):

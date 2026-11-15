@@ -108,8 +108,6 @@ class RecipientParse(unittest.TestCase):
             "Prevent the next 1 damage that would be dealt by ~ this turn.",                      # Barbed Wire: source filter
             "Prevent the next 3 damage that would be dealt to any target this turn by a source of "
             "your choice.",                                                                      # Healing Grace
-            "Prevent the next 4 damage that would be dealt this turn to any number of targets, "
-            "divided as you choose.",                                                            # Embolden
             "Prevent the next 2 damage that would be dealt to target Cleric or Wizard creature "
             "this turn.",                                                                        # subtype union
             "Prevent the next 2 damage that would be dealt to you or ~ this turn.",               # shared pool

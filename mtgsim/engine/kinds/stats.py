@@ -410,3 +410,10 @@ def set_base_referent(game, eff, target, item, prev=None, **_):
     power = subject.power if eff.data["stat"] in ("power", "both") else None
     toughness = subject.toughness if eff.data["stat"] in ("toughness", "both") else None
     game.add_continuous_effect(target, "set_base", power=power, toughness=toughness, until_eot=True)
+
+
+@kind("divided_prevent")
+def divided_prevent(game, p, eff, item=None, **_):
+    """"Prevent the next N damage ... to any number of targets, divided as you choose" (mtgsim.divided_prevent)."""
+    from ... import divided_prevent as dp
+    dp.resolve(game, p, eff, item)

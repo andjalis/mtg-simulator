@@ -75,6 +75,9 @@ class Stack(list):
                 if not hasattr(item, "divided"):
                     item.divided = {}
                 item.divided[id(eff)] = plan(self.game, item.controller, eff)
+        if any(eff.kind == "divided_prevent" for eff in item.effects):
+            from .divided_prevent import plan_item          # "... divided as you choose" shields (#333)
+            plan_item(self.game, item)
 
 
 def plan(game, p, eff):
