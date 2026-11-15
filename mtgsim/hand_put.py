@@ -18,6 +18,11 @@ The effect is the existing ``hand_to_battlefield`` kind; its data gains
 * ``entry``: "tapped", "attacking" (tapped and attacking the opponent), "attached" (an Aura attached to the
   source, which must be a legal host) or "blocking" (blocking the attacker a block trigger names: Aetherplasm).
 
+Multi-puts ("put up to two creature cards ...", "put any number of land cards ... tapped", #523) are the same
+effect with ``data["many"]`` and the count in ``amount`` ("any number" is 99, the gy_move convention); a
+", where X is ..." on the sentence scales ``amount`` through the shared where-X rule, so "put up to X land
+cards ..., where X is ..." needs no special casing.
+
 Only the controller's own hand is covered: "each player may" / "that player may" need a decision by another
 player and are left unmatched, as are quantities ``_xq`` doesn't know ("that damage": #313).
 """
@@ -54,14 +59,16 @@ def _spec(desc: str):
     return spec
 
 
-def _build(m):
-    from .cards.model import Effect, NO_MATCH
+def _common(m):
+    """The shared data of a put: spec, mana value bound, entry modifier. NO_MATCH when unsupported."""
+    from .cards.model import NO_MATCH
     from .cards.clauses import _xq
+    gd = m.groupdict()
     spec = _spec(m["desc"])
     if spec is None:
         return NO_MATCH
-    if m["desc2"]:
-        other = _spec(m["desc2"])
+    if gd.get("desc2"):
+        other = _spec(gd["desc2"])
         if other is None or "any_sub" in spec or "any_sub" in other:
             return NO_MATCH
         spec = {"either": [spec, other]}
@@ -107,7 +114,34 @@ def _build(m):
         return NO_MATCH              # a bare Aura put from hand: the host choice is not modelled here
     if m["sac"]:
         data["sac_eot"] = True
+    return data
+
+
+def _build(m):
+    from .cards.model import Effect, NO_MATCH
+    data = _common(m)
+    if data is NO_MATCH:
+        return NO_MATCH
     return Effect("hand_to_battlefield", data=data)
+
+
+def _build_many(m):
+    """"Put up to N / any number of <desc> cards from your hand onto the battlefield" (#523): the count rides
+    in the effect's amount, so the shared where-X rule scales "up to X" by its quantity at resolution."""
+    from .cards.model import Effect, NO_MATCH, _num
+    data = _common(m)
+    if data is NO_MATCH:
+        return NO_MATCH
+    gd = m.groupdict()
+    if gd.get("many_any"):
+        n = 99                    # "any number of": every candidate the policy chooses to put
+    else:
+        try:
+            n = _num(gd["many_n"])
+        except (KeyError, ValueError):
+            return NO_MATCH       # "up to X" with no ", where X is ...": no constant count
+    data["many"] = True
+    return Effect("hand_to_battlefield", amount=n, data=data)
 
 
 # "... onto the battlefield. Sacrifice it at the beginning of the next end step." (Planebound Accomplice): the
@@ -130,11 +164,15 @@ SUBS = [
 
 _MV = (r"(?: with mana value (?:(?P<n>\d+) or (?P<dir>less|greater|more)|(?P<op>equal to|less than or equal to|X or less|X)"
        r"(?: (?P<q>(?!from\b).+?))?)| with (?P<rel>lesser|equal or lesser) (?P<stat>power|toughness))?")
+_ENTRY_RX = r"(?: (?P<entry>tapped and attacking(?: that opponent)?|tapped|attached to ~|blocking that creature))?"
+_WHERE_RX = r"(?: HANDPUT_WHERE (?P<where>.+?))?(?P<sac> HANDPUT_SAC_EOT)?"
 EFFECT_PATTERNS = [
+    (r"(?:you may )?put (?:up to (?P<many_n>\w+)|(?P<many_any>any number of)) (?P<desc>[\w ,'/-]+?) cards?"
+     r"(?P<chosen> of the chosen type)?" + _MV + r" from your hand onto the battlefield" + _ENTRY_RX + _WHERE_RX,
+     _build_many),
     (r"(?:you may )?put (?:an?|one) (?P<desc>[\w ,'/-]+?) card(?: or an? (?P<desc2>[\w '/-]+?) card)?"
      r"(?P<chosen> of the chosen type)?" + _MV +
-     r" from your hand onto the battlefield(?: (?P<entry>tapped and attacking(?: that opponent)?|tapped|attached to ~|blocking that creature))?"
-     r"(?: HANDPUT_WHERE (?P<where>.+?))?(?P<sac> HANDPUT_SAC_EOT)?", _build),
+     r" from your hand onto the battlefield" + _ENTRY_RX + _WHERE_RX, _build),
 ]
 
 
@@ -214,6 +252,18 @@ def choose(game, me, cards, entry):
     return max(pool, key=lambda c: c.cmc)
 
 
+def choose_many(game, me, cards, entry, n) -> list:
+    """Default policy for a multi-put: up to n cards, each picked through the single-choice hook."""
+    picked, remaining = [], list(cards)
+    while remaining and len(picked) < n:
+        card = game.hook(me, "choose_hand_put")(game, me, remaining, entry)
+        if card is None or card not in remaining:
+            break
+        picked.append(card)
+        remaining.remove(card)
+    return picked
+
+
 def _blocked_attacker(game, p, item):
     """ "blocking that creature": the attacker a "whenever ~ blocks a creature" trigger names (its context), while
     it is still attacking p in this combat; otherwise the creature just enters (CR 506.3)."""
@@ -233,19 +283,26 @@ def _optional(eff, item) -> bool:
 
 
 def resolve(game, p, eff, item):
-    perm = _put(game, p, eff, item)
+    perms = _put(game, p, eff, item)
     if item is not None and _optional(eff, item):
-        item.gate_paid = perm is not None      # "If you do / If you don't, ..." ask whether a card was put
-    return perm
+        item.gate_paid = bool(perms)      # "If you do / If you don't, ..." ask whether a card was put
+    if eff.data.get("many"):
+        return perms or None
+    return perms[0] if perms else None
 
 
 def _put(game, p, eff, item):
-    from .engine.state import Permanent
     cards = candidates(game, p, eff, item)
     entry = eff.data.get("entry", "")
-    card = game.hook(p, "choose_hand_put")(game, p, cards, entry) if cards else None
-    if card is None or card not in cards:
-        return None
+    if not cards:
+        return []
+    limit = eff.amount if eff.data.get("many") else 1    # amount already scaled by a where-X quantity
+    return [perm for card in choose_many(game, p, cards, entry, limit)
+            if (perm := _enter_one(game, p, eff, item, card, entry)) is not None]
+
+
+def _enter_one(game, p, eff, item, card, entry):
+    from .engine.state import Permanent
     src = item.source if item is not None and isinstance(getattr(item, "source", None), Permanent) else None
     p.hand.remove(card)
     if entry == "attached":
@@ -277,12 +334,19 @@ def _put(game, p, eff, item):
 
 
 def value(game, me, eff, source) -> float:
-    """AI worth of the put before it is activated: the mana value of the card it would choose (0: nothing)."""
+    """AI worth of the put before it is activated: the mana value of the card(s) it would choose (0: nothing)."""
     from types import SimpleNamespace
     from .engine.state import Permanent, StackItem
     src = source.source if isinstance(source, StackItem) else source
     item = SimpleNamespace(source=src if isinstance(src, Permanent) else None, card=getattr(src, "card", None),
                            context=None)
     cards = candidates(game, me, eff, item)
-    card = game.hook(me, "choose_hand_put")(game, me, cards, eff.data.get("entry", "")) if cards else None
+    entry = eff.data.get("entry", "")
+    if eff.data.get("many"):
+        limit = eff.amount or 99
+        if eff.data.get("xq"):
+            limit *= game.x_quantity(me, eff.data["xq"], item, None)
+        picked = choose_many(game, me, cards, entry, limit)
+        return sum(c.cmc for c in picked) + len(picked) if picked else 0.0
+    card = game.hook(me, "choose_hand_put")(game, me, cards, entry) if cards else None
     return float(card.cmc) + 1 if card is not None else 0.0

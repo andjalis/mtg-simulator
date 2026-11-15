@@ -29,6 +29,11 @@ RAZER = card("Test Razer", "{1}", "Artifact", "{T}: You may put a creature card 
 SHARED_X = card("Test Feeder", "{1}", "Artifact", "{T}, Sacrifice a creature: Draw X cards, then you may put a "
                 "permanent card with mana value X or less from your hand onto the battlefield, where X is the "
                 "sacrificed creature's mana value.")
+MANY2 = card("Test Pair", "{1}", "Artifact", "{T}: Put up to two creature cards from your hand onto the battlefield.")
+SPRAWL = card("Test Sprawl", "{2}", "Artifact", "{T}: Put any number of land cards from your hand onto the "
+              "battlefield tapped.")
+SPITTER = card("Test Spitter", "{1}", "Artifact", "{T}, Sacrifice a creature: Draw X cards, then put up to X land "
+               "cards from your hand onto the battlefield tapped, where X is the sacrificed creature's power.")
 SHADOW = card("Test Shadow", "{2}", "Creature — Horse", "{T}: You may put a creature card with lesser power from your "
               "hand onto the battlefield.", 3, 3)
 EITHER = card("Test Either", "{2}", "Artifact", "{T}: You may put a red creature card or an artifact creature card from "
@@ -85,6 +90,22 @@ class Parse(unittest.TestCase):
             c = card("Desc Test", "{1}", "Artifact", f"{{T}}: You may put a {desc} card from your hand onto the battlefield.")
             self.assertEqual(c.unsupported, [], desc)
             self.assertEqual(_eff(c).data["spec"], spec, desc)
+
+    def test_many_forms(self):
+        """"Put up to N / any number of <desc> cards" (#523): the count rides in the effect's amount."""
+        for c in (MANY2, SPRAWL, SPITTER):
+            self.assertEqual(c.unsupported, [], c.name)
+        self.assertEqual(_eff(MANY2).amount, 2)
+        self.assertEqual(_eff(MANY2).data, {"spec": {"types": ["creature"]}, "many": True})
+        self.assertEqual(_eff(SPRAWL).amount, 99)
+        self.assertEqual(_eff(SPRAWL).data["entry"], "tapped")
+        # "put up to X land cards ..., where X is Q" parses as one and scales at resolution
+        self.assertEqual(_eff(SPITTER).amount, 1)
+        self.assertEqual(_eff(SPITTER).data["xq"], ("sac", "power"))
+        self.assertTrue(_eff(SPITTER).data["many"])
+        # "up to X" with no where-X has no constant count: stays unmatched
+        c = card("Bare X", "{1}", "Artifact", "{T}: Put up to X land cards from your hand onto the battlefield.")
+        self.assertTrue(c.unsupported)
 
     def test_static_either_relative_and_paid_x(self):
         c = card("Desc Test", "{1}", "Artifact", "{T}: You may put an artifact card with mana value 5 or less from "
@@ -284,6 +305,51 @@ class Resolve(unittest.TestCase):
         self.assertIn("Test Rock", self.names())         # 2 <= 3 put; Brute (5) stays
         self.assertNotIn("Test Brute", self.names())
         self.assertNotIn("Three Ogre", self.names())
+
+    @staticmethod
+    def island():
+        return card("Island", types="Basic Land — Island", text="({T}: Add {U}.)")
+
+    def test_put_up_to_two(self):
+        pair = self.put(MANY2, BEAR2, OGRE3, GOBLIN, BRUTE)
+        self.activate(pair)
+        self.assertEqual(sorted(self.names() & {"Two Bear", "Three Ogre", "Test Goblin", "Test Brute"}),
+                         ["Test Brute", "Three Ogre"])          # the two costliest go
+        self.assertEqual(sorted(c.name for c in self.a.hand), ["Test Goblin", "Two Bear"])
+
+    def test_any_number_lands_enter_tapped(self):
+        sprawl = self.put(SPRAWL, self.island(), self.island(), self.island(), BEAR2)
+        self.activate(sprawl)
+        lands = [x for x in self.a.battlefield if x.card.name == "Island"]
+        self.assertEqual(len(lands), 3)
+        self.assertTrue(all(x.tapped for x in lands))
+        self.assertEqual([c.name for c in self.a.hand], ["Two Bear"])
+
+    def test_many_declined_puts_nothing(self):
+        pair = self.put(MANY2, BEAR2, OGRE3)
+        self.a.ai.choose_hand_put = lambda game, me, cards, entry: None
+        self.activate(pair)
+        self.assertEqual(sorted(c.name for c in self.a.hand), ["Three Ogre", "Two Bear"])
+        self.assertNotIn("Two Bear", self.names())
+
+    def test_where_x_scales_the_many_count(self):
+        """"Draw X cards, then put up to X land cards ..., where X is ...": the count scales with X (#523)."""
+        self.assertEqual(SPITTER.unsupported, [])
+        spitter = self.put(SPITTER, self.island(), self.island(), self.island(), self.island())
+        self.game.enter_battlefield(self.a, OGRE3)       # power 3: the sacrificed creature
+        self.activate(spitter)
+        self.assertEqual(len(self.a.library), 7)         # drew three
+        lands = [x for x in self.a.battlefield if x.card.name == "Island"]
+        self.assertEqual(len(lands), 3)                  # up to three of the seven lands in hand, tapped
+        self.assertTrue(all(x.tapped for x in lands))
+        self.assertEqual(len(self.a.hand), 4)
+
+    def test_ai_activates_many_only_with_cards_to_put(self):
+        pair = self.put(MANY2)
+        idx = len(pair.activated) - 1
+        self.assertFalse(ability_worth(self.game, self.a, pair, idx))
+        self.a.hand.extend([BEAR2, OGRE3])
+        self.assertTrue(ability_worth(self.game, self.a, pair, idx))
 
     def test_either_description(self):
         either = self.put(EITHER, ELF, GOLEM, GOBLIN)
