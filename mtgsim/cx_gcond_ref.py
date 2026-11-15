@@ -197,11 +197,34 @@ def _ref_another(m):
     return _code("prev_is", specs[0]) if specs and len(specs) == 1 else ""
 
 
+@rule(r"(?P<ref>it|that spell) has (?:a single|one) targets?")
+def _single_target(m):
+    """"if it has a single target": the referent spell/ability has exactly one chosen target."""
+    from .cx_condlib import _code
+    return _code("ref_target_count", "==", 1, _refname(m))
+
+
+@rule(r"(?P<ref>it|that spell) targets (?P<f>[\w ,/-]+)")
+def _targets(m):
+    """"if it targets a blue permanent": one of the referent spell's chosen targets matches the noun
+    phrase. Controller selectors ("you control"), players and counts stay unread."""
+    from .cx_condlib import _code
+    f = re.sub(r"^(?:a|an) ", "", m["f"].strip(), flags=re.I)
+    if re.search(_NOT_A_FILTER, f, re.I) or re.search(r"(?i)\b(?:you|your|their|them|only|one or more|two)\b", f):
+        return ""
+    specs = _specs(f)
+    if not specs:
+        return ""
+    codes = [_code("ref_targets", spec, _refname(m)) for spec in specs]
+    return _code("or", *codes) if len(codes) > 1 else codes[0]
+
+
 # ---------------------------------------------------------------------------
 # Evaluation
 # ---------------------------------------------------------------------------
 
-KINDS = {"ref_stat", "ref_stat_vs", "ref_not_is", "ref_flag", "ref_zone", "ref_any_counters"}
+KINDS = {"ref_stat", "ref_stat_vs", "ref_not_is", "ref_flag", "ref_zone", "ref_any_counters",
+         "ref_targets", "ref_target_count"}
 
 
 def _ref_obj(item, source, prev, ref):
@@ -296,4 +319,44 @@ def check(game, p, kind, args, item=None, source=None, prev=None):
         if not isinstance(obj, Permanent):
             return False
         return _cmp(1 if any(v > 0 for v in obj.counters.values()) else 0, op, n)
+    if kind in ("ref_targets", "ref_target_count"):
+        from .engine.state import StackItem
+        if kind == "ref_targets":
+            spec, ref = args
+            obj = _ref_obj(item, source, prev, ref)
+            return isinstance(obj, StackItem) and any(
+                _target_ok(t, spec) for t in obj.targets if t is not None)
+        op, n, ref = args
+        obj = _ref_obj(item, source, prev, ref)
+        return isinstance(obj, StackItem) and _cmp(
+            sum(1 for t in obj.targets if t is not None), op, n)
     return None
+
+
+def _target_ok(t, spec) -> bool:
+    """A chosen target of the referent spell matches the noun-phrase spec: "spell" only matches a
+    StackItem target, "card" only a card in a zone, the rest the target's card (and the permanent's
+    own state, for "tapped" and friends)."""
+    from .engine.state import Permanent, Player, StackItem
+    from .cx_condlib import _card_ok
+    if isinstance(t, Player):
+        return False
+    is_spell = isinstance(t, StackItem)
+    card = t.card if isinstance(t, (Permanent, StackItem)) else t
+    if card is None or not hasattr(card, "types"):
+        return False
+    spec = dict(spec)
+    types = list(spec.get("types", ()))
+    if "spell" in types:
+        if not is_spell:
+            return False
+        types.remove("spell")
+    if "card" in types:
+        if isinstance(t, (Permanent, StackItem)):
+            return False
+        types.remove("card")
+    if types:
+        spec["types"] = types
+    else:
+        spec.pop("types", None)
+    return _card_ok(card, spec, t if isinstance(t, Permanent) else None)
