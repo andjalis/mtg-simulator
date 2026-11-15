@@ -1130,7 +1130,7 @@ def _face_keyword_ability_lines(st, line):
             return None
         m = re.fullmatch(r"((?:I|II|III|IV|V)(?:, (?:I|II|III|IV|V))*) — (.+)", line)
         if m:
-            effs, bad = _parse_effects(m[2])
+            effs, bad = _parse_effects(m[2], allow_linked="chapter")
             for numeral in m[1].split(", "):
                 idx = ["I", "II", "III", "IV", "V"].index(numeral)
                 while len(chapters) <= idx:

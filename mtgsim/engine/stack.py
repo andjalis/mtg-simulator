@@ -129,10 +129,6 @@ class StackMixin:
                 if (event == "etb" and getattr(perm, "_etb_roll_consumed", False)
                         and [e.kind for e in trig.effects] == ["die_roll"]):
                     continue    # "As ~ enters, roll ...": enter_battlefield already rolled
-                if trig.intervening_if and not self.check_cond(perm.controller,
-                        Effect("condition", cond=trig.intervening_if),
-                        StackItem(perm.controller, [], [], source=perm, context=context), None):
-                    continue
                 if trig.data.get("trigger_gate") and not self.check_cond(perm.controller,
                         Effect("condition", cond=trig.data["trigger_gate"]),
                         StackItem(perm.controller, [], [], source=perm, context=context), None):
@@ -147,9 +143,15 @@ class StackMixin:
                         pass
                     elif subject is perm and other == "other":
                         continue
-                    elif not card_matches(subject.card, "a " + re.sub(r",? or (?!greater)|, ", " or a ", desc)):
+                    elif desc == "nontoken creature" and (not subject.is_creature or subject.card.is_token):
+                        continue
+                    elif desc != "nontoken creature" and not card_matches(subject.card, "a " + re.sub(r",? or (?!greater)|, ", " or a ", desc)):
                         continue
                     context = subject if context is None else context    # "attach ~ to it": the one that entered
+                if trig.intervening_if and not self.check_cond(perm.controller,
+                        Effect("condition", cond=trig.intervening_if),
+                        StackItem(perm.controller, [], [], source=perm, context=context), None):
+                    continue
                 if event == "class_level" and trig.filter != str(subject):
                     continue
                 if event == "expend" and trig.filter != str(subject):
@@ -423,7 +425,8 @@ class StackMixin:
             self._entry_mana_colors = getattr(item, "mana_colors", set())
             self._entry_mana_by_color = getattr(item, "mana_by_color", {})
             self._entry_cast = (kind == "kicker" or getattr(item, "kicks", 0) > 0,
-                                bool(getattr(item, "cast_from_hand", False)), getattr(item, "mana_spent", 0))
+                                bool(getattr(item, "cast_from_hand", False)), getattr(item, "mana_spent", 0),
+                                item.kind != "copy")
             if kind in ("disturb", "room_right", "siege"):   # cast transformed: its back face enters (a Room's right door)
                 perm = self.enter_battlefield(p, base.back, x=getattr(item, "x", 0), physical_card=base)
             else:

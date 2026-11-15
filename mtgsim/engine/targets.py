@@ -133,6 +133,9 @@ class TargetsMixin:
         from ..backlog_templates import related_targets
         everything = related_targets(self, eff, everything)
         t = eff.target
+        if t == 'linked_exile_card':
+            from ..copies import linked_cards
+            return linked_cards(source, eff.data['link'])
         if t == 'graveyard_card':
             from ..advanced_templates import grave_targets
             return grave_targets(self, p, eff)
@@ -181,7 +184,7 @@ class TargetsMixin:
 
     def legal_target(self, p: Player, eff: Effect, tgt) -> bool:
         """Use the same type, controller, filter and presence checks as enumeration."""
-        if eff.target in ('creature_or_graveyard', 'graveyard_card') and 'graveyard_ref' in eff.data:
+        if eff.target in ('creature_or_graveyard', 'graveyard_card', 'linked_exile_card') and 'graveyard_ref' in eff.data:
             if eff.data['graveyard_ref'].find(eff.data['graveyard_zone']) is not tgt:
                 return False
         if tgt is None and eff.data.get('optional_target'):

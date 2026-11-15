@@ -157,12 +157,13 @@ def graveyard_actions(game, p):
                 game.log(f"scavenges {card.name} onto {host.card.name}", p)
                 continue
             black = a.kind == "eternalize"
-            token = dataclasses.replace(card, name=f"{card.name} token", mana_cost={"generic": 0}, cmc=0, hybrid=(),
+            token = dataclasses.replace(card, mana_cost={}, cmc=0, hybrid=(),
                                         is_token=True, alt_costs=[], color_override=frozenset("B" if black else "W"),
                                         subtypes=frozenset(card.subtypes) | {"Zombie"},
+                                        advanced_rules=dict(card.advanced_rules, no_mana_cost=True),
                                         power=4 if black else card.power, toughness=4 if black else card.toughness)
             game.log(f"{a.kind}s {card.name}", p)
-            game.enter_battlefield(p, token)
+            game.enter_battlefield(p, token, embalmed=a.kind == "embalm")
 
 
 def entered(perm, kind, alt):

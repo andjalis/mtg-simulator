@@ -64,6 +64,9 @@ def card_move(game, p, eff, target, item=None, **_):
         game.move_card(target, owner.graveyard, owner.hand if to == "hand" else owner.exile, reason="cx_card_move")
         if to == "exile" and item is not None:
             item.copy_exiled_ref = (owner.exile, owner.exile.reference(target), eff)
+            if eff.data.get("copy_link") and isinstance(item.source, Permanent):
+                from ...copies import record_linked_card
+                record_linked_card(item.source, eff.data["copy_link"], owner.exile, target)
     game.log(f"{target.name} goes from {owner}'s graveyard to {to}", p)
 
 

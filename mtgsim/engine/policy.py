@@ -244,6 +244,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     elif side == "type":                # a bare creature-type change: harmful if the type is restricted
         from ..cx_grammar_animate import type_side
         side = type_side(game, eff)
+    if eff.target == "linked_exile_card":
+        return max(legal, key=lambda c: c.cmc, default=None)
     if eff.target == "graveyard_card" and side in ("mine", "theirs", "any"):   # cx_grammar_zones: whose graveyard
         pool = [c for c in legal if side == "any" or any(c is x for x in (me if side == "mine" else opp).graveyard)]
         return max(pool, key=lambda c: c.cmc, default=None)

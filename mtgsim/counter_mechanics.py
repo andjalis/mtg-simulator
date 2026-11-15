@@ -126,7 +126,7 @@ def protect_graveyard_targets(game, effects, targets):
     from .identity import CardInstance, CardZone
     out = []
     for eff, target in zip(effects, targets):
-        if eff.target in ('creature_or_graveyard', 'graveyard_card') and isinstance(target, CardInstance) and isinstance(target.zone, CardZone):
+        if eff.target in ('creature_or_graveyard', 'graveyard_card', 'linked_exile_card') and isinstance(target, CardInstance) and isinstance(target.zone, CardZone):
             eff = dataclasses.replace(eff, data=dict(eff.data, graveyard_ref=target.zone.reference(target),
                                                      graveyard_zone=target.zone))
         out.append(eff)

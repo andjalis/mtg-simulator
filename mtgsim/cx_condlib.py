@@ -940,6 +940,10 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         game = _game_of(p)
     data = json.loads(code[4:])
     kind, args = data[0], data[1:]
+    if kind == "context_not_cast":
+        from .engine.state import Permanent
+        obj = getattr(item, "context", None)
+        return isinstance(obj, Permanent) and not getattr(obj, "entered_was_cast", False)
     if source is None:
         source = _source(item)
     if kind == "not":

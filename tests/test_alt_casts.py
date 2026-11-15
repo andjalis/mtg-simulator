@@ -138,9 +138,11 @@ class AltCasts(unittest.TestCase):
         self.a.graveyard.extend([ATTENDANT, WITNESS, SCORPION])
         alt_casts.graveyard_actions(self.game, self.a)
         tokens = {x.card.name: x for x in self.a.battlefield if x.card.is_token}
-        bird, witness = tokens[ATTENDANT.name + " token"], tokens[WITNESS.name + " token"]
+        bird, witness = tokens[ATTENDANT.name], tokens[WITNESS.name]
         self.assertEqual((bird.card.colors, bird.has("flying"), "Zombie" in bird.card.subtypes), ({"W"}, True, True))
         self.assertEqual((witness.card.power, witness.card.toughness, witness.card.colors), (4, 4, {"B"}))
+        self.assertTrue(bird.card.advanced_rules.get("no_mana_cost"))
+        self.assertTrue(witness.card.advanced_rules.get("no_mana_cost"))
         self.assertEqual(sum(x.p1 for x in self.a.creatures), 2)        # scavenged: the scorpion's power
         self.assertEqual(self.a.graveyard, [])
 

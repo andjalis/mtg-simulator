@@ -56,14 +56,14 @@ class BattlefieldMixin:
 
     def enter_battlefield(self, p: Player, card: CardDef, tapped_attacking: bool = False, x: int = 0,
                           *, tapped: bool = False, counters: dict | None = None,
-                          physical_card: CardDef | None = None) -> Permanent:
+                          physical_card: CardDef | None = None, embalmed: bool = False) -> Permanent:
         from ..residual_templates import blocked_entry
         if blocked_entry(self, card, physical_card):
             return None
         if card.is_token:
             # Reusable token blueprints create a new physical token each time.
             card = CardInstance(card)
-        card, front = copies.clone_on_enter(self, p, card)
+        card, front = copies.clone_on_enter(self, p, card, embalmed=embalmed)
         counters = copies.clone_entry_counters(card, front, x, counters)
         perm = Permanent(card, p)
         perm.front = instance(physical_card if physical_card is not None else front, p)
@@ -93,6 +93,7 @@ class BattlefieldMixin:
         perm.prepared = bool(card.prepared and card.back is not None)
         perm.spent_color = getattr(self, "_spent", "")
         cast = getattr(self, "_entry_cast", None)       # the spell this permanent resolved from (cx_condlib)
+        perm.entered_was_cast = bool(cast and cast[3])
         if cast is not None:
             self._entry_cast = None
             perm.kicked = cast[0]

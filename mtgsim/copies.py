@@ -28,7 +28,7 @@ import dataclasses
 import re
 
 KINDS = {"copy_perm", "copy_spell", "copy_next_spell", "copy_sac", "become_copy", "copy_ability", "copy_set_base_x",
-         "copy_may_blink", "copy_exiled_this_way"}
+         "copy_may_blink", "copy_exiled_this_way", "copy_linked_exiled", "copy_linked_choice"}
 
 _KW = (r"flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|"
        r"indestructible|menace|reach|defender|flash|prowess")
@@ -353,6 +353,65 @@ def _exiled_this_way(m):
     return NO_MATCH if mods is None else Effect("copy_exiled_this_way", data={"mods": mods})
 
 
+def _linked_exiled(m):
+    from .cards import Effect, NO_MATCH
+    mods = parse_except(m["exc"]) if m["exc"] else {}
+    return NO_MATCH if mods is None else Effect("copy_linked_exiled", target="linked_exile_card",
+                                                 data={"mods": mods, "link": "imprint_copy"})
+
+
+def _linked_choice(m):
+    from .cards import Effect, NO_MATCH
+    mods = parse_except(m["exc"]) if m["exc"] else {}
+    return NO_MATCH if mods is None else Effect("copy_linked_choice", data={"mods": mods, "link": "saga_copy"})
+
+
+def bind_imprint_copies(activated, triggers, chapters, unsupported):
+    """Bind one imprint exile ability to one targeted copy ability, or leave the latter unsupported."""
+    choices = [e for chapter in chapters for e in chapter if e.kind == "copy_linked_choice"]
+    if choices:
+        exilers = [e for chapter in chapters for e in chapter if e.kind == "cx_card_move" and e.data.get("to") == "exile"]
+        other_exilers = [e for a in activated for e in a.effects if e.kind == "cx_card_move" and e.data.get("to") == "exile"]
+        other_exilers += [e for t in triggers for e in t.effects if e.kind == "cx_card_move" and e.data.get("to") == "exile"]
+        first = chapters[0]
+        if (len(exilers) == 1 and not other_exilers and len(first) == 2 and first[0] is exilers[0]
+                and first[0].data.get("cx_card") == {"types": ["creature"]}
+                and first[1].kind == "cx_token" and first[1].target == "prev" and "copy" in first[1].data):
+            exilers[0].data["copy_link"] = "saga_copy"
+        else:
+            unsupported.append("copy of a card exiled with this Saga: unbound exile ability")
+            for chapter in chapters:
+                chapter[:] = [e for e in chapter if e.kind != "copy_linked_choice"]
+    copies = [a for a in activated if any(e.kind == "copy_linked_exiled" for e in a.effects)]
+    if not copies:
+        return
+    exilers = [(a, e) for a in activated for e in a.effects if e.kind == "cx_card_move" and e.data.get("to") == "exile"]
+    others = [e for t in triggers for e in t.effects if e.kind == "cx_card_move" and e.data.get("to") == "exile"]
+    others += [e for chapter in chapters for e in chapter if e.kind == "cx_card_move" and e.data.get("to") == "exile"]
+    if len(copies) != 1 or len(exilers) != 1 or others or not exilers[0][0].text.startswith("Imprint — "):
+        for ability in copies:
+            unsupported.append(ability.text)
+            activated.remove(ability)
+        return
+    exilers[0][1].data["copy_link"] = "imprint_copy"
+
+
+def record_linked_card(source, key, zone, card):
+    links = getattr(source, "copy_exile_links", None)
+    if links is None:
+        source.copy_exile_links = links = {}
+    links.setdefault(key, []).append((zone, zone.reference(card)))
+
+
+def linked_cards(source, key):
+    cards = []
+    for zone, ref in getattr(source, "copy_exile_links", {}).get(key, ()):
+        card = ref.find(zone)
+        if card is not None and card.is_creature:
+            cards.append(card)
+    return cards
+
+
 _EXCEPT = r"(?:, except (?P<exc>.+?))?(?P<flags>(?: COPY[A-Z]+)*)"
 _MANY = rf"(?:a token that's a copy|(?P<n>{_N[1:-1]}) tokens that are copies)"
 
@@ -386,6 +445,9 @@ _SPELL_COPY = (r"copy target (?P<what>instant or sorcery |instant |sorcery |crea
                r"(?P<nonlegendary>it isn't legendary if the spell is legendary)))?")
 
 EFFECT_PATTERNS = [
+    (r"create a token that's a copy of a card exiled with ~(?:, except (?P<exc>.+))?", _linked_choice),
+    (r"create a token that's a copy of target creature card exiled with ~(?:, except (?P<exc>.+))?",
+     _linked_exiled),
     (r"if you exiled a card this way, create a token that's a copy of that card, except (?P<exc>.+)",
      lambda m: _exiled_this_way(m)),
     (rf"create {_MANY} of (?P<other>another )?target (?P<what>[\w ,-]+?)(?P<scope> you control| an opponent "
@@ -543,13 +605,17 @@ def parse_line(line: str) -> dict | None:
     if not m:
         return None
     exc = m["exc"]
+    embalmed = (exc == "if ~ was embalmed, the token has no mana cost, it's white, "
+                "and it's a Zombie in addition to its other types")
     conditional = re.fullmatch(r"(.+?) and, if it's a creature, it enters with two additional \+1/\+1 counters "
                                r"on it and has changeling", exc or "", re.I)
-    mods = parse_except(conditional[1] if conditional else exc) if exc else {}
+    mods = {} if embalmed else parse_except(conditional[1] if conditional else exc) if exc else {}
     if mods is None:
         return None
     if conditional:
         mods["if_creature"] = {"counters": {"+1/+1": 2}, "changeling": True}
+    if embalmed:
+        mods["if_embalmed"] = True
     zone = "graveyard" if m["gy"] else "battlefield"
     who = {"you control": "mine", "an opponent controls": "opp"}.get(m["who"] or "", "any")
     kind = m["gy"] or m["any"] or m["ctl"]
@@ -809,6 +875,17 @@ def resolve(game, p, eff, target, item=None):
         card = entry[1].find(entry[0]) if entry and index and item.effects[index - 1] is entry[2] else None
         if card is not None:
             game.enter_battlefield(p, make_copy(card, d["mods"]))
+    elif k == "copy_linked_exiled":
+        if target is not None:
+            from .cx_tokens import create
+            create(game, p, {"card": make_copy(target, d["mods"]), "tapped": False, "attacking": False}, 1)
+    elif k == "copy_linked_choice":
+        cards = linked_cards(source, d["link"])
+        if cards:
+            chosen = game.hook(p, "choose_dig")(game, p, list(cards), 1)
+            card = next((c for c in chosen if any(c is allowed for allowed in cards)), cards[0])
+            from .cx_tokens import create
+            create(game, p, {"card": make_copy(card, d["mods"]), "tapped": False, "attacking": False}, 1)
     elif k == "copy_sac":
         if target is not None and target in target.controller.battlefield:
             game.log(f"sacrifices {target.card.name} (copy)", target.controller)
@@ -983,7 +1060,7 @@ def wants_spell(effects) -> bool:
                for e in effects)
 
 
-def clone_on_enter(game, p, card):
+def clone_on_enter(game, p, card, *, embalmed=False):
     """The card a clone enters as: (card to use, card that goes to the graveyard later)."""
     spec = card.clone
     if not spec:
@@ -1012,6 +1089,10 @@ def clone_on_enter(game, p, card):
         src_card = best.copiable_card
     copied = make_copy(src_card, spec["mods"], token=card.is_token,
                        name=card.name if spec["mods"].get("keep_name") else None)
+    if embalmed and spec["mods"].get("if_embalmed"):
+        rules = dict(copied.advanced_rules, no_mana_cost=True)
+        copied = dataclasses.replace(copied, mana_cost={}, cmc=0, hybrid=(), color_override=frozenset({"W"}),
+                                     subtypes=copied.subtypes | {"Zombie"}, advanced_rules=rules)
     if spec["tapped"]:
         copied = dataclasses.replace(copied, enters_tapped=True)
     game.log(f"{card.name} enters as a copy of {src_card.name}", p)

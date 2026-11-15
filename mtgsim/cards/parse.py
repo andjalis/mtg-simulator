@@ -32,7 +32,7 @@ def hostile_may(text, new):
 _COMPILED = {}      # the effect templates, compiled: there are more of them than re's own cache holds
 
 
-def _parse_effects(text: str, opts: bool = False):
+def _parse_effects(text: str, opts: bool = False, allow_linked: bool = False):
     """Parse a run of sentences into effects. Returns (effects, unmatched_sentences)."""
     effects, unmatched = [], []
     for rx, rep in _SUBS:
@@ -338,6 +338,10 @@ def _parse_effects(text: str, opts: bool = False):
                 eff = build(m)
                 if eff is NO_MATCH:
                     continue
+                if isinstance(eff, Effect) and ((eff.kind == "copy_linked_exiled" and allow_linked != "activated") or
+                                                (eff.kind == "copy_linked_choice" and allow_linked != "chapter")):
+                    unmatched.append(sentence.strip())
+                    break
                 if isinstance(eff, Effect) and eff.kind == "copy_exiled_this_way" and \
                         (not effects or effects[-1].kind != "cx_card_move" or effects[-1].data.get("to") != "exile"):
                     unmatched.append(sentence.strip())
@@ -714,6 +718,7 @@ def _parse_face(data: dict) -> CardDef:
     # Triggers with "choose up to one" get their bullet modes; drop ones that ended up empty.
     triggers = [t for t in triggers if t.effects or t.modes]
     approximations += [note for rx, note in _SUB_NOTES if rx.search(oracle)]
+    _copies.bind_imprint_copies(activated, triggers, chapters, unsupported)
     approximations += _copies.unfired_notes(types, triggers)      # #369
 
     if data.get("mana_cost") == "" and "Land" not in types:     # no mana cost at all (not {0}): CR 118.6
@@ -882,7 +887,7 @@ def _parse_ability(line: str, approximations: list):
         return Activated("ability", cost[0], extra_costs=cost[1], sorcery=sorcery, once=once, text=original, condition=condition,
                          max_per_turn=limit, modes=modal.Modes(spec=head[0]), any_player=any_player,
                          restrictions=restrictions, once_game=once_game)
-    effects, bad = _parse_effects(body)
+    effects, bad = _parse_effects(body, allow_linked="activated")
     if bad or not effects:
         return None
     approximations += approx
@@ -893,6 +898,14 @@ def _parse_ability(line: str, approximations: list):
 
 def _parse_trigger(line: str):
     """(triggers, unmatched, modes list to fill or None) for a triggered ability line, else None."""
+    not_cast = re.fullmatch(r"(Whenever another nontoken creature you control enters), if it wasn't cast, (.+)", line)
+    if not_cast:
+        out = _parse_trigger_line(f"{not_cast[1]}, {not_cast[2]}")
+        if out is not None and out[0] and not out[1] and all(t.event == "permanent_enters" for t in out[0]):
+            for trigger in out[0]:
+                trigger.intervening_if = 'lib:["context_not_cast"]'
+            return out
+        return None
     once = line.endswith(" This ability triggers only once each turn.") or line.endswith(" Do this only once each turn.")
     if once:
         line = line[:-len(" This ability triggers only once each turn.")] \
