@@ -255,6 +255,9 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return opp if opp.hand else None
     if k in ("connive", "attach_new_equipment"):    # the best creature of ours that can be chosen
         return max((x for x in mine if x.is_creature), key=perm_value, default=None)
+    if k == "cx_count_target":          # "for each creature target player controls": the player with more (#337)
+        from ..target_counts import choose
+        return choose(game, me, eff)
     side = eff.data.get("side") if eff.data else None
     if side == "auto":                  # neutral effects (a colour change) take the side of what follows them
         from ..cx_grammar import auto_side

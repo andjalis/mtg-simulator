@@ -216,6 +216,9 @@ class CostsMixin:
             return p.speed
         if kind == "gained":
             return p.life_gained_turn
+        if kind == "of_target":    # a count over the targeted player (target_counts, #337)
+            from ..target_counts import count
+            return count(self, item, spec, prev)
         if kind == "hand":
             return len(p.hand)
         if kind == "opp_hand":

@@ -410,3 +410,10 @@ def set_base_referent(game, eff, target, item, prev=None, **_):
     power = subject.power if eff.data["stat"] in ("power", "both") else None
     toughness = subject.toughness if eff.data["stat"] in ("toughness", "both") else None
     game.add_continuous_effect(target, "set_base", power=power, toughness=toughness, until_eot=True)
+
+
+@kind("cx_count_target")
+def cx_count_target(game, item=None, target=None, **_):
+    """The player a "for each ... target player controls" count reads (mtgsim.target_counts)."""
+    from ... import target_counts
+    target_counts.resolve(game, item, target)
