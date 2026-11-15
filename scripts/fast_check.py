@@ -52,6 +52,29 @@ def _run_test(module: str) -> tuple[str, int, str]:
     return module, p.returncode, p.stderr[-3000:]
 
 
+def db_notes() -> list[str]:
+    """Ways the local card database differs from CI's, which builds it from Scryfall and refreshes it weekly."""
+    try:
+        db = sqlite3.connect(DB)
+        meta = dict(db.execute("select k, v from meta"))
+        db.close()
+    except sqlite3.Error:
+        return []
+    notes = []
+    source = meta.get("source", "")
+    if not source.startswith("scryfall"):
+        notes.append(f"card database source is {source or 'unknown'}, but CI uses Scryfall; Forge's card scripts word some cards "
+                     "differently, so card-specific tests can fail here and pass in CI. Rebuild with "
+                     "`python3 -m mtgsim.build_carddb --source scryfall` where Scryfall is reachable")
+    try:
+        age = time.time() - time.mktime(time.strptime(meta["built"], "%Y-%m-%d %H:%M:%S"))
+        if age > 7 * 86400:
+            notes.append(f"card database was built {age / 86400:.0f} days ago; CI rebuilds it weekly")
+    except (KeyError, ValueError):
+        pass
+    return notes
+
+
 def step(name: str, ok: bool, detail: str, started: float) -> bool:
     print(f"{'ok  ' if ok else 'FAIL'} {name} ({time.time() - started:.0f}s)", flush=True)
     if not ok:
@@ -68,6 +91,9 @@ def main(argv=None) -> int:
         print("cards.sqlite3 is missing: run `python3 -m mtgsim.build_carddb` first", file=sys.stderr)
         return 2
     results = []
+    notes = db_notes()
+    for n in notes:
+        print(f"note: {n}", flush=True)
 
     if not a.no_lint:
         t = time.time()
@@ -92,6 +118,8 @@ def main(argv=None) -> int:
         results.append(step(f"{len(modules)} test modules", not failed,
                             "\n".join(f"--- {m}\n{err}" for m, err in failed), t))
 
+    if notes and not all(results):
+        print("\nnote (repeated): failures above may come from the local card database, not the code:\n  " + "\n  ".join(notes))
     print("fast check:", "PASS" if all(results) else "FAIL")
     return 0 if all(results) else 1
 
