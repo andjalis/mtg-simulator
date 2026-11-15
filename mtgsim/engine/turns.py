@@ -27,6 +27,8 @@ class TurnsMixin:
             return  # a fixture/blueprint insertion has no source zone
         before, origin, actor, source, replacements = pending
         card.pending_move = None
+        if destination.name == "graveyard":
+            card.gy_turn = self.turn      # "a graveyard that was put there this turn" (cx_copy_referents)
         self.rule_events.emit(rules_events.RulesEvent("zone_change", actor, source=source,
             subject=card, before=before, destination=destination.name,
             source_zone=origin, reason=getattr(self, "_zone_reason", "move"), replacements=replacements))

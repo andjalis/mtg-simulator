@@ -289,7 +289,14 @@ def _card_object(text: str, zone: str):
     return Subject("permanent", target="graveyard_card", data=data, copies=n, text=text)
 
 
-_GY = r"(.+?) from (your graveyard|a graveyard|an opponent's graveyard)"
+_GY = r"(.+?) from (your graveyard|a graveyard( that was put there this turn)?|an opponent's graveyard)"
+
+
+def _norm_zone(zone: str):
+    """"a graveyard that was put there this turn": zone "any", with the arrival-turn filter on the data."""
+    if zone.endswith(" that was put there this turn"):
+        return "a graveyard", True
+    return zone, False
 
 
 _ENTRY_NUM = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3}

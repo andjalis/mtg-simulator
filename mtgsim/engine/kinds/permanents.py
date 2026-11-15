@@ -258,9 +258,14 @@ def token(game, p, eff, target, item, prev=None, **_):
     who = target if eff.target == "that_controller" and isinstance(target, Player) else p
     n = None
     if eff.data.get("referent_pt"):
-        if not isinstance(prev, Permanent):
+        if isinstance(prev, Permanent):
+            eff = dataclasses.replace(eff, data=dict(eff.data, power=prev.power, toughness=prev.toughness))
+        elif isinstance(prev, CardDef):
+            # "that card's power": the referent is a card (just exiled or returned), not a permanent
+            eff = dataclasses.replace(eff, data=dict(eff.data, power=prev.power or 0,
+                                                     toughness=prev.toughness or 0))
+        else:
             return
-        eff = dataclasses.replace(eff, data=dict(eff.data, power=prev.power, toughness=prev.toughness))
     if eff.data.get("x"):
         n = (getattr(item.source, "entered_x", 0) if item.source is not None else getattr(item, "x", 0)) \
             if item is not None else 0

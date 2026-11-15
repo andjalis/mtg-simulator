@@ -254,3 +254,5 @@ from .. import cx_attach as _cx_attach
 _EFFECT_PATTERNS += _cx_attach.EFFECT_PATTERNS
 from .. import linked_exile as _linked_exile  # noqa: E402
 _EFFECT_PATTERNS += _linked_exile.EFFECT_PATTERNS
+from .. import cx_copy_referents as _cx_copy_referents  # noqa: E402
+_EFFECT_PATTERNS += _cx_copy_referents.EFFECT_PATTERNS

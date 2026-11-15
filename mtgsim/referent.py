@@ -4,7 +4,9 @@ import re
 
 _COLOR = "white|blue|black|red|green|colorless"
 _TOKEN = rf"create (?:a|an|one) ({_COLOR}) ([A-Z][a-z]+(?: [A-Z][a-z]+)*) creature token"
-_TOKEN_STATS = r"with power equal to that creature's power and toughness equal to that creature's toughness"
+# "that creature" is a permanent on the battlefield; "that card" is one just moved (exiled, returned, ...)
+_REF = r"(?:that creature|that card)"
+_TOKEN_STATS = rf"with power equal to {_REF}'s power and toughness equal to {_REF}'s toughness"
 
 
 def _token(m):
@@ -21,8 +23,8 @@ EFFECT_PATTERNS = [
     (r"(?:you may have )?~'s base power and toughness become equal to that creature's power and toughness until end of turn",
      lambda m: _base("both")),
 ]
-SUBS = [(re.compile(r"(" + _TOKEN + r")\. its power is equal to that creature's power and its toughness is equal to "
-                    r"that creature's toughness", re.I), r"\1 " + _TOKEN_STATS)]
+SUBS = [(re.compile(r"(" + _TOKEN + r")\. its power is equal to " + _REF + r"'s power and its toughness is equal to "
+                    r"" + _REF + r"'s toughness", re.I), r"\1 " + _TOKEN_STATS)]
 
 
 def _base(stat):
