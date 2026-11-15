@@ -54,7 +54,8 @@ class AttachEquipment(unittest.TestCase):
         a.battlefield += [sword, bear, other]
         sword.attached_to = other
         from mtgsim.engine import StackItem
-        game.stack.append(StackItem(a, list(SQUIRE.activated[0].effects), [bear], name="squire", kind="ability"))
+        game.stack.append(StackItem(a, list(SQUIRE.activated[0].effects), [sword, bear], name="squire",
+                                    kind="ability"))       # the targeted Equipment and the host (cx_attach, #343)
         game.resolve_top()
         self.assertIs(sword.attached_to, bear)
 

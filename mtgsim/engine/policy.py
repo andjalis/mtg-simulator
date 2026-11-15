@@ -81,6 +81,9 @@ def damage_amount(game: Game, eff: Effect, source=None) -> int:
 
 def default_choose_target(game: Game, me: Player, eff: Effect):
     """A reasonable target for eff, respecting hexproof and targeting restrictions."""
+    if eff.target == "multi" and eff.data["probe"].kind == "cx_attach" and eff.data["probe"].data.get("host") != "target":
+        from ..cx_attach import choose_many
+        return choose_many(game, me, eff)
     if eff.target == "multi":
         from ..cx_multi_target import choose_list
         return choose_list(game, me, eff)
@@ -120,6 +123,9 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     if k in ("cx_exchange_mark", "cx_exchange"):
         from ..cx_exchange import choose
         return choose(game, me, eff)
+    if k in ("cx_attach_mark", "cx_attach"):
+        from ..cx_attach import choose as choose_attach
+        return choose_attach(game, me, eff)
     if k == "time_counters":
         from ..time_counters import choose
         return choose(game, me, eff)
@@ -308,10 +314,11 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
                 tgt = None
             chosen.append(tgt)
             k = e.kind
-            if k in ("cx_exchange_mark", "cx_exchange"):
+            if k in ("cx_exchange_mark", "cx_exchange", "cx_attach_mark", "cx_attach"):
                 from ..cx_exchange import mode_value
-                v = mode_value(game, me, e, tgt, chosen)
-                if v < 0 and k == "cx_exchange" and not e.data.get("optional"):
+                from ..cx_attach import mode_value as attach_value
+                v = (mode_value if k.startswith("cx_exchange") else attach_value)(game, me, e, tgt, chosen)
+                if v < 0 and k in ("cx_exchange", "cx_attach") and not e.data.get("optional"):
                     return -1
                 total += max(v, 0.0)
                 continue

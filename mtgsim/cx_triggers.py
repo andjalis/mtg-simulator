@@ -77,7 +77,8 @@ SUBS = [
 EFFECT_PATTERNS = [
     (r"tap up to (two|three|four|five) target permanents", _tap),
     # Equipment is picked on resolution (the best one not already on the creature), noted as an approximation.
-    (r"attach (any number of target|all|up to one target|target) equipment(?: you control)? to "
+    # One targeted Equipment ("attach target Equipment ... to ...") is cx_attach's: the chosen target moves (#343).
+    (r"attach (any number of target|all) equipment(?: you control)? to "
      r"(target creature you control|up to one target creature you control|~)", _attach),
     # The ability is picked on resolution: the newest matching one an opponent controls.
     (r"counter target (activated or triggered|activated|triggered) ability", _counter_ability),

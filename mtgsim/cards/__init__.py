@@ -249,3 +249,5 @@ _SUBS += _time_counters.SUBS
 from .. import capped_counters as _capped_counters
 _EFFECT_PATTERNS += _capped_counters.EFFECT_PATTERNS
 _SUBS += _capped_counters.SUBS
+from .. import cx_attach as _cx_attach
+_EFFECT_PATTERNS += _cx_attach.EFFECT_PATTERNS

@@ -49,3 +49,4 @@ from . import cx_mech  # noqa: E402,F401
 from . import cx_grammar  # noqa: E402,F401
 from . import cx_tokens  # noqa: E402,F401
 from . import cx_exchange  # noqa: E402,F401  (exchange of control, #334)
+from . import cx_attach  # noqa: E402,F401  (attach an Aura / Equipment to another object, #343)
