@@ -142,7 +142,27 @@ def counts(rows) -> dict[str, int]:
     return out
 
 
-def check_cards(names, jobs) -> int:
+def _parsed_fields(obj, indent="    ") -> list[str]:
+    """The non-empty fields of a parsed CardDef (or face), one per line, for reading a parse quickly."""
+    import dataclasses
+    out = []
+    for f in dataclasses.fields(obj):
+        v = getattr(obj, f.name)
+        default = f.default if f.default is not dataclasses.MISSING else (
+            f.default_factory() if f.default_factory is not dataclasses.MISSING else dataclasses.MISSING)
+        if v == default or v is None or (hasattr(v, "__len__") and not isinstance(v, str) and len(v) == 0):
+            continue
+        if f.name in ("name", "unsupported", "approximations"):
+            continue
+        if isinstance(v, (list, tuple)) and v and dataclasses.is_dataclass(v[0]):
+            out.append(f"{indent}{f.name}:")
+            out += [f"{indent}  - {item!r}" for item in v]
+        else:
+            out.append(f"{indent}{f.name}: {v!r}")
+    return out
+
+
+def check_cards(names, jobs, show_parse=False) -> int:
     sys.path.insert(0, str(ROOT))
     os.environ.setdefault("MTGSIM_CARDDB", str(DB))
     from mtgsim.carddb import CardDB
@@ -150,7 +170,8 @@ def check_cards(names, jobs) -> int:
     db = CardDB(offline=True)
     for name in names:
         try:
-            row = card_coverage(db.get(name))
+            card = db.get(name)
+            row = card_coverage(card)
         except Exception as exc:
             print(f"{name}: parse_error {type(exc).__name__}: {exc}")
             continue
@@ -159,6 +180,27 @@ def check_cards(names, jobs) -> int:
             print(f"    unsupported: {line}")
         for line in row.simplified:
             print(f"    simplified:  {line}")
+        if show_parse:
+            print("\n".join(_parsed_fields(card)))
+    return 0
+
+
+def parse_lines(lines) -> int:
+    """Parse single effect sentences (spell text, a trigger's or ability's effect) without a card."""
+    sys.path.insert(0, str(ROOT))
+    os.environ.setdefault("MTGSIM_CARDDB", str(DB))
+    from mtgsim.cards import _parse_effects
+    for text in lines:
+        try:
+            effects, unparsed = _parse_effects(text)
+        except Exception as exc:
+            print(f"{text!r}: raises {type(exc).__name__}: {exc}")
+            continue
+        print(f"{text!r}: {'parsed' if effects and not unparsed else 'partly parsed' if effects else 'not parsed'}")
+        for e in effects:
+            print(f"    effect: {e!r}")
+        for rest in unparsed:
+            print(f"    unparsed: {rest}")
     return 0
 
 
@@ -169,9 +211,15 @@ def main(argv=None) -> int:
     ap.add_argument("--cards", nargs="+", metavar="NAME", help="only report these cards (no full run)")
     ap.add_argument("--json", action="store_true", help="print the summary as JSON")
     ap.add_argument("--show", type=int, default=25, help="cards listed per change group (default 25)")
+    ap.add_argument("--parse", action="store_true",
+                    help="with --cards: also print each card's Oracle text and what it parsed into")
+    ap.add_argument("--line", nargs="+", metavar="TEXT",
+                    help="parse these effect sentences with the effect parser and print the result (no full run)")
     args = ap.parse_args(argv)
+    if args.line:
+        return parse_lines(args.line)
     if args.cards:
-        return check_cards(args.cards, args.jobs)
+        return check_cards(args.cards, args.jobs, show_parse=args.parse)
     if not DB.exists():
         sys.exit(f"no card database at {DB}; run python3 -m mtgsim.build_carddb")
 

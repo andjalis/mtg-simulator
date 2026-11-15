@@ -17,6 +17,7 @@ See the README's quick start for the `python3 -m mtgsim ...` commands; the agent
 ```
 python3 -m mtgsim.build_carddb                 # once per clone; builds mtgsim/data/cards.sqlite3 (~13 s)
 python3 scripts/coverage_check.py              # coverage + parse delta vs origin/main in ~10 s, cached (0.2 s repeat); --cards NAME for one card
+python3 scripts/coverage_check.py --cards NAME --parse   # a card's unsupported lines, Oracle text and parse; --line "TEXT" parses one sentence
 python3 scripts/fast_check.py                  # PR check: lint, every card parsed, games, fast tests
 python3 -m unittest discover -s tests -t .     # full suite; broad changes, integration and nightly CI
 ```
@@ -31,6 +32,10 @@ a fake Forge directory and don't need a real install; a real Forge run needs Jav
 `scripts/install_forge.sh` (about 1.5 GB).
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how pull requests are opened and merged.
+
+**Parser or card-support work: read [docs/PARSER_MAP.md](docs/PARSER_MAP.md) first** (the route card text
+takes, the shared condition/quantity/selector libraries, how "it"/"that creature" bind, and the check budget),
+and [mtgsim/GRAMMAR.md](mtgsim/GRAMMAR.md) before adding grammar verbs.
 
 ## Layout
 
