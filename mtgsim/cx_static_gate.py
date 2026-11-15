@@ -123,15 +123,22 @@ def _host_gy(text: str):
 
 def _quantity(spec, text: str, strict: bool = True, host: bool = False):
     """The spec, or False when a static can't read it: a referent that isn't fixed ("it", that spell, the sacrificed
-    creature) or one that reads power / toughness (it would read the bonus it gives). Two pronouns a static can
-    resolve: "counters on it" names the permanent getting the bonus (marked "recipient" by parse_line), and on a
-    host line "its controller's graveyard" is the host's controller's."""
+    creature) or one that reads power / toughness (it would read the bonus it gives). Three pronouns a static can
+    resolve: "counters on it" names the permanent getting the bonus, on a host line "its controller's graveyard" is
+    the host's controller's, and "its mana value" is the host's (marked "recipient" by parse_line)."""
     if spec is None and host:
         spec = _host_gy(text)
+        if spec is None:
+            # "its" on a host line is the enchanted / equipped permanent: read it as "~'s"
+            from .cards.clauses import _xq as _xq2
+            spec = _xq2(re.sub(r"\bits\b", "~'s", text.strip(), flags=re.I))
     on_it = spec is not None and spec[0] == "counters" and bool(re.search(r"\bcounters? on it\b", text, re.I))
-    if spec is None or spec[0] in _CONTEXT or re.search(r"power|toughness", text + repr(spec), re.I) \
-            or re.search(r"\b(?:it|its|that|those|them)\b", text, re.I) and not on_it and spec[0] != "host_gy" \
-            or not _trusted(spec, text, strict):
+    host_ref = host and spec is not None and spec[0] == "stat" and spec[1] == "self" \
+        and re.search(r"\bits\b", text, re.I)
+    if spec is None or spec[0] in _CONTEXT and not host_ref \
+            or re.search(r"power|toughness", text + repr(spec), re.I) \
+            or re.search(r"\b(?:it|its|that|those|them)\b", text, re.I) and not on_it and not host_ref \
+            and spec[0] != "host_gy" or not _trusted(spec, text, strict):
         return False
     return spec
 
@@ -161,6 +168,8 @@ def _trusted(spec, text: str, strict: bool = True) -> bool:
     t = re.sub(r"^the number of ", "", text.strip(), flags=re.I)
     if kind in ("life", "speed", "hand", "party", "colors_among", "devotion", "host_gy"):
         return True             # host_gy: _host_gy matched the words exactly
+    if kind == "stat" and spec[1] == "self" and spec[2] == "mana value":
+        return bool(re.fullmatch(r"its mana value", t, re.I))     # on a host line "its" is the host
     if kind == "counters":
         return bool(re.fullmatch(rf"{re.escape(spec[1])} counters? on (?:~|it)", t, re.I))
     if kind in ("count", "gy"):
@@ -289,9 +298,11 @@ def parse_line(line: str, st) -> bool:
         other = _other(xq, scope, spec, st) if xq is not None else ""
         if other is None:
             continue
-        if other != "recipient" and xq is not None and xq[0] == "counters" \
-                and re.search(r"\bcounters? on it\b", qtext, re.I):
-            other = "recipient"     # "for each +1/+1 counter on it": each permanent getting the bonus counts its own
+        if other != "recipient" and xq is not None and (
+                xq[0] == "counters" and re.search(r"\bcounters? on it\b", qtext, re.I)
+                or xq[0] == "stat" and re.search(r"\bits\b", qtext, re.I)):
+            other = "recipient"     # "for each +1/+1 counter on it" / "where X is its mana value": each permanent
+                                     # getting the bonus reads its own counters / mana value
         rows = []
         for p in parts:
             if p.kind == "pump":

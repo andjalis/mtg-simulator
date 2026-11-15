@@ -46,6 +46,8 @@ class Parsing(unittest.TestCase):
         self.assertEqual(rows[0][3], ("pt", 1, 0, ("domain",)))
         rows = self.full("Each creature you control gets +1/+1 for each +1/+1 counter on it.")
         self.assertEqual(rows[0][3], ("pt", 1, 1, ("counters", "+1/+1"), "recipient"))
+        rows = self.full("Equipped creature gets +X/+X, where X is its mana value.", "Artifact — Equipment")
+        self.assertEqual(rows[0][3], ("pt", 1, 1, ("stat", "self", "mana value"), "recipient"))
         rows = self.full("Enchant creature\nEnchanted creature gets -X/-X, where X is the number of creature cards in "
                          "its controller's graveyard.", "Enchantment — Aura")
         self.assertEqual(rows[0][1], "host")
@@ -70,7 +72,7 @@ class Parsing(unittest.TestCase):
                  "graveyard.", "Enchantment"),                                                       # "its" not fixed for a group
                 ("Equipped creature gets +X/+1, where X is the number of artifacts you control.",  # only part scales
                  "Artifact — Equipment"),
-                ("Equipped creature gets +X/+X, where X is its mana value.", "Artifact — Equipment"),  # "its"
+                ("Equipped creature gets +X/+X, where X is its power.", "Artifact — Equipment"),    # reads P/T ("its")
                 ("~ gets +1/+1 for each land you control and each land card in your graveyard.",    # misread Q
                  "Creature — Avatar"),
                 ("~ has flying as long as you control a creature with flying.", "Creature — Beast"),   # kw on kw
@@ -209,6 +211,17 @@ class Playing(Base):
         self.assertEqual((theirs.power, theirs.toughness), (1, 1))     # 2/2 minus the host controller's 1 creature card
         self.b.graveyard = [BEAR, BEAR, ISLAND, ISLAND]
         self.assertEqual((theirs.power, theirs.toughness), (0, 0))
+
+    def test_host_scale_reads_the_hosts_mana_value(self):
+        matrix = self.perm(gated("Equipped creature gets +X/+X, where X is its mana value.",
+                                 "Artifact — Equipment"), self.a)
+        bear = self.perm(BEAR, self.a)
+        matrix.attached_to = bear
+        bear.equipment.append(matrix)
+        self.assertEqual((bear.power, bear.toughness), (4, 4))          # BEAR's mana value 2
+        big = self.perm(card("Big", "{4}{G}", "Creature — Beast", "", 5, 5), self.a)
+        matrix.attached_to = big                  # equipment lists are derived from attached_to
+        self.assertEqual((big.power, big.toughness), (10, 10))          # the equipped creature's, not the Equipment's
 
     def test_domain_scale_and_counters_on_it(self):
         scout = self.perm(card("Scout", "{R}", "Creature — Kavu", "~ gets +1/+0 for each basic land type among "
