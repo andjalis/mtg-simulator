@@ -99,6 +99,10 @@ def quantity(text: str):
         return ("this_way", "sacrificed", m[1][:-1])
     if low == "the number of cards drawn this way":
         return ("this_way", "drawn", "card")    # the draw just before it in this resolution (kinds.cards.draw)
+    m = re.fullmatch(r"(?:the number of )?(creatures?|cards?|permanents?) returned to (?:your|their|its owner's) "
+                     r"hand this way", low)
+    if m:       # "for each creature returned to your hand this way" (The Eagles Are Coming!): what the return
+        return ("this_way", "returned", m[1][:-1] if m[1].endswith("s") else m[1])   # the noun it noted
     m = re.fullmatch(r"(twice|half) (.+?)(?:, rounded (up|down))?", t, re.I)
     if m and (m[1].lower() == "half") == bool(m[3]):
         inner = _any(m[2])

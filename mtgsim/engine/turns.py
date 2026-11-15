@@ -345,6 +345,7 @@ class TurnsMixin:
             return
         self.step = "draw"
         self.draw_step_serial = getattr(self, "draw_step_serial", 0) + 1
+        cx_delayed.at_step(self, "draw", p)          # "at the beginning of (their) next draw step" (#539)
         self.fire(opp, "opp_draw_step")
         self.fire(p, "draw_step")
         for pl in self.players:

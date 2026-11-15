@@ -99,8 +99,9 @@ def _with_lines(text: str, quoted: list):
 
 
 def _tail(rest: str):
-    """The parts after "token(s)": name, "with" lines and the tapped/attacking state, or None."""
-    name, with_text, state = "", "", ""
+    """The parts after "token(s)": name, "with" lines, colours ("that are red, green, and white"), and the
+    tapped/attacking state, or None."""
+    name, with_text, state, colors = "", "", "", []
     while rest:
         m = re.match(r"\s*named ([A-Z][\w',\- ]*?)(?=\s+with\s|,?\s+that(?:'s| are)\s|$)", rest)
         if m and not name:
@@ -110,12 +111,18 @@ def _tail(rest: str):
         if m and not with_text:
             with_text, rest = m[1], rest[m.end():]
             continue
+        m = re.match(r",?\s*that are ((?:white|blue|black|red|green|colorless)(?:(?:,?\s*(?:and)?\s+)(?:white|blue|"
+                     r"black|red|green|colorless))*)$", rest, re.I)
+        if m and not colors:
+            colors = [w.strip().lower() for w in re.split(r",|\s+and\s+|\s+", m[1]) if w.strip()]
+            rest = ""
+            continue
         m = re.match(r",?\s*that(?:'s| are) (tapped and attacking|tapped|attacking)$", rest)
         if m and not state:
             state, rest = m[1], ""
             continue
         return None
-    return name, with_text, state
+    return name, with_text, state, colors
 
 
 def _token_card(name, power, toughness, colors, supertypes, types, subtypes, lines, colorless):
@@ -143,7 +150,7 @@ def describe(desc: str):
     tail = _tail(m[5])
     if tail is None:
         return None
-    name, with_text, state = tail
+    name, with_text, state, tail_colors = tail
     tapped = bool(m[1]) or "tapped" in state
     attacking = "attacking" in state
     words = m[4].split()
@@ -164,6 +171,11 @@ def describe(desc: str):
             subtypes.append(w)
         else:
             return None
+    for c in tail_colors:                       # "tokens that are red, green, and white" (Hazezon Tamar)
+        if c == "colorless":
+            colorless = True
+        elif _COLOR_LETTERS.get(c) not in colors:
+            colors.append(_COLOR_LETTERS[c])
     lines = _with_lines(with_text, quoted) if with_text else []
     if lines is None:
         return None

@@ -13,6 +13,11 @@ import re
 
 from .cx_grammar import Part, ai_value, count, object_phrase, rider, verb
 
+
+def is_basic_land(c):
+    from .engine.state import is_basic_land as _ibl
+    return _ibl(c)
+
 _KINDS = {"destroy": "destroy", "exile": "exile_permanent", "return": "bounce"}
 # Words that turn a zone change into something these kinds don't do: linked exile, a rider, a choice, a
 # condition, or a card in another zone.
@@ -176,9 +181,11 @@ _CARD_TYPES = ("artifact", "creature", "enchantment", "land", "instant", "sorcer
 _TYPE = "|".join(_CARD_TYPES)
 _CARD_NOUN = re.compile(
     rf"(?:(legendary|nonlegendary|historic) )?(?:({_COLOR}|colorless|multicolored) )?(?:non({_TYPE}) )?"
+    rf"(?:(basic) )?"
     rf"(?:((?:{_TYPE})(?:(?:,? or |, | and/or )(?:{_TYPE}))*) )?cards?"
     r"(?: with (mana value|power|toughness) (.+)| with ([a-z ]+))?")
-_ZONES = {"your graveyard": "you", "a graveyard": "any", "an opponent's graveyard": "opp"}
+_ZONES = {"your graveyard": "you", "a graveyard": "any", "a player's graveyard": "any",
+          "an opponent's graveyard": "opp"}
 
 
 def card_noun(text: str):
@@ -187,10 +194,14 @@ def card_noun(text: str):
     m = _CARD_NOUN.fullmatch(text)
     if m is None:
         return None
-    legend, m = m[1], [None, *m.groups()[1:]]
+    g = m.groups()                  # legend, color, non, basic, types, stat name, stat bound, keyword
+    legend, basic = g[0], g[3]
+    m = [None, g[1], g[2], g[4], g[5], g[6], g[7]]
     spec = {"types": re.split(r",? or |, | and/or ", m[3]) if m[3] else []}
     if legend:                  # "nonlegendary creature card" (Persist), "historic permanent card"
         spec["legend"] = legend
+    if basic:
+        spec["basic"] = True
     if m[1]:
         spec["color"] = m[1]
     if m[2]:
@@ -218,6 +229,8 @@ def card_fits(card, spec, source=None) -> bool:
     def is_type(t):
         return card.is_permanent if t == "permanent" else t.title() in card.types
     if spec["types"] and not any(is_type(t) for t in spec["types"]):
+        return False
+    if spec.get("basic") and not is_basic_land(card):
         return False
     if spec.get("non") and is_type(spec["non"]):
         return False
@@ -289,7 +302,7 @@ def _card_object(text: str, zone: str):
     return Subject("permanent", target="graveyard_card", data=data, copies=n, text=text)
 
 
-_GY = r"(.+?) from (your graveyard|a graveyard|an opponent's graveyard)"
+_GY = r"(.+?) from (your graveyard|a player's graveyard|a graveyard|an opponent's graveyard)"
 
 
 _ENTRY_NUM = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3}
@@ -398,12 +411,16 @@ def _return_choice_value(game, me, eff, obj):
 
 
 @verb(rf"put {_GY} (onto the battlefield under (?:your|its owner's) control|on top of its owner's library|"
-      r"on the bottom of its owner's library|on top of your library|on the bottom of your library)",
+      r"on the bottom of its owner's library|on top of your library|on the bottom of your library|"
+      r"on top of their librar(?:y|ies))(?P<order> in any order)?",
       heads=("put",), subjects=("imperative",))
 def put_card(m, clause):
     obj = _card_object(m[1], m[2])
-    if clause.duration or obj is None or obj.copies > 1 and "on top" in m[3]:
-        return None               # several cards on top: the owner orders them
+    if clause.duration or obj is None:
+        return None
+    any_order = "in any order" in (m[4] or "") or "their librar" in m[3]
+    if obj.copies > 1 and "on top" in m[3] and not any_order:
+        return None               # several cards on top: the owner orders them ("in any order": it doesn't matter)
     if "your library" in m[3] and m[2] != "your graveyard":
         return None
     to = ("battlefield" if "battlefield" in m[3] else "library_top" if "top" in m[3] else "library_bottom")
@@ -411,6 +428,8 @@ def put_card(m, clause):
     if to == "battlefield":
         data["under"] = "you" if "your control" in m[3] else "owner"
     side = {"library_top": "mine", "library_bottom": "theirs"}.get(to, "any" if data.get("under") == "you" else "mine")
+    if "their librar" in m[3]:
+        side = "theirs"           # "on top of their library": the graveyard's owner, not the caster
     return _card_part(m[1], m[2], data, side)
 
 

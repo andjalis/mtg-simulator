@@ -61,14 +61,18 @@ class CombatMixin:
         self.step = "declare_attackers"
         self.attackers, self.blocks, self.attack_targets = [], {}, {}
         self.provoked = {}
+        from .. import cx_delayed
+        cx_delayed.at_step(self, "declare_attackers", p)   # "at the beginning of (that player's) next declare attackers step" (#539)
         self.fire(p, "begin_combat")
         for pl in self.players:
             self.fire(pl, "each_begin_combat")
             if pl is not p:
                 self.fire(pl, "opp_begin_combat", context=p)
+        cx_delayed.at_step(self, "combat", p)                # "at the beginning of the next combat (phase) (this turn)" (#539)
         self.settle()
         if self.over:
             return
+        forced = [a for a in self.attackers if a in a.controller.battlefield]   # "enters ... attacking" (#539)
         self.hook(p, "before_attacks")(self, p)
         if self.over:
             return
@@ -86,6 +90,7 @@ class CombatMixin:
             attackers = attackers[:limit]
         from ..batch1_templates import drop_solo, drop_solo_blocks
         attackers = drop_solo(attackers)
+        attackers += [a for a in forced if a not in attackers and a.can_attack()]   # returned "attacking" (#539)
         self.attackers = list(attackers)
         if not attackers:
             return

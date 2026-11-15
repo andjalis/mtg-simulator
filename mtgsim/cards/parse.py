@@ -762,7 +762,7 @@ def _parse_ability_cost(text: str):
     A leading ability word ("Secrets of the Soul — ", "Vivid — ") is not part of the cost."""
     mana, extra = {"generic": 0}, {}
     parts = text.split(", ")
-    parts[0] = re.sub(r"^[A-Z][\w' ]* — ", "", parts[0])
+    parts[0] = re.sub(r"^[A-Z][\w' -]* — ", "", parts[0])   # hyphenated ability words ("Warp-Strike — ")
     for part in parts:
         m = None
         if part == "{T}":
@@ -834,7 +834,7 @@ def _parse_ability(line: str, approximations: list):
     A leading ability word ("Secrets of the Soul — {T}, Sacrifice ...: ...") is stripped; the
     ability keeps its original wording as text."""
     original = line
-    aw = re.fullmatch(r"[A-Z][\w' ]* — (.+)", line)
+    aw = re.fullmatch(r"[A-Z][\w' -]* — (.+)", line)   # hyphenated ability words ("Warp-Strike — ")
     if aw is not None:
         line = aw[1]
     m = re.fullmatch(r"([^:\"•]+?): (.+)", line)
