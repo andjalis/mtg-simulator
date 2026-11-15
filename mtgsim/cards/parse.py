@@ -298,8 +298,12 @@ def _parse_effects(text: str, opts: bool = False):
                         src_fact = base.startswith('lib:["src_') or \
                             base.startswith('lib:["counters"') and mi[1].startswith("~")
                         if src_fact and re.match(r"(?:~|it) ", mi[1], re.I):
-                            new = [dataclasses.replace(e, target="self") if e.target == "prev" else e
-                                   for e in new]     # "If ~ is suspected, put a +1/+1 counter on it"
+                            # "If ~ is suspected, put a +1/+1 counter on it": the body's "it" is the source.
+                            # An "event_prev" effect names the trigger's event creature instead ("that
+                            # creature" under a block / combat-damage head, #507) and keeps "prev".
+                            new = [dataclasses.replace(e, target="self") if e.target == "prev"
+                                   and not e.data.get("event_prev") else e
+                                   for e in new]
                         effects += [dataclasses.replace(e, cond=e.cond or cond) for e in new]
                         break
                 else:

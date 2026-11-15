@@ -15,7 +15,15 @@ exiled, under their owners' control, when it leaves (a token is gone; a card tha
 
 A group is read only when the source can't be one of its members ("... your opponents control"): whether a source
 that exiles itself along with the rest brings them back at once is left unread (Aligned Hedron Network, Temporary
-Lockdown). Joined at the end of cards/__init__.py.
+Lockdown).
+
+"Exile that creature until ~ leaves the battlefield" (#507) is the same link with the trigger's event object as
+the exiled permanent: under "becomes blocked by a creature" that is the blocker, under "a creature deals combat
+damage to you" the attacker — both are the trigger item's context, so the Effect is target ``prev``. The phrase
+is read only under those heads (``_PREV_EVENTS``): anywhere else "that creature" names something else (a chosen
+target, as in Turncoat Kunoichi) and the sentence stays ignored.
+
+Joined at the end of cards/__init__.py.
 """
 from __future__ import annotations
 
@@ -23,6 +31,18 @@ import re
 
 _COUNT = {"one": 1, "two": 2, "three": 3}
 _UNTIL = r" until ~ leaves the battlefield"
+# Trigger heads whose event carries a creature as the trigger's context (the blocker / the attacker / the
+# other combatant), so "that creature" in the payoff is target "prev". Read from cx_tokens._ctx_events while a
+# trigger body parses.
+_PREV_EVENTS = frozenset({"blocked_by", "blocks", "becomes_blocked", "combat_damage_player", "ally_combat_damage"})
+
+
+def _prev_oring(m):
+    from . import cx_tokens
+    from .cards import Effect, NO_MATCH
+    if not any(e in _PREV_EVENTS for e in cx_tokens._ctx_events):
+        return NO_MATCH          # not a head that carries the creature: leave the sentence ignored
+    return [Effect("oring", target="prev", data={"event_prev": True})]
 
 
 def _slots(phrase, scope=None):
@@ -75,5 +95,6 @@ def _parse(each, phrase):
 
 
 EFFECT_PATTERNS = [
+    (r"exile (?:that creature|that permanent|it)" + _UNTIL, _prev_oring),
     (r"(?:for each (opponent|player), )?exile (.+?)" + _UNTIL, lambda m: _parse(m[1], m[2])),
 ]

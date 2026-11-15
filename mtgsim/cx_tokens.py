@@ -210,19 +210,22 @@ EVENT_AMOUNT_EVENTS = frozenset({
     "player_damaged", "damage_prevented", "gain_life", "opp_gain_life", "opp_loses_life", "you_attack",
 })
 _that_many_ok = False
+_ctx_events = ()       # the raw events of the trigger whose body is being parsed (see event_amount_ctx)
 
 
 @contextlib.contextmanager
 def event_amount_ctx(events):
     """Parser context: the effects being parsed belong to a trigger whose events all carry Game.event_amount."""
-    global _that_many_ok
+    global _that_many_ok, _ctx_events
     prev = _that_many_ok
     raws = [e.removeprefix("ev:").removeprefix("host:") for e in events]
     _that_many_ok = prev or bool(raws) and all(r in EVENT_AMOUNT_EVENTS for r in raws)
+    prev_events, _ctx_events = _ctx_events, tuple(raws)
     try:
         yield
     finally:
         _that_many_ok = prev
+        _ctx_events = prev_events
 
 
 def _quantity(text: str):
