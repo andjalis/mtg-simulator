@@ -81,10 +81,14 @@ def _common(m):
         if "mv" in spec or "either" in spec:
             return NO_MATCH
         spec["mv"] = ["<=" if m["dir"] == "less" else ">=", int(m["n"])]
+    if gd.get("relmv"):
+        # "with equal or lesser mana value" (Kodama): compared with the referent's mana value
+        data["mvq"] = ("<=", ("stat", "referent", "mana value"))
     if m["rel"]:
-        # "with lesser power" (Shadowfax): compared with the source's own power / toughness
+        # "with lesser power" (Shadowfax): compared with the referent's power / toughness (the source
+        # itself when there is no trigger context, e.g. an activated ability)
         stat = m["stat"].lower()
-        data["statq"] = (stat, "<" if m["rel"].lower() == "lesser" else "<=", ("stat", "self", stat))
+        data["statq"] = (stat, "<" if m["rel"].lower() == "lesser" else "<=", ("stat", "referent", stat))
     op = (m["op"] or "").lower()
     if op:
         if op in ("x or less", "x"):
@@ -97,8 +101,16 @@ def _common(m):
             quantity = ("paid_x",)       # the X paid for the spell or ability (Mind into Matter, {X}{U}: Metathran Aerostat)
         else:
             quantity = _xq(q) if q else None
-        if quantity is None or quantity[0] == "stat" and quantity[1] in ("prev", "referent"):
-            return NO_MATCH          # "that damage", "that creature's power": dynamic referents (#313)
+        if quantity is None:
+            if q and re.fullmatch(r"that (much )?damage", q, re.I):
+                # "with mana value ... that damage" (Covert Technician): the event amount, baked into
+                # the effect's amount when the trigger queues (stack.py _that_much)
+                data["that_much"] = True
+                quantity = ("event",)
+            else:
+                return NO_MATCH      # an unknown quantity
+        if quantity[0] == "stat" and quantity[1] == "prev":
+            quantity = ("stat", "referent", quantity[2])   # "that creature's power": the trigger's referent
         data["mvq"] = (_MV_OPS[op], quantity)
     elif m["where"]:
         return NO_MATCH
@@ -165,7 +177,8 @@ SUBS = [
 ]
 
 _MV = (r"(?: with mana value (?:(?P<n>\d+) or (?P<dir>less|greater|more)|(?P<op>equal to|less than or equal to|X or less|X)"
-       r"(?: (?P<q>(?!from\b).+?))?)| with (?P<rel>lesser|equal or lesser) (?P<stat>power|toughness))?")
+       r"(?: (?P<q>(?!from\b).+?))?)| with (?P<rel>lesser|equal or lesser) (?P<stat>power|toughness)"
+       r"| with (?P<relmv>equal or lesser) mana value)?")
 _ENTRY_RX = r"(?: (?P<entry>tapped and attacking(?: that opponent)?|tapped|attached to (?:~|it)|blocking that creature))?"
 _WHERE_RX = r"(?: HANDPUT_WHERE (?P<where>.+?))?(?P<sac> HANDPUT_SAC_EOT)?"
 EFFECT_PATTERNS = [
