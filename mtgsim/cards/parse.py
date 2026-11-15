@@ -156,6 +156,9 @@ def _parse_effects(text: str, opts: bool = False):
         if rider is not None:
             effects += rider
             continue
+        from ..linked_exile import exiled_rider
+        if exiled_rider(s, effects):
+            continue
         # Hybrid symbols too: "you may pay {U/B}" (Kels, Fight Fixer); parse_mana_cost
         # simplifies them to the first coloured half.
         mp = re.fullmatch(r"you may pay ((?:\{[WUBRGC0-9]+(?:/[WUBRGC2P])?\})+)", s, re.I)

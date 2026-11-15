@@ -194,5 +194,63 @@ class AI(Base):
         self.assertEqual(targets, [None, ogre])
 
 
+NEWT = card("Test Newt", "{1}{U}", "Creature — Newt",
+            "When ~ enters, exile a land you control.\n"
+            "When ~ leaves the battlefield, return the exiled card to the battlefield under its owner's control.", 1, 1)
+PROTECTOR = card("Test Protector", "{2}{W}{W}", "Creature — Angel", "Flying\n"
+                 "When ~ enters, you may exile any number of non-Angel creatures you control until ~ leaves the "
+                 "battlefield.", 2, 2)
+ADRIAN = card("Test Adrian", "{4}{W}", "Creature — Human Noble",
+              "When ~ enters, exile any number of other nonland permanents you control until ~ leaves the "
+              "battlefield. Create a 1/1 white Soldier creature token for each permanent exiled this way.", 3, 3)
+ETB_BEAR = card("Test Etb Bear", "{1}{G}", "Creature — Bear", "When ~ enters, you gain 2 life.", 2, 2)
+
+
+class NonTargeted(Base):
+    def test_parse_shapes(self):
+        for c in (NEWT, PROTECTOR, ADRIAN):
+            with self.subTest(card=c.name):
+                self.assertEqual(c.unsupported, [])
+        self.assertEqual(NEWT.triggers[0].effects[0].kind, "oring_pick")
+        self.assertEqual(PROTECTOR.triggers[0].effects[-1].kind, "oring_any")
+        self.assertEqual(ADRIAN.triggers[0].effects[0].kind, "oring_any")
+        self.assertEqual(ADRIAN.triggers[0].effects[0].data["for_each_token"].kind, "token")
+        self.assertTrue(ADRIAN.triggers[0].effects[0].data["reward_each"])
+
+    def test_oring_pick_exiles_the_least_valuable_and_returns_it(self):
+        self.perm(ISLAND, self.a)
+        self.perm(ROCK, self.a)
+        src = self.enter(NEWT)
+        self.assertEqual([x.name for x in self.a.exile], ["Island"])
+        self.assertEqual(self.names(self.a), ["Test Newt", "Test Rock"])   # the artifact stayed (selector: land)
+        self.game.leave_battlefield(src, "graveyard")
+        self.game.settle()
+        self.assertIn("Island", self.names(self.a))
+
+    def test_oring_any_exiles_etb_creatures_and_they_retrigger_on_return(self):
+        self.perm(BEAR, self.a)          # no ETB: not worth exiling
+        self.perm(ETB_BEAR, self.a)
+        life = self.a.life
+        src = self.enter(PROTECTOR)
+        self.assertEqual([x.name for x in self.a.exile], [ETB_BEAR.name])
+        self.assertIn(BEAR.name, self.names(self.a))
+        self.game.leave_battlefield(src, "graveyard")
+        self.game.settle()
+        self.assertEqual(self.a.life, life + 2)      # the ETB fired again on the return
+        self.assertIn(ETB_BEAR.name, self.names(self.a))
+
+    def test_for_each_token_rider_counts_the_exiled(self):
+        self.perm(BEAR, self.a)
+        self.perm(ROCK, self.a)
+        src = self.enter(ADRIAN)
+        soldiers = [x for x in self.a.battlefield if "Soldier" in x.card.name]
+        self.assertEqual(len(soldiers), 2)           # both nonland permanents were exiled (reward_each)
+        self.assertEqual(self.names(self.a), ["Soldier token", "Soldier token", "Test Adrian"])
+        self.game.leave_battlefield(src, "graveyard")
+        self.game.settle()
+        self.assertIn(BEAR.name, self.names(self.a))
+        self.assertIn("Test Rock", self.names(self.a))
+
+
 if __name__ == "__main__":
     unittest.main()

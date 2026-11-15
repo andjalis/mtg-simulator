@@ -596,6 +596,42 @@ def oring_group(game, p, eff, item, **_):
                                       if x is not src and matches(game, x, eff.data["selector"], p, src)])
 
 
+@kind("oring_pick")
+def oring_pick(game, p, eff, item, **_):
+    """Non-targeted "exile another/a <np> you control until ~ leaves" (Wormfang Newt, Idris, Yannik):
+    the controller chooses one; the AI gives up its least valuable."""
+    from ...permanent_templates import matches
+    src = item.source if item is not None else None
+    if not isinstance(src, Permanent) or src not in src.controller.battlefield:
+        return
+    cands = [x for x in p.battlefield if x is not src and matches(game, x, eff.data["selector"], p, src)]
+    if cands:
+        game.exile_until_leaves(src, [min(cands, key=perm_value)])
+
+
+@kind("oring_any")
+def oring_any(game, p, eff, item, **_):
+    """Non-targeted "exile any number of <np> you control until ~ leaves" (Glorious Protector, Abdel Adrian,
+    Lumbering Battlement): the controller chooses the subset. The AI exiles what pays off — permanents with
+    enters-the-battlefield abilities re-fire them on the return — or everything when a rider rewards each exile."""
+    from ...permanent_templates import matches
+    src = item.source if item is not None else None
+    if not isinstance(src, Permanent) or src not in src.controller.battlefield:
+        return
+    cands = [x for x in p.battlefield if x is not src and matches(game, x, eff.data["selector"], p, src)]
+    if eff.data.get("reward_each"):
+        chosen = cands
+    else:
+        chosen = [x for x in cands if x.card.etb_effects or any(t.event == "etb" for t in x.card.triggers)]
+    game.exile_until_leaves(src, chosen)
+    tok = eff.data.get("for_each_token")
+    if tok is not None and chosen:
+        from . import HANDLERS
+        for _ in chosen:
+            HANDLERS[tok.kind](game, p=p, eff=tok, target=None, item=item, opp=game.opponent(p), prev=None,
+                               cause="oring_any: for_each_token", k=tok.kind, source=src)
+
+
 @kind("token_copy")
 def token_copy(game, p, eff, **_):
     game.enter_battlefield(p, eff.data["card"])
