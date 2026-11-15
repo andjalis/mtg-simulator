@@ -196,6 +196,8 @@ def base_pt(permanent):
 
 def pt(permanent):
     p, t = permanent.card.power or 0, permanent.card.toughness or 0
+    from .cx_cda_quantity import apply_cda          # #401: a characteristic-defining P/T sets it in layer 7a
+    p, t = apply_cda(permanent, p, t)
     if permanent.card.level_blocks:
         from .batch1_templates import level_block
         block = level_block(permanent)

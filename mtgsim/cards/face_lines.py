@@ -1249,6 +1249,9 @@ def _face_ability_lines(st, line):
             return None
         if cx_grammar.parse_static(line, st):
             return None
+        from .. import cx_cda_quantity as _cx_cda_quantity      # #401: "~'s power ... equal to Q" (a CDA)
+        if _cx_cda_quantity.parse_line(line, st):
+            return None
         unsupported.append(line)
         return line
     finally:
