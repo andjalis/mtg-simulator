@@ -115,6 +115,9 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         if killable:
             return max(killable, key=perm_value)
         return opp if eff.target in ("any", "player") else None
+    if k in ("bite_src", "ref_bite"):          # referent damage: "... deals damage equal to its power to ..."
+        from ..cx_grammar_bite import choose as bite_choose
+        return bite_choose(game, me, eff)
     if k in removal.KINDS:
         return removal.choose(game, me, eff)
     if k in ("cx_exchange_mark", "cx_exchange"):

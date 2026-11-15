@@ -46,6 +46,10 @@ class TargetsMixin:
             from ..cx_exchange import pair_target_ok
             if not pair_target_ok(self, eff, perm):
                 return False
+        if eff.data.get('bite_rel'):       # "another target creature (that player controls)" (cx_grammar_bite)
+            from ..cx_grammar_bite import rel_ok as bite_rel_ok
+            if not bite_rel_ok(self, eff, perm, by):
+                return False
         if eff.data.get('cx_rel'):         # "target creature blocking it" (cx_abil_damage)
             from ..cx_abil_damage import rel_ok
             if not rel_ok(self, eff, perm):
@@ -235,8 +239,8 @@ class TargetsMixin:
             with self.targeting(source):
                 return self.auto_targets(p, effects, preset=preset)
         out = []
-        previous = getattr(self, '_choosing_targets', [])
-        self._choosing_targets = out
+        previous = getattr(self, '_choosing_targets', []), getattr(self, '_choosing_effects', ())
+        self._choosing_targets, self._choosing_effects = out, effects
         try:
             for index, e in enumerate(effects):
                 if preset is not None and index < len(preset) and preset[index] is not None:
@@ -262,4 +266,4 @@ class TargetsMixin:
                 out.append(tgt)
             return out
         finally:
-            self._choosing_targets = previous
+            self._choosing_targets, self._choosing_effects = previous
