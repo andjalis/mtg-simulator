@@ -59,6 +59,15 @@ RED_ARMOR = card("Red Armor", "{1}{R}", "Enchantment — Aura", "Enchant creatur
 SHIELDED = card("Shielded Researcher", "{1}{U}", "Creature — Human Wizard",
                 "Protection from red\nWhen ~ enters, you may put an Aura card from your hand onto the battlefield "
                 "attached to ~.", 1, 1)
+AEROSTAT = card("Test Aerostat", "{1}{U}", "Creature — Beast", "{X}{U}: You may put a creature card with mana value X "
+               "from your hand onto the battlefield. If you do, return ~ to its owner's hand.", 2, 2)
+AVENGER = card("Test Avenger", "{2}{W}", "Artifact — Equipment", "Equipped creature has double strike.\n"
+               "Whenever equipped creature deals combat damage, you may put an Aura card from your hand onto the "
+               "battlefield attached to it.\nEquip {2}{W}")
+EVERSHrike = card("Test Shrike", "{2}{W/B}", "Creature — Spirit", "{X}{W/B}{W/B}: Return this card from your graveyard "
+                  "to the battlefield. You may put an Aura card with mana value X or less from your hand onto the "
+                  "battlefield attached to it. If you don't, exile ~.", 2, 2)
+AURA3 = card("Test Aura3", "{2}{W}", "Enchantment — Aura", "Enchant creature\nEnchanted creature gets +3/+3.")
 
 
 def _eff(c, i=0):
@@ -119,6 +128,21 @@ class Parse(unittest.TestCase):
         self.assertEqual(spell.unsupported, [])
         self.assertEqual(spell.spell_effects[-1].data["mvq"], ("<=", ("paid_x",)))
 
+    def test_paid_x_from_mana_cost_and_attached_to_it(self):
+        """"{X}{U}: ... with mana value X" reads the X paid for the ability; "attached to it" attaches to the
+        trigger's host (Holy Avenger) / the returned card (Evershrike) (#523)."""
+        self.assertEqual(AEROSTAT.unsupported, [])
+        put = next(e for e in AEROSTAT.activated[0].effects if e.kind == "hand_to_battlefield")
+        self.assertEqual(put.data["mvq"], ("==", ("paid_x",)))
+        self.assertEqual(AVENGER.unsupported, [])
+        host_trig = AVENGER.triggers[0]
+        self.assertEqual(host_trig.effects[-1].data, {"spec": {"sub": ["Aura"]}, "entry": "attached", "attach_it": True})
+        self.assertEqual(EVERSHrike.unsupported, [])
+        act = EVERSHrike.gy_activated[0]
+        put = next(e for e in act.effects if e.kind == "hand_to_battlefield")
+        self.assertEqual(put.data["mvq"], ("<=", ("paid_x",)))
+        self.assertEqual(put.data["entry"], "attached")
+
     def test_refusals(self):
         """Unsupported semantics stay visible rather than approximated."""
         for text in (
@@ -140,7 +164,10 @@ class Parse(unittest.TestCase):
                 "than or equal to that creature's power from your hand onto the battlefield.",
                 # an unknown quantity
                 "{T}: You may put a creature card with mana value equal to the number of storm clouds overhead "
-                "from your hand onto the battlefield."):
+                "from your hand onto the battlefield.",
+                # "Remove X <kind> counters from ~" as a cost: the variable own-counter removal is not planned
+                "{T}, Remove X winch counters from ~: You may put a creature card with mana value X from your hand "
+                "onto the battlefield."):
             c = card("Refusal Test", "{1}", "Creature — Human", text, 1, 1)
             self.assertTrue(c.unsupported, text)
 
@@ -372,6 +399,51 @@ class Resolve(unittest.TestCase):
                                 SimpleNamespace(source=None, card=spell, context=None, x=2))
         self.assertEqual(perm.card.name, "Two Bear")
         self.assertTrue(perm.tapped)
+
+    def test_paid_x_from_mana_cost(self):
+        """"{X}{U}: ... with mana value X": the bound is the X paid for the ability (Metathran Aerostat)."""
+        aerostat = self.put(AEROSTAT, BEAR2, OGRE3, BRUTE)
+        island = self.game.enter_battlefield(self.a, card("Island", types="Basic Land — Island",
+                                                          text="({T}: Add {U}.)"))
+        island.sick = False
+        self.game._action_depth = 1
+        try:
+            self.assertTrue(self.game.activate_ability(self.a, aerostat, len(aerostat.activated) - 1, x=3))
+        finally:
+            self.game._action_depth = 0
+        self.game.settle()
+        self.assertIn("Three Ogre", self.names())          # mana value 3 == X
+        self.assertEqual(sorted(c.name for c in self.a.hand), ["Test Aerostat", "Test Brute", "Two Bear"])
+        self.assertIn("Test Aerostat", [c.name for c in self.a.hand])   # "If you do, return ~ to its owner's hand"
+
+    def test_aura_attached_to_trigger_host(self):
+        """"attached to it" on a host trigger (Holy Avenger): the Aura goes on the equipped creature."""
+        from types import SimpleNamespace
+        host = self.game.enter_battlefield(self.a, HEALER)
+        host.sick = False
+        self.game.settle()
+        self.a.hand.append(ARMOR)
+        eff = AVENGER.triggers[0].effects[-1]
+        perm = hand_put.resolve(self.game, self.a, eff, SimpleNamespace(source=None, context=host, effects=[eff]))
+        self.assertIsNotNone(perm)
+        armor = next(x for x in self.a.battlefield if x.card.name == "Test Armor")
+        self.assertIs(armor.aura_host, host)
+        self.assertIn(armor, host.auras)
+
+    def test_graveyard_ability_attached_to_returned_card(self):
+        """Evershrike: the Aura put from a graveyard ability attaches to the card that just returned."""
+        from types import SimpleNamespace
+        perm = self.game.enter_battlefield(self.a, EVERSHrike)
+        self.a.hand.extend([ARMOR, AURA3])                 # mana value 2 and 3
+        act = EVERSHrike.gy_activated[0]
+        put = next(e for e in act.effects if e.kind == "hand_to_battlefield")
+        item = SimpleNamespace(source=None, context=EVERSHrike, x=2, effects=act.effects)
+        out = hand_put.resolve(self.game, self.a, put, item)
+        self.assertIsNotNone(out)
+        armor = next(x for x in self.a.battlefield if x.card.name == "Test Armor")   # 2 <= X
+        self.assertIs(armor.aura_host, perm)
+        self.assertEqual([c.name for c in self.a.hand], ["Test Aura3"])              # 3 > X stays
+        self.assertTrue(item.gate_paid)
 
     def test_if_you_dont_follows_the_put(self):
         """"If you don't" asks whether a card was put, not whether the always-taken "may" was."""

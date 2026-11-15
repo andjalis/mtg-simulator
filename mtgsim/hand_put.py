@@ -31,7 +31,7 @@ from __future__ import annotations
 import re
 
 _ENTRY = {"tapped": "tapped", "tapped and attacking": "attacking", "tapped and attacking that opponent": "attacking",
-          "attached to ~": "attached", "blocking that creature": "blocking"}
+          "attached to ~": "attached", "attached to it": "attached", "blocking that creature": "blocking"}
 _MV_OPS = {"equal to": "==", "less than or equal to": "<=", "x or less": "<=", "x": "=="}
 
 
@@ -93,8 +93,8 @@ def _common(m):
             q = m["q"]
             if m["where"]:
                 return NO_MATCH
-        if not q and op == "x or less":
-            quantity = ("paid_x",)       # the X paid for the spell or ability (Mind into Matter)
+        if not q and op in ("x or less", "x"):
+            quantity = ("paid_x",)       # the X paid for the spell or ability (Mind into Matter, {X}{U}: Metathran Aerostat)
         else:
             quantity = _xq(q) if q else None
         if quantity is None or quantity[0] == "stat" and quantity[1] in ("prev", "referent"):
@@ -105,6 +105,8 @@ def _common(m):
     entry = (m["entry"] or "").strip().lower()
     if entry:
         data["entry"] = _ENTRY[entry]
+        if entry == "attached to it":
+            data["attach_it"] = True        # the host is the trigger's referent, not the source (Holy Avenger)
         if data["entry"] == "attached" and spec.get("sub") != ["Aura"]:
             return NO_MATCH
         if data["entry"] in ("attacking", "blocking") and not all(
@@ -164,7 +166,7 @@ SUBS = [
 
 _MV = (r"(?: with mana value (?:(?P<n>\d+) or (?P<dir>less|greater|more)|(?P<op>equal to|less than or equal to|X or less|X)"
        r"(?: (?P<q>(?!from\b).+?))?)| with (?P<rel>lesser|equal or lesser) (?P<stat>power|toughness))?")
-_ENTRY_RX = r"(?: (?P<entry>tapped and attacking(?: that opponent)?|tapped|attached to ~|blocking that creature))?"
+_ENTRY_RX = r"(?: (?P<entry>tapped and attacking(?: that opponent)?|tapped|attached to (?:~|it)|blocking that creature))?"
 _WHERE_RX = r"(?: HANDPUT_WHERE (?P<where>.+?))?(?P<sac> HANDPUT_SAC_EOT)?"
 EFFECT_PATTERNS = [
     (r"(?:you may )?put (?:up to (?P<many_n>\w+)|(?P<many_any>any number of)) (?P<desc>[\w ,'/-]+?) cards?"
@@ -181,10 +183,10 @@ EFFECT_PATTERNS = [
 def candidates(game, p, eff, item) -> list:
     """The cards in p's hand this effect may put onto the battlefield right now."""
     from .cx_condlib import _card_ok, _cmp
-    from .engine.state import Permanent
     data = eff.data
     spec = dict(data["spec"])
-    src = item.source if item is not None and isinstance(getattr(item, "source", None), Permanent) else None
+    src = _source_perm(game, item)
+    host = _host_perm(game, item, data.get("attach_it"))
     chosen = spec.pop("chosen", False)
     any_sub = spec.pop("any_sub", None)
     if chosen and not (src is not None and getattr(src, "chosen_type", "")):
@@ -222,7 +224,7 @@ def candidates(game, p, eff, item) -> list:
             continue
         if any_sub and not any(s in c.subtypes for s in any_sub):
             continue
-        if data.get("entry") == "attached" and not _host_ok(game, p, c, src):
+        if data.get("entry") == "attached" and not _host_ok(game, p, c, host):
             continue
         out.append(c)
     return out
@@ -301,12 +303,43 @@ def _put(game, p, eff, item):
             if (perm := _enter_one(game, p, eff, item, card, entry)) is not None]
 
 
-def _enter_one(game, p, eff, item, card, entry):
+def _host_perm(game, item, attach_it):
+    """The Aura's host: "attached to it" names the trigger's referent (the equipped creature, the returned
+    card), "attached to ~" the source itself."""
     from .engine.state import Permanent
-    src = item.source if item is not None and isinstance(getattr(item, "source", None), Permanent) else None
+    if attach_it:
+        from .referent import permanent as _ref
+        who = _ref(item, None, game)
+        if isinstance(who, Permanent):
+            return who
+    return _source_perm(game, item)
+
+
+def _source_perm(game, item):
+    """The permanent this effect's source is: the ability/trigger's own permanent, or — for a graveyard
+    ability ("Return this card from your graveyard ... attached to it", Evershrike) — the permanent the
+    card became when it returned."""
+    from .engine.state import Permanent
+    if item is None:
+        return None
+    src = getattr(item, "source", None)
+    if isinstance(src, Permanent):
+        return src
+    ctx = getattr(item, "context", None)
+    from .cards.model import CardDef
+    if isinstance(ctx, CardDef):
+        for pl in game.players:
+            for perm in pl.battlefield:
+                if perm.card is ctx:
+                    return perm
+    return None
+
+
+def _enter_one(game, p, eff, item, card, entry):
+    src = _source_perm(game, item)
     p.hand.remove(card)
     if entry == "attached":
-        game._aura_host = src
+        game._aura_host = _host_perm(game, item, eff.data.get("attach_it"))
         try:
             perm = game.enter_battlefield(p, card)
         finally:
@@ -339,7 +372,7 @@ def value(game, me, eff, source) -> float:
     from .engine.state import Permanent, StackItem
     src = source.source if isinstance(source, StackItem) else source
     item = SimpleNamespace(source=src if isinstance(src, Permanent) else None, card=getattr(src, "card", None),
-                           context=None)
+                           context=getattr(src, "card", None) if isinstance(src, Permanent) else None)
     cards = candidates(game, me, eff, item)
     entry = eff.data.get("entry", "")
     if eff.data.get("many"):

@@ -61,10 +61,17 @@ def _sac_ok(game, p, card, costs):
 
 def worth(game, p, card, idx) -> bool:
     """Whether the AI should pay this graveyard ability's costs now: it doesn't sacrifice permanents worth more than
-    the card it gets back, discard its last cards, pay life at 10 or less, or mill itself near an empty library."""
+    the card it gets back, discard its last cards, pay life at 10 or less, mill itself near an empty library,
+    or pay a {X} cost with no mana left for X itself."""
     from .engine.policy import perm_value
     act = card.gy_activated[idx]
     costs = act.extra_costs
+    if act.cost.get("X"):
+        from .engine import payable
+        rest = {k: v for k, v in act.cost.items() if k != "X"}
+        rest["generic"] = rest.get("generic", 0) + 1
+        if not payable(game.mana_sources(p, spell="ability"), rest):
+            return False
     pt = [int(x) if str(x).isdigit() else 0 for x in (card.power, card.toughness)]
     value = card.cmc + sum(pt) / 2
     victims = []
@@ -119,7 +126,18 @@ def activate(game, p, card, idx):
         return False
     card = p.graveyard.get(card)
     act = card.gy_activated[idx]
-    if game.pay(p, act.cost) is None:
+    cost = dict(act.cost)
+    x = 0
+    if cost.get("X"):
+        # "{X}{W/B}: Return this card ...": X is paid as generic mana and lands on item.x for the effects
+        # ("with mana value X or less ...": Evershrike's Aura put, #523)
+        from .engine import payable
+        cost = {k: v for k, v in cost.items() if k != "X"}
+        sources = game.mana_sources(p, spell="ability")
+        while x < 20 and payable(sources, {**cost, "generic": cost.get("generic", 0) + x + 1}):
+            x += 1
+        cost["generic"] = cost.get("generic", 0) + x
+    if game.pay(p, cost) is None:
         return False
     if act.extra_costs.get("cx_costs"):
         from .cx_costs import pay as pay_parts
@@ -134,6 +152,8 @@ def activate(game, p, card, idx):
         game.discard_card(p, p.ai.choose_discard(game, p))
     item = StackItem(p, list(act.effects), game.auto_targets(p, act.effects), context=card,
                      name=f"{card.name} graveyard ability", kind="ability")
+    if x:
+        item.x = x
     game.stack.append(item)
     game.log(f"activates {item}", p)
     game.check_ward(item)
