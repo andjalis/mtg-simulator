@@ -233,6 +233,7 @@ _TRIGGERS = [
     (r"Whenever an opponent searches their library, (.+)", ("opp_searches",)),
     (r"When(?:ever)? ~ enters? or attacks?, (.+)", ("etb", "attacks")),
     (r"When ~ enters and at the beginning of your upkeep, (.+)", ("etb", "upkeep")),
+    (r"When ~ enters and at the beginning of your end step, (.+)", ("etb", "end_step")),   # Quantum Entanglement
     (r"When(?:ever)? ~ enters?(?: the battlefield)?, (.+)", ("etb",)),
     (r"Whenever ~ attacks while (?!saddled)(.+)", ("attacks",)),
     (r"When(?:ever)? ~ attacks, (.+)", ("attacks",)),
