@@ -238,6 +238,8 @@ class StackMixin:
                     continue
                 effects = trig.effects
                 if event == "dies":
+                    from ..graveyard_returns import bind_death
+                    effects = bind_death(effects, perm)
                     effects = [dataclasses.replace(e, data=dict(e.data, counters=dict(perm.counters)))
                                if e.kind == "inherit_counters" else e for e in effects]
                 effects = self._that_much(effects)

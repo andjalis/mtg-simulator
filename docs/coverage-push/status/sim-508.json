@@ -1,0 +1,59 @@
+{
+  "issue": 508,
+  "status": "partial",
+  "base": "4ed2d9c",
+  "slice": "dies-source exile followed by graveyard returns",
+  "coverage": {
+    "total": 35284,
+    "before_full": 21347,
+    "after_full": 21352,
+    "gained_full": 5,
+    "lost_full": 0,
+    "new_parse_errors": 0,
+    "parse_changed": 5
+  },
+  "completed_cards": [
+    "Body Snatcher",
+    "Celestial Gatekeeper",
+    "Mistmoon Griffin",
+    "Moldgraf Monstrosity",
+    "Sylvan Hierophant"
+  ],
+  "remaining": [
+    {
+      "family": "distinct mana values",
+      "cards": ["Agadeem's Awakening", "Seasons Past"],
+      "needs": "Pairwise constraints and physical zone references for target lists; untargeted resolution choice for Seasons Past."
+    },
+    {
+      "family": "opponent chooses",
+      "cards": ["Mausoleum Turnkey", "Tasigur, the Golden Fang"],
+      "needs": "Opponent choice at stacking time for Turnkey's target; opponent choice during resolution for Tasigur."
+    },
+    {
+      "family": "chosen creature type",
+      "cards": ["From the Rubble", "Bloodline Bidding", "Haunting Voyage"],
+      "needs": "Permanent choice lookup versus spell-local choice, changeling, and Haunting Voyage's foretold replacement."
+    },
+    {
+      "family": "attached returns",
+      "cards": ["Magnetic Snuffler", "One Last Job", "Unfinished Business", "Forum Filibuster"],
+      "needs": "Legal attachment host and attachment during entry, including host references across nested/reflexive instructions."
+    },
+    {
+      "family": "repeat for subtypes",
+      "cards": ["Grim Captain's Call"],
+      "needs": "Four sequential untargeted subtype choices, so the same physical card cannot be chosen twice."
+    },
+    {
+      "family": "aggregate target budgets",
+      "cards": ["Patch Up", "March from the Tomb", "Reunion of the House"],
+      "needs": "Target-list total mana value or total power validation and selection; fixed count caps where printed."
+    }
+  ],
+  "excluded": [
+    "Aether Rift unless-payer belongs to #321.",
+    "The brief's Lae'zel example is ambiguous; Lae'zel, Vlaakith's Champion has a counter-replacement gap rather than a graveyard-return clause."
+  ],
+  "evidence_scope": "Offline template matches plus focused behavior tests; not complete rules support for issue #508."
+}

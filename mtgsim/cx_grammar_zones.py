@@ -219,6 +219,9 @@ def card_fits(card, spec, source=None) -> bool:
         return card.is_permanent if t == "permanent" else t.title() in card.types
     if spec["types"] and not any(is_type(t) for t in spec["types"]):
         return False
+    if spec.get("subtypes_any") and not (card.changeling or
+            set(spec["subtypes_any"]) & {s.lower() for s in card.subtypes}):
+        return False
     if spec.get("non") and is_type(spec["non"]):
         return False
     legend = spec.get("legend")

@@ -4,7 +4,7 @@ from __future__ import annotations
 import contextlib
 
 from .. import removal, counter_mechanics, permanent_templates
-from ..cards import Effect
+from ..cards import CardDef, Effect
 from ..cx_mech import hexproof_from
 from .policy import default_choose_target, perm_value
 from .state import Permanent, Player, StackItem, TARGETED, is_basic_land, protected_from
@@ -262,7 +262,9 @@ class TargetsMixin:
                     tgt = max((x for x in self.legal_targets(p, e) if all(x is not t for t in taken)
                                and (getattr(x, "controller", x) is not p) == (tgt.controller is not p)),
                               key=lambda x: perm_value(x) if isinstance(x, Permanent) else -1.0, default=None) \
-                        if isinstance(tgt, Permanent) else None
+                        if isinstance(tgt, Permanent) else max(
+                            (x for x in self.legal_targets(p, e) if all(x is not t for t in taken)),
+                            key=lambda x: x.cmc if isinstance(x, CardDef) else -1.0, default=None)
                 out.append(tgt)
             return out
         finally:

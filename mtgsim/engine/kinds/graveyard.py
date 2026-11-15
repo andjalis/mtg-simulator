@@ -11,6 +11,52 @@ from ..state import Permanent, Player, TrackedZone, card_matches
 from . import NO_SBA, kind
 
 
+@kind("exile_dead_source")
+def exile_dead_source(game, p, eff, item, **_):
+    """Exile the same graveyard object that caused this dies trigger; no payoff gate."""
+    item.graveyard_return_picks = []
+    zone, ref = eff.data.get("dead_zone"), eff.data.get("dead_ref")
+    card = ref.find(zone) if ref is not None else None
+    if card is not None:
+        game.move_card(card, zone, zone.owner.exile, reason="exile")
+        game.log(f"exiles {card.name} from the graveyard", p)
+    return NO_SBA
+
+
+@kind("gy_return_mark")
+def gy_return_mark(game, p, eff, target, item, **_):
+    """Collect a still-legal target for the simultaneous return instruction."""
+    item.graveyard_return_picks.append((target, eff))
+    return NO_SBA
+
+
+@kind("gy_return_finish")
+def gy_return_finish(game, p, item, **_):
+    picks = item.graveyard_return_picks
+    if picks:
+        _return_graveyard_cards(game, p, [c for c, _ in picks], picks[0][1].data["to"])
+
+
+@kind("gy_return_random", "gy_return_top")
+def gy_return_choice(game, p, eff, item, **_):
+    pool = [c for c in p.graveyard if c.is_creature]
+    picked = (pool[-1:] if eff.kind == "gy_return_top" else
+              game.rng.sample(pool, min(eff.amount, len(pool))))
+    _return_graveyard_cards(game, p, picked, "battlefield")
+
+
+def _return_graveyard_cards(game, p, cards, to):
+    if to == "hand":
+        for card in cards:
+            game.move_card(card, p.graveyard, p.hand, reason="return")
+    else:
+        for card in cards:
+            p.graveyard.remove(card)
+        game.enter_battlefield_many(p, cards)
+    for card in cards:
+        game.log(f"returns {card.name} from the graveyard to {to}", p)
+
+
 @kind("dig_gy")
 def dig_gy(game, p, eff, **_):
     """"Look at/reveal the top N: some go to your hand (or back on top), the rest into your graveyard."""

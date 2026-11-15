@@ -14,6 +14,13 @@ Open work: [docs/coverage-push/TODO.md](docs/coverage-push/TODO.md) and GitHub i
 `counted-full-but-wrong` / `follow-up` / `parked`. Census: 17,612 full (baseline) -> 18,128 (2026-11-06 20:25 UTC).
 The sections below predate the push.
 
+Issue #508, bounded dies-return slice (2026-11-15): source exile followed by targeted,
+random, or top-creature returns now matches Body Snatcher, Celestial Gatekeeper,
+Mistmoon Griffin, Moldgraf Monstrosity, and Sylvan Hierophant. Offline coverage adds
+five full matches, with no losses or new parse errors. Distinct/aggregate target
+constraints, opponent choices, chosen types, attached returns, and repeated subtype
+choices remain open; see the [machine-readable scope record](docs/coverage-push/status/sim-508.json).
+
 ## Current findings
 
 The full offline census (2026-10-30 Scryfall DB, [results/database_coverage_2026-10-30-morning](results/database_coverage_2026-10-30-morning/README.md)) covers 35,225 entries: **13,848 full** (39.31%), 327 with recorded simplifications, 21,050 partial and zero parser errors. That census predates the last chonk merge rounds of 2026-10-30 (see below), which promoted several hundred more cards; the next census will re-baseline.

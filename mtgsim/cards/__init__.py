@@ -254,3 +254,5 @@ from .. import cx_attach as _cx_attach
 _EFFECT_PATTERNS += _cx_attach.EFFECT_PATTERNS
 from .. import linked_exile as _linked_exile  # noqa: E402
 _EFFECT_PATTERNS += _linked_exile.EFFECT_PATTERNS
+from .. import graveyard_returns as _graveyard_returns
+_parse_module._FACE_LINE_PARSERS = (_graveyard_returns.face_line,) + _parse_module._FACE_LINE_PARSERS
