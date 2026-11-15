@@ -189,7 +189,8 @@ def keywords(text):
 
 _TRAITS = frozenset((
     'tapped', 'untapped', 'attacking', 'blocking', 'legendary', 'nonlegendary', 'token', 'nontoken',
-    'nonland', 'noncreature', 'nonartifact', 'colorless', 'multicolored', 'monocolored', 'suspected'
+    'nonland', 'noncreature', 'nonartifact', 'colorless', 'multicolored', 'monocolored', 'suspected',
+    'nonsnow', 'nonbasic', 'nonattacking', 'nonblocking'      # #403: non<supertype> / non<state> words
 ))
 _IRREGULAR = {'elves': 'Elf', 'dwarves': 'Dwarf', 'wolves': 'Wolf'}
 
@@ -202,6 +203,8 @@ def _classify(low):
         return 'trait', low
     if low in _COLORS:
         return 'color', _COLORS[low]
+    if low.startswith('non') and low[3:] in _COLORS:      # "nonblack creature" (#403)
+        return 'not_color', _COLORS[low[3:]]
     if low.startswith('non-') and low[4:] in _SUBTYPE_TYPES:
         return 'not_subtype', low[4:]
     if low in _SUBTYPE_TYPES:
@@ -210,8 +213,8 @@ def _classify(low):
 
 
 def _record(result, bucket, value):
-    result.setdefault({'trait': 'traits', 'color': 'colors', 'not_subtype': 'not_subtypes',
-                       'subtype': 'subtypes'}[bucket], []).append(value)
+    result.setdefault({'trait': 'traits', 'color': 'colors', 'not_color': 'not_colors',
+                       'not_subtype': 'not_subtypes', 'subtype': 'subtypes'}[bucket], []).append(value)
 
 
 def _singular(word, plural):
