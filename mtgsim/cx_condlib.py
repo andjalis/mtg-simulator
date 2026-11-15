@@ -1171,6 +1171,10 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         from .engine.state import Permanent
         host = source.aura_host or source.attached_to if isinstance(source, Permanent) else None
         return host is not None and _card_ok(host.card, args[0], host)
+    from .cx_gcond_ref import KINDS as _REF_KINDS      # referent-bound conditions (#405), cx_gcond_ref
+    if kind in _REF_KINDS:
+        from .cx_gcond_ref import check as ref_check
+        return ref_check(game, p, kind, args, item, source, prev)
     from .cx_static_cond import check as static_check      # kinds registered by cx_static_cond
     return static_check(game, p, kind, args, item, source)
 
@@ -1230,3 +1234,6 @@ def holds_for(source, code: str, ref=None) -> bool:
 
 from .cx_static_cond import RULES as _STATIC_RULES  # noqa: E402  (devotion, most common color)
 _RULES.extend((re.compile(pattern, re.I), build) for pattern, build in _STATIC_RULES)
+
+from .cx_gcond_ref import RULES as _REF_RULES  # noqa: E402  (referent-bound conditions, #405)
+_RULES.extend((re.compile(pattern, re.I), build) for pattern, build in _REF_RULES)
