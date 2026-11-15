@@ -44,17 +44,21 @@ def blink_next_end(game, target, item, **_):
 
 @kind('return_exile_ref')
 def return_exile_ref(game, item, eff=None, **_):
-    from ...blink import entry_counters, entry_face
+    from ...blink import entry_counters, entry_face, enter_face_down
     zone, ref = item.context
     card = ref.find(zone)
     if card is not None:
         zone.remove(card)
         data = eff.data if eff is not None else {}
+        # the delayed entry's player is already the chosen destination ("yours"/"opponent" resolved at append)
+        owner = item.controller if data.get('yours') or data.get('opponent') else card.owner
         face = entry_face(card, data)
-        game.enter_battlefield(item.controller if data.get('yours') else card.owner, face,
-                               tapped=bool(data.get('tapped')),
-                               counters=entry_counters(data),
-                               physical_card=card if face is not card else None)
+        perm = game.enter_battlefield(owner, face, tapped=bool(data.get('tapped')),
+                                      tapped_attacking=bool(data.get('attacking')),
+                                      counters=entry_counters(data),
+                                      physical_card=card if face is not card else None)
+        if data.get('face_down') and perm is not None:
+            enter_face_down(perm, card)
 
 
 @kind('relationship_mark')

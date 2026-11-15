@@ -149,21 +149,25 @@ def blink(game, p, eff, target, item=None, **_):
     """Exile a permanent, then return it as a new object (at once, or at the next end step); a token is gone."""
     if not isinstance(target, Permanent) or target not in target.controller.battlefield:
         return
-    from ...blink import entry_counters, entry_face
+    from ...blink import entry_counters, entry_face, enter_face_down
     owner, card = target.owner, target.front
     if not game.leave_battlefield(target, "exile") or card.is_token or card not in owner.exile:
         return
-    back = p if eff.data.get("yours") else owner
+    back = p if eff.data.get("yours") else game.opponent(p) if eff.data.get("opponent") else owner
     if eff.data.get("delayed"):
         game.delayed_end_step.append((back, [Effect("return_exile_ref", data=dict(eff.data))],
                                       item.source if item else None, (owner.exile, owner.exile.reference(card))))
         return
     owner.exile.remove(card)
     face = entry_face(card, eff.data)
-    game.enter_battlefield(back, face, tapped=bool(eff.data.get("tapped")),
-                           counters=entry_counters(eff.data),
-                           physical_card=card if face is not card else None)
-    game.log(f"{card.name} returns to the battlefield" + (" transformed" if face is not card else ""), p)
+    perm = game.enter_battlefield(back, face, tapped=bool(eff.data.get("tapped")),
+                                  tapped_attacking=bool(eff.data.get("attacking")),
+                                  counters=entry_counters(eff.data),
+                                  physical_card=card if face is not card else None)
+    if eff.data.get("face_down") and perm is not None:
+        enter_face_down(perm, card)
+    game.log(f"{card.name} returns to the battlefield" + (" transformed" if face is not card else "")
+             + (" face down" if eff.data.get("face_down") else ""), p)
 
 
 @kind("tuck_top")

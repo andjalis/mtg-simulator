@@ -3,18 +3,23 @@
 The exiled card comes back as a new object (counters, Auras and damage are gone, enters-the-battlefield
 triggers fire) and a token is gone for good. The ``blink`` kind (engine/kinds/permanents.py) does the
 exile and the return. Optional modifiers: ``tapped``, ``transformed`` (returns on its back face),
-``yours`` (under your control instead of its owner's), ``counter`` (a named counter on it) and
-``delayed`` (at the beginning of the next end step).
-Joined at the end of ``cards/__init__.py``.
+``face_down`` (returns as a face-down 2/2), ``attacking`` (returns tapped and attacking), ``yours``
+(under your control instead of its owner's), ``opponent`` (under an opponent's control), ``counter``
+(a named counter on it) and ``delayed`` (at the beginning of the next end step). Joined at the end
+of ``cards/__init__.py``.
 """
 from __future__ import annotations
 
 import re
 
 _COUNT = {"one": 1, "two": 2}
-_RETURN = (r"to the battlefield( tapped)?( transformed)? under "
-           r"(its owner's|their owners'|their owner's|his owner's|her owner's|your) control"
-           r"( with a (?:[+-]\d+/[+-]\d+|[a-z]+(?:-[a-z]+)?) counter on (?:it|them))?")
+# The return tail: "to the battlefield [tapped] [transformed] [and attacking] [face down]
+# [under <whose> control] [with a <name> counter on it]" — the control clause defaults to the owner's.
+_RETURN = (r"to the battlefield(?P<tail>"
+           r"(?: tapped| transformed| and attacking| face down"
+           r"| under (?P<who>its owner's|their owners'|their owner's|his owner's|her owner's|your|an opponent's)"
+           r" control"
+           r"|(?P<counter> with a (?:[+-]\d+/[+-]\d+|[a-z]+(?:-[a-z]+)?) counter on (?:it|them)))*)")
 
 
 def _counter(text):
@@ -25,6 +30,19 @@ def _counter(text):
     if name in KEYWORDS or name in ('finality', 'stun') or re.fullmatch(r'[+-]\d+/[+-]\d+', name):
         return name
     return None                   # e.g. shield counters need their own replacement rules
+
+
+def _flags(tail, who=None, counter=None):
+    """The return modifiers of a tail, or None when a named counter is unsupported."""
+    if counter is not None and _counter(counter) is None:
+        return None
+    return {"tapped": bool(re.search(r"\btapped\b", tail, re.I)),
+            "transformed": bool(re.search(r"\btransformed\b", tail, re.I)),
+            "attacking": bool(re.search(r"\battacking\b", tail, re.I)),
+            "face_down": bool(re.search(r"\bface down\b", tail, re.I)),
+            "yours": bool(who and who.lower() == "your"),
+            "opponent": bool(who and who.lower() == "an opponent's"),
+            "counter": _counter(counter) if counter else None}
 
 
 def entry_counters(data):
@@ -40,22 +58,50 @@ def entry_face(card, data):
     return card
 
 
+def enter_face_down(perm, card):
+    """A returned card that enters face down: a 2/2 with no abilities, the real card on ``hidden``
+    (turnable for its morph cost, like manifest; cards that already carry a morph-ish alt cost keep it)."""
+    import dataclasses
+    from .cards import AltCost
+    from .manifest import _face_down_def
+    real = getattr(card, "definition", card)
+    hidden = real
+    if real.is_creature and not any(a.kind in ("morph", "megamorph", "disguise") for a in real.alt_costs):
+        hidden = dataclasses.replace(real, alt_costs=list(real.alt_costs) + [AltCost("morph", real.mana_cost)])
+    perm.hidden = hidden
+    perm.card = _face_down_def()
+
+
 def _singular(phrase):
     """"creatures you control" -> "creature you control" (the selector reads one noun)."""
     return re.sub(r"\b(\w+?)s\b(?= you control| you own| an opponent controls|$)", r"\1", phrase, count=1)
 
 
-def _build(count_word, other, phrase, tapped, transformed, who, counter, delayed):
+def _build(m, delayed=False):
     from . import permanent_templates as pt
     from .cards import Effect, NO_MATCH
-    n = _COUNT.get((count_word or "").lower(), 1)
-    text = ("up to one " if count_word else "") + (other or "") + "target " + (_singular(phrase) if n > 1 else phrase)
-    subj = pt.subject(text)
-    if subj is None or subj[0] != "permanent" or _counter(counter) is None:
+    count_word = (m.group(1) or "").lower()
+    other, phrase = m.group(2), m.group(3)
+    flags = _flags(m["tail"], m["who"], m["counter"])
+    if flags is None:
         return NO_MATCH          # None would mean "matched, no effect": the sentence would be dropped silently
+    if count_word == "any number of":
+        # "exile any number of target X, then return those cards ...": one blink chain per target
+        # (#391's cx_multi list target).
+        subj = pt.subject("target " + _singular(phrase))
+        if subj is None or subj[0] != "permanent":
+            return NO_MATCH
+        target, data = subj
+        probe = Effect("blink", target=target, data=dict(data, **flags))
+        return Effect("cx_multi", target="multi", data={"probe": probe, "chain": [probe]})
+    n = _COUNT.get(count_word.replace("up to ", ""), 1)
+    text = (("up to one " if count_word else "") + (other or "") + "target "
+            + (_singular(phrase) if n > 1 else phrase))
+    subj = pt.subject(text)
+    if subj is None or subj[0] != "permanent":
+        return NO_MATCH
     target, data = subj
-    data = dict(data, tapped=bool(tapped), transformed=bool(transformed), yours=who.lower() == "your",
-                counter=_counter(counter), delayed=delayed)
+    data = dict(data, **flags, delayed=delayed)
     effects = []
     for i in range(n):
         d = dict(data)
@@ -65,32 +111,32 @@ def _build(count_word, other, phrase, tapped, transformed, who, counter, delayed
     return effects
 
 
-def _self(tapped, transformed, who, counter):
+def _self(m):
     from .cards import Effect, NO_MATCH
-    if _counter(counter) is None:
+    flags = _flags(m["tail"], m["who"], m["counter"])
+    if flags is None:
         return NO_MATCH
-    return Effect("blink", target="self", data={"tapped": bool(tapped), "transformed": bool(transformed),
-                                                "yours": who.lower() == "your",
-                                                "counter": _counter(counter), "delayed": False})
+    who = m.group(1)
+    return Effect("blink", target="self" if who == "~" else "prev", data=dict(flags, delayed=False))
 
 
 EFFECT_PATTERNS = [
     (r"BLINKROLL (.+)\|(\d+)", lambda m: _roll_effect(m[1], int(m[2]))),
     (r"BLINKTAKE (.+)", lambda m: _linked_exile(m[1])),
-    (r"BLINKLINKRETURN " + _RETURN, lambda m: _linked_return(m[1], m[2], m[3], m[4])),
-    (r"exile (?:up to (one|two) )?(another |other )?target (.+?)(, then| and then) return (?:it|him|her|that card|those cards|them) "
-     + _RETURN, lambda m: _build(m[1], m[2], m[3], m[5], m[6], m[7], m[8], False)),
-    (r"exile ~(, then| and then) return (?:it|him|her) " + _RETURN,
-     lambda m: _self(m[2], m[3], m[4], m[5])),
-    (r"BLINKLATER (?:up to (one|two) )?(another |other )?target (.+?)\|" + _RETURN,
-     lambda m: _build(m[1], m[2], m[3], m[4], m[5], m[6], m[7], True)),
+    (r"BLINKLINKRETURN " + _RETURN, lambda m: _linked_return(m)),
+    (r"exile (?:((?:up to )?(?:one|two)|any number of) )?(another |other )?target (.+?)(?:, then| and then) "
+     r"return (?:it|him|her|that card|those cards|them) " + _RETURN, lambda m: _build(m)),
+    (r"exile (~|it|him|her)(?:, then| and then) return (?:it|him|her) " + _RETURN,
+     lambda m: _self(m)),
+    (r"BLINKLATER (?:((?:up to )?(?:one|two)) )?(another |other )?target (.+?)\|" + _RETURN,
+     lambda m: _build(m, delayed=True)),
 ]
 
 SUBS = [
     (re.compile(r"exile (?:up to (one|two) )?(another |other )?target ([^.,]+?)\. return (?:it|him|her|that card|the exiled card|those cards|them) "
                 + _RETURN + r" at the beginning of the next end step\.", re.I),
      lambda m: "BLINKLATER " + (f"up to {m[1]} " if m[1] else "") + (m[2] or "") + "target " + m[3] + "|"
-               + "to the battlefield" + (m[4] or "") + (m[5] or "") + " under " + m[6] + " control" + (m[7] or "") + "."),
+               + "to the battlefield" + m["tail"] + "."),
 ]
 
 
@@ -109,12 +155,12 @@ def _linked_exile(phrase):
                   data=dict(data, group=target == 'group'))
 
 
-def _linked_return(tapped, transformed, who, counter):
+def _linked_return(m):
     from .cards import Effect, NO_MATCH
-    if _counter(counter) is None:
+    flags = _flags(m["tail"], m["who"], m["counter"])
+    if flags is None:
         return NO_MATCH
-    return Effect('blink_link_return', data={'tapped': bool(tapped), 'transformed': bool(transformed),
-                                             'yours': who.lower() == 'your', 'counter': _counter(counter)})
+    return Effect('blink_link_return', data=flags)
 
 
 def prepare_linked(text):
@@ -146,8 +192,7 @@ def prepare_linked(text):
     rewritten = re.sub(r'\bexile ((?:(?:up to one )?(?:another |other )?target |all )[^.\n]+)\.', exile, text, flags=re.I)
     if not changed:
         return text
-    rewritten = rx.sub(lambda m: 'BLINKLINKRETURN to the battlefield' + (m[1] or '') + (m[2] or '') + ' under '
-                       + m[3] + ' control' + (m[4] or '') + '.', rewritten)
+    rewritten = rx.sub(lambda m: 'BLINKLINKRETURN to the battlefield' + m["tail"] + '.', rewritten)
     # A rewritten return that shares a line with its exile would be swallowed by the exile's own
     # trigger pattern ("When ~ enters, ..."), so keep every BLINKLINKRETURN on its own line.
     rewritten = re.sub(r"\.\s+(?=(?:when|whenever)\b[^.\n]*?BLINKLINKRETURN)", ".\n", rewritten, flags=re.I)
@@ -203,12 +248,16 @@ def return_refs(game, player, refs, data):
             card = ref.find(zone)
             if card is None:
                 continue
-            owner = player if data.get('yours') else card.owner
+            owner = player if data.get('yours') else game.opponent(player) if data.get('opponent') \
+                else card.owner
             zone.remove(card)
             face = entry_face(card, data)
             permanent = game.enter_battlefield(owner, face, tapped=bool(data.get('tapped')),
+                                               tapped_attacking=bool(data.get('attacking')),
                                                counters=entry_counters(data),
                                                physical_card=card if face is not card else None)
+            if data.get('face_down') and permanent is not None:
+                enter_face_down(permanent, card)
             if permanent is not None:
                 returned.append(permanent)
     return returned

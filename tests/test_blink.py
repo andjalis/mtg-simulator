@@ -301,6 +301,86 @@ class BlinkTests(unittest.TestCase):
         self.assertNotIn(second.front, self.a.exile)
         self.assertEqual([x.front for x in self.a.creatures], [second.front])
 
+    def test_return_without_a_control_clause_defaults_to_the_owner(self):
+        from mtgsim.cards import _parse_effects
+        effects, bad = _parse_effects("Exile ~, then return it to the battlefield.")
+        self.assertEqual(bad, [])
+        self.assertEqual((effects[0].kind, effects[0].target), ("blink", "self"))
+        self.assertFalse(effects[0].data["yours"] or effects[0].data["opponent"])
+        spirit = self.perm(SPIRIT, self.a)
+        self.game.resolve(self.a, effects[0], spirit)
+        self.game.settle()
+        self.assertEqual(len([x for x in self.a.battlefield if x.card.name == "Test Spirit"]), 1)
+
+    def test_return_under_an_opponents_control(self):
+        from mtgsim.cards import _parse_effects
+        effects, bad = _parse_effects("Exile ~, then return it to the battlefield under an opponent's control.")
+        self.assertEqual(bad, [])
+        self.assertTrue(effects[0].data["opponent"])
+        spirit = self.perm(SPIRIT, self.a)
+        self.game.resolve(self.a, effects[0], spirit)
+        self.game.settle()
+        back = [x for x in self.b.battlefield if x.card.name == "Test Spirit"]
+        self.assertEqual(len(back), 1)
+        self.assertFalse([x for x in self.a.battlefield if x.card.name == "Test Spirit"])
+
+    def test_return_tapped_and_attacking(self):
+        from mtgsim.cards import _parse_effects
+        effects, bad = _parse_effects(
+            "Exile up to one target creature you own, then return it to the battlefield under your control "
+            "tapped and attacking.")
+        self.assertEqual(bad, [])
+        self.assertTrue(effects[0].data["tapped"] and effects[0].data["attacking"] and effects[0].data["yours"])
+        bear = self.perm(BEAR, self.a)
+        self.game.resolve(self.a, effects[0], bear)
+        self.game.settle()
+        back = [x for x in self.a.battlefield if x.front is bear.front]
+        self.assertEqual(len(back), 1)
+        self.assertTrue(back[0].tapped)
+
+    def test_any_number_of_targets_blinks_each_chosen(self):
+        from mtgsim.cards import _parse_effects
+        effects, bad = _parse_effects(
+            "Exile any number of target nonland permanents you control, then return those cards to the "
+            "battlefield under their owner's control.")
+        self.assertEqual(bad, [])
+        self.assertEqual(effects[0].kind, "cx_multi")
+        self.assertEqual(effects[0].data["probe"].kind, "blink")
+        one, two = self.perm(GOBLIN, self.a), self.perm(GOBLIN, self.a)
+        life = self.a.life
+        from mtgsim.engine import StackItem
+        item = StackItem(self.a, effects, [one, two])
+        self.game.resolve(self.a, effects[0], (one, two), item)
+        self.game.settle()
+        self.assertEqual(len([x for x in self.a.battlefield if x.card.name == "Test Etb"]), 2)
+        self.assertEqual(self.a.life, life + 4)     # both ETBs re-fired
+
+    def test_exile_it_then_return_it_reads_the_trigger_subject(self):
+        from mtgsim.cards.parse import _parse_trigger
+        triggers, bad, _ = _parse_trigger(
+            "Whenever ~ deals combat damage to a player, you may exile it, then return it to the battlefield "
+            "transformed under its owner's control.")
+        self.assertEqual(bad, [])
+        kinds = [e.kind for e in triggers[0].effects]
+        self.assertEqual(kinds, ["pay_gate", "blink"])
+        self.assertEqual(triggers[0].effects[1].target, "self")     # bound to ~ by the "deals damage" head
+        self.assertTrue(triggers[0].effects[1].data["transformed"])
+
+    def test_face_down_return_enters_as_a_hidden_2_2(self):
+        morph = card("Test Morpher", "{2}{U}", "Creature — Elemental",
+                     "{1}: Exile ~, then return it to the battlefield face down under its owner's control.\n"
+                     "Megamorph {4}{U}", 3, 3)
+        self.assertEqual(morph.unsupported, [])
+        src = self.perm(morph, self.a)
+        self.assertTrue(self.game.activate(self.a, src, "ability:0"))
+        self.game.settle()
+        back = [x for x in self.a.battlefield if x.front is src.front]
+        self.assertEqual(len(back), 1)
+        self.assertIsNot(back[0], src)
+        self.assertIsNotNone(back[0].hidden)
+        self.assertEqual((back[0].power, back[0].toughness), (2, 2))
+        self.assertEqual(back[0].card.name, "Face-down creature")
+
 
 if __name__ == "__main__":
     unittest.main()
