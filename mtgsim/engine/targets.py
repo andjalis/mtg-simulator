@@ -27,6 +27,10 @@ class TargetsMixin:
         return isinstance(obj, Player)
 
     def passes_filter(self, eff: Effect, perm: Permanent, by: Player) -> bool:
+        if eff.data.get('copy_same_name'):
+            from ..copies import same_name_target
+            if not same_name_target(self.target_source, perm):
+                return False
         spec = eff.data.get('selector')
         if spec is not None:
             source = self.target_source.source if isinstance(self.target_source, StackItem) else self.target_source

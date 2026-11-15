@@ -338,6 +338,10 @@ def _parse_effects(text: str, opts: bool = False):
                 eff = build(m)
                 if eff is NO_MATCH:
                     continue
+                if isinstance(eff, Effect) and eff.kind == "copy_exiled_this_way" and \
+                        (not effects or effects[-1].kind != "cx_card_move" or effects[-1].data.get("to") != "exile"):
+                    unmatched.append(sentence.strip())
+                    break  # the referent must be the immediately preceding exile instruction
                 if isinstance(eff, list):
                     effects += eff
                 elif eff is not None:
@@ -531,6 +535,9 @@ def _parse_face(data: dict) -> CardDef:
             nm.split()[0] not in ("The", "Lord", "Lady", "King", "Queen", "Sir") and \
             re.search(rf"\b{re.escape(nm.split()[0])}\b", text):
         text = re.sub(rf"\b{re.escape(nm.split()[0])}\b", "~", text)  # "Ajani" for "Ajani Resolute"
+    elif " of the " in nm and "Legendary" in type_line and \
+            re.search(rf"\bYou may have {re.escape(nm.split()[0])} enter\b", text):
+        text = re.sub(rf"\b{re.escape(nm.split()[0])}\b", "~", text)
     elif " the " in nm and "Legendary" in type_line:
         text = re.sub(rf"\b{re.escape(nm.split(' the ')[0])}\b", "~", text)  # "Smaug the Magnificent"
     for index, token_name in enumerate(token_names):

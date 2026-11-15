@@ -27,7 +27,8 @@ from __future__ import annotations
 import dataclasses
 import re
 
-KINDS = {"copy_perm", "copy_spell", "copy_next_spell", "copy_sac", "become_copy", "copy_ability"}
+KINDS = {"copy_perm", "copy_spell", "copy_next_spell", "copy_sac", "become_copy", "copy_ability", "copy_set_base_x",
+         "copy_may_blink", "copy_exiled_this_way"}
 
 _KW = (r"flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|"
        r"indestructible|menace|reach|defender|flash|prowess")
@@ -150,6 +151,9 @@ def parse_except(text: str, mods: dict | None = None) -> dict | None:
         c = clause.strip()
         if not c:
             continue
+        if re.fullmatch(rf"{_SUBJ}(?:'s| is) legendary and snow in addition to {_POSS} other types", c, flags=re.I):
+            mods["legendary"] = mods["snow"] = True
+            continue
         if re.fullmatch(rf"(?:{_SUBJ}{_BE}|is|are|isn't|aren't) (?:not )?legendary", c, flags=re.I):
             mods["legendary"] = bool(re.fullmatch(rf"(?:{_SUBJ}(?:'s|'re| is| are)|is|are) legendary", c, flags=re.I))
             continue
@@ -220,6 +224,27 @@ def quoted_grant(text: str):
     # the upkeep begins and when the ability resolves. Parse the body normally.
     nontoken = re.fullmatch(r"At the beginning of your upkeep, if ~ isn't a token, (.+)", text)
     parsed_text = ("At the beginning of your upkeep, " + nontoken[1]) if nontoken else text
+    x_base = parsed_text == "{X}: ~ has base power and toughness X/X."
+    if x_base:
+        parsed_text = "{X}: ~ gets +1/+1 until end of turn."
+    may_blink = (parsed_text == "At the beginning of your upkeep, you may exile ~. "
+                 "If you do, return it to the battlefield under its owner's control.")
+    if may_blink:
+        parsed_text = ("At the beginning of your upkeep, exile ~, then return it to the battlefield "
+                       "under its owner's control.")
+    no_planeswalker = re.fullmatch(
+        r"At the beginning of the end step, if you don't control a planeswalker, (.+)", parsed_text)
+    if no_planeswalker:
+        parsed_text = "At the beginning of the end step, " + no_planeswalker[1]
+    # Restrict this rewrite to one destroy target; the ordinary parser still
+    # owns its costs, timing and optional/other-target semantics.
+    same_name = re.fullmatch(
+        r"((?:\{[^}]+\}(?:, | )?)+: Destroy target creature|"
+        r"When ~ enters, destroy up to one other target creature) with the same name as ~\.", parsed_text)
+    if not same_name and re.search(r"target .* with the same name", parsed_text, re.I):
+        return None  # generic descriptor fallbacks do not enforce this relation
+    if same_name:
+        parsed_text = same_name[1] + "."
     probe = _probe(parsed_text)
     if probe.unsupported or probe.approximations:
         return None
@@ -228,6 +253,33 @@ def quoted_grant(text: str):
         if len(probe.triggers) != 1 or probe.triggers[0].event != "upkeep" or probe.triggers[0].intervening_if:
             return None
         probe.triggers[0].intervening_if = _code("src_is", {"token": False})
+    if x_base:
+        from .cards import Effect
+        if len(probe.activated) != 1 or len(probe.activated[0].effects) != 1:
+            return None
+        probe.activated[0].effects = [Effect("copy_set_base_x", target="self")]
+        probe.activated[0].text = text
+    if may_blink:
+        if len(probe.triggers) != 1 or len(probe.triggers[0].effects) != 1 or \
+                probe.triggers[0].effects[0].kind != "blink":
+            return None
+        blink = probe.triggers[0].effects[0]
+        probe.triggers[0].effects[0] = dc.replace(blink, kind="copy_may_blink")
+    if no_planeswalker:
+        from .cx_condlib import parse as parse_cond
+        if len(probe.triggers) != 1 or probe.triggers[0].event != "each_end_step" or probe.triggers[0].intervening_if:
+            return None
+        probe.triggers[0].intervening_if = parse_cond("you control no planeswalkers")
+    if same_name:
+        abilities = list(probe.activated) + list(probe.triggers)
+        if len(abilities) != 1 or len(abilities[0].effects) != 1:
+            return None
+        effect = abilities[0].effects[0]
+        if effect.kind != "destroy" or effect.target not in ("creature", "permanent"):
+            return None
+        restricted = dc.replace(effect, data=dict(effect.data, copy_same_name=True))
+        abilities[0].effects[0] = restricted
+        probe.etb_effects = [restricted if e is effect else e for e in probe.etb_effects]
     blank = _probe("")
     grant = {f.name: getattr(probe, f.name) for f in dc.fields(probe)
              if f.name not in _PROBE_FIELDS_SKIPPED and getattr(probe, f.name) != getattr(blank, f.name)}
@@ -246,6 +298,14 @@ def _merge_grant(old: dict, new: dict) -> dict:
     for name, value in new.items():
         out[name] = _add_field(out[name], value) if name in out else value
     return out
+
+
+def same_name_target(source, target) -> bool:
+    """Compare to the ability's source, including its last known name after it leaves."""
+    from .engine.state import Permanent, StackItem
+    if isinstance(source, StackItem):
+        source = source.source
+    return isinstance(source, Permanent) and source.card.name == target.card.name
 
 
 def _add_field(current, value):
@@ -271,7 +331,8 @@ def _perm_copy(m, **data):
         mods = parse_except(m["exc"], mods)
         if mods is None:
             return NO_MATCH
-    return Effect("copy_perm", target=data.pop("target", "none"), data={**data, "mods": mods})
+    return Effect("copy_perm", target=data.pop("target", "none"), filter=data.pop("filter", ""),
+                  data={**data, "mods": mods})
 
 
 def _target_copy(m):
@@ -284,6 +345,12 @@ def _target_copy(m):
     scope = (m["scope"] or "").strip()
     return _perm_copy(m, what=m["what"], n=n, other=bool(m["other"]),
                       who="mine" if scope == "you control" else "opp" if scope else "any")
+
+
+def _exiled_this_way(m):
+    from .cards import Effect, NO_MATCH
+    mods = parse_except(m["exc"])
+    return NO_MATCH if mods is None else Effect("copy_exiled_this_way", data={"mods": mods})
 
 
 _EXCEPT = r"(?:, except (?P<exc>.+?))?(?P<flags>(?: COPY[A-Z]+)*)"
@@ -319,16 +386,18 @@ _SPELL_COPY = (r"copy target (?P<what>instant or sorcery |instant |sorcery |crea
                r"(?P<nonlegendary>it isn't legendary if the spell is legendary)))?")
 
 EFFECT_PATTERNS = [
+    (r"if you exiled a card this way, create a token that's a copy of that card, except (?P<exc>.+)",
+     lambda m: _exiled_this_way(m)),
     (rf"create {_MANY} of (?P<other>another )?target (?P<what>[\w ,-]+?)(?P<scope> you control| an opponent "
      rf"controls)?{_EXCEPT}", _target_copy),
     (rf"create {_MANY} of (?:~|this equipment|this artifact|this enchantment){_EXCEPT}",
      lambda m: _perm_copy(m, what="self", n=_num(m["n"]) if m["n"] else 1, target="self")),
-    # "target player controls" is read as the opponent (who="opp"): no player is targeted, so it can't be pointed
-    # at yourself and ignores player hexproof. An AI-level simplification (sim-review on #384).
     (rf"for each (?P<other>other )?(?P<what>[\w ,-]+?) (?P<scope>you control|target opponent controls|target player "
      rf"controls), create a token that's a copy of that (?:creature|permanent|artifact){_EXCEPT}",
      lambda m: _perm_copy(m, what=m["what"], n=1, other=bool(m["other"]), each=True,
-                          who="mine" if m["scope"] == "you control" else "opp")),
+                          who="mine" if m["scope"].lower() == "you control" else "chosen",
+                          target="none" if m["scope"].lower() == "you control" else "player",
+                          filter="opp" if m["scope"].lower() == "target opponent controls" else "")),
     (r"you may choose new targets for the cop(?:y|ies)", lambda m: None),
     (r"(?:you may )?copy (?:that spell|it)( twice)?(?:, except (?P<exc>the cop(?:y|ies) .+?))?"
      r"(?: and you may choose new targets for the copy)?",
@@ -473,9 +542,14 @@ def parse_line(line: str) -> dict | None:
     m = _CLONE.fullmatch(line + "." if line.endswith('."') else line)
     if not m:
         return None
-    mods = parse_except(m["exc"]) if m["exc"] else {}
+    exc = m["exc"]
+    conditional = re.fullmatch(r"(.+?) and, if it's a creature, it enters with two additional \+1/\+1 counters "
+                               r"on it and has changeling", exc or "", re.I)
+    mods = parse_except(conditional[1] if conditional else exc) if exc else {}
     if mods is None:
         return None
+    if conditional:
+        mods["if_creature"] = {"counters": {"+1/+1": 2}, "changeling": True}
     zone = "graveyard" if m["gy"] else "battlefield"
     who = {"you control": "mine", "an opponent controls": "opp"}.get(m["who"] or "", "any")
     kind = m["gy"] or m["any"] or m["ctl"]
@@ -558,7 +632,7 @@ def exception_changes(card, mods: dict) -> dict:
         changes["color_override"] = card.colors | mods["colors"]
     if mods.get("keywords"):
         changes["keywords"] = card.keywords | mods["keywords"]
-    if mods.get("changeling"):
+    if mods.get("changeling") or card.is_creature and mods.get("if_creature", {}).get("changeling"):
         changes["changeling"] = True
     if "legendary" in mods:
         changes["legendary"] = mods["legendary"]
@@ -593,6 +667,9 @@ def clone_entry_counters(card, front, x: int, counters: dict | None) -> dict | N
     "except it enters with N additional ... counters on it" too, before its enter triggers are checked."""
     spec = getattr(front, "clone", None)
     extra = entry_counters(spec["mods"], x) if spec and card is not front else {}
+    if spec and card is not front and card.is_creature:
+        for kind, n in entry_counters(spec["mods"].get("if_creature"), x).items():
+            extra[kind] = extra.get(kind, 0) + n
     if not extra:
         return counters
     merged = dict(counters or {})
@@ -601,7 +678,7 @@ def clone_entry_counters(card, front, x: int, counters: dict | None) -> dict | N
     return merged
 
 
-def candidates(game, p, eff, source=None) -> list:
+def candidates(game, p, eff, source=None, chosen=None) -> list:
     """The permanents eff could copy."""
     d = eff.data
     if eff.target == "self":
@@ -609,7 +686,9 @@ def candidates(game, p, eff, source=None) -> list:
     who = d.get("who", "mine")
     # "for each creature target opponent controls": the player is targeted, not the creatures
     pool = [x for pl in game.players for x in pl.battlefield
-            if (who == "any" or (x.controller is p) == (who == "mine")) and (d.get("each") or game.targetable(x, p))]
+            if (who == "any" or who == "chosen" and (chosen is None or x.controller is chosen) or
+                who not in ("any", "chosen") and (x.controller is p) == (who == "mine"))
+            and (d.get("each") or game.targetable(x, p))]
     return [x for x in pool if fits(x.card, d.get("what", "permanent"), x)
             and not (d.get("other") and x is source)]
 
@@ -715,12 +794,28 @@ def spell_targets(game, p, eff):
 def resolve(game, p, eff, target, item=None):
     k, d = eff.kind, eff.data
     source = item.source if item is not None else None
-    if k == "copy_sac":
+    if k == "copy_set_base_x":
+        if source is not None and source in source.controller.battlefield:
+            x = getattr(item, "x", 0)
+            game.add_continuous_effect(source, "set_base", power=x, toughness=x)
+    elif k == "copy_may_blink":
+        if source is not None and source in source.controller.battlefield and \
+                game.hook(p, "pay_optional")(game, p, {}, "blink"):
+            from .engine.kinds.permanents import blink
+            blink(game, p, eff, source, item)
+    elif k == "copy_exiled_this_way":
+        entry = getattr(item, "copy_exiled_ref", None)
+        index = next((i for i, e in enumerate(item.effects) if e is eff), 0) if item is not None else 0
+        card = entry[1].find(entry[0]) if entry and index and item.effects[index - 1] is entry[2] else None
+        if card is not None:
+            game.enter_battlefield(p, make_copy(card, d["mods"]))
+    elif k == "copy_sac":
         if target is not None and target in target.controller.battlefield:
             game.log(f"sacrifices {target.card.name} (copy)", target.controller)
             game.sacrifice(target)
     elif k == "copy_perm":
-        cands = candidates(game, p, eff, target if eff.target == "self" else source)
+        cands = candidates(game, p, eff, target if eff.target == "self" else source,
+                           chosen=target if eff.target == "player" else None)
         if eff.target == "self" and not cands and source is not None:
             cands = [source]     # last known information: the source has left the battlefield
         if not cands:

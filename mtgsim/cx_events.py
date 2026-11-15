@@ -163,6 +163,7 @@ def _perm_fits(game, perm, alts) -> bool:
 
 
 _WITH = [
+    (r" with the same name as ~", lambda m: ("same_name",)),
     (r" with power (\d+) or greater", lambda m: ("power>=", int(m[1]))),
     (r" with power (\d+) or less", lambda m: ("power<=", int(m[1]))),
     (r" with toughness (\d+) or greater", lambda m: ("tough>=", int(m[1]))),
@@ -180,6 +181,8 @@ _WITH = [
 
 def _with_ok(game, perm, w, source) -> bool:
     k = w[0]
+    if k == "same_name":
+        return source is not None and perm.card.name == source.card.name
     if k == "power>=":
         return perm.power >= w[1]
     if k == "power<=":
@@ -209,6 +212,8 @@ def _with_ok(game, perm, w, source) -> bool:
 
 def _object_subject(text: str):
     """Subject spec dict for a permanent subject, or None."""
+    if text == "~ or another creature with the same name":
+        text += " as ~"  # the explicit ~ in this subject supplies the omitted referent
     spec = {"self": False, "host": "", "alts": None, "other": False, "ctrl": "any", "with": [], "batch": False}
     m = re.fullmatch(r"~ or (equipped|enchanted) creature", text)
     if m:

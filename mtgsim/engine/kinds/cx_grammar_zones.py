@@ -39,6 +39,8 @@ def card_move(game, p, eff, target, item=None, **_):
     battlefield under your control or its owner's."""
     from ...referent import remember_card
     remember_card(item, None)
+    if item is not None:
+        item.copy_exiled_ref = None
     owner = next((pl for pl in game.players if any(c is target for c in pl.graveyard)), None)
     if owner is None:
         return
@@ -60,6 +62,8 @@ def card_move(game, p, eff, target, item=None, **_):
             owner.library.insert(0, target)
     else:
         game.move_card(target, owner.graveyard, owner.hand if to == "hand" else owner.exile, reason="cx_card_move")
+        if to == "exile" and item is not None:
+            item.copy_exiled_ref = (owner.exile, owner.exile.reference(target), eff)
     game.log(f"{target.name} goes from {owner}'s graveyard to {to}", p)
 
 

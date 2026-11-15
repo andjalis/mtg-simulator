@@ -42,6 +42,7 @@ class ParseExcept(unittest.TestCase):
                 {"pt": (1, 1), "colors": frozenset("G"), "types": frozenset({"Creature"}),
                  "subtypes": frozenset({"Squirrel"})},
             "its name is ~ and it's legendary in addition to its other types": {"keep_name": True, "legendary": True},
+            "it's legendary and snow in addition to its other types": {"legendary": True, "snow": True},
             "he's a Klingon Spy in addition to his other types and has menace":
                 {"subtypes": frozenset({"Klingon", "Spy"}), "keywords": frozenset({"menace"})},
             "the copy is an artifact in addition to its other types": {"types": frozenset({"Artifact"})},
@@ -53,7 +54,6 @@ class ParseExcept(unittest.TestCase):
     def test_unknown_exception_text_rejects_the_whole_clause(self):
         for text in ("it has this ability", "it isn't legendary, is an artifact in addition to its other types, "
                      "and has myriad", "it isn't a Zombie", "it has \"{T}: Flurble.\"",
-                     "it's legendary and snow in addition to its other types",
                      "it enters with an additional +1/+1 counter on it if it's a creature",
                      "it has haste and exalted", "it's a Vehicle artifact with crew 3 and it loses all other card types",
                      "it's an artifact. Activate only as a sorcery"):
@@ -90,10 +90,10 @@ class Base(unittest.TestCase):
     def resolve(self, c, x=0, effects=None):
         if effects is None:
             effs = list(c.spell_effects)
-            item = StackItem(self.a, effs, [None] * len(effs), card=c, name=c.name)
+            item = StackItem(self.a, effs, [self.b if e.target == "player" else None for e in effs], card=c, name=c.name)
         else:                   # a triggered or activated ability of c
             effs = list(effects)
-            item = StackItem(self.a, effs, [None] * len(effs), name=c.name, kind="trigger")
+            item = StackItem(self.a, effs, [self.b if e.target == "player" else None for e in effs], name=c.name, kind="trigger")
         item.x = x
         self.game.stack.append(item)
         self.game.resolve_top()
@@ -236,7 +236,7 @@ class DatabaseCards(Base):
                 self.assertEqual((c.unsupported, c.approximations), ([], []))
 
     def test_still_partial(self):
-        for name in ("Volrath, the Shapestealer", "Auton Soldier", "Spark Double", "Moritte of the Frost"):
+        for name in ("Volrath, the Shapestealer", "Auton Soldier", "Spark Double"):
             with self.subTest(card=name):
                 self.assertNotEqual(self.db.get(name).unsupported, [])
 
