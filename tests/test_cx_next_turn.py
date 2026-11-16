@@ -100,7 +100,10 @@ class UntilNextTurn(Base):
         self.assertEqual(attack_tax(self.game, self.a), 0)
 
     def test_unrecognised_bodies_stay_visible(self):
-        _, unmatched = cards._parse_effects("Until your next turn, whenever a creature becomes tapped, destroy it.")
+        # "Until your next turn, whenever a creature becomes tapped, destroy it." is read now (#839, cx_trig_turn);
+        # a head naming the source still isn't (the watcher is not the permanent)
+        _, unmatched = cards._parse_effects("Until your next turn, whenever a creature deals combat damage to ~, "
+                                            "destroy that creature.")
         self.assertTrue(unmatched)
 
 

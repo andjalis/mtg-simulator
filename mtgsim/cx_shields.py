@@ -134,11 +134,23 @@ def _would_deal(m):
 
 def _to_and_by(m):
     from .cards.model import NO_MATCH
-    eff = _rule_effect(True, m["w"], None)
+    w = m["w"]
+    if w.startswith("target permanent"):     # Dovin, Kiora: "target permanent (an opponent controls)" (#839)
+        return _permanent_both(m, w)
+    eff = _rule_effect(True if m["c"] else None, "that creature" if w == "that permanent" else w, None)
     if eff is None:
         return NO_MATCH
     eff.data["rule"]["both"] = True
     return eff
+
+
+def _permanent_both(m, w):
+    """"... dealt to and dealt by target permanent [an opponent controls]": the shield on a targeted permanent."""
+    data = {"rule": {"combat": True if m["c"] else None, "to": ("target",), "by": ("any",), "both": True},
+            "side": "theirs"}
+    if w.endswith("an opponent controls"):
+        data["selector"] = {"controller": "opp"}
+    return _effect("cx_shield", target="permanent", data=data)
 
 
 def _next_time(m):
@@ -225,8 +237,11 @@ def _redirect(m):
 
 EFFECT_PATTERNS = [
     (r"cxnextshield (?P<n>\d+|x) (?P<to>target creature|any target|~|you)", _next_shield),
-    (r"prevent all combat damage that would be dealt to and dealt by (?P<w>~|it|that creature|target creature) "
-     r"this turn", _to_and_by),
+    (r"prevent all (?P<c>combat )?damage that would be dealt to and dealt by (?P<w>~|it|that creature|that permanent|"
+     r"target creature|target permanent(?: an opponent controls)?) this turn", _to_and_by),
+    (r"prevent all damage target permanent would deal this turn",      # Gideon of the Trials (#839)
+     lambda m: _effect("cx_shield", target="permanent", data={"rule": {"combat": None, "to": ("any",), "by": ("target",)},
+                                                              "side": "theirs"})),
     (r"prevent all (?P<c>combat |noncombat )?damage that would be dealt (?P<rest>.+)", _prevent_all),
     (r"prevent all (?P<c>combat )?damage (?P<by>~|it|that creature|target (?:attacking )?creature) would deal this turn",
      _would_deal),
@@ -298,9 +313,9 @@ def parse_line(line: str, st) -> bool:
 # Engine
 # ---------------------------------------------------------------------------
 
-def add_rule(game, p, rule, source, target=None, prev=None):
+def add_rule(game, p, rule, source, target=None, prev=None, until=None):
     game._cx_last_shield = None
-    bound = dict(rule, owner=p, src=source, turn=game.turn)
+    bound = dict(rule, owner=p, src=source, turn=game.turn, until=until)
     for key in ("to", "by"):
         kind = rule[key][0]
         if kind in ("target", "prev", "self"):
@@ -397,7 +412,8 @@ def _live(game):
     rules = getattr(game, "_cx_shields", None)
     if not rules:
         return []
-    alive = [r for r in rules if r["turn"] == game.turn and r.get("uses", 1) > 0 and r.get("budget", 1) > 0]
+    alive = [r for r in rules if (r["turn"] == game.turn or r.get("until") is not None and not (
+        game.turn > r["turn"] and game.active is r["until"])) and r.get("uses", 1) > 0 and r.get("budget", 1) > 0]
     if len(alive) != len(rules):
         game._cx_shields = alive
     return alive

@@ -13,7 +13,8 @@ def cx_shield(game, p, eff, target, prev, item, **_):
     rule = eff.data["rule"]
     if eff.data.get("pool_x"):
         rule = dict(rule, budget=getattr(item, "x", 0) or 0)
-    if add_rule(game, p, rule, source, target=target, prev=prev):
+    until = p if eff.data.get("until_next_turn") else None      # "until your next turn" (#839)
+    if add_rule(game, p, rule, source, target=target, prev=prev, until=until):
         game.log("sets up a damage shield", p)
 
 
