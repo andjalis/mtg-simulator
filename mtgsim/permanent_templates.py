@@ -186,7 +186,7 @@ _OUTLAWS = ['assassin', 'mercenary', 'pirate', 'rogue', 'warlock']     # rule 70
 _TRAITS = frozenset((
     'tapped', 'untapped', 'attacking', 'blocking', 'legendary', 'nonlegendary', 'token', 'nontoken',
     'nonland', 'noncreature', 'nonartifact', 'colorless', 'multicolored', 'monocolored',
-    'suspected', 'snow', 'nonsnow', 'face-up'))
+    'suspected', 'snow', 'nonsnow', 'face-up', 'nonattacking', 'nonblocking'))
 _IRREGULAR = {'elves': 'Elf', 'dwarves': 'Dwarf', 'wolves': 'Wolf'}
 
 
@@ -208,6 +208,8 @@ def _classify(low):
         return 'traits', low
     if low in _COLORS:
         return 'colors', _COLORS[low]
+    if low.startswith('non') and low[3:] in _COLORS:     # "nonblack creature" (#403)
+        return 'not_colors', _COLORS[low[3:]]
     if low in ('outlaw', 'outlaws'):          # rule 700.12: Assassins, Mercenaries, Pirates, Rogues, Warlocks
         return 'any_subtypes', _OUTLAWS
     if low == 'non-outlaw':
@@ -315,6 +317,21 @@ def selector(text, *, plural=False):
     if other:
         result['other'] = result['other_than_source'] = True
         text = text[:other.start()]
+    from .cx_noun import take_damage           # "that was dealt damage this turn" (#403)
+    text, damaged = take_damage(text)
+    if damaged is False:
+        return None
+    if damaged:
+        result['damage_turn'] = damaged
+    if not re.search(r' with toughness greater than (?:its|their) power$', text, re.I):
+        # "with power less than ~'s power", "... less than or equal to the number of creatures you control" (#403):
+        # cut before the controller scan, whose " you control" may belong to the quantity
+        from .cx_noun import take_rel
+        text, rel = take_rel(text)
+        if rel is False:
+            return None
+        if rel is not None:
+            result['stat_rel'] = rel
     # "nonland, nontoken permanent", "non-Saga, nonland permanent" (#506)
     text = re.sub(r'(\bnon-?[a-z]+), (?=non-?[a-z]+\b)', r'\1 ', text, flags=re.I)
     # "creatures you control of the chosen type" (#627): the source's chosen creature type (perm.chosen_type)
@@ -361,18 +378,26 @@ def selector(text, *, plural=False):
         result['base_pt'] = [int(base[1]), int(base[2])]
         text = text[:base.start()]
     # Only one supported trailing predicate; additional text fails below.
-    m = re.search(r' with (power|toughness|mana value) (\d+)(?: or (less|greater))?$', text, re.I)
+    m = re.search(r' with (power|toughness|mana value) (\d+|X)(?: or (less|greater))?$', text, re.I)
     rel = re.search(r' with toughness greater than (?:its|their) power$', text, re.I)
     if rel:          # Doran's friends: "each creature you control with toughness greater than its power"
         result['tough_gt_power'] = True
         text = text[:rel.start()]
+    elif m and m[2].upper() == 'X':      # X paid for the spell or ability (#403, cx_noun); "X or greater" is refused
+        if (m[3] or '').lower() == 'greater':
+            return None
+        result['stat_x'] = [m[1].lower(), '<=' if m[3] else '==']
+        text = text[:m.start()]
     elif m:
         result['stat'] = [m[1].lower(), '==' if not m[3] else '<=' if m[3].lower() == 'less' else '>=', int(m[2])]
         text = text[:m.start()]
     else:
-        m = re.search(rf' (with|without) (?:an? )?({_COUNTER}) counters?(?: on (?:it|them))?$', text, re.I)
+        m = re.search(rf' (with|without|that ha(?:s|ve)) (?:an? |one or more )?({_COUNTER}) counters?(?: on (?:it|them))?$',
+                      text, re.I)
+        if m and m[1].lower().startswith('that') and not re.search(r' on (?:it|them)$', m[0], re.I):
+            m = None            # "that has a +1/+1 counter" needs its "on it" (#403)
         if m:
-            result['counter'] = [m[2].lower(), m[1].lower() == 'with']
+            result['counter'] = [m[2].lower(), m[1].lower() != 'without']
             text = text[:m.start()]
         elif re.search(r' with (modular|fading|level up)$', text, re.I):
             # abilities kept as card fields, not keywords: "each creature you control with modular" (#327)
@@ -522,6 +547,10 @@ def matches(game, permanent, spec, controller, source=None):
             return False
         if trait == 'attacking' and permanent not in game.attackers:
             return False
+        if trait == 'nonattacking' and permanent in game.attackers:
+            return False
+        if trait == 'nonblocking' and any(permanent in group for group in game.blocks.values()):
+            return False
         if trait == 'declared_attacker' and not (permanent in game.attackers and           # declared, not put onto
                                                  getattr(permanent, 'attack_count', (None, 0))[0] == game.turn):  # the battlefield attacking
             return False
@@ -548,6 +577,18 @@ def matches(game, permanent, spec, controller, source=None):
         return False
     if spec.get('tough_gt_power') and not permanent.toughness > permanent.power:
         return False
+    if 'damage_turn' in spec:
+        from .cx_noun import damage_ok
+        if not damage_ok(game, permanent, spec['damage_turn'], controller):
+            return False
+    if 'stat_rel' in spec:
+        from .cx_noun import rel_ok
+        if not rel_ok(game, permanent, spec, controller, source):
+            return False
+    if 'stat_x' in spec:
+        from .cx_noun import stat_x_ok
+        if not stat_x_ok(game, permanent, spec, controller):
+            return False
     if 'stat' in spec:
         stat, op, n = spec['stat']
         value = permanent.card.cmc if stat == 'mana value' else getattr(permanent, stat)

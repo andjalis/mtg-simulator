@@ -128,6 +128,7 @@ class EffectsMixin:
             return
         self.last_dealt = amount
         this_way.note_damage(self, target, amount)      # "if a creature is dealt damage this way" (#642)
+        from ..cx_noun import note_damage; note_damage(self, source, target)    # "that dealt damage this turn" (#403)
         from ..batch1_templates import soul_link
         soul_link(self, source, target, amount)
         cx_triggers.on_damage(self, source, target, amount, combat)
