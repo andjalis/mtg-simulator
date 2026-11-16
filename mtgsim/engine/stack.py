@@ -115,7 +115,7 @@ class StackMixin:
             previous_turn, count = getattr(source, 'attack_count', (None, 0))
             source.attack_count = (self.turn, count + 1 if previous_turn == self.turn else 1)
         context = (source if event == "etb" else subject) if event in ("etb", "land_enters") and context is None else context   # the entered one
-        perms = [source] if source is not None else list(p.battlefield)
+        perms = [source] if source is not None else list(p.battlefield) + list(p.command)   # emblems' triggers (#839)
         for perm in perms:
             triggers = getattr(perm, 'last_triggers', None) if source is not None else None
             if triggers is None:

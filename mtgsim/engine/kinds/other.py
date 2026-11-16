@@ -32,6 +32,12 @@ def emblem(game, p, eff, **_):
     game.log(f"gets an emblem: {eff.data['subtype']}s get +{eff.amount}/+{eff.amount2}", p)
 
 
+@kind("emblem_obj")
+def emblem_obj(game, p, eff, item=None, **_):
+    from ...emblems import make           # an emblem with a triggered ability, in the command zone (#839)
+    make(game, p, eff, item)
+
+
 @kind("counter_ability")
 def counter_ability(game, p, item, **_):
     """Counter the newest activated or triggered ability an opponent controls; if its source is an
