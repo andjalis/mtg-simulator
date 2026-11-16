@@ -26,7 +26,8 @@ class Parsing(unittest.TestCase):
     def test_qualified_targets(self):
         e = self.one("Prevent the next 1 damage that would be dealt to target Cleric or Wizard creature this turn.")
         self.assertEqual((e.kind, e.amount, e.target, e.data), ("prevent_next", 1, "creature",
-                                                                {"cx_desc": "Cleric or Wizard creature"}))
+                                                                {"selector": {"subtypes_any": ["cleric", "wizard"],
+                                                                              "types_all": ["creature"]}}))
         e = self.one("Prevent the next 2 damage that would be dealt this turn to target green creature.")
         self.assertEqual(e.data["selector"], {"colors": ["G"], "types_all": ["creature"]})
 
