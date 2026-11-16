@@ -65,7 +65,8 @@ def prevent_next(game, p, eff, target, **_):
         return
     who = p if eff.target == "none" else target
     if isinstance(who, (Permanent, Player)):
-        who.prevent_next += eff.amount
+        from ...prevent_next_templates import instead_amount        # "If it's a green creature, ... 2 ... instead"
+        who.prevent_next += instead_amount(game, p, eff, who)
 
 
 @kind("monstrosity")

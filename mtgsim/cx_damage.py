@@ -61,20 +61,56 @@ def _matches(game, perm, pred) -> bool:
 def _divided(m):
     from .cards import Effect
     from .cards.model import NO_MATCH
-    amount = m[1].lower()
-    if m[3] == "targets" or m[3] == "target creatures" or m[3] == "target creatures and/or planeswalkers":
-        scope, pred = _SCOPES[m[3]], {}
+    amount, count, recipients = m["n"].lower(), m["cnt"].lower(), m["who"]
+    if recipients in _SCOPES:
+        scope, pred = _SCOPES[recipients], {}
     else:
-        who = _who(m[3][len("target "):]) if m[3].startswith("target ") else None
+        who = _who(recipients[len("target "):]) if recipients.startswith("target ") else None
         if who is None:
             return NO_MATCH
         scope, pred = who
-    data = {"scope": scope, "max": _COUNTS[m[2]]}
+    data = {"scope": scope, "max": _COUNTS[count]}
     if pred:
         data["pred"] = pred
     if amount == "x":
         data["x"] = True
+    plus = m.groupdict().get("plus")
+    if plus:
+        if amount != "x":
+            return NO_MATCH
+        data["plus"] = _PLUS[plus.lower()]      # "X plus 1 damage" (Meteor Shower): added to the X paid
     return Effect("divided_damage", 0 if amount == "x" else int(amount), target="none", data=data)
+
+
+_PLUS = {"1": 1, "one": 1, "2": 2, "two": 2, "3": 3, "three": 3}
+
+
+def _as_you_cast(m):
+    """"..., where X is <quantity> as you cast ~": the division and its total are fixed when the spell goes on the
+    stack (Stack.append plans it), which is when "as you cast" reads the quantity."""
+    import dataclasses
+    from .cards.clauses import _xq
+    from .cards.model import NO_MATCH
+    spec = _xq(m["q"])
+    eff = _divided(m)
+    if spec is None or eff is NO_MATCH or not eff.data.get("x") or eff.data.get("plus") or \
+            not isinstance(spec, tuple) or spec[0] in ("this_way", "prev", "spell", "sac"):
+        return NO_MATCH
+    data = {k: v for k, v in eff.data.items() if k != "x"}
+    return dataclasses.replace(eff, amount=1, data=dict(data, xq=spec))
+
+
+def _equal_to(m):
+    """"<source> deals damage equal to <quantity> divided as you choose among ...": the same as "deals X damage
+    divided as you choose among ..., where X is <quantity>" (Orca, Siege Demon)."""
+    from .cards import _parse_effects
+    from .cards.model import NO_MATCH
+    if re.search(r"\bX\b", m[0]):
+        return NO_MATCH
+    new, bad = _parse_effects(f"{m['s']} deals X damage divided as you choose among {m['rest']}, where X is {m['q']}.")
+    if bad or len(new) != 1 or new[0].kind != "divided_damage" or not new[0].data.get("xq"):
+        return NO_MATCH
+    return new[0]
 
 
 def _two_targets(first, second, flip=False):
@@ -99,8 +135,14 @@ EFFECT_PATTERNS = [
      _two_targets("player", "creature", flip=True)),
     (r"(?:~|it) deals (\d+) damage to target creature you don't control and (\d+) damage to target creature you "
      r"control", _two_targets("creature", "mine")),
-    (r"(?:~|it|he|she) deals (\d+|x) damage divided as you choose among (one or two|one, two, or three|any number of|"
-     r"up to (?:two|three|four|five|six|seven|eight)) (targets|target [^,.]+?)", _divided),
+    (r"(?:~|it|he|she) deals (?P<n>\d+|x)(?: plus (?P<plus>1|one|2|two|3|three))? damage divided as you choose among "
+     r"(?P<cnt>one or two|one, two, or three|any number of|up to (?:two|three|four|five|six|seven|eight)) "
+     r"(?P<who>targets|target [^,.]+?)", _divided),
+    (r"(?:~|it|he|she) deals (?P<n>x) damage divided as you choose among (?P<cnt>one or two|one, two, or three|any "
+     r"number of|up to (?:two|three|four|five|six|seven|eight)) (?P<who>targets|target [^,.]+?), where x is "
+     r"(?P<q>.+?) as you cast ~", _as_you_cast),
+    (r"(?P<s>~|it|he|she) deals damage equal to (?P<q>(?:(?!divided).)+?) divided as you choose among (?P<rest>.+)",
+     _equal_to),
 ]
 
 
@@ -141,8 +183,11 @@ def plan(game, p, eff, item=None):
     total = eff.amount
     if eff.data.get("x"):                      # X paid for the spell or ability
         total = getattr(item, "x", 0) or 0
-    elif eff.data.get("xq") and item is not None:     # ", where X is the number of Mountains you control"
+    elif eff.data.get("xq") and item is not None and "xq_base" not in eff.data:
+        # ", where X is the number of Mountains you control" (once: Game.resolve has already applied it when it
+        # marked xq_base)
         total = eff.amount * game.x_quantity(p, eff.data["xq"], item, None)
+    total += eff.data.get("plus", 0)
     pred = eff.data.get("pred", {})
     pool = [x for x in opp.battlefield if game.targetable(x, p) and _matches(game, x, pred) and
             (x.is_creature or x.is_planeswalker and scope in ("any", "creature_pw"))]
@@ -178,9 +223,18 @@ def _legal(game, p, victim) -> bool:
     return player_targetable(game, victim, p)
 
 
+def _planned(eff, item):
+    """The effect as it was put on the stack: Game.resolve hands the handler a copy with its counted amount applied
+    (data["xq_base"]), and the division chosen at cast is keyed on the original."""
+    if any(e is eff for e in item.effects):
+        return eff
+    data = {k: v for k, v in eff.data.items() if k != "xq_base"}
+    return next((e for e in item.effects if e.kind == eff.kind and e.data == data), eff)
+
+
 def resolve(game, p, eff, target, item):
     src = (item.source if item.source is not None else item.card) if item is not None else None
-    chosen = getattr(item, "divided", {}).get(id(eff)) if item is not None else None
+    chosen = getattr(item, "divided", {}).get(id(_planned(eff, item))) if item is not None else None
     if chosen is None:
         chosen = plan(game, p, eff, item)    # not put on the stack through game.stack: choose now
     for victim, amount in chosen:
@@ -188,3 +242,24 @@ def resolve(game, p, eff, target, item):
             continue                          # an illegal target (a player with new hexproof too): its share is not dealt
         game.deal_damage(victim, amount, by=p, cause=f"{getattr(src, 'name', None) or src.card.name}: damage",
                          source=src)
+
+
+def ai_worth(ai, game, me, eff, card, instant):
+    """HeuristicAI's value of casting a divided-damage spell now: the creatures and planeswalkers its planned division
+    kills plus what the damage to the opponent's face is worth, or None to hold it (nothing of theirs dies and no
+    damage reaches them; at instant speed only when something dies)."""
+    from types import SimpleNamespace
+    from .engine.policy import perm_value
+    stub = SimpleNamespace(source=None, card=card, x=0, context=None, controller=me, targets=[], effects=[eff])
+    chosen = plan(game, me, eff, stub)
+    opp, value, kills = game.opponent(me), 0.0, 0
+    for victim, amount in chosen:
+        if victim is opp:
+            value += ai.face_value(game, me, amount)
+        elif victim.controller is not me:
+            dies = victim.toughness - victim.damage <= amount if victim.is_creature else victim.loyalty <= amount
+            if dies and not victim.has("indestructible"):
+                value, kills = value + perm_value(victim) + 1, kills + 1
+    if value <= 0 or (instant and not kills and value < 1000.0):
+        return None
+    return value

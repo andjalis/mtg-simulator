@@ -177,6 +177,7 @@ def _face_special_lines(st, line):
         # Discard triggers fire once per card, so "that many" counters is one counter each time.
         line = re.sub(r"^(Whenever you discard one or more cards), put that many \+1/\+1 counters on ~\.$",
                       r"\1, put a +1/+1 counter on ~.", line)
+        from ..cx_attack_refs import rewrite as _attack_refs; line = _attack_refs(line)    # "they" = the attackers (#628)
         from .. import cx_cda as _cx_cda, cx_conditions as _cx_conditions, cx_night_buffs as _cx_night_buffs, cx_night_kinship as _cx_night_kinship, cx_timing as _cx_timing, cx_triggers as _cx_triggers, emerge as _emerge, that_much as _that_much, transmute as _transmute
         if _transmute.parse_line(line, st) or _emerge.parse_line(line, st) or _that_much.parse_line(line, st) or _cx_triggers.parse_line(line, st) or _cx_timing.parse_line(line, st) or _cx_conditions.parse_line(line, st) or _cx_cda.parse_line(line, st) or _cx_night_buffs.parse_line(line, st) or _cx_night_kinship.parse_line(line, st):
             return None
@@ -186,8 +187,8 @@ def _face_special_lines(st, line):
         from .. import counter_mechanics, permanent_templates, backlog_templates, advanced_templates, residual_templates, batch1_templates, cx_combat_costs
         if cx_combat_costs.parse_line(line, st):
             return None
-        from .. import cx_replace, cx_top, cx_abilitycopy, cx_trigger_grants as _cx_trigger_grants, cx_grammar_crewblock as _cx_crewblock, cx_type_grants as _cx_type_grants, cx_static_chars as _cx_static_chars, cx_multi_target as _cx_multi_target
-        if cx_replace.parse_line(line, st) or cx_top.parse_line(line, st) or cx_abilitycopy.parse_line(line, st) or residual_templates.parse_line(line, st) or batch1_templates.parse_line(line, st) or advanced_templates.parse_line(line, st) or backlog_templates.parse_line(line, st) or permanent_templates.parse_line(line, st) or counter_mechanics.parse_line(line, st) or _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st) or _cx_trigger_grants.parse_line(line, st) or _cx_type_grants.parse_line(line, st) or _cx_static_chars.parse_line(line, st) or _cx_crewblock.parse_line(line, st) or _cx_multi_target.parse_line(line, st):
+        from .. import cx_replace, cx_top, cx_abilitycopy, cx_trigger_grants as _cx_trigger_grants, cx_grammar_crewblock as _cx_crewblock, cx_type_grants as _cx_type_grants, cx_static_chars as _cx_static_chars, cx_multi_target as _cx_multi_target, cx_discard_bf as _cx_discard_bf
+        if cx_replace.parse_line(line, st) or cx_top.parse_line(line, st) or cx_abilitycopy.parse_line(line, st) or residual_templates.parse_line(line, st) or batch1_templates.parse_line(line, st) or advanced_templates.parse_line(line, st) or backlog_templates.parse_line(line, st) or permanent_templates.parse_line(line, st) or counter_mechanics.parse_line(line, st) or _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st) or _cx_trigger_grants.parse_line(line, st) or _cx_type_grants.parse_line(line, st) or _cx_static_chars.parse_line(line, st) or _cx_crewblock.parse_line(line, st) or _cx_multi_target.parse_line(line, st) or _cx_discard_bf.parse_line(line, st):
             return None
         parts = [p.strip().lower() for p in re.split(r",(?: and)? | and |,", line)]
         if all(p in KEYWORDS or re.fullmatch(r"(?:ward \{\d+\}|toxic \d+|bushido \d+)", p) for p in parts):
@@ -521,6 +522,10 @@ def _face_land_and_mana_lines(st, line):
             return None
         if re.fullmatch(r"~ enters(?: the battlefield)? tapped\.", line):
             enters_tapped = True
+            return None
+        if re.fullmatch(r"~ enters(?: the battlefield)? tapped and doesn't untap during your untap step\.", line):
+            enters_tapped = True        # Traxos: the untap lock is the plain no_untap flag
+            extra["no_untap"] = True
             return None
         if re.fullmatch(r"~ enters(?: the battlefield)? tapped unless you control two or more other lands\.", line):
             extra["tapped_condition"] = "unless_2_lands"
@@ -1248,6 +1253,9 @@ def _face_ability_lines(st, line):
                 extra["modes_choose"] = min(head[0].most, 9)
                 approximations += head[1]
                 mode_sink = modes
+                return None
+            from ..cx_group_refs import spell_line_rider     # "Spell mastery — If C, those creatures ..." (#628)
+            if spell_line_rider(line, spell):
                 return None
             effs, bad = _parse_effects(line, opts=bool(extra.get("bargain") or extra.get("gift")))
             spell += effs

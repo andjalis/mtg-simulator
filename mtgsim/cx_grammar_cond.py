@@ -41,6 +41,9 @@ def _body(text: str):
         return [Effect("token", n, target=_SAME)] if n and not m[2] else None
     if re.fullmatch(r"(?:~|it|this spell) deals twice X damage to that (?:permanent|creature|player)", text, re.I):
         return [Effect("damage", target=_SAME, data={"x": True, "instead_multiplier": 2})]
+    if re.fullmatch(r"return that card from (?:your|its owner's) graveyard to the battlefield", text, re.I):
+        # Stitch Together: the same graveyard return, to the battlefield instead of the hand
+        return [Effect("gy_move", target=_SAME, data={"dest": "bf", "instead_amount": True})]
     if re.fullmatch(r"that player mills twice that many cards", text, re.I):
         return [Effect("mill", target=_SAME, data={"instead_amount": True, "instead_multiplier": 2})]
     m = re.fullmatch(r"(?:those creatures|they) get ([+-]\d+)/([+-]\d+) until end of turn", text, re.I)
@@ -378,6 +381,10 @@ def _cost(text: str):
     m = re.fullmatch(r"pays? ((?:\{[\dWUBRGC]\})+)", text, re.I)
     if m:
         return {"mana": parse_mana_cost(m[1].upper())}
+    m = re.fullmatch(r"pays? ((?:\{[\dWUBRGC]\})+) for each (.+)", text, re.I)
+    if m:                       # "pay {1} for each card in your hand": that much mana per counted thing (#330)
+        spec = _per_spec(m[2])
+        return {"mana": parse_mana_cost(m[1].upper()), "per": spec[0], "it": spec[1]} if spec else None
     m = re.fullmatch(r"pays? (\d+) life", text, re.I)
     if m:
         return {"life": int(m[1])}
@@ -395,7 +402,27 @@ def _cost(text: str):
     if m:
         spec = _filter(m[1], plural=False) if m[1] else {}
         return {"discard": spec} if spec is not None else None
+    m = re.fullmatch(r"discards? (two|three|four|five) cards", text, re.I)
+    if m:                       # all of them or none (Court of Ambition)
+        from .cards.model import _num
+        return {"discard": {}, "count": _num(m[1])}
     return _counted_cost(text)
+
+
+def _per_spec(q: str):
+    """(quantity spec, refers to "it") for "for each <q>", from the source controller's side, or None. "On it"
+    is read as the source; unless() keeps that only when the gated effects act on the source itself."""
+    from .cards.clauses import _xq
+    it = bool(re.search(r"\bon it$", q))
+    q = re.sub(r"\bon (?:it|this \w+)$", "on ~", q.strip())
+    words = q.split()
+    plurals = [" ".join(words[:i] + [words[i] + "s"] + words[i + 1:]) for i in range(len(words))
+               if re.fullmatch(r"[a-z+/1-]*[a-rt-z]", words[i], re.I)]     # the head noun, wherever it is
+    for cand in ["the number of " + x for x in [q] + plurals]:
+        spec = _xq(cand)
+        if spec is not None:
+            return spec, it
+    return None
 
 
 _COUNT = r"(a|an|another|one|two|three|four|five)"
@@ -424,6 +451,22 @@ def _counted_cost(text: str):
         return {"remove_counter": m[2].lower(), "count": count(m[1])}
     if re.fullmatch(r"exiles? a card from (?:your|their) graveyard", text, re.I):
         return {"exile_gy": {}}
+    m = re.fullmatch(r"exiles? the top ([\w -]+?) card of (?:your|their) graveyard", text, re.I)
+    if m:                       # the topmost card of that kind (Barrow Ghoul)
+        spec = _filter(m[1], plural=False)
+        return {"exile_gy": spec, "top": True} if spec is not None else None
+    m = re.fullmatch(r"returns? an? ([\w -]+?) card from (?:your|their) graveyard to (?:your|their) hand", text, re.I)
+    if m:                       # Harvest Wurm
+        spec = _filter(m[1], plural=False)
+        return {"regrow": spec} if spec is not None else None
+    if re.fullmatch(r"puts? a card from (?:your|their) graveyard on the bottom of (?:your|their) library", text, re.I):
+        return {"gy_bottom": {}}
+    m = re.fullmatch(r"returns? an? ([\w-]+) to its owner's hand", text, re.I)
+    if m:                       # any player's (Drake Familiar): no "you control"
+        spec = _filter(m[1], plural=False)
+        return {"bounce_any": spec} if spec is not None else None
+    if re.fullmatch(r"removes? a counter from a permanent you control", text, re.I):
+        return {"remove_any_counter": True}
     m = re.fullmatch(r"(?:has|have) (?:~|it) deal (\d+) damage to (?:them|you|him or her)", text, re.I)
     if m:
         return {"damage": int(m[1])}
@@ -441,6 +484,8 @@ def _who_pays(payer: str, first):
         return {"controller": "prev_controller", "that_player": "context", "opponents": "opponent",
                 "target": "target"}.get(who) \
             if payer == "they" else None
+    if payer == "they" and first.kind == "edict" and first.target == "none":
+        return "opponent"           # "each opponent sacrifices a creature unless they ..." (two players)
     if payer == "they":
         return {"player": "target", "each_opponent": "opponent", "that_player": "context"}.get(first.target)
     if first.target == "prev":
@@ -481,6 +526,8 @@ def unless(m, inner):
         cond = _if_cond(rest)
         return [dataclasses.replace(e, cond=_both(e.cond, _negate(cond))) for e in effects] if cond else None
     payer = _PAYERS[words]
+    if any(c.get("it") for c in costs) and not all(e.kind in _HURTS_CONTROLLER for e in effects):
+        return None             # "for each counter on it": "it" is the source only when B acts on the source
     if payer == "they" and len(effects) == 1:
         each = _each_gate(effects[0], costs)
         if each:

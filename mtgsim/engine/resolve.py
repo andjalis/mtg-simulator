@@ -10,16 +10,35 @@ from .state import Permanent, Player, StackItem
 from .kinds import HANDLERS, NO_SBA
 
 
+def that_player_of(prev):
+    """"That player" in a spell or ability without an event player: the player of the object before it (#609).
+    A permanent returned to its owner's hand: its owner (Recoil: "Return target permanent to its owner's hand. Then
+    that player discards a card."); any other permanent: its (last) controller ("Exile target creature an opponent
+    controls. That player ..."); a spell: its controller ("Counter target spell unless its controller pays {1}.
+    That player discards a card.")."""
+    if isinstance(prev, Player):
+        return prev                 # "Target player reveals their hand. That player discards a card."
+    if isinstance(prev, StackItem):
+        return prev.controller
+    if not isinstance(prev, Permanent):
+        return None
+    if getattr(prev, "last_destination", None) == "hand" and prev not in prev.controller.battlefield:
+        return getattr(prev, "owner", None) or prev.controller
+    return prev.controller
+
+
 class ResolveMixin:
     def resolve(self, p: Player, eff: Effect, target, item: StackItem | None = None, prev=None):
         opp = self.opponent(p)
         if eff.target == "self" and item is not None:
             target = item.source
+            if target is None and getattr(item, "created_token", None) is not None:
+                target = item.created_token     # a spell's "Put X +1/+1 counters on it" after "Create a token" (#682)
         if eff.target == "that_player" and item is not None:
             ctx = item.context
             target = ctx.controller if isinstance(ctx, StackItem) else ctx   # any_cast: the cast spell's caster
-            if target is None and isinstance(prev, Permanent):
-                target = prev.owner      # "Return target permanent to its owner's hand. Then that player discards" (#609)
+            if not isinstance(target, Player):
+                target = that_player_of(prev)       # no event: the previous object's player (#609; a bounced permanent: its owner)
         if eff.target == "trigger_subject" and item is not None:
             target = item.context if isinstance(item.context, Permanent) and item.context in item.context.controller.battlefield \
                 else None
@@ -42,7 +61,7 @@ class ResolveMixin:
             eff = dataclasses.replace(eff, amount=tw[2])
         if item is not None and not (isinstance(eff.data.get("xq"), tuple) and eff.data["xq"]
                                      and eff.data["xq"][0] == "this_way"):
-            item.this_way = None    # a new effect starts: "this way" no longer names the previous one's result
+            item.this_way_prior, item.this_way = getattr(item, "this_way", None), None   # a new effect starts (note_this_way may chain)
         source = (item.card.name if item and item.card else
                   item.source.card.name if item and isinstance(item.source, Permanent) else "effect")
         cause = f"{source}: {k}"

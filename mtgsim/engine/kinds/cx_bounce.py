@@ -17,3 +17,18 @@ def bounce_choice(game, p, eff, item, opp, **_):
         pick = min(pool, key=lambda x: (x is src, not (x.card.is_land and x.tapped), perm_value(x)))
         game.log(f"returns {pick.card.name} to hand", player)
         game.leave_battlefield(pick, "hand")
+
+
+@kind("shuffle_zones_in")
+def shuffle_zones_in(game, p, eff, opp, **_):
+    """"Each player shuffles their hand (and graveyard) into their library" (Diminishing Returns, Weftwalking)."""
+    for who in ([p, opp] if eff.data.get("who") == "each" else [p]):
+        for card in list(who.hand):
+            who.hand.remove(card)
+            who.library.append(card)
+        if eff.data.get("graveyard"):
+            for card in list(who.graveyard):
+                who.graveyard.remove(card)
+                who.library.append(card)
+        who.library.shuffle(game.rng)
+        game.log(f"{who} shuffles their hand{' and graveyard' if eff.data.get('graveyard') else ''} into their library", p)

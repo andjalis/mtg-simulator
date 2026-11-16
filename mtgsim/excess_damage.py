@@ -4,17 +4,28 @@ toughness minus the damage already marked on it; 1 from a deathtouch source) goe
 import dataclasses
 import re
 
-_RIDER = re.compile(r"excess damage is dealt to (?:that creature's|its) controller instead\.?", re.I)
+_RIDER = re.compile(r"(?P<trample>if the creature you control has trample, )?"
+                    r"excess damage is dealt to (?:that creature's|its) controller instead\.?", re.I)
 
 
 def parse(sentence: str, effects: list) -> bool:
-    """The parse hook: mark the preceding single-creature damage effect, or return False."""
-    if not _RIDER.fullmatch(sentence.strip()) or not effects:
+    """The parse hook: mark the preceding single-creature damage effect, or a creature's "deals damage equal to its
+    power to <creature>" (bite: Ravenous Tyrannosaurus; only if it has trample: Ram Through), or return False."""
+    m = _RIDER.fullmatch(sentence.strip())
+    if not m or not effects:
         return False
     last = effects[-1]
-    if last.kind != "damage" or last.target != "creature" or last.data.get("excess"):
+    if last.data.get("excess"):
         return False
-    effects[-1] = dataclasses.replace(last, data=dict(last.data, excess="controller"))
+    if m["trample"]:
+        if last.kind != "bite":
+            return False
+        excess = "trample"
+    elif last.kind == "damage" and last.target == "creature" or last.kind == "bite" and last.target == "creature":
+        excess = "controller"
+    else:
+        return False
+    effects[-1] = dataclasses.replace(last, data=dict(last.data, excess=excess))
     return True
 
 

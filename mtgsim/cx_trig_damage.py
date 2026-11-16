@@ -12,6 +12,8 @@
     Whenever an Archer you control deals damage to a creature, that Archer deals that much damage to that
         creature's controller.                                                                        (Greatbow Doyen)
     Whenever a Dinosaur you control is dealt damage, it deals that much damage to any target that isn't a Dinosaur.
+    Whenever an instant or sorcery spell you control that targets only a single creature deals damage to that creature,
+        ~ deals that much damage to each opponent.                                                    (Imodane)
 
 The engine's damage events (``deals_damage`` / ``dealt_damage``) fire only for permanent sources, so spells and
 "any source" heads need their own reading: ``Game.deal_damage`` calls ``observe`` for every damage it deals, with
@@ -35,7 +37,7 @@ _HEAD = re.compile(r"Whenever (?P<subj>.+?) (?:deals damage(?: to (?P<obj>.+?))?
                    r"(?P<body>.+?)\.?")
 _SRC = re.compile(r"an? (?P<adj>(?:(?:red|white|blue|black|green|noncreature) )*)"
                   r"(?P<noun>creature or spell|creature|spell|source|instant or sorcery spell)"
-                  r"(?P<mine> you control)?")
+                  r"(?P<mine> you control)?(?P<single> that targets only a single creature)?")
 _PERM = re.compile(r"an? (?P<desc>[\w -]+?)(?P<mine> you control)?")
 
 
@@ -49,8 +51,10 @@ def _subject(text: str, dealt: bool):
         m = _SRC.fullmatch(text)
         if m:
             nouns = {"creature or spell": ("creature", "spell"), "instant or sorcery spell": ("instant", "sorcery")}
+            if m["single"] and "creature" in nouns.get(m["noun"], (m["noun"],)):
+                return None             # only a spell has targets (Imodane)
             return {"adj": tuple(m["adj"].split()), "nouns": nouns.get(m["noun"], (m["noun"],)),
-                    "mine": bool(m["mine"])}
+                    "mine": bool(m["mine"]), "single": bool(m["single"])}
     m = _PERM.fullmatch(text)
     if not m or re.search(r"\b(?:spell|source|or)\b", m["desc"]):
         return None
@@ -65,6 +69,8 @@ def _object(text):
         return {}
     if text == "~":
         return {"self": True}
+    if text == "that creature":
+        return {"single_target": True}  # the single creature the spell targets (Imodane)
     players, alts = [], []
     from .cx_events import _desc_alts
     for part in re.sub(r"^an? ", "", text).split(" or "):
@@ -129,6 +135,8 @@ def parse(line: str):
     obj = _object(m["obj"])
     if subj is None or obj is None or dealt and obj:
         return None
+    if bool(subj.get("single")) != bool(obj.get("single_target")):
+        return None                     # "that creature" names the spell's single target, and needs one
     eff = _payoff(m["body"], subj, obj, dealt)
     if eff is None:
         return None
@@ -140,6 +148,23 @@ def parse(line: str):
 def _is_spell(game, src) -> bool:
     item = getattr(game, "resolving_item", None)
     return item is not None and item.is_spell and item.card is src
+
+
+def _single_target(game):
+    """The resolving spell's one target when it targets only a single creature (every chosen target is that one
+    creature), else None."""
+    from .engine.state import Permanent
+    item = getattr(game, "resolving_item", None)
+    if item is None or not item.is_spell:
+        return None
+    chosen = []
+    for t in getattr(item, "targets", ()) or ():
+        for x in (t if isinstance(t, (list, tuple)) else [t]):
+            if x is not None and all(x is not y for y in chosen):
+                chosen.append(x)
+    if len(chosen) != 1 or not (isinstance(chosen[0], Permanent) and chosen[0].is_creature):
+        return None
+    return chosen[0]
 
 
 def _src_fits(game, spec, src, by, watcher) -> bool:
@@ -157,6 +182,8 @@ def _src_fits(game, spec, src, by, watcher) -> bool:
         return perm and _perm_fits(game, src, spec["alts"])
     card = src.card if perm else src
     spell = not perm and _is_spell(game, src)
+    if spec.get("single") and _single_target(game) is None:
+        return False
     for adj in spec["adj"]:
         if adj == "noncreature" and (perm and src.is_creature or not perm and "Creature" in card.types):
             return False
@@ -181,6 +208,8 @@ def _obj_fits(game, spec, target, watcher) -> bool:
         return True
     if spec.get("self"):
         return target is watcher
+    if spec.get("single_target"):
+        return target is not None and target is _single_target(game)
     if isinstance(target, Player):
         return "player" in spec["players"] or "opponent" in spec["players"] and target is not watcher.controller
     return isinstance(target, Permanent) and bool(spec["alts"]) and _perm_fits(game, target, spec["alts"])
