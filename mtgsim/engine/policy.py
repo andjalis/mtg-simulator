@@ -128,6 +128,9 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
                                                                            and x.loyalty <= amount)]
         if killable:
             return max(killable, key=perm_value)
+        walkers = [x for x in legal if isinstance(x, Permanent) and x.controller is opp and x.is_planeswalker]
+        if eff.data.get("selector", {}).get("types_all") == ["planeswalker"] and walkers:
+            return max(walkers, key=perm_value)     # "target planeswalker that player controls": loyalty lost is good
         return opp if eff.target in ("any", "player") else None
     if k in ("bite_src", "ref_bite") or eff.data.get("bite_run"):          # referent damage: "... deals damage equal to its power to ..."
         from ..cx_grammar_bite import choose as bite_choose
