@@ -482,6 +482,8 @@ def _xq(text: str):
         re.fullmatch(r"(its) (power|toughness)", t, re.I)
     if m:
         return ("stat", "prev" if m[1] == "that creature" else "self", m[2])
+    if re.fullmatch(r"~'s loyalty|the number of loyalty counters on (?:~|him|her)", t, re.I):    # a planeswalker's own (#839)
+        return ("stat", "self", "loyalty")
     m = re.fullmatch(r"the sacrificed (?:creature|artifact|enchantment|planeswalker|land|permanent)'s "
                      r"(power|toughness|mana value)", t, re.I)
     if m:

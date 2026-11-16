@@ -968,6 +968,10 @@ def _face_cost_and_static_lines(st, line):
                     "~ can be your commander.", "~ can be your Commander.", "Spell commander") or \
                 re.fullmatch(r"~ can be your commander\. If it is, your deck can contain [^.]+\.", line):
             return None          # deck-building or teammate rules: nothing to do in a two-player game (no Commander format, #839)
+        if line == "Compleated":
+            # fewer loyalty counters for each Phyrexian pip paid with life: the engine pays Phyrexian mana with its
+            # colour (README), so the walker always enters with its printed loyalty (#839)
+            return None
         if line == "Umbra armor" or line == "Totem armor":
             extra["umbra_armor"] = True
             return None

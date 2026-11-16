@@ -15,13 +15,19 @@ def modify_counters(game, target, eff, **_):
 
 
 @kind('permanent_group')
-def permanent_group(game, p, item, eff, **_):
+def permanent_group(game, p, item, eff, prev=None, **_):
+    import dataclasses
     from ...permanent_templates import matches
     from . import HANDLERS
     source = item.source if item else None
     victims = [x for player in game.players for x in player.battlefield
                if matches(game, x, eff.data['selector'], p, source)]
     effects = eff.data.get('effects', [eff.data.get('effect')])
+    if (eff.data.get('xq') and not eff.data.get('xq_size')) or eff.data.get('x') is True:
+        # "Put X +1/+1 counters on each creature you control, where X is ..." / "Each other creature gets -X/-X":
+        # the X scales each member's effect (the group's own amount is 0, so the resolver's xq scaling was lost, #863)
+        n = game.x_quantity(p, eff.data['xq'], item, prev) if eff.data.get('xq') else getattr(item, 'x', 0) or 0
+        effects = [dataclasses.replace(e, amount=e.amount * n, amount2=e.amount2 * n) for e in effects]
     # Apply the whole group before state-based actions (not one lethal creature at a time).
     for target in victims:
         for inner in effects:
