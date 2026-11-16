@@ -120,6 +120,10 @@ class PilotGateTests(unittest.TestCase):
             self.assertEqual(select_tests(["mtgsim/cards/parse.py"], root)[0], "discover")
             self.assertEqual(select_tests(["mtgsim/unmapped.py"], root)[0], "discover")
             self.assertEqual(select_tests([], root)[0], "discover")
+            (root / "tests/test_cx_widget.py").touch()
+            self.assertEqual(select_tests(["mtgsim/cards/registry/0990_cx_widget.py", "mtgsim/cx_widget.py"], root),
+                             ["tests.test_cx_widget", "tests.test_registry"])     # a registration file is not broad
+            self.assertEqual(select_tests(["mtgsim/cards/registry/__init__.py"], root)[0], "discover")
 
     def test_process_timeout_is_recorded(self):
         import sys

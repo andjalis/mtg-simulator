@@ -62,7 +62,8 @@ The file-by-file layout table is in [README.md](README.md#layout). Additions for
   coverage gaps show up in `--coverage` and in run output; do not hide them.
 - **Where new code goes.** A card that fails only on an unrecognised wording of an existing effect needs a data entry,
   not code: see `mtgsim/data/wordings/README.md`. A new mechanic family gets its own template module (like `removal.py`) exporting
-  `EFFECT_PATTERNS`/`SUBS`, joined at the end of `cards/__init__.py`, with any engine helper it needs in that
+  `EFFECT_PATTERNS`/`SUBS`, joined through its own registration file `cards/registry/NNNN_<module>.py` (see
+  CONTRIBUTING.md, "Adding a template module"), with any engine helper it needs in that
   module. Small general templates go in `cards/patterns.py` (trigger templates and substitutions in `cards/clauses.py`); new effect kinds as an `@kind(...)` handler in the
   matching `engine/kinds/` family module (damage, cards, graveyard, permanents, stats, other); rules
   systems (zones, events, layers, SBA) in `engine/` or the rules-foundation modules. `mtgsim.engine` and
