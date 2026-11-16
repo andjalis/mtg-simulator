@@ -177,6 +177,16 @@ def pay_gate(game, p, eff, item, **_):
         item.gate_paid = False
         if "gate" in eff.data:
             item.gate_paid = game.pay_gate_cost(p, eff.data["gate"], item)
+        elif eff.data.get("x"):     # "you may pay {X}": the largest X the player can afford, if that is worth paying
+            fixed = eff.data["cost"]
+            x = 0
+            while game.can_pay(p, dict(fixed, generic=fixed.get("generic", 0) + x + 1)):
+                x += 1
+            total = dict(fixed, generic=fixed.get("generic", 0) + x)
+            if x > 0 and game.hook(p, "pay_optional")(game, p, total, "gate"):
+                game.pay(p, total)
+                item.gate_paid = True
+                item.paid_x = item.x = x
         elif game.can_pay(p, eff.data["cost"]) and game.hook(p, "pay_optional")(game, p, eff.data["cost"], "gate"):
             game.pay(p, eff.data["cost"])
             item.gate_paid = True
@@ -186,7 +196,7 @@ def pay_gate(game, p, eff, item, **_):
 def job_select(game, p, item, **_):
     src = item.source if item is not None else None
     hero = game.enter_battlefield(p, dataclasses.replace(make_token("Hero", 1, 1), subtypes=frozenset({"Hero"})))
-    if src is not None and src in p.battlefield and src.card.equip_cost is not None:
+    if src is not None and src in p.battlefield and (src.card.equip_cost is not None or "Equipment" in src.card.subtypes):     # non-mana equip too (#828)
         src.attached_to = hero
         game.log(f"{src.card.name} attaches to the Hero", p)
 

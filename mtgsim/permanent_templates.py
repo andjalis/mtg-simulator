@@ -183,6 +183,110 @@ _SUBTYPE_TYPES.update({'ajani': ['planeswalker'],
 
 _OUTLAWS = ['assassin', 'mercenary', 'pirate', 'rogue', 'warlock']     # rule 700.12
 
+_TRAITS = frozenset((
+    'tapped', 'untapped', 'attacking', 'blocking', 'legendary', 'nonlegendary', 'token', 'nontoken',
+    'nonland', 'noncreature', 'nonartifact', 'colorless', 'multicolored', 'monocolored',
+    'suspected', 'snow', 'nonsnow', 'face-up'))
+_IRREGULAR = {'elves': 'Elf', 'dwarves': 'Dwarf', 'wolves': 'Wolf'}
+
+
+def _singular(word, plural):
+    """One word of a plural noun phrase in the singular; "Frogs," in a list keeps its comma."""
+    if not plural:
+        return word
+    comma = ',' if word.endswith(',') else ''
+    word = word.rstrip(',')
+    low = word.lower()
+    return _IRREGULAR.get(low, word[:-1] if low.endswith('s') and not low.endswith('ss') else word) + comma
+
+
+def _classify(low):
+    """One lowercased selector word -> (bucket, value), or None when unsupported."""
+    if low in _TYPES:
+        return 'type', low
+    if low in _TRAITS or low.startswith('non') and low[3:] in _TYPES:
+        return 'traits', low
+    if low in _COLORS:
+        return 'colors', _COLORS[low]
+    if low in ('outlaw', 'outlaws'):          # rule 700.12: Assassins, Mercenaries, Pirates, Rogues, Warlocks
+        return 'any_subtypes', _OUTLAWS
+    if low == 'non-outlaw':
+        return 'not_subtypes', _OUTLAWS
+    if low.startswith('non-') and low[4:] in _SUBTYPE_TYPES:
+        return 'not_subtypes', low[4:]
+    if low in _SUBTYPE_TYPES:
+        return 'subtypes', low
+    return None
+
+
+def _words_spec(words):
+    """Plain selector words (lower case, singular, no union) -> a spec fragment, or None when a word is
+    unknown or no word names a type or subtype."""
+    spec, types = {}, []
+    for low in words:
+        kind = _classify(low)
+        if kind is None:
+            return None
+        bucket, value = kind
+        if bucket == 'type':
+            types.append(value)
+        else:
+            spec.setdefault(bucket, []).extend(value if isinstance(value, list) else [value])
+    if not types and not spec.get('subtypes') and not spec.get('any_subtypes'):
+        return None
+    if types:
+        spec['types_all'] = types
+    else:
+        spec['types_any'] = ['permanent']
+    return spec
+
+
+def _is_noun(word):
+    return _classify(word)[0] in ('type', 'subtypes', 'any_subtypes')
+
+
+def _union_spec(alts):
+    """A type / subtype union whose alternatives carry modifiers (#506), or None when an alternative is unread.
+
+    Adjectives written before the first alternative's noun distribute over the bare one-word alternatives after
+    it: "nontoken artifact or creature" = nontoken (artifact or creature), "attacking Wolf or Werewolf",
+    "tapped creature or Vehicle". A bare subtype takes the type the last alternative ends in when it is a subtype of
+    it: "Elf or Soldier creature" = Elf creature or Soldier creature. When every alternative is then the same
+    adjectives plus one type (or one subtype of the same type), the union reads flat (types_any / subtypes_any).
+    Anything else is read exactly as written, as an "alts" list of word tuples, words ANDed within an alternative
+    and ORed across them: "artifact or nontoken creature" = artifact, or nontoken creature."""
+    parsed = [alt.split() for alt in alts]
+    if any(not words or _words_spec(words) is None for words in parsed):
+        return None
+    run = []
+    for word in parsed[0]:
+        if _is_noun(word):
+            break
+        run.append(word)
+    if run:
+        parsed = parsed[:1] + [run + words if len(words) == 1 else words for words in parsed[1:]]
+    last = parsed[-1]
+    head = last[-1] if len(last) > 1 and last[-1] in _TYPES and _classify(last[-2])[0] == 'subtypes' else None
+    if head:
+        parsed = [words + [head] if _classify(words[-1])[0] == 'subtypes' and head in _SUBTYPE_TYPES[words[-1]]
+                  else words for words in parsed]
+    n = len(run)
+    if all(words[:n] == run for words in parsed):
+        nouns = [words[n:] for words in parsed]
+        flat = None
+        if all(len(noun) == 1 and noun[0] in _TYPES for noun in nouns):
+            flat = {'types_any': [noun[0] for noun in nouns]}
+        elif all(noun[1:] == ([head] if head else []) and _classify(noun[0])[0] == 'subtypes' for noun in nouns):
+            flat = {'subtypes_any': [noun[0] for noun in nouns], 'types_all' if head else 'types_any': [head or 'permanent']}
+        if flat is not None:
+            spec = _words_spec(run + ['permanent'])
+            del spec['types_all']
+            spec.update(flat)
+            return spec
+    return {'alts': [tuple(words) for words in parsed]}
+
+
+
 def keywords(text):
     from .cards.model import KEYWORDS
     parts = re.split(r',? and |, ', text.lower().strip())
@@ -211,7 +315,8 @@ def selector(text, *, plural=False):
     if other:
         result['other'] = result['other_than_source'] = True
         text = text[:other.start()]
-    text = re.sub(r'(\bnon[a-z]+), (?=non[a-z]+\b)', r'\1 ', text, flags=re.I)    # "nonland, nontoken permanent"
+    # "nonland, nontoken permanent", "non-Saga, nonland permanent" (#506)
+    text = re.sub(r'(\bnon-?[a-z]+), (?=non-?[a-z]+\b)', r'\1 ', text, flags=re.I)
     # "creatures you control of the chosen type" (#627): the source's chosen creature type (perm.chosen_type)
     chosen = re.search(r" of the chosen (?:creature )?type(?= you control| your opponents control| an opponent controls|$)",
                        text, re.I)
@@ -282,16 +387,7 @@ def selector(text, *, plural=False):
                     return None
                 result['keyword'] = [kws[0], m[1].lower() == 'with']
                 text = text[:m.start()]
-    words = text.split()
-    if plural:
-        irregular = {'elves': 'Elf', 'dwarves': 'Dwarf', 'wolves': 'Wolf'}
-
-        def one(w):         # "Frogs," in a list keeps its comma
-            comma = ',' if w.endswith(',') else ''
-            w = w.rstrip(',')
-            return irregular.get(w.lower(), w[:-1] if w.lower().endswith('s') and not w.lower().endswith('ss')
-                                 else w) + comma
-        words = [one(w) for w in words]
+    words = [_singular(w, plural) for w in text.split()]
     if not words:
         return None
     # Type unions are explicit. Prefix modifiers are intersections.
@@ -306,35 +402,15 @@ def selector(text, *, plural=False):
             result['subtypes_any'] = alts
             result['types_any'] = ['permanent']
         else:
-            return None
-    else:
-        types = []
-        for word in words:
-            low = word.lower()
-            if low in _TYPES:
-                types.append(low)
-            elif low in ('tapped', 'untapped', 'attacking', 'blocking', 'legendary', 'nonlegendary', 'token', 'nontoken',
-                         'nonland', 'noncreature', 'nonartifact', 'colorless', 'multicolored', 'monocolored',
-                         'suspected', 'snow', 'nonsnow', 'face-up') or low.startswith('non') and low[3:] in _TYPES:
-                result.setdefault('traits', []).append(low)
-            elif low in _COLORS:
-                result.setdefault('colors', []).append(_COLORS[low])
-            elif low in ('outlaw', 'outlaws'):      # rule 700.12: Assassins, Mercenaries, Pirates, Rogues, Warlocks
-                result.setdefault('any_subtypes', []).extend(_OUTLAWS)
-            elif low == 'non-outlaw':
-                result.setdefault('not_subtypes', []).extend(_OUTLAWS)
-            elif low.startswith('non-') and low[4:] in _SUBTYPE_TYPES:
-                result.setdefault('not_subtypes', []).append(word[4:].lower())
-            elif low in _SUBTYPE_TYPES:
-                result.setdefault('subtypes', []).append(low)
-            else:
+            union = _union_spec(alts) if 'or' in lows and 'and' not in lows else None
+            if union is None:
                 return None
-        if not types and not result.get('subtypes') and not result.get('any_subtypes'):
+            result.update(union)
+    else:
+        parsed = _words_spec(lows)
+        if parsed is None:
             return None
-        if types:
-            result['types_all'] = types
-        else:
-            result['types_any'] = ['permanent']
+        result.update(parsed)
     return result
 
 
@@ -404,6 +480,9 @@ def matches(game, permanent, spec, controller, source=None):
     elif spec.get('controller') and (permanent.controller is controller) != (spec['controller'] == 'mine'):
         return False
     if spec.get('owner') and (permanent.owner is controller) != (spec['owner'] == 'mine'):
+        return False
+    if 'alts' in spec and not any(matches(game, permanent, _words_spec(list(alt)), controller, source)
+                                  for alt in spec['alts']):
         return False
     def has_type(kind):
         return permanent.is_creature if kind == 'creature' else True if kind == 'permanent' else kind.title() in permanent.card.types

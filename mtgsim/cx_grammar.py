@@ -389,7 +389,8 @@ def side(effects) -> str:
     kinds = [e.kind for e in effects]
     if kinds and kinds[0] == "draw" and set(kinds) <= {"draw", "discard", "discard_random"}:
         return "mine"           # "draws two cards, then discards a card": card selection, wanted by its controller
-    hurt = any(e.kind not in _HELPS or e.data.get("side") == "theirs" for e in effects)
+    hurt = any((e.kind not in _HELPS and e.data.get("side") != "mine") or e.data.get("side") == "theirs"
+               for e in effects)        # an inner effect marked side "mine" helps (#629)
     return "theirs" if hurt else "mine"
 
 
