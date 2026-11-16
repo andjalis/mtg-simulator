@@ -105,6 +105,32 @@ def parse_line(line: str, st) -> bool:
     return True
 
 
+class _InHand:
+    """A card in its caster's hand, as the "~" of a static condition ("This spell has flash as long as you control a
+    Merfolk"): its controller is the caster; it has no counters, attachments or tapped state (#745)."""
+    def __init__(self, player, card):
+        self.controller, self.card, self._card = player, card, card
+        self.counters, self.auras, self.tapped, self.attached_to = {}, [], False, None
+
+
+def spell_has(player, card, keyword: str) -> bool:
+    """Whether card, in player's hand, has keyword through a conditional "has <keyword> as long as ..." (#745)."""
+    for kw, cond in card.cond_keywords:
+        if kw != keyword:
+            continue
+        perm = _InHand(player, card)
+        if cond.startswith("cx:") and holds(perm, cond):
+            return True
+        if cond.startswith("lib:"):
+            from .cx_condlib import holds as lib_holds
+            try:
+                if lib_holds(perm, cond):
+                    return True
+            except AttributeError:      # a condition that needs a real permanent: not met
+                pass
+    return False
+
+
 def holds(perm, cond: str) -> bool:
     c = perm.controller
     name, _, rest = cond[3:].partition(":")
