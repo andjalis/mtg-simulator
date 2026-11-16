@@ -764,6 +764,10 @@ def _mana_restriction(text: str):
     text = text.lower()
     if text == "to cast a creature spell of the chosen type, and that spell can't be countered":
         return "chosen_type"
+    if text == "to cast a creature spell of the chosen type":          # Unclaimed Territory, Pillar of Origins (#644)
+        return "chosen_type_plain"         # not "chosen_type": that one also makes the spell uncounterable (Cavern)
+    if text == "to cast a creature spell of the chosen type or activate an ability of a creature source of the chosen type":
+        return "chosen_type_abil"                                      # Secluded Courtyard (#644)
     if re.fullmatch(r"to cast (?:a creature spell|creature spells)", text):
         return "creature"
     if re.fullmatch(r"to cast (?:an artifact spell|artifact spells)", text):
