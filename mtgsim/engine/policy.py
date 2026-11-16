@@ -103,6 +103,10 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     k = eff.kind
     if k == "transform":        # "transform target Werewolf / Incubator token you control" (#635): our best one
         return max(mine, key=perm_value, default=None)
+    if k == "turn_face_up":     # ours first; theirs only when the card allows nothing else (#635: no hidden info)
+        return max(mine, key=perm_value, default=None) or max(theirs, key=perm_value, default=None)
+    if k == "turn_face_down":   # their best face-up creature with a morph ability becomes a 2/2 (#635)
+        return max(theirs, key=perm_value, default=None)
     if k == "copy_spell":
         return max(legal, key=lambda i: i.card.cmc, default=None)
     if k in ("die_roll", "become_copy") and copies.group_model(game, me, eff, None) is not None:   # copy choices

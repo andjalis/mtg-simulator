@@ -15,3 +15,19 @@ def transform_it(game, target, item, **_):
         obj = item.source
     if obj is not None and obj in obj.controller.battlefield:
         game.transform(obj)
+
+
+@kind("turn_face_up")
+def turn_face_up(game, target, **_):
+    from ...face_states import turn_up
+    if isinstance(target, Permanent):
+        turn_up(game, target)
+
+
+@kind("turn_face_down")
+def turn_face_down(game, target, item, eff, **_):
+    from ...face_states import turn_down
+    obj = target if isinstance(target, Permanent) else (item.source if eff.target == "self" and item is not None
+                                                         else None)
+    if isinstance(obj, Permanent):
+        turn_down(game, obj)

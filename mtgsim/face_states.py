@@ -58,3 +58,58 @@ def transform_incubator(game, perm) -> None:
     perm.card = dataclasses.replace(perm.card, name="Phyrexian token", types=frozenset({"Artifact", "Creature"}),
                                     subtypes=frozenset({"Phyrexian"}), power=0, toughness=0, activated=[])
     game.log("incubator transforms into a Phyrexian", perm.controller)
+
+
+# ------------------------------------------------------------------ turning face up and face down
+
+def _face_up(m):
+    """"Turn target face-down creature [an opponent controls / you control] face up" (Break Open, Ixidor)."""
+    from .cards import Effect
+    sel = {"types_all": ["creature"], "traits": ["face-down"]}
+    if m["who"]:
+        sel["controller"] = "opp" if "opponent" in m["who"] else "mine"
+    return Effect("turn_face_up", target="permanent", data={"selector": sel})
+
+
+def _face_down_self(m):
+    from .cards import Effect
+    return Effect("turn_face_down", target="self")
+
+
+def _face_down_target(m):
+    """"[You may] turn target creature with a morph ability face down" (Backslide, Master of the Veil)."""
+    from .cards import Effect
+    eff = Effect("turn_face_down", target="permanent",
+                 data={"selector": {"types_all": ["creature"], "traits": ["morph", "face-up"]}})
+    return [Effect("pay_gate", data={"gate": ("may", "")}), eff] if m["may"] else eff
+
+
+EFFECT_PATTERNS += [
+    (r"turn target face-down creature(?: (?P<who>an opponent controls|you control))? face up", _face_up),
+    (r"turn (?:~|it) face down", _face_down_self),
+    (r"(?P<may>you may )?turn target creature with a morph ability face down", _face_down_target),
+]
+
+
+def turn_up(game, perm) -> bool:
+    """Turn a face-down permanent face up for free (an effect, not its morph cost). A manifested instant or sorcery
+    stays face down (CR 701.40g)."""
+    real = getattr(perm, "hidden", None)
+    if real is None or perm not in perm.controller.battlefield or real.is_instant or real.is_sorcery:
+        return False
+    perm.card, perm.hidden = real, None
+    game.log(f"turns {real.name} face up", perm.controller)
+    game.fire(perm.controller, "turned_face_up", perm)
+    return True
+
+
+def turn_down(game, perm) -> bool:
+    """Turn a face-up permanent face down: a 2/2 nameless creature with no text, the card kept hidden (CR 708.2).
+    A token or a double-faced permanent can't be turned face down."""
+    from .manifest import _face_down_def
+    if getattr(perm, "hidden", None) is not None or perm not in perm.controller.battlefield or perm.card.is_token \
+            or getattr(perm, "front_face", None) is not None or perm.card.back is not None:
+        return False
+    game.log(f"turns {perm.card.name} face down", perm.controller)
+    perm.hidden, perm.card = perm.card, _face_down_def()
+    return True
