@@ -445,8 +445,9 @@ def card_from_scryfall(data: dict) -> CardDef:
             back_types = back.get("type_line", "")
             if "Adventure" in back_types:
                 card.adventure = _parse_face(back)
-            elif "Land" in back_types and not card.is_land:
+            elif "Land" in back_types and not card.is_land and data.get("layout") != "transform":
                 card.land_face = _parse_face(back)   # modal double-faced: may be played as this land
+                # (a transform card with a land back, Search for Azcanta, transforms into it instead: #783)
             elif data.get("layout") == "split" and _split_halves(card, _parse_face(back)):
                 pass
             else:

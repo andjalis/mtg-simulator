@@ -697,6 +697,9 @@ def split_head(line: str):
             return None
         if got[1].get("kind") in ("tap_self", "tap_mana") and any(e.kind == "add_mana" for e in effs):
             return None     # a mana ability: the extra mana must be there for the same payment, not after it
+        if got[1].get("gy") and got[1].get("batch") and any(e.data.get("that_much") for e in effs):
+            return None     # "one or more ... cards are put into your graveyard ..., put that many": the batch's size
+            #                 isn't counted (the trigger fires once per batch), so "that many" would be 0 (#785)
         return tuple("ev:" + r for r in got[0]), head, rest
     return None
 
