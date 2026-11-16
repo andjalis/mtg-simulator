@@ -350,13 +350,14 @@ def _parse_effects(text: str, opts: bool = False):
             # Otherwise "instead A, then B" can leave B running beside the base.
             parts = None if re.search(r"\binstead\b", s, re.I) else _split_compound(s)
             from ..cx_suspect import parse_otherwise
-            from .. import cx_grammar, cx_multi_target
+            from .. import cx_grammar, cx_multi_target, excess_damage
             from ..card_referent import parse_rider as card_ref     # "... equal to that card's mana value" (#313)
             if parts:
                 effects += parts
             elif not card_ref(s, effects) and not parse_otherwise(s, effects) and \
                     not cx_grammar.parse_fallback(s, effects) \
-                    and not cx_multi_target.lift(s, effects):   # "Otherwise, ..."; grammar; counted targets (#312)
+                    and not cx_multi_target.lift(s, effects) \
+                    and not excess_damage.parse(s, effects):   # "Otherwise, ..."; grammar; counted targets (#312); excess (#560)
                 unmatched.append(sentence.strip())
         effects[first:] = _cx_tokens.reparse(s, effects[first:])
         if paid:
@@ -548,6 +549,8 @@ def _parse_face(data: dict) -> CardDef:
     text = re.sub(r"(becomes the target of (?:a spell or ability|a spell)), sacrifice it\.", r"\1, sacrifice ~.", text)
     from ..blink import prepare_linked
     text = prepare_linked(text)
+    from ..its_referent import rewrite as _its_rewrite
+    text = _its_rewrite(text)       # "When ~ dies, create a number of X equal to its power" (#535)
     # The two-sentence O-ring wording ("... exile X. When ~ leaves the battlefield, return the exiled
     # card(s) to the battlefield ...") is the single-sentence "exile X until ~ leaves the battlefield"
     # the oring templates already implement (the engine returns the card when the source leaves).
@@ -795,12 +798,12 @@ def _parse_ability_cost(text: str):
             extra["exile_gy_card"] = "card" if m[1] == "card" else m[1] + " card"
         elif (m := re.fullmatch(r"Pay (\d+) life", part)):
             extra["life"] = int(m[1])
-        elif (m := re.fullmatch(r"Remove (a|an|one|two|three|four|five|six|seven|eight|nine|ten|\d+) "
+        elif (m := re.fullmatch(r"Remove (a|an|one|two|three|four|five|six|seven|eight|nine|ten|\d+|X) "
                                r"([\w/+-]+) counters? from ~", part)):
-            if 'remove_counter' in extra or _num(m[1]) < 1:
+            if 'remove_counter' in extra or m[1] != "X" and _num(m[1]) < 1:
                 return None
             extra["remove_counter"] = m[2]
-            extra["remove_counter_count"] = _num(m[1])
+            extra["remove_counter_count"] = "x" if m[1] == "X" else _num(m[1])     # X: the number removed (#345)
         elif (m := re.fullmatch(r"Remove (a|one|two|three|four|five|\d+) \+1/\+1 counters? "
                                r"from among creatures you control", part)):
             n = _num(m[1])
@@ -884,6 +887,9 @@ def _parse_ability(line: str, approximations: list):
     effects, bad = _parse_effects(body)
     if bad or not effects:
         return None
+    if cost[1].get("remove_counter_count") == "x" and not (
+            any(e.data.get("x") for e in effects) and all(e.kind != "die_amount" for e in effects)):
+        return None     # "Remove X ... counters": an effect must read that X (#345)
     approximations += approx
     return Activated("ability", cost[0], effects=effects, extra_costs=cost[1], sorcery=sorcery, once=once, text=original,
                      condition=condition, max_per_turn=limit, any_player=any_player, restrictions=restrictions,
@@ -1088,7 +1094,8 @@ def _parse_trigger_line(line: str):
         once = events == ("targeted_mine",) or "for the first time each turn" in pat
         return [Trigger(e, effs, flt_map[e] if flt_map else flt, once=once,
                         intervening_if=gate) for e in events], bad, None
-    return None
+    from ..cx_trig_damage import parse as _damage_head      # damage heads from any source (#521)
+    return _damage_head(line)
 
 
 # deferred: face_lines imports the helpers above

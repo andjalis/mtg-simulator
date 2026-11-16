@@ -14,13 +14,67 @@ import re
 KINDS = {"divided_damage"}
 
 _SCOPES = {"targets": "any", "target creatures": "creature", "target creatures and/or planeswalkers": "creature_pw"}
-_COUNTS = {"one or two": 2, "one, two, or three": 3, "any number of": 99}
+_COUNTS = {"one or two": 2, "one, two, or three": 3, "any number of": 99, "up to two": 2, "up to three": 3,
+           "up to four": 4, "up to five": 5, "up to six": 6, "up to seven": 7, "up to eight": 8}
+_STATES = {"attacking": ("attacking",), "attacking or blocking": ("attacking", "blocking")}
+_COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 
+
+def _who(text):
+    """The recipients' words after "target": "creatures with flying", "attacking or blocking creatures without
+    flying", "white and/or blue creatures", "creatures your opponents control" -> (scope, predicate) or None."""
+    pred = {}
+    text = text.strip()
+    if text.endswith(" your opponents control"):
+        text = text[:-len(" your opponents control")]
+    m = re.fullmatch(r"(.+?) (with|without) flying", text)
+    if m:
+        pred["flying"] = m[2] == "with"
+        text = m[1]
+    m = re.fullmatch(r"(attacking or blocking|attacking) (.+)", text)
+    if m:
+        pred["states"] = _STATES[m[1]]
+        text = m[2]
+    m = re.fullmatch(r"(white|blue|black|red|green) and/or (white|blue|black|red|green) (.+)", text)
+    if m:
+        pred["colors"] = (_COLORS[m[1]], _COLORS[m[2]])
+        text = m[3]
+    scope = {"creatures": "creature", "creatures and/or planeswalkers": "creature_pw"}.get(text)
+    if scope is None or (pred and scope != "creature"):
+        return None
+    return scope, pred
+
+
+def _matches(game, perm, pred) -> bool:
+    if "flying" in pred and bool(perm.has("flying")) != pred["flying"]:
+        return False
+    if "states" in pred:
+        now = {"attacking": perm in game.attackers,
+               "blocking": any(perm in bl for bl in game.blocks.values())}
+        if not any(now[st] for st in pred["states"]):
+            return False
+    if "colors" in pred and not any(c in perm.card.colors for c in pred["colors"]):
+        return False
+    return True
 
 
 def _divided(m):
     from .cards import Effect
-    return Effect("divided_damage", int(m[1]), target="none", data={"scope": _SCOPES[m[3]], "max": _COUNTS[m[2]]})
+    from .cards.model import NO_MATCH
+    amount = m[1].lower()
+    if m[3] == "targets" or m[3] == "target creatures" or m[3] == "target creatures and/or planeswalkers":
+        scope, pred = _SCOPES[m[3]], {}
+    else:
+        who = _who(m[3][len("target "):]) if m[3].startswith("target ") else None
+        if who is None:
+            return NO_MATCH
+        scope, pred = who
+    data = {"scope": scope, "max": _COUNTS[m[2]]}
+    if pred:
+        data["pred"] = pred
+    if amount == "x":
+        data["x"] = True
+    return Effect("divided_damage", 0 if amount == "x" else int(amount), target="none", data=data)
 
 
 def _two_targets(first, second, flip=False):
@@ -45,8 +99,8 @@ EFFECT_PATTERNS = [
      _two_targets("player", "creature", flip=True)),
     (r"(?:~|it) deals (\d+) damage to target creature you don't control and (\d+) damage to target creature you "
      r"control", _two_targets("creature", "mine")),
-    (r"(?:~|it|he|she) deals (\d+) damage divided as you choose among (one or two|one, two, or three|any number of) "
-     r"(targets|target creatures|target creatures and/or planeswalkers)", _divided),
+    (r"(?:~|it|he|she) deals (\d+|x) damage divided as you choose among (one or two|one, two, or three|any number of|"
+     r"up to (?:two|three|four|five|six|seven|eight)) (targets|target [^,.]+?)", _divided),
 ]
 
 
@@ -74,23 +128,29 @@ class Stack(list):
             if eff.kind == "divided_damage":
                 if not hasattr(item, "divided"):
                     item.divided = {}
-                item.divided[id(eff)] = plan(self.game, item.controller, eff)
+                item.divided[id(eff)] = plan(self.game, item.controller, eff, item)
         if any(eff.kind == "divided_prevent" for eff in item.effects):
             from .divided_prevent import plan_item          # "... divided as you choose" shields (#333)
             plan_item(self.game, item)
 
 
-def plan(game, p, eff):
+def plan(game, p, eff, item=None):
     """[[victim, amount], ...]: the chosen targets and how the damage is divided among them."""
     opp = game.opponent(p)
     scope = eff.data["scope"]
-    pool = [x for x in opp.battlefield if game.targetable(x, p) and
+    total = eff.amount
+    if eff.data.get("x"):                      # X paid for the spell or ability
+        total = getattr(item, "x", 0) or 0
+    elif eff.data.get("xq") and item is not None:     # ", where X is the number of Mountains you control"
+        total = eff.amount * game.x_quantity(p, eff.data["xq"], item, None)
+    pred = eff.data.get("pred", {})
+    pool = [x for x in opp.battlefield if game.targetable(x, p) and _matches(game, x, pred) and
             (x.is_creature or x.is_planeswalker and scope in ("any", "creature_pw"))]
     if scope == "creature":
         pool = [x for x in pool if x.is_creature]
     from .engine.policy import perm_value
     pool.sort(key=perm_value, reverse=True)
-    left, limit, chosen = eff.amount, eff.data["max"], []
+    left, limit, chosen = total, eff.data["max"], []
     for perm in pool:
         need = max(1, (perm.toughness - perm.damage) if perm.is_creature else perm.loyalty)
         if need <= left and len(chosen) < limit:
@@ -122,7 +182,7 @@ def resolve(game, p, eff, target, item):
     src = (item.source if item.source is not None else item.card) if item is not None else None
     chosen = getattr(item, "divided", {}).get(id(eff)) if item is not None else None
     if chosen is None:
-        chosen = plan(game, p, eff)          # not put on the stack through game.stack: choose now
+        chosen = plan(game, p, eff, item)    # not put on the stack through game.stack: choose now
     for victim, amount in chosen:
         if not _legal(game, p, victim):
             continue                          # an illegal target (a player with new hexproof too): its share is not dealt

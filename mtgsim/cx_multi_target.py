@@ -360,23 +360,79 @@ def strive_cost(game, p, card, effects, targets, cost):
 
 
 _RIDER = re.compile(r"(untap|tap) (?:those creatures|them)|(?:they|those creatures) (gain|get) (.+)", re.I)
+_PLURAL_SUBJ = r"(?:those creatures|those permanents|those tokens|they|each of them)"
+_SING_VERB = {"gain": "gains", "get": "gets", "gets": "gets", "gains": "gains", "can't": "can't", "don't": "doesn't",
+              "have": "has", "lose": "loses"}
+_PLURAL_RIDER = re.compile(rf"{_PLURAL_SUBJ} (gain|gains|get|gets|can't|don't|have|lose) (.+)", re.I)
+_PLURAL_PUT = re.compile(r"(put .+) on (?:each of them|them)", re.I)
+_PLURAL_TAP = re.compile(r"(untap|tap) (?:those creatures|them|each of them)", re.I)
+_PLURAL_WORD = re.compile(r"\b(?:they|them|their|those|each)\b", re.I)
+
+
+def singular_rider(s: str):
+    """A sentence about the several objects a counted or list target chose, as a sentence about one ("It ..."),
+    or None. "Those creatures can't block this turn." -> "It can't block this turn."; "Each of them gets +1/+1
+    until end of turn."; "Put a +1/+1 counter on each of them."; "Untap them."."""
+    t = s.strip().rstrip(".")
+    m = _PLURAL_RIDER.fullmatch(t)
+    if m:
+        return None if _PLURAL_WORD.search(m[2]) else f"It {_SING_VERB[m[1].lower()]} {m[2]}."
+    m = _PLURAL_PUT.fullmatch(t)
+    if m and not _PLURAL_WORD.search(m[1]):
+        return f"{m[1]} on it."
+    m = _PLURAL_TAP.fullmatch(t)
+    if m:
+        return f"{m[1].capitalize()} it."
+    return None
+
+
+def _counted_run(effects: list):
+    """The first Effect indexes of the copies "up to two target creatures" made (one chain per target, consecutive
+    and ending the list), or None. Copies made by lift() share a "group"; a template's copies (one "distinct"
+    Effect per target) are the trailing identical Effects."""
+    run = [i for i, e in enumerate(effects) if e.data.get("distinct") and e.data.get("group", "").startswith("cx_multi:")]
+    if len(run) >= 2:
+        group = effects[run[-1]].data["group"]
+        run = [i for i in run if effects[i].data["group"] == group]
+        width = run[1] - run[0]
+        if width >= 1 and all(b - a == width for a, b in zip(run, run[1:])) and run[-1] + width == len(effects):
+            return run
+        return None
+    tail = len(effects)
+    while tail and effects[tail - 1].data.get("distinct") and "group" not in effects[tail - 1].data and \
+            effects[tail - 1] == effects[-1]:
+        tail -= 1
+    return list(range(tail, len(effects))) if len(effects) - tail >= 2 else None
 
 
 def chain_rider(s: str, effects: list) -> bool:
-    """"Untap those creatures." / "They gain haste until end of turn." after an "any number of target" Effect: more
-    of the chain each chosen target gets."""
-    if not effects or effects[-1].kind != "cx_multi":
+    """"Untap those creatures." / "They gain haste until end of turn." / "Those creatures can't block this turn." after
+    a counted or "any number of target" Effect: more of the chain each chosen target gets."""
+    if not effects:
         return False
-    m = _RIDER.fullmatch(s.strip().rstrip("."))
-    if not m:
+    multi = effects[-1].kind == "cx_multi"
+    run = None if multi else _counted_run(effects)
+    if not multi and run is None:
         return False
+    text = singular_rider(s)
+    if text is None:
+        m = _RIDER.fullmatch(s.strip().rstrip("."))
+        if not m:
+            return False
+        text = f"{m[1].capitalize()} it." if m[1] else f"It {_AGREE[m[2].lower()]} {m[3]}."
     from .cards.parse import _parse_effects
-    text = f"{m[1].capitalize()} it." if m[1] else f"It {_AGREE[m[2].lower()]} {m[3]}."
     new, bad = _parse_effects(text)
     if bad or not new or any(e.target != "prev" or e.cond for e in new):
         return False
-    multi = effects[-1]
-    effects[-1] = dataclasses.replace(multi, data=dict(multi.data, chain=list(multi.data["chain"]) + new))
+    if multi:
+        last = effects[-1]
+        effects[-1] = dataclasses.replace(last, data=dict(last.data, chain=list(last.data["chain"]) + new))
+        return True
+    out = effects[:run[0]]
+    for a, b in zip(run, run[1:] + [len(effects)]):
+        out.extend(effects[a:b])
+        out.extend(dataclasses.replace(e, data=dict(e.data)) for e in new)
+    effects[:] = out
     return True
 
 

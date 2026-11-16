@@ -269,6 +269,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return next((x for x in legal if x is (me if side == "mine" else opp)), None)
     if side in ("mine", "theirs"):      # newer kinds say whose permanent they want
         return max(mine if side == "mine" else theirs, key=perm_value, default=None)
+    if eff.target == "player" and eff.filter == "opp":
+        return opp if opp in legal else None    # "target opponent" is mandatory: the only choice (Wumpus Aberration)
     return None
 
 
@@ -549,6 +551,8 @@ def protective_ability(game: Game, me: Player, item, victim):
             if not saves or e.target not in ("creature", "creature_mine", "any", "self") or \
                     e.target == "self" and perm is not victim:
                 continue
+            if e.target != "self" and not game.passes_filter(e, victim, me):
+                continue            # "target artifact creature", "target Cleric or Wizard creature" (#333)
             first = [] if e.target == "self" else [victim]
             return ("activate", perm, f"ability:{i}", first + [None] * (len(act.effects) - len(first)))
     for pl in game.players:      # an "any player may activate" saver on someone else's permanent
@@ -565,7 +569,8 @@ def protective_ability(game: Game, me: Player, item, victim):
                          (any(x.kind == "destroy" for x in item.effects)
                           or damage >= victim.toughness - victim.damage)
                          or e.kind == "prevent_next" and damage and victim.toughness - victim.damage > damage - e.amount)
-                if not saves or e.target not in ("creature", "creature_mine", "any"):
+                if not saves or e.target not in ("creature", "creature_mine", "any") \
+                        or not game.passes_filter(e, victim, me):
                     continue
                 return ("activate", perm, f"ability:{i}", [victim] + [None] * (len(act.effects) - 1))
     return None
@@ -634,7 +639,7 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
     if act.cost.get("X") and x is None:
         return False
     need = add_costs({k: v for k, v in act.cost.items() if k != "X"},
-                     {"generic": (x or 0) + reserve})
+                     {"generic": (x or 0) * act.cost.get("X", 1) + reserve})
     if not payable(game.mana_sources(me, perm if c.get("tap") else None, "ability"), need):
         return False
     effects = act.effects
@@ -643,6 +648,10 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
                    if e.data.get("x") else e for e in effects]
         effects = [dataclasses.replace(e, data=dict(e.data, x_now=x)) if e.data.get("mv_x") else e
                    for e in effects]        # "mana value X or less" (Fiend Artisan): judge with the X chosen (#379)
+    if c.get("remove_counter_count") == "x" and x is None:     # "Remove X ... counters from ~": all of them (#345)
+        n = perm.counters.get(c["remove_counter"], 0)
+        effects = [dataclasses.replace(e, amount=n, amount2=n if e.data.get("x2") else e.amount2)
+                   if e.data.get("x") else e for e in effects]
     if c.get('remove_creature_counters') in ('x', 'positive'):
         payment = costs.ability_plan(game, me, perm, act, game.ability_cost(me, perm, act))
         if payment is None:

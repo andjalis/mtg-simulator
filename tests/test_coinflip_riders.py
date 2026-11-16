@@ -90,7 +90,7 @@ class CoinFlipRiders(unittest.TestCase):
                 self.assertNotIn("FLIPSEQ", " ".join(bad))
 
     def test_unsupported_real_riders_keep_oracle_wording(self):
-        for name in ("Krark, the Thumbless", "Goblin Festival"):
+        for name in ("Ydwen Efreet", "Skittish Valesk"):
             with self.subTest(card=name):
                 c = self.real(name)
                 self.assertTrue(c.unsupported)

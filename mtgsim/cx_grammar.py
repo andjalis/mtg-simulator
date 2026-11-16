@@ -278,7 +278,7 @@ def subject(text: str):
         found = subject("target " + m[1])
         if found is None or found.kind != "permanent" or found.copies != 1:
             return None
-        found.data["other"] = True
+        found.data["other"] = found.data["other_than_source"] = True    # only the source is excluded (#554)
         return found
     m = re.fullmatch(r"(?:(up to) )?(?:(a|one or two|one|two|three|four|five) )?(other |another )?target (.+?)( each)?",
                      text, re.I)

@@ -115,7 +115,10 @@ def grave_targets(game, p, eff):
         from .cx_grammar_zones import grave_cards
         return grave_cards(game, p, eff)
     types = eff.data['grave_type'].split(' or ')
-    cards = [c for c in p.graveyard if ('cmc_exact' not in eff.data or c.cmc == eff.data['cmc_exact']) and
+    exact = eff.data.get('cmc_exact')
+    if exact == 1 and eff.data.get('xq'):        # "with mana value X, where X is Q": X read as 1 at parse (#317)
+        exact = game.target_x(eff, p)
+    cards = [c for c in p.graveyard if (exact is None or c.cmc == exact) and
              any(c.is_permanent if t == 'permanent' else t.title() in c.types for t in types)]
     if eff.data.get('tribal_group'):
         from .permanent_templates import _CREATURE_SUBTYPES

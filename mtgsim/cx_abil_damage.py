@@ -164,14 +164,23 @@ def plan_damage(ai, game, me, eff, card, precombat, earlier):
         game._choosing_targets = outer if outer is not None else []
 
 
-def scaled(game, me, eff):
+def scaled(game, me, eff, card=None):
     """eff with its amount worked out for target choice: "damage equal to its power / the number of ..." and the
-    source's power are known before the ability resolves, so the AI can tell what a target would die to."""
+    source's power are known before the ability resolves, so the AI can tell what a target would die to. card: the
+    spell being considered when it isn't game.target_source yet (the AI deciding whether to cast it)."""
     import dataclasses
     src = game.target_source.source if hasattr(game.target_source, "source") else game.target_source
-    if eff.data.get("xq") and src is not None and hasattr(src, "counters"):
-        stub = type("Stub", (), {"source": src, "card": None, "x": 0})()
-        return dataclasses.replace(eff, amount=eff.amount * game.x_quantity(me, eff.data["xq"], stub, None))
+    xq = eff.data.get("xq")
+    counted = {k: v for k, v in eff.data.items() if k != "xq"}      # applied once: a second scaled() keeps it
+    if xq and src is not None and hasattr(src, "counters") and (card is None or getattr(src, "card", None) is card):
+        stub = type("Stub", (), {"source": src, "card": None, "x": 0, "context": None})()
+        return dataclasses.replace(eff, amount=eff.amount * game.x_quantity(me, xq, stub, None), data=counted)
+    if isinstance(xq, tuple) and xq and xq[0] not in ("this_way", "spell"):
+        # a spell's count ("damage equal to the number of instant and sorcery cards in your graveyard", #449): what
+        # it is now; "this_way" and "that spell's ..." amounts only exist on the resolving item
+        spell = card if card is not None else getattr(game.target_source, "card", None)
+        stub = type("Stub", (), {"source": None, "card": spell, "x": 0, "context": None})()
+        return dataclasses.replace(eff, amount=eff.amount * game.x_quantity(me, xq, stub, None), data=counted)
     if eff.data.get("src_prev"):
         earlier = [t for t in getattr(game, "_choosing_targets", ()) if hasattr(t, "counters")]
         ctx = getattr(game, "trigger_context", None) or getattr(game.target_source, "context", None)   # the trigger's creature

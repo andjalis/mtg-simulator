@@ -131,7 +131,7 @@ class CostModifiers(unittest.TestCase):
     def test_left_alone(self):
         # a Class level's static only applies from that level on; a count the table misreads stays ignored
         self.assertTrue(any("cost {R}{G} less" in u for u in self.db.get("Bard Class").unsupported))
-        self.assertEqual(len(self.db.get("Hamza, Guardian of Arashin").unsupported), 2)
+        self.assertTrue(self.db.get("Sailors' Bane").unsupported)       # Hamza's count is read since #341
 
     def test_increases_before_reductions(self):
         # 601.2f: Thoughtcast {4}{U} with five artifacts (affinity) under Thalia's {1} tax: 4 + 1 - 5 = 0

@@ -20,17 +20,24 @@ OGRE = card("Test Ogre", "{R}", "Creature — Ogre", "", 2, 2)
 class Vocabulary(unittest.TestCase):
     def test_known(self):
         for what in ("creature", "Elf", "other artifact", "nonland permanent", "artifact, creature, or land",
-                     "basic land", "non-Human creature", "nontoken creature", "ctr:charge", ""):
+                     "basic land", "non-Human creature", "nontoken creature", "ctr:charge", "",
+                     "instant and sorcery", "Soldier and Warrior", "artifact, enchantment, and land",
+                     "instant and/or sorcery"):
             self.assertTrue(known(what), what)
-        for what in ("snow permanent", "green creature", "attacking creature", "instant and sorcery",
-                     "nonlegendary creature", "frob", "card types among", "modified creature"):
+        for what in ("snow permanent", "green creature", "attacking creature", "instant and frob",
+                     "nonlegendary creature", "frob", "card types among", "modified creature",
+                     "lands you control and each land"):
             self.assertFalse(known(what), what)
 
     def test_xq_refuses_or_rereads(self):
         self.assertEqual(_xq("the number of Elves you control"), ("count", "Elf"))
         self.assertEqual(_xq("the number of lands you control"), ("count", "land"))
         self.assertNotEqual(_xq("the number of frobs you control"), ("count", "frob"))
-        self.assertNotEqual((_xq("the number of instant and sorcery cards in your graveyard") or ("",))[0], "gy")
+        # "and" between card types is a union (#449): the cards that are an instant or a sorcery
+        self.assertEqual(_xq("the number of instant and sorcery cards in your graveyard"), ("gy", "instant and sorcery"))
+        self.assertEqual(_xq("the number of Soldiers and Warriors you control"), ("count", "Soldier and Warrior"))
+        self.assertEqual(_xq("the number of creatures and lands you control"), ("count", "creature and land"))
+        self.assertIsNone(_xq("the number of lands you control and each land card in your graveyard"))
         # "X plus Y": the gy reading used to swallow the whole phrase
         self.assertEqual(_xq("the number of Caves you control plus the number of Cave cards in your graveyard"),
                          ("arith", ("count", "Cave"), "+", ("gy", "Cave")))
@@ -109,7 +116,9 @@ class RealCards(unittest.TestCase):
         for name in ("Regal Force", "Take Heart", "Lucid Dreams", "Calamitous Cave-In", "Wandering Stream",
                      "Skred", "Conifer Wurm"):     # Skred / Conifer Wurm: snow counts since #536
             self.assertEqual(card_coverage(db.get(name)).status, "full", name)       # now through readings that count
-        for name in ("Spite of Mogis", "Herd Migration", "Golden Ratio"):
+        for name in ("Steal the Show", "Spite of Mogis"):       # "instant and sorcery cards" is a union (#449)
+            self.assertEqual(card_coverage(db.get(name)).status, "full", name)
+        for name in ("Herd Migration", "Golden Ratio"):
             self.assertEqual(card_coverage(db.get(name)).status, "partial", name)    # no reading counts these yet
 
 

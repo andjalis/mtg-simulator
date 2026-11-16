@@ -62,6 +62,7 @@ class Round10(unittest.TestCase):
         for _ in range(2):
             self.perm(card("Plains", types="Basic Land — Plains", text="({T}: Add {W}.)"))
         self.a.hand.append(GIFT)
+        self.a.ai.promise_gift = lambda *_: True        # promising is a choice (#483): this test promises
         before = len(self.b.hand)
         self.assertTrue(self.game.cast(self.a, GIFT, [mine]))
         self.game.settle()

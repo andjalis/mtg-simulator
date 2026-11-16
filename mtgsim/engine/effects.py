@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from .. import continuous, counter_mechanics, cx_static_damage, cx_triggers, that_much
 
-from .. import auras, cx_trig_state
+from .. import auras, cx_trig_damage, cx_trig_state
 from ..cards import AltCost, CardDef, Effect
 from .. import rules_events
 from .mana import find_payment
@@ -71,6 +71,7 @@ class EffectsMixin:
         if isinstance(target, Player):
             target.last_damage_turn = self.turn
         self.event_amount = amount          # "that much" for the triggers fired below
+        cx_trig_damage.observe(self, source, target, by, amount)       # damage heads from any source (#521)
         if isinstance(source, Permanent) and source in source.controller.battlefield:
             self.fire(source.controller, "deals_damage", source, context=target)
             if isinstance(target, Player):
