@@ -17,7 +17,8 @@ def _xtoken(m):
     effects, bad = _parse_effects("Create one " + singular + ".")
     if bad or not effects:
         return NO_MATCH
-    return [dataclasses.replace(e, data=dict(e.data, x=True)) if e.kind == "token" else e
+    # "token" and "cx_token" alike: resolve scales the count by item.x ("X X/X" tokens: count and size, #865)
+    return [dataclasses.replace(e, data=dict(e.data, x=True)) if e.kind in ("token", "cx_token") else e
             for e in effects]
 
 

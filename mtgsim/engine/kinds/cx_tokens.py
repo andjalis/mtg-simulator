@@ -52,8 +52,13 @@ def cx_token(game, p, eff, target, opp, item=None, **_):
     n = eff.amount * (len(game.players) - 1 if eff.data.get("per_opponent") else 1)
     if eff.data.get("devotion"):            # "equal to your devotion to <colours>": mana symbols of yours
         n *= sum(devotion(x.card, eff.data["devotion"]) for x in p.battlefield)
+    data = eff.data
+    if data.get("x_size"):                  # "an X/X ... token": X is the X paid for the spell or ability (#865)
+        src = getattr(item, "source", None)        # a trigger: the X its permanent was cast for, or its monstrosity X
+        x = getattr(item, "x", 0) or getattr(src, "entered_x", 0) or getattr(src, "monstrous_x", 0) or 0
+        data = dict(data, xq_size=True, power=x, toughness=x)
     for pl in players:
-        create(game, pl, choose(game, pl, eff.data["choice"]) if "choice" in eff.data else eff.data, n)
+        create(game, pl, choose(game, pl, data["choice"]) if "choice" in data else data, n)
 
 
 def devotion(card, colors) -> int:
