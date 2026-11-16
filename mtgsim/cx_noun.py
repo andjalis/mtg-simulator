@@ -17,6 +17,7 @@ anywhere else (a trigger, a modal spell, an alternative cost) the line stays uns
 from __future__ import annotations
 
 import dataclasses
+import re
 
 
 def _has(obj, depth=0) -> bool:
@@ -164,3 +165,65 @@ def ability_x(game, p, perm, act, best):
         if top is None or score > top:
             choice, top = x, score
     return choice if choice is not None else best
+
+
+# ---------------------------------------------------------------- slice 3: relational stats
+# "with power less than ~'s power", "with power less than or equal to the number of creatures you control",
+# "with power greater than its base power", "with toughness greater than the number of cards in your hand"
+# (selector key ``stat_rel``: [stat, "<" | ">", or_equal, ref]). ref is ("base",) / ("own", stat) for the matched
+# permanent's own base or current value, or ("q", spec) for a quantity cards.clauses._xq reads, counted for the
+# selector's controller ("you") with the ability's source as "~".
+
+_REL = re.compile(r" with (power|toughness|mana value) (less|greater) than( or equal to)? (.+)$", re.I)
+
+
+def take_rel(text):
+    """(text without the qualifier, the stat_rel spec) for a trailing relational stat qualifier, (text, None) when
+    there is none, or (text, False) when there is one this reader can't evaluate."""
+    m = _REL.search(text)
+    if not m:
+        return text, None
+    stat, ref = m[1].lower(), m[4].strip()
+    low = ref.lower()
+    own = re.fullmatch(r"(?:its|their) (base )?(power|toughness)", low)
+    if own:
+        if own[1] and own[2] != stat:
+            return text, False          # "power greater than its base toughness": not a printed shape
+        spec = ("base",) if own[1] else ("own", own[2])
+    else:
+        if re.fullmatch(r"~'s", low):           # "with power less than ~'s": the same stat of the source
+            low = f"~'s {stat}"
+        if re.search(r"\b(?:it|its|them|their|they)\b", low):
+            return text, False          # "the number of rust counters on it": "it" is the matched object (Corrosion)
+        from .cards.clauses import _xq
+        q = _xq(low)
+        if q is None or q[0] == "stat" and q[1] != "self" or q[0] in ("spell", "sac"):
+            return text, False          # "that creature's power", "that spell's ...": no referent in a selector
+        spec = ("q", q)
+    return text[:m.start()], [stat, "<" if m[2].lower() == "less" else ">", bool(m[3]), spec]
+
+
+def rel_ok(game, permanent, spec, controller, source) -> bool:
+    from .engine.state import Permanent, StackItem
+    stat, op, or_equal, ref = spec["stat_rel"]
+    value = permanent.card.cmc if stat == "mana value" else getattr(permanent, stat)
+    if ref[0] == "base":
+        from .continuous import base_pt
+        bound = base_pt(permanent)[0 if stat == "power" else 1]
+    elif ref[0] == "own":
+        bound = getattr(permanent, ref[1])
+    else:
+        q = ref[1]
+        if q[0] == "stat" and not isinstance(source, Permanent):
+            return False                # "~'s power" with no source on the battlefield
+        item = game.target_source if isinstance(game.target_source, StackItem) else \
+            getattr(game, "resolving_item", None)
+        if not isinstance(item, StackItem) or item.source is not source:
+            item = StackItem(controller, [], [], source=source if isinstance(source, Permanent) else None,
+                             name="qualifier")
+        if controller is None:
+            return False
+        bound = game.x_quantity(controller, q, item, None)
+    if value == bound:
+        return or_equal
+    return value < bound if op == "<" else value > bound

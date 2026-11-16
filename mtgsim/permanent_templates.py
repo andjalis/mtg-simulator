@@ -317,6 +317,15 @@ def selector(text, *, plural=False):
     if other:
         result['other'] = result['other_than_source'] = True
         text = text[:other.start()]
+    if not re.search(r' with toughness greater than (?:its|their) power$', text, re.I):
+        # "with power less than ~'s power", "... less than or equal to the number of creatures you control" (#403):
+        # cut before the controller scan, whose " you control" may belong to the quantity
+        from .cx_noun import take_rel
+        text, rel = take_rel(text)
+        if rel is False:
+            return None
+        if rel is not None:
+            result['stat_rel'] = rel
     # "nonland, nontoken permanent", "non-Saga, nonland permanent" (#506)
     text = re.sub(r'(\bnon-?[a-z]+), (?=non-?[a-z]+\b)', r'\1 ', text, flags=re.I)
     # "creatures you control of the chosen type" (#627): the source's chosen creature type (perm.chosen_type)
@@ -562,6 +571,10 @@ def matches(game, permanent, spec, controller, source=None):
         return False
     if spec.get('tough_gt_power') and not permanent.toughness > permanent.power:
         return False
+    if 'stat_rel' in spec:
+        from .cx_noun import rel_ok
+        if not rel_ok(game, permanent, spec, controller, source):
+            return False
     if 'stat_x' in spec:
         from .cx_noun import stat_x_ok
         if not stat_x_ok(game, permanent, spec, controller):

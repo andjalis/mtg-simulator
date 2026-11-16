@@ -286,5 +286,88 @@ class RealCardsSlice2(unittest.TestCase):
                 self.assertEqual(card_coverage(db.get(name)).status, "full")
 
 
+class Slice3(Base):
+    """Relational stats: "with power less than ~'s power", "... than the number of ...", "... than its base power"."""
+    BIG = card("Test Big", "{5}{G}", "Creature — Beast", "", 6, 6)
+
+    def test_readings(self):
+        self.assertEqual(selector("creature with power less than ~'s power")["stat_rel"],
+                         ["power", "<", False, ("q", ("stat", "self", "power"))])
+        spec = selector("creature with power less than or equal to the number of creatures you control")
+        self.assertNotIn("controller", spec)          # "you control" belongs to the quantity
+        self.assertEqual(spec["stat_rel"][:3], ["power", "<", True])
+        self.assertEqual(selector("creatures you control with power greater than its base power", plural=True),
+                         {"stat_rel": ["power", ">", False, ("base",)], "controller": "mine", "types_all": ["creature"]})
+
+    def test_refusals(self):
+        for text in ("creatures with power greater than target creature's power",       # another target's
+                     "artifact with mana value less than or equal to the number of rust counters on it",  # "it"
+                     "creature with power less than that creature's power",
+                     "creature with power less than the frobs you control"):
+            with self.subTest(text=text):
+                self.assertIsNone(selector(text, plural=text.startswith("creatures")))
+
+    def test_source_power_bound(self):
+        psycho = self.perm(card("Test Psycho", "{1}{B}{B}", "Creature — Zombie",
+                                "{B}, {T}: Destroy target creature with power less than ~'s power.", 3, 3), self.a)
+        bear, big = self.perm(BEAR, self.b), self.perm(self.BIG, self.b)
+        eff = psycho.card.activated[0].effects[0]
+        with self.g.targeting(psycho):
+            self.assertEqual(self.g.legal_targets(self.a, eff), [bear])
+        self.perm(SWAMP, self.a)
+        self.assertTrue(self.g.activate_ability(self.a, psycho, 0, [bear]))
+        self.assertNotIn(bear, self.b.battlefield)
+        self.assertIn(big, self.b.battlefield)
+
+    def test_quantity_is_counted_for_the_controller(self):
+        shackles = self.perm(card("Test Shackles", "{3}", "Artifact",
+                                  "{2}, {T}: Gain control of target creature with power less than or equal to the "
+                                  "number of Islands you control for as long as ~ remains tapped."), self.a)
+        bear = self.perm(BEAR, self.b)
+        self.perm(self.BIG, self.b)
+        self.perm(ISLAND, self.b, 6)          # the opponent's Islands don't count
+        self.perm(ISLAND, self.a, 2)
+        eff = shackles.card.activated[0].effects[0]
+        with self.g.targeting(shackles):
+            self.assertEqual(self.g.legal_targets(self.a, eff), [bear])
+
+    def test_static_bound_follows_the_hand(self):
+        self.a.hand = [ISLAND] * 2
+        self.g.enter_battlefield(self.a, card("Test Bridge", "{3}", "Artifact",
+                                              "Creatures with power greater than the number of cards in your hand "
+                                              "can't attack."))
+        bear, big = self.g.enter_battlefield(self.b, BEAR), self.g.enter_battlefield(self.b, self.BIG)
+        bear.sick = big.sick = False
+        self.g.settle()
+        self.assertTrue(bear.can_attack())
+        self.assertFalse(big.can_attack())
+        self.a.hand = [ISLAND] * 6
+        self.g.settle()
+        self.assertTrue(big.can_attack())
+
+    def test_heuristic_ai_aims_the_source_bound_removal_at_the_opponent(self):
+        psycho = self.perm(card("Test Psycho", "{1}{B}{B}", "Creature — Zombie",
+                                "{B}, {T}: Destroy target creature with power less than ~'s power.", 3, 3), self.a)
+        theirs = self.perm(BEAR, self.b)
+        self.perm(BEAR, self.a)
+        self.perm(SWAMP, self.a)
+        self.assertEqual(choose_ability(self.g, self.a, instant=True), ("activate", psycho, "ability:0"))
+        self.assertTrue(self.g.activate_ability(self.a, psycho, 0))
+        self.assertNotIn(theirs, self.b.battlefield)
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class RealCardsSlice3(unittest.TestCase):
+    def test_newly_full_and_refused(self):
+        from mtgsim.carddb import CardDB
+        from mtgsim.coverage import card_coverage
+        db = CardDB()
+        for name in ("Unliving Psychopath", "Vedalken Shackles", "Ensnaring Bridge", "Beguiler of Wills",
+                     "Champion of Lambholt", "Lena, Selfless Champion", "Legacy's Allure", "Dominating Vampire"):
+            with self.subTest(name=name):
+                self.assertEqual(card_coverage(db.get(name)).status, "full")
+        self.assertEqual(card_coverage(db.get("Corrosion")).status, "partial")
+
+
 if __name__ == "__main__":
     unittest.main()
