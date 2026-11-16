@@ -46,6 +46,7 @@ def parse_line(line, st):
         "Creatures you control can't have -1/-1 counters put on them.": 'negative_counter_lock',
         'Creatures your opponents control lose infect.': 'remove_infect',
         "You can't play lands.": 'land_lock_you',
+        "You can't play lands or cast spells from your hand.": 'hand_lock_you',     # Experimental Frenzy (#326)
         "Players can't play lands.": 'land_lock_all',
         "Lands can't enter the battlefield.": 'land_entry_lock',
         "Each opponent who controls more lands than you can't play lands.": 'land_lock_more',
@@ -210,6 +211,13 @@ def lands_locked(player):
         return True
     return bool(sources(game, 'land_lock_all')) or any(x.controller is player for x in sources(game, 'land_lock_you')) or \
         player_flag(game, player, 'no_lands')
+
+
+def hand_locked(player):
+    """"You can't play lands or cast spells from your hand." (Experimental Frenzy): "from your hand" covers both, so
+    lands and spells from other zones (the top of the library) stay playable (#326)."""
+    game = getattr(player, '_game', None)
+    return game is not None and any(x.controller is player for x in sources(game, 'hand_lock_you'))
 
 
 def activation_blocked(game, perm, *, mana=False):

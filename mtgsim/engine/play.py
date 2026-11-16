@@ -34,6 +34,9 @@ class PlayMixin:
                 break
         face = card.land_face if back else card
         assert face is not None and face.is_land and not p.land_played
+        from ..residual_templates import hand_locked
+        if card in p.hand and hand_locked(p):       # "You can't play lands ... from your hand" (#326)
+            return
         if card in p.hand:
             p.hand.remove(card)
         elif card in p.exile and card in self.impulse_cards(p):

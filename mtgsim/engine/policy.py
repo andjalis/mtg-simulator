@@ -297,7 +297,9 @@ def play_extra_lands(game: Game, me: Player):
     for _ in range(3):
         if me.land_played:
             return
-        lands = [c for c in me.hand if c.is_land] + [c for c in game.impulse_cards(me) if c.is_land]
+        from ..residual_templates import hand_locked
+        lands = ([] if hand_locked(me) else [c for c in me.hand if c.is_land]) + \
+            [c for c in game.impulse_cards(me) if c.is_land]
         if any(x.card.lands_from_gy for x in me.battlefield):
             lands += [c for c in me.graveyard if c.is_land]
         if not lands:

@@ -879,6 +879,9 @@ class CostsMixin:
                for pl in self.players for x in pl.battlefield):
             return False          # "Creature spells can't be cast" (Aether Storm): the ban applies to everyone
         base, kind, alt = self._origin(card)
+        from ..residual_templates import hand_locked
+        if spell and hand_locked(p) and self._zone(p, kind) is p.hand:    # Experimental Frenzy (#326)
+            return False
         if self.nonmana_locked(p) and kind in ('channel', 'gy_ability', 'unearth'):
             return False
         if card.is_ability and kind in ('channel', 'gy_ability', 'unearth') and self.named_activation_banned(base.name):

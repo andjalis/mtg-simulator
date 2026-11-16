@@ -732,8 +732,12 @@ class HeuristicAI:
     def play_land(self, game: Game, me: Player):
         from . import cx_top
         top = cx_top.top(me)
-        lands = ([top] if cx_top.land_ok(me, top) else []) + [c for c in me.hand if c.is_land]   # the top first
+        from .residual_templates import hand_locked
+        hand = [] if hand_locked(me) else [c for c in me.hand if c.is_land]     # Experimental Frenzy (#326)
+        lands = ([top] if cx_top.land_ok(me, top) else []) + hand   # the top first
         if me.land_played:
+            return
+        if not lands and hand_locked(me):
             return
         if not lands:
             card = HeuristicAI.mdfc_land(self, game, me)
