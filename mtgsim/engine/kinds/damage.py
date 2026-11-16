@@ -64,6 +64,13 @@ def _damage(game, p, eff, target, item, opp, cause, src=None):
     else:
         if eff.data.get("no_regen") and eff.amount > 0 and isinstance(target, Permanent) and target.is_creature:
             target.regeneration_blocked = True
+        if eff.data.get("excess") and isinstance(target, Permanent) and target.is_creature:
+            from ...excess_damage import split          # "Excess damage is dealt to that creature's controller instead."
+            amount, excess = split(target, eff.amount, src)
+            owner = target.controller
+            game.deal_damage(target, amount, by=p, cause=cause, source=src)
+            game.deal_damage(owner, excess, by=p, cause=cause, source=src)
+            return [target, owner] if excess > 0 else [target]
         game.deal_damage(target, eff.amount, by=p, cause=cause, source=src)
         victims.append(target)
     return victims

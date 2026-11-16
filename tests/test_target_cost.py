@@ -167,3 +167,104 @@ class Conditions(unittest.TestCase):
         self.assertEqual(self.cost("Wolfkin Outcast // Wedding Crasher"), base)
         self.g.enter_battlefield(self.a, card("Test Werewolf", "{1}{G}", "Creature — Human Werewolf", "", 2, 2))
         self.assertEqual(self.cost("Wolfkin Outcast // Wedding Crasher")["generic"], base["generic"] - 2)
+
+
+class TempDiscounts(unittest.TestCase):
+    """One-shot discounts for a group of spells (#341 slice 2)."""
+    def setUp(self):
+        self.a, self.b = Player("a", [BEAR] * 10, HeuristicAI()), Player("b", [BEAR] * 10, HeuristicAI())
+        self.g = Game(self.a, self.b, random.Random(0))
+        self.g.turn, self.g.step = 3, "main1"
+        for p in self.g.players:
+            p.library = [ISLAND] * 20
+
+    def run_spell(self, text):
+        c = card("Test Spell", "{1}", "Sorcery", text)
+        self.assertEqual(c.unsupported, [], text)
+        for e in c.spell_effects:
+            self.g.resolve(self.a, e, None)
+
+    def test_next_dragon_spell_once(self):
+        dragon = card("Test Dragon", "{3}{R}", "Creature — Dragon", "Flying", 4, 4)
+        self.run_spell("The next Dragon spell you cast costs {2} less to cast.")
+        self.assertEqual(self.g.cost_of(self.a, BEAR), BEAR.mana_cost)               # not a Dragon
+        self.assertEqual(self.g.cost_of(self.a, dragon)["generic"], 1)
+        self.g.turn += 1
+        self.assertEqual(self.g.cost_of(self.a, dragon)["generic"], 1)               # no "this turn": it waits
+        self.assertEqual(self.g.cost_of(self.b, dragon)["generic"], 3)               # only its caster's
+        for _ in range(3):
+            self.g.enter_battlefield(self.a, card("Mountain", types="Basic Land — Mountain", text="({T}: Add {R}.)"))
+        self.a.hand.append(dragon)
+        self.assertTrue(self.g.cast(self.a, dragon))
+        self.assertEqual(self.g.cost_of(self.a, dragon)["generic"], 3)               # spent
+
+    def test_this_turn_group_discount(self):
+        relic = card("Test Relic", "{3}", "Artifact", "")
+        self.run_spell("Artifact spells you cast this turn cost {1} less to cast.")
+        self.assertEqual(self.g.cost_of(self.a, relic)["generic"], 2)
+        self.assertEqual(self.g.cost_of(self.a, BEAR), BEAR.mana_cost)
+        self.g.turn += 1
+        self.assertEqual(self.g.cost_of(self.a, relic)["generic"], 3)
+
+    def test_refusals(self):
+        for s in ("The next Foo-thing spell an opponent casts costs {1} less to cast.",
+                  "The next wibbly spell you cast costs {2} less to cast.",     # matched, group unread: kept
+                  "The next Dragon spell you cast costs {X} less to cast, where X is the frobs you wibble."):
+            self.assertTrue(card("Test", "{1}", "Sorcery", s).unsupported, s)
+
+
+@unittest.skipUnless(os.path.exists(ALL_CARDS), "card database not built")
+class Quantities(unittest.TestCase):
+    """'costs {N} less for each <quantity>' readers and {X} one-shots fixed on resolution (#341)."""
+    @classmethod
+    def setUpClass(cls):
+        cls.db = CardDB(offline=True)
+
+    def setUp(self):
+        Casting.setUp(self)
+
+    def generic(self, name, who=None):
+        return self.g.cost_of(who or self.a, self.db.get(name)).get("generic", 0)
+
+    def test_hamza_counts_creatures_with_counters(self):
+        base = self.generic("Hamza, Guardian of Arashin")
+        bears = [self.g.enter_battlefield(self.a, BEAR) for _ in range(3)]
+        bears[0].counters["+1/+1"] = 2
+        bears[1].counters["+1/+1"] = 1
+        self.assertEqual(self.generic("Hamza, Guardian of Arashin"), base - 2)       # two creatures, not 3 counters
+
+    def test_eris_counts_distinct_mana_values(self):
+        base = self.generic("Eris, Roar of the Storm")
+        self.a.graveyard = [card("I1", "{1}", "Instant", ""), card("I2", "{1}", "Instant", ""),
+                            card("S3", "{3}", "Sorcery", ""), BEAR]
+        self.assertEqual(self.generic("Eris, Roar of the Storm"), base - 4)          # mana values 1 and 3
+
+    def test_licia_and_delightful_discovery(self):
+        base = self.generic("Licia, Sanguine Tribune")
+        self.a.life_gained_turn = 3
+        self.assertEqual(self.generic("Licia, Sanguine Tribune"), base - 3)
+        base = self.generic("Delightful Discovery")
+        self.g.spells_cast = {"turn": self.g.turn, self.b.name: 2, self.a.name: 5}
+        self.assertEqual(self.generic("Delightful Discovery"), max(0, base - 2))      # only the opponents'
+
+    def test_kaza_fixes_x_on_resolution(self):
+        kaza = self.db.get("Kaza, Roil Chaser")
+        k = self.g.enter_battlefield(self.a, kaza)
+        wizard = card("Test Wizard", "{U}", "Creature — Human Wizard", "", 1, 1)
+        self.g.enter_battlefield(self.a, wizard)
+        effs = kaza.activated[0].effects
+        item = StackItem(self.a, list(effs), [None] * len(effs), source=k)
+        for e in effs:
+            self.g.resolve(self.a, e, None, item)
+        self.g.enter_battlefield(self.a, wizard)                                     # later Wizards don't count
+        bolt = card("Test Bolt", "{3}{R}", "Instant", "Draw a card.")
+        self.assertEqual(self.g.cost_of(self.a, bolt)["generic"], 1)                # Kaza + 1 Wizard = 2
+
+    def test_draconic_debut_uses_the_x_paid(self):
+        debut = self.db.get("Draconic Debut")
+        e = next(e for e in debut.spell_effects if e.kind == "cx_temp_cost")
+        item = StackItem(self.a, [e], [None], card=debut)
+        item.x = 3
+        self.g.resolve(self.a, e, None, item)
+        dragon = card("Test Dragon", "{4}{R}", "Creature — Dragon", "Flying", 5, 5)
+        self.assertEqual(self.g.cost_of(self.a, dragon)["generic"], 1)

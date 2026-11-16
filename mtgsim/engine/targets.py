@@ -26,6 +26,16 @@ class TargetsMixin:
             return obj in self.stack
         return isinstance(obj, Player)
 
+    def target_x(self, eff: Effect, by: Player) -> int:
+        """X of a target restriction ("with mana value X or less, where X is Q") while targets are chosen or
+        checked. "That spell's ..." is the spell a cast trigger fired on (#317): the trigger's context, which
+        flush_triggers exposes as trigger_context before its stack item exists."""
+        item = self.target_source if isinstance(self.target_source, StackItem) else None
+        spell = eff.data.get('cast_spell')
+        if spell is None and isinstance(getattr(self, 'trigger_context', None), StackItem):
+            spell = self.trigger_context
+        return self.x_quantity(by, eff.data['xq'], item, spell)
+
     def passes_filter(self, eff: Effect, perm: Permanent, by: Player) -> bool:
         spec = eff.data.get('selector')
         if spec is not None:
@@ -33,9 +43,7 @@ class TargetsMixin:
             if eff.data.get('xq') and spec.get('stat') and spec['stat'][2] == 1 and eff.kind != 'damage':
                 # "with power X or less, where X is Q": the shared where-X rule read X as 1 and tagged the effect
                 # with Q (#421); the bound is Q now
-                item = self.target_source if isinstance(self.target_source, StackItem) else None
-                n = self.x_quantity(by, eff.data['xq'], item, None)
-                spec = dict(spec, stat=[spec['stat'][0], spec['stat'][1], n])
+                spec = dict(spec, stat=[spec['stat'][0], spec['stat'][1], self.target_x(eff, by)])
             if not permanent_templates.matches(self, perm, spec, by, source):
                 return False
         if eff.data.get('cx_desc') or eff.data.get('cx_snow'):
@@ -125,7 +133,7 @@ class TargetsMixin:
         source = self.target_source.source if isinstance(self.target_source, StackItem) else self.target_source
         if eff.data.get('other'):
             everything = [x for x in everything if x is not source]
-        if eff.data.get('not_earlier'):     # "another target ...": not an object an earlier target of it took
+        if self._not_earlier(eff):          # "another target ...": not an object an earlier target of it took
             taken = self._earlier_targets(eff)
             everything = [x for x in everything if all(x is not t for t in taken)]
         creatures = [c for c in everything if c.is_creature and self.passes_filter(eff, c, p)]
@@ -178,6 +186,17 @@ class TargetsMixin:
                              if self.passes_filter(eff, x, p)]
         return []
 
+    @staticmethod
+    def _not_earlier(eff: Effect) -> bool:
+        """"another / other target ..." differs from the source and from every object an earlier target of the
+        same spell or ability took (rule 115.3, #554); "target ... other than ~" names only the source."""
+        if eff.data.get('not_earlier'):
+            return True
+        sel = eff.data.get('selector')
+        other = eff.data.get('other') or (isinstance(sel, dict) and sel.get('other'))
+        return bool(other) and not eff.data.get('other_than_source') \
+            and not (isinstance(sel, dict) and sel.get('other_than_source'))
+
     def _earlier_targets(self, eff: Effect) -> list:
         """The targets chosen for the effects before eff in the same spell or ability, while its targets are
         chosen (auto_targets: the list so far), checked as a whole list, or checked again on resolution."""
@@ -185,11 +204,13 @@ class TargetsMixin:
         if isinstance(item, StackItem):
             idx = next((i for i, e in enumerate(item.effects) if e is eff), None)
             if idx is not None:
-                return list(item.targets[:idx])
+                return [t for e, t in zip(item.effects[:idx], item.targets) if e.target in TARGETED]
         chosen = getattr(self, '_choosing_targets', None) or []
         effects = getattr(self, '_choosing_effects', None) or ()
         idx = next((i for i, e in enumerate(effects) if e is eff), None)
-        return list(chosen[:idx]) if idx is not None else list(chosen)
+        if idx is None:
+            return list(chosen)
+        return [t for e, t in zip(effects[:idx], chosen) if e.target in TARGETED]
 
     def legal_target(self, p: Player, eff: Effect, tgt) -> bool:
         """Use the same type, controller, filter and presence checks as enumeration."""

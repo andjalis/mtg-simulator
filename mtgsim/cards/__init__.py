@@ -151,6 +151,8 @@ from .. import cx_night_flash as _cx_night_flash
 _EFFECT_PATTERNS += _cx_night_flash.EFFECT_PATTERNS
 from .. import cx_next_turn as _cx_next_turn
 _EFFECT_PATTERNS += _cx_next_turn.EFFECT_PATTERNS
+from .. import cx_flash_perm as _cx_flash_perm
+_EFFECT_PATTERNS += _cx_flash_perm.EFFECT_PATTERNS
 from .. import cx_links as _cx_links
 _EFFECT_PATTERNS += _cx_links.EFFECT_PATTERNS
 from .. import cx_events as _cx_events
@@ -173,6 +175,7 @@ from .. import cx_abil_mana as _cx_abil_mana
 _EFFECT_PATTERNS += _cx_abil_mana.EFFECT_PATTERNS
 from .. import cx_grammar_addmana as _cx_grammar_addmana
 _EFFECT_PATTERNS += _cx_grammar_addmana.EFFECT_PATTERNS
+_SUBS += _cx_grammar_addmana.SUBS
 from .. import cx_lures as _cx_lures
 _EFFECT_PATTERNS += _cx_lures.EFFECT_PATTERNS
 from .. import cx_recolor as _cx_recolor
@@ -254,6 +257,8 @@ from .. import card_referent as _card_referent
 _EFFECT_PATTERNS += _card_referent.EFFECT_PATTERNS
 from .. import cx_attach as _cx_attach
 _EFFECT_PATTERNS += _cx_attach.EFFECT_PATTERNS
+from .. import cx_static_cost as _cx_static_cost  # one-shot spell-group discounts (#341)
+_EFFECT_PATTERNS += _cx_static_cost.EFFECT_PATTERNS
 from .. import cx_exile_play as _cx_exile_play          # "exile the top card of that player's library" (#316)
 _EFFECT_PATTERNS += _cx_exile_play.EFFECT_PATTERNS
 _SUBS += _cx_exile_play.SUBS
@@ -263,3 +268,5 @@ from .. import cx_spent as _cx_spent  # noqa: E402
 _SUBS += _cx_spent.SUBS
 from .. import target_counts as _target_counts  # noqa: E402
 _EFFECT_PATTERNS += _target_counts.EFFECT_PATTERNS
+from .. import bounce_own as _bounce_own  # noqa: E402
+_EFFECT_PATTERNS += _bounce_own.EFFECT_PATTERNS

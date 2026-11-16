@@ -93,6 +93,23 @@ class Games(unittest.TestCase):
         self.assertIn(theirs, legal)
         self.assertNotIn(mine, legal)
 
+    def test_defending_player_of_another_players_attacker(self):
+        """'Whenever a creature attacks, you may have it deal 1 damage to each creature defending player controls':
+        the defending player is the attacker's, not "an opponent" of the trigger's controller."""
+        watch = card("Test Watch", "{2}", "Enchantment", "Whenever a creature attacks, you may have it deal 1 damage "
+                     "to each creature defending player controls.")
+        self.assertEqual(watch.unsupported, [])
+        self.put(self.a, watch)
+        mine = self.put(self.a, card("Test Elf", "{G}", "Creature — Elf", "", 1, 1))
+        ogre = self.put(self.b, card("Test Ogre", "{2}{R}", "Creature — Ogre", "", 3, 3))
+        bystander = self.put(self.b, card("Test Imp", "{B}", "Creature — Imp", "", 1, 1))
+        self.game.active_idx = 1
+        self.b.ai.attack = [ogre]
+        self.game.combat(self.b, self.a)
+        self.game.settle()
+        self.assertNotIn(mine, self.a.battlefield)          # a is the defending player: its Elf takes the 1
+        self.assertIn(bystander, self.b.battlefield)        # the attacker's own side is untouched
+
 
 if __name__ == "__main__":
     unittest.main()

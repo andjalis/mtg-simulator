@@ -11,13 +11,24 @@ cx_grammar_quantity.quantity) as the effect's ``xq``, so the engine scales it at
 destroyed this way" binds to the resolved event result of the preceding effect of the same resolution
 (a ("this_way", verb, noun) spec the engine reads from the resolving item), never to a global count.
 Anything whose quantity has no fixed referent stays unmatched (NO_MATCH) so it remains visible.
+
+Two-sentence wordings are rewritten into those forms first (SUBS):
+
+    Choose a color. Add one mana of that color for each charge counter on ~.        (Astral Cornucopia)
+    Choose a color. Add an amount of mana of that color equal to your devotion to that color.   (Nyx Lotus)
+    Reveal any number of artifact cards in your hand. Add {C}{C} for each card revealed this way.  (Metalworker)
+
+Revealing costs nothing, so every matching card is revealed: the count is the matching cards in hand. "Your
+devotion to that color" counts the colour chosen, so the colour is chosen for the most devotion (add_mana's
+data["devotion_choice"]).
 """
 from __future__ import annotations
 
 import re
 
 _WUBRG = ["W", "U", "B", "R", "G"]
-_SYMS = r"\{[WUBRGC]\}(?: or \{[WUBRGC]\})*"
+_SYMS = (r"(?:\{[WUBRGC]\}(?: or \{[WUBRGC]\})*|"                 # "{B}", "{B} or {G}"
+         + "|".join(rf"\{{{c}\}}(?:\{{{c}\}})+" for c in "WUBRGC") + ")")   # "{C}{C}": that much per counted thing
 # "for each <thing> removed/destroyed this way": only bare nouns the producers actually record.
 _THIS_WAY_Q = r"(?:[\w+/-]+ counters?|(?:nonland )?permanents?|creatures?|artifacts?|enchantments?|lands?)"
 _VERB = r"(?P<verb>removed|destroyed)"
@@ -31,8 +42,8 @@ def _effect(*args, **kwargs):
 def _colors(syms: str) -> dict:
     """data colours for "{B}" (one fixed colour) vs "{B} or {G}" (one choice, made once)."""
     found = re.findall(r"[WUBRGC]", syms)
-    if len(found) == 1:
-        return {"colors": found}
+    if len(found) == 1 or " or " not in syms:
+        return {"colors": found}           # "{C}{C} for each card": two of it per counted thing
     return {"colors": [], "choice": found}
 
 
@@ -77,7 +88,18 @@ def _counted(m):
     return _effect("add_mana", 1, data=data)
 
 
+SUBS = [
+    (re.compile(r"Choose a color\. Add one mana of that color for each ", re.I), "Add one mana of any one color for each "),
+    (re.compile(r"Choose a color\. Add an amount of mana of that color equal to your devotion to that color", re.I),
+     "Add an amount of mana of any one color equal to your devotion to that color"),
+    (re.compile(r"Reveal any number of ([\w-]+(?: [\w-]+)?) cards (?:in|from) your hand\. Add ((?:\{[WUBRGC]\})+) for "
+                r"each card revealed this way", re.I), r"Add \2 for each \1 card in your hand"),
+]
+
+
 EFFECT_PATTERNS = [
+    (r"add an amount of mana of any one color equal to your devotion to that color",
+     lambda m: _effect("add_mana", 1, data={"colors": [], "choice": list(_WUBRG), "devotion_choice": True})),
     (rf"add (?P<syms>{_SYMS}) for each (?P<q>{_THIS_WAY_Q}) {_VERB} this way", _this_way),
     (rf"add one mana of any (?:one )?color for each (?P<q>{_THIS_WAY_Q}) {_VERB} this way",
      lambda m: _this_way(dict(m.groupdict(), syms=""))),

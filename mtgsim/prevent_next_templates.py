@@ -12,8 +12,11 @@ Everything becomes the existing ``prevent_next`` effect: the kind handler adds t
 (engine/kinds/stats.py), Game.deal_damage consumes it, the cleanup step expires it, and the damage_prevented
 event carries the prevented amount for "... this way" riders.
 
-Source filters are deliberately refused: "dealt by ~" (Barbed Wire) or "by a source of your choice" (Healing
-Grace) pick out the damage's source, which a shield on the recipient cannot express. "Any number of targets,
+A qualified single target the grammar's object reader understands ("target Cleric or Wizard creature", "target
+green creature") becomes ``prevent_next`` on a creature with that selector. "Dealt by ~" (Barbed Wire) and "the next
+N combat damage" (Decorated Griffin) pick out the damage's source or kind, which a shield on the recipient cannot
+express: they become cx_shields rules with a budget instead. "By a source of your choice" (Healing Grace) is still
+refused. "Any number of targets,
 divided as you choose" (Embolden) and granted abilities (Cautery Sliver) are separate mechanics and also stay
 unmatched.
 """
@@ -58,6 +61,45 @@ def _shield(m):
     return Effect("prevent_next", amount, target=kind, data=dict(data, **extra))
 
 
+# Any other single "target <qualified> creature" the grammar's object reader understands ("target Cleric or Wizard
+# creature", "target green creature"): target "creature" with that selector / description (#333).
+_QUALIFIED = (r"prevent the next (?P<n>\d+|x) damage that would be dealt(?: to target (?P<d>[\w' -]+? creature) this turn"
+              r"| this turn to target (?P<d2>[\w' -]+? creature))")
+
+
+def _qualified(m):
+    from .cards import Effect, NO_MATCH
+    from .cx_grammar import object_phrase
+    obj = object_phrase("target " + (m["d"] or m["d2"]))
+    if obj is None or obj.kind != "permanent" or obj.target != "permanent" or obj.copies != 1 \
+            or not obj.data or set(obj.data) - {"selector", "cx_desc"}:
+        return NO_MATCH
+    spec = obj.data.get("selector")
+    if spec is not None and ("creature" not in spec.get("types_all", ()) or spec.get("other")):
+        return NO_MATCH
+    n = m["n"]
+    data = dict(obj.data, **({"x": True} if n.lower() == "x" else {}))
+    return Effect("prevent_next", 0 if n.lower() == "x" else int(n), target="creature", data=data)
+
+
+def _budget_shield(combat, to, by):
+    """"Prevent the next N combat damage that would be dealt to you this turn" (Decorated Griffin), "Prevent the next
+    N damage that would be dealt by ~ this turn" (Barbed Wire): a cx_shields rule with a budget, which filters on
+    combat and on the damage's source, so neither needs a shield on the recipient (#333)."""
+    def make(m):
+        from .cards import Effect
+        rule = {"combat": combat, "to": to, "by": by, "budget": int(m["n"])}
+        return Effect("cx_shield", target="none", data={"rule": rule, "side": "mine"})
+    return make
+
+
 EFFECT_PATTERNS = [
     (_NEXT, _shield),
+    (_QUALIFIED, _qualified),
+    (r"prevent the next (?P<n>\d+) combat damage that would be dealt to you this turn", _budget_shield(True, ("you",),
+                                                                                                    ("any",))),
+    (r"prevent the next (?P<n>\d+) combat damage that would be dealt to ~ this turn", _budget_shield(True, ("self",),
+                                                                                                  ("any",))),
+    (r"prevent the next (?P<n>\d+) damage that would be dealt by ~ this turn", _budget_shield(None, ("any",),
+                                                                                           ("self",))),
 ]

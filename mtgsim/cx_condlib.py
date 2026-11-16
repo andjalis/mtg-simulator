@@ -40,6 +40,17 @@ def _n(word: str) -> int:
     return int(word) if word.isdigit() else _WORDS[word]
 
 
+def _paid(item, source):
+    """Whose payment a mana-spent condition reads: the resolving spell, else the spell a trigger fired on ("When you
+    cast this spell, if {C} was spent to cast it": the context), else the permanent the spell became."""
+    if getattr(item, "is_spell", False):
+        return item
+    ctx = getattr(item, "context", None)
+    if getattr(ctx, "is_spell", False):
+        return ctx
+    return source
+
+
 def _tuple(x):
     """A quantity spec back from its JSON list form (nested lists become tuples)."""
     return tuple(_tuple(v) for v in x) if isinstance(x, list) else x
@@ -298,6 +309,7 @@ _ALIASES = {
     "it's not your turn": "!your_turn",
     "it isn't your turn": "!your_turn",
     "you weren't the starting player": "lib:[\"not_starting\"]",
+    "you aren't the starting player": "lib:[\"not_starting\"]",
     "you were the starting player": "lib:[\"starting\"]",
     "it was kicked": "lib:[\"kicked\"]",
     "~ was kicked": "lib:[\"kicked\"]",
@@ -723,10 +735,18 @@ def _prev_was(m):
 
 
 @rule(rf"(?:its|that card's|that creature's|that spell's|that permanent's) mana value (?:was|is) (?P<n>{_NUM}) or "
-      r"(?P<d>less|fewer|greater|more)|(?:it|that card) had mana value (?P<n2>\d+) or (?P<d2>less|greater)")
+      r"(?P<d>less|fewer|greater|more)|(?:it|that card) had mana value (?P<n2>\d+) or (?P<d2>less|greater)|"
+      rf"that spell has mana value (?P<n3>{_NUM}) or (?P<d3>less|greater)")
 def _prev_mv(m):
-    n, d = (m["n"], m["d"]) if m["n"] else (m["n2"], m["d2"])
+    n, d = (m["n"], m["d"]) if m["n"] else (m["n2"], m["d2"]) if m["n2"] else (m["n3"], m["d3"])
     return _code("prev_is", {"mv": [">=" if d in ("greater", "more") else "<=", _n(n)]})
+
+
+@rule(rf"that spell's (?P<s>power|toughness) (?:was|is) (?P<n>{_NUM}) or (?P<d>less|greater|more)")
+def _spell_pt(m):
+    """"If that spell's power is 4 or greater" (Eshki): the printed power of the spell a cast trigger fired on or a
+    counterspell targeted (#317)."""
+    return _code("prev_is", {"spell_" + m["s"].lower(): [">=" if m["d"] != "less" else "<=", _n(m["n"])]})
 
 
 @rule(rf"(?:it|that creature) had (?P<q>{_NUM}|{_NUM} or more|no) (?P<c>\+1/\+1|-1/-1|[a-z]+) counters? on it")
@@ -760,6 +780,14 @@ def _cast_from(m):
 def _spent_color(m):
     """"If {G} was spent to cast it": a mana of that colour paid the spell (the colours the payment recorded)."""
     return _code("spent_color", m["c"].upper())
+
+
+@rule(r"\{C\} (?P<neg>was|wasn't) spent to cast (?:~|it|this spell)")
+def _spent_colorless(m):
+    """"if {C} was / wasn't spent to cast it" (Drowner of Truth, Wumpus Aberration): colourless mana paid part of
+    the spell. Read from the payment's per-type counts, as "at least N colorless mana" is."""
+    code = _code("mana_color", "C", 1)
+    return code if m["neg"] == "was" else _code("not", code)
 
 
 @rule(r"~ is (?:a|an) (?P<f>[\w ,/-]+?)")
@@ -1082,7 +1110,11 @@ def check(game, p, code: str, item=None, source=None, prev=None):
             item._resolve_count = count
         return count == args[0]
     if kind == "prev_is":
-        from .engine.state import Permanent
+        from .engine.state import Permanent, StackItem
+        spell = prev if isinstance(prev, StackItem) else getattr(item, "context", None)
+        if not isinstance(prev, Permanent) and isinstance(spell, StackItem) and spell.card is not None \
+                and not args[0].get("state"):
+            return _spell_ok(spell, args[0])      # "that spell": a cast trigger's spell or a countered one (#317)
         obj = prev if isinstance(prev, Permanent) else getattr(item, "context", None)
         if prev is None and obj is None and item is not None:
             from .cx_delayed import _fresh       # "put an artifact card onto the battlefield. If it's an Equipment, ..."
@@ -1112,7 +1144,7 @@ def check(game, p, code: str, item=None, source=None, prev=None):
             return spell is not None and game.active is p and game.step in ("main1", "main2")
         if kind == "cast_zone":
             return getattr(spell if spell is not None else source, "cast_zone", None) == args[0]
-        return args[0] in getattr(spell if spell is not None else source, "mana_colors", ())
+        return args[0] in getattr(_paid(item, source), "mana_colors", ())
     if kind == "unless_unpaid":          # "B unless <payer> pays ...": the cx_unless just before B wasn't paid
         return not getattr(item, "cx_unless_paid", False)
     if kind == "ref_is":
@@ -1235,12 +1267,12 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         n = prev.card.cmc if args[0] == "mana value" else getattr(prev, args[0], 0)
         return n <= game.x_quantity(p, _tuple(args[1]), item, prev)
     if kind in ("mana_same", "mana_ncolors"):
-        src = item if getattr(item, "is_spell", False) else source
+        src = _paid(item, source)
         if kind == "mana_ncolors":
             return len(set(getattr(src, "mana_colors", ())) & set("WUBRG")) >= args[0]
         return max((n for c, n in getattr(src, "mana_by_color", {}).items() if c in "WUBRG"), default=0) >= args[0]
     if kind == "mana_color":
-        src = item if getattr(item, "is_spell", False) else source
+        src = _paid(item, source)
         return getattr(src, "mana_by_color", {}).get(args[0], 0) >= args[1]
     if kind == "x":
         x = getattr(item, "x", None)
@@ -1324,3 +1356,22 @@ def holds_for(source, code: str, ref=None) -> bool:
 
 from .cx_static_cond import RULES as _STATIC_RULES  # noqa: E402  (devotion, most common color)
 _RULES.extend((re.compile(pattern, re.I), build) for pattern, build in _STATIC_RULES)
+
+
+def _spell_ok(spell, spec) -> bool:
+    """prev_is for a spell on the stack (or just countered): its mana value counts X (rule 202.3b), power and
+    toughness are the printed ones, everything else is the card's."""
+    card = spell.card
+    spec = dict(spec)
+    if "mv" in spec:
+        x = getattr(spell, "x", 0) or 0
+        mv = card.cmc + x * (card.mana_cost.get("X", 0) if isinstance(card.mana_cost, dict) else 0)
+        if not _cmp(mv, *spec.pop("mv")):
+            return False
+    for stat in ("power", "toughness"):
+        want = spec.pop("spell_" + stat, None)
+        if want is not None:
+            value = getattr(card, stat, None)
+            if value is None or not _cmp(int(value or 0), *want):
+                return False
+    return _card_ok(card, spec) if spec else True
