@@ -56,7 +56,7 @@ class BattlefieldMixin:
 
     def enter_battlefield(self, p: Player, card: CardDef, tapped_attacking: bool = False, x: int = 0,
                           *, tapped: bool = False, counters: dict | None = None,
-                          physical_card: CardDef | None = None) -> Permanent:
+                          physical_card: CardDef | None = None, hidden: CardDef | None = None) -> Permanent:
         from ..residual_templates import blocked_entry
         if blocked_entry(self, card, physical_card):
             return None
@@ -66,6 +66,8 @@ class BattlefieldMixin:
         card, front = copies.clone_on_enter(self, p, card)
         counters = copies.clone_entry_counters(card, front, x, counters, self, p)
         perm = Permanent(card, p)
+        if hidden is not None:      # enters face down (CR 708.3): its enters triggers see a face-down 2/2
+            perm.hidden = hidden
         perm.front = instance(physical_card if physical_card is not None else front, p)
         perm.owner = perm.front.owner
         pending = perm.front.pending_move

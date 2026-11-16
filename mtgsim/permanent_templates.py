@@ -186,7 +186,7 @@ _OUTLAWS = ['assassin', 'mercenary', 'pirate', 'rogue', 'warlock']     # rule 70
 _TRAITS = frozenset((
     'tapped', 'untapped', 'attacking', 'blocking', 'legendary', 'nonlegendary', 'token', 'nontoken',
     'nonland', 'noncreature', 'nonartifact', 'colorless', 'multicolored', 'monocolored',
-    'suspected', 'snow', 'nonsnow', 'face-up'))
+    'suspected', 'snow', 'nonsnow', 'face-up', 'transformed'))     # transformed: #635
 _IRREGULAR = {'elves': 'Elf', 'dwarves': 'Dwarf', 'wolves': 'Wolf'}
 
 
@@ -516,6 +516,14 @@ def matches(game, permanent, spec, controller, source=None):
             return False
         if trait == 'face-up' and getattr(permanent, 'hidden', None) is not None:
             return False        # face down: manifested / morphed / disguised (Permanent.hidden) (#540)
+        if trait == 'face-down' and getattr(permanent, 'hidden', None) is None:
+            return False        # (#635)
+        if trait == 'transformed':      # its back face is up: transformed from its front (#635)
+            front = getattr(permanent, 'front_face', None)
+            if front is None or front.back is not permanent.card:
+                return False
+        if trait == 'morph' and not any(a.kind in ('morph', 'megamorph', 'disguise') for a in permanent.card.alt_costs):
+            return False        # "with a morph ability": the face-up card's own (a face-down one has none, #635)
         if trait.startswith('non') and trait[3:] in _TYPES and has_type(trait[3:]):
             return False
         if trait == 'colorless' and permanent.card.colors or trait == 'multicolored' and len(permanent.card.colors) < 2 or trait == 'monocolored' and len(permanent.card.colors) != 1:

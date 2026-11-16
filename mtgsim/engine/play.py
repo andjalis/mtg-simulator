@@ -392,6 +392,8 @@ class PlayMixin:
             copies.on_cast(self, p, item)
             cast_triggers.on_cast(self, p, item)
             alt_casts.replicated(self, p, item, kind)
+            if kind in ("disguise", "morph", "megamorph"):
+                p.face_down_cast_turn = self.turn      # "the first face-down creature spell you cast each turn" (#635)
             for trig in card.cast_self_triggers:
                 self.queue_trigger(p, trig.effects, None, f"{card.name}: cast trigger", context=item)
             if self.spells_cast.get(p.name) == 2:

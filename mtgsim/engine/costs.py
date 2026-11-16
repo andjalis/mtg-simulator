@@ -589,8 +589,14 @@ class CostsMixin:
         elif card.cost_reduction == "party":
             # "This spell costs {1} less to cast for each creature in your party" (Coveted Prize)
             n = self.party_size(p)
+        face_down = any(flt.startswith("face_down") for x in p.battlefield for flt, _ in x.card.cost_discount) \
+            and self._origin(card)[1] in FACE_DOWN          # cast face down (#635)
         for x in p.battlefield:
             for flt, k in x.card.cost_discount:
+                if flt == "face_down" or flt == "face_down_first":
+                    if face_down and (flt == "face_down" or getattr(p, "face_down_cast_turn", None) != self.turn):
+                        n += k
+                    continue
                 if flt.startswith("has_adventure:"):
                     scope = flt.split(":", 1)[1]
                     if card.adventure is not None and (scope == "all" or scope == "permanent" and card.is_permanent or
