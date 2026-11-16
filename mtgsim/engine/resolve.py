@@ -4,7 +4,7 @@ from __future__ import annotations
 import dataclasses
 from contextlib import nullcontext
 
-from .. import counting
+from .. import counting, this_way
 from ..cards import Effect
 from .state import Permanent, Player, StackItem
 from .kinds import HANDLERS, NO_SBA
@@ -53,6 +53,7 @@ class ResolveMixin:
             elif target is None and isinstance(ctx, Player) and eff.data.get("cast_spell") is not None:
                 target = ctx
         k = eff.kind
+        this_way.start(self, item, eff)     # "... this way": the previous effect's results (#642)
         tw = getattr(item, "this_way", None) if item is not None else None
         if eff.data.get("that_much") and not eff.amount and tw is not None and tw[0] == "sacrificed" \
                 and getattr(self, "event_amount", None) is None:

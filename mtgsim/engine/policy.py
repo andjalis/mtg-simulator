@@ -233,7 +233,7 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return max(theirs, key=perm_value, default=None)
     if k == "shrink":
         return max(theirs, key=perm_value, default=None)
-    if k in ("destroy", "debuff_one", "bounce"):
+    if k in ("destroy", "debuff_one", "bounce", "tuck_perm", "tuck_top", "cx_tuck"):     # tucks: removal too (#716)
         if k == "debuff_one":
             theirs = [x for x in theirs if x.toughness <= eff.amount2]
         theirs = [x for x in theirs if not (k == "destroy" and x.has("indestructible"))]
@@ -414,6 +414,12 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
                 v = hand_put.value(game, me, e, game.target_source)
                 if v <= 0 and all(x.kind in ("pay_gate", "hand_to_battlefield") for x in effects):
                     return -1          # nothing in hand it could put: don't spend the activation on it alone
+                total += v
+            elif k == "attach_self":           # "Equip—Pay 3 life." (#646): only a move to a better creature counts
+                from ..auras import attach_value
+                v = attach_value(game, me, tgt)
+                if v <= 0:
+                    return -1
                 total += v
             elif k == "hand_free_cast":       # nothing in hand to cast: not worth an activation (#625)
                 from ..free_cast import value as free_value
@@ -968,10 +974,10 @@ def use_abilities(game: Game, me: Player):
             game.activate(me, h, "sac_debuff")
     play_extra_lands(game, me)
     equip_all(game, me)
-    if game.step == "main1":    # "can't be blocked this turn" before combat
+    if game.step == "main1":    # "can't be blocked this turn" and non-mana Equip costs (#646) before combat
         for perm in list(me.battlefield):
             for i, act in enumerate(perm.activated):
-                if act.kind == "ability" and act.effects and act.effects[0].kind == "unblockable" and \
+                if act.kind == "ability" and act.effects and act.effects[0].kind in ("unblockable", "attach_self") and \
                         perm in me.battlefield and ability_worth(game, me, perm, i):
                     game.activate(me, perm, f"ability:{i}")
                 elif act.kind == "ability" and act.effects and act.effects[0].kind == "cx_animate" and \
