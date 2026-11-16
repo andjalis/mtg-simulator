@@ -202,10 +202,10 @@ def selector(text, *, plural=False):
         text = text[:other.start()]
     text = re.sub(r'(\bnon[a-z]+), (?=non[a-z]+\b)', r'\1 ', text, flags=re.I)    # "nonland, nontoken permanent"
     # "creatures you control of the chosen type" (#627): the source's chosen creature type (perm.chosen_type)
-    chosen = re.search(r" of the chosen (?:creature )?type(?= you control| your opponents control| an opponent controls|$)",
-                       text, re.I)
+    chosen = re.search(r" (that aren't )?of the chosen (?:creature )?type(?= you control| your opponents control|"
+                       r" an opponent controls|$)", text, re.I)
     if chosen:
-        result['chosen_type'] = True
+        result['chosen_type'] = 'not' if chosen[1] else True
         text = text[:chosen.start()] + text[chosen.end():]
     # "creatures named Paper Tiger", "other creatures you control named ~", "creature named ~ you control" (#314):
     # a name, read up to a controller / zone phrase or the end ("~" is the source's own name)
@@ -359,9 +359,13 @@ def matches(game, permanent, spec, controller, source=None):
     if spec.get('other') and permanent is source:
         return False
     if spec.get('chosen_type'):
-        typ = getattr(source, 'chosen_type', '')
-        if not typ or not (typ.lower() in {s.lower() for s in permanent.card.subtypes}
-                           or permanent.card.changeling and permanent.is_creature):
+        from .cx_chosen_type import type_of
+        typ = type_of(game, source)
+        if not typ:
+            return False
+        of_type = typ.lower() in {s.lower() for s in permanent.card.subtypes} or \
+            permanent.card.changeling and permanent.is_creature
+        if of_type != (spec['chosen_type'] is True):
             return False
     if 'name' in spec and not _named(permanent, spec['name'], source):
         return False

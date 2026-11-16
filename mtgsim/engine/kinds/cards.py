@@ -655,3 +655,10 @@ def conjure(game, p, eff, **_):
     if dest == "library" and eff.data.get("shuffle"):
         p.library.shuffle(game.rng)
     game.log(f"conjures {name} into {dest}" if dest != "battlefield" else f"conjures {name}", p)
+
+
+@kind("choose_ctype")
+def choose_ctype(game, p, eff, item=None, **_):
+    """"Choose a creature type." on resolution: the pick is kept on the stack item (mtgsim.cx_chosen_type)."""
+    from ...cx_chosen_type import choose
+    choose(game, p, item, eff.data.get("hostile", False))

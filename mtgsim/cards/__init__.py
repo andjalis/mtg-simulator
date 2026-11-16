@@ -272,3 +272,6 @@ from .. import bounce_own as _bounce_own  # noqa: E402
 _EFFECT_PATTERNS += _bounce_own.EFFECT_PATTERNS
 from .. import free_cast as _free_cast  # noqa: E402  "cast a spell from your hand without paying its mana cost" (#625)
 _EFFECT_PATTERNS += _free_cast.EFFECT_PATTERNS
+from .. import cx_chosen_type as _cx_chosen_type  # noqa: E402  "Choose a creature type." on resolution (#627)
+_SUBS[:0] = _cx_chosen_type.SUBS
+_EFFECT_PATTERNS[:0] = _cx_chosen_type.EFFECT_PATTERNS
