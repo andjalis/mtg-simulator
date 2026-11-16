@@ -621,7 +621,17 @@ class Permanent:
         if self.card.ward_untapped_only and self.tapped:
             return 0
         return max([self.card.ward] + [e.card.equip_ward for e in self.equipment] +
-                   [a.card.equip_ward for a in self.auras])
+                   [a.card.equip_ward for a in self.auras] + self._group_ward())
+
+    def _group_ward(self) -> list:
+        """Ward from "Other creatures you control have ward {1}" statics on the battlefield."""
+        game = getattr(self.controller, '_game', None)
+        if game is None:
+            return []
+        from ..permanent_templates import matches
+        return [n for player in game.players for source in player.battlefield if not source.abilities_suppressed
+                for spec, n in source.card.advanced_rules.get('static_ward', ())
+                if matches(game, self, spec, source.controller, source)]
 
     def can_attack(self):
         return (self.is_creature and not self.tapped and self.detained_by is None and not (self.has("defender") and not self.has("attacks_despite_defender")) and not self.has("cant_attack_now") and not (self.card.cant_attack and not self.abilities_suppressed)
@@ -695,7 +705,7 @@ def pool_mana(color: str) -> CardDef:
     return _POOL_MANA[color]
 
 
-OUTLAWS = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock", "Wizard")
+OUTLAWS = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock")     # rule 700.12 (Wizards are not outlaws)
 
 
 class Player:
