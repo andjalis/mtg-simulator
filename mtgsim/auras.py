@@ -141,7 +141,8 @@ def finish(extra: dict, triggers=()):
     if extra.get("aura"):
         b = extra.get("equip_bonus", (0, 0))
         extra["aura_hostile"] = bool(extra.get("aura_flags")) or b[0] < 0 or b[1] < 0 or \
-            extra["aura"] in ("creature an opponent controls", "player") or gated or _punisher(extra, triggers)
+            extra["aura"] in ("creature an opponent controls", "player") or gated or _punisher(extra, triggers) or \
+            bool((extra.get("advanced_rules") or {}).get("aura_control"))      # Control Magic: steal theirs (#825)
 
 
 def _punisher(extra: dict, triggers) -> bool:
@@ -155,7 +156,9 @@ def _punisher(extra: dict, triggers) -> bool:
     for t in triggers:
         host = t.event == "host_upkeep" or t.event.startswith("ev:") and "enchanted" in (t.filter or "")
         for e in t.effects:
-            if host and (e.kind in ("damage", "lose_life") and e.target == "that_player"
+            if t.event == "upkeep" and e.kind == "bounce" and e.target == "host":
+                harms = True        # "At the beginning of your upkeep, return enchanted creature ..." (Mark of Eviction, #803)
+            elif host and (e.kind in ("damage", "lose_life") and e.target == "that_player"
                          or e.kind == "cx_damage" and e.data.get("who") == "controller" and e.target == "none"
                          or e.kind == "destroy" and e.target == "prev"):
                 harms = True
