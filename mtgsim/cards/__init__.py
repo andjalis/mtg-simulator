@@ -294,6 +294,8 @@ from .. import zone_exile as _zone_exile  # noqa: E402
 _EFFECT_PATTERNS += _zone_exile.EFFECT_PATTERNS
 from .. import give_control as _give_control  # noqa: E402
 _EFFECT_PATTERNS += _give_control.EFFECT_PATTERNS
+from .. import life_total as _life_total  # noqa: E402
+_EFFECT_PATTERNS += _life_total.EFFECT_PATTERNS
 from .. import free_cast as _free_cast  # noqa: E402  "cast a spell from your hand without paying its mana cost" (#625)
 _EFFECT_PATTERNS += _free_cast.EFFECT_PATTERNS
 from .. import cx_dmg_equal as _cx_dmg_equal  # noqa: E402  damage equal to a quantity (#626)
