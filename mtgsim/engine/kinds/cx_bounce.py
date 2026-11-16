@@ -5,11 +5,16 @@ from . import kind
 
 
 @kind("bounce_choice")
-def bounce_choice(game, p, eff, item, opp, **_):
+def bounce_choice(game, p, eff, item, opp, target=None, **_):
     """Each named player returns one permanent of theirs that fits the selector: the cheapest (a tapped land
-    first, the source itself last), as for the other choose-your-own effects."""
+    first, the source itself last), as for the other choose-your-own effects. "named": the player a grammar
+    ``cx_players`` wrapper hands over ("that player returns a land they control", cx_grammar_bounce)."""
+    from ..state import Player
     src = item.source if item is not None else None
-    who = {"you": [p], "each": [p, opp], "opponents": [opp]}[eff.data["who"]]
+    if eff.data["who"] == "named":
+        who = [target] if isinstance(target, Player) else []
+    else:
+        who = {"you": [p], "each": [p, opp], "opponents": [opp]}[eff.data["who"]]
     for player in who:
         pool = [x for x in player.battlefield if permanent_templates.matches(game, x, eff.data["selector"], player, src)]
         if not pool:
@@ -32,3 +37,14 @@ def shuffle_zones_in(game, p, eff, opp, **_):
                 who.library.append(card)
         who.library.shuffle(game.rng)
         game.log(f"{who} shuffles their hand{' and graveyard' if eff.data.get('graveyard') else ''} into their library", p)
+
+
+@kind("source_card_to_hand")
+def source_card_to_hand(game, item, **_):
+    """"Return this card to its owner's hand" after it left the battlefield (Angelic Destiny's Aura, Weatherseed
+    Totem): the source's own card, from its owner's graveyard. Gone elsewhere (exile, a token): nothing happens."""
+    from ..state import Permanent
+    from .permanents import _from_graveyard
+    src = item.source if item is not None else None
+    if isinstance(src, Permanent) and src not in src.controller.battlefield:
+        _from_graveyard(game, src)      # the card it became, if it is still where it went (CR 400.7)

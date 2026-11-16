@@ -284,6 +284,7 @@ class EffectsMixin:
         controller, owner = perm.controller, perm.owner
         perm.last_pt = before.power or 0, before.toughness or 0
         perm.front.pending_move = (before, "battlefield", controller, perm, intent.applied)
+        perm.left_replacements = intent.applied       # which replacements moved it ("When you do", #407)
         controller.battlefield.remove(perm)
         self._residual_source_index = None
         from ..cx_type_grants import changed as type_grants_changed
@@ -470,6 +471,9 @@ class EffectsMixin:
             return
         if perm.last_destination != "graveyard":
             self.log(f"{perm.card.name} is exiled instead of dying", perm.controller)
+            if "would-die-exile" in getattr(perm, "left_replacements", ()):
+                from ..cx_replace import when_you_do      # "... exile it instead. When you do, ..." (#407)
+                when_you_do(self, perm)
             return
         if was_creature and getattr(counter_sources, "suppresses_death", False):
             self.creature_died_turn = True

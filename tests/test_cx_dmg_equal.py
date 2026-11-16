@@ -210,3 +210,87 @@ class AIActivates(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class Referents(unittest.TestCase):
+    """"Equal to that creature's power to the creature's controller", "to that creature's controller equal to ~'s
+    power": the object the effect before it acted on (or the trigger's creature), read as it last was."""
+    NAMES = ("Agonizing Demise", "Creature Bond", "Word of Blasting", "Viashino Heretic", "Meglonoth",
+             "Eshki, Temur's Roar")
+
+    def test_full(self):
+        cards = db()
+        for name in self.NAMES:
+            with self.subTest(name=name):
+                c = cards.get(name)
+                self.assertEqual((c.unsupported, c.approximations), ([], []))
+
+    def test_refusals(self):
+        for s in ("~ deals damage equal to that creature's power to each opponent.",          # whose "that creature"?
+                  "~ deals damage equal to that permanent's mana value to target creature.",  # prev = its target
+                  "~ deals damage equal to that creature's power to target opponent.",
+                  "~ deals damage equal to that Foo's power to the Foo's controller."):
+            with self.subTest(s=s):
+                self.assertTrue(ignored(s), s)
+
+    def test_word_of_blasting_hits_the_walls_controller(self):
+        game, a, b = arena(HeuristicAI)
+        wall = game.enter_battlefield(b, card("Test Wall", "{3}{W}", "Creature — Wall", "Defender", 0, 6))
+        spell = db().get("Word of Blasting")
+        game.stack.append(StackItem(a, list(spell.spell_effects), [wall] * len(spell.spell_effects), card=spell,
+                                    name=spell.name))
+        game.resolve_top()
+        self.assertNotIn(wall, b.battlefield)
+        self.assertEqual((a.life, b.life), (20, 16))
+
+    def test_viashino_heretic(self):
+        game, a, b = arena(HeuristicAI)
+        heretic = game.enter_battlefield(a, db().get("Viashino Heretic"))
+        heretic.sick = False
+        for _ in range(2):
+            game.enter_battlefield(a, MOUNTAIN)
+        relic = game.enter_battlefield(b, card("Test Relic", "{5}", "Artifact", ""))
+        self.assertTrue(game.activate_ability(a, heretic, 0, [relic, None]))
+        game.settle()
+        self.assertNotIn(relic, b.battlefield)
+        self.assertEqual((a.life, b.life), (20, 15))
+
+    def test_creature_bond_uses_its_last_toughness(self):
+        game, a, b = arena(HeuristicAI)
+        ogre = game.enter_battlefield(b, OGRE)
+        ogre.counters["+1/+1"] = 1                              # 4/4 when it dies
+        bond = game.enter_battlefield(a, db().get("Creature Bond"))
+        bond.aura_host = ogre
+        ogre.auras.append(bond)
+        game.destroy(ogre)
+        game.settle()
+        self.assertNotIn(ogre, b.battlefield)
+        self.assertEqual((a.life, b.life), (20, 16))
+
+    def test_meglonoth_hits_the_attackers_controller(self):
+        from tests.test_combat_triggers import Scripted
+        game, a, b = arena(Scripted)
+        game.turn, game.step = 2, "main1"
+        bear = game.enter_battlefield(a, BEAR)
+        bear.sick = False
+        meglonoth = game.enter_battlefield(b, db().get("Meglonoth"))
+        a.ai.attack, b.ai.block = [bear], {bear: [meglonoth]}
+        game.combat(a, b)
+        game.settle()
+        self.assertEqual((a.life, b.life), (14, 20))            # Meglonoth's power, to the attacker's controller
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class Kicked(unittest.TestCase):
+    def test_agonizing_demise_kicked_hits_the_controller_for_its_power(self):
+        game, a, b = arena(HeuristicAI)
+        ogre = game.enter_battlefield(b, OGRE)
+        ogre.counters["+1/+1"] = 2                              # 5 power as it was destroyed
+        spell = db().get("Agonizing Demise")
+        kicked = next(alt for alt in spell.alt_costs if alt.kind == "kicker").effects
+        game.stack.append(StackItem(a, list(kicked), [ogre] + [None] * (len(kicked) - 1), card=spell,
+                                    name=spell.name))
+        game.resolve_top()
+        self.assertNotIn(ogre, b.battlefield)
+        self.assertEqual((a.life, b.life), (20, 15))
