@@ -229,6 +229,11 @@ def schedule(game, p, eff, prev, item):
         objs = _fresh(game, item)
     else:
         fresh = _fresh(game, item)
+        if isinstance(prev, Permanent) and prev not in prev.controller.battlefield:
+            # "return it to the battlefield ... Sacrifice it at the beginning of your next end step" (Come Back
+            # Wrong): the card came back as a new object (CR 400.7), the one "it" names now (#635)
+            back = [x for x in fresh if getattr(x, "front", None) is getattr(prev, "front", object())]
+            prev = back[-1] if back else prev
         objs = [prev] if isinstance(prev, Permanent) else fresh[-1:]
     if not objs:
         return
