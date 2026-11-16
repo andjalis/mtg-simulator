@@ -1438,6 +1438,11 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         if kind == "mana_ncolors":
             return len(set(getattr(src, "mana_colors", ())) & set("WUBRG")) >= args[0]
         return max((n for c, n in getattr(src, "mana_by_color", {}).items() if c in "WUBRG"), default=0) >= args[0]
+    if kind == "flips_all":       # "if both coins come up heads / tails" (chance_each): every coin flipped this way
+        won, lost = getattr(item, "flips_won", 0), getattr(item, "flips_lost", 0)
+        return won + lost > 0 and (lost if args[0] == "won" else won) == 0
+    if kind == "flips_clean":     # "if you win N or more flips" after "if you lose a flip, ~ has no effect"
+        return getattr(item, "flips_lost", 0) == 0 and getattr(item, "flips_won", 0) >= args[0]
     if kind == "mana_from":
         return getattr(_paid(item, source), "mana_from", {}).get(args[0], 0) >= args[1]
     if kind == "mana_color":

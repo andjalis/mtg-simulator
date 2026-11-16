@@ -613,6 +613,12 @@ class Permanent:
         if self.card.keyword_at_counters:
             n, kw = self.card.keyword_at_counters
             count += int(kw == keyword and self.p1 >= n)
+        game = getattr(self.controller, "_game", None)
+        if game is not None and keyword in ("exalted", "riot"):     # "<group> have exalted / riot" (#633)
+            from ..permanent_templates import matches
+            count += sum(keyword in kws and matches(game, self, spec, source.controller, source)
+                         for pl in game.players for source in pl.battlefield if not source.abilities_suppressed
+                         for spec, kws in source.card.static_keyword_grants)
         return count
 
     @property

@@ -60,6 +60,10 @@ def parse_rider(s, effects):
     if re.fullmatch(r"if a creature dealt damage this way would die this turn, exile it instead", s, re.I) and last.kind == "damage":
         effects[-1] = dataclasses.replace(last, data=dict(last.data, exile_dying=True))
         return True
+    if re.fullmatch(r"if a permanent dealt damage (?:this way|by ~) would die this turn, exile it instead", s, re.I) and \
+            last.kind == "damage":      # creatures and planeswalkers alike (#407)
+        effects[-1] = dataclasses.replace(last, data=dict(last.data, exile_dying="permanent"))
+        return True
     return False
 
 

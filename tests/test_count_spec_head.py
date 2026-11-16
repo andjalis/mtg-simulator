@@ -29,7 +29,8 @@ class Specs(unittest.TestCase):
         self.assertEqual(_count_spec("card in your hand"), ("hand",))
 
     def test_unknown_phrase_is_refused(self):
-        self.assertIsNone(_count_spec("permanent of the chosen type you control"))
+        # ("permanent of the chosen type you control" is read since #627: the selector key chosen_type)
+        self.assertIsNone(_count_spec("permanent of the frobbed type you control"))
 
 
 class Behaviour(Base):

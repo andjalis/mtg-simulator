@@ -812,9 +812,10 @@ class CostsMixin:
             for c in p.graveyard:      # Lier: every instant and sorcery has flashback for its own mana cost
                 if (c.is_instant or c.is_sorcery) and c not in p.granted_fb:
                     out.append(self._variant(c, "flashback", AltCost("flashback", dict(c.mana_cost))))
+        from ..zone_grants import alts as granted_alts        # "<cards> in your graveyard have flashback" (#633)
         for c in p.graveyard:
             out += alt_casts.graveyard_variants(self, p, c)
-            for a in c.alt_costs:
+            for a in list(c.alt_costs) + granted_alts(self, p, c):
                 if a.kind in ("flashback", "gy_ability", "unearth") or (a.kind == "disturb" and c.back is not None) or \
                         (a.kind == "blitz" and "graveyard" in a.zone) or \
                         (a.kind == "mayhem" and c in p.discarded_cards):

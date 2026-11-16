@@ -161,6 +161,9 @@ class BattlefieldMixin:
                     for t in c.subtypes:
                         types[t] = types.get(t, 0) + 1
             perm.chosen_type = max(types, key=types.get, default="")
+            if card.advanced_rules.get("choose_opp_type"):       # "creatures of the chosen type get -1/-1" (#627)
+                from ..cx_chosen_type import pick_hostile
+                perm.chosen_type = pick_hostile(self, p) or perm.chosen_type
         elif card.choose_type == "land":
             # Shimmer: "As ~ enters, choose a land type. Each land of the chosen type has
             # phasing." The default pick is the opponent's most common basic land type.
@@ -211,7 +214,9 @@ class BattlefieldMixin:
         if card.etb_named_counters:
             n = x if card.etb_named_counters[1] == -1 else card.etb_named_counters[1]    # -1: "enters with X ..."
             if n:
-                perm.counters[card.etb_named_counters[0]] = n
+                from ..cx_counter_choice import pick     # "your choice of a flying counter or a ... counter" (#627)
+                for name in pick(perm, card.etb_named_counters[0]):
+                    perm.counters[name] = n
         roll = as_enters_roll(card, perm.entered_x)
         if roll is not None:
             sides, n, kind = roll

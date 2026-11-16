@@ -728,6 +728,10 @@ def _parse_face(data: dict) -> CardDef:
 
     from ..cx_multi_target import unpaid_x
     unsupported += unpaid_x(cost, spell, modes, triggers, activated, loyalty_abilities, etb, alt_costs, extra)  # #312
+    from ..cx_chosen_type import unbound, hostile
+    unsupported += unbound(oracle, extra, spell, modes, triggers, activated, loyalty_abilities, etb, extra)  # #627
+    if extra.get("choose_type") == "creature" and hostile(oracle):
+        extra.setdefault("advanced_rules", {})["choose_opp_type"] = True
     if data.get("mana_cost") == "" and "Land" not in types:     # no mana cost at all (not {0}): CR 118.6
         extra.setdefault("advanced_rules", {})["no_mana_cost"] = True
     return CardDef(

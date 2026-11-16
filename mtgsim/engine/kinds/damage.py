@@ -38,7 +38,11 @@ def damage(game, p, eff, target, item, opp, cause, **_):
             game.unpreventable_now = False
     else:
         victims = _damage(game, p, eff, target, item, opp, cause, src)
-    if eff.data.get("exile_dying") or (isinstance(src, Permanent) and src.card.exile_damaged):
+    if eff.data.get("exile_dying") == "permanent":        # "if a permanent dealt damage this way would die" (#407)
+        for v in victims:
+            if isinstance(v, Permanent) and v in v.controller.battlefield:
+                v.exile_turn = game.turn        # zone_destination's exile-if-dies-this-turn replacement
+    elif eff.data.get("exile_dying") or (isinstance(src, Permanent) and src.card.exile_damaged):
         from ...batch1_templates import mark_exile_dying
         for v in victims:
             if isinstance(v, Permanent) and v.is_creature and v.damage > 0 and v in v.controller.battlefield:
