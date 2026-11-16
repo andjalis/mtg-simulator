@@ -655,3 +655,10 @@ def conjure(game, p, eff, **_):
     if dest == "library" and eff.data.get("shuffle"):
         p.library.shuffle(game.rng)
     game.log(f"conjures {name} into {dest}" if dest != "battlefield" else f"conjures {name}", p)
+
+
+@kind("owner_library")
+def owner_library(game, p, eff, target, item=None, **_):
+    """"Put it on top of / on the bottom of / Nth from the top of its owner's library" (mtgsim.cx_owner_library)."""
+    from ...cx_owner_library import resolve
+    resolve(game, p, eff, target, item)

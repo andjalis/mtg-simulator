@@ -699,7 +699,7 @@ def _parse_face(data: dict) -> CardDef:
     finish_level_up(extra, triggers, activated, approximations, produces)
     extra.pop("is_spree", None)
     extra.pop("_subtypes", None)
-    _auras.finish(extra)
+    _auras.finish(extra, triggers)
     _storage.finish(extra, unsupported)
     if "Battle" in types and "Siege" not in type_line.split("—")[-1].split():
         unsupported.append("Battle rules other than a Siege's (protector and defeat)")    # #254: Sieges only
@@ -728,6 +728,10 @@ def _parse_face(data: dict) -> CardDef:
 
     from ..cx_multi_target import unpaid_x
     unsupported += unpaid_x(cost, spell, modes, triggers, activated, loyalty_abilities, etb, alt_costs, extra)  # #312
+    from ..cx_chosen_type import unbound, hostile
+    unsupported += unbound(oracle, extra, spell, modes, triggers, activated, loyalty_abilities, etb, extra)  # #627
+    if extra.get("choose_type") == "creature" and hostile(oracle):
+        extra.setdefault("advanced_rules", {})["choose_opp_type"] = True
     if data.get("mana_cost") == "" and "Land" not in types:     # no mana cost at all (not {0}): CR 118.6
         extra.setdefault("advanced_rules", {})["no_mana_cost"] = True
     return CardDef(

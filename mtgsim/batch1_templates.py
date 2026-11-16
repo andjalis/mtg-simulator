@@ -371,8 +371,17 @@ def on_upkeep(game, active):
             host = src.aura_host
             if host is not None and host.controller is active:
                 for trig in src.triggers:
-                    if trig.event == 'host_upkeep':
+                    if trig.event == 'host_upkeep' and is_host_kind(trig):
+                        # only this module's own kinds: cx_trig_events.host_phase queues the general ones (#714)
                         game.queue_trigger(player, trig.effects, src, src.card.name, context=host)
+
+
+HOST_KINDS = ('host_lose', 'host_damage', 'host_shrink')
+
+
+def is_host_kind(trig) -> bool:
+    """A host_upkeep trigger made of this module's kinds (they read the enchanted permanent as the context)."""
+    return bool(trig.effects) and all(e.kind in HOST_KINDS for e in trig.effects)
 
 
 def cumulative_upkeep(game, p, perm):
