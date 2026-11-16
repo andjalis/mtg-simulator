@@ -212,7 +212,13 @@ class TurnsMixin:
             if perm.hidden is None or (only is not None and perm not in only):
                 continue
             alt = next((a for a in perm.hidden.alt_costs if a.kind in ("disguise", "morph", "megamorph")), None)
-            if alt is not None and self.pay(p, alt.cost) is not None:
+            spec = perm.hidden.advanced_rules.get("morph_cost")
+            if spec is not None:            # "Morph—Pay 5 life." (morph_costs, #646)
+                from ..morph_costs import pay as pay_morph
+                paid = alt is not None and pay_morph(self, p, perm, spec)
+            else:
+                paid = alt is not None and self.pay(p, alt.cost) is not None
+            if paid:
                 self.log(f"turns {perm.hidden.name} face up", p)
                 perm.card, perm.hidden = perm.hidden, None
                 if alt.kind == "megamorph":
