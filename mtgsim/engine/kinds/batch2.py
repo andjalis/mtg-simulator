@@ -59,14 +59,16 @@ def poison(game, p, eff, target, opp, **_):
 
 
 @kind("destroy_group")
-def destroy_group(game, p, eff, opp, **_):
+def destroy_group(game, p, eff, opp, item=None, **_):
     """Destroy all permanents of a type minus an excluded one (nonartifact creatures) or of a land subtype."""
     sources = counter_mechanics.death_sources(game)
     d = eff.data
     for perm in [x for x in p.battlefield + opp.battlefield
                  if (not d.get("types") or d["types"] in x.card.types) and (not d.get("not") or d["not"] not in x.card.types)
                  and (not d.get("sub") or d["sub"] in x.card.subtypes) and (not d.get("tapped") or x.tapped)]:
-        game.destroy(perm, counter_sources=sources)
+        if game.destroy(perm, counter_sources=sources):
+            from ..state import note_this_way           # "... for each creature destroyed this way" (#337)
+            note_this_way(item, "destroyed", {"permanent"} | {t.lower() for t in perm.card.types}, 1)
 
 
 @kind("discard_hand")

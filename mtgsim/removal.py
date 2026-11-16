@@ -237,6 +237,14 @@ def resolve(game, p, eff, target, item):
         return
     game.log(f"{mine.card.name} {'fights' if k == 'fight' else 'strikes'} {target.card.name}", p)
     dmg_to_target, dmg_back = mine.power, target.power
-    game.deal_damage(target, dmg_to_target, by=p, cause=f"{mine.card.name}: {k}", source=mine)
+    excess = (eff.data or {}).get("excess")
+    if k == "bite" and target.is_creature and (excess == "controller" or excess == "trample" and mine.has("trample")):
+        from .excess_damage import split    # "excess damage is dealt to that creature's controller instead" (#560)
+        dmg_to_target, spill = split(target, max(0, dmg_to_target), mine)
+        owner = target.controller
+        game.deal_damage(target, dmg_to_target, by=p, cause=f"{mine.card.name}: {k}", source=mine)
+        game.deal_damage(owner, spill, by=p, cause=f"{mine.card.name}: {k}", source=mine)
+    else:
+        game.deal_damage(target, dmg_to_target, by=p, cause=f"{mine.card.name}: {k}", source=mine)
     if k == "fight":
         game.deal_damage(mine, dmg_back, by=target.controller, cause=f"{target.card.name}: fight", source=target)

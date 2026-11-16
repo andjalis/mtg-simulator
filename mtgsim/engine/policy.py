@@ -148,6 +148,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return choose(game, me, eff)
     if k in ('graveyard_exile_all', 'graveyard_exile_choice'):
         return opp
+    if k == 'give_control_choice':      # a cost: give away the least valuable permanent that fits
+        return min(mine, key=perm_value, default=None)
     if k == 'adapt_exception':
         return max(mine, key=perm_value, default=None)
     if k in ('control_permanent', 'opponent_exile'):
@@ -300,7 +302,9 @@ def play_extra_lands(game: Game, me: Player):
     for _ in range(3):
         if me.land_played:
             return
-        lands = [c for c in me.hand if c.is_land] + [c for c in game.impulse_cards(me) if c.is_land]
+        from ..residual_templates import hand_locked
+        lands = ([] if hand_locked(me) else [c for c in me.hand if c.is_land]) + \
+            [c for c in game.impulse_cards(me) if c.is_land]
         if any(x.card.lands_from_gy for x in me.battlefield):
             lands += [c for c in me.graveyard if c.is_land]
         if not lands:
@@ -414,6 +418,9 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
                 if v <= 0 and all(x.kind in ("pay_gate", "hand_to_battlefield") for x in effects):
                     return -1          # nothing in hand it could put: don't spend the activation on it alone
                 total += v
+            elif k == "hand_free_cast":       # nothing in hand to cast: not worth an activation (#625)
+                from ..free_cast import value as free_value
+                total += free_value(me, e) or -1
             else:
                 total += 1
         return total

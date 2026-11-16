@@ -148,9 +148,12 @@ class CostsMixin:
         return payable(sources, cost)
 
     def spell_payable(self, p: Player, card: CardDef) -> bool:
+        from ..spell_grants import view as granted_view     # "<kind> spells you cast have convoke" (#633)
+        pay_as = granted_view(self, p, card)
         cost = self.cost_of(p, card, assist=False)
-        convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
-        cost, improvised, _ = self.assist_payment(p, card, cost) if card.improvise or card.delve else (cost, [], [])
+        convoked = self.convoke_pool(p)[:self._convoke_k] if pay_as.convoke else []
+        cost, improvised, _ = self.assist_payment(p, pay_as, cost) if pay_as.improvise or pay_as.delve else \
+            (cost, [], [])
         from ..cx_spell_costs import reserved as add_cost_reserved      # tapped for an additional cost (#342)
         return costs.spell_plan(self, p, card, cost, exclude=convoked + improvised + add_cost_reserved(self, p, card)) is not None
 
@@ -241,6 +244,12 @@ class CostsMixin:
             if spec[1] == "mana value":
                 return card.cmc + getattr(spell, "x", 0) * (card.mana_cost.get("X", 0) if isinstance(card.mana_cost, dict) else 0)
             return max(0, int(getattr(card, "power" if spec[1] == "power" else "toughness", 0) or 0))
+        if kind == "attached":       # Auras / Equipment attached to the source (#343)
+            if src is None:
+                return 0
+            return sum(1 for pl in self.players for x in pl.battlefield
+                       if x is not src and (x.attached_to is src or getattr(x, "aura_host", None) is src)
+                       and any(k in x.card.subtypes for k in spec[1]))
         if kind == "stat":
             if spec[1] == "sacrificed":
                 who = getattr(item, "sacrificed_permanent", None)
@@ -555,6 +564,8 @@ class CostsMixin:
         cost = dict(card.mana_cost)
         if card.is_ability:
             return cost          # an activated ability (channel, unearth, ...): spell cost modifiers don't apply
+        from ..spell_grants import view as granted_view     # granted convoke / improvise / delve (#633)
+        pay_as = granted_view(self, p, card)
         n = 0
         if card.cost_reduction == "instant_sorcery_gy":
             n = sum(c.is_instant or c.is_sorcery for c in p.graveyard)
@@ -619,11 +630,11 @@ class CostsMixin:
         # 601.2f: the total cost is the mana cost plus every increase, then every reduction
         from ..cx_spell_costs import add_mana as add_cost_mana      # "... or pay {3}{B}" additional costs (#342)
         cost = cx_static_cost.adjust(self, p, card, add_cost_mana(self, p, card, cost), increase=more, reduction=n)
-        if card.convoke:
+        if pay_as.convoke:
             self._convoke_k = min(len(self.convoke_pool(p)), cost.get("generic", 0))
             cost["generic"] -= self._convoke_k
-        if assist and (card.improvise or card.delve):
-            cost = self.assist_payment(p, card, cost)[0]
+        if assist and (pay_as.improvise or pay_as.delve):
+            cost = self.assist_payment(p, pay_as, cost)[0]
         if getattr(card, "spell_copy", False):
             return {"generic": 0}
         if self._origin(card)[1].startswith("foreign_"):
@@ -814,7 +825,9 @@ class CostsMixin:
         from ..advanced_templates import permission_options
         from .. import cx_top      # "You may cast creature spells from the top of your library."
         from .. import exile_permissions
-        return out + permission_options(self, p) + cx_top.options(self, p) + exile_permissions.options(self, p)
+        from ..cx_altcost import zone_options     # "You may cast this card from your graveyard / from exile" (#625)
+        return out + permission_options(self, p) + cx_top.options(self, p) + exile_permissions.options(self, p) + \
+            zone_options(self, p)
 
     def impulse_cards(self, p: Player) -> list:
         """Exiled cards p may still play (drops the expired ones)."""
@@ -831,6 +844,8 @@ class CostsMixin:
             return getattr(self, "foreign_zones", {}).get((id(p), kind), p.exile)
         if kind.startswith("exile_cast_"):
             return p.exile
+        if kind.startswith(("gy_alt_", "ex_alt_")):      # "You may cast this card from your graveyard / exile"
+            return p.graveyard if kind.startswith("gy") else p.exile
         return {"grave_permission": p.graveyard, "aftermath": p.graveyard, "from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile, "airbent": p.airbent,
                 "mayhem": p.graveyard, "madness": p.exile, "unearth": p.graveyard, "disturb": p.graveyard, "jump_start": p.graveyard,
@@ -876,6 +891,9 @@ class CostsMixin:
                for pl in self.players for x in pl.battlefield):
             return False          # "Creature spells can't be cast" (Aether Storm): the ban applies to everyone
         base, kind, alt = self._origin(card)
+        from ..residual_templates import hand_locked
+        if spell and hand_locked(p) and self._zone(p, kind) is p.hand:    # Experimental Frenzy (#326)
+            return False
         if self.nonmana_locked(p) and kind in ('channel', 'gy_ability', 'unearth'):
             return False
         if card.is_ability and kind in ('channel', 'gy_ability', 'unearth') and self.named_activation_banned(base.name):

@@ -36,8 +36,10 @@ class Parsing(unittest.TestCase):
                          [("cx_dmg", [("cx_dmg_payoff", "subject", "that_creature_controller", None)])])
 
     def test_refusals(self):
-        for line in ("Whenever an instant or sorcery spell you control that targets only a single creature deals "
-                     "damage to that creature, ~ deals that much damage to each opponent.",          # Imodane
+        for line in ("Whenever a creature that targets only a single creature deals damage to that creature, ~ "
+                     "deals that much damage to each opponent.",                     # creatures don't target
+                     "Whenever an instant spell you control deals damage to that creature, ~ deals that much damage "
+                     "to each opponent.",                                            # "that creature" needs the target
                      "Whenever a spell deals damage, draw a card.",                                   # not a payoff
                      "Whenever an artifact spell deals damage, you gain that much life.",             # unknown noun
                      "Whenever a creature deals damage to ~, ~ deals that much damage to that creature's controller.",
@@ -136,6 +138,24 @@ class Behaviour(unittest.TestCase):
         self.game.settle()
         self.assertEqual(self.b.life, 18)
 
+    def test_imodane_single_creature_target_only(self):
+        self.perm(self.a, "Whenever an instant or sorcery spell you control that targets only a single creature "
+                          "deals damage to that creature, ~ deals that much damage to each opponent.")
+        bear = self.game.enter_battlefield(self.b, BEAR)
+        self.cast(self.a, BOLT, bear)
+        self.assertEqual(self.b.life, 17)
+        self.cast(self.a, BOLT, self.b)                     # a player: not a creature
+        self.assertEqual(self.b.life, 14)
+        x, y = (self.game.enter_battlefield(self.b, card(n, "{3}", "Creature — Ogre", "", 4, 4)) for n in "XY")
+        twin = card("Test Twin", "{R}", "Instant", "~ deals 1 damage to each of up to two target creatures.")
+        self.game.enter_battlefield(self.a, MOUNTAIN).sick = False
+        self.a.hand.append(twin)
+        self.assertTrue(self.game.cast(self.a, twin, targets=[x, y]))
+        self.game.settle()
+        self.assertEqual((x.damage + y.damage, self.b.life), (2, 14))     # two targets: no
+        self.cast(self.a, SWEEP)                            # no target at all
+        self.assertEqual(self.b.life, 14)
+
     def test_flesh_reaver(self):
         reaver = self.perm(self.a, "Whenever ~ deals damage to a creature or opponent, ~ deals that much damage to "
                                    "you.", pt=(4, 4))
@@ -165,7 +185,7 @@ class RealCards(unittest.TestCase):
         from mtgsim.database_coverage import card_coverage
         db = CardDB(offline=True)
         for name in ("Tephraderm", "Flesh Reaver", "Tamanoa", "Justice", "Satyr Firedancer", "Kusari-Gama",
-                     "Greatbow Doyen", "Wrathful Raptors"):
+                     "Greatbow Doyen", "Wrathful Raptors", "Imodane, the Pyrohammer"):
             self.assertEqual(card_coverage(db.get(name)).ignored, [], name)
 
 

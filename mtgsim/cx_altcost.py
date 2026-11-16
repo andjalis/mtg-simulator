@@ -5,6 +5,7 @@
     You may sacrifice two Mountains rather than pay ~'s mana cost.                             (Fireblast)
     You may return two Islands you control to their owner's hand rather than pay ~'s mana cost. (Gush)
     If an opponent gained life this turn, you may pay {B} rather than pay ~'s mana cost.      (Needlebite Trap)
+    If an opponent controls a Swamp and you control a Plains, you may cast ~ without paying its mana cost.  (Legates)
 
 Each line becomes an ``AltCost("cond_alt_<i>")`` holding the mana part and the life; the condition and the other
 parts are ``advanced_rules["alt_if"][i] = (condition code, ((part, count, filter), ...))``, the parts being
@@ -26,9 +27,11 @@ _PARTS = [
     ("pitch", re.compile(rf"exile {_Q} (?P<f>[\w -]+?) cards? from your hand")),
     ("discard2", re.compile(rf"discard {_Q} (?P<f>[\w-]+) card and another card")),
     ("discard", re.compile(rf"discard {_Q} (?P<f>[\w -]+?) card")),
+    ("discard_any", re.compile(rf"discard {_Q} cards?")),
     ("bounce", re.compile(rf"return {_Q} (?P<f>[\w -]+?) you control to (?:its|their) owner's hand")),
     ("tap", re.compile(rf"tap {_Q} untapped (?P<f>[\w -]+?) you control")),
-    ("exile_gy", re.compile(rf"exile {_Q} (?P<f>[\w -]+?) card from your graveyard")),
+    ("exile_gy_any", re.compile(rf"exile {_Q} (?:other )?cards? from your graveyard")),
+    ("exile_gy", re.compile(rf"exile {_Q} (?P<f>[\w /-]+?) cards? from your graveyard")),
 ]
 
 
@@ -47,6 +50,9 @@ def _parts(text: str):
                 life = int(m["n"])
             else:
                 n = _QN[m["q"].lower()]
+                if name.endswith("_any"):            # "discard two cards", "exile four other cards from your graveyard"
+                    parts.append((name[:-4], n, {}))
+                    break
                 spec = _filter(m["f"], plural=n > 1)
                 if spec is None:
                     return None
@@ -60,10 +66,62 @@ def _parts(text: str):
     return mana, life, tuple(parts)
 
 
-def parse_line(line: str, st) -> bool:
-    m = _LINE.fullmatch(line)
+# "If <condition>, you may cast ~ without paying its mana cost." (the Legates, Massacre): the same conditional
+# alternative cost, with nothing to pay (#625)
+_FREE = re.compile(r"If (?P<c>.+?), you may cast (?:~|this spell) without paying its mana cost\.", re.I)
+
+
+# "You may cast this card from your graveyard / from exile [by <costs> in addition to paying its other costs | by
+# <costs> rather than paying its mana cost][ if / as long as <condition>]." (#625): a permission to cast the card
+# from that zone, kept as ``advanced_rules["zone_alt"][i] = (zones, condition code, parts, own mana cost)``.
+_ZONE = re.compile(r"(?:[A-Z][\w' ]* — )?You may cast (?:this card|~) from (?P<z>your graveyard or from exile|your graveyard|exile)"
+                   r"(?: by (?P<costs>.+?) (?P<how>in addition to paying its other costs|rather than paying its mana "
+                   r"cost))?(?:,? (?:if|as long as) (?P<c>.+?))?\.", re.I)
+_GERUND = {"paying": "pay", "discarding": "discard", "sacrificing": "sacrifice", "exiling": "exile",
+           "tapping": "tap", "returning": "return"}
+
+
+def _zone_line(line: str, st) -> bool:
+    m = _ZONE.fullmatch(line)
     if not m:
         return False
+    code = ""
+    if m["c"]:
+        from .cx_condlib import parse
+        code = parse(m["c"])
+        if not code:
+            return False
+    mana, life, parts = None, 0, ()
+    if m["costs"]:
+        got = _parts(re.sub(r"\b(" + "|".join(_GERUND) + r")\b", lambda g: _GERUND[g[1].lower()], m["costs"]))
+        if got is None:
+            return False
+        mana, life, parts = got
+    own = m["how"] is None or m["how"].lower().startswith("in addition")
+    if own and mana is not None:
+        return False                # "by paying {2} in addition to ...": a tax this doesn't add up
+    zones = {"your graveyard": ("gy",), "exile": ("ex",), "your graveyard or from exile": ("gy", "ex")}[m["z"].lower()]
+    from .cards.model import AltCost
+    rules = st.extra.setdefault("advanced_rules", {})
+    index = len(rules.get("zone_alt", ()))
+    rules["zone_alt"] = rules.get("zone_alt", ()) + ((zones, code, parts, own),)
+    st.alt_costs.append(AltCost(f"zone_alt_{index}", mana or {"generic": 0}, life=life))
+    return True
+
+
+def parse_line(line: str, st) -> bool:
+    if _zone_line(line, st):
+        return True
+    m = _LINE.fullmatch(line)
+    if not m:
+        m = _FREE.fullmatch(line)
+        if not m:
+            return False
+        from .cx_condlib import parse
+        code = parse(m["c"])
+        if not code:
+            return False
+        return _add(st, code, None, 0, ())
     code = ""
     if m["c"]:
         from .cx_condlib import parse
@@ -76,6 +134,10 @@ def parse_line(line: str, st) -> bool:
     mana, life, parts = got
     if not code and not life and not parts:
         return False            # a plain "You may pay {X} rather than pay ~'s mana cost" (face_lines: AltCost "alt")
+    return _add(st, code, mana, life, parts)
+
+
+def _add(st, code, mana, life, parts) -> bool:
     from .cards.model import AltCost
     rules = st.extra.setdefault("advanced_rules", {})
     index = len(rules.get("alt_if", ()))
@@ -92,8 +154,8 @@ def _candidates(game, p, card, part, n, spec):
     from .cx_condlib import _card_ok
     if part == "pitch" or part == "discard":
         return [c for c in p.hand if c is not card and _card_ok(c, spec)]
-    if part == "exile_gy":
-        return [c for c in p.graveyard if _card_ok(c, spec)]
+    if part == "exile_gy":       # never the card being cast from the graveyard itself
+        return [c for c in p.graveyard if c is not card and _card_ok(c, spec)]
     if part == "tap":
         return [x for x in p.battlefield if not x.tapped and _card_ok(x.card, spec, x)]
     return [x for x in p.battlefield if _card_ok(x.card, spec, x)]
@@ -134,6 +196,40 @@ def variants(game, p, card) -> list:
     return out
 
 
+def zone_options(game, p) -> list:
+    """The graveyard and exile cards p may cast now under their own "You may cast this card from ..." line."""
+    from .cards.model import AltCost, Effect
+    out = []
+    for zone, cards in (("gy", p.graveyard), ("ex", p.exile)):
+        for card in cards:
+            rules = card.advanced_rules.get("zone_alt") if card.advanced_rules else None
+            if not rules or card.is_land:
+                continue
+            for a in card.alt_costs:
+                if not a.kind.startswith("zone_alt_"):
+                    continue
+                index = int(a.kind[9:])
+                zones, code, parts, own = rules[index]
+                if zone not in zones:
+                    continue
+                if code and not game.check_cond(p, Effect("alt", cond=code), None, None):
+                    continue
+                if not _payable(game, p, card, parts) or a.life and p.life < a.life:
+                    continue
+                cost = dict(card.mana_cost) if own else dict(a.cost)
+                out.append(game._variant(card, f"{zone}_alt_{index}", AltCost(f"{zone}_alt_{index}", cost,
+                                                                              life=a.life)))
+    return out
+
+
+def _rule(card, kind: str):
+    """(condition, parts) of a cond_alt_N / gy_alt_N / ex_alt_N cast."""
+    if kind.startswith("cond_alt_"):
+        return card.advanced_rules["alt_if"][int(kind[9:])]
+    zones, code, parts, own = card.advanced_rules["zone_alt"][int(kind[7:])]
+    return code, parts
+
+
 def _cheapest(things):
     def value(x):
         c = getattr(x, "card", x)
@@ -143,7 +239,7 @@ def _cheapest(things):
 
 def pay(game, p, card, kind: str) -> bool:
     """Pay the non-mana parts of a cond_alt cast; False when they can't be paid."""
-    code, parts = card.advanced_rules["alt_if"][int(kind[9:])]
+    code, parts = _rule(card, kind)
     if not _payable(game, p, card, parts):
         return False
     for part, n, spec in parts:

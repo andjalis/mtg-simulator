@@ -95,9 +95,11 @@ def effects(perm) -> list:
     game = getattr(perm.controller, "_game", None)
     if game is None or "impending" not in perm.__dict__ or not perm._card.is_creature:
         return []           # still being constructed (impending is set last): the enter hook refreshes it
+    from .residual_templates import has_source_key, sources
+    if not has_source_key(game, "type_grants"):
+        return []           # nothing grants types (#698)
     from .continuous import ContinuousEffect
     from .permanent_templates import matches
-    from .residual_templates import sources
     out = []
     for source in sources(game, "type_grants"):
         for i, (spec, subs) in enumerate(source.card.advanced_rules["type_grants"]):

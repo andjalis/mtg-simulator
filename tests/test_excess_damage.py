@@ -69,7 +69,7 @@ class Games(unittest.TestCase):
         from mtgsim.coverage import card_coverage
         for name in ("Flame Spill", "Pigment Storm", "Gandalf's Sanction"):
             self.assertEqual(card_coverage(self.db.get(name)).status, "full", name)
-        self.assertNotEqual(card_coverage(self.db.get("Ram Through")).ignored, [])   # the trample-conditional one
+        self.assertEqual(card_coverage(self.db.get("Ram Through")).status, "full")   # the trample rider (test_excess_this_way)
 
     def test_flame_spill_excess_to_controller(self):
         bears = self.game.enter_battlefield(self.b, self.db.get("Grizzly Bears"))

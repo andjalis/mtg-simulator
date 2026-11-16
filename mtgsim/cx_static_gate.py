@@ -140,6 +140,9 @@ def _trusted(spec, text: str, strict: bool = True) -> bool:
     t = re.sub(r"^the number of ", "", text.strip(), flags=re.I)
     if kind in ("life", "speed", "hand", "party", "colors_among", "devotion"):
         return True
+    if kind == "attached":          # "for each Aura and Equipment attached to ~" (#343)
+        return bool(re.fullmatch(r"(?:auras?|equipments?)(?: and (?:auras?|equipments?))? attached to (?:~|him|her)",
+                                 t, re.I))
     if kind == "counters":
         return bool(re.fullmatch(rf"{re.escape(spec[1])} counters? on ~", t, re.I))
     if kind in ("count", "gy"):
@@ -238,6 +241,10 @@ def parse_line(line: str, st) -> bool:
             continue                    # neither gate nor scale: not this module's line
         read = _parts(body, st)
         if read is None:
+            if code and xq is None:     # a gated type / base P/T change (cx_static_chars, #520)
+                from .cx_static_chars import parse_line as chars_line
+                if chars_line(body[0].upper() + body[1:] + ".", st, gate=code):
+                    return True
             continue
         subj, parts = read
         has_pt = any(p.kind == "pump" for p in parts)
@@ -285,6 +292,11 @@ def parse_line(line: str, st) -> bool:
 
 def _rows(perm, what: str):
     """(source, code, payload) for every gated row of kind ``what`` that reaches perm, before its condition."""
+    game = getattr(perm.controller, "_game", None)
+    if game is not None and not perm.card.advanced_rules.get("gated"):
+        from .residual_templates import has_source_key
+        if not has_source_key(game, "gated"):
+            return          # no gated row anywhere: the scans below would find nothing (#698)
     from .permanent_templates import matches
     if not perm.abilities_suppressed:
         for code, scope, _spec, payload in perm.card.advanced_rules.get("gated", ()):

@@ -30,7 +30,14 @@ def damage(game, p, eff, target, item, opp, cause, **_):
     if eff.data.get("src_prev") or eff.data.get("it_ctx"):         # "it deals damage equal to its power ..." (cx_abil_damage)
         from ...cx_abil_damage import damage_source
         src = damage_source(game, item, src, target, eff)
-    victims = _damage(game, p, eff, target, item, opp, cause, src)
+    if eff.data.get("unpreventable"):        # "and the damage can't be prevented" (cx_grammar_unprevent)
+        game.unpreventable_now = True
+        try:
+            victims = _damage(game, p, eff, target, item, opp, cause, src)
+        finally:
+            game.unpreventable_now = False
+    else:
+        victims = _damage(game, p, eff, target, item, opp, cause, src)
     if eff.data.get("exile_dying") or (isinstance(src, Permanent) and src.card.exile_damaged):
         from ...batch1_templates import mark_exile_dying
         for v in victims:

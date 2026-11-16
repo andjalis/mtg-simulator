@@ -137,6 +137,19 @@ def sacrifice(m, clause):
     return [Part("cx_edict", n, data={"noun": obj.group, "scales": True})]
 
 
+@verb(r"sacrifices? all (.+?) (?:they|he or she) controls?", heads=("sacrifice", "sacrifices"), subjects=("player",))
+def sacrifice_all(m, clause):
+    """"Each player sacrifices all lands they control" (Epicenter): an edict over every matching permanent."""
+    noun = m[1]
+    if clause.duration or _REJECT.search(noun) or not re.fullmatch(r".*s", noun) or \
+            re.search(r"\b(?:you|other|than|greatest|least|with the|named)\b", noun):
+        return None
+    obj = object_phrase("all " + noun)
+    if obj is None or obj.kind != "group":
+        return None
+    return [Part("cx_edict", 99, data={"noun": obj.group, "scales": False, "all": True})]
+
+
 # ---------------------------------------------------------------- what the default AI thinks these are worth
 
 def _signed(me, perm, v: float) -> float:
