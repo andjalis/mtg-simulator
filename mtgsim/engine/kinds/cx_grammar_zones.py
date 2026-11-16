@@ -20,7 +20,11 @@ def edict(game, p, eff, target, item, **_):
         value = (lambda x: x.card.cmc) if stat == "mana value" else (lambda x: getattr(x, stat))
         best = (max if way == "max" else min)(value(x) for x in pool)
         pool = [x for x in pool if value(x) == best]
-    victims = sorted(pool, key=lambda x: (not x.card.is_token, perm_value(x)))[:eff.amount]
+    n = eff.amount
+    if eff.data.get("fraction"):             # "half the creatures they control, rounded up" (#631): their own count
+        num, den, up = eff.data["fraction"]
+        n = -(-len(pool) * num // den) if up else len(pool) * num // den
+    victims = sorted(pool, key=lambda x: (not x.card.is_token, perm_value(x)))[:n]
     sources = counter_mechanics.death_sources(game)
     for v in victims:
         if isinstance(v, Permanent) and v in target.battlefield:
