@@ -300,6 +300,8 @@ def _subject_ok(game, spec, perm, obj) -> bool:
         host = getattr(perm, "attached_to", None) or getattr(perm, "aura_host", None)
         if obj is host and host is not None:
             return True
+        if obj is not None and any(x is perm for x in getattr(obj, "left_attachments", ())):
+            return True         # the host this Aura / Equipment was on as the host left (#782)
         return spec["self"] and obj is perm
     if obj is perm:
         return spec["self"] or (spec["alts"] is not None and not spec["other"] and _obj_match(game, spec, perm, obj))
@@ -750,6 +752,9 @@ def observe(game, p, event, source=None, context=None, subject=None):
         watchers.append(source)     # "~ or another creature dies": the dying source still sees it
     if event == "perm_to_gy" and isinstance(subject, Permanent) and subject not in watchers and _has_ev(subject):
         watchers.append(subject)
+    for left in (source, subject):          # the leaving host's Auras / Equipment look back (CR 603.10a, #782)
+        if isinstance(left, Permanent) and event in ("dies", "leaves") and left not in left.controller.battlefield:
+            watchers += [x for x in getattr(left, "left_attachments", ()) if x not in watchers and _has_ev(x)]
     _observe_graveyards(game, p, event, source, context, subject)
     if not watchers:
         return
