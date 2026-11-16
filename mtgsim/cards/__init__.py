@@ -273,6 +273,8 @@ from .. import cx_trig_turn as _cx_trig_turn  # noqa: E402
 _EFFECT_PATTERNS += _cx_trig_turn.EFFECT_PATTERNS
 from .. import cx_spent as _cx_spent  # noqa: E402
 _SUBS += _cx_spent.SUBS
+from .. import named_tokens as _named_tokens  # noqa: E402
+_EFFECT_PATTERNS += _named_tokens.EFFECT_PATTERNS
 from .. import library_peek as _library_peek  # noqa: E402
 _EFFECT_PATTERNS += _library_peek.EFFECT_PATTERNS
 _SUBS += _library_peek.SUBS
@@ -308,3 +310,5 @@ _SUBS += _until_nonland.SUBS
 from .. import votes as _votes  # noqa: E402  will of the council / council's dilemma (#634)
 _EFFECT_PATTERNS += _votes.EFFECT_PATTERNS
 _parse_module._FACE_LINE_PARSERS = (_votes.face_line,) + _parse_module._FACE_LINE_PARSERS
+from .. import another_target as _another_target  # noqa: E402  "another target creature you control" (#809)
+_SUBS += _another_target.SUBS
