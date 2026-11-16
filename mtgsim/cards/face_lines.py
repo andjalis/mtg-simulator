@@ -964,8 +964,10 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["pt_if"] = extra.get("pt_if", ()) + (("delirium", int(m[1]), int(m[2])),)
             return None
-        if line in ("Partner", "Choose a Background", "Friends forever", "Assist", "Doctor's companion"):
-            return None          # deck-building or teammate rules: nothing to do in a two-player game
+        if line in ("Partner", "Choose a Background", "Friends forever", "Assist", "Doctor's companion",
+                    "~ can be your commander.", "~ can be your Commander.", "Spell commander") or \
+                re.fullmatch(r"~ can be your commander\. If it is, your deck can contain [^.]+\.", line):
+            return None          # deck-building or teammate rules: nothing to do in a two-player game (no Commander format, #839)
         if line == "Umbra armor" or line == "Totem armor":
             extra["umbra_armor"] = True
             return None
@@ -1093,6 +1095,9 @@ def _face_keyword_ability_lines(st, line):
             return None
         from .. import champion as _champion
         if _champion.parse_line(line, st):      # "Champion an Elf" (#646)
+            return None
+        from .. import evoke_costs as _evoke_costs
+        if _evoke_costs.parse_line(line, st):           # "Evoke—Exile a white card from your hand." (#646)
             return None
         from .. import morph_costs as _morph_costs
         if _morph_costs.parse_line(line, st):           # "Morph—Reveal a black card in your hand." (#646)
