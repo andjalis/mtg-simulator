@@ -52,7 +52,8 @@ def _slots_of(s) -> list:
     """The payment slots of source s: its own mana, then the extras that have their own colours."""
     n = _amount(s) - sum(len(a.card.advanced_rules.get("aura_mana_colors", ())) for a in s.auras
                          if s.card.is_land and not a.abilities_suppressed) * (2 if s.card.is_land and _doubled(s) else 1)
-    return [s] * (n if s.card.mana_dyn else max(1, n)) + _extras(s)
+    from ..cx_trig_mana import extra_slots      # "Whenever you tap a creature for mana, add an additional {G}" (#860)
+    return [s] * (n if s.card.mana_dyn else max(1, n)) + _extras(s) + extra_slots(s, _Extra)
 
 
 def _doubled(land) -> bool:

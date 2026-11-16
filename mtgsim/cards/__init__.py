@@ -309,3 +309,5 @@ _EFFECT_PATTERNS += _until_nonland.EFFECT_PATTERNS
 _SUBS += _until_nonland.SUBS
 from .. import another_target as _another_target  # noqa: E402  "another target creature you control" (#809)
 _SUBS += _another_target.SUBS
+from .. import cx_trig_mana as _cx_trig_mana  # noqa: E402  triggered mana abilities on tapping for mana (#860)
+_parse_module._FACE_LINE_PARSERS = (_cx_trig_mana.face_line,) + _parse_module._FACE_LINE_PARSERS
