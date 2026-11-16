@@ -112,7 +112,9 @@ def _has_stat(m):
 def _stat_exact(m):
     """"its power is exactly 20" / "its power is greater than 0"."""
     from .cx_condlib import _code, _n
-    ref = "prev" if m[0].lower().startswith("its ") else "that"
+    low = m[0].lower()
+    ref = "prev" if low.startswith("its ") else "spell" if low.startswith("that spell's") else \
+        "card" if low.startswith("that card's") else "that"
     if m["n"]:
         return _code("ref_stat", m["w"].lower(), "==", _n(m["n"]), ref)
     return _code("ref_stat", m["w"].lower(), ">" if m["d"].lower() == "greater" else "<", _n(m["n2"]), ref)
@@ -148,7 +150,8 @@ def _ref_bare_adj(m):
     from .cx_condlib import _code, _filter
     if m["c1"]:
         colors = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
-        return _code("ref_card_is" if _refname(m) == "card" else "prev_is", {"any_color": [colors[m["c1"].lower()], colors[m["c2"].lower()]]})
+        spec = {"any_color": [colors[m["c1"].lower()], colors[m["c2"].lower()]]}
+        return _code("ref_card_is" if _refname(m) == "card" else "prev_is", spec)
     spec = _filter(m["f"].lower(), plural=False)
     return _code("ref_card_is" if _refname(m) == "card" else "prev_is", spec) if spec else ""
 
@@ -258,7 +261,10 @@ def _stat(obj, what: str, item=None) -> int:
         return getattr(obj, "cmc", 0)
     if isinstance(obj, Permanent):
         return getattr(obj, what)
-    return int(getattr(obj, what, 0) or 0)
+    if isinstance(obj, StackItem):
+        obj = obj.card
+    value = str(getattr(obj, what, 0) or 0)
+    return int(value) if value.lstrip("-").isdigit() else 0      # a printed "*" is 0 off the battlefield
 
 
 def check(game, p, kind, args, item=None, source=None, prev=None):
