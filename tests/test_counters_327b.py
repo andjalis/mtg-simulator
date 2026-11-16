@@ -33,8 +33,10 @@ class Parse(unittest.TestCase):
         self.assertEqual(selector("Bird, Cat, Dog, Goat, Ox, or Snake")["subtypes_any"],
                          ["bird", "cat", "dog", "goat", "ox", "snake"])
         self.assertEqual(selector("Elves and Warriors you control", plural=True)["subtypes_any"], ["elf", "warrior"])
-        for desc in ("artifact or Vehicle", "artifact and creature", "Elf or frob"):
+        for desc in ("artifact and creature", "Elf or frob"):
             self.assertIsNone(selector(desc), desc)
+        # a type-or-subtype union is read as alternatives since #506
+        self.assertEqual(selector("artifact or Vehicle"), {"alts": [("artifact",), ("vehicle",)]})
 
     def test_ability_groups(self):
         self.assertEqual(selector("creatures you control with modular", plural=True)["ability"], "modular")
