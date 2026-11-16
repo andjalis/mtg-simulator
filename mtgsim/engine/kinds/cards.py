@@ -486,6 +486,9 @@ def bay_search(game, p, item, **_):
 @kind("draw_each")
 def draw_each(game, eff, **_):
     for pl in game.players:
+        if eff.data.get("multicolored_creature") and not any(
+                x.is_creature and len(getattr(x, "colors", x.card.colors)) >= 2 for x in pl.battlefield):
+            continue        # Depopulate: "Each player who controls a multicolored creature draws a card" (#833)
         game.draw(pl, eff.amount)
 
 

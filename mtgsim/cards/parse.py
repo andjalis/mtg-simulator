@@ -732,6 +732,7 @@ def _parse_face(data: dict) -> CardDef:
     # Payment-dependent spell effects also need the hybrid payment variants.
     extra["spent_colors"] |= frozenset(m[1] for e in spell
         if (m := re.fullmatch(r'lib:\["spent_color","([WUBRG])"\]', e.cond)))
+    approximations += ["one spent colour per cast: only one \"if {C} was spent\" condition holds"] if len(extra["spent_colors"]) > 1 else []  # Deceit (#827)
     if "prowess" in keywords:
         triggers.append(Trigger("cast_noncreature", [Effect("pump", 1, 1, target="self")]))
     # Triggers with "choose up to one" get their bullet modes; drop ones that ended up empty.
