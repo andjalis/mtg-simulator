@@ -32,6 +32,8 @@ class ResolveMixin:
         opp = self.opponent(p)
         if eff.target == "self" and item is not None:
             target = item.source
+            if target is None and getattr(item, "created_token", None) is not None:
+                target = item.created_token     # a spell's "Put X +1/+1 counters on it" after "Create a token" (#682)
         if eff.target == "that_player" and item is not None:
             ctx = item.context
             target = ctx.controller if isinstance(ctx, StackItem) else ctx   # any_cast: the cast spell's caster

@@ -63,16 +63,27 @@ def ordered(effects):
     return result
 
 
+_HELPERS: list = []
+
+
+def _helpers():
+    """(linked_effects, sources, type_grants, chars), imported once: they import this module (#698)."""
+    if not _HELPERS:
+        from .cx_statics import linked_effects
+        from .residual_templates import sources
+        from .cx_type_grants import effects as type_grants
+        from .cx_static_chars import effects as chars          # #406: static type / colour / base-P/T changes
+        _HELPERS.extend((linked_effects, sources, type_grants, chars))
+    return _HELPERS
+
+
 def active(permanent):
     game = getattr(permanent.controller, '_game', None)
     if game is None:
         return []
-    from .cx_statics import linked_effects
-    from .residual_templates import sources
+    linked_effects, sources, type_grants, chars = _HELPERS or _helpers()
     static = [ContinuousEffect(-id(src), permanent, "remove", getattr(src, "rules_timestamp", 0), keyword="infect", source=src)
               for src in sources(game, "remove_infect") if (permanent.is_creature if hasattr(permanent, "impending") else permanent._card.is_creature) and src.controller is not permanent.controller]
-    from .cx_type_grants import effects as type_grants
-    from .cx_static_chars import effects as chars          # #406: static type / colour / base-P/T changes
     return static + linked_effects(permanent) + type_grants(permanent) + chars(permanent) + [e for e in game.continuous_effects if e.target is permanent and
             permanent in permanent.controller.battlefield and (e.source is None or
             e.source in e.source.controller.battlefield) and _alive(game, e)]

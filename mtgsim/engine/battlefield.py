@@ -161,6 +161,9 @@ class BattlefieldMixin:
                     for t in c.subtypes:
                         types[t] = types.get(t, 0) + 1
             perm.chosen_type = max(types, key=types.get, default="")
+            if card.advanced_rules.get("choose_opp_type"):       # "creatures of the chosen type get -1/-1" (#627)
+                from ..cx_chosen_type import pick_hostile
+                perm.chosen_type = pick_hostile(self, p) or perm.chosen_type
         elif card.choose_type == "land":
             # Shimmer: "As ~ enters, choose a land type. Each land of the chosen type has
             # phasing." The default pick is the opponent's most common basic land type.
@@ -355,6 +358,8 @@ class BattlefieldMixin:
                                               ("declare_attackers", "declare_blockers"))
                 if d.get("tapped"):
                     perm.tapped = True
+                self._token_serial = getattr(self, "_token_serial", 0) + 1     # "Put X counters on it" (#682)
+                self._last_token = perm
                 if d.get("end"):
                     self.end_cleanup.append((perm, d["end"]))
         self.log(f"creates {n if n is not None else eff.amount} {d.get('kind') or d.get('name')} token(s)", p)

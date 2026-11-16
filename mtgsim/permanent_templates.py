@@ -212,6 +212,12 @@ def selector(text, *, plural=False):
         result['other'] = result['other_than_source'] = True
         text = text[:other.start()]
     text = re.sub(r'(\bnon[a-z]+), (?=non[a-z]+\b)', r'\1 ', text, flags=re.I)    # "nonland, nontoken permanent"
+    # "creatures you control of the chosen type" (#627): the source's chosen creature type (perm.chosen_type)
+    chosen = re.search(r" of the chosen (?:creature )?type(?= you control| your opponents control| an opponent controls|$)",
+                       text, re.I)
+    if chosen:
+        result['chosen_type'] = True
+        text = text[:chosen.start()] + text[chosen.end():]
     # "creatures named Paper Tiger", "other creatures you control named ~", "creature named ~ you control" (#314):
     # a name, read up to a controller / zone phrase or the end ("~" is the source's own name)
     text = re.sub(r" on the battlefield( named .+)$", r"\1", text)    # "other creature on the battlefield named ~"
@@ -367,6 +373,11 @@ def matches(game, permanent, spec, controller, source=None):
             return False
     if spec.get('other') and permanent is source:
         return False
+    if spec.get('chosen_type'):
+        typ = getattr(source, 'chosen_type', '')
+        if not typ or not (typ.lower() in {s.lower() for s in permanent.card.subtypes}
+                           or permanent.card.changeling and permanent.is_creature):
+            return False
     if 'name' in spec and not _named(permanent, spec['name'], source):
         return False
     scoped = scope_player(game, spec['scope']) if spec.get('scope') else None

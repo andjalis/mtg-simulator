@@ -272,9 +272,15 @@ from .. import protection_types as _protection_types  # noqa: E402
 KEYWORDS.update(_protection_types.KEYWORDS)
 from .. import bounce_own as _bounce_own  # noqa: E402
 _EFFECT_PATTERNS += _bounce_own.EFFECT_PATTERNS
+from .. import zone_exile as _zone_exile  # noqa: E402
+_EFFECT_PATTERNS += _zone_exile.EFFECT_PATTERNS
+from .. import give_control as _give_control  # noqa: E402
+_EFFECT_PATTERNS += _give_control.EFFECT_PATTERNS
 from .. import free_cast as _free_cast  # noqa: E402  "cast a spell from your hand without paying its mana cost" (#625)
 _EFFECT_PATTERNS += _free_cast.EFFECT_PATTERNS
 from .. import cx_dmg_equal as _cx_dmg_equal  # noqa: E402  damage equal to a quantity (#626)
 _EFFECT_PATTERNS += _cx_dmg_equal.EFFECT_PATTERNS
+from .. import cx_owner_library as _cx_owner_library  # noqa: E402  "put it on top of its owner's library" (#628)
+_EFFECT_PATTERNS += _cx_owner_library.EFFECT_PATTERNS
 from .. import cx_grammar_edicts as _cx_grammar_edicts  # noqa: E402  "chooses N ..., then sacrifices the rest" (#631)
 _SUBS += _cx_grammar_edicts.SUBS
