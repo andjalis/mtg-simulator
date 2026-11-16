@@ -479,6 +479,10 @@ class Permanent:
             from ..cx_triggers import hexproof_entered
             if hexproof_entered(self):
                 return True
+        if kw in ("toxic", "ward"):        # "with toxic" / "with ward": any value, printed or granted (#633)
+            from ..kw_values import amounts
+            if (self.card.toxic if kw == "toxic" else self.card.ward) or amounts(self, kw):
+                return True
         fields = _lazy("residual_templates", "field_sources") if game is not None else None
         if kw in ('training', 'dethrone') and self.is_creature and any(k == kw and not (other and source is self)
                                    for source in (fields(game, "granted_attack_keywords") if fields else
@@ -645,8 +649,9 @@ class Permanent:
             return self.animated.ward
         if self.card.ward_untapped_only and self.tapped:
             return 0
+        from ..kw_values import amounts         # granted "ward {N}" (#633)
         return max([self.card.ward] + [e.card.equip_ward for e in self.equipment] +
-                   [a.card.equip_ward for a in self.auras] + self._group_ward())
+                   [a.card.equip_ward for a in self.auras] + amounts(self, "ward") + self._group_ward())
 
     def _group_ward(self) -> list:
         """Ward from "Other creatures you control have ward {1}" statics on the battlefield."""

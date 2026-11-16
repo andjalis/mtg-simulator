@@ -852,6 +852,11 @@ def _parse_ability_cost(text: str):
     return mana, extra
 
 
+def _self_it_act(cost_text, body):
+    from ..self_trigger_it import activated_it
+    return activated_it(cost_text, body)
+
+
 def _parse_ability(line: str, approximations: list):
     """A general activated ability ("{2}, {T}: Draw a card."), or None.
 
@@ -900,6 +905,8 @@ def _parse_ability(line: str, approximations: list):
                          max_per_turn=limit, modes=modal.Modes(spec=head[0]), any_player=any_player,
                          restrictions=restrictions, once_game=once_game)
     effects, bad = _parse_effects(body)
+    if bad and _self_it_act(m[1], body):         # "...: It deals 7 damage ..." names the source (#320)
+        effects, bad = _parse_effects(_self_it_act(m[1], body))
     if bad or not effects:
         return None
     if cost[1].get("remove_counter_count") == "x" and not (

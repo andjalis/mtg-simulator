@@ -382,6 +382,8 @@ class PlayMixin:
             getattr(self, "next_discount", {}).pop(p.name, None)
             from ..cx_static_cost import spell_cast as temp_discounts_spent
             temp_discounts_spent(self, p, card)        # "the next Dragon spell you cast costs {2} less"
+            from ..spell_grants import spell_cast as next_grants_spent
+            next_grants_spent(self, p, card)           # "the next spell you cast this turn has convoke" (#633)
             from ..residual_templates import on_spell_cast
             on_spell_cast(self, p, item)
             copies.on_cast(self, p, item)
