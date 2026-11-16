@@ -77,9 +77,27 @@ def note(game, p, source=None, item=None, kw: str = "", zone: str = "battlefield
 def mana_paid(game, payment):
     """The mana abilities a payment activated (lands, mana creatures and rocks, Treasures)."""
     from .engine.state import Permanent
+    if not _listening(game):
+        return          # a game.fire per mana source only when some head can hear it
     for s in payment:
         if isinstance(s, Permanent) and getattr(s, "stored_in", None) is None:
             _fire(game, s.controller, s, None, "", "battlefield", True)
+
+
+def _listening(game) -> bool:
+    """Some permanent, graveyard card or turn watcher has an "ev:ability_activated" trigger."""
+    from . import cx_trig_turn
+    if cx_trig_turn.watchers(game):
+        return True
+    for pl in game.players:
+        if any(t.event == _EV for x in pl.battlefield if cx_events._has_ev(x) for t in x.triggers):
+            return True
+        if any(t.event == _EV for c in pl.graveyard for t in getattr(c, "gy_triggers", ())):
+            return True
+    return False
+
+
+_EV = "ev:ability_activated"
 
 
 def _fire(game, p, source, item, kw, zone, mana):
