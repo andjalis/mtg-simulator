@@ -156,7 +156,9 @@ def _punisher(extra: dict, triggers) -> bool:
     for t in triggers:
         host = t.event == "host_upkeep" or t.event.startswith("ev:") and "enchanted" in (t.filter or "")
         for e in t.effects:
-            if host and (e.kind in ("damage", "lose_life") and e.target == "that_player"
+            if t.event == "upkeep" and e.kind == "bounce" and e.target == "host":
+                harms = True        # "At the beginning of your upkeep, return enchanted creature ..." (Mark of Eviction, #803)
+            elif host and (e.kind in ("damage", "lose_life") and e.target == "that_player"
                          or e.kind == "cx_damage" and e.data.get("who") == "controller" and e.target == "none"
                          or e.kind == "destroy" and e.target == "prev"):
                 harms = True

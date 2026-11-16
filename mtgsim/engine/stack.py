@@ -284,7 +284,10 @@ class StackMixin:
             ctx = lambda effects: source if any(e.target == "that_controller" or e.data.get("who") == "that_controller"
                                                 or e.data.get("ref_subject") for e in effects) else context
             for attached in list(source.equipment) + list(source.auras):
-                for trig in attached.card.host_triggers:
+                granted = [dataclasses.replace(t, event=t.event[5:]) for t in getattr(attached, "temp_triggers", ())
+                           if t.event.startswith("host:")] if attached in source.equipment else []
+                # granted: "this Equipment gains '...'" (Vorpal Sword, #629)
+                for trig in list(attached.card.host_triggers) + granted:
                     if trig.event != event:
                         continue
                     if trig.data.get("attachment_source"):      # "~" is the Equipment / Aura itself (#793)
@@ -503,7 +506,7 @@ class StackMixin:
                 token = dataclasses.replace(base, name=f"{base.name} token", power=1, toughness=1, is_token=True,
                                             alt_costs=[])
                 self.queue_trigger(p, [Effect("token_copy", data={"card": token})], perm, f"{base.name} offspring")
-            if kind.startswith("evoke"):
+            if kind.startswith("evoke") or kind in (base.advanced_rules or {}).get("evoke_alts", ()):    # (#646)
                 self.log(f"sacrifices evoked {base.name}", p)
                 self.sacrifice(perm)
             if perm.is_creature and p.next_creature_counters:
@@ -583,7 +586,8 @@ class StackMixin:
                     # about (a trigger's subject or spell is its own "that ..."), "it" after an effect on ~ is ~ (#810)
                     prev = item.source
                 just_made = self._last_token if getattr(self, "_token_serial", 0) == serial + 1 else None
-                if eff.kind.endswith("_self") and eff.target in ("none", "self") and isinstance(item.source, Permanent):
+                if eff.kind.endswith("_self") and eff.target in ("none", "self") and isinstance(item.source, Permanent) \
+                        and not eff.data.get("keep_ctx"):      # "that creature" keeps the trigger's subject (self_ref)
                     prev = item.source      # "Untap ~ and put a +1/+1 counter on it": "it" is ~ (audit round 3)
                 if self.over:
                     break
