@@ -129,6 +129,8 @@ TRIGGERS = [
 _PEEK = re.compile(r"(?P<how>look at|reveal) the top card of your library", re.I)
 _REF_IF = re.compile(r"if (?:it's|it is|that card is) (?:a|an) (?P<f>[\w ,/-]+?) card, (?P<body>.+)", re.I)
 _OTHERWISE = re.compile(r"otherwise, (?P<body>.+)", re.I)
+_DONT_PUT = re.compile(r"if you don't put (?:it|the card|that card) (?P<dest>into your hand|onto the battlefield), "
+                       r"(?P<body>.+)", re.I)
 _REF_BODY = re.compile(r"(?:you may )?(?:reveal it and )?put (?:it|that card) (?P<dest>into your hand|onto the battlefield"
                        r"(?: tapped)?(?: under your control)?|into your graveyard|on the bottom of your library)", re.I)
 
@@ -163,6 +165,11 @@ def parse_ref(s: str, effects, following: str = ""):
     m = _PEEK.fullmatch(s)
     if m:
         return [Effect("peek_top", data={"reveal": m["how"].lower() == "reveal"})]
+    m = re.fullmatch(r"if you do, (look at|reveal) the top card of your library", s, re.I)
+    if m and effects and effects[-1].kind == "pay_gate" and not effects[-1].cond:
+        # "You may pay {2}{R}. If you do, reveal the top card ...": unpaid, nothing is revealed, so the "if it's a
+        # ... card" moves after it find no card and do nothing
+        return [Effect("peek_top", cond="paid", data={"reveal": m[1].lower() == "reveal"})]
     m = _MOVE_TOP.fullmatch(s)
     if m and _REF_NEXT.match(following or "") and not (m["mill"] and "top card" in s.lower()):
         # "Exile the top card of your library. If it's a land card, ...": remember the card, then move it.
@@ -182,9 +189,16 @@ def parse_ref(s: str, effects, following: str = ""):
             return None
         cond = _code("ref_card", spec)
         return [dataclasses.replace(e, cond=cond) for e in body]
-    m = _OTHERWISE.fullmatch(s)
+    m = _OTHERWISE.fullmatch(s) or _DONT_PUT.fullmatch(s)
     if m:
         conds = list(dict.fromkeys(e.cond for e in after if e.cond.startswith('lib:["ref_card"')))
+        if m.re is _DONT_PUT:
+            # "If you don't put the card into your hand, ...": the "you may put it" before is taken whenever the
+            # card matches (the engine's "you may" convention), so it is "otherwise" for that same move only.
+            to = "hand" if "hand" in m["dest"].lower() else "battlefield"
+            moves = [e for e in after if e.kind == "ref_move" and e.cond.startswith('lib:["ref_card"')]
+            if not moves or any(e.data["to"] != to for e in moves):
+                return None
         body = _ref_body(m["body"])
         if not conds or body is None:
             return None

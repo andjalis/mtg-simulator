@@ -88,10 +88,17 @@ def pay(game, p, perm, kind, data, age) -> bool:
     if kind == "discard":
         if len(p.hand) < age or age > 2:
             return False
-        for _ in range(age):
-            card = p.ai.choose_discard(game, p)
-            if card not in p.hand:
-                return False
+        hand, picks = list(p.hand), []
+        try:                            # choose every card first: the cost is paid in full or not at all
+            for _ in range(age):
+                card = p.ai.choose_discard(game, p)
+                if card not in p.hand:
+                    return False
+                picks.append(card)
+                p.hand.remove(card)
+        finally:
+            p.hand[:] = hand
+        for card in picks:
             game.discard_card(p, card)
             game.log(f"discards {card.name} for cumulative upkeep", p)
         return True

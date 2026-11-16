@@ -130,7 +130,8 @@ def _word_spec(word: str, spec: dict, plural: bool = True) -> bool:
     elif low.rstrip("s") in _BASICS or low in _BASICS:
         spec.setdefault("sub", []).append(low.rstrip("s").capitalize() if low != "plains" else "Plains")
     elif word[:1].isupper() and word.isalpha():
-        sub = word if not plural or not word.endswith("s") or word.endswith("ss") else word[:-1]
+        from .cx_events import _IRREGULAR       # "Leeches" -> "Leech", "Elves" -> "Elf"
+        sub = _IRREGULAR.get(word) or (word if not plural or not word.endswith("s") or word.endswith("ss") else word[:-1])
         spec.setdefault("sub", []).append(sub)
     elif re.fullmatch(r"[A-Z][a-z]+(?:'s|-[A-Z][a-z]+)", word):
         spec.setdefault("sub", []).append(word)     # "Urza's", "Power-Plant": land subtypes written as they are
