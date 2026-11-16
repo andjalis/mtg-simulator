@@ -228,3 +228,12 @@ Still open: conditional flash ("if you control a Faerie"), "next spell can be ca
 Landed: flashback with a single sacrifice (Lava Dart, Cabal Therapy's cost), Lier's static flashback grant, and the Tainted Adversary token wording (colour before size). The round was small (4 cards change parse).
 
 Still open: flashback costs that tap or sacrifice several creatures (Dread Return, Battle Screech, Group Project), "Discard X cards" / "Sacrifice X Mountains", Otaria (any graveyard), Iroh's Lesson flashback, "Spells can't be countered" (Lier), Cabal Therapy's name choice.
+
+## P2 slices #628–#642 (2026-11-16)
+
+Landed as template families: #628, #632, #633, #636–#639 (discount conditions, type-list taxes, equip discounts, group ward, and the others), #640 give control away (`give_control.py`), #641 zone exile of whole graveyards/hands (`zone_exile.py`), #629 life totals as numbers (`life_total.py`: double, set, exchange, "loses the game"). #630, #631 and #642 were already covered on main by other work (`this_way.py`, the edict and entry-static modules). #634 and #635 were skipped on purpose.
+
+Residue (parser gaps, not yet matched):
+- #640: "with mana value X or less" targets needing a cast-time X; give-away "until end of turn"; "gain control of all permanents you own"; "enchanted permanent until end of turn".
+- #641: exile from hand as an effect step with a later reference; "exile up to N target creatures from the battlefield and/or graveyard".
+- #629: designation conditions and quantities (monarch, poison, energy, experience); win-the-game conditions; "each player's life total becomes N"; half-life quantities ("becomes half your life total").
