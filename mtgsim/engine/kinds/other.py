@@ -269,17 +269,14 @@ def no_prevention_turn(game, p, **_):
 
 @kind("choose_name")
 def choose_name(game, p, item, **_):
-    """\"As ~ enters, choose a nonland card name\" (Meddling Mage): name the nonland card the
-    opponent runs the most copies of. Spells with that name can't be cast while ~ stays on
+    """\"As ~ enters, choose a nonland card name\" (Meddling Mage): name the most threatening nonland card the
+    opponent has shown (cx_name_lock.lock_name). Spells with that name can't be cast while ~ stays on
     the battlefield (Game.named_cast_banned, consulted by can_cast_now)."""
     src = item.source if item is not None else None
     if not isinstance(src, Permanent) or src not in src.controller.battlefield:
         return
-    counts: dict = {}
-    for c in game.opponent(p).deck:
-        if not c.is_land:
-            counts[c.name] = counts.get(c.name, 0) + 1
-    src.chosen_name = max(counts, key=counts.get, default="")
+    from ...cx_name_lock import lock_name      # public information only (#627): never the opponent's decklist
+    src.chosen_name = lock_name(game, p)
     if src.chosen_name:
         game.log(f"names {src.chosen_name}", p)
 

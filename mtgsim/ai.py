@@ -26,6 +26,7 @@ MAX_ENUMERATE = 6       # try every attack set up to this many ready creatures
 # "Put target permanent into its owner's library" (Synchronized Eviction, #716): removal for the AI, like destroy
 # (it also gets around indestructible)
 TUCK_KINDS = ("tuck_perm", "tuck_top", "cx_tuck")
+SWEEP_OPS = ("destroy", "exile", "bounce", "damage")     # group_remove ops the AI values as a sweeper (#716, #723)
 REMOVAL_BAR = 4.5       # least a creature must be worth to spend instant removal on it
 PW_KEEP = 2.0           # value of a planeswalker still being on the battlefield next turn
 SWEEP_BAR = 6.0         # least net value for a sweeper when we are not under pressure
@@ -153,7 +154,7 @@ def _aim(card: CardDef, eff, target) -> list:
 
 # Effects plan_spell values through _extra_value.
 EXTRA_KINDS = {"reanimate_total", "reanimate_one", "tutor_gy", "regrow_perm", "regrow_any", "tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "double_counters", "learn",
-               "tap", "stun", "mill", "proliferate", "search_plan", "gy_move"} | copies.KINDS
+               "tap", "stun", "mill", "proliferate", "search_plan", "cx_turn_trigger", "gy_move"} | copies.KINDS
 EXTRA_KINDS.add("hand_free_cast")     # free casts from hand (free_cast.py, #625)
 
 CARRIER_KINDS = ("pump", "grant", "p1_counters", "unblockable")   # aimed at the creature that attacks
@@ -462,16 +463,30 @@ def _sized_inner(game: Game, me: Player, eff: Effect, who: Player | None = None)
     return inner
 
 
+def _locks_prev(game: Game, me: Player, eff: Effect) -> bool:
+    """A stun counter or "doesn't untap during its controller's next untap step" on the creature just tapped, with
+    its condition (ferocious, spell mastery) true now (#716, #723)."""
+    if eff.target != "prev" or eff.kind not in ("stun", "skip_untap"):
+        return False
+    try:
+        return game.check_cond(me, eff, None, None)
+    except Exception:       # a condition that needs the resolving spell: don't count on it
+        return False
+
+
 def _group_remove_value(game: Game, me: Player, eff: Effect) -> float:
-    """Net value of a group_remove that destroys, exiles or bounces every permanent its selector names: the
-    opponent's minus ours (indestructible ones survive a destroy; a bounce is worth half)."""
+    """Net value of a group_remove that destroys, exiles, bounces or deals damage to every permanent its selector
+    names: the opponent's minus ours (indestructible ones survive a destroy; a bounce is worth half; damage counts
+    the creatures it kills, #723)."""
     from .permanent_templates import matches
     op, total = eff.data.get("op"), 0.0
     for pl in game.players:
         for x in pl.battlefield:
             if not matches(game, x, eff.data["selector"], me, None):
                 continue
-            if op == "destroy" and x.has("indestructible"):
+            if op in ("destroy", "damage") and x.has("indestructible"):
+                continue
+            if op == "damage" and not (x.is_creature and x.toughness - x.damage <= eff.amount):
                 continue
             v = card_value(x.card) * (0.5 if op == "bounce" else 1.0)
             total += -v if pl is me else v
@@ -874,7 +889,7 @@ class HeuristicAI:
                     + self._static_value(game, me, card) - self._sac_cost(game, me, card), None)
         instant = card.instant_speed
         if any('anchor' in e.data or e.kind in ('allocated_counter', 'return_tribal_grave', 'grave_library_top',
-                'control_permanent', 'cx_exchange', 'cx_attach', 'populate', 'advanced_quantity_stats', 'selected_mass_move', 'filtered_grave_return', 'graveyard_exile_all', 'graveyard_exile_choice', 'give_control_choice', 'give_control_all') for e in card.spell_effects):
+                'control_permanent', 'cx_exchange', 'cx_attach', 'populate', 'advanced_quantity_stats', 'selected_mass_move', 'filtered_grave_return', 'graveyard_exile_all', 'graveyard_exile_choice', 'give_control_choice', 'give_control_all', 'life_total', 'player_loses') for e in card.spell_effects):
             from .engine.policy import _mode_value
             with game.targeting(card):
                 value = _mode_value(game, me, card.spell_effects)
@@ -959,7 +974,7 @@ class HeuristicAI:
                 targets.append(got[0])
                 value += got[1]
             elif eff.kind in ("wrath", "debuff") or (eff.kind == "damage" and eff.target == "each_creature") or \
-                    (eff.kind == "group_remove" and eff.data.get("op") in ("destroy", "exile", "bounce")):
+                    (eff.kind == "group_remove" and eff.data.get("op") in SWEEP_OPS):
                 v = self.sweep_value(game, me, eff)
                 # Under pressure any good sweep will do; otherwise wait until it takes out several cards.
                 pressure = 2 * sum(combat_power(c) for c in opp.creatures) >= me.life
@@ -1241,6 +1256,9 @@ class HeuristicAI:
         ready = [c for c in me.creatures if c.can_attack() and c.power > 0]
         if k == "proliferate":
             return None, eff.amount * proliferate.value(game, me)
+        if k == "cx_turn_trigger":      # "Whenever <event> this turn, ..." (#399)
+            v = __import__("mtgsim.cx_trig_turn", fromlist=["value"]).value(game, me, eff, card, precombat)
+            return (None, v) if v > 0 else None
         if k == "learn":
             return None, learning.value(game, me)
         if k in copies.KINDS:
@@ -1592,9 +1610,24 @@ class HeuristicAI:
                         targets.append(None)
                         continue
                     return None
-                stunned = i + 1 < len(effects) and effects[i + 1].kind == "stun" and effects[i + 1].target == "prev"
+                stunned = i + 1 < len(effects) and _locks_prev(game, me, effects[i + 1])
                 targets.append(tgt)
                 value += perm_value(tgt) * (0.6 if stunned else 0.25)
+                continue
+            if tempo and eff.kind == "cx_multi" and eff.data["probe"].kind == "tap" \
+                    and eff.data["probe"].target in CREATURE_TARGETS:
+                # "Tap X target creatures" (Icy Blast, #723): every untapped one of theirs, most valuable first; an X
+                # spell pays for as many as its mana covers (x_targets_cost cuts the rest)
+                probe, chain = eff.data["probe"], eff.data.get("chain", [])
+                legal = sorted((c for c in pool if not c.tapped and _legal(game, me, probe, c, card)),
+                               key=perm_value, reverse=True)
+                if eff.data.get("count_x") and eff.amount:
+                    legal = legal[:eff.amount]
+                if not legal:
+                    return None
+                locked = any(_locks_prev(game, me, e) for e in chain[1:])
+                targets.append(tuple(legal))
+                value += sum(perm_value(c) for c in legal) * (0.6 if locked else 0.25)
                 continue
             if tempo and eff.kind == "draw" and eff.target == "none":
                 targets.append(None)
@@ -1706,6 +1739,13 @@ class HeuristicAI:
                 if tgt is None:
                     continue
                 targets = [tgt if e is eff else None for e in card.spell_effects]
+            elif card.spell_effects and all(e.kind == "group_remove" and e.data.get("op") in SWEEP_OPS
+                                            for e in card.spell_effects):
+                # an instant sweeper ("Destroy all creatures that entered this turn", #723): what it removes now
+                value = sum(self.sweep_value(game, me, e) for e in card.spell_effects)
+                if value < REMOVAL_BAR:
+                    continue
+                targets = [None] * len(card.spell_effects)
             else:
                 plan = self._removal_on(game, me, card, opp.creatures, tempo=True)
                 if plan is None or plan[0] < REMOVAL_BAR:
