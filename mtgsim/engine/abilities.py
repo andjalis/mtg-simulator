@@ -17,13 +17,22 @@ if TYPE_CHECKING:
 
 class AbilitiesMixin:
     @atomic_action
-    def activate_loyalty(self, p: Player, pw: Permanent, idx: int, targets=None) -> bool:
+    def activate_loyalty(self, p: Player, pw: Permanent, idx: int, targets=None, x=None) -> bool:
         if pw not in p.battlefield or pw.loyalty_used or idx < 0 or idx >= len(pw.card.loyalty_abilities):
             return False
         from ..residual_templates import activation_blocked
         if activation_blocked(self, pw) or self.nonmana_locked(p) or self.activations_stopped() or pw.silenced:
             return False
         cost, effects = pw.card.loyalty_abilities[idx]
+        from .. import loyalty_x
+        if loyalty_x.is_x(pw.card, idx):         # "−X": X chosen now, at most the loyalty (#839)
+            if x is None:
+                x = loyalty_x.choose(self, p, pw, effects)
+            if x is None or x < 0 or x > pw.loyalty:
+                return False
+            cost, effects = -x, loyalty_x.effects_at(effects, x)
+        else:
+            x = None
         if pw.loyalty + cost < 0:
             return False
         instant_ok = pw.card.pw_instant_on_entry and pw.entered_turn == self.turn
@@ -38,6 +47,8 @@ class AbilitiesMixin:
             targets = self.auto_targets(p, effects, pw)
         item = StackItem(p, list(effects), list(targets), source=pw, name=f"{pw.card.name} [{cost:+d}]",
                          kind="loyalty")
+        if x is not None:
+            item.x = x
         self.stack.append(item)
         self.log(f"activates {item}" + (f" -> {targets}" if any(targets) else ""), p)
         from .. import cx_abilitycopy

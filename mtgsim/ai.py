@@ -1838,7 +1838,8 @@ class HeuristicAI:
         best effect while it can."""
         opp = game.opponent(me)
         best, best_score = None, -1e9
-        for i, (cost, effects) in enumerate(pw.card.loyalty_abilities):
+        from . import loyalty_x
+        for i, cost, effects in loyalty_x.options(game, me, pw):      # "−X" with its X chosen (#839)
             after = pw.loyalty + cost
             if after < 0:
                 continue

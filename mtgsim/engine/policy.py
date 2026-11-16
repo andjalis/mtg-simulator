@@ -968,9 +968,9 @@ def choose_attack_targets(game: Game, me: Player, attackers: list) -> dict:
 
 def default_loyalty_choice(game: Game, me: Player, pw: Permanent):
     """Index of the loyalty ability to use, or None."""
-    abilities = pw.card.loyalty_abilities
+    from .. import loyalty_x
     best, best_score = None, -1e9
-    for i, (cost, effects) in enumerate(abilities):
+    for i, cost, effects in loyalty_x.options(game, me, pw):          # "−X" with its X chosen (#839)
         if pw.loyalty + cost < 0:
             continue
         value = _mode_value(game, me, effects)
