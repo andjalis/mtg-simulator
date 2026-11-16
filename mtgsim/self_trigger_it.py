@@ -34,6 +34,10 @@ def rewrite(events, line: str, rest: str) -> str:
     if events == ("combat_damage_player",) and line.startswith("Whenever ~ deals combat damage to a player, "):
         rest = re.sub(r"\bdamage to target creature that player controls\b",
                       "damage to target creature an opponent controls", rest)
+    if events == ("combat_damage_player",) and re.match(r"it deals that much damage to ", rest):
+        from .cards import _parse_effects
+        if _parse_effects(rest)[1]:     # only where the "it" wording has no reading of its own
+            return "~" + rest[2:]       # "Whenever ~ deals combat damage to a player, it deals that much damage to ..."
     m = re.match(r"(?:it|he|she) deals \w+ damage to [^.]* and ", rest)
     if events != ("combat_damage_player",) and events != ("dies",) and m:
         return "~" + rest[rest.index(" deals"):]          # "it" / "he" / "she": the permanent itself (Shocker)

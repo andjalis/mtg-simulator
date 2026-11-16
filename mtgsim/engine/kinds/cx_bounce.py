@@ -48,3 +48,32 @@ def source_card_to_hand(game, item, **_):
     src = item.source if item is not None else None
     if isinstance(src, Permanent) and src not in src.controller.battlefield:
         _from_graveyard(game, src)      # the card it became, if it is still where it went (CR 400.7)
+
+
+@kind("life_total")
+def life_total(game, p, eff, target, opp, **_):
+    """Double / set / exchange a life total (#629): the difference is gained or lost (rule 119.5)."""
+    from ..state import Player
+    op, who = eff.data["op"], eff.data["who"]
+    players = {"you": [p], "each": list(game.players), "opponents": [opp]}.get(who) or \
+        ([target] if isinstance(target, Player) else [])
+    if op == "exchange":
+        if players and players[0] is not p:
+            a, b = p.life, players[0].life
+            game.change_life(p, b - a, "exchange life totals")
+            game.change_life(players[0], a - b, "exchange life totals")
+        return
+    for pl in players:
+        goal = max(pl.life, 0) * 2 if op == "double" else eff.amount
+        game.change_life(pl, goal - pl.life, f"life total {op}")
+        game.log(f"life total is now {pl.life}", pl)
+
+
+@kind("player_loses")
+def player_loses(game, p, target, **_):
+    """"Target player loses the game" (#629)."""
+    from ..state import Player
+    from ...cx_night_aura import cant_lose
+    if isinstance(target, Player) and not target.lost and not cant_lose(game, target):
+        game.audit("loss", seat=game.players.index(target), cause="a card's effect")
+        target.lost = True
