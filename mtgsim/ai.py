@@ -1014,6 +1014,12 @@ class HeuristicAI:
                     continue    # "for each ... sacrificed this way": the earlier effect's own value carries it
                 value += 1.5 * (eff.amount2 if eff.kind == "dig" else eff.amount) * \
                     (0.3 if eff.kind in ("scry", "surveil") else 1)
+            elif eff.kind == "discard" and eff.target in ("player", "opponent"):
+                # "Target player discards N cards" (Mind Rot): aimed at the opponent, worth the cards they lose
+                if not opp.hand:
+                    return None
+                targets.append(opp)
+                value += 1.0 * min(max(eff.amount, 1), len(opp.hand))
             elif eff.kind == "discard":
                 targets.append(None)
                 value -= 0.8 * eff.amount
