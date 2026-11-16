@@ -204,8 +204,11 @@ class BattlefieldMixin:
             cx_replace.entry_spent_counters(self, perm)
         if card.entry_counter_quantity:
             from ..backlog_templates import amount
-            kind, spec = card.entry_counter_quantity
-            if isinstance(spec, tuple):      # a cards._xq quantity ("equal to the number of creatures you control")
+            kind, spec, *per = card.entry_counter_quantity
+            if per:          # "a counter for each <thing>" (#630): count without the entering permanent itself
+                from ..cx_counters import entry_count
+                n = per[0] * entry_count(self, p, perm, spec)
+            elif isinstance(spec, tuple):      # a cards._xq quantity ("equal to the number of creatures you control")
                 from types import SimpleNamespace
                 n = self.x_quantity(p, spec, SimpleNamespace(source=perm, card=card, context=None), None)
             else:

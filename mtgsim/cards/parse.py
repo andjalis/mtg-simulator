@@ -6,6 +6,7 @@ import re
 
 from .. import cx_activation, milling, modal, returns, permanent_templates
 from .. import auras as _auras, copies as _copies, cx_tokens as _cx_tokens, storage as _storage
+from .. import kw_lines as _kw_lines
 from .model import (
     Activated, AltCost, BASIC_MANA, CardDef, Effect, NO_MATCH, Trigger, _num, add_mana, parse_mana_cost,
 )
@@ -48,6 +49,10 @@ def _parse_effects(text: str, opts: bool = False):
         s = sentence.strip().rstrip(".").strip()
         if not s:
             continue
+        if effects and effects[-1].kind == "cx_turn_trigger":     # a "this turn" trigger's later sentences (#399)
+            from ..cx_trig_turn import more
+            if more(s, effects, unmatched):
+                continue
         starts.append(len(effects))  # where each sentence's effects begin ("instead" replaces the one before)
         mark(effects, pending)       # "until your next turn" / "player or planeswalker" (cx_next_turn)
         s, kind = rewrite(s)
@@ -579,6 +584,7 @@ def _parse_face(data: dict) -> CardDef:
     text = re.sub(r"(?m)^((?:Exhaust — )?)Waterbend (\{\d+\}(?:, \{T\})?:)", r"\1\2", text)    # waterbend {N} pays like {N} here
     text = re.sub(r"(?m)^Ward—Waterbend (\{\d+\})", r"Ward \1", text)
     text = re.sub(r"(?m)^([A-Za-z ,]*[Ff]irebending \d+[A-Za-z ,]*)$", lambda m: "\n".join(x[0].upper() + x[1:] for x in m[1].split(", ")), text)
+    text = _kw_lines.split_lines(text)      # "Flying; fear" keyword lists, "Gae Bolg — Equip {4}" flavor words (#646)
     keywords, produces, etb, spell, unsupported, approximations = set(), set(), [], [], [], []
     level_marks: list = []      # Class: (level, number of triggers parsed before that level's lines)
     triggers: list[Trigger] = []
@@ -608,7 +614,8 @@ def _parse_face(data: dict) -> CardDef:
                     enters_tapped=enters_tapped, etb=etb, extra=extra, gate=gate, keywords=keywords, kicked=kicked,
                     level_marks=level_marks, loyalty_abilities=loyalty_abilities, mode_sink=mode_sink, modes=modes,
                     produces=produces, spell=spell, station_min=station_min, triggers=triggers,
-                    type_line=type_line, types=types, unsupported=unsupported, name=name, oracle=oracle)
+                    type_line=type_line, types=types, unsupported=unsupported, name=name, oracle=oracle,
+                    mana_cost=cost)
     for line in (l.strip() for l in text.split("\n")):
         for handle in _FACE_LINE_PARSERS:
             line = handle(st, line)

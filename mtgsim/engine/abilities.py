@@ -530,6 +530,7 @@ class AbilitiesMixin:
         item = StackItem(p, effects, list(targets), source=perm, name=f"{perm.card.name} ability",
                          kind="ability")
         item.ability_idx = idx
+        item.cost_sacrificed = [v.card for v in plan.victims]     # "if a Saproling was sacrificed this way" (#642)
         item.counter_x = sum(n for _, _, n in plan.counter_payments)
         if c.get("remove_counter"):      # "{T}, Remove a charge counter from ~: ... for each ... removed this way"
             note_this_way(item, "removed", [c["remove_counter"]], count)
