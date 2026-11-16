@@ -309,3 +309,5 @@ _EFFECT_PATTERNS += _until_nonland.EFFECT_PATTERNS
 _SUBS += _until_nonland.SUBS
 from .. import another_target as _another_target  # noqa: E402  "another target creature you control" (#809)
 _SUBS += _another_target.SUBS
+from .. import cx_grammar_ownerlib as _cx_grammar_ownerlib  # noqa: E402  "the owner of target X shuffles it into their library" (#632)
+_SUBS += _cx_grammar_ownerlib.SUBS

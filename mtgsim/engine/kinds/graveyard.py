@@ -421,6 +421,11 @@ def shuffle_self(game, p, eff, item, **_):
     library, shuffled, instead of the graveyard (the stack hook reads item.shuffle_self)."""
     if item is not None and item.is_spell:
         item.shuffle_self = True
+    elif item is not None and isinstance(item.source, Permanent) and item.source in item.source.controller.battlefield:
+        # A permanent's trigger or ability (Blitz Hellion, Cerulean Sphinx): the permanent itself (#632)
+        name = item.source.card.name
+        if game.put_in_library(item.source, "shuffle"):
+            game.log(f"{name} is shuffled into its owner's library", p)
 
 
 @kind("self_suspend")
