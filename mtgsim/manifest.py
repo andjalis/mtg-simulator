@@ -44,6 +44,11 @@ import dataclasses
 
 
 
+def _n(word):
+    from .cards import _num
+    return int(_num(word.lower()))
+
+
 def _e(kind, amount=1, **kw):
     from .cards import Effect
     return Effect(kind, amount, **kw)
@@ -53,6 +58,14 @@ EFFECT_PATTERNS = [
     (r"manifest the top card of your library, then put two \+1/\+1 counters on it",
      lambda m: _e("manifest", 1, data={"counters": ("+1/+1", 2)})),
     (r"manifest the top card of your library", lambda m: _e("manifest", 1)),
+    # #635: more counts, cloak (a face-down 2/2 with ward {2}), from the hand, "then attach ~ to it"
+    (r"(manifest|cloak) the top (two|three|four|five|\d+) cards of your library",
+     lambda m: _e("manifest", _n(m[2]), data={"cloak": m[1].lower() == "cloak"})),
+    (r"cloak the top card of your library", lambda m: _e("manifest", 1, data={"cloak": True})),
+    (r"(manifest|cloak) the top card of your library, then attach ~ to it",
+     lambda m: _e("manifest", 1, data={"cloak": m[1].lower() == "cloak", "attach": True})),
+    (r"(manifest|cloak) a card from your hand",
+     lambda m: _e("manifest", 1, data={"cloak": m[1].lower() == "cloak", "from": "hand"})),
     (r"manifest a number of cards from the top of your library equal to the number of counters on (?:~|it)",
      lambda m: _e("manifest", data={"counters_of_source": True})),
     (r"manifest dread twice", lambda m: _e("manifest_dread_more", 2)),
@@ -83,8 +96,9 @@ def _face_down_def():
                    types=frozenset({"Creature"}), power=2, toughness=2)
 
 
-def manifest_one(game, p, card=None):
-    """Put card (by default the top card of p's library) onto the battlefield face down."""
+def manifest_one(game, p, card=None, cloak=False):
+    """Put card (by default the top card of p's library) onto the battlefield face down. Cloaked (#635): the
+    face-down 2/2 also has ward {2} until it is turned face up."""
     if card is None:
         if not p.library:
             return None
@@ -98,8 +112,8 @@ def manifest_one(game, p, card=None):
     if perm is None:
         return None
     perm.hidden = hidden
-    perm.card = _face_down_def()
-    game.log(f"manifests {real.name} face down", p)
+    perm.card = dataclasses.replace(_face_down_def(), ward=2) if cloak else _face_down_def()
+    game.log(f"{'cloaks' if cloak else 'manifests'} {real.name} face down", p)
     return perm
 
 
@@ -109,15 +123,35 @@ def manifest(game, p, eff, item):
     if eff.data.get("counters_of_source"):
         src = item.source if item is not None else None
         n = sum(src.counters.values()) if src is not None else 0
+    cloak = bool(eff.data.get("cloak"))
     for _ in range(max(0, n)):
-        perm = manifest_one(game, p)
+        if eff.data.get("from") == "hand":          # "manifest / cloak a card from your hand" (#635)
+            if not p.hand:
+                break
+            card = _hand_pick(p)
+            p.hand.remove(card)
+            perm = manifest_one(game, p, card, cloak=cloak)
+        else:
+            perm = manifest_one(game, p, cloak=cloak)
         if perm is not None:
             made.append(perm)
+    if made and eff.data.get("attach") and item is not None and item.source is not None \
+            and item.source in p.battlefield:       # "cloak the top card of your library, then attach ~ to it"
+        item.source.attached_to = made[0]
+        game.log(f"attaches {item.source.card.name} to the {'cloaked' if cloak else 'manifested'} creature", p)
     kind, n2 = eff.data.get("counters", (None, 0))
     if kind and made:
         for perm in made:
             perm.counters[kind] = perm.p1 + n2
     return made
+
+
+def _hand_pick(p):
+    """The card a player manifests from their own hand: a creature card (it can be turned face up for its cost),
+    the best one; else the least valuable card."""
+    from .ai import card_value
+    creatures = [c for c in p.hand if c.is_creature]
+    return max(creatures, key=card_value) if creatures else min(p.hand, key=card_value)
 
 
 def manifest_dread(game, p, eff, item):

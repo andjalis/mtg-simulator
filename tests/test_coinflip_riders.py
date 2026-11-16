@@ -82,7 +82,9 @@ class CoinFlipRiders(unittest.TestCase):
             # "they" without another player flipping
             "Flip a coin. If they lose the flip, you lose 1 life. If you win the flip, draw a card.",
             # an unsupported rider sentence keeps the whole line unmatched
-            "Flip a coin. If you lose the flip, you lose 1 life. If you win the flip, turn ~ face down.",
+            # ("turn ~ face down" is supported since #635, so a still-unsupported rider stands in)
+            "Flip a coin. If you lose the flip, you lose 1 life. If you win the flip, ~ phases out and can't phase in "
+            "until your next turn.",
         ):
             with self.subTest(text=text):
                 effects, bad = _parse_effects(text)
@@ -90,11 +92,17 @@ class CoinFlipRiders(unittest.TestCase):
                 self.assertNotIn("FLIPSEQ", " ".join(bad))
 
     def test_unsupported_real_riders_keep_oracle_wording(self):
-        for name in ("Ydwen Efreet", "Skittish Valesk"):
+        for name in ("Ydwen Efreet",):          # Skittish Valesk is full since #635 ("turn ~ face down")
             with self.subTest(card=name):
                 c = self.real(name)
                 self.assertTrue(c.unsupported)
                 self.assertNotIn("FLIPSEQ", str(c.unsupported))
+
+    def test_skittish_valesk_turns_face_down_on_a_lost_flip(self):
+        c = self.real("Skittish Valesk")
+        self.assertTrue(c.fully_supported)
+        effects = c.triggers[0].effects
+        self.assertEqual([e.kind for e in effects], ["flip_coin", "turn_face_down"])
 
     # resolution
     def test_lose_then_win_order(self):
