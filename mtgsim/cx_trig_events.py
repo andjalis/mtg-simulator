@@ -24,7 +24,8 @@ _VERBS = [
     (r"(?:is|are) dealt damage", "dealt"),
     (r"(?:is|are) dealt noncombat damage", "dealt_noncombat"),
     (r"(?:is|are) dealt combat damage", "dealt_combat"),
-    (rf"attacks? with (?P<q>one or more|{_COUNT} or more|exactly {_COUNT}) (?P<d>.+)", "attack_with"),
+    (rf"attacks? (?:(?P<at>a player|a player or planeswalker) )?with (?P<q>one or more|{_COUNT} or more|exactly {_COUNT}) "
+     rf"(?P<d>.+)", "attack_with"),
     (r"attacks? while creatures you control have total power (?P<p>\d+) or greater", "attack_power"),
     (r"rolls? a die", "roll"),
     (r"rolls? a (?P<n>\d+)", "roll_exact"),
@@ -56,6 +57,7 @@ def extend_spec(kind, vm, spec) -> bool:
         return True
     if kind != "attack_with":
         return True
+    spec["at"] = vm["at"] or ""            # "you attack a player [or planeswalker] with ..." (#538)
     q = vm["q"]
     if q == "one or more":
         spec["min"], spec["exact"] = 1, False
@@ -96,7 +98,8 @@ def player_ok(game, spec, actor, me, event, perm=None) -> bool:
     if kind == "attack_power":
         return sum(c.power for c in me.creatures) >= spec["power"]
     if kind == "attack_with":
-        hits = [a for a in game.attackers if a.controller is me and cx_events._subject_ok(game, spec["subject"], perm, a)]
+        hits = [a for a in game.attackers if a.controller is me and cx_events._subject_ok(game, spec["subject"], perm, a)
+                and (not spec.get("at") or cx_events.attacks_player(game, a, spec["at"].endswith("planeswalker")))]
         if len(hits) < spec["min"] or (spec["exact"] and len(game.attackers) != spec["min"]):
             return False
         game.event_amount = len(hits)          # "that many" (reset by the combat code after the event)

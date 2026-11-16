@@ -141,6 +141,9 @@ class Permanent:
             if old is not value:            # an Aura / Equipment adding a creature type moved (cx_type_grants)
                 from ..cx_type_grants import refresh_attach
                 refresh_attach(self, old, value)
+                if name == "attached_to":   # "Whenever ~ becomes (un)attached" (cx_trig_attach, #538)
+                    from ..cx_trig_attach import moved
+                    moved(self, old, value)
             return
         if name == "card":
             object.__setattr__(self, "_card", value)

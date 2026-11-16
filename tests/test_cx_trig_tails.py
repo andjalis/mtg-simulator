@@ -27,13 +27,15 @@ class Heads(unittest.TestCase):
 
     def test_refusals(self):
         for head in ("Whenever a player taps a creature for mana",      # not a land word
-                     "Whenever ~ becomes attached to a creature",       # Equipment attach doesn't fire the event
+                     "Whenever ~ becomes attached to a creature",       # not this grammar: cx_trig_attach (#538)
                      "Whenever you put one or more frob counters on a creature",
                      "Whenever you become the target of a frob"):
             self.assertIsNone(compile_head(head), head)
-        for name in ("Groundchuck & Dirtbag", "Amulet of Safekeeping", "Enormous Energy Blade"):
+        for name in ("Groundchuck & Dirtbag", "Amulet of Safekeeping"):
             if DB is not None:
-                self.assertTrue(DB.get(name).unsupported, name)     # mana payoff / ability counter / Equipment
+                self.assertTrue(DB.get(name).unsupported, name)     # mana payoff / ability counter
+        if DB is not None:                                          # the Equipment head is read by cx_trig_attach
+            self.assertFalse(DB.get("Enormous Energy Blade").unsupported)   # (#538)
 
 
 @unittest.skipUnless(HAVE_DB, "card database not built")

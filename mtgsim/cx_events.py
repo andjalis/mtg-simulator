@@ -478,6 +478,8 @@ _OBJ_VERBS = [
     (r"attacks? (?:one of your opponents|an opponent)(?: or a planeswalker an opponent controls)?", ("attacks",),
      "atk_opp"),
     (r"attacks?", ("attacks",), ""),
+    (r"attacks? a player", ("attacks",), "atk_player"),                      # #538: not a planeswalker or battle
+    (r"attacks? a player or planeswalker", ("attacks",), "atk_pp"),          # not a battle
     (r"attacks? alone", ("attacks",), "alone"),
     (r"attacks? and (?:isn't|aren't) blocked", ("unblocked",), ""),
     (r"attacks? enchanted player", ("attacks",), "atk_cursed"),
@@ -550,7 +552,7 @@ _PLAYER_VERBS = [
     (_DISCARD, "discard"),
     (r"cycles? (?:a card|another card)", "cycle"),
     (r"cycles? or discards? (?:a card|another card)", "cycle_discard"),
-    (r"sacrifices? (an? .+|another .+|one or more .+)", "sacrifice"),
+    (r"sacrifices? (~|an? .+|another .+|one or more .+)", "sacrifice"),
     (r"plays? a land", "land"),
     (r"attacks?", "attack"),
     (r"scry|scries", "scry"),
@@ -606,6 +608,8 @@ def _compile_base(head: str):
                 spec["card"] = "" if vm[1] in ("a card", "one or more cards") else vm[1]
                 if vm[1] == "another card":
                     spec["card"] = ""
+            elif kind == "sacrifice" and vm[1] == "~":
+                spec["self"] = True         # "When you sacrifice ~" (#538)
             elif kind == "sacrifice":
                 sm = re.fullmatch(r"(an?|another|one or more) (.+)", vm[1])
                 alts = _desc_alts(sm[2], plural=sm[1] == "one or more") if sm else None
@@ -719,6 +723,13 @@ def _has_ev(perm) -> bool:
     from .cx_trigger_grants import granted
     from .cx_statics import linked_triggers
     return any(t.event.startswith("ev:") for t in list(perm.temp_triggers) + granted(perm) + list(linked_triggers(perm)))
+
+
+def attacks_player(game, attacker, or_planeswalker=False) -> bool:
+    """Is it attacking a player (or, with or_planeswalker, a planeswalker; never a battle)? (#538)"""
+    from .engine.state import Permanent
+    tgt = game.attack_targets.get(attacker, game.opponent(attacker.controller))
+    return tgt in game.players or or_planeswalker and isinstance(tgt, Permanent) and tgt.is_planeswalker
 
 
 def observe(game, p, event, source=None, context=None, subject=None):
@@ -887,6 +898,8 @@ def _match(game, spec, event, perm, p, source, context, subject, wants_player=Fa
             return False
         if kind == "gain_first" and actor.life_gained_turn != (getattr(game, "event_amount", None) or 0):
             return False
+        if kind == "sacrifice" and spec.get("self"):
+            return source if source is perm else False
         if kind == "sacrifice":
             if not isinstance(source, Permanent) or not _perm_fits(game, source, spec["alts"]):
                 return False
@@ -901,6 +914,8 @@ def _match(game, spec, event, perm, p, source, context, subject, wants_player=Fa
     if flag == "etb_mine" and obj.controller is not me:
         return False
     if flag == "etb_opp" and obj.controller is me:
+        return False
+    if flag in ("atk_player", "atk_pp") and not attacks_player(game, obj, flag == "atk_pp"):
         return False
     if flag in ("atk_me", "atk_me_only", "atk_opp"):
         tgt = game.attack_targets.get(obj)
