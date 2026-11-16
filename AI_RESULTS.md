@@ -1,5 +1,22 @@
 # AI before/after
 
+## Painlands deal their damage (#801, PR #808), 2026-11-16
+
+Not an AI change: a rules fix that changes the benchmark decks. Before #808, "{T}: Add {W} or {U}. This land deals 1 damage to you." dropped the damage, so painlands made coloured mana for free. Two of the four `benchmarks/small.json` decks play them: Rakdos midrange (4 Sulfurous Springs) and Azorius control (4 Adarkar Wastes).
+
+Built-in engine, `e5fa948e^1` (before) against `e5fa948e` (the #808 merge; the only difference is the painland fix). 400 games per matchup, seed 5; the script is `results/ai_801/run.sh`. Scores are for the first deck (draws count half), with the approximate 95% interval.
+
+| Matchup | Before | After |
+|---|---|---|
+| mono_red_aggro vs rakdos_midrange | 39.0% (34.3–43.9) | 41.0% (36.3–45.9) |
+| mono_red_aggro vs azorius_control | 76.8% (72.4–80.6) | 81.2% (77.1–84.8) |
+| rakdos_midrange vs azorius_control | 69.8% (65.1–74.0) | 75.8% (71.3–79.7) |
+| kiln_fiend_strobe vs rakdos_midrange | 14.2% (11.2–18.0) | 16.0% (12.7–19.9) |
+
+- Azorius control loses the most: it taps Adarkar Wastes for coloured mana over long games (22–23 player-turns against Rakdos), so the damage adds up. Its matchups against aggro and Rakdos both move about 4–6 points, at the edge of the intervals.
+- Rakdos midrange pays too, but less (it still wins its matchups); the aggro and combo matchups against it move by 2 points, inside the intervals.
+- Earlier numbers for these two decks (ladder, benchmark, `AI_RESULTS` entries before 2026-11-16) were measured with free painland mana.
+
 ## End-of-turn sweepers, damage sweepers and locking taps (#723), 2026-11-16
 
 Built-in engine on top of #729 (same code before and after except the #723 AI changes):

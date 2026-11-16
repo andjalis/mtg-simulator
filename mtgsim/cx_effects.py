@@ -130,7 +130,7 @@ def _animate(m):
 
 _LAND = r"(?:snow |basic |nonbasic )?land|mountain|forest|plains|island|swamp|cave|desert"
 _ANIM = re.compile(
-    r"(?:(?:up to one )?target (?P<desc>(?:" + _LAND + r")(?: you control)?)|(?P<it>it|that land)) becomes an? "
+    r"(?P<lead>until end of turn, )?(?:(?:up to one )?target (?P<desc>(?:" + _LAND + r")(?: you control)?)|(?P<it>it|that land)) becomes an? "
     r"(?P<p>\d+)/(?P<t>\d+) [\w ]*?creature(?: with (?P<kws>[\w ,]+?))?(?P<eot> until end of turn)?"
     r"(?:\. it's still a land| that's still a land)(?=\.|$)", re.I)
 
@@ -138,7 +138,7 @@ _ANIM = re.compile(
 def _anim_sub(m):
     who = "p" if m["it"] else "t"
     desc = (m["desc"] or "").lower()
-    return f"CXANIM {who} {m['p']} {m['t']} {0 if m['eot'] else 1} {desc}|{m['kws'] or ''}"
+    return f"CXANIM {who} {m['p']} {m['t']} {0 if m['eot'] or m['lead'] else 1} {desc}|{m['kws'] or ''}"
 
 EFFECT_PATTERNS.append(
     (r"cxanim (?P<who>[tp]) (?P<p>\d+) (?P<t>\d+) (?P<perm>[01]) (?P<desc>[\w ]*)\|(?P<kws>[\w ,]*)", _animate))

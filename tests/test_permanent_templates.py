@@ -89,6 +89,134 @@ class PermanentTemplates(unittest.TestCase):
         eff = self.parse('Target Elf creature gains shroud until end of turn.')[0]
         self.assertIn(obj, self.g.legal_targets(self.a, eff))
 
+    def test_shared_modifier_distributes_over_type_union(self):
+        self.assertEqual(selector('nontoken artifact or creature'),
+                         {'types_any': ['artifact', 'creature'], 'traits': ['nontoken']})
+        self.assertEqual(selector('legendary creature or planeswalker'),
+                         {'types_any': ['creature', 'planeswalker'], 'traits': ['legendary']})
+        self.assertEqual(selector('noncreature artifact or noncreature enchantment'),
+                         {'types_any': ['artifact', 'enchantment'], 'traits': ['noncreature']})
+        self.assertEqual(selector('non-Saga artifact or enchantment'),
+                         {'types_any': ['artifact', 'enchantment'], 'not_subtypes': ['saga']})
+        self.assertEqual(selector('legendary creatures or planeswalkers', plural=True),
+                         {'types_any': ['creature', 'planeswalker'], 'traits': ['legendary']})
+
+    def test_modifier_on_one_alternative_only_stays_unread(self):
+        # an alternative with no type or subtype of its own stays unread
+        for text in ('artifact or', 'artifact or with flying'):
+            with self.subTest(text=text):
+                self.assertIsNone(selector(text))
+
+    def test_intersection_inside_a_union_alternative(self):
+        # the leading adjective distributes to the bare alternative after it
+        self.assertEqual(selector('nontoken artifact creature or vehicle'),
+                         {'alts': [('nontoken', 'artifact', 'creature'), ('nontoken', 'vehicle')]})
+        self.assertEqual(selector('artifact creature or vehicle'),
+                         {'alts': [('artifact', 'creature'), ('vehicle',)]})
+        self.assertEqual(selector('artifact or Vehicle'),
+                         {'alts': [('artifact',), ('vehicle',)]})
+
+    def test_alts_with_intersection_target_each_alternative_exactly(self):
+        golem = self.put(card('Golem', '{3}', 'Artifact Creature — Golem', '', 3, 3))
+        token_golem = self.put(make_token('Golem', 1, 1, artifact=True))
+        car = self.put(card('Car', '{2}', 'Artifact — Vehicle', ''))
+        artifact = self.put(card('Tool', '{1}', 'Artifact', ''))
+        bear = self.put()
+        eff = self.parse('Target nontoken artifact creature or Vehicle gains shroud until end of turn.')[0]
+        legal = self.g.legal_targets(self.a, eff)
+        self.assertIn(golem, legal)                # nontoken artifact creature
+        self.assertIn(car, legal)                  # Vehicle
+        token_car = self.put(dataclasses.replace(card('Car', '{2}', 'Artifact — Vehicle', ''), is_token=True))
+        self.assertNotIn(token_golem, legal)       # a token is not a nontoken artifact creature
+        self.assertNotIn(token_car, self.g.legal_targets(self.a, eff))   # nor a nontoken Vehicle
+        self.assertNotIn(artifact, legal)          # a plain artifact is neither alternative
+        self.assertNotIn(bear, legal)
+
+    def test_per_alternative_modifiers_read_as_alts(self):
+        self.assertEqual(selector('artifact or nontoken creature'),
+                         {'alts': [('artifact',), ('nontoken', 'creature')]})
+        self.assertEqual(selector('red artifact or blue creature'),
+                         {'alts': [('red', 'artifact'), ('blue', 'creature')]})
+        self.assertEqual(selector('nontoken artifact or legendary creature'),
+                         {'alts': [('nontoken', 'artifact'), ('legendary', 'creature')]})
+        self.assertEqual(selector('elf creature or artifact'),
+                         {'alts': [('elf', 'creature'), ('artifact',)]})
+
+    def test_union_alternatives_need_a_noun_of_their_own(self):
+        # every alternative needs a type or subtype word; modifier-only alternatives stay unread
+        for text in ('artifact or', 'artifact or nontoken', 'artifact or with flying'):
+            with self.subTest(text=text):
+                self.assertIsNone(selector(text))
+
+    def test_alts_selector_targets_each_alternative_as_written(self):
+        artifact = self.put(card('Tool', '{1}', 'Artifact', ''))
+        token_artifact = self.put(make_token('Treasure', 0, 0, kind='treasure'))
+        bear = self.put()
+        token_creature = self.put(make_token('Soldier', 2, 2))
+        land = self.put(ISLAND)
+        eff = self.parse('Exile target artifact or nontoken creature.')[0]
+        legal = self.g.legal_targets(self.a, eff)
+        self.assertIn(artifact, legal)             # the bare "artifact" alternative admits tokens
+        self.assertIn(token_artifact, legal)
+        self.assertIn(bear, legal)                 # the "nontoken creature" alternative
+        self.assertNotIn(token_creature, legal)    # a token is not a nontoken creature
+        self.assertNotIn(land, legal)
+
+    def test_comma_joined_modifiers_before_a_type(self):
+        self.assertEqual(selector('non-Saga, nonland permanent'),
+                         {'not_subtypes': ['saga'], 'traits': ['nonland'], 'types_all': ['permanent']})
+        self.assertEqual(selector('non-Sagas, nonland permanents', plural=True),
+                         {'not_subtypes': ['saga'], 'traits': ['nonland'], 'types_all': ['permanent']})
+        self.assertIsNone(selector('creature, artifact'))    # a comma-joined type list is not a union
+
+    def test_nontoken_union_targets_nontoken_artifacts_and_creatures_only(self):
+        artifact = self.put(card('Tool', '{1}', 'Artifact', ''))
+        bear = self.put()
+        token = self.put(make_token('Soldier', 2, 2))
+        land = self.put(ISLAND)
+        eff = self.parse('Exile up to one target nontoken artifact or creature.')[0]
+        legal = self.g.legal_targets(self.a, eff)
+        self.assertIn(artifact, legal)
+        self.assertIn(bear, legal)
+        self.assertNotIn(token, legal)
+        self.assertNotIn(land, legal)
+
+    def test_non_saga_nonland_permanent_selector(self):
+        saga = self.put(card('Story', '', 'Enchantment — Saga', ''))
+        artifact = self.put(card('Tool', '{1}', 'Artifact', ''))
+        land = self.put(ISLAND)
+        eff = self.parse('Return up to one target non-Saga, nonland permanent to its owner\'s hand.')[0]
+        legal = self.g.legal_targets(self.a, eff)
+        self.assertIn(artifact, legal)
+        self.assertNotIn(saga, legal)
+        self.assertNotIn(land, legal)
+
+    def test_shared_modifier_union_blink_sentence(self):
+        effects, bad = _parse_effects('Exile up to one target nontoken artifact or creature, then return '
+                                      "that card to the battlefield tapped under its owner's control.")
+        self.assertFalse(bad, bad)
+        self.assertEqual(len(effects), 1)
+        eff = effects[0]
+        self.assertEqual(eff.kind, 'blink')
+        self.assertEqual(eff.data['selector'],
+                         {'types_any': ['artifact', 'creature'], 'traits': ['nontoken']})
+        self.assertTrue(eff.data['optional_target'])
+        self.assertTrue(eff.data['tapped'])
+
+    def test_shared_modifier_union_linked_exile_sentence(self):
+        effects, bad = _parse_effects('For each player, exile up to one target non-Saga, nonland permanent '
+                                      'that player controls until ~ leaves the battlefield.')
+        self.assertFalse(bad, bad)
+        self.assertEqual(len(effects), 2)
+        self.assertTrue(all(e.kind == 'oring' for e in effects), effects)
+        self.assertEqual(sorted(e.data['selector']['controller'] for e in effects), ['mine', 'opp'])
+        for eff in effects:
+            spec = eff.data['selector']
+            self.assertEqual(spec['not_subtypes'], ['saga'])
+            self.assertEqual(spec['traits'], ['nonland'])
+            self.assertEqual(spec['types_all'], ['permanent'])
+            self.assertTrue(eff.data['optional_target'])
+
     def test_negative_subtype_excludes_changelings(self):
         changeling = self.put(dataclasses.replace(BEAR, changeling=True))
         bear = self.put()
