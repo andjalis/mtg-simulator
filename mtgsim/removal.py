@@ -49,7 +49,7 @@ EFFECT_PATTERNS = wordings.patterns("removal") + [
     (r"target creature you control deals damage equal to its power to each of two other target creatures",
      lambda m: _pair("bite") + [_distinct(_pair("bite")[1])]),
     (r"put a \+1/\+1 counter on each of up to two target creatures",
-     lambda m: [_distinct(_counter()), _distinct(_counter())]),
+     lambda m: [_up_to_one(_distinct(_counter())), _up_to_one(_distinct(_counter()))]),     # 0..2 targets (#845)
     (r"destroy (up to one )?target artifact, enchantment, or creature with flying",
      lambda m: _effect("destroy", "nonland_perm", filter="art_ench_fly", data=_up_to(m[1]))),
     (r"return up to one other target permanent you control to its owner's hand",
@@ -85,6 +85,12 @@ def _effect(kind, target, data=None, filter=""):
 
 def _distinct(eff):
     eff.data = dict(eff.data, distinct=True)
+    return eff
+
+
+def _up_to_one(eff):
+    """One of "each of up to N target ..." (#845): each slot may stay empty, so 0..N targets are legal."""
+    eff.data = dict(eff.data, optional_target=True)
     return eff
 
 
