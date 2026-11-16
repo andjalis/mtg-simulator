@@ -155,6 +155,7 @@ class CardDef:
     loyalty: int = 0
     defense: int = 0                                       # Battle: defense counters it enters with
     loyalty_abilities: list = field(default_factory=list)   # (cost, effects)
+    loyalty_x: frozenset = frozenset()                      # indices of "−X" loyalty abilities (cost 0 above; #839)
     turn_creature: tuple = ()                           # Kaito: (power, toughness, subtypes, keywords) during your turn
     pw_instant_on_entry: bool = False                   # The Wandering Emperor
     chapters: list = field(default_factory=list)        # saga chapters: one effect list each

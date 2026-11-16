@@ -1164,11 +1164,17 @@ def _face_keyword_ability_lines(st, line):
                         r"time you could cast an instant\.", line):
             extra["pw_instant_on_entry"] = True
             return None
-        m = re.fullmatch(r"\[([+−-]?\d+)\]: ?(.+)", line) or \
-            ("Planeswalker" in types and re.fullmatch(r"([+−-]?\d+): ?(.+)", line))
+        m = re.fullmatch(r"\[([+−-]?(?:\d+|X))\]: ?(.+)", line) or \
+            ("Planeswalker" in types and re.fullmatch(r"([+−-]?(?:\d+|X)): ?(.+)", line))
         if m:
             effs, bad = _parse_effects(m[2])
-            if effs:
+            if effs and m[1].endswith("X"):      # "−X: ...": cost 0 here, X chosen on activation (loyalty_x, #839)
+                if m[1][0] not in "−-":
+                    unsupported.append(f"[{m[1]}]: {m[2]}")
+                    return None
+                extra["loyalty_x"] = frozenset(extra.get("loyalty_x", frozenset()) | {len(loyalty_abilities)})
+                loyalty_abilities.append((0, effs))
+            elif effs:
                 loyalty_abilities.append((int(m[1].replace("−", "-")), effs))
             unsupported += [f"[{m[1]}]: {b}" for b in bad]
             return None

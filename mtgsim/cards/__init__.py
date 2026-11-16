@@ -305,3 +305,5 @@ _EFFECT_PATTERNS += _spell_grants.EFFECT_PATTERNS
 from .. import until_nonland as _until_nonland  # noqa: E402  "exile until a nonland card, you may cast it" (#625)
 _EFFECT_PATTERNS += _until_nonland.EFFECT_PATTERNS
 _SUBS += _until_nonland.SUBS
+from .. import loyalty_x as _loyalty_x  # noqa: E402  Ugin's "−X: exile each permanent with mana value X or less" (#839)
+_EFFECT_PATTERNS += _loyalty_x.EFFECT_PATTERNS
