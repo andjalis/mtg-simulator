@@ -733,6 +733,9 @@ def _face_cost_and_static_lines(st, line):
         if m:
             extra["cost_reduction"] = "affinity:" + m[1]
             return None
+        if line == "Affinity for Equipment":        # its own plural (CR 702.41a, #646)
+            extra["cost_reduction"] = "affinity:Equipment"
+            return None
         if re.fullmatch(r"You may play an additional land on each of your turns\.", line):
             extra["extra_lands"] = 1
             return None
