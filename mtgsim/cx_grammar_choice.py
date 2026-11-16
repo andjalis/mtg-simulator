@@ -45,3 +45,26 @@ def loses_choice(m, clause):
     if options is None or clause.duration != "eot":
         return None
     return [Part("cx_lose_kw", data={"keyword": "choice:" + "|".join(options), "side": "theirs"})]
+
+
+@verb(r"gains? protection from the color of your choice", heads=("gain", "gains"),
+      subjects=("permanent", "group", "host"))
+def gains_protection_choice(m, clause):
+    """"... gains protection from the color of your choice until end of turn": the existing protection choice
+    (protection.choose_color: the colour of the threat on the stack, else the opponent's main colour), one per
+    resolution; every member of a group gets the same colour since the pick depends on the game, not the member."""
+    if clause.duration != "eot":
+        return None
+    from .protection import CHOICE
+    return [Part("grant", data={"keyword": CHOICE})]
+
+
+# "Choose a color. Creatures you control gain protection from the chosen color until end of turn." is the same one
+# choice as "... gain protection from the color of your choice ..." (Akroma's Blessing, Brave the Elements). Only
+# subjects of your own permanents: for "all creatures" the AI's pick (the opponent's colour) would protect their
+# creatures too, which is not what the card is cast for.
+SUBS = [
+    (re.compile(r"choose a color\. ((?:[^.]*?you control|up to \w+ target [^.]*?|x target [^.]*?|target [^.]*?) gains?) "
+                r"protection from the chosen color until end of turn\.", re.I),
+     lambda m: f"{m[1]} protection from the color of your choice until end of turn."),
+]
