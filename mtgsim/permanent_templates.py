@@ -361,11 +361,16 @@ def selector(text, *, plural=False):
         result['base_pt'] = [int(base[1]), int(base[2])]
         text = text[:base.start()]
     # Only one supported trailing predicate; additional text fails below.
-    m = re.search(r' with (power|toughness|mana value) (\d+)(?: or (less|greater))?$', text, re.I)
+    m = re.search(r' with (power|toughness|mana value) (\d+|X)(?: or (less|greater))?$', text, re.I)
     rel = re.search(r' with toughness greater than (?:its|their) power$', text, re.I)
     if rel:          # Doran's friends: "each creature you control with toughness greater than its power"
         result['tough_gt_power'] = True
         text = text[:rel.start()]
+    elif m and m[2].upper() == 'X':      # X paid for the spell or ability (#403, cx_noun); "X or greater" is refused
+        if (m[3] or '').lower() == 'greater':
+            return None
+        result['stat_x'] = [m[1].lower(), '<=' if m[3] else '==']
+        text = text[:m.start()]
     elif m:
         result['stat'] = [m[1].lower(), '==' if not m[3] else '<=' if m[3].lower() == 'less' else '>=', int(m[2])]
         text = text[:m.start()]
@@ -548,6 +553,10 @@ def matches(game, permanent, spec, controller, source=None):
         return False
     if spec.get('tough_gt_power') and not permanent.toughness > permanent.power:
         return False
+    if 'stat_x' in spec:
+        from .cx_noun import stat_x_ok
+        if not stat_x_ok(game, permanent, spec, controller):
+            return False
     if 'stat' in spec:
         stat, op, n = spec['stat']
         value = permanent.card.cmc if stat == 'mana value' else getattr(permanent, stat)

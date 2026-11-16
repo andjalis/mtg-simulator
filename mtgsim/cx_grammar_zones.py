@@ -55,6 +55,13 @@ def objects(text: str):
     items = re.split(r",? and (?:all )?|, (?:all )?", m[2])
     if len(items) < 2:
         return None
+    if all(len(i.split()) == 1 for i in items[:-1]) and len(items[-1].split()) > 1 \
+            and not items[-1].startswith(("each ", "all ")):
+        # "each artifact, creature, and enchantment with mana value X or less": the trailing qualifier belongs to
+        # the whole list (#403), so it reads as one union or not at all
+        union = ", ".join(items[:-1]) + (", or " if len(items) > 2 else " or ") + items[-1]
+        obj = _object(f"{m[1]} {union}")
+        return [obj] if obj is not None and obj.kind == "group" else None
     out = []
     for words in items:
         obj = _object(f"{m[1]} {words}")

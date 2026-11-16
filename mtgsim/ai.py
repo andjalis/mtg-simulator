@@ -843,7 +843,8 @@ class HeuristicAI:
                  if (e.data or {}).get("x") else
                  dataclasses.replace(e, amount=x, data={**e.data, "x_n": False})      # "return X target ... cards"
                  if e.kind == "gy_move" and e.data.get("x_n") else e for e in card.spell_effects]
-        return dataclasses.replace(card, spell_effects=sized)
+        from .cx_noun import plan_x
+        return dataclasses.replace(card, spell_effects=plan_x(sized, x))      # "with mana value X" (#403)
 
     def plan_spell(self, game: Game, me: Player, card: CardDef, precombat: bool = False):
         """Return (value, targets) if the AI wants to cast card in its main phase, else None."""
@@ -856,8 +857,9 @@ class HeuristicAI:
             base = card.spell_effects[0].data["card"]
             return (card_value(base) / 2 + 1, None) if base.is_creature and opp.life > 0 else None
         from .cx_spell_costs import has_x_cost
+        from .cx_noun import _has as stat_x
         if not card.is_permanent and (any((e.data or {}).get("x") or e.kind == "gy_move" and e.data.get("x_n")
-                                          for e in card.spell_effects) or has_x_cost(card)):
+                                          for e in card.spell_effects) or has_x_cost(card) or stat_x(card.spell_effects)):
             sized = self._sized(game, me, card)
             return None if sized is None else self.plan_spell(game, me, sized, precombat)
         if card.is_permanent:

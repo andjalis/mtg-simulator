@@ -741,6 +741,8 @@ def _parse_face(data: dict) -> CardDef:
 
     from ..cx_multi_target import unpaid_x
     unsupported += unpaid_x(cost, spell, modes, triggers, activated, loyalty_abilities, etb, alt_costs, extra)  # #312
+    from ..cx_noun import unpaid_stat_x
+    unsupported += unpaid_stat_x(cost, spell, modes, triggers, activated, loyalty_abilities, etb, alt_costs, extra)  # #403
     from ..cx_chosen_type import unbound, hostile
     unsupported += unbound(oracle, extra, spell, modes, triggers, activated, loyalty_abilities, etb, extra)  # #627
     if extra.get("choose_type") == "creature" and hostile(oracle):
