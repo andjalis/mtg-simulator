@@ -267,7 +267,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
             theirs = [x for x in theirs if x.toughness <= eff.amount2]
         theirs = [x for x in theirs if not (k == "destroy" and x.has("indestructible"))]
         return max(theirs, key=perm_value, default=None)
-    if k in ("pump", "p1_counters", "double_power", "grant", "explore", "attach_self", "force_blocked", "inherit_counters"):
+    if k in ("pump", "p1_counters", "double_power", "grant", "explore", "attach_self", "force_blocked", "inherit_counters",
+             "target_ban_temp"):
         return max(mine, key=perm_value, default=None)
     if k in ("oring", "blink_link_exile"):     # O-Ring style "exile target ... until/when ~ leaves" (#358)
         return max(theirs, key=perm_value, default=None)
@@ -572,6 +573,15 @@ def _option_value(game: Game, me: Player, c: CardDef) -> float:
     return modal.value(game, me, c.modes, n=c.modes_choose) + max(rest, 0) if c.modes else rest
 
 
+def _choice_saves(keyword, item, colored) -> bool:
+    """Whether "protection from [artifacts / colorless or from] the color of your choice" stops item (#643)."""
+    if not isinstance(keyword, str) or keyword.split("|")[0] != "protection_choice":
+        return False
+    card = getattr(item, "card", None) or getattr(getattr(item, "source", None), "card", None)
+    alt = keyword.split("|")[1] if "|" in keyword else ""
+    return colored or alt == "colorless" or alt == "artifacts" and getattr(card, "is_artifact", False)
+
+
 def protective_ability(game: Game, me: Player, item, victim):
     """An activated ability of ours that saves victim from item (Mother of Runes, Samite Healer, a hexproof or
     indestructible granter): ("activate", permanent, "ability:N", targets), or None."""
@@ -586,12 +596,12 @@ def protective_ability(game: Game, me: Player, item, victim):
                 continue
             e = act.effects[0]
             keyword = e.data.get("keyword") if e.kind == "grant" else None
-            saves = (keyword == "protection_choice" and colored or keyword == "hexproof"
+            saves = (_choice_saves(keyword, item, colored) or keyword == "hexproof"
                      or keyword == "indestructible" and (any(x.kind == "destroy" for x in item.effects)
                                                          or damage >= victim.toughness - victim.damage)
                      or e.kind == "prevent_next" and damage and victim.toughness - victim.damage > damage - e.amount)
-            if not saves or e.target not in ("creature", "creature_mine", "any", "self") or \
-                    e.target == "self" and perm is not victim:
+            if not saves or e.target not in ("creature", "creature_mine", "any", "self", "permanent") or \
+                    e.target == "self" and perm is not victim or e.data.get("other") and perm is victim:
                 continue
             if e.target != "self" and not game.passes_filter(e, victim, me):
                 continue            # "target artifact creature", "target Cleric or Wizard creature" (#333)

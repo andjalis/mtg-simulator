@@ -142,7 +142,8 @@ def _gives_protection(card: CardDef) -> bool:
 def _is_trick(card: CardDef) -> bool:
     """Instant pumps and protection spells: kept for combat and for answering removal."""
     return card.instant_speed and not card.is_permanent and (
-        _boost(card) is not None or _gives_hexproof(card) or _gives_protection(card))
+        _boost(card) is not None or _gives_hexproof(card) or _gives_protection(card) or
+        any(e.kind == "target_ban_temp" and not e.data.get("group") for e in card.spell_effects))   # (#643)
 
 
 def _aim(card: CardDef, eff, target) -> list:
@@ -1581,7 +1582,9 @@ class HeuristicAI:
             source = item.card or (item.source.card if item.source is not None else None)
             for card in options:
                 boost = _boost(card)
-                if _gives_hexproof(card) or _gives_protection(card) and source is not None and source.colors:
+                from .target_bans import stops as ban_stops          # Vines of Vastwood (#643)
+                if _gives_hexproof(card) or _gives_protection(card) and source is not None and source.colors or \
+                        ban_stops(card, item, me):
                     first = next((e for e in card.spell_effects if e.target in ("creature_mine", "creature")), None)
                     if first is not None:
                         return card, _aim(card, first, tgt)
