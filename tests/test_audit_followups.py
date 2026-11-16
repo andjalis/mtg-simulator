@@ -1,6 +1,7 @@
 """Audit 2026-11-16 (opus-cast) follow-ups: #824 "target nonland permanent an opponent controls with mana value N or
 less" allowed the caster's own permanents; #833 Depopulate's "each player who controls a multicolored creature
-draws a card" was matched and dropped; #827 Deceit's two spent-colour triggers and impulse draws counted full."""
+draws a card" was matched and dropped; #827 Deceit's two spent-colour triggers and impulse draws, and #815
+"any color that a land ... could produce" (Fellwar Stone), counted full."""
 import unittest
 
 from mtgsim.engine import Permanent, StackItem
@@ -73,7 +74,7 @@ class RealCards(unittest.TestCase):
             eff = db.get(name).triggers[0].effects[0]
             self.assertEqual(eff.data.get("selector"), {"controller": "opp"}, name)
         self.assertEqual(db.get("Depopulate").spell_effects[0].kind, "draw_each")
-        for name in ("Deceit", "Vibrance", "Cori Mountain Monastery", "Act on Impulse"):
+        for name in ("Deceit", "Vibrance", "Cori Mountain Monastery", "Act on Impulse", "Fellwar Stone", "Exotic Orchard"):
             self.assertEqual(card_coverage(db.get(name)).status, "simplified", name)
         self.assertEqual(card_coverage(db.get("Depopulate")).status, "full")
 
