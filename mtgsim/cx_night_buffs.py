@@ -6,6 +6,7 @@ pieces that "Enchanted creature gets +2/+2." and "Enchanted creature has "{T}: A
 """
 from __future__ import annotations
 
+import json
 import re
 
 _KW = ("flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|shroud|indestructible|"
@@ -25,6 +26,22 @@ def _enters_tapped_unless(line, st) -> bool:
     if not code.startswith("lib:") or '"types":["creature"]' not in code or '"sub"' in code or code.startswith('lib:["or"'):
         return False        # creature checks only: land and planeswalker checks have older tapped_condition forms
     st.extra["tapped_condition"] = code
+    return True
+
+
+def enters_tapped_late(line, st) -> bool:
+    """For lines no other parser took (face_lines runs this last, so the older special codes keep their lines):
+    "~ enters tapped unless <condition>" / "~ enters tapped if <condition>" / "If <condition>, ~ enters tapped"
+    with any condition the shared library reads (#630)."""
+    m = re.fullmatch(r"~ enters tapped (unless|if) (.+)\.", line) or \
+        re.fullmatch(r"(If) (.+?), ~ enters tapped\.", line)
+    if not m or st.extra.get("tapped_condition"):
+        return False
+    from .cx_condlib import parse
+    code = parse(m[2])
+    if not code.startswith("lib:"):
+        return False
+    st.extra["tapped_condition"] = code if m[1] == "unless" else 'lib:["not",' + json.dumps(code) + "]"
     return True
 
 

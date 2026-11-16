@@ -1,5 +1,24 @@
 # AI before/after
 
+## Group removal, X instants at end of turn, tuck removal, tap + stun tempo (#716), 2026-11-16
+
+Built-in engine, origin/main `2310dd5f` against the same code with the #716 AI changes:
+- `group_remove` destroy / exile / bounce are valued by `sweep_value` (net by side).
+- `end_of_turn` judges X spells at the X the mana pays for.
+- Tuck kinds count as removal.
+- End-of-turn "tap target creature" (+ stun) and draws are valued as tempo.
+
+400 games per matchup, seed 5; the "after" run was repeated and was identical. The test deck `results/ai_716/grixis_716.txt` plays 4 each of Rain of Daggers, Electrodominance, Synchronized Eviction and Rime Chill; the script is `results/ai_716/run.sh`.
+
+| Matchup | Before | After |
+|---|---|---|
+| grixis_716 vs green_stompy | 2.0% | 3.0% |
+| grixis_716 vs mono_red_aggro | 4.5% | 5.8% |
+| ub_snow_control vs mono_red_aggro | 44.0% | 44.0% |
+| orzhov_midrange vs green_stompy | 69.2% | 69.2% |
+
+- The four cards are now cast and aimed at the opponent's side (tests in `tests/test_ai_716.py`). The test deck's gains are inside the 95% intervals (a weak deck either way). The two stock matchups are game-for-game identical, so decks without these effect shapes are unaffected.
+
 ## Race-aware attack scoring (not kept), 2026-10-22
 
 Built-in engine on `0cf3410`. The tried change weighted the crack-back penalty in `score_attack` by the damage race:

@@ -56,8 +56,8 @@ def ref_bite(game, p, eff, target, item, prev=None, cause=None, **_):
         srcs = group_members(game, p, {"group": data["src_group"]}, item.source if item is not None else None)
     else:
         srcs = list(getattr(item, "bite_sources", None) or ()) if item is not None else []
-        if item is not None:
-            item.bite_sources = []          # the next sentence records its own sources
+        if item is not None and not data.get("keep"):
+            item.bite_sources = []          # the next sentence records its own sources ("keep": a second recipient)
     hits = []
     for src in srcs:
         n = max(0, src.power) * data.get("mult", 1) + data.get("plus", 0)

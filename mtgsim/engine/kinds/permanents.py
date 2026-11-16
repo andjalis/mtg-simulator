@@ -679,3 +679,10 @@ def siege_defeat(game, p, item, **_):
     """A Siege's defeat trigger: exile it, then its controller may cast it transformed (battles.py)."""
     from ...battles import defeat
     defeat(game, p, item)
+
+
+@kind("champion")
+def champion(game, p, eff, item, **_):
+    """Champion (CR 702.72): mtgsim.champion."""
+    from ...champion import resolve
+    resolve(game, p, eff, item)
