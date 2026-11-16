@@ -200,7 +200,8 @@ def _fighter(game, me):
     counters or pump the same spell gives it first, when its condition holds (Ancient Animus: if it's legendary)."""
     from .engine.state import Permanent
     chosen = getattr(game, "_choosing_targets", None) or []
-    fighter = chosen[0] if chosen and isinstance(chosen[0], Permanent) and chosen[0].controller is me else None
+    at = _mark_index(getattr(game, "_choosing_effects", None) or (), len(chosen))
+    fighter = chosen[at] if len(chosen) > at and isinstance(chosen[at], Permanent) and chosen[at].controller is me else None
     if fighter is None:
         return None, 0
     bonus = 0
@@ -209,6 +210,15 @@ def _fighter(game, me):
         if t is fighter and plus and (not e.cond or game.check_cond(me, e, None, fighter)):
             bonus += max(1, e.amount)
     return fighter, bonus
+
+
+def _mark_index(effects, n, eff=None) -> int:
+    """Where the fighter's target sits: the last "target creature you control" mark before this effect (the fight
+    mode of a modal spell can follow another chosen mode: Brigid's Command), else the first target."""
+    effects = list(effects)
+    end = next((i for i, e in enumerate(effects) if e is eff), len(effects)) if eff is not None else len(effects)
+    marks = [i for i, e in enumerate(effects[:min(end, n)]) if e.kind == "fight_mark"]
+    return marks[-1] if marks else 0
 
 
 def resolve(game, p, eff, target, item):
@@ -226,7 +236,8 @@ def resolve(game, p, eff, target, item):
             game.log(f"{target.card.name} returns to hand", p)
             game.leave_battlefield(target, "hand")
         return
-    mine = item.targets[0] if item is not None and item.targets else None
+    at = _mark_index(item.effects, len(item.targets), eff) if item is not None and item.effects else 0
+    mine = item.targets[at] if item is not None and len(item.targets) > at else None
     if mine is not None and item.effects and item.effects[0] is eff:
         mine = None     # a lone "it fights target creature": targets[0] is this effect's own target, not the fighter (#319)
     if mine is None and item is not None:
