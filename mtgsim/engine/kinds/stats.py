@@ -188,7 +188,7 @@ _KEYWORD_RANK = {k: i for i, k in enumerate(("flying", "double strike", "indestr
 @kind("grant")
 def grant(game, p, eff, target, item, **_):
     if eff.data.get("host") and item is not None and isinstance(item.source, Permanent):
-        target = item.source.attached_to
+        target = item.source.attached_to or item.source.aura_host     # an Equipment's or an Aura's host (#742)
     if isinstance(target, Permanent):
         keyword = eff.data["keyword"]
         if keyword == protection.CHOICE:
