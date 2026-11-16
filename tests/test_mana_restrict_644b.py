@@ -57,7 +57,7 @@ class Parse(unittest.TestCase):
                          {"s": ["s:elemental", "st:chandra/planeswalker"], "a": []})
         self.assertEqual(M._spec(M.parse("to cast a time lord or alien spell or activate an ability of a time lord or "
                                          "alien")), {"s": ["s:time lord", "s:alien"], "a": ["s:time lord", "s:alien"]})
-        self.assertEqual((TERRITORY.mana_restriction, COURTYARD.mana_restriction), ("chosen_type", "chosen_type_abil"))
+        self.assertEqual((TERRITORY.mana_restriction, COURTYARD.mana_restriction), ("chosen_type_plain", "chosen_type_abil"))
         self.assertEqual((SAUR.advanced_rules["mana_from"], MYR.advanced_rules["mana_from"]), ("basic_land", "creature"))
         for c in (TERRITORY, COURTYARD, SAUR, MYR):
             self.assertEqual(c.unsupported, [], c.name)
@@ -87,6 +87,28 @@ class Pay(unittest.TestCase):
         self.assertTrue(g.mana_allowed(courtyard, M.AbilityPayment(elf)))       # and abilities of an Elf
         self.assertFalse(g.mana_allowed(courtyard, M.AbilityPayment(goblin)))
         self.assertTrue(g.mana_allowed(courtyard, ELF))
+
+    def test_only_cavern_makes_the_spell_uncounterable(self):
+        from mtgsim.engine import StackItem
+        cavern = card("Test Cavern", "", "Land", "As this land enters, choose a creature type.\n{T}: Add one mana of any "
+                      "color. Spend this mana only to cast a creature spell of the chosen type, and that spell can't be "
+                      "countered.")
+        for land, uncounterable in ((TERRITORY, False), (COURTYARD, False), (cavern, True)):
+            g, a, b = game()
+            src = ready(g, a, land)[0]
+            src.chosen_type = "Elf"
+            ready(g, a, FOREST)
+            a.hand = [ELF]
+            seen = []
+
+            class Recording(list):
+                def append(self, x):
+                    seen.append(x)
+                    super().append(x)
+            g.stack = Recording(g.stack)
+            self.assertTrue(g.cast(a, ELF, None), land.name)
+            item = next(x for x in seen if isinstance(x, StackItem) and x.card and x.card.name == ELF.name)
+            self.assertEqual(bool(getattr(item, "uncounterable", False)), uncounterable, land.name)
 
     def test_basic_lands_only(self):
         g, a, b = game()

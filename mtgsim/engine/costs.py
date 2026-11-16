@@ -125,7 +125,7 @@ class CostsMixin:
             return src is not None and src.is_creature and perm.chosen_type in src.card.subtypes
         if not isinstance(spell, CardDef):
             return False
-        if r in ("chosen_type", "chosen_type_abil"):
+        if r in ("chosen_type", "chosen_type_plain", "chosen_type_abil"):
             return spell.is_creature and perm.chosen_type in spell.subtypes
         if r == "creature":
             return spell.is_creature
