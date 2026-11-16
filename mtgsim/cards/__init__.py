@@ -275,6 +275,9 @@ from .. import cx_spent as _cx_spent  # noqa: E402
 _SUBS += _cx_spent.SUBS
 from .. import divided_prevent as _divided_prevent  # noqa: E402
 _EFFECT_PATTERNS += _divided_prevent.EFFECT_PATTERNS
+from .. import library_peek as _library_peek  # noqa: E402
+_EFFECT_PATTERNS += _library_peek.EFFECT_PATTERNS
+_SUBS += _library_peek.SUBS
 from .. import cx_ifpos as _cx_ifpos  # noqa: E402
 _SUBS += _cx_ifpos.SUBS
 from .. import damage_reorder as _damage_reorder  # noqa: E402
@@ -291,6 +294,8 @@ from .. import zone_exile as _zone_exile  # noqa: E402
 _EFFECT_PATTERNS += _zone_exile.EFFECT_PATTERNS
 from .. import give_control as _give_control  # noqa: E402
 _EFFECT_PATTERNS += _give_control.EFFECT_PATTERNS
+from .. import life_total as _life_total  # noqa: E402
+_EFFECT_PATTERNS += _life_total.EFFECT_PATTERNS
 from .. import free_cast as _free_cast  # noqa: E402  "cast a spell from your hand without paying its mana cost" (#625)
 _EFFECT_PATTERNS += _free_cast.EFFECT_PATTERNS
 from .. import cx_dmg_equal as _cx_dmg_equal  # noqa: E402  damage equal to a quantity (#626)
