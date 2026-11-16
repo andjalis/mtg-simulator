@@ -401,6 +401,22 @@ def effect_value(game, player, effect, target):
                  if not d.get('desc') or card_matches(c, d['desc'])]
         mine = sum(1 for c in cards if c in player.graveyard or c in player.hand)
         return min(1, len(cards)) if effect.kind == 'graveyard_exile_choice' else len(cards) - 2 * mine
+    if effect.kind == 'player_loses':
+        return 1000 if target is game.opponent(player) else -1000
+    if effect.kind == 'life_total':
+        op, who = effect.data['op'], effect.data['who']
+        victims = {'you': [player], 'each': list(game.players), 'opponents': [game.opponent(player)]}.get(who) \
+            or ([target] if target in game.players else [])
+        gain = 0
+        for v in victims:
+            if op == 'exchange':
+                gain += (v.life - player.life) if v is not player else 0
+                continue
+            lives = [pl.life for pl in game.players]
+            new = (v.life * 2 if op == 'double' else min(lives) if op == 'lowest' else max(lives) if op == 'highest'
+                   else effect.amount)
+            gain += (new - v.life) if v is player else (v.life - new)
+        return gain / 2
     if effect.kind in ('give_control_choice', 'give_control_all'):     # giving permanents away is a cost
         if effect.kind == 'give_control_choice':
             return -perm_value(target) if isinstance(target, Permanent) else -5

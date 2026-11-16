@@ -273,6 +273,8 @@ from .. import cx_trig_turn as _cx_trig_turn  # noqa: E402
 _EFFECT_PATTERNS += _cx_trig_turn.EFFECT_PATTERNS
 from .. import cx_spent as _cx_spent  # noqa: E402
 _SUBS += _cx_spent.SUBS
+from .. import named_tokens as _named_tokens  # noqa: E402
+_EFFECT_PATTERNS += _named_tokens.EFFECT_PATTERNS
 from .. import library_peek as _library_peek  # noqa: E402
 _EFFECT_PATTERNS += _library_peek.EFFECT_PATTERNS
 _SUBS += _library_peek.SUBS
@@ -292,6 +294,8 @@ from .. import zone_exile as _zone_exile  # noqa: E402
 _EFFECT_PATTERNS += _zone_exile.EFFECT_PATTERNS
 from .. import give_control as _give_control  # noqa: E402
 _EFFECT_PATTERNS += _give_control.EFFECT_PATTERNS
+from .. import life_total as _life_total  # noqa: E402
+_EFFECT_PATTERNS += _life_total.EFFECT_PATTERNS
 from .. import free_cast as _free_cast  # noqa: E402  "cast a spell from your hand without paying its mana cost" (#625)
 _EFFECT_PATTERNS += _free_cast.EFFECT_PATTERNS
 from .. import cx_dmg_equal as _cx_dmg_equal  # noqa: E402  damage equal to a quantity (#626)
@@ -306,3 +310,5 @@ _SUBS += _until_nonland.SUBS
 from .. import face_states as _face_states  # noqa: E402  transform / face up / face down (#635)
 _SUBS += _face_states.SUBS
 _EFFECT_PATTERNS += _face_states.EFFECT_PATTERNS
+from .. import another_target as _another_target  # noqa: E402  "another target creature you control" (#809)
+_SUBS += _another_target.SUBS
