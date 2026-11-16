@@ -945,6 +945,17 @@ def _nth_resolution(m):
     return _code("nth_resolve", {"second": 2, "third": 3, "fourth": 4, "fifth": 5}[m["n"].lower()])
 
 
+@rule(r"(?:it|~|this spell) was kicked with its (?P<k>(?:\{[0-9WUBRGC]\})+) kicker")
+def _kicked_with(m):
+    """"if it was kicked with its {1}{U} kicker" (Kicker {A} and/or {B}, #859): the kicker cost paid."""
+    return _code("kicked_with", m["k"].upper())
+
+
+@rule(r"(?:it|~|this spell) was kicked (?P<n>twice|with both kickers)")
+def _kicked_twice(m):
+    return _code("kicks", 2)
+
+
 def _ref(m) -> tuple:
     """("it",) when the phrase says "it": the trigger's referent (the creature it triggered on) before the source."""
     return ("it",) if m[0].lower().startswith("it") or " on it" in m[0].lower() and "~" not in m[0] else ()
@@ -1334,6 +1345,10 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         return (game.players[0] is p) == (kind == "starting")
     if kind == "kicked":
         return _kicked(game, item, source)
+    if kind in ("kicked_with", "kicks"):     # Kicker {A} and/or {B} (#859): which kickers, how many
+        from .kicker_costs import kicks_paid
+        paid = kicks_paid(item, source)
+        return args[0] in paid if kind == "kicked_with" else len(paid) >= args[0]
     if kind == "ctx_kicked":
         ctx = getattr(item, "context", None)
         return _kicked(game, ctx, getattr(ctx, "source", None))

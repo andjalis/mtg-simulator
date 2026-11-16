@@ -679,7 +679,8 @@ class CostsMixin:
         return cost, improvised, delved
 
     def _variant(self, card: CardDef, kind: str, alt: AltCost | None = None) -> CardDef:
-        key = (getattr(card, "physical_id", id(card)), getattr(card, "generation", 0), kind)
+        key = (getattr(card, "physical_id", id(card)), getattr(card, "generation", 0), kind,
+               getattr(alt, "kicks", ()))      # "Kicker {A} and/or {B}": one variant per paid combination (#859)
         if key not in self._variants:
             if kind == "adventure":
                 v = dataclasses.replace(card.adventure)
@@ -722,6 +723,8 @@ class CostsMixin:
                         v.extra_sacrifice = alt.sacrifice
                     if alt.discard:
                         v.extra_discard = alt.discard
+                    if alt.add_cost:       # non-mana kicker: paid by the spell additional-cost payer (#859)
+                        v.advanced_rules = dict(v.advanced_rules, spell_add_cost=alt.add_cost)
                     v.spell_effects = list(alt.effects if alt.effects is not None else card.spell_effects) + \
                         list(alt.extra)
                     # the card's own cost reduction still applies to an alternative cost (CR 601.2f)

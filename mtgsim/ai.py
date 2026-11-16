@@ -1358,12 +1358,13 @@ class HeuristicAI:
         """Extra value of a permanent's enters-the-battlefield removal, tutor or explore."""
         # Mirrors Game.enter_battlefield: etb_effects only fire on a card without an etb trigger.
         # "When ~ enters, if it was kicked, ...": only the kicked variant gets that trigger's value (#786)
-        kicked = game._origin(card)[1] == "kicker"
-        gated = lambda cond: "kicked" in (cond or "")
-        effects = [e for t in card.triggers if t.event == "etb" and (kicked or not gated(t.intervening_if))
-                   for e in t.effects if kicked or not gated(e.cond)] or \
-            [e for e in card.etb_effects if kicked or not gated(e.cond)]
-        value = 0.0
+        from .kicker_costs import ai_kick_value, etb_gate       # which kickers this option pays (#859)
+        on = etb_gate(game, card)
+        effects = [e for t in card.triggers if t.event == "etb" and on(t.intervening_if)
+                   for e in t.effects if on(e.cond)] or \
+            [e for e in card.etb_effects if on(e.cond)]
+        value = ai_kick_value(self, game, me, card, precombat,
+                              EXTRA_KINDS | {"oring", "blink_link_exile", "champion", "selected_mass_move"})
         for eff in effects:
             if eff.kind == "oring" or eff.kind == "blink_link_exile" and eff.target != "none":
                 tgt = self.choose_target(game, me, eff, card)

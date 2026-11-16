@@ -99,6 +99,7 @@ class BattlefieldMixin:
             perm.kicked = cast[0]
             perm.cast_from_hand = cast[1]
             perm.mana_spent = cast[2]
+            perm.kicked_with = cast[3] if len(cast) > 3 else ()
             perm.mana_colors = frozenset(getattr(self, "_entry_mana_colors", ()))     # converge
             perm.mana_by_color = dict(getattr(self, "_entry_mana_by_color", {}))
             perm.mana_from = dict(getattr(self, "_entry_mana_from", {}))
@@ -199,6 +200,9 @@ class BattlefieldMixin:
         if card.advanced_rules.get("cx_etb_if"):
             from .. import cx_replace
             cx_replace.entry_counters(self, p, perm)
+        if card.advanced_rules.get("kick_entry"):     # "if kicked, it enters with N counters and with <kw>" (#859)
+            from ..kicker_costs import entry as kick_entry
+            kick_entry(self, p, perm)
         if card.advanced_rules.get("cx_etb_q"):       # "... for each mana spent to cast it" (cx_replace)
             from .. import cx_replace
             cx_replace.entry_spent_counters(self, perm)
