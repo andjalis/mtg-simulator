@@ -11,11 +11,18 @@ def selected_mass_move(game, p, eff, item, **_):
     victims = [x for pl in game.players for x in pl.battlefield
                if permanent_templates.matches(game, x, eff.data['selector'], p, src)]
     snapshots = counter_mechanics.death_sources(game)
+    destroyed = []
     for victim in victims:
         if eff.data['dest'] == 'graveyard':
-            game.destroy(victim, counter_sources=snapshots, no_regen=eff.data.get("no_regen", False))
+            if game.destroy(victim, counter_sources=snapshots, no_regen=eff.data.get("no_regen", False)):
+                destroyed.append(victim)
         else:
             game.leave_battlefield(victim, 'hand')
+    if destroyed:       # "... for each creature destroyed this way" (#337)
+        from ..state import note_this_way
+        nouns = {"permanent"} | {t.lower() for t in ("Creature", "Artifact", "Enchantment", "Land", "Planeswalker")
+                                 if all(t in v.card.types for v in destroyed)}
+        note_this_way(item, "destroyed", nouns, len(destroyed))
 
 
 @kind('filtered_grave_return')

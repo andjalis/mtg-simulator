@@ -807,6 +807,9 @@ def players(game, p, who, item, prev, target=None):
             # no event player: "Target player reveals their hand. ~ deals damage to that player ..." is the player
             # this spell or ability chose (Inquisition)
             context = next((t for t in getattr(item, "targets", ()) or () if t in game.players), None)
+        if context not in game.players:     # nor a target player: the previous object's player (#609)
+            from .engine.resolve import that_player_of
+            context = that_player_of(prev)
         return [context] if context in game.players else []
     if who == "spell_controller":       # a cast trigger's spell, a spell this one targeted, or the one it targets
         from .engine.state import StackItem

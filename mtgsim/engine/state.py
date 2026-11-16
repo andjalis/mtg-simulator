@@ -31,6 +31,9 @@ class PlayerCounters(dict):
         old = self.get(name, 0)
         if value > old and not player_counter_allowed(self.owner, name):
             value = old
+        if value > old:      # "you get that many plus one of each of those kinds of counters instead" (#407)
+            from ..cx_replace_amounts import modify_player
+            value = old + modify_player(self.owner, name, value - old)
         super().__setitem__(name, value)
 
 
@@ -226,6 +229,7 @@ class Permanent:
         self.temp_activated = []
         self.temp_min_blocker = 0          # a backup-granted "can't be blocked by creatures with power N or less"
         self.temp_triggers = []
+        self.gained_triggers = []      # "It gains "<trigger>"" with no duration: for as long as it's here (#540)
         self.regeneration_shields = 0
         self.regeneration_blocked = False
         self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
@@ -607,7 +611,8 @@ class Permanent:
         from ..cx_statics import linked_triggers
         from ..cx_trigger_grants import granted as trigger_grants
         return (list(mine) + (list(self.animated.triggers) if self.animated else []) + exalted + decayed +
-                attack_counters + list(self.temp_triggers) + linked_triggers(self) + trigger_grants(self))
+                attack_counters + list(self.temp_triggers) + list(getattr(self, "gained_triggers", ())) +
+                linked_triggers(self) + trigger_grants(self))
 
     @property
     def ward(self) -> int:
@@ -616,7 +621,17 @@ class Permanent:
         if self.card.ward_untapped_only and self.tapped:
             return 0
         return max([self.card.ward] + [e.card.equip_ward for e in self.equipment] +
-                   [a.card.equip_ward for a in self.auras])
+                   [a.card.equip_ward for a in self.auras] + self._group_ward())
+
+    def _group_ward(self) -> list:
+        """Ward from "Other creatures you control have ward {1}" statics on the battlefield."""
+        game = getattr(self.controller, '_game', None)
+        if game is None:
+            return []
+        from ..permanent_templates import matches
+        return [n for player in game.players for source in player.battlefield if not source.abilities_suppressed
+                for spec, n in source.card.advanced_rules.get('static_ward', ())
+                if matches(game, self, spec, source.controller, source)]
 
     def can_attack(self):
         return (self.is_creature and not self.tapped and self.detained_by is None and not (self.has("defender") and not self.has("attacks_despite_defender")) and not self.has("cant_attack_now") and not (self.card.cant_attack and not self.abilities_suppressed)
@@ -690,7 +705,7 @@ def pool_mana(color: str) -> CardDef:
     return _POOL_MANA[color]
 
 
-OUTLAWS = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock", "Wizard")
+OUTLAWS = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock")     # rule 700.12 (Wizards are not outlaws)
 
 
 class Player:
@@ -878,7 +893,17 @@ def note_this_way(item, verb: str, nouns, n: int):
     """Record what the resolving effect just did "this way" (counters removed / permanents destroyed), so a
     following "for each ... this way" sentence of the same resolution reads the resolved event's result
     (CR 608.2c), not a global count."""
-    if item is not None and n > 0:
+    if item is None or n <= 0:
+        return
+    # One "this way" set per resolution step: what this effect already recorded (a group destroying its members one
+    # by one), or else what the directly preceding effect did with the same verb ("Destroy all artifacts. Destroy all
+    # enchantments." read as one sentence: Fracturing Gust's "each permanent destroyed this way") (#337).
+    prior = getattr(item, "this_way", None)
+    if prior is None or prior[0] != verb:
+        prior = getattr(item, "this_way_prior", None)
+    if prior is not None and prior[0] == verb:
+        item.this_way = (verb, prior[1] & frozenset(nouns), prior[2] + n)
+    else:
         item.this_way = (verb, frozenset(nouns), n)
 
 

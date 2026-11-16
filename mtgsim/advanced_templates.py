@@ -42,6 +42,9 @@ def parse_line(line, state):
         match = ('activation_discount', int(m[1]))
     if line == 'During each of your turns, you may cast an instant or sorcery spell from your graveyard. If a spell cast this way would be put into your graveyard, exile it instead.':
         match = ('grave_cast', True)
+    m = re.fullmatch(r"Equip abilities you activate cost \{(\d+)\} less to activate\.", line)
+    if m:
+        match = ('equip_discount', int(m[1]))
     if match:
         state.extra.setdefault('advanced_rules', {})[match[0]] = match[1]
         return True
@@ -172,9 +175,11 @@ def activation_cost(game, p, permanent, cost):
 
 
 def counter_amount(permanent, name, amount):
+    plus = 0
     if name == '+1/+1' and permanent.is_creature:
-        amount += sum(rules(x).get('counter_plus', 0) for x in permanent.controller.battlefield)
-    return amount
+        plus = sum(rules(x).get('counter_plus', 0) for x in permanent.controller.battlefield)
+    from .cx_replace_amounts import modify       # "twice that many / that many plus one ... instead" (#407)
+    return modify(permanent, name, amount, plus)
 
 
 def draw_recipient(game, p, replaced=()):

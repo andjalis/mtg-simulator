@@ -166,14 +166,14 @@ class RealCards(unittest.TestCase):
         for name in ("Baral's Expertise", "Sram's Expertise", "Yahenni's Expertise", "Rishkar's Expertise",
                      "Electrodominance", "Epistolary Librarian", "Aisha of Sparks and Smoke", "Maelstrom Archangel",
                      "Wildfire Eternal", "Surtland Elementalist", "Yue, the Moon Spirit", "Omnispell Adept",
-                     "Marvo, Deep Operative", "Buster Sword"):
+                     "Marvo, Deep Operative", "Buster Sword", "Omniscience"):
             cov = card_coverage(db.get(name))
             self.assertEqual(cov.status, "full", (name, cov.ignored))
 
     def test_near_misses_stay_partial(self):
         from mtgsim.carddb import CardDB
         db = CardDB(offline=True)
-        for name in ("Reinterpret", "Counterlash", "Omniscience", "Zaffai and the Tempests", "Twinning Glass",
+        for name in ("Reinterpret", "Counterlash", "Zaffai and the Tempests", "Twinning Glass",
                      "One with the Multiverse"):
             self.assertEqual(card_coverage(db.get(name)).status, "partial", name)
 

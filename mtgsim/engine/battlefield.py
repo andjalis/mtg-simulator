@@ -283,6 +283,9 @@ class BattlefieldMixin:
                 self.fire(pl, "permanent_enters", subject=perm)
         if card.is_land:
             self.fire(p, "land_enters", subject=perm)
+        if card.is_token and getattr(self, '_entry_batch', None) is None:
+            from ..cx_replace_amounts import tokens_created       # a lone token: its own creation event (#407)
+            tokens_created(self, [perm])
         if getattr(self, '_entry_batch', None) is None:
             self.state_based_actions()
         return perm
@@ -330,7 +333,8 @@ class BattlefieldMixin:
                     self.create_token(p, Effect("token", count, data={"kind": token_kind, "manufactured": True}))
             return
         count = n if n is not None else eff.amount
-        count *= 2 ** sum(bool(x.card.token_double) for x in p.battlefield if not x.abilities_suppressed)
+        from ..cx_replace_amounts import token_multiplier
+        count *= token_multiplier(self, p)        # doubling replacements (#407)
         from ..backlog_templates import entry_batch
         with entry_batch(self):
             for _ in range(count):

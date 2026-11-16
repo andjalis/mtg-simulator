@@ -208,6 +208,7 @@ _THAT_MANY = ("that_many",)                  # "that many": the amount of the ev
 EVENT_AMOUNT_EVENTS = frozenset({
     "deals_damage", "damages_player", "combat_damage_creature", "dealt_damage", "dealt_combat_damage",
     "player_damaged", "damage_prevented", "gain_life", "opp_gain_life", "opp_loses_life", "you_attack",
+    "combat_damage_player", "ally_combat_damage",       # engine.combat sets the damage dealt (#329)
 })
 _that_many_ok = False
 
@@ -430,7 +431,8 @@ def create(game, who, eff_data: dict, n: int):
         card = eff_data["card"]
         if eff_data.get("xq_size"):         # "an X/X ... token, where X is ...": resolve put X in power/toughness
             card = dataclasses.replace(card, power=eff_data["power"], toughness=eff_data["toughness"])
-        count = n * 2 ** sum(bool(x.card.token_double) for x in who.battlefield if not x.abilities_suppressed)
+        from .cx_replace_amounts import token_multiplier
+        count = n * token_multiplier(game, who)      # doubling replacements (#407)
         attacking = eff_data["attacking"] and game.step in ("declare_attackers", "declare_blockers")
         with entry_batch(game):
             for _ in range(count):
@@ -459,11 +461,21 @@ _RIDERS = [
      lambda m: {"eot_keywords": tuple(_split_list(m[1].lower()))}),
     (re.compile(r"(?:it|they|that token|those tokens|the tokens?) gains? ([a-z ,]+)", re.I),
      lambda m: {"granted_keywords": tuple(_split_list(m[1].lower()))}),
+    # "They have "When this token dies, ..."" (#540): the token is created with the ability (its own card's trigger)
+    (re.compile(r'(?:it|they|that token|those tokens|the tokens?) (?:has|have) "((?:When|Whenever|At) [^"]+)"', re.I),
+     lambda m: {"token_triggers": _quoted(m[1])}),
     (re.compile(rf"(sacrifice|exile) {_THEM} at end of combat", re.I),
      lambda m: {"leave": ("end_combat", m[1].lower())}),
     (re.compile(rf"(sacrifice|exile) {_THEM} at the beginning of the next end step", re.I),
      lambda m: {"leave": ("end_step", m[1].lower())}),
 ]
+
+
+def _quoted(text):
+    """The Triggers of a quoted ability a token is created with, or None."""
+    from .cx_trigger_grants import quoted_triggers
+    got = quoted_triggers(text)
+    return list(got) if got else None
 
 
 _PLAIN_TOKEN = {"name", "power", "toughness", "keywords", "attacking", "triggers", "artifact", "pt_per", "colors",
@@ -504,6 +516,8 @@ def parse_rider(sentence: str, effects: list) -> bool:
                 return False
             effects[-1] = converted
         extra = build(m)
+        if "token_triggers" in extra and extra["token_triggers"] is None:
+            return False
         from .cards.model import KEYWORDS
         if not set(extra.get("eot_keywords", ()) + extra.get("granted_keywords", ())) <= KEYWORDS:
             return False
@@ -513,6 +527,14 @@ def parse_rider(sentence: str, effects: list) -> bool:
         targets = effects[run:]
         if any(key in e.data for e in targets for key in extra):
             return False
+        if "token_triggers" in extra:
+            if not all("card" in e.data for e in targets):
+                return False            # a predefined token (Food, Treasure ...): no card of its own to extend
+            for i, e in enumerate(targets, run):
+                card = e.data["card"]
+                card = dataclasses.replace(card, triggers=list(card.triggers) + list(extra["token_triggers"]))
+                effects[i] = dataclasses.replace(e, data=dict(e.data, card=card))
+            return True
         for i, e in enumerate(targets, run):
             effects[i] = dataclasses.replace(e, data=dict(e.data, **extra))
         return True

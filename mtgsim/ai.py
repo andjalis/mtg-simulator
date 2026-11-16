@@ -732,8 +732,12 @@ class HeuristicAI:
     def play_land(self, game: Game, me: Player):
         from . import cx_top
         top = cx_top.top(me)
-        lands = ([top] if cx_top.land_ok(me, top) else []) + [c for c in me.hand if c.is_land]   # the top first
+        from .residual_templates import hand_locked
+        hand = [] if hand_locked(me) else [c for c in me.hand if c.is_land]     # Experimental Frenzy (#326)
+        lands = ([top] if cx_top.land_ok(me, top) else []) + hand   # the top first
         if me.land_played:
+            return
+        if not lands and hand_locked(me):
             return
         if not lands:
             card = HeuristicAI.mdfc_land(self, game, me)
@@ -989,6 +993,13 @@ class HeuristicAI:
                     return None
                 targets.append(tgt)
                 value += 1.0
+            elif eff.kind == "divided_damage":     # the division itself is planned as it goes on the stack
+                from .cx_damage import ai_worth
+                v = ai_worth(self, game, me, eff, card, instant)
+                if v is None:
+                    return None
+                targets.append(None)
+                value += v
             elif eff.kind == "add_mana":
                 targets.append(None)      # value already counted once by _mana_spell_value
             else:

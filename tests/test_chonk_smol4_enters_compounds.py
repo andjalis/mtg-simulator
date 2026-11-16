@@ -60,10 +60,30 @@ class CompoundParse(unittest.TestCase):
 
     def test_words_the_engine_cant_match_stay_unsupported(self):
         self.assertIsNone(_parse_trigger("Whenever another snow permanent you control enters, scry 1."))
-        # outlaw and historic are known to the trigger-event library (cx_events.py)
-        for text in ("Whenever another outlaw you control enters, ~ deals 1 damage to target opponent.",
-                     "Whenever another nontoken historic permanent you control enters, you gain 1 life."):
-            self.assertEqual(_parse_trigger(text)[0][0].event, "ev:etb", text)
+        # historic is known to the trigger-event library (cx_events.py)
+        text = "Whenever another nontoken historic permanent you control enters, you gain 1 life."
+        self.assertEqual(_parse_trigger(text)[0][0].event, "ev:etb", text)
+
+    def test_outlaw_enters_trigger(self):
+        """'Another outlaw you control enters' (since #321 through the general filtered-enters selector): your other
+        Assassins / Mercenaries / Pirates / Rogues / Warlocks only; Wizards are not outlaws (rule 700.12)."""
+        watcher = card("Test Outlaw Watcher", "{1}{B}", "Creature — Human",
+                       "Whenever another outlaw you control enters, ~ deals 1 damage to target opponent.", 2, 2)
+        self.assertEqual(watcher.unsupported, [])
+        rogue = card("Test Rogue", "{1}{B}", "Creature — Human Rogue", "", 1, 1)
+        wizard = card("Test Wizard", "{1}{U}", "Creature — Human Wizard", "", 1, 1)
+        for mine, theirs, life in ((None, None, 20), (wizard, None, 20), (rogue, None, 19), (None, rogue, 20)):
+            a, b = Player("a", [], Scripted()), Player("b", [], Scripted())
+            game = Game(a, b, random.Random(0))
+            game.turn, game.step = 2, "main1"
+            game.enter_battlefield(a, watcher)
+            game.settle()
+            if mine:
+                game.enter_battlefield(a, mine)
+            if theirs:
+                game.enter_battlefield(b, theirs)
+            game.settle()
+            self.assertEqual(b.life, life, (mine and mine.name, theirs and theirs.name))
 
 
 class CompoundEngine(unittest.TestCase):

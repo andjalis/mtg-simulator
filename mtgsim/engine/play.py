@@ -34,6 +34,9 @@ class PlayMixin:
                 break
         face = card.land_face if back else card
         assert face is not None and face.is_land and not p.land_played
+        from ..residual_templates import hand_locked
+        if card in p.hand and hand_locked(p):       # "You can't play lands ... from your hand" (#326)
+            return
         if card in p.hand:
             p.hand.remove(card)
         elif card in p.exile and card in self.impulse_cards(p):
@@ -94,6 +97,8 @@ class PlayMixin:
             else:
                 card.origin = (actual, kind, alt)
             base = actual
+        from ..spell_grants import apply as spell_grants      # "<kind> spells you cast have cascade" (#633)
+        card = spell_grants(self, p, card, base, kind)
         effects = [] if card.is_permanent else list(card.spell_effects)
         targets = list(targets or [])
         targets += [None] * (len(effects) - len(targets))
@@ -334,6 +339,12 @@ class PlayMixin:
             item.kind = "copy"
             item.physical_card = None
         item.sorcery_timing = self.active is p and self.step in ("main1", "main2") and not self.stack   # cx_delayed
+        if kind == "cx_top":       # "Once each turn, you may cast ... from the top of your library" (#625)
+            from ..cx_top import note_cast
+            note_cast(self, p, base)
+        elif kind.startswith("group_alt_"):       # "Once each turn, you may pay {0} rather than pay ..." (#625)
+            from ..group_altcost import note_cast as note_group
+            note_group(self, p, base, kind)
         self.stack.append(item)
         if item.physical_card is not None and item.move_origin is not None:
             before, origin, actor, _, _ = item.move_origin
