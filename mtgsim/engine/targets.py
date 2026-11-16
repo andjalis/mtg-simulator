@@ -280,6 +280,10 @@ class TargetsMixin:
         self._choosing_targets, self._choosing_effects = out, effects
         try:
             for index, e in enumerate(effects):
+                if e.data.get("random_target"):         # "... chosen at random": not the chooser's pick (#634)
+                    from ..random_choices import pick_target
+                    out.append(pick_target(self, p, e))
+                    continue
                 if preset is not None and index < len(preset) and preset[index] is not None:
                     out.append(preset[index])
                     continue

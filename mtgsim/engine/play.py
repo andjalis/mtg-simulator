@@ -119,6 +119,9 @@ class PlayMixin:
             gifted = decide(self, p, card, targets)
             live = [i for i, e in enumerate(effects) if active(e, gifted)]
             targets = [t if i in live else None for i, t in enumerate(targets)]
+        if any(e.data.get("random_target") for e in effects):     # "chosen at random": not the caster's pick (#634)
+            from ..random_choices import reroll
+            targets = reroll(self, p, effects, targets)
         missing = [i for i in live if effects[i].target in TARGETED and targets[i] is None]
         if missing:   # targets the AI didn't pick (effects it doesn't know about)
             filled = self.auto_targets(p, effects, card, preset=targets)

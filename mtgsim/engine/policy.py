@@ -334,6 +334,14 @@ def choose_target(game: Game, me: Player, eff: Effect):
 
 
 def _mode_value(game: Game, me: Player, effects: list) -> float:
+    if any(e.data.get("random_target") for e in effects):     # "... chosen at random" (#634): the expected side
+        from ..random_choices import side_balance
+        balance = side_balance(game, me, effects)
+        if balance <= 0:
+            return -1
+        return balance * _mode_value(game, me, [dataclasses.replace(e, data={k: v for k, v in e.data.items()
+                                                                             if k != "random_target"})
+                                                 for e in effects])
     opp = game.opponent(me)
     total = 0.0
     previous = getattr(game, '_choosing_targets', [])

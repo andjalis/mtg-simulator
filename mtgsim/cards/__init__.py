@@ -303,3 +303,6 @@ _EFFECT_PATTERNS += _spell_grants.EFFECT_PATTERNS
 from .. import until_nonland as _until_nonland  # noqa: E402  "exile until a nonland card, you may cast it" (#625)
 _EFFECT_PATTERNS += _until_nonland.EFFECT_PATTERNS
 _SUBS += _until_nonland.SUBS
+from .. import random_choices as _random_choices  # noqa: E402  "at random": numbers, targets, reveals (#634)
+_EFFECT_PATTERNS += _random_choices.EFFECT_PATTERNS
+_SUBS += _random_choices.SUBS

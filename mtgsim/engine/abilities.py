@@ -429,6 +429,9 @@ class AbilitiesMixin:
                        if e.data.get("x") else e for e in preview]
         auto = targets is None
         targets = self.auto_targets(p, preview, perm) if auto else list(targets)
+        if not auto and any(e.data.get("random_target") for e in preview):      # "chosen at random" (#634)
+            from ..random_choices import reroll
+            targets = reroll(self, p, preview, targets)
         if auto and x is not None and act.cost.get("X"):           # "{X}, {T}: Tap X target lands": X = the targets
             from ..cx_multi_target import x_count
             n = x_count(preview, targets)
