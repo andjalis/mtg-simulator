@@ -11,6 +11,7 @@ import functools
 import json
 import re
 
+_MULTIWORD_SUBTYPES = {"time lord"}
 _TYPES = {"creature", "artifact", "enchantment", "instant", "sorcery", "land", "planeswalker", "battle"}
 
 
@@ -40,11 +41,16 @@ def _atoms(phrase: str):
     phrase = re.sub(r"\s*(?:spells?|sources?|permanents?)$", "", phrase)
     out = []
     for word in re.split(r",? (?:and/or|or|and) |, ", phrase):
+        word = re.sub(r"\s*(?:spells?|sources?|permanents?)$", "", re.sub(r"^(?:an? )", "", word.strip()))
         w = _singular(word.strip())
-        pair = re.fullmatch(r"([a-z]+) creature", w)
+        if w in _MULTIWORD_SUBTYPES:           # "a Time Lord or Alien spell" (#644)
+            out.append("s:" + w)
+            continue
+        pair = re.fullmatch(r"([a-z]+) (creature|planeswalker|artifact|enchantment|land|instant|sorcery)", w)
         if pair and pair[1] not in _TYPES and pair[1] not in _COLOR_LETTER and not pair[1].startswith("non") and \
                 pair[1] not in ("legendary", "multicolored", "monocolored", "colorless", "colored", "token"):
-            out.append("sc:" + pair[1])        # "an Elf creature spell": that subtype and a creature (#644)
+            # "an Elf creature spell", "a Chandra planeswalker spell": that subtype and that card type (#644)
+            out.append("sc:" + pair[1] if pair[2] == "creature" else f"st:{pair[1]}/{pair[2]}")
             continue
         if not w or " " in w:
             return None
@@ -119,6 +125,10 @@ def _match(atoms, card, perm=None) -> bool:
             return True
         if kind == "sc" and v in subtypes and creature:
             return True
+        if kind == "st":
+            sub, _, typ = v.partition("/")
+            if sub in subtypes and typ.capitalize() in types:
+                return True
         if kind == "c" and v in card.colors:
             return True
         if kind == "k":

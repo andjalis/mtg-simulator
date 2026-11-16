@@ -59,8 +59,10 @@ class CostsMixin:
         out = []
         stopped = self.activations_stopped()
         from ..residual_templates import activation_blocked
+        from ..cx_mana_from import restriction as _mana_from, source_ok as _from_ok
+        only_from = _mana_from(spell) if isinstance(spell, CardDef) else None     # Imperiosaur (#644)
         for perm in p.battlefield:
-            if activation_blocked(self, perm, mana=True):
+            if activation_blocked(self, perm, mana=True) or only_from and not _from_ok(only_from, perm):
                 continue
             if not perm.can_tap_for_mana() or perm is exclude:
                 continue
@@ -97,12 +99,14 @@ class CostsMixin:
             perm.produces_now = produces
             out.append(perm)
         for mana in p.pool:
+            if only_from:
+                break                               # pool mana doesn't record its source
             if not mana.tapped and mana is not exclude and \
                     (not mana.card.mana_restriction or self.mana_allowed(mana, spell)):
                 mana.produces_now = mana.card.produces
                 out.append(mana)
-        stored = storage.stored_sources(p, exclude, lambda r: self.mana_allowed(None, spell, r),
-                                        reserved_counters=reserved_counters)
+        stored = [] if only_from else storage.stored_sources(p, exclude, lambda r: self.mana_allowed(None, spell, r),
+                                                             reserved_counters=reserved_counters)
         if stored:                                  # a storage land spends its counters instead of its own mana
             lands = {id(m.stored_in) for m in stored}
             out = [s for s in out if id(s) not in lands] + stored
@@ -116,8 +120,13 @@ class CostsMixin:
         if r.startswith("pred:"):         # "Spend this mana only to cast <spells> or activate abilities of <sources>"
             from ..cx_abil_mana import allowed
             return allowed(r, spell)
+        if r == "chosen_type_abil" and not isinstance(spell, CardDef):     # an ability of a creature of that type
+            src = getattr(spell, "source", None)
+            return src is not None and src.is_creature and perm.chosen_type in src.card.subtypes
         if not isinstance(spell, CardDef):
             return False
+        if r in ("chosen_type", "chosen_type_abil"):
+            return spell.is_creature and perm.chosen_type in spell.subtypes
         if r == "creature":
             return spell.is_creature
         if r == "artifact":

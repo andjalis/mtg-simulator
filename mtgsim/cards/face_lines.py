@@ -189,6 +189,9 @@ def _face_special_lines(st, line):
         from .. import cx_static_cond as _cx_static_cond
         if _cx_static_cond.parse_line(line, st):
             return None
+        from .. import cx_mana_from as _cx_mana_from          # "Spend only mana produced by ... to cast ~" (#644)
+        if _cx_mana_from.parse_line(line, st):
+            return None
         from .. import counter_mechanics, permanent_templates, backlog_templates, advanced_templates, residual_templates, batch1_templates, cx_combat_costs
         if cx_combat_costs.parse_line(line, st):
             return None

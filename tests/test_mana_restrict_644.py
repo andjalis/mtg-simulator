@@ -52,9 +52,7 @@ class Parse(unittest.TestCase):
                 self.assertEqual(M._spec(M.parse(text)), code)
 
     def test_refusals(self):
-        for text in ("to cast a time lord or alien spell or activate an ability of a time lord or alien",
-                     "to cast an elemental spell or a chandra planeswalker spell",
-                     "to cast a creature spell of the chosen type",
+        for text in ("to cast a creature spell of the chosen type or activate an ability of a creature of the chosen type",
                      "to cast a legendary creature spell", "to cast a nonland creature spell",
                      "to activate an ability of a creature you control",
                      "to cast spells from exile"):
