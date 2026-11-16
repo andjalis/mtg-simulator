@@ -604,7 +604,14 @@ class StackMixin:
         from ..advanced_templates import encode
         if encode(self, item, base):
             return
-        if kind in ("adventure", "cascade_adventure", "rebound_adventure"):
+        gy_rider = self.__dict__.get("gy_cast_riders", {}).pop(id(base), None)    # cast by gy_cast with a rider (#874)
+        if gy_rider == "exile":
+            owner.exile.append(base)
+            self.log(f"exiles {base.name} instead of putting it into a graveyard", owner)
+        elif gy_rider == "bottom":
+            owner.library.insert(0, base)
+            self.log(f"puts {base.name} on the bottom of its owner's library", owner)
+        elif kind in ("adventure", "cascade_adventure", "rebound_adventure"):
             owner.on_adventure.append(base)
         elif kind in ("flashback", "jump_start", "grave_permission", "aftermath", "beam"):
             if getattr(item, "flip_gy", False) and item.card.back is not None:

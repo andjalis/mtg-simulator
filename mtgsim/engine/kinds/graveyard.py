@@ -491,13 +491,17 @@ def gy_cast(game, p, eff, item, opp, **_):
     if not cands:
         return
     cands.sort(key=lambda pair: card_value(pair[1]), reverse=True)
+    rider = eff.data.get("gy_instead")
     for owner, card in cands[:4] if eff.data.get("free") else cands:
+        # The rider goes with the card before it's cast: the spell's own move after resolving applies it
+        # (Game.to_graveyard_after_resolving). A trigger queued after the cast went on the stack above the spell and
+        # resolved first, so the spell still reached the graveyard (#874).
+        riders = game.__dict__.setdefault("gy_cast_riders", {})
+        if rider:
+            riders[id(card)] = rider
         if _cast_from_graveyard(game, p, owner, card, eff.data.get("free")):
-            rider = eff.data.get("gy_instead")
-            if rider:
-                game.queue_trigger(p, [Effect("gy_cast_aftermath", data={"mode": rider})],
-                                   name=f"{card.name}: graveyard-cast rider", context=card)
             return
+        riders.pop(id(card), None)
 
 
 @kind("gy_top")
@@ -513,21 +517,3 @@ def gy_top(game, p, eff, **_):
         p.library.append(card)
     if cards:
         game.log(f"puts {len(cards)} card(s) from their graveyard on top of their library", p)
-
-
-@kind("gy_cast_aftermath")
-def gy_cast_aftermath(game, p, eff, item, **_):
-    """"If that spell would be put into a graveyard, exile it instead" (or the bottom of
-    its owner's library): the spell a gy_cast effect cast from a graveyard has resolved
-    or been countered and landed in its owner's graveyard; the rider moves it on."""
-    card = getattr(item, "context", None) if item is not None else None
-    if not isinstance(card, CardDef) or not any(c is card for c in getattr(card, "owner", p).graveyard):
-        return
-    owner = card.owner or p
-    if eff.data.get("mode") == "bottom":
-        owner.graveyard.remove(card)
-        owner.library.insert(0, card)
-        game.log(f"puts {card.name} on the bottom of its owner's library", p)
-    else:
-        game.move_card(card, owner.graveyard, owner.exile, reason="exile-instead")
-        game.log(f"exiles {card.name} instead of putting it into a graveyard", p)
