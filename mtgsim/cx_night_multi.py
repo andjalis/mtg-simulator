@@ -3,7 +3,8 @@
 
 The sentence is read as its one-target form and repeated once per target, each copy flagged ``distinct`` so that the
 targeting step gives every copy a different target (the way "target creature you control gets +1/+1 ... another target
-creature" already does). "Up to" and "one or two" are played as the full number: the AI picks whatever is legal.
+creature" already does). "Up to N" makes every copy's target optional (0..N targets, #845); "one or two" / "one,
+two, or three" keep the first one required.
 """
 from __future__ import annotations
 
@@ -33,10 +34,13 @@ def _several(m):
     if unmatched or len(effects) != 1 or effects[0].kind not in _KINDS or effects[0].data.get("distinct") or \
             effects[0].target not in ("creature", "any", "artifact", "land", "nonland_perm", "creature_pw"):
         return NO_MATCH
+    count = m["n"].lower()
     out = []
-    for _ in range(_NUMBERS[m["n"].lower()]):
+    for i in range(_NUMBERS[count]):
         eff = _parse_effects(single[0].upper() + single[1:])[0][0]
         eff.data["distinct"] = True
+        if count.startswith("up to") or count.startswith("one") and i > 0:
+            eff.data["optional_target"] = True          # "up to N": any slot may stay empty (#845)
         out.append(eff)
     return out
 
