@@ -583,7 +583,8 @@ def roll(game, p, eff, item, target, prev):
     if not n:
         return
     mod = _modifier(game, p, eff, prev)
-    faces = [max(1, game.rng.randint(1, sides) + mod) for _ in range(n)]
+    from .dice_more import faces as _rolled           # advantage replacements (#634)
+    faces = [max(1, f + mod) for f in _rolled(game, p, sides, n)]
     game.__dict__.setdefault("_die_faces", {})[p] = faces
     total = sum(faces)
     game.__dict__.setdefault("_die_rolls", {})[p] = total

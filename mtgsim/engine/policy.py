@@ -103,6 +103,9 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     k = eff.kind
     if k == "copy_spell":
         return max(legal, key=lambda i: i.card.cmc, default=None)
+    if k == "die_roll" and eff.data.get("sides") == 0:      # "choose target creature, then roll a d20" (#634)
+        from ..dice_more import choose_marker
+        return choose_marker(game, me, eff)
     if k in ("die_roll", "become_copy") and copies.group_model(game, me, eff, None) is not None:   # copy choices
         return copies.group_model(game, me, eff, None)
     if k == "damage" and eff.data.get("spell_controller"):
