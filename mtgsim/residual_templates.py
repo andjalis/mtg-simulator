@@ -408,5 +408,8 @@ def effect_value(game, player, effect, target):
     if effect.kind == 'adapt':
         src = getattr(game.target_source, 'source', game.target_source)
         return effect.amount if isinstance(src, Permanent) and (not src.p1 or getattr(src, 'adapt_exceptions', 0)) and permanent_counter_allowed(src, '+1/+1') else 0
+    if effect.kind == 'vote':      # will of the council / council's dilemma (#634)
+        from .votes import value as vote_value
+        return vote_value(game, player, effect)
     from .batch1_templates import effect_value as batch1_value
     return batch1_value(game, player, effect, target)
