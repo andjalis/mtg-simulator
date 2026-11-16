@@ -309,3 +309,5 @@ _EFFECT_PATTERNS += _until_nonland.EFFECT_PATTERNS
 _SUBS += _until_nonland.SUBS
 from .. import another_target as _another_target  # noqa: E402  "another target creature you control" (#809)
 _SUBS += _another_target.SUBS
+from .. import cx_grammar_choice as _cx_grammar_choice  # noqa: E402  "Choose a color. ... protection from the chosen color" (#627)
+_SUBS += _cx_grammar_choice.SUBS
