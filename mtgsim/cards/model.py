@@ -18,6 +18,8 @@ KEYWORDS = {
     "protection from green", "protection from multicolored", "protection from artifacts",
 }
 KEYWORDS.update(f"hexproof from {w}" for w in ("white", "blue", "black", "red", "green", "monocolored"))
+KEYWORDS.update(("protection from everything", "protection from monocolored", "protection from snow"))  # (#646)
+KEYWORDS.update(f"snow {w}walk" for w in ("swamp", "forest", "island", "mountain", "plains", "land"))   # CR 702.14c (#646)
 BASIC_MANA = {"Plains": "W", "Island": "U", "Swamp": "B", "Mountain": "R", "Forest": "G"}
 NUMBERS = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
            "eight": 8, "nine": 9, "ten": 10}
