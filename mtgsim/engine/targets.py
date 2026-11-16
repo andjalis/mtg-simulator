@@ -6,6 +6,7 @@ import contextlib
 from .. import removal, counter_mechanics, permanent_templates
 from ..cards import Effect
 from ..cx_mech import hexproof_from
+from ..target_bans import banned as _banned       # "can't be the target of ..." (#643)
 from .policy import default_choose_target, perm_value
 from .state import Permanent, Player, StackItem, TARGETED, is_basic_land, protected_from
 
@@ -21,7 +22,8 @@ class TargetsMixin:
             return (obj in obj.controller.battlefield and not obj.has("shroud")
                     and not (obj.has("hexproof") and obj.controller is not by)
                     and not hexproof_from(obj, by, source if source is not None else self.target_source)
-                    and not protected_from(obj, source if source is not None else self.target_source))
+                    and not protected_from(obj, source if source is not None else self.target_source)
+                    and not _banned(self, obj, by, source if source is not None else self.target_source))
         if isinstance(obj, StackItem):
             return obj in self.stack
         return isinstance(obj, Player)
