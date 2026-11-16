@@ -13,7 +13,7 @@ DB_FILE = Path(__file__).resolve().parents[1] / "mtgsim" / "data" / "cards.sqlit
 FULL = ("Ardbert, Warrior of Darkness", "Domri, City Smasher", "Elspeth, Storm Slayer", "Felidar Retreat",
         "Flying Crane Technique", "Gideon, Martial Paragon", "Great Oak Guardian", "Join Shields",
         "Now for Wrath, Now for Ruin!", "Song of Freyalise", "Spider-Man, Miles Morales", "Thundermaw Hellkite",
-        "The General", "Trystan's Command", "Virtue of Loyalty // Ardenvale Fealty", "Suicidal Charge",
+        "The General", "Virtue of Loyalty // Ardenvale Fealty", "Suicidal Charge",
         "Monstrosity of the Lake", "Lulu, Loyal Hollyphant")
 
 
