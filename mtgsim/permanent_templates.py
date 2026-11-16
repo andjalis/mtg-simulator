@@ -186,7 +186,7 @@ _OUTLAWS = ['assassin', 'mercenary', 'pirate', 'rogue', 'warlock']     # rule 70
 _TRAITS = frozenset((
     'tapped', 'untapped', 'attacking', 'blocking', 'legendary', 'nonlegendary', 'token', 'nontoken',
     'nonland', 'noncreature', 'nonartifact', 'colorless', 'multicolored', 'monocolored',
-    'suspected', 'snow', 'nonsnow', 'face-up'))
+    'suspected', 'snow', 'nonsnow', 'face-up', 'nonattacking', 'nonblocking'))
 _IRREGULAR = {'elves': 'Elf', 'dwarves': 'Dwarf', 'wolves': 'Wolf'}
 
 
@@ -208,6 +208,8 @@ def _classify(low):
         return 'traits', low
     if low in _COLORS:
         return 'colors', _COLORS[low]
+    if low.startswith('non') and low[3:] in _COLORS:     # "nonblack creature" (#403)
+        return 'not_colors', _COLORS[low[3:]]
     if low in ('outlaw', 'outlaws'):          # rule 700.12: Assassins, Mercenaries, Pirates, Rogues, Warlocks
         return 'any_subtypes', _OUTLAWS
     if low == 'non-outlaw':
@@ -375,9 +377,12 @@ def selector(text, *, plural=False):
         result['stat'] = [m[1].lower(), '==' if not m[3] else '<=' if m[3].lower() == 'less' else '>=', int(m[2])]
         text = text[:m.start()]
     else:
-        m = re.search(rf' (with|without) (?:an? )?({_COUNTER}) counters?(?: on (?:it|them))?$', text, re.I)
+        m = re.search(rf' (with|without|that ha(?:s|ve)) (?:an? |one or more )?({_COUNTER}) counters?(?: on (?:it|them))?$',
+                      text, re.I)
+        if m and m[1].lower().startswith('that') and not re.search(r' on (?:it|them)$', m[0], re.I):
+            m = None            # "that has a +1/+1 counter" needs its "on it" (#403)
         if m:
-            result['counter'] = [m[2].lower(), m[1].lower() == 'with']
+            result['counter'] = [m[2].lower(), m[1].lower() != 'without']
             text = text[:m.start()]
         elif re.search(r' with (modular|fading|level up)$', text, re.I):
             # abilities kept as card fields, not keywords: "each creature you control with modular" (#327)
@@ -526,6 +531,10 @@ def matches(game, permanent, spec, controller, source=None):
         if trait == 'colorless' and permanent.card.colors or trait == 'multicolored' and len(permanent.card.colors) < 2 or trait == 'monocolored' and len(permanent.card.colors) != 1:
             return False
         if trait == 'attacking' and permanent not in game.attackers:
+            return False
+        if trait == 'nonattacking' and permanent in game.attackers:
+            return False
+        if trait == 'nonblocking' and any(permanent in group for group in game.blocks.values()):
             return False
         if trait == 'declared_attacker' and not (permanent in game.attackers and           # declared, not put onto
                                                  getattr(permanent, 'attack_count', (None, 0))[0] == game.turn):  # the battlefield attacking
