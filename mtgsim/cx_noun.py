@@ -227,3 +227,40 @@ def rel_ok(game, permanent, spec, controller, source) -> bool:
     if value == bound:
         return or_equal
     return value < bound if op == "<" else value > bound
+
+
+# ---------------------------------------------------------------- slice 4: damage this turn
+# "that was dealt damage this turn", "that dealt damage this turn", "that dealt damage to you this turn" (selector
+# key ``damage_turn``: "was_dealt" | "dealt" | "dealt_you"). Game.deal_damage records, per permanent, the turn it was
+# last dealt damage and the turn it last dealt damage (with the players it dealt damage to that turn).
+
+_DAMAGE = re.compile(r" that (was dealt|were dealt|dealt) damage( to you)? this turn$", re.I)
+
+
+def take_damage(text):
+    m = _DAMAGE.search(text)
+    if not m:
+        return text, None
+    if m[1].lower() in ("was dealt", "were dealt"):
+        return (text[:m.start()], "was_dealt") if not m[2] else (text, False)
+    return text[:m.start()], "dealt_you" if m[2] else "dealt"
+
+
+def note_damage(game, source, target):
+    from .engine.state import Permanent, Player
+    if isinstance(target, Permanent):
+        target.cx_dealt_damage_turn = game.turn
+    if isinstance(source, Permanent):
+        players = source.cx_damage_to[1] if getattr(source, "cx_damage_to", (None,))[0] == game.turn else set()
+        if isinstance(target, Player):
+            players = players | {id(target)}
+        source.cx_damage_to = (game.turn, players)
+
+
+def damage_ok(game, permanent, how, controller) -> bool:
+    if how == "was_dealt":      # marked damage only lasts the turn; the record also covers infect / wither damage
+        return permanent.damage > 0 or getattr(permanent, "cx_dealt_damage_turn", None) == game.turn
+    turn, players = getattr(permanent, "cx_damage_to", (None, set()))
+    if turn != game.turn:
+        return False
+    return how == "dealt" or controller is not None and id(controller) in players

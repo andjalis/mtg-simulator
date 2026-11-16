@@ -269,7 +269,7 @@ class Slice2(Base):
         self.perm(SWAMP, self.a, 3)
         spell = card("Test Banshee", "{2}{B}", "Sorcery", "Put a -1/-1 counter on each nonblack creature.")
         self.assertEqual(spell.unsupported, [])
-        self.cast(spell)
+        self.assertTrue(self.cast(spell))
         self.assertTrue(all(b.counters.get("-1/-1") == 1 for b in bears))
         self.assertFalse(shade.counters.get("-1/-1"))
 
@@ -367,6 +367,67 @@ class RealCardsSlice3(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertEqual(card_coverage(db.get(name)).status, "full")
         self.assertEqual(card_coverage(db.get("Corrosion")).status, "partial")
+
+
+class Slice4(Base):
+    """"that was dealt damage this turn", "that dealt damage [to you] this turn": a per-turn damage record."""
+    def setUp(self):
+        super().setUp()
+        self.hitter, self.quiet = self.perm(BEAR, self.b), self.perm(BEAR, self.b)
+        self.hurt = self.perm(BEAR, self.a)
+        self.g.deal_damage(self.a, 2, self.b, source=self.hitter)       # combat-free damage to the player
+        self.g.deal_damage(self.hurt, 1, self.b, source=self.quiet)     # and to a creature
+
+    def legal(self, text):
+        eff = card("Test", "{W}", "Instant", text).spell_effects[0]
+        return self.g.legal_targets(self.a, eff)
+
+    def test_readings_and_refusals(self):
+        self.assertEqual(selector("creature that dealt damage to you this turn")["damage_turn"], "dealt_you")
+        self.assertEqual(selector("creatures that were dealt damage this turn", plural=True)["damage_turn"], "was_dealt")
+        self.assertIsNone(selector("creature that was dealt damage to you this turn"))
+        self.assertIsNone(selector("creature that dealt combat damage this turn"))
+
+    def test_who_dealt_and_who_was_dealt(self):
+        self.assertEqual(self.legal("Exile target creature that dealt damage to you this turn."), [self.hitter])
+        self.assertEqual(set(self.legal("Destroy target creature that dealt damage this turn.")),
+                         {self.hitter, self.quiet})
+        self.assertEqual(self.legal("Destroy target creature that was dealt damage this turn."), [self.hurt])
+
+    def test_the_record_is_for_this_turn_only(self):
+        self.g.turn += 1
+        self.hurt.damage = 0            # cleanup removed the marked damage
+        self.assertEqual(self.legal("Destroy target creature that dealt damage this turn."), [])
+        self.assertEqual(self.legal("Destroy target creature that was dealt damage this turn."), [])
+
+    def test_group_resolves(self):
+        spell = card("Test Peace", "{2}", "Instant", "Return each creature that dealt damage this turn to its "
+                     "owner's hand.")
+        self.assertEqual(spell.unsupported, [])
+        self.perm(ISLAND, self.a, 2)
+        self.assertTrue(self.cast(spell))
+        self.assertNotIn(self.hitter, self.b.battlefield)
+        self.assertNotIn(self.quiet, self.b.battlefield)
+        self.assertIn(self.hurt, self.a.battlefield)
+
+    def test_heuristic_ai_aims_at_the_attacker_that_hit_it(self):
+        self.perm(SWAMP, self.a, 2)
+        spell = card("Test Arrow", "{1}{B}", "Sorcery", "Destroy target creature that dealt damage this turn.")
+        plan = self.a.ai.plan_spell(self.g, self.a, spell, precombat=True)
+        self.assertIsNotNone(plan)
+        self.assertIn(plan[1][0], (self.hitter, self.quiet))
+
+
+@unittest.skipUnless(DB_FILE.exists(), "card database not built")
+class RealCardsSlice4(unittest.TestCase):
+    def test_newly_full(self):
+        from mtgsim.carddb import CardDB
+        from mtgsim.coverage import card_coverage
+        db = CardDB()
+        for name in ("Avenging Arrow", "Reciprocate", "Giltspire Avenger", "Spear of Heliod", "Jarl of the Forsaken",
+                     "Vraska's Finisher", "Death-Rattle Oni", "Retaliate", "Restore the Peace"):
+            with self.subTest(name=name):
+                self.assertEqual(card_coverage(db.get(name)).status, "full")
 
 
 if __name__ == "__main__":

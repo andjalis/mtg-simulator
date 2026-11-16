@@ -317,6 +317,12 @@ def selector(text, *, plural=False):
     if other:
         result['other'] = result['other_than_source'] = True
         text = text[:other.start()]
+    from .cx_noun import take_damage           # "that was dealt damage this turn" (#403)
+    text, damaged = take_damage(text)
+    if damaged is False:
+        return None
+    if damaged:
+        result['damage_turn'] = damaged
     if not re.search(r' with toughness greater than (?:its|their) power$', text, re.I):
         # "with power less than ~'s power", "... less than or equal to the number of creatures you control" (#403):
         # cut before the controller scan, whose " you control" may belong to the quantity
@@ -571,6 +577,10 @@ def matches(game, permanent, spec, controller, source=None):
         return False
     if spec.get('tough_gt_power') and not permanent.toughness > permanent.power:
         return False
+    if 'damage_turn' in spec:
+        from .cx_noun import damage_ok
+        if not damage_ok(game, permanent, spec['damage_turn'], controller):
+            return False
     if 'stat_rel' in spec:
         from .cx_noun import rel_ok
         if not rel_ok(game, permanent, spec, controller, source):
