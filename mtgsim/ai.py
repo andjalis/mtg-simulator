@@ -28,6 +28,7 @@ MAX_ENUMERATE = 6       # try every attack set up to this many ready creatures
 TUCK_KINDS = ("tuck_perm", "tuck_top", "cx_tuck")
 SWEEP_OPS = ("destroy", "exile", "bounce", "damage")     # group_remove ops the AI values as a sweeper (#716, #723)
 REMOVAL_BAR = 4.5       # least a creature must be worth to spend instant removal on it
+NONCREATURE_REMOVAL_BAR = 2.0   # artifact / enchantment removal that can't hit a creature: a mana rock and up (#786)
 PW_KEEP = 2.0           # value of a planeswalker still being on the battlefield next turn
 SWEEP_BAR = 6.0         # least net value for a sweeper when we are not under pressure
 SETUP_FIGHT_BUDGET = 100_000    # fight simulations one lethal_setup search may spend
@@ -122,7 +123,7 @@ MINOR_EFFECTS = {"treasure": 1.0, "rummage": 0.3, "surveil": 0.3, "scry": 0.3, "
 def _boost(card: CardDef):
     """(effect, +power, +toughness) for a spell that pumps or puts +1/+1 counters on our creature."""
     for e in card.spell_effects:
-        if e.kind == "pump":
+        if e.kind == "pump" and not e.data.get("bite_run"):     # a bite run's pump picks damage sources (#811)
             return e, e.amount, e.amount2
         if e.kind == "p1_counters" and e.target == "creature_mine":
             return e, e.amount, e.amount
@@ -824,6 +825,18 @@ class HeuristicAI:
         return life_value(eff) - life_value(eff - amount)
 
     @staticmethod
+    def _max_x(game: Game, me: Player, card: CardDef) -> int:
+        """The largest X the available mana pays for on top of card's other costs ({X}{X}: two mana per X)."""
+        cost = game.cost_of(me, card)
+        per_x = card.mana_cost.get("X", 1) or 1
+        off = getattr(game, "x_reduction", 0)
+        x = 0
+        while x < 20 and engine.find_payment(game.mana_sources(me, spell=card), engine.add_costs(
+                cost, {"generic": max(0, (x + 1) * per_x - off)})) is not None:
+            x += 1
+        return x
+
+    @staticmethod
     def _sized(game: Game, me: Player, card: CardDef):
         """An X spell with X fixed at the largest value the remaining mana pays for, else None."""
         from .cx_spell_costs import cost_x, sized
@@ -875,10 +888,23 @@ class HeuristicAI:
                 from .batch1_templates import bestow_worth
                 worth = bestow_worth(game, me, card)
                 return None if worth is None else (worth, None)
+            from .evoke_costs import ai_value as evoke_value      # "Evoke—Exile a white card ..." (#646)
+            evoked = evoke_value(self, game, me, card, precombat)
+            if evoked is not None:
+                return (evoked, None) if evoked > 0 else None
             etb = self._etb_value(game, me, card, precombat)
             if etb < 0:
                 return None  # its enters trigger costs us more than the permanent is worth
-            return (card_value(card) + 0.5 * card.cmc + etb
+            x_value = 0.0
+            if "X" in card.mana_cost:
+                # "{X}" permanents (Endless One, Hangarback Walker, Sigil of Distinction: counters equal to X) are cast
+                # with the largest X the mana pays for (Game.cast); X = 0 is worthless, and each X is worth what the
+                # mana spent on it would be on a printed cost (#831)
+                x = self._max_x(game, me, card)
+                if x < 1:
+                    return None
+                x_value = 1.0 * x * (card.mana_cost.get("X", 1) or 1)
+            return (card_value(card) + 0.5 * card.cmc + etb + x_value
                     + self._static_value(game, me, card) - self._sac_cost(game, me, card), None)
         instant = card.instant_speed
         if any('anchor' in e.data or e.kind in ('allocated_counter', 'return_tribal_grave', 'grave_library_top',
@@ -935,6 +961,16 @@ class HeuristicAI:
                     return None
                 targets.append(got[0])
                 value += got[1]
+                continue
+            if eff.kind == "pump" and eff.data.get("bite_run"):
+                # "One or two target creatures you control each get +1/+0. They each deal damage equal to their power
+                # to ...": the pumped creatures are the damage sources, chosen like a bite's (#811)
+                with game.targeting(card):
+                    tgt = self.choose_target(game, me, eff, card)
+                if tgt is None and not eff.data.get("optional_target"):
+                    return None
+                targets.append(tgt)
+                value += 0.25 * eff.amount if tgt is not None else 0.0
                 continue
             if eff.kind == "pump" or eff.target == "spell" or _is_trick(card):
                 return None  # tricks go in after_blocks / respond, counters in respond
@@ -1322,7 +1358,12 @@ class HeuristicAI:
     def _etb_value(self, game: Game, me: Player, card: CardDef, precombat: bool) -> float:
         """Extra value of a permanent's enters-the-battlefield removal, tutor or explore."""
         # Mirrors Game.enter_battlefield: etb_effects only fire on a card without an etb trigger.
-        effects = [e for t in card.triggers if t.event == "etb" for e in t.effects] or list(card.etb_effects)
+        # "When ~ enters, if it was kicked, ...": only the kicked variant gets that trigger's value (#786)
+        kicked = game._origin(card)[1] == "kicker"
+        gated = lambda cond: "kicked" in (cond or "")
+        effects = [e for t in card.triggers if t.event == "etb" and (kicked or not gated(t.intervening_if))
+                   for e in t.effects if kicked or not gated(e.cond)] or \
+            [e for e in card.etb_effects if kicked or not gated(e.cond)]
         value = 0.0
         for eff in effects:
             if eff.kind == "oring" or eff.kind == "blink_link_exile" and eff.target != "none":
@@ -1331,6 +1372,9 @@ class HeuristicAI:
             elif eff.kind == "champion":    # sacrificed with nothing to champion; else gives up the championed one
                 from .champion import ai_value
                 value += ai_value(game, me, eff, card)
+            elif eff.kind == "selected_mass_move":     # "return all creatures except ..." (Slinn Voda, #786)
+                from .residual_templates import effect_value as residual_value
+                value += residual_value(game, me, eff, None) or 0.0
             elif eff.kind == "oring_all":   # symmetric: it exiles our own small permanents too
                 hit = lambda x: (x.is_creature or x.card.is_artifact) and x.card.cmc <= eff.amount
                 value += sum(perm_value(x) for x in game.opponent(me).battlefield if hit(x)) - \
@@ -1597,17 +1641,18 @@ class HeuristicAI:
         effects = list(card.spell_effects)
         for i, eff in enumerate(effects):
             if tempo and eff.kind == "tap" and eff.target in CREATURE_TARGETS:
-                legal = [c for c in pool if not c.tapped and _legal(game, me, eff, c, card)
-                         and all(c is not t for t in targets)]
-                tgt = max(legal, key=perm_value, default=None)
-                if tgt is None:
+                legal = sorted((c for c in pool if not c.tapped and _legal(game, me, eff, c, card)
+                                and all(c is not t for t in targets)), key=perm_value, reverse=True)
+                if not legal:
                     if eff.data.get("optional_target"):
                         targets.append(None)
                         continue
                     return None
-                stunned = i + 1 < len(effects) and _locks_prev(game, me, effects[i + 1])
-                targets.append(tgt)
-                value += perm_value(tgt) * (0.6 if stunned else 0.25)
+                # "... doesn't untap during its controller's next untap step": a stun after it, or the tap's own
+                # "freeze" rider (Permafrost Trap, #804); "tap up to two target creatures": the best two
+                stunned = i + 1 < len(effects) and _locks_prev(game, me, effects[i + 1]) or bool(eff.data.get("freeze"))
+                targets.append(legal[0])
+                value += sum(perm_value(c) for c in legal[:max(1, eff.amount)]) * (0.6 if stunned else 0.25)
                 continue
             if tempo and eff.kind == "cx_multi" and eff.data["probe"].kind == "tap" \
                     and eff.data["probe"].target in CREATURE_TARGETS:
@@ -1662,6 +1707,19 @@ class HeuristicAI:
                 etb = [e for t in card.triggers if t.event == "etb" for e in t.effects] or list(card.etb_effects)
                 plan = self._removal_on(game, me, dataclasses.replace(card, spell_effects=etb), attackers)
                 plan = None if plan is None else (plan[0], None)
+            elif card.spell_effects and all(e.kind == "cx_group" and "attacking" in
+                                            e.data.get("group", {}).get("selector", {}).get("traits", ())
+                                            for e in card.spell_effects):
+                # "Attacking creatures get -3/-0 until end of turn" (Lethargy Trap, #804): the grammar's own group
+                # value of the effect on each attacker, now during combat
+                got = [self._group_plan(game, me, e, card, False, True) for e in card.spell_effects]
+                plan = None if None in got else (sum(x[1] for x in got), [x[0] for x in got])
+            elif card.spell_effects and all(e.kind == "divided_damage" for e in card.spell_effects):
+                # "N damage divided as you choose among any number of target attacking creatures" (Arrow Volley
+                # Trap, #804): what the planned division kills now
+                from .cx_damage import ai_worth
+                worth = [ai_worth(self, game, me, e, card, True) for e in card.spell_effects]
+                plan = None if None in worth else (sum(worth), [None] * len(card.spell_effects))
             else:
                 plan = self._removal_on(game, me, card, attackers)
             if plan is None:
@@ -1720,7 +1778,8 @@ class HeuristicAI:
             elif _is_trick(card) or any(e.target == "spell" for e in card.spell_effects):
                 continue
             elif all(e.kind in ("draw", "dig", "scry", "surveil", "discard", "gain_life", "lose_life") or
-                     (e.kind == "token" and "power" not in (e.data or {})) for e in card.spell_effects):
+                     (e.kind == "token" and not (e.data or {}).get("attacking")) for e in card.spell_effects):
+                # (creature tokens too, Baloth Cage Trap #804: made at their end step, they're ready on our turn)
                 # Cantrips and "draw two and create a Map" at the end step; judged as the sorcery
                 # they would be in our own main phase (keeping an additional sacrifice cost).
                 plan = self.plan_spell(game, me, dataclasses.replace(
@@ -1743,7 +1802,14 @@ class HeuristicAI:
                 targets = [None] * len(card.spell_effects)
             else:
                 plan = self._removal_on(game, me, card, opp.creatures, tempo=True)
-                if plan is None or plan[0] < REMOVAL_BAR:
+                if plan is None:
+                    # no creature it can hit (Mogg Salvage, "destroy target artifact"): their best noncreature,
+                    # nonland permanent, at a lower bar (perm_value rates those 1-3) (#786)
+                    others = [x for x in opp.battlefield if not x.is_creature and not x.card.is_land]
+                    plan = self._removal_on(game, me, card, others, tempo=True)
+                    if plan is None or plan[0] < NONCREATURE_REMOVAL_BAR:
+                        continue
+                elif plan[0] < REMOVAL_BAR:
                     continue
                 value, targets = plan
             if value > 0 and (best is None or value > best[0]):
