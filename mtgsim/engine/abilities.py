@@ -148,7 +148,16 @@ class AbilitiesMixin:
 
     def equip_cost(self, equipment: Permanent, creature: Permanent) -> dict:
         cost = dict(equipment.card.equip_cost or {})
+        typed = equipment.card.advanced_rules.get("equip_typed")      # "Equip Pirate {1}" beside "Equip {2}" (#744)
+        if typed:
+            from .policy import equip_matches
+            if equip_matches(creature, typed[0]) and sum(typed[1].values()) <= sum(cost.values()):
+                cost = dict(typed[1])
         cost["generic"] = max(0, cost.get("generic", 0) - creature.card.equip_discount)
+        from ..advanced_templates import rules
+        discount = sum(rules(x).get("equip_discount", 0) for x in equipment.controller.battlefield)
+        if discount and cost.get("generic"):
+            cost["generic"] = max(0, cost["generic"] - discount)     # "Equip abilities you activate cost {1} less"
         return cost
 
     @atomic_action
@@ -320,11 +329,11 @@ class AbilitiesMixin:
             return False
         if p.counters.get("energy", 0) < c.get("energy", 0):
             return False
-        if c.get("life") and p.life <= c["life"]:
+        if c.get("life") and p.life < c["life"]:          # CR 119.4: paying your last life is legal
             return False
         if c.get("discard") and len(p.hand) < c["discard"]:
             return False
-        if c.get("remove_counter") and perm.counters.get(c["remove_counter"], 0) < c.get("remove_counter_count", 1):
+        if c.get("remove_counter") and perm.counters.get(c["remove_counter"], 0) < _counter_cost(c, x):
             return False
         if c.get("sacrifice") and len(self.sacrifice_candidates(p, perm, c["sacrifice"])) < c.get("sac_n", 1):
             return False
@@ -348,8 +357,7 @@ class AbilitiesMixin:
             if x is None:
                 return False
         if x is not None and cost.get("X"):
-            cost = {k: v for k, v in cost.items() if k != "X"}
-            cost["generic"] = cost.get("generic", 0) + x
+            cost = {k: v for k, v in cost.items() if k != "X"} | {"generic": cost.get("generic", 0) + x * cost["X"]}  # {X}{X}: 2X
         return costs.ability_plan(self, p, perm, act, cost,
                                   x=x if c.get("remove_creature_counters") or c.get("exile_gy_count") == "x" else None,
                                   counter_choices=counter_choices) is not None
@@ -373,12 +381,15 @@ class AbilitiesMixin:
         best = None
         for n in range(1, 21):
             cost = {k: v for k, v in base.items() if k != "X"}
-            cost["generic"] = cost.get("generic", 0) + n
+            cost["generic"] = cost.get("generic", 0) + n * base.get("X", 1)     # {X}{X} costs 2X (#531)
             if costs.ability_plan(self, p, perm, act, cost) is None:
                 break
             best = n
         from ..capped_counters import x_limit
         cap = x_limit(perm, act)            # "can't cause the total ... to be greater than N": no X beyond that
+        if act.extra_costs.get("remove_counter_count") == "x":     # "{X}, Remove X charge counters from ~" (#345)
+            have = perm.counters.get(act.extra_costs["remove_counter"], 0)
+            cap = have if cap is None else min(cap, have)
         if best is not None and cap is not None:
             best = min(best, cap) or None
         return best
@@ -407,18 +418,27 @@ class AbilitiesMixin:
         if x is None and cost.get("X"):
             x = self.ability_x(p, perm, act)
         if x is not None and cost.get("X"):
-            cost = {k: v for k, v in cost.items() if k != "X"}
-            cost["generic"] = cost.get("generic", 0) + x
+            cost = {k: v for k, v in cost.items() if k != "X"} | {"generic": cost.get("generic", 0) + x * cost["X"]}  # {X}{X}: 2X
         plan = costs.ability_plan(self, p, perm, act, cost,
                                   x=x if c.get("remove_creature_counters") or c.get("exile_gy_count") == "x" else None,
                                   counter_choices=counter_choices)
         if plan is None:
             return False
         preview = costs.counter_effects(act, plan)
+        if c.get("remove_counter_count") == "x" and not act.cost.get("X"):     # X = the counters it will remove
+            n = perm.counters.get(c["remove_counter"], 0)
+            preview = [dataclasses.replace(e, amount=n, amount2=n if e.data.get("x2") else e.amount2)
+                       if e.data.get("x") else e for e in preview]
         if x is not None and act.cost.get("X"):        # X paid as mana: effects see it at full size
             preview = [dataclasses.replace(e, amount=x, amount2=x if e.data.get("x2") else e.amount2)
                        if e.data.get("x") else e for e in preview]
-        targets = self.auto_targets(p, preview, perm) if targets is None else list(targets)
+        auto = targets is None
+        targets = self.auto_targets(p, preview, perm) if auto else list(targets)
+        if auto and x is not None and act.cost.get("X"):           # "{X}, {T}: Tap X target lands": X = the targets
+            from ..cx_multi_target import x_count
+            n = x_count(preview, targets)
+            if n is not None and n != x:
+                return n > 0 and self.activate_ability(p, perm, idx, targets, x=n, counter_choices=counter_choices)
         if not self.valid_action_targets(p, act.effects, targets, perm):
             return False
         from ..cx_abil_mana import AbilityPayment
@@ -453,9 +473,10 @@ class AbilitiesMixin:
             if card not in p.hand:
                 return False
             self.discard_card(p, card)
+            perm.last_discarded = (int(card.power or 0), int(card.toughness or 0), card.cmc)  # ("discarded", stat)
             self.log(f"discards {card.name}", p)
         if c.get("remove_counter"):
-            count = c.get('remove_counter_count', 1)
+            count = _counter_cost(c, x if act.cost.get("X") else perm.counters.get(c["remove_counter"], 0))
             if perm not in p.battlefield or perm.counters.get(c['remove_counter'], 0) < count:
                 return False
             perm.counters[c["remove_counter"]] -= count
@@ -514,10 +535,13 @@ class AbilitiesMixin:
         item = StackItem(p, effects, list(targets), source=perm, name=f"{perm.card.name} ability",
                          kind="ability")
         item.ability_idx = idx
+        item.cost_sacrificed = [v.card for v in plan.victims]     # "if a Saproling was sacrificed this way" (#642)
         item.counter_x = sum(n for _, _, n in plan.counter_payments)
         if c.get("remove_counter"):      # "{T}, Remove a charge counter from ~: ... for each ... removed this way"
-            note_this_way(item, "removed", [c["remove_counter"]], c.get("remove_counter_count", 1))
-        if c.get("remove_creature_counters") in ("x", "positive"):
+            note_this_way(item, "removed", [c["remove_counter"]], count)
+        if c.get("remove_counter_count") == "x":       # "Remove X charge counters from ~: ... X ..." (#345)
+            item.x = count
+        elif c.get("remove_creature_counters") in ("x", "positive"):
             item.x = item.counter_x
             if c.get("creature_counter_kind"):       # "... counters removed this way" (Ooze Flux)
                 note_this_way(item, "removed", [c["creature_counter_kind"], "counter"], item.counter_x)
@@ -530,3 +554,9 @@ class AbilitiesMixin:
         self.check_ward(item)
         self.settle()
         return True
+
+
+def _counter_cost(c: dict, x) -> int:
+    """How many counters a "Remove N <kind> counters from ~" cost removes: N, or X (at least one)."""
+    n = c.get("remove_counter_count", 1)
+    return max(1, x or 0) if n == "x" else n

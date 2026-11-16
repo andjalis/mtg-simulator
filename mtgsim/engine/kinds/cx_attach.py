@@ -1,5 +1,6 @@
 """Kinds for attaching an Aura or Equipment already on the battlefield (see mtgsim.cx_attach, #343)."""
-from ...cx_attach import attach, gain
+from ...cx_attach import attach, gain, is_attachment, picked
+from ...cx_delayed import _fresh
 from ..state import Permanent
 from . import kind
 
@@ -32,6 +33,9 @@ def _referent(game, p, eff, item):
     spell or ability (while it is still a legal target)."""
     if item is None:
         return None
+    fresh = [x for x in _fresh(game, item) if x.is_creature]
+    if fresh:
+        return fresh[-1]            # "Create a 1/1 Kor Warrior token. You may attach an Equipment you control to it."
     if item.kind == "trigger" and isinstance(item.context, Permanent):
         return item.context
     if item.kind == "trigger" and item.context is None and isinstance(item.source, Permanent):
@@ -44,19 +48,50 @@ def _referent(game, p, eff, item):
     return None
 
 
+def _it(game, p, eff, item):
+    """"attach it to ...": an Aura / Equipment that entered during this resolution ("create an Equipment token ...
+    Attach it to ~"), else one an earlier effect targeted ("Gain control of target Equipment ... Attach it to ~"),
+    else the attachment the trigger is about, else the source itself."""
+    fresh = [x for x in _fresh(game, item) if is_attachment(x)]
+    if fresh:
+        return fresh[-1]
+    idx = next((i for i, e in enumerate(item.effects) if e is eff), 0)
+    for e, t in reversed(list(zip(item.effects[:idx], item.targets[:idx]))):
+        if isinstance(t, Permanent):     # (the earlier effect itself may have changed who controls it)
+            return t if is_attachment(t) and t in t.controller.battlefield else None
+    for x in (getattr(item, "context", None), getattr(item, "source", None)):
+        if isinstance(x, Permanent) and is_attachment(x):
+            return x
+    return None
+
+
 @kind("cx_attach")
 def attach_kind(game, p, eff, target, item=None, **_):
-    host = eff.data.get("host")
+    host, spec = eff.data.get("host"), eff.data.get("obj")
     if host == "target":
-        obj = _marked(game, p, eff, item)
         dest = target
-        game.cx_attach_pending = None
+    elif host == "self":
+        dest = item.source if item is not None else None
     else:
-        obj = target
-        dest = (item.source if item is not None else None) if host == "self" else _referent(game, p, eff, item)
-    if not isinstance(obj, Permanent) or not isinstance(dest, Permanent):
+        dest = _referent(game, p, eff, item)
+    if spec is None:                     # a targeted object
+        if host == "target":
+            objs = [_marked(game, p, eff, item)]
+            game.cx_attach_pending = None
+        else:
+            objs, dest = [target], dest
+    elif spec == "self":
+        objs = [item.source if item is not None else None]
+    elif spec == "it":
+        objs = [_it(game, p, eff, item)]
+    else:                                # chosen on resolution
+        objs = picked(game, p, spec, dest, optional=bool(eff.data.get("optional")))
+    if not isinstance(dest, Permanent):
         return
-    if eff.data.get("optional") and gain(game, p, obj, dest) <= 0:
-        game.log(f"declines to attach {obj.card.name}", p)
-        return
-    attach(game, p, obj, dest)
+    for obj in objs:
+        if not isinstance(obj, Permanent):
+            continue
+        if eff.data.get("optional") and gain(game, p, obj, dest) <= 0:
+            game.log(f"declines to attach {obj.card.name}", p)
+            continue
+        attach(game, p, obj, dest)

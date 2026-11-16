@@ -49,4 +49,12 @@ from . import cx_mech  # noqa: E402,F401
 from . import cx_grammar  # noqa: E402,F401
 from . import cx_tokens  # noqa: E402,F401
 from . import cx_exchange  # noqa: E402,F401  (exchange of control, #334)
+from . import card_referent  # noqa: E402,F401  ("that card's mana value", #313)
 from . import cx_attach  # noqa: E402,F401  (attach an Aura / Equipment to another object, #343)
+from . import cx_static_cost  # noqa: E402,F401  (one-shot spell-group discounts, #341)
+from . import cx_static_chars  # noqa: E402,F401  ("loses all abilities", #406)
+from . import cx_static  # noqa: E402,F401  (sim-static's small kinds)
+from . import library_peek  # noqa: E402,F401  (#346)
+from . import cx_trig_turn  # noqa: E402,F401  (triggers for the rest of the turn, #399)
+from . import cx_trig_damage  # noqa: E402,F401  (damage triggers from any source, #521)
+from . import cx_bounce  # noqa: E402,F401  (bounce residue, #638)

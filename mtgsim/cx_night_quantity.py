@@ -36,7 +36,7 @@ _PLURAL_ZONES = {"card in your hand": "cards in your hand", "card in an opponent
                  "card in your graveyard": "cards in your graveyard"}
 # The same pluralisation inside a longer "for each <things> card in <zone>" phrase ("artifact and/or creature
 # card in your graveyard"), where the whole string is not a _PLURAL_ZONES key.
-_ZONE_PLURAL = re.compile(r"\b(card|spell|permanent) (in all graveyards|in your graveyard|in an opponent's graveyard|"
+_ZONE_PLURAL = re.compile(r"\b(card|spell|permanent) (in all graveyards|in each graveyard|in your graveyard|in an opponent's graveyard|"
                           r"in your hand|in an opponent's hand|in exile|you own in exile|in your library)\b", re.I)
 
 

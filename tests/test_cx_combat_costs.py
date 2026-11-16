@@ -52,7 +52,7 @@ class CombatCosts(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertEqual(self.db.get(name).unsupported, [])
         self.assertEqual(len(self.db.get("Nils, Discipline Enforcer").unsupported), 1)  # end-step trigger
-        self.assertEqual(len(self.db.get("Oko, Lord of the Fae").unsupported), 2)  # unrelated loyalty abilities
+        self.assertEqual(len(self.db.get("Oko, Lord of the Fae").unsupported), 1)  # the Alchemy emblem (−7)
 
     def test_player_tax_does_not_protect_planeswalkers(self):
         self.put("Ghostly Prison", self.b)

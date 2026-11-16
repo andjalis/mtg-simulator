@@ -50,8 +50,8 @@ def linked_restrict(game, p, target, eff, item, **_):
 
 
 @kind("hand_to_battlefield")
-def hand_to_battlefield(game, p, eff, item, **_):
+def hand_to_battlefield(game, p, eff, item, target=None, prev=None, **_):
     """"You may put a creature card from your hand onto the battlefield" (Elvish Piper) and its qualified
     forms (dynamic mana value, chosen type, tapped / attacking / attached entry): see mtgsim/hand_put.py."""
     from ...hand_put import resolve
-    resolve(game, p, eff, item)
+    resolve(game, p, eff, item, target, prev)

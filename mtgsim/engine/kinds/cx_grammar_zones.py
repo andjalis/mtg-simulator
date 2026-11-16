@@ -15,6 +15,11 @@ def edict(game, p, eff, target, item, **_):
     source = item.source if item is not None else None
     pool = group_members(game, target, {"group": eff.data["noun"]}, source, target)
     pool = [x for x in pool if not (eff.data.get("other") and x is source)]
+    if eff.data.get("extreme") and pool:     # "with the greatest power among creatures they control" (#631)
+        stat, way = eff.data["extreme"]
+        value = (lambda x: x.card.cmc) if stat == "mana value" else (lambda x: getattr(x, stat))
+        best = (max if way == "max" else min)(value(x) for x in pool)
+        pool = [x for x in pool if value(x) == best]
     victims = sorted(pool, key=lambda x: (not x.card.is_token, perm_value(x)))[:eff.amount]
     sources = counter_mechanics.death_sources(game)
     for v in victims:
@@ -72,9 +77,14 @@ def card_choose(game, p, eff, target, item=None, **_):
     if not isinstance(target, Player):
         return
     source = item.source if item is not None else None
-    pool = [c for c in target.graveyard if card_fits(c, eff.data["cx_card"], source)]
+    event = getattr(item, "context", None)
+    pool = [c for c in target.graveyard
+            if card_fits(c, eff.data["cx_card"], source, event if isinstance(event, Permanent) else None)]
     chosen = []
-    for card in game.hook(target, "choose_dig")(game, target, list(pool), eff.amount):
+    if eff.data.get("random"):          # "at random": nobody chooses
+        pool = game.rng.sample(pool, min(eff.amount, len(pool)))
+    for card in ([] if eff.data.get("random") else game.hook(target, "choose_dig")(game, target, list(pool),
+                                                                                    eff.amount)):
         if any(card is c for c in pool) and not any(card is c for c in chosen):
             chosen.append(card)
     if not eff.data["up_to"]:

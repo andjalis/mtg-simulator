@@ -64,8 +64,8 @@ def pair_ok(first, second, rels) -> bool:
 
 # ---- parsing ----------------------------------------------------------------------------------------------
 
-def _object(text: str):
-    """(Subject, relations) for one "target ..." object phrase, or None."""
+def _object(text: str, *, optional=False):
+    """(Subject, relations) for one "target ..." object phrase, or None. optional: "up to one target ..." too."""
     from .cx_grammar import object_phrase
     rels = []
     t = text.strip()
@@ -87,8 +87,10 @@ def _object(text: str):
     if m:
         t, owner = m[1], "opp"
     obj = object_phrase(t)
+    up_to = optional and t.lower().startswith("up to one target ")
     if obj is None or obj.kind != "permanent" or obj.target in ("self", "prev", "host") or obj.copies != 1 \
-            or obj.data.get("optional_target") or obj.data.get("distinct") or not t.lower().startswith("target "):
+            or (obj.data.get("optional_target") and not up_to) or obj.data.get("distinct") \
+            or not (t.lower().startswith("target ") or up_to):
         return None
     if owner:
         sel = obj.data.get("selector")
@@ -131,9 +133,9 @@ def parse(s: str):
         rel = {" that share a card type": ["share_card"], " that share a permanent type": ["share_perm"],
                " controlled by different players": ["diff_ctrl"]}.get((m[3] or "").lower(), [])
         return _pair(obj, obj, rel)
-    m = re.fullmatch(r"exchange control of (" + _SELF + r") and (target .+)", s, re.I)
+    m = re.fullmatch(r"exchange control of (" + _SELF + r") and ((?:up to one )?target .+)", s, re.I)
     if m:
-        got = _object(m[2])
+        got = _object(m[2], optional=True)     # "~ and up to one target creature" (Gilded Drake): none, no exchange
         if got is None or any(r.startswith("share:") for r in got[1]):
             return None
         return _pair(None, got[0], got[1], self_first=True)
@@ -145,8 +147,9 @@ def parse(s: str):
         rels = list(second[1])
         if "share:listed" in rels:
             listed = _listed_types(first[0])
-            if not m[2] or listed is None:
-                return None
+            theirs = (second[0].data.get("selector") or {}).get("controller") == "opp"
+            if not (m[2] or theirs) or listed is None:
+                return None         # "another target ..." or one an opponent controls: never the same object
             rels[rels.index("share:listed")] = "share:" + ",".join(listed)
         elif m[2]:
             return None
@@ -159,7 +162,33 @@ def _build(m):
     return parse(m[0]) or NO_MATCH
 
 
-EFFECT_PATTERNS = [(r"exchange control of (?!.*\bspell\b).+", _build)]
+def _exchanged_auras(m):
+    from .cards.model import Effect
+    return Effect("cx_exchange_else", target="none", data={"if_exchanged": "destroy_auras"})
+
+
+def _else_sacrifice(m):
+    from .cards.model import Effect
+    return Effect("cx_exchange_else", target="none", data={"sacrifice": "self"})
+
+
+EFFECT_PATTERNS = [(r"exchange control of (?!.*\bspell\b).+", _build),
+                   # Gilded Drake: "If you don't or can't make an exchange, sacrifice ~."
+                   (r"if you don't or can't make an exchange, sacrifice ~", _else_sacrifice),
+                   # Gauntlets of Chaos: "If those permanents are exchanged this way, destroy all Auras attached to them."
+                   (r"if those permanents are exchanged this way, destroy all auras attached to them", _exchanged_auras)]
+
+
+def still_resolves_rider(s: str, effects: list) -> bool:
+    """"This ability still resolves if its target becomes illegal." after an exchange with an "if you can't make an
+    exchange" part (Gilded Drake): the exchange's target slot doesn't make the ability fizzle."""
+    if not re.fullmatch(r"this ability still resolves if its target becomes illegal\.?", s.strip(), re.I):
+        return False
+    if len(effects) < 2 or effects[-1].kind != "cx_exchange_else" or effects[-2].kind != "cx_exchange":
+        return False
+    import dataclasses
+    effects[-2] = dataclasses.replace(effects[-2], data=dict(effects[-2].data, resolves_anyway=True))
+    return True
 
 
 # ---- targets and the first object ---------------------------------------------------------------------------

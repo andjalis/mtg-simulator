@@ -235,7 +235,6 @@ class Refusals(unittest.TestCase):
         for text in (
             "Return target creature card with mana value less than X from your graveyard to the battlefield.",
             "Return target creature card with mana value less than or equal to its power from your graveyard to the battlefield.",
-            "Return target creature card with lesser toughness from your graveyard to your hand.",
             "Return up to two creature cards at random from your graveyard to your hand.",
             "Return a nonland card of an opponent's choice from your graveyard to your hand.",
             "Return up to two creature cards of that type from your graveyard to the battlefield.",

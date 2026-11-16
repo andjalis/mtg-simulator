@@ -131,10 +131,13 @@ class ExileDurations(unittest.TestCase):
         self.assertIn(ISLAND, self.b.graveyard)
 
     def test_play_taxes_and_untracked_referents_remain_unmatched(self):
-        for s in (PAID.split('. ', 1)[1],
-                  'Exile target nonland permanent. For as long as that card remains exiled, its owner may play it.',
-                  'Exile target nonland permanent. You may cast that card for as long as it remains exiled.'):
+        for s in (PAID.split('. ', 1)[1],):
             self.assertTrue(_parse_effects(s)[1], s)
+        # #316: the exiled card is now tracked by cx_exile_play (the cards that arrive in exile during the effect)
+        for s in ('Exile target nonland permanent. For as long as that card remains exiled, its owner may play it.',
+                  'Exile target nonland permanent. You may cast that card for as long as it remains exiled.'):
+            effects, bad = _parse_effects(s)
+            self.assertEqual((bad, effects[-1].kind), ([], 'cx_exile_play'), s)
 
     @unittest.skipUnless(DB_FILE.exists(), 'offline card database not built')
     def test_real_oracle(self):

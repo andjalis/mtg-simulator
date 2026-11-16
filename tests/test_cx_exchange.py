@@ -54,8 +54,7 @@ class Parsing(unittest.TestCase):
         self.assertNotIn("optional", effects[0].data)
 
     def test_near_misses_stay_unsupported(self):
-        for text in ("Exchange control of ~ and up to one target creature an opponent controls.",   # Gilded Drake
-                     "Exchange control of target noncreature spell and target creature.",
+        for text in ("Exchange control of target noncreature spell and target creature.",
                      "You may exchange control of ~ and that spell.",
                      "Exchange control of target creature and another target creature.",           # "another" alone
                      "Exchange control of up to two target creatures.",
@@ -69,7 +68,6 @@ class Parsing(unittest.TestCase):
         for name in ("Avarice Totem", "Chromeshell Crab", "Daring Thief", "Conjured Currency", "Switcheroo",
                      "Kitsune, Dragon's Daughter", "Shifting Loyalties", "Vedalken Plotter", "Spawnbroker"):
             self.assertEqual(db.get(name).unsupported, [], name)
-        self.assertTrue(db.get("Gilded Drake").unsupported)
 
 
 class Engine(Base):
@@ -201,6 +199,104 @@ class Engine(Base):
         self.go(self.item(trig, targets, None, "trigger"))
         self.assertIs(mine.controller, self.b)
         self.assertIs(theirs.controller, self.a)
+
+
+DRAKE = card("Test Drake", "{1}{U}", "Creature — Drake", "Flying\nWhen ~ enters, exchange control of ~ and up to "
+             "one target creature an opponent controls. If you don't or can't make an exchange, sacrifice ~. This "
+             "ability still resolves if its target becomes illegal.", 3, 3)
+
+
+class GildedDrake(Base):
+    """"~ and up to one target creature ... If you don't or can't make an exchange, sacrifice ~." (#334)"""
+    def trig(self, drake, targets):
+        item = StackItem(self.a, list(DRAKE.triggers[0].effects), list(targets), source=drake, kind="trigger")
+        self.game.stack.append(item)
+        self.game.resolve_top()
+        return item
+
+    def test_parse(self):
+        self.assertEqual(DRAKE.unsupported, [])
+        self.assertEqual([e.kind for e in DRAKE.triggers[0].effects], ["cx_exchange", "cx_exchange_else"])
+        ex = DRAKE.triggers[0].effects[0]
+        self.assertTrue(ex.data["optional_target"] and ex.data["resolves_anyway"])
+        self.assertIsNone(kinds("If you don't or can't make an exchange, draw a card."))
+
+    def test_exchange_keeps_the_drake(self):
+        drake, giant = self.perm(DRAKE, self.a), self.perm(BIG, self.b)
+        targets = self.game.auto_targets(self.a, DRAKE.triggers[0].effects, drake)
+        self.assertEqual(targets, [giant, None])
+        self.trig(drake, targets)
+        self.assertIs(giant.controller, self.a)
+        self.assertIs(drake.controller, self.b)
+        self.assertIn(drake, self.b.battlefield)        # exchanged: not sacrificed
+
+    def test_no_target_sacrifices(self):
+        drake = self.perm(DRAKE, self.a)
+        self.trig(drake, [None, None])
+        self.assertNotIn(drake, self.a.battlefield)
+
+    def test_illegal_target_still_resolves_and_sacrifices(self):
+        drake, giant = self.perm(DRAKE, self.a), self.perm(BIG, self.b)
+        item = StackItem(self.a, list(DRAKE.triggers[0].effects), [giant, None], source=drake, kind="trigger")
+        self.game.stack.append(item)
+        self.game.leave_battlefield(giant, "exile")
+        self.game.resolve_top()
+        self.assertTrue(item.resolved)
+        self.assertNotIn(drake, self.a.battlefield)
+
+    def test_drake_gone_no_exchange(self):
+        drake, giant = self.perm(DRAKE, self.a), self.perm(BIG, self.b)
+        item = StackItem(self.a, list(DRAKE.triggers[0].effects), [giant, None], source=drake, kind="trigger")
+        self.game.stack.append(item)
+        self.game.leave_battlefield(drake, "graveyard")
+        self.game.resolve_top()
+        self.assertIs(giant.controller, self.b)          # can't make the exchange; nothing to sacrifice
+
+
+GAUNTLETS = card("Test Gauntlets", "{5}", "Artifact", "{5}, Sacrifice ~: Exchange control of target artifact, "
+                 "creature, or land you control and target permanent an opponent controls that shares one of those "
+                 "types with it. If those permanents are exchanged this way, destroy all Auras attached to them.")
+
+
+class Gauntlets(Base):
+    def test_parse(self):
+        self.assertEqual(GAUNTLETS.unsupported, [])
+        effects = GAUNTLETS.activated[0].effects
+        self.assertEqual([e.kind for e in effects], ["cx_exchange_mark", "cx_exchange", "cx_exchange_else"])
+        self.assertEqual(effects[1].data["cx_pair"], ["share:artifact,creature,land"])
+
+    def test_exchange_destroys_the_auras(self):
+        gaunt = self.perm(GAUNTLETS, self.a)
+        mine, theirs = self.perm(BEAR, self.a), self.perm(BIG, self.b)
+        shell = self.perm(AURA, self.b)
+        from mtgsim import auras
+        auras.attach(self.game, shell, theirs)
+        item = StackItem(self.a, list(GAUNTLETS.activated[0].effects), [mine, theirs, None], source=gaunt,
+                         kind="ability")
+        self.game.stack.append(item)
+        self.game.resolve_top()
+        self.assertIs(theirs.controller, self.a)
+        self.assertNotIn(shell, self.b.battlefield)
+
+    def test_no_exchange_keeps_the_auras(self):
+        gaunt = self.perm(GAUNTLETS, self.a)
+        mine, theirs = self.perm(BEAR, self.a), self.perm(BIG, self.b)
+        shell = self.perm(AURA, self.b)
+        from mtgsim import auras
+        auras.attach(self.game, shell, theirs)
+        item = StackItem(self.a, list(GAUNTLETS.activated[0].effects), [mine, theirs, None], source=gaunt,
+                         kind="ability")
+        self.game.stack.append(item)
+        self.game.leave_battlefield(mine, "graveyard")        # no exchange happens
+        self.game.resolve_top()
+        self.assertIs(theirs.controller, self.b)
+        self.assertIn(shell, self.b.battlefield)
+
+    def test_unshared_types_are_not_a_pair(self):
+        effects = GAUNTLETS.activated[0].effects
+        land, theirs = self.perm(ISLAND, self.a), self.perm(BIG, self.b)
+        gaunt = self.perm(GAUNTLETS, self.a)
+        self.assertFalse(self.game.valid_action_targets(self.a, effects, [land, theirs, None], gaunt))
 
 
 class AIChoice(Base):

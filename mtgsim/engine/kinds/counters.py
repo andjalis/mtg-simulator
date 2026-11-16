@@ -162,4 +162,7 @@ def exile_permanent(game, target, eff=None, **_):
 @kind('grant_triggers')
 def grant_triggers(game, target, eff, **_):
     if isinstance(target, Permanent) and target in target.controller.battlefield:
-        target.temp_triggers.extend(eff.data['triggers'])
+        if eff.data.get('permanent'):       # no duration: the object keeps it while it stays (#540)
+            target.gained_triggers.extend(eff.data['triggers'])
+        else:
+            target.temp_triggers.extend(eff.data['triggers'])

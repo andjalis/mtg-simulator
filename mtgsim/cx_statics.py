@@ -143,6 +143,10 @@ def _holds(source, code, ref) -> bool:
 def _anthems(perm):
     """(source, rule) for every conditional anthem that could reach perm."""
     game = getattr(perm.controller, "_game", None)
+    if game is not None:
+        from .residual_templates import _source_index
+        if "anthem_if" not in _source_index(game):
+            return          # no conditional anthem on the battlefield (#698)
     players = game.players if game is not None else (perm.controller,)
     for pl in players:
         for x in pl.battlefield:
@@ -164,6 +168,16 @@ def _attached(perm):
     return list(perm.auras) + list(perm.equipment)
 
 
+def _host_rules(perm) -> bool:
+    """Could an attached permanent have host_kws / host_if rules? (the cached source index; #698)"""
+    game = getattr(perm.controller, "_game", None)
+    if game is None:
+        return True
+    from .residual_templates import _source_index
+    index = _source_index(game)
+    return "host_kws" in index or "host_if" in index
+
+
 def pt_bonus(perm):
     bp = bt = 0
     if not perm.abilities_suppressed:
@@ -174,7 +188,7 @@ def pt_bonus(perm):
                 if perm.condition(code):
                     n = game.x_quantity(perm.controller, spec, StackItem(perm.controller, [], [], source=perm), None)
                     bp, bt = bp + pp * n, bt + tt * n
-    for a in _attached(perm):
+    for a in _attached(perm) if _host_rules(perm) else ():
         for code, pp, tt, _kws, ep, et in a.card.advanced_rules.get("host_if", ()):
             if _holds(a, code, perm):
                 bp, bt = bp + pp, bt + tt
@@ -190,7 +204,7 @@ def pt_bonus(perm):
 
 
 def grants(perm, kw: str) -> bool:
-    for a in _attached(perm):
+    for a in _attached(perm) if _host_rules(perm) else ():
         if kw in a.card.advanced_rules.get("host_kws", ()):      # cx_lures: "Enchanted creature can't block."
             return True
         for code, _pp, _tt, kws, _ep, _et in a.card.advanced_rules.get("host_if", ()):
@@ -280,7 +294,24 @@ def _restrict(m):
                         "optional_target": bool(g.get("up"))})
 
 
+def _linked_animate(m):
+    """"<target> becomes a 4/4 artifact creature for as long as ~ remains tapped / remains on the battlefield"
+    (The Blackstaff of Waterdeep, Skilled Animator): the grammar's animation with its end-of-turn duration swapped
+    for one tied to the source (``linked`` mode; ``effect_alive``). "For as long as you control ~" stays unmatched:
+    nothing refreshes the animated permanent when control of the source changes."""
+    import dataclasses
+    from .cards import NO_MATCH, _parse_effects
+    mode = _mode(m["d"])
+    if "controlled" in mode:
+        return NO_MATCH
+    effects, bad = _parse_effects(m["body"][0].upper() + m["body"][1:] + " until end of turn.")
+    if bad or len(effects) != 1 or effects[0].kind != "cx_animate" or not effects[0].data.get("eot"):
+        return NO_MATCH
+    return dataclasses.replace(effects[0], data=dict(effects[0].data, eot=False, linked=mode))
+
+
 EFFECT_PATTERNS = [
+    (rf"(?P<body>(?:another )?target [^.]+? becomes [^.]+?) {_DUR}", _linked_animate),
     (r"(?P<up>up to one )?target creature can't (?P<what>attack or block|attack|block) "
      r"for as long as (?P<d>you control ~)", lambda m: _restrict(dict(m.groupdict(), who=None))),
     (rf"(?:you may )?gain control of (?P<up>up to one )?target (?P<f>[\w ,'~-]+?) {_DUR}", _control),
@@ -414,8 +445,32 @@ def counter_changed(perm, name):
         game._linked_statics = [x for x in links if x not in removed]
 
 
+def link_effect(game, effect, mode, giver):
+    """Tie a continuous effect (whose source is the linked source) to a "for as long as" duration."""
+    if not hasattr(game, "_effect_links"):
+        game._effect_links = {}
+    game._effect_links[effect.id] = (mode, giver)
+
+
+def effect_alive(game, effect) -> bool:
+    """continuous.active: a linked continuous effect lasts while its duration does (a broken "remains tapped" never
+    comes back)."""
+    links = getattr(game, "_effect_links", None)
+    if not links or effect.id not in links:
+        return True
+    mode, giver = links[effect.id]
+    return mode != "broken" and linked_ok(effect.source, mode, giver)
+
+
 def on_untap(game, source):
     """"~ remains tapped" ends for good when ~ untaps, even if it's tapped again later."""
+    elinks = getattr(game, "_effect_links", None)
+    if elinks:
+        from . import continuous
+        for e in [e for e in game.continuous_effects if e.source is source and e.id in elinks
+                  and "tapped" in elinks[e.id][0]]:
+            elinks[e.id] = ("broken", None)
+            continuous.refresh(e.target)
     links = getattr(game, "_linked_statics", None)
     if links:
         game._linked_statics = [x for x in links if not (x.source is source and "tapped" in x.mode)]

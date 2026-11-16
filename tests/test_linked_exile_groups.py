@@ -44,9 +44,7 @@ class Parse(unittest.TestCase):
         self.assertTrue(all(e.data["optional_target"] for e in effs))
 
     def test_refusals(self):
-        for text in ("Exile all creatures with power 5 or greater until ~ leaves the battlefield.",   # may hit ~ itself
-                     "Exile each nonland permanent with mana value 2 or less until ~ leaves the battlefield.",
-                     "For each opponent, exile target nonland permanent that player controls until ~ leaves the "
+        for text in ("For each opponent, exile target nonland permanent that player controls until ~ leaves the "
                      "battlefield.",
                      "Exile target non-Saga, nonland permanent until ~ leaves the battlefield.",
                      "Exile any number of other target creatures controlled by different players until ~ leaves "
@@ -61,8 +59,10 @@ class Parse(unittest.TestCase):
                      "Suspension Field"):
             with self.subTest(name=name):
                 self.assertEqual(db.get(name).unsupported, [])
-        for name in ("Aligned Hedron Network", "Temporary Lockdown"):
-            self.assertTrue(db.get(name).unsupported, name)
+        for name in ("Aligned Hedron Network", "Temporary Lockdown", "Wormfang Newt"):
+            self.assertEqual(db.get(name).unsupported, [], name)
+        # "exile that creature": the blocker / attacker isn't the trigger's context yet (follow-up issue)
+        self.assertTrue(db.get("Grasping Giant").unsupported)
 
 
 class Base(unittest.TestCase):
@@ -177,6 +177,34 @@ class Resolve(Base):
         self.assertEqual(len(self.b.battlefield), 2)
 
 
+class SelfMatchingGroups(Base):
+    NETWORK = card("Test Network", "{4}", "Artifact", "When ~ enters, exile all creatures with power 5 or greater "
+                   "until ~ leaves the battlefield.")
+    GIANT_NETWORK = card("Test Giant Network", "{4}", "Artifact Creature — Construct", "When ~ enters, exile all "
+                         "creatures with power 5 or greater until ~ leaves the battlefield.", 5, 4)
+
+    def test_a_group_on_both_sides_returns_when_the_source_leaves(self):
+        self.assertEqual(self.NETWORK.unsupported, [])
+        mine, theirs, small = self.perm(OGRE, self.a), self.perm(OGRE, self.b), self.perm(BEAR, self.b)
+        src = self.enter(self.NETWORK, [None])
+        self.assertEqual((self.names(self.a), self.names(self.b)), (["Test Network"], [BEAR.name]))
+        self.game.leave_battlefield(src, "graveyard")
+        self.game.settle()
+        self.assertEqual(self.names(self.a), [OGRE.name])
+        self.assertEqual(self.names(self.b), sorted([BEAR.name, OGRE.name]))
+        self.assertIsNotNone((mine, theirs, small))
+
+    def test_a_source_in_its_own_group_ends_the_duration_at_once(self):
+        """Rule 610.3: the source is exiled with the rest, so the duration it set is over and the others return."""
+        self.perm(OGRE, self.b)
+        src = self.enter(self.GIANT_NETWORK, [None])
+        self.assertNotIn(src, self.a.battlefield)
+        self.assertIn("Test Giant Network", [c.name for c in self.a.exile])
+        back = [x for x in self.b.battlefield if x.card.name == OGRE.name]
+        self.assertEqual(len(back), 1)
+        self.assertEqual([c.name for c in self.b.exile], [])
+
+
 class AI(Base):
     def test_grasp_aims_at_the_opponents_best_nonland_permanent(self):
         self.perm(BEAR, self.a)
@@ -192,6 +220,32 @@ class AI(Base):
         ogre = self.perm(OGRE, self.b)
         targets = self.game.auto_targets(self.a, effs)
         self.assertEqual(targets, [None, ogre])
+
+
+
+class OwnChoice(Base):
+    NEWT = card("Test Newt", "{1}{U}", "Creature — Salamander", "When ~ enters, exile a land you control.\n"
+                "When ~ leaves the battlefield, return the exiled card to the battlefield under its owner's control.",
+                4, 4)
+    ETB_LAND = card("Test Etb Land", "", "Land", "When ~ enters, you gain 1 life.")
+
+    def test_newt_takes_its_controllers_land_and_gives_it_back(self):
+        self.assertEqual(self.NEWT.unsupported, [])
+        self.perm(ISLAND, self.b)
+        plain, etb = self.perm(ISLAND, self.a), self.perm(self.ETB_LAND, self.a)
+        src = self.enter(self.NEWT, [None])
+        self.assertEqual(self.names(self.a), sorted(["Island", "Test Newt"]))     # the land that gains: enters again
+        self.assertEqual(len(self.b.battlefield), 1)
+        life = self.a.life
+        self.game.leave_battlefield(src, "graveyard")
+        self.game.settle()
+        self.assertEqual(self.names(self.a), sorted(["Island", "Test Etb Land"]))
+        self.assertEqual(self.a.life, life + 1)
+        self.assertIsNotNone((plain, etb))
+
+    def test_no_land_no_exile(self):
+        src = self.enter(self.NEWT, [None])
+        self.assertIn(src, self.a.battlefield)
 
 
 if __name__ == "__main__":

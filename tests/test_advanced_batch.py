@@ -378,7 +378,7 @@ class AdvancedBatch(unittest.TestCase):
     def test_foreign_permission_expires_when_card_changes_zones(self):
         self.b.library = [SPELL] * 4
         self.put('Gonti, Lord of Luxury')
-        zone, ref = self.a.foreign_permissions[0]
+        zone, ref, *_ = self.a.foreign_permissions[0]
         spell = ref.find(zone)
         self.g.move_card(spell, zone, self.b.hand)
         self.g.move_card(spell, self.b.hand, zone)
@@ -553,7 +553,7 @@ class AdvancedBatch(unittest.TestCase):
     def test_foreign_exile_is_face_down_until_card_leaves(self):
         self.b.library = [SPELL] * 4
         self.put('Gonti, Lord of Luxury')
-        zone, ref = self.a.foreign_permissions[0]
+        zone, ref, *_ = self.a.foreign_permissions[0]
         spell = ref.find(zone)
         self.assertTrue(spell.face_down_exile)
         self.g.move_card(spell, zone, self.b.hand)

@@ -46,7 +46,7 @@ class Parsing(unittest.TestCase):
         for s in ("They each deal damage equal to their power to target creature an opponent controls.",
                   "Target creature you control deals damage equal to its toughness to any target.",
                   "Target creature you control deals damage equal to its power to you and any target.",
-                  "Target creature you control deals damage equal to its power to target creature defending player "
+                  "Target creature you control deals damage equal to its power to target creature the chosen player "
                   "controls.",
                   "Target creature you control deals damage equal to its power to another target creature that "
                   "player controls.",           # "that player": no player in the sentence

@@ -34,7 +34,6 @@ def grant(permanent, free):
 
 
 def options(game, p):
-    from .cards.model import AltCost
     out = []
     alive = []
     for ref, free in getattr(p, 'exile_cast_permissions', ()):
@@ -43,13 +42,28 @@ def options(game, p):
             continue
         alive.append((ref, free))
         if not card.is_land:
-            kind = PREFIX + str(card.physical_id) + ('_free' if free else '_paid')
-            out.append(game._variant(card, kind, AltCost(kind, {'generic': 0}) if free else None))
+            kind = PREFIX + str(card.physical_id) + _suffix(free)
+            out.append(game._variant(card, kind, alt_cost(card, kind, free)))
     p.exile_cast_permissions = alive
     return out
 
 
+def _suffix(free):
+    return '_any' if free == 'any' else '_free' if free else '_paid'
+
+
+def alt_cost(card, kind, free):
+    """The cost of a permission cast: nothing (free), the mana cost with every pip generic ("mana of any type can be
+    spent to cast it", "any" from cx_exile_play), or None (the card's own cost)."""
+    from .cards.model import AltCost
+    if free == 'any':
+        cost = dict(card.mana_cost)
+        total = sum(n for k, n in cost.items() if k not in ('X',))
+        return AltCost(kind, {'generic': total, **({'X': cost['X']} if cost.get('X') else {})})
+    return AltCost(kind, {'generic': 0}) if free else None
+
+
 def available(game, p, card, kind):
     base = game._origin(card)[0]
-    return any(ref.find(p.exile) is base and kind.endswith('_free' if free else '_paid')
+    return any(ref.find(p.exile) is base and kind.endswith(_suffix(free))
                for ref, free in getattr(p, 'exile_cast_permissions', ()))

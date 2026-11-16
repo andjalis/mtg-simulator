@@ -45,8 +45,12 @@ def parse_animation(text: str, plural: bool):
             return None
         data["still"] = m[1].capitalize()
         t = t[:m.start()]
+    m = re.search(r" with power and toughness each equal to its mana value$", t, re.I)
+    if m:           # Karn's Touch (#313): its mana value as it resolves (a permanent's mana value doesn't change)
+        data.update(pt=(0, 0), pt_mv=True)
+        t = t[:m.start()]
     m = re.search(r" with ([a-z ,]+)$", t)
-    if m and not m[1].startswith("base "):
+    if m and not m[1].startswith("base ") and not m[1].startswith("power and toughness"):
         kws = keyword_list(m[1])
         if not kws:
             return None

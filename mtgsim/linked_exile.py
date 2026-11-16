@@ -7,15 +7,17 @@
         battlefield.                                                   (Grasp of Fate: one slot per opponent)
     For each player, exile up to one target creature that player controls until ~ leaves the battlefield.
     exile all artifacts your opponents control until ~ leaves the battlefield.   (Consulate Crackdown)
+    exile all creatures with power 5 or greater until ~ leaves the battlefield.  (Aligned Hedron Network)
+    exile a land you control until ~ leaves the battlefield.         (Wormfang Newt: its controller chooses)
 
 The noun phrase is read by permanent_templates.subject (every word understood or the line stays ignored). Each
 target slot is an ``oring`` Effect (engine: Game.exile_until_leaves); a group is ``oring_group``. Both exile
 only while the source is still the same object on the battlefield, and the source returns exactly the cards it
 exiled, under their owners' control, when it leaves (a token is gone; a card that left exile stays where it is).
 
-A group is read only when the source can't be one of its members ("... your opponents control"): whether a source
-that exiles itself along with the rest brings them back at once is left unread (Aligned Hedron Network, Temporary
-Lockdown). Joined at the end of cards/__init__.py.
+A group may include the source itself (Aligned Hedron Network, Temporary Lockdown can't match their own filter,
+but a changed or copied source could): then the source is exiled with them, and since the duration it set is
+already over, the others come back at once (rule 610.3). Joined at the end of cards/__init__.py.
 """
 from __future__ import annotations
 
@@ -67,9 +69,15 @@ def _parse(each, phrase):
         return out
     if re.match(r"(?:all|each) ", phrase, re.I):
         subj = subject(phrase)
-        if subj is None or subj[0] != "group" or subj[1]["selector"].get("controller") != "opp":
+        if subj is None or subj[0] != "group":
             return NO_MATCH
         return Effect("oring_group", data={"selector": subj[1]["selector"]})
+    m = re.fullmatch(r"(an?|another) (.+ you control)", phrase, re.I)
+    if m:                       # "exile a land you control" (Wormfang Newt): its controller's choice, untargeted
+        subj = subject(("another " if m[1].lower() == "another" else "") + "target " + m[2])
+        if subj is None or subj[0] != "permanent" or subj[1]["selector"].get("controller") != "mine":
+            return NO_MATCH
+        return Effect("oring_choose", data={"selector": subj[1]["selector"]})
     slots = _slots(phrase)
     return slots if slots is not None else NO_MATCH
 

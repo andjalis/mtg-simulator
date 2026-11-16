@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import re
 
+from . import this_way as _this_way
 from .cards.model import NUMBERS
 
 _NUM = r"(?:\d+|a|an|one|two|three|four|five|six|seven|eight|nine|ten|twenty)"
@@ -35,9 +36,27 @@ _PLURAL_SUB = {"elves": "Elf", "dwarves": "Dwarf", "wolves": "Wolf", "plains": "
                "deserts": "Desert", "gates": "Gate"}
 
 
+_OUTLAWS = ["Assassin", "Mercenary", "Pirate", "Rogue", "Warlock"]     # rule 700.12
+
 def _n(word: str) -> int:
     word = word.lower()
     return int(word) if word.isdigit() else _WORDS[word]
+
+
+def _paid(item, source):
+    """Whose payment a mana-spent condition reads: the resolving spell, else the spell a trigger fired on ("When you
+    cast this spell, if {C} was spent to cast it": the context), else the permanent the spell became."""
+    if getattr(item, "is_spell", False):
+        return item
+    ctx = getattr(item, "context", None)
+    if getattr(ctx, "is_spell", False):
+        return ctx
+    return source
+
+
+def _tuple(x):
+    """A quantity spec back from its JSON list form (nested lists become tuples)."""
+    return tuple(_tuple(v) for v in x) if isinstance(x, list) else x
 
 
 def _code(*parts) -> str:
@@ -93,6 +112,10 @@ def _word_spec(word: str, spec: dict, plural: bool = True) -> bool:
         spec[low] = True
     elif low in ("multicolored", "colorless", "monocolored"):
         spec["colorcount"] = low
+    elif low in ("outlaw", "outlaws"):          # rule 700.12
+        spec.setdefault("any_sub", []).extend(_OUTLAWS)
+    elif low == "non-outlaw":
+        spec.setdefault("not_any_sub", []).extend(_OUTLAWS)
     elif low.startswith("non") and low[3:] in _COLORS:
         spec.setdefault("not_colors", []).append(_COLORS[low[3:]])
     elif low in _COLORS:
@@ -107,7 +130,8 @@ def _word_spec(word: str, spec: dict, plural: bool = True) -> bool:
     elif low.rstrip("s") in _BASICS or low in _BASICS:
         spec.setdefault("sub", []).append(low.rstrip("s").capitalize() if low != "plains" else "Plains")
     elif word[:1].isupper() and word.isalpha():
-        sub = word if not plural or not word.endswith("s") or word.endswith("ss") else word[:-1]
+        from .cx_events import _IRREGULAR       # "Leeches" -> "Leech", "Elves" -> "Elf"
+        sub = _IRREGULAR.get(word) or (word if not plural or not word.endswith("s") or word.endswith("ss") else word[:-1])
         spec.setdefault("sub", []).append(sub)
     elif re.fullmatch(r"[A-Z][a-z]+(?:'s|-[A-Z][a-z]+)", word):
         spec.setdefault("sub", []).append(word)     # "Urza's", "Power-Plant": land subtypes written as they are
@@ -116,10 +140,19 @@ def _word_spec(word: str, spec: dict, plural: bool = True) -> bool:
     return True
 
 
-def _filter(text: str, plural: bool = True):
+def _filter(text: str, plural: bool = True, names: bool = False):
     """A permanent/card filter from "other untapped legendary creatures with flying", or None."""
-    text = text.strip().replace(",", "")
+    text = text.strip()
+    if re.fullmatch(r"enchanted permanents?", text):
+        # "an enchanted permanent": one with an Aura attached (#518). Only this exact phrase: "enchanted creature"
+        # in an Aura's text is the Aura's host, not a filter.
+        return {"enchanted": True, "types": ["permanent"]}
     spec: dict = {}
+    named = names and re.fullmatch(r"(.+?) named (~|[A-Z][\w'-]*(?:,? (?:[A-Z][\w'-]*|of|the|and|de|la|to|from|in))*)", text)
+    if named:       # "a creature named Bogbrew Witch", "four or more creatures named ~" (#314)
+        spec["name"] = named[2]
+        text = named[1]
+    text = text.replace(",", "")
     m = re.fullmatch(r"(\d+)/(\d+) (.+)", text)
     if m:                       # "a 1/1 creature" (#325): exact power and toughness
         spec["power"], spec["toughness"] = ["==", int(m[1])], ["==", int(m[2])]
@@ -142,6 +175,11 @@ def _filter(text: str, plural: bool = True):
     if colors:
         spec["any_color"] = [_COLORS[colors[1]], _COLORS[colors[2]]]
         text = colors[3]
+    subs = re.fullmatch(r"([A-Z][a-z]+) or ([A-Z][a-z]+)", text)
+    if subs:                    # "a Wolf or Werewolf" (#341): either creature type
+        from .permanent_templates import _CREATURE_SUBTYPES
+        if all(_IRREG_SUB.get(w.lower(), w.lower()) in _CREATURE_SUBTYPES for w in subs.groups()):
+            return {"any_sub": [w for w in subs.groups()]}
     any_of = re.fullmatch(r"(\w+) (?:and/or|or) (\w+)( .+)?", text)
     if any_of and any_of[1].lower().rstrip("s") in _TYPES + ("sorcerie",) and \
             any_of[2].lower().rstrip("s") in _TYPES + ("sorcerie",):
@@ -158,6 +196,9 @@ def _filter(text: str, plural: bool = True):
         if not _word_spec(word, spec, plural):
             return None
     return spec
+
+
+_IRREG_SUB: dict = {}
 
 
 def _is_basic(card) -> bool:
@@ -180,11 +221,17 @@ def _card_ok(card, spec: dict, perm=None) -> bool:
 
     if any(not has_type(t) for t in spec.get("types", ())):
         return False
+    if "name" in spec and card.name != spec["name"]:      # "~" is resolved by the caller (_count_perms)
+        return False
     if any(has_type(t) for t in spec.get("not", ())):
         return False
     if "any" in spec and not any(has_type(t) for t in spec["any"]):
         return False
     if any(s not in subs for s in spec.get("sub", ())):
+        return False
+    if spec.get("any_sub") and not (set(spec["any_sub"]) & subs or card.changeling):
+        return False
+    if spec.get("not_any_sub") and (set(spec["not_any_sub"]) & subs or card.changeling):
         return False
     if spec.get("colors") and not all(c in card.colors for c in spec["colors"]):
         return False
@@ -212,6 +259,8 @@ def _card_ok(card, spec: dict, perm=None) -> bool:
         return False
     if spec.get("historic") and not (card.is_artifact or card.legendary or getattr(card, "is_saga", False)):
         return False
+    if spec.get("enchanted") and (perm is None or not perm.auras):
+        return False
     if perm is not None:
         if "tapped" in spec and bool(perm.tapped) != spec["tapped"]:
             return False
@@ -236,6 +285,13 @@ def _card_ok(card, spec: dict, perm=None) -> bool:
 
 
 def _count_perms(player, spec, source=None) -> int:
+    name = spec.get("name")
+    if name == "~":         # the source's own name
+        name = getattr(getattr(source, "card", source), "name", None)
+        if name is None:
+            return 0
+    if name is not None:
+        spec = dict(spec, name=name)
     return sum(1 for x in player.battlefield
                if not (spec.get("other") and x is source) and _card_ok(x.card, spec, x))
 
@@ -258,6 +314,7 @@ _ALIASES = {
     "~ was cast": "cast",
     "you cast it": "cast",
     "you cast ~": "cast",
+    "~ wasn't cast": "lib:[\"not_cast\"]",
     "a creature died under your control this turn": "lib:[\"died_mine\"]",
     "you're the monarch": "lib:[\"monarch\"]",
     "you are the monarch": "lib:[\"monarch\"]",
@@ -268,14 +325,22 @@ _ALIASES = {
     "it's not your turn": "!your_turn",
     "it isn't your turn": "!your_turn",
     "you weren't the starting player": "lib:[\"not_starting\"]",
+    "you aren't the starting player": "lib:[\"not_starting\"]",
     "you were the starting player": "lib:[\"starting\"]",
     "it was kicked": "lib:[\"kicked\"]",
     "~ was kicked": "lib:[\"kicked\"]",
     "that spell was kicked": "lib:[\"ctx_kicked\"]",
     "you cast it from your hand": "lib:[\"from_hand\"]",
+    # rule 120.4a: excess damage dealt by this resolution (game.excess_dealt, kept by deal_damage; #560)
+    "excess damage was dealt this way": "lib:[\"excess\"]",
+    "excess damage was dealt to that creature this way": "lib:[\"excess\"]",
+    "excess damage was dealt to a creature this way": "lib:[\"excess\"]",
+    "excess damage was dealt to a permanent this way": "lib:[\"excess\"]",
+    "excess damage was dealt to that permanent this way": "lib:[\"excess\"]",
     "you cast ~ from your hand": "lib:[\"from_hand\"]",
     "~ was cast from your hand": "lib:[\"from_hand\"]",
     "~ is attacking": "lib:[\"src_attacking\"]",
+    "~ is attached to a creature": "lib:[\"src_attached\"]",      # an Equipment / Aura on a creature (#625)
     "it's attacking": "lib:[\"src_attacking\",\"it\"]",
     "~ is tapped": "source_tapped",
     "~ is untapped": "source_untapped",
@@ -327,7 +392,7 @@ def rule(pattern: str):
 @rule(rf"you control {_QUANT} (?P<f>.+?)")
 def _you_control(m):
     op, n = _quant(m["q"])
-    f = _filter(m["f"], _plural(m["q"]))
+    f = _filter(m["f"], _plural(m["q"]), names=True)
     if f is None:
         return ""
     if m["q"].lower() == "another":
@@ -335,18 +400,24 @@ def _you_control(m):
     return _code("ctl", "you", f, op, n)
 
 
-@rule(r"you control (?:creatures|permanents|artifacts|lands) named (?P<a>[A-Z][\w' -]+?) and (?P<b>[A-Z][\w' -]+)")
-def _you_control_named(m):
-    """"If you control creatures named Mine Worker and Tower Worker": one permanent by each name."""
-    t = re.match(r"you control (\w+?)s? named", m[0]).group(1).lower()
-    t = "permanent" if t == "permanent" else t
-    return _code("and", *(_code("ctl", "you", {"types": [t], "name": n.strip()}, ">=", 1) for n in (m["a"], m["b"])))
+@rule(r"you control (?P<kind>creatures|artifacts|Equipment|permanents|lands) named (?P<names>.+?)")
+def _you_control_names(m):
+    """"you control creatures named Mine Worker and Power Plant Worker", "artifacts named Crown of Empires and
+    Throne of Empires": one of each (#314)."""
+    names = [n.strip() for n in re.split(r",? and |, ", m["names"]) if n.strip()]
+    kind = {"creatures": "creature", "artifacts": "artifact", "equipment": "Equipment", "permanents": "permanent",
+            "lands": "land"}[
+        m["kind"].lower()]
+    if len(names) < 2 or not all(re.fullmatch(r"~|[A-Z][\w'-]*(?: (?:[A-Z][\w'-]*|of|the))*", n) for n in names):
+        return ""
+    spec = {"sub": ["Equipment"]} if kind == "Equipment" else {"types": [kind]}
+    return _code("and", *(_code("ctl", "you", dict(spec, name=n), ">=", 1) for n in names))
 
 
 @rule(rf"(?:an opponent|defending player|that player|target opponent) controls {_QUANT} (?P<f>.+?)")
 def _opp_control(m):
     op, n = _quant(m["q"])
-    f = _filter(m["f"], _plural(m["q"]))
+    f = _filter(m["f"], _plural(m["q"]), names=True)
     if f is None:
         return ""
     return _code("ctl", "opp", f, op, n)
@@ -362,7 +433,7 @@ def _on_battlefield(m):
 
 @rule(r"no opponent controls (?:a|an|any) (?P<f>.+?)")
 def _no_opp_control(m):
-    f = _filter(m["f"], plural=False)
+    f = _filter(m["f"], plural=False, names=True)
     return _code("ctl", "opp", f, "==", 0) if f is not None else ""
 
 
@@ -407,6 +478,13 @@ def _small_library(m):
 def _opp_more(m):
     f = _filter(m["f"])
     return _code("ctl_vs", f, "<") if f is not None else ""
+
+
+@rule(rf"(?:an opponent|defending player) controls at least (?P<n>{_NUM}) more (?P<f>.+?) than you")
+def _opp_more_by(m):
+    """"an opponent controls at least four more creatures than you" (Avatar of Might, #341)."""
+    f = _filter(m["f"])
+    return _code("ctl_more", f, _n(m["n"])) if f is not None else ""
 
 
 @rule(r"you control more (?P<f>.+?) than (?:an opponent|defending player|that player|each opponent)")
@@ -485,6 +563,65 @@ def _spells_turn(m):
     return _code("spells", op, n)
 
 
+# ---- #341 cost-reduction conditions (each is a plain board / turn-history fact, read the same in every context)
+
+@rule(r"it's (?P<w>night|day)")
+def _day_night(m):
+    return _code("daynight", m["w"].lower())
+
+
+@rule(rf"an opponent (?:has )?cast (?P<q>{_NUM} or more) spells this turn")
+def _opp_spells(m):
+    op, n = _quant(m["q"])
+    return _code("opp_spells", op, n)
+
+
+@rule(rf"an opponent (?:has drawn|drew) (?P<n>{_NUM}) or more cards this turn")
+def _opp_drawn(m):
+    return _code("drawn_opp", _n(m["n"]))
+
+
+@rule(r"there are no (?P<f>[\w -]+?) cards in your hand")
+def _none_in_hand(m):
+    f = _filter(m["f"], plural=False)
+    return _code("hand", f, "==", 0) if f is not None else ""
+
+
+@rule(rf"there are (?P<q>{_NUM} or more) (?P<f>[\w -]+?) cards total in all graveyards")
+def _all_graveyards(m):
+    f = _filter(m["f"], plural=False)
+    op, n = _quant(m["q"])
+    return _code("gy_all", f, op, n) if f is not None else ""
+
+
+@rule(r"a creature is attacking you")
+def _attacking_you(m):
+    return _code("attacking_you")
+
+
+@rule(rf"creatures you control have total toughness (?P<n>{_NUM}) or greater")
+def _total_toughness(m):        # (total power has its own older rule, "total_power")
+    return _code("total_stat", "toughness", ">=", _n(m["n"]))
+
+
+@rule(r"a player's life total is less than or equal to half their starting life total")
+def _half_life(m):
+    return _code("half_life")
+
+
+@rule(r"you control an? (?P<t>[A-Z][a-z]+) creature and a non-(?P<u>[A-Z][a-z]+) creature")
+def _type_and_non(m):
+    if m["t"] != m["u"]:
+        return ""
+    return _code("and", _code("ctl", "you", {"sub": [m["t"]], "types": ["creature"]}, ">=", 1),
+                 _code("non_sub_creature", m["t"]))
+
+
+@rule(r"you control at least two creatures that share a creature type")
+def _share_type(m):
+    return _code("share_type", 2)
+
+
 @rule(rf"you(?:'ve| have)? gained (?P<n>{_NUM}) or more life this turn")
 def _gained(m):
     return f"gained_life>={_n(m['n'])}"
@@ -500,6 +637,11 @@ def _attacked(m):
     return _code("attacked", _n(m["n"]))
 
 
+@rule(r"~'s power is (?P<w>even|odd)")
+def _parity(m):
+    return _code("src_parity", m["w"].lower())      # Kianne, Corrupted Memory (#625)
+
+
 @rule(rf"there are (?P<n>{_NUM}) or more cards in exile")
 def _exile_total(m):
     return _code("exile_total", _n(m["n"]))
@@ -513,6 +655,18 @@ def _total_power(m):
 @rule(rf"you control (?P<n>{_NUM}) or more creatures with different powers")
 def _diff_powers(m):
     return _code("diff_powers", _n(m["n"]))
+
+
+# The Traps' conditions (#625): attackers now (what an opponent drew / cast: _opp_drawn, _opp_spells)
+@rule(rf"(?P<n>{_NUM}) or more creatures are attacking")
+def _attackers_n(m):
+    return _code("attackers", ">=", _n(m["n"]))
+
+
+@rule(r"an? (?P<f>[\w ]+? creature(?: with [\w ]+)?) is attacking")
+def _attacker_kind(m):
+    spec = _filter(m["f"], plural=False)
+    return _code("attacker_kind", spec) if spec and spec != {"types": ["creature"]} else ""
 
 
 @rule(rf"at least (?P<n>{_NUM}) mana was spent to cast (?P<ref>it|~|that spell)")
@@ -533,6 +687,46 @@ def _no_mana_spent(m):
 @rule(rf"at least (?P<n>{_NUM}) (?P<c>white|blue|black|red|green|colorless) mana was spent to cast ~")
 def _color_mana_spent(m):
     return _code("mana_color", "WUBRGC"["white blue black red green colorless".split().index(m["c"].lower())], _n(m["n"]))
+
+
+@rule(rf"at least (?P<n>{_NUM}) mana of the same color was spent to cast (?:~|it|this spell)")
+def _same_color_spent(m):
+    """Adamant's colourless form (Henge Walker): some one colour paid at least N of the cost."""
+    return _code("mana_same", _n(m["n"]))
+
+
+@rule(rf"(?P<n>{_NUM}) or more colors of mana were spent to cast (?:~|it|this spell)")
+def _colors_spent(m):
+    return _code("mana_ncolors", _n(m["n"]))
+
+
+@rule(r"(?P<cs>(?:\{[WUBRG]\}){2,5}) was spent to cast (?:~|it|this spell)")
+def _spent_colors(m):
+    """"If {U}{B} was spent to cast ~" (the Mythos cycle): each of those colours paid the spell. A repeated
+    colour ("{G}{G}") is an amount of that colour, not read here."""
+    colours = re.findall(r"[WUBRG]", m["cs"])
+    if len(set(colours)) != len(colours):
+        return ""
+    return _code("and", *(_code("spent_color", c) for c in colours))
+
+
+@rule(r"its (?P<stat>mana value|power|toughness) is less than or equal to (?P<q>.+? spent to cast (?:~|it|this spell))")
+def _target_stat_le(m):
+    """"Exile target nonland permanent if its mana value is less than or equal to the number of colors of mana
+    spent to cast ~" (Prismatic Ending): the effect's own target (``prev`` as its condition is checked) against
+    a quantity of the spell."""
+    from .cards.clauses import _xq
+    spec = _xq(re.sub(r"cast (?:it|this spell)$", "cast ~", m["q"]))
+    return _code("tgt_stat_le", m["stat"].lower(), list(spec)) if spec else ""
+
+
+@rule(rf"(?:(?P<n>{_NUM}) or more )?mana from (?P<src>an? [A-Za-z]+(?: source)?|[A-Za-z]+) (?:was|were) spent to "
+      r"cast (?:~|it|this spell)")
+def _mana_from(m):
+    """"if mana from a Treasure was spent to cast it" / "three or more mana from creatures was spent" (cx_spent)."""
+    from .cx_spent import source_kind
+    kind = source_kind(m["src"])
+    return _code("mana_from", kind, _n(m["n"]) if m["n"] else 1) if kind else ""
 
 
 @rule(rf"(?P<q>a|one or more|{_NUM} or more) cards? left your graveyard this turn")
@@ -633,6 +827,16 @@ def _prev_is(m):
     return _code("prev_is", f) if f is not None else ""
 
 
+@rule(r"you have max speed")
+def _max_speed(m):
+    return _code("speed", ">=", 4)      # Start your engines!: speed 4 is the maximum (#518)
+
+
+@rule(r"(?:(?:it's|it is) paired with a creature with soulbond|~ is paired with a creature(?: with soulbond)?)")
+def _paired(m):
+    return _code("paired")              # soulbond: a pairing always involves a creature with soulbond
+
+
 @rule(r"(?:it's|it is|that creature is) (?P<w>legendary|tapped|untapped|attacking|blocking|equipped|enchanted)")
 def _prev_state(m):
     w = m["w"].lower()
@@ -649,10 +853,18 @@ def _prev_was(m):
 
 
 @rule(rf"(?:its|that card's|that creature's|that spell's|that permanent's) mana value (?:was|is) (?P<n>{_NUM}) or "
-      r"(?P<d>less|fewer|greater|more)|(?:it|that card) had mana value (?P<n2>\d+) or (?P<d2>less|greater)")
+      r"(?P<d>less|fewer|greater|more)|(?:it|that card) had mana value (?P<n2>\d+) or (?P<d2>less|greater)|"
+      rf"that spell has mana value (?P<n3>{_NUM}) or (?P<d3>less|greater)")
 def _prev_mv(m):
-    n, d = (m["n"], m["d"]) if m["n"] else (m["n2"], m["d2"])
+    n, d = (m["n"], m["d"]) if m["n"] else (m["n2"], m["d2"]) if m["n2"] else (m["n3"], m["d3"])
     return _code("prev_is", {"mv": [">=" if d in ("greater", "more") else "<=", _n(n)]})
+
+
+@rule(rf"that spell's (?P<s>power|toughness) (?:was|is) (?P<n>{_NUM}) or (?P<d>less|greater|more)")
+def _spell_pt(m):
+    """"If that spell's power is 4 or greater" (Eshki): the printed power of the spell a cast trigger fired on or a
+    counterspell targeted (#317)."""
+    return _code("prev_is", {"spell_" + m["s"].lower(): [">=" if m["d"] != "less" else "<=", _n(m["n"])]})
 
 
 @rule(rf"(?:it|that creature) had (?P<q>{_NUM}|{_NUM} or more|no) (?P<c>\+1/\+1|-1/-1|[a-z]+) counters? on it")
@@ -686,6 +898,14 @@ def _cast_from(m):
 def _spent_color(m):
     """"If {G} was spent to cast it": a mana of that colour paid the spell (the colours the payment recorded)."""
     return _code("spent_color", m["c"].upper())
+
+
+@rule(r"\{C\} (?P<neg>was|wasn't) spent to cast (?:~|it|this spell)")
+def _spent_colorless(m):
+    """"if {C} was / wasn't spent to cast it" (Drowner of Truth, Wumpus Aberration): colourless mana paid part of
+    the spell. Read from the payment's per-type counts, as "at least N colorless mana" is."""
+    code = _code("mana_color", "C", 1)
+    return code if m["neg"] == "was" else _code("not", code)
 
 
 @rule(r"~ is (?:a|an) (?P<f>[\w ,/-]+?)")
@@ -741,6 +961,9 @@ _PAST = [
     (rf"{_SUBJ_Q} (?P<s>.+?) left the battlefield under your control", "{q} {s} you control leaves the battlefield"),
     (rf"{_SUBJ_Q} (?P<s>.+?) left the battlefield", "{q} {s} leaves the battlefield"),
     (rf"you(?:'ve| have)? cast {_SUBJ_Q} (?P<s>.+?)", "you cast {q} {s}"),
+    (rf"an opponent cast {_SUBJ_Q} (?P<s>.+?)", "an opponent casts {q} {s}"),
+    (rf"an opponent had {_SUBJ_Q} (?P<s>.+?) enter(?: the battlefield)? under their control",
+     "{q} {s} an opponent controls enters"),
     (rf"you(?:'ve| have)? sacrificed {_SUBJ_Q} (?P<s>.+?)", "you sacrifice {q} {s}"),
     (r"you(?:'ve| have)? discarded (?P<q>a|one or more) (?P<s>cards?)", "you discard a card"),
     (r"you(?:'ve| have)? cycled (?P<q>a|one or more) (?P<s>cards?)", "you cycle a card"),
@@ -858,7 +1081,7 @@ def parse(phrase: str) -> str:
     had = re.fullmatch(r"you had (an?) (.+?) enter(?: the battlefield)? under your control this turn", phrase.strip(), re.I)
     if had:     # "you had a land enter the battlefield under your control this turn"
         phrase = f"{had[1]} {had[2]} entered the battlefield under your control this turn"
-    code = _plain(phrase) or _history(phrase)
+    code = _plain(phrase) or _history(phrase) or _this_way.parse_cond(phrase)     # "... this way" (#642)
     if code:
         return code
     for joiner, kind in ((" or ", "or"), (" and ", "and")):
@@ -870,6 +1093,11 @@ def parse(phrase: str) -> str:
                 subject = re.match(r"(you control|an opponent controls) ", left, re.I)
                 if subject:
                     right = subject[0] + right
+            elif re.fullmatch(r"[A-Z][a-z]+", right.strip()):
+                # "you control a Mount or Vehicle": the article carries over too (#630)
+                subject = re.match(r"(you control|an opponent controls) (an?) [A-Z][a-z]+$", left)
+                if subject:
+                    right = f"{subject[1]} {'an' if right.strip()[0] in 'AEIOU' else 'a'} {right.strip()}"
             a, b = _plain(left), _plain(right)
             if a and b:
                 return _code(kind, a, b)
@@ -944,6 +1172,8 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         source = _source(item)
     if kind == "not":
         return not _eval_any(game, p, args[0], item, source, prev)
+    if kind == "this_way":
+        return _this_way.check(game, p, args, item, prev)
     if kind in ("or", "and"):
         results = [_eval_any(game, p, sub, item, source, prev) for sub in args]
         return any(results) if kind == "or" else all(results)
@@ -951,6 +1181,14 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         who, spec, op, n = args
         pl = _player_for(game, p, who, item)
         return pl is not None and _cmp(_count_perms(pl, spec, source), op, n)
+    if kind == "speed":
+        return _cmp(getattr(p, "speed", 0), args[0], args[1])
+    if kind == "paired":
+        partner = getattr(source, "partner", None)
+        return partner is not None and any(partner in pl.battlefield for pl in game.players)
+    if kind == "ctl_more":                  # the opponent controls at least n more than p
+        spec, n = args
+        return _count_perms(game.opponent(p), spec) - _count_perms(p, spec) >= n
     if kind == "ctl_all":                   # every player's battlefield
         spec, op, n = args
         return _cmp(sum(_count_perms(pl, spec) for pl in game.players), op, n)
@@ -1005,8 +1243,16 @@ def check(game, p, code: str, item=None, source=None, prev=None):
             item._resolve_count = count
         return count == args[0]
     if kind == "prev_is":
-        from .engine.state import Permanent
+        from .engine.state import Permanent, StackItem
+        spell = prev if isinstance(prev, StackItem) else getattr(item, "context", None)
+        if not isinstance(prev, Permanent) and isinstance(spell, StackItem) and spell.card is not None \
+                and not args[0].get("state"):
+            return _spell_ok(spell, args[0])      # "that spell": a cast trigger's spell or a countered one (#317)
         obj = prev if isinstance(prev, Permanent) else getattr(item, "context", None)
+        if prev is None and obj is None and item is not None:
+            from .cx_delayed import _fresh       # "put an artifact card onto the battlefield. If it's an Equipment, ..."
+            fresh = _fresh(game, item)
+            obj = fresh[-1] if fresh else None
         spec = args[0]
         if prev is None and not isinstance(obj, Permanent):
             prev = getattr(item, "exiled_card", None)
@@ -1031,7 +1277,7 @@ def check(game, p, code: str, item=None, source=None, prev=None):
             return spell is not None and game.active is p and game.step in ("main1", "main2")
         if kind == "cast_zone":
             return getattr(spell if spell is not None else source, "cast_zone", None) == args[0]
-        return args[0] in getattr(spell if spell is not None else source, "mana_colors", ())
+        return args[0] in getattr(_paid(item, source), "mana_colors", ())
     if kind == "unless_unpaid":          # "B unless <payer> pays ...": the cx_unless just before B wasn't paid
         return not getattr(item, "cx_unless_paid", False)
     if kind == "ref_is":
@@ -1053,14 +1299,21 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         return game.opponent(p).last_damage_turn == game.turn
     if kind == "attackers":
         return _cmp(len(getattr(game, "attackers", ()) or ()), *args)
+    if kind == "attacker_kind":
+        return any(_card_ok(x.card, args[0], x) for x in getattr(game, "attackers", ()) or ())
     if kind == "exile":
         return any(True for _ in game.opponent(p).exile)
+    if kind == "src_parity":
+        power = getattr(source, "power", None)
+        return power is not None and power % 2 == (0 if args[0] == "even" else 1)
     if kind == "gy_types":
         return len({t for c in p.graveyard for t in c.types}) >= args[0]
     if kind == "any_gy":
         return any(len(pl.graveyard) >= args[0] for pl in game.players)
     if kind == "small_library":
         return any(len(pl.library) <= args[0] for pl in game.players)
+    if kind == "excess":
+        return getattr(game, "excess_dealt", 0) > 0
     if kind == "monarch":
         return getattr(game, "monarch", None) is p
     if kind == "opp_monarch":
@@ -1105,6 +1358,9 @@ def check(game, p, code: str, item=None, source=None, prev=None):
                                           for pl in game.players for x in pl.battlefield) >= n
     if kind == "src_attacking":
         return source is not None and source in getattr(game, "attackers", ())
+    if kind == "src_attached":
+        host = getattr(source, "attached_to", None) or getattr(source, "aura_host", None)
+        return host is not None and host.is_creature and host in host.controller.battlefield
     if kind == "src_tapped":
         return source is not None and bool(getattr(source, "tapped", False)) == args[0]
     if kind == "src_creature":
@@ -1122,6 +1378,39 @@ def check(game, p, code: str, item=None, source=None, prev=None):
     if kind == "drawn":
         drawn = getattr(p, "drawn_turn", (None, 0))
         return drawn[0] == game.turn and drawn[1] >= args[0]
+    if kind == "drawn_opp":
+        drawn = getattr(game.opponent(p), "drawn_turn", (None, 0))
+        return drawn[0] == game.turn and drawn[1] >= args[0]
+    if kind == "daynight":
+        return getattr(game, "day_night", None) == args[0]
+    if kind == "opp_spells":
+        return _cmp(game.spells_cast_turn(game.opponent(p)), *args)
+    if kind == "hand":
+        spec, op, n = args
+        return _cmp(sum(_card_ok(c, spec) for c in p.hand), op, n)
+    if kind == "gy_all":
+        spec, op, n = args
+        return _cmp(sum(_card_ok(c, spec) for pl in game.players for c in pl.graveyard), op, n)
+    if kind == "attacking_you":
+        return any(a.controller is not p for a in getattr(game, "attackers", ()) or ())
+    if kind == "total_stat":
+        stat, op, n = args
+        return _cmp(sum(max(0, getattr(x, stat)) for x in p.creatures), op, n)
+    if kind == "half_life":
+        return any(pl.life <= getattr(pl, "starting_life", 20) // 2 for pl in game.players)
+    if kind == "non_sub_creature":
+        return any(x.is_creature and args[0] not in x.card.subtypes and not getattr(x.card, "changeling", False)
+                   for x in p.battlefield)
+    if kind == "share_type":
+        from collections import Counter
+        seen = Counter()
+        wild = 0
+        for x in p.creatures:
+            if getattr(x.card, "changeling", False):
+                wild += 1
+            else:
+                seen.update(set(x.card.subtypes))
+        return wild + max(seen.values(), default=0) >= args[0] and (seen or wild >= args[0])
     if kind == "attacked":
         return p.attacked_with >= args[0]
     if kind == "total_power":
@@ -1145,8 +1434,28 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         return stamp == game.turn and n >= args[0]
     if kind == "gy_left":
         return getattr(p.graveyard, "left_turn", 0) >= args[0]
+    if kind == "not_cast":      # "if it wasn't cast": the permanent itself (entry conditions have no item)
+        return source is not None and not getattr(source, "was_cast", False)
+    if kind == "tgt_stat_le":
+        from .engine.state import Permanent
+        if not isinstance(prev, Permanent):
+            return False
+        n = prev.card.cmc if args[0] == "mana value" else getattr(prev, args[0], 0)
+        return n <= game.x_quantity(p, _tuple(args[1]), item, prev)
+    if kind in ("mana_same", "mana_ncolors"):
+        src = _paid(item, source)
+        if kind == "mana_ncolors":
+            return len(set(getattr(src, "mana_colors", ())) & set("WUBRG")) >= args[0]
+        return max((n for c, n in getattr(src, "mana_by_color", {}).items() if c in "WUBRG"), default=0) >= args[0]
+    if kind == "flips_all":       # "if both coins come up heads / tails" (chance_each): every coin flipped this way
+        won, lost = getattr(item, "flips_won", 0), getattr(item, "flips_lost", 0)
+        return won + lost > 0 and (lost if args[0] == "won" else won) == 0
+    if kind == "flips_clean":     # "if you win N or more flips" after "if you lose a flip, ~ has no effect"
+        return getattr(item, "flips_lost", 0) == 0 and getattr(item, "flips_won", 0) >= args[0]
+    if kind == "mana_from":
+        return getattr(_paid(item, source), "mana_from", {}).get(args[0], 0) >= args[1]
     if kind == "mana_color":
-        src = item if getattr(item, "is_spell", False) else source
+        src = _paid(item, source)
         return getattr(src, "mana_by_color", {}).get(args[0], 0) >= args[1]
     if kind == "x":
         x = getattr(item, "x", None)
@@ -1234,6 +1543,25 @@ def holds_for(source, code: str, ref=None) -> bool:
 
 from .cx_static_cond import RULES as _STATIC_RULES  # noqa: E402  (devotion, most common color)
 _RULES.extend((re.compile(pattern, re.I), build) for pattern, build in _STATIC_RULES)
+
+
+def _spell_ok(spell, spec) -> bool:
+    """prev_is for a spell on the stack (or just countered): its mana value counts X (rule 202.3b), power and
+    toughness are the printed ones, everything else is the card's."""
+    card = spell.card
+    spec = dict(spec)
+    if "mv" in spec:
+        x = getattr(spell, "x", 0) or 0
+        mv = card.cmc + x * (card.mana_cost.get("X", 0) if isinstance(card.mana_cost, dict) else 0)
+        if not _cmp(mv, *spec.pop("mv")):
+            return False
+    for stat in ("power", "toughness"):
+        want = spec.pop("spell_" + stat, None)
+        if want is not None:
+            value = getattr(card, stat, None)
+            if value is None or not _cmp(int(value or 0), *want):
+                return False
+    return _card_ok(card, spec) if spec else True
 
 from .cx_gcond_ref import RULES as _REF_RULES  # noqa: E402  (referent-bound conditions, #405)
 _RULES.extend((re.compile(pattern, re.I), build) for pattern, build in _REF_RULES)

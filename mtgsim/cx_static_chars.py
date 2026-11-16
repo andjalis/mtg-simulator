@@ -21,6 +21,7 @@ enchanted / equipped permanent, ``"cx_chars@group"`` ((spec, ops), ...) for a gr
     ("add_subtypes", subs)              layer 4, creature types added
     ("set_subtypes", subs)              layer 4, creature types replaced, other subtypes kept (rule 205.1b)
     ("add_colors", colors) / ("set_colors", colors)     layer 5
+    ("set_name", name)                  layer 3 ("... named Legitimate Businessperson")
 
 Engine: ``effects(perm)`` (read by continuous.active) makes one ContinuousEffect per operation that reaches perm,
 stamped with its source's timestamp (an Aura's or Equipment's: when it was attached), so the engine's layer order
@@ -39,7 +40,7 @@ import re
 _COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 _CARD_TYPES = {"artifact": "Artifact", "enchantment": "Enchantment", "creature": "Creature"}
 _IRREGULAR = {"elves": "elf", "dwarves": "dwarf", "wolves": "wolf", "fungi": "fungus", "mercenaries": "mercenary"}
-_HEADS = r"(?:is|are|has|have|gets?|can't|can|attacks?|blocks?|loses?)"
+_HEADS = r"(?:is|are|has|have|gets?|can't|can|attacks?|blocks?|loses?|it loses)"
 _HOST = re.compile(r"(Enchanted|Equipped) (creature|artifact|permanent)\b")
 # group membership a layer-4/5 change can't make stale (the view is recomputed only on enter / leave / attach)
 _STABLE = {"other", "controller", "types_all", "traits"}
@@ -62,10 +63,19 @@ def description(text: str, plural: bool, addition: str):
     addition "" (sets), "types", "creature types" or "colors and types"; or None."""
     t = text.strip()
     ops, pt = [], None
+    named = re.search(r" named ([A-Z][\w'-]*(?: [A-Z][\w'-]*)*)$", t)
+    if named:               # "... named Legitimate Businessperson" (#517): the name in the view
+        if plural or addition:
+            return None
+        t = t[:named.start()]
     m = re.search(r" with base power and toughness (\d+)/(\d+)$", t)
+    mv = re.search(r" with power and toughness each equal to its mana value$", t)
     if m:
         pt = (int(m[1]), int(m[2]))
         t = t[:m.start()]
+    elif mv:                # layer 7b, per permanent: its own mana value (#520)
+        pt = ("mv", "mv")
+        t = t[:mv.start()]
     if not plural:
         m = re.match(r"an? ", t)
         if not m:
@@ -116,6 +126,8 @@ def description(text: str, plural: bool, addition: str):
         ops.append(("set_subtypes", tuple(subs)))                 # "is a Treefolk": rule 205.1b
     if pt:
         ops.append(("set_base",) + pt)
+    if named:
+        ops.append(("set_name", named[1]))
     return tuple(ops)
 
 
@@ -139,6 +151,8 @@ def _subject(line: str, st):
     plural = not (each and m[1].startswith("Each"))
     words = each[1] if each else m[1]
     spec = selector(words if plural else re.sub(r"^(\w+)", r"\1s", words), plural=True)
+    if spec is None and not plural:         # "Each other non-Aura enchantment": the noun is last (#520)
+        spec = selector(re.sub(r"(\w+)((?: you control| an opponent controls)?)$", r"\1s\2", words), plural=True)
     if spec is None:
         return None
     return "group", spec, m[1], plural, line[m.end():]
@@ -152,7 +166,30 @@ _ADD = re.compile(r"(?:is|are) (.+?) in addition to (?:its|their) other (colors 
 _SET = re.compile(r"(?:is|are) (.+)")
 
 
-def parse_line(line: str, st) -> bool:
+def _host_guard(line: str, st) -> bool:
+    """"As long as enchanted permanent is a Vehicle, it's a creature in addition to its other types." (Aerial
+    Modification, #517): a host rule guarded by the host's printed subtype, which only changes when the Aura moves
+    (and the view is recomputed on attach)."""
+    m = re.fullmatch(r"As long as enchanted (permanent|artifact|creature) is an? ([A-Z][\w-]+), it's (.+?) in addition to "
+                     r"its other (types|creature types|colors and types)\.", line.strip())
+    if not m or not st.extra.get("aura"):
+        return False
+    from .permanent_templates import _SUBTYPE_TYPES
+    if m[2].lower() not in _SUBTYPE_TYPES:
+        return False
+    ops = description(m[3], False, m[4])
+    if ops is None:
+        return False
+    rules = st.extra.setdefault("advanced_rules", {})
+    rules["cx_chars@host"] = tuple(rules.get("cx_chars@host", ())) + ((("if_sub", m[2]),) + tuple(ops),)
+    return True
+
+
+def parse_line(line: str, st, gate: str = "") -> bool:
+    """Read the line; with ``gate`` (a cx_static_gate condition code, the "as long as" already removed) the
+    operations are recorded as a gated row instead (Starfield of Nyx, #520)."""
+    if not gate and _host_guard(line, st):
+        return True
     s = line.strip()
     if not s.endswith(".") or '"' in s or re.search(r"\b(?:as long as|during|until|this turn|if|unless|for as long|"
                                                      r"where|for each|chosen|of your choice|except)\b", s, re.I):
@@ -161,6 +198,9 @@ def parse_line(line: str, st) -> bool:
     m = re.fullmatch(r"~ is also (?:an? )?((?:[A-Z][\w'-]*)(?:,? (?:and )?[A-Z][\w'-]*)*)", s)
     if m:
         return _also(m[1], st)
+    if s.strip() == "~ is every creature type" and "Creature" in st.types:
+        st.extra["changeling"] = True       # a characteristic-defining ability, like changeling (rule 604.3)
+        return True
     if s == "~ is all colors":
         if st.extra.get("color_override") not in (None, frozenset("WUBRG")):
             return False
@@ -172,6 +212,29 @@ def parse_line(line: str, st) -> bool:
     scope, spec, text, plural, rest = subj
     ops, others = [], []
     for phrase in _phrases(rest):
+        if re.fullmatch(r"(?:it )?loses? all (?:other )?abilities", phrase):
+            ops.append(("lose_all",))       # layer 6 (slice 3): "loses all other abilities" keeps this line's grants
+            continue
+        if re.fullmatch(r"(?:it )?loses? all other abilities, card types, and creature types", phrase):
+            if not any(op[0] == "set_types" for op in ops):
+                return False                # the types it keeps must be named first ("is an Insect artifact creature")
+            ops.append(("lose_all",))       # Darksteel Mutation (#517): set_types already replaced the types
+            continue
+        if re.fullmatch(r"(?:has|have) base power and base toughness each equal to (?:its|their) mana value", phrase):
+            ops.append(("set_base", "mv", "mv"))     # layer 7b: each permanent's own mana value (#520)
+            continue
+        if re.fullmatch(r"(?:is|are) every creature type", phrase):
+            ops.append(("all_creature_types",))     # layer 4: every creature type (the view's changeling flag)
+            continue
+        kws = re.fullmatch(r"(loses?|can't have or gain) (.+)", phrase)
+        if kws and not kws[2].startswith("all "):
+            from .cx_grammar import keyword_list
+            found = keyword_list(kws[2])
+            if not found:
+                return False
+            # layer 6: "loses flying" (a later grant wins), "can't have or gain flying" (nothing grants it)
+            ops += [("lock_kw" if kws[1].startswith("can't") else "remove_kw", k) for k in found]
+            continue
         if not re.match(r"(?:is|are)\b", phrase):
             others.append(phrase)           # the grammar's (gets, has, can't ...)
             continue
@@ -190,6 +253,16 @@ def parse_line(line: str, st) -> bool:
         return False
     if not ops or not _allowed(scope, spec, ops, st):
         return False
+    if gate:
+        # Only group changes behind a "you control N or more <filter>" count: the views are recomputed on every
+        # enter / leave / control change while such a rule is in play, which is exactly when that count changes.
+        # A gate that flips otherwise (turn, life, tapped) would leave the type view stale.
+        if others or scope != "group" or not gate.startswith("cx:ctrl"):
+            return False
+        rules = st.extra.setdefault("advanced_rules", {})
+        rules["gated"] = tuple(rules.get("gated", ())) + ((gate, scope, dict(spec) if spec else None,
+                                                          ("rule", "cx_chars", tuple(ops))),)
+        return True
     import copy
     saved = copy.deepcopy(st.extra)
     if others:
@@ -204,7 +277,8 @@ def parse_line(line: str, st) -> bool:
     rules = st.extra.setdefault("advanced_rules", {})
     rules[key] = tuple(rules.get(key, ())) + ((dict(spec), tuple(ops)) if scope == "group" else tuple(ops),)
     pt = next((op for op in ops if op[0] == "set_base"), None)
-    if scope == "host" and st.extra.get("aura") and pt and (pt[1] or 0) <= 1 and not others:
+    removes = any(op[0] in ("lose_all", "remove_kw", "lock_kw") for op in ops)
+    if scope == "host" and st.extra.get("aura") and (removes or pt and (pt[1] or 0) <= 1 and not others):
         st.extra["gate_hostile"] = True     # "Enchanted creature is a Turtle with base power and toughness 0/1"
     return True
 
@@ -220,7 +294,11 @@ def _allowed(scope, spec, ops, st) -> bool:
         return True
     if not layered:
         return True
-    if set(spec) - _STABLE or set(spec.get("traits", ())) - {"token", "nontoken"}:
+    keys = set(spec) - _STABLE
+    if keys == {"not_subtypes"} and not any(op[0] in ("add_subtypes", "set_subtypes", "set_types", "all_creature_types")
+                                            for op in layered):
+        keys = set()        # "non-Aura": no operation here changes subtypes, so membership can't go stale (#520)
+    if keys or set(spec.get("traits", ())) - {"token", "nontoken"}:
         return False
     named = {t.lower() for op in layered if op[0] in ("add_types", "set_types") for t in op[1]}
     if named & set(spec.get("types_all", ())) or any(op[0] == "set_types" for op in layered):
@@ -269,6 +347,10 @@ def _rows(perm):
     for x in sources(game, "cx_chars@host"):       # not perm.auras: an Aura's host is set before that list
         if (x.aura_host or x.attached_to) is perm:
             for ops in x.card.advanced_rules["cx_chars@host"]:
+                if ops and ops[0][0] == "if_sub":     # "as long as enchanted permanent is a Vehicle" (printed)
+                    if ops[0][1] not in perm._card.subtypes:
+                        continue
+                    ops = ops[1:]
                 yield x, _stamp(x, attached=True), ops
     for x in sources(game, "cx_chars@group"):
         for spec, ops in x.card.advanced_rules["cx_chars@group"]:
@@ -285,6 +367,11 @@ def effects(perm) -> list:
     game = getattr(perm.controller, "_game", None)
     if game is None or "impending" not in perm.__dict__ or id(perm) in _BUSY:
         return []           # still being constructed, or asked again while reading a group's membership
+    if not (perm._card.advanced_rules or {}).get("cx_chars"):
+        from .residual_templates import _source_index
+        index = _source_index(game)
+        if "cx_chars@host" not in index and "cx_chars@group" not in index and "gated" not in index:
+            return []       # no rule anywhere could reach perm: _rows would yield nothing (#698)
     from .continuous import ContinuousEffect
     from .permanent_templates import _SUBTYPE_TYPES
     _BUSY.add(id(perm))
@@ -301,7 +388,18 @@ def effects(perm) -> list:
             uid = -(id(source) * 64 + 32 + (n * 8 + k) % 32)
             kind = op[0]
             if kind == "set_base":
-                out.append(ContinuousEffect(uid, perm, "set_base", stamp, op[1], op[2], source=source))
+                p_, t_ = (printed.cmc if v == "mv" else v for v in (op[1], op[2]))      # "equal to its mana value"
+                out.append(ContinuousEffect(uid, perm, "set_base", stamp, p_, t_, source=source))
+            elif kind == "lose_all":
+                out.append(ContinuousEffect(uid, perm, "lose_all", stamp, source=source))
+            elif kind in ("remove_kw", "lock_kw"):
+                out.append(ContinuousEffect(uid, perm, "remove" if kind == "remove_kw" else "lock", stamp,
+                                            keyword=op[1], source=source))
+            elif kind == "set_name":
+                out.append(ContinuousEffect(uid, perm, "set_name", stamp, source=source, name=op[1]))
+            elif kind == "all_creature_types":
+                if creature:
+                    out.append(ContinuousEffect(uid, perm, "all_creature_types", stamp, source=source))
             elif kind in ("add_types", "set_types"):
                 subs = frozenset(op[2]) if kind == "set_types" else None
                 out.append(ContinuousEffect(uid, perm, kind, stamp, source=source, types=frozenset(op[1]),
@@ -319,13 +417,77 @@ def effects(perm) -> list:
     return out
 
 
+def _gated(rules) -> bool:
+    return any(row[3][:2] == ("rule", "cx_chars") for row in rules.get("gated", ()))
+
+
 def grants(perm) -> bool:
     """Whether perm's card has a cx_chars rule that changes types or colours (its view needs recomputing)."""
     card = getattr(perm, "_card", None)
     rules = card.advanced_rules if card is not None and card.advanced_rules else {}
-    return any(rules.get(k) for k in ("cx_chars", "cx_chars@host", "cx_chars@group"))
+    return any(rules.get(k) for k in ("cx_chars", "cx_chars@host", "cx_chars@group")) or _gated(rules)
 
 
 def present(game) -> bool:
+    """Whether a group or gated cx_chars rule is in play: then every enter / leave / control change recomputes the
+    views (a gate such as "five or more enchantments" only flips on such changes)."""
     from .residual_templates import sources
-    return bool(sources(game, "cx_chars@group"))
+    if sources(game, "cx_chars@group"):
+        return True
+    return any(x.card.advanced_rules and _gated(x.card.advanced_rules) for pl in game.players for x in pl.battlefield)
+
+
+# ---------------------------------------------------------------- "loses all abilities" (layer 6, slice 3)
+
+# What a permanent that loses all its abilities keeps: its characteristics other than abilities (rule 613.1f
+# removes abilities in layer 6; name, cost, types, colours and printed P/T stay), and the bookkeeping of the card.
+_KEEP = {"name", "mana_cost", "cmc", "types", "subtypes", "power", "toughness", "unsupported", "approximations",
+         "oracle", "snow", "back", "adventure", "split_right", "land_face", "token_kind", "is_token", "is_ability",
+         "hybrid", "color_override", "basic", "legendary", "aura", "aura_hostile", "loyalty", "defense"}
+_BASIC_TYPES = {"Plains", "Island", "Swamp", "Mountain", "Forest"}
+
+
+def strip(base, subtypes) -> dict:
+    """CardDef field values for base without any of its abilities: every ability field back to its default, so
+    every reader of ``perm.card`` (triggers, activated abilities, keywords, statics, CDAs) sees none."""
+    import dataclasses
+    from .cards import CardDef
+    out = {}
+    for f in dataclasses.fields(CardDef):
+        if f.name in _KEEP:
+            out[f.name] = getattr(base, f.name)
+        elif f.default is not dataclasses.MISSING:
+            out[f.name] = f.default
+        elif f.default_factory is not dataclasses.MISSING:
+            out[f.name] = f.default_factory()
+        else:
+            out[f.name] = getattr(base, f.name)
+    if set(subtypes) & _BASIC_TYPES:        # a basic land type's mana ability comes with the type (rule 305.6)
+        out["produces"] = base.produces
+    return out
+
+
+def granted_after(perm, kw: str, stamp) -> bool:
+    """Whether a static grant newer than (or from the same effect as) the "loses all abilities" effect gives perm kw:
+    an Equipment or Aura attached at or after it, a group grant whose source arrived later, a later animation."""
+    from .permanent_templates import matches
+    for x in list(perm.equipment) + list(perm.auras):
+        if kw in x.card.equip_keywords and getattr(x, "attachment_timestamp", 0) >= stamp and perm.is_creature:
+            return True
+    game = getattr(perm.controller, "_game", None)
+    if game is not None:
+        for pl in game.players:
+            for source in pl.battlefield:
+                if getattr(source, "rules_timestamp", 0) > stamp and not source.abilities_suppressed and any(
+                        kw in kws and matches(game, perm, spec, source.controller, source)
+                        for spec, kws in source.card.static_keyword_grants):
+                    return True
+    anim = perm.animated
+    return bool(anim and kw in anim.keywords and getattr(perm, "animation_timestamp", 0) > stamp)
+
+
+def record_lose_all(extra: dict) -> None:
+    """"Enchanted creature loses all abilities" (auras.py's lines): a cx_chars host rule, and a hostile Aura."""
+    rules = extra.setdefault("advanced_rules", {})
+    rules["cx_chars@host"] = tuple(rules.get("cx_chars@host", ())) + ((("lose_all",),),)
+    extra["gate_hostile"] = True

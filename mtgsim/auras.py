@@ -111,15 +111,16 @@ def parse_line(line: str, extra: dict, types) -> bool:
     m = re.fullmatch(r"Enchanted (?:creature|permanent) loses all abilities(?: and doesn't untap during its controller's "
                      r"untap step)?\.", line)
     if m:
-        flags = {"loses_abilities"} | ({"no_untap"} if "untap" in line else set())
-        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | flags
-        extra.setdefault("_approx", []).append("loses all abilities: only keywords are removed")
+        from .cx_static_chars import record_lose_all
+        record_lose_all(extra)                  # layer 6, every ability (cx_static_chars, #406)
+        if "untap" in line:
+            extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"no_untap"}
         return True
     m = re.fullmatch(r"Enchanted creature gets ([+−-])(\d+)/([+−-])(\d+) and loses all abilities\.", line)
     if m:
         extra["equip_bonus"] = (_n(m[1], m[2]), _n(m[3], m[4]))
-        extra["aura_flags"] = extra.get("aura_flags", frozenset()) | {"loses_abilities"}
-        extra.setdefault("_approx", []).append("loses all abilities: only keywords are removed")
+        from .cx_static_chars import record_lose_all
+        record_lose_all(extra)
         return True
     m = re.fullmatch(rf"Enchanted creature (?:gets ([+−-])(\d+)/([+−-])(\d+))?(?:,? and |, | )?"
                      rf"(?:has ((?:{_KW})(?:(?:, | and |, and )(?:{_KW}))*))?(?:(?:,? and | )?(?:has )?ward \{{(\d+)\}})?\.", line)
@@ -134,13 +135,35 @@ def parse_line(line: str, extra: dict, types) -> bool:
     return False
 
 
-def finish(extra: dict):
+def finish(extra: dict, triggers=()):
     """After all lines are parsed: is the Aura hostile (put on the opponent's creature)?"""
     gated = extra.pop("gate_hostile", False)        # a debuff read by cx_static_gate
     if extra.get("aura"):
         b = extra.get("equip_bonus", (0, 0))
         extra["aura_hostile"] = bool(extra.get("aura_flags")) or b[0] < 0 or b[1] < 0 or \
-            extra["aura"] in ("creature an opponent controls", "player") or gated
+            extra["aura"] in ("creature an opponent controls", "player") or gated or _punisher(extra, triggers) or \
+            bool((extra.get("advanced_rules") or {}).get("aura_control"))      # Control Magic: steal theirs (#825)
+
+
+def _punisher(extra: dict, triggers) -> bool:
+    """An Aura whose only abilities hurt the enchanted permanent's controller (#722): "At the beginning of the upkeep
+    of enchanted land's controller, ~ deals 1 damage to that player" (Cursed Land, Feedback, Power Taint), "Whenever
+    enchanted land becomes tapped, ~ deals 2 damage to that land's controller / destroy it" (Psychic Venom, Spreading
+    Algae). A static bonus or keyword it gives, or any other kind of trigger, keeps it friendly."""
+    if any(extra.get(k) for k in ("equip_bonus", "equip_keywords", "equip_ward")) or not triggers:
+        return False
+    harms = False
+    for t in triggers:
+        host = t.event == "host_upkeep" or t.event.startswith("ev:") and "enchanted" in (t.filter or "")
+        for e in t.effects:
+            if host and (e.kind in ("damage", "lose_life") and e.target == "that_player"
+                         or e.kind == "cx_damage" and e.data.get("who") == "controller" and e.target == "none"
+                         or e.kind == "destroy" and e.target == "prev"):
+                harms = True
+            elif not (e.kind in ("cx_unless", "pay_gate") or e.kind == "add_counter" and e.target == "self"
+                      or t.event == "dies" and e.kind == "bounce"):     # Spreading Algae returns to hand
+                return False        # anything else (a counter on the host, a draw, a pump ...) isn't plainly harmful
+    return harms
 
 
 EFFECT_PATTERNS = wordings.patterns("auras") + [
@@ -227,6 +250,7 @@ def attach(game, aura, host):
         add_control(game, host, aura.controller, source=aura)
         aura.controlled_host = host
     game.log(f"{aura.card.name} enchants {host.card.name}", aura.controller)
+    game.fire(aura.controller, "aura_attached", aura, context=host)     # "Whenever an Aura becomes attached to ~"
 
 
 def detach(aura):
@@ -264,3 +288,18 @@ def resolve(game, p, eff, target, item):
         if source is not None and source in p.battlefield and target is not None and target in p.battlefield:
             source.attached_to = target
             game.log(f"{source.card.name} attaches to {target.card.name}", p)
+
+
+def attach_value(game, me, target) -> float:
+    """HeuristicAI's value of "attach ~ to target creature you control" (an Equip ability with a non-mana cost,
+    #646): what the Equipment adds where it goes, nothing when it is already there or the new creature is no
+    better than the one it is on (so the cost isn't paid again for nothing)."""
+    from .engine.policy import perm_value
+    src = getattr(game, "target_source", None)
+    if target is None or src is None or getattr(src, "attached_to", None) is target or not target.is_creature:
+        return 0.0
+    current = getattr(src, "attached_to", None)
+    if current is not None and current in current.controller.battlefield and perm_value(current) >= perm_value(target):
+        return 0.0
+    bonus = getattr(src.card, "equip_bonus", (0, 0)) or (0, 0)
+    return 1.0 + 0.5 * (bonus[0] + bonus[1])

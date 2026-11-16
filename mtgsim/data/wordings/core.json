@@ -346,6 +346,13 @@
     "cards": ["A-Akki Ronin"]
   },
   {
+    "match": "(?:you )?may draw up to (one|two|three|four|\\d+) cards?",
+    "effect": "cx_draw_up_to_n",
+    "amount": "$1:num",
+    "example": "You may draw up to two cards",
+    "cards": ["Arcane Denial"]
+  },
+  {
     "match": "(?:then )?if you have fewer than (three) cards in hand, draw cards equal to the difference",
     "effect": "draw_up_to",
     "amount": "$1:num",
@@ -474,6 +481,23 @@
     "amount": "$1:int",
     "example": "~ deals 2 damage to each player",
     "cards": ["Cast Away Doubt"]
+  },
+  {
+    "match": "exile (a|one|two|three|four|five) cards? from your graveyard",
+    "effect": "exile_own_gy_n",
+    "amount": "$1:num",
+    "example": "exile two cards from your graveyard",
+    "cards": ["Bloodcurdler"],
+    "note": "an effect, not a cost: exile that many of your own graveyard's cards, all of them when there are fewer"
+  },
+  {
+    "match": "put another \\+1/\\+1 counter on ~",
+    "effect": "p1_counters",
+    "amount": 1,
+    "target": "self",
+    "example": "put another +1/+1 counter on ~",
+    "cards": ["Chlorophant"],
+    "note": "'another' only says ~ may already have one: one more +1/+1 counter"
   },
   {
     "match": "put (a|one|two|three|four|five|six) \\+1/\\+1 counters? on it",
@@ -1820,14 +1844,6 @@
     "effects": [{"effect": "grant", "target": "creature", "data": {"keyword": "$1:lower"}}, {"effect": "grant", "target": "prev", "data": {"keyword": "$2:lower"}}],
     "example": "Target creature gains flying and double strike until end of turn",
     "cards": ["Ajani, Caller of the Pride"]
-  },
-  {
-    "match": "target creature gains your choice of ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) or (?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach) until end of turn",
-    "effect": "grant",
-    "target": "creature",
-    "data": {"keyword": "$1:lower"},
-    "example": "target creature gains your choice of first strike or vigilance until end of turn",
-    "cards": ["Éowyn, Lady of Rohan"]
   },
   {
     "match": "put (a|one|two) \\+1/\\+1 counters? on each creature target player controls",

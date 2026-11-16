@@ -107,7 +107,15 @@ def deals(m, clause):
         distinct = re.fullmatch(r"any other target", m4)
         if distinct and not re.fullmatch(r"any target", m2):
             return None
+        if source == "self" and m4.lower() == "its controller" and _targeted(obj1) and obj1.kind == "permanent" \
+                and re.fullmatch(r"target (creature|artifact|enchantment|planeswalker|permanent)", m2.lower()):
+            m4 = f"that {m2.split()[1].lower()}'s controller"   # "target creature and 1 damage to its controller" (#320)
         obj2 = _object("any target" if distinct else m4, source)
+        pair = re.fullmatch(r"(you|each opponent|each player) and (each [\w ]+)", m4) if obj2 is None else None
+        if pair:        # "... and 1 damage to you and each creature you control" (Hail Storm, #320): both get it
+            for text in (pair[1], pair[2]):
+                parts.append(_part(second[0], second[1], _object(text, source), source, _targeted(obj1)))
+            return None if any(p is None for p in parts) else parts
         parts.append(_part(second[0], second[1], obj2, source, _targeted(obj1)))
         if distinct and all(parts):         # "any other target": not the first one (the source may be either)
             for p in parts:
@@ -147,11 +155,11 @@ def _damage_value(game, me, eff, obj):
     return sign * (life_value(obj.life) - life_value(obj.life - eff.amount))
 
 
-_COUNT_WORDS = {"two": 2, "three": 3, "four": 4, "five": 5}
+_COUNT_WORDS = {"two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
 
 
 @verb(rf"deals? {_AMOUNT} damage to (?:any target and {_AMOUNT} damage to )?each of (up to )?"
-      rf"(one or two|two|three|four|five) (other )?targets", heads=("deal", "deals"), subjects=("permanent", "host"))
+      rf"(one or two|two|three|four|five|six|seven|eight|nine|ten) (other )?targets", heads=("deal", "deals"), subjects=("permanent", "host"))
 def deals_each_of_targets(m, clause):
     """"~ deals 2 damage to each of two targets", "... to each of up to three targets", "~ deals 4 damage to any
     target and 3 damage to each of up to two other targets": one damage Part per target, all different targets."""
@@ -175,6 +183,24 @@ def deals_each_of_targets(m, clause):
         data["optional_from"] = 1
     obj = dataclasses.replace(anyt, copies=n, data=data)
     parts.append(_part(rest[0], rest[1], obj, "self", False))
+    if any(p is None for p in parts):
+        return None
+    for p in parts:
+        p.data = dict(p.data, distinct=True)
+    return parts
+
+
+@verb(rf"deals? {_AMOUNT} damage to any target, {_AMOUNT} damage to another target, and {_AMOUNT} damage to a third "
+      rf"target", heads=("deal", "deals"), subjects=("permanent", "host"))
+def deals_three_targets(m, clause):
+    """"~ deals 1 damage to any target, 2 damage to another target, and 3 damage to a third target" (Cone of Flame):
+    one damage Part per target, all different targets (#320)."""
+    if clause.duration or _source(clause) != "self":
+        return None
+    amounts = [_amount(w) for w in (m[1], m[2], m[3])]
+    if any(a is None or a[1] for a in amounts):
+        return None
+    parts = [_part(a[0], {}, object_phrase("any target"), "self", False) for a in amounts]
     if any(p is None for p in parts):
         return None
     for p in parts:

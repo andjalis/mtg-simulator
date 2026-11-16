@@ -5,7 +5,7 @@
     python3 scripts/fast_check.py --jobs 2
 
 Steps: pyflakes, parse every card in the database (about a minute on one core since the effect templates
-are compiled once), a few short seeded
+are compiled once; every effect kind a card produces must have a handler, scripts/kind_check.py), a few short seeded
 games, and the unit tests except the modules in SLOW_TESTS, run as parallel processes. The slow modules run in the nightly workflow
 (`.github/workflows/nightly.yml`) and on demand.
 """
@@ -23,6 +23,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "scripts"))
 DB = ROOT / "mtgsim" / "data" / "cards.sqlite3"
 SHARDS = 16     # the card database is parsed in this many interleaved slices, one per pool task
 SMOKE = [("decks/green_stompy.txt", "decks/mono_red_aggro.txt"), ("decks/orzhov_midrange.txt", "decks/green_stompy.txt")]
@@ -35,14 +36,19 @@ def _parse_shard(args) -> list[str]:
     import re
     re._MAXCACHE = 1_000_000    # the parser uses thousands of patterns; the default cache of 512 recompiles them per card
     from mtgsim import cards
+    from kind_check import handled, kinds_of
+    known = handled()
     bad = []
     db = sqlite3.connect(DB)
     for i, (key, data) in enumerate(db.execute("select key, data from cards order by key")):
         if i % step == offset:
             try:
-                cards.card_from_scryfall(json.loads(data))
+                card = cards.card_from_scryfall(json.loads(data))
             except Exception as e:
                 bad.append(f"{key}: {e!r}")
+                continue
+            # an effect kind without a handler does nothing when it resolves (scripts/kind_check.py)
+            bad += [f"{key}: effect kind {k!r} has no handler" for k in sorted(kinds_of(card) - known)]
     db.close()
     return bad
 

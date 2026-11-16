@@ -54,7 +54,7 @@ class ParseExcept(unittest.TestCase):
         for text in ("it has this ability", "it isn't legendary, is an artifact in addition to its other types, "
                      "and has myriad", "it isn't a Zombie", "it has \"{T}: Flurble.\"",
                      "it's legendary and snow in addition to its other types",
-                     "it enters with an additional +1/+1 counter on it if it's a creature",
+                     "it enters with an additional +1/+1 counter on it if it's a Wizard",
                      "it has haste and exalted", "it's a Vehicle artifact with crew 3 and it loses all other card types",
                      "it's an artifact. Activate only as a sorcery"):
             with self.subTest(text=text):
@@ -236,7 +236,7 @@ class DatabaseCards(Base):
                 self.assertEqual((c.unsupported, c.approximations), ([], []))
 
     def test_still_partial(self):
-        for name in ("Volrath, the Shapestealer", "Auton Soldier", "Spark Double", "Moritte of the Frost"):
+        for name in ("Volrath, the Shapestealer", "Auton Soldier", "Moritte of the Frost"):
             with self.subTest(card=name):
                 self.assertNotEqual(self.db.get(name).unsupported, [])
 

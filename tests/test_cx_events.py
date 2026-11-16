@@ -38,7 +38,7 @@ class Heads(unittest.TestCase):
         self.assertEqual(compile_head("Whenever a player sacrifices a creature")[0], ("sacrificed",))
 
     def test_unknown_words_fail_closed(self):
-        for head in ("Whenever a creature of the chosen type enters", "Whenever a creature dies this turn",
+        for head in ("Whenever a creature of the chosen name enters", "Whenever a creature dies this turn",
                      "Whenever your commander attacks", "Whenever a frobnicated creature attacks"):
             self.assertIsNone(compile_head(head), head)
 

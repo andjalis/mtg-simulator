@@ -17,6 +17,34 @@ _RETURN = (r"to the battlefield( tapped)?( transformed)? under "
            r"( with a (?:[+-]\d+/[+-]\d+|[a-z]+(?:-[a-z]+)?) counter on (?:it|them))?")
 
 
+_RETURN2 = (r"to the battlefield(?P<tapped> tapped)?(?P<tf> transformed)?"
+            r"(?: under (?P<who>its owner's|their owners'|their owner's|his owner's|her owner's|your|an opponent's) "
+            r"control)?(?P<atk> tapped and attacking)?\s*")
+
+
+def _general(target, m):
+    """The shapes the first patterns don't read (see EFFECT_PATTERNS); `target` "self", or the match
+    of a targeted object (then `m` is None)."""
+    from .cards import Effect, NO_MATCH
+    if m is None:
+        m, target = target, None
+    who = (m["who"] or "its owner's").lower()
+    data = {"tapped": bool(m["tapped"] or m["atk"]), "transformed": bool(m["tf"]), "yours": who == "your",
+            "counter": False, "delayed": False}
+    if who == "an opponent's":
+        data["opponent"] = True
+    if m["atk"]:
+        data["attacking"] = True
+    if target is not None:
+        return Effect("blink", target=target, data=data)
+    effects = _build(m[1], m[2], m[3], m["tapped"], m["tf"], "your" if data["yours"] else "its owner's", None, False)
+    if effects is NO_MATCH:
+        return NO_MATCH
+    for eff in effects:
+        eff.data.update({k: v for k, v in data.items() if k in ("opponent", "attacking", "tapped")})
+    return effects
+
+
 def _counter(text):
     if not text:
         return False
@@ -45,10 +73,21 @@ def _singular(phrase):
     return re.sub(r"\b(\w+?)s\b(?= you control| you own| an opponent controls|$)", r"\1", phrase, count=1)
 
 
+def _type_list(phrase):
+    """"creature and/or land you control", "artifact, creatures, and/or lands you control" (a counted target the
+    #312 rewrite made singular up to the first comma) -> "artifact, creature, or land you control": each target
+    is one of the types."""
+    if " and/or " not in phrase:
+        return phrase
+    phrase = re.sub(r",? and/or ", lambda m: m[0].replace("and/or", "or"), phrase)
+    return re.sub(r"\b(artifact|creature|land|enchantment|planeswalker|battle)s\b", r"\1", phrase)
+
+
 def _build(count_word, other, phrase, tapped, transformed, who, counter, delayed):
     from . import permanent_templates as pt
     from .cards import Effect, NO_MATCH
     n = _COUNT.get((count_word or "").lower(), 1)
+    phrase = _type_list(phrase)
     text = ("up to one " if count_word else "") + (other or "") + "target " + (_singular(phrase) if n > 1 else phrase)
     subj = pt.subject(text)
     if subj is None or subj[0] != "permanent" or _counter(counter) is None:
@@ -84,9 +123,23 @@ EFFECT_PATTERNS = [
      lambda m: _self(m[2], m[3], m[4], m[5])),
     (r"BLINKLATER (?:up to (one|two) )?(another |other )?target (.+?)\|" + _RETURN,
      lambda m: _build(m[1], m[2], m[3], m[4], m[5], m[6], m[7], True)),
+    # The rest of #318: a return under an opponent's control or
+    # with no control clause (its owner's, front face up: the saga back faces' "(front face up)" is reminder text),
+    # and "tapped and attacking". Tried after the shapes above.
+    # "Exile it, then return it": "it" is target prev, which cx_trig_self_it binds per trigger head (#458): the
+    # creature an ally trigger is about, ~ itself under a self head
+    (r"exile (~|it|him|her)(?:, then| and then) return (?:it|him|her) " + _RETURN2,
+     lambda m: _general("prev" if m[1].lower() == "it" else "self", m)),
+    (r"exile (?:up to (one|two) )?(another |other )?target (.+?)(?:, then| and then) return "
+     r"(?:it|him|her|that card|those cards|them) " + _RETURN2,
+     lambda m: _general(m, None)),
 ]
 
 SUBS = [
+    # "exile any number of target X, then return those cards ...": "those cards" are the exiled targets, "them"
+    # for the counted-target rewrite (#312), which can't make "those" singular
+    (re.compile(r"(exile any number of (?:other |another )?target [^.]+?(?:, then| and then) return) those cards "
+                r"(?=to the battlefield)", re.I), lambda m: m[1] + " them "),
     (re.compile(r"exile (?:up to (one|two) )?(another |other )?target ([^.,]+?)\. return (?:it|him|her|that card|the exiled card|those cards|them) "
                 + _RETURN + r" at the beginning of the next end step\.", re.I),
      lambda m: "BLINKLATER " + (f"up to {m[1]} " if m[1] else "") + (m[2] or "") + "target " + m[3] + "|"
@@ -212,3 +265,83 @@ def return_refs(game, player, refs, data):
             if permanent is not None:
                 returned.append(permanent)
     return returned
+
+
+def _rewards_entry(perm) -> bool:
+    """A permanent worth blinking for its own sake: it has an enters ability, or it sheds harm (damage, -1/-1 or
+    stun counters, an opponent's Aura)."""
+    card = perm.card
+    return bool(card.etb_effects or any(t.event == "etb" for t in card.triggers) or perm.damage
+                or perm.counters.get("-1/-1") or perm.counters.get("stun")
+                or any(a.controller is not perm.controller for a in getattr(perm, "auras", ())))
+
+
+def worth_blinking(me, eff, perm) -> bool:
+    """Whether the default AI wants this permanent among "any number of target ..." blinks (see choose_target)."""
+    if perm.controller is not me:
+        return perm.card.is_token or bool(eff.data.get("yours"))
+    return not perm.card.is_token and perm.owner is me and _rewards_entry(perm)
+
+
+def choose_target(game, me, eff, mine, theirs):
+    """The default AI's target for a blink: an opponent's best nontoken permanent when it returns under the
+    caster's control (a steal), else its own permanent that gains most from re-entering, else an opponent's
+    token (exiled, it is gone). None when nothing gains: the spell isn't worth casting."""
+    from .engine.policy import perm_value
+    taken = getattr(game, "_choosing_targets", None) or []
+    mine = [x for x in mine if all(x is not t for t in taken)]
+    theirs = [x for x in theirs if all(x is not t for t in taken)]
+    if eff.data.get("yours"):
+        steal = [x for x in theirs if not x.card.is_token]
+        if steal:
+            return max(steal, key=perm_value)
+    if eff.data.get("opponent"):
+        return None
+    own = [x for x in mine if not x.card.is_token and x.owner is me and _rewards_entry(x)]
+    if own:
+        return max(own, key=perm_value)
+    tokens = [x for x in theirs if x.card.is_token]
+    if tokens:
+        return max(tokens, key=perm_value)
+    if taken and eff.data.get("distinct") and not eff.data.get("optional_target"):
+        # a required further target of "two target ...": the one that loses least by re-entering
+        harmless = [x for x in mine if not x.card.is_token and x.owner is me]
+        return min(harmless, key=perm_value, default=None)
+    return None
+
+
+def blink_all(game, p, eff, perms, item=None):
+    """Exile every permanent in perms, then return them all at once as new objects (one entry batch: each sees
+    the others enter), or at the next end step for a delayed blink. A token is gone; an optional ("you may")
+    blink skips what would be lost (a token, or a permanent that would return to someone else)."""
+    from .backlog_templates import entry_batch
+    from .cards.model import Effect
+    from .engine.state import Permanent
+    data = eff.data
+    exiled = []
+    for target in perms:
+        if not isinstance(target, Permanent) or target not in target.controller.battlefield:
+            continue
+        owner, card = target.owner, target.front
+        back = p if data.get("yours") else game.opponent(p) if data.get("opponent") else owner
+        if data.get("optional") and (card.is_token or back is not p):
+            continue
+        if game.leave_battlefield(target, "exile") and not card.is_token and card in owner.exile:
+            exiled.append((owner, card, back))
+    if data.get("delayed"):
+        for owner, card, back in exiled:
+            game.delayed_end_step.append((back, [Effect("return_exile_ref", data=dict(data))],
+                                          item.source if item else None, (owner.exile, owner.exile.reference(card))))
+        return
+    # "tapped and attacking" attacks only during combat; otherwise it just enters tapped (rule 506.3)
+    attacking = bool(data.get("attacking")) and game.step in ("declare_attackers", "declare_blockers")
+    with entry_batch(game):
+        for owner, card, back in exiled:
+            if card not in owner.exile:
+                continue
+            owner.exile.remove(card)
+            face = entry_face(card, data)
+            game.enter_battlefield(back, face, attacking, tapped=bool(data.get("tapped")),
+                                   counters=entry_counters(data), physical_card=card if face is not card else None)
+            game.log(f"{card.name} returns to the battlefield" + (" transformed" if face is not card else ""), p)
+

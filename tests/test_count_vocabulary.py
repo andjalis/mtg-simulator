@@ -20,28 +20,39 @@ OGRE = card("Test Ogre", "{R}", "Creature — Ogre", "", 2, 2)
 class Vocabulary(unittest.TestCase):
     def test_known(self):
         for what in ("creature", "Elf", "other artifact", "nonland permanent", "artifact, creature, or land",
-                     "basic land", "non-Human creature", "nontoken creature", "ctr:charge", ""):
+                     "basic land", "non-Human creature", "nontoken creature", "ctr:charge", "",
+                     "instant and sorcery", "Soldier and Warrior", "artifact, enchantment, and land",
+                     "instant and/or sorcery"):
             self.assertTrue(known(what), what)
-        for what in ("snow permanent", "green creature", "attacking creature", "instant and sorcery",
-                     "nonlegendary creature", "frob", "card types among", "modified creature"):
+        for what in ("snow permanent", "green creature", "attacking creature", "instant and frob",
+                     "nonlegendary creature", "frob", "card types among", "modified creature",
+                     "lands you control and each land"):
             self.assertFalse(known(what), what)
 
     def test_xq_refuses_or_rereads(self):
         self.assertEqual(_xq("the number of Elves you control"), ("count", "Elf"))
         self.assertEqual(_xq("the number of lands you control"), ("count", "land"))
         self.assertNotEqual(_xq("the number of frobs you control"), ("count", "frob"))
-        self.assertNotEqual((_xq("the number of instant and sorcery cards in your graveyard") or ("",))[0], "gy")
+        # "and" between card types is a union (#449): the cards that are an instant or a sorcery
+        self.assertEqual(_xq("the number of instant and sorcery cards in your graveyard"), ("gy", "instant and sorcery"))
+        self.assertEqual(_xq("the number of Soldiers and Warriors you control"), ("count", "Soldier and Warrior"))
+        self.assertEqual(_xq("the number of creatures and lands you control"), ("count", "creature and land"))
+        self.assertIsNone(_xq("the number of lands you control and each land card in your graveyard"))
         # "X plus Y": the gy reading used to swallow the whole phrase
         self.assertEqual(_xq("the number of Caves you control plus the number of Cave cards in your graveyard"),
                          ("arith", ("count", "Cave"), "+", ("gy", "Cave")))
 
     def test_templates_refuse_unknown_words(self):
-        for text in ("Draw a card for each snow permanent you control.",
-                     "Create a 1/1 green Saproling creature token for each snow land you control.",
-                     "Add {G} for each snow Forest you control."):
+        for text in ("Draw a card for each frob permanent you control.",
+                     "Create a 1/1 green Saproling creature token for each frob land you control.",
+                     "Add {G} for each frob Forest you control."):
             effects, bad = _parse_effects(text)
             self.assertEqual(bad, [text.rstrip()], text)
-        pumped = card("Snow Bear", "{2}{G}", "Creature — Bear", "Snow Bear gets +1/+1 for each snow land you control.",
+        # "snow" is a selector trait since #536 (#404 slice 4): counted, not dropped
+        effects, bad = _parse_effects("Draw a card for each snow permanent you control.")
+        self.assertEqual(bad, [])
+        self.assertEqual(effects[0].data["xq"][2]["selector"]["traits"], ["snow"])
+        pumped = card("Frob Bear", "{2}{G}", "Creature — Bear", "Frob Bear gets +1/+1 for each frob land you control.",
                       1, 1)
         self.assertNotEqual(pumped.unsupported, [])
         self.assertEqual(pumped.pt_per, "")
@@ -102,10 +113,13 @@ class RealCards(unittest.TestCase):
         from mtgsim.carddb import CardDB
         from mtgsim.coverage import card_coverage
         db = CardDB(offline=True)
-        for name in ("Regal Force", "Take Heart", "Lucid Dreams", "Calamitous Cave-In", "Wandering Stream"):
+        for name in ("Regal Force", "Take Heart", "Lucid Dreams", "Calamitous Cave-In", "Wandering Stream",
+                     "Skred", "Conifer Wurm"):     # Skred / Conifer Wurm: snow counts since #536
             self.assertEqual(card_coverage(db.get(name)).status, "full", name)       # now through readings that count
-        for name in ("Skred", "Conifer Wurm", "Spite of Mogis", "Herd Migration", "Golden Ratio"):
-            self.assertEqual(card_coverage(db.get(name)).status, "partial", name)    # no reading counts these yet
+        for name in ("Steal the Show", "Spite of Mogis",       # "instant and sorcery cards" is a union (#449)
+                     "Herd Migration",                          # tokens for each basic land type (#329)
+                     "Golden Ratio"):                           # distinct powers since #337
+            self.assertEqual(card_coverage(db.get(name)).status, "full", name)
 
 
 if __name__ == "__main__":

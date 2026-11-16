@@ -1,9 +1,11 @@
 """Game methods for game events that effects and rules cause: damage, destroy, sacrifice, dying, state-based actions."""
 from __future__ import annotations
 
-from .. import continuous, counter_mechanics, cx_static_damage, cx_triggers, that_much
+import re
 
-from .. import auras
+from .. import continuous, counter_mechanics, cx_static_damage, cx_triggers, that_much, this_way
+
+from .. import auras, cx_trig_damage, cx_trig_state
 from ..cards import AltCost, CardDef, Effect
 from .. import rules_events
 from .mana import find_payment
@@ -26,7 +28,8 @@ class EffectsMixin:
             return (source.has(keyword) if isinstance(source, Permanent)
                     else isinstance(source, CardDef) and keyword in source.keywords)
         from ..cx_shields import apply as cx_shields, unpreventable
-        preventable = not self.no_prevention_turn and not unpreventable(self, source)   # Skullcrack, Everlasting Torment
+        preventable = not self.no_prevention_turn and not unpreventable(self, source) \
+            and not getattr(self, "unpreventable_now", False)   # Skullcrack, Everlasting Torment, Lightning Surge
         amount = cx_shields(self, target, amount, by, source, combat, preventable)     # prevention / redirection rules
         if amount <= 0:
             return
@@ -71,6 +74,7 @@ class EffectsMixin:
         if isinstance(target, Player):
             target.last_damage_turn = self.turn
         self.event_amount = amount          # "that much" for the triggers fired below
+        cx_trig_damage.observe(self, source, target, by, amount)       # damage heads from any source (#521)
         if isinstance(source, Permanent) and source in source.controller.battlefield:
             self.fire(source.controller, "deals_damage", source, context=target)
             if isinstance(target, Player):
@@ -88,8 +92,10 @@ class EffectsMixin:
             self.event_combat = False
         self.event_amount = None
         if isinstance(target, Player):
-            if combat and isinstance(source, Permanent) and source.card.toxic:
-                target.counters["poison"] = target.counters.get("poison", 0) + source.card.toxic
+            from ..kw_values import amounts as kw_amounts      # granted toxic adds up (#633, CR 702.164c)
+            toxic = source.card.toxic + sum(kw_amounts(source, "toxic")) if combat and isinstance(source, Permanent) else 0
+            if toxic:
+                target.counters["poison"] = target.counters.get("poison", 0) + toxic
             if infect:
                 target.counters["poison"] = target.counters.get("poison", 0) + amount
             else:
@@ -98,6 +104,11 @@ class EffectsMixin:
                 if amount > 0:
                     self.change_life(target, -amount, cause)
         elif isinstance(target, Permanent) and target in target.controller.battlefield:
+            if target.is_creature or target.is_planeswalker:
+                # rule 120.4a: the damage beyond lethal (loyalty for a planeswalker), for "excess damage ... this way"
+                from ..excess_damage import lethal
+                limit = lethal(target, source) if target.is_creature else max(0, target.loyalty)
+                self.excess_dealt = getattr(self, "excess_dealt", 0) + max(0, amount - limit)
             if target.is_planeswalker:
                 target.counters["loyalty"] = target.loyalty - amount
             if target.is_battle:          # damage to a battle removes that many defense counters (#254)
@@ -116,6 +127,7 @@ class EffectsMixin:
         else:
             return
         self.last_dealt = amount
+        this_way.note_damage(self, target, amount)      # "if a creature is dealt damage this way" (#642)
         from ..batch1_templates import soul_link
         soul_link(self, source, target, amount)
         cx_triggers.on_damage(self, source, target, amount, combat)
@@ -208,7 +220,9 @@ class EffectsMixin:
 
     def dig(self, p: Player, n: int, keep: int, desc: str | None = None):
         cards = list(reversed(p.library[-min(n, len(p.library)):])) if n else []
-        allowed = [c for c in cards if card_matches(c, desc.replace(" or ", " or a "))] if desc else cards
+        # "artifact or creature card" -> "artifact or a creature card"; never "power 2 or less" (#776)
+        allowed = [c for c in cards if card_matches(c, re.sub(r" or (?!less\b|greater\b|more\b)", " or a ", desc))] \
+            if desc else cards
         chosen = list(self.hook(p, "choose_dig")(self, p, list(allowed), keep))[:keep] if allowed else []
         rest = list(cards)
         for c in chosen:
@@ -277,6 +291,7 @@ class EffectsMixin:
         controller, owner = perm.controller, perm.owner
         perm.last_pt = before.power or 0, before.toughness or 0
         perm.front.pending_move = (before, "battlefield", controller, perm, intent.applied)
+        perm.left_replacements = intent.applied       # which replacements moved it ("When you do", #407)
         controller.battlefield.remove(perm)
         self._residual_source_index = None
         from ..cx_type_grants import changed as type_grants_changed
@@ -290,6 +305,10 @@ class EffectsMixin:
         perm.front.last_zone = "battlefield"
         perm.front.zone = None
         controller.perm_left_turn = True
+        # what was attached as it left: their "when enchanted / equipped creature dies / leaves" triggers look back
+        # in time (CR 603.10a) though the Auras are put into the graveyard next (cx_events.observe, #782)
+        perm.left_attachments = list(perm.auras) + [x for pl in self.players for x in pl.battlefield
+                                                    if x.attached_to is perm]
         if perm.card.aura:
             auras.detach(perm)
         perm.attached_to = None
@@ -378,19 +397,26 @@ class EffectsMixin:
         if item is not None and item.controller is not p and any(rules(x).get("sac_protection") for x in p.battlefield):
             return False
         p.sacrificed_turn += 1
+        if item is not None:            # "you gain life equal to that creature's toughness" after an edict (#778)
+            item.sacrificed_permanent = perm
         for other in list(p.battlefield):
             for trig in other.triggers:
                 if trig.event == "sacrifice" and (card_matches(perm.card, trig.filter) if not trig.filter.startswith("another ") else
                                                   other is not perm and card_matches(perm.card, "a " + trig.filter[8:])):
-                    self.queue_trigger(p, trig.effects, other, other.card.name)
+                    from ..cx_grammar_zones import bake_event
+                    self.queue_trigger(p, bake_event(trig.effects, perm), other, other.card.name)
         self.fire(p, "sacrificed", perm)     # "whenever a player sacrifices a <desc>" (cx_events)
         self.dies(perm, counter_sources=counter_sources) if perm.is_creature else self.leave_battlefield(perm, "graveyard")
 
     def discard_card(self, p: Player, card: CardDef):
         from ..madness import after_discard, discard_destination
-        card = self.move_card(card, p.hand, discard_destination(self, p, card), reason="discard")
-        p.discarded_cards.append(card)
-        after_discard(self, p, card)
+        from ..cx_discard_bf import onto_battlefield         # "... causes you to discard this card, put it onto the battlefield" (#628)
+        if onto_battlefield(self, p, card):
+            p.discarded_cards.append(card)
+        else:
+            card = self.move_card(card, p.hand, discard_destination(self, p, card), reason="discard")
+            p.discarded_cards.append(card)
+            after_discard(self, p, card)
         self.fire(p, "you_discard")
         # The subject lets typed listeners ("whenever an opponent discards a creature/land card",
         # Waste Not) filter on the discarded card's types.
@@ -458,6 +484,9 @@ class EffectsMixin:
             return
         if perm.last_destination != "graveyard":
             self.log(f"{perm.card.name} is exiled instead of dying", perm.controller)
+            if "would-die-exile" in getattr(perm, "left_replacements", ()):
+                from ..cx_replace import when_you_do      # "... exile it instead. When you do, ..." (#407)
+                when_you_do(self, perm)
             return
         if was_creature and getattr(counter_sources, "suppresses_death", False):
             self.creature_died_turn = True
@@ -508,6 +537,8 @@ class EffectsMixin:
             if left:
                 pl.graveyard.left = []
                 self.fire(pl, "gy_leave", subject=left)
+        if getattr(self, "_mid_resolution", 0):
+            return      # CR 704.3: not between the effects of a resolving item; resolve_top checks once it is done (#682)
         changed = True
         while changed:
             changed = False
@@ -545,7 +576,8 @@ class EffectsMixin:
                         perm.attached_to = None
                         changed = True
                     if perm.card.needs_land and not any(perm.card.needs_land in x.card.subtypes or
-                                                        perm.card.needs_land in x.card.types for x in p.battlefield):
+                                                        perm.card.needs_land in x.card.types for x in p.battlefield) \
+                            or cx_trig_state.unmet(self, perm):
                         self.sacrifice(perm)
                         changed = True
                         continue

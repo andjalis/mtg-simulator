@@ -61,7 +61,7 @@ def rewrite(s):
 
 
 def _upgrade(eff):
-    if eff.kind == "damage" and eff.target == "player":
+    if eff.kind in ("damage", "prevent_next") and eff.target == "player":     # a shield on a planeswalker too (#333)
         return dataclasses.replace(eff, data=dict(eff.data, or_pw=True))
     inner = eff.data.get("effect")
     if inner is not None and hasattr(inner, "kind"):

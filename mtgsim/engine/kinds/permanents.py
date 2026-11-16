@@ -6,7 +6,7 @@ import dataclasses
 from ... import copies, counter_mechanics
 from ...cards import CardDef, Effect, jace_token, make_token, role_token
 from ..policy import choose_basic, perm_value
-from ..state import Permanent, Player, is_basic_land
+from ..state import Permanent, Player, StackItem, is_basic_land, note_this_way
 from . import NO_SBA, kind
 
 
@@ -25,7 +25,7 @@ def destroy(game, p, eff, target, item, **_):
                 game.draw(p)
         if did:
             from ..state import note_this_way
-            note_this_way(item, "destroyed", ["creature"] if target.is_creature else ["permanent"], 1)
+            note_this_way(item, "destroyed", ["creature", "permanent"] if target.is_creature else ["permanent"], 1)
 
 
 @kind("wrath")
@@ -36,7 +36,7 @@ def wrath(game, p, eff, opp, item=None, **_):
         if game.destroy(perm, no_regen=eff.data.get("no_regen", False), counter_sources=sources):
             n += 1
     from ..state import note_this_way
-    note_this_way(item, "destroyed", ["creature"], n)
+    note_this_way(item, "destroyed", ["creature", "permanent"], n)
 
 
 @kind("destroy_all")
@@ -49,7 +49,7 @@ def destroy_all(game, p, eff, opp, item=None, **_):
         if game.destroy(perm, counter_sources=sources):
             n += 1
     from ..state import note_this_way
-    note_this_way(item, "destroyed", [kind, "permanent"], n)
+    note_this_way(item, "destroyed", [kind.lower(), "permanent"], n)
 
 
 @kind("wrath_pw")
@@ -66,6 +66,14 @@ def wrath_pw(game, p, eff, opp, item=None, **_):
 @kind("bounce")
 def bounce(game, p, target, eff=None, item=None, **_):
     if isinstance(target, Permanent) and target in target.controller.battlefield:
+        auras = (eff.data.get("with_auras") if eff is not None else None)
+        if auras is not None:       # "... and all (white) Auras (you control / you own) attached to it" (#638)
+            for aura in list(target.auras):
+                if (auras.get("controller") != "mine" or aura.controller is p) and \
+                        (auras.get("owner") != "mine" or aura.owner is p) and \
+                        all(c in aura.card.colors for c in auras.get("colors", ())):
+                    game.log(f"{aura.card.name} returns to hand", p)
+                    game.leave_battlefield(aura, "hand")
         game.log(f"{target.card.name} returns to hand", p)
         game.leave_battlefield(target, "hand")
     elif item is not None and isinstance(item.source, Permanent) and (
@@ -75,11 +83,15 @@ def bounce(game, p, target, eff=None, item=None, **_):
 
 def _from_graveyard(game, perm):
     """"When ~ dies / is put into a graveyard from the battlefield, return it to its owner's hand" (Rancor,
-    Immortal Phoenix): the trigger finds the card it became in the graveyard (CR 400.7), if it is still there."""
+    Immortal Phoenix): the trigger finds the card it became in the graveyard (CR 400.7), if it is still there.
+    Also exile, for "dies or is put into exile from the battlefield, return it to its owner's hand"."""
+    if not isinstance(perm, Permanent):
+        return
     card = getattr(perm, "front", None)
-    if isinstance(perm, Permanent) and getattr(perm, "last_destination", None) == "graveyard" and card is not None \
-            and not card.is_token and card in perm.owner.graveyard:
-        game.move_card(card, perm.owner.graveyard, perm.owner.hand, reason="return")
+    dest = getattr(perm, "last_destination", None)
+    zone = perm.owner.graveyard if dest == "graveyard" else perm.owner.exile if dest == "exile" else None
+    if zone is not None and card is not None and not card.is_token and card in zone:
+        game.move_card(card, zone, perm.owner.hand, reason="return")
         game.log(f"{card.name} returns to its owner's hand", perm.owner)
 
 
@@ -105,7 +117,9 @@ def destroy_that_player(game, p, eff, item, **_):
     """"Destroy target <type> that player controls" inside a trigger: the "that player" is
     the trigger's context (the player dealt damage), and the most valuable permanent of
     theirs that fits is destroyed, not a normally chosen target."""
-    who = item.context if item is not None and isinstance(item.context, Player) else game.opponent(p)
+    ctx = item.context if item is not None else None
+    ctx = ctx.controller if isinstance(ctx, StackItem) else ctx     # a cast trigger: the spell's caster
+    who = ctx if isinstance(ctx, Player) else game.opponent(p)
     what = eff.data.get("type", "creature")
     fits = lambda x: x.is_creature if what == "creature" else True
     cands = [x for x in who.battlefield if fits(x)]
@@ -146,24 +160,25 @@ def flicker(game, p, eff, target, **_):
 
 @kind("blink")
 def blink(game, p, eff, target, item=None, **_):
-    """Exile a permanent, then return it as a new object (at once, or at the next end step); a token is gone."""
-    if not isinstance(target, Permanent) or target not in target.controller.battlefield:
+    """Exile a permanent, then return it as a new object (at once, or at the next end step); a token is gone.
+    The targets of one counted blink ("two target creatures", data group) are exiled together, then return
+    together (Ghostly Flicker): the first slot of the group does all of them."""
+    from ...blink import blink_all
+    group = eff.data.get("group")
+    if group and item is not None and eff.data.get("distinct"):
+        done = getattr(item, "blink_groups", set())
+        if group in done:
+            return
+        item.blink_groups = done | {group}
+        perms = []
+        with game.targeting(item):
+            for e, t in zip(item.effects, item.targets):
+                if e.kind == "blink" and e.data.get("group") == group and t is not None and \
+                        game.legal_target(p, e, t) and all(t is not x for x in perms):
+                    perms.append(t)
+        blink_all(game, p, eff, perms, item)
         return
-    from ...blink import entry_counters, entry_face
-    owner, card = target.owner, target.front
-    if not game.leave_battlefield(target, "exile") or card.is_token or card not in owner.exile:
-        return
-    back = p if eff.data.get("yours") else owner
-    if eff.data.get("delayed"):
-        game.delayed_end_step.append((back, [Effect("return_exile_ref", data=dict(eff.data))],
-                                      item.source if item else None, (owner.exile, owner.exile.reference(card))))
-        return
-    owner.exile.remove(card)
-    face = entry_face(card, eff.data)
-    game.enter_battlefield(back, face, tapped=bool(eff.data.get("tapped")),
-                           counters=entry_counters(eff.data),
-                           physical_card=card if face is not card else None)
-    game.log(f"{card.name} returns to the battlefield" + (" transformed" if face is not card else ""), p)
+    blink_all(game, p, eff, [target], item)
 
 
 @kind("tuck_top")
@@ -261,7 +276,9 @@ def token(game, p, eff, target, item, prev=None, **_):
         if not isinstance(prev, Permanent):
             return
         eff = dataclasses.replace(eff, data=dict(eff.data, power=prev.power, toughness=prev.toughness))
-    if eff.data.get("x"):
+    if eff.data.get("x") and getattr(item, "paid_x", None) is not None:
+        n = item.paid_x                 # "you may pay {X}. If you do, create X ..." (#645)
+    elif eff.data.get("x"):
         n = (getattr(item.source, "entered_x", 0) if item.source is not None else getattr(item, "x", 0)) \
             if item is not None else 0
     game.create_token(who, eff, n)
@@ -529,6 +546,7 @@ def edict(game, p, eff, opp, target=None, item=None, **_):
         item.sacrificed_permanent = None
     victims = sorted(victim_player.creatures, key=perm_value)[:eff.amount]
     sources = counter_mechanics.death_sources(game)
+    sacrificed = 0
     for v in victims:
         if eff.data.get("exile"):
             game.leave_battlefield(v, "exile")
@@ -536,9 +554,11 @@ def edict(game, p, eff, opp, target=None, item=None, **_):
         elif eff.data.get("destroy"):
             game.destroy(v)
         else:
-            game.sacrifice(v, counter_sources=sources)
+            sacrificed += game.sacrifice(v, counter_sources=sources) is not False and v not in v.controller.battlefield
             if item is not None:
                 item.sacrificed_permanent = v
+    # "Create a Food token for each creature sacrificed this way" (Syphon Flesh, Voracious Fell Beast, #329)
+    note_this_way(item, "sacrificed", ("permanent", "creature"), sacrificed)
 
 
 @kind("endure")
@@ -590,6 +610,27 @@ def oring_group(game, p, eff, item, **_):
     if isinstance(src, Permanent) and src in src.controller.battlefield:
         game.exile_until_leaves(src, [x for pl in game.players for x in pl.battlefield
                                       if x is not src and matches(game, x, eff.data["selector"], p, src)])
+        if matches(game, src, eff.data["selector"], p, src):
+            # the source is one of them: it is exiled too, which ends the duration it set at once, so the
+            # others return right away (rule 610.3)
+            game.leave_battlefield(src, "exile")
+
+
+@kind("oring_choose")
+def oring_choose(game, p, eff, item, **_):
+    """"Exile a land you control until ~ leaves the battlefield" (Wormfang Newt): no target; the controller picks
+    one of its own (the default AI: a permanent that gains from re-entering, else its least valuable)."""
+    from ...permanent_templates import matches
+
+    def _rewards_entry(x):
+        return bool(x.card.etb_effects or any(t.event == "etb" for t in x.card.triggers))
+    src = item.source if item is not None else None
+    if not isinstance(src, Permanent) or src not in src.controller.battlefield:
+        return
+    pool = [x for x in p.battlefield if x is not src and matches(game, x, eff.data["selector"], p, src)]
+    if pool:
+        gains = [x for x in pool if not x.card.is_token and _rewards_entry(x)]
+        game.exile_until_leaves(src, [max(gains, key=perm_value) if gains else min(pool, key=perm_value)])
 
 
 @kind("token_copy")
@@ -640,3 +681,10 @@ def siege_defeat(game, p, item, **_):
     """A Siege's defeat trigger: exile it, then its controller may cast it transformed (battles.py)."""
     from ...battles import defeat
     defeat(game, p, item)
+
+
+@kind("champion")
+def champion(game, p, eff, item, **_):
+    """Champion (CR 702.72): mtgsim.champion."""
+    from ...champion import resolve
+    resolve(game, p, eff, item)

@@ -40,19 +40,22 @@ _SUB_NOTES = [
      "the tap-lock's duration is not one the engine records, so it is played as a single skipped untap step"),
 ]
 
+# "a creature card with mana value 3 or less": the bound card_matches reads at the end of a description
+_KEEP_BOUND = r"(?: with (?:mana value|power|toughness) \d+(?: or (?:less|greater))?)?"
 _SUBS = [
     (re.compile(r"(?:target opponent reveals their hand\. you choose|look at target opponent's hand\. you may exile) an? "
                 r"(nonland|noncreature, nonland|nonartifact, nonland|instant or sorcery) card from it(?:\. exile that card)? "
                 r"until ~ leaves the battlefield\.", re.I), lambda m: f"HANDEXILE {m[1].lower()}."),
     (re.compile(r"^(~ gains [a-z]+ until end of turn)\. tap it\.", re.I), r"\1. Tap ~."),
-    # The AI never aims its removal at its own creature, so "another" target is any target.
-    (re.compile(r"(destroy|exile) another target (creature or planeswalker|creature|nonland permanent)(?! you own)", re.I),
-     r"\1 target \2"),
     # Activated and triggered abilities can't be countered in the engine: these counter spells only.
     (re.compile(r"counter target spell, activated ability, or triggered ability", re.I), "counter target spell"),
     # Planeswalkers rarely matter as the target: "creature or planeswalker you control gains ..." is the creature.
     (re.compile(r"target creature or planeswalker you control gains", re.I), "target creature you control gains"),
     # Two players: "for each opponent, tap ... that player controls" is the one opponent.
+    # ... and "each of those creatures" after it is that one target (#628)
+    (re.compile(r"for each opponent, (tap up to one target creature) that player controls\. (?:(put [^.]+? on) each of "
+                r"those creatures|each of those creatures (doesn't untap during its controller's next untap step))\.",
+                re.I), lambda m: f"{m[1]} an opponent controls. " + (f"{m[2]} it." if m[2] else f"It {m[3]}.")),
     (re.compile(r"for each opponent, (tap up to one target creature) that player controls", re.I),
      r"\1 an opponent controls"),
     (re.compile(r"tap up to one target creature\. it loses all abilities for as long as ~ remains on the battlefield\.",
@@ -128,7 +131,7 @@ _SUBS = [
     (re.compile(r"if (?:this spell|~) was cast from a graveyard, exile it, then put it onto the battlefield transformed "
                 r"under its owner's control with a finality counter on it\.", re.I), lambda m: "FLIPFROMGY."),
     (re.compile(r"reveal the top card of your library\. if it's an? (permanent|land|creature) card, put it into your "
-                r"hand\.", re.I), lambda m: f"REVEALTOP {m[1].lower()}."),
+                r"hand\.(?! otherwise\b)", re.I), lambda m: f"REVEALTOP {m[1].lower()}."),    # "Otherwise, ...": cx_links
     (re.compile(r"destroy target nonbasic land an opponent controls\. that land's controller may search their library for "
                 r"a basic land card, put it onto the battlefield, then shuffle\. you may search your library for a basic "
                 r"land card, put it onto the battlefield, then shuffle\.", re.I), lambda m: "BOTHLANDSWAP."),
@@ -139,10 +142,10 @@ _SUBS = [
     (re.compile(r"look at the top (\w+) cards of your library\. put (\w+) of them into your hand and the "
                 r"rest on the bottom of your library(?: in (?:a random|any|any random) order)?\.", re.I),
      lambda m: f"DIG {_num(m[1])} {_num(m[2])}."),
-    (re.compile(r"look at the top (\w+) cards of your library\. you may reveal (an? .+? card) from among them and "
+    (re.compile(rf"look at the top (\w+) cards of your library\. you may reveal (an? .+? card{_KEEP_BOUND}) from among them and "
                 r"put it into your hand\. put the rest on the bottom of your library in (?:a random|any) order\.",
                 re.I), lambda m: f"DIGFILTER {_num(m[1])} {m[2]}."),
-    (re.compile(r"look at the top (\w+) cards of your library\. you may put (an? [\w, -]+? card) from among them "
+    (re.compile(rf"look at the top (\w+) cards of your library\. you may put (an? [\w, -]+? card{_KEEP_BOUND}) from among them "
                 r"into your hand\. put the rest on the bottom of your library in (?:a random|any) order\.",
                 re.I), lambda m: f"DIGFILTER {_num(m[1])} {m[2]}."),
     (re.compile(r"look at the top \w+ cards of your library, where X is the number of lands you control\. put "
@@ -196,7 +199,9 @@ _SUBS = [
     # "Return this card from your graveyard": the card itself is "~".
     (re.compile(r"\breturn this card from your graveyard\b", re.I), r"return ~ from your graveyard"),
     # "You may have ~ deal N damage to ...": always taken, so the damage is certain (Game.resolve_item).
-    (re.compile(r"you may have ~ deal (\d+) damage to (any target|target [a-z' ]+)", re.I), r"~ deals \1 damage to \2"),
+    # Only a lone recipient: "... and 1 damage to you" must not become a forced cost.
+    (re.compile(r"you may have ~ deal (\d+) damage to (any target|target [a-z' ]+?)(?=\.|$)", re.I),
+     r"~ deals \1 damage to \2"),
     (re.compile(r"then return a creature or planeswalker card with mana value X or less from your graveyard to "
                 r"the battlefield, where X is the amount of \{S\} spent to cast ~\.", re.I),
      lambda m: "REANIMATESNOW."),
@@ -431,6 +436,23 @@ def _target_discard(m):
     return f"TARGETDISCARD2 {m[1]}."
 
 
+def _each_singular(what: str) -> str:
+    """A counted description made singular part by part: "creatures and lands" -> "creature and land", "Soldiers
+    and Warriors" -> "Soldier and Warrior", "Zombies" -> "Zombie" (a subtype: the "ies" -> "y" rule is for
+    "Sorceries"), "instant and sorcery" unchanged. The separators are copies.ALTERNATIVES' (a union, #449)."""
+    from ..copies import ALTERNATIVES
+    from ..counting import _singular
+    from ..cx_events import _singular as subtype
+    out, at = [], 0
+    for sep in list(ALTERNATIVES.finditer(what)) + [None]:
+        part = what[at:sep.start() if sep else len(what)]
+        head, _, last = part.rpartition(" ")
+        last = subtype(last) if last[:1].isupper() else _singular(last)
+        out.append((head + " " if head else "") + last + (sep[0] if sep else ""))
+        at = sep.end() if sep else len(what)
+    return "".join(out)
+
+
 def _xq(text: str):
     """The quantity in ", where X is ...": a tuple the engine evaluates, or None when it isn't a known one."""
     t = text.strip().rstrip(".")
@@ -445,6 +467,13 @@ def _xq(text: str):
                  "the amount of life you gained this turn": ("gained",),
                  "the number of cards in your hand": ("hand",),
                  "the number of cards in an opponent's hand": ("opp_hand",)}[tl])
+    if tl in ("the amount of mana spent to cast that spell", "the number of colors of mana spent to cast that spell"):
+        return ("spell", "mana_spent" if tl.startswith("the amount") else "converge")   # its payment (Game.x_quantity)
+    m = re.fullmatch(r"the number of (auras?|equipments?|auras? and equipments?|equipments? and auras?) attached to "
+                     r"(?:~|him|her)", t, re.I)
+    if m:      # "for each Aura and Equipment attached to ~" (#343): the card's own attachments
+        words = m[1].lower()
+        return ("attached", tuple(k for k in ("Aura", "Equipment") if k.lower() in words))
     m = re.fullmatch(r"that spell's (mana value|power|toughness)|the number of (?:that spell's colors)|"
                      r"the amount of generic mana in that spell's mana cost", t, re.I)
     if m:      # the spell a cast trigger fired on, or the spell a counterspell targets (not the host)
@@ -471,12 +500,14 @@ def _xq(text: str):
         return ("tapped_any", tuple(_singular(k) for k in kinds))
     if tl == "the number of times ~ has mutated":
         return ("mutated",)
-    m = re.fullmatch(r"the number of ([\w+/ -]+?) counters? on (?:~|it)", t, re.I)
+    # one counter kind, at most two words ("acquired taste"), never a creature phrase ending "with a +1/+1" (#630)
+    m = re.fullmatch(r"the number of ((?:(?!with |you |and |or |a |an |each |other )[a-z]+ )?[\w+/-]+) counters? on "
+                     r"(?:~|it)", t, re.I)
     if m:
         return ("counters", m[1])
     m = re.fullmatch(r"the number of ([\w -]+?) cards? in your graveyard", t, re.I)
-    if m and known(_singular(m[1])):        # an unknown word would count 0: try the readings below instead
-        return ("gy", _singular(m[1]))
+    if m and known(_each_singular(m[1])):   # an unknown word would count 0: try the readings below instead
+        return ("gy", _each_singular(m[1]))
     if tl == "the number of cards in your graveyard":
         return ("gy", "")
     if tl in ("the number of basic land types among lands you control", "the number of colors among permanents you control",
@@ -486,13 +517,9 @@ def _xq(text: str):
                 [tl[len("the number of "):-len(" you control")]])
     m = re.fullmatch(r"the number of ([\w -]+?) you control", t, re.I)
     if m and " with " not in m[1] and " that " not in m[1]:
-        head, _, last = m[1].rpartition(" ")
-        if last[:1].isupper():      # a subtype: "Zombies" -> "Zombie" (the "ies" -> "y" rule is for "Sorceries")
-            from ..cx_events import _singular as subtype
-            if known((head + " " if head else "") + subtype(last)):
-                return ("count", (head + " " if head else "") + subtype(last))
-        elif known(_singular(m[1])):
-            return ("count", _singular(m[1]))
+        what = _each_singular(m[1])
+        if known(what):
+            return ("count", what)
     if tl == "the number of creatures in your party":
         return ("party",)
     # "3 minus the number of cards in their hand" (Rackling), "the number of cards in their hand

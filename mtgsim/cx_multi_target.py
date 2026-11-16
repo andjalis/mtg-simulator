@@ -86,7 +86,10 @@ def _rewrite_any(s: str):
     if agreed == rest and (not head or head.endswith(", ")):       # the list is the subject
         agreed = re.sub(rf"^((?:\s+(?!(?:{_VERBS})\b)\S+)*?)\s+({_VERBS})\b", lambda v: v[1] + " " + _AGREE[v[2]],
                         rest, count=1)
-    rest = re.sub(rf"(\band|, then) ({_VERBS})\b{_OUTSIDE_QUOTES}", lambda v: f"{v[1]} {_AGREE[v[2]]}", agreed)
+    if agreed != rest:   # the list is the subject: later verbs agree with it too
+        rest = re.sub(rf"(\band|, then) ({_VERBS})\b{_OUTSIDE_QUOTES}", lambda v: f"{v[1]} {_AGREE[v[2]]}", agreed)
+    else:                # "exile any number of target ..., then return those cards": you stay the subject
+        rest = re.sub(rf"\band (get|gain|have|become|lose)\b{_OUTSIDE_QUOTES}", lambda v: "and " + _AGREE[v[1]], rest)
     if players:          # "each discard their hands": one player's own hand
         rest = re.sub(r"\btheir (hand|graveyard)s\b", r"their \1", rest)
         rest = re.sub(r"\btheir libraries\b", "their library", rest)
@@ -126,6 +129,9 @@ def legal_list(game, p, eff, tgt) -> bool:
     most = max_count(game, p, eff)
     if most is not None and len(tgt) > most:
         return False
+    if eff.data.get("count_x") and eff.amount and len(tgt) != eff.amount and \
+            (eff.data["count_x"] == "exact" or len(tgt) > eff.amount):
+        return False                       # an ability's X, known while its targets are chosen
     return all(game.legal_target(p, eff.data["probe"], x) for x in tgt)
 
 
@@ -141,8 +147,11 @@ def choose_list(game, me, eff) -> tuple:
     side = pick.controller if isinstance(pick, Permanent) else pick
     pool = [x for x in game.legal_targets(me, probe)
             if (x.controller if isinstance(x, Permanent) else x) is side]
+    if probe.kind == "blink":         # not tokens (gone for good) or what gains nothing from re-entering (#318)
+        from .blink import worth_blinking
+        pool = [x for x in pool if worth_blinking(me, probe, x)]
     pool = sorted(pool, key=lambda x: -perm_value(x) if isinstance(x, Permanent) else 0)
-    most = max_count(game, me, eff)
+    most = max_count(game, me, eff) if not (eff.data.get("count_x") and eff.amount) else eff.amount
     return tuple(pool if most is None else pool[:most])
 
 
@@ -197,6 +206,49 @@ def _lift_upto_x(s: str, effects: list) -> bool:
     return True
 
 
+_X_TARGET = re.compile(r"\b((?i:each of )?)((?i:up to ))?X ((?i:other |another ))?(?i:target)\b")
+
+
+def _lift_x_targets(s: str, effects: list) -> bool:
+    """"Tap X target creatures." / "Destroy up to X target artifacts.": X is the spell's or ability's own X, and
+    the list holds exactly X objects ("up to X": at most X). X is chosen as the number of targets (play.cast /
+    abilities.activate_ability), so the list's length is X."""
+    if re.search(r"\bwhere X is\b", s, re.I):
+        return False
+    m = _X_TARGET.search(s)
+    body = s[:m.start()] + "any number of " + (m[3] or "") + "target" + s[m.end():]
+    new: list = []
+    if not _lift_any(body, new):
+        return False
+    multi = new[0]
+    effects.append(dataclasses.replace(multi, data=dict(multi.data, count_x="up_to" if m[2] else "exact", x=True)))
+    return True
+
+
+def x_count(effects, targets):
+    """The number of targets of an "X target" list among effects/targets, or None when there is none."""
+    for e, t in zip(effects, targets):
+        if e.data.get("count_x"):
+            return len(t or ())
+    return None
+
+
+def x_targets_cost(game, p, card, effects, targets, cost):
+    """A spell with "X target ...": X is the number of chosen targets, paid as generic mana; a list the caster can't
+    pay for is cut to its most valuable members it can (choose_list sorts them). Returns (cost, targets, x)."""
+    from . import costs as _costs
+    targets = list(targets)
+    i = next(i for i, e in enumerate(effects) if e.data.get("count_x"))
+    per = max(1, card.mana_cost.get("X", 1)) if isinstance(card.mana_cost, dict) else 1     # {X}{X}: twice X
+    while True:
+        n = len(targets[i] or ())
+        total = dict(cost, generic=cost.get("generic", 0) + n * per)
+        total.pop("X", None)
+        if _costs.spell_plan(game, p, card, total) is not None or not targets[i]:
+            return total, targets, n
+        targets[i] = targets[i][:-1]
+
+
 def max_count(game, p, eff):
     """The most objects an "up to X target" list may hold, or None for no limit. Counted while targets are chosen;
     on resolution (a stack item is the targeting source) the number chosen stands."""
@@ -214,7 +266,7 @@ def max_count(game, p, eff):
 def lift(s: str, effects: list) -> bool:
     """Parse s, a sentence with one counted target ("up to two target creatures"), into effects. True if it did."""
     from .engine.state import TARGETED
-    if chain_rider(s, effects):
+    if chain_rider(s, effects) or _compound_rider(s, effects):
         return True
     outside = re.sub(r'"[^"]*"', '""', s)          # a quoted ability's own targets are its own
     if len(re.findall(r"\btarget\b", outside, re.I)) != 1:
@@ -223,8 +275,10 @@ def lift(s: str, effects: list) -> bool:
         return False                          # "choose up to one target creature": a referent for later sentences
     if _ANY.search(outside):
         return not _COUNTED.search(outside) and _lift_any(s, effects)
-    if _UPTO_X.search(outside):
+    if _UPTO_X.search(outside) and _WHERE_X.search(s.strip().rstrip(".")):
         return _lift_upto_x(s, effects)
+    if _X_TARGET.search(outside):
+        return _lift_x_targets(s, effects)
     found = list(_COUNTED.finditer(s))
     if len(found) != 1:
         return False
@@ -306,23 +360,121 @@ def strive_cost(game, p, card, effects, targets, cost):
 
 
 _RIDER = re.compile(r"(untap|tap) (?:those creatures|them)|(?:they|those creatures) (gain|get) (.+)", re.I)
+_PLURAL_SUBJ = r"(?:those creatures|those permanents|those tokens|they|each of them|each of those creatures)"
+_SING_VERB = {"gain": "gains", "get": "gets", "gets": "gets", "gains": "gains", "can't": "can't", "don't": "doesn't",
+              "have": "has", "lose": "loses", "doesn't": "doesn't"}
+_PLURAL_RIDER = re.compile(rf"{_PLURAL_SUBJ} (gain|gains|get|gets|can't|don't|doesn't|have|lose) (.+)", re.I)
+_PLURAL_PUT = re.compile(r"(put .+) on (?:each of them|them|each of those creatures)", re.I)
+# "Those creatures don't untap during their controllers' next untap steps": each one's own controller's step
+_THEIR_STEPS = re.compile(r"\btheir controllers' next untap steps\b", re.I)
+_PLURAL_TAP = re.compile(r"(untap|tap) (?:those creatures|them|each of them)", re.I)
+_PLURAL_WORD = re.compile(r"\b(?:they|them|their|those|each)\b", re.I)
+
+
+def singular_rider(s: str):
+    """A sentence about the several objects a counted or list target chose, as a sentence about one ("It ..."),
+    or None. "Those creatures can't block this turn." -> "It can't block this turn."; "Each of them gets +1/+1
+    until end of turn."; "Put a +1/+1 counter on each of them."; "Untap them."."""
+    t = s.strip().rstrip(".")
+    m = _PLURAL_RIDER.fullmatch(_THEIR_STEPS.sub("its controller's next untap step", t))
+    if m:
+        return None if _PLURAL_WORD.search(m[2]) else f"It {_SING_VERB[m[1].lower()]} {m[2]}."
+    m = _PLURAL_PUT.fullmatch(t)
+    if m and not _PLURAL_WORD.search(m[1]):
+        return f"{m[1]} on it."
+    m = _PLURAL_TAP.fullmatch(t)
+    if m:
+        return f"{m[1].capitalize()} it."
+    return None
+
+
+def _counted_run(effects: list):
+    """The first Effect indexes of the copies "up to two target creatures" made (one chain per target, consecutive
+    and ending the list), or None. Copies made by lift() share a "group"; a template's copies (one "distinct"
+    Effect per target) are the trailing identical Effects."""
+    run = [i for i, e in enumerate(effects) if e.data.get("distinct") and e.data.get("group", "").startswith("cx_multi:")]
+    if len(run) >= 2:
+        group = effects[run[-1]].data["group"]
+        run = [i for i in run if effects[i].data["group"] == group]
+        width = run[1] - run[0]
+        if width >= 1 and all(b - a == width for a, b in zip(run, run[1:])) and run[-1] + width == len(effects):
+            return run
+        return None
+    def same(e):     # "one or two target creatures": the copies after the first are optional_target
+        return dataclasses.replace(e, data={k: v for k, v in e.data.items() if k != "optional_target"})
+    tail = len(effects)
+    while tail and effects[tail - 1].data.get("distinct") and "group" not in effects[tail - 1].data and \
+            same(effects[tail - 1]) == same(effects[-1]):
+        tail -= 1
+    return list(range(tail, len(effects))) if len(effects) - tail >= 2 else None
+
+
+_LEGACY_TAP_WORD = {2: "two", 3: "three", 4: "four", 5: "five"}
+
+
+def _legacy_tap(eff):
+    """The counted copies for a "tap up to two target creatures" wording entry (one tap Effect whose amount is the
+    count, the extras picked on resolution), so a rider about "them" can follow each chosen target; or None."""
+    if eff.kind != "tap" or eff.target != "creature" or eff.data or eff.filter or eff.cond \
+            or eff.amount not in _LEGACY_TAP_WORD:
+        return None
+    copies = []
+    if not lift(f"Tap up to {_LEGACY_TAP_WORD[eff.amount]} target creatures", copies) or len(copies) != eff.amount:
+        return None
+    return copies
+
+
+_COMPOUND_RIDER = re.compile(r"(.+?\btarget\b.+?)(?:,? then|,? and) (put .+? on each of them|(?:untap|tap) them|they .+)",
+                             re.I)
+
+
+def _compound_rider(s: str, effects: list) -> bool:
+    """"Tap up to two target creatures and put a stun counter on each of them.": the counted part, then the rider."""
+    m = _COMPOUND_RIDER.fullmatch(s.strip().rstrip("."))
+    if m is None:
+        return False
+    from .cards.parse import _parse_effects
+    new, bad = _parse_effects(m[1][0].upper() + m[1][1:] + ".")
+    if bad or not new or not chain_rider(m[2][0].upper() + m[2][1:] + ".", new):
+        return False
+    effects += new
+    return True
 
 
 def chain_rider(s: str, effects: list) -> bool:
-    """"Untap those creatures." / "They gain haste until end of turn." after an "any number of target" Effect: more
-    of the chain each chosen target gets."""
-    if not effects or effects[-1].kind != "cx_multi":
+    """"Untap those creatures." / "They gain haste until end of turn." / "Those creatures can't block this turn." after
+    a counted or "any number of target" Effect: more of the chain each chosen target gets."""
+    if not effects:
         return False
-    m = _RIDER.fullmatch(s.strip().rstrip("."))
-    if not m:
+    caller, legacy = effects, _legacy_tap(effects[-1])
+    if legacy:      # read on a copy: the caller's list changes only when the rider is read
+        effects = list(effects[:-1]) + legacy
+    multi = effects[-1].kind == "cx_multi"
+    run = None if multi else _counted_run(effects)
+    if not multi and run is None:
         return False
+    chosen = effects[-1].data["probe"] if multi else effects[run[0]]
+    if chosen.target.endswith("_card") or chosen.kind == "cx_card_move":
+        return False        # cards chosen in a graveyard: "it" afterwards is not the permanent they became
+    text = singular_rider(s)
+    if text is None:
+        m = _RIDER.fullmatch(s.strip().rstrip("."))
+        if not m:
+            return False
+        text = f"{m[1].capitalize()} it." if m[1] else f"It {_AGREE[m[2].lower()]} {m[3]}."
     from .cards.parse import _parse_effects
-    text = f"{m[1].capitalize()} it." if m[1] else f"It {_AGREE[m[2].lower()]} {m[3]}."
     new, bad = _parse_effects(text)
     if bad or not new or any(e.target != "prev" or e.cond for e in new):
         return False
-    multi = effects[-1]
-    effects[-1] = dataclasses.replace(multi, data=dict(multi.data, chain=list(multi.data["chain"]) + new))
+    if multi:
+        last = effects[-1]
+        effects[-1] = dataclasses.replace(last, data=dict(last.data, chain=list(last.data["chain"]) + new))
+        return True
+    out = effects[:run[0]]
+    for a, b in zip(run, run[1:] + [len(effects)]):
+        out.extend(effects[a:b])
+        out.extend(dataclasses.replace(e, data=dict(e.data)) for e in new)
+    caller[:] = out
     return True
 
 
@@ -339,3 +491,38 @@ def no_regen_rider(s: str, effects: list) -> bool:
     probe = chain[0] if chain[0].kind == "destroy" else multi.data["probe"]
     effects[-1] = dataclasses.replace(multi, data=dict(multi.data, chain=chain, probe=probe))
     return True
+
+
+def unpaid_x(cost, spell, modes, triggers, activated, loyalty, etb, alt_costs=(), extra=None) -> list:
+    """Unsupported notes for "X target ..." lists whose X isn't a mana {X} the engine ties to the targets. Only a
+    (non-modal) spell with {X} in its mana cost (play.cast) and an activated ability with one {X} in its cost
+    (abilities.activate_ability) choose X as the number of targets. X from an additional cost ("sacrifice X
+    creatures"), a trigger, a loyalty cost, a modal spell, an alternative or graveyard ability, or {X}{X} on an
+    ability stays unsupported (#312)."""
+    def has(obj, depth=0):
+        if depth > 4 or obj is None:
+            return False
+        if hasattr(obj, "kind") and hasattr(obj, "data") and isinstance(getattr(obj, "data"), dict):
+            return bool(obj.data.get("count_x"))
+        if isinstance(obj, dict):
+            return any(has(v, depth + 1) for v in obj.values())
+        if isinstance(obj, (list, tuple)):
+            return any(has(v, depth + 1) for v in obj)
+        effects = getattr(obj, "effects", None)
+        return has(effects, depth + 1) if effects is not None else False
+    bad = []
+    if has(spell) and not (cost or {}).get("X"):
+        bad.append("spell")
+    if any(has(m) for m in (modes or ())):
+        bad.append("mode")
+    if any(has(t.effects) for t in triggers or ()) or has(etb):
+        bad.append("trigger")
+    if any(has(a.effects) and a.cost.get("X") != 1 for a in activated or ()):
+        bad.append("ability")
+    if any(has(effs) for _, effs in loyalty or ()):
+        bad.append("loyalty")
+    if has(list(alt_costs or ())):
+        bad.append("alternative cost")
+    if has({k: v for k, v in (extra or {}).items() if k != "alt_costs"}):
+        bad.append("other")
+    return [f"X target count without a mana X tied to the targets ({', '.join(bad)})"] if bad else []

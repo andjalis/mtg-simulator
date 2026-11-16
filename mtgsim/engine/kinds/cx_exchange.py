@@ -50,4 +50,24 @@ def exchange(game, p, eff, target, item=None, **_):
     a, b = first.controller, second.controller
     counter_mechanics.add_control(game, first, b)
     counter_mechanics.add_control(game, second, a)
+    if item is not None:
+        item.cx_exchanged, item.cx_exchanged_pair = True, (first, second)
     game.log(f"exchanges control of {first.card.name} ({b.name} now) and {second.card.name} ({a.name} now)", p)
+
+
+@kind("cx_exchange_else")
+def exchange_else(game, p, eff, item=None, **_):
+    """"If you don't or can't make an exchange, sacrifice ~." (Gilded Drake): after the item's exchange, when no
+    exchange happened (no target chosen, the target illegal, or the exchange couldn't be made)."""
+    if item is None or not any(e.kind == "cx_exchange" for e in item.effects):
+        return
+    if eff.data.get("if_exchanged") == "destroy_auras":
+        for perm in getattr(item, "cx_exchanged_pair", ()) if getattr(item, "cx_exchanged", False) else ():
+            for aura in list(perm.auras):
+                game.destroy(aura)
+        return
+    if getattr(item, "cx_exchanged", False):
+        return
+    src = item.source
+    if eff.data.get("sacrifice") == "self" and _present(src) and src.controller is p:
+        game.sacrifice(src)

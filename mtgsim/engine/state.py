@@ -31,6 +31,9 @@ class PlayerCounters(dict):
         old = self.get(name, 0)
         if value > old and not player_counter_allowed(self.owner, name):
             value = old
+        if value > old:      # "you get that many plus one of each of those kinds of counters instead" (#407)
+            from ..cx_replace_amounts import modify_player
+            value = old + modify_player(self.owner, name, value - old)
         super().__setitem__(name, value)
 
 
@@ -62,10 +65,15 @@ class Counters(dict):
         if key == "charge" and value != old:       # Spacecraft: a creature at its station threshold
             from .. import continuous
             continuous.refresh(perm)
-        if key == "+1/+1" and value > old and perm in perm.controller.battlefield:
+        if key in ("+1/+1", "-1/-1") and value > old and perm in perm.controller.battlefield:
             game = getattr(perm.controller, "_game", None)
             if game is not None:
-                game.fire(perm.controller, "p1_added", perm)
+                saved = getattr(game, "event_amount", None)
+                game.event_amount = value - old         # "that many": the counters just put on it
+                try:
+                    game.fire(perm.controller, "p1_added" if key == "+1/+1" else "m1_added", perm)
+                finally:
+                    game.event_amount = saved
 
     def __delitem__(self, key):
         old = self.get(key, 0)
@@ -103,10 +111,27 @@ def protected_from(perm, source) -> bool:
         return False
     if perm.has("protection from creatures") and isinstance(source, Permanent) and source.is_creature:
         return True
-    return any(perm.has(PROTECTION[c]) for c in card.colors) or \
-        len(card.colors) >= 2 and perm.has("protection from multicolored") or \
-        card.is_artifact and perm.has("protection from artifacts")
+    if any(perm.has(PROTECTION[c]) for c in card.colors) or \
+            len(card.colors) >= 2 and perm.has("protection from multicolored") or \
+            card.is_artifact and perm.has("protection from artifacts"):
+        return True
+    from ..protection_types import protected            # card types and subtypes ("from Demons", "from instants")
+    return protected(perm, card, source)
 
+
+
+_LAZY: dict = {}
+
+
+def _lazy(module: str, name: str):
+    """mtgsim.<module>.<name>, imported on first use and kept: these modules import this one, and a function-level
+    import costs about a microsecond on paths called millions of times per game (#698)."""
+    key = module + "." + name
+    found = _LAZY.get(key)
+    if found is None:
+        import importlib
+        found = _LAZY[key] = getattr(importlib.import_module("mtgsim." + module), name)
+    return found
 
 class Permanent:
     def __setattr__(self, name, value):
@@ -218,6 +243,7 @@ class Permanent:
         self.temp_activated = []
         self.temp_min_blocker = 0          # a backup-granted "can't be blocked by creatures with power N or less"
         self.temp_triggers = []
+        self.gained_triggers = []      # "It gains "<trigger>"" with no duration: for as long as it's here (#540)
         self.regeneration_shields = 0
         self.regeneration_blocked = False
         self.ability_turns: dict = {}      # activated ability index -> turn it was last activated
@@ -281,8 +307,7 @@ class Permanent:
     def _pt_bonus(self):
         """(power, toughness) from anthems, attached equipment and "for each" counts, in one pass
         over the battlefield; the same sums as anthem, equipment and per_bonus."""
-        from ..residual_templates import anthem_bonus
-        bp, bt = anthem_bonus(self)
+        bp, bt = _lazy("residual_templates", "anthem_bonus")(self)
         creature = self.is_creature
         what = self.card.pt_per
         sp, st = self.card.pt_scale
@@ -300,6 +325,11 @@ class Permanent:
             n = self._cda_count(self.card.pt_cda)
             bp += n
             bt += n
+        if creature and "cda_q" in self.card.advanced_rules:      # any _xq quantity (cx_cda)
+            from ..cx_cda import quantity_bonus
+            qp, qt = quantity_bonus(self)
+            bp += qp
+            bt += qt
         if creature:
             for pl in (self.controller, self.controller.foe):
                 for x in (pl.battlefield if pl is not None else ()):
@@ -416,7 +446,8 @@ class Permanent:
 
     @property
     def abilities_suppressed(self):
-        return self.silenced or any('loses_abilities' in a.card.aura_flags for a in self.auras)
+        return self.silenced or any('loses_abilities' in a.card.aura_flags for a in self.auras) or \
+            getattr(self.__dict__.get("card"), "lost_all", False)      # "loses all abilities" (cx_static_chars)
 
     def has(self, kw):
         if self.silenced_by is not None and kw in KEYWORDS and self.silenced:
@@ -426,14 +457,19 @@ class Permanent:
         return continuous.keyword(self, kw, self._has_unlayered(kw))
 
     def _has_unlayered(self, kw):
+        # the permanent's own keywords first: every check up to keyword_at_counters only returns True and has no
+        # side effects, so the cheapest one can go first without changing the answer (#698)
+        if kw in self.card.keywords or kw in self.temp_kw or kw in self.perm_kw or (kw in KEYWORDS and self.counters.get(kw, 0) > 0):
+            return True
         game = getattr(self.controller, '_game', None)
         if game is not None:
-            from ..permanent_templates import matches
-            for player in game.players:
-                for source in player.battlefield:
-                    if not source.abilities_suppressed and any(kw in kws and matches(game, self, spec, source.controller, source)
-                            for spec, kws in source.card.static_keyword_grants):
-                        return True
+            matches = _lazy("permanent_templates", "matches")
+            # only permanents that may grant keywords (the cached index); cheapest test first (#698)
+            for source in _lazy("residual_templates", "field_sources")(game, "static_keyword_grants"):
+                grants = source.card.static_keyword_grants
+                if grants and any(kw in kws for _, kws in grants) and not source.abilities_suppressed and \
+                        any(kw in kws and matches(game, self, spec, source.controller, source) for spec, kws in grants):
+                    return True
         if self.card.level_blocks:
             from ..batch1_templates import level_block
             block = level_block(self)
@@ -443,10 +479,14 @@ class Permanent:
             from ..cx_triggers import hexproof_entered
             if hexproof_entered(self):
                 return True
-        if kw in self.card.keywords or kw in self.temp_kw or kw in self.perm_kw or (kw in KEYWORDS and self.counters.get(kw, 0) > 0):
-            return True
+        if kw in ("toxic", "ward"):        # "with toxic" / "with ward": any value, printed or granted (#633)
+            from ..kw_values import amounts
+            if (self.card.toxic if kw == "toxic" else self.card.ward) or amounts(self, kw):
+                return True
+        fields = _lazy("residual_templates", "field_sources") if game is not None else None
         if kw in ('training', 'dethrone') and self.is_creature and any(k == kw and not (other and source is self)
-                                   for source in self.controller.battlefield
+                                   for source in (fields(game, "granted_attack_keywords") if fields else
+                                                  self.controller.battlefield) if source.controller is self.controller
                                    for k, other in source.card.granted_attack_keywords
                                    if not source.silenced and not any('loses_abilities' in a.card.aura_flags for a in source.auras)):
             return True
@@ -466,28 +506,29 @@ class Permanent:
         for k, cond in self.card.cond_keywords:
             if k == kw and self.condition(cond):
                 return True
-        from ..cx_statics import grants as conditional_grant
-        if conditional_grant(self, kw):
+        if _lazy("cx_statics", "grants")(self, kw):
             return True
+        # permanents with keyword_sub grants: all players' (the index) or, with no game, the controller's
+        subs = fields(game, "keyword_sub") if fields else list(self.controller.battlefield)
         if any((sub in self.card.subtypes or sub == "Face-down" and self.hidden is not None) and k == kw
                and not (other and x is self)
-               for x in self.controller.battlefield for sub, k, other in x.card.keyword_sub):
+               for x in subs if x.controller is self.controller for sub, k, other in x.card.keyword_sub):
             return True
         # A chosen-type grant (Shimmer: "Each land of the chosen type has phasing") — the
         # "@chosen" marker reads the source's chosen_type; these grants are not scoped to
         # the source's controller.
-        game = getattr(self.controller, "_game", None)
-        players = game.players if game is not None else (self.controller,)
         if any(sub == "@chosen" and k == kw and not (other and x is self)
                and getattr(x, "chosen_type", "") and x.chosen_type in self.card.subtypes
-               for pl in players for x in pl.battlefield for sub, k, other in x.card.keyword_sub):
+               for x in subs for sub, k, other in x.card.keyword_sub):
             return True
         if self.is_creature and self.p1 > 0 and any(kw in x.card.counter_team_keywords
-                                                    for x in self.controller.battlefield):
+                                                    for x in (fields(game, "counter_team_keywords") if fields else
+                                                              self.controller.battlefield)
+                                                    if x.controller is self.controller):
             return True
         if kw in TEAM_KEYWORDS and self.is_creature:
-            for x in self.controller.battlefield:
-                if kw in x.card.team_keywords:
+            for x in (fields(game, "team_keywords") if fields else self.controller.battlefield):
+                if x.controller is self.controller and kw in x.card.team_keywords:
                     return True
         if self.card.keyword_at_counters and self.p1 >= self.card.keyword_at_counters[0]:
             return kw == self.card.keyword_at_counters[1]
@@ -573,6 +614,12 @@ class Permanent:
         if self.card.keyword_at_counters:
             n, kw = self.card.keyword_at_counters
             count += int(kw == keyword and self.p1 >= n)
+        game = getattr(self.controller, "_game", None)
+        if game is not None and keyword in ("exalted", "riot"):     # "<group> have exalted / riot" (#633)
+            from ..permanent_templates import matches
+            count += sum(keyword in kws and matches(game, self, spec, source.controller, source)
+                         for pl in game.players for source in pl.battlefield if not source.abilities_suppressed
+                         for spec, kws in source.card.static_keyword_grants)
         return count
 
     @property
@@ -593,7 +640,8 @@ class Permanent:
         from ..cx_statics import linked_triggers
         from ..cx_trigger_grants import granted as trigger_grants
         return (list(mine) + (list(self.animated.triggers) if self.animated else []) + exalted + decayed +
-                attack_counters + list(self.temp_triggers) + linked_triggers(self) + trigger_grants(self))
+                attack_counters + list(self.temp_triggers) + list(getattr(self, "gained_triggers", ())) +
+                linked_triggers(self) + trigger_grants(self))
 
     @property
     def ward(self) -> int:
@@ -601,8 +649,19 @@ class Permanent:
             return self.animated.ward
         if self.card.ward_untapped_only and self.tapped:
             return 0
+        from ..kw_values import amounts         # granted "ward {N}" (#633)
         return max([self.card.ward] + [e.card.equip_ward for e in self.equipment] +
-                   [a.card.equip_ward for a in self.auras])
+                   [a.card.equip_ward for a in self.auras] + amounts(self, "ward") + self._group_ward())
+
+    def _group_ward(self) -> list:
+        """Ward from "Other creatures you control have ward {1}" statics on the battlefield."""
+        game = getattr(self.controller, '_game', None)
+        if game is None:
+            return []
+        from ..permanent_templates import matches
+        return [n for player in game.players for source in player.battlefield if not source.abilities_suppressed
+                for spec, n in source.card.advanced_rules.get('static_ward', ())
+                if matches(game, self, spec, source.controller, source)]
 
     def can_attack(self):
         return (self.is_creature and not self.tapped and self.detained_by is None and not (self.has("defender") and not self.has("attacks_despite_defender")) and not self.has("cant_attack_now") and not (self.card.cant_attack and not self.abilities_suppressed)
@@ -676,7 +735,7 @@ def pool_mana(color: str) -> CardDef:
     return _POOL_MANA[color]
 
 
-OUTLAWS = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock", "Wizard")
+OUTLAWS = ("Assassin", "Mercenary", "Pirate", "Rogue", "Warlock")     # rule 700.12 (Wizards are not outlaws)
 
 
 class Player:
@@ -864,7 +923,17 @@ def note_this_way(item, verb: str, nouns, n: int):
     """Record what the resolving effect just did "this way" (counters removed / permanents destroyed), so a
     following "for each ... this way" sentence of the same resolution reads the resolved event's result
     (CR 608.2c), not a global count."""
-    if item is not None and n > 0:
+    if item is None or n <= 0:
+        return
+    # One "this way" set per resolution step: what this effect already recorded (a group destroying its members one
+    # by one), or else what the directly preceding effect did with the same verb ("Destroy all artifacts. Destroy all
+    # enchantments." read as one sentence: Fracturing Gust's "each permanent destroyed this way") (#337).
+    prior = getattr(item, "this_way", None)
+    if prior is None or prior[0] != verb:
+        prior = getattr(item, "this_way_prior", None)
+    if prior is not None and prior[0] == verb:
+        item.this_way = (verb, prior[1] & frozenset(nouns), prior[2] + n)
+    else:
         item.this_way = (verb, frozenset(nouns), n)
 
 

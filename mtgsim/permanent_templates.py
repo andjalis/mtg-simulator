@@ -181,6 +181,8 @@ _SUBTYPE_TYPES.update({'ajani': ['planeswalker'],
  'zariel': ['planeswalker']})
 
 
+_OUTLAWS = ['assassin', 'mercenary', 'pirate', 'rogue', 'warlock']     # rule 700.12
+
 def keywords(text):
     from .cards.model import KEYWORDS
     parts = re.split(r',? and |, ', text.lower().strip())
@@ -195,6 +197,27 @@ def selector(text, *, plural=False):
         result['other'] = True
         text = text.split(' ', 1)[1]
     text = re.sub(r'^(?:a|an) ', '', text, flags=re.I)
+    # "creatures you control that entered this turn", "each creature that entered the battlefield under your control
+    # this turn" (#327): the permanents whose current object entered on this turn (Permanent.entered_turn)
+    # ("entered under your control" would need the controller it entered under, which isn't recorded: refused)
+    entered = re.search(r' that entered(?: the battlefield)?( under your control)? this turn$', text, re.I)
+    if entered:
+        if entered[1]:
+            return None
+        result['entered_turn'] = True
+        text = text[:entered.start()]
+    # "target permanent other than ~" (#645): the source itself is excluded, like "another"
+    other = re.search(r' other than (?:~|this (?:creature|permanent|artifact|enchantment|land))$', text, re.I)
+    if other:
+        result['other'] = result['other_than_source'] = True
+        text = text[:other.start()]
+    text = re.sub(r'(\bnon[a-z]+), (?=non[a-z]+\b)', r'\1 ', text, flags=re.I)    # "nonland, nontoken permanent"
+    # "creatures you control of the chosen type" (#627): the source's chosen creature type (perm.chosen_type)
+    chosen = re.search(r" of the chosen (?:creature )?type(?= you control| your opponents control| an opponent controls|$)",
+                       text, re.I)
+    if chosen:
+        result['chosen_type'] = True
+        text = text[:chosen.start()] + text[chosen.end():]
     # "creatures named Paper Tiger", "other creatures you control named ~", "creature named ~ you control" (#314):
     # a name, read up to a controller / zone phrase or the end ("~" is the source's own name)
     text = re.sub(r" on the battlefield( named .+)$", r"\1", text)    # "other creature on the battlefield named ~"
@@ -213,7 +236,8 @@ def selector(text, *, plural=False):
             text = re.sub(re.escape(scope), '', text, flags=re.I)
             result['owner'] = label
     for scope, label in ((" you control", 'mine'), (" an opponent controls", 'opp'), (" you don't control", 'opp'), (" your opponents control", 'opp'),
-                         (" each opponent controls", 'opp'), (" target opponent controls", 'opp')):
+                         (" each opponent controls", 'opp'), (" target opponent controls", 'opp'),
+                         (" that player controls", 'that_player'), (" defending player controls", 'defending')):
         if scope in text.lower():
             if 'controller' in result or text.lower().count(scope) != 1:
                 return None
@@ -221,24 +245,34 @@ def selector(text, *, plural=False):
             if tail and not tail.startswith((' with ', ' without ')):
                 return None
             text = re.sub(re.escape(scope), '', text, flags=re.I)
+            if label in ('that_player', 'defending'):
+                # the trigger's player / the player the source attacks (#338): an opponent wherever only "opp" is
+                # read; matches() narrows it to that exact player when the trigger gives one (scope_player)
+                result['scope'] = label
+                label = 'opp'
             result['controller'] = label
     base = re.search(r' with base power and toughness (\d+)/(\d+)$', text, re.I)
     if base:
         result['base_pt'] = [int(base[1]), int(base[2])]
         text = text[:base.start()]
     # Only one supported trailing predicate; additional text fails below.
-    m = re.search(r' with (power|toughness|mana value) (\d+) or (less|greater)$', text, re.I)
+    m = re.search(r' with (power|toughness|mana value) (\d+)(?: or (less|greater))?$', text, re.I)
     rel = re.search(r' with toughness greater than (?:its|their) power$', text, re.I)
     if rel:          # Doran's friends: "each creature you control with toughness greater than its power"
         result['tough_gt_power'] = True
         text = text[:rel.start()]
     elif m:
-        result['stat'] = [m[1].lower(), '<=' if m[3].lower() == 'less' else '>=', int(m[2])]
+        result['stat'] = [m[1].lower(), '==' if not m[3] else '<=' if m[3].lower() == 'less' else '>=', int(m[2])]
         text = text[:m.start()]
     else:
         m = re.search(rf' (with|without) (?:an? )?({_COUNTER}) counters?(?: on (?:it|them))?$', text, re.I)
         if m:
             result['counter'] = [m[2].lower(), m[1].lower() == 'with']
+            text = text[:m.start()]
+        elif re.search(r' with (modular|fading|level up)$', text, re.I):
+            # abilities kept as card fields, not keywords: "each creature you control with modular" (#327)
+            m = re.search(r' with (modular|fading|level up)$', text, re.I)
+            result['ability'] = m[1].lower()
             text = text[:m.start()]
         else:
             m = re.search(r' (with|without) ([a-z ]+)$', text, re.I)
@@ -251,16 +285,28 @@ def selector(text, *, plural=False):
     words = text.split()
     if plural:
         irregular = {'elves': 'Elf', 'dwarves': 'Dwarf', 'wolves': 'Wolf'}
-        words = [irregular.get(w.lower(), w[:-1] if w.lower().endswith('s') and
-                 not w.lower().endswith('ss') else w) for w in words]
+
+        def one(w):         # "Frogs," in a list keeps its comma
+            comma = ',' if w.endswith(',') else ''
+            w = w.rstrip(',')
+            return irregular.get(w.lower(), w[:-1] if w.lower().endswith('s') and not w.lower().endswith('ss')
+                                 else w) + comma
+        words = [one(w) for w in words]
     if not words:
         return None
     # Type unions are explicit. Prefix modifiers are intersections.
-    if 'or' in [w.lower() for w in words]:
-        alts = re.split(r',? or |, ', ' '.join(words).lower())
-        if not all(alt in _TYPES for alt in alts):
+    lows = [w.lower() for w in words]
+    if 'or' in lows or 'and' in lows:
+        # "artifact or creature"; a list of subtypes is a union too, with "or" or (for "each ...") "and":
+        # "target Bird, Cat, Dog, Goat, Ox, or Snake", "each Pest, Bat, Insect, Snake, and Spider you control" (#327)
+        alts = re.split(r',? or |,? and |, ', ' '.join(words).lower())
+        if 'or' in lows and all(alt in _TYPES for alt in alts):
+            result['types_any'] = alts
+        elif len(alts) > 1 and all(alt in _SUBTYPE_TYPES for alt in alts):
+            result['subtypes_any'] = alts
+            result['types_any'] = ['permanent']
+        else:
             return None
-        result['types_any'] = alts
     else:
         types = []
         for word in words:
@@ -269,23 +315,59 @@ def selector(text, *, plural=False):
                 types.append(low)
             elif low in ('tapped', 'untapped', 'attacking', 'blocking', 'legendary', 'nonlegendary', 'token', 'nontoken',
                          'nonland', 'noncreature', 'nonartifact', 'colorless', 'multicolored', 'monocolored',
-                         'suspected'):
+                         'suspected', 'snow', 'nonsnow', 'face-up') or low.startswith('non') and low[3:] in _TYPES:
                 result.setdefault('traits', []).append(low)
             elif low in _COLORS:
                 result.setdefault('colors', []).append(_COLORS[low])
+            elif low in ('outlaw', 'outlaws'):      # rule 700.12: Assassins, Mercenaries, Pirates, Rogues, Warlocks
+                result.setdefault('any_subtypes', []).extend(_OUTLAWS)
+            elif low == 'non-outlaw':
+                result.setdefault('not_subtypes', []).extend(_OUTLAWS)
             elif low.startswith('non-') and low[4:] in _SUBTYPE_TYPES:
                 result.setdefault('not_subtypes', []).append(word[4:].lower())
             elif low in _SUBTYPE_TYPES:
                 result.setdefault('subtypes', []).append(low)
             else:
                 return None
-        if not types and not result.get('subtypes'):
+        if not types and not result.get('subtypes') and not result.get('any_subtypes'):
             return None
         if types:
             result['types_all'] = types
         else:
             result['types_any'] = ['permanent']
     return result
+
+
+def scope_player(game, scope):
+    """The player "that player" / "defending player" names for the ability whose targets are being chosen or
+    checked, or None when it can't be told (then the selector's "opp" stands)."""
+    if game is None:
+        return None
+    from .engine.state import Permanent, Player, StackItem
+    item = getattr(game, "target_source", None)
+    if not isinstance(item, StackItem):
+        item = getattr(game, "resolving_item", None) or item       # group effects: the resolving ability
+    ctx = getattr(game, "trigger_context", None)
+    if ctx is None and isinstance(item, StackItem):
+        ctx = item.context
+    if scope == 'that_player':
+        chosen = getattr(game, "_choosing_targets", None) if isinstance(getattr(game, "_choosing_targets", None), list) \
+            else (item.targets if isinstance(item, StackItem) else [])
+        named = [t for t in chosen or () if isinstance(t, Player)]
+        if named:
+            return named[0]                 # "Target player ... target creature that player controls"
+        if isinstance(ctx, StackItem):
+            ctx = ctx.controller            # a cast trigger's context is the spell: its caster
+        return ctx if isinstance(ctx, Player) else None
+    src = item.source if isinstance(item, StackItem) else item
+    attacked = None
+    for obj in (ctx, src):      # the attacker: the trigger's event object ("Whenever a creature attacks"), else ~
+        attacked = game.attack_targets.get(obj) if isinstance(obj, Permanent) else None
+        if attacked is not None:
+            break
+    if isinstance(attacked, Permanent):
+        attacked = attacked.controller
+    return attacked if isinstance(attacked, Player) else None
 
 
 def _named(permanent, name, source) -> bool:
@@ -308,9 +390,18 @@ def matches(game, permanent, spec, controller, source=None):
             return False
     if spec.get('other') and permanent is source:
         return False
+    if spec.get('chosen_type'):
+        typ = getattr(source, 'chosen_type', '')
+        if not typ or not (typ.lower() in {s.lower() for s in permanent.card.subtypes}
+                           or permanent.card.changeling and permanent.is_creature):
+            return False
     if 'name' in spec and not _named(permanent, spec['name'], source):
         return False
-    if spec.get('controller') and (permanent.controller is controller) != (spec['controller'] == 'mine'):
+    scoped = scope_player(game, spec['scope']) if spec.get('scope') else None
+    if scoped is not None:
+        if permanent.controller is not scoped:
+            return False
+    elif spec.get('controller') and (permanent.controller is controller) != (spec['controller'] == 'mine'):
         return False
     if spec.get('owner') and (permanent.owner is controller) != (spec['owner'] == 'mine'):
         return False
@@ -326,7 +417,16 @@ def matches(game, permanent, spec, controller, source=None):
         return False
     if any(s in subs or changeling and s in _CREATURE_SUBTYPES for s in spec.get('not_subtypes', [])):
         return False
+    if 'subtypes_any' in spec and not any(s in subs or changeling and s in _CREATURE_SUBTYPES
+                                          for s in spec['subtypes_any']):
+        return False
+    if spec.get('any_subtypes') and not (subs & set(spec['any_subtypes']) or changeling):
+        return False
     if not all(c in permanent.card.colors for c in spec.get('colors', [])):
+        return False
+    if 'colors_any' in spec and not set(spec['colors_any']) & set(permanent.card.colors):       # "red or green"
+        return False
+    if set(spec.get('not_colors', ())) & set(permanent.card.colors):                            # "nonblack"
         return False
     for trait in spec.get('traits', []):
         if trait in ('tapped', 'untapped') and permanent.tapped != (trait == 'tapped'):
@@ -335,30 +435,44 @@ def matches(game, permanent, spec, controller, source=None):
             return False
         if trait in ('token', 'nontoken') and permanent.card.is_token != (trait == 'token'):
             return False
+        if trait == 'face-up' and getattr(permanent, 'hidden', None) is not None:
+            return False        # face down: manifested / morphed / disguised (Permanent.hidden) (#540)
         if trait.startswith('non') and trait[3:] in _TYPES and has_type(trait[3:]):
             return False
         if trait == 'colorless' and permanent.card.colors or trait == 'multicolored' and len(permanent.card.colors) < 2 or trait == 'monocolored' and len(permanent.card.colors) != 1:
             return False
         if trait == 'attacking' and permanent not in game.attackers:
             return False
+        if trait == 'declared_attacker' and not (permanent in game.attackers and           # declared, not put onto
+                                                 getattr(permanent, 'attack_count', (None, 0))[0] == game.turn):  # the battlefield attacking
+            return False
         if trait == 'blocking' and not any(permanent in group for group in game.blocks.values()):
             return False
         if trait == 'suspected' and not permanent.has('suspected'):
             return False
+        if trait in ('snow', 'nonsnow') and bool(permanent.card.snow) != (trait == 'snow'):
+            return False
     if 'counter' in spec:
         name, positive = spec['counter']
-        if (permanent.counters.get(name, 0) > 0) != positive:
+        has = any(n > 0 for n in permanent.counters.values()) if name in ('a', 'an') else \
+            permanent.counters.get(name, 0) > 0         # "with a counter on it": any kind (#630)
+        if has != positive:
             return False
     if 'keyword' in spec:
         name, present = spec['keyword']
         if permanent.has(name) != present:
             return False
+    if spec.get('entered_turn') and getattr(permanent, 'entered_turn', -1) != game.turn:
+        return False
+    if 'ability' in spec and not (permanent.card.level_blocks if spec['ability'] == 'level up'
+                                  else getattr(permanent.card, spec['ability'], 0)):
+        return False
     if spec.get('tough_gt_power') and not permanent.toughness > permanent.power:
         return False
     if 'stat' in spec:
         stat, op, n = spec['stat']
         value = permanent.card.cmc if stat == 'mana value' else getattr(permanent, stat)
-        if not (value <= n if op == '<=' else value >= n):
+        if not (value <= n if op == '<=' else value >= n if op == '>=' else value == n):
             return False
     return True
 
@@ -402,6 +516,8 @@ def build(kind, obj, *, amount=0, amount2=0, data=None):
         return None
     target, more = subj
     combined = dict(more, **(data or {}))
+    if isinstance(more.get('selector'), dict) and more['selector'].get('other_than_source'):
+        combined['other_than_source'] = True
     if target == 'group':
         return Effect('permanent_group', data={'selector': more['selector'], 'effect':
                       Effect(kind, amount, amount2, target='self', data=data or {})})
@@ -479,6 +595,15 @@ def parse_line(line, st):
     if m and m[2].lower() not in ('+1/+1', '-1/-1') and not st.extra.get('etb_named_counters'):
         st.extra['etb_named_counters'] = (m[2].lower(), _num(m[1]))
         return True
+    # "Other creatures you control have ward {1}": a parameter the plain keyword grants can't carry; Permanent.ward
+    # reads advanced_rules["static_ward"] (selector, N) from every battlefield source.
+    m = re.fullmatch(r'((?:Other |All |Each )?[A-Za-z][^.{}"]*? you control(?: with [^.{}"]+?)?) (?:have|has) ward \{(\d+)\}\.', line)
+    if m:
+        spec = selector(re.sub(r'^(?:All|Each) ', '', m[1]), plural=True)
+        if spec is not None and 'keyword' not in spec and spec.get('counter', ('x',))[0] not in ('a', 'an', 'any'):
+            rules = st.extra.setdefault('advanced_rules', {})
+            rules['static_ward'] = rules.get('static_ward', ()) + ((spec, int(m[2])),)
+            return True
     # Static keyword grants reuse the same selectors as targeted operations.
     m = re.fullmatch(r'(.+?) (?:have|has) (.+)\.', line)
     if m:

@@ -189,6 +189,17 @@ def parse_except(text: str, mods: dict | None = None) -> dict | None:
                 mods["keywords"] = mods.get("keywords", frozenset()) | kws
             continue
         m = re.fullmatch(rf"(?:{_SUBJ} )?enters? with (?P<n>an|one|two|three|four|five|X) additional {_COUNTER} "
+                         rf"counters? on (?:it|him|her|them) if (?P<cond>it's a creature|it's a planeswalker|"
+                         rf"you control that creature)", c, flags=re.I) or \
+            re.fullmatch(rf"(?:{_SUBJ} )?enters? with (?P<n>a|an|one) {_COUNTER} counters? on (?:it|him|her|them) "
+                         rf"if (?P<cond>you control that creature)", c, flags=re.I)
+        if m:
+            # "it enters with an additional +1/+1 counter on it if it's a creature" (Spark Double), "with a shield
+            # counter on it if you control that creature" (Undercover Operative): checked as the copy enters
+            cond = {"it's a creature": "creature", "it's a planeswalker": "planeswalker"}.get(m["cond"].lower(), "mine")
+            mods["counters_if"] = tuple(mods.get("counters_if", ())) + ((m["counter"], _num(m["n"].lower()), cond),)
+            continue
+        m = re.fullmatch(rf"(?:{_SUBJ} )?enters? with (?P<n>an|one|two|three|four|five|X) additional {_COUNTER} "
                          rf"counters? on (?:it|him|her|them)", c, flags=re.I)
         if m:
             n = "x" if m["n"] == "X" else _num(m["n"].lower())
@@ -330,6 +341,10 @@ EFFECT_PATTERNS = [
      r"(?P<nonlegendary>, except the copy isn't legendary)?(?: and you may choose new targets for the cop(?:y|ies))?",
      lambda m: _effect("copy_next_spell", what=m["a"] or m["b"], max_cmc=int(m["cmc"] or 99),
                        n=2 if m["twice"] else 1, **({"exc": {"legendary": False}} if m["nonlegendary"] else {}))),
+    (r"target (?P<subj>artifact|creature|permanent)(?P<subjmine> you control)? becomes a copy of (?:another|a second) "
+     r"target (?P<kind>artifact or creature|creature or artifact|artifact|creature|permanent)(?P<mine> you control)? "
+     r"until end of turn(?:, except (?P<exc>.+?))?",
+     lambda m: _become_pair(m)),
     (r"each (?P<other>other )?(?P<kind>creature|artifact|permanent)(?P<mine> you control)?"
      r"(?P<chosen> other than the chosen (?:creature|artifact|permanent))? becomes? a copy of "
      r"(?:that (?:creature|artifact|permanent)|it) until end of turn(?:, except (?P<exc>.+?))?",
@@ -391,17 +406,54 @@ def _become_group(m):
                                                       "mods": mods, "eot": True})
 
 
+def _become_pair(m):
+    """"Target artifact you control becomes a copy of another target artifact or creature you control until end
+    of turn, except ..." (Saheeli, Sublime Artificer; Shuri): two distinct targets, the first becomes a copy of
+    the second. The first is a choose-target marker, the copy effect targets the model."""
+    from .cards import NO_MATCH, Effect
+    from .permanent_templates import selector
+    mods = parse_except(m["exc"]) if m["exc"] else {}
+    subj = selector(m["subj"] + (" you control" if m["subjmine"] else ""))
+    model = selector(m["kind"] + (" you control" if m["mine"] else ""))
+    if mods is None or subj is None or model is None or mods.get("counters") or mods.get("counters_if"):
+        return NO_MATCH
+    return [Effect("die_roll", target="permanent", data={"sides": 0, "selector": subj, "distinct": True}),
+            Effect("become_copy", target="permanent", data={"pair": True, "selector": model, "distinct": True,
+                                                            "mods": mods, "eot": True})]
+
+
+def _pair_subject(item, eff):
+    """The first target of a pair copy: the target slot right before eff in the resolving item."""
+    effects = list(getattr(item, "effects", None) or ())
+    targets = list(getattr(item, "targets", None) or ())
+    i = next((n for n, e in enumerate(effects) if e is eff), None)
+    return targets[i - 1] if i and i - 1 < len(targets) else None
+
+
 def group_model(game, me, eff, card):
     """AI: the permanent to name with the "choose target creature" right before a group copy (the best one of
     me's that can be targeted), or None when eff isn't such a choice."""
+    if eff.kind == "become_copy" and eff.data.get("pair"):           # the model: the best other legal one
+        chosen = list(getattr(game, "_choosing_targets", []) or [])
+        pool = [x for x in game.legal_targets(me, eff) if getattr(x, "controller", None) is me
+                and not any(x is c for c in chosen)]
+        return max(pool, key=lambda x: score(x.card), default=None)
     if card is None:        # an ability: the source being activated (game.targeting)
         src = getattr(game, "target_source", None)
         src_card = getattr(src, "card", src)
-        effects = next((list(a.effects) for a in getattr(src_card, "activated", ()) or ()
-                        if any(e is eff for e in a.effects)), [])
+        lists = [list(a.effects) for a in getattr(src_card, "activated", ()) or ()] + \
+            [list(effs) for _, effs in getattr(src_card, "loyalty_abilities", ()) or ()]
+        effects = next((effs for effs in lists if any(e is eff for e in effs)), [])
     else:
         effects = list(getattr(card, "spell_effects", ()) or ())
     i = next((n for n, e in enumerate(effects) if e is eff), None)
+    if i is not None and i + 1 < len(effects) and effects[i + 1].kind == "become_copy" and \
+            effects[i + 1].data.get("pair"):
+        # the subject of a pair copy: the least valuable legal one, if a better model exists
+        pool = sorted((x for x in game.legal_targets(me, eff) if getattr(x, "controller", None) is me),
+                      key=lambda x: score(x.card))
+        models = [x for x in game.legal_targets(me, effects[i + 1]) if getattr(x, "controller", None) is me]
+        return next((x for x in pool if any(score(m.card) > score(x.card) for m in models if m is not x)), None)
     if i is None or i + 1 >= len(effects) or effects[i + 1].kind != "become_copy" or \
             not effects[i + 1].data.get("group"):
         return None
@@ -444,7 +496,9 @@ _CLONE = re.compile(
     rf"(?:any (?P<any>{_CLONE_KIND}(?: or {_CLONE_KIND})?) on the battlefield|"
     rf"an? (?P<ctl>{_CLONE_KIND}(?: or {_CLONE_KIND})?) (?P<who>you control|an opponent controls)|"
     r"(?:any|an?) (?P<gy>creature|land) card in a graveyard)(?:, except (?P<exc>.+?))?\."
-    r"(?P<exile> When you do, exile that card\.)?")
+    r"(?P<exile> When you do, exile that card\.)?"
+    r"(?P<copyctr> If you do, it enters with additional counters on it equal to the same number and kinds of "
+    r"counters the copied permanent has on it\.)?")
 
 
 _CAST_COPY = re.compile(
@@ -470,23 +524,34 @@ def parse_line(line: str) -> dict | None:
     zone = "graveyard" if m["gy"] else "battlefield"
     who = {"you control": "mine", "an opponent controls": "opp"}.get(m["who"] or "", "any")
     kind = m["gy"] or m["any"] or m["ctl"]
+    if m["copyctr"]:
+        if zone != "battlefield":
+            return None
+        mods = dict(mods, copy_counters=True)       # Dominion Saboteur
     return {"clone": {"zone": zone, "who": who, "what": kind, "mods": mods, "tapped": bool(m["tapped"]),
                       "exile": bool(m["exile"])}}
 
 
 # ------------------------------------------------------------------ the engine side
 
+# the separators of a description's alternatives: "A or B", "A, B, or C", "A and B", "A, B, and C", "A and/or B"
+ALTERNATIVES = re.compile(r",? and/or |,? or |,? and |, ")
+
+
 def fits(card, what: str, perm=None) -> bool:
     """Whether a card (or permanent) is one of "artifact or creature", "nonland permanent", "Elemental",
-    "nontoken creature", "artifact token", "artifact, creature, or land" ..."""
+    "nontoken creature", "artifact token", "artifact, creature, or land" ... "and" between nouns is a union too:
+    "instant and sorcery cards" are the cards that are an instant or a sorcery (#449)."""
     is_creature = perm.is_creature if perm is not None else card.is_creature
-    for alt in re.split(r",? or |, ", what.strip()):
+    for alt in ALTERNATIVES.split(what.strip()):
         ok = True
         for w in alt.split():
             lw = w.lower()
-            if lw in ("permanent", "nonlegendary"):
+            if lw == "permanent":
                 continue
-            if lw == "token":
+            if lw in ("legendary", "nonlegendary"):       # "another legendary creature you control dies" (Havi)
+                ok &= bool(card.legendary) == (lw == "legendary")
+            elif lw == "token":
                 ok &= card.is_token
             elif lw == "nontoken":
                 ok &= not card.is_token
@@ -560,11 +625,22 @@ def exception_changes(card, mods: dict) -> dict:
     return changes
 
 
-def entry_counters(mods: dict, x: int = 0) -> dict:
+def entry_counters(mods: dict, x: int = 0, card=None, model=None, controller=None) -> dict:
     """The counters "except it enters with N additional ... counters on it" puts on the copy as it enters.
-    They are not copiable values, so they are not part of the copy's CardDef."""
-    return {kind: (x if n == "x" else n) for kind, n in (mods or {}).get("counters", {}).items()
-            if (x if n == "x" else n)}
+    They are not copiable values, so they are not part of the copy's CardDef. card is the copy, model the
+    permanent it copies: for the conditional counters and "the same number and kinds of counters"."""
+    out = {kind: (x if n == "x" else n) for kind, n in (mods or {}).get("counters", {}).items()
+           if (x if n == "x" else n)}
+    for kind, n, cond in (mods or {}).get("counters_if", ()):
+        if cond == "creature" and card is not None and card.is_creature or \
+                cond == "planeswalker" and card is not None and "Planeswalker" in card.types or \
+                cond == "mine" and model is not None and controller is not None and model.controller is controller:
+            out[kind] = out.get(kind, 0) + n
+    if (mods or {}).get("copy_counters") and model is not None:
+        for kind, n in model.counters.items():
+            if n > 0:
+                out[kind] = out.get(kind, 0) + n
+    return out
 
 
 def unfired_notes(types, triggers) -> list:
@@ -579,11 +655,12 @@ def unfired_notes(types, triggers) -> list:
     return []
 
 
-def clone_entry_counters(card, front, x: int, counters: dict | None) -> dict | None:
+def clone_entry_counters(card, front, x: int, counters: dict | None, game=None, p=None) -> dict | None:
     """enter_battlefield hook: a clone that entered as a copy (card is not front) gets the counters of its
     "except it enters with N additional ... counters on it" too, before its enter triggers are checked."""
     spec = getattr(front, "clone", None)
-    extra = entry_counters(spec["mods"], x) if spec and card is not front else {}
+    model = getattr(game, "_clone_model", None) if game is not None else None
+    extra = entry_counters(spec["mods"], x, card, model, p) if spec and card is not front else {}
     if not extra:
         return counters
     merged = dict(counters or {})
@@ -617,6 +694,11 @@ def value(game, me, eff, source=None) -> float:
         best = sorted((score(x.card) for x in cands), reverse=True)
         v = sum(best) if d.get("each") else best[0] * max(n, 1)
         return v / 2 if d.get("mods", {}).get("sac_end") else v
+    if k == "become_copy" and d.get("pair"):
+        mine = [x for x in me.battlefield if game.targetable(x, me)]
+        gain = max((score(a.card) - score(b.card) for a in mine for b in mine if a is not b
+                    and fits(a.card, "permanent", a)), default=0)
+        return gain if gain > 0 else -1
     if k == "become_copy" and d.get("group"):
         # "each other creature you control becomes a copy of the chosen one": worth the upgrade of the group
         # to the best permanent the choice could name
@@ -722,9 +804,17 @@ def resolve(game, p, eff, target, item=None):
         chosen = cands if d.get("each") else [max(cands, key=lambda x: score(x.card))]
         for perm in chosen:
             for _ in range(n):
-                game.enter_battlefield(p, make_copy(perm.copiable_card, d.get("mods", {})),
-                                       counters=entry_counters(d.get("mods"), getattr(item, "x", 0)) or None)
+                new = make_copy(perm.copiable_card, d.get("mods", {}))
+                game.enter_battlefield(p, new, counters=entry_counters(d.get("mods"), getattr(item, "x", 0),
+                                                                       new, perm, p) or None)
             game.log(f"creates {n} token cop{'y' if n == 1 else 'ies'} of {perm.card.name}", p)
+    elif k == "become_copy" and d.get("pair"):
+        from .engine.state import Permanent
+        subject = _pair_subject(item, eff)
+        if not all(isinstance(x, Permanent) and x in x.controller.battlefield for x in (subject, target)) \
+                or subject is target:
+            return
+        _become_one(game, subject.controller, subject, target, d, eff)
     elif k == "become_copy" and d.get("group"):
         from .engine.state import Permanent
         if not isinstance(target, Permanent) or target not in target.controller.battlefield:
@@ -882,6 +972,7 @@ def wants_spell(effects) -> bool:
 def clone_on_enter(game, p, card):
     """The card a clone enters as: (card to use, card that goes to the graveyard later)."""
     spec = card.clone
+    game._clone_model = None        # the permanent copied, for clone_entry_counters
     if not spec:
         return card, card
     if spec["zone"] == "graveyard":
@@ -906,6 +997,7 @@ def clone_on_enter(game, p, card):
         if best is None:
             return card, card
         src_card = best.copiable_card
+        game._clone_model = best
     copied = make_copy(src_card, spec["mods"], token=card.is_token,
                        name=card.name if spec["mods"].get("keep_name") else None)
     if spec["tapped"]:

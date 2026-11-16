@@ -21,7 +21,7 @@ _HEAD = re.compile(r"(?:When|Whenever) ~ ([^,]+),")
 # Events whose trigger context is not ~ itself (a damaged player, a blocker, nothing). Entering, turning face up
 # and mutating already start "prev" at ~, and some kinds read "prev" specially there ("create a token, then attach
 # ~ to it": auras.py), so those heads are left alone.
-_EVENTS = re.compile(r"(?:attacks|blocks|becomes blocked|blocks or becomes blocked|attacks or blocks|attacks while saddled|"
+_EVENTS = re.compile(r"(?:attacks|attacks while [^,]+|attacks and isn't blocked|blocks|becomes blocked|blocks or becomes blocked|attacks or blocks|attacks while saddled|"
                      r"becomes (?:un)?tapped|is dealt damage|deals (?:combat )?damage(?: to (?:a player|an opponent))?)")
 # Effects that may come before "it" without giving it another antecedent: costs and their "if you do" gates.
 _GATES = {"pay_gate", "pay_energy", "link_start", "link_check", "sac_filtered"}
@@ -46,7 +46,10 @@ def bind(line: str, triggers) -> list:
     if not head or not _EVENTS.fullmatch(head[1]):
         return triggers
     body = line[head.end():]
-    if not re.search(r"\b(?:it|he|she)\b", body) or re.search(r"\bthat (?:creature|permanent|card)\b", body):
+    # a reflexive "When you do, ... Exile that card." names its own objects; only the part before it can give
+    # "it" another antecedent
+    lead = re.split(r"\. When you do, ", body, maxsplit=1)[0]
+    if not re.search(r"\b(?:it|he|she)\b", lead) or re.search(r"\bthat (?:creature|permanent|card)\b", lead):
         return triggers          # "~ deals 1 damage to that creature" is the other combatant, also "prev"
     if len({tuple(e.kind for e in t.effects) for t in triggers}) > 1:
         # one ability split over several Triggers ("gain control of target land ... Untap it."): in the later

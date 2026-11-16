@@ -13,7 +13,8 @@ import re
 _N = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
       "nine": 9, "ten": 10}
 _NUM = r"(a|an|one|two|three|four|five|six|seven|eight|nine|ten|\d+)"
-KINDS = ("sacrifice_n", "untap_self", "remove_sac", "remove_creature_counter", "exile_top_library", "exile_top_gy")
+KINDS = ("sacrifice_n", "untap_self", "remove_sac", "remove_creature_counter", "exile_top_library", "exile_top_gy",
+         "half_life", "remove_perm_counter", "hand_top")
 
 
 def _n(word: str) -> int:
@@ -33,6 +34,12 @@ def parse_part(part: str, extra: dict) -> bool:
         spec = ("exile_top_library", 1 if m[1] == "card" else _n(m[1]), {})
     elif (m := re.fullmatch(r"Exile the top (?:(creature|land|artifact|instant|sorcery) )?card of your graveyard", part)):
         spec = ("exile_top_gy", 1, {"type": m[1]} if m[1] else {})
+    elif (m := re.fullmatch(r"Pay half your life, rounded (up|down)", part)):
+        spec = ("half_life", 1, {"up": m[1] == "up"})
+    elif (m := re.fullmatch(rf"Remove {_NUM} counters? from (?:a|another) permanents? you control", part)):
+        spec = ("remove_perm_counter", _n(m[1]), {})
+    elif (m := re.fullmatch(rf"Put {_NUM} cards? from your hand on top of your library", part)):
+        spec = ("hand_top", _n(m[1]), {})
     elif (m := re.fullmatch(rf"Sacrifice {_NUM} (.+)", part)):
         from .permanent_templates import selector
         n = _n(m[1])
@@ -65,6 +72,12 @@ def _sac_pool(game, p, perm, spec):
     return sorted((x for x in p.battlefield if x is not perm and matches(game, x, spec, p, perm)), key=perm_value)
 
 
+def _counter_holders(p):
+    """Permanents holding counters, the least valuable first."""
+    from .cx_costs import _cheap
+    return _cheap([x for x in p.battlefield if any(v > 0 for v in x.counters.values())])
+
+
 def payable(game, p, perm, kind, n, spec) -> bool:
     if kind == "sacrifice_n":
         return len(_sac_pool(game, p, perm, spec)) >= n
@@ -78,6 +91,12 @@ def payable(game, p, perm, kind, n, spec) -> bool:
         return len(p.library) >= n
     if kind == "exile_top_gy":
         return _gy_pick(p, spec) is not None
+    if kind == "half_life":
+        return p.life >= 1
+    if kind == "remove_perm_counter":
+        return len(_counter_holders(p)) > 0 and sum(sum(v for v in x.counters.values() if v > 0) for x in p.battlefield) >= n
+    if kind == "hand_top":
+        return len(p.hand) >= n
     return False
 
 
@@ -99,6 +118,23 @@ def pay_one(game, p, perm, kind, n, spec) -> bool:
         if not pool:
             return False
         pool[0].counters[spec["counter"]] -= n
+    elif kind == "half_life":
+        game.change_life(p, -(((p.life + 1) // 2) if spec["up"] else p.life // 2), f"{perm.card.name}: ability cost")
+    elif kind == "remove_perm_counter":
+        for _ in range(n):
+            holders = _counter_holders(p)
+            if not holders:
+                return False
+            name = max((k for k, v in holders[0].counters.items() if v > 0), key=lambda k: holders[0].counters[k])
+            holders[0].counters[name] -= 1
+    elif kind == "hand_top":
+        from .cx_costs import _cheap
+        for _ in range(n):
+            if not p.hand:
+                return False
+            c = _cheap(list(p.hand))[0]
+            p.hand.remove(c)
+            p.library.append(c)
     elif kind == "exile_top_library":
         for _ in range(n):
             game.move_card(p.library[-1], p.library, p.exile, reason="cost")
@@ -119,5 +155,7 @@ def ai_cost_ok(game, me, perm, costs) -> bool:
             if any(not v.card.is_token and perm_value(v) > 1 for v in _sac_pool(game, me, perm, spec)[:n]):
                 return False
         elif kind == "exile_top_library" and len(me.library) < n + 10:
+            return False
+        elif kind == "half_life" and me.life < 12:
             return False
     return True

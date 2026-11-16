@@ -4,13 +4,20 @@ from __future__ import annotations
 import dataclasses
 import re
 
-from .. import alt_casts, auras, copies, cx_events, cx_trig_events, milling
+from .. import alt_casts, auras, copies, cx_delayed, cx_events, cx_trig_events, milling
 from ..cards import CardDef, Effect
 from .. import modal, rules_events, phase_conditions, turn_conditions, counter_mechanics, cx_condlib
 from ..identity import CardInstance, CardZone
 from ..actions import perform, can_perform
 from .state import Permanent, Player, StackItem, TARGETED, TrackedZone, _gy_desc, card_matches
 from .policy import perm_value
+
+
+def _shrink(e) -> int:
+    """How much toughness a forced harmful effect takes away (0 when it doesn't shrink or deal damage)."""
+    if e.kind in ("debuff_one", "damage") or e.kind == "add_counter" and e.data.get("counter") == "-1/-1":
+        return e.amount if isinstance(e.amount, int) else 0
+    return 0
 
 
 class StackMixin:
@@ -90,6 +97,7 @@ class StackMixin:
         self.rule_events.emit(rules_events.RulesEvent(event, p, source, context, subject, before,
                                                       amount=amount if amount is not None else 0))
         self._dispatch_trigger_event(p, event, source, context, subject, targeter)
+        self.event_targeter = targeter      # "becomes the target of a spell you control" (cx_trig_heads)
         cx_events.observe(self, p, event, source, context, subject)
         if event == "dies" and self.cx_watchers:
             from .. import cx_trig_watch
@@ -246,6 +254,8 @@ class StackMixin:
                                if e.data.get("xq", ("",))[0] == "spell" or e.target == "that_controller"
                                or e.data.get("who") == "spell_controller" else e
                                for e in effects]
+                from ..cx_grammar_zones import bake_event
+                effects = bake_event(effects, subject)      # "with lesser mana value": the event creature's (LKI)
                 if subject is not None and any(e.data.get("subject_power") for e in effects):
                     effects = [dataclasses.replace(e, amount=max(0, subject.power)) if e.data.get("subject_power")
                                else e for e in effects]
@@ -272,16 +282,16 @@ class StackMixin:
             # "its controller" in "Whenever enchanted creature ..., its controller ..." is the creature's (#361)
             ctx = lambda effects: source if any(e.target == "that_controller" or e.data.get("who") == "that_controller"
                                                 or e.data.get("ref_subject") for e in effects) else context
-            for equipment in source.equipment:
-                for trig in equipment.card.host_triggers:
-                    if trig.event == event:
-                        self.queue_trigger(equipment.controller, self._that_much(trig.effects), source,
-                                           equipment.card.name, ctx(trig.effects))
-            for aura in list(source.auras):
-                for trig in aura.card.host_triggers:
-                    if trig.event == event:
-                        self.queue_trigger(aura.controller, self._that_much(trig.effects), source, aura.card.name,
-                                           ctx(trig.effects))
+            for attached in list(source.equipment) + list(source.auras):
+                for trig in attached.card.host_triggers:
+                    if trig.event != event:
+                        continue
+                    if trig.data.get("attachment_source"):      # "~" is the Equipment / Aura itself (#793)
+                        self.queue_trigger(attached.controller, self._that_much(trig.effects), attached,
+                                           attached.card.name, source)
+                    else:
+                        self.queue_trigger(attached.controller, self._that_much(trig.effects), source,
+                                           attached.card.name, ctx(trig.effects))
         if source is None and p.suspended:     # "if this card is suspended" abilities (Deep-Sea Kraken)
             from ..time_counters import suspended_triggers
             suspended_triggers(self, p, event, context)
@@ -326,21 +336,30 @@ class StackMixin:
         return True
 
     def force_damage_targets(self, controller, effects, targets, source):
-        """A mandatory trigger must target when a legal creature exists, killable or not: damage (#295) and
-        -N/-N (#377). Not after a "you may" gate, nor for optional targets."""
+        """A mandatory trigger must target when a legal permanent exists (CR 603.3d), whatever the policy thinks of
+        it: damage (#295), -N/-N (#377), and any other targeted effect the policy declined, such as a drawback on
+        our own creature or a mode it chose (#823). Not after a "you may" gate, nor for optional targets."""
         targets = list(targets)
         may = False
         for i, e in enumerate(effects):
             may = may or e.kind == "pay_gate" and (e.data.get("gate") or ("",))[0] == "may"
-            hostile = e.kind == "damage" and e.target == "creature" or e.kind == "debuff_one" and e.target in TARGETED
-            if not hostile or may or e.data.get("optional") or e.data.get("optional_target") or i >= len(targets) \
+            hostile = e.target in TARGETED and e.target not in ("self", "prev", "multi", "player", "any") \
+                or e.kind == "damage" and e.target == "creature"
+            if not hostile or may or e.data.get("optional") or e.data.get("optional_target") \
+                    or e.data.get("optional_from") is not None or e.data.get("may") or i >= len(targets) \
                     or targets[i] is not None:
                 continue
             with self.targeting(source):
                 legal = [x for x in self.legal_targets(controller, e) if isinstance(x, Permanent)]
-            enemies = [x for x in legal if x.controller is not controller] or legal
+            # Same rule as the blink chooser (#774/#780): the opponent's best, else our least valuable one, preferring
+            # one the effect doesn't kill (a 5/5 shrinks for the turn rather than a 2/2 dying).
+            enemies = [x for x in legal if x.controller is not controller]
             if enemies:
                 targets[i] = max(enemies, key=perm_value)
+            elif legal:
+                n = _shrink(e)
+                safe = [x for x in legal if not n or x.toughness - getattr(x, "damage", 0) > n]
+                targets[i] = min(safe or legal, key=perm_value)
         return targets
 
     @staticmethod
@@ -371,6 +390,9 @@ class StackMixin:
                 if item.kind == "spell" and tgt.controller is item.controller:
                     self.fire(tgt.controller, "heroic", source=tgt)
         for tgt in unique_targets:
+            if isinstance(tgt, Player):                 # "Whenever you become the target of ..." (cx_trig_heads)
+                self.fire(tgt, "player_targeted", context=item, targeter=item)
+        for tgt in unique_targets:
             if isinstance(tgt, Permanent) and tgt.controller is item.controller and tgt in tgt.controller.battlefield:
                 self.fire(tgt.controller, "targeted_mine", source=tgt, targeter=item)  # Valiant
         for tgt in unique_targets:
@@ -394,6 +416,7 @@ class StackMixin:
         item = self.stack.pop()
         p = item.controller
         self.last_dealt = 0          # "the damage dealt this way" only counts damage from this resolution
+        self.excess_dealt = 0        # "excess damage ... this way" (excess_damage.py) likewise
         if item.intervening_if and not self.check_cond(p, Effect("condition", cond=item.intervening_if), item, None):
             self.log(f"{item} does not resolve (intervening condition is false)", p)
             self.state_based_actions()
@@ -422,6 +445,7 @@ class StackMixin:
                     return
             self._entry_mana_colors = getattr(item, "mana_colors", set())
             self._entry_mana_by_color = getattr(item, "mana_by_color", {})
+            self._entry_mana_from = getattr(item, "mana_from", {})
             self._entry_cast = (kind == "kicker" or getattr(item, "kicks", 0) > 0,
                                 bool(getattr(item, "cast_from_hand", False)), getattr(item, "mana_spent", 0))
             if kind in ("disturb", "room_right", "siege"):   # cast transformed: its back face enters (a Room's right door)
@@ -434,10 +458,12 @@ class StackMixin:
                 from ..cx_mech import room_entered
                 room_entered(perm)
             perm.cast_zone = getattr(item, "cast_zone", None)       # "if it was cast from exile" (cx_condlib)
+            cx_delayed.flash_resolved(self, perm, item)             # cast as an instant: sacrificed at cleanup
             if base.aura == "player":
                 perm.curse_target = self.opponent(p)
             self._entry_mana_colors = set()
             self._entry_mana_by_color = {}
+            self._entry_mana_from = {}
             self._spent = ""
             if kind in ("disguise", "morph", "megamorph"):
                 perm.hidden = base
@@ -486,6 +512,7 @@ class StackMixin:
         targeted = [(e, t) for e, t in zip(item.effects, item.targets)        # a list with nobody chosen: no target
                     if e.target in TARGETED and not (t is None and e.data.get("optional_target"))
                     and not e.data.get("chosen")          # a choice on resolution, not a target (#360)
+                    and not e.data.get("resolves_anyway")  # "This ability still resolves if its target becomes illegal"
                     and not (e.target == "multi" and not t)]
         with self.targeting(item):
             item.resolved = not (targeted and all(not (self.legal_target(p, e, t) if e.target != "multi" else
@@ -502,6 +529,7 @@ class StackMixin:
             prev = item.context if item.kind == "trigger" and isinstance(item.context, Permanent) else None
             done: list = []
             instead_choices = {}
+            just_made = None    # the one token the effect just before created: "it" right after "Create a ... token"
             for i, (eff, tgt) in enumerate(zip(item.effects, item.targets)):   # "would die this turn" must precede the damage
                 if eff.kind == "exile_instead" and i and isinstance(item.targets[i - 1], Permanent):
                     item.targets[i - 1].exile_turn = self.turn
@@ -519,7 +547,7 @@ class StackMixin:
                     if isinstance(tgt, StackItem):
                         item.target_spell = tgt        # "that spell" still names it after a later target
                 elif eff.target == "prev":
-                    tgt = prev
+                    tgt = just_made if just_made is not None else prev
                 if eff.data.get("distinct") and any(t is tgt for e2, t in zip(item.effects, item.targets)
                                                     if e2 is not eff and e2.data.get("distinct") and e2.kind == eff.kind
                                                     and e2 in done):
@@ -539,7 +567,23 @@ class StackMixin:
                     continue
                 if eff.data.get("may_hostile") and not self.hostile_target(p, tgt):
                     continue                  # "you may ...": declined unless it hits the opponent
-                self.resolve(p, eff, tgt, item, prev)
+                # CR 704.3: state-based actions wait until the whole item has resolved (checked below), so a 0/0
+                # token gets the counters the next effect puts on it (Wild Hypothesis, #682)
+                self._mid_resolution = getattr(self, "_mid_resolution", 0) + 1
+                serial = getattr(self, "_token_serial", 0)
+                item.created_token = just_made
+                try:
+                    self.resolve(p, eff, tgt, item, prev)
+                finally:
+                    self._mid_resolution -= 1
+                if eff.target == "self" and prev is None and getattr(item, "context", None) is None \
+                        and isinstance(item.source, Permanent):
+                    # "{3}: Tap ~. It gains indestructible ...": with no earlier object and nothing the ability is
+                    # about (a trigger's subject or spell is its own "that ..."), "it" after an effect on ~ is ~ (#810)
+                    prev = item.source
+                just_made = self._last_token if getattr(self, "_token_serial", 0) == serial + 1 else None
+                if eff.kind.endswith("_self") and eff.target in ("none", "self") and isinstance(item.source, Permanent):
+                    prev = item.source      # "Untap ~ and put a +1/+1 counter on it": "it" is ~ (audit round 3)
                 if self.over:
                     break
         if item.kind == "chapter":
@@ -603,6 +647,8 @@ class StackMixin:
         c = eff.cond
         if not c:
             return True
+        if c == "your_turn":        # "if it's (not) your turn" (cx_condlib aliases; "!your_turn" negates below, #721)
+            return self.active is p
         if c == 'attacking_most_life':
             return counter_mechanics.is_attacking_most_life(self, item.source if item else None, p)
         phase_condition = phase_conditions.check(p, c, item)
@@ -641,6 +687,8 @@ class StackMixin:
                 item.source.counters.get("charge", 0) >= int(c[8:])
         if c == "paid":
             return bool(getattr(item, "gate_paid", False))
+        if c in ("flip_won", "flip_lost"):         # the last coin flip of this ability (never flipped: neither)
+            return getattr(item, "flip_result", None) is (c == "flip_won")
         if c == "unpaid":                          # the other side of a coin flip
             return not getattr(item, "gate_paid", False)
         if c == "harnessed":

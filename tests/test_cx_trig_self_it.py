@@ -22,6 +22,9 @@ class Parsing(unittest.TestCase):
         self.assertEqual(targets("Whenever ~ deals combat damage to a player, put a +1/+1 counter on it."), [["self"]])
         self.assertEqual(targets("Whenever ~ becomes untapped, put two +1/+1 counters on it."), [["self"]])
         self.assertEqual(targets("Whenever ~ attacks or blocks, it gets +1/+1 until end of turn."), [["self"], ["self"]])
+        self.assertEqual(targets("Whenever ~ attacks while you don't control another Dinosaur, "
+                                 "put a stun counter on it."), [["self"]])
+        self.assertEqual(targets("Whenever ~ attacks and isn't blocked, it gets +2/+0 until end of turn."), [["self"]])
         got = targets("Whenever ~ attacks, you may pay {1}. If you do, it gains flying until end of turn.")[0]
         self.assertNotIn("prev", got)
 
@@ -70,6 +73,31 @@ class Behaviour(unittest.TestCase):
         self.game.settle()
         self.assertNotIn(raider, self.a.battlefield)
         self.assertTrue(any(c.name == "Saprazzan Raider" for c in self.a.hand))
+
+    @unittest.skipUnless(os.path.exists(DB), "card database not built")
+    def test_real_cards_with_conditions_and_reflexes(self):
+        from mtgsim.carddb import CardDB
+        db = CardDB(offline=True)
+        hammer = self.game.enter_battlefield(self.a, db.get("Pugnacious Hammerskull"))    # "attacks while ..."
+        self.game.fire(self.a, "attacks", hammer)
+        self.game.settle()
+        self.assertEqual(hammer.counters.get("stun"), 1)
+        blade = self.game.enter_battlefield(self.a, db.get("Brazen Blademaster"))
+        for _ in range(2):
+            self.game.enter_battlefield(self.a, card("Test Rock", "{1}", "Artifact"))
+        self.game.fire(self.a, "attacks", blade)
+        self.game.settle()
+        self.assertEqual((blade.power, blade.toughness), (4, 4))
+        cyber = self.game.enter_battlefield(self.a, db.get("Cybermat"))                   # "attacks and isn't blocked"
+        self.game.attackers = [cyber]
+        self.game.fire(self.a, "unblocked", cyber)
+        self.game.settle()
+        self.assertEqual(cyber.power, 3)
+        ninja = self.game.enter_battlefield(self.a, db.get("Biting-Palm Ninja"))   # "When you do, ... that card"
+        self.assertEqual(ninja.counters.get("menace"), 1)
+        self.game.fire(self.a, "combat_damage_player", ninja, context=self.b)
+        self.game.settle()
+        self.assertFalse(ninja.counters.get("menace"))
 
 
 if __name__ == "__main__":

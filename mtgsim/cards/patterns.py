@@ -218,12 +218,12 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
      lambda m: Effect("destroy", target="creature", filter=f"total_pt<={m[1]}")),
     (r"up to one target creature gets \+(\d+)/\+(\d+) until end of turn",
      lambda m: Effect("pump", int(m[1]), int(m[2]), target="creature_mine")),
-    (r"up to one target creature gets -(\d+)/-(\d+) until end of turn",
-     lambda m: Effect("debuff_one", int(m[1]), int(m[2]), target="creature", filter="opp")),
+    (r"up to one target creature gets -(\d+)/-(\d+) until end of turn",     # any creature, or none (#443)
+     lambda m: Effect("debuff_one", int(m[1]), int(m[2]), target="creature", data={"optional_target": True})),
     (r"~ gets \+(\d+)/\+(\d+) until end of turn and can't be blocked this turn",
      lambda m: [Effect("pump", int(m[1]), int(m[2]), target="self"), Effect("unblockable", target="self")]),
-    (r"(?:you may have )?(another )?target creature gets? -(\d+)/-(\d+) until end of turn",
-     lambda m: Effect("debuff_one", int(m[2]), int(m[3]), target="creature")),
+    (r"(?:you may have )?(another )?target creature gets? -(\d+)/-(\d+) until end of turn",    # "another": #443
+     lambda m: Effect("debuff_one", int(m[2]), int(m[3]), target="creature", data={"not_earlier": True} if m[1] else {})),
     (r"target creature gets \+(\d+)/-(\d+) until end of turn",
      lambda m: Effect("debuff_one", -int(m[1]), int(m[2]), target="creature")),
     (r"(up to (?:one|two|three)|one or two|up to two) target creatures can't block this turn",
@@ -400,8 +400,8 @@ _EFFECT_PATTERNS = wordings.patterns("core") + [
      [Effect("grant", target="prev", data={"keyword": k.lower()}) for k in (m[3], m[4]) if k]),
     (r"(?:it|that creature) gains ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) and ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) until end of turn",
      lambda m: [Effect("grant", target="prev", data={"keyword": k.lower()}) for k in (m[1], m[2])]),
-    (r"(?:you may )?(?:return|put) (all |(?:up to )?(?:one|two|three|four|five|six|x) (?:other )?target |(?:up to one )?target |an? )?"
-     r"([\w ,/'-]+?) cards?(?: each)?(?: with mana value (\d+|x) or (less|greater))? from (your|a|an opponent's) "
+    (r"(?:you may )?(?:return|put) (all |(?:up to )?(?:one|two|three|four|five|six|[xX]) (?:other )?target |(?:up to one )?target |an? )?"
+     r"(?:([\w ,/'-]+?) )?cards?(?: each)?(?: with mana value (\d+|[xX]) or (less|greater))? from (your|a|an opponent's) "
      r"graveyard (to your hand|(?:onto|to) the battlefield)( tapped)?(?: under your control)?",
      lambda m: _gy_move(m)),
     (r"put (?:a|an) ((?:flying|first strike|double strike|deathtouch|lifelink|vigilance|trample|haste|hexproof|indestructible|menace|reach)) counter on (target creature|~|it)",
@@ -446,10 +446,14 @@ _N_WORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "x":
 
 def _gy_move(m):
     head = (m[1] or "").lower()
-    what = m[2]
-    if re.search(r"\b(this|named|that)\b", what) or what.lower().startswith("up to"):
-        return NO_MATCH
-    w = re.search(r"(one|two|three|four|five|six|x)", head)
+    what = m[2] or ""
+    if not what and not (head.startswith("all") or re.search(r"\bx\b", head)):
+        return NO_MATCH         # "two target cards": the targeted graveyard templates (cx_card_move) take those;
+                                # "X target cards" (Wildest Dreams) is counted by X like "X target creature cards"
+    if re.search(r"\b(this|named|that)\b", what) or what.lower().startswith("up to") or \
+            re.match(r"(?:\w+ )?target\b", what, re.I):
+        return NO_MATCH         # a count word the head didn't take must not become the card description (#546)
+    w = re.search(r"\b(one|two|three|four|five|six|x)\b", head)
     n = 99 if head.startswith("all") else (_N_WORDS[w[1]] if w else 1)
     return Effect("gy_move", n, data={"what": what, "dest": "hand" if m[6].endswith("hand") else "bf",
                                       "tapped": bool(m[7]), "zone": {"your": "mine", "a": "any"}.get(m[5], "opp"),

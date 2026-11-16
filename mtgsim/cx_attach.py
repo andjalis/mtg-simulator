@@ -112,26 +112,53 @@ def _host(text: str):
     return "target", obj
 
 
+_SELF_OBJ = {"~": "self", "this equipment": "self", "this aura": "self", "this enchantment": "self", "it": "it"}
+_PICK = re.compile(r"(an?|any number of|all) (aura|equipment)s?(?: and (?:aura|equipment)s?)?"
+                   r"(?: (you control|on the battlefield))?", re.I)
+
+
+def _pick(text: str):
+    """An untargeted object chosen on resolution: {"pick": "one"/"any"/"all", "subs": [...], "ctl": "mine"/""}."""
+    m = _PICK.fullmatch(text.strip())
+    if not m or (m[1].lower() != "all" and not m[3]) or (m[1].lower() == "all" and not m[3]):
+        return None                 # "an Equipment" alone: whose? (stays unsupported)
+    subs = sorted({w.capitalize() if w.lower() == "aura" else "Equipment"
+                   for w in re.findall(r"aura|equipment", text, re.I)})
+    return {"pick": {"an": "one", "a": "one", "any number of": "any", "all": "all"}[m[1].lower()],
+            "subs": subs, "ctl": "mine" if (m[3] or "").lower() == "you control" else ""}
+
+
 def parse(s: str):
     """Effects for an "attach <object> to <host>" sentence, or None."""
     from .cards.model import Effect
-    m = re.fullmatch(r"attach ((?:up to one )?target .+?) to (.+?)\.?", s.strip(), re.I)
+    m = re.fullmatch(r"attach (up to one .+?|.+?) to (.+?)\.?", s.strip(), re.I)    # not the "to" of "up to one"
     if not m:
         return None
-    obj, host = _object(m[1]), _host(m[2])
-    if obj is None or host is None:
+    host = _host(m[2])
+    if host is None:
         return None
-    a = dict(obj.data)
+    if re.match(r"(?:up to one )?target ", m[1], re.I):
+        obj = _object(m[1])
+        if obj is None:
+            return None
+        a = dict(obj.data)
+        if host[0] == "fixed":
+            return [Effect("cx_attach", target=obj.target, data=dict(a, host=host[1]))]
+        b = dict(host[1].data)
+        if a.get("optional_target") and b.get("optional_target"):
+            return None
+        common = {"group": "cx_attach", "distinct": True}
+        move = Effect("cx_attach", target=host[1].target, data=dict(b, host="target", **common))
+        mark = Effect("cx_attach_mark", target=obj.target,
+                      data=dict(a, partner={"target": move.target, "data": dict(move.data)}, **common))
+        return [mark, move]
+    # the object isn't targeted: the attachment itself, or Auras / Equipment chosen on resolution
+    obj = _SELF_OBJ.get(m[1].lower()) or _pick(m[1])
+    if obj is None or (obj == host[1] if host[0] == "fixed" else False) or (obj == "it" and host == ("fixed", "prev")):
+        return None
     if host[0] == "fixed":
-        return [Effect("cx_attach", target=obj.target, data=dict(a, host=host[1]))]
-    b = dict(host[1].data)
-    if a.get("optional_target") and b.get("optional_target"):
-        return None
-    common = {"group": "cx_attach", "distinct": True}
-    move = Effect("cx_attach", target=host[1].target, data=dict(b, host="target", **common))
-    mark = Effect("cx_attach_mark", target=obj.target,
-                  data=dict(a, partner={"target": move.target, "data": dict(move.data)}, **common))
-    return [mark, move]
+        return [Effect("cx_attach", target="none", data={"host": host[1], "obj": obj})]
+    return [Effect("cx_attach", target=host[1].target, data=dict(host[1].data, host="target", obj=obj))]
 
 
 def _build(m):
@@ -139,7 +166,29 @@ def _build(m):
     return parse(m[0]) or NO_MATCH
 
 
-EFFECT_PATTERNS = [(r"attach (?:up to one )?target (?:aura|equipment)\b.+", _build)]
+EFFECT_PATTERNS = [(r"attach (?:up to one )?target (?:aura|equipment)\b.+", _build),
+                   (r"attach (?:~|it|this (?:equipment|aura|enchantment)) to (?!target creature you control$).+", _build),
+                   (r"attach (?:an?|any number of|all) (?:aura|equipment)s?\b.+", _build)]
+
+
+def pool(game, p, spec, host) -> list:
+    """The Auras / Equipment an untargeted "attach an / any number of / all ..." can choose from."""
+    subs = set(spec["subs"])
+    return [x for pl in game.players for x in pl.battlefield
+            if x is not host and (not spec["ctl"] or x.controller is p)
+            and (("Aura" in subs and x.card.aura) or ("Equipment" in subs and "Equipment" in x.card.subtypes))]
+
+
+def picked(game, p, spec, host, *, optional=False) -> list:
+    """The objects an untargeted attach moves: all of them, the ones that gain something ("any number of"), or the
+    one that gains most ("an Equipment you control"; a "may" one only if it gains)."""
+    cands = pool(game, p, spec, host)
+    if spec["pick"] == "all":
+        return cands
+    if spec["pick"] == "any":
+        return [x for x in cands if gain(game, p, x, host) > 0]
+    best = max(cands, key=lambda x: gain(game, p, x, host), default=None)
+    return [best] if best is not None and (not optional or gain(game, p, best, host) > 0) else []
 
 
 # ---- the AI -----------------------------------------------------------------------------------------------
@@ -210,6 +259,12 @@ def choose(game, me, eff):
         if best is None or (optional or partner.data.get("optional_target")) and best[0] <= 0:
             return None
         return best[1]
+    if eff.data.get("host") == "target" and eff.data.get("obj") is not None:
+        pool_ = [x for x in game.legal_targets(me, eff)]
+        if not pool_:
+            return None
+        host = max(pool_, key=lambda x: host_value(game, me, eff, x))
+        return None if optional and host_value(game, me, eff, host) <= 0 else host
     if eff.data.get("host") == "target":
         obj = anchor(game, eff) or getattr(game, "cx_attach_pending", None)    # reflexive: chosen one at a time
         pool = [x for x in game.legal_targets(me, eff) if x is not obj]
@@ -225,10 +280,33 @@ def choose(game, me, eff):
     return None if optional and gain(game, me, obj, host) <= 0 else obj
 
 
+def _own(game):
+    """The attachment an "attach ~ / it to target ..." moves, while its host is chosen."""
+    from .cx_exchange import _source
+    from .engine.state import Permanent
+    for x in (getattr(game, "trigger_context", None), _source(game)):
+        if isinstance(x, Permanent) and is_attachment(x):
+            return x
+    return None
+
+
+def host_value(game, me, eff, host) -> float:
+    """What a host target is worth for an attach whose object isn't targeted."""
+    spec = eff.data["obj"]
+    if spec in ("self", "it"):
+        return gain(game, me, _own(game), host)
+    gains = [gain(game, me, x, host) for x in pool(game, me, spec, host)]
+    if spec["pick"] == "all":
+        return sum(gains)
+    return sum(g for g in gains if g > 0) if spec["pick"] == "any" else max(gains, default=-1.0)
+
+
 def mode_value(game, me, eff, tgt, chosen) -> float:
     """policy._mode_value for one attach effect (chosen: the targets so far, tgt last)."""
     if eff.kind == "cx_attach_mark":
         return 0.0
+    if eff.data.get("host") == "target" and eff.data.get("obj") is not None:
+        return host_value(game, me, eff, tgt) if tgt is not None else -1.0
     if eff.data.get("host") == "target":
         obj = chosen[-2] if len(chosen) >= 2 else None
         return gain(game, me, obj, tgt) if hasattr(obj, "controller") and tgt is not None else -1.0

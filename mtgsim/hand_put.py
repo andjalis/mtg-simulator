@@ -138,6 +138,78 @@ EFFECT_PATTERNS = [
 ]
 
 
+# Counted puts and other players' puts (#331 slice 4):
+#     Put any number of creature cards from your hand onto the battlefield.        (Ghalta, Myojin of Life's Web)
+#     You may put up to two creature cards from your hand onto the battlefield.    (Tooth and Nail, Smuggler's Surprise)
+#     you may put a creature card and/or a land card from your hand onto the battlefield.   (Michelangelo)
+#     Each player may put an artifact, creature, enchantment, or land card from their hand onto the battlefield.
+#     each other player / each opponent may put a creature card from their hand onto the battlefield.
+# data: "who" (each / each_other / each_opp; absent = you), "count" (an int, or "any"), "each_of" (one card per
+# listed filter). Every player chooses (active player first), then all the chosen cards enter together.
+_CARD_TYPES = ("artifact", "creature", "enchantment", "land", "planeswalker", "battle")
+_COUNTS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7}
+_WHO = {"each player": "each", "each other player": "each_other", "each opponent": "each_opp",
+        # one other player named by the sentence: the previous target's controller (Divine Gambit, Fold into
+        # Aether) or the trigger's player (Braids); "target opponent" is a targeted player
+        "that player": "that", "that opponent": "that", "its controller": "that", "target opponent": "target"}
+
+
+def _spec_or_list(desc: str):
+    """_spec, plus card-type lists: "artifact, creature, enchantment, and/or land" -> {"any": [...]}."""
+    m = re.fullmatch(r"((?:\w+, )+)(?:or|and/or) (\w+)", desc)
+    if m:
+        words = [w for w in m[1].split(", ") if w] + [m[2]]
+        return {"any": words} if all(w in _CARD_TYPES for w in words) else None
+    return _spec(desc)
+
+
+def _build_many(m):
+    from .cards.model import Effect, NO_MATCH
+    who = _WHO.get((m["who"] or "").lower(), "")
+    if who and m["whose"].lower() != "their" or not who and m["whose"].lower() != "your":
+        return NO_MATCH
+    data = {}
+    if m["count"]:
+        count = m["count"].lower()
+        data["count"] = "any" if count == "any number of" else "x" if count == "up to x" else \
+            _COUNTS[count.split()[-1]]
+        spec = _spec_or_list(m["pdesc"])
+    elif m["desc2"]:
+        spec, other = _spec_or_list(m["desc"]), _spec_or_list(m["desc2"])
+        if spec is None or other is None:
+            return NO_MATCH
+        data["each_of"] = [spec, other]
+    else:
+        if not who:
+            return NO_MATCH            # a plain "you may put a ... card": the pattern above
+        spec = _spec_or_list(m["desc"])
+    if spec is None or any(one.get("any_sub") or one.get("sub") == ["Aura"] for one in data.get("each_of", [spec])):
+        return NO_MATCH
+    data["spec"] = spec
+    if who:
+        data["who"] = who
+    if m["entry"]:
+        data["entry"] = "tapped"
+    if m["countered"]:
+        if who != "that" or m["who"].lower() != "its controller":
+            return NO_MATCH
+        data["if_countered"] = True     # Fold into Aether: only if the counter worked
+    if who == "that":
+        return Effect("hand_to_battlefield", target="that_player", data=data)
+    if who == "target":
+        return Effect("hand_to_battlefield", target="player", filter="opp", data=data)
+    return Effect("hand_to_battlefield", data=data)
+
+
+EFFECT_PATTERNS.append(
+    (r"(?P<countered>if that spell is countered this way, )?"
+     r"(?:(?P<who>you|each player|each other player|each opponent|that player|that opponent|its controller|"
+     r"target opponent) may )?put "
+     r"(?:(?P<count>any number of|up to (?:one|two|three|four|five|six|seven|X)) (?P<pdesc>[\w ,'/-]+?) cards?"
+     r"|(?:an?|one) (?P<desc>[\w ,'/-]+?) card(?: and/or an? (?P<desc2>[\w '/-]+?) card)?)"
+     r" from (?P<whose>your|their) hand onto the battlefield(?P<entry> tapped)?", _build_many))
+
+
 # ------------------------------------------------------------------ the engine side
 
 def candidates(game, p, eff, item) -> list:
@@ -186,6 +258,8 @@ def candidates(game, p, eff, item) -> list:
             continue
         if data.get("entry") == "attached" and not _host_ok(game, p, c, src):
             continue
+        if c.aura and data.get("entry") != "attached":
+            continue      # an Aura put without a host choice (303.4f isn't modelled here): not put
         out.append(c)
     return out
 
@@ -232,8 +306,88 @@ def _optional(eff, item) -> bool:
     return bool(i) and effects[i - 1].kind == "pay_gate" and effects[i - 1].data.get("gate") == ("may", "")
 
 
-def resolve(game, p, eff, item):
-    perm = _put(game, p, eff, item)
+def _players(game, p, who, chooser=None):
+    """The players who choose, active player first (APNAP)."""
+    if who in ("that", "target"):
+        return [chooser] if chooser is not None else []
+    if not who:
+        return [p]
+    order = list(game.players)
+    start = order.index(game.active) if game.active in order else 0
+    order = order[start:] + order[:start]
+    if who == "each":
+        return order
+    return [pl for pl in order if pl is not p]       # each_other / each_opp (two-player and free-for-all alike)
+
+
+def choose_many(game, pl, eff, item) -> list:
+    """The cards pl puts for a counted / and-or put: its hook picks one at a time, up to the limit."""
+    from dataclasses import replace
+    data = eff.data
+    count = data.get("count", 1)
+    if count == "x":                 # "{X}: put up to X ...": the X paid
+        count = getattr(item, "x", 0) or 0
+    elif isinstance(count, int) and data.get("xq"):      # "up to X ..., where X is <quantity>"
+        who = getattr(item, "controller", None) or pl
+        count *= game.x_quantity(who, data["xq"], item, None)
+    limit = 99 if count == "any" else count
+    groups = [(replace(eff, data=dict(data, spec=one)), 1) for one in data["each_of"]] if data.get("each_of") \
+        else [(eff, limit)]
+    out, names = [], {x.card.name for x in pl.battlefield if x.card.legendary}
+    for e, n in groups:
+        for _ in range(n):
+            cards = [c for c in candidates(game, pl, e, item) if not any(c is x for x in out)
+                     and not (c.legendary and c.name in names)]
+            card = game.hook(pl, "choose_hand_put")(game, pl, cards, data.get("entry", "")) if cards else None
+            if card is None or not any(card is c for c in cards):
+                break
+            out.append(card)
+            if card.legendary:
+                names.add(card.name)
+    return out
+
+
+def _chooser(eff, target, prev):
+    """The one player of "that player / its controller / target opponent may put"."""
+    from .engine.state import Permanent, Player, StackItem
+    if eff.data.get("who") == "target":
+        return target if isinstance(target, Player) else None
+    if isinstance(prev, (Permanent, StackItem)):
+        return prev.controller          # the controller of the object the previous effect acted on
+    return target if isinstance(target, Player) else None      # the trigger's player (that_player)
+
+
+def _put_many(game, p, eff, item, chooser=None):
+    """Every chooser picks first, then all the picked cards enter together; returns p's first new permanent."""
+    from .backlog_templates import entry_batch
+    from .residual_templates import blocked_entry
+    plan = [(pl, [c for c in choose_many(game, pl, eff, item) if c in pl.hand])
+            for pl in _players(game, p, eff.data.get("who"), chooser)]
+    tapped = eff.data.get("entry") == "tapped"
+    mine = None
+    previous = getattr(game, "_batch_entry_suppressed", False)       # as Game.enter_battlefield_many
+    game._batch_entry_suppressed = previous or any(
+        (c.advanced_rules.get("suppress_entry") or c.advanced_rules.get("suppress_entry_death"))
+        and not blocked_entry(game, c) for _, cards in plan for c in cards)
+    try:
+        with entry_batch(game):          # one simultaneous entry for every player's cards (no SBA in between)
+            for pl, cards in plan:
+                for card in cards:
+                    pl.hand.remove(card)
+                    perm = game.enter_battlefield(pl, card, tapped=tapped)
+                    game.log(f"puts {card.name} onto the battlefield" + (" (tapped)" if tapped else ""), pl)
+                    if pl is p and mine is None:
+                        mine = perm
+    finally:
+        game._batch_entry_suppressed = previous
+    return mine
+
+
+def resolve(game, p, eff, item, target=None, prev=None):
+    if eff.data.get("if_countered") and (prev is None or any(prev is s for s in game.stack)):
+        return None             # "if that spell is countered this way": it is still on the stack
+    many = any(k in eff.data for k in ("who", "count", "each_of"))
+    perm = _put_many(game, p, eff, item, _chooser(eff, target, prev)) if many else _put(game, p, eff, item)
     if item is not None and _optional(eff, item):
         item.gate_paid = perm is not None      # "If you do / If you don't, ..." ask whether a card was put
     return perm
@@ -283,6 +437,13 @@ def value(game, me, eff, source) -> float:
     src = source.source if isinstance(source, StackItem) else source
     item = SimpleNamespace(source=src if isinstance(src, Permanent) else None, card=getattr(src, "card", None),
                            context=None)
+    if any(k in eff.data for k in ("who", "count", "each_of")):
+        who = eff.data.get("who")
+        mine = choose_many(game, me, eff, item) if who in (None, "each") else []
+        # the opponents' hands are hidden: each one with cards in hand is assumed to put something worth 2
+        others = [game.opponent(me)] if who in ("that", "target") else _players(game, me, who)
+        theirs = 2.0 * sum(1 for pl in others if pl is not me and pl.hand) if who else 0.0
+        return sum(float(c.cmc) + 1 for c in mine) - theirs
     cards = candidates(game, me, eff, item)
     card = game.hook(me, "choose_hand_put")(game, me, cards, eff.data.get("entry", "")) if cards else None
     return float(card.cmc) + 1 if card is not None else 0.0

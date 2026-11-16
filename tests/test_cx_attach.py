@@ -40,7 +40,9 @@ class Parsing(unittest.TestCase):
                 ("Attach target Equipment you control to up to one target creature you control.",
                  ["cx_attach_mark", "cx_attach"]),
                 ("Attach target Equipment you control to ~.", ["cx_attach"]),
-                ("Attach up to one target Equipment you control to that creature.", ["cx_attach"])):
+                ("Attach up to one target Equipment you control to that creature.", ["cx_attach"]),
+                ("Attach up to one target Equipment you control to target creature you control.",
+                 ["cx_attach_mark", "cx_attach"])):
             with self.subTest(text):
                 self.assertEqual(kinds(text), want)
         effects, _ = _parse_effects("Attach up to one target Equipment you control to that creature.")
@@ -267,6 +269,126 @@ class RealCards(Base):
         self.assertEqual({id(x) for x in targets[1]}, {id(x) for x in blades})
         self.assertTrue(all(b.attached_to is auto for b in blades))
         self.assertIs(blades[1].controller, self.b)
+
+
+@unittest.skipUnless(os.path.exists(DB_FILE), "card database not built")
+class UntargetedObjects(Base):
+    """Slice 2: the attachment itself ("attach it to target Dwarf you control") and Auras / Equipment chosen on
+    resolution ("attach an / any number of / all Equipment ... to it")."""
+    def setUp(self):
+        super().setUp()
+        from mtgsim.carddb import CardDB
+        self.db = CardDB(offline=True)
+
+    def run_item(self, effects, targets=None, **kw):
+        item = StackItem(self.a, list(effects), list(targets or [None] * len(effects)), name="test", **kw)
+        self.game.stack.append(item)
+        self.game.resolve_top()
+        return item
+
+    def test_parse(self):
+        for text, data in (("Attach it to target Dwarf you control.", {"host": "target", "obj": "it"}),
+                           ("Attach ~ to target creature.", {"host": "target", "obj": "self"}),
+                           ("Attach all Equipment on the battlefield to it.",
+                            {"host": "prev", "obj": {"pick": "all", "subs": ["Equipment"], "ctl": ""}}),
+                           ("You may attach an Equipment you control to it.",
+                            {"host": "prev", "obj": {"pick": "one", "subs": ["Equipment"], "ctl": "mine"}})):
+            with self.subTest(text):
+                effects, bad = _parse_effects(text)
+                self.assertEqual(bad, [])
+                self.assertEqual({k: effects[0].data[k] for k in data}, data)
+        for text in ("Attach an Equipment to it.",                     # whose Equipment?
+                     "Attach it to it.",
+                     "Attach any number of Equipment you control to target creature or player."):
+            with self.subTest(text):
+                self.assertIsNone(kinds(text))
+
+    def test_cards_full(self):
+        from mtgsim.coverage import card_coverage
+        for name in ("Dwarven Mattock", "Shining Armor", "Stasis Cell", "Nahiri, Heir of the Ancients",
+                     "Resolute Strike", "Vow to Erebor", "Battlefield Improvisation", "Beatrix, Loyal General",
+                     "Vulshok Battlemaster", "U.S.Agent, John Walker", "Tony Stark // The Invincible Iron Man"):
+            with self.subTest(name):
+                self.assertEqual(card_coverage(self.db.get(name)).status, "full")
+
+    def test_equipment_enters_and_attaches_to_a_dwarf_only(self):
+        dwarf = self.game.enter_battlefield(self.a, card("Test Dwarf", "{1}{R}", "Creature — Dwarf", "", 2, 2))
+        self.game.enter_battlefield(self.a, BIG)
+        mattock = self.game.enter_battlefield(self.a, self.db.get("Dwarven Mattock"))
+        self.game.settle()
+        self.assertIs(mattock.attached_to, dwarf)
+
+    def test_nahiri_attaches_to_the_new_token(self):
+        nahiri = self.perm(self.db.get("Nahiri, Heir of the Ancients"), self.a)
+        blade = self.perm(BLADE, self.a)
+        effects = nahiri.card.loyalty_abilities[0][1]
+        self.run_item(effects, source=nahiri, kind="loyalty")
+        token = next(x for x in self.a.battlefield if x.card.is_token)
+        self.assertIs(blade.attached_to, token)
+
+    def test_us_agent_attaches_the_new_shield(self):
+        agent = self.game.enter_battlefield(self.a, self.db.get("U.S.Agent, John Walker"))
+        self.game.settle()
+        shield = next(x for x in self.a.battlefield if x.card.is_token)
+        self.assertIs(shield.attached_to, agent)
+
+    def test_battlemaster_takes_every_equipment_without_control(self):
+        mine, theirs = self.perm(BLADE, self.a), self.perm(BLADE, self.b)
+        theirs.attached_to = self.perm(BEAR, self.b)
+        master = self.game.enter_battlefield(self.a, self.db.get("Vulshok Battlemaster"))
+        self.game.settle()
+        self.assertTrue(mine.attached_to is master and theirs.attached_to is master)
+        self.assertIs(theirs.controller, self.b)
+
+    def test_resolute_strike_only_on_a_warrior(self):
+        strike = self.db.get("Resolute Strike")
+        blade = self.perm(BLADE, self.a)
+        bear = self.perm(BEAR, self.a)
+        self.run_item(strike.spell_effects, [bear] + [None] * (len(strike.spell_effects) - 1), card=strike)
+        self.assertIsNone(blade.attached_to)
+        warrior = self.perm(card("Test Warrior", "{1}", "Creature — Human Warrior", "", 1, 1), self.a)
+        self.run_item(strike.spell_effects, [warrior] + [None] * (len(strike.spell_effects) - 1), card=strike)
+        self.assertIs(blade.attached_to, warrior)
+
+    def test_beatrix_moves_every_useful_equipment_to_its_best_target(self):
+        beatrix = self.perm(self.db.get("Beatrix, Loyal General"), self.a)
+        mite = self.perm(card("Test Mite", "", "Creature — Insect", "", 0, 1), self.a)
+        blades = [self.perm(BLADE, self.a), self.perm(BLADE, self.a)]
+        blades[0].attached_to = mite
+        effects = beatrix.card.triggers[0].effects
+        targets = self.game.auto_targets(self.a, effects, beatrix)
+        self.assertIs(targets[0], beatrix)               # the best creature (worth more than the mite)
+        self.run_item(effects, targets, source=beatrix, kind="trigger")
+        self.assertTrue(all(b.attached_to is beatrix for b in blades))
+
+    def test_stasis_cell_moves_itself(self):
+        cell = self.perm(self.db.get("Stasis Cell"), self.a)
+        bear, giant = self.perm(BEAR, self.b), self.perm(BIG, self.b)
+        auras.attach(self.game, cell, bear)
+        effects = cell.card.activated[0].effects
+        self.assertEqual(self.game.auto_targets(self.a, effects, cell), [giant])   # a hostile Aura: their best
+        self.run_item(effects, [giant], source=cell, kind="ability")
+        self.assertIs(cell.aura_host, giant)
+
+    def test_it_is_the_equipment_an_earlier_effect_targeted(self):
+        ogre = self.perm(self.db.get("Ogre Geargrabber"), self.a)
+        theirs = self.perm(BLADE, self.b)
+        theirs.attached_to = self.perm(BEAR, self.b)
+        trig = ogre.card.triggers[0]
+        targets = self.game.auto_targets(self.a, trig.effects, ogre)
+        self.assertIs(targets[0], theirs)
+        self.run_item(trig.effects, targets, source=ogre, kind="trigger")
+        self.assertIs(theirs.controller, self.a)
+        self.assertIs(theirs.attached_to, ogre)
+
+    def test_iron_man_attaches_only_an_equipment(self):
+        iron = self.perm(self.db.get("Tony Stark // The Invincible Iron Man").back, self.a)
+        trig = iron.card.triggers[0]
+        for put, attached in ((card("Test Rock", "{1}", "Artifact", ""), False), (BLADE, True)):
+            self.a.hand = [put]
+            self.run_item(trig.effects, source=iron, kind="trigger")
+            perm = next(x for x in self.a.battlefield if x.card.name == put.name)
+            self.assertEqual(perm.attached_to is iron, attached, put.name)
 
 
 if __name__ == "__main__":

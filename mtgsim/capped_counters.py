@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import re
 
+from .life_costs import ai_ability_life_ok
+
 _N = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
 _KIND = r"([+-]\d+/[+-]\d+|[a-z]+)"
 
@@ -65,7 +67,7 @@ def upkeep(game, p):
         idx, eff = _ability(perm)
         if eff is None or perm.tapped or room(perm, eff) * 2 < eff.data["cap"]:
             continue
-        if game.can_activate(p, perm, idx):
+        if game.can_activate(p, perm, idx) and ai_ability_life_ok(p, perm.activated[idx]):
             x = game.ability_x(p, perm, perm.card.activated[idx])
             if x:
                 game.activate_ability(p, perm, idx, x=x)

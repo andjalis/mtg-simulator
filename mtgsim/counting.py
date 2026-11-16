@@ -26,7 +26,8 @@ def known(what: str) -> bool:
     if w.startswith("ctr:") or w == "":
         return True
     w = w[6:] if w.startswith("other ") else w
-    for alt in re.split(r",? or |, ", w):
+    from .copies import ALTERNATIVES
+    for alt in ALTERNATIVES.split(w):
         words = alt.split()
         if not words:
             return False

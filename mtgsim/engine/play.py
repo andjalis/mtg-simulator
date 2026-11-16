@@ -27,16 +27,22 @@ SPELL_KINDS = {   # "Whenever you cast a multicolored / historic / blue ... spel
 class PlayMixin:
     def play_land(self, p: Player, card: CardDef, back: bool = False):
         """Play a land from hand; with back=True, a modal double-faced card's land face."""
+        from ..cx_exile_play import foreign_zone
         for zone in (p.hand, p.exile, p.graveyard, p.library):
             if card in zone:
                 card = zone.get(card)
                 break
         face = card.land_face if back else card
         assert face is not None and face.is_land and not p.land_played
+        from ..residual_templates import hand_locked
+        if card in p.hand and hand_locked(p):       # "You can't play lands ... from your hand" (#326)
+            return
         if card in p.hand:
             p.hand.remove(card)
         elif card in p.exile and card in self.impulse_cards(p):
             p.exile.remove(card)
+        elif foreign_zone(p, card) is not None:     # a land p may play from another player's exile (#316)
+            foreign_zone(p, card).remove(card)
         elif card in p.library:     # "You may play lands from the top of your library." (cx_top)
             from .. import cx_top
             assert cx_top.land_ok(p, card)
@@ -91,6 +97,8 @@ class PlayMixin:
             else:
                 card.origin = (actual, kind, alt)
             base = actual
+        from ..spell_grants import apply as spell_grants      # "<kind> spells you cast have cascade" (#633)
+        card = spell_grants(self, p, card, base, kind)
         effects = [] if card.is_permanent else list(card.spell_effects)
         targets = list(targets or [])
         targets += [None] * (len(effects) - len(targets))
@@ -105,28 +113,45 @@ class PlayMixin:
             idx = next((i for i, e in enumerate(effects) if e.target in TARGETED), None)
             if tapped and idx is not None and targets[idx] not in tapped:
                 targets[idx] = max(tapped, key=perm_value)
-        missing = [i for i, e in enumerate(effects) if e.target in TARGETED and targets[i] is None]
+        gifted, live = bool(card.gift), list(range(len(effects)))
+        if card.gift:      # promised or not as it is cast: only that mode's effects need targets (#483)
+            from ..gift_choice import active, decide
+            gifted = decide(self, p, card, targets)
+            live = [i for i, e in enumerate(effects) if active(e, gifted)]
+            targets = [t if i in live else None for i, t in enumerate(targets)]
+        missing = [i for i in live if effects[i].target in TARGETED and targets[i] is None]
         if missing:   # targets the AI didn't pick (effects it doesn't know about)
             filled = self.auto_targets(p, effects, card, preset=targets)
             for i in missing:
                 targets[i] = filled[i]
-        if not self.valid_action_targets(p, effects, targets, card):
+        if not self.valid_action_targets(p, [effects[i] for i in live], [targets[i] for i in live], card):
             return False
         cost = self.cost_of(p, card, assist=False)
+        defiler_life = self._defiler_life[1] if getattr(self, "_defiler_life", (None,))[0] is card else 0
+        if card.advanced_rules.get("target_cost"):    # "costs {2} less to cast if it targets a black permanent"
+            from ..cx_static_cost import target_cost
+            cost, targets = target_cost(self, p, card, effects, targets)
         if card.advanced_rules.get("strive"):        # "costs {1}{W} more for each target beyond the first"
             from ..cx_multi_target import strive_cost
             cost, targets = strive_cost(self, p, card, effects, targets, cost)
+        x_off = getattr(self, "x_reduction", 0)        # reduction the generic part couldn't use: it pays toward X (#512)
+        x_fixed = None
+        if "X" in card.mana_cost and any(e.data.get("count_x") for e in effects):   # "Tap X target creatures" (#312)
+            from ..cx_multi_target import x_targets_cost
+            cost, targets, x_fixed = x_targets_cost(self, p, card, effects, targets, cost)
+            if not x_fixed:
+                return False                           # X = 0: no target, nothing to do
         convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
         assisted = card.improvise or card.delve
         x = 0
         if assisted and "X" in card.mana_cost:
             for n in range(1, 21):
-                trial = dict(cost, generic=cost.get("generic", 0) + n)
+                trial = dict(cost, generic=cost.get("generic", 0) + max(0, n * card.mana_cost["X"] - x_off))
                 remaining, tapped, _ = self.assist_payment(p, card, trial)
                 if costs.spell_plan(self, p, card, remaining, exclude=convoked + tapped) is None:
                     break
                 x = n
-            cost["generic"] = cost.get("generic", 0) + x
+            cost["generic"] = cost.get("generic", 0) + max(0, x * card.mana_cost["X"] - x_off)
         cost, improvised, delved = self.assist_payment(p, card, cost) if assisted else (cost, [], [])
         from .. import cx_spell_costs           # "As an additional cost to cast ~, ..." (#342)
         add_cost = cx_spell_costs.for_cast(self, p, card, targets)
@@ -148,11 +173,15 @@ class PlayMixin:
         for c in delved:
             p.graveyard.remove(c)
             p.exile.append(c)
-        if "X" in card.mana_cost and not assisted:     # X: as much as the remaining mana allows
-            while x < 20 and payable([s for s in self.mana_sources(p, spell=card) if s not in plan.exclude], {"generic": x + 1}):
+        if x_fixed is not None:
+            x = x_fixed                                # already in the cost: X is the number of targets
+        elif "X" in card.mana_cost and not assisted:     # X: as much as the remaining mana allows
+            per_x = card.mana_cost["X"] or 1           # {X}{X}: each X costs two mana (#531)
+            while x < 20 and payable([s for s in self.mana_sources(p, spell=card) if s not in plan.exclude],
+                                     {"generic": max(0, (x + 1) * per_x - x_off)}):
                 x += 1
-            if x:
-                payment += self.pay(p, {"generic": x}, spell=card, exclude_many=plan.exclude)
+            if x * per_x > x_off:
+                payment += self.pay(p, {"generic": x * per_x - x_off}, spell=card, exclude_many=plan.exclude)
         kicks = 0
         multipay = card.advanced_rules.get("multipay")
         if multipay is not None and kind == "":
@@ -167,6 +196,8 @@ class PlayMixin:
             self.change_life(p, -alt.life, f"{card.name}: alternative cost")
         if card.extra_life_cost:
             self.change_life(p, -card.extra_life_cost, f"{card.name}: additional cost")
+        if defiler_life:
+            self.change_life(p, -defiler_life, f"{card.name}: additional cost (Defiler)")
         sac_stats = None
         if plan.sacrifice is not None:
             victim = plan.sacrifice
@@ -194,7 +225,7 @@ class PlayMixin:
             from ..cx_mech import pay_beam
             if not pay_beam(self, p, base):
                 return False
-        if kind.startswith("cond_alt_"):
+        if kind.startswith(("cond_alt_", "gy_alt_", "ex_alt_")):
             from ..cx_altcost import pay as pay_alternative
             if not pay_alternative(self, p, base, kind):
                 return False
@@ -209,6 +240,7 @@ class PlayMixin:
             if paid is False:
                 return False
             sac_stats = sac_stats or paid
+        discarded_cost = None
         if card.extra_discard and not card.discard_or_pay and not p.hand:
             return False
         if kind == "escape":
@@ -228,6 +260,7 @@ class PlayMixin:
             if pitched not in p.hand:
                 return False
             self.discard_card(p, pitched)
+            discarded_cost = pitched        # ("discarded", stat): "the discarded card's mana value" (#313)
             self.log(f"discards {pitched.name} for {card.name}", p)
         if kind == "channel":      # channel / reinforce: "discard this card" is a real discard (madness, "whenever you discard")
             from ..madness import after_discard, discard_destination
@@ -282,17 +315,22 @@ class PlayMixin:
             if source is not None:
                 source.grave_cast_turn = self.turn
         item.snow_spent = sum(1 for s in payment if s.card.snow)
+        from ..cx_spent import source_counts
+        item.mana_from = source_counts(payment)          # "if mana from a Treasure was spent to cast it"
         item.x = x
         item.kicks = kicks
         item.teamwork = teamwork_paid
         item.evidence = self.collect_evidence(p, card)
         item.emerged_toughness = getattr(self, "_emerge_toughness", None) if kind == "emerge" else None
         item.sac_stats = sac_stats
-        item.behold_exiled = list(getattr(self, "_add_cost_exiled", ())) if add_cost is not None else []
+        cx_spell_costs.to_item(self, item, add_cost)        # X / "this way" / beheld cards of the paid cost
+        if discarded_cost is not None:
+            item.discarded_stats = (int(discarded_cost.power or 0), int(discarded_cost.toughness or 0),
+                                    discarded_cost.cmc)
         if exiled_gy is not None:    # for ("exiled_gy", "power") and friends (Corpse Lunge)
             item.exiled_gy_stats = (int(exiled_gy.power or 0), int(exiled_gy.toughness or 0), exiled_gy.cmc)
         item.bargained = bool(card.bargain) and self.pay_bargain(p, card)
-        item.gifted = bool(card.gift)
+        item.gifted = gifted
         item.uncounterable = any(s.card.mana_restriction == "chosen_type" and self.mana_allowed(s, card)
                                  for s in payment)
         item.mana_spent = sum(v for k, v in cost.items() if k != "X")
@@ -303,6 +341,13 @@ class PlayMixin:
         if getattr(card, "spell_copy", False):
             item.kind = "copy"
             item.physical_card = None
+        item.sorcery_timing = self.active is p and self.step in ("main1", "main2") and not self.stack   # cx_delayed
+        if kind == "cx_top":       # "Once each turn, you may cast ... from the top of your library" (#625)
+            from ..cx_top import note_cast
+            note_cast(self, p, base)
+        elif kind.startswith("group_alt_"):       # "Once each turn, you may pay {0} rather than pay ..." (#625)
+            from ..group_altcost import note_cast as note_group
+            note_group(self, p, base, kind)
         self.stack.append(item)
         if item.physical_card is not None and item.move_origin is not None:
             before, origin, actor, _, _ = item.move_origin
@@ -338,6 +383,10 @@ class PlayMixin:
                         self.queue_trigger(p, trig.effects, perm, perm.card.name, modes=trig.modes,
                                            context=item)
             getattr(self, "next_discount", {}).pop(p.name, None)
+            from ..cx_static_cost import spell_cast as temp_discounts_spent
+            temp_discounts_spent(self, p, card)        # "the next Dragon spell you cast costs {2} less"
+            from ..spell_grants import spell_cast as next_grants_spent
+            next_grants_spent(self, p, card)           # "the next spell you cast this turn has convoke" (#633)
             from ..residual_templates import on_spell_cast
             on_spell_cast(self, p, item)
             copies.on_cast(self, p, item)

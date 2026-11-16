@@ -63,8 +63,10 @@ class DestroyThatPlayers(unittest.TestCase):
     def test_parses_into_a_combat_damage_trigger(self):
         self.assertEqual(SHAMAN.unsupported, [])
         effect = SHAMAN.triggers[0].effects[0]
-        self.assertEqual((SHAMAN.triggers[0].event, effect.kind, effect.target, effect.filter),
-                         ("combat_damage_player", "destroy", "artifact_enchantment", "opp"))
+        # since #537 the scope names the damaged player exactly ("that player controls")
+        self.assertEqual((SHAMAN.triggers[0].event, effect.kind, effect.target, effect.data["selector"]),
+                         ("combat_damage_player", "destroy", "permanent",
+                          {"scope": "that_player", "controller": "opp", "types_any": ["artifact", "enchantment"]}))
 
 
 BURST = card("Test Burst", "{1}{R}", "Instant",

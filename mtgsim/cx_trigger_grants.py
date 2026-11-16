@@ -100,7 +100,67 @@ def _names_source(st) -> bool:
 
 
 def parse_line(line: str, st) -> bool:
-    return _simple(line, st) or _compound(line, st)
+    return _simple(line, st) or _compound(line, st) or _gated(line, st)
+
+
+_PAIRED = re.compile(r'As long as ~ is paired with another creature, (?:each of those creatures has|both creatures have) '
+                     r'"((?:When|Whenever|At) [^"]+)"\.?')
+_GATED_BODY = re.compile(r'(~|it|enchanted creature|equipped creature) (?:gets ([+-]\d+)/([+-]\d+) and )?has '
+                         r'"((?:When|Whenever|At) [^"]+)"')
+
+
+def _gated(line: str, st) -> bool:
+    """A grant that holds only while a condition does (#338):
+
+        As long as you control another Wizard, ~ has "When ~ dies, draw a card."           (self)
+        As long as enchanted creature is blue, it gets +1/+1 and has "Whenever ~ ..."       (host, with a bonus)
+        As long as ~ is paired with another creature, each of those creatures has "..."     (soulbond: both)
+
+    The condition is read by cx_static_gate (the gated statics' reader) and checked whenever the recipient's
+    abilities are read, so a dies trigger sees it as the creature leaves (its last-known abilities). A P/T bonus
+    goes to cx_static_gate as the same line without the quote."""
+    m = _PAIRED.fullmatch(line)
+    if m:
+        triggers = _body(m[1])
+        if triggers is None or _names_source(st) or hostile(m[1]):
+            return False
+        _record(st, {"paired": True}, triggers)
+        return True
+    if not line.startswith("As long as "):
+        return False
+    from .cx_static_gate import _gates
+    s = line.rstrip()
+    s = s[:-1] if s.endswith(".") else s
+    for code, body, cond in _gates(s):
+        b = _GATED_BODY.fullmatch(body.rstrip("."))
+        if not code or not b or re.search(r"\b(?:power|toughness)\b", cond):
+            continue
+        who = b[1].lower()
+        host = who in ("enchanted creature", "equipped creature") or who == "it" and \
+            re.match(r"(?:enchanted|equipped) creature\b", cond)
+        if who == "it" and not host:
+            continue
+        if host and not (st.extra.get("aura") or "Equipment" in getattr(st, "type_line", "")):
+            continue
+        triggers = _body(b[4])
+        if triggers is None or _names_source(st) or hostile(b[4]) and not host:
+            continue
+        if host and hostile(b[4]):
+            continue
+        if b[2]:
+            from .cx_static_gate import parse_line as gate_line
+            subj = "it" if who == "it" else "enchanted creature" if who.startswith("enchanted") else \
+                "equipped creature" if who.startswith("equipped") else "~"
+            if not gate_line(f"As long as {cond}, {subj} gets {b[2]}/{b[3]}.", st):
+                continue
+        _record(st, {"host": True, "gate": code} if host else {"self": True, "gate": code}, triggers)
+        return True
+    return False
+
+
+def _record(st, spec, triggers):
+    st.extra["trigger_grants"] = st.extra.get("trigger_grants", ()) + ((spec, triggers),)
+    st.extra.setdefault("advanced_rules", {})["trigger_grants"] = True      # indexed by residual_templates.sources
 
 
 def _simple(line: str, st) -> bool:
@@ -157,11 +217,27 @@ def granted(perm) -> list:
         for spec, triggers in source.card.trigger_grants:
             if spec.get("host"):
                 ok = (source.aura_host or source.attached_to) is perm
+            elif spec.get("self"):
+                ok = source is perm
+            elif spec.get("paired"):
+                from .batch1_templates import paired
+                ok = (source is perm or perm is source.partner) and paired(source) is not None
             else:
                 ok = matches(game, perm, spec, source.controller, source)
+            if ok and spec.get("gate"):
+                ok = _gate_holds(source, spec["gate"], perm)
             if ok:
                 out.extend(triggers)
     return out
+
+
+def _gate_holds(source, code, perm) -> bool:
+    """A grant's "as long as" condition from the source's point of view ("it": the recipient)."""
+    if code.startswith("cx:"):
+        from .cx_conditions import holds
+        return holds(source, code)
+    from .cx_statics import _holds
+    return _holds(source, code, perm)
 
 
 def _token_grant(m):

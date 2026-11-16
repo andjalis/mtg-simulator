@@ -38,7 +38,7 @@
     "cards": ["Ambuscade"]
   },
   {
-    "match": "(?:it|that creature|he|she) fights up to one target creature (?:an opponent controls|you don't control)",
+    "match": "(?:~|it|that creature|he|she) fights up to one target creature (?:an opponent controls|you don't control)",
     "effect": "fight",
     "target": "creature",
     "filter": "opp",
@@ -47,12 +47,20 @@
     "cards": ["Abomination, Terrifying Titan"]
   },
   {
-    "match": "(?:it|that creature|he|she) fights target creature (?:an opponent controls|you don't control)",
+    "match": "(?:~|it|that creature|he|she) fights target creature (?:an opponent controls|you don't control)",
     "effect": "fight",
     "target": "creature",
     "filter": "opp",
     "example": "He fights target creature an opponent controls",
     "cards": ["Abomination, Terrifying Titan"]
+  },
+  {
+    "match": "(?:~|it|that creature|he|she) fights another target creature",
+    "effect": "fight",
+    "target": "creature",
+    "data": {"other": true},
+    "example": "It fights another target creature",
+    "cards": ["Atzocan Archer"]
   },
   {
     "match": "untap target creature",

@@ -49,7 +49,89 @@ def _fold_flip(m):
             else f"FLIPCOIN {m[1].lower()} {m[2]}.")
 
 
+_FLIP_SEQ: dict = {}
+_SEQ_RIDER = re.compile(r"(?:if|when) (you|they) (win|lose) the flip, ", re.I)
+
+
+def _fold_seq(m, force=False):
+    """The general flip shape: "Flip a coin." (or "that player flips a coin.") followed by up to one
+    "If/When you win the flip, ..." and one "... lose the flip, ..." rider, in either order, each running
+    to the next rider or the end of the text (so a rider may be several sentences). Only the shapes the
+    single-sentence SUBS below can't read are folded here; the parsed effects are kept in _FLIP_SEQ and
+    the text becomes a "FLIPSEQ <n>." marker sentence."""
+    from .cards import Effect
+    from .cx_grammar_cond import _both
+    other = bool(m[1])
+    parts = _SEQ_RIDER.split(m[2])
+    if parts[0].strip():
+        return m[0]
+    riders = [(parts[i].lower(), parts[i + 1].lower(), parts[i + 2].strip().rstrip(".").strip())
+              for i in range(1, len(parts), 3)]
+    sides = [side for _, side, _ in riders]
+    if len(set(sides)) != len(sides) or any((who == "they") != other for who, _, _ in riders):
+        return m[0]
+    if not (force or other or sides == ["lose", "win"] or any(". " in body for _, _, body in riders)):
+        return m[0]     # single-sentence riders in win-then-lose order: the SUBS below
+    key = (other, tuple(riders))
+    if key not in _FLIP_SEQ:
+        _FLIP_SEQ[key] = _seq_effects(other, riders, Effect, _both)
+    return m[0] if _FLIP_SEQ[key] is None else f"FLIPSEQ {list(_FLIP_SEQ).index(key)}."
+
+
+def _seq_effects(other, riders, Effect, _both):
+    from .cards import _parse_effects
+    out = [Effect("flip_coin", target="that_player" if other else "none")]
+    for _, side, body in sorted(riders, key=lambda r: r[1] != "win"):
+        effects, bad = _parse_effects(body[0].upper() + body[1:] + ".")
+        if bad or not effects:
+            return None
+        # the flip's own result, not the pay gate: under "If you do, flip a coin" a declined
+        # payment must run neither rider (Breeches, the Blastmaker)
+        cond = "flip_won" if side == "win" else "flip_lost"
+        out += [dataclasses.replace(e, cond=_both(e.cond, cond)) for e in effects]
+    return out
+
+
+def _fold_later(m):
+    """"Flip a coin at end of combat. If you lose the flip, <X>." (Fickle Efreet): the flip and its riders are one
+    delayed group (combat_triggers' "<effects> at end of combat"), so the riders read that flip's result."""
+    folded = _fold_seq(m, force=True)
+    return m[0] if folded == m[0] else folded[:-1] + " at end of combat."
+
+
+def _opponent_control(m):
+    """Two players: "an opponent" / "one of your opponents" who gains control is the one opponent."""
+    return "each opponent gains control of ~"
+
+
+def _remove_tap(m):
+    """"Remove ~ from combat and tap it" (Mijae Djinn): out of combat (still blocked if it was), then tapped."""
+    from .cards import Effect
+    return [Effect("remove_from_combat", target="self"), Effect("tap", 1, target="self")]
+
+
+def _bounce_cast(m):
+    """"Return that spell to its owner's hand" on a cast trigger (Krark, the Thumbless): the spell the trigger fired
+    on (its context), not a target. Nothing happens when it has already left the stack."""
+    from .cards import Effect
+    return Effect("bounce_spell", target="none", data={"ctx_spell": True})
+
+
+def _seq(m):
+    effects = list(_FLIP_SEQ.values())[int(m[1])]
+    return list(effects)
+
+
 SUBS = [
+    (re.compile(r"(?:^|(?<=\. ))(?:(that player) flips|flip) a coin at end of combat\. "
+                r"((?:if|when) (?:you|they) (?:win|lose) the flip, .+?)\.?$", re.I | re.S), _fold_later),
+    # "copy that spell, and you may choose new targets for the copy" (Krark): the two-sentence form copy_spell reads
+    (re.compile(r"\b(copy that spell), and (you may choose new targets for the copy)", re.I),
+     lambda m: f"{m[1]}. {m[2][0].upper()}{m[2][1:]}"),
+    (re.compile(r"\b(?:an opponent|choose one of your opponents\. that player) gains control of ~", re.I),
+     _opponent_control),
+    (re.compile(r"(?:^|(?<=\. )|(?<=if you do, ))(?:(that player) flips|flip) a coin\. ((?:if|when) (?:you|they) (?:win|lose) the flip, .+?)\.?$",
+                re.I | re.S), _fold_seq),
     # "Clash with an opponent. If you win, <X>." (also "defending player", "If you won")
     (re.compile(r"clash with (?:an opponent|defending player|target opponent)\. "
                 r"if you (?:win|won), ([^.]+)\.?", re.I),
@@ -155,6 +237,9 @@ EFFECT_PATTERNS = [
     (r"flip a coin until you lose a flip", _until_lose),
     (r"flip (x|one|two|three|four|five|six|seven|eight|nine|ten|\d+) coins?", _counted),
     (r"CLASHWIN (.+)", _clash),
+    (r"FLIPSEQ (\d+)", _seq),
+    (r"remove ~ from combat and tap it", _remove_tap),
+    (r"return that spell to its owner's hand", _bounce_cast),
     (r"FLIPBOTH (.+?) \|\| (.+)", lambda m: _gated_both(m[1], m[2])),
     (r"FLIPCOIN (win|lose) (.+)", _flip),
     # "Clash with an opponent." with no rider (Oaken Brawler), and a coin flip with no

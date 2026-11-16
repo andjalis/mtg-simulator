@@ -187,5 +187,85 @@ class Cards(Timing):
             from mtgsim.cx_delayed import pact_affordable
             self.assertTrue(pact_affordable(a, DB.get("Force of Rage")))      # no Pact: no limit
 
+@unittest.skipUnless(HAVE_DB, "card database not built")
+class Slice2(unittest.TestCase):
+    """#344 slice 2: a delayed effect for a player fixed as it resolves; flash Auras' cleanup sacrifice."""
+    def setUp(self):
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step, self.game.active_idx = 2, "main1", 1
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 30
+        self.island = card("Test Island", "", "Basic Land — Island", "{T}: Add {U}.")
+        self.mountain = card("Test Mountain", "", "Basic Land — Mountain", "{T}: Add {R}.")
+
+    def turn(self, who):
+        self.game.turn += 1
+        self.game.active_idx = self.game.players.index(who)
+        with patch.object(self.game, "main_phase"), patch.object(self.game, "combat"):
+            self.game.take_turn(who)
+        self.game.settle()
+
+    def test_full(self):
+        for n in ("Arcane Denial", "Lightning Reflexes"):
+            self.assertEqual(DB.get(n).unsupported, [], n)
+
+    def test_arcane_denial_its_controller_draws_two(self):
+        from mtgsim.engine.state import StackItem
+        bolt = card("Test Bolt", "{R}", "Instant", "Test Bolt deals 3 damage to any target.")
+        self.game.stack.append(StackItem(self.b, bolt.spell_effects, [self.a], card=bolt, kind="spell"))
+        denial = DB.get("Arcane Denial")
+        for _ in range(2):
+            self.game.enter_battlefield(self.a, self.island)
+        self.a.hand = [denial]
+        self.assertTrue(self.game.cast(self.a, denial, [self.game.stack[-1]]))
+        self.game.settle()
+        self.assertEqual(self.a.life, 20)                          # countered
+        self.assertEqual((len(self.a.hand), len(self.b.hand)), (0, 0))
+        self.turn(self.a)                                          # the next turn's upkeep (then a's draw step)
+        self.assertEqual((len(self.a.hand), len(self.b.hand)), (2, 2))
+
+    def flash_reflexes(self, active):
+        self.game.active_idx = self.game.players.index(active)
+        bear = self.game.enter_battlefield(self.a, card("Test Bear", "{1}{G}", "Creature — Bear", "", 2, 2))
+        for _ in range(2):
+            self.game.enter_battlefield(self.a, self.mountain)
+        reflexes = DB.get("Lightning Reflexes")
+        self.a.hand = [reflexes]
+        self.assertTrue(self.game.cast(self.a, reflexes, [bear]))
+        self.game.settle()
+        return next(x for x in self.a.battlefield if x.card.name == "Lightning Reflexes")
+
+    def test_flash_aura_cast_as_an_instant_is_sacrificed_at_cleanup(self):
+        aura = self.flash_reflexes(self.b)                      # on the opponent's turn
+        from mtgsim import cx_delayed
+        cx_delayed.at_step(self.game, "cleanup", self.b)
+        self.game.settle()
+        self.assertNotIn(aura, self.a.battlefield)
+
+    def test_flash_aura_cast_at_sorcery_timing_stays(self):
+        aura = self.flash_reflexes(self.a)                      # own main phase, empty stack
+        from mtgsim import cx_delayed
+        cx_delayed.at_step(self.game, "cleanup", self.a)
+        self.game.settle()
+        self.assertIn(aura, self.a.battlefield)
+
+    def test_heuristic_ai_casts_reflexes_in_its_main_phase_and_keeps_it(self):
+        a, b = Player("a", [], HeuristicAI()), Player("b", [], HeuristicAI())
+        game = Game(a, b, random.Random(0))
+        game.turn, game.step, game.active_idx = 3, "main1", 0
+        a.library = b.library = [ISLAND] * 10
+        game.enter_battlefield(a, card("Test Bear", "{1}{G}", "Creature — Bear", "", 2, 2)).sick = False
+        for _ in range(2):
+            game.enter_battlefield(a, self.mountain)
+        a.hand = [DB.get("Lightning Reflexes")]
+        a.ai.main_phase(game, a)
+        game.settle()
+        from mtgsim import cx_delayed
+        cx_delayed.at_step(game, "cleanup", a)
+        game.settle()
+        self.assertTrue(any(x.card.name == "Lightning Reflexes" for x in a.battlefield))
+
+
 if __name__ == "__main__":
     unittest.main()

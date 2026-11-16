@@ -103,6 +103,9 @@ def craft(game, p, item, **_):
 
 @kind("counter", "bounce_spell")
 def counter(game, p, eff, target, item, **_):
+    if eff.data.get("ctx_spell"):       # "return that spell to its owner's hand" on a cast trigger (Krark)
+        ctx = getattr(item, "context", None)
+        target = ctx if isinstance(ctx, StackItem) else None
     if eff.data.get("redirect"):       # "Change the target of target spell with a single target" (cx_night_redirect)
         from .cx_night_redirect import redirect_spell
         if eff.amount and isinstance(target, StackItem):       # Divert: "... unless that spell's controller pays {N}"
@@ -136,6 +139,13 @@ def add_mana(game, p, eff, **_):
     if add_special(game, p, eff):
         return
     colors = list(eff.data["colors"])
+    if eff.data.get("devotion_choice"):        # "Choose a color. Add ... equal to your devotion to that color" (Nyx Lotus)
+        from ...cx_abil_mana import devotion_pick
+        color, n = devotion_pick(p)
+        p.last_added_mana = [Permanent(pool_mana(color), p) for _ in range(n)]
+        p.pool.extend(p.last_added_mana)
+        game.log(f"adds {color * n} (devotion to {color})", p)
+        return
     if eff.data.get("choice"):                 # "{U} or {R}", "one mana of any color": what the hand needs most
         need = {c: sum(card.mana_cost.get(c, 0) for card in p.hand) for c in eff.data["choice"]}
         colors.append(max(eff.data["choice"], key=lambda c: need[c]))
@@ -167,6 +177,16 @@ def pay_gate(game, p, eff, item, **_):
         item.gate_paid = False
         if "gate" in eff.data:
             item.gate_paid = game.pay_gate_cost(p, eff.data["gate"], item)
+        elif eff.data.get("x"):     # "you may pay {X}": the largest X the player can afford, if that is worth paying
+            fixed = eff.data["cost"]
+            x = 0
+            while game.can_pay(p, dict(fixed, generic=fixed.get("generic", 0) + x + 1)):
+                x += 1
+            total = dict(fixed, generic=fixed.get("generic", 0) + x)
+            if x > 0 and game.hook(p, "pay_optional")(game, p, total, "gate"):
+                game.pay(p, total)
+                item.gate_paid = True
+                item.paid_x = item.x = x
         elif game.can_pay(p, eff.data["cost"]) and game.hook(p, "pay_optional")(game, p, eff.data["cost"], "gate"):
             game.pay(p, eff.data["cost"])
             item.gate_paid = True
@@ -176,7 +196,7 @@ def pay_gate(game, p, eff, item, **_):
 def job_select(game, p, item, **_):
     src = item.source if item is not None else None
     hero = game.enter_battlefield(p, dataclasses.replace(make_token("Hero", 1, 1), subtypes=frozenset({"Hero"})))
-    if src is not None and src in p.battlefield and src.card.equip_cost is not None:
+    if src is not None and src in p.battlefield and (src.card.equip_cost is not None or "Equipment" in src.card.subtypes):     # non-mana equip too (#828)
         src.attached_to = hero
         game.log(f"{src.card.name} attaches to the Hero", p)
 
@@ -259,17 +279,14 @@ def no_prevention_turn(game, p, **_):
 
 @kind("choose_name")
 def choose_name(game, p, item, **_):
-    """\"As ~ enters, choose a nonland card name\" (Meddling Mage): name the nonland card the
-    opponent runs the most copies of. Spells with that name can't be cast while ~ stays on
+    """\"As ~ enters, choose a nonland card name\" (Meddling Mage): name the most threatening nonland card the
+    opponent has shown (cx_name_lock.lock_name). Spells with that name can't be cast while ~ stays on
     the battlefield (Game.named_cast_banned, consulted by can_cast_now)."""
     src = item.source if item is not None else None
     if not isinstance(src, Permanent) or src not in src.controller.battlefield:
         return
-    counts: dict = {}
-    for c in game.opponent(p).deck:
-        if not c.is_land:
-            counts[c.name] = counts.get(c.name, 0) + 1
-    src.chosen_name = max(counts, key=counts.get, default="")
+    from ...cx_name_lock import lock_name      # public information only (#627): never the opponent's decklist
+    src.chosen_name = lock_name(game, p)
     if src.chosen_name:
         game.log(f"names {src.chosen_name}", p)
 

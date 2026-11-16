@@ -41,7 +41,7 @@ class Resolving(Base):
         self.assertEqual((mine.tapped, theirs.tapped), (False, True))
 
     def test_rejects(self):
-        for s in ("Tap target creature that player controls.", "Tap target creature until end of turn.",
+        for s in ("Tap target creature the chosen player controls.", "Tap target creature until end of turn.",
                   "Islands don't untap during your untap step."):
             self.assertIsNone(parse_sentence(s), s)
 

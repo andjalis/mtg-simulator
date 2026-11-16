@@ -30,8 +30,19 @@ def damage(game, p, eff, target, item, opp, cause, **_):
     if eff.data.get("src_prev") or eff.data.get("it_ctx"):         # "it deals damage equal to its power ..." (cx_abil_damage)
         from ...cx_abil_damage import damage_source
         src = damage_source(game, item, src, target, eff)
-    victims = _damage(game, p, eff, target, item, opp, cause, src)
-    if eff.data.get("exile_dying") or (isinstance(src, Permanent) and src.card.exile_damaged):
+    if eff.data.get("unpreventable"):        # "and the damage can't be prevented" (cx_grammar_unprevent)
+        game.unpreventable_now = True
+        try:
+            victims = _damage(game, p, eff, target, item, opp, cause, src)
+        finally:
+            game.unpreventable_now = False
+    else:
+        victims = _damage(game, p, eff, target, item, opp, cause, src)
+    if eff.data.get("exile_dying") == "permanent":        # "if a permanent dealt damage this way would die" (#407)
+        for v in victims:
+            if isinstance(v, Permanent) and v in v.controller.battlefield:
+                v.exile_turn = game.turn        # zone_destination's exile-if-dies-this-turn replacement
+    elif eff.data.get("exile_dying") or (isinstance(src, Permanent) and src.card.exile_damaged):
         from ...batch1_templates import mark_exile_dying
         for v in victims:
             if isinstance(v, Permanent) and v.is_creature and v.damage > 0 and v in v.controller.battlefield:
@@ -64,6 +75,13 @@ def _damage(game, p, eff, target, item, opp, cause, src=None):
     else:
         if eff.data.get("no_regen") and eff.amount > 0 and isinstance(target, Permanent) and target.is_creature:
             target.regeneration_blocked = True
+        if eff.data.get("excess") and isinstance(target, Permanent) and target.is_creature:
+            from ...excess_damage import split          # "Excess damage is dealt to that creature's controller instead."
+            amount, excess = split(target, eff.amount, src)
+            owner = target.controller
+            game.deal_damage(target, amount, by=p, cause=cause, source=src)
+            game.deal_damage(owner, excess, by=p, cause=cause, source=src)
+            return [target, owner] if excess > 0 else [target]
         game.deal_damage(target, eff.amount, by=p, cause=cause, source=src)
         victims.append(target)
     return victims

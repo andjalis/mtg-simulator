@@ -16,7 +16,6 @@ class Parsing(unittest.TestCase):
                 ("~ can't attack unless its controller pays {2}.", "Creature — Beast"),       # ~ with "its controller"
                 ("~ can't attack unless you pay {X}.", "Creature — Beast"),
                 ("~ can't attack unless you pay {1} for each card in your hand.", "Creature — Beast"),
-                ("~ can't attack unless you sacrifice a land.", "Creature — Dragon"),            # not a mana price
                 ("~ can't attack unless you pay {2} and sacrifice a land.", "Creature — Beast"),
                 ("~ can't attack unless there is another Mountain on the battlefield.", "Creature — Beast")):
             with self.subTest(text):
@@ -108,3 +107,58 @@ class Cards(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipUnless(os.path.exists(ALL_CARDS), "card database not built")
+class Actions(unittest.TestCase):
+    """Non-mana prices paid as the creature is declared (#325 slice 2)."""
+    setUpClass = classmethod(lambda cls: setattr(cls, "db", CardDB(offline=True)))
+
+    def setUp(self):
+        Cards.setUp(self)
+
+    put = Cards.put
+
+    def test_refusals(self):
+        for text in ("~ can't attack unless you sacrifice a Foo-bar of doom.",
+                     "~ can't attack unless you return an enchantment you control.",           # no "to ... hand"
+                     "~ can't attack unless you tap an untapped creature you control.",
+                     "~ can't attack unless you sacrifice a land you control to its owner's hand."):
+            with self.subTest(text):
+                self.assertTrue(card("Test", "{1}", "Creature — Beast", text, 2, 2).unsupported)
+
+    def test_exalted_dragon_sacrifices_a_land(self):
+        dragon = self.put("Exalted Dragon")
+        self.assertEqual(pay_attackers(self.g, self.a, [dragon], {dragon: self.b}), [])     # no land: stays home
+        lands = [self.put(ISLAND) for _ in range(2)]
+        self.assertEqual(pay_attackers(self.g, self.a, [dragon], {dragon: self.b}), [dragon])
+        self.assertEqual(sum(x in self.a.battlefield for x in lands), 1)
+        self.assertEqual(len(self.a.graveyard), 1)
+
+    def test_floodtide_serpent_returns_an_enchantment(self):
+        serpent = self.put("Floodtide Serpent")
+        altar = card("Test Altar", "{1}", "Enchantment", "")
+        self.assertEqual(pay_attackers(self.g, self.a, [serpent], {serpent: self.b}), [])
+        a = self.put(altar)
+        self.assertEqual(pay_attackers(self.g, self.a, [serpent], {serpent: self.b}), [serpent])
+        self.assertNotIn(a, self.a.battlefield)
+        self.assertIn(altar, self.a.hand)
+
+    def test_hollow_warrior_taps_a_creature_that_isnt_declared(self):
+        warrior = self.put("Hollow Warrior")
+        bear = self.put(BEAR)
+        self.assertEqual(pay_attackers(self.g, self.a, [warrior, bear], {warrior: self.b, bear: self.b}), [warrior])
+        # the Bear can't both attack and pay: the declaration sheds it, and then it pays for the Warrior
+        self.assertTrue(bear.tapped)
+        attacker = self.put(BEAR, self.b)
+        other = self.put(BEAR)
+        self.assertEqual(pay_blockers(self.g, self.a, {attacker: [warrior]}), {attacker: [warrior]})
+        self.assertTrue(other.tapped)
+
+    def test_flooded_woodlands_charges_each_green_attacker(self):
+        self.put("Flooded Woodlands", self.b)
+        bears = [self.put(BEAR), self.put(BEAR)]
+        self.put(ISLAND)
+        got = pay_attackers(self.g, self.a, bears, {b: self.b for b in bears})
+        self.assertEqual(len(got), 1)                                   # one land: one green attacker
+        self.assertFalse(any(x.card.is_land for x in self.a.battlefield))

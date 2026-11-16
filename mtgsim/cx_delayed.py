@@ -127,6 +127,15 @@ def parse_rider(sentence: str, effects: list) -> bool:
         return False        # the player is not read yet
     body = m["a"]
     eff = action(body)
+    player = None
+    pm = re.fullmatch(r"(its controller|that player) (.+)", body, re.I)
+    if eff is None and pm:
+        # "Its controller may draw up to two cards at the beginning of the next turn's upkeep" (Arcane Denial): the
+        # player is fixed as this resolves (the countered spell's controller) and acts as "you" in the body
+        player = "controller" if pm[1].lower() == "its controller" else "that_player"
+        body = "you " + _base_verb(pm[2])
+        if body is None:
+            return False
     if eff is None:
         if re.search(r"\b(?:it|them|that|those|this way)\b", body, re.I):
             return False
@@ -134,6 +143,8 @@ def parse_rider(sentence: str, effects: list) -> bool:
         if bad or not new or any(e.target not in ("none", "self", "you", "") for e in new):
             return False
         eff = _effect("cx_delay", data={"op": "effects", "who": "none", "effects": new})
+        if player:
+            eff = dataclasses.replace(eff, data=dict(eff.data, player=player))
         conds = {e.cond for e in new}
         if len(conds) == 1 and next(iter(conds)) and re.match(r"if ", body, re.I):
             # "If <C>, <action> at the beginning of the next end step": C is checked as this resolves, not at the end step
@@ -146,6 +157,17 @@ def parse_rider(sentence: str, effects: list) -> bool:
         eff = dataclasses.replace(eff, data=dict(eff.data, at=at))
     effects.append(eff)
     return True
+
+
+def _base_verb(text: str):
+    """"may draw up to two cards" / "draws a card" -> the form after "you"."""
+    m = re.match(r"(may )?(\w+)(.*)", text)
+    verb = m[2]
+    if not m[1]:
+        if not verb.endswith("s"):
+            return None
+        verb = verb[:-2] if verb.endswith(("ches", "shes", "sses")) else verb[:-1]
+    return (m[1] or "") + verb + m[3]
 
 
 _PACT = re.compile(r"at the beginning of your next upkeep, pay (?P<c>(?:\{[0-9WUBRG]\})+)", re.I)
@@ -187,6 +209,11 @@ def schedule(game, p, eff, prev, item):
     op, who = data["op"], data["who"]
     source = item.source if item is not None else None
     if op == "effects":
+        if data.get("player"):
+            who = _player(game, data["player"], prev, item)
+            if who is None:
+                return
+            p = who                     # it acts as "you" in the delayed effects
         _store(game, p, data, list(data["effects"]), source, None)
         return
     if op == "battlefield":
@@ -206,6 +233,17 @@ def schedule(game, p, eff, prev, item):
     if not objs:
         return
     _store(game, p, data, [_effect("cx_delayed_do", data=dict(data))], source, tuple(objs))
+
+
+def _player(game, how, prev, item):
+    """The player a delayed "its controller / that player ..." names, fixed as the ability resolves."""
+    from .engine.state import Permanent, Player, StackItem
+    if isinstance(prev, (StackItem, Permanent)):
+        return prev.controller if how == "controller" else None
+    if isinstance(prev, Player):
+        return prev
+    ctx = getattr(item, "context", None)
+    return ctx if isinstance(ctx, Player) and how == "that_player" else None
 
 
 def _store(game, p, data, effects, source, context):
@@ -307,3 +345,25 @@ def pact_affordable(me, card) -> bool:
         if any(sum(1 for x in sources if col in x.card.produces) < n for col, n in cost.items() if col != "generic"):
             return False
     return True
+
+
+_FLASH = ("You may cast ~ as though it had flash. If you cast it any time a sorcery couldn't have been cast, the "
+          "controller of the permanent it becomes sacrifices it at the beginning of the next cleanup step.")
+
+
+def flash_line(line: str, st) -> bool:
+    """The flash Auras (Lightning Reflexes, Armor of Thorns): flash, and if cast when a sorcery couldn't have been,
+    a delayed "sacrifice it at the beginning of the next cleanup step" made as it resolves (``flash_resolved``)."""
+    if line != _FLASH:
+        return False
+    st.keywords.add("flash")
+    st.extra.setdefault("advanced_rules", {})["flash_cleanup"] = True
+    return True
+
+
+def flash_resolved(game, perm, item) -> None:
+    """A permanent spell resolved: schedule the flash Aura's cleanup sacrifice when it was cast at instant timing."""
+    if perm is None or not perm.card.advanced_rules.get("flash_cleanup") or getattr(item, "sorcery_timing", True):
+        return
+    _store(game, perm.controller, {"at": "cleanup"},
+           [_effect("cx_delayed_do", data={"op": "sacrifice", "who": "fresh"})], perm, (perm,))

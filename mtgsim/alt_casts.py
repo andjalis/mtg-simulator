@@ -37,6 +37,9 @@ def parse_line(line: str, st) -> bool:
     from .cx_mech import parse_line as mech_line
     if mech_line(line, st):
         return True
+    from .group_altcost import parse_line as group_line   # "rather than pay the mana cost for <spells>" (#625)
+    if group_line(line, st):
+        return True
     if line in ("Jump-start", "Retrace"):
         st.alt_costs.append(AltCost(line.lower().replace("-", "_"), {}, zone="graveyard"))
         return True
@@ -81,7 +84,8 @@ def parse_line(line: str, st) -> bool:
     if m:
         st.alt_costs.append(AltCost("suspend", parse_mana_cost(m[2]), counters=int(m[1])))
         return True
-    return False
+    from .spell_grants import parse_line as spell_grant_line     # "<kind> spells you cast have convoke" (#633)
+    return spell_grant_line(line, st)
 
 
 def variants(game, p, card) -> list:
@@ -106,7 +110,8 @@ def variants(game, p, card) -> list:
     from .cx_mech import variants as splice_variants
     out += splice_variants(game, p, card)
     from .cx_altcost import variants as conditional_alts    # "[If ...,] you may ... rather than pay ~'s mana cost"
-    return out + conditional_alts(game, p, card)
+    from .group_altcost import variants as group_alts     # a permanent's cost for a group of spells (#625)
+    return out + conditional_alts(game, p, card) + group_alts(game, p, card)
 
 
 def graveyard_variants(game, p, card) -> list:
@@ -115,7 +120,8 @@ def graveyard_variants(game, p, card) -> list:
     out = []
     from .cx_mech import beam_variants
     out += beam_variants(game, p, card)
-    for a in card.alt_costs:
+    from .zone_grants import alts as granted_alts          # granted retrace / jump-start (#633)
+    for a in list(card.alt_costs) + granted_alts(game, p, card):
         if a.kind == "jump_start" and len(p.hand) > 0:
             v = game._variant(card, "jump_start", AltCost("jump_start", dict(card.mana_cost)))
             v.extra_discard = 1

@@ -1,9 +1,11 @@
 """Qualified hand-to-battlefield puts (#331, mtgsim/hand_put.py): dynamic mana value, chosen type, entry modifiers."""
+import os
 import random
 import unittest
 
 from mtgsim import hand_put
 from mtgsim.cards import card_from_scryfall
+from mtgsim.carddb import ALL_CARDS, CardDB
 from mtgsim.engine import Game, Player
 from mtgsim.engine.policy import ability_worth
 from tests.test_combat_triggers import Scripted
@@ -104,8 +106,12 @@ class Parse(unittest.TestCase):
                 # "that damage" is a dynamic referent (#313)
                 "Whenever ~ deals combat damage to a player, you may put an artifact card with mana value less "
                 "than or equal to that damage from your hand onto the battlefield.",
-                # another player's decision
-                "When ~ enters, each opponent may put a creature card from their hand onto the battlefield.",
+                # another player's put from "your" hand, and "their" hand without another player
+                "When ~ enters, each opponent may put a creature card from your hand onto the battlefield.",
+                "When ~ enters, you may put a creature card from their hand onto the battlefield.",
+                # counted puts of Auras (host choice) and subtype lists stay out
+                "{T}: Put up to two Aura cards from your hand onto the battlefield.",
+                "{T}: Put any number of non-Saga permanent cards from your hand onto the battlefield.",
                 # combat entry into a block
                 "{T}: You may put a creature card from your hand onto the battlefield blocking target creature.",
                 # a bare Aura from hand needs a host choice this template doesn't make
@@ -361,6 +367,9 @@ class Resolve(unittest.TestCase):
         self.game.leave_battlefield(researcher, "graveyard")
         self.game.settle()
         self.assertEqual([c.name for c in self.a.hand], ["Test Armor"])
+        anthem = card("Test Anything", "{1}", "Artifact", "{T}: You may put a permanent card from your hand onto the "
+                      "battlefield.")
+        self.assertEqual(hand_put.candidates(self.game, self.a, _eff(anthem), None), [])     # the single put too
 
     def test_sacrificed_at_next_end_step(self):
         accomplice = self.put(ACCOMPLICE, WALKER)
@@ -380,5 +389,273 @@ class Resolve(unittest.TestCase):
         self.assertTrue(ability_worth(self.game, self.a, vial, idx))
 
 
+
+GHALTA = card("Test Stampede", "{4}", "Artifact", "{T}: Put any number of creature cards from your hand onto the "
+              "battlefield.")
+NAIL = card("Test Nail", "{9}", "Sorcery", "Put up to two creature cards from your hand onto the battlefield.")
+MICHEL = card("Test Michel", "{3}", "Artifact", "{T}: You may put a creature card and/or a land card from your hand "
+              "onto the battlefield.")
+SHOW = card("Test Show", "{2}{U}", "Sorcery", "Each player may put an artifact, creature, enchantment, or land card "
+            "from their hand onto the battlefield.")
+WUMPUS = card("Test Wumpus", "{3}{G}", "Creature — Beast", "When ~ enters, each other player may put a creature card "
+              "from their hand onto the battlefield.", 6, 6)
+WURM = card("Test Tempting", "{1}{G}", "Creature — Wurm", "When ~ enters, each opponent may put any number of "
+            "artifact, creature, enchantment, and/or land cards from their hand onto the battlefield.", 5, 5)
+SHOCK = card("Test Shock", "{R}", "Instant", "Test Shock deals 2 damage to any target.")
+FOREST = card("Forest", types="Basic Land — Forest", text="({T}: Add {G}.)")
+
+
+class Many(unittest.TestCase):
+    """Counted puts and other players' puts (#331 slice 4)."""
+    def setUp(self):
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 20
+            p.ai.attack, p.ai.block = (), {}
+            p.ai.respond = p.ai.respond_extras = lambda *args: None
+
+    def names(self, p):
+        return sorted(x.card.name for x in p.battlefield)
+
+    def resolve(self, c, who=None):
+        from mtgsim.engine.state import StackItem
+        who = who or self.a
+        item = StackItem(who, list(c.spell_effects), [None] * len(c.spell_effects), card=c, kind="spell")
+        self.game.stack.append(item)
+        self.game.settle()
+
+    def test_parse(self):
+        for c in (GHALTA, NAIL, MICHEL, SHOW, WUMPUS, WURM):
+            self.assertEqual(c.unsupported, [], c.name)
+        self.assertEqual(_eff(GHALTA).data, {"count": "any", "spec": {"types": ["creature"]}})
+        self.assertEqual(NAIL.spell_effects[0].data["count"], 2)
+        self.assertEqual(_eff(MICHEL).data["each_of"], [{"types": ["creature"]}, {"types": ["land"]}])
+        self.assertEqual(SHOW.spell_effects[0].data, {"who": "each", "spec": {
+            "any": ["artifact", "creature", "enchantment", "land"]}})
+        self.assertEqual(WUMPUS.triggers[0].effects[-1].data["who"], "each_other")
+        self.assertEqual(WURM.triggers[0].effects[-1].data["who"], "each_opp")
+
+    def test_any_number_puts_every_creature_but_one_copy_of_a_legend(self):
+        stampede = self.game.enter_battlefield(self.a, GHALTA)
+        self.a.hand = [BEAR2, OGRE3, LEGEND, LEGEND, FOREST, SHOCK]
+        self.assertTrue(self.game.activate_ability(self.a, stampede, len(stampede.activated) - 1))
+        self.game.settle()
+        self.assertEqual(self.names(self.a), ["Test Legend", "Test Stampede", "Three Ogre", "Two Bear"])
+        self.assertEqual(sorted(c.name for c in self.a.hand), ["Forest", "Test Legend", "Test Shock"])
+
+    def test_up_to_two(self):
+        self.a.hand = [BEAR2, OGRE3, BRUTE]
+        self.resolve(NAIL)
+        self.assertEqual(self.names(self.a), ["Test Brute", "Three Ogre"])     # the two biggest
+        self.assertEqual([c.name for c in self.a.hand], ["Two Bear"])
+
+    def test_creature_and_or_land(self):
+        michel = self.game.enter_battlefield(self.a, MICHEL)
+        self.a.hand = [FOREST, BEAR2, OGRE3, FOREST]
+        self.assertTrue(self.game.activate_ability(self.a, michel, len(michel.activated) - 1))
+        self.game.settle()
+        self.assertEqual(self.names(self.a), ["Forest", "Test Michel", "Three Ogre"])
+        self.a.hand = [FOREST]                       # "and/or": the land alone
+        michel.tapped = False
+        self.assertTrue(self.game.activate_ability(self.a, michel, len(michel.activated) - 1))
+        self.game.settle()
+        self.assertEqual(self.names(self.a), ["Forest", "Forest", "Test Michel", "Three Ogre"])
+
+    def test_show_and_tell_both_players(self):
+        self.a.hand = [BRUTE, SHOCK]
+        self.b.hand = [OGRE3, SHOCK]
+        self.resolve(SHOW)
+        self.assertEqual(self.names(self.a), ["Test Brute"])
+        self.assertEqual(self.names(self.b), ["Three Ogre"])
+        self.assertEqual([c.name for c in self.b.hand], ["Test Shock"])
+
+    def test_each_other_player_only(self):
+        self.a.hand = [BRUTE]
+        self.b.hand = [OGRE3, BEAR2]
+        self.game.enter_battlefield(self.a, WUMPUS)
+        self.game.settle()
+        self.assertEqual(self.names(self.a), ["Test Wumpus"])
+        self.assertEqual(self.names(self.b), ["Three Ogre"])          # one card, its own pick
+
+    def test_each_opponent_any_number_with_etb_triggers(self):
+        self.b.hand = [HEALER, ROCK, FOREST, SHOCK]
+        self.game.enter_battlefield(self.a, WURM)
+        self.game.settle()
+        self.assertEqual(self.names(self.b), ["Forest", "Test Healer", "Test Rock"])
+        self.assertEqual(self.b.life, 23)                         # the put creature's own ETB trigger
+        self.assertEqual([c.name for c in self.b.hand], ["Test Shock"])
+
+    def test_entries_are_simultaneous(self):
+        """A watcher entering with other creatures sees them, within one player and across players."""
+        warden = card("Test Warden", "{W}", "Creature — Human Cleric", "Whenever another creature enters, you gain "
+                      "1 life.", 1, 1)
+        self.a.hand, self.b.hand = [BRUTE], [warden]
+        self.resolve(SHOW)
+        self.assertEqual((self.b.life, self.a.life), (21, 20))
+        stampede = self.game.enter_battlefield(self.a, GHALTA)
+        self.a.hand = [warden, OGRE3]
+        self.assertTrue(self.game.activate_ability(self.a, stampede, len(stampede.activated) - 1))
+        self.game.settle()
+        self.assertEqual(self.a.life, 21)
+
+    def test_auras_are_not_put_without_a_host_choice(self):
+        self.game.enter_battlefield(self.b, BEAR2)
+        self.a.hand = [ARMOR, ROCK]
+        self.resolve(SHOW)
+        self.assertEqual(self.names(self.a), ["Test Rock"])
+        self.assertEqual([c.name for c in self.a.hand], ["Test Armor"])
+        anthem = card("Test Anything", "{1}", "Artifact", "{T}: You may put a permanent card from your hand onto the "
+                      "battlefield.")
+        self.assertEqual(hand_put.candidates(self.game, self.a, _eff(anthem), None), [])     # the single put too
+
+    def test_declined_and_empty(self):
+        self.b.ai.choose_hand_put = lambda game, me, cards, entry: None
+        self.a.hand, self.b.hand = [BRUTE], [OGRE3]
+        self.resolve(SHOW)
+        self.assertEqual((self.names(self.a), self.names(self.b)), (["Test Brute"], []))
+        self.a.hand = []
+        self.resolve(NAIL)
+        self.assertEqual(self.names(self.a), ["Test Brute"])
+
+    def test_ai_values(self):
+        stampede = self.game.enter_battlefield(self.a, GHALTA)
+        stampede.sick = False
+        idx = len(stampede.activated) - 1
+        self.assertFalse(ability_worth(self.game, self.a, stampede, idx))
+        self.a.hand = [BEAR2, OGRE3]
+        self.assertTrue(ability_worth(self.game, self.a, stampede, idx))
+        self.assertGreater(hand_put.value(self.game, self.a, _eff(GHALTA), stampede), 6)
+        self.b.hand = [OGRE3]
+        self.assertLess(hand_put.value(self.game, self.a, WUMPUS.triggers[0].effects[-1], None), 0)
+
+
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipUnless(os.path.exists(ALL_CARDS), "card database not built")
+class ThatPlayer(unittest.TestCase):
+    """'That player / that opponent / its controller / target opponent may put ... from their hand' (#331)."""
+    def setUp(self):
+        self.db = CardDB(offline=True)
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 20
+            p.ai.attack, p.ai.block = (), {}
+            p.ai.respond = p.ai.respond_extras = lambda *args: None
+            for _ in range(5):
+                self.game.enter_battlefield(p, ISLAND).sick = False
+
+    def names(self, p):
+        return sorted(x.card.name for x in p.battlefield if not x.card.is_land)
+
+    def test_divine_gambit_the_exiled_permanents_controller_puts(self):
+        gambit = self.db.get("Divine Gambit")
+        self.assertEqual(gambit.unsupported, [])
+        for _ in range(2):
+            self.game.enter_battlefield(self.a, card("Plains", types="Basic Land — Plains",
+                                                     text="({T}: Add {W}.)")).sick = False
+        bear = self.game.enter_battlefield(self.b, BEAR2)
+        self.a.hand, self.b.hand = [gambit, BRUTE], [OGRE3, SHOCK]
+        self.assertTrue(self.game.cast(self.a, gambit, [bear]))
+        self.game.settle()
+        self.assertEqual((self.names(self.a), self.names(self.b)), ([], ["Three Ogre"]))
+        self.assertEqual([c.name for c in self.a.hand], ["Test Brute"])
+
+    def test_metamorphose_that_opponent_puts(self):
+        spell = self.db.get("Metamorphose")
+        self.assertEqual(spell.unsupported, [])
+        rock = self.game.enter_battlefield(self.b, ROCK)
+        self.b.hand = [OGRE3]
+        self.a.hand = [spell]
+        self.assertTrue(self.game.cast(self.a, spell, [rock]))
+        self.game.settle()
+        self.assertEqual(self.names(self.b), ["Three Ogre"])
+
+    def test_fold_into_aether_only_when_countered(self):
+        fold = self.db.get("Fold into Aether")
+        self.assertEqual(fold.unsupported, [])
+        self.b.hand = [BRUTE, OGRE3]
+        self.game._priority_depth = 1
+        self.assertTrue(self.game.cast(self.b, BRUTE, []))
+        self.a.hand = [fold]
+        self.assertTrue(self.game.cast(self.a, fold, [self.game.stack[-1]]))
+        self.game._priority_depth = 0
+        self.game.settle()
+        self.assertEqual(self.names(self.b), ["Three Ogre"])
+        self.assertIn("Test Brute", [c.name for c in self.b.graveyard])
+
+    def test_fold_into_aether_counter_fails(self):
+        from mtgsim.engine.state import StackItem
+        fold = self.db.get("Fold into Aether")
+        self.b.hand = [OGRE3]
+        gone = StackItem(self.b, [], [], card=BRUTE, kind="spell")      # not on the stack any more
+        stays = StackItem(self.b, [], [], card=BRUTE, kind="spell")
+        self.game.stack.append(stays)
+        eff = fold.spell_effects[-1]
+        hand_put.resolve(self.game, self.a, eff, None, None, stays)       # still on the stack: not countered
+        self.assertEqual(self.names(self.b), [])
+        self.game.stack.remove(stays)
+        hand_put.resolve(self.game, self.a, eff, None, None, gone)
+        self.assertEqual(self.names(self.b), ["Three Ogre"])
+
+    def test_braids_the_upkeep_player_puts(self):
+        braids = self.game.enter_battlefield(self.a, self.db.get("Braids, Conjurer Adept"))
+        self.assertEqual(braids.card.unsupported, [])
+        self.a.hand, self.b.hand = [BRUTE], [OGRE3]
+        self.game.turn += 1
+        self.game.begin_upkeep(self.b)
+        self.game.settle()
+        self.assertEqual(self.names(self.b), ["Three Ogre"])
+        self.assertEqual(self.names(self.a), ["Braids, Conjurer Adept"])
+
+    def test_refusals_and_ai_value(self):
+        for text in ("If that spell is countered this way, each player may put a creature card from their hand "
+                     "onto the battlefield.",
+                     "That player may put a creature card from your hand onto the battlefield."):
+            c = card("Refusal Test", "{1}", "Instant", text)
+            self.assertTrue(c.unsupported, text)
+        eff = self.db.get("Divine Gambit").spell_effects[-1]
+        self.b.hand = [OGRE3]
+        self.assertLess(hand_put.value(self.game, self.a, eff, None), 0)
+
+
+class UpToX(unittest.TestCase):
+    """'Put up to X land cards from your hand onto the battlefield [tapped], where X is ...' and a paid {X}."""
+    def setUp(self):
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.game = Game(self.a, self.b, random.Random(0), log=True)
+        self.game.turn, self.game.step = 2, "main1"
+        for p in (self.a, self.b):
+            p.library = [ISLAND] * 20
+
+    def test_where_x(self):
+        c = card("Probe Mover", "{1}", "Artifact", "{T}: Put up to X land cards from your hand onto the battlefield "
+                 "tapped, where X is the number of creatures you control.")
+        self.assertEqual(c.unsupported, [])
+        mover = self.game.enter_battlefield(self.a, c)
+        for _ in range(2):
+            self.game.enter_battlefield(self.a, BEAR2)
+        self.a.hand = [ISLAND, ISLAND, ISLAND]
+        self.assertTrue(self.game.activate_ability(self.a, mover, len(mover.activated) - 1))
+        self.game.settle()
+        lands = [x for x in self.a.battlefield if x.card.is_land]
+        self.assertEqual(len(lands), 2)
+        self.assertTrue(all(x.tapped for x in lands))
+        self.assertEqual(len(self.a.hand), 1)
+
+    def test_paid_x(self):
+        c = card("Probe Mover", "{1}", "Artifact", "{X}, {T}: Put up to X land cards from your hand onto the battlefield.")
+        self.assertEqual(c.unsupported, [])
+        mover = self.game.enter_battlefield(self.a, c)
+        for _ in range(3):
+            self.game.enter_battlefield(self.a, ISLAND).sick = False
+        forest = card("Forest", types="Basic Land — Forest", text="({T}: Add {G}.)")
+        self.a.hand = [forest, forest, forest]
+        self.assertTrue(self.game.activate_ability(self.a, mover, len(mover.activated) - 1, x=2))
+        self.game.settle()
+        self.assertEqual(sum(x.card.name == "Forest" for x in self.a.battlefield), 2)

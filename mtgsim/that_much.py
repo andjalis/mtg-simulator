@@ -47,6 +47,8 @@ def _damage(m):
         return Effect("cx_damage", 0, data={"that_much": True, "source": "self", "side": "theirs", "who": "you"})
     target = "any" if who in ("any target", "any other target") else "creature" if who == "target creature" else "player"
     data = {"that_much": True}
+    if who == "target creature an opponent controls":     # Mordant Dragon (#319): the opponent's creature
+        return Effect("damage", 0, target="creature", filter="opp", data=data)
     if who == "any other target":
         data["other"] = True
     return Effect("damage", 0, target=target, data=data)
@@ -98,8 +100,32 @@ EFFECT_PATTERNS = [
     (r"discard that many cards", _that_much("discard")),
     (r"(?:target|each) opponent loses that much life", _that_much("drain", target="each_opponent")),
     (r"(~|it|he|she) deals that much damage to (any target|any other target|you|target opponent|target player|"
-     r"each opponent|each other opponent|each player|target creature)", _damage),
+     r"each opponent|each other opponent|each player|target creature an opponent controls|target creature)", _damage),
 ]
+
+
+_ANY_KINDS = {"damage", "group_remove", "cx_damage", "damage_each_player"}
+
+
+def _damage_any(m):
+    """"~ deals that much damage to <recipients>" for recipients the list above doesn't name ("each creature that
+    player controls", "target planeswalker that player controls"): the damage sentence with an amount of one, as the
+    templates read it, when that is plain damage whose amount the trigger's event then sets (``that_much``)."""
+    import dataclasses
+    from .cards import _parse_effects
+    from .cards.model import NO_MATCH
+    if re.match(r"(?:that|its|those|this)\b", m[1], re.I) or re.search(r"\b(?:other|or planeswalker)\b", m[1], re.I):
+        return NO_MATCH     # "that player / that permanent": "that much" there is a count of an earlier effect;
+        # "each other creature ...": other than the trigger's creature; "player or planeswalker": read by a substitution
+    effects, bad = _parse_effects(f"~ deals 1 damage to {m[1]}.")
+    if bad or len(effects) != 1:
+        return NO_MATCH
+    eff = effects[0]
+    if eff.kind not in _ANY_KINDS or eff.amount != 1 or (eff.kind == "group_remove" and eff.data.get("op") != "damage") \
+            or any(k in eff.data for k in ("x", "xq", "per", "per_kick", "count", "source_power", "that_much",
+                                            "effects")):
+        return NO_MATCH
+    return dataclasses.replace(eff, amount=0, data=dict(eff.data, that_much=True))
 
 TRIGGERS = [
     (r"Whenever ~ deals damage, (.+)", ("deals_damage",)),
@@ -194,3 +220,7 @@ def damage_amount(game, target, amount: int, by, source, combat: bool) -> int:
                     continue
                 amount += mod["delta"]
     return max(0, amount)
+
+
+# After the other templates (cards/__init__.py): only recipients nothing else reads come here.
+LATE_PATTERNS = [(r"~ deals that much damage to (.+)", _damage_any)]

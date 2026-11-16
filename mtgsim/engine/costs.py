@@ -83,6 +83,8 @@ class CostsMixin:
                     produces = produces - set(gate_colors)
             if c.mana_pay_life and p.life <= c.mana_pay_life:
                 produces = produces & {"C"} if "C" in produces else produces & set()
+            if c.mana_damage and p.life <= c.mana_damage:       # a painland's damaging colours at its last life
+                produces = produces - c.mana_damage_colors
             if c.mana_tap_other and not any(x is not perm and not x.tapped and (x.is_creature or c.mana_tap_other == "permanent")
                                             for x in p.battlefield):
                 continue
@@ -148,9 +150,12 @@ class CostsMixin:
         return payable(sources, cost)
 
     def spell_payable(self, p: Player, card: CardDef) -> bool:
+        from ..spell_grants import view as granted_view     # "<kind> spells you cast have convoke" (#633)
+        pay_as = granted_view(self, p, card)
         cost = self.cost_of(p, card, assist=False)
-        convoked = self.convoke_pool(p)[:self._convoke_k] if card.convoke else []
-        cost, improvised, _ = self.assist_payment(p, card, cost) if card.improvise or card.delve else (cost, [], [])
+        convoked = self.convoke_pool(p)[:self._convoke_k] if pay_as.convoke else []
+        cost, improvised, _ = self.assist_payment(p, pay_as, cost) if pay_as.improvise or pay_as.delve else \
+            (cost, [], [])
         from ..cx_spell_costs import reserved as add_cost_reserved      # tapped for an additional cost (#342)
         return costs.spell_plan(self, p, card, cost, exclude=convoked + improvised + add_cost_reserved(self, p, card)) is not None
 
@@ -178,6 +183,10 @@ class CostsMixin:
                 s.skip_untap = max(s.skip_untap, 1)   # its colored mana was spent: it skips its next untap
             if s.card.mana_pay_life and self._needed_color(p, s, payment, cost):
                 self.change_life(p, -s.card.mana_pay_life, "paid life")
+            if s.card.mana_damage and (not (s.card.produces - s.card.mana_damage_colors)
+                                       or self._needed_color(p, s, payment, cost)):
+                # its damaging ability made the mana: 1 damage to its controller (an undamaged {C} would not)
+                self.deal_damage(p, s.card.mana_damage, by=p, cause=f"{s.card.name}: mana", source=s)
             if s.card.mana_filter == "once":
                 s.ability_turns["filter"] = self.turn
             else:
@@ -199,6 +208,9 @@ class CostsMixin:
         p.expend = (self.turn, old + len(payment))
         for n in range(old + 1, old + len(payment) + 1):
             self.fire(p, "expend", subject=n)
+        for s in payment:       # "Whenever a player taps a land for mana" (cx_trig_heads)
+            if isinstance(s, Permanent) and s.tapped and s in s.controller.battlefield:
+                self.fire(s.controller, "tapped_for_mana", s)
         return payment
 
     def x_quantity(self, p: Player, spec: tuple, item, prev) -> int:
@@ -223,6 +235,11 @@ class CostsMixin:
             card = spell.card if isinstance(spell, StackItem) else None
             if card is None:
                 return 0
+            if spec[1] == "mana_spent":         # "the amount of mana spent to cast that spell"
+                from ..cx_grammar_quantity import spent_amount
+                return spent_amount(spell)
+            if spec[1] == "converge":           # "... colors of mana spent to cast that spell"
+                return len(set(getattr(spell, "mana_colors", ())) & set("WUBRG"))
             if spec[1] == "colors":
                 return len(card.colors)
             if spec[1] == "generic":
@@ -230,6 +247,12 @@ class CostsMixin:
             if spec[1] == "mana value":
                 return card.cmc + getattr(spell, "x", 0) * (card.mana_cost.get("X", 0) if isinstance(card.mana_cost, dict) else 0)
             return max(0, int(getattr(card, "power" if spec[1] == "power" else "toughness", 0) or 0))
+        if kind == "attached":       # Auras / Equipment attached to the source (#343)
+            if src is None:
+                return 0
+            return sum(1 for pl in self.players for x in pl.battlefield
+                       if x is not src and (x.attached_to is src or getattr(x, "aura_host", None) is src)
+                       and any(k in x.card.subtypes for k in spec[1]))
         if kind == "stat":
             if spec[1] == "sacrificed":
                 who = getattr(item, "sacrificed_permanent", None)
@@ -292,6 +315,17 @@ class CostsMixin:
         if kind == "party":
             # "where X is the number of creatures in your party" (Acquisitions Expert)
             return self.party_size(p)
+        if kind == "card":
+            # "equal to that card's mana value" (card_referent, #313): the card the previous effect moved,
+            # frozen on the stack item when it moved
+            from ..referent import card_stat
+            return max(0, int(card_stat(item, spec[1]) or 0))
+        if kind == "discarded":
+            # "the discarded card's mana value": the card discarded to pay the spell's or ability's cost
+            stats = getattr(item, "discarded_stats", None)
+            if stats is None and src is not None:
+                stats = getattr(src, "last_discarded", None)
+            return _stat_of(stats, spec[1])
         if kind == "exiled_gy":
             # "Damage equal to the exiled card's power" (Molten-Tail Masticore, Corpse Lunge):
             # the card exiled from the graveyard as a cost — item.exiled_gy_stats (spell cost,
@@ -335,6 +369,10 @@ class CostsMixin:
             return 0
         if kind == "gy":
             return counting.count(self, p, {"what": spec[1], "zone": "graveyard"}, src)
+        if isinstance(spec[1], str) and spec[1].startswith("other ") and src is not None and not src.is_creature \
+                and isinstance(prev, Permanent) and prev.is_creature:
+            # "it gets +1/+1 for each other creature you control" on an Equipment / Aura trigger: other than it
+            return counting.count(self, p, {"what": spec[1], "zone": "battlefield"}, prev)
         return counting.count(self, p, {"what": spec[1], "zone": "battlefield"}, src)
 
     def gy_move(self, p: Player, eff: Effect, item):
@@ -529,6 +567,8 @@ class CostsMixin:
         cost = dict(card.mana_cost)
         if card.is_ability:
             return cost          # an activated ability (channel, unearth, ...): spell cost modifiers don't apply
+        from ..spell_grants import view as granted_view     # granted convoke / improvise / delve (#633)
+        pay_as = granted_view(self, p, card)
         n = 0
         if card.cost_reduction == "instant_sorcery_gy":
             n = sum(c.is_instant or c.is_sorcery for c in p.graveyard)
@@ -581,6 +621,8 @@ class CostsMixin:
             n += pending[1]             # "the next spell you cast this turn costs {N} less" (Peerless Samurai)
         from ..batch1_templates import spell_tax
         more = spell_tax(self, p, card)             # increases: taxes and "or pay {N}" additional costs
+        from ..cx_name_lock import named_tax
+        more += named_tax(self, card)               # "Spells with the chosen name cost {3} more" (#627)
         if card.extra_discard and card.discard_or_pay and self.spare_cards(p, card) < 1:
             more += card.discard_or_pay
         if card.behold_or_pay:
@@ -591,13 +633,16 @@ class CostsMixin:
         if card.extra_sac_or_pay and not self.extra_sac_candidates(p, card):
             more += card.extra_sac_or_pay
         # 601.2f: the total cost is the mana cost plus every increase, then every reduction
-        from ..cx_spell_costs import add_mana as add_cost_mana      # "... or pay {3}{B}" additional costs (#342)
-        cost = cx_static_cost.adjust(self, p, card, add_cost_mana(self, p, card, cost), increase=more, reduction=n)
-        if card.convoke:
+        from ..cx_spell_costs import add_mana as add_cost_mana, reduction as add_cost_reduction    # #342
+        cost = cx_static_cost.adjust(self, p, card, add_cost_mana(self, p, card, cost), increase=more,
+                                    reduction=n + add_cost_reduction(self, p, card))
+        from ..cx_spell_costs import defiler_discount
+        cost = defiler_discount(self, p, card, cost)     # "you may pay 2 life ... cost {B} less" (Defilers, #342)
+        if pay_as.convoke:
             self._convoke_k = min(len(self.convoke_pool(p)), cost.get("generic", 0))
             cost["generic"] -= self._convoke_k
-        if assist and (card.improvise or card.delve):
-            cost = self.assist_payment(p, card, cost)[0]
+        if assist and (pay_as.improvise or pay_as.delve):
+            cost = self.assist_payment(p, pay_as, cost)[0]
         if getattr(card, "spell_copy", False):
             return {"generic": 0}
         if self._origin(card)[1].startswith("foreign_"):
@@ -778,9 +823,10 @@ class CostsMixin:
             for c in p.graveyard:      # Lier: every instant and sorcery has flashback for its own mana cost
                 if (c.is_instant or c.is_sorcery) and c not in p.granted_fb:
                     out.append(self._variant(c, "flashback", AltCost("flashback", dict(c.mana_cost))))
+        from ..zone_grants import alts as granted_alts        # "<cards> in your graveyard have flashback" (#633)
         for c in p.graveyard:
             out += alt_casts.graveyard_variants(self, p, c)
-            for a in c.alt_costs:
+            for a in list(c.alt_costs) + granted_alts(self, p, c):
                 if a.kind in ("flashback", "gy_ability", "unearth") or (a.kind == "disturb" and c.back is not None) or \
                         (a.kind == "blitz" and "graveyard" in a.zone) or \
                         (a.kind == "mayhem" and c in p.discarded_cards):
@@ -788,12 +834,15 @@ class CostsMixin:
         from ..advanced_templates import permission_options
         from .. import cx_top      # "You may cast creature spells from the top of your library."
         from .. import exile_permissions
-        return out + permission_options(self, p) + cx_top.options(self, p) + exile_permissions.options(self, p)
+        from ..cx_altcost import zone_options     # "You may cast this card from your graveyard / from exile" (#625)
+        return out + permission_options(self, p) + cx_top.options(self, p) + exile_permissions.options(self, p) + \
+            zone_options(self, p)
 
     def impulse_cards(self, p: Player) -> list:
         """Exiled cards p may still play (drops the expired ones)."""
         p.impulse = [(c, t) for c, t in p.impulse if t >= self.turn and c in p.exile]
-        return [c for c, _ in p.impulse]
+        from ..cx_exile_play import foreign_lands      # lands p may play from another player's exile (#316)
+        return [c for c, _ in p.impulse] + foreign_lands(p)
 
     def _origin(self, card: CardDef):
         return getattr(card, "origin", None) or (card, "", None)
@@ -804,13 +853,16 @@ class CostsMixin:
             return getattr(self, "foreign_zones", {}).get((id(p), kind), p.exile)
         if kind.startswith("exile_cast_"):
             return p.exile
+        if kind.startswith(("gy_alt_", "ex_alt_")):      # "You may cast this card from your graveyard / exile"
+            return p.graveyard if kind.startswith("gy") else p.exile
         return {"grave_permission": p.graveyard, "aftermath": p.graveyard, "from_adventure": p.on_adventure, "foretold": p.foretold, "flashback": p.graveyard,
                 "blitz_gy": p.graveyard, "gy_ability": p.graveyard, "plotted": p.plotted, "from_warp": p.warp_exile, "airbent": p.airbent,
                 "mayhem": p.graveyard, "madness": p.exile, "unearth": p.graveyard, "disturb": p.graveyard, "jump_start": p.graveyard,
                 "retrace": p.graveyard, "beam": p.graveyard,
                 "escape": p.graveyard, "impulse": p.exile, "suspended": p.exile, "rebound": p.exile,
                 "cascade": p.exile, "cascade_adventure": p.exile,
-                "rebound_adventure": p.exile, "discover": p.exile, "siege": p.exile, "cx_top": p.library}.get(kind, p.hand)
+                "rebound_adventure": p.exile, "discover": p.exile, "siege": p.exile, "cx_top": p.library,
+                "cx_top_life": p.library}.get(kind, p.hand)
 
     def _available(self, p: Player, card: CardDef) -> bool:
         base, kind, _ = self._origin(card)
@@ -822,9 +874,9 @@ class CostsMixin:
             return False
         if kind == "prepared":
             return any(x.front is base and x.prepared for x in p.battlefield)
-        if kind == "cx_top":
+        if kind in ("cx_top", "cx_top_life"):
             from .. import cx_top
-            return cx_top.spell_ok(p, base)
+            return cx_top.spell_ok(p, base, life=kind == "cx_top_life")
         return base in self._zone(p, kind)
 
     def can_cast_now(self, p: Player, card: CardDef, *, during_resolution=False) -> bool:
@@ -848,6 +900,9 @@ class CostsMixin:
                for pl in self.players for x in pl.battlefield):
             return False          # "Creature spells can't be cast" (Aether Storm): the ban applies to everyone
         base, kind, alt = self._origin(card)
+        from ..residual_templates import hand_locked
+        if spell and hand_locked(p) and self._zone(p, kind) is p.hand:    # Experimental Frenzy (#326)
+            return False
         if self.nonmana_locked(p) and kind in ('channel', 'gy_ability', 'unearth'):
             return False
         if card.is_ability and kind in ('channel', 'gy_ability', 'unearth') and self.named_activation_banned(base.name):
@@ -857,9 +912,9 @@ class CostsMixin:
         from ..residual_templates import life_locked
         if life_locked(p) and (card.extra_life_cost or alt is not None and alt.life):
             return False
-        if alt is not None and alt.life and p.life <= alt.life:
+        if alt is not None and alt.life and p.life < alt.life:      # CR 119.4 (#467)
             return False
-        if card.extra_life_cost and p.life <= card.extra_life_cost:
+        if card.extra_life_cost and p.life < card.extra_life_cost:
             return False
         if card.extra_discard and not card.discard_or_pay and self.spare_cards(p, card) < card.extra_discard:
             return False
@@ -882,7 +937,10 @@ class CostsMixin:
                     and not (card.is_sorcery and (player_flag(self, p, "sorcery_flash") or any(
                         x.card.advanced_rules.get("sorcery_flash") and not x.abilities_suppressed
                         for x in p.battlefield))):
-                return False
+                from ..cx_flash_perm import flash_allowed
+                from ..cx_conditions import spell_has
+                if not flash_allowed(self, p, card) and not (card.cond_keywords and spell_has(p, card, "flash")):
+                    return False
         if any(e.target == "spell" and not e.data.get("optional_target") and not self.legal_targets(p, e)
                for e in card.spell_effects):
             return False

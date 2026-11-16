@@ -43,7 +43,7 @@ cx_events._PLAYER_SUBJ["a source you control"] = "src_you"
 # the fixed verbs go first: "loses life during your turn" must not be read as a longer match of "loses life"
 cx_events._PLAYER_VERBS[0:0] = _VERBS
 cx_events._PLAYER_RAW.update(_RAW)
-cx_events._OBSERVED.update({"you_surveil", "you_win_flip", "player_damaged", "explores", "exerted", "you_roll"})
+cx_events._OBSERVED.update({"card_to_gy", "you_surveil", "you_win_flip", "player_damaged", "explores", "exerted", "you_roll"})
 
 
 def extend_spec(kind, vm, spec) -> bool:
@@ -68,9 +68,9 @@ def extend_spec(kind, vm, spec) -> bool:
     desc = desc[6:] if other else desc
     if "~" in desc or "commander" in desc or " and " in desc and "and/or" not in desc:
         return False
-    subj = cx_events._object_subject("one or more " + ("other " if other else "") + desc + " you control")
+    subj = cx_events._object_subject("one or more " + ("other " if other else "") + desc + " you control", head=True)
     if subj is None:
-        subj = cx_events._object_subject("one or more " + ("other " if other else "") + desc)
+        subj = cx_events._object_subject("one or more " + ("other " if other else "") + desc, head=True)
     if subj is None:
         return False
     subj["ctrl"] = "you"
@@ -135,6 +135,7 @@ def host_phase(game, p, event) -> None:
 
     "That player" is p; "that creature / land / artifact" (parsed as the previous target) is the enchanted permanent."""
     import dataclasses
+    from .batch1_templates import is_host_kind
     want = "host_upkeep" if event == "upkeep" else "host_end_step"
     for pl in game.players:
         for aura in list(pl.battlefield):
@@ -142,6 +143,97 @@ def host_phase(game, p, event) -> None:
             if host is None or host.controller is not p:
                 continue
             for trig in aura.card.triggers:
-                if trig.event == want:
+                if trig.event == want and not (want == "host_upkeep" and is_host_kind(trig)):
+                    # batch1_templates.on_upkeep queues its own host_* kinds; one dispatcher per trigger (#714)
                     effects = [dataclasses.replace(e, target="host") if e.target == "prev" else e for e in trig.effects]
                     game.queue_trigger(aura.controller, effects, aura, aura.card.name, context=p)
+
+
+# ---------------------------------------------------------------------------
+# "Whenever a <description> card is put into <your / an opponent's / a> graveyard [from <zone>]"
+# ---------------------------------------------------------------------------
+
+_GY = re.compile(r"(?P<q>an?|another|one or more) (?P<d>[\w' -]+?) (?:is|are) put into (?P<who>your|an opponent's|a) "
+                 r"graveyard(?: from (?P<from>anywhere other than the battlefield|anywhere|the battlefield|"
+                 r"(?:your|their|a) library|(?:your|their) hand))?")
+_FROM = {"anywhere": None, "anywhere other than the battlefield": "not_battlefield", "the battlefield": "battlefield",
+         "your library": "library", "their library": "library", "a library": "library",
+         "your hand": "hand", "their hand": "hand"}
+
+
+def gy_head(head: str):
+    m = re.fullmatch(r"When(?:ever)? (.+)", head)
+    g = _GY.fullmatch(m[1]) if m else None
+    if g is None:
+        return None
+    desc = g["d"]
+    is_card = bool(re.search(r"\bcards?$", desc))
+    desc = re.sub(r"\s*\bcards?$", "", desc)
+    alts = None
+    if desc and desc != "permanent" or (desc == "permanent"):
+        alts = cx_events._desc_alts(desc, plural=g["q"] == "one or more")
+        if alts is None:
+            return None
+    frm = _FROM[g["from"]] if g["from"] else None
+    if not is_card:
+        # "a permanent / another artifact is put into a graveyard [from the battlefield]": permanents (tokens too)
+        # leave the battlefield, which is cx_events' perm_to_gy event, not a card arrival
+        return None
+    spec = {"alts": alts, "other": g["q"] == "another", "whose": {"your": "you", "an opponent's": "opp", "a": "any"}[g["who"]],
+            "from": frm, "cards": is_card, "batch": g["q"] == "one or more",
+            "self": False, "kind": "gy", "player": "any"}
+    return ("card_to_gy",), {"gy": spec, "batch": spec["batch"]}
+
+
+def _card_word(card, w: str) -> bool:
+    lw = w.lower()
+    if lw == "creature":
+        return card.is_creature
+    if lw == "permanent":
+        return card.is_permanent
+    if lw in cx_events._TYPES:
+        return lw.capitalize() in card.types
+    if lw.startswith("non") and lw[3:] in cx_events._TYPES:
+        return not (card.is_creature if lw == "noncreature" else lw[3:].capitalize() in card.types)
+    if lw == "token":
+        return card.is_token
+    if lw == "nontoken":
+        return not card.is_token
+    if lw in cx_events._COLORS:
+        return cx_events._COLORS[lw] in card.colors
+    if lw.startswith("non") and lw[3:] in cx_events._COLORS:
+        return cx_events._COLORS[lw[3:]] not in card.colors
+    if lw == "legendary":
+        return card.legendary
+    if lw == "nonlegendary":
+        return not card.legendary
+    if lw == "basic":
+        return card.basic
+    if lw == "nonbasic":
+        return not card.basic
+    if lw == "historic":
+        return card.is_artifact or card.legendary or card.is_saga
+    if lw == "multicolored":
+        return len(card.colors) >= 2
+    if lw == "colorless":
+        return not card.colors
+    return w in card.subtypes
+
+
+def gy_match(game, spec, perm, p, source, context, subject):
+    """The card, if the arrival ``subject`` (put into p's graveyard from zone ``context``) fits the head."""
+    me = perm.controller
+    card = subject
+    if spec["whose"] == "you" and p is not me or spec["whose"] == "opp" and p is me:
+        return False
+    if spec["other"] and card is perm.card:
+        return False
+    if spec["cards"] and card.is_token:
+        return False
+    origin = context
+    want = spec["from"]
+    if want == "not_battlefield" and origin == "battlefield" or want not in (None, "not_battlefield") and origin != want:
+        return False
+    if spec["alts"] is not None and not any(all(_card_word(card, w) for w in ws) for ws in spec["alts"]):
+        return False
+    return card

@@ -14,6 +14,7 @@ from .. import modal
 from .. import hand_put
 from .mana import add_costs, payable
 from .state import Permanent, StackItem, TARGETED, _gy_desc, is_basic_land, protected_from
+from ..life_costs import ai_ability_life_ok, ai_spell_life_ok
 
 if TYPE_CHECKING:
     from .game import Game
@@ -79,8 +80,31 @@ def damage_amount(game: Game, eff: Effect, source=None) -> int:
     return max(0, src.power) if isinstance(src, Permanent) else 0
 
 
+def _blink_next_end_target(game: Game, me: Player, eff: Effect, mine: list, theirs: list, legal: list):
+    """A permanent of ours that gains from entering again (not the source itself); else the opponent's best one
+    (out of the game until the end step, a token for good); else nothing for an optional target, or the least
+    valuable legal one for a mandatory target (CR 603.3d: a trigger with a legal target must target)."""
+    src = game.target_source
+    src = getattr(src, "source", src)
+    gains = [x for x in mine if x is not src and not x.card.is_token and
+             (x.card.etb_effects or any(t.event == "etb" for t in x.card.triggers))]
+    if gains:
+        return max(gains, key=perm_value)
+    if theirs:
+        return max(theirs, key=perm_value)
+    if eff.data.get("optional_target"):
+        return None
+    return min((x for x in legal if isinstance(x, Permanent)), key=perm_value, default=None)
+
+
 def default_choose_target(game: Game, me: Player, eff: Effect):
     """A reasonable target for eff, respecting hexproof and targeting restrictions."""
+    sel = eff.data.get("selector")
+    if isinstance(sel, dict) and sel.get("scope"):
+        from ..permanent_templates import scope_player
+        if scope_player(game, sel["scope"]) is me:   # "target creature that player controls" and that player is us
+            legal = [x for x in game.legal_targets(me, eff) if isinstance(x, Permanent)]
+            return min(legal, key=perm_value, default=None)
     if eff.target == "multi" and eff.data["probe"].kind == "cx_attach" and eff.data["probe"].data.get("host") != "target":
         from ..cx_attach import choose_many
         return choose_many(game, me, eff)
@@ -89,12 +113,14 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return choose_list(game, me, eff)
     opp = game.opponent(me)
     legal = game.legal_targets(me, eff)
+    from ..cx_spent import fitting_targets
+    legal = fitting_targets(game, me, eff, legal)      # "if its mana value is <= converge" (Prismatic Ending)
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     k = eff.kind
     if k == "copy_spell":
         return max(legal, key=lambda i: i.card.cmc, default=None)
-    if k == "die_roll" and copies.group_model(game, me, eff, None) is not None:     # a group copy's model
+    if k in ("die_roll", "become_copy") and copies.group_model(game, me, eff, None) is not None:   # copy choices
         return copies.group_model(game, me, eff, None)
     if k == "damage" and eff.data.get("spell_controller"):
         return max((i for i in legal if i.controller is opp), key=lambda i: i.card.cmc, default=None)
@@ -119,10 +145,16 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
                                                                            and x.loyalty <= amount)]
         if killable:
             return max(killable, key=perm_value)
+        walkers = [x for x in legal if isinstance(x, Permanent) and x.controller is opp and x.is_planeswalker]
+        if eff.data.get("selector", {}).get("types_all") == ["planeswalker"] and walkers:
+            return max(walkers, key=perm_value)     # "target planeswalker that player controls": loyalty lost is good
         return opp if eff.target in ("any", "player") else None
-    if k in ("bite_src", "ref_bite"):          # referent damage: "... deals damage equal to its power to ..."
+    if k in ("bite_src", "ref_bite") or eff.data.get("bite_run"):          # referent damage: "... deals damage equal to its power to ..."
         from ..cx_grammar_bite import choose as bite_choose
         return bite_choose(game, me, eff)
+    if eff.data.get("ref_amount"):     # a target only for an amount ("equal to target creature's power"): the largest
+        return max((x for x in legal if isinstance(x, Permanent)),
+                   key=lambda x: game.x_quantity(me, eff.data["xq"], None, x), default=None)
     if k in removal.KINDS:
         return removal.choose(game, me, eff)
     if k in ("cx_exchange_mark", "cx_exchange"):
@@ -136,10 +168,21 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return choose(game, me, eff)
     if k in ('graveyard_exile_all', 'graveyard_exile_choice'):
         return opp
+    if k == 'player_loses':
+        return opp
+    if k == 'life_total':
+        op = eff.data['op']
+        if op == 'exchange':
+            return opp if opp.life > me.life else None
+        if op == 'double':
+            return me
+        return me if eff.amount > me.life else opp if eff.amount < opp.life else None
+    if k == 'give_control_choice':      # a cost: give away the least valuable permanent that fits
+        return min(mine, key=perm_value, default=None)
     if k == 'adapt_exception':
         return max(mine, key=perm_value, default=None)
-    if k in ('control_permanent', 'opponent_exile'):
-        return max(theirs, key=perm_value, default=None) if k == 'control_permanent' else opp
+    if k in ('control_permanent', 'control_linked', 'opponent_exile'):     # control_linked: "... for as long as ..."
+        return opp if k == 'opponent_exile' else max(theirs, key=perm_value, default=None)
     if k in ('grave_library_top', 'return_tribal_grave'):
         return max(legal, key=lambda c: c.cmc, default=None)
     if k == 'allocated_counter':
@@ -195,8 +238,14 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return max(theirs if eff.data['power'].startswith('-') else mine, key=perm_value, default=None)
     if k == 'grant_activated':
         return max(mine, key=perm_value, default=None)
-    if k == 'blink_next_end':
-        return max(mine, key=perm_value, default=None)
+    if k == 'blink':
+        from ..blink import choose_target
+        return choose_target(game, me, eff, mine, theirs)
+    if k == 'search_plan' and eff.data.get('name_as_target'):
+        from ..search_counted import choose_name_target
+        return choose_name_target(game, me, eff)
+    if k == 'blink_next_end':          # "exile target ..., return it at the next end step" (#774)
+        return _blink_next_end_target(game, me, eff, mine, theirs, legal)
     if k == 'relationship_mark':
         if eff.data.get('relationship') == 'counter':
             return max((x for x in mine if x.p1 > 0), key=lambda x: x.p1, default=None)
@@ -213,7 +262,7 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return max(theirs, key=perm_value, default=None)
     if k == "shrink":
         return max(theirs, key=perm_value, default=None)
-    if k in ("destroy", "debuff_one", "bounce"):
+    if k in ("destroy", "debuff_one", "bounce", "tuck_perm", "tuck_top", "cx_tuck"):     # tucks: removal too (#716)
         if k == "debuff_one":
             theirs = [x for x in theirs if x.toughness <= eff.amount2]
         theirs = [x for x in theirs if not (k == "destroy" and x.has("indestructible"))]
@@ -251,6 +300,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return next((x for x in legal if x is (me if side == "mine" else opp)), None)
     if side in ("mine", "theirs"):      # newer kinds say whose permanent they want
         return max(mine if side == "mine" else theirs, key=perm_value, default=None)
+    if eff.target == "player" and eff.filter == "opp":
+        return opp if opp in legal else None    # "target opponent" is mandatory: the only choice (Wumpus Aberration)
     return None
 
 
@@ -277,7 +328,9 @@ def play_extra_lands(game: Game, me: Player):
     for _ in range(3):
         if me.land_played:
             return
-        lands = [c for c in me.hand if c.is_land] + [c for c in game.impulse_cards(me) if c.is_land]
+        from ..residual_templates import hand_locked
+        lands = ([] if hand_locked(me) else [c for c in me.hand if c.is_land]) + \
+            [c for c in game.impulse_cards(me) if c.is_land]
         if any(x.card.lands_from_gy for x in me.battlefield):
             lands += [c for c in me.graveyard if c.is_land]
         if not lands:
@@ -330,6 +383,9 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
                     return -1
                 total += max(v, 0.0)
                 continue
+            if k == "blink" and e.data.get("opponent"):
+                total -= 5.0       # "return it under an opponent's control": gives the permanent away (#318)
+                continue
             from ..residual_templates import effect_value
             residual_value = effect_value(game, me, e, tgt)
             if residual_value is None:
@@ -346,8 +402,8 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
                 total += search_counted.value(game, me, e)
             elif k in ("return_tribal_grave", "grave_library_top"):
                 total += tgt.cmc + 1 if tgt is not None else 0
-            elif k == "control_permanent":
-                total += 2 * perm_value(tgt)
+            elif k in ("control_permanent", "control_linked"):
+                total += 2 * perm_value(tgt) if tgt is not None else 0
             elif k == "populate":
                 total += max((perm_value(x) for x in me.creatures if x.card.is_token), default=0)
             elif k == "proliferate":
@@ -388,6 +444,15 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
                 if v <= 0 and all(x.kind in ("pay_gate", "hand_to_battlefield") for x in effects):
                     return -1          # nothing in hand it could put: don't spend the activation on it alone
                 total += v
+            elif k == "attach_self":           # "Equip—Pay 3 life." (#646): only a move to a better creature counts
+                from ..auras import attach_value
+                v = attach_value(game, me, tgt)
+                if v <= 0:
+                    return -1
+                total += v
+            elif k == "hand_free_cast":       # nothing in hand to cast: not worth an activation (#625)
+                from ..free_cast import value as free_value
+                total += free_value(me, e) or -1
             else:
                 total += 1
         return total
@@ -445,7 +510,7 @@ def respond(game: Game, me: Player):
     if protect is not None:
         return protect
     from ..cx_delayed import pact_affordable
-    options = {c.name: c for c in game.spell_options(me) if c.instant_speed and game.can_cast_now(me, c)
+    options = {c.name: c for c in game.spell_options(me) if c.instant_speed and game.can_cast_now(me, c) and ai_spell_life_ok(game, me, c)
                and pact_affordable(me, c)}
     top = game.stack[-1] if game.stack else None
     if top is not None:
@@ -517,7 +582,7 @@ def protective_ability(game: Game, me: Player, item, victim):
         return None                 # already saved by an earlier activation
     for perm in me.battlefield:
         for i, act in enumerate(perm.activated):
-            if not act.effects or not game.can_activate(me, perm, i):
+            if not act.effects or not game.can_activate(me, perm, i) or not ai_ability_life_ok(me, act):
                 continue
             e = act.effects[0]
             keyword = e.data.get("keyword") if e.kind == "grant" else None
@@ -528,6 +593,8 @@ def protective_ability(game: Game, me: Player, item, victim):
             if not saves or e.target not in ("creature", "creature_mine", "any", "self") or \
                     e.target == "self" and perm is not victim:
                 continue
+            if e.target != "self" and not game.passes_filter(e, victim, me):
+                continue            # "target artifact creature", "target Cleric or Wizard creature" (#333)
             first = [] if e.target == "self" else [victim]
             return ("activate", perm, f"ability:{i}", first + [None] * (len(act.effects) - len(first)))
     for pl in game.players:      # an "any player may activate" saver on someone else's permanent
@@ -535,7 +602,8 @@ def protective_ability(game: Game, me: Player, item, victim):
             continue
         for perm in pl.battlefield:
             for i, act in enumerate(perm.activated):
-                if not act.effects or not any_player_ability(act) or not game.can_activate(me, perm, i):
+                if not act.effects or not any_player_ability(act) or not game.can_activate(me, perm, i) \
+                        or not ai_ability_life_ok(me, act):
                     continue
                 e = act.effects[0]
                 keyword = e.data.get("keyword") if e.kind == "grant" else None
@@ -543,7 +611,8 @@ def protective_ability(game: Game, me: Player, item, victim):
                          (any(x.kind == "destroy" for x in item.effects)
                           or damage >= victim.toughness - victim.damage)
                          or e.kind == "prevent_next" and damage and victim.toughness - victim.damage > damage - e.amount)
-                if not saves or e.target not in ("creature", "creature_mine", "any"):
+                if not saves or e.target not in ("creature", "creature_mine", "any") \
+                        or not game.passes_filter(e, victim, me):
                     continue
                 return ("activate", perm, f"ability:{i}", [victim] + [None] * (len(act.effects) - 1))
     return None
@@ -574,7 +643,7 @@ def respond_extras(game: Game, me: Player):
             return combat_pump(game, me)
         return None
     from ..cx_delayed import pact_affordable
-    options = [c for c in game.spell_options(me) if c.instant_speed and game.can_cast_now(me, c)
+    options = [c for c in game.spell_options(me) if c.instant_speed and game.can_cast_now(me, c) and ai_spell_life_ok(game, me, c)
                and pact_affordable(me, c)]
     if game.step == "declare_attackers" and game.attackers:
         flash_pw = [c for c in options if c.is_planeswalker]
@@ -612,12 +681,18 @@ def ability_worth(game: Game, me: Player, perm: Permanent, idx: int, reserve: in
     if act.cost.get("X") and x is None:
         return False
     need = add_costs({k: v for k, v in act.cost.items() if k != "X"},
-                     {"generic": (x or 0) + reserve})
+                     {"generic": (x or 0) * act.cost.get("X", 1) + reserve})
     if not payable(game.mana_sources(me, perm if c.get("tap") else None, "ability"), need):
         return False
     effects = act.effects
     if x is not None:               # the X paid as mana: judge the effects at full size
         effects = [dataclasses.replace(e, amount=x, amount2=x if e.data.get("x2") else e.amount2)
+                   if e.data.get("x") else e for e in effects]
+        effects = [dataclasses.replace(e, data=dict(e.data, x_now=x)) if e.data.get("mv_x") else e
+                   for e in effects]        # "mana value X or less" (Fiend Artisan): judge with the X chosen (#379)
+    if c.get("remove_counter_count") == "x" and x is None:     # "Remove X ... counters from ~": all of them (#345)
+        n = perm.counters.get(c["remove_counter"], 0)
+        effects = [dataclasses.replace(e, amount=n, amount2=n if e.data.get("x2") else e.amount2)
                    if e.data.get("x") else e for e in effects]
     if c.get('remove_creature_counters') in ('x', 'positive'):
         payment = costs.ability_plan(game, me, perm, act, game.ability_cost(me, perm, act))
@@ -928,10 +1003,10 @@ def use_abilities(game: Game, me: Player):
             game.activate(me, h, "sac_debuff")
     play_extra_lands(game, me)
     equip_all(game, me)
-    if game.step == "main1":    # "can't be blocked this turn" before combat
+    if game.step == "main1":    # "can't be blocked this turn" and non-mana Equip costs (#646) before combat
         for perm in list(me.battlefield):
             for i, act in enumerate(perm.activated):
-                if act.kind == "ability" and act.effects and act.effects[0].kind == "unblockable" and \
+                if act.kind == "ability" and act.effects and act.effects[0].kind in ("unblockable", "attach_self") and \
                         perm in me.battlefield and ability_worth(game, me, perm, i):
                     game.activate(me, perm, f"ability:{i}")
                 elif act.kind == "ability" and act.effects and act.effects[0].kind == "cx_animate" and \
@@ -941,7 +1016,7 @@ def use_abilities(game: Game, me: Player):
                     game.activate(me, perm, f"ability:{i}")     # "~ becomes a 2/2 ... creature until end of turn": attack
     # Spells from other zones or with alternative costs the AI may not look at.
     for c in game.spell_options(me):
-        if (c in me.hand and not c.modes) or c.instant_speed or not game.can_cast_now(me, c):
+        if (c in me.hand and not c.modes) or c.instant_speed or not game.can_cast_now(me, c) or not ai_spell_life_ok(game, me, c):
             continue
         need = add_costs(game.cost_of(me, c), {"generic": _reserve(game, me)})
         if not payable(game.mana_sources(me), need):

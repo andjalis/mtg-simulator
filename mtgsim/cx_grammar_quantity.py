@@ -19,6 +19,7 @@ None. ``value(game, p, spec, item, prev)`` evaluates it when the effect resolves
     the total power of creatures you control
     the number of opponents you have
     the number of colors of mana spent to cast ~ (converge)
+    the amount of mana spent to cast ~           (the spell's payment, X included; a copy paid nothing)
     twice <Q> / half <Q>, rounded up|down
 
 Only quantities whose referent is fixed by the words are read here. "its power", "that card's mana value" and
@@ -28,9 +29,11 @@ from __future__ import annotations
 
 import re
 
+from . import this_way
+
 _COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 _STATS = ("power", "toughness", "mana value")
-_ZONES = {"in all graveyards": "all_gy", "in your graveyard": "your_gy", "in an opponent's graveyard": "opp_gy",
+_ZONES = {"in all graveyards": "all_gy", "in each graveyard": "all_gy", "in your graveyard": "your_gy", "in an opponent's graveyard": "opp_gy",
           "in your hand": "your_hand", "in exile": "exile", "you own in exile": "your_exile",
           "in your library": "your_library"}
 # "the number of <things> <past event> this turn" -> the turn-history condition phrase cx_condlib already counts
@@ -82,10 +85,20 @@ def quantity(text: str):
     m = re.fullmatch(r"the number of (?:([\w+/-]+) )?counters? removed this way", low)
     if m:       # "draw a card for each counter removed this way": what the previous effect removed (#345)
         return ("this_way", "removed", m[1] or "counter")
+    if re.fullmatch(r"(?:the (?:amount of )?|that )?excess damage(?: dealt(?: to (?:that creature|that permanent|a creature|"
+                    r"a permanent))? this way)?", low):
+        return ("cxq", "excess")            # the excess damage this resolution dealt (rule 120.4a, #560)
     if low == "the number of opponents you have":
         return ("cxq", "opponents")
     if low in ("the number of colors of mana spent to cast ~", "the number of colors of mana spent to cast this spell"):
         return ("cxq", "converge")
+    m = re.fullmatch(r"the (?:number|amount) of mana from (.+?) (?:that was )?spent to cast (?:~|this spell|it)", low)
+    if m:       # "for each mana from a Treasure spent to cast ~" (Spoils of the Hunt, Cataclysmic Prospecting)
+        from .cx_spent import source_kind
+        kind = source_kind(m[1])
+        return ("cxq", "mana_from", kind) if kind else None
+    if low in ("the amount of mana spent to cast ~", "the amount of mana spent to cast this spell"):
+        return ("cxq", "mana_amount")
     if low == "the number of cards you've drawn this turn":
         return ("cxq", "drawn")
     if low == "the number of cards you've discarded this turn":
@@ -97,6 +110,13 @@ def quantity(text: str):
     m = re.fullmatch(r"the number of (permanents|creatures|artifacts|lands|enchantments|tokens) sacrificed this way", low)
     if m:       # the "Sacrifice any number of ..." just before it (cx_grammar_thatmany records one type, or none)
         return ("this_way", "sacrificed", m[1][:-1])
+    m = re.fullmatch(r"the number of (?:nonland )?(permanents|creatures|artifacts|lands|enchantments|planeswalkers) "
+                     r"destroyed this way", low)
+    if m:       # the destroy just before it in this resolution (wrath, destroy_all, group_remove, ... record it) (#337)
+        return ("this_way", "destroyed", m[1][:-1])
+    tw = this_way.parse_quantity(t)
+    if tw:          # "the number of creature cards milled this way" (#642)
+        return tw
     if low == "the number of cards drawn this way":
         return ("this_way", "drawn", "card")    # the draw just before it in this resolution (kinds.cards.draw)
     m = re.fullmatch(r"(twice|half) (.+?)(?:, rounded (up|down))?", t, re.I)
@@ -109,14 +129,24 @@ def quantity(text: str):
     if m:
         noun = _noun(m[3])
         return ("cxq", m[1].lower(), m[2].lower(), noun) if noun else None
+    m = re.fullmatch(r"the number of (?:different (mana values|powers|toughnesses)|(colors)) among (.+)", t, re.I)
+    if m:       # "a card for each different mana value among nonland permanents you control" (#337)
+        stat = {"mana values": "mana value", "powers": "power", "toughnesses": "toughness"}.get(
+            (m[1] or "").lower(), "colors")
+        zone = re.fullmatch(r"(.+?) (in your graveyard|in all graveyards|in your hand)", m[3], re.I)
+        if zone:
+            cards = _cards(zone[1])
+            return ("cxq", "distinct_cards", stat, _ZONES[zone[2].lower()], cards) if cards is not None else None
+        noun = _noun(m[3])
+        return ("cxq", "distinct", stat, noun) if noun else None
     m = re.fullmatch(r"the number of card types among cards (in all graveyards|in your graveyard)", low)
     if m:
         return ("cxq", "card_types", _ZONES[m[1]])
-    m = re.fullmatch(r"the number of (.+?) (in all graveyards|in your graveyard|in an opponent's graveyard|"
+    m = re.fullmatch(r"the number of (.+?) (in all graveyards|in each graveyard|in your graveyard|in an opponent's graveyard|"
                      r"in your hand|in exile|you own in exile|in your library)", t, re.I)
     if m:
         zone = _ZONES[m[2].lower()]
-        named = re.fullmatch(r"cards named ~", m[1], re.I)
+        named = re.fullmatch(r"cards? named ~", m[1], re.I)
         if named:
             return ("cxq", "cards", zone, None)
         spec = _cards(m[1])
@@ -165,6 +195,17 @@ def _source(item):
     return src if isinstance(src, Permanent) else None
 
 
+def spent_amount(obj) -> int:
+    """Mana actually spent to cast a spell (X included) or to cast the spell a permanent resolved from;
+    a copy, or a permanent that wasn't cast, spent none."""
+    from .engine.state import Permanent
+    if obj is None or getattr(obj, "kind", "") == "copy":
+        return 0
+    if isinstance(obj, Permanent):
+        return (obj.mana_spent + obj.entered_x) if obj.was_cast else 0
+    return getattr(obj, "mana_spent", 0) + getattr(obj, "x", 0)
+
+
 def _source_name(item) -> str:
     card = getattr(item, "card", None) or getattr(getattr(item, "source", None), "card", None)
     return card.name if card is not None else ""
@@ -195,6 +236,8 @@ def _stat(perm, stat: str) -> int:
 
 def value(game, p, spec, item, prev) -> int:
     kind = spec[1]
+    if kind == "tw":
+        return this_way.value(game, p, spec, item)
     if kind == "flips":
         return getattr(item, "flips_" + spec[2], 0)
     if kind == "devotion":
@@ -206,6 +249,12 @@ def value(game, p, spec, item, prev) -> int:
         if item is not None and getattr(item, "is_spell", False):
             return len(getattr(item, "mana_colors", ()))
         return len(getattr(_source(item), "mana_colors", ()))
+    if kind == "mana_from":     # the spell, else a trigger's spell ("Whenever you cast ..."), else the permanent
+        ctx = getattr(item, "context", None)
+        obj = item if getattr(item, "is_spell", False) else ctx if getattr(ctx, "is_spell", False) else _source(item)
+        return getattr(obj, "mana_from", {}).get(spec[2], 0) if obj is not None and getattr(obj, "was_cast", True) else 0
+    if kind == "mana_amount":
+        return spent_amount(item if item is not None and getattr(item, "is_spell", False) else _source(item))
     if kind == "drawn":
         drawn = getattr(p, "drawn_turn", (None, 0))
         return drawn[1] if drawn[0] == game.turn else 0
@@ -227,6 +276,8 @@ def value(game, p, spec, item, prev) -> int:
             return len(members)
         stats = [_stat(x, spec[2]) for x in members]
         return max(stats, default=0) if kind == "greatest" else sum(max(0, s) for s in stats)
+    if kind == "excess":
+        return getattr(game, "excess_dealt", 0)
     if kind == "card_types":
         return len({t for c in _zone_cards(game, p, spec[2]) for t in c.types})
     if kind == "cards":
@@ -236,6 +287,22 @@ def value(game, p, spec, item, prev) -> int:
             return sum(1 for c in cards if c.name == name)
         from .cx_condlib import _card_ok
         return sum(1 for c in cards if _card_ok(c, spec[3]))
+    if kind in ("distinct", "distinct_cards"):
+        if kind == "distinct":
+            from .cx_grammar import group_members
+            objs = [(x.card, x) for x in group_members(game, p, {"group": spec[3]}, _source(item))]
+        else:
+            from .cx_condlib import _card_ok
+            objs = [(c, None) for c in _zone_cards(game, p, spec[3]) if _card_ok(c, spec[4])]
+        if spec[2] == "colors":
+            return len({c for card, _ in objs for c in card.colors})
+        values = set()
+        for card, perm in objs:
+            v = _stat(perm, spec[2]) if perm is not None else card.cmc if spec[2] == "mana value" else \
+                getattr(card, spec[2], None)
+            if v is not None:
+                values.add(v)
+        return len(values)
     if kind == "hist":
         hist = getattr(game, "_condlib_hist", None)
         return hist[1].get((spec[2], p.name), 0) if hist is not None and hist[0] == game.turn else 0

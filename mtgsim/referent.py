@@ -14,7 +14,37 @@ def _token(m):
                                     "colors": frozenset({color}) if color else frozenset()})
 
 
+_STAT = r"(power|toughness|mana value)"
+_THAT = r"(?:its|that (?:creature|artifact|enchantment|permanent|spell)'s)"
+
+
+def _stat_spec(m, first, second):
+    """("stat", "prev", stat) for the object the effect before it targeted, or the sum of two of its stats."""
+    a = ("stat", "prev", m[first].lower())
+    return a if not m[second] else ("arith", a, "+", ("stat", "prev", m[second].lower()))
+
+
+def _controller_amount(m):
+    """"Its controller gains / loses life (mills cards) equal to its mana value / power plus its toughness"
+    (Crumble, Illumination, Phthisis, Grisly Spectacle): the object the previous effect targeted, read as it was
+    (last known information after a destroy or a counter), and its controller."""
+    from .cards import Effect
+    kind = {"gains life": "gain_life", "loses life": "lose_life", "mills cards": "mill"}[m[1].lower()]
+    return Effect(kind, 1, target="that_controller", data={"xq": _stat_spec(m, 2, 3)})
+
+
+def _gain_target_stat(m):
+    """"You gain life equal to target creature's power" (Soul's Grace): the creature is a target only for the
+    amount; read on resolution (``prev`` is the chosen creature)."""
+    from .cards import Effect
+    return Effect("gain_life", 1, target="creature", data={"xq": ("stat", "prev", m[1].lower()), "side": "any",
+                                                           "ref_amount": True})
+
+
 EFFECT_PATTERNS = [
+    (rf"{_THAT} controller (gains life|loses life|mills cards) equal to {_THAT} {_STAT}(?: plus {_THAT} {_STAT})?",
+     _controller_amount),
+    (rf"you gain life equal to target creature's {_STAT}", _gain_target_stat),
     (_TOKEN + " " + _TOKEN_STATS, _token),
     (r"(?:you may have )?~'s base (power|toughness) become(?:s)? equal to that creature's \1 until end of turn",
      lambda m: _base(m[1].lower())),

@@ -222,6 +222,10 @@ def sources(game, eff, me=None):
     j = idx - 1
     while j >= 0 and effects[j].kind == "bite_src":
         mark = effects[j]
+        if mark.data.get("run"):        # "they each": the targets of the run before it
+            out += [t for t in chosen[max(0, j - mark.data["run"]):j] if isinstance(t, Permanent)]
+            j -= 1
+            continue
         if mark.target == "self":
             obj = _source_perm(game)
         elif mark.target == "host":
@@ -280,6 +284,11 @@ def choose(game, me, eff):
     from .engine.state import Permanent
     opp = game.opponent(me)
     legal = game.legal_targets(me, eff)
+    if eff.data.get("bite_run"):        # "Tap two target creatures you control. They each deal damage ...": mine, biggest
+        taken = getattr(game, "_choosing_targets", None) or []
+        pool = [x for x in legal if isinstance(x, Permanent) and x.controller is me and x.power > 0
+                and all(x is not t for t in taken)]
+        return max(pool, key=lambda x: (x.power, perm_value(x)), default=None)
     if eff.kind == "bite_src":
         bite_eff = _following_bite(game, eff)
         to = bite_eff.data.get("to") if bite_eff is not None else "target"

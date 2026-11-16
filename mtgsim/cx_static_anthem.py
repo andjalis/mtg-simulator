@@ -80,4 +80,7 @@ def fits(perm, sub: str, source=None) -> bool:
         if state == "colorless":
             return not card.colors
         return False
-    return sub in card.subtypes
+    if sub in card.subtypes:
+        return True
+    from .permanent_templates import _CREATURE_SUBTYPES     # a changeling is every creature type (rule 702.73a)
+    return bool(card.changeling and perm.is_creature and sub.lower() in _CREATURE_SUBTYPES)

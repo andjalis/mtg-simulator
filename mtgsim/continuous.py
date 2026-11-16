@@ -6,11 +6,12 @@ Dependencies are explicit inputs; Oracle dependency inference is not implemented
 from dataclasses import dataclass, fields
 from .cards import CardDef
 
-LAYERS = {'grant': (6, 0), 'remove': (6, 0), 'set_base': (7, 1),
+LAYERS = {'grant': (6, 0), 'remove': (6, 0), 'lose_all': (6, 0), 'lock': (6, 0), 'set_base': (7, 1),
           'modify': (7, 2), 'switch': (7, 3)}
-LAYERS.update({op: (4, 0) for op in ('set_types', 'add_types', 'remove_types',
+LAYERS.update({op: (4, 0) for op in ('set_types', 'add_types', 'remove_types', 'all_creature_types',
               'set_subtypes', 'add_subtypes', 'remove_subtypes')})
 LAYERS.update({op: (5, 0) for op in ('set_colors', 'add_colors', 'remove_colors')})
+LAYERS['set_name'] = (3, 0)     # "... named Legitimate Businessperson" (Witness Protection, #517)
 
 
 @dataclass(frozen=True)
@@ -28,6 +29,7 @@ class ContinuousEffect:
     types: frozenset = frozenset()
     subtypes: frozenset | None = None
     colors: frozenset = frozenset()
+    name: str = ''
 
     @property
     def layer(self):
@@ -61,19 +63,35 @@ def ordered(effects):
     return result
 
 
+_HELPERS: list = []
+
+
+def _helpers():
+    """(linked_effects, sources, type_grants, chars), imported once: they import this module (#698)."""
+    if not _HELPERS:
+        from .cx_statics import linked_effects
+        from .residual_templates import sources
+        from .cx_type_grants import effects as type_grants
+        from .cx_static_chars import effects as chars          # #406: static type / colour / base-P/T changes
+        _HELPERS.extend((linked_effects, sources, type_grants, chars))
+    return _HELPERS
+
+
 def active(permanent):
     game = getattr(permanent.controller, '_game', None)
     if game is None:
         return []
-    from .cx_statics import linked_effects
-    from .residual_templates import sources
+    linked_effects, sources, type_grants, chars = _HELPERS or _helpers()
     static = [ContinuousEffect(-id(src), permanent, "remove", getattr(src, "rules_timestamp", 0), keyword="infect", source=src)
               for src in sources(game, "remove_infect") if (permanent.is_creature if hasattr(permanent, "impending") else permanent._card.is_creature) and src.controller is not permanent.controller]
-    from .cx_type_grants import effects as type_grants
-    from .cx_static_chars import effects as chars          # #406: static type / colour / base-P/T changes
     return static + linked_effects(permanent) + type_grants(permanent) + chars(permanent) + [e for e in game.continuous_effects if e.target is permanent and
             permanent in permanent.controller.battlefield and (e.source is None or
-            e.source in e.source.controller.battlefield)]
+            e.source in e.source.controller.battlefield) and _alive(game, e)]
+
+
+def _alive(game, e):
+    from .cx_statics import effect_alive        # "for as long as ~ remains tapped" (cx_statics.link_effect)
+    return effect_alive(game, e)
 
 
 class CharacteristicView(CardDef):
@@ -110,7 +128,7 @@ def refresh(permanent):
 
 
 def characteristics(permanent, base):
-    effects = [e for e in active(permanent) if e.layer < (6, 0)]
+    effects = [e for e in active(permanent) if e.layer < (6, 0) or e.operation == 'lose_all']
     animation = getattr(permanent, '_animated', None)
     if animation is not None or getattr(permanent, '_crewed', False):
         stamp = max(getattr(permanent, 'animation_timestamp', 0) if animation else 0,
@@ -138,8 +156,19 @@ def characteristics(permanent, base):
     if cached is not None and cached[0] == key:
         return cached[1]
     types, subtypes, colors = base.types, base.subtypes, base.colors
+    lost = every = False
+    name = None
     for effect in ordered(effects):
         operation = effect.operation
+        if operation == 'set_name':
+            name = effect.name
+            continue
+        if operation == 'lose_all':         # layer 6: cx_static_chars.strip (#406)
+            lost = True
+            continue
+        if operation == 'all_creature_types':   # "is every creature type" (#406)
+            every = True
+            continue
         if operation.endswith('types') and not operation.endswith('subtypes'):
             types = (effect.types if operation == 'set_types' else types | effect.types
                      if operation == 'add_types' else types - effect.types)
@@ -152,8 +181,14 @@ def characteristics(permanent, base):
         else:
             colors = (effect.colors if operation == 'set_colors' else colors | effect.colors
                       if operation == 'add_colors' else colors - effect.colors)
-    view = CharacteristicView(**{f.name: getattr(base, f.name) for f in fields(CardDef)})
+    from .cx_static_chars import strip
+    view = CharacteristicView(**(strip(base, subtypes) if lost else {f.name: getattr(base, f.name) for f in fields(CardDef)}))
     view.types, view.subtypes, view.effective_colors = types, subtypes, colors
+    if name is not None:
+        view.name = name
+    view.lost_all = lost
+    if every:
+        view.changeling = True
     if conditional_colors:
         view.effective_colors = base.colors
         view._color_source = permanent
@@ -225,8 +260,15 @@ def pt(permanent):
 
 def keyword(permanent, kw, initial):
     value = initial
-    for effect in ordered([e for e in active(permanent) if e.layer == (6, 0) and e.keyword == kw]):
+    effects = [e for e in active(permanent) if e.layer == (6, 0) and (e.keyword == kw or e.operation == 'lose_all')]
+    if any(e.operation == 'lock' for e in effects):
+        return False                        # "can't have or gain flying": no grant, whenever, gives it
+    for effect in ordered(effects):
         value = effect.operation == 'grant'
+    lost = [e.timestamp for e in effects if e.operation == 'lose_all']
+    if lost and not value:
+        from .cx_static_chars import granted_after
+        value = granted_after(permanent, kw, max(lost))     # an Equipment attached later still grants it
     return value
 
 

@@ -173,10 +173,16 @@ def _face_special_lines(st, line):
         line = re.sub(r"^[A-Z][a-z]+'s [A-Z][a-z]+ — (?=When )", "", line)    # a named trigger: Wasp's Sting
         # Any ability word ("Phalanx Commander —", "Life Drain —") before a When/At/If line; "Survival — "
         # keeps its prefix: it names a distinct engine event.
-        line = re.sub(r"^(?!(?:Survival|Pack tactics) — )[A-Z][\w'&/ ]+ — (?=When|At|If)", "", line)
+        line = re.sub(r"^(?!(?:Survival|Pack tactics) — |[IVX]+(?:, [IVX]+)* — )[A-Z][\w'&/ ,.!-]+ — (?=When|At|If)", "",
+                      line)       # also "Vibro-Shock Gauntlets —", "Bring it Down! —" (CR 207.2c); not Saga chapters
         # Discard triggers fire once per card, so "that many" counters is one counter each time.
         line = re.sub(r"^(Whenever you discard one or more cards), put that many \+1/\+1 counters on ~\.$",
                       r"\1, put a +1/+1 counter on ~.", line)
+        from ..cx_attack_refs import rewrite as _attack_refs; line = _attack_refs(line)    # "they" = the attackers (#628)
+        from ..cx_owner_library import rewrite as _owner_lib; line, _other = _owner_lib(line)    # "put it on top of its owner's library" (#628)
+        if _other:
+            unsupported.append(line)
+            return None
         from .. import cx_cda as _cx_cda, cx_conditions as _cx_conditions, cx_night_buffs as _cx_night_buffs, cx_night_kinship as _cx_night_kinship, cx_timing as _cx_timing, cx_triggers as _cx_triggers, emerge as _emerge, that_much as _that_much, transmute as _transmute
         if _transmute.parse_line(line, st) or _emerge.parse_line(line, st) or _that_much.parse_line(line, st) or _cx_triggers.parse_line(line, st) or _cx_timing.parse_line(line, st) or _cx_conditions.parse_line(line, st) or _cx_cda.parse_line(line, st) or _cx_night_buffs.parse_line(line, st) or _cx_night_kinship.parse_line(line, st):
             return None
@@ -186,8 +192,8 @@ def _face_special_lines(st, line):
         from .. import counter_mechanics, permanent_templates, backlog_templates, advanced_templates, residual_templates, batch1_templates, cx_combat_costs
         if cx_combat_costs.parse_line(line, st):
             return None
-        from .. import cx_replace, cx_top, cx_abilitycopy, cx_trigger_grants as _cx_trigger_grants, cx_grammar_crewblock as _cx_crewblock, cx_type_grants as _cx_type_grants, cx_static_chars as _cx_static_chars, cx_multi_target as _cx_multi_target
-        if cx_replace.parse_line(line, st) or cx_top.parse_line(line, st) or cx_abilitycopy.parse_line(line, st) or residual_templates.parse_line(line, st) or batch1_templates.parse_line(line, st) or advanced_templates.parse_line(line, st) or backlog_templates.parse_line(line, st) or permanent_templates.parse_line(line, st) or counter_mechanics.parse_line(line, st) or _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st) or _cx_trigger_grants.parse_line(line, st) or _cx_type_grants.parse_line(line, st) or _cx_static_chars.parse_line(line, st) or _cx_crewblock.parse_line(line, st) or _cx_multi_target.parse_line(line, st):
+        from .. import cx_replace, cx_top, cx_abilitycopy, cx_trigger_grants as _cx_trigger_grants, cx_grammar_crewblock as _cx_crewblock, cx_type_grants as _cx_type_grants, cx_static_chars as _cx_static_chars, cx_multi_target as _cx_multi_target, cx_discard_bf as _cx_discard_bf, cx_counter_choice as _cx_counter_choice, cx_name_lock as _cx_name_lock
+        if cx_replace.parse_line(line, st) or cx_top.parse_line(line, st) or cx_abilitycopy.parse_line(line, st) or residual_templates.parse_line(line, st) or batch1_templates.parse_line(line, st) or advanced_templates.parse_line(line, st) or backlog_templates.parse_line(line, st) or permanent_templates.parse_line(line, st) or counter_mechanics.parse_line(line, st) or _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st) or _cx_trigger_grants.parse_line(line, st) or _cx_type_grants.parse_line(line, st) or _cx_static_chars.parse_line(line, st) or _cx_crewblock.parse_line(line, st) or _cx_multi_target.parse_line(line, st) or _cx_discard_bf.parse_line(line, st) or _cx_counter_choice.parse_line(line, st) or _cx_name_lock.parse_line(line, st):
             return None
         parts = [p.strip().lower() for p in re.split(r",(?: and)? | and |,", line)]
         if all(p in KEYWORDS or re.fullmatch(r"(?:ward \{\d+\}|toxic \d+|bushido \d+)", p) for p in parts):
@@ -393,6 +399,10 @@ def _face_land_and_mana_lines(st, line):
                 return None
         m = re.fullmatch(r"Equip (\{[^ .]+\})(\. This ability costs [^.]+ less to activate[^.]*\.)?", line)
         if m:
+            rules = extra.get("advanced_rules", {})
+            if rules.get("equip_restriction") and extra.get("equip_cost") is not None:
+                # "Equip Pirate {1}" came first: it's an extra, cheaper equip, not a limit on this one (#744)
+                rules["equip_typed"] = (rules.pop("equip_restriction"), extra["equip_cost"])
             extra["equip_cost"] = parse_mana_cost(m[1])
             if m[2]:
                 approximations.append(f"cost reduction ignored:{m[2]}")
@@ -407,6 +417,13 @@ def _face_land_and_mana_lines(st, line):
                 restriction = " or ".join(kinds)
             else:
                 restriction = None
+            if restriction is not None and extra.get("equip_cost") is not None and \
+                    not extra.get("advanced_rules", {}).get("equip_restriction"):
+                # a plain "Equip {2}" came first: this is another, typed equip (#744)
+                extra.setdefault("advanced_rules", {})["equip_typed"] = (restriction, parse_mana_cost(m[2]))
+                if m[3]:
+                    approximations.append(f"cost reduction ignored:{m[3]}")
+                return None
             if restriction is not None:
                 extra["equip_cost"] = parse_mana_cost(m[2])
                 extra.setdefault("advanced_rules", {})["equip_restriction"] = restriction
@@ -493,9 +510,12 @@ def _face_land_and_mana_lines(st, line):
             extra["mana_amount"] = max(cond_mana[1], extra.get("mana_amount", 1))
             extra["mana_dyn"] = cond_mana[2]
             return None
-        m = re.fullmatch(r"\{T\}: Add ([^.]+)\.(?: ~ deals 1 damage to you\.)?", line)
+        m = re.fullmatch(r"\{T\}: Add ([^.]+)\.( ~ deals 1 damage to you\.)?", line)
         if m:
             cols, amount = _parse_mana_ability(m[1])
+            if m[2]:        # painlands: the damage is dealt when this ability's mana is used (#801)
+                extra["mana_damage"] = 1
+                extra["mana_damage_colors"] = frozenset(extra.get("mana_damage_colors", frozenset()) | set(cols))
             if not cols and "chosen color" not in m[1]:
                 # No colour in the wording: "N mana in any combination of colors" is exactly N mana of any colours;
                 # "N mana of any one color" / "of different colors" are played as that too (recorded below). Anything
@@ -521,6 +541,10 @@ def _face_land_and_mana_lines(st, line):
             return None
         if re.fullmatch(r"~ enters(?: the battlefield)? tapped\.", line):
             enters_tapped = True
+            return None
+        if re.fullmatch(r"~ enters(?: the battlefield)? tapped and doesn't untap during your untap step\.", line):
+            enters_tapped = True        # Traxos: the untap lock is the plain no_untap flag
+            extra["no_untap"] = True
             return None
         if re.fullmatch(r"~ enters(?: the battlefield)? tapped unless you control two or more other lands\.", line):
             extra["tapped_condition"] = "unless_2_lands"
@@ -989,6 +1013,12 @@ def _face_cost_and_static_lines(st, line):
         if m:                                    # a state trigger: sacrificed while you control none
             extra["needs_land"] = {"lands": "Land", "Plains": "Plains"}.get(m[1], m[1][:-1])
             return None
+        from .. import cx_delayed as _cx_delayed
+        if _cx_delayed.flash_line(line, st):                  # flash Auras sacrificed at cleanup if cast as an instant
+            return None
+        from .. import cx_trig_state as _cx_trig_state
+        if _cx_trig_state.parse_line(line, extra):        # "When you control no other creatures, sacrifice ~."
+            return None
         line = re.sub(r"^Raid — (?=~ enters with)", "", line)
         m = re.fullmatch(r"~ enters with a \+1/\+1 counter on it if (an opponent lost life|a creature died|you attacked) "
                          r"this turn\.", line)
@@ -1023,7 +1053,7 @@ def _face_cost_and_static_lines(st, line):
             alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2])))
             return None
         from ..cx_spell_costs import parse_line as _spell_add_cost      # "As an additional cost to cast ~, ..." (#342)
-        if _spell_add_cost(line, extra):
+        if _spell_add_cost(line, extra, getattr(st, "mana_cost", None)):
             return None
         return line
     finally:
@@ -1060,6 +1090,20 @@ def _face_keyword_ability_lines(st, line):
             extra["cycling"] = {"cost": parse_mana_cost(m[2]), "land": "" if kind == "cycling" else
                                 "basic" if kind == "basic landcycling" else "any" if kind == "landcycling" else
                                 m[1][:-7]}
+            return None
+        from .. import champion as _champion
+        if _champion.parse_line(line, st):      # "Champion an Elf" (#646)
+            return None
+        from .. import morph_costs as _morph_costs
+        if _morph_costs.parse_line(line, st):           # "Morph—Reveal a black card in your hand." (#646)
+            return None
+        from .. import cumulative_costs as _cumulative_costs
+        if _cumulative_costs.parse_line(line, st):      # "Cumulative upkeep—Discard a card." (#646)
+            return None
+        from .. import kw_lines as _kw_lines
+        spec = _kw_lines.typecycling(line)       # "Wizardcycling {2}", "Islandcycling {2}, swampcycling {2}" (#646)
+        if spec is not None:
+            extra["cycling"] = spec
             return None
         m = re.fullmatch(r"Saddle (\d+)", line)
         if m:
@@ -1243,11 +1287,17 @@ def _face_ability_lines(st, line):
                 approximations += head[1]
                 mode_sink = modes
                 return None
+            from ..cx_group_refs import spell_line_rider     # "Spell mastery — If C, those creatures ..." (#628)
+            if spell_line_rider(line, spell):
+                return None
             effs, bad = _parse_effects(line, opts=bool(extra.get("bargain") or extra.get("gift")))
             spell += effs
             unsupported += bad
             return None
         if cx_grammar.parse_static(line, st):
+            return None
+        from ..cx_night_buffs import enters_tapped_late      # "~ enters tapped unless / if <condition>" (#630)
+        if enters_tapped_late(line, st):
             return None
         unsupported.append(line)
         return line
@@ -1265,4 +1315,5 @@ from .. import cx_grammar  # noqa: E402
 from ..cx_night_flash import parse_line as _night_flash_line  # noqa: E402
 from ..cx_night_aura import parse_line as _night_aura_line  # noqa: E402
 from ..named_cards import parse_line as _named_cards_line  # noqa: E402
-_FACE_LINE_PARSERS = (_named_cards_line, _night_aura_line, _night_flash_line, _face_special_lines, _face_mode_and_ward_lines, _face_land_and_mana_lines, _face_cost_and_static_lines, _face_keyword_ability_lines, _face_ability_lines)
+from ..cx_flash_perm import parse_line as _flash_perm_line  # noqa: E402
+_FACE_LINE_PARSERS = (_named_cards_line, _night_aura_line, _flash_perm_line, _night_flash_line, _face_special_lines, _face_mode_and_ward_lines, _face_land_and_mana_lines, _face_cost_and_static_lines, _face_keyword_ability_lines, _face_ability_lines)

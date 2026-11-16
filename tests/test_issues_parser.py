@@ -150,10 +150,22 @@ if __name__ == "__main__":
 class FalseFullXQuantities(unittest.TestCase):
     """Player clauses whose X the engine can't read yet stay unmatched instead of counting the wrong thing."""
 
-    def test_named_card_count_not_full(self):
+    def test_named_card_count_reads_the_name(self):
+        """#314: "cards named ~" counts cards with the spell's own name (cx_grammar_quantity), so Mind Burst parses."""
+        import random
+        from mtgsim.ai import HeuristicAI
+        from mtgsim.engine import Game, Player, StackItem
+        from tests.test_templates import ISLAND
         c = card("Mind Burst", "{1}{B}", "Sorcery", "Target player discards X cards, where X is one plus the number "
                  "of cards named Mind Burst in all graveyards.")
-        self.assertTrue(c.unsupported)
+        self.assertEqual(c.unsupported, [])
+        a, b = Player("a", [], HeuristicAI()), Player("b", [], HeuristicAI())
+        g = Game(a, b, random.Random(0))
+        g.turn, g.step = 3, "main1"
+        b.hand, a.graveyard, b.graveyard = [ISLAND] * 6, [c], [c, ISLAND]
+        g.stack.append(StackItem(a, list(c.spell_effects), [b] * len(c.spell_effects), card=c, name=c.name))
+        g.resolve_top()
+        self.assertEqual(len(b.hand), 3)        # one plus two Mind Bursts in graveyards
 
     def test_that_spells_mana_value_reads_the_spell(self):
         """#317 made "that spell's mana value" a readable quantity, so the clause now parses with it."""

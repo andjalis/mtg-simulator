@@ -49,7 +49,7 @@ class Quantity(unittest.TestCase):
 
     def test_unknown_quantity_is_not_guessed(self):
         self.assertEqual(len(STRANGE.unsupported), 1)
-        self.assertEqual(len(card("Test Lone", "{W}", "Instant", "You gain 1 life for each creature defending player controls.")
+        self.assertEqual(len(card("Test Lone", "{W}", "Instant", "You gain 1 life for each frob defending player controls.")
                              .unsupported), 1)
 
     def test_selector_counts_keywords_and_attackers(self):

@@ -10,6 +10,43 @@ _LINE = re.compile(r"~'s power and toughness are each equal to the number of (ot
                    r"in the hand of the opponent with the most cards in hand)\.")
 
 
+_ANY = re.compile(r"(?:[A-Z][\w' -]* — )?~'s (power|toughness|power and toughness are each) (?:is )?equal to (.+?)\.")
+
+
+def _any_quantity(line: str, st) -> bool:
+    """Any quantity ``cards._xq`` reads ("the greatest mana value among creatures you control", "the number of
+    cards in your hand", "1 plus the number of lands you control"): ``advanced_rules["cda_q"]`` = (spec, power
+    scale, toughness scale), evaluated for the permanent as its P/T is read (Permanent._pt_bonus)."""
+    m = _ANY.fullmatch(line)
+    if m is None or re.search(r"\b(?:it|its|that|this|those|their)\b", m[2], re.I):
+        return False
+    from .cards.clauses import _xq
+    spec = _xq(m[2])
+    if spec is None:
+        return False
+    scale = {"power": (1, 0), "toughness": (0, 1)}.get(m[1], (1, 1))
+    st.extra.setdefault("advanced_rules", {})["cda_q"] = (spec, scale)
+    return True
+
+
+def late_line(line: str, st) -> bool:
+    """After every face-line reader: a CDA line nobody read, with any _xq quantity (cards/parse.py hook)."""
+    return _any_quantity(line, st)
+
+
+def quantity_bonus(perm) -> tuple:
+    """(power, toughness) from a ``cda_q`` quantity (0, 0 without one)."""
+    q = perm.card.advanced_rules.get("cda_q")
+    game = getattr(perm.controller, "_game", None)
+    if not q or game is None:
+        return 0, 0
+    from types import SimpleNamespace
+    spec, (sp, st) = q
+    n = max(0, game.x_quantity(perm.controller, spec, SimpleNamespace(source=perm, card=perm.card, context=None,
+                                                                      x=0), None))
+    return sp * n, st * n
+
+
 def parse_line(line: str, st) -> bool:
     m = _LINE.fullmatch(line)
     if m is None or m[3].startswith("in the hand"):

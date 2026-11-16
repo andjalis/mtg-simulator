@@ -31,12 +31,16 @@ def tap(m, clause):
       heads=("doesn't", "don't"), subjects=("permanent", "group", "host"))
 def no_untap(m, clause):
     subj = clause.subject
-    if m[1] == "your" and not (subj.kind == "group" and (subj.group.get("selector") or {}).get("controller") == "mine"
-                               or subj.target == "self"):
+    yours_only = m[1] == "your" and m[2] and subj.kind == "permanent" and subj.target == "prev" and subj.copies == 1
+    if m[1] == "your" and not yours_only and not (
+            subj.kind == "group" and (subj.group.get("selector") or {}).get("controller") == "mine"
+            or subj.target == "self"):
         return None             # "your untap step" for something you may not control
     if m[2]:
         if clause.duration:
             return None
+        if yours_only:          # "Tap that creature. It doesn't untap during your next untap step." (Samite Alchemist):
+            return [Part("cx_skip_untap", data={"side": "theirs", "yours_only": True})]   # only if you control it
         return [Part("cx_skip_untap", data={"side": "theirs"})]
     if clause.duration != "static" or m[1] == "your" and subj.target == "self":
         return None             # "~ doesn't untap during your untap step" is another parser's line

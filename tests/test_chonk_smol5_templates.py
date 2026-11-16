@@ -216,12 +216,13 @@ class ChooseName(Chonk5Templates):
         self.land(self.b, 3)
         self.b.deck = [BLAST] * 4 + [BEAR]
         self.b.hand = [BLAST]
+        self.b.graveyard = [BLAST]                  # public: a copy they cast (#627: never the decklist)
         mage = self.perm(MAGE)
         self.assertTrue(self.g.can_cast_now(self.b, BLAST))   # no name chosen yet
         effects = self.trigger_effects(MAGE)
         item = StackItem(self.a, effects, [None] * len(effects), source=mage, kind="trigger")
         self.g.resolve(self.a, effects[0], None, item)
-        self.assertEqual(mage.chosen_name, "Test Blast")      # 4 copies beat one Bear
+        self.assertEqual(mage.chosen_name, "Test Blast")
         self.assertFalse(self.g.can_cast_now(self.b, BLAST))
         self.a.battlefield.remove(mage)                      # leaving lifts the ban
         self.assertTrue(self.g.can_cast_now(self.b, BLAST))
@@ -361,7 +362,9 @@ class RealCards(unittest.TestCase):
     def test_partial_cards_keep_their_remaining_gaps_visible(self):
         # multi-card exile costs stay approximate; the hold items stay unsupported
         ruinator = self.card("Skaab Ruinator")
-        self.assertIn("You may cast this card from your graveyard.", ruinator.unsupported)
+        # its graveyard permission is read since #625 (cx_altcost zone_alt); the exile cost stays approximate
+        self.assertNotIn("You may cast this card from your graveyard.", ruinator.unsupported)
+        self.assertTrue(ruinator.advanced_rules.get("zone_alt"))
         self.assertTrue(any("instead of three" in a for a in ruinator.approximations))
         oculus = self.card("Abhorrent Oculus")
         self.assertTrue(any("instead of six" in a for a in oculus.approximations))

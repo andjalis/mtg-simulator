@@ -35,7 +35,7 @@ class Parsing(unittest.TestCase):
     def test_refusals(self):
         for s in ("~ deals damage to target player equal to the number of artifacts they control.",   # targeted
                   "~ deals damage to each player equal to the number of lands you control.",          # the caster's
-                  "~ deals damage to that player equal to the number of snow lands they control.",    # #428
+                  "~ deals damage to that player equal to the number of frob lands they control.",
                   "~ deals damage to each player equal to the number of spells they've cast this turn.",
                   "~ deals damage to each creature equal to the number of lands they control."):
             self.assertIsNone(parse_sentence(s), s)
@@ -142,6 +142,19 @@ class RealCards(Base):
         while self.game.stack:
             self.game.resolve_top()
         self.assertEqual((self.a.life, self.b.life), (22, 17))
+
+    def test_skred_counts_only_your_snow_permanents(self):
+        from mtgsim.carddb import CardDB
+        skred = CardDB(offline=True).get("Skred")
+        snow = card("Snow-Covered Swamp", types="Basic Snow Land — Swamp", text="({T}: Add {B}.)")
+        self.assertTrue(snow.snow)
+        for _ in range(2):
+            self.perm(snow, self.a)
+        self.perm(SWAMP, self.a)                  # not snow
+        self.perm(snow, self.b)                   # not yours
+        target = self.perm(card("Test Giant", "{5}", "Creature — Giant", "", 5, 5), self.b)
+        self.cast(skred, [target])
+        self.assertEqual(target.damage, 2)
 
 
 if __name__ == "__main__":

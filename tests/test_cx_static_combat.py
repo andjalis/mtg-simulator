@@ -121,9 +121,11 @@ class CombatUnless(unittest.TestCase):
         self.b.exile += [BEAR] * 3
         self.assertTrue(ket.can_attack())
 
-    def test_non_mana_prices_stay_unparsed(self):
-        # mana prices are paid at declaration since #325 (tests/test_combat_own_costs.py); others aren't
-        self.assertTrue(self.db.get("Exalted Dragon").unsupported)
+    def test_other_prices_stay_unparsed(self):
+        # mana, sacrifice, return and tap prices are paid at declaration since #325 (tests/test_combat_own_costs.py)
+        from tests.test_templates import card
+        self.assertTrue(card("Test", "{1}", "Creature — Beast", "~ can't attack unless you discard a card.", 2, 2)
+                        .unsupported)
 
 
 if __name__ == "__main__":

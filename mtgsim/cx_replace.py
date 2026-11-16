@@ -6,6 +6,8 @@
 * "If ~ would die, exile it instead." and "If <subject> would die, exile it instead." with the subject
   grammar of the trigger-event library ("a creature an opponent controls", "another nontoken creature").
   Engine: one replacement in ``rules_events.zone_destination``.
+* "If ~ would die, put it on top of / on the bottom of its owner's library / return it to its owner's hand
+  instead." Engine: another replacement in ``rules_events.zone_destination``.
 * "If you would draw a card[ except the first one you draw in each of your draw steps], draw N cards
   instead." Engine: ``extra_draws`` from ``Game.draw``.
 * Two-player choices: "As ~ enters, choose an opponent." names the only opponent, so the line needs no
@@ -27,25 +29,48 @@ def parse_line(line: str, st) -> bool:
     if lead:        # "Adamant — If at least three red mana was spent to cast ~, ~ enters with a +1/+1 counter on it."
         line = f"{lead[1]}{lead[3]} if {lead[2]}."
     m = re.fullmatch(r"(?:[A-Z][\w' -]* — )?~ enters(?: the battlefield)? with (a|an|one|two|three|four|five|six|"
-                     r"seven|eight|\d+) (?:additional )?(\+1/\+1|-1/-1|[a-z]+) counters? on it if (.+)\.", line)
+                     r"seven|eight|\d+) (?:additional )?(\+1/\+1|-1/-1|[a-z]+) counters? on it (if|unless) (.+)\.", line)
     if m:
-        from .cx_condlib import parse
+        from .cx_condlib import _code, parse
         from .cards.clauses import _if_cond
-        code = parse(m[3]) or _if_cond(m[3])
+        # "if it wasn't cast": "it" is the entering permanent itself here (Freestrider Commando)
+        cond = re.sub(r"^it wasn't cast\b", "~ wasn't cast", m[4])
+        code = parse(cond) or (_if_cond(cond) if m[3] == "if" else "")
         if not code:
             return False
+        if m[3] == "unless":    # "unless two or more colors of mana were spent to cast it" (Steel Exemplar)
+            code = _code("not", code)
         n = int(m[1]) if m[1].isdigit() else _N[m[1]]
         _rules(st).setdefault("cx_etb_if", []).append((code, n, m[2]))
+        return True
+    q = re.fullmatch(r"(?:[A-Z][\w' -]* — )?~ enters(?: the battlefield)? with (?:(a|an|one|two|three|\d+) "
+                     r"(\+1/\+1|[a-z]+) counters? on it for each (color of )?mana spent to cast it|(?:a number of )?"
+                     r"(\+1/\+1|[a-z]+) counters on it equal to the amount of mana spent to cast it)\.", line)
+    if q and not (q[3] and q[1] in ("a", "an") and q[2] == "+1/+1"):   # one +1/+1 per colour: sunburst (batch1)
+        n = 1 if q[4] else int(q[1]) if q[1].isdigit() else _N[q[1]]
+        _rules(st).setdefault("cx_etb_q", []).append((n, q[2] or q[4], "colors" if q[3] else "mana"))
         return True
     if line == "If ~ would die, exile it instead.":
         _rules(st)["cx_exile_self"] = True
         return True
-    m = re.fullmatch(r"If (an? .+?|another .+?) would die, exile it instead\.", line)
+    m = re.fullmatch(r"If ~ would die, (put it on top of|put it on the bottom of|return it to) its owner's "
+                     r"(library|hand) instead\.", line)
+    if m and (m[2] == "hand") == m[1].startswith("return"):     # Gravebane Zombie, Nissa's Chosen (#407)
+        _rules(st)["cx_die_dest"] = {"put it on top of": "library_top", "put it on the bottom of": "library_bottom",
+                                     "return it to": "hand"}[m[1]]
+        return True
+    m = re.fullmatch(r"If (an? .+?|another .+?) would die, exile it instead\.(?: When you do, (.+\.))?", line)
     if m:
         from .cx_events import _object_subject
         spec = _object_subject(m[1])
         if spec is None or spec["host"] or spec["batch"]:
             return False
+        if m[2]:        # "When you do, create a 2/2 green Wolf creature token." (Head of the Hunt, #407)
+            from .cards.parse import _parse_effects
+            effects, bad = _parse_effects(m[2][0].upper() + m[2][1:])
+            if bad or not effects:
+                return False
+            _rules(st).setdefault("cx_exile_when", []).append((m[1], effects))
         _rules(st).setdefault("cx_exile_if", []).append(m[1])
         return True
     m = re.fullmatch(r"If you would draw a card( except the first one you draw in each of your draw steps)?, "
@@ -94,6 +119,18 @@ def entry_counters(game, p, perm):
             perm.counters[kind] = perm.counters.get(kind, 0) + n
 
 
+def entry_spent_counters(game, perm):
+    """'~ enters with N counters on it for each [color of] mana spent to cast it' / '... equal to the amount
+    of mana spent to cast it' (Verazol, Marath, Glinting Creeper): the payment of the spell it resolved from;
+    a permanent that wasn't cast gets none."""
+    from .cx_grammar_quantity import spent_amount
+    for n, kind, what in perm.card.advanced_rules.get("cx_etb_q", ()):
+        k = (len(set(perm.mana_colors) & set("WUBRG")) if perm.was_cast else 0) if what == "colors" \
+            else spent_amount(perm)
+        if n * k:
+            perm.counters[kind] = perm.counters.get(kind, 0) + n * k
+
+
 def exiles(game, perm) -> bool:
     """Whether a "would die, exile it instead" static applies to this dying creature."""
     if not perm.is_creature:
@@ -111,6 +148,24 @@ def exiles(game, perm) -> bool:
                 if spec is not None and x is perm and not spec["other"] and _subject_ok(game, spec, x, perm):
                     return True
     return False
+
+
+def when_you_do(game, perm) -> None:
+    """perm was exiled by a "would die, exile it instead" static: queue that static's "When you do" trigger (the first
+    matching source's; with several, only one replacement applied)."""
+    from .cx_events import _object_subject, _subject_ok
+    for pl in game.players:
+        for x in pl.battlefield:
+            for head, effects in _rules_of(x).get("cx_exile_when", ()):
+                spec = _object_subject(head)
+                if spec is not None and x is not perm and _subject_ok(game, spec, x, perm):
+                    game.queue_trigger(x.controller, effects, x, f"{x.card.name}: when you do", context=perm)
+                    return
+
+
+def die_destination(perm):
+    """Where "If ~ would die, put it ... instead" sends this dying creature, or None."""
+    return _rules_of(perm).get("cx_die_dest") if perm.is_creature else None
 
 
 def extra_draws(game, p, replaced) -> int:

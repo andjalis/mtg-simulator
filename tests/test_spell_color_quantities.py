@@ -70,7 +70,11 @@ class SpellColorQuantityTests(unittest.TestCase):
 
     def test_mana_spent_color_counts_are_not_treated_as_spell_colors(self):
         c = card("Spent colors", "{2}", "Creature — Eldrazi", "Whenever you cast an instant or sorcery spell, creatures you control get +1/+0 until end of turn for each color of mana spent to cast that spell.", 2, 2)
-        self.assertTrue(c.unsupported)
+        # read as that spell's payment (converge), never as its colours (#324)
+        self.assertEqual(c.unsupported, [])
+        specs = [e.data.get("xq") for t in c.triggers for e in t.effects]
+        self.assertIn(("spell", "converge"), specs)
+        self.assertNotIn(("spell", "colors"), specs)
 
     def test_real_database_entries(self):
         db = CardDB(offline=True)

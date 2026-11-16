@@ -32,3 +32,13 @@ def base_pt(m, clause):
 def base_one(m, clause):
     n = int(m[2])
     return _part(clause, n if m[1] == "power" else None, n if m[1] == "toughness" else None)
+
+
+@verb(r"loses? all abilities", heads=("lose", "loses"), subjects=("permanent", "group"))
+def lose_all(m, clause):
+    """"Until end of turn, target creature loses all abilities" (Turn to Frog): a layer-6 lose_all effect
+    (cx_static_chars, #406 slice 3) until end of turn, or for good without a duration. Static lines are
+    cx_static_chars' own."""
+    if clause.duration not in ("eot", ""):
+        return None
+    return [Part("cx_lose_all", data={"eot": clause.duration == "eot", "side": "theirs"})]

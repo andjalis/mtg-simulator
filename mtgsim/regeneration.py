@@ -1,6 +1,8 @@
 """Conservative priority responses for regeneration shields."""
 from __future__ import annotations
 
+from .life_costs import ai_ability_life_ok
+
 
 def threatened(game, p):
     from .engine import Permanent
@@ -58,7 +60,7 @@ def respond(game, p):
                     else:
                         legal &= eff.target in ('creatures_mine', 'each_creature')
                         targets.append(None)
-                if legal and game.can_activate(p, source, i):
+                if legal and game.can_activate(p, source, i) and ai_ability_life_ok(p, act):
                     return 'activate', source, f'ability:{i}', targets
         for card in game.spell_options(p):
             if not card.instant_speed or not game.can_cast_now(p, card) or not card.spell_effects:

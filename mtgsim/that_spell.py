@@ -63,6 +63,11 @@ SUBS = [
     # "mills cards equal to ..." / "draw cards equal to ..."
     (re.compile(r"\b(mills|mill|draws|draw) cards equal to " + _Q + r"(?=[,.])", re.I),
      lambda m: f"{m[1]} X cards, where X is {m[2]}"),
+    # "target creature with that spell's mana value", "... with mana value less than or equal to that spell's mana
+    # value ...": the where-X form, whose bound the targeting step reads from the cast trigger's spell (#317)
+    (re.compile(r"\b(target (?:(?! and |\bwith\b)[^.,])*?) with (?:mana value (?:(less|greater) than or )?equal to |)that spell's mana value"
+                r"([^.]*)(?=\.|$)", re.I),
+     lambda m: f"{m[1]} with mana value X{' or ' + m[2].lower() if m[2] else ''}{m[3]}, where X is that spell's mana value"),
     # "put a number of +1/+1 counters equal to that spell's mana value on <object>"
     (re.compile(r"\bput (?:a number of )?" + _NOUN + r" equal to " + _Q + r" on ([^.,]+?)(?=\.|$)", re.I),
      lambda m: f"put X {m[1]} on {m[3]}, where X is {m[2]}"),

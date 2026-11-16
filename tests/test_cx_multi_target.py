@@ -331,7 +331,6 @@ class UpToX(Base):
         self.assertEqual(marauder[0].data["max_xq"], ("devotion", ("B",)))
         for text in ("Up to X target creatures you control get +X/+X until end of turn, where X is the number of "
                      "colors among permanents you control.",          # X means two things
-                     "Destroy up to X target lands.",                 # an X spell: X is chosen after targets
                      "Destroy up to X target lands, where X is the number of times ~ was kicked.",
                      "Return up to X target creatures to their owners' hands, where X is one plus the number of "
                      "cards named ~ in all graveyards as you cast ~."):      # the count would drop "named ~"
@@ -384,6 +383,82 @@ class UpToX(Base):
         for name in ("Rumbling Crescendo", "Recantation", "Serra's Liturgy", "Mogis's Marauder", "Vile Requiem"):
             with self.subTest(name):
                 self.assertEqual(card_coverage(db.get(name)).status, "full")
+
+
+class XTargets(Base):
+    """"Tap X target creatures" with X the spell's or ability's mana X: X is chosen as the number of targets
+    (#312 slice F)."""
+    GREMLINS = card("Test Gremlins", "{X}{X}{R}", "Sorcery", "Destroy X target artifacts. Create X 2/2 red Gremlin "
+                    "creature tokens.")
+    HELIX = card("Test Helix", "{5}", "Artifact", "{X}, {T}: Tap X target lands.")
+    ROCK = card("Test Rock", "{2}", "Artifact", "")
+
+    def mountains(self, n):
+        from mtgsim.engine import Permanent
+        for _ in range(n):
+            self.a.battlefield.append(Permanent(card("Test Mountain", "", "Basic Land — Mountain", "({T}: Add {R}.)"),
+                                                self.a))
+
+    def test_parse_and_gating(self):
+        tap = parsed("Tap X target creatures.")
+        self.assertEqual((tap[0].kind, tap[0].data["count_x"]), ("cx_multi", "exact"))
+        self.assertEqual(parsed("Destroy up to X target artifacts.")[0].data["count_x"], "up_to")
+        self.assertEqual(self.GREMLINS.unsupported, [])
+        self.assertEqual(self.HELIX.unsupported, [])
+        for text, types, cost in (("As an additional cost to cast this spell, sacrifice X creatures.\nDestroy X target "
+                                   "creatures.", "Sorcery", "{4}{B}"),                 # X isn't mana
+                                  ("When ~ enters, tap X target creatures.", "Enchantment", "{X}{U}"),   # a trigger
+                                  ("{1}, Remove X ki counters from ~: Tap X target creatures.", "Creature — Spirit",
+                                   "{2}{W}")):
+            with self.subTest(text):
+                c = card("Test Card", cost, types, text, 1, 1)
+                self.assertTrue(any("X target count" in u or "X" in u for u in c.unsupported), c.unsupported)
+
+    def test_x_is_the_number_of_targets_cut_to_what_can_be_paid(self):
+        rocks = [self.game.enter_battlefield(self.b, self.ROCK) for _ in range(3)]
+        self.mountains(4)                                  # {X}{X}{R}: X = 1 is all 4 lands pay for
+        self.a.hand.append(self.GREMLINS)
+        self.assertTrue(self.game.cast(self.a, self.GREMLINS))
+        self.game.settle()
+        self.assertEqual(sum(r not in self.b.battlefield for r in rocks), 1)
+        self.assertEqual(sum(x.card.is_token for x in self.a.battlefield), 1)
+        self.assertEqual(sum(not x.tapped for x in self.a.battlefield if x.card.is_land), 1)
+
+    def test_no_target_no_cast(self):
+        self.mountains(5)
+        self.a.hand.append(self.GREMLINS)
+        self.assertFalse(self.game.cast(self.a, self.GREMLINS))     # X = 0 would do nothing
+
+    def test_ability_x_is_the_number_of_targets(self):
+        from mtgsim.engine import Permanent
+        helix = Permanent(self.HELIX, self.a)
+        self.a.battlefield.append(helix)
+        self.mountains(3)
+        islands = [self.game.enter_battlefield(self.b, ISLAND) for _ in range(2)]
+        self.assertTrue(self.game.activate_ability(self.a, helix, 0))
+        self.game.settle()
+        self.assertTrue(all(x.tapped for x in islands))
+        self.assertEqual(sum(not x.tapped for x in self.a.battlefield if x.card.is_land), 1)   # paid X = 2, not 3
+
+    def test_exact_count_for_an_ability(self):
+        effects = list(self.HELIX.activated[0].effects)
+        islands = [self.game.enter_battlefield(self.b, ISLAND) for _ in range(2)]
+        import dataclasses
+        two = [dataclasses.replace(e, amount=2) for e in effects]
+        self.assertTrue(self.game.valid_action_targets(self.a, two, [tuple(islands)]))
+        self.assertFalse(self.game.valid_action_targets(self.a, two, [tuple(islands[:1])]))
+
+    @unittest.skipUnless(os.path.exists(DB), "card database not built")
+    def test_real_cards(self):
+        from mtgsim.carddb import CardDB
+        from mtgsim.coverage import card_coverage
+        db = CardDB(offline=True)
+        for name in ("Release the Gremlins", "Mishra's Helix", "Thrive"):
+            with self.subTest(name):
+                self.assertEqual(card_coverage(db.get(name)).status, "full")
+        for name in ("Eliminate the Competition", "Reality Spasm", "Lost in the Maze"):
+            with self.subTest(name):
+                self.assertNotEqual(card_coverage(db.get(name)).status, "full")
 
 
 if __name__ == "__main__":

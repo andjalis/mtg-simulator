@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import dataclasses
 import re
+from . import auras as _auras
 
 EFFECT_PATTERNS = []
 SUBS = []
@@ -41,13 +42,20 @@ def parse_line(line, state):
         match = ('activation_discount', int(m[1]))
     if line == 'During each of your turns, you may cast an instant or sorcery spell from your graveyard. If a spell cast this way would be put into your graveyard, exile it instead.':
         match = ('grave_cast', True)
+    m = re.fullmatch(r"Equip abilities you activate cost \{(\d+)\} less to activate\.", line)
+    if m:
+        match = ('equip_discount', int(m[1]))
     if match:
         state.extra.setdefault('advanced_rules', {})[match[0]] = match[1]
         return True
-    if line.startswith('Enchant non-') and 'Aura' in state.type_line:
+    if line.startswith('Enchant ') and 'Aura' in state.type_line and not re.search(
+            r"\b(?:player|opponent|graveyard|hand|library|exile)\b", line) and not state.extra.get('aura') \
+            and not _auras._ENCHANT.fullmatch(line):
+        # "Enchant non-Human creature", "Enchant red or green creature", "Enchant tapped creature" (#633 residue):
+        # the noun phrase is a battlefield selector that must still hold while the Aura stays attached
         from .permanent_templates import selector
-        spec = selector(line[8:])
-        if spec is not None:
+        spec = _color_creature(line[8:]) or selector(line[8:])
+        if spec is not None and 'cx_desc' not in spec:
             state.extra['aura'] = line[8:]
             state.extra.setdefault('advanced_rules', {})['aura_selector'] = spec
             return True
@@ -59,6 +67,20 @@ def parse_line(line, state):
             state.triggers.append(Trigger('etb', effects, data={'enters_untapped': True}))
             return True
     return False
+
+
+_COLOR_LETTER = {'white': 'W', 'blue': 'U', 'black': 'B', 'red': 'R', 'green': 'G'}
+
+
+def _color_creature(text):
+    """"red or green creature" / "nonblack creature": the colour words selector() can't read."""
+    m = re.fullmatch(r'((?:white|blue|black|red|green)(?: or (?:white|blue|black|red|green))+) creature', text)
+    if m:
+        return {'colors_any': [_COLOR_LETTER[w] for w in m[1].split(' or ')], 'types_all': ['creature']}
+    m = re.fullmatch(r'non-?(white|blue|black|red|green) creature', text)
+    if m:
+        return {'not_colors': [_COLOR_LETTER[m[1]]], 'types_all': ['creature']}
+    return None
 
 
 def parse_effect(text, previous):
@@ -107,8 +129,6 @@ def parse_effect(text, previous):
             return []
     if s == 'look at the top four cards of target opponent\'s library, exile one of them face down, then put the rest on the bottom of that library in a random order':
         return [Effect('opponent_exile', 4, target='player', filter='opp')]
-    if s == 'you may cast that card for as long as it remains exiled, and mana of any type can be spent to cast that spell':
-        return [Effect('exile_permission')]
     return None
 
 
@@ -117,7 +137,10 @@ def grave_targets(game, p, eff):
         from .cx_grammar_zones import grave_cards
         return grave_cards(game, p, eff)
     types = eff.data['grave_type'].split(' or ')
-    cards = [c for c in p.graveyard if ('cmc_exact' not in eff.data or c.cmc == eff.data['cmc_exact']) and
+    exact = eff.data.get('cmc_exact')
+    if exact == 1 and eff.data.get('xq'):        # "with mana value X, where X is Q": X read as 1 at parse (#317)
+        exact = game.target_x(eff, p)
+    cards = [c for c in p.graveyard if (exact is None or c.cmc == exact) and
              any(c.is_permanent if t == 'permanent' else t.title() in c.types for t in types)]
     if eff.data.get('tribal_group'):
         from .permanent_templates import _CREATURE_SUBTYPES
@@ -152,9 +175,11 @@ def activation_cost(game, p, permanent, cost):
 
 
 def counter_amount(permanent, name, amount):
+    plus = 0
     if name == '+1/+1' and permanent.is_creature:
-        amount += sum(rules(x).get('counter_plus', 0) for x in permanent.controller.battlefield)
-    return amount
+        plus = sum(rules(x).get('counter_plus', 0) for x in permanent.controller.battlefield)
+    from .cx_replace_amounts import modify       # "twice that many / that many plus one ... instead" (#407)
+    return modify(permanent, name, amount, plus)
 
 
 def draw_recipient(game, p, replaced=()):
@@ -274,14 +299,15 @@ def permission_options(game, p):
             out.append(option)
         if c.split_right is not None and c.split_right.advanced_rules.get('aftermath'):
             out.append(game._variant(c, 'aftermath'))
-    for zone, ref in getattr(p, 'foreign_permissions', []):
+    for zone, ref, *free in getattr(p, 'foreign_permissions', []):     # (zone, ref[, free]) (cx_exile_play)
         card = ref.find(zone)
         if card is not None:
             key = 'foreign_' + str(card.physical_id)
             if not hasattr(game, 'foreign_zones'):
                 game.foreign_zones = {}
             game.foreign_zones[(id(p), key)] = zone
-            option = game._variant(card, key)
+            from .exile_permissions import alt_cost
+            option = game._variant(card, key, alt_cost(card, key, free[0] if free else False))
             out.append(option)
     return out
 
@@ -296,7 +322,7 @@ def permission_available(game, p, card, kind):
     if kind == 'aftermath':
         return card.advanced_rules.get('aftermath', False)
     if kind.startswith('foreign_'):
-        return any(ref.find(zone) is game._origin(card)[0] for zone, ref in getattr(p, 'foreign_permissions', []))
+        return any(ref.find(zone) is game._origin(card)[0] for zone, ref, *_ in getattr(p, 'foreign_permissions', []))
     if kind.startswith('exile_cast_'):
         from . import exile_permissions
         return exile_permissions.available(game, p, card, kind)

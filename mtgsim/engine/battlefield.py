@@ -64,7 +64,7 @@ class BattlefieldMixin:
             # Reusable token blueprints create a new physical token each time.
             card = CardInstance(card)
         card, front = copies.clone_on_enter(self, p, card)
-        counters = copies.clone_entry_counters(card, front, x, counters)
+        counters = copies.clone_entry_counters(card, front, x, counters, self, p)
         perm = Permanent(card, p)
         perm.front = instance(physical_card if physical_card is not None else front, p)
         perm.owner = perm.front.owner
@@ -77,6 +77,7 @@ class BattlefieldMixin:
         perm.front.generation += 1
         perm.front.zone = perm
         perm.entered_turn = self.turn
+        perm.entered_from = source_zone        # "enters from a graveyard" (cx_events)
         perm.rules_timestamp = self.next_effect_timestamp()
         from ..cx_type_grants import changed as type_grants_changed
         type_grants_changed(self, perm)         # a creature type granted by a static ability (layer 4)
@@ -100,6 +101,8 @@ class BattlefieldMixin:
             perm.mana_spent = cast[2]
             perm.mana_colors = frozenset(getattr(self, "_entry_mana_colors", ()))     # converge
             perm.mana_by_color = dict(getattr(self, "_entry_mana_by_color", {}))
+            perm.mana_from = dict(getattr(self, "_entry_mana_from", {}))
+            perm.was_cast = True       # already as it enters ("if it wasn't cast", Freestrider Commando)
         others = sum(x.card.is_land for x in p.battlefield)
         cond = card.tapped_condition
         if cond.startswith("other_subtype:"):
@@ -158,6 +161,9 @@ class BattlefieldMixin:
                     for t in c.subtypes:
                         types[t] = types.get(t, 0) + 1
             perm.chosen_type = max(types, key=types.get, default="")
+            if card.advanced_rules.get("choose_opp_type"):       # "creatures of the chosen type get -1/-1" (#627)
+                from ..cx_chosen_type import pick_hostile
+                perm.chosen_type = pick_hostile(self, p) or perm.chosen_type
         elif card.choose_type == "land":
             # Shimmer: "As ~ enters, choose a land type. Each land of the chosen type has
             # phasing." The default pick is the opponent's most common basic land type.
@@ -193,10 +199,16 @@ class BattlefieldMixin:
         if card.advanced_rules.get("cx_etb_if"):
             from .. import cx_replace
             cx_replace.entry_counters(self, p, perm)
+        if card.advanced_rules.get("cx_etb_q"):       # "... for each mana spent to cast it" (cx_replace)
+            from .. import cx_replace
+            cx_replace.entry_spent_counters(self, perm)
         if card.entry_counter_quantity:
             from ..backlog_templates import amount
-            kind, spec = card.entry_counter_quantity
-            if isinstance(spec, tuple):      # a cards._xq quantity ("equal to the number of creatures you control")
+            kind, spec, *per = card.entry_counter_quantity
+            if per:          # "a counter for each <thing>" (#630): count without the entering permanent itself
+                from ..cx_counters import entry_count
+                n = per[0] * entry_count(self, p, perm, spec)
+            elif isinstance(spec, tuple):      # a cards._xq quantity ("equal to the number of creatures you control")
                 from types import SimpleNamespace
                 n = self.x_quantity(p, spec, SimpleNamespace(source=perm, card=card, context=None), None)
             else:
@@ -205,7 +217,9 @@ class BattlefieldMixin:
         if card.etb_named_counters:
             n = x if card.etb_named_counters[1] == -1 else card.etb_named_counters[1]    # -1: "enters with X ..."
             if n:
-                perm.counters[card.etb_named_counters[0]] = n
+                from ..cx_counter_choice import pick     # "your choice of a flying counter or a ... counter" (#627)
+                for name in pick(perm, card.etb_named_counters[0]):
+                    perm.counters[name] = n
         roll = as_enters_roll(card, perm.entered_x)
         if roll is not None:
             sides, n, kind = roll
@@ -218,7 +232,8 @@ class BattlefieldMixin:
         for kind, n in (counters or {}).items():
             perm.counters[kind] = perm.counters.get(kind, 0) + n
         from ..residual_templates import tapped_by_opponent
-        perm.tapped |= tapped or tapped_by_opponent(self, perm)
+        from ..entry_statics import tapped as entry_tapped          # "<group> enter tapped" (#630)
+        perm.tapped |= tapped or tapped_by_opponent(self, perm) or entry_tapped(self, perm)
         p.battlefield.append(perm)
         from ..batch1_templates import soulbond_pair
         soulbond_pair(self, p, perm)
@@ -247,6 +262,8 @@ class BattlefieldMixin:
                 grant = source.card.entry_counter_grant
                 if grant and not source.silenced and not (grant[2] and source is perm):
                     perm.counters[grant[0]] = perm.counters.get(grant[0], 0) + grant[1]
+        from ..entry_statics import counters as entry_counters      # "<group> enter with an additional counter" (#630)
+        entry_counters(self, p, perm)
         if tapped_attacking:
             perm.tapped = True
             self.attackers.append(perm)
@@ -277,6 +294,9 @@ class BattlefieldMixin:
                 self.fire(pl, "permanent_enters", subject=perm)
         if card.is_land:
             self.fire(p, "land_enters", subject=perm)
+        if card.is_token and getattr(self, '_entry_batch', None) is None:
+            from ..cx_replace_amounts import tokens_created       # a lone token: its own creation event (#407)
+            tokens_created(self, [perm])
         if getattr(self, '_entry_batch', None) is None:
             self.state_based_actions()
         return perm
@@ -324,7 +344,8 @@ class BattlefieldMixin:
                     self.create_token(p, Effect("token", count, data={"kind": token_kind, "manufactured": True}))
             return
         count = n if n is not None else eff.amount
-        count *= 2 ** sum(bool(x.card.token_double) for x in p.battlefield if not x.abilities_suppressed)
+        from ..cx_replace_amounts import token_multiplier
+        count *= token_multiplier(self, p)        # doubling replacements (#407)
         from ..backlog_templates import entry_batch
         with entry_batch(self):
             for _ in range(count):
@@ -345,6 +366,8 @@ class BattlefieldMixin:
                                               ("declare_attackers", "declare_blockers"))
                 if d.get("tapped"):
                     perm.tapped = True
+                self._token_serial = getattr(self, "_token_serial", 0) + 1     # "Put X counters on it" (#682)
+                self._last_token = perm
                 if d.get("end"):
                     self.end_cleanup.append((perm, d["end"]))
         self.log(f"creates {n if n is not None else eff.amount} {d.get('kind') or d.get('name')} token(s)", p)

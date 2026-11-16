@@ -137,6 +137,19 @@ def sacrifice(m, clause):
     return [Part("cx_edict", n, data={"noun": obj.group, "scales": True})]
 
 
+@verb(r"sacrifices? all (.+?) (?:they|he or she) controls?", heads=("sacrifice", "sacrifices"), subjects=("player",))
+def sacrifice_all(m, clause):
+    """"Each player sacrifices all lands they control" (Epicenter): an edict over every matching permanent."""
+    noun = m[1]
+    if clause.duration or _REJECT.search(noun) or not re.fullmatch(r".*s", noun) or \
+            re.search(r"\b(?:you|other|than|greatest|least|with the|named)\b", noun):
+        return None
+    obj = object_phrase("all " + noun)
+    if obj is None or obj.kind != "group":
+        return None
+    return [Part("cx_edict", 99, data={"noun": obj.group, "scales": False, "all": True})]
+
+
 # ---------------------------------------------------------------- what the default AI thinks these are worth
 
 def _signed(me, perm, v: float) -> float:
@@ -184,11 +197,23 @@ _ZONES = {"your graveyard": "you", "a graveyard": "any", "an opponent's graveyar
 def card_noun(text: str):
     """A spec for a card noun phrase ("creature card with mana value 3 or less", "instant or sorcery card"), or
     None. Only these words are read: anything else (named, with a keyword, lesser, chosen, ...) rejects."""
+    subtypes = None
+    sub = re.fullmatch(r"((?:[a-z]+ )*?)([A-Z][\w'-]*(?:(?:,? or |, |,? and/or )[A-Z][\w'-]*)*) ((?:[a-z]+ )*cards?\b.*)",
+                       text)
+    if sub:                     # "Cleric card", "Aura or Equipment card", "Bird and/or Cleric permanent cards"
+        subtypes = re.split(r",? or |, |,? and/or ", sub[2])
+        if not all(re.fullmatch(r"[A-Z][a-z'-]+", w) for w in subtypes):
+            return None
+        text = sub[1] + sub[3]
+    elif re.search(r"[A-Z]", text):
+        return None             # a name or another capitalized word
     m = _CARD_NOUN.fullmatch(text)
     if m is None:
         return None
     legend, m = m[1], [None, *m.groups()[1:]]
     spec = {"types": re.split(r",? or |, | and/or ", m[3]) if m[3] else []}
+    if subtypes:
+        spec["subtypes"] = subtypes
     if legend:                  # "nonlegendary creature card" (Persist), "historic permanent card"
         spec["legend"] = legend
     if m[1]:
@@ -196,6 +221,10 @@ def card_noun(text: str):
     if m[2]:
         spec["non"] = m[2]
     if m[6]:                    # "creature card with infect" (Corpse Cur): a keyword the card has printed
+        lesser = re.fullmatch(r"lesser (mana value|power|toughness)", m[6])
+        if lesser:              # "with lesser mana value" (Havi): than the creature the trigger is about
+            spec["bound"] = [lesser[1], "less than", ["event", lesser[1]]]
+            return spec
         from .cards.model import KEYWORDS
         if m[6] not in KEYWORDS:
             return None
@@ -214,10 +243,15 @@ def card_noun(text: str):
     return spec
 
 
-def card_fits(card, spec, source=None) -> bool:
+def card_fits(card, spec, source=None, event=None) -> bool:
+    """Whether a card fits a card_noun spec; `source` is the resolving permanent ("~'s power"), `event` the
+    permanent the trigger is about ("with lesser mana value")."""
     def is_type(t):
         return card.is_permanent if t == "permanent" else t.title() in card.types
     if spec["types"] and not any(is_type(t) for t in spec["types"]):
+        return False
+    if spec.get("subtypes") and not any(t in card.subtypes or card.changeling and card.is_creature
+                                        and t not in _NONCREATURE_SUBTYPES for t in spec["subtypes"]):
         return False
     if spec.get("non") and is_type(spec["non"]):
         return False
@@ -243,9 +277,10 @@ def card_fits(card, spec, source=None) -> bool:
         stat, comparison, limit = spec["bound"]
         if isinstance(limit, list):
             from .engine.state import Permanent
-            if not isinstance(source, Permanent):
-                return False
-            limit = source.card.cmc if limit[1] == "mana value" else getattr(source, limit[1])
+            ref = event if limit[0] == "event" else source
+            if not isinstance(ref, Permanent):
+                return False            # no such creature (not a trigger about one): nothing qualifies
+            limit = ref.card.cmc if limit[1] == "mana value" else getattr(ref, limit[1])
         value = card.cmc if stat == "mana value" else (getattr(card, stat, 0) or 0)
         if not {"less than": value < limit, "less than or equal to": value <= limit,
                 "equal to": value == limit, "greater than": value > limit,
@@ -254,6 +289,11 @@ def card_fits(card, spec, source=None) -> bool:
     return True
 
 
+# Changeling has every creature type, not these
+_NONCREATURE_SUBTYPES = {"Aura", "Equipment", "Vehicle", "Saga", "Curse", "Shrine", "Cartouche", "Rune", "Class",
+                         "Room", "Case", "Background", "Role", "Fortification", "Food", "Treasure", "Clue", "Gate",
+                         "Forest", "Island", "Mountain", "Plains", "Swamp", "Desert", "Lair", "Locus", "Mine",
+                         "Power-Plant", "Tower", "Cave", "Sphere", "Town", "Planet", "Spacecraft", "Attraction"}
 _COLOR_CODES = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 
 
@@ -323,17 +363,18 @@ def return_card(m, clause):
     owner's hand; to the battlefield only from your own graveyard (under your control)."""
     if clause.duration:
         return None
+    text = clause.text[m.start(1):m.end(1)]       # original case: subtypes ("Cleric card")
     if m[5]:
         counters = entry_counters(m[5])
         if counters is None or m[3] != "the battlefield":
             return None
-        parts = _return_parts(m[1], m[2], m[3], m[4], clause)
+        parts = _return_parts(text, m[2], m[3], m[4], clause)
         for part in parts or ():
             inner = part.data.get("effects")
             for target in (inner if inner else [part]):
                 target.data = dict(target.data, counters=counters)
         return parts
-    return _return_parts(m[1], m[2], m[3], m[4], clause)
+    return _return_parts(text, m[2], m[3], m[4], clause)
 
 
 def _return_parts(text, zone, dest, state, clause):
@@ -361,8 +402,11 @@ def _return_parts(text, zone, dest, state, clause):
     # Nontargeted choices happen at resolution, even when the graveyard is empty at cast time.
     from .cards.model import Effect
     from .cx_grammar import Subject
+    at_random = text.endswith(" at random")     # "Return two cards at random from your graveyard to your hand"
+    if at_random:
+        text = text[:-len(" at random")]
     m = re.fullmatch(r"(?:(up to) )?(a|one|two|three|four|five) (.+)", text)
-    if m is None or zone != "your graveyard" or dest not in ("your hand", "the battlefield"):
+    if m is None or zone != "your graveyard" or dest not in ("your hand", "the battlefield") or at_random and m[1]:
         return None
     n, spec = count(m[2]), card_noun(m[3])
     if spec is None or (n > 1) != m[3].split(" with ")[0].endswith("cards"):
@@ -372,6 +416,8 @@ def _return_parts(text, zone, dest, state, clause):
     if data.get("attacking") and spec["types"] != ["creature"]:
         return None
     data = dict(data, cx_card=spec, up_to=bool(m[1]))
+    if at_random:
+        data["random"] = True
     if clause.subject.kind == "player":
         return [Part("cx_card_choose", n, data=data)]
     # A player wrapper gives the AI the same family-local valuation as explicit "you return".
@@ -384,7 +430,7 @@ def _return_parts(text, zone, dest, state, clause):
 def return_card_reordered(m, clause):
     if clause.duration:
         return None
-    return _return_parts(m[3], m[1], m[2], m[4], clause)
+    return _return_parts(clause.text[m.start(3):m.end(3)], m[1], m[2], m[4], clause)
 
 
 @ai_value("cx_card_choose")
@@ -393,7 +439,8 @@ def _return_choice_value(game, me, eff, obj):
     if not isinstance(obj, Player):
         return 0.0
     source = getattr(game.target_source, "source", game.target_source)
-    values = sorted((1 + c.cmc for c in obj.graveyard if card_fits(c, eff.data["cx_card"], source)), reverse=True)
+    values = sorted((1 + c.cmc for c in obj.graveyard if card_fits(c, eff.data["cx_card"], source,
+                                                                   event_permanent(game))), reverse=True)
     return sum(values[:eff.amount]) * (1 if obj is me else -1)
 
 
@@ -427,7 +474,18 @@ def grave_cards(game, p, eff):
     owners = [p] if zone == "you" else [game.opponent(p)] if zone == "opp" else list(game.players)
     source = getattr(game.target_source, "source", game.target_source)
     excluded = getattr(source, "front", source) if eff.data.get("other") else None
-    return [c for o in owners for c in o.graveyard if c is not excluded and card_fits(c, eff.data["cx_card"], source)]
+    event = event_permanent(game)
+    return [c for o in owners for c in o.graveyard
+            if c is not excluded and card_fits(c, eff.data["cx_card"], source, event)]
+
+
+def event_permanent(game):
+    """The permanent the trigger being targeted or resolved is about (the creature that died, was sacrificed,
+    ...): the stack item's context, or while a trigger's targets are chosen, Game.trigger_context."""
+    from .engine.state import Permanent, StackItem
+    item = game.target_source
+    ctx = item.context if isinstance(item, StackItem) else getattr(game, "trigger_context", None)
+    return ctx if isinstance(ctx, Permanent) else None
 
 
 @rider(r"for each color, (return up to one target (?:(?:creature|permanent|artifact|enchantment|land|instant|sorcery) )?"
@@ -445,5 +503,26 @@ def each_color(m, inner):
         eff = effects[0]
         eff.data = dict(eff.data, distinct=True, group="cx_each_color")
         out.append(eff)
+    return out
+
+
+def bake_event(effects, subject):
+    """Effects with "with lesser mana value / power / toughness" bounds fixed to the event creature's stats as the
+    trigger queues (last known information: the creature that died or was sacrificed is gone by resolution)."""
+    import dataclasses
+    from .engine.state import Permanent
+    if not isinstance(subject, Permanent) or not any(
+            isinstance(e.data.get("cx_card", {}).get("bound", [None] * 3)[2], list)
+            and e.data["cx_card"]["bound"][2][0] == "event" for e in effects):
+        return effects
+    out = []
+    for e in effects:
+        bound = e.data.get("cx_card", {}).get("bound")
+        if bound and isinstance(bound[2], list) and bound[2][0] == "event":
+            stat = bound[2][1]
+            value = subject.card.cmc if stat == "mana value" else getattr(subject, stat)
+            spec = dict(e.data["cx_card"], bound=[bound[0], bound[1], value])
+            e = dataclasses.replace(e, data=dict(e.data, cx_card=spec))
+        out.append(e)
     return out
 

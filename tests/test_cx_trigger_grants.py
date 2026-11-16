@@ -264,12 +264,16 @@ class TokenGrants(unittest.TestCase):
         self.assertEqual(self.b.life, life - 1)          # the AI aims the token's ping at the opponent
 
     def test_refusals(self):
+        # a counted description ("a number of ... tokens equal to ...") is read by cx_tokens' "They have" rider
+        # since #540 (tests/test_quoted_grants_more.py); the quoted body still must parse
+        self.assertFalse(card("Test Counted", "{1}", "Sorcery", "Create a number of 1/1 green Saproling creature "
+                              "tokens equal to the number of cards in your hand. They have \"When this token dies, "
+                              "you gain 1 life.\"").unsupported)
         for text in (
-                # the tokens are described further after "tokens": not a plain description
-                "Create a number of 1/1 green Saproling creature tokens equal to the number of cards in your hand. "
-                "They have \"When this token dies, you gain 1 life.\"",
                 # the quoted body isn't matched
-                "Create a 1/1 red Devil creature token. It has \"When this token dies, frobnicate.\""):
+                "Create a 1/1 red Devil creature token. It has \"When this token dies, frobnicate.\"",
+                "Create a number of 1/1 green Saproling creature tokens equal to the number of cards in your hand. "
+                "They have \"When this token dies, frobnicate.\""):
             with self.subTest(text):
                 self.assertTrue(card("Test Refusal", "{1}", "Sorcery", text).unsupported)
 

@@ -38,7 +38,7 @@ class Parsing(unittest.TestCase):
         self.assertEqual([(e.kind, e.amount) for e in effs[0].data["effects"]], [("cx_edict", 2)])
         self.assertEqual(self.kinds("Each opponent sacrifices a creature or planeswalker."), ["cx_players"])
         for s in ("Each player sacrifices a creature you control.",
-                  "Each opponent sacrifices a creature with the greatest power among creatures they control.",
+                  # "with the greatest power among ..." is read by cx_grammar_edicts now (#631)
                   "Each player sacrifices two land."):
             self.assertIsNone(parse_sentence(s), s)
 
@@ -306,7 +306,7 @@ class GraveyardCards(Base):
         self.assertEqual([(e.kind, e.target) for e in effs], [("cx_card_move", "graveyard_card")] * 2)
         self.assertTrue(effs[0].data["optional_target"] and effs[0].data["distinct"])
         for s in ("Return target creature card with landfall from your graveyard to your hand.",   # unknown words
-                  "Return target creature card with lesser mana value from your graveyard to the battlefield.",
+                  "Return target creature card with greater mana value from your graveyard to the battlefield.",
                   "Return target creature card from a graveyard to the battlefield.",   # under whose control?
                   "Return target card from an opponent's graveyard to your hand.",
                   "Put two target cards from a graveyard on top of their owners' libraries.",

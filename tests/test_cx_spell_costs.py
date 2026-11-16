@@ -29,9 +29,8 @@ class Parse(unittest.TestCase):
                          (("sac", 1, {"any": ["creature", "enchantment"]}),))
 
     def test_refusals(self):
-        for text in ("sacrifice X creatures", "discard X cards", "pay X life", "sacrifice any number of creatures",
-                     "sacrifice a creature that dealt damage this turn", "sacrifice half the lands you control, rounded up",
-                     "behold a Goblin", "behold a Goblin and sacrifice it", "blight 2 or pay {1}", "forage or pay {B}",
+        for text in ("sacrifice a creature that dealt damage this turn", "sacrifice half the lands you control",
+                     "behold a Goblin", "behold a Goblin and sacrifice it", "blight X", "blight X or pay {1}",
                      "sacrifice a creature or pay {X}", "discard a widget"):
             self.assertIsNone(parse_cost(text), text)
 
@@ -47,7 +46,7 @@ class RealCards(unittest.TestCase):
             "Deprive", "Dusk Mangler", "Final Payment", "Kaervek's Spite", "Lethal Sting", "Natural Order",
             "Phyrexian Tribute", "Ruthless Disposal", "Savage Order", "Shared Discovery", "Spark Harvest",
             "Surge of Strength", "Magmatic Insight", "Guardian of the Great Door", "Soaring Stoneglider")
-    STILL_PARTIAL = ("Treacherous Greed", "Hatred", "Vicious Betrayal", "Tectonic Split")
+    STILL_PARTIAL = ("Treacherous Greed",)
 
     @classmethod
     def setUpClass(cls):
@@ -209,7 +208,8 @@ class Casting(unittest.TestCase):
         enemy = self.g.enter_battlefield(self.b, BIG)
         self.a.hand = [payment]
         self.a.life = 5
-        self.assertFalse(self.g.can_cast_now(self.a, payment))       # life would hit 0; nothing to sacrifice
+        self.assertTrue(self.g.can_cast_now(self.a, payment))        # CR 119.4: paying the last life is legal (#467)
+        self.assertFalse(self.a.ai._can_cast(self.g, self.a, payment))   # but the AI won't pay itself to 0
         self.a.life = 20
         self.assertTrue(self.g.cast(self.a, payment, [enemy]))
         self.g.settle()
@@ -385,3 +385,255 @@ class AICasts(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CountedParse(unittest.TestCase):
+    def test_x_and_any_number(self):
+        self.assertEqual(parse_cost("discard X cards"), ((("discard", "x", {}),),))
+        self.assertEqual(parse_cost("discard X cards at random"), ((("discard_random", "x", {}),),))
+        self.assertEqual(parse_cost("pay X life"), ((("life", "x", {}),),))
+        self.assertEqual(parse_cost("sacrifice any number of creatures"), ((("sac", "any", {"types": ["creature"]}),),))
+
+    def test_counted_refusals(self):
+        for text in ("discard X cards or pay {2}", "discard X cards and pay X life", "pay any number of life",
+                     "reveal X cards from your hand", "sacrifice X widgets"):
+            self.assertIsNone(parse_cost(text), text)
+
+
+@unittest.skipUnless(os.path.exists(ALL_CARDS), "card database not built")
+class CountedGames(unittest.TestCase):
+    """X chosen as the spell is cast is the spell's X; 'any number of' counts as 'this way'."""
+    def setUp(self):
+        self.db = CardDB(offline=True)
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.g = Game(self.a, self.b, random.Random(0), log=True)
+        self.g.turn, self.g.step = 2, "main1"
+        for p in self.g.players:
+            p.library = [ISLAND] * 20
+            p.ai.respond = p.ai.respond_extras = lambda *args: None
+        for land in (FOREST, FOREST, ISLAND, MOUNTAIN, SWAMP, SWAMP, SWAMP, SWAMP):
+            self.g.enter_battlefield(self.a, land).sick = False
+
+    def choose(self, n):
+        self.a.ai.choose_cost_count = lambda game, me, card, kind, pool, mode: n
+
+    def test_sickening_dreams_discards_x_and_deals_x(self):
+        self.choose(2)
+        enemy = self.g.enter_battlefield(self.b, BIG)
+        spell = self.db.get("Sickening Dreams")
+        self.a.hand = [spell, ISLAND, FOREST, ISLAND]
+        self.assertTrue(self.g.cast(self.a, spell, []))
+        self.g.settle()
+        self.assertEqual(len(self.a.hand), 1)
+        self.assertEqual((self.a.life, self.b.life, enemy.damage), (18, 18, 2))
+
+    def test_x_zero_is_legal(self):
+        self.choose(0)
+        spell = self.db.get("Sickening Dreams")
+        self.a.hand = [spell]
+        self.assertTrue(self.g.can_cast_now(self.a, spell))
+        self.assertTrue(self.g.cast(self.a, spell, []))
+        self.g.settle()
+        self.assertEqual((self.a.life, self.b.life), (20, 20))
+
+    def test_hatred_pays_x_life(self):
+        self.choose(3)
+        mine = self.g.enter_battlefield(self.a, TOKEN_BEAR)
+        spell = self.db.get("Hatred")
+        self.a.hand = [spell]
+        self.assertTrue(self.g.cast(self.a, spell, [mine]))
+        self.g.settle()
+        self.assertEqual((self.a.life, mine.power, mine.toughness), (17, 4, 1))
+
+    def test_life_x_never_reaches_zero(self):
+        self.choose(50)
+        self.a.life = 4
+        mine = self.g.enter_battlefield(self.a, TOKEN_BEAR)
+        spell = self.db.get("Hatred")
+        self.a.hand = [spell]
+        self.assertTrue(self.g.cast(self.a, spell, [mine]))
+        self.g.settle()
+        self.assertEqual((self.a.life, mine.power), (1, 4))
+
+    def test_restless_and_nostalgic_dreams_return_x(self):
+        self.choose(2)
+        self.a.graveyard.extend([BIG, TOKEN_BEAR, FOREST])
+        spell = self.db.get("Restless Dreams")
+        self.a.hand = [spell, ISLAND, ISLAND]
+        self.assertTrue(self.g.cast(self.a, spell, []))
+        self.g.settle()
+        self.assertEqual(sorted(c.name for c in self.a.hand), ["Test Cub", "Test Giant"])
+        spell = self.db.get("Nostalgic Dreams")
+        self.a.hand.append(spell)
+        self.assertTrue(self.g.cast(self.a, spell, []))
+        self.g.settle()
+        self.assertEqual(len(self.a.hand), 2)            # discarded two, got two back
+        self.assertIn("Nostalgic Dreams", [c.name for c in self.a.exile])
+
+    def test_vicious_betrayal_sacrifices_cheap_others_and_counts_them(self):
+        target = self.g.enter_battlefield(self.a, BIG)
+        cubs = [self.g.enter_battlefield(self.a, TOKEN_BEAR) for _ in range(2)]
+        spell = self.db.get("Vicious Betrayal")
+        self.a.hand = [spell]
+        self.assertTrue(self.g.cast(self.a, spell, [target]))
+        self.g.settle()
+        self.assertTrue(all(c not in self.a.battlefield for c in cubs))
+        self.assertEqual((target.power, target.toughness), (9, 9))
+
+    def test_restock_returns_two_cards(self):
+        """'Return two target cards from your graveyard' read 'two target' as a card type and returned nothing
+        (targeted graveyard cards since #546: cx_card_move)."""
+        self.a.graveyard.extend([BIG, FOREST, ISLAND])
+        spell = self.db.get("Restock")
+        self.a.hand = [spell]
+        self.assertTrue(self.g.cast(self.a, spell, self.a.graveyard[:2]))
+        self.g.settle()
+        self.assertEqual(len(self.a.hand), 2)
+
+    def test_ai_chooses_x_for_restless_dreams(self):
+        """The AI discards a spare land to return a good creature card."""
+        from mtgsim.ai import HeuristicAI
+        self.a.ai = HeuristicAI()
+        self.a.graveyard.extend([BIG, BIG])
+        self.a.hand = [self.db.get("Restless Dreams"), FOREST, ISLAND]
+        self.a.ai.main_phase(self.g, self.a)
+        self.g.settle()
+        # it plays the Forest as its land, discards the Island (X=1), returns a Giant and casts it
+        self.assertIn("Restless Dreams", [c.name for c in self.a.graveyard])
+        self.assertIn("Island", [c.name for c in self.a.graveyard])
+        self.assertEqual([c.name for c in self.a.graveyard].count("Test Giant"), 1)
+
+    def test_ai_life_x_is_bounded_by_the_value(self):
+        from mtgsim import cx_spell_costs
+        from mtgsim.ai import HeuristicAI
+        self.a.ai = HeuristicAI()
+        self.a.life = 6
+        self.g.enter_battlefield(self.a, TOKEN_BEAR)
+        x = cx_spell_costs.cost_x(self.g, self.a, self.db.get("Hatred"))
+        self.assertLess(x, 5)
+
+
+PLAINS = card("Plains", types="Basic Land — Plains", text="({T}: Add {W}.)")
+KNIGHT = card("Test Knight", "{W}{W}", "Creature — Human Knight", "", 2, 2)
+
+
+@unittest.skipUnless(os.path.exists(ALL_CARDS), "card database not built")
+class Defilers(unittest.TestCase):
+    """'As an additional cost to cast white permanent spells, you may pay 2 life. Those spells cost {W} less ...'"""
+    def setUp(self):
+        self.db = CardDB(offline=True)
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.g = Game(self.a, self.b, random.Random(0), log=True)
+        self.g.turn, self.g.step = 2, "main1"
+        for p in self.g.players:
+            p.library = [ISLAND] * 20
+            p.ai.respond = p.ai.respond_extras = lambda *args: None
+        self.defiler = self.g.enter_battlefield(self.a, self.db.get("Defiler of Faith"))
+
+    def test_pays_life_only_when_it_needs_the_discount(self):
+        self.g.enter_battlefield(self.a, PLAINS).sick = False
+        self.a.hand = [KNIGHT]
+        self.assertEqual(self.g.cost_of(self.a, KNIGHT), {"generic": 0, "W": 1})
+        self.assertTrue(self.g.cast(self.a, KNIGHT, []))
+        self.g.settle()
+        self.assertEqual(self.a.life, 18)
+        self.assertIn("Test Knight", [x.card.name for x in self.a.battlefield])
+        # with enough white mana it pays the full cost and no life
+        self.g.enter_battlefield(self.a, PLAINS).sick = False
+        for x in self.a.battlefield:
+            x.tapped = False
+        knight2 = card("Test Knight", "{W}{W}", "Creature — Human Knight", "", 2, 2)
+        self.a.hand = [knight2]
+        self.assertTrue(self.g.cast(self.a, knight2, []))
+        self.assertEqual(self.a.life, 18)
+
+    def test_only_its_color_permanents_and_not_at_low_life(self):
+        self.g.enter_battlefield(self.a, PLAINS).sick = False
+        sorcery = card("Test Ray", "{W}{W}", "Sorcery", "You gain 1 life.")
+        self.assertEqual(self.g.cost_of(self.a, sorcery), {"generic": 0, "W": 2})      # not a permanent spell
+        green = card("Test Elk", "{G}{G}", "Creature — Elk", "", 2, 2)
+        self.assertEqual(self.g.cost_of(self.a, green), {"generic": 0, "G": 2})
+        self.a.life = 7
+        self.assertEqual(self.g.cost_of(self.a, KNIGHT), {"generic": 0, "W": 2})
+        self.assertFalse(self.g.can_cast_now(self.a, KNIGHT))
+
+    def test_ai_casts_with_the_discount(self):
+        from mtgsim.ai import HeuristicAI
+        self.a.ai = HeuristicAI()
+        self.g.enter_battlefield(self.a, PLAINS).sick = False
+        self.a.hand = [KNIGHT]
+        self.a.ai.main_phase(self.g, self.a)
+        self.g.settle()
+        self.assertIn("Test Knight", [x.card.name for x in self.a.battlefield])
+        self.assertEqual(self.a.life, 18)
+
+
+@unittest.skipUnless(os.path.exists(ALL_CARDS), "card database not built")
+class OptionalReductions(unittest.TestCase):
+    """'As an additional cost, you may <any number of ...>. This spell costs {N} less for each ... this way.'"""
+    def setUp(self):
+        self.db = CardDB(offline=True)
+        self.a, self.b = Player("a", [], Scripted()), Player("b", [], Scripted())
+        self.g = Game(self.a, self.b, random.Random(0), log=True)
+        self.g.turn, self.g.step = 2, "main1"
+        for p in self.g.players:
+            p.library = [ISLAND] * 20
+            p.ai.respond = p.ai.respond_extras = lambda *args: None
+
+    def lands(self, land, n):
+        for _ in range(n):
+            self.g.enter_battlefield(self.a, land).sick = False
+
+    def test_parse(self):
+        rules = self.db.get("Hierophant Bio-Titan").advanced_rules
+        self.assertEqual(rules[KEY], ((("rm_p1", "any", {"reduce": 2}),),))
+        self.assertEqual(self.db.get("Explosive Singularity").advanced_rules[KEY][0][0][:2], ("tap", "any"))
+        for name in ("Hierophant Bio-Titan", "Explosive Singularity"):
+            self.assertEqual(self.db.get(name).unsupported, [], name)
+
+    def test_explosive_singularity_taps_creatures_only_as_needed(self):
+        singularity = self.db.get("Explosive Singularity")          # {8}{R}{R}
+        self.lands(MOUNTAIN, 7)
+        cubs = [self.g.enter_battlefield(self.a, TOKEN_BEAR) for _ in range(4)]
+        self.a.hand = [singularity]
+        self.assertEqual(self.g.cost_of(self.a, singularity), {"generic": 5, "R": 2})   # 3 creatures tapped
+        self.assertTrue(self.g.cast(self.a, singularity, [self.b]))
+        self.g.settle()
+        self.assertEqual(self.b.life, 10)
+        self.assertEqual(sum(c.tapped for c in cubs), 3)
+
+    def test_without_units_the_full_cost(self):
+        singularity = self.db.get("Explosive Singularity")
+        self.lands(MOUNTAIN, 9)
+        self.a.hand = [singularity]
+        self.assertFalse(self.g.can_cast_now(self.a, singularity))
+
+    def test_hierophant_removes_counters(self):
+        titan = self.db.get("Hierophant Bio-Titan")                 # {12}{G}{G}? read its cost
+        need = sum(v for k, v in titan.mana_cost.items() if k != "X")
+        big = self.g.enter_battlefield(self.a, BIG)
+        big.counters["+1/+1"] = 3
+        self.lands(FOREST, need - 6)
+        self.a.hand = [titan]
+        self.assertTrue(self.g.cast(self.a, titan, []))
+        self.g.settle()
+        self.assertEqual(big.counters["+1/+1"], 0)
+        self.assertIn("Hierophant Bio-Titan", [x.card.name for x in self.a.battlefield])
+
+    def test_x_spells_keep_the_reduction_visible(self):
+        """The engine pays {X} after the reduction, so 'costs {2} less for each card exiled' couldn't lower X."""
+        march = self.db.get("March of Wretched Sorrow")
+        self.assertTrue(march.unsupported)
+        self.assertFalse(alternatives(march))
+
+    def test_ai_casts_explosive_singularity(self):
+        from mtgsim.ai import HeuristicAI
+        self.a.ai = HeuristicAI()
+        self.lands(MOUNTAIN, 7)
+        for _ in range(3):
+            self.g.enter_battlefield(self.a, TOKEN_BEAR).sick = True
+        self.b.life = 10
+        self.a.hand = [self.db.get("Explosive Singularity")]
+        self.a.ai.main_phase(self.g, self.a)
+        self.g.settle()
+        self.assertLessEqual(self.b.life, 0)

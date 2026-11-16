@@ -52,8 +52,8 @@ class Parsing(unittest.TestCase):
 
     def test_refusals(self):
         for text, types in (
-                ("Enchant creature\nEnchanted creature is a Treefolk with base power and toughness 0/4 and loses all "
-                 "abilities.", "Enchantment — Aura"),                                         # a later slice
+                ("Enchant creature\nEnchanted creature is a Treefolk with base power and toughness 0/4, loses all "
+                 "abilities, card types, and creature types.", "Enchantment — Aura"),       # more than abilities
                 ("Creatures you control with +1/+1 counters on them are artifacts in addition to their other types.",
                  "Enchantment"),                                                               # membership changes
                 ("Creatures with power 2 or less have base power and toughness 3/3.", "Enchantment"),   # reads itself

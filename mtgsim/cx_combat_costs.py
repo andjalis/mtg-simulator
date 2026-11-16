@@ -51,8 +51,54 @@ def _own_cost(line, st):
     return True
 
 
+_ACT_LABEL = r"(?:[A-Z][\w' ]* — )?"
+_ACT = re.compile(rf"{_ACT_LABEL}~ can't (attack|block|attack or block) unless you (sacrifice|return|tap) "
+                  r"(an? (?:untapped )?[\w -]+?)( you control)?( to its owner's hand)?"
+                  r"( not declared as an attacking or blocking creature this combat)?\.")
+_GROUP_ACT = re.compile(r"(White|Blue|Black|Red|Green) creatures can't attack unless their controller sacrifices a "
+                        r"land of their choice for each (white|blue|black|red|green) creature they control that's "
+                        r"attacking\.")
+
+
+def _own_action(line, st):
+    """Non-mana prices to declare a creature (#325 slice 2), recorded as ``advanced_rules["cx_own_combat_action"]``
+    ((what, (kind, spec)), ...) with kind "sacrifice", "bounce" or "tap" and spec a cx_condlib filter:
+
+        ~ can't attack unless you sacrifice a land.                                          (Exalted Dragon)
+        ~ can't attack unless you return an enchantment you control to its owner's hand.     (Floodtide Serpent)
+        ~ can't attack or block unless you tap an untapped creature you control not declared as an attacking or
+        blocking creature this combat.                                                      (Hollow Warrior)
+    and the group form "Green creatures can't attack unless their controller sacrifices a land of their choice for
+    each green creature they control that's attacking." (``"cx_combat_action@group"``: (color, what, action))."""
+    from .cx_condlib import _filter
+    g = _GROUP_ACT.fullmatch(line)
+    if g:
+        if g[1].lower() != g[2]:
+            return False
+        rules = st.extra.setdefault("advanced_rules", {})
+        color = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}[g[2]]
+        rules["cx_combat_action@group"] = rules.get("cx_combat_action@group", ()) + (
+            (color, "attack", ("sacrifice", {"types": ["land"]})),)
+        return True
+    m = _ACT.fullmatch(line)
+    if not m or "Creature" not in st.types:
+        return False
+    verb, noun, yours, hand, undeclared = m[2], m[3], m[4], m[5], m[6]
+    if (verb == "return") != bool(hand) or (verb == "tap") != bool(undeclared and yours and "untapped" in noun) \
+            or verb == "tap" and m[1] != "attack or block" or verb == "sacrifice" and (yours or hand):
+        return False
+    spec = _filter(re.sub(r"^an? (?:untapped )?", "", noun), plural=False)
+    if spec is None:
+        return False
+    kind = {"sacrifice": "sacrifice", "return": "bounce", "tap": "tap"}[verb]
+    what = {"attack": "attack", "block": "block"}.get(m[1], "both")
+    rules = st.extra.setdefault("advanced_rules", {})
+    rules["cx_own_combat_action"] = rules.get("cx_own_combat_action", ()) + ((what, (kind, spec)),)
+    return True
+
+
 def parse_line(line, st):
-    if _own_cost(line, st):
+    if _own_cost(line, st) or _own_action(line, st):
         return True
     variable = re.fullmatch(rf"[Cc]reatures can't ({_ATTACK}) unless their controller pays \{{X\}} "
                             rf"(?:{_EACH}), where X is the number of (enchantments you control|basic land types among lands you control)\.", line)
@@ -214,10 +260,59 @@ def pay_attackers(game, player, attackers, targets):
         for cost in costs:
             if cost is not None:
                 _add(total, cost)
-        if all(cost is not None for cost in costs) and _pay(game, player, total, group):
+        chosen = _choose_actions(game, player, group, "attack")
+        if all(cost is not None for cost in costs) and chosen is not None and _pay(game, player, total, group):
+            _do_actions(game, player, chosen)
             return group
         group = declaration_group(group[:-1], "attack")
     return []
+
+
+def own_actions(game, creature, action) -> list:
+    """The non-mana prices (kind, spec) to declare creature as an attacker / blocker."""
+    out = []
+    if not creature.abilities_suppressed:
+        out += [a for what, a in creature.card.advanced_rules.get("cx_own_combat_action", ())
+                if what in (action, "both")]
+    for p in game.players:
+        for source in p.battlefield:
+            if source.abilities_suppressed or not source.card.advanced_rules:
+                continue
+            for color, what, a in source.card.advanced_rules.get("cx_combat_action@group", ()):
+                if what == action and color in creature.card.colors and creature.is_creature:
+                    out.append(a)
+    return out
+
+
+def _choose_actions(game, player, group, action):
+    """[(kind, permanent)] paying every declared creature's non-mana price with distinct permanents (the least
+    valuable ones; never one of the declared creatures), or None when they can't all be paid."""
+    from .cx_condlib import _card_ok
+    from .engine.policy import perm_value
+    used, out = set(), []
+    for c in group:
+        for kind, spec in own_actions(game, c, action):
+            pool = [x for x in player.battlefield if id(x) not in used and x not in group and _card_ok(x.card, spec, x)
+                    and (kind != "tap" or not x.tapped and x.is_creature)]
+            if not pool:
+                return None
+            pick = min(pool, key=lambda x: (perm_value(x), not x.tapped))
+            used.add(id(pick))
+            out.append((kind, pick))
+    return out
+
+
+def _do_actions(game, player, chosen):
+    for kind, perm in chosen:
+        if perm not in player.battlefield:
+            continue
+        if kind == "sacrifice":
+            game.sacrifice(perm)
+        elif kind == "bounce":
+            game.leave_battlefield(perm, "hand")
+        else:
+            perm.tapped = True
+        game.log(f"pays a declaration cost: {kind} {perm.card.name}", player)
 
 
 def pay_blockers(game, player, blocks):
@@ -228,7 +323,9 @@ def pay_blockers(game, player, blocks):
         total = {}
         for c in creatures:
             _add(total, _static_costs(game, c, "block"))
-        if _pay(game, player, total, creatures):
+        chosen = _choose_actions(game, player, creatures, "block")
+        if chosen is not None and _pay(game, player, total, creatures):
+            _do_actions(game, player, chosen)
             return blocks
         drop = creatures[-1]
         blocks = drop_solo_blocks({a: [b for b in bl if b is not drop] for a, bl in blocks.items()})
