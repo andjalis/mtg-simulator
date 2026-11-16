@@ -10,6 +10,7 @@ import re
 from typing import TYPE_CHECKING
 from .. import alt_casts, transmute, copies, learning, proliferate, regeneration, removal, costs
 from ..cards import COLORS, CardDef, Effect
+from ..cards.registry import TARGET_CHOOSERS
 from .. import modal
 from .. import hand_put
 from .mana import add_costs, payable
@@ -118,6 +119,9 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     k = eff.kind
+    chooser = TARGET_CHOOSERS.get(k)
+    if chooser is not None:             # registered by the kind's module (cards/registry, TARGET_CHOOSERS)
+        return chooser(game, me, eff, legal, mine, theirs)
     if k == "copy_spell":
         return max(legal, key=lambda i: i.card.cmc, default=None)
     if k in ("die_roll", "become_copy") and copies.group_model(game, me, eff, None) is not None:   # copy choices

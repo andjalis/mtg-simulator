@@ -13,6 +13,9 @@ Every ``NNNN_<name>.py`` file in this package is imported once, in filename orde
 ``LINE_HOOKS``          ``{stage: (fn, ...)}``: ``fn(line, st)`` returns True once it handled the line; each stage
                         runs at one fixed point inside a face-line parser of ``cards/face_lines.py``
                         (see ``face_lines.LINE_HOOK_STAGES``), after the hooks that were written into it by hand
+``TARGET_CHOOSERS``     ``{kind: fn(game, me, eff, legal, mine, theirs)}``: how the default AI picks the target of an
+                        effect of that kind (``engine/policy.default_choose_target`` asks it first, before its own
+                        chain; what ``fn`` returns is the choice, None for no target). One chooser per kind.
 
 Order: files load in sorted filename order and each one's lists are added in that order, so the number prefix
 decides precedence. To add a module, create ``NNNN_<your_module>.py`` with the next free number above the highest
@@ -26,7 +29,11 @@ import pkgutil
 import re
 
 FILE_NAME = re.compile(r"\d{4}_[a-z0-9_]+")
-FIELDS = ("PRIORITY_PATTERNS", "EFFECT_PATTERNS", "SUBS", "TRIGGERS", "KEYWORDS", "FACE_LINE_PARSERS", "LINE_HOOKS")
+FIELDS = ("PRIORITY_PATTERNS", "EFFECT_PATTERNS", "SUBS", "TRIGGERS", "KEYWORDS", "FACE_LINE_PARSERS", "LINE_HOOKS",
+          "TARGET_CHOOSERS")
+# Filled by load_all from the TARGET_CHOOSERS fields; read by engine/policy.default_choose_target. It lives here
+# (not in the engine) because the registry loads with mtgsim.cards, before the engine is imported.
+TARGET_CHOOSERS: dict = {}
 
 
 def file_names() -> list:
@@ -38,7 +45,8 @@ def file_names() -> list:
     return names
 
 
-def load_all(effect_patterns: list, subs: list, triggers: list, keywords: set, parse_module, line_hooks: dict) -> list:
+def load_all(effect_patterns: list, subs: list, triggers: list, keywords: set, parse_module, line_hooks: dict,
+             target_choosers: dict = TARGET_CHOOSERS) -> list:
     """Import every registration file in order and add its fields to the given tables (in place).
 
     Returns the loaded modules (for tests and the coverage tooling)."""
@@ -60,5 +68,9 @@ def load_all(effect_patterns: list, subs: list, triggers: list, keywords: set, p
             if stage not in line_hooks:
                 raise ImportError(f"{mod.__name__}: unknown LINE_HOOKS stage {stage!r}; known: {sorted(line_hooks)}")
             line_hooks[stage].extend(hooks)
+        for k, chooser in getattr(mod, "TARGET_CHOOSERS", {}).items():
+            if k in target_choosers:
+                raise ImportError(f"{mod.__name__}: a target chooser for kind {k!r} is already registered")
+            target_choosers[k] = chooser
         loaded.append(mod)
     return loaded

@@ -76,7 +76,7 @@ class LoadAllTest(unittest.TestCase):
             self.addCleanup(sys.modules.pop, mod.__name__, None)
         tables = dict(effect_patterns=["old"], subs=["s0"], triggers=["t0"], keywords={"flying"},
                       parse_module=types.SimpleNamespace(_FACE_LINE_PARSERS=("base",)),
-                      line_hooks={"keyword": ["h0"]})
+                      line_hooks={"keyword": ["h0"]}, target_choosers={"old_kind": "c0"})
         with mock.patch.object(registry, "file_names", return_value=names):
             registry.load_all(**tables)
         return tables
@@ -91,12 +91,50 @@ class LoadAllTest(unittest.TestCase):
         self.assertEqual(t["keywords"], {"flying", "zap"})
         self.assertEqual(t["parse_module"]._FACE_LINE_PARSERS, ("f2", "f1", "base"))
         self.assertEqual(t["line_hooks"], {"keyword": ["h0", "h1"]})
+        self.assertEqual(self.load({"TARGET_CHOOSERS": {"new_kind": "c1"}})["target_choosers"],
+                         {"old_kind": "c0", "new_kind": "c1"})
 
     def test_typo_field_and_unknown_stage_are_refused(self):
         with self.assertRaises(ImportError):
             self.load({"EFFECT_PATTERN": ["a"]})
         with self.assertRaises(ImportError):
             self.load({"LINE_HOOKS": {"nowhere": ("h",)}})
+        with self.assertRaises(ImportError):          # one chooser per kind
+            self.load({"TARGET_CHOOSERS": {"old_kind": "c1"}})
+
+
+class TargetChooserTest(unittest.TestCase):
+    """engine/policy.default_choose_target asks a registered chooser first, with the split it already computed."""
+
+    def test_registered_chooser_picks_the_target(self):
+        import random
+        from mtgsim.ai import HeuristicAI
+        from mtgsim.cards import Effect
+        from mtgsim.engine import Game, Permanent, Player
+        from mtgsim.engine.policy import default_choose_target
+        bear = card("", name="Bear")
+        a, b = Player("A", [bear] * 20, HeuristicAI()), Player("B", [bear] * 20, HeuristicAI())
+        game = Game(a, b, random.Random(0))
+        mine, theirs = Permanent(bear, a), Permanent(bear, b)
+        a.battlefield.append(mine)
+        b.battlefield.append(theirs)
+        eff = Effect("tap", target="creature")
+        self.assertIs(default_choose_target(game, a, eff), theirs)      # the built-in "tap" choice: theirs
+        calls = []
+
+        def chooser(game_, me, eff_, legal, mine_, theirs_):
+            calls.append((me, legal, mine_, theirs_))
+            return mine_[0]
+        registry.TARGET_CHOOSERS["tap"] = chooser
+        self.addCleanup(registry.TARGET_CHOOSERS.pop, "tap")
+        self.assertIs(default_choose_target(game, a, eff), mine)
+        me, legal, mine_, theirs_ = calls[0]
+        self.assertIs(me, a)
+        self.assertEqual((mine_, theirs_), ([mine], [theirs]))
+        self.assertEqual(set(map(id, legal)), {id(mine), id(theirs)})
+
+    def test_none_registered_on_main(self):
+        self.assertEqual(registry.TARGET_CHOOSERS, {})
 
 
 class LineHookTest(unittest.TestCase):
