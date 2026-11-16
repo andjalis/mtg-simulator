@@ -250,6 +250,7 @@ class Permanent:
         self.auras: list["Permanent"] = []   # Auras on this permanent (they sit on their caster's battlefield)
         self.kicks = 0                                 # times a multikicker / squad cost was paid
         self.kicked = False                            # cast with a kicker cost ("if it was kicked")
+        self.cast_kind = ""                            # the alternative cost it was cast for ("if its surge cost was paid")
         self.cast_from_hand = False                    # "if you cast it from your hand"
         self.mana_spent = 0                            # "if at least N mana was spent to cast it"
         self.mana_by_color = {}                        # {"R": 3}: most mana of a colour the payment can have been

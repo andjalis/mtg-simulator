@@ -164,6 +164,7 @@ def parse_alt_line(line: str, st) -> bool:
             code = "mech:hit:" + "|".join(types)     # prowl: a creature that shares a type with the card
         index = len(st.extra.setdefault("advanced_rules", {}).get("alt_if", ()))
         st.extra["advanced_rules"]["alt_if"] = st.extra["advanced_rules"].get("alt_if", ()) + ((code, parts),)
+        st.extra["advanced_rules"].setdefault("alt_names", {})[f"cond_alt_{index}"] = kind.lower()   # "prowl cost was paid"
         st.alt_costs.append(AltCost(f"cond_alt_{index}", cost))
         return True
     m = re.fullmatch(r"Reinforce (\d+)—((?:\{[^}]+\})+)(?: \(.*\))?", line)

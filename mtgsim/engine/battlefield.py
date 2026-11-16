@@ -103,6 +103,7 @@ class BattlefieldMixin:
             perm.mana_by_color = dict(getattr(self, "_entry_mana_by_color", {}))
             perm.mana_from = dict(getattr(self, "_entry_mana_from", {}))
             perm.was_cast = True       # already as it enters ("if it wasn't cast", Freestrider Commando)
+            perm.cast_kind = cast[3] if len(cast) > 3 else ""
         others = sum(x.card.is_land for x in p.battlefield)
         cond = card.tapped_condition
         if cond.startswith("other_subtype:"):
