@@ -85,6 +85,8 @@ class CostsMixin:
                     produces = produces - set(gate_colors)
             if c.mana_pay_life and p.life <= c.mana_pay_life:
                 produces = produces & {"C"} if "C" in produces else produces & set()
+            if c.mana_damage and p.life <= c.mana_damage:       # a painland's damaging colours at its last life
+                produces = produces - c.mana_damage_colors
             if c.mana_tap_other and not any(x is not perm and not x.tapped and (x.is_creature or c.mana_tap_other == "permanent")
                                             for x in p.battlefield):
                 continue
@@ -190,6 +192,10 @@ class CostsMixin:
                 s.skip_untap = max(s.skip_untap, 1)   # its colored mana was spent: it skips its next untap
             if s.card.mana_pay_life and self._needed_color(p, s, payment, cost):
                 self.change_life(p, -s.card.mana_pay_life, "paid life")
+            if s.card.mana_damage and (not (s.card.produces - s.card.mana_damage_colors)
+                                       or self._needed_color(p, s, payment, cost)):
+                # its damaging ability made the mana: 1 damage to its controller (an undamaged {C} would not)
+                self.deal_damage(p, s.card.mana_damage, by=p, cause=f"{s.card.name}: mana", source=s)
             if s.card.mana_filter == "once":
                 s.ability_turns["filter"] = self.turn
             else:
@@ -941,7 +947,8 @@ class CostsMixin:
                         x.card.advanced_rules.get("sorcery_flash") and not x.abilities_suppressed
                         for x in p.battlefield))):
                 from ..cx_flash_perm import flash_allowed
-                if not flash_allowed(self, p, card):
+                from ..cx_conditions import spell_has
+                if not flash_allowed(self, p, card) and not (card.cond_keywords and spell_has(p, card, "flash")):
                     return False
         if any(e.target == "spell" and not e.data.get("optional_target") and not self.legal_targets(p, e)
                for e in card.spell_effects):
