@@ -148,6 +148,11 @@ class AbilitiesMixin:
 
     def equip_cost(self, equipment: Permanent, creature: Permanent) -> dict:
         cost = dict(equipment.card.equip_cost or {})
+        typed = equipment.card.advanced_rules.get("equip_typed")      # "Equip Pirate {1}" beside "Equip {2}" (#744)
+        if typed:
+            from .policy import equip_matches
+            if equip_matches(creature, typed[0]) and sum(typed[1].values()) <= sum(cost.values()):
+                cost = dict(typed[1])
         cost["generic"] = max(0, cost.get("generic", 0) - creature.card.equip_discount)
         from ..advanced_templates import rules
         discount = sum(rules(x).get("equip_discount", 0) for x in equipment.controller.battlefield)
@@ -530,6 +535,7 @@ class AbilitiesMixin:
         item = StackItem(p, effects, list(targets), source=perm, name=f"{perm.card.name} ability",
                          kind="ability")
         item.ability_idx = idx
+        item.cost_sacrificed = [v.card for v in plan.victims]     # "if a Saproling was sacrificed this way" (#642)
         item.counter_x = sum(n for _, _, n in plan.counter_payments)
         if c.get("remove_counter"):      # "{T}, Remove a charge counter from ~: ... for each ... removed this way"
             note_this_way(item, "removed", [c["remove_counter"]], count)

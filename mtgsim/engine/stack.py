@@ -275,16 +275,16 @@ class StackMixin:
             # "its controller" in "Whenever enchanted creature ..., its controller ..." is the creature's (#361)
             ctx = lambda effects: source if any(e.target == "that_controller" or e.data.get("who") == "that_controller"
                                                 or e.data.get("ref_subject") for e in effects) else context
-            for equipment in source.equipment:
-                for trig in equipment.card.host_triggers:
-                    if trig.event == event:
-                        self.queue_trigger(equipment.controller, self._that_much(trig.effects), source,
-                                           equipment.card.name, ctx(trig.effects))
-            for aura in list(source.auras):
-                for trig in aura.card.host_triggers:
-                    if trig.event == event:
-                        self.queue_trigger(aura.controller, self._that_much(trig.effects), source, aura.card.name,
-                                           ctx(trig.effects))
+            for attached in list(source.equipment) + list(source.auras):
+                for trig in attached.card.host_triggers:
+                    if trig.event != event:
+                        continue
+                    if trig.data.get("attachment_source"):      # "~" is the Equipment / Aura itself (#793)
+                        self.queue_trigger(attached.controller, self._that_much(trig.effects), attached,
+                                           attached.card.name, source)
+                    else:
+                        self.queue_trigger(attached.controller, self._that_much(trig.effects), source,
+                                           attached.card.name, ctx(trig.effects))
         if source is None and p.suspended:     # "if this card is suspended" abilities (Deep-Sea Kraken)
             from ..time_counters import suspended_triggers
             suspended_triggers(self, p, event, context)
@@ -565,6 +565,8 @@ class StackMixin:
                 finally:
                     self._mid_resolution -= 1
                 just_made = self._last_token if getattr(self, "_token_serial", 0) == serial + 1 else None
+                if eff.kind.endswith("_self") and eff.target in ("none", "self") and isinstance(item.source, Permanent):
+                    prev = item.source      # "Untap ~ and put a +1/+1 counter on it": "it" is ~ (audit round 3)
                 if self.over:
                     break
         if item.kind == "chapter":
