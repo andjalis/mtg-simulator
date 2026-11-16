@@ -276,7 +276,9 @@ def token(game, p, eff, target, item, prev=None, **_):
         if not isinstance(prev, Permanent):
             return
         eff = dataclasses.replace(eff, data=dict(eff.data, power=prev.power, toughness=prev.toughness))
-    if eff.data.get("x"):
+    if eff.data.get("x") and getattr(item, "paid_x", None) is not None:
+        n = item.paid_x                 # "you may pay {X}. If you do, create X ..." (#645)
+    elif eff.data.get("x"):
         n = (getattr(item.source, "entered_x", 0) if item.source is not None else getattr(item, "x", 0)) \
             if item is not None else 0
     game.create_token(who, eff, n)

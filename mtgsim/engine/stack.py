@@ -13,6 +13,13 @@ from .state import Permanent, Player, StackItem, TARGETED, TrackedZone, _gy_desc
 from .policy import perm_value
 
 
+def _shrink(e) -> int:
+    """How much toughness a forced harmful effect takes away (0 when it doesn't shrink or deal damage)."""
+    if e.kind in ("debuff_one", "damage") or e.kind == "add_counter" and e.data.get("counter") == "-1/-1":
+        return e.amount if isinstance(e.amount, int) else 0
+    return 0
+
+
 class StackMixin:
     def settle(self):
         """Outside a priority loop: let players respond to whatever was just put on the
@@ -275,16 +282,19 @@ class StackMixin:
             # "its controller" in "Whenever enchanted creature ..., its controller ..." is the creature's (#361)
             ctx = lambda effects: source if any(e.target == "that_controller" or e.data.get("who") == "that_controller"
                                                 or e.data.get("ref_subject") for e in effects) else context
-            for equipment in source.equipment:
-                for trig in equipment.card.host_triggers:
-                    if trig.event == event:
-                        self.queue_trigger(equipment.controller, self._that_much(trig.effects), source,
-                                           equipment.card.name, ctx(trig.effects))
-            for aura in list(source.auras):
-                for trig in aura.card.host_triggers:
-                    if trig.event == event:
-                        self.queue_trigger(aura.controller, self._that_much(trig.effects), source, aura.card.name,
-                                           ctx(trig.effects))
+            for attached in list(source.equipment) + list(source.auras):
+                granted = [dataclasses.replace(t, event=t.event[5:]) for t in getattr(attached, "temp_triggers", ())
+                           if t.event.startswith("host:")] if attached in source.equipment else []
+                # granted: "this Equipment gains '...'" (Vorpal Sword, #629)
+                for trig in list(attached.card.host_triggers) + granted:
+                    if trig.event != event:
+                        continue
+                    if trig.data.get("attachment_source"):      # "~" is the Equipment / Aura itself (#793)
+                        self.queue_trigger(attached.controller, self._that_much(trig.effects), attached,
+                                           attached.card.name, source)
+                    else:
+                        self.queue_trigger(attached.controller, self._that_much(trig.effects), source,
+                                           attached.card.name, ctx(trig.effects))
         if source is None and p.suspended:     # "if this card is suspended" abilities (Deep-Sea Kraken)
             from ..time_counters import suspended_triggers
             suspended_triggers(self, p, event, context)
@@ -329,21 +339,30 @@ class StackMixin:
         return True
 
     def force_damage_targets(self, controller, effects, targets, source):
-        """A mandatory trigger must target when a legal creature exists, killable or not: damage (#295) and
-        -N/-N (#377). Not after a "you may" gate, nor for optional targets."""
+        """A mandatory trigger must target when a legal permanent exists (CR 603.3d), whatever the policy thinks of
+        it: damage (#295), -N/-N (#377), and any other targeted effect the policy declined, such as a drawback on
+        our own creature or a mode it chose (#823). Not after a "you may" gate, nor for optional targets."""
         targets = list(targets)
         may = False
         for i, e in enumerate(effects):
             may = may or e.kind == "pay_gate" and (e.data.get("gate") or ("",))[0] == "may"
-            hostile = e.kind == "damage" and e.target == "creature" or e.kind == "debuff_one" and e.target in TARGETED
-            if not hostile or may or e.data.get("optional") or e.data.get("optional_target") or i >= len(targets) \
+            hostile = e.target in TARGETED and e.target not in ("self", "prev", "multi", "player", "any") \
+                or e.kind == "damage" and e.target == "creature"
+            if not hostile or may or e.data.get("optional") or e.data.get("optional_target") \
+                    or e.data.get("optional_from") is not None or e.data.get("may") or i >= len(targets) \
                     or targets[i] is not None:
                 continue
             with self.targeting(source):
                 legal = [x for x in self.legal_targets(controller, e) if isinstance(x, Permanent)]
-            enemies = [x for x in legal if x.controller is not controller] or legal
+            # Same rule as the blink chooser (#774/#780): the opponent's best, else our least valuable one, preferring
+            # one the effect doesn't kill (a 5/5 shrinks for the turn rather than a 2/2 dying).
+            enemies = [x for x in legal if x.controller is not controller]
             if enemies:
                 targets[i] = max(enemies, key=perm_value)
+            elif legal:
+                n = _shrink(e)
+                safe = [x for x in legal if not n or x.toughness - getattr(x, "damage", 0) > n]
+                targets[i] = min(safe or legal, key=perm_value)
         return targets
 
     @staticmethod
@@ -486,7 +505,7 @@ class StackMixin:
                 token = dataclasses.replace(base, name=f"{base.name} token", power=1, toughness=1, is_token=True,
                                             alt_costs=[])
                 self.queue_trigger(p, [Effect("token_copy", data={"card": token})], perm, f"{base.name} offspring")
-            if kind.startswith("evoke"):
+            if kind.startswith("evoke") or kind in (base.advanced_rules or {}).get("evoke_alts", ()):    # (#646)
                 self.log(f"sacrifices evoked {base.name}", p)
                 self.sacrifice(perm)
             if perm.is_creature and p.next_creature_counters:
@@ -560,7 +579,15 @@ class StackMixin:
                     self.resolve(p, eff, tgt, item, prev)
                 finally:
                     self._mid_resolution -= 1
+                if eff.target == "self" and prev is None and getattr(item, "context", None) is None \
+                        and isinstance(item.source, Permanent):
+                    # "{3}: Tap ~. It gains indestructible ...": with no earlier object and nothing the ability is
+                    # about (a trigger's subject or spell is its own "that ..."), "it" after an effect on ~ is ~ (#810)
+                    prev = item.source
                 just_made = self._last_token if getattr(self, "_token_serial", 0) == serial + 1 else None
+                if eff.kind.endswith("_self") and eff.target in ("none", "self") and isinstance(item.source, Permanent) \
+                        and not eff.data.get("keep_ctx"):      # "that creature" keeps the trigger's subject (self_ref)
+                    prev = item.source      # "Untap ~ and put a +1/+1 counter on it": "it" is ~ (audit round 3)
                 if self.over:
                     break
         if item.kind == "chapter":

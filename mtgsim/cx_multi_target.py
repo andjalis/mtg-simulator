@@ -144,13 +144,17 @@ def choose_list(game, me, eff) -> tuple:
     pick = default_choose_target(game, me, probe)
     if pick is None:
         return ()
-    side = pick.controller if isinstance(pick, Permanent) else pick
-    pool = [x for x in game.legal_targets(me, probe)
-            if (x.controller if isinstance(x, Permanent) else x) is side]
+    from .engine.state import Player
+    if isinstance(pick, (Permanent, Player)):
+        side = pick.controller if isinstance(pick, Permanent) else pick
+        pool = [x for x in game.legal_targets(me, probe)
+                if (x.controller if isinstance(x, Permanent) else x) is side]
+    else:       # cards in a graveyard / exile: the probe's own zone rules already pick the side (#786)
+        pool = list(game.legal_targets(me, probe))
     if probe.kind == "blink":         # not tokens (gone for good) or what gains nothing from re-entering (#318)
         from .blink import worth_blinking
         pool = [x for x in pool if worth_blinking(me, probe, x)]
-    pool = sorted(pool, key=lambda x: -perm_value(x) if isinstance(x, Permanent) else 0)
+    pool = sorted(pool, key=lambda x: -perm_value(x) if isinstance(x, Permanent) else -getattr(x, "cmc", 0))
     most = max_count(game, me, eff) if not (eff.data.get("count_x") and eff.amount) else eff.amount
     return tuple(pool if most is None else pool[:most])
 
