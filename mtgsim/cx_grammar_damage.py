@@ -111,6 +111,11 @@ def deals(m, clause):
                 and re.fullmatch(r"target (creature|artifact|enchantment|planeswalker|permanent)", m2.lower()):
             m4 = f"that {m2.split()[1].lower()}'s controller"   # "target creature and 1 damage to its controller" (#320)
         obj2 = _object("any target" if distinct else m4, source)
+        pair = re.fullmatch(r"(you|each opponent|each player) and (each [\w ]+)", m4) if obj2 is None else None
+        if pair:        # "... and 1 damage to you and each creature you control" (Hail Storm, #320): both get it
+            for text in (pair[1], pair[2]):
+                parts.append(_part(second[0], second[1], _object(text, source), source, _targeted(obj1)))
+            return None if any(p is None for p in parts) else parts
         parts.append(_part(second[0], second[1], obj2, source, _targeted(obj1)))
         if distinct and all(parts):         # "any other target": not the first one (the source may be either)
             for p in parts:

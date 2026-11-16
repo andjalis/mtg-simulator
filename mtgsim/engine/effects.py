@@ -90,8 +90,10 @@ class EffectsMixin:
             self.event_combat = False
         self.event_amount = None
         if isinstance(target, Player):
-            if combat and isinstance(source, Permanent) and source.card.toxic:
-                target.counters["poison"] = target.counters.get("poison", 0) + source.card.toxic
+            from ..kw_values import amounts as kw_amounts      # granted toxic adds up (#633, CR 702.164c)
+            toxic = source.card.toxic + sum(kw_amounts(source, "toxic")) if combat and isinstance(source, Permanent) else 0
+            if toxic:
+                target.counters["poison"] = target.counters.get("poison", 0) + toxic
             if infect:
                 target.counters["poison"] = target.counters.get("poison", 0) + amount
             else:

@@ -229,7 +229,8 @@ class BattlefieldMixin:
         for kind, n in (counters or {}).items():
             perm.counters[kind] = perm.counters.get(kind, 0) + n
         from ..residual_templates import tapped_by_opponent
-        perm.tapped |= tapped or tapped_by_opponent(self, perm)
+        from ..entry_statics import tapped as entry_tapped          # "<group> enter tapped" (#630)
+        perm.tapped |= tapped or tapped_by_opponent(self, perm) or entry_tapped(self, perm)
         p.battlefield.append(perm)
         from ..batch1_templates import soulbond_pair
         soulbond_pair(self, p, perm)
@@ -258,6 +259,8 @@ class BattlefieldMixin:
                 grant = source.card.entry_counter_grant
                 if grant and not source.silenced and not (grant[2] and source is perm):
                     perm.counters[grant[0]] = perm.counters.get(grant[0], 0) + grant[1]
+        from ..entry_statics import counters as entry_counters      # "<group> enter with an additional counter" (#630)
+        entry_counters(self, p, perm)
         if tapped_attacking:
             perm.tapped = True
             self.attackers.append(perm)

@@ -233,7 +233,7 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return max(theirs, key=perm_value, default=None)
     if k == "shrink":
         return max(theirs, key=perm_value, default=None)
-    if k in ("destroy", "debuff_one", "bounce"):
+    if k in ("destroy", "debuff_one", "bounce", "tuck_perm", "tuck_top", "cx_tuck"):     # tucks: removal too (#716)
         if k == "debuff_one":
             theirs = [x for x in theirs if x.toughness <= eff.amount2]
         theirs = [x for x in theirs if not (k == "destroy" and x.has("indestructible"))]
