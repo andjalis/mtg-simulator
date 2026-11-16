@@ -515,3 +515,4 @@ class TurnsMixin:
         self.fire(p, "upkeep")
         from .. import capped_counters
         capped_counters.upkeep(self, p)
+        from .. import cx_upkeep_acts; cx_upkeep_acts.upkeep(self, p)     # "Activate only during your upkeep" (#629)
