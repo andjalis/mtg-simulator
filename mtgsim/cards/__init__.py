@@ -307,5 +307,8 @@ _EFFECT_PATTERNS += _spell_grants.EFFECT_PATTERNS
 from .. import until_nonland as _until_nonland  # noqa: E402  "exile until a nonland card, you may cast it" (#625)
 _EFFECT_PATTERNS += _until_nonland.EFFECT_PATTERNS
 _SUBS += _until_nonland.SUBS
+from .. import face_states as _face_states  # noqa: E402  transform / face up / face down (#635)
+_SUBS += _face_states.SUBS
+_EFFECT_PATTERNS += _face_states.EFFECT_PATTERNS
 from .. import another_target as _another_target  # noqa: E402  "another target creature you control" (#809)
 _SUBS += _another_target.SUBS

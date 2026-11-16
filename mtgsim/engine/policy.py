@@ -118,6 +118,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
     theirs = [x for x in legal if isinstance(x, Permanent) and x.controller is opp]
     mine = [x for x in legal if isinstance(x, Permanent) and x.controller is me]
     k = eff.kind
+    if k == "transform":        # "transform target Werewolf / Incubator token you control" (#635): our best one
+        return max(mine, key=perm_value, default=None)
     if k == "copy_spell":
         return max(legal, key=lambda i: i.card.cmc, default=None)
     if k in ("die_roll", "become_copy") and copies.group_model(game, me, eff, None) is not None:   # copy choices
