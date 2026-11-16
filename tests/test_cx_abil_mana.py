@@ -31,8 +31,8 @@ class Parse(unittest.TestCase):
                 self.assertTrue(M.parse(text).startswith("pred:"))
 
     def test_unmodelled_stays_unmodelled(self):
-        for text in ("to cast kicked spells", "to cast spells from exile", "to cast your commander",
-                     "to cast spells with flashback from a graveyard", "to turn permanents face up"):
+        for text in ("to cast kicked spells", "to cast your commander",       # "from exile", "with flashback from
+                     "to turn permanents face up"):                          # a graveyard": cx_mana_zone (#644)
             with self.subTest(text=text):
                 self.assertIsNone(M.parse(text))
 

@@ -11,6 +11,7 @@ import functools
 import json
 import re
 
+_MULTIWORD_SUBTYPES = {"time lord"}
 _TYPES = {"creature", "artifact", "enchantment", "instant", "sorcery", "land", "planeswalker", "battle"}
 
 
@@ -40,7 +41,17 @@ def _atoms(phrase: str):
     phrase = re.sub(r"\s*(?:spells?|sources?|permanents?)$", "", phrase)
     out = []
     for word in re.split(r",? (?:and/or|or|and) |, ", phrase):
+        word = re.sub(r"\s*(?:spells?|sources?|permanents?)$", "", re.sub(r"^(?:an? )", "", word.strip()))
         w = _singular(word.strip())
+        if w in _MULTIWORD_SUBTYPES:           # "a Time Lord or Alien spell" (#644)
+            out.append("s:" + w)
+            continue
+        pair = re.fullmatch(r"([a-z]+) (creature|planeswalker|artifact|enchantment|land|instant|sorcery)", w)
+        if pair and pair[1] not in _TYPES and pair[1] not in _COLOR_LETTER and not pair[1].startswith("non") and \
+                pair[1] not in ("legendary", "multicolored", "monocolored", "colorless", "colored", "token"):
+            # "an Elf creature spell", "a Chandra planeswalker spell": that subtype and that card type (#644)
+            out.append("sc:" + pair[1] if pair[2] == "creature" else f"st:{pair[1]}/{pair[2]}")
+            continue
         if not w or " " in w:
             return None
         if w == "legendary":
@@ -60,8 +71,23 @@ def _atoms(phrase: str):
     return out or None
 
 
+def _normal(text: str) -> str:
+    """The singular and reversed wordings as the plural one (#644): "to activate an ability [of an artifact source]" →
+    "activate abilities [of artifact sources]"; "to activate an ability or cast X" → "to cast X or activate
+    abilities"; "or to activate" → "or activate"."""
+    text = re.sub(r"\b(?:to )?activate an ability of (?:an? )?(\w+?)(?: sources?)?$", r"activate abilities of \1", text)
+    text = re.sub(r"\b(?:to )?activate an ability\b", "activate abilities", text)
+    m = re.fullmatch(r"(?:to )?activate abilities(?: of (\w+))? or cast (.+)", text)
+    if m:
+        text = f"to cast {m[2]} or activate abilities" + (f" of {m[1]}" if m[1] else "")
+    return re.sub(r"\b(or|and) to activate\b", r"\1 activate", text)
+
+
 def parse(text: str):
-    text = text.strip().lower()
+    from .cx_mana_zone import code as zone_code
+    if zone_code(text):                     # where the spell is cast from (#644)
+        return zone_code(text)
+    text = _normal(text.strip().lower())
     cast = acts = None
     m = re.fullmatch(r"(?:to cast (.+?))?(?:,? (?:or|and) )?(?:(?:to )?activate (?:abilities|equip abilities)"
                      r"(?: of (.+))?)?", text)
@@ -100,6 +126,12 @@ def _match(atoms, card, perm=None) -> bool:
             return True
         if kind == "s" and v in subtypes:
             return True
+        if kind == "sc" and v in subtypes and creature:
+            return True
+        if kind == "st":
+            sub, _, typ = v.partition("/")
+            if sub in subtypes and typ.capitalize() in types:
+                return True
         if kind == "c" and v in card.colors:
             return True
         if kind == "k":
