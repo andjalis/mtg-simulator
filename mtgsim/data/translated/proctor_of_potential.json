@@ -1,0 +1,45 @@
+{
+ "name": "Proctor of Potential",
+ "oracle_sha1": "4a26c5c3d5a1",
+ "covers": [
+  "{W}{U}: Return this card from your graveyard to the battlefield with a finality counter on it. Activate only if you've scried or surveilled this turn."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "add": {
+    "gy_activated": [
+     {
+      "$dc": "mtgsim.cards.model:Activated",
+      "kind": "ability",
+      "cost": {
+       "generic": 0,
+       "W": 1,
+       "U": 1
+      },
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "return_self_gy",
+        "data": {
+         "tapped": false,
+         "entry_counters": {
+          "finality": 1
+         }
+        }
+       }
+      ],
+      "text": "{W}{U}: Return this card from your graveyard to the battlefield with a finality counter on it. Activate only if you've scried or surveilled this turn.",
+      "restrictions": {
+       "$t": [
+        "lib:[\"or\",\"lib:[\\\"hist\\\",\\\"you scry\\\",1]\",\"lib:[\\\"hist\\\",\\\"you surveil\\\",1]\"]"
+       ]
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::proctor_of_potential",
+ "notes": "Graveyard ability with an activation restriction: hist you scry OR you surveil."
+}

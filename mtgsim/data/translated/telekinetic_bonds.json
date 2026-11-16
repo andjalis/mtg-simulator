@@ -1,0 +1,45 @@
+{
+ "name": "Telekinetic Bonds",
+ "oracle_sha1": "0cc580a0f93b",
+ "covers": [
+  "Whenever a player discards a card, you may pay {1}{U}. If you do, you may tap or untap target permanent."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "add": {
+    "triggers": [
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "ev:you_discard",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "pay_gate",
+        "data": {
+         "cost": {
+          "generic": 1,
+          "U": 1
+         }
+        }
+       },
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "tap",
+        "amount": 1,
+        "target": "permanent",
+        "cond": "paid",
+        "data": {
+         "or_untap": true
+        }
+       }
+      ],
+      "filter": "Whenever a player discards a card"
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::telekinetic_bonds",
+ "notes": "The second 'you may' (after paying) is dropped: paying and then doing nothing is never better."
+}

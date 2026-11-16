@@ -1,0 +1,201 @@
+idx	name	outcome	detail
+0	Found Footage	needs-engine-small	no-op if the AI already sees face-down cards; not verified
+1	Forsaken Monument	needs-engine	"mana-ability triggers: ""whenever you tap a permanent for {C}, add an additional {C}"""
+2	The Chain Veil	needs-engine	loyalty-ability history and extra loyalty activations
+3	Aeon Engine	translated-noop	two players: reversing turn order changes nothing
+4	Altar of the Wretched // Wretched Bonemass	needs-engine	craft (exiled-material P/T and keyword copying)
+5	Gustha's Scepter	needs-engine	"linked face-down exile + ""when you lose control"" trigger"
+6	Niv-Mizzet's Diary	needs-engine	imprint spells as they resolve + cast copies of imprinted cards
+7	Panther Habit	needs-engine	damage-prevention replacement that becomes +1/+1 counters
+8	Shell of the Last Kappa	needs-engine	exile a spell on the stack (that targets you) + linked free cast
+9	Transmogrant's Crown	translated	re-audit: equip_cost {2} + activated 'equip' effect for {B} (was needs-engine)
+10	Treasure Chest	needs-engine-small	search destination chosen by the found card's type
+11	Tsabo's Web	needs-engine-small	selector predicate: land with a non-mana activated ability
+12	Unstable Molecule Suit	translated-noop	no commanders: equip commander never usable
+13	Hankyu	needs-engine	"granted ability with ""remove all counters"" cost and damage equal to counters removed"
+14	Magewright's Stone	needs-engine-small	selector predicate: has a {T} activated ability
+15	Oni-Cult Anvil	translated	
+16	Psychic Paper	needs-engine	choosing a card name/creature type that becomes the creature's name/type
+17	Bellowing Elk	translated	
+18	Goblin Rock Sled	needs-engine-small	condition: attacked during your last turn (history only covers this turn)
+19	Guildsworn Prowler	translated	
+20	Homarid Warrior	translated	
+21	Mirkwood Bats	translated	
+22	Raving Oni-Slave	translated	
+23	Swarming Goblins	translated	
+24	Veiling Oddity	needs-engine	"trigger on the last time counter removed while suspended + ""creatures can't be blocked this turn"""
+25	Vile Bile	skipped	Un-card: physical-world action (touching the card)
+26	Voda Sea Scavenger	needs-engine-small	library-look variant: keep one on top, rest random bottom (+ domain X)
+27	Wall of Resistance	failed-verification	re-audit translation via hist '~ is dealt damage' failed tests (hist not per-permanent); card left partial; real gap: per-permanent damage history
+28	Acererak the Archlich	needs-engine	"punisher: ""you create X unless that player sacrifices a creature"""
+29	Aclazotz, Deepest Betrayal // Temple of the Dead	needs-engine	for each opponent who can't [discard], draw; return transformed
+30	Captain Jean-Luc Picard	needs-engine	"cost ""tap N untapped <subtype> you control""; search Spacecraft with charge counters"
+31	Diviner of Fates	needs-engine	seek (digital)
+32	Ebondeath, Dracolich	needs-engine-small	zone_alt condition 'a creature not named ~ died this turn' (creature_died exists, name exclusion doesn't)
+33	Ellie, Vengeful Hunter	translated	harness fix: pad targets per effect
+34	Erebos's Titan	needs-engine	"trigger ""a creature card leaves an opponent's graveyard"" while this is in your graveyard"
+35	Kruphix, God of Horizons	needs-engine	mana pool persistence (unspent mana becomes colorless)
+36	Luminous Broodmoth	needs-engine-small	return_dead returns under the trigger controller (not owner) and only with +1/+1 counters; needs owner + keyword counter
+37	Medomai the Ageless	needs-engine-small	state 'this is an extra turn'
+38	Minnea, Planar Tourist	skipped	Planechase planes (not a game mode here)
+39	Quark, Humble Proprietor	needs-engine-small	sacrifice prohibition for Treasure tokens
+40	Scourge of the Skyclaves	needs-engine	"kicker ""each player loses half their life rounded up""; CDA 20 minus highest life"
+41	Underbridge Warlock	needs-engine	boons (digital)
+42	Vv'viza, Orbital Overseer	needs-engine	conjure from a spellbook (digital)
+43	Adamaro, First to Desire	translated	
+44	Alistair, the Brigadier	translated	1st attempt failed verification (missing 'paid' gate), fixed on 2nd
+45	Assquatch	skipped	Un-card: fractional P/T (+1½)
+46	Bloodroot Apothecary	translated	
+47	Breathkeeper Seraph	translated	corrected after opus-discovery review: only the combined 'Flying, soulbond' keyword line was unparsed; soulbond exists
+48	Captain Rex Nebula	needs-engine	turn a permanent into a Vehicle with crew and a granted die-roll trigger
+49	D00-DL, Caricaturist	skipped	Un-card: drawing a token in fifteen seconds, art-dependent keywords
+50	Dalkovan Outrider	needs-engine	perpetual (digital)
+51	Daybreak Ranger	translated	
+52	Death Baron	translated	re-audit: one union selector (Skeleton or Zombie, other); documented edge: Baron itself becoming a Skeleton
+53	Dosan the Falling Leaf	needs-engine	players can cast spells only during their own turns for both players
+54	Elrond of the White Council	needs-engine	secret voting
+55	Erithizon	needs-engine	target chosen by the defending player
+56	Firesong and Sunspeaker	needs-engine	spells with lifelink; trigger on a white spell causing life gain
+57	Forgotten Ancient	needs-engine	move any number of +1/+1 counters distributed among other creatures
+58	Gelatinous Cube	needs-engine	linked exile with X-mana-value activated retrieval
+59	Gigantoplasm	needs-engine	clone with an added activated ability
+60	Gruff Triplets	needs-engine	if it isn't a token copy tokens; counters equal to power on each creature named ~
+61	Gríma, Saruman's Footman	needs-engine	opponent exiles until instant/sorcery, you cast it free, rest to bottom
+62	Haktos the Unscarred	needs-engine	protection from each mana value except a random chosen number
+63	Heir to Dragonfire	needs-engine	perpetual (digital)
+64	Hidetsugu, Devouring Chaos	needs-engine	reflexive trigger on the impulse-exiled card's type, damage = its mana value
+65	Jurin, Leading the Charge	needs-engine	per-attacked-player pump counting that player's creatures
+66	Keruga, the Macrosage	needs-engine	companion
+67	Krang, Master Mind	translated	
+68	Mr. Wiggles, Helpful Butterfly	translated-noop	commander-only line never applies
+69	Mycosynth Golem	needs-engine	grant affinity to spells
+70	Myojin of Night's Reach and Grim Betrayal	needs-engine	reanimate all cards put into graveyards from anywhere this turn
+71	Nalathni Dragon	needs-engine	banding
+72	Necravolver	needs-engine	multiple distinct kicker costs
+73	Niambi, Beloved Protector	needs-engine	perpetual (digital)
+74	Nils, Discipline Enforcer	translated	spec corrected: AI legally declines 'up to one' on opponent's creature
+75	Okoye, Mighty and Adored	needs-engine	trigger on attacking the monarch
+76	Oriss, Samite Guardian	needs-engine-small	cost 'discard another card named ~' (effects exist)
+77	Proctor of Potential	translated	re-audit: gy_activated + restriction hist(you scry) OR hist(you surveil)
+78	Rampaging Yao Guai	needs-engine	any number of targets with total mana value X
+79	Rogue Skycaptain	needs-engine	wage counters: pay per counter or give control
+80	Rose Tyler	needs-engine	counting suspended cards and time-counter permanents
+81	Salvation Colossus	needs-engine-small	unearth paid with energy (parser reads it as free unearth)
+82	Shelob, Dread Weaver	needs-engine	linked exile pool with X activated retrieval
+83	Sisters of Stone Death	needs-engine	linked exile pool + put onto battlefield
+84	Spellpyre Phoenix	needs-engine-small	card filter 'with a cycling ability' (end-step part expressible via hist 'you cycle a card' x2)
+85	Splinter & Leo, Father & Son	needs-engine	modes that must target different players
+86	The Actualizer	skipped	Un-card: reading aloud and lying
+87	The Raven Man	translated	re-audit: hist 'a player discards a card'
+88	The Roaring Toeclaws	needs-engine	'becomes untapped' trigger
+89	The Snapstone Wielder	skipped	Un/commander: random Magic card cast
+90	The Twelfth Doctor	needs-engine	grant demonstrate to first non-hand spell
+91	The Unbeatable Squirrel Girl	translated	spec corrected (she is a Squirrel herself)
+92	Thorna and Twigtooth	needs-engine	perpetual (digital)
+93	Zagorka, Mother of Sanctum	needs-engine	each player may create; per-opponent attack restriction next turn
+94	Aetherborn Marauder	needs-engine	move any number of counters from several permanents
+95	Agent of Acquisitions	translated-noop	draft-only text
+96	Angel's Herald	needs-engine-small	cost: sacrifice creatures of three named colors
+97	Bioluminary	skipped	Un-card: tickets and stickers
+98	Crystalline Nautilus	needs-engine	bestow host gets a granted 'becomes the target' trigger
+99	Fear of Burning Alive	needs-engine	damage-amount-copying trigger for any noncombat damage source
+100	Galloping Lizrog	needs-engine	remove any number of counters, then twice that many
+101	Gut, Bestial Fanatic	needs-engine	specialize (digital)
+102	Karakyk Guardian	needs-engine-small	history: this permanent has never dealt damage
+103	Keeper of the Beasts	translated	target opponent modelled as activation restriction + resolution check (player hexproof not modelled)
+104	Kiora of Salt and Sand	needs-engine	grant loyalty abilities to planeswalkers
+105	Kutzil, Malamet Exemplar	needs-engine-small	selector: power greater than base power
+106	Mistway Spy	translated	re-audit: turned_face_up trigger + cx_turn_trigger
+107	Nacatl War-Pride	needs-engine	must be blocked by exactly one; X attacking copies
+108	Orator of Ojutai	needs-engine	optional reveal as an additional cost (the parser approximates it as never paid)
+109	Pyretic Hunter	skipped	draft-matters (no draft)
+110	Stromgald Spy	needs-engine	hand revealed for duration; assigns no combat damage
+111	That Which Was Compleated	needs-engine	ward paid by poison; annihilator X
+112	Throatseeker	needs-engine-small	selector trait 'unblocked'
+113	Torgal, A Fine Hound	needs-engine	first Human spell each turn enters with extra counters
+114	Twisted Sewer-Witch	needs-engine	Role token attached to each Rat
+115	Voice of Many	translated	
+116	Wingbright Thief	needs-engine	perpetual (digital)
+117	Zombie Fanboy	skipped	Un-card: artist-matters
+118	Awesome Presence	needs-engine	block tax per blocking creature
+119	Bound by Moonsilver	needs-engine-small	prohibition 'can't transform' (can't attack/block exists)
+120	Clawing Torment	translated	
+121	Parasitic Implant	needs-engine-small	effect: the enchanted creature's controller sacrifices it (destroy host exists, sacrifice host doesn't)
+122	The Rise of Sozin // Fire Lord Sozin	needs-engine	reflexive multi-target reanimation with total mana value X
+123	Abundance	needs-engine	draw replacement: reveal until land/nonland
+124	Bulwark	needs-engine-small	quantity: your hand size minus that player's hand size
+125	Charged Conjuration	needs-engine	perpetual / conjure from spellbook (digital)
+126	Last Light of Durin's Day	needs-engine	search hand and/or library
+127	Love on the Battlefield	needs-engine	attack with exactly two; per-pair combat-damage trigger
+128	Malignant Growth	needs-engine	additional draws per counter, damage = cards drawn this way
+129	New Perspectives	needs-engine-small	conditional {0} cycling cost
+130	Psychic Possession	needs-engine	Enchant opponent (auras on players)
+131	Return the Past	translated	
+132	Ripples of Undeath	needs-engine	pay mana and life to pick among milled cards
+133	Roll-Roll-Roll-Roll	needs-engine	dice-chapter blink with delayed return
+134	Sigarda's Summons	needs-engine	layered base P/T + type + keyword for creatures with counters
+135	Spectacle of Destruction	needs-engine	seek (digital)
+136	Telekinetic Bonds	translated	
+137	Tornado	needs-engine-small	life cost scaled by counters on the source
+138	Born to Drive	needs-engine-small	count 'creatures and/or Vehicles you control' for an Aura pump
+139	Entangling Trap	needs-engine-small	condition 'you won the clash' on the follow-up
+140	Gryff's Boon	needs-engine-small	graveyard ability: return attached to target creature
+141	Priority Boarding	needs-engine	die-roll-reveal-exile-cast chain
+142	Tattoo Ward	needs-engine-small	protection from enchantments that doesn't remove this Aura
+143	Tidal Influence	needs-engine	tide counter states
+144	Vow of Flight	needs-engine-small	attack restriction relative to the Aura's controller ('can't attack you')
+145	Brackish Blunder	failed-verification	prev_is tapped gate made a Map for an untapped creature; real gap: condition on the bounced creature's last tapped state
+146	Hypnotic Pattern	needs-engine	perpetual (digital)
+147	Molder	needs-engine-small	target filter: mana value exactly X
+148	Now You See Me . . .	skipped	Un-card: mirrors on walls
+149	Thunder Salvo	translated	documented edge: a copy (not cast) gets 1 less; exposed loader bug (history heads) fixed in the loader
+150	Unforge	needs-engine-small	referent: the creature the destroyed Equipment was attached to
+151	Barreling Attack	needs-engine	delayed 'becomes blocked' pump per blocker on target
+152	Clear, Fair Magic	skipped	Un-card
+153	Endless Detour	needs-engine	owner chooses top or bottom; spell/permanent/graveyard target
+154	Failure // Comply	needs-engine-small	cast ban by a chosen card name
+155	Plasm Capture	needs-engine	delayed mana at your next main phase
+156	Synthetic Destiny	needs-engine	delayed reveal-until N creatures onto battlefield
+157	The Eagles Are Coming!	needs-engine	choose targets you own, return, delayed per-returned tokens
+158	Booster Tutor	skipped	Un-card: opening a booster
+159	Dissension in the Ranks	needs-engine-small	fight between two targets (fight is source-based)
+160	Fatal Fissure	needs-engine-small	delayed 'when that creature dies this turn' on a target
+161	Kindred Denial	needs-engine	seek (digital)
+162	Repel the Abominable	needs-engine-small	prevention by source characteristic (non-Human)
+163	Return the Favor	needs-engine	copy abilities; change a spell's target
+164	Trial // Error	needs-engine-small	group 'creatures blocking or blocked by target'; counter multicolored
+165	Forsaken City	needs-engine-small	optional cost: exile a card from hand, then untap
+166	Sorrow's Path	needs-engine	swap blockers
+167	Hammerheim	needs-engine-small	lose landwalk abilities
+168	Werewolf Lightning Mage	skipped	Un-card: tickets
+169	Chandra Nalaar	needs-engine-small	loyalty cost −X (loyalty costs are ints)
+170	Koth of the Hammer	needs-engine	emblem granting an activated ability to Mountains
+171	Nissa, Worldwaker	needs-engine	animate the lands found by the search ('those lands')
+172	Tezzeret, Betrayer of Flesh	needs-engine	first-activation discount; emblem tap trigger
+173	Nissa, Who Shakes the World	needs-engine	mana-ability triggers; emblem
+174	Icequake	translated	
+175	Mutual Destruction	needs-engine-small	conditional flash (you control a permanent with flash)
+176	Roots of Wisdom	needs-engine-small	condition 'if you can't [return a card]'
+177	Wretched Banquet	needs-engine-small	condition: least power among creatures
+178	Crush of Tentacles	needs-engine-small	condition: surge cost was paid
+179	Ornate Imitations	needs-engine	conjure random cards (digital)
+180	All of History, All at Once	needs-engine	time travel
+181	Breaking Wave	needs-engine-small	simultaneous tap/untap swap of all creatures
+182	By Invitation Only	needs-engine	choose a number; each player sacrifices that many
+183	Dream Harvest	needs-engine	exile until total mana value; free casts
+184	Indicate	skipped	Un-card
+185	Last One Standing	needs-engine-small	random choice then destroy the rest
+186	Living Death	needs-engine	simultaneous exile/sacrifice/return across zones
+187	March of Souls	needs-engine-small	per-destroyed tokens for each controller
+188	Remorseless Punishment	translated	test fix: spec gave 3 lands for a 5-mana spell
+189	The Countdown Is at One	skipped	Un-card: subgame
+190	The Five Doctors	needs-engine	search library and/or graveyard
+191	Tombfire	needs-engine-small	card filter 'with flashback' for graveyard exile
+192	Traumatize	needs-engine-small	quantity: half the library
+193	Awaken the Sleeper	needs-engine-small	destroy the Equipment attached to that creature
+194	Blizzard Brawl	failed-verification	rules tests passed but HeuristicAI never cast it in 8 games
+195	Devouring Tendrils	needs-engine-small	delayed 'when that permanent dies this turn' on a target
+196	Grisly Sigil	needs-engine-small	condition: target was dealt noncombat damage this turn
+197	Mentor's Guidance	needs-engine-small	cast-copy condition over a subtype union
+198	Park Re-Entry	skipped	Un-card: hats
+199	Rhystic Scrying	needs-engine	'if any player pays' (rhystic)

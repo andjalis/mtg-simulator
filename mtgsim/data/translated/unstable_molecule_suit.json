@@ -1,0 +1,10 @@
+{
+ "name": "Unstable Molecule Suit",
+ "oracle_sha1": "10fe06688f42",
+ "covers": [
+  "Equip commander {2}"
+ ],
+ "patches": [],
+ "verify": "tests/translated/test_cards.py::unstable_molecule_suit",
+ "notes": "NO-OP: equip commander can't be used without a commander."
+}

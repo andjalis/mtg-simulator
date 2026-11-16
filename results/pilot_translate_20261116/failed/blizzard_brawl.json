@@ -1,0 +1,41 @@
+{
+ "name": "Blizzard Brawl",
+ "oracle_sha1": "21ca0558eb0e",
+ "covers": [
+  "Choose target creature you control and target creature you don't control.",
+  "If you control three or more snow permanents, the creature you control gets +1/+0 and gains indestructible until end of turn.",
+  "Then those creatures fight each other."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "spell_effects": [
+     {
+      "$dc": "mtgsim.cards.model:Effect",
+      "kind": "fight_mark",
+      "target": "creature_mine"
+     },
+     {
+      "$dc": "mtgsim.cards.model:Effect",
+      "kind": "pump",
+      "amount": 1,
+      "target": "prev",
+      "cond": "lib:[\"ctl\",\"you\",{\"snow\":true,\"types\":[\"permanent\"]},\">=\",3]",
+      "data": {
+       "keyword": "indestructible"
+      }
+     },
+     {
+      "$dc": "mtgsim.cards.model:Effect",
+      "kind": "fight",
+      "target": "creature",
+      "filter": "opp"
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::blizzard_brawl",
+ "notes": "fight_mark your creature, snow-gated pump on it (prev), then fight the opponent's creature."
+}

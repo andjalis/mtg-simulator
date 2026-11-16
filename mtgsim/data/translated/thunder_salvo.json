@@ -1,0 +1,41 @@
+{
+ "name": "Thunder Salvo",
+ "oracle_sha1": "2619a1ba2ea9",
+ "covers": [
+  "~ deals X damage to target creature, where X is 2 plus the number of other spells you've cast this turn."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "spell_effects": [
+     {
+      "$dc": "mtgsim.cards.model:Effect",
+      "kind": "damage",
+      "amount": 1,
+      "target": "creature",
+      "data": {
+       "xq": {
+        "$t": [
+         "arith",
+         1,
+         "+",
+         {
+          "$t": [
+           "cxq",
+           "hist",
+           "you cast a spell"
+          ]
+         }
+        ]
+       },
+       "xq_size": false
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::thunder_salvo",
+ "notes": "X = 1 + spells you cast this turn (that count includes Thunder Salvo itself). Deviation: a COPY of it (not cast) gets one less."
+}

@@ -1,0 +1,39 @@
+{
+ "name": "Krang, Master Mind",
+ "oracle_sha1": "ef84bf1c3064",
+ "covers": [
+  "Draw cards equal to the difference."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "etb_effects": [
+     {
+      "$dc": "mtgsim.cards.model:Effect",
+      "kind": "draw_up_to",
+      "amount": 4
+     }
+    ]
+   },
+   "add": {
+    "triggers": [
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "etb",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "draw_up_to",
+        "amount": 4
+       }
+      ],
+      "intervening_if": "lib:[\"res\",\"you\",\"hand\",\"<\",4]"
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::krang_master_mind",
+ "notes": "'draw cards equal to the difference' = draw_up_to 4."
+}

@@ -1,0 +1,10 @@
+{
+ "name": "Mr. Wiggles, Helpful Butterfly",
+ "oracle_sha1": "2cba49fb7da7",
+ "covers": [
+  "Mono Eminence — As the game begins, if ~ is your commander and your deck's color identity is monogreen, at the beginning of your first upkeep, search your library for a Forest card, put it onto the battlefield tapped, then shuffle."
+ ],
+ "patches": [],
+ "verify": "tests/translated/test_cards.py::mr_wiggles_helpful_butterfly",
+ "notes": "NO-OP: 'if ~ is your commander' never holds (no commanders)."
+}

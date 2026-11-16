@@ -1,0 +1,72 @@
+{
+ "name": "The Raven Man",
+ "oracle_sha1": "b7bd62b9cae2",
+ "covers": [
+  "if a player discarded a card this turn, create a 1/1 black Bird creature token with flying and \"~ can't block.\""
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "add": {
+    "triggers": [
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "each_end_step",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "cx_token",
+        "amount": 1,
+        "cond": "lib:[\"hist\",\"a player discards a card\",1]",
+        "data": {
+         "card": {
+          "$dc": "mtgsim.cards.model:CardDef",
+          "name": "Bird token",
+          "mana_cost": {
+           "generic": 0
+          },
+          "cmc": 0,
+          "types": {
+           "$fs": [
+            "Creature"
+           ]
+          },
+          "subtypes": {
+           "$fs": [
+            "Bird"
+           ]
+          },
+          "power": 1,
+          "toughness": 1,
+          "keywords": {
+           "$fs": [
+            "flying"
+           ]
+          },
+          "oracle": "Flying\n~ can't block.",
+          "is_token": true,
+          "cant_block": true,
+          "color_override": {
+           "$fs": [
+            "B"
+           ]
+          },
+          "advanced_rules": {
+           "no_mana_cost": true
+          }
+         },
+         "tapped": false,
+         "attacking": false,
+         "who": "you"
+        }
+       }
+      ],
+      "intervening_if": "lib:[\"hist\",\"a player discards a card\",1]"
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::the_raven_man",
+ "notes": "hist condition on 'a player discards a card'."
+}

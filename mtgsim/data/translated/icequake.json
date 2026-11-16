@@ -1,0 +1,35 @@
+{
+ "name": "Icequake",
+ "oracle_sha1": "0043b4984539",
+ "covers": [
+  "If that land was a snow land, ~ deals 1 damage to that land's controller."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "spell_effects": [
+     {
+      "$dc": "mtgsim.cards.model:Effect",
+      "kind": "destroy",
+      "target": "land",
+      "filter": "land:"
+     },
+     {
+      "$dc": "mtgsim.cards.model:Effect",
+      "kind": "cx_damage",
+      "amount": 1,
+      "cond": "lib:[\"prev_is\",{\"snow\":true,\"types\":[\"land\"]}]",
+      "data": {
+       "source": "self",
+       "side": "theirs",
+       "who": "controller"
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::icequake",
+ "notes": "destroy + cx_damage to controller gated on prev_is snow land."
+}

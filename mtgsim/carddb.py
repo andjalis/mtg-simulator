@@ -9,6 +9,7 @@ import urllib.request
 from pathlib import Path
 
 from .build_carddb import DEFAULT_DB, normalize
+from . import translated
 from .cards import CardDef, card_from_scryfall
 
 BUILTIN = Path(__file__).parent / "data" / "builtin_cards.json"
@@ -77,7 +78,7 @@ class CardDB:
         key = self._key(name)
         if key not in self._defs:
             self.ensure([name])
-            self._defs[key] = card_from_scryfall(self.raw[self._key(name)])
+            self._defs[key] = translated.apply(card_from_scryfall(self.raw[self._key(name)]))   # per-card translations (pilot)
         return self._defs[key]
 
     @staticmethod

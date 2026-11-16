@@ -1,0 +1,40 @@
+{
+ "name": "Voice of Many",
+ "oracle_sha1": "b54ebfc38f54",
+ "covers": [
+  "draw a card for each opponent who controls fewer creatures than you."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "etb_effects": [
+     {
+      "$dc": "mtgsim.cards.model:Effect",
+      "kind": "draw",
+      "amount": 1,
+      "cond": "lib:[\"ctl_vs\",{\"types\":[\"creature\"]},\">\"]"
+     }
+    ]
+   },
+   "add": {
+    "triggers": [
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "etb",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "draw",
+        "amount": 1,
+        "cond": "lib:[\"ctl_vs\",{\"types\":[\"creature\"]},\">\"]"
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::voice_of_many",
+ "notes": "Two players: one card if the opponent has fewer creatures, checked on resolution only."
+}

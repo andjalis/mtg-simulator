@@ -1,0 +1,72 @@
+{
+ "name": "Bloodroot Apothecary",
+ "oracle_sha1": "1b55d0774ac7",
+ "covers": [
+  "you and target opponent each create a Treasure token."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "etb_effects": [
+     {
+      "$dc": "mtgsim.cards.model:Effect",
+      "kind": "token",
+      "amount": 1,
+      "data": {
+       "kind": "treasure"
+      }
+     },
+     {
+      "$dc": "mtgsim.cards.model:Effect",
+      "kind": "cx_token",
+      "amount": 1,
+      "target": "player",
+      "filter": "opp",
+      "data": {
+       "kind": "treasure",
+       "tapped": false,
+       "attacking": false,
+       "who": "that_controller",
+       "side": "theirs"
+      }
+     }
+    ]
+   },
+   "add": {
+    "triggers": [
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "etb",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "token",
+        "amount": 1,
+        "data": {
+         "kind": "treasure"
+        }
+       },
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "cx_token",
+        "amount": 1,
+        "target": "player",
+        "filter": "opp",
+        "data": {
+         "kind": "treasure",
+         "tapped": false,
+         "attacking": false,
+         "who": "that_controller",
+         "side": "theirs"
+        }
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::bloodroot_apothecary",
+ "notes": "you: token; target opponent: cx_token."
+}

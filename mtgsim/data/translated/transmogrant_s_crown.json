@@ -1,0 +1,40 @@
+{
+ "name": "Transmogrant's Crown",
+ "oracle_sha1": "0f1b3304299b",
+ "covers": [
+  "Equip {2} or {B}"
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "equip_cost": {
+     "generic": 2
+    }
+   },
+   "add": {
+    "activated": [
+     {
+      "$dc": "mtgsim.cards.model:Activated",
+      "kind": "ability",
+      "cost": {
+       "generic": 0,
+       "B": 1
+      },
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "equip",
+        "target": "creature_mine"
+       }
+      ],
+      "sorcery": true,
+      "text": "Equip {B}"
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::transmogrant_s_crown",
+ "notes": "Equip {2} as the equip cost plus an activated 'equip' ability costing {B}."
+}

@@ -1,0 +1,160 @@
+{
+ "name": "The Unbeatable Squirrel Girl",
+ "oracle_sha1": "35c37e03787e",
+ "covers": [
+  "Do You Like Squirrels? — Whenever ~ enters or attacks, create a 1/1 green Squirrel creature token.",
+  "I LOVE Squirrels! — {1}{G}{G}{G}: Create X 1/1 green Squirrel creature tokens, where X is the number of Squirrels you control."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "set": {
+    "etb_effects": [
+     {
+      "$dc": "mtgsim.cards.model:Effect",
+      "kind": "token",
+      "amount": 1,
+      "data": {
+       "name": "Squirrel",
+       "power": 1,
+       "toughness": 1,
+       "keywords": {
+        "$fs": []
+       },
+       "attacking": false,
+       "triggers": [],
+       "artifact": false,
+       "pt_per": "",
+       "colors": {
+        "$fs": [
+         "G"
+        ]
+       }
+      }
+     }
+    ]
+   },
+   "add": {
+    "triggers": [
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "etb",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "token",
+        "amount": 1,
+        "data": {
+         "name": "Squirrel",
+         "power": 1,
+         "toughness": 1,
+         "keywords": {
+          "$fs": []
+         },
+         "attacking": false,
+         "triggers": [],
+         "artifact": false,
+         "pt_per": "",
+         "colors": {
+          "$fs": [
+           "G"
+          ]
+         }
+        }
+       }
+      ]
+     },
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "attacks",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "token",
+        "amount": 1,
+        "data": {
+         "name": "Squirrel",
+         "power": 1,
+         "toughness": 1,
+         "keywords": {
+          "$fs": []
+         },
+         "attacking": false,
+         "triggers": [],
+         "artifact": false,
+         "pt_per": "",
+         "colors": {
+          "$fs": [
+           "G"
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ],
+    "activated": [
+     {
+      "$dc": "mtgsim.cards.model:Activated",
+      "kind": "ability",
+      "cost": {
+       "generic": 1,
+       "G": 3
+      },
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "cx_token",
+        "amount": 1,
+        "data": {
+         "card": {
+          "$dc": "mtgsim.cards.model:CardDef",
+          "name": "Squirrel token",
+          "mana_cost": {
+           "generic": 0
+          },
+          "cmc": 0,
+          "types": {
+           "$fs": [
+            "Creature"
+           ]
+          },
+          "subtypes": {
+           "$fs": [
+            "Squirrel"
+           ]
+          },
+          "power": 1,
+          "toughness": 1,
+          "is_token": true,
+          "color_override": {
+           "$fs": [
+            "G"
+           ]
+          },
+          "advanced_rules": {
+           "no_mana_cost": true
+          }
+         },
+         "tapped": false,
+         "attacking": false,
+         "who": "you",
+         "xq": {
+          "$t": [
+           "count",
+           "Squirrel"
+          ]
+         },
+         "xq_size": false
+        }
+       }
+      ],
+      "text": "{1}{G}{G}{G}: Create X 1/1 green Squirrel creature tokens, where X is the number of Squirrels you control."
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::the_unbeatable_squirrel_girl",
+ "notes": "Ability words with punctuation stripped; bodies as the parser builds them."
+}

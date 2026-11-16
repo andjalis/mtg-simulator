@@ -1,0 +1,75 @@
+{
+ "name": "Swarming Goblins",
+ "oracle_sha1": "7b938c6f9d21",
+ "covers": [
+  "Create two of those tokens.",
+  "Create three of those tokens."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "add": {
+    "triggers": [
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "die:10-19",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "token",
+        "amount": 2,
+        "data": {
+         "name": "Goblin",
+         "power": 1,
+         "toughness": 1,
+         "keywords": {
+          "$fs": []
+         },
+         "attacking": false,
+         "triggers": [],
+         "artifact": false,
+         "pt_per": "",
+         "colors": {
+          "$fs": [
+           "R"
+          ]
+         }
+        }
+       }
+      ]
+     },
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "die:20-20",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "token",
+        "amount": 3,
+        "data": {
+         "name": "Goblin",
+         "power": 1,
+         "toughness": 1,
+         "keywords": {
+          "$fs": []
+         },
+         "attacking": false,
+         "triggers": [],
+         "artifact": false,
+         "pt_per": "",
+         "colors": {
+          "$fs": [
+           "R"
+          ]
+         }
+        }
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::swarming_goblins",
+ "notes": "The two outcome rows reuse the 1-9 row's Goblin token with amount 2 and 3."
+}

@@ -1,0 +1,27 @@
+{
+ "name": "Brackish Blunder",
+ "oracle_sha1": "3c6a981bb55d",
+ "covers": [
+  "If it was tapped, create a Map token."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "add": {
+    "spell_effects": [
+     {
+      "$dc": "mtgsim.cards.model:Effect",
+      "kind": "token",
+      "amount": 1,
+      "cond": "lib:[\"prev_is\",{\"traits\":[\"tapped\"]}]",
+      "data": {
+       "kind": "map"
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::brackish_blunder",
+ "notes": "Map token gated on prev_is tapped (the bounced creature's last state)."
+}

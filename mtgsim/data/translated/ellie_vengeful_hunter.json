@@ -1,0 +1,46 @@
+{
+ "name": "Ellie, Vengeful Hunter",
+ "oracle_sha1": "461ee8eb9a21",
+ "covers": [
+  "Pay 2 life, Sacrifice another creature: ~ deals 2 damage to target player and gains indestructible until end of turn."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "add": {
+    "activated": [
+     {
+      "$dc": "mtgsim.cards.model:Activated",
+      "kind": "ability",
+      "cost": {
+       "generic": 0
+      },
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "damage",
+        "amount": 2,
+        "target": "player"
+       },
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "grant",
+        "target": "self",
+        "data": {
+         "keyword": "indestructible"
+        }
+       }
+      ],
+      "extra_costs": {
+       "life": 2,
+       "sacrifice": "other creature"
+      },
+      "text": "Pay 2 life, Sacrifice another creature: ~ deals 2 damage to target player and gains indestructible until end of turn."
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::ellie_vengeful_hunter",
+ "notes": "Sentence split: damage, then grant indestructible to self."
+}

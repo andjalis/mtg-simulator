@@ -51,7 +51,9 @@ class CombatCosts(unittest.TestCase):
                      "Collective Restraint", "Baird, Steward of Argive", "Archon of Absolution"):
             with self.subTest(name=name):
                 self.assertEqual(self.db.get(name).unsupported, [])
-        self.assertEqual(len(self.db.get("Nils, Discipline Enforcer").unsupported), 1)  # end-step trigger
+        from mtgsim.cards import card_from_scryfall      # the parser's own result, not a per-card translation
+        nils = card_from_scryfall(self.db.raw[self.db._key("Nils, Discipline Enforcer")])
+        self.assertEqual(len(nils.unsupported), 1)  # end-step trigger
         self.assertEqual(len(self.db.get("Oko, Lord of the Fae").unsupported), 1)  # the Alchemy emblem (−7)
 
     def test_player_tax_does_not_protect_planeswalkers(self):

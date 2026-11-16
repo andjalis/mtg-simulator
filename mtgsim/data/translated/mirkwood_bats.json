@@ -1,0 +1,44 @@
+{
+ "name": "Mirkwood Bats",
+ "oracle_sha1": "2ea6f0c2fb6b",
+ "covers": [
+  "Whenever you create or sacrifice a token, each opponent loses 1 life."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "add": {
+    "triggers": [
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "permanent_enters",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "drain",
+        "amount": 1,
+        "target": "each_opponent"
+       }
+      ],
+      "filter": "noself|any|token"
+     },
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "sacrifice",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "drain",
+        "amount": 1,
+        "target": "each_opponent"
+       }
+      ],
+      "filter": "a token"
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::mirkwood_bats",
+ "notes": "'you create a token' as 'a token you control enters' (differs only for tokens created under another player's control)."
+}

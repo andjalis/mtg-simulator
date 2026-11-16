@@ -1,0 +1,35 @@
+{
+ "name": "Wall of Resistance",
+ "oracle_sha1": "02d8f17734df",
+ "covers": [
+  "if ~ was dealt damage this turn, put a +0/+1 counter on it."
+ ],
+ "patches": [
+  {
+   "face": "front",
+   "add": {
+    "triggers": [
+     {
+      "$dc": "mtgsim.cards.model:Trigger",
+      "event": "each_end_step",
+      "effects": [
+       {
+        "$dc": "mtgsim.cards.model:Effect",
+        "kind": "add_counter",
+        "amount": 1,
+        "target": "self",
+        "cond": "lib:[\"hist\",\"~ is dealt damage\",1]",
+        "data": {
+         "counter": "+0/+1"
+        }
+       }
+      ],
+      "intervening_if": "lib:[\"hist\",\"~ is dealt damage\",1]"
+     }
+    ]
+   }
+  }
+ ],
+ "verify": "tests/translated/test_cards.py::wall_of_resistance",
+ "notes": "hist condition on the head '~ is dealt damage'."
+}
