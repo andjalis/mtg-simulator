@@ -89,6 +89,8 @@ class AltCost:
     pt: tuple = ()                   # prototype: (power, toughness)
     sacrifice: str = ""              # flashback: "a Mountain" sacrificed as the (additional) cost
     discard: int = 0                 # flashback: cards discarded as the (additional) cost
+    kicks: tuple = ()                # Kicker {A} and/or {B}: the kicker costs this cast pays ("{1}{U}", ...) (#859)
+    add_cost: tuple = ()             # non-mana kicker: cx_spell_costs alternatives paid on top (#859)
 
 
 @dataclass

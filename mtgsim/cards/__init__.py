@@ -309,3 +309,5 @@ _EFFECT_PATTERNS += _until_nonland.EFFECT_PATTERNS
 _SUBS += _until_nonland.SUBS
 from .. import another_target as _another_target  # noqa: E402  "another target creature you control" (#809)
 _SUBS += _another_target.SUBS
+from .. import kicker_costs as _kicker_costs  # noqa: E402  "Kicker {A} and/or {B}", "Kicker—<non-mana cost>" (#859)
+_parse_module._FACE_LINE_PARSERS = (_kicker_costs.face_line,) + _parse_module._FACE_LINE_PARSERS

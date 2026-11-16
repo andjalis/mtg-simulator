@@ -675,6 +675,7 @@ def _parse_face(data: dict) -> CardDef:
         alt_costs.append(AltCost("kicker", add_mana(cost, extra.pop("kicker")), effects=kicked_effects))
     elif kicked:
         unsupported += [f"if kicked: {k}" for k in kicked]
+    from ..kicker_costs import finish as _kicker_finish; _kicker_finish(extra, cost, alt_costs, unsupported)  # noqa: E702  #859
     if "bestow" in extra:
         bonus = extra.pop("bestow_bonus", None)
         cost = extra.pop("bestow")

@@ -319,6 +319,7 @@ class PlayMixin:
         item.mana_from = source_counts(payment)          # "if mana from a Treasure was spent to cast it"
         item.x = x
         item.kicks = kicks
+        from ..kicker_costs import cast_kicks; cast_kicks(item, kind, alt)      # noqa: E702  "Kicker {A} and/or {B}" (#859)
         item.teamwork = teamwork_paid
         item.evidence = self.collect_evidence(p, card)
         item.emerged_toughness = getattr(self, "_emerge_toughness", None) if kind == "emerge" else None
