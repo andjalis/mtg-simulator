@@ -81,6 +81,44 @@ class PilotGateTests(unittest.TestCase):
         self.assertEqual(len(suspicious({"cond": '!lib:["ref_card",{"types":["land"]}'})), 1)  # broken JSON
         self.assertEqual(len(suspicious({"cond": '!lib:["prev_is",{"f":"{unresolved}"}]'})), 1)  # placeholder inside
 
+    def test_mana_restriction_code_is_not_a_placeholder(self):
+        # #765 / #794: cx_abil_mana's "pred:" restriction (Oaken Siren, Haven of the Spirit Dragon, The Emperor of
+        # Palamecia), read by engine/costs.py
+        for code in ('pred:{"s":["t:artifact"],"a":["t:artifact"]}', 'pred:{"s":["sc:dragon"],"a":[]}',
+                     'pred:{"s":["n:creature"],"a":[]}', 'pred:{"s":["s:elemental"],"a":["s:elemental"]}',
+                     'pred:{"s":["t:artifact"],"a":true}', 'pred:{"s":["k:colorless"],"a":true}',    # any ability
+                     'pred:{"s":["mv:5","x"],"a":[]}', 'pred:{"s":["kw:devoid"],"a":[],"u":true}',
+                     'pred:{"s":["st:elf/warrior"],"a":[]}'):
+            self.assertEqual(suspicious({"mana_restriction": code}), [], code)
+        self.assertEqual(len(suspicious({"mana_restriction": 'pred:{"s":["t:artifact"],"a":[]'})), 1)   # broken JSON
+        self.assertEqual(len(suspicious({"mana_restriction": 'pred:{"s":["{unresolved}"],"a":[]}'})), 1)  # placeholder
+        self.assertEqual(len(suspicious({"mana_restriction": 'pred:{"x":["t:artifact"]}'})), 1)     # unknown key
+        self.assertEqual(len(suspicious({"mana_restriction": 'pred:{"s":["Artifact Spell"]}'})), 1)  # not an atom
+        self.assertEqual(len(suspicious({"mana_restriction": 'pred:{"s":[],"a":"any"}'})), 1)       # "a" not a list/true
+        self.assertEqual(len(suspicious({"mana_restriction": 'pred:["t:artifact"]'})), 1)           # not an object
+        self.assertEqual(len(suspicious({"mana_restriction": 'pick:{"s":["t:artifact"]}'})), 1)     # unknown prefix
+
+    def test_reveal_condition_is_not_a_placeholder(self):
+        # Primal Beyond: "you may reveal an Elemental card from your hand. If you don't, it enters tapped"
+        self.assertEqual(suspicious({"tapped_condition": 'reveal:[{"sub":["Elemental"],"types":["card"]}]'}), [])
+        self.assertEqual(len(suspicious({"tapped_condition": 'reveal:[{"sub":["Elemental"]}'})), 1)      # broken JSON
+        self.assertEqual(len(suspicious({"tapped_condition": 'reveal:[{"sub":["<subtype>"]}]'})), 1)     # placeholder
+
+    def test_empty_what_is_the_whole_graveyard_for_gy_to_library(self):
+        # #739: "Shuffle your graveyard into your library" (Archangel's Light, Feldon's Cane): what "" = every card
+        @dataclass
+        class Effect:
+            kind: str
+            data: dict
+        whole = Effect("gy_to_library", {"who": "you", "what": "", "n": 0})
+        self.assertEqual(suspicious({"spell_effects": [whole]}), [])
+        self.assertEqual(suspicious({"chapters": [[Effect("draw", {}), whole]]}), [])
+        flags = suspicious({"spell_effects": [Effect("return_from_gy", {"what": ""})]})     # other kinds still flag
+        self.assertEqual(flags, ["parse.spell_effects[0].data.what is empty"])
+        self.assertEqual(len(suspicious({"data": {"what": ""}})), 1)                         # no kind: still flags
+        nested = Effect("gy_to_library", {"what": "", "then": [Effect("mill", {"what": ""})]})
+        self.assertEqual(len(suspicious({"spell_effects": [nested]})), 1)                  # only its own data
+
     def test_untargeted_none_is_advisory(self):
         sample = {"name": "Innocent Blood", "flags": ["parse.spell_effects[0].target='none'"]}
         self.assertEqual(verdict({}, {}, [sample], self.smoke)[0], "PASS")

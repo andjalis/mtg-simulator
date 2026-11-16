@@ -58,9 +58,21 @@ def run(command, cwd, log, env=None, timeout=CHECK_TIMEOUT):
             "log": log.name}
 
 
+def _pred_shape(code):
+    """cx_abil_mana's mana restriction ("pred:" + JSON, read by engine/costs.py): "s" the spells it may cast and "a"
+    the sources whose abilities it may pay for, as lists of atoms ("t:artifact", "sc:dragon", "st:x/y", "mv:5", "x",
+    "colored_nox"); "a" true = any ability; "u" true = the spell can't be countered."""
+    def atoms(v):
+        return isinstance(v, list) and all(isinstance(x, str) and re.fullmatch(r"[a-z_]+(?::[\w'/ -]+)?", x) for x in v)
+    return isinstance(code, dict) and code.keys() <= {"s", "a", "u"} and atoms(code.get("s", [])) and \
+        (code.get("a", []) is True or atoms(code.get("a", []))) and isinstance(code.get("u", False), bool)
+
+
 def _placeholder(text):
-    """An unresolved "{...}"/"<...>" or the word unknown/placeholder. A cx_condlib code ("lib:" + JSON) is judged
-    by its string leaves, since its filter objects are JSON braces; broken JSON there is suspicious too. A negated code
+    """An unresolved "{...}"/"<...>" or the word unknown/placeholder. An engine code written as a prefix + JSON is
+    judged by its string leaves, since its objects are JSON braces; broken JSON there is suspicious too: cx_condlib
+    conditions ("lib:"), cx_abil_mana restrictions ("pred:", engine/costs.py, also shape-checked) and the "reveal a
+    <card> from your hand" enters-tapped condition ("reveal:", face_lines / engine/battlefield.py). A negated code
     ("!lib:...", cx_links' "Otherwise", engine/stack.py) is judged the same way after the "!"; any other "!<word>:"
     prefix is unknown."""
     negated = re.match(r"!(\w+):", text)
@@ -68,10 +80,13 @@ def _placeholder(text):
         if negated[1] != "lib":
             return True
         text = text[1:]
-    if text.startswith("lib:"):
+    prefix = re.match(r"(lib|pred|reveal):(?=[\[{])", text)
+    if prefix:
         try:
-            code = json.loads(text[4:])
+            code = json.loads(text[len(prefix[0]):])
         except ValueError:
+            return True
+        if prefix[1] == "pred" and not _pred_shape(code):
             return True
         stack = [code]
         while stack:
@@ -88,8 +103,14 @@ def _placeholder(text):
     return bool(re.search(r"\{(?![0-9WUBRGCSXYZTEP/]+\})[^{}]+\}|<[^>]+>|\b(?:unknown|placeholder)\b", text, re.I))
 
 
-def suspicious(value, path="parse", seen=None):
-    """Inspect actual fields (including defaults hidden by parse_diff.describe)."""
+# Effect kinds whose empty data "what" is defined as "every card": gy_to_library (cx_gy_library, #632) shuffles the
+# whole graveyard into the library ("Shuffle your graveyard into your library").
+WHOLE_ZONE_WHAT = frozenset({"gy_to_library"})
+
+
+def suspicious(value, path="parse", seen=None, kind=None):
+    """Inspect actual fields (including defaults hidden by parse_diff.describe). ``kind`` is the effect kind whose
+    fields are being read, passed down into its data."""
     seen = set() if seen is None else seen
     if is_dataclass(value) and not isinstance(value, type):
         if id(value) in seen:
@@ -98,16 +119,17 @@ def suspicious(value, path="parse", seen=None):
         value = {f.name: getattr(value, f.name) for f in fields(value)}
     flags = []
     if isinstance(value, dict):
+        own = value.get("kind") if isinstance(value.get("kind"), str) else kind
         for key, item in value.items():
             at = f"{path}.{key}"
             if key == "target" and item == "none":
                 flags.append(f"{at}='none'")
-            if key == "what" and not item:
+            if key == "what" and not item and own not in WHOLE_ZONE_WHAT:
                 flags.append(f"{at} is empty")
             # Oracle/name strings may legitimately contain card or mana symbols.
             if key not in {"oracle", "name", "text"} and isinstance(item, str) and _placeholder(item):
                 flags.append(f"{at}: unknown placeholder {item!r}")
-            flags.extend(suspicious(item, at, seen))
+            flags.extend(suspicious(item, at, seen, own if key == "data" else None))
     elif isinstance(value, (list, tuple, set, frozenset)):
         for i, item in enumerate(value):
             flags.extend(suspicious(item, f"{path}[{i}]", seen))
