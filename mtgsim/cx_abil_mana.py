@@ -83,10 +83,25 @@ def _normal(text: str) -> str:
     return re.sub(r"\b(or|and) to activate\b", r"\1 activate", text)
 
 
+# Spell properties (#644): the whole wording → (spell atoms, "that spell can't be countered").
+_PROPERTIES = {
+    "to cast spells with mana value 5 or greater or spells with {x} in their mana costs": (["mv:5", "x"], False),
+    "to cast a spell that's one or more colors without {x} in its mana cost": (["colored_nox"], False),
+    "to cast a spell with devoid": (["kw:devoid"], False),
+    "to cast a legendary spell, and that spell can't be countered": (["legendary"], True),
+}
+
+
 def parse(text: str):
     from .cx_mana_zone import code as zone_code
     if zone_code(text):                     # where the spell is cast from (#644)
         return zone_code(text)
+    prop = _PROPERTIES.get(text.strip().lower())
+    if prop:
+        spec = {"s": prop[0], "a": []}
+        if prop[1]:
+            spec["u"] = True                # Game.cast: the spell paid with it can't be countered
+        return "pred:" + json.dumps(spec, separators=(",", ":"))
     text = _normal(text.strip().lower())
     cast = acts = None
     m = re.fullmatch(r"(?:to cast (.+?))?(?:,? (?:or|and) )?(?:(?:to )?activate (?:abilities|equip abilities)"
@@ -128,6 +143,14 @@ def _match(atoms, card, perm=None) -> bool:
             return True
         if kind == "sc" and v in subtypes and creature:
             return True
+        if kind == "mv" and card.cmc >= int(v):
+            return True
+        if a == "x" and "X" in card.mana_cost:
+            return True
+        if a == "colored_nox" and card.colors and "X" not in card.mana_cost:
+            return True
+        if kind == "kw" and v in card.keywords:
+            return True
         if kind == "st":
             sub, _, typ = v.partition("/")
             if sub in subtypes and typ.capitalize() in types:
@@ -139,6 +162,11 @@ def _match(atoms, card, perm=None) -> bool:
             if {"multicolored": n >= 2, "monocolored": n == 1, "colorless": n == 0, "colored": n >= 1}[v]:
                 return True
     return False
+
+
+def uncounterable(code: str) -> bool:
+    """Whether a spell paid with this mana can't be countered ("..., and that spell can't be countered")."""
+    return code.startswith("pred:") and bool(_spec(code).get("u"))
 
 
 def allowed(code: str, spell) -> bool:
