@@ -42,6 +42,8 @@ class AbilitiesMixin:
         self.log(f"activates {item}" + (f" -> {targets}" if any(targets) else ""), p)
         from .. import cx_abilitycopy
         cx_abilitycopy.on_activate(self, p, item)
+        from .. import cx_trig_activate
+        cx_trig_activate.note(self, p, pw, item, "loyalty")
         if self.commits_crime(p, targets):
             self.fire(p, "crime")
         self.check_ward(item)
@@ -143,6 +145,8 @@ class AbilitiesMixin:
             self.log(f"crews {perm.card.name} with {crew}", p)
         else:
             return False
+        from .. import cx_trig_activate
+        cx_trig_activate.note(self, p, perm)       # Clue, Blood, animate, saddle, crew: activated abilities too
         self.settle()
         return True
 
@@ -185,6 +189,8 @@ class AbilitiesMixin:
                          source=equipment, name=f"{equipment.card.name} equip", kind="ability")
         self.stack.append(item)
         self.log(f"activates {item} -> {creature.card.name}", p)
+        from .. import cx_trig_activate
+        cx_trig_activate.note(self, p, equipment, item)
         self.check_ward(item)
         self.settle()
         return True
@@ -551,6 +557,8 @@ class AbilitiesMixin:
         self.log(f"activates {item}" + (f" -> {targets}" if any(targets) else ""), p)
         from .. import cx_abilitycopy     # "Whenever you activate an ability, ... copy that ability."
         cx_abilitycopy.on_activate(self, p, item)
+        from .. import cx_trig_activate
+        cx_trig_activate.note(self, p, perm, item, cx_trig_activate.keyword_of(act))
         self.check_ward(item)
         self.settle()
         return True

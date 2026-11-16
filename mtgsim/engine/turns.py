@@ -249,6 +249,8 @@ class TurnsMixin:
             self.discard_card(p, card)
             self.log(f"cycles {card.name}", p)
             self.fire(p, "you_cycle")
+            from ..cx_trig_activate import note
+            note(self, p, card, zone="hand")      # cycling is an activated ability of the card in hand
             for trig in card.cycle_self_triggers:
                 self.queue_trigger(p, trig.effects, None, f"{card.name}: cycled")
             if spec["land"] or spec.get("type"):

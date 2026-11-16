@@ -439,6 +439,9 @@ class EffectsMixin:
         self.leave_battlefield(attacker, "hand")
         self.log(f"sneaks in {card.name}, returning {attacker.card.name}", p)
         p.hand.remove(card)
+        if alt.kind == "ninjutsu":      # an activated ability of the card in hand (#860)
+            from ..cx_trig_activate import note
+            note(self, p, card, zone="hand")
         if card.is_creature or alt.kind == "ninjutsu":
             perm = self.enter_battlefield(p, card, tapped_attacking=True)
             self.attackers.append(perm)
