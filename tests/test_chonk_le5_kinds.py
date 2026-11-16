@@ -91,8 +91,9 @@ class ChooseNameTests(unittest.TestCase):
 
     def test_choose_name_picks_the_opponents_most_common_nonland(self):
         mage = self.mage()
+        self.b.graveyard.append(BLAST)                     # public: they have cast it (#627: never the decklist)
         resolve(self.game, self.a, Effect("choose_name"), StackItem(self.a, [], [], source=mage))
-        self.assertEqual(mage.chosen_name, "Test Blast")   # 4 copies beat Grizzly Bears' 0
+        self.assertEqual(mage.chosen_name, "Test Blast")
 
     def test_choose_name_needs_the_source_on_the_battlefield(self):
         mage = Permanent(BEAR, self.a)                     # not put onto the battlefield

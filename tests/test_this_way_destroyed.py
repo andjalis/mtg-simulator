@@ -16,13 +16,13 @@ class Parsing(unittest.TestCase):
         self.assertEqual(quantity("the number of creatures destroyed this way"), ("this_way", "destroyed", "creature"))
         self.assertEqual(quantity("the number of permanents destroyed this way"),
                          ("this_way", "destroyed", "permanent"))
-        for q in ("the number of creature cards destroyed this way", "the number of creatures exiled this way",
-                  "the number of Goblins destroyed this way"):
+        # "creatures exiled this way" and "Goblins destroyed this way" are read by mtgsim.this_way's journal (#642)
+        for q in ("the number of creature cards destroyed this way",):
             self.assertIsNone(quantity(q), q)
 
     def test_near_misses_stay_unsupported(self):
-        for text in ("Destroy all creatures. You gain 1 life for each creature card destroyed this way.",
-                     "Destroy all creatures. You gain 1 life for each Goblin destroyed this way."):
+        for text in ("Destroy all creatures. You gain 1 life for each creature card destroyed this way.",):
+            # "for each Goblin destroyed this way" is read by mtgsim.this_way's journal (#642, test_this_way)
             self.assertNotEqual(card("Test Spell", "{1}", "Sorcery", text).unsupported, [], text)
 
 

@@ -216,12 +216,13 @@ class ChooseName(Chonk5Templates):
         self.land(self.b, 3)
         self.b.deck = [BLAST] * 4 + [BEAR]
         self.b.hand = [BLAST]
+        self.b.graveyard = [BLAST]                  # public: a copy they cast (#627: never the decklist)
         mage = self.perm(MAGE)
         self.assertTrue(self.g.can_cast_now(self.b, BLAST))   # no name chosen yet
         effects = self.trigger_effects(MAGE)
         item = StackItem(self.a, effects, [None] * len(effects), source=mage, kind="trigger")
         self.g.resolve(self.a, effects[0], None, item)
-        self.assertEqual(mage.chosen_name, "Test Blast")      # 4 copies beat one Bear
+        self.assertEqual(mage.chosen_name, "Test Blast")
         self.assertFalse(self.g.can_cast_now(self.b, BLAST))
         self.a.battlefield.remove(mage)                      # leaving lifts the ban
         self.assertTrue(self.g.can_cast_now(self.b, BLAST))

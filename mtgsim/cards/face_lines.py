@@ -192,8 +192,8 @@ def _face_special_lines(st, line):
         from .. import counter_mechanics, permanent_templates, backlog_templates, advanced_templates, residual_templates, batch1_templates, cx_combat_costs
         if cx_combat_costs.parse_line(line, st):
             return None
-        from .. import cx_replace, cx_top, cx_abilitycopy, cx_trigger_grants as _cx_trigger_grants, cx_grammar_crewblock as _cx_crewblock, cx_type_grants as _cx_type_grants, cx_static_chars as _cx_static_chars, cx_multi_target as _cx_multi_target, cx_discard_bf as _cx_discard_bf, cx_counter_choice as _cx_counter_choice
-        if cx_replace.parse_line(line, st) or cx_top.parse_line(line, st) or cx_abilitycopy.parse_line(line, st) or residual_templates.parse_line(line, st) or batch1_templates.parse_line(line, st) or advanced_templates.parse_line(line, st) or backlog_templates.parse_line(line, st) or permanent_templates.parse_line(line, st) or counter_mechanics.parse_line(line, st) or _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st) or _cx_trigger_grants.parse_line(line, st) or _cx_type_grants.parse_line(line, st) or _cx_static_chars.parse_line(line, st) or _cx_crewblock.parse_line(line, st) or _cx_multi_target.parse_line(line, st) or _cx_discard_bf.parse_line(line, st) or _cx_counter_choice.parse_line(line, st):
+        from .. import cx_replace, cx_top, cx_abilitycopy, cx_trigger_grants as _cx_trigger_grants, cx_grammar_crewblock as _cx_crewblock, cx_type_grants as _cx_type_grants, cx_static_chars as _cx_static_chars, cx_multi_target as _cx_multi_target, cx_discard_bf as _cx_discard_bf, cx_counter_choice as _cx_counter_choice, cx_name_lock as _cx_name_lock
+        if cx_replace.parse_line(line, st) or cx_top.parse_line(line, st) or cx_abilitycopy.parse_line(line, st) or residual_templates.parse_line(line, st) or batch1_templates.parse_line(line, st) or advanced_templates.parse_line(line, st) or backlog_templates.parse_line(line, st) or permanent_templates.parse_line(line, st) or counter_mechanics.parse_line(line, st) or _creature_keywords.parse_line(line, st) or _alt_casts.parse_line(line, st) or _storage.parse_line(line, st) or _cx_trigger_grants.parse_line(line, st) or _cx_type_grants.parse_line(line, st) or _cx_static_chars.parse_line(line, st) or _cx_crewblock.parse_line(line, st) or _cx_multi_target.parse_line(line, st) or _cx_discard_bf.parse_line(line, st) or _cx_counter_choice.parse_line(line, st) or _cx_name_lock.parse_line(line, st):
             return None
         parts = [p.strip().lower() for p in re.split(r",(?: and)? | and |,", line)]
         if all(p in KEYWORDS or re.fullmatch(r"(?:ward \{\d+\}|toxic \d+|bushido \d+)", p) for p in parts):
@@ -399,6 +399,10 @@ def _face_land_and_mana_lines(st, line):
                 return None
         m = re.fullmatch(r"Equip (\{[^ .]+\})(\. This ability costs [^.]+ less to activate[^.]*\.)?", line)
         if m:
+            rules = extra.get("advanced_rules", {})
+            if rules.get("equip_restriction") and extra.get("equip_cost") is not None:
+                # "Equip Pirate {1}" came first: it's an extra, cheaper equip, not a limit on this one (#744)
+                rules["equip_typed"] = (rules.pop("equip_restriction"), extra["equip_cost"])
             extra["equip_cost"] = parse_mana_cost(m[1])
             if m[2]:
                 approximations.append(f"cost reduction ignored:{m[2]}")
@@ -413,6 +417,13 @@ def _face_land_and_mana_lines(st, line):
                 restriction = " or ".join(kinds)
             else:
                 restriction = None
+            if restriction is not None and extra.get("equip_cost") is not None and \
+                    not extra.get("advanced_rules", {}).get("equip_restriction"):
+                # a plain "Equip {2}" came first: this is another, typed equip (#744)
+                extra.setdefault("advanced_rules", {})["equip_typed"] = (restriction, parse_mana_cost(m[2]))
+                if m[3]:
+                    approximations.append(f"cost reduction ignored:{m[3]}")
+                return None
             if restriction is not None:
                 extra["equip_cost"] = parse_mana_cost(m[2])
                 extra.setdefault("advanced_rules", {})["equip_restriction"] = restriction
@@ -499,9 +510,12 @@ def _face_land_and_mana_lines(st, line):
             extra["mana_amount"] = max(cond_mana[1], extra.get("mana_amount", 1))
             extra["mana_dyn"] = cond_mana[2]
             return None
-        m = re.fullmatch(r"\{T\}: Add ([^.]+)\.(?: ~ deals 1 damage to you\.)?", line)
+        m = re.fullmatch(r"\{T\}: Add ([^.]+)\.( ~ deals 1 damage to you\.)?", line)
         if m:
             cols, amount = _parse_mana_ability(m[1])
+            if m[2]:        # painlands: the damage is dealt when this ability's mana is used (#801)
+                extra["mana_damage"] = 1
+                extra["mana_damage_colors"] = frozenset(extra.get("mana_damage_colors", frozenset()) | set(cols))
             if not cols and "chosen color" not in m[1]:
                 # No colour in the wording: "N mana in any combination of colors" is exactly N mana of any colours;
                 # "N mana of any one color" / "of different colors" are played as that too (recorded below). Anything
