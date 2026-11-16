@@ -574,7 +574,7 @@ def _opp_spells(m):
     return _code("opp_spells", op, n)
 
 
-@rule(rf"an opponent has drawn (?P<n>{_NUM}) or more cards this turn")
+@rule(rf"an opponent (?:has drawn|drew) (?P<n>{_NUM}) or more cards this turn")
 def _opp_drawn(m):
     return _code("drawn_opp", _n(m["n"]))
 
@@ -653,6 +653,18 @@ def _total_power(m):
 @rule(rf"you control (?P<n>{_NUM}) or more creatures with different powers")
 def _diff_powers(m):
     return _code("diff_powers", _n(m["n"]))
+
+
+# The Traps' conditions (#625): attackers now (what an opponent drew / cast: _opp_drawn, _opp_spells)
+@rule(rf"(?P<n>{_NUM}) or more creatures are attacking")
+def _attackers_n(m):
+    return _code("attackers", ">=", _n(m["n"]))
+
+
+@rule(r"an? (?P<f>[\w ]+? creature(?: with [\w ]+)?) is attacking")
+def _attacker_kind(m):
+    spec = _filter(m["f"], plural=False)
+    return _code("attacker_kind", spec) if spec and spec != {"types": ["creature"]} else ""
 
 
 @rule(rf"at least (?P<n>{_NUM}) mana was spent to cast (?P<ref>it|~|that spell)")
@@ -947,6 +959,9 @@ _PAST = [
     (rf"{_SUBJ_Q} (?P<s>.+?) left the battlefield under your control", "{q} {s} you control leaves the battlefield"),
     (rf"{_SUBJ_Q} (?P<s>.+?) left the battlefield", "{q} {s} leaves the battlefield"),
     (rf"you(?:'ve| have)? cast {_SUBJ_Q} (?P<s>.+?)", "you cast {q} {s}"),
+    (rf"an opponent cast {_SUBJ_Q} (?P<s>.+?)", "an opponent casts {q} {s}"),
+    (rf"an opponent had {_SUBJ_Q} (?P<s>.+?) enter(?: the battlefield)? under their control",
+     "{q} {s} an opponent controls enters"),
     (rf"you(?:'ve| have)? sacrificed {_SUBJ_Q} (?P<s>.+?)", "you sacrifice {q} {s}"),
     (r"you(?:'ve| have)? discarded (?P<q>a|one or more) (?P<s>cards?)", "you discard a card"),
     (r"you(?:'ve| have)? cycled (?P<q>a|one or more) (?P<s>cards?)", "you cycle a card"),
@@ -1275,6 +1290,8 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         return game.opponent(p).last_damage_turn == game.turn
     if kind == "attackers":
         return _cmp(len(getattr(game, "attackers", ()) or ()), *args)
+    if kind == "attacker_kind":
+        return any(_card_ok(x.card, args[0], x) for x in getattr(game, "attackers", ()) or ())
     if kind == "exile":
         return any(True for _ in game.opponent(p).exile)
     if kind == "src_parity":

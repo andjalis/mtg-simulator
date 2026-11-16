@@ -699,7 +699,7 @@ def _parse_face(data: dict) -> CardDef:
     finish_level_up(extra, triggers, activated, approximations, produces)
     extra.pop("is_spree", None)
     extra.pop("_subtypes", None)
-    _auras.finish(extra)
+    _auras.finish(extra, triggers)
     _storage.finish(extra, unsupported)
     if "Battle" in types and "Siege" not in type_line.split("—")[-1].split():
         unsupported.append("Battle rules other than a Siege's (protector and defeat)")    # #254: Sieges only

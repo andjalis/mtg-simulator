@@ -148,6 +148,8 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
         return choose(game, me, eff)
     if k in ('graveyard_exile_all', 'graveyard_exile_choice'):
         return opp
+    if k == 'give_control_choice':      # a cost: give away the least valuable permanent that fits
+        return min(mine, key=perm_value, default=None)
     if k == 'adapt_exception':
         return max(mine, key=perm_value, default=None)
     if k in ('control_permanent', 'opponent_exile'):

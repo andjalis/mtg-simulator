@@ -163,7 +163,7 @@ def enters(game, p, perm):
     if c.unleash:      # the counter, unless it's needed as a blocker: low on life against a real attack
         if not (p.life <= 8 and sum(x.power for x in opp.creatures) * 2 >= p.life):
             perm.counters["+1/+1"] = perm.p1 + 1
-    if c.riot:         # haste when it can attack this turn and nothing untapped would block and kill it
+    if c.riot or perm.keyword_instances("riot"):   # haste when it can attack and nothing untapped would kill it
         can_attack = p is game.active and game.step in ("main1", "untap", "upkeep", "draw")
         walls = [x for x in opp.creatures if not x.tapped and x.power >= perm.toughness]
         if can_attack and not walls:

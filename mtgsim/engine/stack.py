@@ -513,6 +513,7 @@ class StackMixin:
             prev = item.context if item.kind == "trigger" and isinstance(item.context, Permanent) else None
             done: list = []
             instead_choices = {}
+            just_made = None    # the one token the effect just before created: "it" right after "Create a ... token"
             for i, (eff, tgt) in enumerate(zip(item.effects, item.targets)):   # "would die this turn" must precede the damage
                 if eff.kind == "exile_instead" and i and isinstance(item.targets[i - 1], Permanent):
                     item.targets[i - 1].exile_turn = self.turn
@@ -530,7 +531,7 @@ class StackMixin:
                     if isinstance(tgt, StackItem):
                         item.target_spell = tgt        # "that spell" still names it after a later target
                 elif eff.target == "prev":
-                    tgt = prev
+                    tgt = just_made if just_made is not None else prev
                 if eff.data.get("distinct") and any(t is tgt for e2, t in zip(item.effects, item.targets)
                                                     if e2 is not eff and e2.data.get("distinct") and e2.kind == eff.kind
                                                     and e2 in done):
@@ -550,7 +551,16 @@ class StackMixin:
                     continue
                 if eff.data.get("may_hostile") and not self.hostile_target(p, tgt):
                     continue                  # "you may ...": declined unless it hits the opponent
-                self.resolve(p, eff, tgt, item, prev)
+                # CR 704.3: state-based actions wait until the whole item has resolved (checked below), so a 0/0
+                # token gets the counters the next effect puts on it (Wild Hypothesis, #682)
+                self._mid_resolution = getattr(self, "_mid_resolution", 0) + 1
+                serial = getattr(self, "_token_serial", 0)
+                item.created_token = just_made
+                try:
+                    self.resolve(p, eff, tgt, item, prev)
+                finally:
+                    self._mid_resolution -= 1
+                just_made = self._last_token if getattr(self, "_token_serial", 0) == serial + 1 else None
                 if self.over:
                     break
         if item.kind == "chapter":
@@ -614,6 +624,8 @@ class StackMixin:
         c = eff.cond
         if not c:
             return True
+        if c == "your_turn":        # "if it's (not) your turn" (cx_condlib aliases; "!your_turn" negates below, #721)
+            return self.active is p
         if c == 'attacking_most_life':
             return counter_mechanics.is_attacking_most_life(self, item.source if item else None, p)
         phase_condition = phase_conditions.check(p, c, item)

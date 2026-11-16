@@ -358,6 +358,8 @@ class BattlefieldMixin:
                                               ("declare_attackers", "declare_blockers"))
                 if d.get("tapped"):
                     perm.tapped = True
+                self._token_serial = getattr(self, "_token_serial", 0) + 1     # "Put X counters on it" (#682)
+                self._last_token = perm
                 if d.get("end"):
                     self.end_cleanup.append((perm, d["end"]))
         self.log(f"creates {n if n is not None else eff.amount} {d.get('kind') or d.get('name')} token(s)", p)

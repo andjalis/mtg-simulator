@@ -66,6 +66,14 @@ def wrath_pw(game, p, eff, opp, item=None, **_):
 @kind("bounce")
 def bounce(game, p, target, eff=None, item=None, **_):
     if isinstance(target, Permanent) and target in target.controller.battlefield:
+        auras = (eff.data.get("with_auras") if eff is not None else None)
+        if auras is not None:       # "... and all (white) Auras (you control / you own) attached to it" (#638)
+            for aura in list(target.auras):
+                if (auras.get("controller") != "mine" or aura.controller is p) and \
+                        (auras.get("owner") != "mine" or aura.owner is p) and \
+                        all(c in aura.card.colors for c in auras.get("colors", ())):
+                    game.log(f"{aura.card.name} returns to hand", p)
+                    game.leave_battlefield(aura, "hand")
         game.log(f"{target.card.name} returns to hand", p)
         game.leave_battlefield(target, "hand")
     elif item is not None and isinstance(item.source, Permanent) and (
