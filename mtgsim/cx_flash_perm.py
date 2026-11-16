@@ -6,6 +6,8 @@
     You may cast ~ as though it had flash if you control a Faerie.             (~, gated by a condition)
     If there are two or more instant and/or sorcery cards in your graveyard, you may cast ~ as though it had flash.
 
+"As long as <condition>, you may cast <kind> spells as though they had flash." and "Any player may cast <kind> spells
+as though they had flash." store ``(specs, condition, any player)`` in ``advanced_rules["flash_gated"]`` (#625).
 A static line stores filter specs in ``advanced_rules["flash_specs"]`` (the condition library's filter dialect);
 "this turn" is a ``cx_player_flag`` named ``flash_filter`` carrying the specs; a gated ~ stores a condition code in
 ``advanced_rules["flash_self"]``. ``flash_allowed`` is what ``Game.can_cast`` asks. A condition the library doesn't
@@ -33,6 +35,8 @@ def specs_for(text: str):
     return out
 
 
+_GATED = re.compile(r"(?:[A-Z][\w' ]* — )?(?:As long as (?P<c>.+?), you|(?P<any>Any player)) may cast "
+                    r"(?:(?P<k>[^.]+?) )?spells as though they had flash\.")
 _STATIC = re.compile(r"You may cast (?:(.+?) )?spells as though they had flash\.")
 _SELF = (re.compile(r"You may cast ~ as though it had flash if (.+)\."),
          re.compile(r"(?:If|As long as) (.+?), you may cast ~ as though it had flash\."),
@@ -42,6 +46,18 @@ _SELF = (re.compile(r"You may cast ~ as though it had flash if (.+)\."),
 def parse_line(st, line: str):
     """Face-line handler: returns None once the line is handled, else the line."""
     line = re.sub(r" \(You may cast it any time you could cast an instant\.\)$", "", line)
+    g = _GATED.fullmatch(line)
+    if g:               # "As long as <condition>, you may cast ..." / "Any player may cast ..." (#625)
+        specs = specs_for(g["k"] or "")
+        cond = ""
+        if g["c"]:
+            from .cx_condlib import parse
+            cond = parse(g["c"])
+        if specs and (cond or g["any"]):
+            rules = st.extra.setdefault("advanced_rules", {})
+            rules["flash_gated"] = tuple(rules.get("flash_gated", ())) + ((specs, cond, bool(g["any"])),)
+            return None
+        return line
     m = _STATIC.fullmatch(line)
     if m and (m[1] or "").lower() not in ("", "sorcery"):      # the unfiltered forms are cx_night_aura's
         specs = specs_for(m[1])
@@ -73,7 +89,23 @@ def flash_allowed(game, p, card) -> bool:
             continue
         if any(_card_ok(card, s) for s in x.card.advanced_rules.get("flash_specs", ())):
             return True
-    return any(_card_ok(card, s) for f in flags(game, p, "flash_filter") for s in f.data["specs"])
+    if any(_card_ok(card, s) for f in flags(game, p, "flash_filter") for s in f.data["specs"]):
+        return True
+    for pl in game.players:
+        for x in pl.battlefield:
+            for specs, cond, anyone in () if x.abilities_suppressed else x.card.advanced_rules.get("flash_gated", ()):
+                if (anyone or pl is p) and any(_card_ok(card, s) for s in specs) and \
+                        (not cond or _holds(game, pl, cond, x)):
+                    return True
+    return False
+
+
+def _holds(game, p, code, source) -> bool:
+    """A condition read with the permission's permanent as its source ("as long as ~ is tapped")."""
+    from types import SimpleNamespace
+    from .cx_condlib import _eval_any
+    item = SimpleNamespace(source=source, context=None, card=source.card, controller=p, targets=[])
+    return bool(_eval_any(game, p, code, item, source))
 
 
 def _this_turn(m):

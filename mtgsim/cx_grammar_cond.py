@@ -402,6 +402,10 @@ def _cost(text: str):
     if m:
         spec = _filter(m[1], plural=False) if m[1] else {}
         return {"discard": spec} if spec is not None else None
+    m = re.fullmatch(r"discards? (two|three|four|five) cards", text, re.I)
+    if m:                       # all of them or none (Court of Ambition)
+        from .cards.model import _num
+        return {"discard": {}, "count": _num(m[1])}
     return _counted_cost(text)
 
 
@@ -447,6 +451,22 @@ def _counted_cost(text: str):
         return {"remove_counter": m[2].lower(), "count": count(m[1])}
     if re.fullmatch(r"exiles? a card from (?:your|their) graveyard", text, re.I):
         return {"exile_gy": {}}
+    m = re.fullmatch(r"exiles? the top ([\w -]+?) card of (?:your|their) graveyard", text, re.I)
+    if m:                       # the topmost card of that kind (Barrow Ghoul)
+        spec = _filter(m[1], plural=False)
+        return {"exile_gy": spec, "top": True} if spec is not None else None
+    m = re.fullmatch(r"returns? an? ([\w -]+?) card from (?:your|their) graveyard to (?:your|their) hand", text, re.I)
+    if m:                       # Harvest Wurm
+        spec = _filter(m[1], plural=False)
+        return {"regrow": spec} if spec is not None else None
+    if re.fullmatch(r"puts? a card from (?:your|their) graveyard on the bottom of (?:your|their) library", text, re.I):
+        return {"gy_bottom": {}}
+    m = re.fullmatch(r"returns? an? ([\w-]+) to its owner's hand", text, re.I)
+    if m:                       # any player's (Drake Familiar): no "you control"
+        spec = _filter(m[1], plural=False)
+        return {"bounce_any": spec} if spec is not None else None
+    if re.fullmatch(r"removes? a counter from a permanent you control", text, re.I):
+        return {"remove_any_counter": True}
     m = re.fullmatch(r"(?:has|have) (?:~|it) deal (\d+) damage to (?:them|you|him or her)", text, re.I)
     if m:
         return {"damage": int(m[1])}
@@ -464,6 +484,8 @@ def _who_pays(payer: str, first):
         return {"controller": "prev_controller", "that_player": "context", "opponents": "opponent",
                 "target": "target"}.get(who) \
             if payer == "they" else None
+    if payer == "they" and first.kind == "edict" and first.target == "none":
+        return "opponent"           # "each opponent sacrifices a creature unless they ..." (two players)
     if payer == "they":
         return {"player": "target", "each_opponent": "opponent", "that_player": "context"}.get(first.target)
     if first.target == "prev":

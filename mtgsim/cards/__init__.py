@@ -274,6 +274,8 @@ from .. import bounce_own as _bounce_own  # noqa: E402
 _EFFECT_PATTERNS += _bounce_own.EFFECT_PATTERNS
 from .. import free_cast as _free_cast  # noqa: E402  "cast a spell from your hand without paying its mana cost" (#625)
 _EFFECT_PATTERNS += _free_cast.EFFECT_PATTERNS
+from .. import cx_dmg_equal as _cx_dmg_equal  # noqa: E402  damage equal to a quantity (#626)
+_EFFECT_PATTERNS += _cx_dmg_equal.EFFECT_PATTERNS
 from .. import cx_card_name as _cx_card_name  # noqa: E402  "Choose a card name, then reveal ..." (#627)
 _SUBS[:0] = _cx_card_name.SUBS
 _EFFECT_PATTERNS[:0] = _cx_card_name.EFFECT_PATTERNS

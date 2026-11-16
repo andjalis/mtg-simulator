@@ -250,10 +250,16 @@ def _scaled_counters(m):
     <quantity>" / "Put N <kind> counters on <obj> for each <thing>": the add_counter amount scaled by a known quantity
     (the same ``xq`` the other scaled effects use)."""
     from .cards.model import NO_MATCH
-    from .cx_night_quantity import _PLURAL_ZONES, _quantity
+    from .cx_night_quantity import _PLURAL_ZONES, _plural_zone, _quantity
     from .permanent_templates import build
     if m.groupdict().get("n"):       # "for each"
-        n, spec = _num(m["n"]), _quantity("the number of " + _PLURAL_ZONES.get(m["each"], m["each"]), plural=False)
+        each = m["each"]
+        n, spec = _num(m["n"]), _quantity("the number of " + _PLURAL_ZONES.get(each, _plural_zone(each)), plural=False)
+        if spec is None and not re.search(r"\b(?:it|its|that|they|their|those)\b", each, re.I):
+            # the grammar's "for each" reader: the head noun made plural ("artifact and/or creature card in your
+            # graveyard", "basic land type among ..."), and what it can't count refused (#327)
+            from .cx_grammar import _count_spec
+            spec = _count_spec(each)
     else:
         n, spec = 1, _quantity(m["q"])
         if re.search(r"\bthe result\b|\bthose\b", m["q"]):

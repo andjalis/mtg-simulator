@@ -21,6 +21,7 @@ enchanted / equipped permanent, ``"cx_chars@group"`` ((spec, ops), ...) for a gr
     ("add_subtypes", subs)              layer 4, creature types added
     ("set_subtypes", subs)              layer 4, creature types replaced, other subtypes kept (rule 205.1b)
     ("add_colors", colors) / ("set_colors", colors)     layer 5
+    ("set_name", name)                  layer 3 ("... named Legitimate Businessperson")
 
 Engine: ``effects(perm)`` (read by continuous.active) makes one ContinuousEffect per operation that reaches perm,
 stamped with its source's timestamp (an Aura's or Equipment's: when it was attached), so the engine's layer order
@@ -62,6 +63,11 @@ def description(text: str, plural: bool, addition: str):
     addition "" (sets), "types", "creature types" or "colors and types"; or None."""
     t = text.strip()
     ops, pt = [], None
+    named = re.search(r" named ([A-Z][\w'-]*(?: [A-Z][\w'-]*)*)$", t)
+    if named:               # "... named Legitimate Businessperson" (#517): the name in the view
+        if plural or addition:
+            return None
+        t = t[:named.start()]
     m = re.search(r" with base power and toughness (\d+)/(\d+)$", t)
     mv = re.search(r" with power and toughness each equal to its mana value$", t)
     if m:
@@ -120,6 +126,8 @@ def description(text: str, plural: bool, addition: str):
         ops.append(("set_subtypes", tuple(subs)))                 # "is a Treefolk": rule 205.1b
     if pt:
         ops.append(("set_base",) + pt)
+    if named:
+        ops.append(("set_name", named[1]))
     return tuple(ops)
 
 
@@ -158,9 +166,30 @@ _ADD = re.compile(r"(?:is|are) (.+?) in addition to (?:its|their) other (colors 
 _SET = re.compile(r"(?:is|are) (.+)")
 
 
+def _host_guard(line: str, st) -> bool:
+    """"As long as enchanted permanent is a Vehicle, it's a creature in addition to its other types." (Aerial
+    Modification, #517): a host rule guarded by the host's printed subtype, which only changes when the Aura moves
+    (and the view is recomputed on attach)."""
+    m = re.fullmatch(r"As long as enchanted (permanent|artifact|creature) is an? ([A-Z][\w-]+), it's (.+?) in addition to "
+                     r"its other (types|creature types|colors and types)\.", line.strip())
+    if not m or not st.extra.get("aura"):
+        return False
+    from .permanent_templates import _SUBTYPE_TYPES
+    if m[2].lower() not in _SUBTYPE_TYPES:
+        return False
+    ops = description(m[3], False, m[4])
+    if ops is None:
+        return False
+    rules = st.extra.setdefault("advanced_rules", {})
+    rules["cx_chars@host"] = tuple(rules.get("cx_chars@host", ())) + ((("if_sub", m[2]),) + tuple(ops),)
+    return True
+
+
 def parse_line(line: str, st, gate: str = "") -> bool:
     """Read the line; with ``gate`` (a cx_static_gate condition code, the "as long as" already removed) the
     operations are recorded as a gated row instead (Starfield of Nyx, #520)."""
+    if not gate and _host_guard(line, st):
+        return True
     s = line.strip()
     if not s.endswith(".") or '"' in s or re.search(r"\b(?:as long as|during|until|this turn|if|unless|for as long|"
                                                      r"where|for each|chosen|of your choice|except)\b", s, re.I):
@@ -185,6 +214,11 @@ def parse_line(line: str, st, gate: str = "") -> bool:
     for phrase in _phrases(rest):
         if re.fullmatch(r"(?:it )?loses? all (?:other )?abilities", phrase):
             ops.append(("lose_all",))       # layer 6 (slice 3): "loses all other abilities" keeps this line's grants
+            continue
+        if re.fullmatch(r"(?:it )?loses? all other abilities, card types, and creature types", phrase):
+            if not any(op[0] == "set_types" for op in ops):
+                return False                # the types it keeps must be named first ("is an Insect artifact creature")
+            ops.append(("lose_all",))       # Darksteel Mutation (#517): set_types already replaced the types
             continue
         if re.fullmatch(r"(?:has|have) base power and base toughness each equal to (?:its|their) mana value", phrase):
             ops.append(("set_base", "mv", "mv"))     # layer 7b: each permanent's own mana value (#520)
@@ -313,6 +347,10 @@ def _rows(perm):
     for x in sources(game, "cx_chars@host"):       # not perm.auras: an Aura's host is set before that list
         if (x.aura_host or x.attached_to) is perm:
             for ops in x.card.advanced_rules["cx_chars@host"]:
+                if ops and ops[0][0] == "if_sub":     # "as long as enchanted permanent is a Vehicle" (printed)
+                    if ops[0][1] not in perm._card.subtypes:
+                        continue
+                    ops = ops[1:]
                 yield x, _stamp(x, attached=True), ops
     for x in sources(game, "cx_chars@group"):
         for spec, ops in x.card.advanced_rules["cx_chars@group"]:
@@ -352,6 +390,8 @@ def effects(perm) -> list:
             elif kind in ("remove_kw", "lock_kw"):
                 out.append(ContinuousEffect(uid, perm, "remove" if kind == "remove_kw" else "lock", stamp,
                                             keyword=op[1], source=source))
+            elif kind == "set_name":
+                out.append(ContinuousEffect(uid, perm, "set_name", stamp, source=source, name=op[1]))
             elif kind == "all_creature_types":
                 if creature:
                     out.append(ContinuousEffect(uid, perm, "all_creature_types", stamp, source=source))

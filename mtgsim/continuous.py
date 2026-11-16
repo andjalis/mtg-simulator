@@ -11,6 +11,7 @@ LAYERS = {'grant': (6, 0), 'remove': (6, 0), 'lose_all': (6, 0), 'lock': (6, 0),
 LAYERS.update({op: (4, 0) for op in ('set_types', 'add_types', 'remove_types', 'all_creature_types',
               'set_subtypes', 'add_subtypes', 'remove_subtypes')})
 LAYERS.update({op: (5, 0) for op in ('set_colors', 'add_colors', 'remove_colors')})
+LAYERS['set_name'] = (3, 0)     # "... named Legitimate Businessperson" (Witness Protection, #517)
 
 
 @dataclass(frozen=True)
@@ -28,6 +29,7 @@ class ContinuousEffect:
     types: frozenset = frozenset()
     subtypes: frozenset | None = None
     colors: frozenset = frozenset()
+    name: str = ''
 
     @property
     def layer(self):
@@ -144,8 +146,12 @@ def characteristics(permanent, base):
         return cached[1]
     types, subtypes, colors = base.types, base.subtypes, base.colors
     lost = every = False
+    name = None
     for effect in ordered(effects):
         operation = effect.operation
+        if operation == 'set_name':
+            name = effect.name
+            continue
         if operation == 'lose_all':         # layer 6: cx_static_chars.strip (#406)
             lost = True
             continue
@@ -167,6 +173,8 @@ def characteristics(permanent, base):
     from .cx_static_chars import strip
     view = CharacteristicView(**(strip(base, subtypes) if lost else {f.name: getattr(base, f.name) for f in fields(CardDef)}))
     view.types, view.subtypes, view.effective_colors = types, subtypes, colors
+    if name is not None:
+        view.name = name
     view.lost_all = lost
     if every:
         view.changeling = True
