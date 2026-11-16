@@ -188,6 +188,10 @@ class EffectsMixin:
                 if not life_locked(payer) and payer.life > n + 2 and self.hook(payer, "pay_unless")(self, payer, 0, target):
                     self.change_life(payer, -n, f"ward: pay {n} life")
                     return
+            elif eff.data.get("ward_cost"):          # non-mana ward costs (ward_costs, #646)
+                from ..ward_costs import pay as pay_ward
+                if pay_ward(self, payer, eff.data["ward_cost"], eff.data.get("warded"), target):
+                    return
             elif eff.data.get("discard"):
                 if payer.hand and self.hook(payer, "pay_unless")(self, payer, 0, target):
                     card = payer.ai.choose_discard(self, payer)
@@ -301,6 +305,8 @@ class EffectsMixin:
             if effect.source is perm:
                 continuous.refresh(effect.target)
         perm.last_destination = to
+        if to == "graveyard":           # gravestorm counts these, tokens included (CR 702.69a, #646)
+            self.to_graveyard_turn = getattr(self, "to_graveyard_turn", 0) + 1
         perm.front.generation += 1
         perm.front.last_zone = "battlefield"
         perm.front.zone = None

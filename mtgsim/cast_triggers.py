@@ -11,6 +11,9 @@ def on_cast(game, p, item):
     for _ in range(item.card.storm or int('storm' in item.card.keywords)):
         game.queue_trigger(p, [Effect('storm_copy', getattr(item, 'storm_count', 0))],
                            name=f'{item.card.name}: storm', context=item)
+    if 'gravestorm' in item.card.keywords:      # copy it for each permanent put into a graveyard this turn (#646)
+        game.queue_trigger(p, [Effect('storm_copy', getattr(game, 'to_graveyard_turn', 0))],
+                           name=f'{item.card.name}: gravestorm', context=item)
     for _ in range(item.card.cascade or int('cascade' in item.card.keywords)):
         value = item.card.cmc + getattr(item, 'x', 0) * item.card.mana_cost.get('X', 0)
         game.queue_trigger(p, [Effect('cascade', value)], name=f'{item.card.name}: cascade')

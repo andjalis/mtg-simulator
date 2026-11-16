@@ -346,6 +346,7 @@ class TurnsMixin:
                 pl.graveyard.descents = 0
             pl.graveyard.left_turn = 0
         self.creature_died_turn = False
+        self.to_graveyard_turn = 0          # permanents put into a graveyard from the battlefield (gravestorm)
         from ..advanced_templates import begin_turn
         begin_turn(self, p)
         self.step = "untap"
