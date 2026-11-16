@@ -294,6 +294,8 @@ class CardDef:
     mana_depletion: bool = False                        # Peat Bog: each tap removes a depletion counter; sacrificed at none
     mana_sac: bool = False                              # "{T}, Sacrifice ~: Add one mana of any color."
     mana_pay_life: int = 0                              # "{T}, Pay 1 life: Add one mana of any color": life paid when a colour is used
+    mana_damage: int = 0                                # painlands: "{T}: Add {W} or {U}. ~ deals 1 damage to you."
+    mana_damage_colors: frozenset = frozenset()         # the colours that ability makes (an undamaged {C} doesn't hurt)
     mana_cond: str = ""                                 # "Dragon": only while you control one
     mana_gate: tuple = ()                               # ((colours, land types), ...): colours need one of the types; () types = entered this turn or a basic
     pt_scale: tuple = (1, 1)                            # (power, toughness) gained per counted permanent
