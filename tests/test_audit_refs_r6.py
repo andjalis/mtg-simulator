@@ -11,6 +11,7 @@ from tests.test_templates import BEAR, ISLAND, card
 DB_FILE = Path(__file__).resolve().parents[1] / "mtgsim" / "data" / "cards.sqlite3"
 PLAINS = card("Plains", "", "Basic Land — Plains", "({T}: Add {W}.)")
 FOREST = card("Forest", "", "Basic Land — Forest", "({T}: Add {G}.)")
+SWAMP = card("Swamp", "", "Basic Land — Swamp", "({T}: Add {B}.)")
 
 
 def game():
@@ -64,6 +65,19 @@ class FightAfterAnotherMode(unittest.TestCase):
         self.assertNotIn(bear, b.battlefield)
         self.assertIn(kith, a.battlefield)
         self.assertTrue(any("fights Grizzly Bears" in e for e in g.events))
+
+    def test_fight_after_an_untargeted_group_grant(self):
+        """Undercity Uprising: "Creatures you control gain deathtouch ... Then target creature you control fights
+        target creature you don't control." The first effect has no target, so targets[0] is None."""
+        g, a, b, kith, bear = self._board()
+        ready(g, a, SWAMP)
+        giant = ready(g, b, self.db.get("Hill Giant"))
+        spell = self.db.get("Undercity Uprising")
+        a.hand = [spell]
+        self.assertTrue(g.cast(a, spell, [None, kith, giant]))
+        g.settle()
+        self.assertNotIn(giant, b.battlefield)        # deathtouch
+        self.assertTrue(any("fights Hill Giant" in e for e in g.events))
 
     def test_plain_fight_spell_still_uses_its_first_target(self):
         g, a, b, kith, bear = self._board()
