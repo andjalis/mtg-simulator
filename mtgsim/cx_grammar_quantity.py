@@ -29,6 +29,8 @@ from __future__ import annotations
 
 import re
 
+from . import this_way
+
 _COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 _STATS = ("power", "toughness", "mana value")
 _ZONES = {"in all graveyards": "all_gy", "in each graveyard": "all_gy", "in your graveyard": "your_gy", "in an opponent's graveyard": "opp_gy",
@@ -112,6 +114,9 @@ def quantity(text: str):
                      r"destroyed this way", low)
     if m:       # the destroy just before it in this resolution (wrath, destroy_all, group_remove, ... record it) (#337)
         return ("this_way", "destroyed", m[1][:-1])
+    tw = this_way.parse_quantity(t)
+    if tw:          # "the number of creature cards milled this way" (#642)
+        return tw
     if low == "the number of cards drawn this way":
         return ("this_way", "drawn", "card")    # the draw just before it in this resolution (kinds.cards.draw)
     m = re.fullmatch(r"(twice|half) (.+?)(?:, rounded (up|down))?", t, re.I)
@@ -231,6 +236,8 @@ def _stat(perm, stat: str) -> int:
 
 def value(game, p, spec, item, prev) -> int:
     kind = spec[1]
+    if kind == "tw":
+        return this_way.value(game, p, spec, item)
     if kind == "flips":
         return getattr(item, "flips_" + spec[2], 0)
     if kind == "devotion":

@@ -287,3 +287,18 @@ def resolve(game, p, eff, target, item):
         if source is not None and source in p.battlefield and target is not None and target in p.battlefield:
             source.attached_to = target
             game.log(f"{source.card.name} attaches to {target.card.name}", p)
+
+
+def attach_value(game, me, target) -> float:
+    """HeuristicAI's value of "attach ~ to target creature you control" (an Equip ability with a non-mana cost,
+    #646): what the Equipment adds where it goes, nothing when it is already there or the new creature is no
+    better than the one it is on (so the cost isn't paid again for nothing)."""
+    from .engine.policy import perm_value
+    src = getattr(game, "target_source", None)
+    if target is None or src is None or getattr(src, "attached_to", None) is target or not target.is_creature:
+        return 0.0
+    current = getattr(src, "attached_to", None)
+    if current is not None and current in current.controller.battlefield and perm_value(current) >= perm_value(target):
+        return 0.0
+    bonus = getattr(src.card, "equip_bonus", (0, 0)) or (0, 0)
+    return 1.0 + 0.5 * (bonus[0] + bonus[1])

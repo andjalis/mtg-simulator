@@ -149,7 +149,7 @@ def _aim(card: CardDef, eff, target) -> list:
 
 # Effects plan_spell values through _extra_value.
 EXTRA_KINDS = {"reanimate_total", "reanimate_one", "tutor_gy", "regrow_perm", "regrow_any", "tutor", "explore", "earthbend", "unblockable", "oring_all", "pump_all", "double_counters", "learn",
-               "tap", "stun", "mill", "proliferate", "search_plan", "gy_move"} | copies.KINDS
+               "tap", "stun", "mill", "proliferate", "search_plan", "cx_turn_trigger", "gy_move"} | copies.KINDS
 EXTRA_KINDS.add("hand_free_cast")     # free casts from hand (free_cast.py, #625)
 
 CARRIER_KINDS = ("pump", "grant", "p1_counters", "unblockable")   # aimed at the creature that attacks
@@ -810,6 +810,10 @@ class HeuristicAI:
     @staticmethod
     def _sized(game: Game, me: Player, card: CardDef):
         """An X spell with X fixed at the largest value the remaining mana pays for, else None."""
+        from .cx_spell_costs import cost_x, sized
+        paid = cost_x(game, me, card)              # "discard X cards" / "pay X life": X chosen by the cost
+        if paid is not None:
+            return sized(card, paid) if paid >= 1 else None
         x = 0
         cost = game.cost_of(me, card)
         per_x = card.mana_cost.get("X", 1) or 1          # {X}{X}: two mana per X (#531)
@@ -836,8 +840,9 @@ class HeuristicAI:
             # Unearth: a hasty attacker for one turn; worth casting before combat when it can attack
             base = card.spell_effects[0].data["card"]
             return (card_value(base) / 2 + 1, None) if base.is_creature and opp.life > 0 else None
-        if not card.is_permanent and any((e.data or {}).get("x") or e.kind == "gy_move" and e.data.get("x_n")
-                                         for e in card.spell_effects):
+        from .cx_spell_costs import has_x_cost
+        if not card.is_permanent and (any((e.data or {}).get("x") or e.kind == "gy_move" and e.data.get("x_n")
+                                          for e in card.spell_effects) or has_x_cost(card)):
             sized = self._sized(game, me, card)
             return None if sized is None else self.plan_spell(game, me, sized, precombat)
         if card.is_permanent:
@@ -1013,6 +1018,13 @@ class HeuristicAI:
                     return None
                 targets.append(tgt)
                 value += 1.0
+            elif eff.kind == "gy_move" and eff.data.get("zone") == "mine" and not eff.data.get("x_n"):
+                # "return N target <desc> cards from your graveyard to your hand / the battlefield": the best N
+                from .engine.state import _gy_desc
+                pool = sorted((c for c in me.graveyard if copies.fits(c, _gy_desc(eff.data.get("what", "")))),
+                              key=lambda c: -c.cmc)[:max(1, eff.amount)]
+                targets.append(None)
+                value += sum((card_value(c) if eff.data.get("dest") == "bf" else 1.0) + 0.5 * c.cmc for c in pool)
             elif eff.kind == "divided_damage":     # the division itself is planned as it goes on the stack
                 from .cx_damage import ai_worth
                 v = ai_worth(self, game, me, eff, card, instant)
@@ -1221,6 +1233,9 @@ class HeuristicAI:
         ready = [c for c in me.creatures if c.can_attack() and c.power > 0]
         if k == "proliferate":
             return None, eff.amount * proliferate.value(game, me)
+        if k == "cx_turn_trigger":      # "Whenever <event> this turn, ..." (#399)
+            v = __import__("mtgsim.cx_trig_turn", fromlist=["value"]).value(game, me, eff, card, precombat)
+            return (None, v) if v > 0 else None
         if k == "learn":
             return None, learning.value(game, me)
         if k in copies.KINDS:
@@ -1297,6 +1312,9 @@ class HeuristicAI:
             if eff.kind == "oring" or eff.kind == "blink_link_exile" and eff.target != "none":
                 tgt = self.choose_target(game, me, eff, card)
                 value += perm_value(tgt) if tgt is not None else 0.0
+            elif eff.kind == "champion":    # sacrificed with nothing to champion; else gives up the championed one
+                from .champion import ai_value
+                value += ai_value(game, me, eff, card)
             elif eff.kind == "oring_all":   # symmetric: it exiles our own small permanents too
                 hit = lambda x: (x.is_creature or x.card.is_artifact) and x.card.cmc <= eff.amount
                 value += sum(perm_value(x) for x in game.opponent(me).battlefield if hit(x)) - \

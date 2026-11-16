@@ -212,7 +212,13 @@ class TurnsMixin:
             if perm.hidden is None or (only is not None and perm not in only):
                 continue
             alt = next((a for a in perm.hidden.alt_costs if a.kind in ("disguise", "morph", "megamorph")), None)
-            if alt is not None and self.pay(p, alt.cost) is not None:
+            spec = perm.hidden.advanced_rules.get("morph_cost")
+            if spec is not None:            # "Morph—Pay 5 life." (morph_costs, #646)
+                from ..morph_costs import pay as pay_morph
+                paid = alt is not None and pay_morph(self, p, perm, spec)
+            else:
+                paid = alt is not None and self.pay(p, alt.cost) is not None
+            if paid:
                 self.log(f"turns {perm.hidden.name} face up", p)
                 perm.card, perm.hidden = perm.hidden, None
                 if alt.kind == "megamorph":
@@ -245,10 +251,18 @@ class TurnsMixin:
             self.fire(p, "you_cycle")
             for trig in card.cycle_self_triggers:
                 self.queue_trigger(p, trig.effects, None, f"{card.name}: cycled")
-            if spec["land"]:
+            if spec["land"] or spec.get("type"):
                 want = spec["land"]
-                found = next((c for c in p.library if c.is_land and (
-                    want == "any" or (want == "basic" and is_basic_land(c)) or want in c.subtypes)), None)
+                if spec.get("type"):            # "Wizardcycling": any card with that subtype (CR 702.29e)
+                    found = next((c for c in p.library if spec["type"] in c.subtypes), None)
+                elif "|" in want:               # "Islandcycling {2}, swampcycling {2}": the type we have fewer of
+                    have = [x for x in p.battlefield if x.card.is_land]
+                    kinds = sorted(want.split("|"), key=lambda t: sum(t in x.card.subtypes for x in have))
+                    found = next((c for t in kinds for c in p.library if t in c.subtypes), None)
+                else:
+                    found = next((c for c in p.library if c.is_land and (
+                        want == "any" or (want == "basic" and is_basic_land(c)) or
+                        (want == "artifact" and c.is_artifact) or want in c.subtypes)), None)
                 if found is not None:
                     p.library.remove(found)
                     p.hand.append(found)

@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import re
 
+from . import this_way as _this_way
 from .cards.model import NUMBERS
 
 _NUM = r"(?:\d+|a|an|one|two|three|four|five|six|seven|eight|nine|ten|twenty)"
@@ -129,7 +130,8 @@ def _word_spec(word: str, spec: dict, plural: bool = True) -> bool:
     elif low.rstrip("s") in _BASICS or low in _BASICS:
         spec.setdefault("sub", []).append(low.rstrip("s").capitalize() if low != "plains" else "Plains")
     elif word[:1].isupper() and word.isalpha():
-        sub = word if not plural or not word.endswith("s") or word.endswith("ss") else word[:-1]
+        from .cx_events import _IRREGULAR       # "Leeches" -> "Leech", "Elves" -> "Elf"
+        sub = _IRREGULAR.get(word) or (word if not plural or not word.endswith("s") or word.endswith("ss") else word[:-1])
         spec.setdefault("sub", []).append(sub)
     elif re.fullmatch(r"[A-Z][a-z]+(?:'s|-[A-Z][a-z]+)", word):
         spec.setdefault("sub", []).append(word)     # "Urza's", "Power-Plant": land subtypes written as they are
@@ -1079,7 +1081,7 @@ def parse(phrase: str) -> str:
     had = re.fullmatch(r"you had (an?) (.+?) enter(?: the battlefield)? under your control this turn", phrase.strip(), re.I)
     if had:     # "you had a land enter the battlefield under your control this turn"
         phrase = f"{had[1]} {had[2]} entered the battlefield under your control this turn"
-    code = _plain(phrase) or _history(phrase)
+    code = _plain(phrase) or _history(phrase) or _this_way.parse_cond(phrase)     # "... this way" (#642)
     if code:
         return code
     for joiner, kind in ((" or ", "or"), (" and ", "and")):
@@ -1091,6 +1093,11 @@ def parse(phrase: str) -> str:
                 subject = re.match(r"(you control|an opponent controls) ", left, re.I)
                 if subject:
                     right = subject[0] + right
+            elif re.fullmatch(r"[A-Z][a-z]+", right.strip()):
+                # "you control a Mount or Vehicle": the article carries over too (#630)
+                subject = re.match(r"(you control|an opponent controls) (an?) [A-Z][a-z]+$", left)
+                if subject:
+                    right = f"{subject[1]} {'an' if right.strip()[0] in 'AEIOU' else 'a'} {right.strip()}"
             a, b = _plain(left), _plain(right)
             if a and b:
                 return _code(kind, a, b)
@@ -1165,6 +1172,8 @@ def check(game, p, code: str, item=None, source=None, prev=None):
         source = _source(item)
     if kind == "not":
         return not _eval_any(game, p, args[0], item, source, prev)
+    if kind == "this_way":
+        return _this_way.check(game, p, args, item, prev)
     if kind in ("or", "and"):
         results = [_eval_any(game, p, sub, item, source, prev) for sub in args]
         return any(results) if kind == "or" else all(results)

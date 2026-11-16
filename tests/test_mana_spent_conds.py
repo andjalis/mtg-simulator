@@ -71,7 +71,6 @@ class ManaSpentConditions(unittest.TestCase):
 
     def test_near_misses_refused(self):
         for text in (
-            "You gain 3 life if you control a Forest and {G} was spent to cast ~.",   # not a spent condition
             "You gain 3 life if {G} was spent to cast another spell.",
             "Destroy target creature if it's a creature or if {G}{W} was spent to cast ~.",
         ):

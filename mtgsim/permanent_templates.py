@@ -454,7 +454,9 @@ def matches(game, permanent, spec, controller, source=None):
             return False
     if 'counter' in spec:
         name, positive = spec['counter']
-        if (permanent.counters.get(name, 0) > 0) != positive:
+        has = any(n > 0 for n in permanent.counters.values()) if name in ('a', 'an') else \
+            permanent.counters.get(name, 0) > 0         # "with a counter on it": any kind (#630)
+        if has != positive:
             return False
     if 'keyword' in spec:
         name, present = spec['keyword']

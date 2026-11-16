@@ -89,7 +89,8 @@ EFFECT_PATTERNS = [
 
 
 def parse_line(line, extra, type_line=""):
-    return entry_x_counters(line, extra) or counter_pt(line, extra, type_line) or entry_quantity(line, extra)
+    return entry_x_counters(line, extra) or counter_pt(line, extra, type_line) or entry_quantity(line, extra) or \
+        entry_for_each(line, extra)
 
 
 def entry_quantity(line, extra):
@@ -105,6 +106,39 @@ def entry_quantity(line, extra):
         return False
     extra["entry_counter_quantity"] = (m[1].lower(), spec)
     return True
+
+
+_N = {"a": 1, "an": 1, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5}
+
+
+def entry_for_each(line, extra):
+    """"~ enters with a <kind> counter on it for each <thing>." / "... with two <kind> counters on it for each
+    <thing>." (#630): the count is read as the permanent enters, with the shared "for each" quantity reader; the
+    entering permanent is never one of the things counted (the counters are part of how it enters)."""
+    m = re.fullmatch(r"(?:[A-Z][\w' ]* — )?~ enters(?: the battlefield)? with (a|an|one|two|three|four|five) ([a-z]+(?:-[a-z]+)?|[+-]\d+/[+-]\d+) "
+                     r"counters? on (?:it|him|her) for each (.+?)\.", line, re.I)
+    if m is None or extra.get("entry_counter_quantity") or extra.get("etb_named_counters"):
+        return False
+    from .cx_night_quantity import _plural_zone, _quantity
+    spec = _quantity("the number of " + _plural_zone(m[3]), plural=False)
+    if spec is None:
+        return False
+    extra["entry_counter_quantity"] = (m[2].lower(), spec, _N[m[1].lower()])
+    return True
+
+
+def entry_count(game, p, perm, spec) -> int:
+    """The "for each" count as perm enters, with perm itself off the battlefield while counting."""
+    from types import SimpleNamespace
+    zone = perm.controller.battlefield
+    present = perm in zone
+    if present:
+        zone.remove(perm)
+    try:
+        return game.x_quantity(p, spec, SimpleNamespace(source=perm, card=perm.card, context=None), None)
+    finally:
+        if present:
+            zone.append(perm)
 
 
 def counter_pt(line, extra, type_line=""):

@@ -393,7 +393,11 @@ def cumulative_upkeep(game, p, perm):
     age = perm.counters.get('age', 0) + 1
     perm.counters['age'] = age
     kind, cost = perm.card.advanced_rules['cumulative_upkeep']
-    if kind == 'life':
+    if kind not in ('life', 'mana'):        # "{G} or {W}", "Sacrifice a land.", ... (cumulative_costs, #646)
+        from .cumulative_costs import pay
+        if pay(game, p, perm, kind, cost, age):
+            return
+    elif kind == 'life':
         if p.life - cost * age >= 8:
             game.change_life(p, -cost * age, f"{perm.card.name}: cumulative upkeep")
             return

@@ -128,6 +128,9 @@ def default_choose_target(game: Game, me: Player, eff: Effect):
                                                                            and x.loyalty <= amount)]
         if killable:
             return max(killable, key=perm_value)
+        walkers = [x for x in legal if isinstance(x, Permanent) and x.controller is opp and x.is_planeswalker]
+        if eff.data.get("selector", {}).get("types_all") == ["planeswalker"] and walkers:
+            return max(walkers, key=perm_value)     # "target planeswalker that player controls": loyalty lost is good
         return opp if eff.target in ("any", "player") else None
     if k in ("bite_src", "ref_bite") or eff.data.get("bite_run"):          # referent damage: "... deals damage equal to its power to ..."
         from ..cx_grammar_bite import choose as bite_choose
@@ -414,6 +417,12 @@ def _mode_value(game: Game, me: Player, effects: list) -> float:
                 v = hand_put.value(game, me, e, game.target_source)
                 if v <= 0 and all(x.kind in ("pay_gate", "hand_to_battlefield") for x in effects):
                     return -1          # nothing in hand it could put: don't spend the activation on it alone
+                total += v
+            elif k == "attach_self":           # "Equip—Pay 3 life." (#646): only a move to a better creature counts
+                from ..auras import attach_value
+                v = attach_value(game, me, tgt)
+                if v <= 0:
+                    return -1
                 total += v
             elif k == "hand_free_cast":       # nothing in hand to cast: not worth an activation (#625)
                 from ..free_cast import value as free_value
@@ -968,10 +977,10 @@ def use_abilities(game: Game, me: Player):
             game.activate(me, h, "sac_debuff")
     play_extra_lands(game, me)
     equip_all(game, me)
-    if game.step == "main1":    # "can't be blocked this turn" before combat
+    if game.step == "main1":    # "can't be blocked this turn" and non-mana Equip costs (#646) before combat
         for perm in list(me.battlefield):
             for i, act in enumerate(perm.activated):
-                if act.kind == "ability" and act.effects and act.effects[0].kind == "unblockable" and \
+                if act.kind == "ability" and act.effects and act.effects[0].kind in ("unblockable", "attach_self") and \
                         perm in me.battlefield and ability_worth(game, me, perm, i):
                     game.activate(me, perm, f"ability:{i}")
                 elif act.kind == "ability" and act.effects and act.effects[0].kind == "cx_animate" and \

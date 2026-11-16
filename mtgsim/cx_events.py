@@ -745,6 +745,7 @@ def observe(game, p, event, source=None, context=None, subject=None):
         return      # Torpor Orb and friends
     from .engine.state import Permanent
     watchers = [x for pl in game.players for x in pl.battlefield if _has_ev(x)]
+    watchers += cx_trig_turn.watchers(game)     # "Whenever <event> this turn, ..." (#399)
     if isinstance(source, Permanent) and source not in watchers and _has_ev(source):
         watchers.append(source)     # "~ or another creature dies": the dying source still sees it
     if event == "perm_to_gy" and isinstance(subject, Permanent) and subject not in watchers and _has_ev(subject):
@@ -950,3 +951,4 @@ def _match(game, spec, event, perm, p, source, context, subject, wants_player=Fa
 from . import cx_trig_events  # noqa: E402  (extends the player-verb table above)
 from . import cx_trig_cast  # noqa: E402  (cast-head qualifiers)
 from . import cx_trig_heads  # noqa: E402  (attack / damage / targeting / counter heads)
+from . import cx_trig_turn  # noqa: E402  (watchers of "Whenever <event> this turn, ..." triggers, #399)
