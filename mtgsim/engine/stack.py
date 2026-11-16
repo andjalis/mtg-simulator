@@ -144,6 +144,10 @@ class StackMixin:
                         continue    # only "~ or another Zombie enters" triggers see foreign entries
                     if trig.data.get("enters_tapped") and not getattr(subject, "tapped", False):
                         continue    # "Whenever a permanent you control enters tapped" (Amulet of Vigor)
+                    if desc.startswith("face-down "):         # a state of the permanent, not of its card (Kadena)
+                        if getattr(subject, "hidden", None) is None:
+                            continue
+                        desc = desc[len("face-down "):]
                     if subject is perm and me_ok == "self":
                         pass
                     elif subject is perm and other == "other":
@@ -434,6 +438,11 @@ class StackMixin:
                                 bool(getattr(item, "cast_from_hand", False)), getattr(item, "mana_spent", 0))
             if kind in ("disturb", "room_right", "siege"):   # cast transformed: its back face enters (a Room's right door)
                 perm = self.enter_battlefield(p, base.back, x=getattr(item, "x", 0), physical_card=base)
+            elif kind in ("disguise", "morph", "megamorph"):   # face down from the start: no enters ability of its own
+                perm = self.enter_battlefield(p, CardDef(name="Face-down creature", mana_cost={"generic": 0}, cmc=0,
+                                                         types=frozenset({"Creature"}), power=2, toughness=2,
+                                                         ward=2 if kind == "disguise" else 0),
+                                              x=getattr(item, "x", 0), physical_card=base, hidden=base)
             else:
                 perm = self.enter_battlefield(p, base, x=getattr(item, "x", 0))
             self._aura_host = None
@@ -449,11 +458,6 @@ class StackMixin:
             self._entry_mana_by_color = {}
             self._entry_mana_from = {}
             self._spent = ""
-            if kind in ("disguise", "morph", "megamorph"):
-                perm.hidden = base
-                perm.card = CardDef(name="Face-down creature", mana_cost={"generic": 0}, cmc=0,
-                                    types=frozenset({"Creature"}), power=2, toughness=2,
-                                    ward=2 if kind == "disguise" else 0)
             if kind in ("blitz", "blitz_gy"):
                 perm.blitz = True
             alt_casts.entered(perm, kind, item.card.origin[2] if getattr(item.card, "origin", None) else None)

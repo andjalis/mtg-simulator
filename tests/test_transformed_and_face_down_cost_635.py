@@ -82,6 +82,58 @@ class Game_(unittest.TestCase):
         self.game.turn += 1
         self.assertEqual(self.face_down_costs()[0], {"generic": 0})     # a new turn
 
+    def manifest(self, p):
+        from mtgsim.manifest import manifest_one
+        perm = manifest_one(self.game, p)
+        self.game.settle()
+        return perm
+
+    def test_kadena_draws_for_my_face_down_entries(self):
+        """opus-refs on #805: 'whenever a face-down creature you control enters' never fired; the creature now
+        enters face down instead of being turned down after its enters events."""
+        self.put(self.a, "Kadena, Slinking Sorcerer")
+        self.a.hand = [db("Skinthinner")]
+        morph = next(o for o in self.game.spell_options(self.a) if "morph" in o.name.lower())
+        self.assertTrue(self.game.cast(self.a, morph))
+        self.game.settle()
+        self.assertEqual(len(self.a.hand), 1)                            # cast face down: draw one
+        self.assertIsNotNone(self.manifest(self.a).hidden)
+        self.assertEqual(len(self.a.hand), 2)                            # manifested: another
+        self.manifest(self.b)
+        self.put(self.a, "Grizzly Bears")
+        self.assertEqual(len(self.a.hand), 2)                            # not theirs, not a face-up creature
+
+    def test_face_down_morph_has_no_enters_ability(self):
+        from tests.test_templates import card
+        morpher = card("T Morpher", "{4}{U}", "Creature — Shapeshifter", "When this creature enters, draw a card.\n"
+                       "Morph {U}", 3, 3)
+        for _ in range(3):
+            self.put(self.a, "Island")
+        self.a.hand = [morpher]
+        morph = next(o for o in self.game.spell_options(self.a) if self.game._origin(o)[1] == "morph")
+        self.assertTrue(self.game.cast(self.a, morph))
+        self.game.settle()
+        perm = next(x for x in self.a.battlefield if x.hidden is not None)
+        self.assertEqual((perm.card.name, perm.power), ("Face-down creature", 2))
+        self.assertEqual(self.a.hand, [])                                 # its own "when this enters" didn't trigger
+        self.game.destroy(perm)
+        self.game.settle()
+        self.assertEqual([c.name for c in self.a.graveyard], ["T Morpher"])   # the real card goes to the graveyard
+
+    def test_skirk_alarmist_sacrifices_it_at_the_end_step(self):
+        """opus-refs on #805 (probable): the delayed sacrifice works when the ability gets a target per effect."""
+        self.game.active_idx = 0
+        self.a.my_turn, self.b.my_turn = True, False
+        skirk = self.put(self.a, "Skirk Alarmist")
+        skirk.sick = False
+        down = self.manifest(self.a)
+        self.assertTrue(self.game.activate_ability(self.a, skirk, 0))    # targets chosen by the engine
+        self.game.settle()
+        self.assertIsNone(down.hidden)
+        self.game.begin_end_step(self.a)
+        self.game.settle()
+        self.assertNotIn(down, self.a.battlefield)
+
 
 if __name__ == "__main__":
     unittest.main()

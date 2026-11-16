@@ -108,11 +108,10 @@ def manifest_one(game, p, card=None, cloak=False):
     hidden = real
     if real.is_creature:                    # a creature card can be turned face up for its cost
         hidden = dataclasses.replace(real, alt_costs=list(real.alt_costs) + [AltCost("morph", real.mana_cost)])
-    perm = game.enter_battlefield(p, _face_down_def(), physical_card=card)
+    face = dataclasses.replace(_face_down_def(), ward=2) if cloak else _face_down_def()
+    perm = game.enter_battlefield(p, face, physical_card=card, hidden=hidden)     # face down as it enters (Kadena)
     if perm is None:
         return None
-    perm.hidden = hidden
-    perm.card = dataclasses.replace(_face_down_def(), ward=2) if cloak else _face_down_def()
     game.log(f"{'cloaks' if cloak else 'manifests'} {real.name} face down", p)
     return perm
 
