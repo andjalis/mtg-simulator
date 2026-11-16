@@ -676,3 +676,10 @@ def owner_library(game, p, eff, target, item=None, **_):
     """"Put it on top of / on the bottom of / Nth from the top of its owner's library" (mtgsim.cx_owner_library)."""
     from ...cx_owner_library import resolve
     resolve(game, p, eff, target, item)
+
+
+@kind("choose_ctype")
+def choose_ctype(game, p, eff, item=None, **_):
+    """"Choose a creature type." on resolution: the pick is kept on the stack item (mtgsim.cx_chosen_type)."""
+    from ...cx_chosen_type import choose
+    choose(game, p, item, eff.data.get("hostile", False))

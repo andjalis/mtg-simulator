@@ -163,7 +163,7 @@ class BattlefieldMixin:
             perm.chosen_type = max(types, key=types.get, default="")
             if card.advanced_rules.get("choose_opp_type"):       # "creatures of the chosen type get -1/-1" (#627)
                 from ..cx_chosen_type import pick_hostile
-                perm.chosen_type = pick_hostile(self, p) or perm.chosen_type
+                perm.chosen_type = pick_hostile(self, p)         # public information only; "" if none known
         elif card.choose_type == "land":
             # Shimmer: "As ~ enters, choose a land type. Each land of the chosen type has
             # phasing." The default pick is the opponent's most common basic land type.

@@ -36,13 +36,11 @@ class Parse(unittest.TestCase):
         self.assertEqual(PLAGUE.unsupported, [])
         self.assertTrue(PLAGUE.advanced_rules.get("choose_opp_type"))
 
-    def test_choice_on_resolution_is_refused(self):
-        c = card("Test Roar", "{2}{R}", "Sorcery", "Choose a creature type. ~ deals damage to any target equal to the "
-                                                   "number of permanents you control of the chosen type.")
+    def test_no_stored_choice_is_refused(self):
+        # the key read with no choice anywhere (no "As ~ enters, choose", no "Choose a creature type." before it)
+        c = card("Test Roar", "{2}{R}", "Sorcery", "~ deals damage to any target equal to the number of permanents you "
+                                                   "control of the chosen type.")
         self.assertTrue(any("no stored choice" in u for u in c.unsupported))
-        c = card("Test Fear", "{B}", "Instant", "Choose a creature type. Creatures you control of the chosen type "
-                                                "get +1/+0 until end of turn.")
-        self.assertTrue(c.unsupported)
 
 
 class Resolve(unittest.TestCase):
