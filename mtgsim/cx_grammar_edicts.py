@@ -171,3 +171,28 @@ def _keep_value(game, me, eff, obj):
         kept += free[:n]
     lost = sum(perm_value(x) for x in scope if x not in kept)
     return lost if obj is not me else -lost
+
+
+# ---------------------------------------------------------------- "half the creatures they control, rounded up"
+
+_FRACTIONS = {"half": (1, 2), "a third of": (1, 3), "a tenth of": (1, 10)}
+
+
+@verb(r"sacrifices? (half|a third of|a tenth of) the (.+?) (?:they|that player) controls?, rounded (up|down)",
+      heads=("sacrifice", "sacrifices"), subjects=("player",))
+def sacrifice_fraction(m, clause):
+    """"Each opponent sacrifices half the creatures they control, rounded up": the count is that player's own,
+    worked out when the edict resolves (the cx_edict handler)."""
+    noun = m[2]
+    if clause.duration or _BAD.search(noun) or not _plural_ok(noun, 2):
+        return None
+    group = _group(noun, 2)
+    if group is None:
+        return None
+    num, den = _FRACTIONS[m[1].lower()]
+    return [Part("cx_edict", 0, data={"noun": group, "scales": False, "fraction": [num, den, m[3].lower() == "up"]})]
+
+
+# "<players> sacrifice X <nouns>" is not read: X there is often not the mana X the grammar wrapper hands over (an
+# additional cost's X, a trigger's X, a number the player chooses: Devastating Dreams, Gluttonous Hellkite,
+# Campsite Cuisine), so a reading would sacrifice nothing.

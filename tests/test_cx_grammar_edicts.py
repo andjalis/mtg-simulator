@@ -11,7 +11,8 @@ DB_FILE = Path(__file__).resolve().parents[1] / "mtgsim" / "data" / "cards.sqlit
 
 FULL = ("Break Under Pressure", "Catch // Release", "Consecrate // Consume", "Consumed by Greed", "Crackling Doom",
         "Extract a Confession", "Flare of Malice", "Necrotic Hex", "Perilous Predicament", "Soul Shatter",
-        "Structural Collapse", "To the Slaughter", "Witch-king, Bringer of Ruin")
+        "Structural Collapse", "To the Slaughter", "Witch-king, Bringer of Ruin", "Zodiark, Umbral God",
+        "Legate Lanius, Caesar's Ace", "Vona's Hunger")
 GREED = card("Test Greed", "{3}{B}", "Instant", "Target opponent sacrifices a creature with the greatest power among "
                                                 "creatures they control.")
 LEAST = card("Test Least", "{B}", "Instant", "Target opponent sacrifices a creature with the least power among "
@@ -102,6 +103,24 @@ class Resolve(unittest.TestCase):
         cast(g, a, HEX, [None])
         self.assertEqual(len([x for x in theirs if x in b.battlefield]), 1)
         self.assertEqual([x for x in mine if x in a.battlefield], [])
+
+
+class Fractions(unittest.TestCase):
+    def test_half_rounded_up_and_down_is_each_players_own_count(self):
+        for way, left in (("up", 2), ("down", 3)):
+            g, a, b = game()
+            for i in range(5):
+                creature(g, b, f"E{i}", 1, 1)
+            mine = [creature(g, a, f"M{i}", 1, 1) for i in range(2)]
+            c = card("Test Half", "{B}", "Sorcery", f"Each opponent sacrifices half the creatures they control, "
+                                                   f"rounded {way}.")
+            self.assertEqual(c.unsupported, [])
+            cast(g, a, c, [None])
+            self.assertEqual(len(b.creatures), left, way)
+            self.assertEqual(len([x for x in mine if x in a.battlefield]), 2)
+
+    def test_x_is_not_read(self):
+        self.assertTrue(card("Test Break", "{X}{R}{R}", "Sorcery", "Each player sacrifices X lands.").unsupported)
 
 
 @unittest.skipUnless(DB_FILE.exists(), "card database not built")
