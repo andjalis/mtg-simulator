@@ -972,10 +972,11 @@ _PAST = [
 
 def _history(phrase: str) -> str:
     """A code for "<something happened> this turn", or ""."""
-    m = re.fullmatch(r"(.+?) this turn", phrase.strip(), re.I)
+    m = re.fullmatch(r"(.+?) (this|last) turn", phrase.strip(), re.I)
     if not m:
         return ""
     body, negate = m[1], False
+    last = ("last",) if m[2].lower() == "last" else ()      # "if you lost life last turn": the turn before
     neg = re.fullmatch(r"you haven't (cast|sacrificed|discarded|cycled) (.+)", body, re.I)
     if neg:
         body, negate = f"you {neg[1]} {neg[2]}", True
@@ -999,12 +1000,39 @@ def _history(phrase: str) -> str:
         if got is None:
             continue
         _HIST_HEADS[head] = got
-        code = _code("hist", head, count)
+        code = _code("hist", head, count, *last)
         return "!" + code if negate else code
-    return ""
+    from .cx_hist_past import heads         # any past tense the trigger grammar reads in the present (#397)
+    got = heads(m[1])
+    if got is None:
+        return ""
+    alts, negate = got
+    for head, compiled in alts:
+        _HIST_HEADS[head] = compiled
+    codes = [_code("hist", head, 1, *last) for head, _ in alts]
+    code = codes[0] if len(codes) == 1 else _code("or", *codes)
+    return "!" + code if negate else code
 
 
 _EVENTS = ("crime",)
+
+
+def _hist_table(game):
+    """This turn's history table, keeping the one before it for "last turn"."""
+    hist = getattr(game, "_condlib_hist", None)
+    if hist is None or hist[0] != game.turn:
+        if hist is not None:
+            game._condlib_hist_last = hist
+        hist = game._condlib_hist = (game.turn, {})
+    return hist
+
+
+def _hist_last(game):
+    """Last turn's history table (empty if nothing was recorded then)."""
+    for hist in (getattr(game, "_condlib_hist", None), getattr(game, "_condlib_hist_last", None)):
+        if hist is not None and hist[0] == game.turn - 1:
+            return hist[1]
+    return {}
 
 
 def record(game, p, event, source=None, context=None, subject=None):
@@ -1013,25 +1041,19 @@ def record(game, p, event, source=None, context=None, subject=None):
         from .cx_statics import on_untap
         on_untap(game, source)
     if event in _EVENTS:
-        hist = getattr(game, "_condlib_hist", None)
-        if hist is None or hist[0] != game.turn:
-            hist = game._condlib_hist = (game.turn, {})
+        hist = _hist_table(game)
         key = ("@" + event, p.name)
         hist[1][key] = hist[1].get(key, 0) + 1
     if event == "damages_player" and source is not None and context is not None and context is not p:
         # "~ dealt damage to an opponent this turn": the damaging permanent, keyed by identity
-        hist = getattr(game, "_condlib_hist", None)
-        if hist is None or hist[0] != game.turn:
-            hist = game._condlib_hist = (game.turn, {})
+        hist = _hist_table(game)
         key = ("@src_dmg_opp", id(source))
         hist[1][key] = hist[1].get(key, 0) + 1
     if not _HIST_HEADS:
         return
     if event == "perm_to_gy" and source is not None or event == "any_cast" and getattr(context, "controller", context) is not p:
         return
-    hist = getattr(game, "_condlib_hist", None)
-    if hist is None or hist[0] != game.turn:
-        hist = game._condlib_hist = (game.turn, {})
+    hist = _hist_table(game)
     from .cx_events import _match
     for head, (raws, spec) in _HIST_HEADS.items():
         if event not in raws:
@@ -1217,13 +1239,15 @@ def check(game, p, code: str, item=None, source=None, prev=None):
     if kind == "ref_card":                   # cx_links: the looked-at card is still where it went, and matches
         return linked_zone(p, item) is not None and _card_ok(item.link_card, args[0])
     if kind == "hist":
-        head, n = args
+        head, n, *when = args
         if head not in _HIST_HEADS:
             from .cx_events import compile_head
             got = compile_head("Whenever " + head)
             if got is None:
                 return False
             _HIST_HEADS[head] = got
+        if when:
+            return _hist_last(game).get((head, p.name), 0) >= n
         hist = getattr(game, "_condlib_hist", None)
         return hist is not None and hist[0] == game.turn and hist[1].get((head, p.name), 0) >= n
     if kind == "any_counters":
