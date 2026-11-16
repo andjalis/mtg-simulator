@@ -18,6 +18,7 @@ import re
 
 _COLORS = {"white": "W", "blue": "U", "black": "B", "red": "R", "green": "G"}
 _NAMES = {v: k for k, v in _COLORS.items()}
+_BASIC = {"W": "Plains", "U": "Island", "B": "Swamp", "R": "Mountain", "G": "Forest"}
 _OTHER = re.compile(r"(?:~ enters tapped\. )?As (?:~|it|this \w+) enters, choose a color other than "
                     r"(white|blue|black|red|green)\.")
 _PROTECTION = "~ has protection from the chosen color."
@@ -75,6 +76,12 @@ def choose(game, p, perm, card):
         produces |= set(card.produces)
     if "mana of the chosen color" in oracle:
         produces.add(color)
+    subtypes = card.subtypes
+    if kind == "basic_land" and "is the chosen type" in oracle:
+        # Multiversal Passage (#821): "This land is the chosen type" gives it that basic type and its mana ability
+        produces.add(color)
+        subtypes = frozenset(set(card.subtypes) | {_BASIC[color]})
     keywords = card.keywords | {f"protection from {_NAMES[color]}"} if protect else card.keywords
-    perm.card = dataclasses.replace(card, produces=frozenset(produces), keywords=frozenset(keywords))
+    perm.card = dataclasses.replace(card, produces=frozenset(produces), keywords=frozenset(keywords),
+                                    subtypes=subtypes)
     game.log(f"chooses {_NAMES[color]} for {card.name}", p)
