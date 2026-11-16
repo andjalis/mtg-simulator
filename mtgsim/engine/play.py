@@ -331,8 +331,9 @@ class PlayMixin:
             item.exiled_gy_stats = (int(exiled_gy.power or 0), int(exiled_gy.toughness or 0), exiled_gy.cmc)
         item.bargained = bool(card.bargain) and self.pay_bargain(p, card)
         item.gifted = gifted
-        item.uncounterable = any(s.card.mana_restriction == "chosen_type" and self.mana_allowed(s, card)
-                                 for s in payment)
+        from ..cx_abil_mana import uncounterable as _uncounterable     # Delighted Halfling (#644)
+        item.uncounterable = any((s.card.mana_restriction == "chosen_type" or _uncounterable(s.card.mana_restriction))
+                                 and self.mana_allowed(s, card) for s in payment)
         item.mana_spent = sum(v for k, v in cost.items() if k != "X")
         if card.is_ability:
             item.kind = "channel"
