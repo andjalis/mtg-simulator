@@ -103,6 +103,10 @@ def _ward_payable(game: Game, by: Player, perm, card: CardDef | None = None) -> 
         return by.life > life + 3
     if getattr(perm.card, "ward_discard", False):
         return len(by.hand) > (1 if card is not None and card in by.hand else 0)
+    spec = (getattr(perm.card, "advanced_rules", None) or {}).get("ward_cost")
+    if spec:                                    # "Ward—Sacrifice a creature." (ward_costs, #646)
+        from .ward_costs import ai_payable
+        return ai_payable(game, by, spec, perm, card)
     return True
 
 

@@ -115,6 +115,9 @@ def protected_from(perm, source) -> bool:
             len(card.colors) >= 2 and perm.has("protection from multicolored") or \
             card.is_artifact and perm.has("protection from artifacts"):
         return True
+    if len(card.colors) == 1 and perm.has("protection from monocolored") or card.snow and perm.has("protection from snow") \
+            or perm.has("protection from everything"):      # CR 702.16j: everything, colorless included (#646)
+        return True
     from ..protection_types import protected            # card types and subtypes ("from Demons", "from instants")
     return protected(perm, card, source)
 
@@ -885,6 +888,11 @@ def can_block(blocker: Permanent, attacker: Permanent) -> bool:
     if attacker.has("legendary landwalk") and any(x.card.is_land and x.card.legendary
                                                  for x in blocker.controller.battlefield):
         return False
+    if any(attacker.has(f"snow {w}walk") and any(x.card.is_land and x.card.snow and (sub is None or sub in x.card.subtypes)
+                                                for x in blocker.controller.battlefield)
+           for w, sub in (("swamp", "Swamp"), ("forest", "Forest"), ("island", "Island"), ("mountain", "Mountain"),
+                          ("plains", "Plains"), ("land", None))):
+        return False            # "Snow swampwalk": not while the defender controls a snow Swamp (CR 702.14c, #646)
     if protected_from(attacker, blocker):
         return False
     if attacker.has("skulk") and blocker.power > attacker.power:

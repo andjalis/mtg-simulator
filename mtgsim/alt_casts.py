@@ -55,6 +55,10 @@ def parse_line(line: str, st) -> bool:
     if m:
         st.alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2]), zone="graveyard"))
         return True
+    m = re.fullmatch(r"(Embalm|Eternalize)—((?:\{[^}]+\})+), Discard a card\.", line)
+    if m:                       # "Eternalize—{2}{W}{W}, Discard a card." (CR 702.129a, #646)
+        st.alt_costs.append(AltCost(m[1].lower(), parse_mana_cost(m[2]), zone="graveyard", discard=1))
+        return True
     m = re.fullmatch(r"(Disturb) ((?:\{[^}]+\})+)", line)
     if m:
         st.alt_costs.append(AltCost("disturb", parse_mana_cost(m[2]), zone="graveyard"))
@@ -94,7 +98,8 @@ def variants(game, p, card) -> list:
     out = []
     for a in card.alt_costs:
         if a.kind == "buyback":
-            out.append(game._variant(card, "buyback", AltCost("buyback", add_mana(card.mana_cost, a.cost))))
+            out.append(game._variant(card, "buyback", AltCost("buyback", add_mana(card.mana_cost, a.cost),
+                                                              life=a.life)))     # "Buyback—Pay 4 life." (#646)
         elif a.kind == "surge" and game.spells_cast_turn(p) >= 1:
             out.append(game._variant(card, "surge", a))
         elif a.kind == "prototype":
@@ -154,8 +159,14 @@ def graveyard_actions(game, p):
                 continue
             if a.kind == "scavenge" and not p.creatures:
                 continue
+            if a.discard and len(p.hand) < a.discard + 1:
+                continue                # "..., Discard a card": only with a spare card to discard (#646)
             if not game.can_pay(p, a.cost) or game.pay(p, a.cost) is None:
                 continue
+            for _ in range(a.discard):
+                discarded = p.ai.choose_discard(game, p)
+                game.discard_card(p, discarded)
+                game.log(f"discards {discarded.name} to {a.kind}", p)
             game.move_card(card, p.graveyard, p.exile, reason=a.kind)
             if a.kind == "scavenge":
                 host = max(p.creatures, key=perm_value)
